@@ -14,8 +14,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * This validator sets restartOnDeploy for clusters with added, changed or removed sidecars.
- * This ensures that sidecar client components are created or removed after sidecar containers have been started or stopped.
+ * Sets restartOnDeploy for existing clusters when adding, changing or removing sidecars.
+ * This ensures that Vespa components are reconstructed given updated sidecar containers.
  *
  * @author glebashnik
  */
@@ -23,8 +23,7 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
 
     @Override
     public void validate(ChangeContext context) {
-        // Only validate sidecars for existing clusters.
-        // New clusters with sidecars do not require restartOnDeploy.
+        // Validate sidecars for existing clusters, new clusters do not need restartOnDeploy.
         for (var previousCluster :
                 context.previousModel().getContainerClusters().values()) {
             var nextCluster = context.model().getContainerClusters().get(previousCluster.name());
@@ -93,10 +92,10 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
                             return "%s (%s)".formatted(changedSidecar.name(), sidecarDiff);
                         })
                         .collect(Collectors.joining(", "));
-                
+
                 messageBuilder.append(" changed sidecars: ").append(changedSidecarsMessage);
             }
-            
+
             if (!removedSidecars.isEmpty() || !addedSidecars.isEmpty() || !changedSidecars.isEmpty()) {
                 addRestartAction(context, nextCluster, messageBuilder.toString());
             }
