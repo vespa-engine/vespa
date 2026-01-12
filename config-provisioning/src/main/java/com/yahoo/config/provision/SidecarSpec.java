@@ -50,21 +50,6 @@ public record SidecarSpec(
         return id == other.id || name.equals(other.name);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SidecarSpec that = (SidecarSpec) o;
-        return id == that.id
-                && Objects.equals(name, that.name)
-                && Objects.equals(image, that.image)
-                && Objects.equals(resources, that.resources)
-                && Objects.equals(volumeMounts, that.volumeMounts)
-                && Objects.equals(envs, that.envs)
-                && Objects.equals(command, that.command)
-                && Objects.equals(livenessProbe, that.livenessProbe);
-    }
-
     public static Builder builder() {
         return new Builder();
     }
