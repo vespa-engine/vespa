@@ -948,7 +948,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private boolean sessionIsActiveForItsApplication(Tenant tenant, Session session) {
         Optional<ApplicationId> owner = session.getOptionalApplicationId();
         if (owner.isEmpty()) return true; // Chicken out ~(˘▾˘)~
-        return tenant.getApplicationRepo().activeSessionOf(owner.get()).equals(Optional.of(session.getSessionId()));
+        return tenant.getApplicationRepo().activeSessionOf(owner.get()).orElse(-1L).equals(session.getSessionId());
     }
 
     // ---------------- Tenant operations ----------------------------------------------------------------
