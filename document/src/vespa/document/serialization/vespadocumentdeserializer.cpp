@@ -104,9 +104,8 @@ VespaDocumentDeserializer::read(FieldValue &value) {
 const DocumentType*
 VespaDocumentDeserializer::readDocType(const DocumentType &guess)
 {
-    string_view type_name(_stream.peek());
+    string_view type_name = read_cstr(_stream);
 
-    _stream.adjustReadPos(type_name.size() + 1);
     readValue<uint16_t>(_stream);  // skip version
 
     if (guess.getName() != type_name) {
@@ -121,9 +120,8 @@ VespaDocumentDeserializer::readDocType(const DocumentType &guess)
 
 void
 VespaDocumentDeserializer::read(DocumentId &value) {
-    string_view s(_stream.peek());
-    value.set(s);
-    _stream.adjustReadPos(s.size() + 1);
+    string_view id = read_cstr(_stream);
+    value.set(id);
 }
 
 void
