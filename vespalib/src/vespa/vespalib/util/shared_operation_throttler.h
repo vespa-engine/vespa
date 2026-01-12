@@ -4,7 +4,7 @@
 #include "time.h"
 #include <functional>
 #include <memory>
-#include <optional>
+#include <string>
 #include <limits.h>
 
 namespace vespalib {
@@ -118,6 +118,8 @@ public:
 
         bool operator==(const DynamicThrottleParams&) const noexcept = default;
         bool operator!=(const DynamicThrottleParams&) const noexcept = default;
+
+        [[nodiscard]] std::string to_string() const;
     };
 
     // No-op if underlying throttler does not use a dynamic policy, or if the supplied

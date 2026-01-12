@@ -110,8 +110,8 @@ public abstract class Session implements Comparable<Session>  {
         return sessionZooKeeperClient.readCreateTime();
     }
 
-    public Instant getActivatedTime() {
-        return sessionZooKeeperClient.readActivatedTime();
+    public Instant statusChanged() {
+        return sessionZooKeeperClient.readStatusChanged();
     }
 
     /** Returns application id read from ZooKeeper. Will throw RuntimeException if not found */

@@ -4,6 +4,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <cassert>
+#include <format>
 #include <functional>
 #include <mutex>
 
@@ -525,6 +526,15 @@ DynamicOperationThrottler::Token::operator=(Token&& rhs) noexcept
     rhs._throttler = nullptr;
     rhs._operation_resource_usage = 0;
     return *this;
+}
+
+std::string
+DynamicOperationThrottler::DynamicThrottleParams::to_string() const {
+    return std::format("DynamicThrottleParams(window_size_increment={}, min_window_size={}, "
+                       "max_window_size={}, resize_rate={}, window_size_decrement_factor={}, "
+                       "window_size_backoff={})",
+                       window_size_increment, min_window_size, max_window_size,
+                       resize_rate, window_size_decrement_factor, window_size_backoff);
 }
 
 }
