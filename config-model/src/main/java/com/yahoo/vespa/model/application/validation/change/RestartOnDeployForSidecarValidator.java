@@ -104,43 +104,43 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
         var toResources = to.resources();
 
         if (from.id() != to.id()) {
-            changes.add("id: " + from.id() + " -> " + to.id());
+            changes.add("id: %s -> %s".formatted(from.id(), to.id()));
         }
 
         if (!from.name().equals(to.name())) {
-            changes.add("name: '" + from.name() + "' -> '" + to.name() + "'");
+            changes.add("name: %s -> %s".formatted(from.name(), to.name()));
         }
 
         if (!from.image().equals(to.image())) {
-            changes.add("image: '" + from.image() + "' -> '" + to.image() + "'");
+            changes.add("image: %s -> %s".formatted(from.image(), to.image()));
         }
 
         if (fromResources.maxCpu() != toResources.maxCpu()) {
-            changes.add("maxCpu: " + fromResources.maxCpu() + " -> " + toResources.maxCpu());
+            changes.add("maxCpu: %s -> %s".formatted(fromResources.maxCpu(), toResources.maxCpu()));
         }
 
         if (fromResources.minCpu() != toResources.minCpu()) {
-            changes.add("minCpu: " + fromResources.minCpu() + " -> " + toResources.minCpu());
+            changes.add("minCpu: %s -> %s".formatted(fromResources.minCpu(), toResources.minCpu()));
         }
 
         if (fromResources.memoryGiB() != toResources.memoryGiB()) {
-            changes.add("memoryGiB: " + fromResources.memoryGiB() + " -> " + toResources.memoryGiB());
+            changes.add("memoryGiB: %s -> %s".formatted(fromResources.memoryGiB(), toResources.memoryGiB()));
         }
 
         if (fromResources.hasGpu() != toResources.hasGpu()) {
-            changes.add("hasGpu: " + fromResources.hasGpu() + " -> " + toResources.hasGpu());
+            changes.add("hasGpu: %s -> %s".formatted(fromResources.hasGpu(), toResources.hasGpu()));
         }
 
         if (!from.volumeMounts().equals(to.volumeMounts())) {
-            changes.add("volumeMounts: " + from.volumeMounts() + " -> " + to.volumeMounts());
+            changes.add("volumeMounts: %s -> %s".formatted(from.volumeMounts(), to.volumeMounts()));
         }
 
         if (!from.envs().equals(to.envs())) {
-            changes.add("envs: " + from.envs() + " -> " + to.envs());
+            changes.add("envs: %s -> %s".formatted(from.envs(), to.envs()));
         }
 
         if (!from.command().equals(to.command())) {
-            changes.add("command: " + from.command() + " -> " + to.command());
+            changes.add("command: %s -> %s".formatted(from.command(), to.command()));
         }
 
         // Skipping livenessProbe diff since it doesn't affect sidecar functionality from sidecar client perspective.
