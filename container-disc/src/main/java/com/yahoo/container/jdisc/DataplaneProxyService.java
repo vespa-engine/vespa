@@ -257,6 +257,7 @@ public final class DataplaneProxyService extends AbstractComponent {
             String corsMap = isDevEnvironment ? """
                     map $http_origin $allow_origin {
                             ~^https://.*\\.vespa-cloud.com$ $http_origin;
+                            ~^https://.*\\.cd-vespa-cloud.com$ $http_origin;
                             ~^https?://localhost(:\\d+)?$ $http_origin;
                             default "";
                         }
