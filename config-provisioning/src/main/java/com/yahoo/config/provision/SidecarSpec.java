@@ -3,21 +3,19 @@ package com.yahoo.config.provision;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
- * Sidecar container configuration.
- * 
+ * Sidecar container specification provided to host-admin by config-server or constructed based on a feature flag.
  * @param id Unique identifier of the sidecar in a specific node assigned by config-server or in a feature flag.
  *           Should be a positive integer from 0 to 99 inclusive. Used as part of a sidecar container name and hostname.
  * @param name User-defined sidecar name. Must be unique within a node.
- *             Used as a hostname inside the main container, e.g. `curl sidecar0:8000`.
+ *             Used inside a Vespa container to make calls to a sidecar container, e.g. `curl sidecar0:8000`.
  * @param image Image to use for the sidecar container.
  * @param resources Compute resources to use for the sidecar container.
- * @param volumeMounts List of paths in the sidecar container mounted as volumes from host and shared with the main container.
+ * @param volumeMounts List of paths in the sidecar container that will be mounted as volumes from host and shared with Vespa container.
  * @param envs Environment variables to set in the sidecar container.
  * @param command Command to run in the sidecar container where the first element is the executable and the rest are arguments.
- * @param livenessProbe Health check to determine if the sidecar container is running correctly.
+ *
  * @author glebashnik
  */
 public record SidecarSpec(
@@ -27,11 +25,10 @@ public record SidecarSpec(
         SidecarResources resources,
         List<String> volumeMounts,
         Map<String, String> envs,
-        List<String> command,
-        Optional<SidecarProbe> livenessProbe) {
+        List<String> command) {
 
     public SidecarSpec {
-        if (id < 0 || id > 99) { // This limit is due to hostname length restrictions.
+        if (id < 0 || id > 99) {
             throw new IllegalArgumentException("Sidecar id must be from 0 to 99 inclusive");
         }
         Objects.requireNonNull(name);
@@ -56,8 +53,7 @@ public record SidecarSpec(
                 && Objects.equals(resources, that.resources)
                 && Objects.equals(volumeMounts, that.volumeMounts)
                 && Objects.equals(envs, that.envs)
-                && Objects.equals(command, that.command)
-                && Objects.equals(livenessProbe, that.livenessProbe);
+                && Objects.equals(command, that.command);
     }
 
     public static Builder builder() {
@@ -76,7 +72,6 @@ public record SidecarSpec(
         private List<String> volumeMounts = List.of();
         private Map<String, String> envs = Map.of();
         private List<String> command = List.of();
-        private Optional<SidecarProbe> livenessProbe = Optional.empty();
 
         public Builder() {}
 
@@ -88,7 +83,6 @@ public record SidecarSpec(
             this.volumeMounts = spec.volumeMounts;
             this.envs = spec.envs;
             this.command = spec.command;
-            this.livenessProbe = spec.livenessProbe;
         }
 
         public Builder id(long id) {
@@ -146,13 +140,8 @@ public record SidecarSpec(
             return this;
         }
 
-        public Builder livenessProbe(SidecarProbe livenessProbe) {
-            this.livenessProbe = Optional.of(livenessProbe);
-            return this;
-        }
-
         public SidecarSpec build() {
-            return new SidecarSpec(id, name, image, resources, volumeMounts, envs, command, livenessProbe);
+            return new SidecarSpec(id, name, image, resources, volumeMounts, envs, command);
         }
     }
 }
