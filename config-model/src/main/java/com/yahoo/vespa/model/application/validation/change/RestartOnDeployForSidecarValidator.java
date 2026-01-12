@@ -23,9 +23,8 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
 
     @Override
     public void validate(ChangeContext context) {
-        // Validate sidecars for existing clusters, new clusters do not need restartOnDeploy.
-        for (var previousCluster :
-                context.previousModel().getContainerClusters().values()) {
+        // Validate sidecars in existing clusters only, new clusters do not need restartOnDeploy.
+        for (var previousCluster : context.previousModel().getContainerClusters().values()) {
             var nextCluster = context.model().getContainerClusters().get(previousCluster.name());
 
             if (nextCluster == null) {
@@ -47,21 +46,14 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
             var previousSidecars = previousClusterSpec.get().sidecars();
             var nextSidecars = nextClusterSpec.get().sidecars();
 
-            var removedSidecars = previousSidecars.stream()
-                    .filter(previousSidecar ->
-                            nextSidecars.stream().noneMatch(sidecar -> sidecar.matchesByIdOrName(previousSidecar)))
-                    .toList();
+            var removedSidecars = previousSidecars.stream().filter(previousSidecar -> nextSidecars.stream().noneMatch(
+                    sidecar -> sidecar.matchesByIdOrName(previousSidecar))).toList();
 
-            var addedSidecars = nextSidecars.stream()
-                    .filter(nextSidecar ->
-                            previousSidecars.stream().noneMatch(sidecar -> sidecar.matchesByIdOrName(nextSidecar)))
-                    .toList();
+            var addedSidecars = nextSidecars.stream().filter(nextSidecar -> previousSidecars.stream().noneMatch(
+                    sidecar -> sidecar.matchesByIdOrName(nextSidecar))).toList();
 
-            var changedSidecars = nextSidecars.stream()
-                    .filter(nextSidecar -> previousSidecars.stream()
-                            .anyMatch(
-                                    sidecar -> sidecar.matchesByIdOrName(nextSidecar) && !sidecar.equals(nextSidecar)))
-                    .toList();
+            var changedSidecars = nextSidecars.stream().filter(nextSidecar -> previousSidecars.stream().anyMatch(
+                    sidecar -> sidecar.matchesByIdOrName(nextSidecar) && !sidecar.equals(nextSidecar))).toList();
 
             var messageBuilder = new StringBuilder("Need to restart services in %s due to".formatted(clusterId));
 
@@ -81,17 +73,13 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
                     messageBuilder.append("; ");
                 }
 
-                var changedSidecarsMessage = changedSidecars.stream()
-                        .map(changedSidecar -> {
-                            var matchingPreviousSidecar = previousSidecars.stream()
-                                    .filter(sidecar -> sidecar.matchesByIdOrName(changedSidecar))
-                                    .findFirst()
-                                    .orElseThrow(); // Should never throw.
+                var changedSidecarsMessage = changedSidecars.stream().map(changedSidecar -> {
+                    var matchingPreviousSidecar = previousSidecars.stream().filter(sidecar -> sidecar.matchesByIdOrName(
+                            changedSidecar)).findFirst().orElseThrow(); // Should never throw.
 
-                            var sidecarDiff = diffSidecarSpecs(matchingPreviousSidecar, changedSidecar);
-                            return "%s (%s)".formatted(changedSidecar.name(), sidecarDiff);
-                        })
-                        .collect(Collectors.joining(", "));
+                    var sidecarDiff = diffSidecarSpecs(matchingPreviousSidecar, changedSidecar);
+                    return "'%s' (%s)".formatted(changedSidecar.name(), sidecarDiff);
+                }).collect(Collectors.joining(", "));
 
                 messageBuilder.append(" changed sidecars: ").append(changedSidecarsMessage);
             }
@@ -103,13 +91,11 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
     }
 
     private Optional<ClusterSpec> findClusterSpec(VespaModel model, ClusterSpec.Id clusterId) {
-        return model.allClusters().stream()
-                .filter(c -> c.id().equals(clusterId))
-                .findFirst();
+        return model.allClusters().stream().filter(c -> c.id().equals(clusterId)).findFirst();
     }
 
     private String joinSidecarNames(List<SidecarSpec> sidecars) {
-        return sidecars.stream().map(SidecarSpec::name).collect(Collectors.joining(", "));
+        return sidecars.stream().map(sidecar -> "'%s'".formatted(sidecar.name())).collect(Collectors.joining(", "));
     }
 
     private String diffSidecarSpecs(SidecarSpec from, SidecarSpec to) {
@@ -120,9 +106,11 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
         if (from.id() != to.id()) {
             changes.add("id: " + from.id() + " -> " + to.id());
         }
+
         if (!from.name().equals(to.name())) {
             changes.add("name: '" + from.name() + "' -> '" + to.name() + "'");
         }
+
         if (!from.image().equals(to.image())) {
             changes.add("image: '" + from.image() + "' -> '" + to.image() + "'");
         }
@@ -130,12 +118,15 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
         if (fromResources.maxCpu() != toResources.maxCpu()) {
             changes.add("maxCpu: " + fromResources.maxCpu() + " -> " + toResources.maxCpu());
         }
+
         if (fromResources.minCpu() != toResources.minCpu()) {
             changes.add("minCpu: " + fromResources.minCpu() + " -> " + toResources.minCpu());
         }
+
         if (fromResources.memoryGiB() != toResources.memoryGiB()) {
             changes.add("memoryGiB: " + fromResources.memoryGiB() + " -> " + toResources.memoryGiB());
         }
+
         if (fromResources.hasGpu() != toResources.hasGpu()) {
             changes.add("hasGpu: " + fromResources.hasGpu() + " -> " + toResources.hasGpu());
         }
@@ -143,22 +134,26 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
         if (!from.volumeMounts().equals(to.volumeMounts())) {
             changes.add("volumeMounts: " + from.volumeMounts() + " -> " + to.volumeMounts());
         }
+
         if (!from.envs().equals(to.envs())) {
             changes.add("envs: " + from.envs() + " -> " + to.envs());
         }
+
         if (!from.command().equals(to.command())) {
             changes.add("command: " + from.command() + " -> " + to.command());
         }
+
+        // Skipping livenessProbe diff since it doesn't affect sidecar functionality from sidecar client perspective.
 
         return String.join(", ", changes);
     }
 
     private void addRestartAction(ChangeContext context, ApplicationContainerCluster cluster, String message) {
-        var services = cluster.getContainers().stream()
-                .map(AbstractService::getServiceInfo)
-                .toList();
+        var services = cluster.getContainers().stream().map(AbstractService::getServiceInfo).toList();
 
         context.require(new VespaRestartAction(
-                cluster.id(), message, services, VespaRestartAction.ConfigChange.DEFER_UNTIL_RESTART));
+                cluster.id(), message, services,
+                VespaRestartAction.ConfigChange.DEFER_UNTIL_RESTART
+        ));
     }
 }

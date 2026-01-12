@@ -87,7 +87,7 @@ public class RestartOnDeployForSidecarValidatorTest {
         assertEquals(1, result.size());
         assertRestartActionProperties(
                 result.get(0),
-                "Need to restart services in cluster 'feed' due to added sidecar 'triton'");
+                "Need to restart services in cluster 'feed' due to added sidecars: 'triton'");
     }
 
     @Test
@@ -99,8 +99,8 @@ public class RestartOnDeployForSidecarValidatorTest {
         assertEquals(1, result.size());
         assertRestartActionProperties(
                 result.get(0),
-                "Need to restart services in cluster 'feed' due to changed sidecar 'triton' "
-                        + "(image: 'nvcr.io/nvidia/tritonserver:25.09-py3' -> 'nvcr.io/nvidia/tritonserver:26.01-py3', "
+                "Need to restart services in cluster 'feed' due to changed sidecars: 'triton' ("
+                        + "image: 'nvcr.io/nvidia/tritonserver:25.09-py3' -> 'nvcr.io/nvidia/tritonserver:26.01-py3', "
                         + "minCpu: 1.0 -> 2.0, "
                         + "volumeMounts: [/models] -> [/models, /configs], "
                         + "command: [tritonserver, --log-verbose=1, --model-repository=/models] -> [tritonserver, --log-verbose=2])");
@@ -124,7 +124,7 @@ public class RestartOnDeployForSidecarValidatorTest {
         assertEquals(1, result.size());
         assertRestartActionProperties(
                 result.get(0),
-                "Need to restart services in cluster 'feed' due to removed sidecar 'triton'");
+                "Need to restart services in cluster 'feed' due to removed sidecars: 'triton'");
     }
 
     private List<ConfigChangeAction> validate(VespaModel current, VespaModel next) {
