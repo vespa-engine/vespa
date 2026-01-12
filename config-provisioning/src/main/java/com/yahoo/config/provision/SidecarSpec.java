@@ -41,6 +41,11 @@ public record SidecarSpec(
         Objects.requireNonNull(command);
     }
 
+    public SidecarSpec(long id, String name, DockerImage image, SidecarResources resources,
+                       List<String> volumeMounts, Map<String, String> envs, List<String> command) {
+        this(id, name, image, resources, volumeMounts, envs, command, Optional.empty());
+    }
+
     public boolean matchesByIdOrName(SidecarSpec other) {
         return id == other.id || name.equals(other.name);
     }
