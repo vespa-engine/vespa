@@ -387,7 +387,7 @@ public class TenantRepository {
                                                                     onnxModelCost,
                                                                     endpointCertificateSecretStores,
                                                                     inheritableApplications);
-        log.log(Level.FINE, "Adding tenant '" + tenantName + "'" + ", created " + created +
+        log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created +
                             ". Bootstrapping in " + Duration.between(start, clock.instant()));
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, created);
         createAndWriteTenantMetaData(tenant);
