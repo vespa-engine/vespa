@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
@@ -35,6 +36,7 @@ const (
   } ]
 }`
 	clusterStarResponse = `{"pathId":"/document/v1/","message":"Your Vespa deployment has no content cluster '*', only 'fooCC'"}`
+	overloadResponse    = `{"pathId":"/document/v1/","message":"Rejecting execution due to overload: 12345 requests already enqueued"}`
 )
 
 func TestQuoteFunc(t *testing.T) {
@@ -109,6 +111,11 @@ func withMockClient(t *testing.T, prepCli func(*mock.HTTPClient), runOp func(*ve
 	return client.LastRequest
 }
 
+type responseCodeAndPayload struct {
+	httpCode int
+	payload  string
+}
+
 func TestVisitCommand(t *testing.T) {
 	assertVisitResults(
 		[]string{
@@ -117,15 +124,23 @@ func TestVisitCommand(t *testing.T) {
 			"--json-lines",
 		},
 		t,
-		[]string{
-			normalpre +
+		[]responseCodeAndPayload{
+			{200, handlersResponse},
+			{400, clusterStarResponse},
+			// 429s shall be transparently retried with random exponential backoff
+			{429, overloadResponse},
+			{429, overloadResponse},
+			{429, overloadResponse},
+			{200, normalpre +
 				document1 +
-				`],"documentCount":1,"continuation":"CAFE"}`,
-			normalpre +
+				`],"documentCount":1,"continuation":"CAFE"}`},
+			// Continuation token must be retained across 429 retries
+			{429, overloadResponse},
+			{200, normalpre +
 				document2 +
 				"," +
 				document3 +
-				`],"documentCount":2}`,
+				`],"documentCount":2}`},
 		},
 		"cluster=fooCC&continuation=CAFE&wantedDocumentCount=1000&bucketSpace=default&stream=false",
 		document1+"\n"+
@@ -133,16 +148,20 @@ func TestVisitCommand(t *testing.T) {
 			document3+"\n")
 }
 
-func assertVisitResults(arguments []string, t *testing.T, responses []string, queryPart, output string) {
+func inRangeMillis(v time.Duration, lo int64, hi int64) bool {
+	return v.Milliseconds() >= lo && v.Milliseconds() <= hi
+}
+
+func assertVisitResults(arguments []string, t *testing.T, responses []responseCodeAndPayload, queryPart, output string) {
 	t.Helper()
 	client := &mock.HTTPClient{}
-	client.NextResponseString(200, handlersResponse)
-	client.NextResponseString(400, clusterStarResponse)
 	for _, resp := range responses {
-		client.NextResponseString(200, resp)
+		client.NextResponseString(resp.httpCode, resp.payload)
 	}
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
+	var backoffs []time.Duration
+	cli.sleeper = func(d time.Duration) { backoffs = append(backoffs, d) }
 	arguments = append(arguments, "-t", "http://127.0.0.1:8080")
 	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t, output, stdout.String())
@@ -150,4 +169,10 @@ func assertVisitResults(arguments []string, t *testing.T, responses []string, qu
 	assert.Equal(t, queryPart, client.LastRequest.URL.RawQuery)
 	assert.Equal(t, "/document/v1/", client.LastRequest.URL.Path)
 	assert.Equal(t, "GET", client.LastRequest.Method)
+
+	assert.Equal(t, len(backoffs), 4)
+	assert.True(t, inRangeMillis(backoffs[0], 100, 300)) // 200ms +- 100ms
+	assert.True(t, inRangeMillis(backoffs[1], 150, 450)) // 300ms +- 150ms
+	assert.True(t, inRangeMillis(backoffs[2], 225, 675)) // 450ms +- 225ms
+	assert.True(t, inRangeMillis(backoffs[3], 100, 300)) // reset back to 200ms +- 100ms
 }
