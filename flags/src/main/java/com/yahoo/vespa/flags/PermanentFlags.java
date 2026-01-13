@@ -235,6 +235,12 @@ public class PermanentFlags {
             "Takes effect immediately, but any current excess upgrades will not be cancelled"
     );
 
+    public static final UnboundIntFlag OS_UPGRADE_RELEASE_CADENCE = defineIntFlag(
+            "os-upgrade-release-cadence", 60,
+            "The approximate time in days that should elapse between OS versions",
+            "Takes effect on next run of OsUpgradeScheduler"
+    );
+
     public static final UnboundListFlag<String> EXTENDED_TRIAL_TENANTS = defineListFlag(
             "extended-trial-tenants", List.of(), String.class,
             "Tenants that will not be expired from their trial plan",
