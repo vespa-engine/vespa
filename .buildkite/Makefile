@@ -23,6 +23,8 @@ export NUM_CPU_LIMIT ?= $(shell nproc)
 export NUM_CPP_THREADS := $(shell echo $$(( $(NUM_CPU_LIMIT)*2/3 )))
 export NUM_MVN_THREADS := $(shell echo $$(( $(NUM_CPU_LIMIT)*2/3 )))
 
+export MAVEN_OPTS ?= -Xms1g -Xmx$(NUM_MVN_THREADS)g
+
 export BUILDKITE ?= false
 export BUILDKITE_PULL_REQUEST ?= true
 ifeq ($(BUILDKITE_PULL_REQUEST),false)
