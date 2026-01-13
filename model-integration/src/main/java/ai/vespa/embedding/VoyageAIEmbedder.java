@@ -64,11 +64,17 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    // VoyageAI API endpoints - auto-selected based on model name
+    private static final String EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/embeddings";
+    private static final String MULTIMODAL_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/multimodalembeddings";
+    private static final String CONTEXTUALIZED_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/contextualizedembeddings";
+
     // Configuration
     private final VoyageAiEmbedderConfig config;
     private final Embedder.Runtime runtime;
     private final Secret apiKey;
     private final OkHttpClient httpClient;
+    private final String resolvedEndpoint;
 
     @Inject
     public VoyageAIEmbedder(VoyageAiEmbedderConfig config, Embedder.Runtime runtime, Secrets secretStore) {
@@ -76,8 +82,37 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         this.runtime = runtime;
         this.apiKey = getApiKey(config, secretStore);
         this.httpClient = createHttpClient(config);
+        this.resolvedEndpoint = resolveEndpoint(config);
 
-        log.info("VoyageAI embedder initialized with model: " + config.model());
+        log.info("VoyageAI embedder initialized with model: " + config.model() + ", endpoint: " + resolvedEndpoint);
+    }
+
+    /**
+     * Resolve the API endpoint based on model name.
+     * Different model types use different endpoints:
+     * - voyage-multimodal-* models use /v1/multimodalembeddings
+     * - voyage-context-* models use /v1/contextualizedembeddings
+     * - All other models use /v1/embeddings
+     */
+    private String resolveEndpoint(VoyageAiEmbedderConfig config) {
+        // If user explicitly configured an endpoint, use it
+        String configuredEndpoint = config.endpoint();
+        if (configuredEndpoint != null && !configuredEndpoint.equals(EMBEDDINGS_ENDPOINT)) {
+            return configuredEndpoint;
+        }
+
+        // Auto-select endpoint based on model name
+        String model = config.model();
+        if (model != null) {
+            if (model.startsWith("voyage-multimodal-")) {
+                return MULTIMODAL_EMBEDDINGS_ENDPOINT;
+            }
+            if (model.startsWith("voyage-context-")) {
+                return CONTEXTUALIZED_EMBEDDINGS_ENDPOINT;
+            }
+        }
+
+        return EMBEDDINGS_ENDPOINT;
     }
 
     /**
@@ -198,22 +233,112 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     }
 
     /**
+     * Check if this is a multimodal model.
+     */
+    private boolean isMultimodalModel() {
+        return config.model() != null && config.model().startsWith("voyage-multimodal-");
+    }
+
+    /**
+     * Check if this is a contextual model.
+     */
+    private boolean isContextualModel() {
+        return config.model() != null && config.model().startsWith("voyage-context-");
+    }
+
+    /**
+     * Check if the model supports variable output dimensions.
+     * Currently voyage-multimodal-* and voyage-context-* models support: 256, 512, 1024, 2048
+     */
+    private boolean supportsVariableDimensions() {
+        return isMultimodalModel() || isContextualModel();
+    }
+
+    /**
+     * Validate and get the output dimension from the target tensor type.
+     * For models that support variable dimensions, validates that the dimension is one of: 256, 512, 1024, 2048.
+     * Returns null if the model doesn't support variable dimensions (use model's default).
+     */
+    private Integer getOutputDimensionFromTensorType(TensorType targetType) {
+        long dim = targetType.dimensions().get(0).size().orElse(-1L);
+        if (dim == -1) {
+            return null;  // Unbound dimension, use model default
+        }
+
+        if (!supportsVariableDimensions()) {
+            return null;  // Model doesn't support variable dimensions, API will return default
+        }
+
+        int dimension = (int) dim;
+        if (dimension != 256 && dimension != 512 && dimension != 1024 && dimension != 2048) {
+            throw new IllegalArgumentException(
+                "Invalid output dimension " + dimension + " for model '" + config.model() + "'. " +
+                "Supported dimensions are: 256, 512, 1024, 2048. " +
+                "Please adjust your schema's tensor type accordingly."
+            );
+        }
+        return dimension;
+    }
+
+    /**
      * Call VoyageAI API to get embeddings.
      */
     private Tensor callVoyageAI(String text, String inputType, TensorType targetType)
             throws IOException, InterruptedException {
 
-        VoyageAIRequest request = new VoyageAIRequest(
-                List.of(text),
-                config.model(),
-                inputType,
-                config.truncate()
-        );
+        // Infer output dimension from target tensor type for models that support variable dimensions
+        Integer outputDimension = getOutputDimensionFromTensorType(targetType);
 
-        String jsonRequest = objectMapper.writeValueAsString(request);
+        String jsonRequest;
+        if (isMultimodalModel()) {
+            // Multimodal API uses different request format
+            MultimodalRequest request = new MultimodalRequest(
+                    text,
+                    config.model(),
+                    inputType,
+                    config.truncate(),
+                    outputDimension
+            );
+            jsonRequest = objectMapper.writeValueAsString(request);
+        } else if (isContextualModel()) {
+            // Contextual API uses array of document chunks format
+            // For single text, we treat it as a single-chunk document
+            ContextualRequest request = new ContextualRequest(
+                    text,
+                    config.model(),
+                    inputType,
+                    outputDimension
+            );
+            jsonRequest = objectMapper.writeValueAsString(request);
+
+            log.fine(() -> "VoyageAI request: " + jsonRequest);
+
+            // Contextual API has different response format: data[document].data[chunk].embedding
+            ContextualResponse response = callAPIWithRetry(jsonRequest, ContextualResponse.class);
+
+            if (response.data == null || response.data.isEmpty() ||
+                response.data.get(0).data == null || response.data.get(0).data.isEmpty()) {
+                throw new IOException("VoyageAI contextual API returned empty response");
+            }
+
+            // Get embedding from first chunk of first document
+            float[] embedding = response.data.get(0).data.get(0).embedding;
+            return createTensor(embedding, targetType);
+        } else {
+            // Standard embeddings API
+            VoyageAIRequest request = new VoyageAIRequest(
+                    List.of(text),
+                    config.model(),
+                    inputType,
+                    config.truncate(),
+                    outputDimension
+            );
+            jsonRequest = objectMapper.writeValueAsString(request);
+        }
+
         log.fine(() -> "VoyageAI request: " + jsonRequest);
 
-        VoyageAIResponse response = callAPIWithRetry(jsonRequest);
+        VoyageAIResponse response = callAPIWithRetry(jsonRequest, VoyageAIResponse.class);
 
         if (response.data == null || response.data.isEmpty()) {
             throw new IOException("VoyageAI API returned empty response");
@@ -231,8 +356,13 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
      * - Uses fixed 1-second delay between retry attempts
      * - Bounded by global timeout: will not retry if it would exceed the configured timeout
      * - maxRetries provides an additional safety limit to prevent excessive retry attempts
+     *
+     * @param jsonRequest the JSON request body
+     * @param responseType the class of the expected response type
+     * @param <T> the response type (VoyageAIResponse or ContextualResponse)
+     * @return the parsed response
      */
-    private VoyageAIResponse callAPIWithRetry(String jsonRequest)
+    private <T> T callAPIWithRetry(String jsonRequest, Class<T> responseType)
             throws IOException, InterruptedException {
 
         long startTime = System.currentTimeMillis();
@@ -244,7 +374,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             try {
                 RequestBody body = RequestBody.create(jsonRequest, JSON);
                 Request httpRequest = new Request.Builder()
-                        .url(config.endpoint())
+                        .url(resolvedEndpoint)
                         .header("Authorization", "Bearer " + apiKey.current())
                         .header("Content-Type", "application/json")
                         .post(body)
@@ -254,7 +384,8 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                     String responseBody = response.body() != null ? response.body().string() : "";
 
                     if (response.isSuccessful()) {
-                        return objectMapper.readValue(responseBody, VoyageAIResponse.class);
+                        log.fine(() -> "VoyageAI response: " + responseBody);
+                        return objectMapper.readValue(responseBody, responseType);
                     } else if (response.code() == 429 || response.code() >= 500) {
                         // Calculate time remaining
                         long elapsedTime = System.currentTimeMillis() - startTime;
@@ -335,12 +466,32 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     // ===== Request/Response DTOs =====
 
-    private record VoyageAIRequest(
-            @JsonProperty("input") List<String> input,
-            @JsonProperty("model") String model,
-            @JsonProperty("input_type") String inputType,
-            @JsonProperty("truncation") boolean truncation
-    ) {}
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class VoyageAIRequest {
+        @JsonProperty("input")
+        public List<String> input;
+
+        @JsonProperty("model")
+        public String model;
+
+        @JsonProperty("input_type")
+        public String inputType;
+
+        @JsonProperty("truncation")
+        public boolean truncation;
+
+        @JsonProperty("output_dimension")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public Integer outputDimension;
+
+        public VoyageAIRequest(List<String> input, String model, String inputType, boolean truncation, Integer outputDimension) {
+            this.input = input;
+            this.model = model;
+            this.inputType = inputType;
+            this.truncation = truncation;
+            this.outputDimension = outputDimension;
+        }
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class VoyageAIResponse {
@@ -367,6 +518,115 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private static class Usage {
         @JsonProperty("total_tokens")
         public int totalTokens;
+    }
+
+    // ===== Contextual Request/Response DTOs =====
+
+    /**
+     * Request format for contextual embeddings API (voyage-context-*).
+     * Uses "inputs" as array of document chunks: [["chunk1", "chunk2"], ["chunk1", "chunk2"]]
+     * For single text embedding, we treat it as a single-chunk document: [["text"]]
+     * Note: Contextual API does not support truncation parameter.
+     * Supports output_dimension: 2048, 1024 (default), 512, 256
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ContextualRequest {
+        @JsonProperty("inputs")
+        public List<List<String>> inputs;
+
+        @JsonProperty("model")
+        public String model;
+
+        @JsonProperty("input_type")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public String inputType;
+
+        @JsonProperty("output_dimension")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public Integer outputDimension;
+
+        public ContextualRequest(String text, String model, String inputType, Integer outputDimension) {
+            // Single text is treated as a single-chunk document
+            this.inputs = List.of(List.of(text));
+            this.model = model;
+            this.inputType = inputType;
+            this.outputDimension = outputDimension;
+        }
+    }
+
+    /**
+     * Response format for contextual embeddings API.
+     * The actual response structure is nested: data[document].data[chunk].embedding
+     * {"object":"list","data":[{"object":"list","data":[{"object":"embedding","embedding":[...]}]}]}
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ContextualResponse {
+        @JsonProperty("data")
+        public List<ContextualDocumentResult> data;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ContextualDocumentResult {
+        @JsonProperty("data")
+        public List<EmbeddingData> data;  // Reuse existing EmbeddingData class
+    }
+
+    // ===== Multimodal Request DTOs =====
+
+    /**
+     * Request format for multimodal embeddings API.
+     * Uses "inputs" with content array instead of "input" with string list.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class MultimodalRequest {
+        @JsonProperty("inputs")
+        public List<MultimodalInput> inputs;
+
+        @JsonProperty("model")
+        public String model;
+
+        @JsonProperty("input_type")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public String inputType;
+
+        @JsonProperty("truncation")
+        public boolean truncation;
+
+        @JsonProperty("output_dimension")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        public Integer outputDimension;
+
+        public MultimodalRequest(String text, String model, String inputType, boolean truncation, Integer outputDimension) {
+            this.inputs = List.of(new MultimodalInput(text));
+            this.model = model;
+            this.inputType = inputType;
+            this.truncation = truncation;
+            this.outputDimension = outputDimension;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class MultimodalInput {
+        @JsonProperty("content")
+        public List<ContentItem> content;
+
+        public MultimodalInput(String text) {
+            this.content = List.of(new ContentItem(text));
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ContentItem {
+        @JsonProperty("type")
+        public String type;
+
+        @JsonProperty("text")
+        public String text;
+
+        public ContentItem(String text) {
+            this.type = "text";
+            this.text = text;
+        }
     }
 
     // ===== Cache Key =====
