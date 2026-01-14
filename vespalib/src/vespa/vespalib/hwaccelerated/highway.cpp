@@ -781,8 +781,7 @@ float my_dot_product_f8_e5m2(const uint8_t* a, const uint8_t* b, size_t sz) noex
 }
 HWY_NOINLINE
 float my_dot_product_f4_e2m1(const uint8_t* a, const uint8_t* b, size_t sz) noexcept {
-    // TODO benchmark with both on representative platforms
-#if defined(HWY_NATIVE_REORDER_WIDEN_MUL_ACC_BF16)
+#if defined(HWY_NATIVE_REORDER_WIDEN_MUL_ACC_BF16) // TODO always via BF16 on AVX, never slower than FP16
     return mul_add_fp4_e2m1_to_f32_via_bf16(a, b, sz);
 #else
     return mul_add_fp4_e2m1_to_f32_via_fp16(a, b, sz);
