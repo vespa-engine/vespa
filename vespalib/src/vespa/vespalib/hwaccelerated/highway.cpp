@@ -565,15 +565,16 @@ float mul_add_fp8_e4m3fn_to_f32_via_fp16_v2(const uint8_t* HWY_RESTRICT a,
     const hn::ScalableTag<uint8_t> du8;
     const hn::Repartition<hwy::float16_t, decltype(du8)> df16;
     const hn::Repartition<float, decltype(df16)> df32;
+    const hn::Half<decltype(du8)> du8h;
 
-    auto kernel_fn = [du8, df16, df32](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_HWY_LAMBDA {
+    auto kernel_fn = [du8h, df16, df32](auto lhs, auto rhs, auto& acc0, auto& acc1, auto& acc2, auto& acc3) VESPA_HWY_LAMBDA {
         using VF16 = hn::VFromD<decltype(df16)>;
         // TODO SVE friendly
-        VF16 lhs_f16_lo = promote_fp8_e4m3_to(df16, hn::LowerHalf(lhs));
-        VF16 rhs_f16_lo = promote_fp8_e4m3_to(df16, hn::LowerHalf(rhs));
+        VF16 lhs_f16_lo = promote_fp8_e4m3_to(df16, hn::LowerHalf(du8h, lhs));
+        VF16 rhs_f16_lo = promote_fp8_e4m3_to(df16, hn::LowerHalf(du8h, rhs));
         acc0 = MyReorderWidenMulAccumulate(df32, lhs_f16_lo, rhs_f16_lo, acc0, acc1);
-        VF16 lhs_f16_hi = promote_fp8_e4m3_to(df16, hn::UpperHalf(du8, lhs));
-        VF16 rhs_f16_hi = promote_fp8_e4m3_to(df16, hn::UpperHalf(du8, rhs));
+        VF16 lhs_f16_hi = promote_fp8_e4m3_to(df16, hn::UpperHalf(du8h, lhs));
+        VF16 rhs_f16_hi = promote_fp8_e4m3_to(df16, hn::UpperHalf(du8h, rhs));
         acc2 = MyReorderWidenMulAccumulate(df32, lhs_f16_hi, rhs_f16_hi, acc2, acc3);
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<2>, HasAccumulatorArity<4>>;
