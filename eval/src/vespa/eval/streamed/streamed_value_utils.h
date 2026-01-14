@@ -69,6 +69,8 @@ public:
         _current_address(num_mapped_dims)
     {}
 
+    LabelBlockStream(LabelBlockStream&&) noexcept;
+
     ~LabelBlockStream();
 };
 
