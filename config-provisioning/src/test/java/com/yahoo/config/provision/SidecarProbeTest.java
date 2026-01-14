@@ -39,56 +39,56 @@ public class SidecarProbeTest {
     void invalid_initial_delay_seconds() {
         var exception = assertThrows(IllegalArgumentException.class,
                 () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), -1, 5, 2, 3));
-        assertEquals("initialDelaySeconds must be between 0 and 1800 seconds, got: -1", exception.getMessage());
+        assertEquals("initialDelaySeconds must be between 0 and 300 seconds, got: -1", exception.getMessage());
 
         exception = assertThrows(IllegalArgumentException.class,
-                () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 1801, 5, 2, 3));
-        assertEquals("initialDelaySeconds must be between 0 and 1800 seconds, got: 1801", exception.getMessage());
+                () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 301, 5, 2, 3));
+        assertEquals("initialDelaySeconds must be between 0 and 300 seconds, got: 301", exception.getMessage());
     }
 
     @Test
     void invalid_period_seconds() {
         var exception = assertThrows(IllegalArgumentException.class,
                 () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 0, 2, 3));
-        assertEquals("periodSeconds must be between 1 and 300 seconds, got: 0", exception.getMessage());
+        assertEquals("periodSeconds must be between 1 and 10 seconds, got: 0", exception.getMessage());
 
         exception = assertThrows(IllegalArgumentException.class,
                 () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, -5, 2, 3));
-        assertEquals("periodSeconds must be between 1 and 300 seconds, got: -5", exception.getMessage());
+        assertEquals("periodSeconds must be between 1 and 10 seconds, got: -5", exception.getMessage());
 
         exception = assertThrows(IllegalArgumentException.class,
-                () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 301, 2, 3));
-        assertEquals("periodSeconds must be between 1 and 300 seconds, got: 301", exception.getMessage());
+                () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 11, 2, 3));
+        assertEquals("periodSeconds must be between 1 and 10 seconds, got: 11", exception.getMessage());
     }
 
     @Test
     void invalid_timeout_seconds() {
         var exception = assertThrows(IllegalArgumentException.class,
                 () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 5, 0, 3));
-        assertEquals("timeoutSeconds must be between 1 and 60 seconds, got: 0", exception.getMessage());
+        assertEquals("timeoutSeconds must be between 1 and 10 seconds, got: 0", exception.getMessage());
 
         exception = assertThrows(IllegalArgumentException.class,
                 () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 5, -2, 3));
-        assertEquals("timeoutSeconds must be between 1 and 60 seconds, got: -2", exception.getMessage());
+        assertEquals("timeoutSeconds must be between 1 and 10 seconds, got: -2", exception.getMessage());
 
         exception = assertThrows(IllegalArgumentException.class,
-                () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 5, 61, 3));
-        assertEquals("timeoutSeconds must be between 1 and 60 seconds, got: 61", exception.getMessage());
+                () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 5, 11, 3));
+        assertEquals("timeoutSeconds must be between 1 and 10 seconds, got: 11", exception.getMessage());
     }
 
     @Test
     void invalid_failure_threshold() {
         var exception = assertThrows(IllegalArgumentException.class,
                 () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 5, 2, 0));
-        assertEquals("failureThreshold must be between 1 and 10, got: 0", exception.getMessage());
+        assertEquals("failureThreshold must be between 1 and 3, got: 0", exception.getMessage());
 
         exception = assertThrows(IllegalArgumentException.class,
                 () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 5, 2, -3));
-        assertEquals("failureThreshold must be between 1 and 10, got: -3", exception.getMessage());
+        assertEquals("failureThreshold must be between 1 and 3, got: -3", exception.getMessage());
 
         exception = assertThrows(IllegalArgumentException.class,
-                () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 5, 2, 11));
-        assertEquals("failureThreshold must be between 1 and 10, got: 11", exception.getMessage());
+                () -> new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 5, 2, 4));
+        assertEquals("failureThreshold must be between 1 and 3, got: 4", exception.getMessage());
     }
 
     @Test
@@ -189,11 +189,11 @@ public class SidecarProbeTest {
     @Test
     void probe_with_maximum_valid_values() {
         // Test boundary values - maximum valid values
-        var probe = new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 1800, 300, 60, 10);
-        assertEquals(1800, probe.initialDelaySeconds());
-        assertEquals(300, probe.periodSeconds());
-        assertEquals(60, probe.timeoutSeconds());
-        assertEquals(10, probe.failureThreshold());
+        var probe = new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 300, 10, 10, 3);
+        assertEquals(300, probe.initialDelaySeconds());
+        assertEquals(10, probe.periodSeconds());
+        assertEquals(10, probe.timeoutSeconds());
+        assertEquals(3, probe.failureThreshold());
     }
 
 }
