@@ -4,8 +4,12 @@ package com.yahoo.language.process;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.language.Language;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -19,6 +23,7 @@ public class InvocationContext<SUBCLASS extends InvocationContext<SUBCLASS>> {
     private String destination;
     private String componentId = "unknown";
     private final Map<Object, Object> cache;
+    private Deadline deadline;
 
     public InvocationContext(String destination) {
         this(destination, LazyMap.newHashMap());
@@ -71,6 +76,12 @@ public class InvocationContext<SUBCLASS extends InvocationContext<SUBCLASS>> {
         return (SUBCLASS)this;
     }
 
+    /** @return the operation timeout represented as a {@link Deadline} */
+    public Optional<Deadline> getDeadline() { return Optional.ofNullable(deadline); }
+
+    @SuppressWarnings("unchecked")
+    public SUBCLASS setDeadline(Deadline deadline) { this.deadline = deadline; return (SUBCLASS)this; }
+
     /** Return the component id or 'unknown' if not set. */
     public String getComponentId() { return componentId; }
 
@@ -96,6 +107,35 @@ public class InvocationContext<SUBCLASS extends InvocationContext<SUBCLASS>> {
     @SuppressWarnings("unchecked")
     public <T> T computeCachedValueIfAbsent(Object key, Supplier<? extends T> supplier) {
         return (T) cache.computeIfAbsent(key, __ -> supplier.get());
+    }
+
+    public static class Deadline {
+        private final Clock clock;
+        private final Instant deadlineInstant;
+
+        private Deadline(Clock clock, Instant deadlineInstant) {
+            this.clock = clock;
+            this.deadlineInstant = deadlineInstant;
+        }
+
+        public static Deadline of(Duration duration) {
+            return new Deadline(Clock.systemUTC(), Clock.systemUTC().instant().plus(duration));
+        }
+
+        public static Deadline of(Instant deadline) {
+            return new Deadline(Clock.systemUTC(), deadline);
+        }
+
+        public boolean isExpired() { return clock.instant().isAfter(deadlineInstant); }
+
+        public Duration timeRemaining() {
+            Instant now = clock.instant();
+            if (now.isAfter(deadlineInstant)) {
+                return Duration.ZERO;
+            }
+            return Duration.between(now, deadlineInstant);
+        }
+        public Instant asInstant() { return deadlineInstant; }
     }
 
 }
