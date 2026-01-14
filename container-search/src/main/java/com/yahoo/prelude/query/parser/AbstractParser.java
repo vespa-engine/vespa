@@ -2,7 +2,9 @@
 package com.yahoo.prelude.query.parser;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.Segmenter;
+import com.yahoo.language.process.StemMode;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
@@ -375,7 +377,7 @@ public abstract class AbstractParser implements CustomParser {
 
 
         Segmenter segmenter = environment.getLinguistics().getSegmenter();
-        List<String> segments = segmenter.segment(normalizedToken, language);
+        List<String> segments = segmenter.segment(normalizedToken, new LinguisticsParameters(indexName, true, language, StemMode.NONE, false, false));
         if (segments.isEmpty()) {
             return null;
         }

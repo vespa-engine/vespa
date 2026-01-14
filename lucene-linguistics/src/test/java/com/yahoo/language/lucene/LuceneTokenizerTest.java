@@ -37,7 +37,7 @@ public class LuceneTokenizerTest {
 
     @Test
     public void testTokenizer() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, true, true);
         String text = "This is my Text";
         Iterable<Token> tokens = luceneLinguistics().getTokenizer()
                 .tokenize(text, parameters);
@@ -46,7 +46,7 @@ public class LuceneTokenizerTest {
 
     @Test
     public void testLithuanianTokenizer() {
-        var parameters = new LinguisticsParameters(Language.LITHUANIAN, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters("default", true, Language.LITHUANIAN, StemMode.ALL, true, true);
         String text = "Žalgirio mūšio data yra 1410 metai";
         Iterable<Token> tokens = luceneLinguistics().getTokenizer().tokenize(text, parameters);
         assertEquals(List.of("žalgir", "mūš", "dat", "1410", "met"), tokenStrings(tokens));
@@ -55,7 +55,7 @@ public class LuceneTokenizerTest {
     @Test
     public void testStemming() {
         String text = "mūšio";
-        var parameters = new LinguisticsParameters(Language.LITHUANIAN, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters("default", true, Language.LITHUANIAN, StemMode.ALL, true, true);
         List<StemList> tokens = luceneLinguistics().getStemmer().stem(text, parameters);
         assertEquals(1, tokens.size());
         assertEquals("mūš", tokens.get(0).get(0));
@@ -63,7 +63,7 @@ public class LuceneTokenizerTest {
 
     @Test
     public void testStemmingMultiple() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, false, true);
         String languageCode = Language.ENGLISH.languageCode();
         var analyzer = new MockAnalyzer();
         var registry = new ComponentRegistry<Analyzer>();
@@ -159,7 +159,7 @@ public class LuceneTokenizerTest {
 
     @Test
     public void testAnalyzerConfiguration() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, false, true);
         String languageCode = Language.ENGLISH.languageCode();
         LuceneAnalysisConfig enConfig = new LuceneAnalysisConfig.Builder()
                 .configDir(Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("."))))
@@ -187,7 +187,7 @@ public class LuceneTokenizerTest {
 
     @Test
     public void testEnglishStemmerAnalyzerConfiguration() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, false, true);
         String languageCode = Language.ENGLISH.languageCode();
         LuceneAnalysisConfig enConfig = new LuceneAnalysisConfig.Builder()
                 .configDir(Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("."))))
@@ -207,7 +207,7 @@ public class LuceneTokenizerTest {
 
     @Test
     public void testStemmerWithStopWords() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, false, true);
         String languageCode = Language.ENGLISH.languageCode();
         LuceneAnalysisConfig enConfig = new LuceneAnalysisConfig.Builder()
                 .configDir(Optional.of(FileReference.mockFileReferenceForUnitTesting(new File("."))))
@@ -248,19 +248,19 @@ public class LuceneTokenizerTest {
         LuceneLinguistics linguistics = new LuceneLinguistics(zhConfig, new ComponentRegistry<>());
 
         // Default processing, for comparison
-        var english = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        var english = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, false, true);
         assertEquals(List.of("dog", "cat"), tokenStrings(linguistics.getTokenizer().tokenize("Dogs and Cats", english)));
 
-        var simplified = new LinguisticsParameters(Language.CHINESE_SIMPLIFIED, StemMode.ALL, false, true);
+        var simplified = new LinguisticsParameters("default", true, Language.CHINESE_SIMPLIFIED, StemMode.ALL, false, true);
         assertEquals(List.of("Dogs", "Cats"), tokenStrings(linguistics.getTokenizer().tokenize("Dogs and Cats", simplified)));
 
-        var traditional = new LinguisticsParameters(Language.CHINESE_TRADITIONAL, StemMode.ALL, false, true);
+        var traditional = new LinguisticsParameters("default", true, Language.CHINESE_TRADITIONAL, StemMode.ALL, false, true);
         assertEquals(List.of("Dogs", "Cats"), tokenStrings(linguistics.getTokenizer().tokenize("Dogs and Cats", traditional)));
     }
 
     @Test
     public void testOptionalPath() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, false, true);
         String languageCode = Language.ENGLISH.languageCode();
         LuceneAnalysisConfig enConfig = new LuceneAnalysisConfig.Builder()
                 .analysis(
@@ -279,7 +279,7 @@ public class LuceneTokenizerTest {
 
     @Test
     public void testOptionalPathWithClasspathResources() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, false, true);
         String languageCode = Language.ENGLISH.languageCode();
         LuceneAnalysisConfig enConfig = new LuceneAnalysisConfig.Builder()
                 .analysis(
@@ -319,11 +319,11 @@ public class LuceneTokenizerTest {
                 ).build();
         LuceneLinguistics linguistics = new LuceneLinguistics(enConfig, new ComponentRegistry<>());
         // Matching StemMode
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, false, true);
         Iterable<Token> tokens = linguistics.getTokenizer().tokenize("Dogs and Cats", parameters);
         assertEquals(List.of("sgoD", "dna", "staC"), tokenStrings(tokens));
         // StemMode is different
-        parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.BEST, false, true);
+        parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.BEST, false, true);
         Iterable<Token> stemModeTokens = linguistics.getTokenizer().tokenize("Dogs and Cats", parameters);
         assertEquals(List.of("dog", "cat"), tokenStrings(stemModeTokens));
 
@@ -331,7 +331,7 @@ public class LuceneTokenizerTest {
 
     @Test
     public void testSynonymConfiguration() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, false, true);
         String languageCode = Language.ENGLISH.languageCode();
         var analysis = new LuceneAnalysisConfig.Analysis.Builder();
         analysis.tokenizer.name("whitespace");

@@ -95,7 +95,7 @@ public class QueryTestCase {
         String body = "a bb. ccc??!";
         Linguistics linguistics = new SimpleLinguistics();
 
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.SHORTEST, true, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.SHORTEST, true, true);
         AndItem and = new AndItem();
         for (Token token : linguistics.getTokenizer().tokenize(body, parameters)) {
             if (token.isIndexable())

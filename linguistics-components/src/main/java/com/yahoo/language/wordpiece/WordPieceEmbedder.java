@@ -2,6 +2,8 @@
 package com.yahoo.language.wordpiece;
 
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.language.process.LinguisticsParameters;
+import com.yahoo.language.process.StemMode;
 import com.yahoo.language.tools.Embed;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
@@ -55,8 +57,8 @@ public class WordPieceEmbedder implements Embedder, Segmenter {
      * @return the list of zero or more token ids resulting from segmenting the input text
      */
     @Override
-    public List<String> segment(String text, Language language) {
-        return resolveModelFrom(language).segment(text, tokenizer);
+    public List<String> segment(String text, LinguisticsParameters parameters) {
+        return resolveModelFrom(parameters.language()).segment(text, tokenizer, parameters);
     }
 
     /**
@@ -68,7 +70,9 @@ public class WordPieceEmbedder implements Embedder, Segmenter {
      */
     @Override
     public List<Integer> embed(String text, Context context) {
-        return resolveModelFrom(context.getLanguage()).embed(text, tokenizer);
+        return resolveModelFrom(context.getLanguage()).embed(text, tokenizer,
+                                                             new LinguisticsParameters(context.getDestination(), false, context.getLanguage(),
+                                                                                       StemMode.ALL, true, true));
     }
 
     /**

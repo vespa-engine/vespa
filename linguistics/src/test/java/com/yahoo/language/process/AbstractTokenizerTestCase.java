@@ -41,7 +41,7 @@ public abstract class AbstractTokenizerTestCase {
     }
 
     public Iterable<Token> tokenize(String input) {
-        var parameters = new LinguisticsParameters(language, stemMode, accentDrop, lowercase);
+        var parameters = new LinguisticsParameters("default", false, language, stemMode, accentDrop, lowercase);
         return linguistics.getTokenizer().tokenize(input, parameters);
     }
 

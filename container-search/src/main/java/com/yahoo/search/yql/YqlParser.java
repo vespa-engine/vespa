@@ -828,7 +828,7 @@ public class YqlParser implements Parser {
         phrase.setIndexName(field);
 
         if (getAnnotation(ast, IMPLICIT_TRANSFORMS, Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION)) {
-            words = segmenter.segment(origin.getValue(), currentlyParsing.getLanguage());
+            words = segmenter.segment(origin.getValue(), new LinguisticsParameters(field, true, currentlyParsing.getLanguage(), StemMode.NONE, false, false));
         }
 
         if (words != null && words.size() > 0) {
@@ -1635,7 +1635,7 @@ public class YqlParser implements Parser {
             uriItem.addStartAnchorItem();
 
         String uriString = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1).get(0).getArgument(0);
-        for (String token : segmenter.segment(uriString, Language.ENGLISH))
+        for (String token : segmenter.segment(uriString, new LinguisticsParameters(field, true, Language.ENGLISH, StemMode.NONE, false, false)))
             uriItem.addItem(new WordItem(token, field, true));
 
         if (getAnnotation(ast, END_ANCHOR, Boolean.class, endAnchorDefault,
@@ -1802,7 +1802,7 @@ public class YqlParser implements Parser {
     }
 
     private TaggableItem segment(String field, OperatorNode<ExpressionOperator> ast, String wordData, String toSegment, boolean fromQuery, Class<?> parent, Language language) {
-        List<String> segments = segmenter.segment(toSegment, language);
+        List<String> segments = segmenter.segment(toSegment, new LinguisticsParameters(field, true, language, StemMode.NONE, false, false));
         if (segments.isEmpty()) {
             return instantiateWordItem(wordData, field, fromQuery, ast); // TODO: This should use toSegment?
         } else if (segments.size() == 1 || !phraseSegmentChildSupported(parent)) {
@@ -1821,7 +1821,7 @@ public class YqlParser implements Parser {
 
     private TaggableItem tokenize(String field, OperatorNode<ExpressionOperator> ast, String wordData, String toSegment, boolean fromQuery, Class<?> parent, Language language) {
         // We're in 'linguistics' mode, so these parameters should be ignored by the linguistics component
-        var parameters = new LinguisticsParameters(language, StemMode.BEST, true, true);
+        var parameters = new LinguisticsParameters(field, true, language, StemMode.BEST, true, true);
         List<Token> tokens = new ArrayList<>();
         for (Token token : tokenizer.tokenize(toSegment, parameters)) {
             if (token.isIndexable())

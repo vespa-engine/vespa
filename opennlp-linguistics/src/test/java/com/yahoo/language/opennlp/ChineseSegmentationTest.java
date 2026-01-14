@@ -21,7 +21,7 @@ public class ChineseSegmentationTest {
 
     @Test
     public void testChineseSegmentation() {
-        var parameters = new LinguisticsParameters(Language.CHINESE_SIMPLIFIED, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters("default", true, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true, true);
 
         var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).build());
         List<String> tokens;
@@ -34,7 +34,7 @@ public class ChineseSegmentationTest {
         assertEquals(11, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试, 阶段, 测试阶段, 。]", tokens.toString());
 
-        tokens = tester.segmenter().segment(text, parameters.language());
+        tokens = tester.segmenter().segment(text, parameters);
         assertEquals(7, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, 目前, 在, 测试阶段]", tokens.toString());
 
@@ -45,7 +45,7 @@ public class ChineseSegmentationTest {
 
     @Test
     public void testChineseSegmentationWithoutGrams() {
-        var parameters = new LinguisticsParameters(Language.CHINESE_SIMPLIFIED, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters("default", true, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true, true);
 
         var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).createCjkGrams(false).build());
         List<String> tokens;
@@ -58,7 +58,7 @@ public class ChineseSegmentationTest {
         assertEquals(9, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, ，, 目前, 在, 测试阶段, 。]", tokens.toString());
 
-        tokens = tester.segmenter().segment(text, parameters.language());
+        tokens = tester.segmenter().segment(text, parameters);
         assertEquals(7, tokens.size());
         assertEquals("[是, 一个, 展示, 雅, 目前, 在, 测试阶段]", tokens.toString());
 
@@ -69,7 +69,7 @@ public class ChineseSegmentationTest {
 
     @Test
     public void testOtherLanguagesWorksAsUsualWithChineseSegmentation() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, true, true);
 
         var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).build());
         List<String> tokens;

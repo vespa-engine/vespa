@@ -197,7 +197,9 @@ public class StemmingSearcher extends Searcher {
 
     // The rewriting logic is here
     private Item stem(BlockItem current, StemContext context, Index index) {
-        var parameters = new LinguisticsParameters(context.language, index.getStemMode(), index.getNormalize(), index.isLowercase());
+        var parameters = new LinguisticsParameters(current.getIndexName(), true,
+                                                   context.language, index.getStemMode(), index.getNormalize(),
+                                                   index.isLowercase());
         Item blockAsItem = (Item)current;
         CompositeItem composite;
         List<StemList> segments = linguistics.getStemmer().stem(current.stringValue(), parameters);

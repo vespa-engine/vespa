@@ -182,7 +182,7 @@
     "methods" : [
       "public void <init>(com.yahoo.language.sentencepiece.SentencePieceConfig)",
       "public void <init>(com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder)",
-      "public java.util.List segment(java.lang.String, com.yahoo.language.Language)",
+      "public java.util.List segment(java.lang.String, com.yahoo.language.process.LinguisticsParameters)",
       "public java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
       "public java.lang.String decode(java.util.List, com.yahoo.language.process.Embedder$Context)",
       "public java.lang.String decode(java.util.List, com.yahoo.language.process.Embedder$Context, boolean)",
@@ -320,7 +320,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.language.wordpiece.WordPieceConfig)",
-      "public java.util.List segment(java.lang.String, com.yahoo.language.Language)",
+      "public java.util.List segment(java.lang.String, com.yahoo.language.process.LinguisticsParameters)",
       "public java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
       "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
     ],
