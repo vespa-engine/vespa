@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
+import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -10,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
-import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
@@ -20,13 +20,11 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -156,7 +154,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 .connectTimeout(Duration.ofMillis(config.timeout()))
                 .readTimeout(Duration.ofMillis(config.timeout()))
                 .writeTimeout(Duration.ofMillis(config.timeout()))
-                .callTimeout(Duration.ofMillis(config.timeout()))
                 .connectionPool(new ConnectionPool(config.maxIdleConnections(), 5, TimeUnit.MINUTES))
                 .build();
     }
@@ -175,29 +172,20 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
         long startTime = System.nanoTime();
 
-        try {
-            // Check cache first using Context's cache mechanism
-            String inputType = detectInputType(context);
-            CacheKey cacheKey = new CacheKey(context.getEmbedderId(), text, inputType);
+        String inputType = detectInputType(context);
+        CacheKey cacheKey = new CacheKey(context.getEmbedderId(), text, inputType);
+        Tensor result = context.computeCachedValueIfAbsent(cacheKey, () -> {
+            try {
+                return callVoyageAI(text, inputType, targetType, context);
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException("Failed to call VoyageAI API: " + e.getMessage(), e);
+            }
+        });
 
-            Tensor result = context.computeCachedValueIfAbsent(cacheKey, () -> {
-                try {
-                    return callVoyageAI(text, inputType, targetType);
-                } catch (IOException | InterruptedException e) {
-                    throw new RuntimeException("Failed to call VoyageAI API: " + e.getMessage(), e);
-                }
-            });
+        runtime.sampleSequenceLength(text.length(), context);
+        runtime.sampleEmbeddingLatency((System.nanoTime() - startTime) / 1_000_000_000.0, context);
 
-            // Record metrics
-            runtime.sampleSequenceLength(text.length(), context);
-            runtime.sampleEmbeddingLatency((System.nanoTime() - startTime) / 1_000_000_000.0, context);
-
-            return result;
-
-        } catch (RuntimeException e) {
-            log.log(Level.WARNING, "VoyageAI embedding failed for model: " + config.model(), e);
-            throw e;
-        }
+        return result;
     }
 
     /**
@@ -283,7 +271,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     /**
      * Call VoyageAI API to get embeddings.
      */
-    private Tensor callVoyageAI(String text, String inputType, TensorType targetType)
+    private Tensor callVoyageAI(String text, String inputType, TensorType targetType, Context context)
             throws IOException, InterruptedException {
 
         // Infer output dimension from target tensor type for models that support variable dimensions
@@ -314,7 +302,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             log.fine(() -> "VoyageAI request: " + jsonRequest);
 
             // Contextual API has different response format: data[document].data[chunk].embedding
-            ContextualResponse response = callAPIWithRetry(jsonRequest, ContextualResponse.class);
+            var response = callAPIWithRetry(jsonRequest, ContextualResponse.class, context);
 
             if (response.data == null || response.data.isEmpty() ||
                 response.data.get(0).data == null || response.data.get(0).data.isEmpty()) {
@@ -338,7 +326,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
         log.fine(() -> "VoyageAI request: " + jsonRequest);
 
-        VoyageAIResponse response = callAPIWithRetry(jsonRequest, VoyageAIResponse.class);
+        VoyageAIResponse response = callAPIWithRetry(jsonRequest, VoyageAIResponse.class, context);
 
         if (response.data == null || response.data.isEmpty()) {
             throw new IOException("VoyageAI API returned empty response");
@@ -354,21 +342,21 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
      * <p>Retry strategy:
      * - Retries on rate limits (429) and server errors (5xx)
      * - Uses fixed 1-second delay between retry attempts
-     * - Bounded by global timeout: will not retry if it would exceed the configured timeout
+     * - Bounded by deadline timeout: will not retry if it would exceed the deadline
      * - maxRetries provides an additional safety limit to prevent excessive retry attempts
      *
      * @param jsonRequest the JSON request body
      * @param responseType the class of the expected response type
+     * @param context the embedder context containing optional deadline
      * @param <T> the response type (VoyageAIResponse or ContextualResponse)
      * @return the parsed response
      */
-    private <T> T callAPIWithRetry(String jsonRequest, Class<T> responseType)
+    private <T> T callAPIWithRetry(String jsonRequest, Class<T> responseType, Context context)
             throws IOException, InterruptedException {
 
-        long startTime = System.currentTimeMillis();
-        long timeoutMs = config.timeout();
         int retries = 0;
         long retryDelay = 1000; // Fixed 1 second delay
+        long startTime = System.currentTimeMillis(); // Track start time for non-deadline case
 
         while (true) {
             try {
@@ -380,24 +368,17 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                         .post(body)
                         .build();
 
-                try (Response response = httpClient.newCall(httpRequest).execute()) {
+                var call = httpClient.newCall(httpRequest);
+                var timeoutMs = calculateTimeoutMs(context, startTime);
+                call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS);
+
+                try (var response = call.execute()) {
                     String responseBody = response.body() != null ? response.body().string() : "";
 
                     if (response.isSuccessful()) {
                         log.fine(() -> "VoyageAI response: " + responseBody);
                         return objectMapper.readValue(responseBody, responseType);
                     } else if (response.code() == 429 || response.code() >= 500) {
-                        // Calculate time remaining
-                        long elapsedTime = System.currentTimeMillis() - startTime;
-                        long timeRemaining = timeoutMs - elapsedTime;
-
-                        // Check if we have time for another retry
-                        if (timeRemaining <= retryDelay) {
-                            String errorType = response.code() == 429 ? "rate limit" : "server error";
-                            throw new IOException("VoyageAI API " + errorType + " (" + response.code() +
-                                    "). Cannot retry: would exceed timeout of " + timeoutMs + "ms. Response: " + responseBody);
-                        }
-
                         // Safety limit check
                         if (retries >= config.maxRetries()) {
                             String errorType = response.code() == 429 ? "rate limited" : "server error";
@@ -408,8 +389,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                         // Retry with fixed delay
                         retries++;
                         String errorMsg = response.code() == 429 ? "rate limited" : "server error (" + response.code() + ")";
-                        log.warning("VoyageAI API " + errorMsg + ". Retry " + retries +
-                                " after " + retryDelay + "ms (timeout remaining: " + timeRemaining + "ms)");
+                        log.fine("VoyageAI API " + errorMsg + ". Retry " + retries + " after " + retryDelay + "ms");
 
                         Thread.sleep(retryDelay);
 
@@ -424,6 +404,14 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 throw new IOException("Failed to parse VoyageAI API response", e);
             }
         }
+    }
+
+    private long calculateTimeoutMs(Context context, long startTime) throws IOException {
+        long remainingMs = context.getDeadline().isPresent()
+                ? context.getDeadline().get().timeRemaining().toMillis()
+                : config.timeout() - (System.currentTimeMillis() - startTime);
+        if (remainingMs <= 0) throw new IOException("Request timeout exceeded before API call");
+        return remainingMs;
     }
 
     /**

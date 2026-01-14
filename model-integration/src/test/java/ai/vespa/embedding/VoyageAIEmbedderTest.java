@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
-import ai.vespa.secret.Secret;
-import ai.vespa.secret.Secrets;
 import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
+import ai.vespa.secret.Secrets;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -16,8 +16,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for VoyageAI embedder using MockWebServer to simulate API responses.
@@ -176,6 +180,35 @@ public class VoyageAIEmbedderTest {
         assertTrue(exception.getMessage().contains("timeout") || exception.getMessage().contains("exceed"));
 
         shortTimeoutEmbedder.deconstruct();
+    }
+
+    @Test
+    public void testDeadlineTimeout() {
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .endpoint(mockServer.url("/v1/embeddings").toString())
+                .model("voyage-3")
+                .timeout(30000)
+                .maxRetries(100);
+        var embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
+
+        for (int i = 0; i < 10; i++) {
+            mockServer.enqueue(new MockResponse()
+                    .setResponseCode(429)
+                    .setBody("{\"error\":\"rate_limit_exceeded\"}"));
+        }
+
+        var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+
+        var context = new Embedder.Context("test-embedder")
+                .setDeadline(InvocationContext.Deadline.of(Duration.ofMillis(2500)));
+
+        // Should fail when context deadline is reached (2.5 sec), not config timeout (30 sec)
+        var exception = assertThrows(RuntimeException.class, () -> {
+            embedder.embed("test", context, targetType);
+        });
+        assertEquals("Failed to call VoyageAI API: Request timeout exceeded before API call", exception.getMessage());
+        embedder.deconstruct();
     }
 
     @Test
