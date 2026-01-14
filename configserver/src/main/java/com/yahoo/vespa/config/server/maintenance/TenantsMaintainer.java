@@ -34,8 +34,13 @@ public class TenantsMaintainer extends ConfigServerMaintainer {
         if ( ! applicationRepository.configserverConfig().hostedVespa()) return 1.0;
 
         log.log(Level.INFO, "Starting deletion of unused tenants");
-        Set<TenantName> tenants = applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, clock.instant());
-        log.log(Level.INFO, "Deleted tenants " + tenants);
+        try {
+            Set<TenantName> tenants = applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, clock.instant());
+            log.log(Level.INFO, "Deleted tenants " + tenants);
+        } catch (StackOverflowError e) {
+            log.log(Level.WARNING, "Stack overflow when deleting tenants", e);
+            return 0.0;
+        }
         return 1.0;
     }
 
