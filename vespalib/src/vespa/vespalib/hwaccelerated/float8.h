@@ -9,8 +9,6 @@
 namespace vespalib::hwaccelerated {
 
 struct Float8E4M3FN {
-    using TagType = dispatch::Fp8E4M3FNTag;
-
     using native_type = uint8_t;
 
     native_type _bits;
@@ -28,8 +26,6 @@ struct Float8E4M3FN {
 };
 
 struct Float8E5M2 {
-    using TagType = dispatch::Fp8E5M3Tag;
-
     using native_type = uint8_t;
 
     native_type _bits;
