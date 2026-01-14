@@ -16,24 +16,29 @@ import java.util.List;
 public record SidecarProbe(
         Action action, int initialDelaySeconds, int periodSeconds, int timeoutSeconds, int failureThreshold) {
 
+    /** 
+     * Validates, sets time and attempt limits.
+     * These are kept fairly low to detect unhealthy sidecars without a long wait.
+     */
     public SidecarProbe {
         if (action == null) {
             throw new IllegalArgumentException("Probe action must not be null");
         }
-        if (initialDelaySeconds < 0 || initialDelaySeconds > 1800) {
-            throw new IllegalArgumentException("initialDelaySeconds must be between 0 and 1800 seconds, got: " + initialDelaySeconds);
+        
+        if (initialDelaySeconds < 0 || initialDelaySeconds > 300) {
+            throw new IllegalArgumentException("initialDelaySeconds must be between 0 and 300 seconds, got: " + initialDelaySeconds);
         }
-        if (periodSeconds < 1 || periodSeconds > 300) {
+        if (periodSeconds < 1 || periodSeconds > 10) {
             throw new IllegalArgumentException(
-                    "periodSeconds must be between 1 and 300 seconds, got: " + periodSeconds);
+                    "periodSeconds must be between 1 and 10 seconds, got: " + periodSeconds);
         }
-        if (timeoutSeconds < 1 || timeoutSeconds > 60) {
+        if (timeoutSeconds < 1 || timeoutSeconds > 10) {
             throw new IllegalArgumentException(
-                    "timeoutSeconds must be between 1 and 60 seconds, got: " + timeoutSeconds);
+                    "timeoutSeconds must be between 1 and 10 seconds, got: " + timeoutSeconds);
         }
-        if (failureThreshold < 1 || failureThreshold > 10) {
+        if (failureThreshold < 1 || failureThreshold > 3) {
             throw new IllegalArgumentException(
-                    "failureThreshold must be between 1 and 10, got: " + failureThreshold);
+                    "failureThreshold must be between 1 and 3, got: " + failureThreshold);
         }
     }
 
