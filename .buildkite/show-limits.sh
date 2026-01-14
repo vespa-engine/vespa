@@ -142,7 +142,7 @@ if [ "$CGROUP_VERSION" = "v2" ]; then
     if [ "$IO_MAX" != "N/A" ]; then
         echo "  io.max:"
         echo "$IO_MAX" | while read -r line; do
-            [ -n "$line" ] && echo "    $line"
+            [ -z "$line" ] || echo "    $line"
         done
     fi
     echo
@@ -162,7 +162,7 @@ else
     # Cgroups v1
     echo "Cgroup controllers:"
     while IFS=: read -r _ controllers path; do
-        [ -z "$controllers" ] && continue
+        [ "$controllers" ] || continue
         echo "  $controllers -> $path"
     done < "$PROC_CGROUP"
     echo
@@ -250,13 +250,13 @@ else
         if [ "$THROTTLE_READ" != "N/A" ] && [ -n "$THROTTLE_READ" ]; then
             echo "  blkio.throttle.read_bps_device:"
             echo "$THROTTLE_READ" | while read -r line; do
-                [ -n "$line" ] && echo "    $line"
+                [ -z "$line" ] || echo "    $line"
             done
         fi
         if [ "$THROTTLE_WRITE" != "N/A" ] && [ -n "$THROTTLE_WRITE" ]; then
             echo "  blkio.throttle.write_bps_device:"
             echo "$THROTTLE_WRITE" | while read -r line; do
-                [ -n "$line" ] && echo "    $line"
+                [ -z "$line" ] || echo "    $line"
             done
         fi
         echo
