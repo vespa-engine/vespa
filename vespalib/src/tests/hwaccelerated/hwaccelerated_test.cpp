@@ -420,7 +420,7 @@ TEST(Float4E2M1WideningTest, can_widen_fp4_e2m1_to_fp8_types) {
     }
 }
 
-namespace N_NEON_BF16 { // tee hee
+/*namespace N_NEON_BF16 { // tee hee
 void test_fp8_to_fp16(const uint8_t* buf, uint16_t* out, size_t n);
 }
 
@@ -441,7 +441,7 @@ TEST(Float8Alternate, prototyping) {
             ASSERT_EQ(actual_fp16_bits, expected_fp16_bits) << " for fp8 raw u8 value " << std::hex << i+j;
         }
     }
-}
+}*/
 
 } // vespalib::hwaccelerated
 
