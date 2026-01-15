@@ -9,6 +9,7 @@ import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detection;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +29,7 @@ public class ExecutionContext {
     // Document id is practical for logging and informative error messages
     private DocumentId documentId;
     private boolean isReindexingOperation = false;
+    private Instant deadline;
 
     public ExecutionContext() {
         this(null);
@@ -125,6 +127,9 @@ public class ExecutionContext {
     public Optional<DocumentId> getDocumentId() { return Optional.ofNullable(documentId); }
     public ExecutionContext setDocumentId(DocumentId id) { documentId = Objects.requireNonNull(id); return this; }
 
+    public Optional<Instant> getDeadline() { return Optional.ofNullable(deadline); }
+    public ExecutionContext setDeadline(Instant deadline) { this.deadline = deadline; return this; }
+
     /**
      * Clears all state in this pertaining to the current indexing statement
      * Does not clear the cache.
@@ -141,7 +146,7 @@ public class ExecutionContext {
         // using resolveLanguage anyway.
         // TODO: detectedLanguage = Language.UNKNOWN;
         currentValue = null;
-        // note: must not reset per-document or global values (like isReindexingOperation)
+        // note: must not reset per-document or global values (like isReindexingOperation, deadline)
         return this;
     }
 
