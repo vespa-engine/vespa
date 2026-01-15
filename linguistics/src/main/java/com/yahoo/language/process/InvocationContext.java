@@ -42,6 +42,7 @@ public class InvocationContext<SUBCLASS extends InvocationContext<SUBCLASS>> {
         language = other.getLanguage();
         destination = other.getDestination();
         componentId = other.getComponentId();
+        deadline = other.getDeadline().orElse(null);
         this.cache = other.getCache();
     }
 

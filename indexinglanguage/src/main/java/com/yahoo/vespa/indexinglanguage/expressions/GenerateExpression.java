@@ -8,13 +8,12 @@ import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+
+import static com.yahoo.language.process.InvocationContext.Deadline;
 
 /**
  * Indexing language expression for generating field values with LLMs and custom components.
@@ -98,6 +97,7 @@ public class GenerateExpression extends Expression {
         var generatorContext =  new FieldGenerator.Context(destination, targetType, context.getCache())
                 .setLanguage(context.resolveLanguage(linguistics))
                 .setComponentId(generator.id());
+        context.getDeadline().ifPresent(instant -> generatorContext.setDeadline(Deadline.of(instant)));
 
         return generator.component().generate(prompt, generatorContext);
     }

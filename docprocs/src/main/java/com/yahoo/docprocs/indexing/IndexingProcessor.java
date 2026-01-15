@@ -30,6 +30,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 import com.yahoo.yolean.Exceptions;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -90,13 +91,19 @@ public class IndexingProcessor extends DocumentProcessor {
     public Progress process(Processing proc) {
         if (proc.getDocumentOperations().isEmpty()) return Progress.DONE;
 
+        Instant deadline = null;
+        var timeLeft = proc.timeLeft();
+        if (timeLeft != Processing.NO_TIMEOUT) {
+            deadline = Instant.now().plus(timeLeft);
+        }
+
         List<DocumentOperation> out = new ArrayList<>(proc.getDocumentOperations().size());
         for (var op : proc.getDocumentOperations()) {
             try {
                 if (op instanceof DocumentPut dp) {
-                    processDocument(dp, out);
+                    processDocument(dp, out, deadline);
                 } else if (op instanceof DocumentUpdate du) {
-                    processUpdate(du, out);
+                    processUpdate(du, out, deadline);
                 } else if (op instanceof DocumentRemove dr) {
                     processRemove(dr, out);
                 } else if (op != null) {
@@ -121,7 +128,7 @@ public class IndexingProcessor extends DocumentProcessor {
         return documentTypeManager;
     }
 
-    private void processDocument(DocumentPut input, List<DocumentOperation> out) {
+    private void processDocument(DocumentPut input, List<DocumentOperation> out, Instant deadline) {
         DocumentType hadType = input.getDocument().getDataType();
         DocumentScript script = scriptManager.getScript(hadType);
         if (script == null) {
@@ -140,19 +147,19 @@ public class IndexingProcessor extends DocumentProcessor {
             buffer.flip();
             inputDocument = documentTypeManager.createDocument(buffer);
         }
-        Document output = script.execute(fieldValuesFactory, inputDocument, isReindexingOperation(input));
+        Document output = script.execute(fieldValuesFactory, inputDocument, isReindexingOperation(input), deadline);
         if (output == null) return;
 
         out.add(new DocumentPut(input, output));
     }
 
-    private void processUpdate(DocumentUpdate input, List<DocumentOperation> out) {
+    private void processUpdate(DocumentUpdate input, List<DocumentOperation> out, Instant deadline) {
         DocumentScript script = scriptManager.getScript(input.getType());
         if (script == null) {
             out.add(input);
             return;
         }
-        DocumentUpdate output = script.execute(fieldValuesFactory, input);
+        DocumentUpdate output = script.execute(fieldValuesFactory, input, deadline);
         if (output == null) return;
         output.setCondition(input.getCondition());
         out.add(output);

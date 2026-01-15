@@ -8,6 +8,8 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
+
+import java.time.Instant;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
@@ -198,24 +200,25 @@ public abstract class Expression extends Selectable {
         return execute(factory.asFieldValues(doc), doc.getId());
     }
 
-    public Document execute(FieldValuesFactory factory, Document doc, boolean isReindexing) {
+    public Document execute(FieldValuesFactory factory, Document doc, boolean isReindexing, Instant deadline) {
         var adapter = factory.asFieldValues(doc);
         var ctx = new ExecutionContext(adapter)
                 .setDocumentId(doc.getId());
         if (isReindexing) ctx.setReindexingOperation();
+        if (deadline != null) ctx.setDeadline(deadline);
         execute(ctx);
         return adapter.getFullOutput();
     }
 
     public final Document execute(DocumentFieldValues adapter, DocumentId docId) {
-        execute((FieldValues)adapter, docId);
+        execute((FieldValues)adapter, docId, null);
         return adapter.getFullOutput();
     }
 
-    public static DocumentUpdate execute(Expression expression, FieldValuesFactory factory, DocumentUpdate update) {
+    public static DocumentUpdate execute(Expression expression, FieldValuesFactory factory, DocumentUpdate update, Instant deadline) {
         DocumentUpdate result = null;
         for (UpdateFieldValues adapter : factory.asFieldValues(update)) {
-            DocumentUpdate output = adapter.getExpression(expression).execute(adapter, update.getId());
+            DocumentUpdate output = adapter.getExpression(expression).execute(adapter, update.getId(), deadline);
             if (output == null) {
                 // ignore
             } else if (result != null) {
@@ -230,16 +233,17 @@ public abstract class Expression extends Selectable {
         return result;
     }
 
-    public final DocumentUpdate execute(UpdateFieldValues adapter, DocumentId docId) {
-        execute((FieldValues)adapter, docId);
+    public final DocumentUpdate execute(UpdateFieldValues adapter, DocumentId docId, Instant deadline) {
+        execute((FieldValues)adapter, docId, deadline);
         return adapter.getOutput();
     }
 
-    public final FieldValue execute(FieldValues adapter) { return execute(adapter, null); }
+    public final FieldValue execute(FieldValues adapter) { return execute(adapter, null, null); }
 
-    public FieldValue execute(FieldValues adapter, DocumentId docId) {
+    public FieldValue execute(FieldValues adapter, DocumentId docId, Instant deadline) {
         var ctx = new ExecutionContext(adapter);
         if (docId != null) ctx.setDocumentId(docId);
+        if (deadline != null) ctx.setDeadline(deadline);
         return execute(ctx);
     }
 
@@ -278,7 +282,7 @@ public abstract class Expression extends Selectable {
     }
 
     public static DocumentUpdate execute(Expression expression, DocumentUpdate update) {
-        return execute(expression, new FieldValuesFactory(), update);
+        return execute(expression, new FieldValuesFactory(), update, null);
     }
 
     public final FieldValue execute() {

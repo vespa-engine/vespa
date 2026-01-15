@@ -21,6 +21,7 @@ import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,16 +46,16 @@ class DocumentScript {
 
     ScriptExpression getExpression() { return expression; }
 
-    Document execute(FieldValuesFactory fieldValuesFactory, Document document, boolean isReindexing) {
+    Document execute(FieldValuesFactory fieldValuesFactory, Document document, boolean isReindexing, Instant deadline) {
         for (var i = document.iterator(); i.hasNext(); ) {
             Map.Entry<Field, FieldValue> entry = i.next();
             requireThatFieldIsDeclaredInDocument(entry.getKey());
             removeAnyLinguisticsSpanTree(entry.getValue());
         }
-        return expression.execute(fieldValuesFactory, document, isReindexing);
+        return expression.execute(fieldValuesFactory, document, isReindexing, deadline);
     }
 
-    DocumentUpdate execute(FieldValuesFactory fieldValuesFactory, DocumentUpdate update) {
+    DocumentUpdate execute(FieldValuesFactory fieldValuesFactory, DocumentUpdate update, Instant deadline) {
         for (FieldUpdate fieldUpdate : update.fieldUpdates()) {
             requireThatFieldIsDeclaredInDocument(fieldUpdate.getField());
             for (ValueUpdate<?> valueUpdate : fieldUpdate.getValueUpdates()) {
@@ -67,7 +68,7 @@ class DocumentScript {
                 removeAnyLinguisticsSpanTree(((AssignFieldPathUpdate)fieldUpdate).getFieldValue());
             }
         }
-        return Expression.execute(expression, fieldValuesFactory, update);
+        return Expression.execute(expression, fieldValuesFactory, update, deadline);
     }
 
     private void requireThatFieldIsDeclaredInDocument(Field field) {
