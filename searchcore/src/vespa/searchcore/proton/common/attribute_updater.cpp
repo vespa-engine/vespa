@@ -131,7 +131,6 @@ template <typename V, typename Accessor>
 void
 AttributeUpdater::handleUpdateT(V & vec, Accessor, uint32_t lid, const ValueUpdate & upd)
 {
-    LOG(spam, "handleValueUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
     ValueUpdate::ValueUpdateType op = upd.getType();
     if (vec.hasMultiValue()) {
         if (op == ValueUpdate::Clear) {

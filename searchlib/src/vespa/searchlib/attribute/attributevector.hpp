@@ -173,5 +173,18 @@ bool AttributeVector::remove(ChangeVectorT< ChangeTemplate<T> > & changes, DocId
     return retval;
 }
 
+template<typename T>
+bool AttributeVector::assign_element(ChangeVectorT< ChangeTemplate<T> > &changes, DocId doc, uint32_t index, const T &v) {
+    bool retval(hasMultiValue() && hasArrayType() && (doc < getNumDocs()));
+    if (retval) {
+        // Use _weight field to store array index
+        changes.push_back(ChangeTemplate<T>(ChangeBase::ASSIGN_ELEMENT, doc, v, index));
+        _status.incUpdates();
+        updateUncommittedDocIdLimit(doc);
+        _status.incNonIdempotentUpdates();
+    }
+    return retval;
+}
+
 }
 
