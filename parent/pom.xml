@@ -71,6 +71,13 @@
                             <_fixupmessages>"Classes found in the wrong directory"</_fixupmessages>
                         </instructions>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>biz.aQute.bnd</groupId>
+                            <artifactId>biz.aQute.bndlib</artifactId>
+                            <version>7.2.0</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -93,6 +100,13 @@
                             <arg>-Werror</arg>
                         </compilerArgs>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${asm.vespa.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -145,6 +159,13 @@
                         <!-- see http://jira.codehaus.org/browse/MNG-5346 -->
                         <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${asm.vespa.version}</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>mojo-descriptor</id>
@@ -190,7 +211,7 @@
                             </filter>
                         </filters>
                     </configuration>
-                 </plugin>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-site-plugin</artifactId>
@@ -219,6 +240,13 @@
                         <argLine>-Djava.io.tmpdir=${project.build.directory} ${ffm.args}</argLine>
                         <excludedEnvironmentVariables>VESPA_HOME,VESPA_USER</excludedEnvironmentVariables>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${asm.vespa.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -253,6 +281,13 @@
                         <useCommonAssemblyIds>true</useCommonAssemblyIds>
                         <failOnWarnings>true</failOnWarnings>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${asm.vespa.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>com.yahoo.vespa</groupId>
