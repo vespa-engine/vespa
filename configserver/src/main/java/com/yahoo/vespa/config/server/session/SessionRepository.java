@@ -1020,17 +1020,18 @@ public class SessionRepository {
     public Clock clock() { return clock; }
 
     public void close() {
-        deleteAllSessions();
-        tenantFileSystemDirs.delete();
+        // Make sure to close directory cache first, otherwise we might have
+        // issues with zk path being recreated when delete all sessions
         try {
             if (directoryCache != null) {
                 directoryCache.close();
             }
         } catch (Exception e) {
             log.log(Level.WARNING, "Exception when closing path cache", e);
-        } finally {
-            checkForRemovedSessions(new ArrayList<>());
         }
+        deleteAllSessions();
+        tenantFileSystemDirs.delete();
+        checkForRemovedSessions(new ArrayList<>());
     }
 
     private void sessionsChanged() throws NumberFormatException {
