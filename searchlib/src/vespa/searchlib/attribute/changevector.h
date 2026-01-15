@@ -16,6 +16,7 @@ struct ChangeBase {
         UPDATE,
         APPEND,
         REMOVE,
+        ASSIGN_ELEMENT,  // Element-wise array assignment for field-path updates
         INCREASEWEIGHT,
         MULWEIGHT,
         DIVWEIGHT,

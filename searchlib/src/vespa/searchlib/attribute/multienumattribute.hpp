@@ -38,6 +38,7 @@ void
 MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
 {
     if (c._type == ChangeBase::APPEND ||
+        c._type == ChangeBase::ASSIGN_ELEMENT ||
         (this->getInternalCollectionType().createIfNonExistant() &&
          (c._type >= ChangeBase::INCREASEWEIGHT && c._type <= ChangeBase::SETWEIGHT)))
     {

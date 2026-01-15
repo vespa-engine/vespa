@@ -6,8 +6,12 @@
 #include "ifieldupdatecallback.h"
 #include "imported_attributes_repo.h"
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/base/fieldpath.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/document/fieldvalue/literalfieldvalue.h>
+#include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -217,6 +221,65 @@ applyRemoveToAttribute(SerialNum serialNum, DocumentIdT lid,
 {
     ensureLidSpace(serialNum, lid, attr);
     attr.clearDoc(lid);
+}
+
+struct ParsedFieldPath {
+    std::string field_name;
+    uint32_t element_index;
+    bool is_simple_array_access;
+
+    static ParsedFieldPath parse(const std::string& originalPath, const DocumentType& docType) {
+        // Use existing FieldPath parsing infrastructure
+        FieldPath fieldPath;
+        try {
+            docType.buildFieldPath(fieldPath, originalPath);
+        } catch (...) {
+            return {.field_name = "", .element_index = 0, .is_simple_array_access = false};
+        }
+
+        // Check if it's a simple case: field[index]
+        // Pattern: [STRUCT_FIELD, ARRAY_INDEX]
+        if (fieldPath.size() == 2 &&
+            fieldPath[0].getType() == FieldPathEntry::Type::STRUCT_FIELD &&
+            fieldPath[1].getType() == FieldPathEntry::Type::ARRAY_INDEX) {
+
+            return {
+                .field_name = std::string(fieldPath[0].getFieldRef().getName()),
+                .element_index = fieldPath[1].getIndex(),
+                .is_simple_array_access = true
+            };
+        }
+
+        return {.field_name = "", .element_index = 0, .is_simple_array_access = false};
+    }
+};
+
+void
+queue_assign_element_change(AttributeVector& attr, DocumentIdT lid,
+                             uint32_t index, const FieldValue& value) {
+    // Dispatch based on attribute type
+    bool success = false;
+    if (attr.isIntegerType()) {
+        auto& intAttr = static_cast<IntegerAttribute&>(attr);
+        int64_t val = value.getAsLong();
+        success = intAttr.assign_element(lid, index, val);
+    } else if (attr.isStringType()) {
+        auto& strAttr = static_cast<StringAttribute&>(attr);
+        std::string_view val = static_cast<const LiteralFieldValueB&>(value).getValueRef();
+        success = strAttr.assign_element(lid, index, val);
+    } else if (attr.isFloatingPointType()) {
+        auto& floatAttr = static_cast<FloatingPointAttribute&>(attr);
+        double val = value.getAsDouble();
+        success = floatAttr.assign_element(lid, index, val);
+    } else {
+        LOG(warning, "Unsupported attribute type for ASSIGN_ELEMENT: %s",
+            attr.getName().c_str());
+    }
+
+    if (!success) {
+        LOG(warning, "Failed to queue ASSIGN_ELEMENT change for attribute %s, lid=%u, index=%u",
+            attr.getName().c_str(), lid, index);
+    }
 }
 
 void
@@ -794,6 +857,68 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
             args[id]->_onWriteDone = onWriteDone;
             _attributeFieldWriter.executeTask(ExecutorId(id), std::move(args[id]));
         }
+    }
+
+    // NEW: Handle field-path updates for attributes (naive approach with ASSIGN_ELEMENT)
+    for (const auto& fpupd : upd.getFieldPathUpdates()) {
+        // Only handle AssignFieldPathUpdate for now
+        if (fpupd->type() != FieldPathUpdate::Assign) {
+            continue;
+        }
+
+        // Parse field path - only support simple array access: field[index]
+        ParsedFieldPath parsed = ParsedFieldPath::parse(
+            fpupd->getOriginalFieldPath(),
+            upd.getType()
+        );
+
+        if (!parsed.is_simple_array_access) {
+            LOG(debug, "Skipping unsupported field path: %s",
+                fpupd->getOriginalFieldPath().c_str());
+            continue;
+        }
+
+        // Look up attribute
+        auto found = _attrMap.find(parsed.field_name);
+        if (found == _attrMap.end()) {
+            continue;  // Not an attribute field
+        }
+
+        AttributeVector* attrp = found->second.attribute;
+        if (attrp == nullptr) {
+            LOG(warning, "Attribute pointer is null for field '%s'", parsed.field_name.c_str());
+            continue;
+        }
+
+        if (attrp->getStatus().getLastSyncToken() >= serialNum) {
+            continue;
+        }
+
+        // Only support multi-value attributes (arrays)
+        if (!attrp->hasMultiValue() || !attrp->hasArrayType()) {
+            LOG(warning, "Field path updates only supported for array attributes, got: %s (hasMultiValue=%d, hasArrayType=%d)",
+                attrp->getName().c_str(), attrp->hasMultiValue(), attrp->hasArrayType());
+            continue;
+        }
+
+        // Queue ASSIGN_ELEMENT operation
+        const AssignFieldPathUpdate& assignUpdate =
+            static_cast<const AssignFieldPathUpdate&>(*fpupd);
+
+        if (!assignUpdate.hasValue()) {
+            continue;
+        }
+
+        // Create task to queue ASSIGN_ELEMENT change
+        // Capture onWriteDone to keep DocumentUpdate alive
+        _attributeFieldWriter.execute(found->second.executor_id,
+            [serialNum, lid, attrp, element_index=parsed.element_index,
+             value=&assignUpdate.getValue(), onWriteDone]() mutable {
+                ensureLidSpace(serialNum, lid, *attrp);
+                queue_assign_element_change(*attrp, lid, element_index, *value);
+                attrp->commitIfChangeVectorTooLarge();
+                // onWriteDone will be released here, allowing DocumentUpdate to be freed
+            });
     }
 
 }
