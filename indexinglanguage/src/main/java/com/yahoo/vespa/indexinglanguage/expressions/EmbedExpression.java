@@ -225,7 +225,11 @@ public class EmbedExpression extends Expression  {
         context.getDeadline().ifPresent(instant ->
                 embedderContext.setDeadline(com.yahoo.language.process.InvocationContext.Deadline.of(instant)));
 
-        return embedder.component().embed(input, embedderContext, targetType);
+        try {
+            return embedder.component().embed(input, embedderContext, targetType);
+        } catch (com.yahoo.language.process.OverloadException e) {
+            throw new OverloadException(e.getMessage(), e);
+        }
     }
 
     /**

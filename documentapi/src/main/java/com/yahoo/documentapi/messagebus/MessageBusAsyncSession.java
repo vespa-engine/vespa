@@ -48,6 +48,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
+import static com.yahoo.documentapi.Response.Outcome.BUSY;
 import static com.yahoo.documentapi.Response.Outcome.CONDITION_FAILED;
 import static com.yahoo.documentapi.Response.Outcome.ERROR;
 import static com.yahoo.documentapi.Response.Outcome.INSUFFICIENT_STORAGE;
@@ -275,6 +276,9 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     private static Response.Outcome toOutcome(Reply reply) {
+        if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_BUSY)) {
+            return BUSY;
+        }
         if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_NO_SPACE)) {
             return INSUFFICIENT_STORAGE;
         }

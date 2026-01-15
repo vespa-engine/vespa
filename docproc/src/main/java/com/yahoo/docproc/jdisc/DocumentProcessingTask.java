@@ -18,7 +18,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -143,6 +142,12 @@ public class DocumentProcessingTask implements Runnable {
                 logProcessingFailure(processing, null);
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE,
                                                 progress.getReason().orElse("Document processing failed."));
+                return progress;
+            } else if (DocumentProcessor.Progress.BUSY.equals(progress)) {
+                log.log(Level.FINE,
+                        () -> "Overload/busy for '" + processing + "' at " + processing.callStack().getLastPopped());
+                requestContext.processingFailed(RequestContext.ErrorCode.ERROR_BUSY,
+                                                progress.getReason().orElse("Document processing rejected due to overload."));
                 return progress;
             }
         }

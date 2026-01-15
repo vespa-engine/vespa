@@ -382,6 +382,7 @@
       "public static final enum com.yahoo.documentapi.Response$Outcome INSUFFICIENT_STORAGE",
       "public static final enum com.yahoo.documentapi.Response$Outcome TIMEOUT",
       "public static final enum com.yahoo.documentapi.Response$Outcome REJECTED",
+      "public static final enum com.yahoo.documentapi.Response$Outcome BUSY",
       "public static final enum com.yahoo.documentapi.Response$Outcome ERROR"
     ]
   },

@@ -397,6 +397,61 @@ public class IndexingProcessorTestCase {
         assertTrue(embedder.deadline.isBefore(Instant.MAX));
     }
 
+    @Test
+    public void testOverloadExceptionPropagation() {
+        class OverloadThrowingEmbedder implements Embedder {
+            @Override public List<Integer> embed(String text, Context context) { return List.of(); }
+
+            @Override
+            public Tensor embed(String text, Context context, TensorType tensorType) {
+                throw new com.yahoo.language.process.OverloadException("Embedder overloaded: rate limit exceeded");
+            }
+        }
+        // Set up document type with embedding field
+        var documentTypes = new DocumentTypeManager();
+        var testType = new DocumentType("test");
+        testType.addField("text", DataType.STRING);
+        testType.addField("embedding", new TensorDataType(
+            TensorType.fromSpec("tensor<float>(x[4])")
+        ));
+        documentTypes.register(testType);
+
+        var embedder = new OverloadThrowingEmbedder();
+
+        // Configure indexing script
+        var config = new IlscriptsConfig.Builder();
+        config.ilscript(new IlscriptsConfig.Ilscript.Builder()
+            .doctype("test")
+            .content("input text | embed | attribute embedding")
+            .docfield("text"));
+
+        var scripts = new ScriptManager(
+            documentTypes,
+            new IlscriptsConfig(config),
+            null,
+            Chunker.throwsOnUse.asMap(),
+            Map.of("test", embedder),
+            FieldGenerator.throwsOnUse.asMap()
+        );
+
+        var processor = new IndexingProcessor(documentTypes, scripts);
+
+        // Create document operation
+        var input = new DocumentPut(testType, "id:ns:test::");
+        input.getDocument().setFieldValue("text", new StringFieldValue("hello world"));
+
+        var proc = new Processing();
+        proc.getDocumentOperations().add(input);
+
+        // Process and verify Progress.BUSY is returned
+        var progress = processor.process(proc);
+
+        assertEquals(com.yahoo.docproc.DocumentProcessor.Progress.BUSY, progress);
+        assertTrue(progress.getReason().isPresent());
+        var reason = progress.getReason().get();
+        assertEquals("Operation on 'id:ns:test::' rejected due to overload: Embedder overloaded: rate limit exceeded", reason);
+    }
+
     static class PartialUpdateTester {
 
         IndexingProcessorTester nestedTester;
