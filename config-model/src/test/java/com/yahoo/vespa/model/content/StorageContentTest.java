@@ -120,7 +120,7 @@ public class StorageContentTest extends ContentBaseTest {
     }
 
     @Test
-    void testDocumentTypesAndLocalSelectionRouting() throws Exception {
+    void testDocumentTypesAndLocalSelectionRouting() {
         String cluster1docs = "<documents>\n" +
                 "  <document type=\"type1\" mode=\"store-only\" selection=\"1 != 2\"/>\n" +
                 "  <document type=\"type2\" mode=\"store-only\" selection=\"now() &gt; 1000\"/>\n" +

@@ -346,7 +346,8 @@ public class DocumentDatabaseTestCase {
                                                          List<String> documentDBConfigIds,
                                                          Map<String, List<String>> expectedAttributesMap)
     {
-        assertAttributesConfigIndependentOfMode(mode, sds, documentDBConfigIds, expectedAttributesMap, new DeployState.Builder(), 123456);
+        assertAttributesConfigIndependentOfMode(mode, sds, documentDBConfigIds, expectedAttributesMap,
+                                                new DeployState.Builder().properties(new TestProperties()), 123456);
     }
 
     private void assertAttributesConfigIndependentOfMode(String mode, List<String> sds,

@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.search.config.QrStartConfig;
@@ -47,7 +48,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         // Need to create VespaModel to make deploy properties have effect
         final TestLogger logger = new TestLogger();
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), TestDeployState.createBuilder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
                 .build());
