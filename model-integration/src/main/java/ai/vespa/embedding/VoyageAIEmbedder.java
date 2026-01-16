@@ -12,10 +12,12 @@ import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.OverloadException;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import okhttp3.ConnectionPool;
+import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -24,36 +26,16 @@ import okhttp3.RequestBody;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
- * VoyageAI embedder that uses the VoyageAI Embeddings API to generate
- * high-quality semantic embeddings for text.
- *
- * <p>Features:
- * <ul>
- *   <li>Supports all VoyageAI models (voyage-3, voyage-code-3, etc.)</li>
- *   <li>LRU caching to reduce API calls</li>
- *   <li>Auto-detection of input type (query vs document)</li>
- *   <li>Exponential backoff retry on rate limits</li>
- * </ul>
- *
- * <p><b>Future Enhancement:</b> Request batching - Currently each embed() call results
- * in a separate API request. A future enhancement will support batching multiple texts
- * in a single API request for improved efficiency and reduced latency when processing
- * multiple documents.
- *
- * <p>Configuration example in services.xml:
- * <pre>{@code
- * <component id="voyage" type="voyage-ai-embedder">
- *   <model>voyage-3</model>
- *   <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
- * </component>
- * }</pre>
+ * VoyageAI embedder that uses the VoyageAI Embeddings API.
  *
  * @see <a href="https://docs.voyageai.com/">VoyageAI Documentation</a>
  * @author VoyageAI team
+ * @author bjorncs
  */
 @Beta
 public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
@@ -82,7 +64,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         this.httpClient = createHttpClient(config);
         this.resolvedEndpoint = resolveEndpoint(config);
 
-        log.info("VoyageAI embedder initialized with model: " + config.model() + ", endpoint: " + resolvedEndpoint);
+        log.fine(() -> "VoyageAI embedder initialized with model: %s, endpoint: %s".formatted(config.model(), resolvedEndpoint));
     }
 
     /**
@@ -113,9 +95,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         return EMBEDDINGS_ENDPOINT;
     }
 
-    /**
-     * Retrieve API key from Vespa's secret store.
-     */
     private Secret getApiKey(VoyageAiEmbedderConfig config, Secrets secretStore) {
         String secretName = config.apiKeySecretRef();
 
@@ -146,15 +125,14 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         }
     }
 
-    /**
-     * Create HTTP client with connection pooling and timeouts.
-     */
     private OkHttpClient createHttpClient(VoyageAiEmbedderConfig config) {
         return new OkHttpClient.Builder()
+                .addInterceptor(new RetryInterceptor(config.maxRetries()))
+                .retryOnConnectionFailure(true)
                 .connectTimeout(Duration.ofMillis(config.timeout()))
                 .readTimeout(Duration.ofMillis(config.timeout()))
                 .writeTimeout(Duration.ofMillis(config.timeout()))
-                .connectionPool(new ConnectionPool(config.maxIdleConnections(), 5, TimeUnit.MINUTES))
+                .connectionPool(new ConnectionPool(config.maxIdleConnections(), 1, TimeUnit.MINUTES))
                 .build();
     }
 
@@ -174,13 +152,8 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
         String inputType = detectInputType(context);
         CacheKey cacheKey = new CacheKey(context.getEmbedderId(), text, inputType);
-        Tensor result = context.computeCachedValueIfAbsent(cacheKey, () -> {
-            try {
-                return callVoyageAI(text, inputType, targetType, context);
-            } catch (IOException | InterruptedException e) {
-                throw new RuntimeException("Failed to call VoyageAI API: " + e.getMessage(), e);
-            }
-        });
+        Tensor result = context.computeCachedValueIfAbsent(cacheKey, () ->
+                callVoyageAI(text, inputType, targetType, context));
 
         runtime.sampleSequenceLength(text.length(), context);
         runtime.sampleEmbeddingLatency((System.nanoTime() - startTime) / 1_000_000_000.0, context);
@@ -188,9 +161,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         return result;
     }
 
-    /**
-     * Validate that the target tensor type is appropriate for embeddings.
-     */
     private void validateTensorType(TensorType targetType) {
         if (targetType.dimensions().size() != 1) {
             throw new IllegalArgumentException(
@@ -204,9 +174,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         }
     }
 
-    /**
-     * Auto-detect input type (query vs document) from context.
-     */
     private String detectInputType(Context context) {
         if (!config.autoDetectInputType()) {
             return config.defaultInputType().toString().toLowerCase();
@@ -220,26 +187,12 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         return "document";
     }
 
-    /**
-     * Check if this is a multimodal model.
-     */
     private boolean isMultimodalModel() {
         return config.model() != null && config.model().startsWith("voyage-multimodal-");
     }
 
-    /**
-     * Check if this is a contextual model.
-     */
     private boolean isContextualModel() {
         return config.model() != null && config.model().startsWith("voyage-context-");
-    }
-
-    /**
-     * Check if the model supports variable output dimensions.
-     * Currently voyage-multimodal-* and voyage-context-* models support: 256, 512, 1024, 2048
-     */
-    private boolean supportsVariableDimensions() {
-        return isMultimodalModel() || isContextualModel();
     }
 
     /**
@@ -247,14 +200,13 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
      * For models that support variable dimensions, validates that the dimension is one of: 256, 512, 1024, 2048.
      * Returns null if the model doesn't support variable dimensions (use model's default).
      */
-    private Integer getOutputDimensionFromTensorType(TensorType targetType) {
+    private Optional<Integer> getOutputDimensionFromTensorType(TensorType targetType) {
         long dim = targetType.dimensions().get(0).size().orElse(-1L);
         if (dim == -1) {
-            return null;  // Unbound dimension, use model default
+            return Optional.empty();  // Unbound dimension, use model default
         }
-
-        if (!supportsVariableDimensions()) {
-            return null;  // Model doesn't support variable dimensions, API will return default
+        if (!(isMultimodalModel() || isContextualModel())) {
+            return Optional.empty();  // Model doesn't support variable dimensions, API will return default
         }
 
         int dimension = (int) dim;
@@ -265,21 +217,15 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 "Please adjust your schema's tensor type accordingly."
             );
         }
-        return dimension;
+        return Optional.of(dimension);
     }
 
-    /**
-     * Call VoyageAI API to get embeddings.
-     */
-    private Tensor callVoyageAI(String text, String inputType, TensorType targetType, Context context)
-            throws IOException, InterruptedException {
+    private Tensor callVoyageAI(String text, String inputType, TensorType targetType, Context context) {
 
-        // Infer output dimension from target tensor type for models that support variable dimensions
-        Integer outputDimension = getOutputDimensionFromTensorType(targetType);
+        Integer outputDimension = getOutputDimensionFromTensorType(targetType).orElse(null);
 
         String jsonRequest;
         if (isMultimodalModel()) {
-            // Multimodal API uses different request format
             MultimodalRequest request = new MultimodalRequest(
                     text,
                     config.model(),
@@ -287,7 +233,11 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                     config.truncate(),
                     outputDimension
             );
-            jsonRequest = objectMapper.writeValueAsString(request);
+            try {
+                jsonRequest = objectMapper.writeValueAsString(request);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to serialize multimodal request", e);
+            }
         } else if (isContextualModel()) {
             // Contextual API uses array of document chunks format
             // For single text, we treat it as a single-chunk document
@@ -297,23 +247,25 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                     inputType,
                     outputDimension
             );
-            jsonRequest = objectMapper.writeValueAsString(request);
+            try {
+                jsonRequest = objectMapper.writeValueAsString(request);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to serialize contextual request", e);
+            }
 
             log.fine(() -> "VoyageAI request: " + jsonRequest);
 
-            // Contextual API has different response format: data[document].data[chunk].embedding
-            var response = callAPIWithRetry(jsonRequest, ContextualResponse.class, context);
+            var response = doRequest(jsonRequest, ContextualResponse.class, context);
 
             if (response.data == null || response.data.isEmpty() ||
                 response.data.get(0).data == null || response.data.get(0).data.isEmpty()) {
-                throw new IOException("VoyageAI contextual API returned empty response");
+                throw new RuntimeException("VoyageAI contextual API returned empty response");
             }
 
             // Get embedding from first chunk of first document
             float[] embedding = response.data.get(0).data.get(0).embedding;
             return createTensor(embedding, targetType);
         } else {
-            // Standard embeddings API
             VoyageAIRequest request = new VoyageAIRequest(
                     List.of(text),
                     config.model(),
@@ -321,102 +273,64 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                     config.truncate(),
                     outputDimension
             );
-            jsonRequest = objectMapper.writeValueAsString(request);
+            try {
+                jsonRequest = objectMapper.writeValueAsString(request);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to serialize request", e);
+            }
         }
 
         log.fine(() -> "VoyageAI request: " + jsonRequest);
 
-        VoyageAIResponse response = callAPIWithRetry(jsonRequest, VoyageAIResponse.class, context);
+        var response = doRequest(jsonRequest, VoyageAIResponse.class, context);
 
         if (response.data == null || response.data.isEmpty()) {
-            throw new IOException("VoyageAI API returned empty response");
+            throw new RuntimeException("VoyageAI API returned empty response");
         }
 
         float[] embedding = response.data.get(0).embedding;
         return createTensor(embedding, targetType);
     }
 
-    /**
-     * Call VoyageAI API with retry on transient failures.
-     *
-     * <p>Retry strategy:
-     * - Retries on rate limits (429) and server errors (5xx)
-     * - Uses fixed 1-second delay between retry attempts
-     * - Bounded by deadline timeout: will not retry if it would exceed the deadline
-     * - maxRetries provides an additional safety limit to prevent excessive retry attempts
-     *
-     * @param jsonRequest the JSON request body
-     * @param responseType the class of the expected response type
-     * @param context the embedder context containing optional deadline
-     * @param <T> the response type (VoyageAIResponse or ContextualResponse)
-     * @return the parsed response
-     */
-    private <T> T callAPIWithRetry(String jsonRequest, Class<T> responseType, Context context)
-            throws IOException, InterruptedException {
+    private <T> T doRequest(String jsonRequest, Class<T> responseType, Context context) {
+        long startTime = System.currentTimeMillis();
 
-        int retries = 0;
-        long retryDelay = 1000; // Fixed 1 second delay
-        long startTime = System.currentTimeMillis(); // Track start time for non-deadline case
+        var httpRequest = new Request.Builder()
+                .url(resolvedEndpoint)
+                .header("Authorization", "Bearer " + apiKey.current())
+                .header("Content-Type", "application/json")
+                .post(RequestBody.create(jsonRequest, JSON))
+                .build();
 
-        while (true) {
-            try {
-                RequestBody body = RequestBody.create(jsonRequest, JSON);
-                Request httpRequest = new Request.Builder()
-                        .url(resolvedEndpoint)
-                        .header("Authorization", "Bearer " + apiKey.current())
-                        .header("Content-Type", "application/json")
-                        .post(body)
-                        .build();
+        var call = httpClient.newCall(httpRequest);
+        var timeoutMs = calculateTimeoutMs(context, startTime);
+        call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS);
 
-                var call = httpClient.newCall(httpRequest);
-                var timeoutMs = calculateTimeoutMs(context, startTime);
-                call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS);
-
-                try (var response = call.execute()) {
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    if (response.isSuccessful()) {
-                        log.fine(() -> "VoyageAI response: " + responseBody);
-                        return objectMapper.readValue(responseBody, responseType);
-                    } else if (response.code() == 429 || response.code() >= 500) {
-                        // Safety limit check
-                        if (retries >= config.maxRetries()) {
-                            String errorType = response.code() == 429 ? "rate limited" : "server error";
-                            throw new IOException("VoyageAI API " + errorType + " (" + response.code() +
-                                    "). Max retries (" + config.maxRetries() + ") exceeded. Response: " + responseBody);
-                        }
-
-                        // Retry with fixed delay
-                        retries++;
-                        String errorMsg = response.code() == 429 ? "rate limited" : "server error (" + response.code() + ")";
-                        log.fine("VoyageAI API " + errorMsg + ". Retry " + retries + " after " + retryDelay + "ms");
-
-                        Thread.sleep(retryDelay);
-
-                    } else if (response.code() == 401) {
-                        throw new IOException("VoyageAI API authentication failed. Please check your API key. Response: " + responseBody);
-
-                    } else {
-                        throw new IOException("VoyageAI API request failed with status " + response.code() + ": " + responseBody);
-                    }
-                }
-            } catch (JsonProcessingException e) {
-                throw new IOException("Failed to parse VoyageAI API response", e);
+        try (var response = call.execute()) {
+            var responseBody = response.body() != null ? response.body().string() : "";
+            log.fine(() -> "VoyageAI response with code " + response.code() + ": " + responseBody);
+            if (response.isSuccessful()) {
+                return objectMapper.readValue(responseBody, responseType);
+            } else if (response.code() == 429) {
+                throw new OverloadException("VoyageAI API rate limited (429)");
+            } else if (response.code() == 401) {
+                throw new RuntimeException("VoyageAI API authentication failed. Please check your API key: " + responseBody);
+            } else {
+                throw new RuntimeException("VoyageAI API request failed with status " + response.code() + ": " + responseBody);
             }
+        } catch (IOException e) {
+            throw new RuntimeException("VoyageAI API call failed: " + e.getMessage(), e);
         }
     }
 
-    private long calculateTimeoutMs(Context context, long startTime) throws IOException {
+    private long calculateTimeoutMs(Context context, long startTime) {
         long remainingMs = context.getDeadline().isPresent()
                 ? context.getDeadline().get().timeRemaining().toMillis()
                 : config.timeout() - (System.currentTimeMillis() - startTime);
-        if (remainingMs <= 0) throw new IOException("Request timeout exceeded before API call");
+        if (remainingMs <= 0) throw new RuntimeException("Request timeout exceeded before API call");
         return remainingMs;
     }
 
-    /**
-     * Create Vespa tensor from embedding array.
-     */
     private Tensor createTensor(float[] embedding, TensorType targetType) {
         long expectedDim = targetType.dimensions().get(0).size().orElse(-1L);
         if (expectedDim != -1 && embedding.length != expectedDim) {
@@ -450,6 +364,42 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         httpClient.dispatcher().executorService().shutdown();
         httpClient.connectionPool().evictAll();
         super.deconstruct();
+    }
+
+    private static class RetryInterceptor implements Interceptor {
+        static final long RETRY_DELAY_MS = 100;
+        private final int maxRetries;
+
+        RetryInterceptor(int maxRetries) {
+            this.maxRetries = maxRetries;
+        }
+
+        @Override
+        public okhttp3.Response intercept(Chain chain) throws IOException {
+            var request = chain.request();
+
+            for (int attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    var response = chain.proceed(request);
+
+                    int code = response.code();
+                    boolean shouldRetry = code == 500 || code == 502 || code == 503 || code == 504;
+                    if (response.isSuccessful() || !shouldRetry) return response;
+                    response.close();
+
+                    if (attempt < maxRetries) {
+                        int retryNumber = attempt + 1;
+                        log.fine(() -> "VoyageAI API server error (%d). Retry %d of %d after %dms"
+                                .formatted(code, retryNumber + 1, maxRetries, RETRY_DELAY_MS));
+                        Thread.sleep(RETRY_DELAY_MS);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Retry interrupted", e);
+                }
+            }
+            throw new IOException("Max retries exceeded for VoyageAI API (" + maxRetries + ")");
+        }
     }
 
     // ===== Request/Response DTOs =====

@@ -123,28 +123,26 @@ public class VoyageAIEmbedderTest {
     }
 
     @Test
-    public void testRateLimitRetry() throws Exception {
-        // First request: rate limited
+    public void testThrowsOverloadExceptionOn429() {
+        // Mock 429 response
         mockServer.enqueue(new MockResponse()
                 .setResponseCode(429)
-                .setHeader("Retry-After", "1")
                 .setBody("{\"error\":\"rate_limit_exceeded\"}"));
-
-        // Second request: success
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(createSuccessResponse(1024)));
 
         embedder = createEmbedder();
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("test-embedder");
 
-        // Should retry and succeed
-        Tensor result = embedder.embed("test", context, targetType);
-        assertNotNull(result);
+        // Should throw OverloadException immediately
+        var exception = assertThrows(
+            com.yahoo.language.process.OverloadException.class,
+            () -> embedder.embed("test", context, targetType)
+        );
 
-        // Verify 2 requests were made (1 failed, 1 succeeded)
-        assertEquals(2, mockServer.getRequestCount());
+        assertEquals("VoyageAI API rate limited (429)", exception.getMessage());
+
+        // Verify only 1 request was made (no retries on 429)
+        assertEquals(1, mockServer.getRequestCount());
     }
 
     @Test
@@ -163,11 +161,11 @@ public class VoyageAIEmbedderTest {
                 createMockSecrets()
         );
 
-        // Mock multiple rate limit responses (each retry waits 1 second)
+        // Mock multiple server error responses (each retry waits 100ms)
         for (int i = 0; i < 10; i++) {
             mockServer.enqueue(new MockResponse()
-                    .setResponseCode(429)
-                    .setBody("{\"error\":\"rate_limit_exceeded\"}"));
+                    .setResponseCode(500)
+                    .setBody("{\"error\":\"internal_server_error\"}"));
         }
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
@@ -188,26 +186,24 @@ public class VoyageAIEmbedderTest {
                 .apiKeySecretRef("test_key")
                 .endpoint(mockServer.url("/v1/embeddings").toString())
                 .model("voyage-3")
-                .timeout(30000)
+                .timeout(2000)
                 .maxRetries(100);
         var embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100; i++) {
             mockServer.enqueue(new MockResponse()
-                    .setResponseCode(429)
-                    .setBody("{\"error\":\"rate_limit_exceeded\"}"));
+                    .setResponseCode(500)
+                    .setBody("{\"error\":\"internal_server_error\"}"));
         }
 
         var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
 
         var context = new Embedder.Context("test-embedder")
-                .setDeadline(InvocationContext.Deadline.of(Duration.ofMillis(2500)));
+                .setDeadline(InvocationContext.Deadline.of(Duration.ofMillis(500)));
 
-        // Should fail when context deadline is reached (2.5 sec), not config timeout (30 sec)
-        var exception = assertThrows(RuntimeException.class, () -> {
-            embedder.embed("test", context, targetType);
-        });
-        assertEquals("Failed to call VoyageAI API: Request timeout exceeded before API call", exception.getMessage());
+        var exception = assertThrows(RuntimeException.class, () -> embedder.embed("test", context, targetType));
+
+        assertEquals("VoyageAI API call failed: timeout", exception.getMessage());
         embedder.deconstruct();
     }
 
@@ -227,11 +223,11 @@ public class VoyageAIEmbedderTest {
                 createMockSecrets()
         );
 
-        // Mock 4 rate limit responses (max retries is 2)
+        // Mock 4 server error responses (max retries is 2)
         for (int i = 0; i < 4; i++) {
             mockServer.enqueue(new MockResponse()
-                    .setResponseCode(429)
-                    .setBody("{\"error\":\"rate_limit_exceeded\"}"));
+                    .setResponseCode(503)
+                    .setBody("{\"error\":\"service_unavailable\"}"));
         }
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
@@ -402,10 +398,9 @@ public class VoyageAIEmbedderTest {
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("test-embedder");
 
-        // Should fail with parse error
         RuntimeException exception = assertThrows(RuntimeException.class, () -> embedder.embed("test", context, targetType));
-        assertTrue(exception.getMessage().contains("Failed to parse") ||
-                   exception.getMessage().contains("parse"));
+        assertEquals("VoyageAI API call failed: Unexpected character ('t' (code 116)): was expecting double-quote to start field name\n" +
+                " at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 3]", exception.getMessage());
     }
 
     // ===== Helper Methods =====
