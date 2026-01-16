@@ -100,40 +100,6 @@ public class VoyageAIEmbedderIntegrationTest {
     }
 
     @Test
-    public void testRealAPIWithNormalization() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretRef("test_key");
-        configBuilder.model("voyage-3");
-        configBuilder.normalize(true);
-
-        VoyageAIEmbedder embedder = new VoyageAIEmbedder(
-                configBuilder.build(),
-                Embedder.Runtime.testInstance(),
-                createSecrets(apiKey)
-        );
-
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
-        Embedder.Context context = new Embedder.Context("integration-test");
-
-        Tensor result = embedder.embed("Normalization test", context, targetType);
-
-        // Calculate L2 norm
-        double sumSquares = 0.0;
-        for (int i = 0; i < 1024; i++) {
-            double val = result.get(TensorAddress.of(i));
-            sumSquares += val * val;
-        }
-        double norm = Math.sqrt(sumSquares);
-
-        // Should be normalized to ~1.0
-        assertEquals(1.0, norm, 0.01);
-
-        embedder.deconstruct();
-    }
-
-    @Test
     public void testRealAPISemanticSimilarity() {
         String apiKey = System.getenv("VOYAGE_API_KEY");
 

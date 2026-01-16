@@ -36,8 +36,3 @@ truncate bool default=true
 
 # Maximum number of idle HTTP connections to keep in the pool
 maxIdleConnections int default=5
-
-# Output Processing
-
-# Apply L2 normalization to output embeddings
-normalize bool default=false

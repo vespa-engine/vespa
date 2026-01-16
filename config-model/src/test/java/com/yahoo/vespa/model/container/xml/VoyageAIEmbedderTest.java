@@ -38,7 +38,6 @@ public class VoyageAIEmbedderTest {
         assertEquals(5, config.maxRetries());
         assertEquals(VoyageAiEmbedderConfig.DefaultInputType.Enum.query, config.defaultInputType());
         assertFalse(config.autoDetectInputType());
-        assertTrue(config.normalize());
         assertTrue(config.truncate());
         assertEquals(10, config.maxIdleConnections());
     }
@@ -61,7 +60,6 @@ public class VoyageAIEmbedderTest {
         assertEquals(10, config.maxRetries()); // Default retries
         assertEquals(VoyageAiEmbedderConfig.DefaultInputType.Enum.document, config.defaultInputType());
         assertTrue(config.autoDetectInputType()); // Default auto-detect
-        assertFalse(config.normalize()); // Default no normalization
         assertTrue(config.truncate()); // Default truncate
         assertEquals(5, config.maxIdleConnections()); // Default max idle connections
     }

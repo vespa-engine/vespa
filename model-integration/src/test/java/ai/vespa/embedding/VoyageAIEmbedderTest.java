@@ -6,7 +6,6 @@ import ai.vespa.secret.Secrets;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.InvocationContext;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -289,41 +288,6 @@ public class VoyageAIEmbedderTest {
 
         // Should fail with validation error
         assertThrows(IllegalArgumentException.class, () -> embedder.embed("test", context, invalidType));
-    }
-
-    @Test
-    public void testNormalization() throws Exception {
-        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretRef("test_key");
-        configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
-        configBuilder.model("voyage-3");
-        configBuilder.normalize(true); // Enable normalization
-
-        VoyageAIEmbedder normalizingEmbedder = new VoyageAIEmbedder(
-                configBuilder.build(),
-                runtime,
-                createMockSecrets()
-        );
-
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(createSuccessResponse(128)));
-
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[128])");
-        Embedder.Context context = new Embedder.Context("test");
-
-        Tensor result = normalizingEmbedder.embed("test", context, targetType);
-
-        // Verify tensor is normalized (L2 norm should be ~1.0)
-        double sumSquares = 0.0;
-        for (int i = 0; i < 128; i++) {
-            double val = result.get(TensorAddress.of(i));
-            sumSquares += val * val;
-        }
-        double norm = Math.sqrt(sumSquares);
-        assertEquals(1.0, norm, 0.01); // Should be close to 1.0
-
-        normalizingEmbedder.deconstruct();
     }
 
     @Test

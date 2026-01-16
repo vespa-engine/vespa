@@ -349,14 +349,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             builder.cell(embedding[i], i);
         }
 
-        Tensor result = builder.build();
-
-        // Apply normalization if configured
-        if (config.normalize()) {
-            result = EmbeddingNormalizer.normalize(result, type);
-        }
-
-        return result;
+        return builder.build();
     }
 
     @Override

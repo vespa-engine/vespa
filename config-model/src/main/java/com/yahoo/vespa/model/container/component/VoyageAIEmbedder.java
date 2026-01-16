@@ -23,7 +23,6 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  *   <timeout>30000</timeout>
  *   <auto-detect-input-type>true</auto-detect-input-type>
  *   <max-idle-connections>5</max-idle-connections>
- *   <normalize>false</normalize>
  * </component>
  * }</pre>
  *
@@ -73,7 +72,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
      * Helps manage resource usage and connection reuse for better performance.
      */
     private final Integer maxIdleConnections;
-    private final Boolean normalize;
 
     @SuppressWarnings("unused") // cluster and state parameters required by Vespa component framework
     public VoyageAIEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
@@ -97,7 +95,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         this.autoDetectInputType = getChildValue(xml, "auto-detect-input-type").map(Boolean::parseBoolean).orElse(null);
         this.truncate = getChildValue(xml, "truncate").map(Boolean::parseBoolean).orElse(null);
         this.maxIdleConnections = getChildValue(xml, "max-idle-connections").map(Integer::parseInt).orElse(null);
-        this.normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
 
         // Validate configuration
         validate();
@@ -164,9 +161,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         }
         if (maxIdleConnections != null) {
             builder.maxIdleConnections(maxIdleConnections);
-        }
-        if (normalize != null) {
-            builder.normalize(normalize);
         }
     }
 }

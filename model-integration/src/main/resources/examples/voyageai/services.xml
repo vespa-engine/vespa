@@ -16,7 +16,6 @@
     <component id="code-embedder" type="voyage-ai-embedder">
       <model>voyage-code-3</model>
       <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
-      <normalize>true</normalize>
     </component>
 
     <!-- High-Performance Configuration -->
@@ -34,7 +33,6 @@
       <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
       <default-input-type>query</default-input-type>
       <auto-detect-input-type>false</auto-detect-input-type>
-      <normalize>true</normalize>
     </component>
   </container>
 
