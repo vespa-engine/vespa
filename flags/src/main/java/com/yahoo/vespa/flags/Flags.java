@@ -370,13 +370,6 @@ public class Flags {
             TENANT_ID
     );
 
-    public static final UnboundBooleanFlag AZURE_IPV6 = defineFeatureFlag(
-            "azure-ipv6", false,
-            List.of("olaa"), "2025-06-10", "2026-02-01",
-            "Whether Azure hosts should be provisioned with IPv6 addresses",
-            "Takes effect immediately"
-    );
-
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
             "use-new-prepare-for-restart-method", true,
             List.of("hmusum"), "2025-06-17", "2026-02-01",
