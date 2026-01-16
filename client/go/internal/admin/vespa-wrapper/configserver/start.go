@@ -52,6 +52,7 @@ func JustStartConfigserver() int {
 	removeStaleZkLocks(vespaHome)
 	c := jvm.NewStandaloneContainer(SERVICE_NAME)
 	jvmOpts := c.JvmOptions()
+	jvmOpts.VersionOptions(jvm.NoExtraJvmFeatures)
 	if extra := os.Getenv(envvars.VESPA_CONFIGSERVER_JVMARGS); extra != "" {
 		jvmOpts.AddJvmArgsFromString(extra)
 	}
