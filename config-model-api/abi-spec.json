@@ -1364,8 +1364,7 @@
       "public boolean useTriton()",
       "public boolean useNewPrepareForRestart()",
       "public int searchCoreMaxOutstandingMoveOps()",
-      "public double docprocHandlerThreadpool()",
-      "public boolean adjustCCMaxHeap()"
+      "public double docprocHandlerThreadpool()"
     ],
     "fields" : [ ]
   },
