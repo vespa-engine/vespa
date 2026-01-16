@@ -15,7 +15,6 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -77,7 +76,6 @@ import com.yahoo.vespa.model.container.DataplaneProxy;
 import com.yahoo.vespa.model.container.DefaultThreadpoolProvider;
 import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.PlatformBundles;
-import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
@@ -214,7 +212,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         DocumentFactoryBuilder.buildDocumentFactories(cluster, spec);
 
         addConfiguredComponents(deployState, cluster, spec);
-        addSecretStore(cluster, spec, deployState);
         addSecrets(cluster, spec, deployState);
 
         addProcessing(deployState, spec, cluster, context);
@@ -245,8 +242,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addDeploymentSpecConfig(cluster, context, deployState.getDeployLogger());
         addZooKeeper(cluster, spec);
         addAthenzServiceIdentityProvider(cluster, context);
-
-        addParameterStoreValidationHandler(cluster, deployState);
     }
     
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
@@ -275,19 +270,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
         
         return sidecars;
-    }
-
-    private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
-        if ( ! deployState.isHosted()) return;
-        // Always add platform bundle. Cannot be controlled by a feature flag as platform bundle cannot change.
-        cluster.addPlatformBundle(PlatformBundles.absoluteBundlePath("cloud-aws", PlatformBundles.JarSuffix.DEPLOY));
-        if (deployState.zone().system().isPublicCloudLike()) {
-            BindingPattern bindingPattern = SystemBindingPattern.fromHttpPath("/validate-secret-store");
-            Handler handler = new Handler(
-                    new ComponentModel("com.yahoo.jdisc.cloud.aws.AwsParameterStoreValidationHandler", null, "cloud-aws", null));
-            handler.addServerBindings(bindingPattern);
-            cluster.addComponent(handler);
-        }
     }
 
     private void addZooKeeper(ApplicationContainerCluster cluster, Element spec) {
@@ -349,52 +331,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                      deployState.getProperties().applicationId().tenant(),
                                                      deployState.getProperties().tenantVaults()));
         }
-    }
-
-    private void addSecretStore(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {
-
-        Element secretStoreElement = XML.getChild(spec, "secret-store");
-        if (secretStoreElement != null) {
-            String type = secretStoreElement.getAttribute("type");
-            if ("cloud".equals(type)) {
-                addCloudSecretStore(cluster, secretStoreElement, deployState);
-            } else {
-                SecretStore secretStore = new SecretStore();
-                for (Element group : XML.getChildren(secretStoreElement, "group")) {
-                    secretStore.addGroup(group.getAttribute("name"), group.getAttribute("environment"));
-                }
-                cluster.setSecretStore(secretStore);
-            }
-        }
-    }
-
-    private void addCloudSecretStore(ApplicationContainerCluster cluster, Element secretStoreElement, DeployState deployState) {
-        if ( ! deployState.isHosted()) return;
-        if ( ! cluster.getZone().system().isPublicCloudLike())
-            throw new IllegalArgumentException("Cloud secret store is not supported in non-public system, see the documentation");
-        CloudSecretStore cloudSecretStore = new CloudSecretStore();
-        Map<String, TenantSecretStore> secretStoresByName = deployState.getProperties().tenantSecretStores()
-                .stream()
-                .collect(Collectors.toMap(
-                        TenantSecretStore::getName,
-                        store -> store
-                ));
-        Element store = XML.getChild(secretStoreElement, "store");
-        for (Element group : XML.getChildren(store, "aws-parameter-store")) {
-            String account = group.getAttribute("account");
-            String region = group.getAttribute("aws-region");
-            TenantSecretStore secretStore = secretStoresByName.get(account);
-
-            if (secretStore == null)
-                throw new IllegalArgumentException("No configured secret store named " + account);
-
-            if (secretStore.getExternalId().isEmpty())
-                throw new IllegalArgumentException("No external ID has been set for secret store " + secretStore.getName());
-
-            cloudSecretStore.addConfig(account, region, secretStore.getAwsId(), secretStore.getRole(), secretStore.getExternalId().get());
-        }
-
-        cluster.addComponent(cloudSecretStore);
     }
 
     private void addAthenzServiceIdentityProvider(ApplicationContainerCluster cluster, ConfigModelContext context) {
