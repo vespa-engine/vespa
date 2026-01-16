@@ -411,6 +411,16 @@ public class Flags {
             APPLICATION, INSTANCE_ID
     );
 
+    public static final UnboundDoubleFlag HOST_MEMORY_SERVICES_MIXING_FACTOR = defineDoubleFlag(
+            "host-memory-services-mixing-factor", 0.0,
+            List.of("boeker"), "2026-01-16", "2026-04-16",
+            "How much of the sum of the memory limits specified for the customer rpm services should be added to " +
+            "the memory reserved for host's management processes. " +
+            "0.0 means none at all, 1.0 means the sum of the memory limits.",
+            "Affects future deployments, JVM settings for new config server Podman containers, auto scaling modelling.",
+            INSTANCE_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

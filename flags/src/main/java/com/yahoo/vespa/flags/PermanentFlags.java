@@ -321,15 +321,6 @@ public class PermanentFlags {
             ARCHITECTURE, CLAVE, CLOUD_ACCOUNT, FLAVOR);
 
     // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
-    public static final UnboundDoubleFlag HOST_MEMORY_SERVICES_MIXING_FACTOR = defineDoubleFlag(
-            "host-memory-services-mixing-factor", 0.0,
-            "How much of the sum of the memory limits specified for the customer rpm services should be added to " +
-                    "the memory reserved for host's management processes. " +
-                    "0.0 means none at all, 1.0 means the sum of the memory limits.",
-            "Affects future deployments, JVM settings for new config server Podman containers, auto scaling modelling.",
-            INSTANCE_ID);
-
-    // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
     public static final UnboundDoubleFlag HOST_MEMORY_RATIO = defineDoubleFlag(
             "host-memory-ratio", -1.0,
             "The ratio of MemTotal reserved for Linux or host processes, and not available to the Podman containers. " +
