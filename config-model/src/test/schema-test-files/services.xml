@@ -49,6 +49,15 @@
   </config>
 
   <container id='qrsCluster_1' version='1.0'>
+    <secret-store type="oath-ckms">
+      <!-- NOTE: when removing (or adding) an environment, the rnc schema must also be updated! -->
+      <group name="foo" environment="alpha" />
+      <group name="foo" environment="corp" />
+      <group name="foo" environment="prod" />
+      <group name="foo" environment="aws" />
+      <group name="foo" environment="aws_stage" />
+    </secret-store>
+
     <http>
       <filtering strict-mode="true">
         <access-control>
@@ -258,6 +267,11 @@
   </container>
 
   <container id='qrsCluster_2' version='1.0'>
+    <secret-store type="cloud">
+      <store id="foo">
+        <aws-parameter-store account="foo" aws-region="us-east-1"/>
+      </store>
+    </secret-store>
     <search>
       <threadpool>
         <threads boost="32.0">8.0</threads>

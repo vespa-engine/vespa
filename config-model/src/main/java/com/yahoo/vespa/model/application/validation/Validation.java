@@ -102,6 +102,7 @@ public class Validation {
         new DeploymentSpecValidator().validate(execution);
         new ValidationOverridesValidator().validate(execution);
         new ConstantValidator().validate(execution);
+        new SecretStoreValidator().validate(execution);
         new AccessControlFilterValidator().validate(execution);
         new QuotaValidator().validate(execution);
         new UriBindingsValidator().validate(execution);
