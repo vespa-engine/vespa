@@ -21,6 +21,7 @@ ContainerServices =
     Server* &
     Http? &
     AccessLog* &
+    SecretStore? &
     Secrets? &
     ZooKeeper? &
     GenericConfig* &
@@ -82,6 +83,21 @@ AccessLog = element accesslog {
         element path-prefix { string } &
         element max-bytes { xsd:nonNegativeInteger }
     }*
+}
+
+SecretStore = element secret-store {
+    attribute type { string "oath-ckms" | string "cloud" } &
+    element group {
+      attribute name { string } &
+      attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" }
+    } * &
+    element store {
+      attribute id { string } &
+      element aws-parameter-store {
+        attribute account { string } &
+        attribute aws-region { string }
+      } *
+    }?
 }
 
 Secrets = element secrets {

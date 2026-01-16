@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Quota;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -52,6 +53,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedNiceness = 0.0;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantVault> tenantVaults = List.of();
+    private List<TenantSecretStore> tenantSecretStores = List.of();
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = List.of();
     private double resourceLimitDisk = 0.75;
@@ -104,6 +106,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double feedNiceness() { return feedNiceness; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantVault> tenantVaults() { return tenantVaults; }
+    @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
@@ -227,6 +230,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setTenantVaults(List<TenantVault> tenantVaults) {
         this.tenantVaults = List.copyOf(tenantVaults);
+        return this;
+    }
+
+    public TestProperties setTenantSecretStores(List<TenantSecretStore> secretStores) {
+        this.tenantSecretStores = List.copyOf(secretStores);
         return this;
     }
 

@@ -144,6 +144,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private ContainerSearch containerSearch;
     private ContainerDocproc containerDocproc;
     private ContainerDocumentApi containerDocumentApi;
+    private SecretStore secretStore;
     private final ContainerThreadpool defaultHandlerThreadpool;
 
     private boolean rpcServerEnabled = true;
@@ -417,6 +418,14 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public Collection<Handler> getHandlers() {
         return componentGroup.getComponents(Handler.class);
+    }
+
+    public void setSecretStore(SecretStore secretStore) {
+        this.secretStore = secretStore;
+    }
+
+    public Optional<SecretStore> getSecretStore() {
+        return Optional.ofNullable(secretStore);
     }
 
     public void setDefaultThreadpoolProvider(DefaultThreadpoolProvider defaultThreadpoolProvider) {
