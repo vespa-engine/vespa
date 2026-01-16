@@ -15,11 +15,8 @@ model                    string
 
 # Request Settings
 
-# Request timeout in milliseconds (also bounds retry attempts - retries will stop when timeout is reached)
-timeout int default=30000
-
-# Maximum number of retry attempts for failed requests (safety limit in addition to timeout)
-maxRetries int default=10
+# Maximum number of retry attempts for failed requests
+maxRetries int default=3
 
 # Input Processing
 
@@ -31,8 +28,3 @@ autoDetectInputType bool default=true
 
 # Truncate inputs that exceed model's maximum token limit
 truncate bool default=true
-
-# Performance Settings
-
-# Maximum number of idle HTTP connections to keep in the pool
-maxIdleConnections int default=5

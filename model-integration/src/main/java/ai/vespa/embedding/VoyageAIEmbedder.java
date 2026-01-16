@@ -49,6 +49,9 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private static final String MULTIMODAL_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/multimodalembeddings";
     private static final String CONTEXTUALIZED_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/contextualizedembeddings";
 
+    private static final int READ_WRITE_TIMEOUT_SECONDS = 60;
+    private static final long TOTAL_TIMEOUT_MS = READ_WRITE_TIMEOUT_SECONDS * 1000;
+
     // Configuration
     private final VoyageAiEmbedderConfig config;
     private final Embedder.Runtime runtime;
@@ -129,10 +132,10 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         return new OkHttpClient.Builder()
                 .addInterceptor(new RetryInterceptor(config.maxRetries()))
                 .retryOnConnectionFailure(true)
-                .connectTimeout(Duration.ofMillis(config.timeout()))
-                .readTimeout(Duration.ofMillis(config.timeout()))
-                .writeTimeout(Duration.ofMillis(config.timeout()))
-                .connectionPool(new ConnectionPool(config.maxIdleConnections(), 1, TimeUnit.MINUTES))
+                .connectTimeout(Duration.ofSeconds(10))
+                .readTimeout(Duration.ofSeconds(READ_WRITE_TIMEOUT_SECONDS))
+                .writeTimeout(Duration.ofSeconds(READ_WRITE_TIMEOUT_SECONDS))
+                .connectionPool(new ConnectionPool(10, 1, TimeUnit.MINUTES))
                 .build();
     }
 
@@ -326,7 +329,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private long calculateTimeoutMs(Context context, long startTime) {
         long remainingMs = context.getDeadline().isPresent()
                 ? context.getDeadline().get().timeRemaining().toMillis()
-                : config.timeout() - (System.currentTimeMillis() - startTime);
+                : TOTAL_TIMEOUT_MS - (System.currentTimeMillis() - startTime);
         if (remainingMs <= 0) throw new RuntimeException("Request timeout exceeded before API call");
         return remainingMs;
     }
@@ -370,6 +373,8 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         @Override
         public okhttp3.Response intercept(Chain chain) throws IOException {
             var request = chain.request();
+            int lastStatusCode = 0;
+            String lastResponseBody = "";
 
             for (int attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
@@ -378,6 +383,12 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                     int code = response.code();
                     boolean shouldRetry = code == 500 || code == 502 || code == 503 || code == 504;
                     if (response.isSuccessful() || !shouldRetry) return response;
+
+                    // Capture response details before closing
+                    lastStatusCode = code;
+                    if (response.body() != null) {
+                        lastResponseBody = response.body().string();
+                    }
                     response.close();
 
                     if (attempt < maxRetries) {
@@ -391,7 +402,10 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                     throw new IOException("Retry interrupted", e);
                 }
             }
-            throw new IOException("Max retries exceeded for VoyageAI API (" + maxRetries + ")");
+
+            var errorMsg = "Max retries exceeded for VoyageAI API (%d). Last response: %d - %s"
+                    .formatted(maxRetries, lastStatusCode, lastResponseBody);
+            throw new IOException(errorMsg);
         }
     }
 

@@ -145,22 +145,20 @@ public class VoyageAIEmbedderTest {
     }
 
     @Test
-    public void testTimeoutExceeded() {
-        // Create embedder with very short timeout
+    public void testMaxRetriesExceeded() {
+        // Create embedder with hardcoded maxRetries=3
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
-        configBuilder.timeout(2000); // 2 second timeout
-        configBuilder.maxRetries(100); // High retry count, but timeout should hit first
 
-        VoyageAIEmbedder shortTimeoutEmbedder = new VoyageAIEmbedder(
+        VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
                 runtime,
                 createMockSecrets()
         );
 
-        // Mock multiple server error responses (each retry waits 100ms)
+        // Mock server error responses - more than maxRetries
         for (int i = 0; i < 10; i++) {
             mockServer.enqueue(new MockResponse()
                     .setResponseCode(500)
@@ -170,13 +168,13 @@ public class VoyageAIEmbedderTest {
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("test-embedder");
 
-        // Should fail when timeout is reached
+        // Should fail after exhausting retries
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            shortTimeoutEmbedder.embed("test", context, targetType);
+            embedder.embed("test", context, targetType);
         });
-        assertTrue(exception.getMessage().contains("timeout") || exception.getMessage().contains("exceed"));
+        assertEquals("VoyageAI API call failed: Max retries exceeded for VoyageAI API (3). Last response: 500 - {\"error\":\"internal_server_error\"}", exception.getMessage());
 
-        shortTimeoutEmbedder.deconstruct();
+        embedder.deconstruct();
     }
 
     @Test
@@ -185,7 +183,6 @@ public class VoyageAIEmbedderTest {
                 .apiKeySecretRef("test_key")
                 .endpoint(mockServer.url("/v1/embeddings").toString())
                 .model("voyage-3")
-                .timeout(2000)
                 .maxRetries(100);
         var embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
 
@@ -208,22 +205,20 @@ public class VoyageAIEmbedderTest {
 
     @Test
     public void testMaxRetriesSafetyLimit() {
-        // Create embedder with low maxRetries
+        // Create embedder with hardcoded maxRetries=3
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
-        configBuilder.timeout(30000); // High timeout
-        configBuilder.maxRetries(2); // Low retry count
 
-        VoyageAIEmbedder lowRetryEmbedder = new VoyageAIEmbedder(
+        VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
                 runtime,
                 createMockSecrets()
         );
 
-        // Mock 4 server error responses (max retries is 2)
-        for (int i = 0; i < 4; i++) {
+        // Mock 5 server error responses (max retries is 3, so 1 + 3 retries = 4 total attempts)
+        for (int i = 0; i < 5; i++) {
             mockServer.enqueue(new MockResponse()
                     .setResponseCode(503)
                     .setBody("{\"error\":\"service_unavailable\"}"));
@@ -234,11 +229,11 @@ public class VoyageAIEmbedderTest {
 
         // Should fail after max retries
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            lowRetryEmbedder.embed("test", context, targetType);
+            embedder.embed("test", context, targetType);
         });
-        assertTrue(exception.getMessage().contains("Max retries") || exception.getMessage().contains("exceeded"));
+        assertEquals("VoyageAI API call failed: Max retries exceeded for VoyageAI API (3). Last response: 503 - {\"error\":\"service_unavailable\"}", exception.getMessage());
 
-        lowRetryEmbedder.deconstruct();
+        embedder.deconstruct();
     }
 
     @Test
@@ -374,8 +369,6 @@ public class VoyageAIEmbedderTest {
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
-        configBuilder.maxRetries(10);
-        configBuilder.timeout(5000);
 
         return new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
     }

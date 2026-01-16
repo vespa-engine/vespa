@@ -34,12 +34,9 @@ public class VoyageAIEmbedderTest {
         assertEquals("voyage-3.5", config.model());
         assertEquals("voyage_api_key", config.apiKeySecretRef());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint());
-        assertEquals(60000, config.timeout());
-        assertEquals(5, config.maxRetries());
         assertEquals(VoyageAiEmbedderConfig.DefaultInputType.Enum.query, config.defaultInputType());
         assertFalse(config.autoDetectInputType());
         assertTrue(config.truncate());
-        assertEquals(10, config.maxIdleConnections());
     }
 
     @Test
@@ -56,12 +53,10 @@ public class VoyageAIEmbedderTest {
         assertEquals("voyage_key", config.apiKeySecretRef());
         assertEquals("voyage-3.5", config.model());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint()); // Default endpoint
-        assertEquals(30000, config.timeout()); // Default timeout
-        assertEquals(10, config.maxRetries()); // Default retries
+        assertEquals(3, config.maxRetries()); // Default retries
         assertEquals(VoyageAiEmbedderConfig.DefaultInputType.Enum.document, config.defaultInputType());
         assertTrue(config.autoDetectInputType()); // Default auto-detect
         assertTrue(config.truncate()); // Default truncate
-        assertEquals(5, config.maxIdleConnections()); // Default max idle connections
     }
 
     @Test
@@ -82,25 +77,6 @@ public class VoyageAIEmbedderTest {
         assertTrue(exception.getMessage().contains("api-key-secret-ref"));
     }
 
-    @Test
-    void testVoyageAIEmbedderInvalidTimeout() {
-        String servicesXml = """
-                <?xml version="1.0" encoding="utf-8" ?>
-                <services version="1.0">
-                    <container id="container" version="1.0">
-                        <component id="voyage" type="voyage-ai-embedder">
-                            <model>voyage-3</model>
-                            <api-key-secret-ref>key</api-key-secret-ref>
-                            <timeout>500</timeout>
-                        </component>
-                    </container>
-                </services>
-                """;
-
-        // Should fail because timeout < 1000ms
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
-        assertTrue(exception.getMessage().contains("timeout"));
-    }
 
     @Test
     void testVoyageAIEmbedderInvalidInputType() {
@@ -155,7 +131,6 @@ public class VoyageAIEmbedderTest {
         VoyageAiEmbedderConfig minimalConfig = getVoyageAIEmbedderConfig(cluster, "voyage-minimal");
 
         assertNotEquals(fullConfig.apiKeySecretRef(), minimalConfig.apiKeySecretRef());
-        assertNotEquals(fullConfig.timeout(), minimalConfig.timeout());
     }
 
     // ===== Helper Methods =====

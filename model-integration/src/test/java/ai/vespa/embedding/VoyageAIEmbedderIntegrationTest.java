@@ -209,7 +209,6 @@ public class VoyageAIEmbedderIntegrationTest {
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.model("voyage-multimodal-3.5");
-        configBuilder.timeout(30000);
 
         VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
@@ -241,7 +240,6 @@ public class VoyageAIEmbedderIntegrationTest {
             VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
             configBuilder.apiKeySecretRef("test_key");
             configBuilder.model("voyage-multimodal-3.5");
-            configBuilder.timeout(30000);
 
             VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                     configBuilder.build(),
@@ -327,7 +325,6 @@ public class VoyageAIEmbedderIntegrationTest {
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.model("voyage-context-3");
-        configBuilder.timeout(30000);
 
         VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
@@ -359,7 +356,6 @@ public class VoyageAIEmbedderIntegrationTest {
             VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
             configBuilder.apiKeySecretRef("test_key");
             configBuilder.model("voyage-context-3");
-            configBuilder.timeout(30000);
 
             VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                     configBuilder.build(),
@@ -386,7 +382,6 @@ public class VoyageAIEmbedderIntegrationTest {
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.model(model);
-        configBuilder.timeout(30000);
 
         return new VoyageAIEmbedder(
                 configBuilder.build(),
