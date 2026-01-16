@@ -208,6 +208,8 @@
                                         <include>org.eclipse.jetty:jetty-jmx:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-server:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-util:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty.compression:jetty-compression-common:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty.compression:jetty-compression-gzip:${jetty.vespa.version}:test</include>
                                         <include>org.hamcrest:hamcrest:${hamcrest.vespa.version}:test</include>
                                         <include>org.hamcrest:hamcrest-core:${hamcrest.vespa.version}:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}:test</include>

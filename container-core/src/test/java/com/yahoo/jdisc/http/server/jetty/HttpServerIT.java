@@ -76,7 +76,6 @@ import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.jdisc.Response.Status.REQUEST_TOO_LONG;
-import static com.yahoo.jdisc.Response.Status.REQUEST_URI_TOO_LONG;
 import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
 import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.CONNECTION;
@@ -156,14 +155,15 @@ public class HttpServerIT {
     }
 
     @Test
-    void requireThatTooLongInitLineReturns414() throws Exception {
+    void requireThatTooLongInitLineReturns431() throws Exception {
         final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder()
                         .requestHeaderSize(1));
+        // Jetty 12.1 returns 431 (Request Header Fields Too Large) instead of 414
         driver.client().get("/status.html")
-                .expectStatusCode(is(REQUEST_URI_TOO_LONG));
+                .expectStatusCode(is(431));
         assertTrue(driver.close());
     }
 
@@ -208,9 +208,9 @@ public class HttpServerIT {
                 new ConnectorConfig.Builder().requestHeaderSize(1),
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().get("/status.html")
-                .expectStatusCode(is(REQUEST_URI_TOO_LONG));
+                .expectStatusCode(is(431));
         RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));
-        assertEquals(414, entry.statusCode().getAsInt());
+        assertEquals(431, entry.statusCode().getAsInt());
         assertTrue(driver.close());
     }
 
@@ -767,7 +767,8 @@ public class HttpServerIT {
         RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));
         assertEquals(200, entry.statusCode().getAsInt());
         assertEquals(6, entry.requestSize().getAsLong());
-        assertEquals("text/plain; charset=UTF-8", entry.content().get().type());
+        // Jetty 12.1 returns lowercase charset name
+        assertEquals("text/plain; charset=utf-8", entry.content().get().type());
         assertEquals(6, entry.content().get().length());
         assertEquals("abcdef", new String(entry.content().get().body(), UTF_8));
         assertTrue(driver.close());
