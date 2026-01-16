@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "indexmaintainer.h"
+#include "disk_index_with_destructor_cleanup.h"
 #include "disk_indexes.h"
 #include "diskindexcleaner.h"
 #include "eventlogger.h"
@@ -15,7 +16,6 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
 #include <vespa/searchlib/common/i_flush_token.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -38,7 +38,6 @@ using search::index::SchemaUtil;
 using search::common::FileHeaderContext;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
-using search::queryeval::Blueprint;
 using search::SerialNum;
 using vespalib::makeLambdaTask;
 using vespalib::makeSharedLambdaCallback;
@@ -91,97 +90,6 @@ public:
 ReconfigRunnableTask::~ReconfigRunnableTask() = default;
 
 SerialNum noSerialNumHigh = std::numeric_limits<SerialNum>::max();
-
-
-class DiskIndexWithDestructorCleanup : public IDiskIndex {
-private:
-    std::shared_ptr<std::mutex>          _remove_lock;
-    std::shared_ptr<IDiskIndex>          _index;
-    IndexDiskDir                         _index_disk_dir;
-    std::shared_ptr<IndexDiskLayout>     _layout;
-    std::shared_ptr<DiskIndexes>         _disk_indexes;
-
-public:
-    DiskIndexWithDestructorCleanup(std::shared_ptr<std::mutex> remove_lock,
-                                    std::shared_ptr<IDiskIndex> index,
-                                    std::shared_ptr<IndexDiskLayout> layout,
-                                    std::shared_ptr<DiskIndexes> disk_indexes) noexcept
-        : _remove_lock(std::move(remove_lock)),
-          _index(std::move(index)),
-          _index_disk_dir(IndexDiskLayout::get_index_disk_dir(_index->getIndexDir())),
-          _layout(std::move(layout)),
-          _disk_indexes(std::move(disk_indexes))
-    {
-    }
-    DiskIndexWithDestructorCleanup(const DiskIndexWithDestructorCleanup&) = delete;
-    DiskIndexWithDestructorCleanup(DiskIndexWithDestructorCleanup&&) = delete;
-    ~DiskIndexWithDestructorCleanup() override;
-    DiskIndexWithDestructorCleanup& operator=(const DiskIndexWithDestructorCleanup&) = delete;
-    DiskIndexWithDestructorCleanup& operator=(DiskIndexWithDestructorCleanup&&) = delete;
-    const IDiskIndex &getWrapped() const { return *_index; }
-
-    /**
-     * Implements searchcorespi::IndexSearchable
-     */
-    std::unique_ptr<Blueprint>
-    createBlueprint(const IRequestContext & requestContext,
-                    const FieldSpec &field,
-                    const Node &term,
-                    search::fef::MatchDataLayout &global_layout) override
-    {
-        FieldSpecList fsl;
-        fsl.add(field);
-        return _index->createBlueprint(requestContext, fsl, term, global_layout);
-    }
-    std::unique_ptr<Blueprint>
-    createBlueprint(const IRequestContext & requestContext,
-                    const FieldSpecList &fields,
-                    const Node &term,
-                    search::fef::MatchDataLayout &global_layout) override
-    {
-        return _index->createBlueprint(requestContext, fields, term, global_layout);
-    }
-    search::IndexStats get_index_stats(bool clear_disk_io_stats) const override;
-    search::SerialNum getSerialNum() const override {
-        return _index->getSerialNum();
-    }
-    void accept(IndexSearchableVisitor &visitor) const override {
-        _index->accept(visitor);
-    }
-
-    /**
-     * Implements IFieldLengthInspector
-     */
-    search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
-        return _index->get_field_length_info(field_name);
-    }
-
-    /**
-     * Implements IDiskIndex
-     */
-    const std::string &getIndexDir() const override { return _index->getIndexDir(); }
-    const search::index::Schema &getSchema() const override { return _index->getSchema(); }
-
-};
-
-DiskIndexWithDestructorCleanup::~DiskIndexWithDestructorCleanup()
-{
-    auto index_dir = _index->getIndexDir();
-    _index.reset();
-    _disk_indexes->notActive(index_dir);
-    std::lock_guard remove_guard(*_remove_lock);
-    DiskIndexCleaner::removeOldIndexes(_layout->get_base_dir(), *_disk_indexes);
-}
-
-search::IndexStats
-DiskIndexWithDestructorCleanup::get_index_stats(bool clear_disk_io_stats) const
-{
-    auto stats = _index->get_index_stats(clear_disk_io_stats);
-    uint64_t transient_size = _disk_indexes->get_transient_size(*_layout, _index_disk_dir);
-    stats.fusion_size_on_disk(transient_size);
-    return stats;
-}
-
 
 }  // namespace
 
