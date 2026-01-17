@@ -43,4 +43,12 @@ DenseTensorAttribute::get_vectors(uint32_t docid) const noexcept
     return _denseTensorStore.get_vectors(ref);
 }
 
+
+void
+DenseTensorAttribute::prefetch_vector(uint32_t docid) const noexcept
+{
+    const auto ref = acquire_entry_ref(docid);
+    _denseTensorStore.prefetch_vectors(ref);
+}
+
 }
