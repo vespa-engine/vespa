@@ -28,6 +28,12 @@ public:
         _pos += sizeof(uint32_t);
         return result;
     }
+
+    void readNHostOrder(uint32_t* buf, size_t n) {
+        assert(_pos + sizeof(uint32_t) * n <= _data.size());
+        std::memcpy(buf, _data.data() + _pos, sizeof(uint32_t) * n);
+        _pos += sizeof(uint32_t) * n;
+    }
 };
 
 }
