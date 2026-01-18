@@ -78,6 +78,10 @@ public interface ImmutableSDField {
 
     NormalizeLevel getNormalizing();
 
+    String getIndexLinguisticsProfile();
+
+    String getSearchLinguisticsProfile();
+
     ImmutableSDField getStructField(String name);
 
     Collection<? extends ImmutableSDField> getStructFields();

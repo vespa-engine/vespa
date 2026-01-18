@@ -81,7 +81,7 @@ public final class JsonlDocumentFormatStrategy implements FormatStrategy {
     }
 
     private void tokenizeAndAccumulate(SortedMap<String, Long> df, String text) {
-        var params = new LinguisticsParameters(tokenizationLanguage, StemMode.NONE, false, true);
+        var params = new LinguisticsParameters(null, tokenizationLanguage, StemMode.NONE, false, true);
         var tokens = tokenizer.tokenize(text, params);
 
         var unique = new java.util.HashSet<String>();

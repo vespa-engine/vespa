@@ -10,7 +10,6 @@ import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.TermItem;
-import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.parser.Parsable;
@@ -18,9 +17,6 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.yahoo.prelude.query.parser.Token.Kind.NUMBER;
-import static com.yahoo.prelude.query.parser.Token.Kind.WORD;
 
 /**
  * A parser which delegates all tokenization and processing to the linguistics component.
@@ -39,7 +35,8 @@ public final class LinguisticsParser extends AbstractParser {
     @Override
     Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
                IndexFacts.Session indexFacts, String defaultIndex, Parsable parsable) {
-        var parameters = new LinguisticsParameters(parsingLanguage,
+        var parameters = new LinguisticsParameters(linguisticsProfileFor(defaultIndex),
+                                                   parsingLanguage,
                                                    StemMode.BEST,
                                                    true,
                                                    true);

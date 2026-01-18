@@ -24,7 +24,7 @@ public class TermCondition extends Condition {
         super(label);
         this.linguistics = linguistics;
         this.originalTerm = term;
-        this.term = linguistics.process(term);
+        this.term = linguistics.process(label, term);
     }
 
     protected boolean doesMatch(RuleEvaluation e) {
@@ -38,7 +38,9 @@ public class TermCondition extends Condition {
             if ( ! labelMatches(e)) return false;
 
             boolean matches = labelMatches(e.currentItem().getItem(), e) &&
-                              linguistics.process(e.currentItem().getItem().stringValue()).equals(term);
+                              linguistics.process(e.currentItem().getItem().getIndexName(),
+                                                  e.currentItem().getItem().stringValue())
+                                         .equals(term);
             if ((matches && !e.isInNegation() || (!matches && e.isInNegation()))) {
                 e.addMatch(e.currentItem(), originalTerm);
                 e.setValue(term);
