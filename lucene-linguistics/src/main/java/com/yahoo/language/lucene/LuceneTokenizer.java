@@ -93,4 +93,9 @@ class LuceneTokenizer implements Tokenizer {
         return (other instanceof LuceneTokenizer) && analyzers.equals(((LuceneTokenizer) other).analyzers);
     }
 
+    @Override
+    public int hashCode() {
+        return analyzers.hashCode();
+    }
+
 }
