@@ -145,6 +145,7 @@ public class SelectParser implements Parser {
     private static final String EQ = "equals";
     private static final String IN = "in";
     private static final String MATCHES = "matches";
+    private static final String NOT = "not";
     private static final String OR = "or";
 
     Parsable query;
@@ -203,9 +204,10 @@ public class SelectParser implements Parser {
                 case EQ -> item[0] = buildEquals(key, value);
                 case IN -> item[0] = buildIn(key, value);
                 case MATCHES -> item[0] = buildRegExpSearch(key, value);
+                case NOT -> item[0] = buildNot(key, value);
                 case OR -> item[0] = buildOr(key, value);
                 case RANGE -> item[0] = buildRange(key, value);
-                default -> throw newUnexpectedArgumentException(key, AND, AND_NOT, CALL, CONTAINS, EQ, IN, MATCHES, OR, RANGE);
+                default -> throw newUnexpectedArgumentException(key, AND, AND_NOT, CALL, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE);
             }
         });
         return item[0];
@@ -406,6 +408,13 @@ public class SelectParser implements Parser {
         OrItem orItem = new OrItem();
         addItemsFromInspector(orItem, value);
         return orItem;
+    }
+
+    private CompositeItem buildNot(String key, Inspector value) {
+        NotItem notItem = new NotItem();
+        Item negativeItem = walkJson(value);
+        notItem.addNegativeItem(negativeItem);
+        return notItem;
     }
 
     private Item buildGeoBoundingBox(String key, Inspector value) {

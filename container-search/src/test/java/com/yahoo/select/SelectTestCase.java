@@ -152,7 +152,7 @@ public class SelectTestCase {
         assertParseFail("{\"in\" : [\"nofield\", 'a', 25]}",
                 new IllegalArgumentException("Field 'nofield' does not exist."));
         assertParseFail("{\"not in\" : [\"field\", 25]}",
-                new IllegalArgumentException("Expected and, and_not, call, contains, equals, in, matches, or or range, got not in."));
+                new IllegalArgumentException("Expected and, and_not, call, contains, equals, in, matches, not, or or range, got not in."));
         assertParseFail("{\"in\" : [\"float\", 25]}",
                 new IllegalArgumentException("The in operator is only supported for integer and string fields. " +
                         "The field 'float' is not of these types"));
@@ -220,6 +220,43 @@ public class SelectTestCase {
 
         assertParse(json_and_not.toString(),
                 "+title:madonna -title:saint");
+    }
+
+    @Test
+    void testNot() {
+        assertParse("{\"not\": {\"contains\": [\"title\", \"madonna\"]}}",
+                "-title:madonna");
+    }
+
+    @Test
+    void testNotWithRange() {
+        assertParse("{\"not\": {\"range\": [\"price\", {\">=\": 100}]}}",
+                "-price:[100;]");
+    }
+
+    @Test
+    void testNotWithAnd() {
+        assertParse("{\"not\": {\"and\": [{\"contains\": [\"title\", \"a\"]}, {\"contains\": [\"title\", \"b\"]}]}}",
+                "-(AND title:a title:b)");
+    }
+
+    @Test
+    void testMultipleNotWithAnd() {
+        assertParse("{\"and\": [{\"not\": {\"contains\": [\"title\", \"madonna\"]}}, " +
+                           "{\"not\": {\"contains\": [\"title\", \"saint\"]}}]}",
+                "AND (-title:madonna) (-title:saint)");
+    }
+
+    @Test
+    void testNotWithBoolean() {
+        assertParse("{\"not\": true}", "-TRUE");
+        assertParse("{\"not\": false}", "-FALSE");
+    }
+
+    @Test
+    void testDoubleNegation() {
+        assertParse("{\"not\": {\"not\": {\"contains\": [\"title\", \"madonna\"]}}}",
+                "-(-title:madonna)");
     }
 
     @Test
