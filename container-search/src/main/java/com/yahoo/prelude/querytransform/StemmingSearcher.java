@@ -44,6 +44,7 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.query.QueryType;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
@@ -101,7 +102,7 @@ public class StemmingSearcher extends Searcher {
                     StemContext context = new StemContext();
                     context.language = Language.ENGLISH;
                     context.indexFacts = indexFacts;
-                    Item newHighlight = scan(highlight.getHighlightItems().get(field), context);
+                    Item newHighlight = scan(highlight.getHighlightItems().get(field), context, query.getModel().getQueryType());
                     highlight.getHighlightItems().put(field, (AndItem)newHighlight);
                 }
             }
@@ -125,7 +126,7 @@ public class StemmingSearcher extends Searcher {
         context.reverseConnectivity = createReverseConnectivities(q.getModel().getQueryTree().getRoot());
         if (q.getTrace().getLevel() >= 3)
             q.trace("Stemming with language " + language + " using " + linguistics, 3);
-        return scan(q.getModel().getQueryTree().getRoot(), context);
+        return scan(q.getModel().getQueryTree().getRoot(), context, q.getModel().getQueryType());
     }
 
     private Map<Item, TaggableItem> createReverseConnectivities(Item root) {
@@ -148,19 +149,19 @@ public class StemmingSearcher extends Searcher {
         return reverseConnectivity;
     }
 
-    private Item scan(Item item, StemContext context) {
+    private Item scan(Item item, StemContext context, QueryType queryType) {
         if (item == null) return null;
         boolean old = context.insidePhrase;
         if (item instanceof PhraseItem || item instanceof PhraseSegmentItem) {
             context.insidePhrase = true;
         }
         if (item instanceof BlockItem) {
-            item = checkBlock((BlockItem) item, context);
+            item = checkBlock((BlockItem) item, context, queryType);
         } else if (item instanceof CompositeItem composite) {
             ListIterator<Item> i = composite.getItemIterator();
             while (i.hasNext()) {
                 Item original = i.next();
-                Item transformed = scan(original, context);
+                Item transformed = scan(original, context, queryType);
                 if (original != transformed)
                     i.set(transformed);
             }
@@ -169,13 +170,13 @@ public class StemmingSearcher extends Searcher {
         return item;
     }
 
-    private Item checkBlock(BlockItem item, StemContext context) {
+    private Item checkBlock(BlockItem item, StemContext context, QueryType queryType) {
         if (item instanceof PrefixItem || !item.isWords()) return (Item) item;
 
         if (item.isFromQuery() && !item.isStemmed()) {
             Index index = context.indexFacts.getIndex(item.getIndexName());
             StemMode stemMode = index.getStemMode();
-            if (stemMode != StemMode.NONE) return stem(item, context, index);
+            if (stemMode != StemMode.NONE) return stem(queryType, item, context, index);
         }
         return (Item) item;
     }
@@ -196,8 +197,8 @@ public class StemmingSearcher extends Searcher {
     }
 
     // The rewriting logic is here
-    private Item stem(BlockItem current, StemContext context, Index index) {
-        var parameters = new LinguisticsParameters(current.getIndexName(), true,
+    private Item stem(QueryType queryType, BlockItem current, StemContext context, Index index) {
+        var parameters = new LinguisticsParameters(linguisticsProfile(queryType, index),
                                                    context.language, index.getStemMode(), index.getNormalize(),
                                                    index.isLowercase());
         Item blockAsItem = (Item)current;
@@ -442,6 +443,13 @@ public class StemmingSearcher extends Searcher {
         if (blockItem instanceof TermItem termItem) return termItem.getDocumentFrequency();
         if (blockItem instanceof PhraseSegmentItem phraseSegmentItem) return phraseSegmentItem.getDocumentFrequency();
         return Optional.empty();
+    }
+
+    private String linguisticsProfile(QueryType queryType, Index index) {
+        String queryAssignedProfile = queryType.getProfile();
+        if (queryAssignedProfile != null) return queryAssignedProfile;
+        if (index == null) return null;
+        return index.getLinguisticsProfile();
     }
 
     private static class Connectivity {

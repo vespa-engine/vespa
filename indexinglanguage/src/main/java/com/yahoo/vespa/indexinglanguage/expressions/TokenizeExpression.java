@@ -20,7 +20,6 @@ public final class TokenizeExpression extends Expression {
 
     private final Linguistics linguistics;
     private final AnnotatorConfig config;
-    private String outputFieldName;
 
     public TokenizeExpression(Linguistics linguistics, AnnotatorConfig config) {
         this.linguistics = linguistics;
@@ -51,15 +50,9 @@ public final class TokenizeExpression extends Expression {
         context.setCurrentValue(output);
 
         AnnotatorConfig contextualizedConfig = new AnnotatorConfig(config);
-        contextualizedConfig.setField(outputFieldName);
         Optional.ofNullable(context.resolveLanguage(linguistics)).ifPresent(contextualizedConfig::setLanguage);
         LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, contextualizedConfig);
         annotator.annotate(output, context.getDocumentId().orElse(null), context.isReindexingOperation());
-    }
-
-    @Override
-    public void setStatementOutput(DocumentType documentType, Field field) {
-        outputFieldName = field.getName();
     }
 
     @Override

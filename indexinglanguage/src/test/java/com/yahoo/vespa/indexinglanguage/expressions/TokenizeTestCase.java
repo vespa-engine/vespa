@@ -2,16 +2,34 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.Field;
 import com.yahoo.document.annotation.SpanTrees;
+import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.update.AssignValueUpdate;
+import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.LinguisticsParameters;
+import com.yahoo.language.process.Token;
+import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.language.simple.SimpleTokenizer;
+import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
+import com.yahoo.vespa.indexinglanguage.ScriptTester;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
+import com.yahoo.vespa.indexinglanguage.UpdateFieldValues;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.util.List;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
@@ -25,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings({"deprecation", "removal"})
+@SuppressWarnings({"removal"})
 public class TokenizeTestCase {
 
     @Test
@@ -106,4 +124,49 @@ public class TokenizeTestCase {
         assertTrue(val instanceof StringFieldValue);
         assertNull(((StringFieldValue)val).getSpanTree(SpanTrees.LINGUISTICS));
     }
+
+    @Test
+    public void testLinguisticsProfile() {
+        String script = """
+        { clear_state | guard { input myString | tokenize normalize profile:"p1" stem:"BEST" | index myString; } }
+        """;
+
+        var tester = new ScriptTester();
+        var mockLinguistics = new MockLinguistics();
+        var expression = tester.scriptFrom(script, mockLinguistics);
+
+        DocumentType docType = new DocumentType("test");
+        Field field1 = new Field("myString", DataType.STRING);
+        docType.addField(field1);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(field1);
+        adapter.setValue("myString", new StringFieldValue("Hello, world!"));
+        expression.resolve(adapter);
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        assertEquals("p1", mockLinguistics.lastLinguisticsProfile);
+    }
+
+    private static class MockLinguistics extends SimpleLinguistics {
+
+        String lastLinguisticsProfile = null;
+
+        @Override
+        public Tokenizer getTokenizer() {
+            return new MockTokenizer();
+        }
+
+        private class MockTokenizer extends SimpleTokenizer {
+
+            @Override
+            public Iterable<Token> tokenize(String input, LinguisticsParameters parameters) {
+                lastLinguisticsProfile = parameters.profile();
+                return super.tokenize(input, parameters);
+            }
+
+        }
+
+    }
+
 }

@@ -14,11 +14,12 @@ import java.util.Optional;
  * This class holds the extracted information after parsing a "field"
  * block, using simple data structures as far as possible.  Do not put
  * advanced logic here!
+ *
  * @author arnej27959
- **/
+ */
 public class ParsedField extends ParsedBlock {
 
-    private ParsedType type;
+    private final ParsedType type;
     private boolean hasBolding = false;
     private boolean isFilter = false;
     private int overrideId = 0;
@@ -26,6 +27,8 @@ public class ParsedField extends ParsedBlock {
     private boolean isNormal = false;
     private Integer weight;
     private String normalizing = null;
+    private String searchLinguisticsProfile;
+    private String indexLinguisticsProfile;
     private final ParsedMatchSettings matchInfo = new ParsedMatchSettings();
     private Stemming stemming = null;
     private ParsedIndexingOp indexingOp = null;
@@ -63,6 +66,8 @@ public class ParsedField extends ParsedBlock {
     Optional<Integer> getWeight() { return Optional.ofNullable(weight); }
     Optional<Stemming> getStemming() { return Optional.ofNullable(stemming); }
     Optional<String> getNormalizing() { return Optional.ofNullable(normalizing); }
+    Optional<String> getIndexLinguisticsProfile() { return Optional.ofNullable(indexLinguisticsProfile); }
+    Optional<String> getSearchLinguisticsProfile() { return Optional.ofNullable(searchLinguisticsProfile); }
     Optional<ParsedIndexingOp> getIndexing() { return Optional.ofNullable(indexingOp); }
     Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
     Map<String, String> getRankTypes() { return Collections.unmodifiableMap(rankTypes); }
@@ -121,6 +126,8 @@ public class ParsedField extends ParsedBlock {
     public void setLiteral(boolean value) { this.isLiteral = value; }
     public void setNormal(boolean value) { this.isNormal = value; }
     public void setNormalizing(String value) { this.normalizing = value; }
+    public void setIndexLinguisticsProfile(String profile) { this.indexLinguisticsProfile = profile; }
+    public void setSearchLinguisticsProfile(String profile) { this.searchLinguisticsProfile = profile; }
     public void setStemming(Stemming stemming) { this.stemming = stemming; }
     public void setWeight(int weight) { this.weight = weight; }
 

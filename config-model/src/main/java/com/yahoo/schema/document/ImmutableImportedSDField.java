@@ -154,6 +154,12 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     }
 
     @Override
+    public String getIndexLinguisticsProfile() { return importedField.targetField().getIndexLinguisticsProfile(); }
+
+    @Override
+    public String getSearchLinguisticsProfile() { return importedField.targetField().getSearchLinguisticsProfile(); }
+
+    @Override
     public ImmutableSDField getStructField(String name) {
         throw createUnsupportedException("struct");
     }

@@ -43,7 +43,7 @@ public class SegmenterImplTestCase {
     }
 
     private static void assertSegments(String input, List<String> expectedSegments) {
-        assertEquals(expectedSegments, SEGMENTER.segment(input, new LinguisticsParameters("", true, Language.ENGLISH, StemMode.NONE, false, true)));
+        assertEquals(expectedSegments, SEGMENTER.segment(input, new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true)));
     }
 
     @Test
@@ -52,7 +52,7 @@ public class SegmenterImplTestCase {
         Segmenter fancySegmenter = new SegmenterImpl(fancyTokenizer);
         List<String> expectedSegments = List.of("juice", "\u00BD", "oz");
         String input = "juice \u00BD oz";
-        assertEquals(expectedSegments, fancySegmenter.segment(input, new LinguisticsParameters("", true, Language.ENGLISH, StemMode.NONE, false, true)));
+        assertEquals(expectedSegments, fancySegmenter.segment(input, new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true)));
     }
 
     private static class FancyTokenizer implements Tokenizer {

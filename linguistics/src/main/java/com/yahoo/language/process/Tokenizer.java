@@ -23,7 +23,7 @@ public interface Tokenizer {
      */
     @Deprecated // TODO: Remove on Vespa 9
     default Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
-        return tokenize(input, new LinguisticsParameters("", false, language, stemMode, removeAccents, true));
+        return tokenize(input, new LinguisticsParameters(null, language, stemMode, removeAccents, true));
     }
 
     /**

@@ -640,6 +640,60 @@ public class SchemaTestCase {
     }
 
     @Test
+    void testLinguisticsProfile() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            linguistics {
+                                profile: p1
+                            }
+                        }
+                        field s2 type string {
+                            indexing: index
+                            linguistics {
+                                profile: p2
+                            }
+                        }
+                        field s3 type string {
+                            indexing: index
+                            linguistics {
+                                profile {
+                                    search: p3
+                                    index: p4
+                                }
+                            }
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+
+        var ilConfigBuilder = new IlscriptsConfig.Builder();
+        derived.getIndexingScript().getConfig(ilConfigBuilder);
+        assertEquals("clear_state | guard { input s1 | tokenize normalize profile:\"p1\" stem:\"BEST\" | index s1; }",
+                     ilConfigBuilder.build().ilscript().get(0).content(0));
+        assertEquals("clear_state | guard { input s2 | tokenize normalize profile:\"p2\" stem:\"BEST\" | index s2; }",
+                     ilConfigBuilder.build().ilscript().get(0).content(1));
+        assertEquals("clear_state | guard { input s3 | tokenize normalize profile:\"p4\" stem:\"BEST\" | index s3; }",
+                     ilConfigBuilder.build().ilscript().get(0).content(2));
+
+
+        var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
+        derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
+        assertTrue(indexInfoConfigBuilder.build().toString().contains("linguistics-profile p1"));
+        assertTrue(indexInfoConfigBuilder.build().toString().contains("linguistics-profile p2"));
+        assertTrue(indexInfoConfigBuilder.build().toString().contains("linguistics-profile p3"));
+        assertFalse(indexInfoConfigBuilder.build().toString().contains("linguistics-profile p4"));
+    }
+
+    @Test
     void testCasedWordMatching() throws Exception {
         String schema =
                 """

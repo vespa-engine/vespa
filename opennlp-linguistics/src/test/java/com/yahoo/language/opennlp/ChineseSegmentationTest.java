@@ -21,7 +21,7 @@ public class ChineseSegmentationTest {
 
     @Test
     public void testChineseSegmentation() {
-        var parameters = new LinguisticsParameters("default", true, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters(null, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true, true);
 
         var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).build());
         List<String> tokens;
@@ -45,7 +45,7 @@ public class ChineseSegmentationTest {
 
     @Test
     public void testChineseSegmentationWithoutGrams() {
-        var parameters = new LinguisticsParameters("default", true, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters(null, Language.CHINESE_SIMPLIFIED, StemMode.ALL, true, true);
 
         var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).createCjkGrams(false).build());
         List<String> tokens;
@@ -69,7 +69,7 @@ public class ChineseSegmentationTest {
 
     @Test
     public void testOtherLanguagesWorksAsUsualWithChineseSegmentation() {
-        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, true, true);
 
         var tester = new OpenNlpLinguisticsTester(new OpenNlpConfig.Builder().cjk(true).build());
         List<String> tokens;

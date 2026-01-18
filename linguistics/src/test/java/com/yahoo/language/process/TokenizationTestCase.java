@@ -85,7 +85,7 @@ public class TokenizationTestCase {
 
         int numTokens = 0;
         List<Long> pos = new ArrayList<>();
-        var parameters = new LinguisticsParameters("default", false, Language.ENGLISH, StemMode.NONE, false, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true);
         for (Token t : tokenizer.tokenize(input, parameters)) {
             numTokens++;
             if ((numTokens % 100) == 0) {
@@ -103,7 +103,7 @@ public class TokenizationTestCase {
         for (int i = 0; i < 128 * 256; i++) {
             str.append("ab");
         }
-        var parameters = new LinguisticsParameters("default", false, Language.ENGLISH, StemMode.NONE, false, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true);
         Iterator<Token> it = tokenizer.tokenize(str.toString(), parameters).iterator();
         assertTrue(it.hasNext());
         assertNotNull(it.next().getTokenString());
@@ -112,7 +112,7 @@ public class TokenizationTestCase {
 
     @Test
     public void testTokenIterator() {
-        var parameters = new LinguisticsParameters("default", false, Language.ENGLISH, StemMode.NONE, false, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true);
         Iterator<Token> it = tokenizer.tokenize("", parameters).iterator();
         assertFalse(it.hasNext());
         try {
@@ -136,7 +136,7 @@ public class TokenizationTestCase {
 
     @Test
     public void testGetOffsetLength() {
-        var parameters = new LinguisticsParameters("default", false, Language.GERMAN, StemMode.SHORTEST, false, true);
+        var parameters = new LinguisticsParameters(null, Language.GERMAN, StemMode.SHORTEST, false, true);
         String input = "Deka-Chef Weber r\u00e4umt Kommunikationsfehler ein";
         long[] expOffset = { 0, 4, 5, 9, 10, 15, 16, 21, 22, 42, 43 };
         int[] len = { 4, 1, 4, 1, 5, 1, 5, 1, 20, 1, 3 };
@@ -151,7 +151,7 @@ public class TokenizationTestCase {
 
     @Test
     public void testRecursiveDecompose() {
-        var parameters = new LinguisticsParameters("default", false, Language.ENGLISH, StemMode.SHORTEST, false, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.SHORTEST, false, true);
         for (Token t : tokenizer.tokenize("\u00a510%", parameters)) {
             recurseDecompose(t);
         }
@@ -165,7 +165,7 @@ public class TokenizationTestCase {
             for (Language l : new Language[] { Language.INDONESIAN,
                     Language.ENGLISH, Language.ARABIC }) {
                 for (boolean accentDrop : new boolean[] { true, false }) {
-                    var parameters = new LinguisticsParameters("default", false, l, stemMode, accentDrop, true);
+                    var parameters = new LinguisticsParameters(null, l, stemMode, accentDrop, true);
                     for (Token token : tokenizer.tokenize(input, parameters)) {
                         if (token.getTokenString().isEmpty()) {
                             assertFalse(token.isIndexable());
@@ -215,7 +215,7 @@ public class TokenizationTestCase {
      */
     private void assertTokenize(String input, Language language, StemMode stemMode, boolean accentDrop,
                                 List<String> indexed, List<String> orig) {
-        var parameters = new LinguisticsParameters("default", false, language, stemMode, accentDrop, true);
+        var parameters = new LinguisticsParameters(null, language, stemMode, accentDrop, true);
         int i = 0;
         int j = 0;
         for (Token token : tokenizer.tokenize(input, parameters)) {

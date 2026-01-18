@@ -596,12 +596,11 @@
       "record"
     ],
     "methods" : [
-      "public void <init>(java.lang.String, boolean, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean, boolean)",
+      "public void <init>(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean, boolean)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
-      "public java.lang.String field()",
-      "public boolean query()",
+      "public java.lang.String profile()",
       "public com.yahoo.language.Language language()",
       "public com.yahoo.language.process.StemMode stemMode()",
       "public boolean removeAccents()",

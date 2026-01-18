@@ -71,7 +71,8 @@ public class WordPieceEmbedder implements Embedder, Segmenter {
     @Override
     public List<Integer> embed(String text, Context context) {
         return resolveModelFrom(context.getLanguage()).embed(text, tokenizer,
-                                                             new LinguisticsParameters(context.getDestination(), false, context.getLanguage(),
+                                                             new LinguisticsParameters(null,
+                                                                                       context.getLanguage(),
                                                                                        StemMode.ALL, true, true));
     }
 

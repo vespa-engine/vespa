@@ -27,7 +27,7 @@ public interface Segmenter {
      */
     @Deprecated // TODO: Remove on Vespa 9
     default List<String> segment(String input, Language language) {
-        return segment(input, new LinguisticsParameters("", true, language, StemMode.NONE, false, false));
+        return segment(input, new LinguisticsParameters(null, language, StemMode.NONE, false, false));
     }
 
     /**

@@ -2,11 +2,9 @@
 package com.yahoo.language.lucene;
 
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.language.Language;
+import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.LinguisticsParameters;
-import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
-import com.yahoo.language.process.TokenScript;
 import com.yahoo.language.process.TokenType;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleToken;
@@ -31,22 +29,20 @@ class LuceneTokenizer implements Tokenizer {
     // Dummy value, just to stuff the Lucene interface.
     private final static String FIELD_NAME = "F";
 
-    private final AnalyzerFactory analyzerFactory;
+    private final Analyzers analyzers;
 
     public LuceneTokenizer(LuceneAnalysisConfig config) {
         this(config, new ComponentRegistry<>());
     }
-    public LuceneTokenizer(LuceneAnalysisConfig config, ComponentRegistry<Analyzer> analyzers) {
-        this.analyzerFactory = new AnalyzerFactory(config, analyzers);
+    public LuceneTokenizer(LuceneAnalysisConfig config, ComponentRegistry<Analyzer> analyzerComponents) {
+        this.analyzers = new Analyzers(config, analyzerComponents);
     }
 
     @Override
     public Iterable<Token> tokenize(String input, LinguisticsParameters parameters) {
         if (input.isEmpty()) return List.of();
 
-        List<Token> tokens = textToTokens(input, analyzerFactory.getAnalyzer(parameters.language(),
-                                                                             parameters.stemMode(),
-                                                                             parameters.removeAccents()));
+        List<Token> tokens = textToTokens(input, analyzers.getAnalyzer(parameters));
         log.log(Level.FINEST, () -> "Tokenized '" + parameters.language() +
                                     "' text='" + input + "' into: n=" + tokens.size() + ", tokens=" + tokens);
         return tokens;
@@ -89,6 +85,12 @@ class LuceneTokenizer implements Tokenizer {
     private boolean isAtSamePositionAs(Token token, OffsetAttribute offsetAttribute) {
         if (token == null) return false;
         return offsetAttribute.startOffset() == token.getOffset();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        // Config actually determines if Linguistics are equal
+        return (other instanceof LuceneTokenizer) && analyzers.equals(((LuceneTokenizer) other).analyzers);
     }
 
 }

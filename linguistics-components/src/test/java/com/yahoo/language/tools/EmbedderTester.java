@@ -55,9 +55,9 @@ public class EmbedderTester {
     }
 
     public void assertSegmented(Language language, String input, String... expectedSegments) {
-        List<String> segments = ((Segmenter)embedder).segment(input, new LinguisticsParameters("", false, language, StemMode.NONE, false, true));
+        List<String> segments = ((Segmenter)embedder).segment(input, new LinguisticsParameters(null, language, StemMode.NONE, false, true));
         assertArrayEquals("Actual segments: " + segments,
-                          expectedSegments, ((Segmenter)embedder).segment(input, new LinguisticsParameters("", false, language, StemMode.NONE, false, true)).toArray());
+                          expectedSegments, ((Segmenter)embedder).segment(input, new LinguisticsParameters(null, language, StemMode.NONE, false, true)).toArray());
     }
 
     public void assertDecoded(String input) {

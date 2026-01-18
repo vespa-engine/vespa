@@ -375,9 +375,13 @@ public abstract class AbstractParser implements CustomParser {
             return new WordItem(normalizedToken, true, token.substring);
         }
 
-
         Segmenter segmenter = environment.getLinguistics().getSegmenter();
-        List<String> segments = segmenter.segment(normalizedToken, new LinguisticsParameters(indexName, true, language, StemMode.NONE, false, false));
+        List<String> segments = segmenter.segment(normalizedToken,
+                                                  new LinguisticsParameters(linguisticsProfileFor(indexName),
+                                                                            language,
+                                                                            StemMode.NONE,
+                                                                            false,
+                                                                            false));
         if (segments.isEmpty()) {
             return null;
         }
@@ -419,6 +423,15 @@ public abstract class AbstractParser implements CustomParser {
             case phrase  -> new PhraseItem();
             case weakAnd -> new WeakAndItem();
         };
+    }
+
+    protected String linguisticsProfileFor(String field) {
+        String queryAssignedProfile = environment.getType().getProfile();
+        if (queryAssignedProfile != null) return queryAssignedProfile;
+        if (indexFacts == null) return null;
+        Index index = indexFacts.getIndex(field);
+        if (index == null) return null;
+        return index.getLinguisticsProfile();
     }
 
 }

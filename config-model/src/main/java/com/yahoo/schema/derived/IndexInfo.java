@@ -45,6 +45,7 @@ public class IndexInfo extends Derived {
     private static final String CMD_INDEX = "index";
     private static final String CMD_LOWERCASE = "lowercase";
     private static final String CMD_NORMALIZE = "normalize";
+    private static final String CMD_LINGUISTICS_PROFILE = "linguistics-profile";
     private static final String CMD_STEM = "stem";
     private static final String CMD_URLHOST = "urlhost";
     private static final String CMD_WORD = "word";
@@ -170,6 +171,9 @@ public class IndexInfo extends Derived {
             }
             if (normalizeAccents(field)) {
                 addIndexCommand(field, CMD_NORMALIZE);
+            }
+            if (field.getSearchLinguisticsProfile() != null) {
+                addIndexCommand(field, CMD_LINGUISTICS_PROFILE + " " + field.getSearchLinguisticsProfile());
             }
             if (field.getMatching() == null || field.getMatching().getType().equals(MatchType.TEXT)) {
                 addIndexCommand(field, CMD_PLAIN_TOKENS);

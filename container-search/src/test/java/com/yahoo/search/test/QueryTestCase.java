@@ -95,7 +95,7 @@ public class QueryTestCase {
         String body = "a bb. ccc??!";
         Linguistics linguistics = new SimpleLinguistics();
 
-        var parameters = new LinguisticsParameters("default", true, Language.ENGLISH, StemMode.SHORTEST, true, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.SHORTEST, true, true);
         AndItem and = new AndItem();
         for (Token token : linguistics.getTokenizer().tokenize(body, parameters)) {
             if (token.isIndexable())
@@ -1407,6 +1407,10 @@ public class QueryTestCase {
         }
     }
 
+    private String parse(String yql, Linguistics linguistics) {
+        return parse(yql, linguistics, new QueryProfile("test"));
+    }
+
     private String parse(String yql, Linguistics linguistics, QueryProfile profile) {
         var query = new Query(httpEncode("?yql=" + yql), profile.compile(null));
         var result = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub(null, linguistics)).search(query);
@@ -1507,6 +1511,21 @@ public class QueryTestCase {
         Query q = new Query(httpEncode("?query=a b -c&model.type=linguistics"), cRegistry.findQueryProfile("default"));
     }
 
+    @Test
+    void testLinguisticsProfiles() {
+        var mockLinguistics = new MockTokenizerLinguistics();
+
+        parse("select * from sources * where {grammar.profile:'p1'}userInput('hello world')", mockLinguistics);
+        assertEquals("p1", mockLinguistics.lastLinguisticsProfile);
+
+        var profile = new QueryProfile("test");
+        profile.set("model.type.isYqlDefault", true, null);
+        profile.set("model.type.profile", "p2", null);
+        parse("select * from sources * where userInput('hello world')", mockLinguistics, profile);
+        assertEquals("p2", mockLinguistics.lastLinguisticsProfile);
+
+    }
+
     private QueryType type(String type) {
         return QueryType.from(type);
     }
@@ -1560,33 +1579,36 @@ public class QueryTestCase {
 
     private static class MockTokenizerLinguistics extends SimpleLinguistics {
 
+        String lastLinguisticsProfile = null;
+
         @Override
         public Tokenizer getTokenizer() { return new MockTokenizer(); }
 
         @Override
         public boolean equals(Linguistics other) { return (other instanceof MockTokenizerLinguistics); }
 
-    }
+        private class MockTokenizer extends SimpleTokenizer {
 
-    private static class MockTokenizer extends SimpleTokenizer {
-
-        @Override
-        public Iterable<Token> tokenize(String input, LinguisticsParameters parameters) {
-            List<Token> tokens = new ArrayList<>();
-            for (String token : input.split(" ")) {
-                if (token.isBlank()) continue;
-                if (token.equals("color")) {
-                    tokens.add(SimpleToken.fromStems("color", List.of("color", "colour")));
+            @Override
+            public Iterable<Token> tokenize(String input, LinguisticsParameters parameters) {
+                lastLinguisticsProfile = parameters.profile();
+                List<Token> tokens = new ArrayList<>();
+                for (String token : input.split(" ")) {
+                    if (token.isBlank()) continue;
+                    if (token.equals("color")) {
+                        tokens.add(SimpleToken.fromStems("color", List.of("color", "colour")));
+                    }
+                    else if (token.equals("color-red")) {
+                        tokens.add(SimpleToken.fromStems("color", List.of("color", "colour")));
+                        tokens.add(SimpleToken.fromStems("red", List.of("red")));
+                    }
+                    else {
+                        tokens.add(SimpleToken.fromStems(token, List.of(token)));
+                    }
                 }
-                else if (token.equals("color-red")) {
-                    tokens.add(SimpleToken.fromStems("color", List.of("color", "colour")));
-                    tokens.add(SimpleToken.fromStems("red", List.of("red")));
-                }
-                else {
-                    tokens.add(SimpleToken.fromStems(token, List.of(token)));
-                }
+                return tokens;
             }
-            return tokens;
+
         }
 
     }

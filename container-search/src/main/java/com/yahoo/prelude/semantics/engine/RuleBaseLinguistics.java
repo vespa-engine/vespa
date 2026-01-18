@@ -45,7 +45,7 @@ public class RuleBaseLinguistics {
     /** Processes this term according to the linguistics of this rule base */
     public String process(String label, String term) {
         if (stemMode == StemMode.NONE) return term;
-        var parameters = new LinguisticsParameters(label, true, language, StemMode.SHORTEST, true, true);
+        var parameters = new LinguisticsParameters(null, language, StemMode.SHORTEST, true, true);
         List<StemList> stems = linguistics.getStemmer().stem(term, parameters);
         if (stems.isEmpty()) return term;
         if (stems.get(0).isEmpty()) return term;
