@@ -35,7 +35,7 @@ public:
     uint64_t getAnonymousRss() const { return _anonymous_rss; }
     bool similarTo(const ProcessMemoryStats &rhs, double epsilon) const;
     std::string toString() const;
-    bool operator < (const ProcessMemoryStats & rhs) const { return _anonymous_rss < rhs._anonymous_rss; }
+    bool operator < (const ProcessMemoryStats & rhs) const noexcept { return _anonymous_rss < rhs._anonymous_rss; }
 
     /** for unit tests only */
     ProcessMemoryStats(uint64_t, uint64_t, uint64_t);

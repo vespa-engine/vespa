@@ -84,7 +84,7 @@ private:
         GetHandler *handler;
         BindState(uint64_t handle_in, std::string prefix_in, GetHandler &handler_in) noexcept
             : handle(handle_in), prefix(std::move(prefix_in)), handler(&handler_in) {}
-        bool operator<(const BindState &rhs) const {
+        bool operator<(const BindState &rhs) const noexcept {
             if (prefix.size() == rhs.prefix.size()) {
                 return (handle > rhs.handle);
             }

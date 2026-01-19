@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdarg>
+#include <cstdint>
 #include <memory>
 #include <new>         // for placement new
 #include <sys/types.h> // for pid_t

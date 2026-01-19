@@ -54,7 +54,7 @@ struct CmpNode {
     bool false_is_default;
     CmpNode(float v, uint32_t t, BitRange m, bool f_def) noexcept
         : value(v), tree_id(t), false_mask(m), false_is_default(f_def) {}
-    bool operator<(const CmpNode &rhs) const {
+    bool operator<(const CmpNode &rhs) const noexcept {
         return (value < rhs.value);
     }
     ~CmpNode() = default;

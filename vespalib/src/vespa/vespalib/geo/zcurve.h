@@ -174,7 +174,7 @@ public:
         int64_t max() const { return _max; }
         void min(int64_t value) { _min = value; }
         void max(int64_t value) { _max = value; }
-        bool operator<(const Range &rhs) const { return (_min < rhs._min); }
+        bool operator<(const Range &rhs) const noexcept { return (_min < rhs._min); }
     };
     using RangeVector = std::vector<Range>;
 
