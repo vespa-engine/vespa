@@ -32,9 +32,10 @@ bool FSAManager::load(const std::string &id, const std::string &url)
   {
     unsigned int pos=url.find_last_of('/');
     if(pos==url.size()-1) return false;
-    _cacheLock.lock();
-    file=_cacheDir;
-    _cacheLock.unlock();
+    {
+      std::lock_guard guard(_cacheLock);
+      file = _cacheDir;
+    }
     if(file.size()>0 && file[file.size()-1]!='/') file+='/';
     file+=url.substr(pos+1);
     if(!getUrl(url,file)) return false;
@@ -118,9 +119,8 @@ void FSAManager::clear()
 
 void FSAManager::setCacheDir(const std::string &dir)
 {
-  _cacheLock.lock();
+  std::lock_guard guard(_cacheLock);
   _cacheDir = dir;
-  _cacheLock.unlock();
 }
 
 // }}}

@@ -55,7 +55,7 @@ private:
   Library           _library;    /**< Library of automata.                         */
   mutable std::shared_mutex    _lock;       /**< Read-write lock for library synchronization. */
   std::string       _cacheDir;   /**< Cache directory.                             */
-  mutable Mutex     _cacheLock;  /**< Mutex for cache synchronization.             */
+  mutable std::mutex _cacheLock;  /**< Mutex for cache synchronization.             */
 
   /**
    * @brief Fetch an automaton from the net.
