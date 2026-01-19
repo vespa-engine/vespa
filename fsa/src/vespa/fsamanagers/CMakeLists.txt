@@ -22,7 +22,6 @@ install(FILES
     metadatahandle.h
     metadatamanager.h
     mutex.h
-    refcountable.h
     rwlock.h
     singleton.h
     DESTINATION include/vespa/fsamanagers)
