@@ -6,7 +6,7 @@ import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
-import static ai.vespa.embedding.config.VoyageAiEmbedderConfig.DefaultInputType;
+import static ai.vespa.embedding.config.VoyageAiEmbedderConfig.InputTypeOverride;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 
@@ -20,7 +20,7 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  *   <model>voyage-3</model>
  *   <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
  *   <endpoint>https://api.voyageai.com/v1/embeddings</endpoint>
- *   <auto-detect-input-type>true</auto-detect-input-type>
+ *   <input-type-override>auto</input-type-override>
  * </component>
  * }</pre>
  *
@@ -44,16 +44,11 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
     private final String endpoint;
     private final String model;
     /**
-     * Default input type (query vs document) used when auto-detection is disabled.
+     * Input type override: "auto" (detect from context), "query", or "document".
      * VoyageAI optimizes embeddings differently based on whether the text is a search query
-     * or a document to be indexed.
+     * or a document to be indexed. When set to "auto", automatically detects from context destination.
      */
-    private final String defaultInputType;
-    /**
-     * When true, automatically detects input type from the Embedder.Context destination.
-     * If the destination contains "query", it uses "query" type; otherwise "document" type.
-     */
-    private final Boolean autoDetectInputType;
+    private final String inputTypeOverride;
     private final Boolean truncate;
 
     @SuppressWarnings("unused") // cluster and state parameters required by Vespa component framework
@@ -72,8 +67,7 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
 
         // Optional fields with defaults
         this.endpoint = getChildValue(xml, "endpoint").orElse(null);
-        this.defaultInputType = getChildValue(xml, "default-input-type").orElse(null);
-        this.autoDetectInputType = getChildValue(xml, "auto-detect-input-type").map(Boolean::parseBoolean).orElse(null);
+        this.inputTypeOverride = getChildValue(xml, "input-type-override").orElse(null);
         this.truncate = getChildValue(xml, "truncate").map(Boolean::parseBoolean).orElse(null);
 
         // Validate configuration
@@ -84,11 +78,11 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
      * Validate configuration values.
      */
     public void validate() {
-        if (defaultInputType != null) {
-            String type = defaultInputType.toLowerCase();
-            if (!type.equals("query") && !type.equals("document")) {
+        if (inputTypeOverride != null) {
+            String type = inputTypeOverride.toLowerCase();
+            if (!type.equals("auto") && !type.equals("query") && !type.equals("document")) {
                 throw new IllegalArgumentException(
-                        "default-input-type must be 'query' or 'document', got: " + defaultInputType);
+                        "input-type-override must be 'auto', 'query' or 'document', got: " + inputTypeOverride);
             }
         }
 
@@ -109,11 +103,8 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         if (endpoint != null) {
             builder.endpoint(endpoint);
         }
-        if (defaultInputType != null) {
-            builder.defaultInputType(DefaultInputType.Enum.valueOf(defaultInputType.toLowerCase()));
-        }
-        if (autoDetectInputType != null) {
-            builder.autoDetectInputType(autoDetectInputType);
+        if (inputTypeOverride != null) {
+            builder.inputTypeOverride(InputTypeOverride.Enum.valueOf(inputTypeOverride.toLowerCase()));
         }
         if (truncate != null) {
             builder.truncate(truncate);

@@ -176,11 +176,12 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     }
 
     private String detectInputType(Context context) {
-        if (!config.autoDetectInputType()) {
-            return config.defaultInputType().toString().toLowerCase();
+        String override = config.inputTypeOverride().toString().toLowerCase();
+        if (!override.equals("auto")) {
+            return override;  // "query" or "document"
         }
 
-        // Use context destination to determine type
+        // Auto-detect from context destination
         String destination = context.getDestination();
         if (destination != null && destination.toLowerCase().contains("query")) {
             return "query";

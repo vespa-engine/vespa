@@ -34,8 +34,7 @@ public class VoyageAIEmbedderTest {
         assertEquals("voyage-3.5", config.model());
         assertEquals("voyage_api_key", config.apiKeySecretRef());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint());
-        assertEquals(VoyageAiEmbedderConfig.DefaultInputType.Enum.query, config.defaultInputType());
-        assertFalse(config.autoDetectInputType());
+        assertEquals(VoyageAiEmbedderConfig.InputTypeOverride.Enum.query, config.inputTypeOverride());
         assertTrue(config.truncate());
     }
 
@@ -54,8 +53,7 @@ public class VoyageAIEmbedderTest {
         assertEquals("voyage-3.5", config.model());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint()); // Default endpoint
         assertEquals(3, config.maxRetries()); // Default retries
-        assertEquals(VoyageAiEmbedderConfig.DefaultInputType.Enum.document, config.defaultInputType());
-        assertTrue(config.autoDetectInputType()); // Default auto-detect
+        assertEquals(VoyageAiEmbedderConfig.InputTypeOverride.Enum.auto, config.inputTypeOverride()); // Default auto-detect
         assertTrue(config.truncate()); // Default truncate
     }
 
@@ -87,15 +85,15 @@ public class VoyageAIEmbedderTest {
                         <component id="voyage" type="voyage-ai-embedder">
                             <model>voyage-3</model>
                             <api-key-secret-ref>key</api-key-secret-ref>
-                            <default-input-type>invalid</default-input-type>
+                            <input-type-override>invalid</input-type-override>
                         </component>
                     </container>
                 </services>
                 """;
 
-        // Should fail because input type must be 'query' or 'document'
+        // Should fail because input type must be 'auto', 'query' or 'document'
         Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
-        assertTrue(exception.getMessage().contains("default-input-type"));
+        assertTrue(exception.getMessage().contains("input-type-override"));
     }
 
     @Test

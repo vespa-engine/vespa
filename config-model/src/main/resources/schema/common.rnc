@@ -159,8 +159,7 @@ VoyageAIEmbedder =
    element model { xsd:string } &
    element api-key-secret-ref { xsd:string } &
    element endpoint { xsd:string }? &
-   element default-input-type { "query" | "document" }? &
-   element auto-detect-input-type { xsd:boolean }? &
+   element input-type-override { "auto" | "query" | "document" }? &
    element truncate { xsd:boolean }?
 
 OnnxModelExecutionParams =

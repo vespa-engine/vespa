@@ -10,8 +10,7 @@
             <model>voyage-3.5</model>
             <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
             <endpoint>https://api.voyageai.com/v1/embeddings</endpoint>
-            <default-input-type>query</default-input-type>
-            <auto-detect-input-type>false</auto-detect-input-type>
+            <input-type-override>query</input-type-override>
             <truncate>true</truncate>
         </component>
 

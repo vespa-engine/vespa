@@ -23,11 +23,8 @@ timeout int default=60000
 
 # Input Processing
 
-# Default input type when auto-detection is disabled
-defaultInputType enum { query, document } default=document
-
-# Automatically detect input type from Context (query vs document)
-autoDetectInputType bool default=true
+# Input type: auto-detect from context, or force specific type (query/document)
+inputTypeOverride enum { auto, query, document } default=auto
 
 # Truncate inputs that exceed model's maximum token limit
 truncate bool default=true
