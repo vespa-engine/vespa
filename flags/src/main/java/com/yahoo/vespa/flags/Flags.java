@@ -15,7 +15,9 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
+import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
+import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
@@ -418,7 +420,7 @@ public class Flags {
             "the memory reserved for host's management processes. " +
             "0.0 means none at all, 1.0 means the sum of the memory limits.",
             "Affects future deployments, JVM settings for new config server Podman containers, auto scaling modelling.",
-            INSTANCE_ID
+            TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
