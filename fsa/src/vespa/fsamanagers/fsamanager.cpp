@@ -46,7 +46,7 @@ bool FSAManager::load(const std::string &id, const std::string &url)
     return false;
   }
 
-  _lock.wrLock();
+  std::lock_guard guard(_lock);
   {
     LibraryIterator it = _library.find(id);
     if(it!=_library.end()){
@@ -56,7 +56,6 @@ bool FSAManager::load(const std::string &id, const std::string &url)
     else
       _library.insert(Library::value_type(id,newdict));
   }
-  _lock.unlock();
 
   return true;
 }
@@ -76,14 +75,13 @@ bool FSAManager::getUrl(const std::string &url, const std::string &file)
 FSA::Handle* FSAManager::get(const std::string &id) const
 {
   FSA::Handle *newhandle=nullptr;
-  _lock.rdLock();
+  std::shared_lock guard(_lock);
   {
     LibraryConstIterator it = _library.find(id);
     if(it!=_library.end()){
       newhandle = new FSA::Handle(*(it->second));
     }
   }
-  _lock.unlock();
   return newhandle;
 }
 
@@ -92,7 +90,7 @@ FSA::Handle* FSAManager::get(const std::string &id) const
 
 void FSAManager::drop(const std::string &id)
 {
-  _lock.wrLock();
+  std::lock_guard guard(_lock);
   {
     LibraryIterator it = _library.find(id);
     if(it!=_library.end()){
@@ -100,7 +98,6 @@ void FSAManager::drop(const std::string &id)
       _library.erase(it);
     }
   }
-  _lock.unlock();
 }
 
 // }}}
@@ -108,13 +105,12 @@ void FSAManager::drop(const std::string &id)
 
 void FSAManager::clear()
 {
-  _lock.wrLock();
+  std::lock_guard guard(_lock);
   {
     for(LibraryIterator it = _library.begin(); it!=_library.end(); ++it)
       delete it->second;
     _library.clear();
   }
-  _lock.unlock();
 }
 
 // }}}

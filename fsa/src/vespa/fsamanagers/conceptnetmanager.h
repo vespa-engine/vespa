@@ -11,9 +11,9 @@
 #pragma once
 
 #include "conceptnethandle.h"
-#include "rwlock.h"
 #include "singleton.h"
 #include <map>
+#include <shared_mutex>
 #include <string>
 
 namespace fsa {
@@ -50,7 +50,7 @@ private:
   using LibraryConstIterator = std::map<std::string,ConceptNet::Handle*>::const_iterator;
 
   Library           _library;    /**< Library of concept networks.                 */
-  mutable RWLock    _lock;       /**< Read-write lock for library synchronization. */
+  mutable std::shared_mutex    _lock;       /**< Read-write lock for library synchronization. */
 
 public:
 
