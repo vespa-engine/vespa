@@ -18,4 +18,13 @@ public record LinguisticsParameters(String profile,
                                     StemMode stemMode,
                                     boolean removeAccents,
                                     boolean lowercase) {
+
+    /** Construct parameters with no profile. */
+    public LinguisticsParameters(Language language,
+                                 StemMode stemMode,
+                                 boolean removeAccents,
+                                 boolean lowercase) {
+        this(null, language, stemMode, removeAccents, lowercase);
+    }
+
 }
