@@ -3,6 +3,7 @@
 
 #include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
+#include <cstdint>
 #include <string>
 
 namespace storage::lib { class NodeType; }

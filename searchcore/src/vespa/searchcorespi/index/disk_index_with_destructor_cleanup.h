@@ -4,6 +4,7 @@
 
 #include "idiskindex.h"
 #include "index_disk_dir.h"
+#include <mutex>
 
 namespace searchcorespi::index {
 

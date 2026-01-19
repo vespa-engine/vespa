@@ -50,7 +50,7 @@ public:
     int32_t getWeight()  const { return _weight; }
     int32_t weight()  const { return _weight; }
     void setWeight(int32_t w)  { _weight = w; }
-    bool operator==(const WeightedType & rhs) const {
+    bool operator==(const WeightedType & rhs) const noexcept {
         return _value == rhs._value && _weight == rhs._weight;
     }
 };

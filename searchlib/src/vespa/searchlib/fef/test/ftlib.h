@@ -130,10 +130,10 @@ struct FtQueryTerm {
     search::query::Weight termWeight;
     feature_t connexity;
     feature_t significance;
-    bool operator<(const FtQueryTerm & rhs) const {
+    bool operator<(const FtQueryTerm & rhs) const noexcept {
         return term < rhs.term;
     }
-    bool operator==(const FtQueryTerm & rhs) const {
+    bool operator==(const FtQueryTerm & rhs) const noexcept {
         return term == rhs.term;
     }
 };

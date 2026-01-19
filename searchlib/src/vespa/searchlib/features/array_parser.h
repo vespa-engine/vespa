@@ -30,7 +30,7 @@ public:
         ValueAndIndex(T value, uint32_t index) noexcept : _value(value), _index(index) { }
         T getValue() const { return _value; }
         uint32_t getIndex() const { return _index; }
-        bool operator < (const ValueAndIndex & b) const { return _index < b._index; }
+        bool operator < (const ValueAndIndex & b) const noexcept { return _index < b._index; }
     private:
         T        _value;
         uint32_t _index;

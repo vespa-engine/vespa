@@ -70,7 +70,7 @@ public:
              uint32_t fieldId,
              uint32_t elementId, uint32_t wordPos,
              uint64_t wordNum,
-             uint32_t elementLen, int32_t elementWeight)
+             uint32_t elementLen, int32_t elementWeight) noexcept
         : _docId(docId),
           _fieldId(fieldId),
           _wordNum(wordNum),
@@ -82,7 +82,7 @@ public:
     }
 
     bool
-    operator<(const PosEntry &rhs) const
+    operator<(const PosEntry &rhs) const noexcept
     {
         if (_docId != rhs._docId)
             return _docId < rhs._docId;
