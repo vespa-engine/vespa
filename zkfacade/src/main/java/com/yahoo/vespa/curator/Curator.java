@@ -314,7 +314,7 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         //
         // This recursion is believed to be the cause of an incident:
         //   1. Each of the 3 config servers had a PathChildrenCache (PCC) on `/config/v2/tenants/TENANT/sessions`,
-        //      and one on `/config/v2/tenants//TENANT/applications`.
+        //      and one on `/config/v2/tenants/TENANT/applications`.
         //   2. On config server "cfg1" the tenant was deleted, so the two PCCs were closed and TENANT was deleted.
         //   3. But because the other two cfgs have PCCs on sessions and applications, the PCC will compete to
         //      recreate these nodes via watchers.  Each time cfg1 tried to delete TENANT after one of these 4 PCC
@@ -325,14 +325,14 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         //
         // This implementation uses iteration instead of recursion on NotEmptyException.
 
-        while (true) {
+        for (int attempt = 1;; attempt++) {
             final List<String> children;
             try {
                 children = framework().getChildren().forPath(path.getAbsolute());
             } catch (KeeperException.NoNodeException e) {
                 return;
             } catch (Exception e) {
-                throw new RuntimeException("Could not get children of " + path.getAbsolute());
+                throw new RuntimeException("Could not get children of " + path.getAbsolute(), e);
             }
 
             for (var child : children) {
@@ -344,6 +344,9 @@ public class Curator extends AbstractComponent implements AutoCloseable {
                 return;
             } catch (KeeperException.NotEmptyException e) {
                 // retry by iteration
+                if (attempt % 1000 == 0) {
+                    LOG.warning("Have made " + attempt + " attempts to delete " + path.getAbsolute() + ": still trying");
+                }
             } catch (Exception e) {
                 throw new RuntimeException("Could not delete " + path.getAbsolute(), e);
             }
