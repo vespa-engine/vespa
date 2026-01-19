@@ -613,6 +613,7 @@
       "record"
     ],
     "methods" : [
+      "public void <init>(com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean, boolean)",
       "public void <init>(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean, boolean)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
