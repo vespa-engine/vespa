@@ -229,6 +229,8 @@ public class EmbedExpression extends Expression  {
             return embedder.component().embed(input, embedderContext, targetType);
         } catch (com.yahoo.language.process.OverloadException e) {
             throw new OverloadException(e.getMessage(), e);
+        } catch (com.yahoo.language.process.TimeoutException e) {
+            throw new TimeoutException(e.getMessage(), e);
         }
     }
 

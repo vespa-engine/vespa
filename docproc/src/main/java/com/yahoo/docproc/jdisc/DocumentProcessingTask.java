@@ -148,6 +148,11 @@ public class DocumentProcessingTask implements Runnable {
                         () -> "Overload/busy for '" + processing + "' at " + processing.callStack().getLastPopped());
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_BUSY,
                                                 progress.getReason().orElse("Document processing rejected due to overload."));
+            } else if (DocumentProcessor.Progress.TIMEOUT.equals(progress)) {
+                log.log(Level.FINE,
+                        () -> "Timeout for '" + processing + "' at " + processing.callStack().getLastPopped());
+                requestContext.processingFailed(RequestContext.ErrorCode.ERROR_TIMEOUT,
+                                                progress.getReason().orElse("Document processing timed out."));
                 return progress;
             }
         }

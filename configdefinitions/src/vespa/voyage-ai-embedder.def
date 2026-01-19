@@ -18,6 +18,9 @@ model                    string
 # Maximum number of retry attempts for failed requests
 maxRetries int default=3
 
+# HTTP client timeout in milliseconds for read/write operations
+timeout int default=60000
+
 # Input Processing
 
 # Default input type when auto-detection is disabled

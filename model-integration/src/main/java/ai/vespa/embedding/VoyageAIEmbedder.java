@@ -13,6 +13,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.OverloadException;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -48,9 +49,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private static final String EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/embeddings";
     private static final String MULTIMODAL_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/multimodalembeddings";
     private static final String CONTEXTUALIZED_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/contextualizedembeddings";
-
-    private static final int READ_WRITE_TIMEOUT_SECONDS = 60;
-    private static final long TOTAL_TIMEOUT_MS = READ_WRITE_TIMEOUT_SECONDS * 1000;
 
     // Configuration
     private final VoyageAiEmbedderConfig config;
@@ -133,8 +131,8 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 .addInterceptor(new RetryInterceptor(config.maxRetries()))
                 .retryOnConnectionFailure(true)
                 .connectTimeout(Duration.ofSeconds(10))
-                .readTimeout(Duration.ofSeconds(READ_WRITE_TIMEOUT_SECONDS))
-                .writeTimeout(Duration.ofSeconds(READ_WRITE_TIMEOUT_SECONDS))
+                .readTimeout(Duration.ofMillis(config.timeout()))
+                .writeTimeout(Duration.ofMillis(config.timeout()))
                 .connectionPool(new ConnectionPool(10, 1, TimeUnit.MINUTES))
                 .build();
     }
@@ -321,6 +319,10 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             } else {
                 throw new RuntimeException("VoyageAI API request failed with status " + response.code() + ": " + responseBody);
             }
+        } catch (java.io.InterruptedIOException e) {
+            // Covers both OkHttp timeout (InterruptedIOException) and socket timeout (SocketTimeoutException extends InterruptedIOException)
+            throw new TimeoutException(
+                    "VoyageAI API call timed out after " + timeoutMs + "ms", e);
         } catch (IOException e) {
             throw new RuntimeException("VoyageAI API call failed: " + e.getMessage(), e);
         }
@@ -329,8 +331,10 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private long calculateTimeoutMs(Context context, long startTime) {
         long remainingMs = context.getDeadline().isPresent()
                 ? context.getDeadline().get().timeRemaining().toMillis()
-                : TOTAL_TIMEOUT_MS - (System.currentTimeMillis() - startTime);
-        if (remainingMs <= 0) throw new RuntimeException("Request timeout exceeded before API call");
+                : config.timeout() - (System.currentTimeMillis() - startTime);
+        if (remainingMs <= 0) {
+            throw new TimeoutException("Request deadline exceeded before VoyageAI API call");
+        }
         return remainingMs;
     }
 

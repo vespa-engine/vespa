@@ -5,6 +5,7 @@ import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import ai.vespa.secret.Secrets;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.InvocationContext;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import okhttp3.mockwebserver.MockResponse;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -145,6 +147,60 @@ public class VoyageAIEmbedderTest {
     }
 
     @Test
+    public void testThrowsTimeoutExceptionOnSocketTimeout() {
+        // Configure mock server with slow response to trigger socket timeout
+        mockServer.enqueue(new MockResponse()
+                .setBodyDelay(1, TimeUnit.SECONDS)
+                .setBody("{\"data\":[{\"embedding\":[0.1,0.2,0.3,0.4]}]}"));
+
+        // Create embedder with 100ms timeout to trigger timeout quickly
+        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
+        configBuilder.apiKeySecretRef("test_key");
+        configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
+        configBuilder.model("voyage-3");
+        configBuilder.timeout(100); // 100ms timeout
+        embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
+
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+
+        var exception = assertThrows(TimeoutException.class, () -> embedder.embed("test", context, targetType));
+
+        var message = exception.getMessage();
+        assertTrue(message.contains("VoyageAI API call timed out after"), "Expected message to contain 'VoyageAI API call timed out after', got: " + message);
+        assertTrue(message.contains("ms"), "Expected message to contain 'ms', got: " + message);
+
+        assertNotNull(exception.getCause());
+        assertTrue(exception.getCause() instanceof java.io.InterruptedIOException
+                || exception.getCause() instanceof java.net.SocketTimeoutException);
+
+        // Verify only 1 request was made (no retries on timeout)
+        assertEquals(1, mockServer.getRequestCount());
+    }
+
+    @Test
+    public void testThrowsTimeoutExceptionOnExpiredDeadline() {
+        embedder = createEmbedder();
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+
+        // Create context with already-expired deadline
+        var context = new Embedder.Context("test-embedder")
+                .setDeadline(com.yahoo.language.process.InvocationContext.Deadline.of(
+                        java.time.Instant.now().minusSeconds(1)));
+
+        // Should throw TimeoutException before making HTTP request
+        var exception = assertThrows(
+                TimeoutException.class,
+                () -> embedder.embed("test", context, targetType)
+        );
+
+        assertEquals("Request deadline exceeded before VoyageAI API call", exception.getMessage());
+
+        // No HTTP request should be made
+        assertEquals(0, mockServer.getRequestCount());
+    }
+
+    @Test
     public void testMaxRetriesExceeded() {
         // Create embedder with hardcoded maxRetries=3
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
@@ -197,9 +253,12 @@ public class VoyageAIEmbedderTest {
         var context = new Embedder.Context("test-embedder")
                 .setDeadline(InvocationContext.Deadline.of(Duration.ofMillis(500)));
 
-        var exception = assertThrows(RuntimeException.class, () -> embedder.embed("test", context, targetType));
+        var exception = assertThrows(TimeoutException.class,
+                () -> embedder.embed("test", context, targetType));
 
-        assertEquals("VoyageAI API call failed: timeout", exception.getMessage());
+        String message = exception.getMessage();
+        assertTrue(message.contains("VoyageAI API call timed out after"), "Expected message to contain 'VoyageAI API call timed out after', got: " + message);
+        assertTrue(message.contains("ms"), "Expected message to contain 'ms', got: " + message);
         embedder.deconstruct();
     }
 

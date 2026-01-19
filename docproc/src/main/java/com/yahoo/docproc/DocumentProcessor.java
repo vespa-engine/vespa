@@ -141,6 +141,13 @@ public abstract class DocumentProcessor extends ChainedComponent {
         @Beta
         public static final Progress BUSY = new Progress("busy");
 
+        /**
+         * Returned by a processor when processing timed out.
+         * The document processing framework will not retry the operation.
+         */
+        @Beta
+        public static final Progress TIMEOUT = new Progress("timeout");
+
         private final String name;
 
         private Optional<String> reason = Optional.empty();

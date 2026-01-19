@@ -815,6 +815,18 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.language.process.TimeoutException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Throwable)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.language.process.Token" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],

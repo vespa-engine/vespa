@@ -168,7 +168,8 @@
       "public static final com.yahoo.docproc.DocumentProcessor$Progress FAILED",
       "public static final com.yahoo.docproc.DocumentProcessor$Progress INVALID_INPUT",
       "public static final com.yahoo.docproc.DocumentProcessor$Progress PERMANENT_FAILURE",
-      "public static final com.yahoo.docproc.DocumentProcessor$Progress BUSY"
+      "public static final com.yahoo.docproc.DocumentProcessor$Progress BUSY",
+      "public static final com.yahoo.docproc.DocumentProcessor$Progress TIMEOUT"
     ]
   },
   "com.yahoo.docproc.DocumentProcessor" : {
