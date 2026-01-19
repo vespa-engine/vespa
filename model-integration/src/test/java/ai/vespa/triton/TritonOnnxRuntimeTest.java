@@ -263,8 +263,11 @@ class TritonOnnxRuntimeTest {
                 .build();
         var mockTerminator = new MockProcessTerminator();
 
-        assertThrows(MockProcessTerminationException.class, () -> new TritonOnnxRuntime(config, mockTerminator));
+        var runtime = new TritonOnnxRuntime(config, mockTerminator);
+        var modelPath = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+        var opts = optsBuilder.build();
 
+        assertThrows(MockProcessTerminationException.class, () -> runtime.evaluatorOf(modelPath, opts));
         assertEquals(1, mockTerminator.dieRequests);
         assertTrue(mockTerminator.lastMessage.contains("can't be reached"));
         assertTrue(mockTerminator.lastMessage.contains("localhost:9999"));
@@ -275,16 +278,20 @@ class TritonOnnxRuntimeTest {
         var config = new TritonConfig.Builder()
                 .target(tritonContainer.getGrpcEndpoint())
                 .build();
+        
         var mockClient = new TritonOnnxClient(config) {
             @Override
             public boolean isHealthy() {
                 return false;
             }
         };
+        
         var mockTerminator = new MockProcessTerminator();
+        var runtime = new TritonOnnxRuntime(config, mockClient, mockTerminator);
+        var modelPath = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+        var opts = optsBuilder.build();
 
-        assertThrows(MockProcessTerminationException.class, () -> new TritonOnnxRuntime(config, mockClient, mockTerminator));
-
+        assertThrows(MockProcessTerminationException.class, () -> runtime.evaluatorOf(modelPath, opts));
         assertEquals(1, mockTerminator.dieRequests);
         assertTrue(mockTerminator.lastMessage.contains("not healthy"));
         assertTrue(mockTerminator.lastMessage.contains(tritonContainer.getGrpcEndpoint()));
@@ -297,11 +304,19 @@ class TritonOnnxRuntimeTest {
                 .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
                 .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
                 .build();
-        
+
         var mockTerminator = new MockProcessTerminator();
         var runtime = new TritonOnnxRuntime(config, mockTerminator);
 
+        var modelPath = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+        var opts = optsBuilder.build();
+
+        // Verify that evaluatorOf succeeds when server is healthy
+        var evaluator = assertDoesNotThrow(() -> runtime.evaluatorOf(modelPath, opts));
+        assertNotNull(evaluator);
         assertEquals(0, mockTerminator.dieRequests);
+
+        evaluator.close();
         runtime.deconstruct();
     }
 
