@@ -3,6 +3,7 @@
 #pragma once
 
 #include "thread_bundle.h"
+#include <cstdint>
 
 namespace vespalib {
 

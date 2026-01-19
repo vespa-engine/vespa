@@ -24,6 +24,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/exception.h>
+#include <cstdint>
 #include <map>
 #include <set>
 #include <vector>

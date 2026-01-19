@@ -131,7 +131,7 @@ struct Program : public Sim {
         Stats(size_t gen) noexcept : weakness(0.0), cost(0), born(gen), alt(0) {}
         Stats(Weakness weakness_in, size_t cost_in, size_t born_in, size_t alt_in) noexcept
             : weakness(weakness_in), cost(cost_in), born(born_in), alt(alt_in) {}
-        bool operator<(const Stats &rhs) const {
+        bool operator<(const Stats &rhs) const noexcept {
             if (weakness != rhs.weakness) {
                 return (weakness < rhs.weakness);
             }
@@ -181,7 +181,7 @@ struct Program : public Sim {
     void mutate(Random &rnd);
     void reborn(size_t gen) { _stats.born = gen; }
     const Stats &stats() const { return _stats; }
-    bool operator<(const Program &rhs) const {
+    bool operator<(const Program &rhs) const noexcept {
         return (stats() < rhs.stats() ||
                 ((_waste < rhs._waste) && !(rhs.stats() < stats())));
     }

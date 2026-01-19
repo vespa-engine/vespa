@@ -2,6 +2,7 @@
 #pragma once
 
 #include "snapshots.h"
+#include <cstdint>
 #include <string>
 
 namespace vespalib { class asciistream; }
