@@ -970,7 +970,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                     case INSUFFICIENT_STORAGE -> jsonResponse.commit(Response.Status.INSUFFICIENT_STORAGE);
                     case TIMEOUT -> jsonResponse.commit(Response.Status.GATEWAY_TIMEOUT);
                     case REJECTED -> jsonResponse.commit(Response.Status.BAD_REQUEST);
-                    case BUSY -> jsonResponse.commit(Response.Status.TOO_MANY_REQUESTS);
+                    case OVERLOAD -> jsonResponse.commit(Response.Status.TOO_MANY_REQUESTS);
                     case ERROR -> {
                         log.log(FINE, () -> "Exception performing document operation: " + response.getTextMessage());
                         jsonResponse.commit(Status.INTERNAL_SERVER_ERROR);
@@ -1002,7 +1002,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             case SUCCESS -> incrementMetricSucceeded();
             case NOT_FOUND -> incrementMetricNotFound();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
-            case BUSY -> { /* Transient overload - don't count as failure */ }
+            case OVERLOAD -> { /* Transient overload - don't count as failure */ }
             case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
             case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
             case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
@@ -1016,7 +1016,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             case SUCCESS -> incrementMetricSucceeded();
             case NOT_FOUND -> incrementMetricNotFound();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
-            case BUSY -> { /* Transient overload - don't count as failure */ }
+            case OVERLOAD -> { /* Transient overload - don't count as failure */ }
             case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
             case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
             case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
@@ -1028,7 +1028,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         switch (outcome) {
             case SUCCESS,NOT_FOUND -> incrementMetricSucceeded();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
-            case BUSY -> { /* Transient overload - don't count as failure */ }
+            case OVERLOAD -> { /* Transient overload - don't count as failure */ }
             case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
             case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
             case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }

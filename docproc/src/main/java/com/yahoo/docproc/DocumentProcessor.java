@@ -137,9 +137,10 @@ public abstract class DocumentProcessor extends ChainedComponent {
         /**
          * Returned by a processor when the operation was rejected due to overload/rate limiting.
          * Indicates back-pressure from downstream systems (e.g., embedders).
+         * This is a non-retryable error - the client will receive an immediate 429 response.
          */
         @Beta
-        public static final Progress BUSY = new Progress("busy");
+        public static final Progress OVERLOAD = new Progress("overload");
 
         /**
          * Returned by a processor when processing timed out.

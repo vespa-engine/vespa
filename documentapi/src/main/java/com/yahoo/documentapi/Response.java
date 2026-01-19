@@ -123,7 +123,7 @@ public class Response {
         REJECTED,
 
         /** The operation was rejected due to overload/rate limiting. */
-        BUSY,
+        OVERLOAD,
 
         /** The operation failed for some unknown reason. */
         ERROR

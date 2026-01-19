@@ -121,7 +121,7 @@ public class IndexingProcessor extends DocumentProcessor {
                         : "Operation contains invalid input: %s".formatted(message));
             } catch (OverloadException e) {
                 String message = Exceptions.toMessageString(e);
-                return Progress.BUSY.withReason(
+                return Progress.OVERLOAD.withReason(
                         op.getId() != null
                         ? "Operation on '%s' rejected due to overload: %s".formatted(op.getId().toString(), message)
                         : "Operation rejected due to overload: %s".formatted(message));

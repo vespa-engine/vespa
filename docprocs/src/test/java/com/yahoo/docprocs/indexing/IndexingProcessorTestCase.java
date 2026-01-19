@@ -444,10 +444,10 @@ public class IndexingProcessorTestCase {
         var proc = new Processing();
         proc.getDocumentOperations().add(input);
 
-        // Process and verify Progress.BUSY is returned
+        // Process and verify Progress.OVERLOAD is returned
         var progress = processor.process(proc);
 
-        assertEquals(com.yahoo.docproc.DocumentProcessor.Progress.BUSY, progress);
+        assertEquals(com.yahoo.docproc.DocumentProcessor.Progress.OVERLOAD, progress);
         assertTrue(progress.getReason().isPresent());
         var reason = progress.getReason().get();
         assertEquals("Operation on 'id:ns:test::' rejected due to overload: Embedder overloaded: rate limit exceeded", reason);
