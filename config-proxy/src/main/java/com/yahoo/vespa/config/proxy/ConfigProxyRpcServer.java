@@ -66,13 +66,15 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
     }
 
     void shutdown() {
+        supervisor.transport().shutdown().join();
         try {
-            rpcExecutor.shutdownNow();
-            rpcExecutor.awaitTermination(10, TimeUnit.SECONDS);
+            rpcExecutor.shutdown();
+            if (!rpcExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                rpcExecutor.shutdownNow();
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        supervisor.transport().shutdown().join();
     }
 
     Spec getSpec() {
