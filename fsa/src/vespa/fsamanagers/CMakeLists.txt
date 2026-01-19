@@ -4,7 +4,6 @@ vespa_add_library(vespafsamanagers
     conceptnetmanager.cpp
     fsamanager.cpp
     metadatamanager.cpp
-    mutex.cpp
     singleton.cpp
     INSTALL lib64
     DEPENDS
@@ -20,6 +19,5 @@ install(FILES
     fsamanager.h
     metadatahandle.h
     metadatamanager.h
-    mutex.h
     singleton.h
     DESTINATION include/vespa/fsamanagers)
