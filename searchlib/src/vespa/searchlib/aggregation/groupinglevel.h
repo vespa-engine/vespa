@@ -54,12 +54,8 @@ private:
         Filter &_filter;
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
-        void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const override {
-            groupDoc(g, result, doc, rank);
-        }
-        void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const override {
-            groupDoc(g, result, doc, rank);
-        }
+        void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const override;
+        void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const override;
         SingleValueGrouper * clone() const override { return new SingleValueGrouper(*this); }
     };
     class MultiValueGrouper : public SingleValueGrouper {
@@ -73,12 +69,8 @@ private:
     private:
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
-        void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const override {
-            groupDoc(g, result, doc, rank);
-        }
-        void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const override {
-            groupDoc(g, result, doc, rank);
-        }
+        void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const override;
+        void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const override;
         MultiValueGrouper * clone() const override { return new MultiValueGrouper(*this); }
         CurrentIndex &_currentIndex;
     };
