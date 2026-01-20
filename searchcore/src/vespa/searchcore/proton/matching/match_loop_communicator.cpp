@@ -12,6 +12,7 @@ namespace proton:: matching {
 MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
     : MatchLoopCommunicator(threads, topN, {}, nullptr, []() noexcept {})
 {}
+
 MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup, std::function<void()> before_second_phase)
     : _best_scores(),
       _best_dropped(),
@@ -19,7 +20,26 @@ MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::u
       _get_second_phase_work(threads, topN, _best_scores, _best_dropped, std::move(diversifier), first_phase_rank_lookup, std::move(before_second_phase)),
       _complete_second_phase(threads, topN, _best_scores, _best_dropped)
 {}
+
 MatchLoopCommunicator::~MatchLoopCommunicator() = default;
+
+double
+MatchLoopCommunicator::estimate_match_frequency(const Matches &matches)
+{
+    return _estimate_match_frequency.rendezvous(matches);
+}
+
+MatchLoopCommunicator::TaggedHits
+MatchLoopCommunicator::get_second_phase_work(SortedHitSequence sortedHits, size_t thread_id)
+{
+    return _get_second_phase_work.rendezvous(sortedHits, thread_id);
+}
+
+std::pair<MatchLoopCommunicator::Hits,MatchLoopCommunicator::RangePair>
+MatchLoopCommunicator::complete_second_phase(TaggedHits my_results, size_t thread_id)
+{
+    return _complete_second_phase.rendezvous(std::move(my_results), thread_id);
+}
 
 void
 MatchLoopCommunicator::EstimateMatchFrequency::mingle()
