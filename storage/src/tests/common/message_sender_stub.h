@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/storage/common/messagesender.h>
+#include <cstdint>
 #include <vector>
 
 namespace storage {

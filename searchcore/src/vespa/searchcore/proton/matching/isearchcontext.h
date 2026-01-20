@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 
 namespace search::queryeval { class Searchable; }

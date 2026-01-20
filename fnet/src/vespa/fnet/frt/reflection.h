@@ -4,6 +4,7 @@
 
 #include "invokable.h"
 #include "request_access_filter.h"
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>

@@ -17,13 +17,13 @@ struct BitVectorWordSingleKey {
     }
 
     bool
-    operator<(const BitVectorWordSingleKey &rhs) const
+    operator<(const BitVectorWordSingleKey &rhs) const noexcept
     {
         return  _wordNum < rhs._wordNum;
     }
 
     bool
-    operator==(const BitVectorWordSingleKey &rhs) const
+    operator==(const BitVectorWordSingleKey &rhs) const noexcept
     {
         return _wordNum == rhs._wordNum;
     }

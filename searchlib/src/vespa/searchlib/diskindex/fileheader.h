@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 

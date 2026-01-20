@@ -440,7 +440,7 @@ public:
         {
         }
 
-        bool operator<(std::string_view word) const {
+        bool operator<(std::string_view word) const noexcept {
             return _l7Word < word;
         }
     };
@@ -463,7 +463,7 @@ public:
         {
         }
 
-        bool operator<(uint64_t wordNum) const {
+        bool operator<(uint64_t wordNum) const noexcept {
             return _wordNum < wordNum;
         }
     };
