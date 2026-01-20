@@ -357,7 +357,7 @@ namespace matching {
      * before actually accessing the tensors for distance calculation, which could drastically reduce latencies,
      * but could also completely trash the memory caches and make things considerably worse.
      *
-     * Benchmakring the specific setup is recommended before enabling.
+     * Benchmarking the specific setup is recommended before enabling.
      **/
     struct TensorsPrefetch {
         static const std::string NAME;

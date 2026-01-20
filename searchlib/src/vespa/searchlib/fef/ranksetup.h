@@ -417,7 +417,7 @@ public:
     void set_exploration_slack(double v) { _exploration_slack = v; }
     double get_exploration_slack() const { return _exploration_slack; }
     void set_prefetch_tensors(bool v) { _prefetch_tensors = v; };
-    bool get_perfetch_tensors() const { return _prefetch_tensors; }
+    bool get_prefetch_tensors() const { return _prefetch_tensors; }
     void set_target_hits_max_adjustment_factor(double v) { _target_hits_max_adjustment_factor = v; }
     double get_target_hits_max_adjustment_factor() const { return _target_hits_max_adjustment_factor; }
     void set_fuzzy_matching_algorithm(vespalib::FuzzyMatchingAlgorithm v) { _fuzzy_matching_algorithm = v; }
