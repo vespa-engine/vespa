@@ -145,7 +145,7 @@ public class ClusterDeploymentMetricsRetriever {
                                     .addMemoryUsage(memoryUtil, values.field(ClusterControllerMetrics.RESOURCE_USAGE_MEMORY_LIMIT.last()).asDouble())
                                     .addDiskUsage(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION.max()).asDouble(),
                                             values.field(ClusterControllerMetrics.RESOURCE_USAGE_DISK_LIMIT.last()).asDouble())
-                                    .setIsFeedBlocked(values.field(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT.last()).asLong() > 0));
+                                    .setIsFeedBlocked((int) values.field(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT.last()).asLong()));
         }
     }
 

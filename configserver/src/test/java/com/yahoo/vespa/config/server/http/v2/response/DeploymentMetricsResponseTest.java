@@ -30,7 +30,7 @@ public class DeploymentMetricsResponseTest {
         DeploymentMetricsAggregator aggregator = new DeploymentMetricsAggregator()
                 .addDocumentCount(1000.0)
                 .addReadLatency(100.0, 10.0)
-                .setIsFeedBlocked(true);
+                .setIsFeedBlocked(1);
 
         Map<ClusterInfo, DeploymentMetricsAggregator> metrics = Map.of(contentCluster, aggregator);
         DeploymentMetricsResponse response = new DeploymentMetricsResponse(applicationId, metrics);
@@ -46,7 +46,7 @@ public class DeploymentMetricsResponseTest {
         assertEquals("content", cluster.field("clusterType").asString());
 
         Inspector clusterMetrics = cluster.field("metrics");
-        assertTrue(clusterMetrics.field("isFeedBlocked").asBool());
+        assertEquals(1, clusterMetrics.field("isFeedBlocked").asLong());
         assertEquals(1000.0, clusterMetrics.field("documentCount").asDouble(), 0.001);
     }
 
@@ -57,14 +57,14 @@ public class DeploymentMetricsResponseTest {
 
         DeploymentMetricsAggregator aggregator = new DeploymentMetricsAggregator()
                 .addDocumentCount(1000.0)
-                .setIsFeedBlocked(false);
+                .setIsFeedBlocked(0);
 
         Map<ClusterInfo, DeploymentMetricsAggregator> metrics = Map.of(contentCluster, aggregator);
         DeploymentMetricsResponse response = new DeploymentMetricsResponse(applicationId, metrics);
 
         Inspector inspector = SlimeUtils.jsonToSlime(getRenderedString(response)).get();
         Inspector clusterMetrics = inspector.field("clusters").entry(0).field("metrics");
-        assertFalse(clusterMetrics.field("isFeedBlocked").asBool());
+        assertEquals(0, clusterMetrics.field("isFeedBlocked").asLong());
     }
 
     private static String getRenderedString(DeploymentMetricsResponse response) throws IOException {

@@ -73,7 +73,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
                         .addReadLatency(3000 , 43) // there are 2 content nodes
                         .addMemoryUsage(0.89074, 0.8)
                         .addDiskUsage(0.83517, 0.75)
-                        .setIsFeedBlocked(false), // nodes_above_limit is 0
+                        .setIsFeedBlocked(0), // nodes_above_limit is 0
                 aggregatorMap.get(expectedContentCluster)
         );
 
@@ -110,7 +110,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
         assertEquals(Set.of(expectedContentCluster), aggregatorMap.keySet());
 
         DeploymentMetricsAggregator aggregator = aggregatorMap.get(expectedContentCluster);
-        assertTrue(aggregator.isFeedBlocked());
+        assertEquals(2, aggregator.isFeedBlocked());
 
         wireMock.stop();
     }

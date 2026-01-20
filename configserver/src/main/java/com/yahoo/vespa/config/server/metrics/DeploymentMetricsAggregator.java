@@ -15,7 +15,7 @@ public class DeploymentMetricsAggregator {
     private Double documentCount;
     private ResourceUsage memoryUsage;
     private ResourceUsage diskUsage;
-    private boolean isFeedBlocked = false;
+    private int isFeedBlocked = 0;
 
     public synchronized DeploymentMetricsAggregator addFeedLatency(double sum, double count) {
         this.feed = combineLatency(this.feed, sum, count);
@@ -47,7 +47,7 @@ public class DeploymentMetricsAggregator {
         return this;
     }
 
-    public synchronized DeploymentMetricsAggregator setIsFeedBlocked(boolean isFeedBlocked) {
+    public synchronized DeploymentMetricsAggregator setIsFeedBlocked(int isFeedBlocked) {
         this.isFeedBlocked = isFeedBlocked;
         return this;
     }
@@ -92,7 +92,7 @@ public class DeploymentMetricsAggregator {
         return Optional.ofNullable(diskUsage);
     }
 
-    public boolean isFeedBlocked() {
+    public int isFeedBlocked() {
         return isFeedBlocked;
     }
 
