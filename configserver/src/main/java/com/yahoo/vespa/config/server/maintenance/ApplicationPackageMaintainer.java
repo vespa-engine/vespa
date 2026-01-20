@@ -112,7 +112,6 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     }
 
     private Collection<RemoteSession> preparedAndActivatedSessions() {
-        var tenantRepository = applicationRepository.tenantRepository();
         return tenantRepository.getAllTenantNames().stream()
                 .map(tenantRepository::getTenant)
                 .map(t -> t.getSessionRepository().getRemoteSessions())

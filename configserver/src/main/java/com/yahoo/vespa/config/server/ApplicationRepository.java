@@ -147,7 +147,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private final AtomicBoolean bootstrapping = new AtomicBoolean(true);
 
-    private final TenantRepository tenantRepository;
+    public final TenantRepository tenantRepository;
     private final Optional<Provisioner> hostProvisioner;
     private final Optional<InfraDeployer> infraDeployer;
     private final ConfigConvergenceChecker convergeChecker;
@@ -954,28 +954,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public TenantRepository tenantRepository() {
         return tenantRepository;
-    }
-
-    public Set<TenantName> deleteUnusedTenants(Duration ttlForUnusedTenant, Instant now) {
-        return tenantRepository.getAllTenantNames().stream()
-                .filter(tenantName -> activeApplications(tenantName).isEmpty())
-                .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
-                .filter(tenantName -> !tenantName.equals(HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
-                .filter(tenantName -> getTenantMetaData(tenantRepository.getTenant(tenantName)).lastDeployTimestamp().isBefore(now.minus(ttlForUnusedTenant)))
-                .peek(tenantRepository::deleteTenant)
-                .collect(Collectors.toSet());
-    }
-
-    public void deleteTenant(TenantName tenantName) {
-        List<ApplicationId> activeApplications = activeApplications(tenantName);
-        if (activeApplications.isEmpty())
-            tenantRepository.deleteTenant(tenantName);
-        else
-            throw new IllegalArgumentException("Cannot delete tenant '" + tenantName + "', it has active applications: " + activeApplications);
-    }
-
-    private List<ApplicationId> activeApplications(TenantName tenantName) {
-        return tenantRepository.getTenant(tenantName).getApplicationRepo().activeApplications();
     }
 
     // ---------------- SearchNode Metrics ------------------------------------------------------------------------

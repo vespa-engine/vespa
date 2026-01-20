@@ -466,6 +466,8 @@ public class TenantRepository {
             throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
         if ( ! tenants.containsKey(name))
             throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");
+        if ( ! activeApplications(name).isEmpty())
+            throw new IllegalArgumentException("Cannot delete tenant '" + name + "', it has active applications: " + activeApplications(name));
 
         // Deletes the tenant tree from ZooKeeper (application and session status for the tenant)
         // and triggers Tenant.close().
@@ -628,5 +630,19 @@ public class TenantRepository {
     public com.yahoo.vespa.curator.Curator getCurator() { return curator; }
 
     public HostProvisionerProvider hostProvisionerProvider() { return hostProvisionerProvider; }
+
+    public Set<TenantName> deleteUnusedTenants(Duration ttlForUnusedTenant, Instant now) {
+        return getAllTenantNames().stream()
+                .filter(tenantName -> activeApplications(tenantName).isEmpty())
+                .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
+                .filter(tenantName -> !tenantName.equals(HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
+                .filter(tenantName -> getTenantMetaData(getTenant(tenantName)).lastDeployTimestamp().isBefore(now.minus(ttlForUnusedTenant)))
+                .peek(this::deleteTenant)
+                .collect(Collectors.toSet());
+    }
+
+    private List<ApplicationId> activeApplications(TenantName tenantName) {
+        return getTenant(tenantName).getApplicationRepo().activeApplications();
+    }
 
 }
