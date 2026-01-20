@@ -159,13 +159,8 @@ VoyageAIEmbedder =
    element model { xsd:string } &
    element api-key-secret-ref { xsd:string } &
    element endpoint { xsd:string }? &
-   element timeout { xsd:positiveInteger }? &
-   element max-retries { xsd:nonNegativeInteger }? &
-   element default-input-type { "query" | "document" }? &
-   element auto-detect-input-type { xsd:boolean }? &
-   element normalize { xsd:boolean }? &
-   element truncate { xsd:boolean }? &
-   element max-idle-connections { xsd:positiveInteger }?
+   element input-type-override { "auto" | "query" | "document" }? &
+   element truncate { xsd:boolean }?
 
 OnnxModelExecutionParams =
     element onnx-execution-mode { "parallel" | "sequential" }? &

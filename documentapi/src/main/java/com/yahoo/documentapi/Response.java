@@ -5,7 +5,6 @@ import com.yahoo.messagebus.Trace;
 
 import java.util.Objects;
 
-import static com.yahoo.documentapi.Response.Outcome.ERROR;
 import static com.yahoo.documentapi.Response.Outcome.SUCCESS;
 
 /**
@@ -122,6 +121,9 @@ public class Response {
          * configured maximum size limits. See the error message for details.
          */
         REJECTED,
+
+        /** The operation was rejected due to overload/rate limiting. */
+        OVERLOAD,
 
         /** The operation failed for some unknown reason. */
         ERROR

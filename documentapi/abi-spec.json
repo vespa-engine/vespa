@@ -382,6 +382,7 @@
       "public static final enum com.yahoo.documentapi.Response$Outcome INSUFFICIENT_STORAGE",
       "public static final enum com.yahoo.documentapi.Response$Outcome TIMEOUT",
       "public static final enum com.yahoo.documentapi.Response$Outcome REJECTED",
+      "public static final enum com.yahoo.documentapi.Response$Outcome OVERLOAD",
       "public static final enum com.yahoo.documentapi.Response$Outcome ERROR"
     ]
   },
@@ -1853,6 +1854,7 @@
       "public static final int ERROR_TEST_AND_SET_CONDITION_FAILED",
       "public static final int ERROR_PROCESSING_FAILURE",
       "public static final int ERROR_TIMESTAMP_EXIST",
+      "public static final int ERROR_OVERLOAD",
       "public static final int ERROR_NODE_NOT_READY",
       "public static final int ERROR_WRONG_DISTRIBUTION",
       "public static final int ERROR_ABORTED",
