@@ -351,6 +351,9 @@ public class IndexInfo extends Derived {
         for (String qc : fieldSet.queryCommands()) {
             addIndexCommand(iiB, fieldSet.getName(), qc);
         }
+        if (fieldSet.getLinguisticsProfile() != null) {
+            addIndexCommand(iiB, fieldSet.getName(), CMD_LINGUISTICS_PROFILE + " " + fieldSet.getLinguisticsProfile());
+        }
         boolean anyIndexing = false;
         boolean anyAttributing = false;
         boolean anyLowerCasing = false;

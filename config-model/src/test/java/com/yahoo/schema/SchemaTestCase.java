@@ -668,6 +668,15 @@ public class SchemaTestCase {
                                 }
                             }
                         }
+                        field s4 type string {
+                            indexing: index
+                            linguistics {
+                                profile: p3
+                            }
+                        }
+                    }
+                    fieldset fs1 {
+                        fields: s3, s4
                     }
                 }""";
         ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
@@ -687,10 +696,12 @@ public class SchemaTestCase {
 
         var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
         derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
-        assertTrue(indexInfoConfigBuilder.build().toString().contains("linguistics-profile p1"));
-        assertTrue(indexInfoConfigBuilder.build().toString().contains("linguistics-profile p2"));
-        assertTrue(indexInfoConfigBuilder.build().toString().contains("linguistics-profile p3"));
-        assertFalse(indexInfoConfigBuilder.build().toString().contains("linguistics-profile p4"));
+        var config = indexInfoConfigBuilder.build();
+        assertCommand("s1", "linguistics-profile p1", config);
+        assertCommand("s2", "linguistics-profile p2", config);
+        assertCommand("s3", "linguistics-profile p3", config);
+        assertNoCommand("s3", "linguistics-profile p4", config);
+        assertCommand("fs1", "linguistics-profile p3", config);
     }
 
     @Test
@@ -892,6 +903,23 @@ public class SchemaTestCase {
         assertNotNull(schema.getUniqueNamedSummaryFields().get("pf1"));
         assertNotNull(schema.temporaryImportedFields().get().fields().get("parent_imported"));
         assertTrue(schema.isRawAsBase64());
+    }
+
+    private void assertCommand(String field, String command, IndexInfoConfig config) {
+        assertTrue(containsCommand(field, command, config), "Field '" + field + "' has '" + command + "'");
+    }
+
+    private void assertNoCommand(String field, String command, IndexInfoConfig config) {
+        assertFalse(containsCommand(field, command, config), "Field '" + field + "' does not have '" + command + "'");
+    }
+
+    private boolean containsCommand(String field, String command, IndexInfoConfig config) {
+        if (config.indexinfo().size() != 1) throw new IllegalArgumentException("Support multiple doc types");
+        for (var commandConfig : config.indexinfo(0).command()) {
+            if (commandConfig.indexname().equals(field) && commandConfig.command().equals(command))
+                return true;
+        }
+        return false;
     }
 
 }
