@@ -112,7 +112,7 @@ public class DocumentProcessingTask implements Runnable {
                     location = "no processing instance";
                 }
                 log.log(Level.FINE, () -> "Time is up for '" + processing + " failed, " + location + "'.");
-                requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE, "Time is up.");
+                requestContext.processingFailed(RequestContext.ErrorCode.ERROR_TIMEOUT, "Request deadline exceeded");
                 return progress;
             }
 

@@ -1057,6 +1057,23 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange[] values()",
+      "public static com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange IMMEDIATE",
+      "public static final enum com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange DEFER_UNTIL_RESTART"
+    ]
+  },
   "com.yahoo.config.model.api.ConfigChangeRestartAction" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -1068,7 +1085,8 @@
       "abstract"
     ],
     "methods" : [
-      "public com.yahoo.config.model.api.ConfigChangeAction$Type getType()"
+      "public com.yahoo.config.model.api.ConfigChangeAction$Type getType()",
+      "public com.yahoo.config.model.api.ConfigChangeRestartAction$ConfigChange configChange()"
     ],
     "fields" : [ ]
   },
@@ -1285,7 +1303,8 @@
       "public com.yahoo.config.model.api.Provisioned provisioned()",
       "public java.util.Map documentTypesByCluster()",
       "public java.util.Map indexedDocumentTypesByCluster()",
-      "public java.util.Set applicationClusterInfo()"
+      "public java.util.Set applicationClusterInfo()",
+      "public void markClustersForDeferredReconfiguration(java.util.Set)"
     ],
     "fields" : [ ]
   },
@@ -1315,6 +1334,7 @@
       "public int maxUnCommittedMemory()",
       "public boolean containerDumpHeapOnShutdownTimeout()",
       "public int heapSizePercentage()",
+      "public int heapSizePercentage(java.util.Optional)",
       "public java.util.List allowedAthenzProxyIdentities()",
       "public int maxActivationInhibitedOutOfSyncGroups()",
       "public double resourceLimitDisk()",
@@ -1344,8 +1364,7 @@
       "public boolean useTriton()",
       "public boolean useNewPrepareForRestart()",
       "public int searchCoreMaxOutstandingMoveOps()",
-      "public double docprocHandlerThreadpool()",
-      "public boolean adjustCCMaxHeap()"
+      "public double docprocHandlerThreadpool()"
     ],
     "fields" : [ ]
   },
@@ -1398,6 +1417,7 @@
       "public abstract java.lang.String jvmGCOptions(java.util.Optional, java.util.Optional)",
       "public java.lang.String mallocImpl(java.util.Optional)",
       "public int searchNodeInitializerThreads(java.lang.String)",
+      "public int heapSizePercentage(java.lang.String)",
       "public boolean useDedicatedNodeForLogserver()",
       "public boolean allowDisableMtls()",
       "public java.util.List operatorCertificates()",

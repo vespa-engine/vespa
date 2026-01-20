@@ -56,7 +56,7 @@ public class RunVespaQuery implements SchemaCommand {
         runVespaQuery(queryCommand, context.logger).thenAccept(result -> {
             if (!result.success()) {
                 if (result.result().toLowerCase().contains("cannot run program")) {
-                    context.messageHandler.sendMessage(MessageType.Error, "Could not find vespa CLI. Make sure vespa CLI is installed and added to path. Download vespa CLI here: https://docs.vespa.ai/en/vespa-cli.html");
+                    context.messageHandler.sendMessage(MessageType.Error, "Could not find vespa CLI. Make sure vespa CLI is installed and added to path. Download vespa CLI here: https://docs.vespa.ai/en/clients/vespa-cli.html");
                     return;
                 }
                 context.messageHandler.sendMessage(MessageType.Error, "Failed to run query:\n" + result.result());

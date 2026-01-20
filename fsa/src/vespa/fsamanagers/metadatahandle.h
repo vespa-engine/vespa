@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "refcountable.h"
 #include <vespa/fsa/metadata.h>
+#include <memory>
 #include <string>
 
 namespace fsa {
@@ -39,12 +39,7 @@ private:
    */
   Handle& operator=(const Handle&);
 
-  class RefCountableMetaData: public MetaData, public RefCountable<MetaData> {
-  public:
-    RefCountableMetaData(const char *datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF) : MetaData(datafile,fam) {}
-  };
-
-  RefCountableMetaData *_metaData; /**< The MetaData object itself. */
+  std::shared_ptr<MetaData> _metaData; /**< The MetaData object itself. */
 
 public:
 
@@ -57,7 +52,6 @@ public:
    */
   Handle(const Handle& h) : _metaData(h._metaData)
   {
-    _metaData->addReference();
   }
 
   /**
@@ -69,10 +63,9 @@ public:
    * @param fam File access mode (read or mmap). If not set, the
    *            global preferred access mode will be used.
    */
-  Handle(const char *datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF) :
-    _metaData(new RefCountableMetaData(datafile,fam))
+  Handle(const char *datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+    : _metaData(std::make_shared<MetaData>(datafile, fam))
   {
-    _metaData->addReference();
   }
 
   /**
@@ -84,19 +77,15 @@ public:
    * @param fam File access mode (read or mmap). If not set, the
    *            global preferred access mode will be used.
    */
-  Handle(const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF) :
-    _metaData(new RefCountableMetaData(datafile.c_str(),fam))
+  Handle(const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+    : _metaData(std::make_shared<MetaData>(datafile, fam))
   {
-    _metaData->addReference();
   }
 
   /**
    * @brief Destructor.
    */
-  ~Handle()
-  {
-    _metaData->removeReference();
-  }
+  ~Handle() = default;
 
   /**
    * @brief Dereference operator, provides access to Metadata
@@ -112,7 +101,7 @@ public:
    *
    * @return Pointer the Metadata object.
    */
-  const MetaData* operator->() const { return _metaData; }
+  const MetaData* operator->() const { return _metaData.get(); }
 
   /**
    * @brief Proxy methods
@@ -126,4 +115,3 @@ public:
 // }}}
 
 } // namespace fsa
-

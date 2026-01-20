@@ -62,7 +62,6 @@
 ./http-utils/* @bjorncs
 ./indexinglanguage/* @glebashnik
 ./jaxrs_utils/* @hakonhall
-./jdisc-cloud-aws/* @oyving
 ./jdisc-security-filters/* @bjorncs
 ./jdisc_core/* @gjoranv @bjorncs
 ./jdisc_core_test/* @gjoranv @bjorncs
@@ -147,7 +146,6 @@
 ./vespa-feed-client-cli/* @bjorncs
 ./vespa-feed-client/* @bjorncs
 ./vespa-maven-plugin/* @hmusum
-./vespa-testrunner-components/* @hmusum
 ./vespabase/* @hmusum @arnej27959
 ./vespaclient-container-plugin/* @bjorncs @vekterli
 ./vespaclient-core/* @bjorncs

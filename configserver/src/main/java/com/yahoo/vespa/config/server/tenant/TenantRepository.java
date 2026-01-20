@@ -387,7 +387,7 @@ public class TenantRepository {
                                                                     onnxModelCost,
                                                                     endpointCertificateSecretStores,
                                                                     inheritableApplications);
-        log.log(Level.FINE, "Adding tenant '" + tenantName + "'" + ", created " + created +
+        log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created +
                             ". Bootstrapping in " + Duration.between(start, clock.instant()));
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, created);
         createAndWriteTenantMetaData(tenant);
@@ -467,17 +467,8 @@ public class TenantRepository {
         if ( ! tenants.containsKey(name))
             throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");
 
-        log.log(Level.INFO, "Deleting tenant '" + name + "'");
         // Deletes the tenant tree from ZooKeeper (application and session status for the tenant)
         // and triggers Tenant.close().
-        try (Lock lock = tenantLocks.lock(name)) {
-            Path path = tenants.get(name).getPath();
-            closeTenant(name);
-            curator.delete(path);
-        }
-    }
-
-    private void closeTenant(TenantName name) {
         try (Lock lock = tenantLocks.lock(name)) {
             Tenant tenant = tenants.remove(name);
             if (tenant == null)
@@ -486,7 +477,9 @@ public class TenantRepository {
             log.log(Level.INFO, "Closing tenant '" + name + "'");
             notifyRemovedTenant(name);
             tenant.close();
+            curator.delete(tenant.getPath());
         }
+        log.log(Level.INFO, "Deleted tenant '" + name + "'");
     }
 
     /**

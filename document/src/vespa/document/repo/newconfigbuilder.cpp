@@ -167,7 +167,7 @@ TypeRef NewMap::ref() {
 
 // ==================== NewAnnotationRef ====================
 
-NewAnnotationRef::NewAnnotationRef(NewConfigBuilder&, int32_t annotation_idx)
+NewAnnotationRef::NewAnnotationRef(int32_t annotation_idx) noexcept
     : _annotation_idx(annotation_idx),
       _idx(-1),
       _registered(false)
@@ -183,7 +183,7 @@ TypeRef NewAnnotationRef::ref() {
 
 // ==================== NewDocTypeRep ====================
 
-NewDocTypeRep::NewDocTypeRep(NewConfigBuilder& builder, int32_t idx, std::string name, int32_t)
+NewDocTypeRep::NewDocTypeRep(NewConfigBuilder& builder, int32_t idx, std::string name)
     : _builder(builder),
       _idx(idx),
       _name(std::move(name))
@@ -335,7 +335,7 @@ TypeRef NewDocTypeRep::createAnnotationReference(TypeRef annotation_type_idx) {
     }
 
     // Create an annotation reference using the NewAnnotationRef helper
-    NewAnnotationRef ar(_builder, annotation_type_idx.idx);
+    NewAnnotationRef ar(annotation_type_idx.idx);
     _builder.registerAnnotationRef(ar, _idx);
     return ar.ref();
 }
@@ -558,7 +558,7 @@ NewDocTypeRep& NewConfigBuilder::document(const std::string& name, int32_t inter
     doc.inherits.emplace_back().idx = _base_document_idx;
 
     // Create and store NewDocTypeRep
-    auto* rep = new NewDocTypeRep(*this, doc.idx, name, internalid);
+    auto* rep = new NewDocTypeRep(*this, doc.idx, name);
     _doctype_builders[doc.idx] = rep;
 
     return *rep;

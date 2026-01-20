@@ -13,8 +13,6 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 
-import static java.util.logging.Level.INFO;
-
 /**
  * Container cluster for cluster-controller containers.
  *
@@ -28,7 +26,6 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     private final ReindexingContext reindexingContext;
 
     private int totalNumberOfContentNodes = 0;
-    private final boolean adjustCCMaxHeap;
 
     public ClusterControllerContainerCluster(
             TreeConfigProducer<?> parent, String subId, String name, DeployState deployState) {
@@ -39,7 +36,6 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
                                                                  Optional.of(ClusterSpec.Id.from(name))));
         if (isHostedVespa())
             addAccessLog("controller");
-        this.adjustCCMaxHeap = deployState.featureFlags().adjustCCMaxHeap();
     }
 
     @Override
@@ -66,20 +62,12 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     }
 
     private int calculateJvmHeapAdjustment() {
-        if (!adjustCCMaxHeap) return 0;
-
         // Heuristic to set JVM heap size for cluster controller
         // 300 nodes => need heap size of about 400 MiB, minimum heap should be 128 MiB
         // Increase in steps to avoid changes to heap size with small changes in node count.
         double adjustmentFactor = 0.75; // 0.75 MiB per node
         var step = totalNumberOfContentNodes / 50;
-        int adjustment = (int) (step * adjustmentFactor * 50);
-
-        if (adjustment > 0.0) {
-            log.log(INFO, "Increased cluster controller max heap size memory with " + adjustment +
-                    " MiB due to having many content nodes(" + totalNumberOfContentNodes + ")");
-        }
-        return adjustment;
+        return  (int) (step * adjustmentFactor * 50);
     }
 
     public ReindexingContext reindexingContext() { return reindexingContext; }

@@ -2,6 +2,7 @@
 
 #include "array.hpp"
 #include "array_equal.hpp"
+#include <cstdint>
 
 namespace vespalib {
 

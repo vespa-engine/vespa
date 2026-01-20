@@ -8,7 +8,7 @@
         or by the application through Java components supplied as part of the application.
 
         See:
-          - Reference: https://docs.vespa.ai/en/reference/services-container.html
+          - Reference: https://docs.vespa.ai/en/reference/applications/services/container.html
     -->
     <container id="default" version="1.0">
 
@@ -42,8 +42,8 @@
             to the content cluster.
 
             See:
-             - Reference: https://docs.vespa.ai/en/reference/services-container.html#document-api
-             - Operations: https://docs.vespa.ai/en/document-v1-api-guide.html
+             - Reference: https://docs.vespa.ai/en/reference/applications/services/container.html#document-api
+             - Operations: https://docs.vespa.ai/en/writing/document-v1-api-guide.html
         -->
         <document-api/>
 
@@ -53,8 +53,8 @@
             Java components processing the query and/or result.
 
             See:
-             - Reference: https://docs.vespa.ai/en/query-api.html
-             - Searchers: https://docs.vespa.ai/en/searcher-development.html
+             - Reference: https://docs.vespa.ai/en/querying/query-api.html
+             - Searchers: https://docs.vespa.ai/en/applications/searcher-development.html
         -->
         <search/>
 
@@ -71,7 +71,7 @@
         distributed parts of a query.
 
         See:
-          - Reference: https://docs.vespa.ai/en/reference/services-content.html
+          - Reference: https://docs.vespa.ai/en/reference/applications/services/content.html
     -->
     <content id="content" version="1.0">
         <min-redundancy>2</min-redundancy>

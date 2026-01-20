@@ -40,9 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-
 /**
- * The field class represents a document field. It is used in
+ * The field class represents a schema field. It is used in
  * the Document class to get and set fields. Each SDField has a name, a numeric ID,
  * a data type. The numeric ID is used when the fields are stored
  * in serialized form.
@@ -96,6 +95,9 @@ public class SDField extends Field implements ImmutableSDField {
 
     /** How content of this field should be accent normalized etc. */
     private NormalizeLevel normalizing = new NormalizeLevel();
+
+    private String indexLinguisticsProfile;
+    private String searchLinguisticsProfile;
 
     /** Extra query commands of this field */
     private final List<String> queryCommands = new java.util.ArrayList<>(0);
@@ -746,10 +748,18 @@ public class SDField extends Field implements ImmutableSDField {
     @Override
     public NormalizeLevel getNormalizing() { return normalizing; }
 
-    /**
-     * Change how the content of this field should be accent normalized etc
-     */
+    /** Change how the content of this field should be accent normalized etc. */
     public void setNormalizing(NormalizeLevel level) { normalizing = level; }
+
+    public void setIndexLinguisticsProfile(String profile) { this.indexLinguisticsProfile = profile; }
+
+    @Override
+    public String getIndexLinguisticsProfile() { return indexLinguisticsProfile; }
+
+    public void setSearchLinguisticsProfile(String profile) { this.searchLinguisticsProfile = profile; }
+
+    @Override
+    public String getSearchLinguisticsProfile() { return searchLinguisticsProfile; }
 
     public void addQueryCommand(String name) {
        queryCommands.add(name);

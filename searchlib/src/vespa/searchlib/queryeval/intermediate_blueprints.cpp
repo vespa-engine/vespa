@@ -7,12 +7,14 @@
 #include "orsearch.h"
 #include "nearsearch.h"
 #include "ranksearch.h"
+#include "lazy_filter.h"
 #include "leaf_blueprints.h"
 #include "sourceblendersearch.h"
 #include "termwise_blueprint_helper.h"
 #include "isourceselector.h"
 #include "field_spec.hpp"
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
+#include <vespa/vespalib/util/require.h>
 
 namespace search::queryeval {
 
@@ -191,6 +193,7 @@ AndNotBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
         auto termwise_search = (helper.first_termwise == 0)
                                ? AndNotSearch::create(helper.get_termwise_children(), termwise_strict)
                                : OrSearch::create(helper.get_termwise_children(), termwise_strict);
+        termwise_search->set_id(id());
         helper.insert_termwise(std::move(termwise_search), termwise_strict);
         auto rearranged = helper.get_result();
         if (rearranged.size() == 1) {
@@ -210,6 +213,13 @@ AndNotBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
     return create_andnot_filter(get_children(), strict(), constraint);
 }
 
+std::shared_ptr<GlobalFilter>
+AndNotBlueprint::create_lazy_filter() const
+{
+    auto &children = get_children();
+    REQUIRE(!children.empty());
+    return children[0]->create_lazy_filter();
+}
 
 AnyFlow
 AndNotBlueprint::my_flow(InFlow in_flow) const
@@ -293,6 +303,7 @@ AndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
         bool termwise_strict = ((helper.first_termwise < childCnt()) &&
                                 getChild(helper.first_termwise).strict());
         auto termwise_search = AndSearch::create(helper.get_termwise_children(), termwise_strict);
+        termwise_search->set_id(id());
         helper.insert_termwise(std::move(termwise_search), termwise_strict);
         auto rearranged = helper.get_result();
         if (rearranged.size() == 1) {
@@ -311,6 +322,27 @@ SearchIterator::UP
 AndBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_and_filter(get_children(), strict(), constraint);
+}
+
+std::shared_ptr<GlobalFilter>
+AndBlueprint::create_lazy_filter() const {
+    std::vector<std::shared_ptr<GlobalFilter>> lazy_filters;
+    for (const auto & child : get_children()) {
+        auto lazy_filter = child->create_lazy_filter();
+        if (lazy_filter->is_active()) {
+            lazy_filters.push_back(std::move(lazy_filter));
+        }
+    }
+
+    if (lazy_filters.size() == 1) {
+        return lazy_filters[0];
+    }
+
+    if (lazy_filters.size() > 1) {
+        return AndFilter::create(std::move(lazy_filters));
+    }
+
+    return GlobalFilter::create();
 }
 
 AnyFlow
@@ -392,6 +424,7 @@ OrBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
         bool termwise_strict = ((helper.first_termwise < childCnt()) &&
                                 getChild(helper.first_termwise).strict());
         auto termwise_search = OrSearch::create(helper.get_termwise_children(), termwise_strict);
+        termwise_search->set_id(id());
         helper.insert_termwise(std::move(termwise_search), termwise_strict);
         auto rearranged = helper.get_result();
         if (rearranged.size() == 1) {

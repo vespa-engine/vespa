@@ -166,6 +166,8 @@ public class ConvertParsedFields {
         parsed.getWeight().ifPresent(value -> field.setWeight(value));
         parsed.getStemming().ifPresent(value -> field.setStemming(value));
         parsed.getNormalizing().ifPresent(value -> convertNormalizing(field, value));
+        parsed.getIndexLinguisticsProfile().ifPresent(value -> field.setIndexLinguisticsProfile(value));
+        parsed.getSearchLinguisticsProfile().ifPresent(value -> field.setSearchLinguisticsProfile(value));
         for (var attribute : parsed.getAttributes()) {
             convertAttribute(schema, field, attribute);
         }

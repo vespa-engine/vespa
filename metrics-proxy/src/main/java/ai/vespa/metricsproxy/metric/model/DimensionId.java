@@ -14,17 +14,16 @@ public final class DimensionId {
 
     private static final Map<String, DimensionId> dictionary = new CopyOnWriteHashMap<>();
     public final String id;
-    private final String idForPrometheus;
+
     private DimensionId(String id) {
         this.id = id;
-        idForPrometheus = PrometheusUtil.sanitize(id);
     }
 
     public static DimensionId toDimensionId(String id) {
-        return dictionary.computeIfAbsent(id, key -> new DimensionId(key));
+        return dictionary.computeIfAbsent(id, DimensionId::new);
     }
 
-    public String getIdForPrometheus() { return idForPrometheus; }
+    public String getIdForPrometheus() { return PrometheusUtil.sanitize(id); }
 
     @Override
     public boolean equals(Object o) {

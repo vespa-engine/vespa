@@ -2,9 +2,16 @@
 package com.yahoo.vespa.config.server.configchange;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ConfigChangeRestartAction;
 import com.yahoo.config.model.api.ServiceInfo;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -20,6 +27,7 @@ public class RestartActions {
         private final String clusterType;
         private final String serviceType;
         private final boolean ignoreForInternalRedeploy;
+        private final boolean deferChanges;
         private final Set<ServiceInfo> services = new LinkedHashSet<>();
         private final Set<String> messages = new TreeSet<>();
 
@@ -32,11 +40,13 @@ public class RestartActions {
             messages.add(message);
         }
 
-        private Entry(String clusterName, String clusterType, String serviceType, boolean ignoreForInternalRedeploy) {
+        private Entry(String clusterName, String clusterType, String serviceType,
+                     boolean ignoreForInternalRedeploy, boolean deferChanges) {
             this.clusterName = clusterName;
             this.clusterType = clusterType;
             this.serviceType = serviceType;
             this.ignoreForInternalRedeploy = ignoreForInternalRedeploy;
+            this.deferChanges = deferChanges;
         }
 
         public String getClusterName() {
@@ -53,6 +63,10 @@ public class RestartActions {
 
         public boolean ignoreForInternalRedeploy() {
             return ignoreForInternalRedeploy;
+        }
+
+        public boolean deferChanges() {
+            return deferChanges;
         }
 
         public Set<ServiceInfo> getServices() {
@@ -76,8 +90,10 @@ public class RestartActions {
     public RestartActions(List<ConfigChangeAction> actions) {
         for (ConfigChangeAction action : actions) {
             if (action.getType().equals(ConfigChangeAction.Type.RESTART)) {
+                boolean deferChanges = (action instanceof ConfigChangeRestartAction vra)
+                        && vra.configChange() == ConfigChangeRestartAction.ConfigChange.DEFER_UNTIL_RESTART;
                 for (ServiceInfo service : action.getServices()) {
-                    addEntry(service, action.ignoreForInternalRedeploy()).
+                    addEntry(service, action.ignoreForInternalRedeploy(), deferChanges).
                             addService(service).
                             addMessage(action.getMessage());
                 }
@@ -85,13 +101,15 @@ public class RestartActions {
         }
     }
 
-    private Entry addEntry(ServiceInfo service, boolean ignoreForInternalRedeploy) {
+    private Entry addEntry(ServiceInfo service, boolean ignoreForInternalRedeploy, boolean deferChanges) {
         String clusterName = service.getProperty("clustername").orElse("");
         String clusterType = service.getProperty("clustertype").orElse("");
-        String entryId = clusterType + "." + clusterName + "." + service.getServiceType() + "." + ignoreForInternalRedeploy;
+        String entryId = clusterType + "." + clusterName + "." + service.getServiceType()
+                       + "." + ignoreForInternalRedeploy + "." + deferChanges;
         Entry entry = actions.get(entryId);
         if (entry == null) {
-            entry = new Entry(clusterName, clusterType, service.getServiceType(), ignoreForInternalRedeploy);
+            entry = new Entry(clusterName, clusterType, service.getServiceType(),
+                            ignoreForInternalRedeploy, deferChanges);
             actions.put(entryId, entry);
         }
         return entry;

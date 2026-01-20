@@ -75,6 +75,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _global_filter_set(false),
       _global_filter_hits(),
       _global_filter_hit_ratio(),
+      _lazy_filter(),
       _doom(doom),
       _matching_phase(MatchingPhase::FIRST_PHASE),
       _nni_stats(),
@@ -138,11 +139,25 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
 }
 
 void
+NearestNeighborBlueprint::set_lazy_filter(const GlobalFilter &lazy_filter) {
+    _lazy_filter = lazy_filter.shared_from_this();
+}
+
+void
 NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index)
 {
     uint32_t k = _adjusted_target_hits;
     const auto &df = _distance_calc->function();
-    if (_global_filter->is_active()) {
+    if (_lazy_filter && _lazy_filter->is_active()) { // Global filter might or might not be active
+        std::shared_ptr<const GlobalFilter> use_filter = _lazy_filter;
+        if (_global_filter->is_active()) { // Both global filter and lazy filter
+            use_filter = FallbackFilter::create(*_global_filter, *_lazy_filter);
+        }
+        bool low_hit_ratio = (static_cast<double>(use_filter->count()) / _attr_tensor.get_num_docs()) < _hnsw_params.filter_first_upper_limit;
+        _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *use_filter, low_hit_ratio, _hnsw_params.filter_first_exploration,
+                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _doom, _hnsw_params.distance_threshold);
+        _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
+    } else if (_global_filter->is_active()) {
         _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *_global_filter, _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit, _hnsw_params.filter_first_exploration,
                                                         k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;

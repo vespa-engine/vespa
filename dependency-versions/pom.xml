@@ -33,6 +33,7 @@
 
         <!-- DO NOT UPGRADE THESE TO A NEW MAJOR VERSION WITHOUT CHECKING FOR BINARY COMPATIBILITY -->
         <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
+        <dev-smart-ubjson.vespa.version>0.1.8</dev-smart-ubjson.vespa.version>
         <error-prone-annotations.vespa.version>2.30.0</error-prone-annotations.vespa.version>
         <guava.vespa.version>33.2.1-jre</guava.vespa.version>
         <guice.vespa.version>6.0.0</guice.vespa.version>
@@ -68,11 +69,8 @@
         <assertj.vespa.version>3.26.3</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <aws-sdk.vespa.version>1.12.768</aws-sdk.vespa.version>
         <athenz.vespa.version>1.11.63</athenz.vespa.version>
         <!-- Athenz END -->
-
-        <aws-sdk2.vespa.version>2.27.4</aws-sdk2.vespa.version>
         <bouncycastle.vespa.version>1.78.1</bouncycastle.vespa.version>
         <byte-buddy.vespa.version>1.17.6</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
@@ -87,11 +85,11 @@
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
         <commons-compress.vespa.version>1.27.0</commons-compress.vespa.version>
         <commons-cli.vespa.version>1.9.0</commons-cli.vespa.version>
-	 <!-- WARNING: If you change curator version, you might need to update
-                 zkfacade/src/main/java/org/apache/curator/**/package-info.java
+        <!-- WARNING: If you change curator version, you might need to update
+             zkfacade/src/main/java/org/apache/curator/**/package-info.java
              using something like
-                 find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
-                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
+             find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
+             xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
         -->
         <curator.vespa.version>5.8.0</curator.vespa.version>
         <dropwizard.metrics.vespa.version>4.2.26</dropwizard.metrics.vespa.version> <!-- ZK 3.9.x requires this -->
@@ -146,7 +144,7 @@
         <org.apache.datasketches.vespa.version>7.0.1</org.apache.datasketches.vespa.version>
         <org.apache.datasketches.memory.vespa.version>4.1.0</org.apache.datasketches.memory.vespa.version>
         <org.json.vespa.version>20240303</org.json.vespa.version>
-        <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
+        <at.yawk.lz4.vespa.version>1.10.1</at.yawk.lz4.vespa.version>
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
         <plexus-archiver.vespa.version>4.10.0</plexus-archiver.vespa.version>
         <plexus-interpolation.vespa.version>1.27</plexus-interpolation.vespa.version>

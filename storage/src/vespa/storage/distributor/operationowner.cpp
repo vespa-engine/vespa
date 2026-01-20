@@ -7,7 +7,7 @@
 #include <vespa/storageframework/generic/clock/clock.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".operationowner");
+LOG_SETUP(".distributor.operation_owner");
 
 namespace storage::distributor {
 

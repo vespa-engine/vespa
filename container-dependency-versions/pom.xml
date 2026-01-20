@@ -90,8 +90,8 @@
             <dependency>
                 <!-- TODO Vespa 9 Stop providing servlet-api 3.x -->
                 <groupId>javax.servlet</groupId>
-              <artifactId>javax.servlet-api</artifactId>
-              <version>${javax.servlet-api.vespa.version}</version>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>${javax.servlet-api.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.ws.rs</groupId>

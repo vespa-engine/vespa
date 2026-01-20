@@ -33,6 +33,7 @@ vespa_define_module(
     src/tests/array
     src/tests/arrayqueue
     src/tests/assert
+    src/tests/atomics
     src/tests/barrier
     src/tests/barrier_bench
     src/tests/benchmark

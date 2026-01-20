@@ -54,7 +54,7 @@ class SslHandshakeMetricsIT {
                 .withTrustStore(certificateFile)
                 .build();
         assertHttpsRequestTriggersSslHandshakeException(
-                driver, clientCtx, null, null, "Received fatal alert: bad_certificate");
+                driver, clientCtx, null, null, "Received fatal alert: ");
         verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
@@ -168,7 +168,8 @@ class SslHandshakeMetricsIT {
             client.get("/status.html");
             fail("SSLHandshakeException expected");
         } catch (SSLHandshakeException e) {
-            assertTrue(e.getMessage().contains(expectedExceptionSubstring));
+            assertTrue(e.getMessage().contains(expectedExceptionSubstring),
+                       "expected message containing >>>" + expectedExceptionSubstring + "<<< but got: " + e);
         } catch (SocketException | SSLException e) {
             // This exception is thrown if Apache httpclient's write thread detects the handshake failure before the read thread.
             var msg = e.getMessage();

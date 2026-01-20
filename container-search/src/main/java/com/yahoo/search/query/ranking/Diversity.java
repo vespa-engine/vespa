@@ -8,7 +8,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import java.util.Objects;
 
 /**
- * <p>The diversity settings during match phase of a query.
+ * <p>The settings used to achieve diversity in the match phase of a query.
  * These are the same settings for diversity during match phase that can be set in a rank profile
  * and is used for achieving guaranteed diversity at the cost of slightly higher cost as more hits must be
  * considered compared to plain match-phase.</p>
@@ -22,19 +22,27 @@ public class Diversity implements Cloneable {
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
+    public static final String DIVERSITY = "diversity";
     public static final String ATTRIBUTE = "attribute";
     public static final String MINGROUPS = "minGroups";
+    public static final String CUTOFF_FACTOR = "cutoffFactor";
+    public static final String CUTOFF_STRATEGY = "cutoffStrategy";
+
+    @Deprecated // TODO: Remove on Vespa 9
     public static final String CUTOFF = "cutoff";
+    @Deprecated // TODO: Remove on Vespa 9
     public static final String FACTOR = "factor";
+    @Deprecated // TODO: Remove on Vespa 9
     public static final String STRATEGY = "strategy";
 
-
     static {
-        argumentType = new QueryProfileType(Ranking.DIVERSITY);
+        argumentType = new QueryProfileType(DIVERSITY);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(ATTRIBUTE, "string"));
         argumentType.addField(new FieldDescription(MINGROUPS, "long"));
+        argumentType.addField(new FieldDescription(CUTOFF_FACTOR, "double"));
+        argumentType.addField(new FieldDescription(CUTOFF_STRATEGY, "string"));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
@@ -51,7 +59,7 @@ public class Diversity implements Cloneable {
      * <p>
      * If this is set, make sure to also set the maxGroups value.
      * <p>
-     * This attribute must be singlevalue.
+     * This attribute must be single value.
      */
     public void setAttribute(String attribute) { this.attribute = attribute; }
 

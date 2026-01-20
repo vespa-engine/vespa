@@ -16,7 +16,7 @@ INJECT SchemaParser:
 
     import com.yahoo.schema.DistributableResource;
     import com.yahoo.searchlib.ranking.features.FeatureNames;
-    import com.yahoo.schema.ElementGap;
+    import com.yahoo.search.query.ranking.ElementGap;
     import com.yahoo.schema.OnnxModel;
     import com.yahoo.schema.RankProfile.DiversitySettings;
     import com.yahoo.schema.RankProfile.MatchPhaseSettings;
@@ -399,6 +399,7 @@ TOKEN :
 | < TYPE: "type" >
 | < INDEX: "index" >
 | < INPUTS: "inputs">
+| < LINGUISTICS: "linguistics">
 | < MTOKEN: "token" >
 | < TEXT: "text" >
 | < WORD: "word" >
@@ -408,6 +409,7 @@ TOKEN :
 | < MAX_OCCURRENCES: "max-occurrences" >
 | < MAX_TOKEN_LENGTH: "max-token-length" >
 | < PREFIX: "prefix" >
+| < PROFILE: "profile" >
 | < SUBSTRING: "substring" >
 | < SUFFIX: "suffix" >
 | < CONSTANT: "constant">
@@ -1170,6 +1172,7 @@ void fieldBodyElm(ParsedField field) : { }
        summaryInField(field) |
        indexInsideField(field) |
        indexingElm(field) |
+       linguisticsElm(field) |
        matchSettingsElm(field.matchSettings()) |
        normalizingElm(field) |
        queryCommandInField(field) |
@@ -1233,6 +1236,34 @@ SubLanguageData indexingOperationElm(ParsedField field, boolean multiLine) : { }
         //    //ParsedIndexingOp newOp = new ParsedIndexingOp(oldOp.getScript());
         //    //field.setIndexingOperation(newOp);
         //}
+    }
+;
+
+/**
+ * A linguistics block of a field.
+ */
+void linguisticsElm(ParsedField field) :
+{
+    String indexProfile = null;
+    String searchProfile = null;
+}
+    <LINGUISTICS> openLbrace() <PROFILE> (
+      ( <COLON> indexProfile = identifierStr() (<NL>)* )
+      |
+      ( openLbrace()
+          (
+              ( <INDEX>  <COLON> indexProfile  = identifierStr() (<NL>)* ) |
+              ( <SEARCH> <COLON> searchProfile = identifierStr() (<NL>)* )
+          )+
+        <RBRACE> (<NL>)*
+      )
+    )
+    <RBRACE>
+    {
+      if (searchProfile == null)
+          searchProfile = indexProfile;
+      field.setSearchLinguisticsProfile(searchProfile);
+      field.setIndexLinguisticsProfile(indexProfile);
     }
 ;
 
@@ -3103,7 +3134,7 @@ String constantTensorErrorMessage(String rankProfileName, Reference name) : {}
 
 /**
  * Parses a tensor written in a tensor literal form,
- * https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form
+ * https://docs.vespa.ai/en/reference/ranking/tensor.html#tensor-literal-form
  */
 Tensor tensorValue(TensorType type) :
 {
@@ -3485,6 +3516,7 @@ String identifierStr :
       | <INPUT>
       | <INPUTS>
       | <INTEGER>
+      | <LINGUISTICS>
       | <LITERAL>
       | <LOCALE>
       | <LONG>
@@ -3510,6 +3542,7 @@ String identifierStr :
       | <PARALLEL>
       | <PREFIX>
       | <PRIMARY>
+      | <PROFILE>
       | <PROPERTIES>
       | <QUATERNARY>
       | <QUERY>

@@ -203,24 +203,6 @@ public class LinguisticsAnnotatorTestCase {
     }
 
     @Test
-    public void requireThatExistingAnnotationsAreKept() {
-        runWithBothModes(this::requireThatExistingAnnotationsAreKeptImpl);
-    }
-
-    private void requireThatExistingAnnotationsAreKeptImpl(boolean useSimpleAnnotations) {
-        SpanTree spanTree = new SpanTree(SpanTrees.LINGUISTICS);
-        spanTree.spanList().span(0, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("baz")));
-
-        StringFieldValue val = new StringFieldValue("foo");
-        val.setSpanTree(spanTree);
-
-        Linguistics linguistics = newLinguistics(List.of(token("foo", "bar", TokenType.ALPHABETIC, false)),
-                                                 Map.of());
-        assertTrue(new LinguisticsAnnotator(linguistics, new AnnotatorConfig()).annotate(val));
-        assertEquals(spanTree, val.getSpanTree(SpanTrees.LINGUISTICS));
-    }
-
-    @Test
     public void requireThatTokenizeCappingWorks() {
         runWithBothModes(this::requireThatTokenizeCappingWorksImpl);
     }

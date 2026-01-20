@@ -20,7 +20,7 @@ import static com.yahoo.tensor.serialization.JsonFormat.decodeNumberString;
 
 /**
  * Reads the tensor format defined at
- * See <a href="https://docs.vespa.ai/en/reference/document-json-format.html">https://docs.vespa.ai/en/reference/document-json-format.html</a>
+ * See <a href="https://docs.vespa.ai/en/reference/schemas/document-json-format.html">https://docs.vespa.ai/en/reference/document-json-format.html</a>
  *
  * @author geirst
  * @author bratseth

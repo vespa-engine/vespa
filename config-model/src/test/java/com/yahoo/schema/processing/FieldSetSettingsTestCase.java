@@ -34,10 +34,10 @@ public class FieldSetSettingsTestCase {
                         "The matching settings in fieldset 'default' are inconsistent (explicitly or because of field type). " +
                         "This may lead to recall and ranking issues. The fieldset will use matching TEXT. " +
                         "[ Field 'ci' has matching TEXT,  Field 'ps' has matching WORD] " +
-                        "See https://docs.vespa.ai/en/reference/schema-reference.html#fieldset",
+                        "See https://docs.vespa.ai/en/reference/schemas/schemas.html#fieldset",
                 "For schema 'child', field 'ps': " +
                         "The normalization settings for the fields in fieldset 'default' are inconsistent (explicitly or because of field type). " +
-                        "This may lead to recall and ranking issues. See https://docs.vespa.ai/en/reference/schema-reference.html#fieldset"},
+                        "This may lead to recall and ranking issues. See https://docs.vespa.ai/en/reference/schemas/schemas.html#fieldset"},
                 logger.warnings.toArray());
     }
 

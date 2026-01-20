@@ -19,4 +19,4 @@ if [ $# -lt 1 ]; then
 fi
 CLASS=$1
 shift
-exec java -cp $CLASSPATH $CLASS "$@"
+exec java -Djava.io.tmpdir=@CMAKE_CURRENT_BINARY_DIR@ -cp $CLASSPATH $CLASS "$@"

@@ -79,6 +79,8 @@ class ScriptManager {
         ScriptParserContext parserContext = new ScriptParserContext(linguistics, chunkers, embedders, generators);
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());
         parserContext.getAnnotatorConfig().setMaxTokenizeLength(config.fieldmatchmaxlength());
+        parserContext.getAnnotatorConfig().setMaxReplacementCharactersRatio(config.maxReplacementCharactersRatio());
+        parserContext.getAnnotatorConfig().setMaxReplacementCharacters(config.maxReplacementCharacters());
 
         for (IlscriptsConfig.Ilscript ilscript : config.ilscript()) {
             DocumentType documentType = documentTypes.getDocumentType(ilscript.doctype());

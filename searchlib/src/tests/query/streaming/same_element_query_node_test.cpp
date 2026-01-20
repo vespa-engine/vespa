@@ -13,7 +13,6 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/element_id_extractor.h>
-#include <vespa/searchlib/queryeval/same_element_flags.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -28,7 +27,6 @@ using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
 using search::query::Weight;
 using search::queryeval::ElementIdExtractor;
-using search::queryeval::SameElementFlags;
 using search::SerializedQueryTree;
 using search::streaming::HitList;
 using search::streaming::Query;
@@ -307,20 +305,10 @@ TEST_F(SameElementQueryNodeTest, and_below_same_element)
     EXPECT_EQ((std::vector<uint32_t>{ 7, 12 }), get_element_ids(QueryTweak::AND, elementsvv3));
     EXPECT_TRUE(evaluate_query(QueryTweak::AND, elementsvv9));
     EXPECT_EQ((std::vector<uint32_t>{ 9 }), get_element_ids(QueryTweak::AND, elementsvv9));
-    {
-        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(false);
-        SCOPED_TRACE("query_builder_tweak false");
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::AND, elementsvv3));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::AND, elementsvv9));
-    }
-    {
-        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(true);
-        SCOPED_TRACE("query_builder_tweak true");
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 7, 12 }, { 7, 12 } }),
-                  extract_element_ids(QueryTweak::AND, elementsvv3));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 9 }, { 9 } }),
-                  extract_element_ids(QueryTweak::AND, elementsvv9));
-    }
+    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 7, 12 }, { 7, 12 } }),
+              extract_element_ids(QueryTweak::AND, elementsvv3));
+    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 9 }, { 9 } }),
+              extract_element_ids(QueryTweak::AND, elementsvv9));
 }
 
 TEST_F(SameElementQueryNodeTest, or_below_same_element)
@@ -331,20 +319,10 @@ TEST_F(SameElementQueryNodeTest, or_below_same_element)
     EXPECT_EQ((std::vector<uint32_t>{ 5, 7, 10, 12 }), get_element_ids(QueryTweak::OR, elementsvv3));
     EXPECT_TRUE(evaluate_query(QueryTweak::OR, elementsvv9));
     EXPECT_EQ((std::vector<uint32_t>{ 4, 6, 9 }), get_element_ids(QueryTweak::OR, elementsvv9));
-    {
-        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(false);
-        SCOPED_TRACE("query_builder_tweak false");
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::OR, elementsvv3));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::OR, elementsvv9));
-    }
-    {
-        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(true);
-        SCOPED_TRACE("query_builder_tweak true");
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 5, 10 }, { 7, 12 } }),
-                  extract_element_ids(QueryTweak::OR, elementsvv3));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 6 }, { 4, 9 } }),
-                  extract_element_ids(QueryTweak::OR, elementsvv9));
-    }
+    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 5, 10 }, { 7, 12 } }),
+              extract_element_ids(QueryTweak::OR, elementsvv3));
+    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 6 }, { 4, 9 } }),
+              extract_element_ids(QueryTweak::OR, elementsvv9));
 }
 
 TEST_F(SameElementQueryNodeTest, and_not_below_same_element)
@@ -358,22 +336,12 @@ TEST_F(SameElementQueryNodeTest, and_not_below_same_element)
     EXPECT_EQ((std::vector<uint32_t>{}), get_element_ids(QueryTweak::ANDNOT, elementsvv5));
     EXPECT_TRUE(evaluate_query(QueryTweak::ANDNOT, elementsvv9));
     EXPECT_EQ((std::vector<uint32_t>{ 6 }), get_element_ids(QueryTweak::ANDNOT, elementsvv9));
-    {
-        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(false);
-        SCOPED_TRACE("expose_descendants_tweak false");
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::ANDNOT, elementsvv3));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::ANDNOT, elementsvv5));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::ANDNOT, elementsvv9));
-    }
-    {
-        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(true);
-        SCOPED_TRACE("expose_descendants_tweak true");
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 5, 10 }, {} }),
-                  extract_element_ids(QueryTweak::ANDNOT, elementsvv3));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::ANDNOT, elementsvv5));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 6 }, {} }),
-                  extract_element_ids(QueryTweak::ANDNOT, elementsvv9));
-    }
+    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 5, 10 }, {} }),
+              extract_element_ids(QueryTweak::ANDNOT, elementsvv3));
+    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }),
+              extract_element_ids(QueryTweak::ANDNOT, elementsvv5));
+    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 6 }, {} }),
+              extract_element_ids(QueryTweak::ANDNOT, elementsvv9));
 }
 
 TEST_F(SameElementQueryNodeTest, rank_below_same_element)
@@ -387,20 +355,10 @@ TEST_F(SameElementQueryNodeTest, rank_below_same_element)
     EXPECT_EQ((std::vector<uint32_t>{7, 12}), get_element_ids(QueryTweak::RANK, elementsvv5));
     EXPECT_TRUE(evaluate_query(QueryTweak::RANK, elementsvv9));
     EXPECT_EQ((std::vector<uint32_t>{ 4, 6, 9 }), get_element_ids(QueryTweak::RANK, elementsvv9));
-    {
-        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(false);
-        SCOPED_TRACE("expose_descendants_tweak false");
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::RANK, elementsvv3));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::RANK, elementsvv5));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ {}, {} }), extract_element_ids(QueryTweak::RANK, elementsvv9));
-    }
-    {
-        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(true);
-        SCOPED_TRACE("expose_descendants_tweak true");
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 5, 7, 10,12 }, { 7, 12 } }),
-                  extract_element_ids(QueryTweak::RANK, elementsvv3));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 7, 12 }, { 7, 12 } }), extract_element_ids(QueryTweak::RANK, elementsvv5));
-        EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 4, 6,9 }, { 4, 9 } }),
-                  extract_element_ids(QueryTweak::RANK, elementsvv9));
-    }
+    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 5, 7, 10,12 }, { 7, 12 } }),
+              extract_element_ids(QueryTweak::RANK, elementsvv3));
+    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 7, 12 }, { 7, 12 } }),
+              extract_element_ids(QueryTweak::RANK, elementsvv5));
+    EXPECT_EQ((std::vector<std::vector<uint32_t>>{ { 4, 6,9 }, { 4, 9 } }),
+              extract_element_ids(QueryTweak::RANK, elementsvv9));
 }

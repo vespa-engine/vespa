@@ -38,7 +38,7 @@ public class StreamingValidator implements Validator {
             }
             if (cluster.hasStreaming() && cluster.hasIndexed()) {
                 deployLogger.logApplicationPackage(Level.WARNING, "For search cluster '" + cluster +
-                        "': Using document types with both streaming and indexed mode is discouraged, see https://docs.vespa.ai/en/streaming-search.html.");
+                        "': Using document types with both streaming and indexed mode is discouraged, see https://docs.vespa.ai/en/performance/streaming-search.html.");
             }
         }
     }

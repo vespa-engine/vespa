@@ -70,7 +70,7 @@ public class CommandLineOptions {
 
         options.addOption(Option.builder("f")
                 .hasArg(true)
-                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/documents.html#fieldsets) (default '" + DocumentOnly.NAME + "')")
+                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/schemas/documents.html#fieldsets) (default '" + DocumentOnly.NAME + "')")
                 .longOpt(FIELDSET_OPTION)
                 .argName("fieldset").build());
 

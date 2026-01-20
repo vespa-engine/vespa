@@ -4,15 +4,10 @@
 package jvm
 
 import (
-	"bytes"
 	"crypto/md5"
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"regexp"
-	"strconv"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
@@ -27,11 +22,6 @@ const (
 
 type ApplicationContainer struct {
 	containerBase
-}
-
-type DetectJavaVersion struct {
-	output string
-	major  int
 }
 
 func md5Hex(text string) string {
@@ -189,67 +179,6 @@ func (c *ApplicationContainer) exportExtraEnv(ps *prog.Spec) {
 }
 
 // addJdkVersionSpecificArgs appends JVM args depending on detected JDK major version.
-// - JDK 17/18: --add-modules=jdk.incubator.foreign
-// - JDK 19-21: --enable-preview and --enable-native-access=ALL-UNNAMED
 func (a *ApplicationContainer) addJdkVersionSpecificArgs() {
-	javaVersion := detectJavaMajorVersion()
-	major := javaVersion.major
-	if major == 0 {
-		trace.Warning("Could not detect Java version; skipping version-specific JVM args. Output: " + javaVersion.output)
-		return
-	}
-	switch {
-	case major == 17 || major == 18:
-		a.JvmOptions().AddOption("--add-modules=jdk.incubator.foreign")
-		trace.Info("Added incubator module flag for Java", major)
-	case major >= 19 && major <= 21:
-		a.JvmOptions().AddOption("--enable-preview")
-		a.JvmOptions().AddOption("--enable-native-access=ALL-UNNAMED")
-		trace.Info("Added preview and native-access flags for Java", major)
-	default:
-		trace.Warning("Unrecognized Java major version, no additional JVM flags added:", major)
-	}
-}
-
-// Returns 0 on failure.
-func detectJavaMajorVersion() DetectJavaVersion {
-	java := "java"
-	if home := os.Getenv("JAVA_HOME"); home != "" {
-		candidate := filepath.Join(home, "bin", "java")
-		if _, err := os.Stat(candidate); err == nil {
-			java = candidate
-		}
-	}
-	// The UsePerfData option is added to avoid issues with perf data path being locked
-	cmd := exec.Command(java, "-version", "-XX:-UsePerfData")
-	var out bytes.Buffer
-	var errorBuffer bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &errorBuffer
-	if err := cmd.Run(); err != nil {
-		trace.Trace("java -version failed:", err)
-		return DetectJavaVersion{output: out.String(), major: 0}
-	}
-	s := out.String()
-	if s == "" {
-		s = errorBuffer.String()
-	}
-	return DetectJavaVersion{output: s, major: parseJavaVersion(s)}
-}
-
-func parseJavaVersion(versionString string) int {
-	// Look for a quoted version like "17.0.9"
-	re := regexp.MustCompile(`\"(\d+)(?:\.(\d+))?`)
-	m := re.FindStringSubmatch(versionString)
-	if len(m) < 2 {
-		return 0
-	}
-	major, _ := strconv.Atoi(m[1])
-	// Handle legacy "1.x" formats (e.g. Java 8 -> "1.8")
-	if major == 1 && len(m) >= 3 {
-		if minor, err := strconv.Atoi(m[2]); err == nil {
-			return minor
-		}
-	}
-	return major
+	a.JvmOptions().VersionOptions(PreviewJvmFeatures)
 }

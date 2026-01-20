@@ -50,6 +50,9 @@ DistributorMetricSet::DistributorMetricSet()
               {{"logdefault"},{"yamasdefault"}},
               "Number of bytes stored in all buckets controlled by "
               "this distributor", this),
+      mutatating_op_memory_usage("mutating_op_memory_usage", {},
+             "Estimated amount of memory used by active mutating operations "
+             "across all distributor stripes, in bytes", this),
       mutable_dbs("mutable", this),
       read_only_dbs("read_only", this)
 {}

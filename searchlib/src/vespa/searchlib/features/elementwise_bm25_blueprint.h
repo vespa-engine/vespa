@@ -22,9 +22,10 @@ class ElementwiseBm25Blueprint : public fef::Blueprint {
     const fef::FieldInfo* _field;
     double _k1_param;
     double _b_param;
-    std::optional<double> _avg_element_length;
+    std::optional<double>                  _avg_element_length;
     vespalib::eval::ValueType              _output_tensor_type;
     std::unique_ptr<vespalib::eval::Value> _empty_output;
+
 public:
     ElementwiseBm25Blueprint();
     ~ElementwiseBm25Blueprint() override;

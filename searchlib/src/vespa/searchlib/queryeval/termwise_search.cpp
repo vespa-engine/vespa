@@ -19,7 +19,10 @@ struct TermwiseSearch : public SearchIterator {
     }
 
     TermwiseSearch(SearchIterator::UP search_in)
-        : search(std::move(search_in)), result(), my_beginid(0), my_first_hit(0) {}
+        : search(std::move(search_in)), result(), my_beginid(0), my_first_hit(0)
+    {
+        set_id(search->id());
+    }
     ~TermwiseSearch() override;
 
     Trinary is_strict() const override { return IS_STRICT ? Trinary::True : Trinary::False; }
@@ -51,6 +54,10 @@ struct TermwiseSearch : public SearchIterator {
     void visitMembers(vespalib::ObjectVisitor &visitor) const override {
         visit(visitor, "search", *search);
         visit(visitor, "strict", IS_STRICT);
+    }
+    void transform_children(std::function<SearchIterator::UP(SearchIterator::UP)> f) override
+    {
+        search = f(std::move(search));
     }
 };
 

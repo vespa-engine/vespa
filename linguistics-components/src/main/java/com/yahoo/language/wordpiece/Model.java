@@ -65,10 +65,9 @@ class Model {
 
     Language language() { return language; }
 
-    List<Integer> embed(String text, Tokenizer tokenizer) {
+    List<Integer> embed(String text, Tokenizer tokenizer, LinguisticsParameters parameters) {
         List<Integer> ids = new ArrayList<>();
         text = text.toLowerCase();
-        var parameters = new LinguisticsParameters(language, StemMode.NONE, true, true);
         for (Token t : tokenizer.tokenize(text, parameters)) {
             String originalToken = t.getTokenString();
             String candidate = originalToken;
@@ -85,8 +84,8 @@ class Model {
         return ids;
     }
 
-    List<String> segment(String text, Tokenizer tokenizer) {
-        return embed(text, tokenizer).stream().map(tokenId -> tokenId2Token.get(tokenId)).toList();
+    List<String> segment(String text, Tokenizer tokenizer, LinguisticsParameters parameters) {
+        return embed(text, tokenizer, parameters).stream().map(tokenId -> tokenId2Token.get(tokenId)).toList();
     }
 
     private Tuple2<String, Integer> findLongestSubstring(String candidate) {

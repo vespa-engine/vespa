@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "refcountable.h"
 #include <vespa/fsa/conceptnet.h>
+#include <memory>
 #include <string>
 
 namespace fsa {
@@ -39,12 +39,7 @@ private:
    */
   Handle& operator=(const Handle&);
 
-  class RefCountableConceptNet: public ConceptNet, public RefCountable<ConceptNet> {
-  public:
-    RefCountableConceptNet(const char *fsafile, const char *datafile=nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF) : ConceptNet(fsafile,datafile,fam) {}
-  };
-
-  RefCountableConceptNet *_conceptNet; /**< The ConceptNet object itself. */
+  std::shared_ptr<ConceptNet> _conceptNet; /**< The ConceptNet object itself. */
 
 public:
 
@@ -55,9 +50,9 @@ public:
    *
    * @param h Reference to existing ConceptNet::Handle.
    */
-  Handle(const Handle& h) : _conceptNet(h._conceptNet)
+  Handle(const Handle &h)
+    : _conceptNet(h._conceptNet)
   {
-    _conceptNet->addReference();
   }
 
   /**
@@ -69,10 +64,9 @@ public:
    * @param fam File access mode (read or mmap). If not set, the
    *            global preferred access mode will be used.
    */
-  Handle(const char *fsafile, const char *datafile=nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF) :
-    _conceptNet(new RefCountableConceptNet(fsafile,datafile,fam))
+  Handle(const char *fsafile, const char *datafile=nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+    : _conceptNet(std::make_shared<ConceptNet>(fsafile, datafile, fam))
   {
-    _conceptNet->addReference();
   }
 
   /**
@@ -84,19 +78,15 @@ public:
    * @param fam File access mode (read or mmap). If not set, the
    *            global preferred access mode will be used.
    */
-  Handle(const std::string &fsafile, const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF) :
-    _conceptNet(new RefCountableConceptNet(fsafile.c_str(),datafile.c_str(),fam))
+  Handle(const std::string &fsafile, const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+    : _conceptNet(std::make_shared<ConceptNet>(fsafile, datafile, fam))
   {
-    _conceptNet->addReference();
   }
 
   /**
    * @brief Destructor.
    */
-  ~Handle()
-  {
-    _conceptNet->removeReference();
-  }
+  ~Handle() = default;
 
   /**
    * @brief Dereference operator, provides access to ConceptNet
@@ -112,11 +102,10 @@ public:
    *
    * @return Pointer the ConceptNet object.
    */
-  const ConceptNet* operator->() const { return _conceptNet; }
+  const ConceptNet* operator->() const { return _conceptNet.get(); }
 
 };
 
 // }}}
 
 } // namespace fsa
-

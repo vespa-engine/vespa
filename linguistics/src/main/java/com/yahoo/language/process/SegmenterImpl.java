@@ -18,8 +18,7 @@ public class SegmenterImpl implements Segmenter {
     }
 
     @Override
-    public List<String> segment(String input, Language language) {
-        var parameters = new LinguisticsParameters(language, StemMode.NONE, false, false);
+    public List<String> segment(String input, LinguisticsParameters parameters) {
         List<String> segments = new ArrayList<>();
         for (Token token : tokenizer.tokenize(input, parameters))
             findSegments(token, segments);

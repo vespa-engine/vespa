@@ -18,8 +18,10 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
+import com.yahoo.vespa.config.server.session.ActivationTriggers.DeferredReconfiguration;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.NodeRestart;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.Reindexing;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -38,6 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.session.Session.Status.DELETE;
 import static java.util.stream.Collectors.groupingBy;
@@ -131,6 +134,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = params.get().getTimeoutBudget();
             timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
+            applyDeferredReconfigurationOfClusters();
             Activation activation = applicationRepository.activate(session, applicationId, tenant, params.get().isBootstrap(), params.get().force());
             waitForActivation(applicationId, timeoutBudget, activation);
             restartServicesIfNeeded(applicationId);
@@ -202,6 +206,24 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                                                                  typesInCluster.getValue().stream()
                                                                                                .map(Reindexing::documentType).collect(joining(", ")))
                                                           .collect(joining("; "))));
+    }
+
+    private void applyDeferredReconfigurationOfClusters() {
+        var clustersWithDeferredReconfiguration = session.getActivationTriggers().deferredReconfigurations().stream()
+                .map(DeferredReconfiguration::clusterId)
+                .collect(Collectors.toSet());
+        if (clustersWithDeferredReconfiguration.isEmpty()) return;
+
+        // Get the Vespa model of the session being activated and mark clusters for deferred reconfiguration
+        var model = sessionRepository().getRemoteSession(session.getSessionId()).applicationVersions()
+                .flatMap(versions -> versions.get(session.getVespaVersion()))
+                .map(Application::getModel)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot apply deferred reconfiguration: no model available for session " + session.getSessionId()));
+        model.markClustersForDeferredReconfiguration(clustersWithDeferredReconfiguration);
+        clustersWithDeferredReconfiguration.forEach(clusterName ->
+            deployLogger.log(Level.INFO, "Deferring reconfiguration of cluster '%s' until restart is completed"
+                    .formatted(clusterName)));
     }
 
     /**

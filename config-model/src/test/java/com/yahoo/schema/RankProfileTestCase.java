@@ -8,7 +8,6 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
-import com.yahoo.schema.ElementGap;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -16,6 +15,7 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import com.yahoo.search.query.ranking.ElementGap;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.RawRankProfile;
 import com.yahoo.schema.document.RankType;
@@ -817,6 +817,44 @@ rank-profile feature_logging {
         assertEquals(3, registry.all().size());
         RawRankProfile rawProfile = createRawRankProfile(registry.get(schema, "test"), schema);
         assertEquals("17.0", findProperty(rawProfile.configProperties(), "vespa.hitcollector.secondphase.rankscoredroplimit").get());
+    }
+
+    @Test
+    void testSwitchExpressionTransformation() throws ParseException {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        ApplicationBuilder builder = new ApplicationBuilder(registry);
+        String input = """
+            schema test {
+              document test {
+                field myrank type int {
+                  indexing: attribute | summary
+                }
+              }
+              rank-profile test inherits default {
+                first-phase {
+                   expression: switch(attribute(myrank)) { case 100: 10000, case 50: 2500, default: 0 }
+                }
+              }
+            }
+            """;
+        builder.addSchema(input);
+        Application application = builder.build(true);
+        RankProfile profile = application.rankProfileRegistry().get("test", "test");
+
+        // Explicitly compile the profile to trigger transformations
+        var queryProfiles = new QueryProfileRegistry();
+        var importedModels = new ImportedMlModels();
+        RankProfile compiledProfile = profile.compile(queryProfiles, importedModels);
+
+        var rootNode = compiledProfile.getFirstPhaseRanking().getRoot();
+        String expression = rootNode.toString();
+
+        // Switch should be transformed to nested if statements
+        assertTrue(expression.contains("if"), "Expression should contain 'if' after transformation: " + expression);
+        assertFalse(expression.contains("switch"), "Expression should not contain 'switch' after transformation: " + expression);
+        assertTrue(expression.contains("attribute(myrank)"), "Expression should contain discriminant: " + expression);
+        assertTrue(expression.contains("10000"), "Expression should contain case result: " + expression);
+        assertTrue(expression.contains("2500"), "Expression should contain case result: " + expression);
     }
 
 }

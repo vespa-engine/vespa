@@ -14,7 +14,6 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -24,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import static com.yahoo.vespa.model.container.ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory;
 
 /**
  * A test-only Properties class
@@ -67,7 +68,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int rpc_num_targets = 2;
     private int rpc_events_before_wakeup = 1;
     private int mbus_network_threads = 1;
-    private int heapSizePercentage = ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory;
+    private final Map<String, Integer> heapSizePercentage = new HashMap<>();
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
@@ -75,12 +76,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int searchCoreMaxOutstandingMoveOps = 100;
-    private Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
+    private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private boolean useNewPrepareForRestart = true;
-    private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
+    private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
-    private double docprocHandlerThreadpool = 1.0;
-    private boolean adjustCCMaxHeap = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -122,7 +121,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int mbusCppRpcNumTargets() { return mbus_cpp_num_targets; }
     @Override public int mbusCppEventsBeforeWakeup() { return mbus_cpp_events_before_wakeup; }
     @Override public int rpcNumTargets() { return rpc_num_targets; }
-    @Override public int heapSizePercentage() { return heapSizePercentage; }
+    @Override public int heapSizePercentage() { return heapSizePercentage(Optional.empty()); }
+    @Override public int heapSizePercentage(Optional<String> clusterId) {
+        return heapSizePercentage.getOrDefault(clusterId.orElse(""), defaultHeapSizePercentageOfAvailableMemory);
+    }
     @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
@@ -137,8 +139,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
     }
     @Override public boolean useTriton() { return useTriton; }
-    @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
-    @Override public boolean adjustCCMaxHeap() { return adjustCCMaxHeap; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -155,8 +155,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setHeapSizePercentage(int percentage) {
-        this.heapSizePercentage = percentage;
+    public TestProperties setHeapSizePercentage(String clusterId, int percentage) {
+        this.heapSizePercentage.put(clusterId, percentage);
         return this;
     }
 
@@ -334,10 +334,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public void setDocprocHandlerThreadpool(double threads) {
-        this.docprocHandlerThreadpool = threads;
-    }
-
     public TestProperties setMallocImpl(ClusterSpec.Type clusterType, String mallocImpl) {
         this.mallocImpl.put(clusterType, mallocImpl);
         return this;
@@ -355,11 +351,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseTriton(boolean value) {
         this.useTriton = value;
-        return this;
-    }
-
-    public TestProperties adjustCCMaxHeap(boolean value) {
-        this.adjustCCMaxHeap = value;
         return this;
     }
 

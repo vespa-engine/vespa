@@ -74,7 +74,7 @@ public interface ModelContext {
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"hakonhall"}) default boolean useNonPublicEndpointForTest() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"hmusum"}) default String responseSequencerType() { return  "ADAPTIVE"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double queryDispatchWarmup() { return 5.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int defaultNumResponseThreads() { return 2; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int mbusNetworkThreads() { return 1; }
@@ -89,7 +89,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int maxUnCommittedMemory() { return 130000; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default int heapSizePercentage() { return 0; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter="8.621") default int heapSizePercentage() { return 0; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default int heapSizePercentage(Optional<String> clusterId) { return  0;}
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.75; }
@@ -100,7 +101,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 10; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 10; } // TODO(bjorncs, 2025-12-01) Remove after Jan 2026
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default SharedHosts sharedHosts() { return SharedHosts.empty(); }
@@ -108,11 +109,11 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default double logserverNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return false; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean sendProtobufQuerytree() { return false; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean sendProtobufQuerytree() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
-        @ModelFeatureFlag(owners = {"bjorncs"}) default int documentV1QueueSize() { return -1; /* use default from config def */ }
+        @ModelFeatureFlag(owners = {"bjorncs"}) default int documentV1QueueSize() { return -1; /* use default from config def */ } // TODO(bjorncs, 2025-12-01) Remove after Jan 2026
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default int maxDocumentOperationRequestSizeMib() { return 2048; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
@@ -120,7 +121,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean useNewPrepareForRestart() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
         @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean adjustCCMaxHeap() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -163,6 +163,8 @@ public interface ModelContext {
         default String mallocImpl(Optional<ClusterSpec.Type> clusterType) { return ""; }
 
         default int searchNodeInitializerThreads(String clusterId) { return 0; }
+
+        default int heapSizePercentage(String clusterId) { return 0;}
 
         // Note: Used in unit tests (set to false in TestProperties) to avoid needing to deal with implicitly created node for logserver
         default boolean useDedicatedNodeForLogserver() { return true; }

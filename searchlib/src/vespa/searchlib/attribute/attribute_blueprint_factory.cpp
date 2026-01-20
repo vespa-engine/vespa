@@ -30,6 +30,7 @@
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
+#include <vespa/searchlib/queryeval/lazy_filter.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/queryeval/orlikesearch.h>
@@ -42,6 +43,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/regexp.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <charconv>
 #include <limits>
@@ -158,7 +160,8 @@ public:
             return {estimate_when_unknown(), lookup_cost(indirections), lookup_strict_cost(indirections)};
         } else {
             double rel_est = abs_to_rel_est(_hit_estimate.est_hits(), docid_limit);
-            return {rel_est, btree_cost(rel_est), btree_strict_cost(rel_est)};
+            double merge_factor = _search_context->posting_list_merge_factor();
+            return {rel_est, btree_cost(rel_est), btree_strict_cost(rel_est, merge_factor)};
         }
     }
 
@@ -315,7 +318,15 @@ public:
         }
     }
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
-        return create_default_filter(constraint);
+        if (constraint == FilterConstraint::UPPER_BOUND) {
+            auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
+            wrapper->wrap(createLeafSearch(wrapper->tfmda()));
+            return wrapper;
+
+        } else {
+            REQUIRE_EQ(constraint, FilterConstraint::LOWER_BOUND);
+            return std::make_unique<queryeval::EmptySearch>();
+        }
     }
 
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override {
@@ -339,12 +350,14 @@ class LocationPostFilterBlueprint : public ComplexLeafBlueprint
 private:
     const IAttributeVector  &_attribute;
     common::Location _location;
+    HitEstimate _pre_filter_estimate;
 
 public:
     LocationPostFilterBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc)
         : ComplexLeafBlueprint(field),
           _attribute(attribute),
-          _location(loc)
+          _location(loc),
+          _pre_filter_estimate()
     {
         uint32_t estHits = 0;
         if (loc.valid()) {
@@ -359,6 +372,8 @@ public:
     ~LocationPostFilterBlueprint() override;
 
     const common::Location &location() const { return _location; }
+
+    void set_pre_filter_estimate(const HitEstimate &estimate) { _pre_filter_estimate = estimate; }
 
     void sort(queryeval::InFlow in_flow) override {
         resolve_strict(in_flow);
@@ -382,6 +397,9 @@ public:
     }
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
+    }
+    std::shared_ptr<queryeval::GlobalFilter> create_lazy_filter() const override {
+        return queryeval::LocationLazyFilter::create(_location, _pre_filter_estimate);
     }
     void visitMembers(vespalib::ObjectVisitor& visitor) const override {
         LeafBlueprint::visitMembers(visitor);
@@ -413,6 +431,7 @@ make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribut
             location.bounding_box.x.high,
             location.bounding_box.y.high);
     auto pre_filter = std::make_unique<LocationPreFilterBlueprint>(field, attribute, rangeVector, scParams);
+    post_filter->set_pre_filter_estimate(pre_filter->getState().estimate());
     if (!pre_filter->should_use()) {
         LOG(debug, "only use post filter");
         return post_filter;

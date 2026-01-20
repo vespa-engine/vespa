@@ -84,7 +84,7 @@ DiskIndexes::get_transient_size(IndexDiskLayout& layout, IndexDiskDir index_disk
      * Only report transient size related to a valid fusion index. This ensures
      * that transient size is reported once per index collection.
      */
-    if (!index_disk_dir.valid() || !index_disk_dir.is_fusion_index()) {
+    if (!index_disk_dir.valid() || !index_disk_dir.is_fusion_index_or_first_flush_index()) {
         return 0u;
     }
     uint64_t transient_size = 0u;

@@ -53,7 +53,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
         super(chains);
         assert (options != null) : "Null Options for " + this + " under cluster " + cluster.getName();
         this.options = options;
-        this.useSimpleAnnotations = deployState != null && deployState.featureFlags().useSimpleAnnotations();
+        this.useSimpleAnnotations = deployState == null || deployState.featureFlags().useSimpleAnnotations();
 
         if (addSourceClientProvider) {
             addSource(cluster, "source", SessionConfig.Type.SOURCE);
@@ -88,7 +88,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
         }
         builder.simpleAnnotations(useSimpleAnnotations);
     }
-    
+
     @Override
     public void getConfig(SchemamappingConfig.Builder builder) {
         Map<Pair<String, String>, String> allMappings = new HashMap<>();
@@ -112,7 +112,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
             }
         }
     }
-    
+
     /**
      * The field name schema map that applies to this whole chain
      * @return doctype,from → to

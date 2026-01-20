@@ -190,7 +190,7 @@
                             </filter>
                         </filters>
                     </configuration>
-                 </plugin>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-site-plugin</artifactId>
@@ -309,8 +309,8 @@
                 </plugin>
                 <plugin>
                     <!--
-                    Configure rewrite-maven-plugin to facilitate Junit4 to Junit5 conversion.
-                    Run "mvn rewrite:run" to perform automated rewrite to Junit5.
+                        Configure rewrite-maven-plugin to facilitate Junit4 to Junit5 conversion.
+                        Run "mvn rewrite:run" to perform automated rewrite to Junit5.
                     -->
                     <groupId>org.openrewrite.maven</groupId>
                     <artifactId>rewrite-maven-plugin</artifactId>
@@ -356,14 +356,14 @@
                             <configuration>
                                 <release>21</release>
                                 <compilerArgs>
-                                <arg>--enable-preview</arg>
-                                <arg>-Xlint:all</arg>
-                                <arg>-Xlint:-this-escape</arg>
-                                <arg>-Xlint:-preview</arg>
-                                <arg>-Xlint:-serial</arg>
-                                <arg>-Xlint:-try</arg>
-                                <arg>-Xlint:-processing</arg>
-                                <arg>-Werror</arg>
+                                    <arg>--enable-preview</arg>
+                                    <arg>-Xlint:all</arg>
+                                    <arg>-Xlint:-this-escape</arg>
+                                    <arg>-Xlint:-preview</arg>
+                                    <arg>-Xlint:-serial</arg>
+                                    <arg>-Xlint:-try</arg>
+                                    <arg>-Xlint:-processing</arg>
+                                    <arg>-Werror</arg>
                                 </compilerArgs>
                             </configuration>
                         </plugin>
@@ -525,24 +525,14 @@
                 <version>${huggingface.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-core</artifactId>
-                <version>${aws-sdk.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-ssm</artifactId>
-                <version>${aws-sdk.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-sts</artifactId>
-                <version>${aws-sdk.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.auth0</groupId>
                 <artifactId>java-jwt</artifactId>
                 <version>${java-jwt.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dev-smart</groupId>
+                <artifactId>ubjson</artifactId>
+                <version>${dev-smart-ubjson.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -595,9 +585,9 @@
                 <version>${zookeeper.client.vespa.version}</version>
                 <exclusions>
                     <!--
-                      Container provides wiring for all common log libraries
-                      Duplicate embedding results in various warnings being printed to stderr
-                     -->
+                        Container provides wiring for all common log libraries
+                        Duplicate embedding results in various warnings being printed to stderr
+                    -->
                     <exclusion>
                         <groupId>ch.qos.logback</groupId>
                         <artifactId>*</artifactId>
@@ -1376,9 +1366,9 @@
                 <version>${mimepull.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.lz4</groupId>
+                <groupId>at.yawk.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
-                <version>${org.lz4.vespa.version}</version>
+                <version>${at.yawk.lz4.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -1446,13 +1436,6 @@
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
                 <version>${snappy.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>software.amazon.awssdk</groupId>
-                <artifactId>bom</artifactId>
-                <version>${aws-sdk2.vespa.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>xerces</groupId>

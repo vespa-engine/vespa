@@ -26,7 +26,7 @@ import java.util.logging.Level;
 // (this requires adding normalizing and stemming settings to FieldSet).
 public class FieldSetSettings extends Processor {
 
-    private static final String fieldSetDocUrl = "https://docs.vespa.ai/en/reference/schema-reference.html#fieldset";
+    private static final String fieldSetDocUrl = "https://docs.vespa.ai/en/reference/schemas/schemas.html#fieldset";
 
     public FieldSetSettings(Schema schema,
                             DeployLogger deployLogger,

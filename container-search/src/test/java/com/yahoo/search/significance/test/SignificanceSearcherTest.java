@@ -302,9 +302,9 @@ public class SignificanceSearcherTest {
         assertEquals(
                 "Inconsistent 'significance' configuration for the rank profile 'significance-ranking' in the schemas [music, album]. " +
                         "Use 'restrict' to limit the query to a subset of schemas " +
-                        "(https://docs.vespa.ai/en/schemas.html#multiple-schemas). " +
+                        "(https://docs.vespa.ai/en/basics/schemas.html#multiple-schemas). " +
                         "Specify same 'significance' configuration for all selected schemas " +
-                        "(https://docs.vespa.ai/en/reference/schema-reference.html#significance).",
+                        "(https://docs.vespa.ai/en/reference/schemas/schemas.html#significance).",
                 errorMessage
         );
     }

@@ -101,7 +101,7 @@ public class VespaDeployer {
             logger.info("Application package for Vespa Cloud has been generated at: {}", appDir);
             logger.info("To deploy to Vespa Cloud, use the Vespa CLI with the following steps:");
             logger.info("");
-            logger.info("1. If you haven't already, install the Vespa CLI: https://docs.vespa.ai/en/vespa-cli.html");
+            logger.info("1. If you haven't already, install the Vespa CLI: https://docs.vespa.ai/en/clients/vespa-cli.html");
             logger.info("");
             logger.info("2. Point the CLI to your Vespa Cloud application:");
             logger.info("   vespa config set target cloud");
@@ -114,7 +114,7 @@ public class VespaDeployer {
             logger.info("   cd {}", appDir);
             logger.info("   vespa deploy --wait 900");
             logger.info("");
-            logger.info("For more information, see: https://docs.vespa.ai/en/cloud/getting-started");
+            logger.info("For more information, see: https://docs.vespa.ai/en/basics/deploy-an-application.html");
             logger.info("===============================================================");
         }
     }

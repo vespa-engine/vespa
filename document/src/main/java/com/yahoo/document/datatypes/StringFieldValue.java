@@ -2,6 +2,8 @@
 package com.yahoo.document.datatypes;
 
 import com.yahoo.collections.CollectionComparator;
+import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.data.disclosure.DataSource;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.PrimitiveDataType;
@@ -32,7 +34,7 @@ import java.util.logging.Logger;
  * @author Einar M R Rosenvinge
  */
 @SuppressWarnings({"deprecation", "removal"})
-public class StringFieldValue extends FieldValue {
+public class StringFieldValue extends FieldValue implements DataSource {
 
     private static final Logger log = Logger.getLogger(StringFieldValue.class.getName());
 
@@ -322,9 +324,6 @@ public class StringFieldValue extends FieldValue {
         convertAnySimpleAnnotations();
         if (spanTrees == null)
             spanTrees = new HashMap<>(1);
-        if (spanTrees.containsKey(spanTree.getName())) {
-            throw new IllegalArgumentException("Span tree " + spanTree.getName() + " already exists.");
-        }
         spanTrees.put(spanTree.getName(), spanTree);
         spanTree.setStringFieldValue(this);
 
@@ -551,6 +550,11 @@ public class StringFieldValue extends FieldValue {
      */
     public void setUnChecked(String s) {
         value = s;
+    }
+
+    @Override
+    public void emit(DataSink sink) {
+        sink.stringValue(value);
     }
 
 }

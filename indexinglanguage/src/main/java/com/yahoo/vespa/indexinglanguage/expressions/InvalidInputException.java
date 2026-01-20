@@ -5,7 +5,7 @@ import com.yahoo.document.Document;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 
 /**
- * Thrown by {@link Expression#execute(FieldValuesFactory, Document, boolean)}
+ * Thrown by {@link Expression#execute(FieldValuesFactory, Document)}
  * and similar overloads when the input document is invalid.
  *
  * @author bjorncs

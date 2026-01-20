@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -53,7 +54,9 @@ class BundleResolver {
             if (!resolver.resolve()) {
                 throw new RuntimeException(
                         "Failed to resolve bundle dependencies: %s"
-                                .formatted(Arrays.toString(resolver.getUnsatisfiedRequirements())));
+                                .formatted(Arrays.stream(resolver.getUnsatisfiedRequirements())
+                                        .map(m -> "%s %s".formatted(m.getRequirement(), m.getResource()))
+                                        .collect(Collectors.joining())));
             }
             var resolvedBundlePaths = Stream.concat(Arrays.stream(resolver.getRequiredResources()), Arrays.stream(resolver.getAddedResources()))
                     .map(BundleResolver::extractBundlePath)

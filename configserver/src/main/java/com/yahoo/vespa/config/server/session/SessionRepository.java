@@ -653,7 +653,7 @@ public class SessionRepository {
                     boolean activeForApplication = sessionIsActiveForApplication.test(session);
                     if (status == ACTIVATE && activeForApplication) continue;
 
-                    boolean hasExpired = hasExpired(createTime);
+                    boolean hasExpired = hasExpired(session);
                     log.log(Level.FINE, "Session " + sessionId + ", status " + status + ", has expired: " + hasExpired);
                     if (! hasExpired) continue;
 
@@ -671,7 +671,7 @@ public class SessionRepository {
                         deleteLocalSession(sessionId);
                         deletedLocalSessions++;
                     }
-                    if (deletedRemoteSessions  + deletedLocalSessions >= deleteMax)
+                    if (deletedRemoteSessions + deletedLocalSessions >= deleteMax)
                         break;
                 }
             } catch (Throwable e) { // Make sure to catch here, to avoid executor just dying in case of issues ...
@@ -709,8 +709,15 @@ public class SessionRepository {
         return createTime.plus(expiry).isBefore(clock.instant());
     }
 
-    private boolean hasExpired(Instant created) {
-        return created.plus(sessionLifeTime()).isBefore(clock.instant());
+    private boolean hasExpired(Session session) {
+        var created = session.getCreateTime();
+        var startTime = created;
+        var statusChanged = session.statusChanged();
+        if (statusChanged.isAfter(created)) {
+            startTime = statusChanged;
+        }
+        log.log(Level.FINE, "session " + session.getSessionId() + " created " + created + ", status changed " + statusChanged);
+        return startTime.plus(sessionLifeTime()).isBefore(clock.instant());
     }
 
     private Duration sessionLifeTime() { return Duration.ofSeconds(sessionLifeTimeInSeconds()); }
@@ -1013,17 +1020,18 @@ public class SessionRepository {
     public Clock clock() { return clock; }
 
     public void close() {
-        deleteAllSessions();
-        tenantFileSystemDirs.delete();
+        // Make sure to close directory cache first, otherwise we might have
+        // issues with zk path being recreated when delete all sessions
         try {
             if (directoryCache != null) {
                 directoryCache.close();
             }
         } catch (Exception e) {
             log.log(Level.WARNING, "Exception when closing path cache", e);
-        } finally {
-            checkForRemovedSessions(new ArrayList<>());
         }
+        deleteAllSessions();
+        tenantFileSystemDirs.delete();
+        checkForRemovedSessions(new ArrayList<>());
     }
 
     private void sessionsChanged() throws NumberFormatException {

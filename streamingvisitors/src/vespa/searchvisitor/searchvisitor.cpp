@@ -560,7 +560,7 @@ SearchVisitor::init(const Parameters & params)
 
             _rankController.setRankManagerSnapshot(_env->get_rank_manager_snapshot());
             _rankController.setupRankProcessors(_query, location, wantedSummaryCount, ! _sortList.empty(), _attrMan, _attributeFields);
-            _element_gap_inspector.set_index_env(_rankController.getRankProcessor()->get_query_env().getIndexEnvironment());
+            _element_gap_inspector.set_query_env(_rankController.getRankProcessor()->get_query_env());
 
             // This depends on _fieldPathMap (from setupScratchDocument),
             // and IQueryEnvironment (from setupRankProcessors).
@@ -1390,7 +1390,8 @@ SearchVisitor::generate_errors()
 }
 
 SearchVisitor::ElementGapInspector::ElementGapInspector() noexcept
-: _index_env(nullptr)
+  : _query_env(nullptr),
+    _cache(16)
 {
 }
 
@@ -1399,10 +1400,23 @@ SearchVisitor::ElementGapInspector::~ElementGapInspector() = default;
 ElementGap
 SearchVisitor::ElementGapInspector::get_element_gap(uint32_t field_id) const noexcept
 {
-    if (_index_env != nullptr) {
-        auto field = _index_env->getField(field_id);
+    if (_query_env != nullptr) {
+        if (_cache.size() <= field_id) {
+            _cache.resize(2 * field_id + 1);
+        } else if (_cache[field_id].has_value()) {
+            return _cache[field_id].value();
+        }
+        auto field = _query_env->getIndexEnvironment().getField(field_id);
         if (field != nullptr) {
-            return field->get_element_gap();
+            ElementGap result = field->get_element_gap();
+            using mprops = search::fef::indexproperties::matching::ElementGap;
+            std::optional<ElementGap> query_override =
+                    mprops::lookup_for_field(_query_env->getProperties(), field->name());
+            if (query_override.has_value()) {
+                result = query_override.value();
+            }
+            _cache[field_id] = result;
+            return result;
         }
     }
     return std::nullopt;

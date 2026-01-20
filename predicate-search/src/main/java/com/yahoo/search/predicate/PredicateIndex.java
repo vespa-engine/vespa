@@ -35,7 +35,7 @@ import java.util.stream.Stream;
  * @author Magnar Nedland
  * @author bjorncs
  *
- * @deprecated See <a href="https://docs.vespa.ai/en/vespa9-release-notes.html">Vespa 9 Release Notes</a>
+ * @deprecated See <a href="https://docs.vespa.ai/en/reference/release-notes/vespa9.html">Vespa 9 Release Notes</a>
  */
 @Beta
 @Deprecated(forRemoval = true, since = "8")

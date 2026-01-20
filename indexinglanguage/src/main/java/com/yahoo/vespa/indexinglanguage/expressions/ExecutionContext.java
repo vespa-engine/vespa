@@ -9,6 +9,7 @@ import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detection;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -27,7 +28,8 @@ public class ExecutionContext {
     private final Map<Object, Object> cache = LazyMap.newHashMap();
     // Document id is practical for logging and informative error messages
     private DocumentId documentId;
-    private boolean isReindexingOperation;
+    private boolean isReindexingOperation = false;
+    private Instant deadline;
 
     public ExecutionContext() {
         this(null);
@@ -125,13 +127,26 @@ public class ExecutionContext {
     public Optional<DocumentId> getDocumentId() { return Optional.ofNullable(documentId); }
     public ExecutionContext setDocumentId(DocumentId id) { documentId = Objects.requireNonNull(id); return this; }
 
-    /** Clears all state in this except the cache. */
+    public Optional<Instant> getDeadline() { return Optional.ofNullable(deadline); }
+    public ExecutionContext setDeadline(Instant deadline) { this.deadline = deadline; return this; }
+
+    /**
+     * Clears all state in this pertaining to the current indexing statement
+     * Does not clear the cache.
+     * Note that assignLanguage is not cleared; an indexing statement doing
+     * set_language should affect following statements.
+     */
     public ExecutionContext clear() {
-        // Why is language not cleared?
+        // We do not really want to clear variables here, but because
+        // indexing statements are re-ordered letting them survive
+        // will be even more confusing than clearing them.
         variables.clear();
+        // We should probably clear detectedLanguage, but
+        // it looks like the statements that use it will reset it
+        // using resolveLanguage anyway.
+        // TODO: detectedLanguage = Language.UNKNOWN;
         currentValue = null;
-        documentId = null;
-        isReindexingOperation = false;
+        // note: must not reset per-document or global values (like isReindexingOperation, deadline)
         return this;
     }
 

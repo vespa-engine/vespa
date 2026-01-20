@@ -382,6 +382,16 @@ namespace matching {
     };
 
     /**
+     * Use a lazy filter in addition to the global filter in NNS
+     **/
+    struct LazyFilter {
+        static const std::string NAME;
+        static const bool DEFAULT_VALUE;
+        static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
+        static bool check(const Properties &props, bool fallback);
+    };
+
+    /**
      * Try to find a word matching less that this whose score will be used as initial heap threshold.
      * The value is given as a fraction of the corpus in the range [0,1]
      **/

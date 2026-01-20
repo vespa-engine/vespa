@@ -4,6 +4,7 @@ package ai.vespa.triton;
 import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import com.yahoo.container.protect.ProcessTerminator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
@@ -252,5 +254,92 @@ class TritonOnnxRuntimeTest {
         var normalizedExpected = expectedConfig.replaceFirst(regex, "$1\"");
         var normalizedActual = actualConfig.replaceFirst(regex, "$1\"");
         assertEquals(normalizedExpected, normalizedActual);
+    }
+
+    @Test
+    void die_when_triton_server_is_unreachable() {
+        var config = new TritonConfig.Builder()
+                .target("localhost:9999")  // Non-existent server
+                .build();
+        var mockTerminator = new MockProcessTerminator();
+
+        var runtime = new TritonOnnxRuntime(config, mockTerminator);
+        var modelPath = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+        var opts = optsBuilder.build();
+
+        assertThrows(MockProcessTerminationException.class, () -> runtime.evaluatorOf(modelPath, opts));
+        assertEquals(1, mockTerminator.dieRequests);
+        assertTrue(mockTerminator.lastMessage.contains("can't be reached"));
+        assertTrue(mockTerminator.lastMessage.contains("localhost:9999"));
+    }
+
+    @Test
+    void die_when_triton_server_is_unhealthy() {
+        var config = new TritonConfig.Builder()
+                .target(tritonContainer.getGrpcEndpoint())
+                .build();
+        
+        var mockClient = new TritonOnnxClient(config) {
+            @Override
+            public boolean isHealthy() {
+                return false;
+            }
+        };
+        
+        var mockTerminator = new MockProcessTerminator();
+        var runtime = new TritonOnnxRuntime(config, mockClient, mockTerminator);
+        var modelPath = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+        var opts = optsBuilder.build();
+
+        assertThrows(MockProcessTerminationException.class, () -> runtime.evaluatorOf(modelPath, opts));
+        assertEquals(1, mockTerminator.dieRequests);
+        assertTrue(mockTerminator.lastMessage.contains("not healthy"));
+        assertTrue(mockTerminator.lastMessage.contains(tritonContainer.getGrpcEndpoint()));
+    }
+
+    @Test
+    void not_die_when_triton_server_is_healthy() {
+        var config = new TritonConfig.Builder()
+                .target(tritonContainer.getGrpcEndpoint())
+                .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
+                .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
+                .build();
+
+        var mockTerminator = new MockProcessTerminator();
+        var runtime = new TritonOnnxRuntime(config, mockTerminator);
+
+        var modelPath = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+        var opts = optsBuilder.build();
+
+        // Verify that evaluatorOf succeeds when server is healthy
+        var evaluator = assertDoesNotThrow(() -> runtime.evaluatorOf(modelPath, opts));
+        assertNotNull(evaluator);
+        assertEquals(0, mockTerminator.dieRequests);
+
+        evaluator.close();
+        runtime.deconstruct();
+    }
+
+    private static class MockProcessTerminator extends ProcessTerminator {
+        public int dieRequests = 0;
+        public String lastMessage = null;
+
+        @Override
+        public void logAndDie(String message, boolean dumpThreads) {
+            dieRequests++;
+            lastMessage = message;
+            throw new MockProcessTerminationException("Simulated process termination: " + message);
+        }
+
+        @Override
+        public void logAndDie(String message) {
+            logAndDie(message, false);
+        }
+    }
+
+    private static class MockProcessTerminationException extends RuntimeException {
+        public MockProcessTerminationException(String message) {
+            super(message);
+        }
     }
 }

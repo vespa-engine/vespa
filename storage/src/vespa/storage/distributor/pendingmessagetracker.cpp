@@ -7,7 +7,7 @@
 #include <map>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".pendingmessages");
+LOG_SETUP(".distributor.pending_message_tracker");
 
 namespace storage::distributor {
 

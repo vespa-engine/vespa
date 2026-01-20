@@ -1,0 +1,449 @@
+---
+# Copyright Vespa.ai. All rights reserved.
+title: "Developing Cloud Config Model Plugins"
+redirect_from:
+- /en/cloudconfig/cloudconfig-model-plugins.html
+---
+
+<p>
+The Cloud Config System (CCS) provides the ability to write custom plugins to the config model.
+This allows cloud config consumers to provide a custom syntax for their users to configure the system.
+</p><p>
+Why create a Plugin?
+While creating a config model plugin is not strictly necessary for using CCS,
+it increases the usability of the platform.
+With a plugin, one can provide custom syntax
+that allows the users to configure the system at a higher level of abstraction.
+</p>
+
+
+<h2 id="what-problem-does-it-solve">What problem does it solve</h2>
+<p>
+Imagine that you are developing a platform that requires the user to configure
+a cluster of servers running some service that can potentially scale to hundreds of servers.
+A service may be composed of multiple processes running on the same server,
+and those processes might be containers running many components inside them.
+The amount of configuration parameters of those processes and components can be huge.
+Often, the differences in the configurations might be small,
+but just enough that you need to duplicate information
+that you later on need to ensure that does not conflict.
+</p><p>
+Once you have this large amount of configuration parameters,
+the logical step is to create some sort of script that automatically generates
+a valid configuration based on a few parameters to reduce the amount of human errors.
+It is also common to create some form of validation program
+that can be run to ensure that the configuration options are valid and does not conflict.
+CCS model plugins allows you to take this even further.
+</p><p>
+In CCS, the configuration is represented as an application package,
+which contains various files that can represent the entire system configuration.
+However, the configuration is not directly given to the consumer processes and their components.
+First, the application package is provided as input to the config server,
+which builds a java object model of the system, also known as the <em>config model</em>.
+The config model is built from a set of <em>model plugins</em>
+that are able to produce a java object model based on the application package contents.
+The object model can then serve the appropriate configuration to a component within a service.
+</p>
+<img src="https://docs.vespa.ai/assets/img/config-assembly.svg" alt="The config server assembles app config" width="810px" height="auto" />
+
+
+<h3 id="benefits-of-writing-plugins">Benefits of writing plugins</h3>
+<p>
+The model plugins allows you to create abstractions on top of the low level configuration parameters
+that are given to the services.
+Here are some specific use cases the model plugins solve:
+</p>
+<ul>
+  <li>The application can be validated to ensure that there are no syntax
+    errors in the configuration files</li>
+  <li>The configuration files can be checked for conflicting configuration values</li>
+  <li>The plugin can allocate resources without the user needing to specify them
+    (typically server ports)</li>
+  <li>The plugin may support any form of syntax as long as it can generate the object model,
+    though using XML allows you to take advantage of many existing library features
+    that i.e. make node and port allocation automatic
+    or to allow the service to be automatically bootstrapped</li>
+  <li>The plugin may provide a high level of abstraction
+    that allows the user to change one configuration value,
+    while in reality more than one of the configuration values served to the services may change</li>
+</ul>
+
+
+<h3 id="example">Example</h3>
+<p>
+Vespa uses CCS with multiple config model plugins.
+In Vespa, you can set up a complete system with e.g. this configuration:
+<pre>{% highlight xml %}
+<services version="1.0">
+
+  <admin version="2.0">
+    <adminserver hostalias="node1"/>
+  </admin>
+
+  <container id="stateless" version="1.0">
+    <nodes>
+      <node hostalias="node2"/>
+    </nodes>
+    <search/>
+  </container>
+
+  <content id="mycontent" version="1.0">
+    <redundancy>1</redundancy>
+    <documents>
+      <document type="myschema" mode="index"/>
+    </documents>
+    <nodes>
+      <node distribution-key="0" hostalias="node3"/>
+    </nodes>
+  </content>
+
+</services>
+{% endhighlight %}</pre>
+<p>The Vespa model plugins ensure that the following is set up based on the above XML:</p>
+<ul>
+  <li>A config server cluster</li>
+  <li>A log server cluster receiving logs from all the nodes</li>
+  <li>A service location broker cluster (vespa-slobrok)
+    which maintains the current observed state of all the nodes in the other clusters</li>
+  <li>A document processing cluster processing incoming data</li>
+  <li>A container cluster set up to receive searches</li>
+  <li>A cluster controller cluster which takes singular decisions
+    about the current state of nodes in the content cluster</li>
+  <li>A distributor cluster managing content distribution</li>
+  <li>A search+content cluster storing and searching a partition</li>
+</ul>
+<p>
+In addition, it sets up the wiring between these clusters,
+the matching configuration of content and query processing and more.
+</p><p>
+Going from the simple user-facing config shown above to this complete system specification
+is the task of the config model(s).
+</p><p>
+Technically the models are just Java objects that are instantiated in response
+to hitting an element immediately below &lt;services&gt; in <em>services.xml</em>
+(so the above will create one <em>admin</em>, <em>container</em> and <em>content</em> model),
+which are embedded into the config server at runtime
+and answers incoming requests for config instances.
+During construction of the complete system model
+(consisting of multiple such config models),
+the models may create additional implicit config models
+and exchange information between themselves.
+They may also read other files of any format from the application package.
+</p>
+
+
+
+<h2 id="building-a-model">Building a Model</h2>
+<p>
+In this section, we will build a plugin for a simple echo service.
+First, we must have a config to serve.
+An echo server just needs to know which port it must listen to.
+To keep the initial example simple,
+we ignore bootstrap and which host the node should run on for now
+(see <a href="#bootstrapping-services">bootstrapping services</a> for an extended example).
+The following config is created and stored in
+<code>src/main/resources/configdefinitions</code> in the plugin source tree:
+<pre>
+namespace=echo
+port int
+</pre>
+See <a href="https://docs.vespa.ai/en/applications/configapi-dev.html">Using the Cloud config API</a>
+and the <a href="https://docs.vespa.ai/en/reference/applications/config-files.html">Configuration File Reference</a>
+for more information on config definition files.
+The service will be configured using:
+<pre>{% highlight xml %}
+<services version="1.0">
+  <echo version="1.0">
+    <port>1337</port>
+  </echo>
+</services>
+{% endhighlight %}</pre>
+To deal with your custom syntax, you first need to create a parser.
+The parser class must extend <code>ConfigModelBuilder</code>.
+The builder is required to specify which XML tags it can handle
+via the <code>handlesElements</code> method,
+and must hook the model into a subclass of <code>ConfigModel</code> object
+in the <code>doBuild</code> method.
+Its constructor must forward the class of the model
+in order for the superclass to instantiate the correct class and pass it to doBuild:
+<pre>{% highlight xml %}
+public class EchoModelBuilder extends ConfigModelBuilder<EchoModel> {
+    public EchoModelBuilder() {
+        super(EchoModel.class);
+    }
+    @Override
+    public List<ConfigModelId> handlesElements() {
+        return Arrays.asList(ConfigModelId.fromName("echo"));
+    }
+    @Override
+    public void doBuild(EchoModel configModel, Element spec, ConfigModelContext modelContext) {
+        int port = Integer.parseInt(XML.getValue(XML.getChild(spec, "port")));
+        configModel.addServer(new EchoServer(configModel.getConfigProducer(), port));
+    }
+}
+{% endhighlight %}</pre>
+The config model represents the model that serves config when requested.
+The <code>ConfigModel</code> object does not itself serve config,
+but is used to proxy request to the appropriate config producers for that model.
+For the echo service, the model is simple:
+<pre>{% highlight xml %}
+public class EchoModel extends ConfigModel {
+    private final List<EchoServer> servers = new ArrayList<EchoServer>();
+    public EchoModel(ConfigModelContext modelContext) {
+        super(modelContext);
+    }
+    public void addServer(EchoServer server) {
+        servers.add(server);
+    }
+    public int numServers() {
+        return servers.size();
+    }
+}
+{% endhighlight %}</pre>
+<p>
+The <code>EchoServer</code> is the actual object producing the config,
+and is a subclass of the <code>AbstractConfigProducer</code> class,
+which automatically hooks it into the parent node in the tree,
+and causes config requests to be relayed to this producer:
+</p>
+<pre>
+public class EchoServer extends AbstractConfigProducer implements EchoConfig.Producer {
+    private final int port;
+    public EchoServer(AbstractConfigProducer parent, int port) {
+        super(parent, "server");
+        this.port = port;
+    }
+    public void getConfig(EchoConfig.Builder builder) {
+        builder.port(port);
+    }
+}
+</pre>
+<p>
+The <code>EchoConfig</code> class is the one generated
+from the config definition file we specified earlier.
+</p><p>
+Now we have a complete plugin that is able to serve the <code>echo</code> config
+to anyone who asks with the appropriate <em>config id</em>.
+The config id of a config producer is relative to its parent.
+In this example, the root producers has the id <code>echo</code>,
+while the server has the id <code>echo/server</code>.
+</p>
+
+
+
+<h2 id="depending-on-other-models">Depending on other models</h2>
+<p>
+To create a modular system and facilitate code reuse,
+it is possible to depend on and use other models when building your own model.
+For instance, if we have a <code>EchoProxyModel</code> that handled a <code>&lt;echoproxy&gt;</code> tag,
+and which is dependent on the <code>EchoModel</code> being built first,
+we can add it as a constructor argument to signal the dependency
+and also allow us to access the <code>EchoModel</code> when building the <code>EchoProxyModel</code>.
+</p>
+<pre>
+public class EchoProxyModel extends ConfigModel {
+    public EchoProxyModel(ConfigModelContext context, EchoModel echoModel) {
+        // Store away model for use in builder.
+    }
+}
+</pre>
+
+
+
+<h2 id="testing">Unit Testing</h2>
+<p>
+Creating a unit test for your plugin is easy.
+Mock classes acting as the config model is available and can be used in unit tests:
+<pre>{% highlight xml %}
+public class EchoModelTest {
+    @Test
+    public void testEchoModel() {
+        EchoModelBuilder builder = new EchoModelBuilder();
+        assertThat(builder.handlesElements().size(), is(1));
+        assertThat(builder.handlesElements().get(0).getName(), is("echo"));
+        String xml = "<echo version="1.0">"
+                   + "<port>1337</port>"
+                   + "</echo>"
+        TestDriver testDriver = new TestDriver().addBuilder(builder);
+        TestRoot root = testDriver.buildModel(xml);
+        EchoConfig config = root.getConfig(EchoConfig.class, "server");
+        assertThat(config.port(), is(1337));
+
+        EchoModel model = testDriver.getConfigModels(EchoModel.class).get(0);
+        assertThat(model.numServers(), is(1));
+    }
+}
+{% endhighlight %}</pre>
+<p>
+The <code>ConfigModelTester</code> is a helper class
+designed to make unit testing config model builders a breeze.
+Any builders required to parse the xml is added to the tester using the <code>addBuilder</code> method.
+To build the entire model, with all dependencies resolved,
+call <code>buildModel</code> with either <em>services.xml</em>
+or an <code>ApplicationPackage</code> as input.
+The result is a <code>TestRoot</code> object which can be used to inspect the entire model.
+The config retrieved from the <code>TestRoot</code>
+is the same as you would get from the config server in a production system.
+</p><p>
+The MockRoot class mocks the config model producer tree,
+and can be used to retrieve the config once the producers have been added to the tree.
+Before using it, however, the topology must be frozen by calling
+<code>freezeModelTopology</code>.
+</p><p>
+Use <a href="https://docs.vespa.ai/en/reference/operations/self-managed/tools.html#vespa-get-config">vespa-get-config</a>
+to retrieve in the payload format:
+</p>
+<pre>
+$ vespa-get-config -n echo.echo -i echo/server -a path/to/echo.def
+</pre>
+
+
+
+<h2 id="bootstrapping-services">Bootstrapping Services</h2>
+<p>
+To ease the bootstrapping of services that must be run,
+Vespa provides helper classes that help define which hosts a service should run on,
+and which performs automatic start/stop of those services based on the config.
+We will now extend the echo service to support specifying clusters of echo servers
+that are automatically bootstrapped and run on multiple nodes.
+</p><p>
+In CCS, the term <em>node</em> is used about any machine capable of running the services.
+It can be an alias for physical host, a VM
+or simply a set of parameters describing the resource requirements,
+and CCS will acquire a node.
+In this example, a traditional host alias specification is used.
+</p><p>
+First, the XML syntax must be changed in order to support the new requirements
+and for the helper classes to recognize them:
+</p>
+<pre>{% highlight xml %}
+<services version="1.0">
+  <echo version="1.0">
+    <server hostalias="node0" port="1337" />
+    <server hostalias="node0" port="1338" />
+    <server hostalias="node1" port="1337" />
+  </echo>
+</services>
+{% endhighlight %}</pre>
+<p>
+This syntax says "Run two echoservers on node0 using port 1337 and 1338, respectively.
+Run one echoserver on node1 using port 1337".
+</p><p>
+Now we need to change the plugin (only shows methods that we have changed):
+</p>
+<pre>{% highlight xml %}
+public class EchoModelBuilder extends ConfigModelBuilder<EchoModel> {
+    &hellip;
+    @Override
+    public void doBuild(EchoModel configModel, Element spec, ConfigModelContext modelContext) {
+        configModel.setCluster(new EchoServerClusterBuilder().build(configModel.getConfigProducer(), spec));
+    }
+    &hellip;
+}
+{% endhighlight %}</pre>
+<pre>
+public class EchoModel extends ConfigModel {
+    private EchoServerCluster cluster;
+    public EchoModel(ConfigModelContext modelContext) {
+        super(modelContext);
+    }
+    public void setCluster(EchoServerCluster cluster) {
+        this.cluster = cluster;
+    }
+}
+</pre>
+<pre>{% highlight xml %}
+public class EchoServerClusterBuilder extends DomConfigProducerBuilder<EchoServerCluster> {
+    @Override
+    protected EchoServerCluster doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
+        final Element repeatElement = XML.getChild(producerSpec, "repeat");
+        final int repeat = repeatElement != null ? Integer.parseInt(XML.getValue(repeatElement)) : -1;
+
+        final EchoServerCluster cluster = new EchoServerCluster(ancestor, "echocluster", repeat);
+        for (Element server : XML.getChildren(producerSpec, "server")) {
+            EchoServerBuilder builder = new EchoServerBuilder(cluster.numServers());
+            cluster.addServer(builder.build(cluster, server));
+        }
+        return cluster;
+    }
+}
+{% endhighlight %}</pre>
+<pre>{% highlight xml %}
+public class EchoServerCluster extends AbstractConfigProducer implements EchoConfig.Producer {
+    private final List<EchoServer> echoServers = new ArrayList<EchoServer>();
+    private final int repeat;
+    public EchoServerCluster(AbstractConfigProducer parent, String subId, int repeat) {
+        super(parent, subId);
+        this.repeat = repeat;
+    }
+    public void addServer(EchoServer server) {
+        echoServers.add(server);
+    }
+    public int numServers() {
+        return echoServers.size();
+    }
+    @Override
+    public void getConfig(EchoConfig.Builder builder) {
+        if (repeat &gt;= 0)
+            builder.repeat(repeat);
+    }
+}
+{% endhighlight %}</pre>
+<pre>{% highlight xml %}
+public class EchoServerBuilder extends DomConfigProducerBuilder<EchoServer> {
+    private final int serverNumber;
+    public EchoServerBuilder(int serverNumber) {
+        this.serverNumber = serverNumber;
+    }
+    @Override
+    protected EchoServer doBuild(AbstractConfigProducer parent, Element element) {
+        int port = Integer.valueOf(element.getAttribute("port"));
+        return new EchoServer(parent, "server." + serverNumber, port);
+    }
+}
+{% endhighlight %}</pre>
+<pre>
+public class EchoServer extends AbstractService implements EchoConfig.Producer {
+    private final int port;
+    public EchoServer(AbstractConfigProducer parent, String name, int port) {
+        super(parent, name);
+        this.port = port;
+    }
+    @Override
+    public String getStartupCommand() {
+        return "/mydir/bin/echoserver";
+    }
+    public void getConfig(EchoConfig.Builder builder) {
+        builder.port(port);
+    }
+}
+</pre>
+<p>
+By using the helper classes, there is a minimal amount of extra code,
+but the gain is huge.
+Using CCS, all the echoservers will automatically start when Vespa is run on their respective nodes,
+and they will get their appropriate config id passed as an environment variable.
+See <a href="https://docs.vespa.ai/en/applications/configapi-dev.html">Using the Cloud config API</a>
+for examples of how the echo server can subscribe and use the config.
+</p><p>
+In addition to host management,
+the <code>DomConfigProducerBuilder</code> class supports parsing config overrides as well.
+</p>
+
+
+
+<h2 id="installing">Installing model plugins</h2>
+<p>
+To make use of the model plugins,
+they must be installed on the configserver host before the config server is started.
+The default folder for model plugins is <code>$VESPA_HOME/lib/jars/config-models</code>.
+</p><p>
+Having installed the model plugin, the configserver needs to be instructed to load the plugin.
+To load the example <code>EchoModelBuilder</code>,
+add the following to <code>$VESPA_HOME/conf/configserver-app/config-models/echomodel.xml</code>
+</p>
+<pre>{% highlight xml %}
+<components>
+  <component id="<package>.EchoModelBuilder" bundle="<the name in <artifactId> in your pom.xml>" />
+</components>
+{% endhighlight %}</pre>

@@ -84,7 +84,7 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
-       <dependency>
+        <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>zkfacade</artifactId>
             <version>${project.version}</version>
@@ -124,13 +124,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                  <compilerArgs>
-                    <!-- Turn off classfile warnings where spotbugs is pulled in transitively. -->
-                    <arg>${vespaCompilerArgs.xlint}</arg>
-                    <arg>-Xlint:-classfile</arg>
-                    <arg>-Xlint:-serial</arg>
-                    <arg>-Werror</arg>
-                  </compilerArgs>
+                    <compilerArgs>
+                        <!-- Turn off classfile warnings where spotbugs is pulled in transitively. -->
+                        <arg>${vespaCompilerArgs.xlint}</arg>
+                        <arg>-Xlint:-classfile</arg>
+                        <arg>-Xlint:-serial</arg>
+                        <arg>-Werror</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>

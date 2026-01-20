@@ -3,7 +3,6 @@ package com.yahoo.data.access.helpers;
 
 import com.yahoo.collections.Hashlet;
 
-import com.yahoo.data.access.ArrayTraverser;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.ObjectTraverser;
 import com.yahoo.data.access.Type;
@@ -51,8 +50,8 @@ public class MatchFeatureData {
             }
         }
         public Inspector field(String name) {
-            int offset = hashlet.getIndexOfKey(name);
-            if (offset < 0) {
+            Integer offset = hashlet.get(name);
+            if (offset == null) {
                 return invalid();
             }
             return valueAt(offset);
@@ -62,7 +61,7 @@ public class MatchFeatureData {
             for (int i = 0; i < hashlet.size(); i++) {
                 String fn = hashlet.key(i);
                 int offset = hashlet.value(i);
-                list.add(new SimpleEntry<String,Inspector>(fn, valueAt(offset)));
+                list.add(new SimpleEntry<>(fn, valueAt(offset)));
             }
             return list;
         }

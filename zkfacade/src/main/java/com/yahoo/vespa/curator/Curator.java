@@ -202,7 +202,7 @@ public class Curator extends AbstractComponent implements AutoCloseable {
 
     /**
      * A convenience method which sets some content at a path.
-     * If the path and any of its parents does not exists they are created.
+     * If the path and any of its parents does not exist they are created.
      */
     // TODO: Use create().orSetData() in Curator 4 and later
     public Stat set(Path path, byte[] data) {
@@ -299,12 +299,57 @@ public class Curator extends AbstractComponent implements AutoCloseable {
 
     public void delete(Path path, int expectedVersion, boolean recursive) {
         try {
-            if (recursive) framework().delete().guaranteed().deletingChildrenIfNeeded().withVersion(expectedVersion).forPath(path.getAbsolute());
-            else           framework().delete().guaranteed()                           .withVersion(expectedVersion).forPath(path.getAbsolute());
+            if (recursive) deleteRecursively(path, expectedVersion);
+            else           framework().delete().guaranteed().withVersion(expectedVersion).forPath(path.getAbsolute());
         } catch (KeeperException.NoNodeException e) {
             // Do nothing
         } catch (Exception e) {
             throw new RuntimeException("Could not delete " + path.getAbsolute(), e);
+        }
+    }
+
+    private void deleteRecursively(Path path, int expectedVersion) {
+        // This method avoids using Curator's recursive delete (deletingChildrenIfNeeded())
+        // because it calls ZKPaths.deleteChildren() RECURSIVELY on KeeperException.NotEmptyException.
+        //
+        // This recursion is believed to be the cause of an incident:
+        //   1. Each of the 3 config servers had a PathChildrenCache (PCC) on `/config/v2/tenants/TENANT/sessions`,
+        //      and one on `/config/v2/tenants/TENANT/applications`.
+        //   2. On config server "cfg1" the tenant was deleted, so the two PCCs were closed and TENANT was deleted.
+        //   3. But because the other two cfgs have PCCs on sessions and applications, the PCC will compete to
+        //      recreate these nodes via watchers.  Each time cfg1 tried to delete TENANT after one of these 4 PCC
+        //      had recreated sessions or applications, the Curator implementation would get a NotEmptyException,
+        //      and retry the deletion of the children via a recursion (+1 stack frame).
+        //   4. The incident heap dump had a stack frame depth of 5900 in ZKPaths.  A StackOverflowError was thrown,
+        //      triggering JDK-8318888, and deadlocking the config server.
+        //
+        // This implementation uses iteration instead of recursion on NotEmptyException.
+
+        for (int attempt = 1;; attempt++) {
+            final List<String> children;
+            try {
+                children = framework().getChildren().forPath(path.getAbsolute());
+            } catch (KeeperException.NoNodeException e) {
+                return;
+            } catch (Exception e) {
+                throw new RuntimeException("Could not get children of " + path.getAbsolute(), e);
+            }
+
+            for (var child : children) {
+                deleteRecursively(path.append(child), -1);
+            }
+
+            try {
+                framework().delete().guaranteed().withVersion(expectedVersion).forPath(path.getAbsolute());
+                return;
+            } catch (KeeperException.NotEmptyException e) {
+                // retry by iteration
+                if (attempt % 1000 == 0) {
+                    LOG.warning("Have made " + attempt + " attempts to delete " + path.getAbsolute() + ": still trying");
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Could not delete " + path.getAbsolute(), e);
+            }
         }
     }
 

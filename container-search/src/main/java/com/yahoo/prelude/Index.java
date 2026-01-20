@@ -50,6 +50,7 @@ public class Index {
     private boolean integer = false;
     private boolean string = false;
     private boolean predicate = false;
+    private String linguisticsProfile = null;
 
     private long predicateUpperBound = Long.MAX_VALUE;
     private long predicateLowerBound = Long.MIN_VALUE;
@@ -185,6 +186,8 @@ public class Index {
             setPhraseSegmenting(true);
         } else if (command.startsWith("phrase-segmenting ")) {
             setPhraseSegmenting(Boolean.parseBoolean(command.substring("phrase-segmenting ".length())));
+        } else if (command.startsWith("linguistics-profile ")) {
+            setLinguisticsProfile(command.substring("linguistics-profile ".length()));
         } else if (command.equals(CMD_STRING)) {
             setString(true);
         } else {
@@ -332,7 +335,11 @@ public class Index {
 
     public boolean getPhraseSegmenting() { return phraseSegmenting; }
 
-    public boolean setPhraseSegmenting(boolean phraseSegmenting) { return this.phraseSegmenting = phraseSegmenting; }
+    public void setPhraseSegmenting(boolean phraseSegmenting) { this.phraseSegmenting = phraseSegmenting; }
+
+    public String getLinguisticsProfile() { return linguisticsProfile; }
+
+    public void setLinguisticsProfile(String profile) { this.linguisticsProfile = profile; }
 
     /** Returns all the literal command strings given as arguments to addCommand in this instance */
     public List<String> allCommands() { return allCommands; }

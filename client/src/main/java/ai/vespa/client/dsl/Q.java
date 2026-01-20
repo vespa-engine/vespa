@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * Helper class for generating Vespa search queries
- * https://docs.vespa.ai/en/reference/query-language-reference.html
+ * https://docs.vespa.ai/en/reference/querying/yql.html
  */
 public final class Q {
 
@@ -63,7 +63,7 @@ public final class Q {
 
     /**
      * Rank rank.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#rank
+     * https://docs.vespa.ai/en/reference/querying/yql.html#rank
      *
      * @param query the query
      * @param ranks the ranks
@@ -75,7 +75,7 @@ public final class Q {
 
     /**
      * UI represents "userInput".
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#userinput
+     * https://docs.vespa.ai/en/reference/querying/yql.html#userinput
      *
      * @param value the value
      * @return the user input query
@@ -86,7 +86,7 @@ public final class Q {
 
     /**
      * userInput with an annotation.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#userinput
+     * https://docs.vespa.ai/en/reference/querying/yql.html#userinput
      *
      * @param a     the a
      * @param value the value
@@ -98,7 +98,7 @@ public final class Q {
 
     /**
      * A convenience method to generate userInput with default index annotation.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#userinput
+     * https://docs.vespa.ai/en/reference/querying/yql.html#userinput
      *
      * @param index the index
      * @param value the value
@@ -110,7 +110,7 @@ public final class Q {
 
     /**
      * dotPdt represents "dotProduct".
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#dotproduct
+     * https://docs.vespa.ai/en/reference/querying/yql.html#dotproduct
      *
      * @param field       the field
      * @param weightedSet the weighted set
@@ -122,7 +122,7 @@ public final class Q {
 
     /**
      * wtdSet represents "weightedSet".
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#weightedset
+     * https://docs.vespa.ai/en/reference/querying/yql.html#weightedset
      *
      * @param field       the field
      * @param weightedSet the weighted set
@@ -134,7 +134,7 @@ public final class Q {
 
     /**
      * NonEmpty non empty.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#nonempty
+     * https://docs.vespa.ai/en/reference/querying/yql.html#nonempty
      *
      * @param query the query
      * @return the non empty query
@@ -145,7 +145,7 @@ public final class Q {
 
     /**
      * Wand wand.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#wand
+     * https://docs.vespa.ai/en/reference/querying/yql.html#wand
      *
      * @param field       the field
      * @param weightedSet the weighted set
@@ -157,7 +157,7 @@ public final class Q {
 
     /**
      * Wand wand.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#wand
+     * https://docs.vespa.ai/en/reference/querying/yql.html#wand
      *
      * @param field        the field
      * @param numericRange the numeric range
@@ -169,7 +169,7 @@ public final class Q {
 
     /**
      * Weakand weak and.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#weakand
+     * https://docs.vespa.ai/en/reference/querying/yql.html#weakand
      *
      * @param query the query
      * @return the weak and query
@@ -180,7 +180,7 @@ public final class Q {
 
     /**
      * GeoLocation geo location
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#geolocation
+     * https://docs.vespa.ai/en/reference/querying/yql.html#geolocation
      *
      * @param field the field
      * @param longitude longitude
@@ -194,7 +194,7 @@ public final class Q {
 
     /**
      * NearestNeighbor nearest neighbor
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#nearestneighbor
+     * https://docs.vespa.ai/en/reference/querying/yql.html#nearestneighbor
      *
      * @param docVectorName the vector name defined in the vespa schema
      * @param queryVectorName the vector name in this query

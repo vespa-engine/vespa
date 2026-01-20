@@ -6,6 +6,8 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
+
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -41,6 +43,17 @@ public class MockCurator extends Curator {
      */
     public MockCurator(boolean stableOrdering) {
         super("host1:2181", "host1:2181", (retryPolicy) -> new MockCuratorFramework(stableOrdering, false));
+    }
+
+    /**
+     * Creates a mock curator
+     *
+     * @param stableOrdering if true children of a node are returned in the same order each time they are queried.
+     *                       This is not what ZooKeeper does.
+     * @param clock          a clock
+     */
+    public MockCurator(boolean stableOrdering, Clock clock) {
+        super("host1:2181", "host1:2181", (retryPolicy) -> new MockCuratorFramework(stableOrdering, false, clock));
     }
 
     private MockCuratorFramework mockFramework() {

@@ -41,7 +41,7 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testTokenizerCanPreserveCasing() {
-        var keepCasing = new LinguisticsParameters(Language.ENGLISH, StemMode.SHORTEST, false, false);
+        var keepCasing = new LinguisticsParameters(null, Language.ENGLISH, StemMode.SHORTEST, false, false);
         var tester = new OpenNlpLinguisticsTester();
         tester.assertTokenize("This IS a test",
                               keepCasing,
@@ -51,14 +51,14 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testUnderscoreTokenization() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.SHORTEST, true, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.SHORTEST, true, true);
         var tester = new OpenNlpLinguisticsTester();
         tester.assertTokenize("ugcapi_1", parameters, List.of("ugcapi", "1"), null);
     }
 
     @Test
     public void testEnglishStemming() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, true, true);
         var withKstem = new OpenNlpLinguisticsTester();
         withKstem.assertTokenize("cars walking, jumps pushed", parameters, List.of("car", "walking", "jumps", "pushed"), null);
 
@@ -68,7 +68,7 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testPhrasesWithPunctuation() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.NONE, false, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true);
         var tester = new OpenNlpLinguisticsTester();
         tester.assertTokenize("PHY_101.html a space/time or space-time course", parameters,
                               List.of("phy", "101", "html", "a", "space", "time", "or", "space", "time", "course"),
@@ -79,8 +79,8 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testDoubleWidthTokenization() {
-        var noStems = new LinguisticsParameters(Language.ENGLISH, StemMode.NONE, false, true);
-        var shortestStem = new LinguisticsParameters(Language.ENGLISH, StemMode.SHORTEST, false, true);
+        var noStems = new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true);
+        var shortestStem = new LinguisticsParameters(null, Language.ENGLISH, StemMode.SHORTEST, false, true);
         var tester = new OpenNlpLinguisticsTester();
         // "sony"
         tester.assertTokenize("\uFF53\uFF4F\uFF4E\uFF59", noStems, List.of("sony"), null);
@@ -94,13 +94,13 @@ public class OpenNlpTokenizationTestCase {
         // "ON"
         tester.assertTokenize("\uFF2F\uFF2E", noStems, List.of("on"), null);
         tester.assertTokenize("\uFF2F\uFF2E", shortestStem, List.of("on"), null);
-        var russianShortestStem = new LinguisticsParameters(Language.RUSSIAN, StemMode.SHORTEST, false, true);
+        var russianShortestStem = new LinguisticsParameters(null, Language.RUSSIAN, StemMode.SHORTEST, false, true);
         tester.assertTokenize("наименование", russianShortestStem, List.of("наименован"), null);
     }
 
     @Test
     public void testLargeTextTokenization() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.NONE, false, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true);
         var tester = new OpenNlpLinguisticsTester();
         String input = "teststring ".repeat(100000);
         int numTokens = 0;
@@ -118,7 +118,7 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testLargeTokenGuard() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.NONE, false, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true);
         var tester = new OpenNlpLinguisticsTester();
         String input = "ab".repeat(128 * 256);
         Iterator<Token> it = tester.tokenizer().tokenize(input, parameters).iterator();
@@ -129,7 +129,7 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testTokenIterator() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.NONE, false, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true);
         var tester = new OpenNlpLinguisticsTester();
         Iterator<Token> it = tester.tokenizer().tokenize("", parameters).iterator();
         assertFalse(it.hasNext());
@@ -154,7 +154,7 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testGetOffsetLength() {
-        var parameters = new LinguisticsParameters(Language.GERMAN, StemMode.SHORTEST, false, true);
+        var parameters = new LinguisticsParameters(null, Language.GERMAN, StemMode.SHORTEST, false, true);
         var tester = new OpenNlpLinguisticsTester();
         String input = "Deka-Chef Weber r\u00e4umt Kommunikationsfehler ein";
         long[] expOffset = { 0, 4, 5, 9, 10, 15, 16, 21, 22, 42, 43 };
@@ -170,7 +170,7 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testRecursiveDecompose() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.SHORTEST, false, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.SHORTEST, false, true);
         var tester = new OpenNlpLinguisticsTester();
         for (Token t : tester.tokenizer().tokenize("\u00a510%", parameters)) {
             tester.recurseDecompose(t);
@@ -184,7 +184,7 @@ public class OpenNlpTokenizationTestCase {
         for (StemMode stemMode : new StemMode[] { StemMode.NONE, StemMode.SHORTEST }) {
             for (Language l : List.of(Language.INDONESIAN, Language.ENGLISH, Language.ARABIC)) {
                 for (boolean accentDrop : new boolean[] { true, false }) {
-                    var parameters = new LinguisticsParameters(l, stemMode, accentDrop, true);
+                    var parameters = new LinguisticsParameters(null, l, stemMode, accentDrop, true);
                     for (Token token : tester.tokenizer().tokenize(input, parameters)) {
                         if (token.getTokenString().isEmpty()) {
                             assertFalse(token.isIndexable());
@@ -197,7 +197,7 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testTokenizeEmojis() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, true, true);
         var tester = new OpenNlpLinguisticsTester();
         String emoji1 = "\uD83D\uDD2A"; // 🔪
         Iterator<Token> tokens1 = tester.tokenizer().tokenize(emoji1, parameters).iterator();
@@ -215,7 +215,7 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testStemEmojis() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, true, true);
         var stemmer = new OpenNlpLinguistics().getStemmer();
         String emoji = "\uD83D\uDD2A"; // 🔪
         List<StemList> stems = stemmer.stem(emoji, parameters);
@@ -227,7 +227,7 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testStemGreek() {
-        var parameters = new LinguisticsParameters(Language.GREEK, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters(null, Language.GREEK, StemMode.ALL, true, true);
         var stemmer = new OpenNlpLinguistics().getStemmer();
         String input = "οὖν";
         String output = "ουν";

@@ -3,6 +3,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
+#include <string.h>
 
 namespace document {
 
@@ -27,6 +29,15 @@ T readValue(Input &input) {
     T val;
     input >> val;
     return val;
+}
+
+
+template <typename Input>
+[[nodiscard]] std::string_view read_cstr(Input& stream) {
+    const char* s = stream.peek();
+    size_t sz = strnlen(s, stream.size()); // `size()` gives the _remaining_ byte count
+    stream.adjustReadPos(sz+1);
+    return std::string_view(s, sz);
 }
 
 template <typename Input>

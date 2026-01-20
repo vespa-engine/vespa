@@ -61,7 +61,7 @@ echo "Using maven target: ${MAVEN_TARGET}"
 # Set up maven wrapper.
 echo "Setting up maven wrapper in $(pwd)"
 # shellcheck disable=SC2086 # allow word splitting for maven extra opts
-mvn -B wrapper:wrapper -Dmaven=3.9.9 -N ${MAVEN_EXTRA_OPTS}
+mvn -B wrapper:wrapper -Dmaven=3.9.12 -N ${MAVEN_EXTRA_OPTS}
 
 # Proxy allowing you to put $(pwd)/maven-wrapper/bin first in PATH
 # to redirect any plain "mvn" commands so they use the wrapper

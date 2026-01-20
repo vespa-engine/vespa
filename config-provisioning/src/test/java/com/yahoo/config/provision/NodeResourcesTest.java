@@ -42,6 +42,37 @@ class NodeResourcesTest {
     }
 
     @Test
+    void testSatisfiesWithUnspecifiedDisk() {
+        // When disk is unspecified (0), it should satisfy any disk requirement
+        var unspecifiedDisk = new NodeResources(2, 8, 0, 0.3);
+        var specifiedDisk = new NodeResources(2, 8, 300, 0.3);
+
+        // Unspecified disk (0) should satisfy specified disk requirement
+        assertTrue(unspecifiedDisk.satisfies(specifiedDisk),
+                "Unspecified disk (0) should satisfy any disk requirement");
+
+        // Specified disk should satisfy unspecified disk requirement
+        assertTrue(specifiedDisk.satisfies(unspecifiedDisk),
+                "Any disk should satisfy unspecified disk requirement (0)");
+
+        // Both unspecified should satisfy each other
+        var anotherUnspecified = new NodeResources(2, 8, 0, 0.3);
+        assertTrue(unspecifiedDisk.satisfies(anotherUnspecified),
+                "Unspecified disk should satisfy unspecified disk");
+    }
+
+    @Test
+    void testClusterResourcesIsWithinWithUnspecifiedDisk() {
+        // Simulates the autoscaling scenario: min/max have disk=0, target has actual disk
+        var min = new ClusterResources(2, 1, new NodeResources(0.5, 8, 0, 0.3));
+        var max = new ClusterResources(6, 1, new NodeResources(0.5, 8, 0, 0.3));
+        var target = new ClusterResources(3, 1, new NodeResources(0.5, 8, 300, 0.3));
+
+        assertTrue(target.isWithin(min, max),
+                "Target with specified disk should be within min/max that have unspecified disk");
+    }
+
+    @Test
     void testSatisfies() {
         var hostResources = new NodeResources(1, 2, 3, 1);
         assertTrue(hostResources.satisfies(new NodeResources(1, 2, 3, 1)));

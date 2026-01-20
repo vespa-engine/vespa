@@ -77,6 +77,7 @@
              -->
             <Import-Package>
               com.google.inject, <!-- must use @Inject exported from container -->
+              !com.fasterxml.jackson.dataformat.cbor, <!-- Don't import CBOR package - it's not available at runtime -->
               com.fasterxml.*, <!-- expands to all Jackson packages by Felix plugin -->
               com.yahoo.component,
               com.yahoo.component.provider,
@@ -186,6 +187,7 @@
 
                     <!-- 3rd party artifacts embedded -->
                     <i>aopalliance:aopalliance:*:*</i>
+                    <i>com.dev-smart:ubjson:*:*</i>
                     <i>com.google.errorprone:error_prone_annotations:*:*</i>
                     <i>com.google.guava:failureaccess:*:*</i>
                     <i>com.google.guava:guava:*:*</i>
@@ -209,7 +211,7 @@
                     <i>org.antlr:antlr4-runtime:*:*</i>
                     <i>org.apache.felix:org.apache.felix.framework:*:*</i>
                     <i>org.hdrhistogram:HdrHistogram:*:*</i>
-                    <i>org.lz4:lz4-java:*:*</i>
+                    <i>at.yawk.lz4:lz4-java:*:*</i>
                     <i>org.slf4j:jcl-over-slf4j:*:*</i>
                     <i>org.slf4j:log4j-over-slf4j:*:*</i>
                     <i>org.slf4j:slf4j-api:*:*</i>

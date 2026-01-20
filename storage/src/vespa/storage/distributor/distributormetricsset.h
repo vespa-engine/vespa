@@ -38,6 +38,7 @@ public:
     metrics::DoubleAverageMetric  recoveryModeTime;
     metrics::LongValueMetric      docsStored;
     metrics::LongValueMetric      bytesStored;
+    metrics::LongValueMetric      mutatating_op_memory_usage;
     BucketDbMetrics               mutable_dbs;
     BucketDbMetrics               read_only_dbs;
 

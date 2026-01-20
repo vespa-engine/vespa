@@ -3,19 +3,15 @@ package com.yahoo.vespa.config.server.configchange;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author geirst
@@ -31,14 +27,16 @@ public class ConfigChangeActionsBuilder {
     }
 
     public ConfigChangeActionsBuilder restart(String message, String clusterName, String clusterType, String serviceType, String serviceName) {
-        return restart(message, clusterName, clusterType, serviceType, serviceName, false);
+        return restart(message, clusterName, clusterType, serviceType, serviceName, false, ConfigChange.IMMEDIATE);
     }
 
-    public ConfigChangeActionsBuilder restart(String message, String clusterName, String clusterType, String serviceType, String serviceName, boolean ignoreForInternalRedeploy) {
+    public ConfigChangeActionsBuilder restart(String message, String clusterName, String clusterType, String serviceType,
+                                              String serviceName, boolean ignoreForInternalRedeploy, ConfigChange configChange) {
         actions.add(new VespaRestartAction(ClusterSpec.Id.from(clusterName),
                                            message,
-                                           createService(clusterName, clusterType, serviceType, serviceName),
-                                           ignoreForInternalRedeploy));
+                                           List.of(createService(clusterName, clusterType, serviceType, serviceName)),
+                                           ignoreForInternalRedeploy,
+                                           configChange));
         return this;
     }
 

@@ -37,7 +37,7 @@ private:
              std::string_view prefix_in,
              const JsonGetHandler &handler_in) noexcept
             : seq(seq_in), path_prefix(prefix_in), handler(&handler_in) {}
-        bool operator <(const Hook &rhs) const {
+        bool operator <(const Hook &rhs) const noexcept {
             if (path_prefix.size() == rhs.path_prefix.size()) {
                 return (seq > rhs.seq);
             }

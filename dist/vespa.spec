@@ -33,7 +33,7 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
 %global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_depencencies_version 1.6.8
+%global _vespa_build_depencencies_version 1.7.0
 %global _vespa_gtest_version 1.16.0
 %global _vespa_protobuf_version 5.30.1
 %global _vespa_openblas_version 0.3.27
@@ -51,7 +51,7 @@
 %global _vespa_java_version 21
 %endif
 %endif
-%if 0%{?el10}
+%if 0%{?el10} || 0%{?el9}
 %global _vespa_java_version 21
 %endif
 %if ! 0%{?_vespa_java_version:1}
@@ -134,6 +134,12 @@ Requires: libcgroup-tools
 
 %if ! 0%{?amzn2023}
 Requires: xxhash-libs >= 0.8.1
+%endif
+
+%ifarch aarch64
+%if 0%{?el8} || 0%{?el9}
+Requires: vespa-libatomic >= 14.2.0
+%endif
 %endif
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
@@ -507,9 +513,6 @@ fi
 %{_prefix}/lib/jars/predicate-search-jar-with-dependencies.jar
 %{_prefix}/lib/jars/searchlib.jar
 %{_prefix}/lib/jars/tenant-cd-api-jar-with-dependencies.jar
-%{_prefix}/lib/jars/vespa-osgi-testrunner-jar-with-dependencies.jar
-%{_prefix}/lib/jars/vespa-testrunner-components.jar
-%{_prefix}/lib/jars/vespa-testrunner-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar
 %{_prefix}/lib/perl5
 %{_prefix}/libexec
@@ -661,7 +664,6 @@ fi
 %{_prefix}/lib/jars/hosted-zone-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jackson-*.jar
 %{_prefix}/lib/jars/javax.*.jar
-%{_prefix}/lib/jars/jdisc-cloud-aws-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc_core-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc-security-filters-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jna-*.jar

@@ -18,7 +18,7 @@
             <!-- Due to com.yahoo.search.query.profile.DumpTool ... -->
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-dev</artifactId>
-	    <version>${project.version}</version>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.microsoft.onnxruntime</groupId>
@@ -58,12 +58,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.lz4</groupId>
+            <groupId>at.yawk.lz4</groupId>
             <artifactId>lz4-java</artifactId>
         </dependency>
         <dependency>
-          <groupId>io.airlift</groupId>
-          <artifactId>airline</artifactId>
+            <groupId>io.airlift</groupId>
+            <artifactId>airline</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>

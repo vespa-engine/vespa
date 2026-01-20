@@ -13,6 +13,7 @@ import com.yahoo.language.huggingface.ModelInfo.PaddingStrategy;
 import com.yahoo.language.huggingface.ModelInfo.TruncationStrategy;
 import com.yahoo.language.huggingface.config.HuggingFaceTokenizerConfig;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.language.tools.Embed;
 import com.yahoo.tensor.Tensor;
@@ -98,8 +99,8 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
     }
 
     @Override
-    public List<String> segment(String input, Language language) {
-        return List.of(resolve(language).encode(input).getTokens());
+    public List<String> segment(String input, LinguisticsParameters parameters) {
+        return List.of(resolve(parameters.language()).encode(input).getTokens());
     }
 
     @Override

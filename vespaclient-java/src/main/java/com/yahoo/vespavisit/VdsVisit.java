@@ -198,7 +198,7 @@ public class VdsVisit {
                 .longOpt("fieldset")
                 .hasArg(true)
                 .argName("fieldset")
-                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/documents.html#fieldsets). Default is [document].")
+                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/schemas/documents.html#fieldsets). Default is [document].")
                 .build());
 
         options.addOption(Option.builder()

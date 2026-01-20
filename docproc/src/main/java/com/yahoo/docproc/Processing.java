@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc;
 
-import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.docproc.impl.ProcessingAccess;
 import com.yahoo.docproc.impl.ProcessingEndpoint;
 import com.yahoo.document.DocumentOperation;
@@ -232,7 +231,7 @@ public final class Processing extends ProcessingAccess {
     /** @return time left or {@link #NO_TIMEOUT} if processing has no timeout */
     public Duration timeLeft() {
         if (expiresAt == Instant.MAX) return NO_TIMEOUT;
-        Instant now = SystemTimer.INSTANCE.instant();
+        Instant now = Instant.now();
         if (now.isAfter(expiresAt)) return Duration.ZERO;
         return Duration.between(now, expiresAt);
     }

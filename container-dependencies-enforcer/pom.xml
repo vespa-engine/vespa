@@ -148,6 +148,7 @@
                                         <include>com.yahoo.vespa:vsm:*:test</include>
 
                                         <!-- 3rd party test dependencies -->
+                                        <include>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson2.vespa.version}:test</include>
                                         <include>com.fasterxml.jackson.module:jackson-module-kotlin:${jackson2.vespa.version}:test</include>
                                         <include>com.google.code.findbugs:jsr305:${findbugs.vespa.version}:test</include>
                                         <include>com.google.protobuf:protobuf-java:${protobuf.vespa.version}:test</include>
@@ -216,7 +217,7 @@
                                         <include>org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlin.vespa.version}:test</include>
                                         <include>org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin.vespa.version}:test</include>
                                         <include>org.json:json:${org.json.vespa.version}:test</include> <!-- TODO: Remove on Vespa 9 -->
-                                        <include>org.lz4:lz4-java:${org.lz4.vespa.version}:test</include>
+                                        <include>at.yawk.lz4:lz4-java:${at.yawk.lz4.vespa.version}:test</include>
                                         <include>xerces:xercesImpl:${xerces.vespa.version}:test</include>
                                     </allowed>
                                 </enforceDependencies>

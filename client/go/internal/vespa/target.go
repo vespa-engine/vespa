@@ -33,6 +33,12 @@ const (
 	// A hosted Vespa target
 	TargetHosted = "hosted"
 
+	// A Vespa Cloud CD target (internal test system, don't put in doc/output)
+	TargetPublicCD = "publiccd"
+
+	// A hosted Vespa CD target (internal test system, don't put in doc/output)
+	TargetCD = "cd"
+
 	// LatestDeployment waits for a deployment to converge to latest generation
 	LatestDeployment int64 = -1
 

@@ -3,7 +3,6 @@ package com.yahoo.config.provision;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 /**
  * The node resources required by an application cluster
@@ -441,7 +440,7 @@ public class NodeResources {
         other.ensureSpecified();
         if (this.vcpu < other.vcpu) return false;
         if (this.memoryGiB < other.memoryGiB) return false;
-        if (this.diskGb < other.diskGb) return false;
+        if ( ! this.diskIsUnspecified() && ! other.diskIsUnspecified() && this.diskGb < other.diskGb) return false;
         if (this.bandwidthGbps < other.bandwidthGbps) return false;
         if (this.gpuResources.lessThan(other.gpuResources)) return false;
         // disallow substitution of GPU type
@@ -450,7 +449,7 @@ public class NodeResources {
         }
 
         // Why doesn't a fast disk satisfy a slow disk? Because if slow disk is explicitly specified
-        // (i.e not "any"), you should not randomly, sometimes get a faster disk as that means you may
+        // (i.e. not "any"), you should not randomly, sometimes get a faster disk as that means you may
         // draw conclusions about performance on the basis of better resources than you think you have
         if (other.diskSpeed != DiskSpeed.any && other.diskSpeed != this.diskSpeed) return false;
 
