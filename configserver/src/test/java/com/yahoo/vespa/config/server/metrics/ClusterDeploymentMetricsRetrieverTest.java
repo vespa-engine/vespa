@@ -23,6 +23,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -71,7 +72,8 @@ public class ClusterDeploymentMetricsRetrieverTest {
                         .addReadLatency(3000 , 43)
                         .addReadLatency(3000 , 43) // there are 2 content nodes
                         .addMemoryUsage(0.89074, 0.8)
-                        .addDiskUsage(0.83517, 0.75),
+                        .addDiskUsage(0.83517, 0.75)
+                        .setIsFeedBlocked(false), // nodes_above_limit is 0
                 aggregatorMap.get(expectedContentCluster)
         );
 
@@ -86,6 +88,33 @@ public class ClusterDeploymentMetricsRetrieverTest {
         wireMock.stop();
     }
 
+    @Test
+    public void testFeedBlockedMetric() throws IOException {
+        List<URI> hosts = Stream.of(1, 2)
+                .map(item -> URI.create("http://localhost:" + wireMock.port() + "/" + item))
+                .toList();
+
+        stubFor(get(urlEqualTo("/1"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(contentMetrics())));
+
+        stubFor(get(urlEqualTo("/2"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(clustercontrollerMetricsWithFeedBlocked())));
+
+        ClusterInfo expectedContentCluster = new ClusterInfo("content_cluster_id", "content");
+
+        Map<ClusterInfo, DeploymentMetricsAggregator> aggregatorMap = new ClusterDeploymentMetricsRetriever().requestMetricsGroupedByCluster(hosts);
+        assertEquals(Set.of(expectedContentCluster), aggregatorMap.keySet());
+
+        DeploymentMetricsAggregator aggregator = aggregatorMap.get(expectedContentCluster);
+        assertTrue(aggregator.isFeedBlocked());
+
+        wireMock.stop();
+    }
+
     private String containerMetrics() throws IOException {
         return Files.readString(Path.of("src/test/resources/metrics/container_metrics.json"));
     }
@@ -96,6 +125,10 @@ public class ClusterDeploymentMetricsRetrieverTest {
 
     private String clustercontrollerMetrics() throws IOException {
         return Files.readString(Path.of("src/test/resources/metrics/clustercontroller_metrics.json"));
+    }
+
+    private String clustercontrollerMetricsWithFeedBlocked() throws IOException {
+        return Files.readString(Path.of("src/test/resources/metrics/clustercontroller_metrics_feed_blocked.json"));
     }
 
     // Same tolerance value as used internally in MetricsAggregator.isZero
@@ -115,6 +148,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
         compareOptionals(expected.diskUsage(), actual.diskUsage(), (a, b) -> assertDoubles.accept(a.feedBlockLimit(), b.feedBlockLimit()));
         compareOptionals(expected.memoryUsage(), actual.memoryUsage(), (a, b) -> assertDoubles.accept(a.util(), b.util()));
         compareOptionals(expected.memoryUsage(), actual.memoryUsage(), (a, b) -> assertDoubles.accept(a.feedBlockLimit(), b.feedBlockLimit()));
+        assertEquals(expected.isFeedBlocked(), actual.isFeedBlocked());
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")

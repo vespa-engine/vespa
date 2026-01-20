@@ -15,6 +15,7 @@ public class DeploymentMetricsAggregator {
     private Double documentCount;
     private ResourceUsage memoryUsage;
     private ResourceUsage diskUsage;
+    private boolean isFeedBlocked = false;
 
     public synchronized DeploymentMetricsAggregator addFeedLatency(double sum, double count) {
         this.feed = combineLatency(this.feed, sum, count);
@@ -43,6 +44,11 @@ public class DeploymentMetricsAggregator {
 
     public synchronized DeploymentMetricsAggregator addMemoryUsage(double feedBlockUtil, double feedBlockLimit) {
         this.memoryUsage = combineResourceUtil(this.memoryUsage, feedBlockUtil, feedBlockLimit);
+        return this;
+    }
+
+    public synchronized DeploymentMetricsAggregator setIsFeedBlocked(boolean isFeedBlocked) {
+        this.isFeedBlocked = isFeedBlocked;
         return this;
     }
 
@@ -86,6 +92,9 @@ public class DeploymentMetricsAggregator {
         return Optional.ofNullable(diskUsage);
     }
 
+    public boolean isFeedBlocked() {
+        return isFeedBlocked;
+    }
 
     private static LatencyMetrics combineLatency(LatencyMetrics metricsOrNull, double sum, double count) {
         return Optional.ofNullable(metricsOrNull).orElseGet(LatencyMetrics::new).combine(sum, count);
