@@ -1325,4 +1325,14 @@ IndexMaintainer::has_pending_urgent_flush() const
     return urgent_flush_id > _fusion_spec.last_fusion_id;
 }
 
+search::IndexStats
+IndexMaintainer::get_index_stats(bool clear_disk_io_stats) const
+{
+    std::unique_lock lock(_new_search_lock);
+    auto stats = _source_list->get_index_stats(clear_disk_io_stats);
+    lock.unlock();
+    stats.fusion_size_on_disk(_disk_indexes->get_transient_size(*_layout));
+    return stats;
+}
+
 }
