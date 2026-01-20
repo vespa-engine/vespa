@@ -37,7 +37,7 @@ public:
      * Try to prefetch tensor's data into memory.
      */
     virtual void prefetch_vector(uint32_t docid) const noexcept {
-        (void)entry_ref;
+        (void)docid;
     }
 };
 
