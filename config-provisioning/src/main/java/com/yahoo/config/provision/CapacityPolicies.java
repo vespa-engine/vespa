@@ -114,7 +114,17 @@ public class CapacityPolicies {
     }
 
     public NodeResources specifyFully(NodeResources resources, ClusterSpec clusterSpec) {
-        return resources.withUnspecifiedFieldsFrom(defaultResources(clusterSpec).with(DiskSpeed.any));
+        boolean diskWasUnspecified = resources.diskIsUnspecified();
+        NodeResources specified = resources.withUnspecifiedFieldsFrom(defaultResources(clusterSpec).with(DiskSpeed.any));
+
+        // Ensure disk size meets minimum requirements based on cluster type, but only if it was originally unspecified
+        if (diskWasUnspecified) {
+            double minDiskGb = minDiskGbForClusterType(specified, clusterSpec);
+            if (specified.diskGb() < minDiskGb) {
+                specified = specified.withDiskGb(minDiskGb);
+            }
+        }
+        return specified;
     }
 
     private NodeResources defaultResources(ClusterSpec clusterSpec) {
@@ -221,6 +231,15 @@ public class CapacityPolicies {
         return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
                               "no default resources applicable for " + spec + " among: " + resources)
                        .getValue();
+    }
+
+    private double minDiskGbForClusterType(NodeResources resources, ClusterSpec clusterSpec) {
+        if (resources.memoryIsUnspecified()) return 0;
+
+        return resources.memoryGiB() * switch (clusterSpec.type()) {
+            case content -> 3.0;  // 3x memory for content nodes
+            default -> 2.0; // 2x memory for other nodes
+        };
     }
 
 }
