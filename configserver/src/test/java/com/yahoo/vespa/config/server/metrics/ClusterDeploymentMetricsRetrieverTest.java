@@ -73,7 +73,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
                         .addReadLatency(3000 , 43) // there are 2 content nodes
                         .addMemoryUsage(0.89074, 0.8)
                         .addDiskUsage(0.83517, 0.75)
-                        .setIsFeedBlocked(0), // nodes_above_limit is 0
+                        .setFeedBlockedNodes(0), // nodes_above_limit is 0
                 aggregatorMap.get(expectedContentCluster)
         );
 
@@ -110,7 +110,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
         assertEquals(Set.of(expectedContentCluster), aggregatorMap.keySet());
 
         DeploymentMetricsAggregator aggregator = aggregatorMap.get(expectedContentCluster);
-        assertEquals(2, aggregator.isFeedBlocked());
+        assertEquals(2, aggregator.feedBlockedNodes());
 
         wireMock.stop();
     }
@@ -148,7 +148,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
         compareOptionals(expected.diskUsage(), actual.diskUsage(), (a, b) -> assertDoubles.accept(a.feedBlockLimit(), b.feedBlockLimit()));
         compareOptionals(expected.memoryUsage(), actual.memoryUsage(), (a, b) -> assertDoubles.accept(a.util(), b.util()));
         compareOptionals(expected.memoryUsage(), actual.memoryUsage(), (a, b) -> assertDoubles.accept(a.feedBlockLimit(), b.feedBlockLimit()));
-        assertEquals(expected.isFeedBlocked(), actual.isFeedBlocked());
+        assertEquals(expected.feedBlockedNodes(), actual.feedBlockedNodes());
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
