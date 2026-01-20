@@ -344,14 +344,12 @@ hn::VFromD<D> promote_fp8_e4m3_to(D df16, hn::VFromD<hn::Rebind<uint8_t, D>> v) 
     const hn::RebindToUnsigned<decltype(df16)> du16;
     using VU16 = hn::VFromD<decltype(du16)>;
 
-    const VU16 as_u16 = hn::PromoteTo(du16, v);
-    DEBUG_PRINT_LANES8(du16, "as_u16", as_u16);
-    const VU16 sign = hn::ShiftRight<7>(as_u16);
-    const VU16 mantissa_fp8 = hn::And(as_u16, hn::Set(du16, 0x7));
-    const VU16 exp_fp8 = hn::And(hn::ShiftRight<3>(as_u16), hn::Set(du16, 0xF));
+    const VU16 as_u16         = hn::PromoteTo(du16, v);
+    const VU16 sign           = hn::ShiftRight<7>(as_u16);
+    const VU16 mantissa_fp8   = hn::And(as_u16, hn::Set(du16, 0x7));
+    const VU16 exp_fp8        = hn::And(hn::ShiftRight<3>(as_u16), hn::Set(du16, 0xF));
     const auto is_fp8_subnorm = hn::Eq(exp_fp8, hn::Zero(du16));
-    DEBUG_PRINT_LANES8(du16, "is_fp8_subnorm", hn::VecFromMask(du16, is_fp8_subnorm));
-    const auto is_fp8_nan = hn::Eq(hn::ShiftLeft<9>(as_u16), hn::Set(du16, 0xFE00)); // ignore sign bit
+    const auto is_fp8_nan     = hn::Eq(hn::ShiftLeft<9>(as_u16), hn::Set(du16, 0xFE00)); // ignore sign bit
     // We normalize the fp8 subnormal by expressing it as fp16 (where all e4m3 subnormals
     // are covered by the normalized fp range) and doing a "magic" floating-point subtraction.
     // This subtraction will as part of IEEE 754 floating point semantics implicitly:
@@ -393,20 +391,24 @@ hn::VFromD<D> promote_fp8_e4m3_to(D df16, hn::VFromD<hn::Rebind<uint8_t, D>> v) 
     // (only widening conversion is currently supported). The blog post also does not go into
     // any details of how the magic number works, hence the above "reverse-engineered" wall
     // of text exposition.
-    const VU16 magic = hn::Set(du16, 16 << 10);
+    const VU16 magic         = hn::Set(du16, 16 << 10);
     const VU16 subnorm_fixup = hn::BitCast(du16, MySub(hn::BitCast(df16, hn::Or(magic, mantissa_fp8)), hn::BitCast(df16, magic)));
+    const VU16 mantissa_fp16 = hn::ShiftLeft<10 - 3>(mantissa_fp8);
+    const VU16 exp_fp16      = hn::Add(exp_fp8, hn::Set(du16, 15 - 7));
+    const VU16 normal        = hn::Or(hn::ShiftLeft<10>(exp_fp16), mantissa_fp16);
+    const VU16 bits_finite   = hn::IfThenElse(is_fp8_subnorm, subnorm_fixup, normal);
+    // Note that our NaN has a single (quiet) bit set to bitwise match the f32->f16 conversion from the fp8 LUT
+    const VU16 bits_fp16     = hn::IfThenElse(is_fp8_nan, hn::Set(du16, 0b0111'1110'0000'0000), bits_finite);
+
+    DEBUG_PRINT_LANES8(du16, "as_u16", as_u16);
+    DEBUG_PRINT_LANES8(du16, "is_fp8_subnorm", hn::VecFromMask(du16, is_fp8_subnorm));
     DEBUG_PRINT_LANES8(du16, "magic", magic);
     DEBUG_PRINT_LANES8(df16, "magic_fp16", hn::BitCast(df16, magic));
     DEBUG_PRINT_LANES8(df16, "mangled", hn::BitCast(df16, hn::Or(magic, mantissa_fp8)));
     DEBUG_PRINT_LANES8(df16, "subnorm_fixup", MySub(hn::BitCast(df16, hn::Or(magic, mantissa_fp8)), hn::BitCast(df16, magic)));
     DEBUG_PRINT_LANES8(du16, "subnorm_fixup_bits", hn::BitCast(du16, subnorm_fixup));
-    const VU16 mantissa_fp16 = hn::ShiftLeft<10 - 3>(mantissa_fp8);
-    const VU16 exp_fp16 = hn::Add(exp_fp8, hn::Set(du16, 15 - 7));
-    const VU16 normal = hn::Or(hn::ShiftLeft<10>(exp_fp16), mantissa_fp16);
-    const VU16 bits_finite = hn::IfThenElse(is_fp8_subnorm, subnorm_fixup, normal);
-    // Note that our NaN has a single (quiet) bit set to bitwise match the f32->f16 conversion from the fp8 LUT
-    const VU16 bits_fp16 = hn::IfThenElse(is_fp8_nan, hn::Set(du16, 0b0111'1110'0000'0000), bits_finite);
     DEBUG_PRINT_LANES8(df16, "bits_fp16", hn::BitCast(df16, bits_fp16));
+
     return hn::BitCast(df16, hn::Or(hn::ShiftLeft<15>(sign), bits_fp16));
 }
 
@@ -440,7 +442,7 @@ void promote_fp8e4m3fn(D du8, hn::VFromD<D> v,
     const VU8 v_no_sign     = hn::And(v, hn::Set(du8, 0b0111'1111));
     const VU8 lo_4_bits     = hn::And(v, hn::Set(du8, 0b0000'1111));
     const VU8 mantissa_only = hn::And(v, hn::Set(du8, 0b0000'0111));
-    const VU8 exp_only      = hn::And(v_no_sign, hn::Set(du8, 0b0111'1000));
+    const VU8 exp_only      = hn::And(v, hn::Set(du8, 0b0111'1000));
     const VU8 adj_exp       = hn::Add(exp_only, hn::Set(du8, (15 - 7) << 3)); // "pre-shifted", as-if ((exp_only >> 3) + 8) << 3
     // "special" is +/- Zero, NaN or a subnormal. E4M3 has only a single NaN value, which is quiet.
     const auto is_special = hn::Or(hn::Eq(exp_only, hn::Zero(du8)), hn::Eq(v_no_sign, hn::Set(du8, 0b0111'1111)));
