@@ -98,7 +98,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
-                                        .filter(serviceInfo -> shouldCheckService(hostsToCheck, application, serviceInfo))
+                                        .filter(service -> shouldCheckService(hostsToCheck, application, service))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
         log.log(FINE, () -> "Services to check for config convergence: " + servicesToCheck);
@@ -160,7 +160,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                                                      .filter(ApplicationClusterInfo::getDeferChangesUntilRestart)
                                                                      .collect(Collectors.toSet());
         log.log(FINE, "Exclude services from these clusters when checking config convergence: " +
-                excludeFromChecking.stream().map(c -> String.join(c.name(), "")) );
+                excludeFromChecking.stream().map(ApplicationClusterInfo::name).collect(Collectors.joining(", ")));
 
         return excludeFromChecking.stream().noneMatch(info -> info.name().equals(serviceInfo.getProperty("clustername").orElse("")));
     }

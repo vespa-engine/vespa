@@ -178,11 +178,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         Set<String> nodesToRestart = session.getActivationTriggers().nodeRestarts().stream().map(NodeRestart::hostname).collect(toSet());
         if (nodesToRestart.isEmpty()) return;
 
-        applicationRepository.modifyPendingRestarts(applicationId, pendingRestarts -> pendingRestarts.withRestarts(session.getSessionId(), nodesToRestart));
+        long configGeneration = session.getSessionId();
+        applicationRepository.modifyPendingRestarts(applicationId, pendingRestarts -> pendingRestarts.withRestarts(configGeneration, nodesToRestart));
+        String hostnames = nodesToRestart.stream().sorted().collect(joining(", "));
         deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
-                                                   nodesToRestart.size(), nodesToRestart.stream().sorted().collect(joining(", "))));
-        log.info(String.format("%sWill schedule service restart of %d nodes after convergence on generation %d: %s",
-                               session.logPre(), nodesToRestart.size(), session.getSessionId(), nodesToRestart.stream().sorted().collect(joining(", "))));
+                                                   nodesToRestart.size(), hostnames));
+        log.info(String.format("%sWill schedule service restart of %d nodes after convergence on generation %d (unless restartOnDeploy enabled): %s",
+                               session.logPre(), nodesToRestart.size(), configGeneration, hostnames));
         configChangeActions = configChangeActions == null ? null : configChangeActions.withRestartActions(new RestartActions());
     }
 
