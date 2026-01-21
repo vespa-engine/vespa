@@ -44,7 +44,6 @@ import java.util.logging.Logger;
 public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     private static final Logger log = Logger.getLogger(VoyageAIEmbedder.class.getName());
-    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     // VoyageAI API endpoints - auto-selected based on model name
@@ -63,20 +62,13 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     public VoyageAIEmbedder(VoyageAiEmbedderConfig config, Embedder.Runtime runtime, Secrets secretStore) {
         this.config = config;
         this.runtime = runtime;
-        this.apiKey = getApiKey(config, secretStore);
+        this.apiKey = secretStore.get(config.apiKeySecretRef());
         this.httpClient = createHttpClient(config);
         this.resolvedEndpoint = resolveEndpoint(config);
 
         log.fine(() -> "VoyageAI embedder initialized with model: %s, endpoint: %s".formatted(config.model(), resolvedEndpoint));
     }
 
-    /**
-     * Resolve the API endpoint based on model name.
-     * Different model types use different endpoints:
-     * - voyage-multimodal-* models use /v1/multimodalembeddings
-     * - voyage-context-* models use /v1/contextualizedembeddings
-     * - All other models use /v1/embeddings
-     */
     private String resolveEndpoint(VoyageAiEmbedderConfig config) {
         // If user explicitly configured an endpoint, use it
         String configuredEndpoint = config.endpoint();
@@ -96,36 +88,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         }
 
         return EMBEDDINGS_ENDPOINT;
-    }
-
-    private Secret getApiKey(VoyageAiEmbedderConfig config, Secrets secretStore) {
-        String secretName = config.apiKeySecretRef();
-
-        if (secretName == null || secretName.isEmpty()) {
-            throw new IllegalArgumentException(
-                "api-key-secret-ref must be configured for VoyageAI embedder. " +
-                "Please set it in services.xml and ensure the secret is in the secret store."
-            );
-        }
-
-        try {
-            Secret secret = secretStore.get(secretName);
-            if (secret == null) {
-                throw new IllegalArgumentException(
-                    "Secret not found in secret store: " + secretName + ". " +
-                    "Please add it using: vespa secret add " + secretName + " --value YOUR_API_KEY"
-                );
-            }
-            return secret;
-        } catch (UnsupportedOperationException e) {
-            throw new IllegalArgumentException(
-                "Secret store is not configured. Cannot retrieve API key for VoyageAI embedder.", e
-            );
-        } catch (Exception e) {
-            throw new IllegalArgumentException(
-                "Failed to retrieve API key from secret store. Secret name: " + secretName, e
-            );
-        }
     }
 
     private OkHttpClient createHttpClient(VoyageAiEmbedderConfig config) {
@@ -297,7 +259,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 .url(resolvedEndpoint)
                 .header("Authorization", "Bearer " + apiKey.current())
                 .header("Content-Type", "application/json")
-                .post(RequestBody.create(jsonRequest, JSON))
+                .post(RequestBody.create(jsonRequest, MediaType.get("application/json; charset=utf-8")))
                 .build();
 
         var call = httpClient.newCall(httpRequest);
