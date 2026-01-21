@@ -34,7 +34,6 @@ public class VoyageAIEmbedderTest {
         assertEquals("voyage-3.5", config.model());
         assertEquals("voyage_api_key", config.apiKeySecretRef());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint());
-        assertEquals(VoyageAiEmbedderConfig.InputTypeOverride.Enum.query, config.inputTypeOverride());
         assertTrue(config.truncate());
     }
 
@@ -53,7 +52,6 @@ public class VoyageAIEmbedderTest {
         assertEquals("voyage-3.5", config.model());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint()); // Default endpoint
         assertEquals(3, config.maxRetries()); // Default retries
-        assertEquals(VoyageAiEmbedderConfig.InputTypeOverride.Enum.auto, config.inputTypeOverride()); // Default auto-detect
         assertTrue(config.truncate()); // Default truncate
     }
 
@@ -73,27 +71,6 @@ public class VoyageAIEmbedderTest {
         // Should fail because api-key-secret-ref is required
         Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
         assertTrue(exception.getMessage().contains("api-key-secret-ref"));
-    }
-
-
-    @Test
-    void testVoyageAIEmbedderInvalidInputType() {
-        String servicesXml = """
-                <?xml version="1.0" encoding="utf-8" ?>
-                <services version="1.0">
-                    <container id="container" version="1.0">
-                        <component id="voyage" type="voyage-ai-embedder">
-                            <model>voyage-3</model>
-                            <api-key-secret-ref>key</api-key-secret-ref>
-                            <input-type-override>invalid</input-type-override>
-                        </component>
-                    </container>
-                </services>
-                """;
-
-        // Should fail because input type must be 'auto', 'query' or 'document'
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
-        assertTrue(exception.getMessage().contains("input-type-override"));
     }
 
     @Test

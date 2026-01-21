@@ -6,7 +6,6 @@ import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
-import static ai.vespa.embedding.config.VoyageAiEmbedderConfig.InputTypeOverride;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 
@@ -20,7 +19,6 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  *   <model>voyage-3</model>
  *   <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
  *   <endpoint>https://api.voyageai.com/v1/embeddings</endpoint>
- *   <input-type-override>auto</input-type-override>
  * </component>
  * }</pre>
  *
@@ -43,12 +41,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
      */
     private final String endpoint;
     private final String model;
-    /**
-     * Input type override: "auto" (detect from context), "query", or "document".
-     * VoyageAI optimizes embeddings differently based on whether the text is a search query
-     * or a document to be indexed. When set to "auto", automatically detects from context destination.
-     */
-    private final String inputTypeOverride;
     private final Boolean truncate;
 
     @SuppressWarnings("unused") // cluster and state parameters required by Vespa component framework
@@ -67,7 +59,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
 
         // Optional fields with defaults
         this.endpoint = getChildValue(xml, "endpoint").orElse(null);
-        this.inputTypeOverride = getChildValue(xml, "input-type-override").orElse(null);
         this.truncate = getChildValue(xml, "truncate").map(Boolean::parseBoolean).orElse(null);
 
         // Validate configuration
@@ -78,14 +69,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
      * Validate configuration values.
      */
     public void validate() {
-        if (inputTypeOverride != null) {
-            String type = inputTypeOverride.toLowerCase();
-            if (!type.equals("auto") && !type.equals("query") && !type.equals("document")) {
-                throw new IllegalArgumentException(
-                        "input-type-override must be 'auto', 'query' or 'document', got: " + inputTypeOverride);
-            }
-        }
-
         if (model != null && !model.startsWith("voyage")) {
             throw new IllegalArgumentException(
                     "Invalid VoyageAI model name: " + model + ". " +
@@ -102,9 +85,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         // Optional - only set if provided (otherwise use defaults from .def file)
         if (endpoint != null) {
             builder.endpoint(endpoint);
-        }
-        if (inputTypeOverride != null) {
-            builder.inputTypeOverride(InputTypeOverride.Enum.valueOf(inputTypeOverride.toLowerCase()));
         }
         if (truncate != null) {
             builder.truncate(truncate);
