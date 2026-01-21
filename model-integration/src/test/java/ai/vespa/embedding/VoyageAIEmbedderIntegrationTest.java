@@ -1,17 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
-import ai.vespa.secret.Secret;
-import ai.vespa.secret.Secrets;
 import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
+import ai.vespa.secret.Secrets;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvalidInputException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for VoyageAI embedder with real API.
@@ -157,6 +160,37 @@ public class VoyageAIEmbedderIntegrationTest {
         assertEquals(1024, result.size());
 
         embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithTruncationDisabledThrowsException() {
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .model("voyage-3")
+                .truncate(false);
+
+        var embedder = new VoyageAIEmbedder(
+                configBuilder.build(),
+                Embedder.Runtime.testInstance(),
+                createSecrets(getApiKey()));
+
+        try {
+            var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+            var context = new Embedder.Context("integration-test");
+
+            // Generate very long text that exceeds token limit
+            var veryLongText = "This is a test sentence. ".repeat(10000);
+
+            var exception = assertThrows(InvalidInputException.class, () ->
+                    embedder.embed(veryLongText, context, targetType)
+            );
+            assertEquals("VoyageAI API bad request (400): Request to model 'voyage-3' failed. " +
+                    "The example at index 0 in your batch has too many tokens and does not fit into the " +
+                    "model's context window of 32000 tokens. Please lower the number of tokens in the listed " +
+                    "example(s) or use truncation.", exception.getMessage());
+        } finally {
+            embedder.deconstruct();
+        }
     }
 
     @Test

@@ -564,6 +564,18 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.language.process.InvalidInputException" : {
+    "superClass" : "java.lang.IllegalArgumentException",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Exception)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.language.process.InvocationContext$Deadline" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
