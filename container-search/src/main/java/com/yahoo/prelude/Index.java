@@ -335,7 +335,7 @@ public class Index {
 
     public boolean getPhraseSegmenting() { return phraseSegmenting; }
 
-    public void setPhraseSegmenting(boolean phraseSegmenting) { this.phraseSegmenting = phraseSegmenting; }
+    public boolean setPhraseSegmenting(boolean phraseSegmenting) { return this.phraseSegmenting = phraseSegmenting; }
 
     public String getLinguisticsProfile() { return linguisticsProfile; }
 
