@@ -180,7 +180,20 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         return CuratorCompletionWaiter.createAndInitialize(this, barrierPath, id, waitForAll);
     }
 
-    /** Creates a listenable cache which keeps in sync with changes to all the immediate children of a path */
+    /**
+     * Creates a listenable cache which keeps in sync with changes to all the immediate children of a path.
+     *
+     * <p>WARNING: The directory cache ensures the path exists, which complicates removal of parent nodes.
+     * For example, as of 2026-01-20, each of the 3 config servers sets up a directory cache on
+     * `/config/v2/tenants/TENANT/sessions` (and `applications`).  The first config server to decide this
+     * tenant is unused and should be removed, will close the caches then delete TENANT recursively.
+     * However, the other config servers' caches recreate `sessions` (and `applications`) as soon as they
+     * are removed, which results in the first config server trying to delete the children of TENANT again.
+     * It has been observed that the first will delete just-created nodes >5900 times.  It eventually completes
+     * when the first config server is able to delete TENANT (however short-lived), which triggers a watcher
+     * on the other config servers to delete that tenant.  A better design would be to put the `sessions`
+     * directory (and directory cache) at `/config/v2/tenantSessions` (and `tenantApplications`).</p>
+     */
     public DirectoryCache createDirectoryCache(String path, boolean cacheData, boolean dataIsCompressed, ExecutorService executorService) {
         return new PathChildrenCacheWrapper(framework(), path, cacheData, dataIsCompressed, executorService);
     }
