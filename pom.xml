@@ -139,6 +139,16 @@
         <module>integration/schema-language-server/lemminx-vespa</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>java25</id>
+            <activation><jdk>[25,26)</jdk></activation>
+            <modules>
+                <module>datasketches-java25</module>
+            </modules>
+        </profile>
+    </profiles>
+
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>

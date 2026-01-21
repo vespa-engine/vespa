@@ -416,6 +416,39 @@
                 </pluginManagement>
             </build>
         </profile>
+
+        <profile>
+            <id>ffm-native</id>
+            <activation><jdk>[25,26)</jdk></activation>
+            <properties>
+                <ffm.args></ffm.args>
+                <org.apache.datasketches.memory.vespa.version>${project.version}</org.apache.datasketches.memory.vespa.version>
+                <org.apache.datasketches.vespa.version>9.0.0</org.apache.datasketches.vespa.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-compiler-plugin</artifactId>
+                            <configuration>
+                                <release>25</release>
+                                <compilerArgs>
+                                    <arg>-Xlint:all</arg>
+                                    <arg>-Xlint:-this-escape</arg>
+                                    <arg>-Xlint:-preview</arg>
+                                    <arg>-Xlint:-serial</arg>
+                                    <arg>-Xlint:-try</arg>
+                                    <arg>-Xlint:-processing</arg>
+                                    <arg>-Werror</arg>
+                                </compilerArgs>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
         <profile>
             <id>attach-sources</id>
             <activation>
