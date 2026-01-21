@@ -12,6 +12,7 @@ import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvalidInputException;
 import com.yahoo.language.process.OverloadException;
 import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.IndexedTensor;
@@ -25,6 +26,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -311,16 +313,31 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 throw new OverloadException("VoyageAI API rate limited (429)");
             } else if (response.code() == 401) {
                 throw new RuntimeException("VoyageAI API authentication failed. Please check your API key: " + responseBody);
+            } else if (response.code() == 400) {
+                String errorMessage = parseErrorDetail(responseBody).orElse(responseBody);
+                throw new InvalidInputException("VoyageAI API bad request (400): " + errorMessage);
             } else {
                 throw new RuntimeException("VoyageAI API request failed with status " + response.code() + ": " + responseBody);
             }
-        } catch (java.io.InterruptedIOException e) {
+        } catch (InterruptedIOException e) {
             // Covers both OkHttp timeout (InterruptedIOException) and socket timeout (SocketTimeoutException extends InterruptedIOException)
             throw new TimeoutException(
                     "VoyageAI API call timed out after " + timeoutMs + "ms", e);
         } catch (IOException e) {
             throw new RuntimeException("VoyageAI API call failed: " + e.getMessage(), e);
         }
+    }
+
+    private Optional<String> parseErrorDetail(String responseBody) {
+        try {
+            ErrorResponse errorResponse = objectMapper.readValue(responseBody, ErrorResponse.class);
+            if (errorResponse.detail != null && !errorResponse.detail.isEmpty()) {
+                return Optional.of(errorResponse.detail);
+            }
+        } catch (JsonProcessingException e) {
+            log.fine(() -> "Failed to parse error response as JSON: " + e.getMessage());
+        }
+        return Optional.empty();
     }
 
     private long calculateTimeoutMs(Context context, long startTime) {
@@ -571,6 +588,12 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             this.type = "text";
             this.text = text;
         }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ErrorResponse {
+        @JsonProperty("detail")
+        public String detail;
     }
 
     // ===== Cache Key =====

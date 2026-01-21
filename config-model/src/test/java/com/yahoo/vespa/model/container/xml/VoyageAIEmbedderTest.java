@@ -56,24 +56,6 @@ public class VoyageAIEmbedderTest {
     }
 
     @Test
-    void testVoyageAIEmbedderMissingApiKey() {
-        String servicesXml = """
-                <?xml version="1.0" encoding="utf-8" ?>
-                <services version="1.0">
-                    <container id="container" version="1.0">
-                        <component id="voyage" type="voyage-ai-embedder">
-                            <model>voyage-3</model>
-                        </component>
-                    </container>
-                </services>
-                """;
-
-        // Should fail because api-key-secret-ref is required
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
-        assertTrue(exception.getMessage().contains("api-key-secret-ref"));
-    }
-
-    @Test
     void testVoyageAIEmbedderInvalidModelName() {
         String servicesXml = """
                 <?xml version="1.0" encoding="utf-8" ?>

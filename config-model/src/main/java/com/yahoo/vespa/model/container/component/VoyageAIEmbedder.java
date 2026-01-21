@@ -13,61 +13,29 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
  * Configuration builder for VoyageAI embedder component.
  * Parses XML configuration from services.xml and produces VoyageAiEmbedderConfig.
  *
- * <p>Example services.xml:
- * <pre>{@code
- * <component id="voyage-embedder" type="voyage-ai-embedder">
- *   <model>voyage-3</model>
- *   <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
- *   <endpoint>https://api.voyageai.com/v1/embeddings</endpoint>
- * </component>
- * }</pre>
- *
- * <p><b>Note:</b> Request batching is not currently implemented. Each embed() call
- * results in a separate API request. Batching support will be added in a future version.
- *
  * @author VoyageAI team
+ * @author bjorncs
  */
 public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedderConfig.Producer {
 
     private final String apiKeySecretRef;
-    /**
-     * VoyageAI API endpoint URL. Can be overridden for:
-     * <ul>
-     * <li>Using a custom proxy/gateway for API requests</li>
-     * <li>Testing with a mock server</li>
-     * <li>Using regional endpoints if available</li>
-     * </ul>
-     * Default: https://api.voyageai.com/v1/embeddings
-     */
     private final String endpoint;
     private final String model;
     private final Boolean truncate;
 
-    @SuppressWarnings("unused") // cluster and state parameters required by Vespa component framework
+    @SuppressWarnings("unused")
     public VoyageAIEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.VoyageAIEmbedder", INTEGRATION_BUNDLE_NAME, xml);
 
-        // Required fields
-        this.apiKeySecretRef = getChildValue(xml, "api-key-secret-ref")
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "VoyageAI embedder requires <api-key-secret-ref> element. " +
-                        "Please specify the reference to the secret in Vespa's secret store."));
-        this.model = getChildValue(xml, "model")
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "VoyageAI embedder requires <model> element. " +
-                        "Please specify the VoyageAI model name (e.g., voyage-3, voyage-3.5, voyage-code-3)."));
+        this.apiKeySecretRef = getChildValue(xml, "api-key-secret-ref").get();
+        this.model = getChildValue(xml, "model").get();
 
-        // Optional fields with defaults
         this.endpoint = getChildValue(xml, "endpoint").orElse(null);
         this.truncate = getChildValue(xml, "truncate").map(Boolean::parseBoolean).orElse(null);
 
-        // Validate configuration
         validate();
     }
 
-    /**
-     * Validate configuration values.
-     */
     public void validate() {
         if (model != null && !model.startsWith("voyage")) {
             throw new IllegalArgumentException(
@@ -78,11 +46,9 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
 
     @Override
     public void getConfig(VoyageAiEmbedderConfig.Builder builder) {
-        // Required
         builder.apiKeySecretRef(apiKeySecretRef);
         builder.model(model);
 
-        // Optional - only set if provided (otherwise use defaults from .def file)
         if (endpoint != null) {
             builder.endpoint(endpoint);
         }

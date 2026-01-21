@@ -231,6 +231,8 @@ public class EmbedExpression extends Expression  {
             throw new OverloadException(e.getMessage(), e);
         } catch (com.yahoo.language.process.TimeoutException e) {
             throw new TimeoutException(e.getMessage(), e);
+        } catch (com.yahoo.language.process.InvalidInputException e) {
+            throw new InvalidInputException(e.getMessage(), e);
         }
     }
 
