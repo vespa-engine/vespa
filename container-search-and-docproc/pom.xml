@@ -49,7 +49,7 @@
       <exclusions>
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
-          <artifactId>container-core</artifactId>
+          <artifactId>container-disc</artifactId>
         </exclusion>
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
@@ -85,7 +85,7 @@
       <exclusions>
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
-          <artifactId>container-core</artifactId>
+          <artifactId>container-disc</artifactId>
         </exclusion>
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
@@ -193,7 +193,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-core</artifactId>
+      <artifactId>container-disc</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -206,12 +206,6 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-messagebus</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-disc</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

@@ -29,7 +29,6 @@
 ./configserver-flags/* @hakonhall
 ./configserver/* @hmusum
 ./configutil/* @hmusum
-./container-core/* @arnej27959 @bjorncs @gjoranv
 ./container-dependencies-enforcer/* @gjoranv
 ./container-dev/* @gjoranv
 ./container-disc/* @gjoranv

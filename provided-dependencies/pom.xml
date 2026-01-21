@@ -61,7 +61,7 @@
 
     </dependency>
 
-    <!-- Dependencies used by container-core -->
+    <!-- Dependencies used by container-disc -->
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>

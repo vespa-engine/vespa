@@ -42,8 +42,7 @@ jDisc core modules:
 
 jDisc container modules, layered on jDisc core:
 
-- [container-disc](https://github.com/vespa-engine/vespa/tree/master/container-disc) - integration between the jDisc container and jDisc core layers.
-- [container-core](https://github.com/vespa-engine/vespa/tree/master/container-core) - core jDisc container functionality: Metrics, OSGi integration for component bundles, dependency injection, HTTP connector, etc.
+- [container-disc](https://github.com/vespa-engine/vespa/tree/master/container-disc) - core jDisc container functionality: Metrics, OSGi integration for component bundles, dependency injection, HTTP connector, integration between the jDisc container and jDisc core layers, etc.
 - [component](https://github.com/vespa-engine/vespa/tree/master/component) - the component model. Components (in Java) will implement or subclass a type for this module.
 
 Search container layered on jDisc container:

@@ -119,12 +119,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-disc</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>searchcore</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -179,7 +173,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-core</artifactId>
+      <artifactId>container-disc</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
