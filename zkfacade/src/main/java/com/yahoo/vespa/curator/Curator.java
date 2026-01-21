@@ -308,6 +308,32 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         }
     }
 
+    /** Delete path and all children, giving up and returning false if some children were created concurrently. */
+    public boolean tryDelete(Path path) {
+        final List<String> children;
+        try {
+            children = framework().getChildren().forPath(path.getAbsolute());
+        } catch (KeeperException.NoNodeException e) {
+            return true;
+        } catch (Exception e) {
+            throw new RuntimeException("Could not get children of " + path.getAbsolute(), e);
+        }
+
+        for (var child : children) {
+            if (!tryDelete(path.append(child))) return false;
+        }
+
+        try {
+            framework().delete().guaranteed().forPath(path.getAbsolute());
+        } catch (KeeperException.NotEmptyException e) {
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("Could not delete " + path.getAbsolute(), e);
+        }
+
+        return true;
+    }
+
     private void deleteRecursively(Path path, int expectedVersion) {
         // This method avoids using Curator's recursive delete (deletingChildrenIfNeeded())
         // because it calls ZKPaths.deleteChildren() RECURSIVELY on KeeperException.NotEmptyException.
