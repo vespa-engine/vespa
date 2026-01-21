@@ -233,6 +233,13 @@ public class CapacityPolicies {
                        .getValue();
     }
 
+    /**
+     * Calculates the minimum disk size (in GiB) for the given cluster based on both
+     * the memory specified in {@code resources} and the {@link ClusterSpec.Type}.
+     * <p>
+     * For content clusters, the minimum disk is 3x the memory; for all other cluster
+     * types, it is 2x the memory. If memory is unspecified, this returns 0.
+     */
     private double minDiskGbForClusterType(NodeResources resources, ClusterSpec clusterSpec) {
         if (resources.memoryIsUnspecified()) return 0;
 
