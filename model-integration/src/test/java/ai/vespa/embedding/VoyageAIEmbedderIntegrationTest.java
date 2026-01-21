@@ -28,9 +28,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithVoyage3() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -57,9 +55,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithVoyage3Lite() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3-lite");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3-lite");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[512])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -74,9 +70,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithCaching() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -101,9 +95,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPISemanticSimilarity() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -128,9 +120,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIInputTypes() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
 
@@ -154,9 +144,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPILongText() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -173,10 +161,8 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithMultimodal35DefaultDimension() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // voyage-multimodal-3.5 should auto-select the multimodal embeddings endpoint
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-multimodal-3.5");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-multimodal-3.5");
 
         // Default dimension is 1024
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
@@ -203,8 +189,6 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithMultimodal35CustomDimension() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // Test with custom output dimension (512) - dimension is inferred from tensor type
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
@@ -213,7 +197,7 @@ public class VoyageAIEmbedderIntegrationTest {
         VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
                 Embedder.Runtime.testInstance(),
-                createSecrets(apiKey)
+                createSecrets(getApiKey())
         );
 
         // Dimension is inferred from tensor type specification
@@ -230,8 +214,6 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithMultimodal35AllDimensions() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // Test all supported dimensions: 256, 512, 1024, 2048
         // Dimension is inferred from the tensor type specification
         int[] dimensions = {256, 512, 1024, 2048};
@@ -244,7 +226,7 @@ public class VoyageAIEmbedderIntegrationTest {
             VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                     configBuilder.build(),
                     Embedder.Runtime.testInstance(),
-                    createSecrets(apiKey)
+                    createSecrets(getApiKey())
             );
 
             // Dimension is inferred from tensor type
@@ -262,10 +244,8 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithContextual3() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // voyage-context-3 should auto-select the contextualized embeddings endpoint
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-context-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-context-3");
 
         // voyage-context-3 outputs 1024 dimensions
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
@@ -292,9 +272,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithContextual3SemanticSimilarity() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-context-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-context-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -319,8 +297,6 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithContextual3CustomDimension() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // Test with custom output dimension (512) - dimension is inferred from tensor type
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
@@ -329,7 +305,7 @@ public class VoyageAIEmbedderIntegrationTest {
         VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
                 Embedder.Runtime.testInstance(),
-                createSecrets(apiKey)
+                createSecrets(getApiKey())
         );
 
         // Dimension is inferred from tensor type specification
@@ -346,8 +322,6 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithContextual3AllDimensions() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // voyage-context-3 supports: 256, 512, 1024, 2048
         // Dimension is inferred from the tensor type specification
         int[] dimensions = {256, 512, 1024, 2048};
@@ -360,7 +334,7 @@ public class VoyageAIEmbedderIntegrationTest {
             VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                     configBuilder.build(),
                     Embedder.Runtime.testInstance(),
-                    createSecrets(apiKey)
+                    createSecrets(getApiKey())
             );
 
             // Dimension is inferred from tensor type
@@ -377,6 +351,8 @@ public class VoyageAIEmbedderIntegrationTest {
     }
 
     // ===== Helper Methods =====
+
+    private String getApiKey() { return System.getenv("VOYAGE_API_KEY"); }
 
     private VoyageAIEmbedder createEmbedder(String apiKey, String model) {
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
