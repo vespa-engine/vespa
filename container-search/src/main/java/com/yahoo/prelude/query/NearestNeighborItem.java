@@ -21,6 +21,7 @@ import java.util.Objects;
 public class NearestNeighborItem extends SimpleTaggableItem {
 
     private int targetNumHits = 0;
+    private Integer totalTargetNumHits = null; // Total target hits across all nodes (nullable to distinguish "not set")
     private int hnswExploreAdditionalHits = 0;
     private double distanceThreshold = Double.POSITIVE_INFINITY;
     private boolean approximate = true;
@@ -38,8 +39,11 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         this.queryTensorName = queryTensorName;
     }
 
-    /** Returns the K number of hits to produce */
+    /** Returns the K number of hits to produce per node */
     public int getTargetNumHits() { return targetNumHits; }
+
+    /** Returns the total number of hits to produce across all nodes, or null if not set */
+    public Integer getTotalTargetNumHits() { return totalTargetNumHits; }
 
     /** Returns the name of the index (field) to be searched */
     public String getIndexName() { return field; }
@@ -74,8 +78,11 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     /** Returns the target hits max adjustment factor for HNSW */
     public Double getHnswTargetHitsMaxAdjustmentFactor() { return hnswTargetHitsMaxAdjustmentFactor; }
 
-    /** Set the K number of hits to produce */
+    /** Set the K number of hits to produce per node */
     public void setTargetNumHits(int target) { this.targetNumHits = target; }
+
+    /** Set the total number of hits to produce across all nodes */
+    public void setTotalTargetNumHits(Integer total) { this.totalTargetNumHits = total; }
 
     /** Set the distance threshold for nearest-neighbor hits */
     public void setDistanceThreshold(double threshold) { this.distanceThreshold = threshold; }
@@ -137,6 +144,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         buffer.append(",distanceThreshold=").append(distanceThreshold);
         buffer.append(",approximate=").append(approximate);
         buffer.append(",targetHits=").append(targetNumHits);
+        if (totalTargetNumHits != null)
+            buffer.append(",totalTargetHits=").append(totalTargetNumHits);
         if (hnswApproximateThreshold != null)
             buffer.append(",hnsw.approximateThreshold=").append(hnswApproximateThreshold);
         if (hnswExplorationSlack != null)
@@ -161,6 +170,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         discloser.addProperty("distanceThreshold", distanceThreshold);
         discloser.addProperty("approximate", approximate);
         discloser.addProperty("targetHits", targetNumHits);
+        if (totalTargetNumHits != null)
+            discloser.addProperty("totalTargetHits", totalTargetNumHits);
         if (hnswApproximateThreshold != null)
             discloser.addProperty("hnsw.approximateThreshold", hnswApproximateThreshold);
         if (hnswExplorationSlack != null)
@@ -180,6 +191,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         if ( ! super.equals(o)) return false;
         NearestNeighborItem other = (NearestNeighborItem)o;
         if (this.targetNumHits != other.targetNumHits) return false;
+        if ( ! Objects.equals(this.totalTargetNumHits, other.totalTargetNumHits)) return false;
         if (this.hnswExploreAdditionalHits != other.hnswExploreAdditionalHits) return false;
         if (this.distanceThreshold != other.distanceThreshold) return false;
         if (this.approximate != other.approximate) return false;
@@ -196,7 +208,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), targetNumHits, hnswExploreAdditionalHits,
+        return Objects.hash(super.hashCode(), targetNumHits, totalTargetNumHits, hnswExploreAdditionalHits,
                             distanceThreshold, approximate, field, queryTensorName,
                             hnswApproximateThreshold, hnswExplorationSlack,
                             hnswFilterFirstExploration, hnswFilterFirstThreshold,
@@ -204,11 +216,34 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(com.yahoo.search.Query query) {
         var builder = SearchProtocol.ItemNearestNeighbor.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         builder.setQueryTensorName(queryTensorName);
-        builder.setTargetNumHits(targetNumHits);
+
+        // Determine effective targetHits: use override if available, otherwise use targetNumHits
+        int effectiveTargetHits = targetNumHits;
+
+        if (query != null && totalTargetNumHits != null && totalTargetNumHits > 0) {
+            // Get current node key from query properties
+            Integer currentNodeKey = query.properties().getInteger("dispatch.currentNodeKey");
+            if (currentNodeKey != null) {
+                // Look up the override for this node
+                String propertyKey = "dispatch.nn.targetHitsOverrides." + getIndexName() +
+                                   "." + getQueryTensorName();
+                Object overrides = query.properties().get(propertyKey);
+                if (overrides instanceof java.util.Map) {
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<Integer, Integer> overrideMap = (java.util.Map<Integer, Integer>) overrides;
+                    Integer override = overrideMap.get(currentNodeKey);
+                    if (override != null) {
+                        effectiveTargetHits = override;
+                    }
+                }
+            }
+        }
+
+        builder.setTargetNumHits(effectiveTargetHits);
         builder.setAllowApproximate(approximate);
         builder.setExploreAdditionalHits(hnswExploreAdditionalHits);
         builder.setDistanceThreshold(distanceThreshold);
@@ -230,9 +265,17 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         if (hnswTargetHitsMaxAdjustmentFactor != null) {
             builder.setTargetHitsMaxAdjustmentFactor(hnswTargetHitsMaxAdjustmentFactor);
         }
+        if (totalTargetNumHits != null) {
+            builder.setTotalTargetNumHits(totalTargetNumHits);
+        }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemNearestNeighbor(builder.build())
                 .build();
+    }
+
+    @Override
+    SearchProtocol.QueryTreeItem toProtobuf() {
+        return toProtobuf(null);
     }
 
 }

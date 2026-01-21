@@ -211,6 +211,7 @@ public class YqlParser implements Parser {
     public static final String SUFFIX = "suffix";
     public static final String TARGET_HITS = "targetHits";
     public static final String TARGET_NUM_HITS = "targetNumHits";
+    public static final String TOTAL_TARGET_HITS = "totalTargetHits";
     public static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
     public static final String UNIQUE_ID = "id";
     public static final String URI = "uri";
@@ -561,6 +562,11 @@ public class YqlParser implements Parser {
         Integer targetNumHits = buildTargetHits(ast);
         if (targetNumHits != null) {
             item.setTargetNumHits(targetNumHits);
+        }
+        Integer totalTargetHits = getAnnotation(ast, TOTAL_TARGET_HITS,
+                Integer.class, null, "desired total hits to produce across all nodes");
+        if (totalTargetHits != null) {
+            item.setTotalTargetNumHits(totalTargetHits);
         }
         Double distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD,
                 Double.class, null, "maximum distance allowed from query point");

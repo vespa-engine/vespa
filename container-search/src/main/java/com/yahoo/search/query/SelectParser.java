@@ -120,6 +120,7 @@ import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
 import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
+import static com.yahoo.search.yql.YqlParser.TOTAL_TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
 import static com.yahoo.search.yql.YqlParser.USE_POSITION_DATA;
@@ -477,6 +478,9 @@ public class SelectParser implements Parser {
                 }
                 if (TARGET_NUM_HITS.equals(annotation_name)){
                     item.setTargetNumHits((int)(annotation_value.asDouble()));
+                }
+                if (TOTAL_TARGET_HITS.equals(annotation_name)){
+                    item.setTotalTargetNumHits((int)(annotation_value.asDouble()));
                 }
                 if (DISTANCE_THRESHOLD.equals(annotation_name)) {
                     double distanceThreshold = annotation_value.asDouble();
