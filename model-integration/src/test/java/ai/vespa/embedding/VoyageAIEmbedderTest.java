@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for VoyageAI embedder using MockWebServer to simulate API responses.
+ *
+ * @author bjorncs
  */
 public class VoyageAIEmbedderTest {
 
