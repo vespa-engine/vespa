@@ -10,12 +10,14 @@ import com.yahoo.container.jdisc.state.MetricValue;
 import com.yahoo.metrics.simple.Bucket;
 import com.yahoo.metrics.simple.Identifier;
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.metrics.simple.MetricSettings;
 import com.yahoo.metrics.simple.Point;
 import com.yahoo.metrics.simple.UntypedMetric;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,6 +74,20 @@ public class SnapshotConverterTest {
             }
             assertEquals(3, cnt);
         }
+    }
+
+    @Test
+    void testHistogramConversion() {
+        MetricReceiver.MockReceiver mock = new MetricReceiver.MockReceiver();
+        var gauge = mock.declareGauge("latency", Optional.empty(), new MetricSettings.Builder().histogram(true).build());
+        for (int i = 1; i <= 100; i++) gauge.sample(i);
+
+        MetricSnapshot snapshot = new SnapshotConverter(mock.getSnapshot()).convert();
+        GaugeMetric gaugeMetric = (GaugeMetric) snapshot.iterator().next().getValue().get("latency");
+
+        assertEquals(100, gaugeMetric.getCount());
+        assertTrue(gaugeMetric.getPercentiles().isPresent());
+        assertEquals(2, gaugeMetric.getPercentiles().get().size());
     }
 
 }
