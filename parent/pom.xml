@@ -93,6 +93,7 @@
                         <showWarnings>true</showWarnings>
                         <showDeprecation>false</showDeprecation>
                         <compilerArgs>
+                            <arg>${vespaCompilerArgs.preview}</arg>
                             <arg>${vespaCompilerArgs.xlint}</arg>
                             <arg>-Xlint:-serial</arg>
                             <arg>-Xlint:-try</arg>
@@ -390,16 +391,6 @@
                             <artifactId>maven-compiler-plugin</artifactId>
                             <configuration>
                                 <release>21</release>
-                                <compilerArgs>
-                                    <arg>--enable-preview</arg>
-                                    <arg>-Xlint:all</arg>
-                                    <arg>-Xlint:-this-escape</arg>
-                                    <arg>-Xlint:-preview</arg>
-                                    <arg>-Xlint:-serial</arg>
-                                    <arg>-Xlint:-try</arg>
-                                    <arg>-Xlint:-processing</arg>
-                                    <arg>-Werror</arg>
-                                </compilerArgs>
                             </configuration>
                         </plugin>
                         <plugin>
@@ -433,15 +424,6 @@
                             <artifactId>maven-compiler-plugin</artifactId>
                             <configuration>
                                 <release>25</release>
-                                <compilerArgs>
-                                    <arg>-Xlint:all</arg>
-                                    <arg>-Xlint:-this-escape</arg>
-                                    <arg>-Xlint:-preview</arg>
-                                    <arg>-Xlint:-serial</arg>
-                                    <arg>-Xlint:-try</arg>
-                                    <arg>-Xlint:-processing</arg>
-                                    <arg>-Werror</arg>
-                                </compilerArgs>
                             </configuration>
                         </plugin>
                     </plugins>
@@ -576,6 +558,16 @@
             <id>java21VespaCompilerArgs</id>
             <activation>
                 <jdk>[21,25)</jdk>
+            </activation>
+            <properties>
+                <vespaCompilerArgs.xlint>-Xlint:all,-this-escape,-preview</vespaCompilerArgs.xlint>
+                <vespaCompilerArgs.preview>--enable-preview</vespaCompilerArgs.preview>
+            </properties>
+        </profile>
+        <profile>
+            <id>java25VespaCompilerArgs</id>
+            <activation>
+                <jdk>[25,26)</jdk>
             </activation>
             <properties>
                 <vespaCompilerArgs.xlint>-Xlint:all,-this-escape</vespaCompilerArgs.xlint>
