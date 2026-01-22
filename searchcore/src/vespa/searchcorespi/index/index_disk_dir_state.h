@@ -27,7 +27,7 @@ public:
     bool is_active() const noexcept { return _active_count != 0; }
     const std::optional<uint64_t>& get_size_on_disk() const noexcept { return _size_on_disk; }
     void set_size_on_disk(uint64_t size_on_disk) noexcept { _size_on_disk = size_on_disk; }
-    bool get_stale() const noexcept { return _stale; }
+    bool is_stale() const noexcept { return _stale; }
     void set_stale() noexcept { _stale = true; }
 };
 

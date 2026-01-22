@@ -27,7 +27,7 @@ DiskIndexes::remove_from_sum(const IndexDiskDirState& state)
 {
     auto size_on_disk = state.get_size_on_disk().value_or(0u);
     _sum_size_on_disk -= size_on_disk;
-    if (state.get_stale()) {
+    if (state.is_stale()) {
         _sum_stale_size_on_disk -= size_on_disk;
     }
 }
@@ -42,7 +42,7 @@ DiskIndexes::setActive(const string &index, uint64_t size_on_disk)
     auto& state = insres.first->second;
     if (state.activate(size_on_disk)) {
         _sum_size_on_disk += size_on_disk;
-        if (state.get_stale()) {
+        if (state.is_stale()) {
             _sum_stale_size_on_disk += size_on_disk;
         }
         if (index_disk_dir.is_fusion_index()) {
@@ -55,7 +55,7 @@ DiskIndexes::setActive(const string &index, uint64_t size_on_disk)
             for (auto& entry : _active) {
                 if (entry.first < index_disk_dir) {
                     auto& stale_state = entry.second;
-                    if (!stale_state.get_stale()) {
+                    if (!stale_state.is_stale()) {
                         stale_state.set_stale();
                         _sum_stale_size_on_disk += stale_state.get_size_on_disk().value_or(0u);
                     }
@@ -129,7 +129,7 @@ DiskIndexes::get_transient_size(const IndexDiskLayout& layout) const
          * complete and might be removed if fusion is aborted. Disk
          * space used by these indexes is considered transient.
          */
-        if (!state.get_size_on_disk().has_value() && !state.get_stale()) {
+        if (!state.get_size_on_disk().has_value() && !state.is_stale()) {
             deferred.emplace_back(entry.first);
         }
     }
