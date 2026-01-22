@@ -208,11 +208,13 @@ public:
           _start(start), _done(done), _proceed(proceed)
     { }
 
+    virtual void on_run() { }
     void run() override {
         _start.countDown();
         if (_proceed != nullptr) {
             _proceed->await();
         }
+        on_run();
         _flushedSerial.store(_currentSerial, std::memory_order_relaxed);
         _done.countDown();
     }
@@ -231,35 +233,44 @@ public:
     Task::UP          _task;
 
 protected:
-    SimpleTarget(const std::string &name, const Type &type, search::SerialNum flushedSerial = 0, bool proceedImmediately = true) :
-        test::DummyFlushTarget(name, type, Component::OTHER),
-        _flushedSerial(flushedSerial),
-        _currentSerial(0),
-        _proceed(),
-        _initDone(),
-        _taskStart(),
-        _taskDone(),
-        _task(std::make_unique<SimpleTask>(_taskStart, _taskDone, &_proceed,
-                                           _flushedSerial, _currentSerial))
+    SimpleTarget(const std::string &name, const Type &type, search::SerialNum flushedSerial = 0,
+                 bool proceedImmediately = true)
+        : test::DummyFlushTarget(name, type, Component::OTHER),
+          _flushedSerial(flushedSerial),
+          _currentSerial(0),
+          _proceed(),
+          _initDone(),
+          _taskStart(),
+          _taskDone(),
+          _task(std::make_unique<SimpleTask>(_taskStart, _taskDone, &_proceed,
+                                             _flushedSerial, _currentSerial))
     {
         if (proceedImmediately) {
             _proceed.countDown();
         }
     }
 
+    struct no_task_tag {};
+    SimpleTarget(const std::string &name, const Type& type, no_task_tag) noexcept
+        : test::DummyFlushTarget(name, type, Component::OTHER),
+          _flushedSerial(0),
+          _currentSerial(0),
+          _proceed(),
+          _initDone(),
+          _taskStart(),
+          _taskDone(),
+          _task()
+    {
+    }
+
 public:
     using SP = std::shared_ptr<SimpleTarget>;
 
-    SimpleTarget(Task::UP task, const std::string &name) noexcept :
-        test::DummyFlushTarget(name),
-        _flushedSerial(0),
-        _currentSerial(0),
-        _proceed(),
-        _initDone(),
-        _taskStart(),
-        _taskDone(),
-        _task(std::move(task))
-    { }
+    SimpleTarget(Task::UP task, const std::string &name) noexcept
+        : SimpleTarget(name, Type::OTHER, no_task_tag())
+    {
+        _task = std::move(task);
+    }
 
     SimpleTarget(search::SerialNum flushedSerial = 0, bool proceedImmediately = true)
         : SimpleTarget("anon", flushedSerial, proceedImmediately)
@@ -268,6 +279,8 @@ public:
     SimpleTarget(const std::string &name, search::SerialNum flushedSerial = 0, bool proceedImmediately = true)
         : SimpleTarget(name, Type::OTHER, flushedSerial, proceedImmediately)
     { }
+
+    ~SimpleTarget() override;
 
     Time getLastFlushTime() const override { return vespalib::system_clock::now(); }
 
@@ -303,6 +316,8 @@ public:
     }
 };
 
+SimpleTarget::~SimpleTarget() = default;
+
 class AssertedTarget : public SimpleTarget {
 public:
     mutable bool _mgain;
@@ -329,6 +344,44 @@ public:
         return SimpleTarget::getFlushedSerialNum();
     }
 };
+
+class ReservedDiskSpaceTask : public SimpleTask {
+    IFlushTarget::DiskGain& _disk_gain;
+    void on_run() override {
+        _disk_gain = IFlushTarget::DiskGain(_disk_gain.getAfter(), _disk_gain.getAfter());
+    }
+public:
+    ReservedDiskSpaceTask(vespalib::Gate &start,
+                          vespalib::Gate &done,
+                          vespalib::Gate *proceed,
+                          std::atomic<search::SerialNum> &flushedSerial,
+                          search::SerialNum &currentSerial,
+                          IFlushTarget::DiskGain &disk_gain)
+        : SimpleTask(start, done, proceed, flushedSerial, currentSerial),
+          _disk_gain(disk_gain)
+    {
+    }
+
+};
+
+class ReservedDiskSpaceTarget : public SimpleTarget {
+    DiskGain _disk_gain;
+public:
+    ReservedDiskSpaceTarget(const std::string &name, search::SerialNum flushedSerial, DiskGain disk_gain)
+        : SimpleTarget(name, Type::OTHER, no_task_tag()),
+          _disk_gain(disk_gain)
+    {
+        _flushedSerial = flushedSerial;
+        _task = std::make_unique<ReservedDiskSpaceTask>(_taskStart, _taskDone, &_proceed,
+                                                        _flushedSerial, _currentSerial, _disk_gain);
+    }
+    ~ReservedDiskSpaceTarget() override;
+    DiskGain getApproxDiskGain() const override {
+        return _disk_gain;
+    }
+};
+
+ReservedDiskSpaceTarget::~ReservedDiskSpaceTarget() = default;
 
 class SimpleStrategy : public IFlushStrategy {
 public:
@@ -706,12 +759,12 @@ TEST(FlushEngineTest, require_that_trigger_flush_works)
 }
 
 bool
-asserCorrectHandlers(const FlushEngine::FlushMetaSet & current1, const std::vector<const char *> & targets)
+asserCorrectHandlers(const FlushEngine::FlushMetaSet & current1, const std::vector<std::string> & targets)
 {
     bool retval(targets.size() == current1.size());
     auto curr = current1.begin();
     if (retval) {
-        for (const char * target : targets) {
+        for (auto& target : targets) {
             if (target != (curr++)->getName()) {
                 return false;
             }
@@ -721,7 +774,7 @@ asserCorrectHandlers(const FlushEngine::FlushMetaSet & current1, const std::vect
 }
 
 void
-assertThatHandlersInCurrentSet(FlushEngine & engine, const std::vector<const char *> & targets)
+assertThatHandlersInCurrentSet(FlushEngine & engine, const std::vector<std::string> & targets)
 {
     FlushEngine::FlushMetaSet current1 = engine.getCurrentlyFlushingSet();
     while ((current1.size() < targets.size()) || !asserCorrectHandlers(current1, targets)) {
@@ -921,5 +974,41 @@ TEST(FlushEngineTest, the_oldest_start_time_is_tracked_per_flush_handler_in_Acti
     EXPECT_EQ(t1, stats.oldest_start_time("h1").value());
 }
 
+TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
+    Fixture f(2, 50ms); // 2 normal flush threads, 3 total flush threads
+    auto target1 = std::make_shared<ReservedDiskSpaceTarget>("target1", 1, IFlushTarget::DiskGain(10, 20));
+    auto target2 = std::make_shared<ReservedDiskSpaceTarget>("target2", 2, IFlushTarget::DiskGain(100, 200));
+    auto target3 = std::make_shared<ReservedDiskSpaceTarget>("target3", 3, IFlushTarget::DiskGain(1000, 2000));
+    auto target4 = std::make_shared<ReservedDiskSpaceTarget>("target4", 4, IFlushTarget::DiskGain(10000, 20000));
+    auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4}), "handler", 9);
+    f.putFlushHandler("handler", handler);
+
+    EXPECT_EQ(33310, f.engine.calculate_reserved_disk());
+    f.engine.start();
+
+    EXPECT_TRUE(target1->_initDone.await(LONG_TIMEOUT));
+    EXPECT_TRUE(target2->_initDone.await(LONG_TIMEOUT));
+    EXPECT_FALSE(target3->_initDone.await(SHORT_TIMEOUT));
+    EXPECT_FALSE(target4->_initDone.await(SHORT_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target1", "handler.target2"});
+    EXPECT_FALSE(target3->_initDone.await(SHORT_TIMEOUT));
+    EXPECT_EQ(33310, f.engine.calculate_reserved_disk());
+    target1->_proceed.countDown();
+    EXPECT_TRUE(target1->_taskDone.await(LONG_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target3"});
+    EXPECT_EQ(33300, f.engine.calculate_reserved_disk());
+    target3->_proceed.countDown();
+    EXPECT_TRUE(target3->_taskDone.await(LONG_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target4"});
+    EXPECT_EQ(32300, f.engine.calculate_reserved_disk());
+    target2->_proceed.countDown();
+    EXPECT_TRUE(target2->_taskDone.await(LONG_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target4"});
+    EXPECT_EQ(32200, f.engine.calculate_reserved_disk());
+    target4->_proceed.countDown();
+    EXPECT_TRUE(target4->_taskDone.await(LONG_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {});
+    EXPECT_EQ(22200, f.engine.calculate_reserved_disk());
+}
 
 GTEST_MAIN_RUN_ALL_TESTS()
