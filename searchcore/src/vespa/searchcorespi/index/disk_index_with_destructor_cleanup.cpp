@@ -52,10 +52,7 @@ DiskIndexWithDestructorCleanup::createBlueprint(const IRequestContext& requestCo
 search::IndexStats
 DiskIndexWithDestructorCleanup::get_index_stats(bool clear_disk_io_stats) const
 {
-    auto stats = _index->get_index_stats(clear_disk_io_stats);
-    uint64_t transient_size = _disk_indexes->get_transient_size(*_layout, _index_disk_dir);
-    stats.fusion_size_on_disk(transient_size);
-    return stats;
+    return _index->get_index_stats(clear_disk_io_stats);
 }
 
 search::SerialNum

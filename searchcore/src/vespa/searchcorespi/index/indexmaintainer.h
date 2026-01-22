@@ -360,10 +360,7 @@ public:
         return _source_list;
     }
 
-    search::IndexStats get_index_stats(bool clear_disk_io_stats) const override {
-        LockGuard lock(_new_search_lock);
-        return _source_list->get_index_stats(clear_disk_io_stats);
-    }
+    search::IndexStats get_index_stats(bool clear_disk_io_stats) const override;
 
     IFlushTarget::List getFlushTargets() override;
     void setSchema(const Schema & schema, SerialNum serialNum) override ;
