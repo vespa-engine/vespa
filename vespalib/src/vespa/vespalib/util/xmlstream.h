@@ -30,6 +30,7 @@
 #pragma once
 
 #include "xmlserializable.h"
+#include <cstdint>
 #include <iosfwd>
 #include <list>
 #include <memory>

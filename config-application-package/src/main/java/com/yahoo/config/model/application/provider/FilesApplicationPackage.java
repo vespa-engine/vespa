@@ -568,7 +568,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     static {
         // Note: Directories intentionally not validated: MODELS_DIR (custom models can contain files with any extension)
 
-        // TODO: Files that according to doc (https://docs.vespa.ai/en/reference/schema-reference.html)
+        // TODO: Files that according to doc (https://docs.vespa.ai/en/reference/schemas/schemas.html)
         //       can be anywhere in the application package:
         //       - constant tensors (.json, .json.lz4)
         //       - onnx model files (.onnx)

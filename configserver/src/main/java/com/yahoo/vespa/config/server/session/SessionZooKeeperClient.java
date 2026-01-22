@@ -105,8 +105,8 @@ public class SessionZooKeeperClient {
     }
 
     public void writeStatus(Session.Status sessionStatus) {
-        try {
-            createWriteStatusTransaction(sessionStatus).commit();
+        try (var transaction = createWriteStatusTransaction(sessionStatus)) {
+            transaction.commit();
         } catch (Exception e) {
             throw new RuntimeException("Unable to write session status", e);
         }
@@ -285,7 +285,7 @@ public class SessionZooKeeperClient {
                    });
     }
 
-    public Instant readActivatedTime() {
+    public Instant readStatusChanged() {
         Optional<Stat> statData = curator.getStat(sessionStatusPath);
         return statData.map(s -> Instant.ofEpochMilli(s.getMtime())).orElse(Instant.EPOCH);
     }

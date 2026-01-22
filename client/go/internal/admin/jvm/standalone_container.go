@@ -37,6 +37,7 @@ func (a *StandaloneContainer) configureOptions() {
 	opts := a.jvmOpts
 	opts.ConfigureCpuCount(0)
 	opts.AddCommonXX()
+	opts.VersionOptions(NoExtraJvmFeatures)
 	opts.AddCommonOpens()
 	opts.AddCommonJdkProperties()
 	a.addJdiscProperties()

@@ -19,15 +19,16 @@ public class SoftTimeout implements Cloneable {
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
+    public static final String SOFTTIMEOUT = "softtimeout";
     public static final String ENABLE = "enable";
     public static final String FACTOR = "factor";
     public static final String TAILCOST = "tailcost";
 
     /** The full property name for turning softtimeout on or off */
-    public static final CompoundName enableProperty = CompoundName.from(Ranking.RANKING + "." + Ranking.SOFTTIMEOUT + "." + ENABLE);
+    public static final CompoundName enableProperty = CompoundName.fromComponents(Ranking.RANKING, SOFTTIMEOUT, ENABLE);
 
     static {
-        argumentType = new QueryProfileType(Ranking.SOFTTIMEOUT);
+        argumentType = new QueryProfileType(SOFTTIMEOUT);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(ENABLE, "boolean"));

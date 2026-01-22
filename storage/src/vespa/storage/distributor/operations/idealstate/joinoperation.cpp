@@ -5,7 +5,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/log/bufferedlogger.h>
-LOG_SETUP(".distributor.operation.idealstate.join");
+LOG_SETUP(".distributor.operations.idealstate.join");
 
 using namespace storage::distributor;
 

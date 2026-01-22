@@ -4,6 +4,7 @@
 #include "flushstats.h"
 #include "flushtask.h"
 #include <vespa/vespalib/util/time.h>
+#include <algorithm>
 #include <vector>
 
 namespace search { class IFlushToken; }
@@ -54,12 +55,15 @@ public:
     public:
         Gain() noexcept : _before(0), _after(0) { }
         Gain(T before, T after) noexcept : _before(before), _after(after) { }
-        T getBefore() const { return _before; }
-        T  getAfter() const { return _after; }
-        T gain() const { return _before - _after; }
-        double gainRate() const { return (_before != 0) ? double(gain())/_before : 0;}
-        Gain & operator += (const Gain & b) { _before += b.getBefore(); _after += b.getAfter(); return *this; }
-        static Gain noGain(size_t currentSize) { return Gain(currentSize, currentSize); }
+        T getBefore() const noexcept { return _before; }
+        T  getAfter() const noexcept { return _after; }
+        T gain() const noexcept { return _before - _after; }
+        double gainRate() const noexcept { return (_before != 0) ? double(gain())/_before : 0;}
+        void add_as_positive_or_zero_gain(const Gain& b) noexcept {
+            _before += std::max(b.getBefore(), b.getAfter());
+            _after += b.getAfter();
+        }
+        static Gain noGain(size_t currentSize) noexcept { return Gain(currentSize, currentSize); }
     private:
         T _before;
         T _after;

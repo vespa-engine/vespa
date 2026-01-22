@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
-import ai.vespa.secret.Secret;
-import ai.vespa.secret.Secrets;
 import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
+import ai.vespa.secret.Secrets;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvocationContext;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -16,11 +16,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for VoyageAI embedder using MockWebServer to simulate API responses.
+ *
+ * @author bjorncs
  */
 public class VoyageAIEmbedderTest {
 
@@ -119,86 +126,163 @@ public class VoyageAIEmbedderTest {
     }
 
     @Test
-    public void testRateLimitRetry() throws Exception {
-        // First request: rate limited
+    public void testThrowsOverloadExceptionOn429() {
+        // Mock 429 response
         mockServer.enqueue(new MockResponse()
                 .setResponseCode(429)
-                .setHeader("Retry-After", "1")
                 .setBody("{\"error\":\"rate_limit_exceeded\"}"));
-
-        // Second request: success
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(createSuccessResponse(1024)));
 
         embedder = createEmbedder();
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("test-embedder");
 
-        // Should retry and succeed
-        Tensor result = embedder.embed("test", context, targetType);
-        assertNotNull(result);
+        // Should throw OverloadException immediately
+        var exception = assertThrows(
+            com.yahoo.language.process.OverloadException.class,
+            () -> embedder.embed("test", context, targetType)
+        );
 
-        // Verify 2 requests were made (1 failed, 1 succeeded)
-        assertEquals(2, mockServer.getRequestCount());
+        assertEquals("VoyageAI API rate limited (429)", exception.getMessage());
+
+        // Verify only 1 request was made (no retries on 429)
+        assertEquals(1, mockServer.getRequestCount());
     }
 
     @Test
-    public void testTimeoutExceeded() {
-        // Create embedder with very short timeout
+    public void testThrowsTimeoutExceptionOnSocketTimeout() {
+        // Configure mock server with slow response to trigger socket timeout
+        mockServer.enqueue(new MockResponse()
+                .setBodyDelay(1, TimeUnit.SECONDS)
+                .setBody("{\"data\":[{\"embedding\":[0.1,0.2,0.3,0.4]}]}"));
+
+        // Create embedder with 100ms timeout to trigger timeout quickly
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
-        configBuilder.timeout(2000); // 2 second timeout
-        configBuilder.maxRetries(100); // High retry count, but timeout should hit first
+        configBuilder.timeout(100); // 100ms timeout
+        embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
 
-        VoyageAIEmbedder shortTimeoutEmbedder = new VoyageAIEmbedder(
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+
+        var exception = assertThrows(TimeoutException.class, () -> embedder.embed("test", context, targetType));
+
+        var message = exception.getMessage();
+        assertTrue(message.contains("VoyageAI API call timed out after"), "Expected message to contain 'VoyageAI API call timed out after', got: " + message);
+        assertTrue(message.contains("ms"), "Expected message to contain 'ms', got: " + message);
+
+        assertNotNull(exception.getCause());
+        assertTrue(exception.getCause() instanceof java.io.InterruptedIOException
+                || exception.getCause() instanceof java.net.SocketTimeoutException);
+
+        // Verify only 1 request was made (no retries on timeout)
+        assertEquals(1, mockServer.getRequestCount());
+    }
+
+    @Test
+    public void testThrowsTimeoutExceptionOnExpiredDeadline() {
+        embedder = createEmbedder();
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+
+        // Create context with already-expired deadline
+        var context = new Embedder.Context("test-embedder")
+                .setDeadline(com.yahoo.language.process.InvocationContext.Deadline.of(
+                        java.time.Instant.now().minusSeconds(1)));
+
+        // Should throw TimeoutException before making HTTP request
+        var exception = assertThrows(
+                TimeoutException.class,
+                () -> embedder.embed("test", context, targetType)
+        );
+
+        assertEquals("Request deadline exceeded before VoyageAI API call", exception.getMessage());
+
+        // No HTTP request should be made
+        assertEquals(0, mockServer.getRequestCount());
+    }
+
+    @Test
+    public void testMaxRetriesExceeded() {
+        // Create embedder with hardcoded maxRetries=3
+        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
+        configBuilder.apiKeySecretRef("test_key");
+        configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
+        configBuilder.model("voyage-3");
+
+        VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
                 runtime,
                 createMockSecrets()
         );
 
-        // Mock multiple rate limit responses (each retry waits 1 second)
+        // Mock server error responses - more than maxRetries
         for (int i = 0; i < 10; i++) {
             mockServer.enqueue(new MockResponse()
-                    .setResponseCode(429)
-                    .setBody("{\"error\":\"rate_limit_exceeded\"}"));
+                    .setResponseCode(500)
+                    .setBody("{\"error\":\"internal_server_error\"}"));
         }
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("test-embedder");
 
-        // Should fail when timeout is reached
+        // Should fail after exhausting retries
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            shortTimeoutEmbedder.embed("test", context, targetType);
+            embedder.embed("test", context, targetType);
         });
-        assertTrue(exception.getMessage().contains("timeout") || exception.getMessage().contains("exceed"));
+        assertEquals("VoyageAI API call failed: Max retries exceeded for VoyageAI API (3). Last response: 500 - {\"error\":\"internal_server_error\"}", exception.getMessage());
 
-        shortTimeoutEmbedder.deconstruct();
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testDeadlineTimeout() {
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .endpoint(mockServer.url("/v1/embeddings").toString())
+                .model("voyage-3")
+                .maxRetries(100);
+        var embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
+
+        for (int i = 0; i < 100; i++) {
+            mockServer.enqueue(new MockResponse()
+                    .setResponseCode(500)
+                    .setBody("{\"error\":\"internal_server_error\"}"));
+        }
+
+        var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+
+        var context = new Embedder.Context("test-embedder")
+                .setDeadline(InvocationContext.Deadline.of(Duration.ofMillis(500)));
+
+        var exception = assertThrows(TimeoutException.class,
+                () -> embedder.embed("test", context, targetType));
+
+        String message = exception.getMessage();
+        assertTrue(message.contains("VoyageAI API call timed out after"), "Expected message to contain 'VoyageAI API call timed out after', got: " + message);
+        assertTrue(message.contains("ms"), "Expected message to contain 'ms', got: " + message);
+        embedder.deconstruct();
     }
 
     @Test
     public void testMaxRetriesSafetyLimit() {
-        // Create embedder with low maxRetries
+        // Create embedder with hardcoded maxRetries=3
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
-        configBuilder.timeout(30000); // High timeout
-        configBuilder.maxRetries(2); // Low retry count
 
-        VoyageAIEmbedder lowRetryEmbedder = new VoyageAIEmbedder(
+        VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
                 runtime,
                 createMockSecrets()
         );
 
-        // Mock 4 rate limit responses (max retries is 2)
-        for (int i = 0; i < 4; i++) {
+        // Mock 5 server error responses (max retries is 3, so 1 + 3 retries = 4 total attempts)
+        for (int i = 0; i < 5; i++) {
             mockServer.enqueue(new MockResponse()
-                    .setResponseCode(429)
-                    .setBody("{\"error\":\"rate_limit_exceeded\"}"));
+                    .setResponseCode(503)
+                    .setBody("{\"error\":\"service_unavailable\"}"));
         }
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
@@ -206,11 +290,11 @@ public class VoyageAIEmbedderTest {
 
         // Should fail after max retries
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            lowRetryEmbedder.embed("test", context, targetType);
+            embedder.embed("test", context, targetType);
         });
-        assertTrue(exception.getMessage().contains("Max retries") || exception.getMessage().contains("exceeded"));
+        assertEquals("VoyageAI API call failed: Max retries exceeded for VoyageAI API (3). Last response: 503 - {\"error\":\"service_unavailable\"}", exception.getMessage());
 
-        lowRetryEmbedder.deconstruct();
+        embedder.deconstruct();
     }
 
     @Test
@@ -260,41 +344,6 @@ public class VoyageAIEmbedderTest {
 
         // Should fail with validation error
         assertThrows(IllegalArgumentException.class, () -> embedder.embed("test", context, invalidType));
-    }
-
-    @Test
-    public void testNormalization() throws Exception {
-        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretRef("test_key");
-        configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
-        configBuilder.model("voyage-3");
-        configBuilder.normalize(true); // Enable normalization
-
-        VoyageAIEmbedder normalizingEmbedder = new VoyageAIEmbedder(
-                configBuilder.build(),
-                runtime,
-                createMockSecrets()
-        );
-
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(createSuccessResponse(128)));
-
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[128])");
-        Embedder.Context context = new Embedder.Context("test");
-
-        Tensor result = normalizingEmbedder.embed("test", context, targetType);
-
-        // Verify tensor is normalized (L2 norm should be ~1.0)
-        double sumSquares = 0.0;
-        for (int i = 0; i < 128; i++) {
-            double val = result.get(TensorAddress.of(i));
-            sumSquares += val * val;
-        }
-        double norm = Math.sqrt(sumSquares);
-        assertEquals(1.0, norm, 0.01); // Should be close to 1.0
-
-        normalizingEmbedder.deconstruct();
     }
 
     @Test
@@ -369,10 +418,9 @@ public class VoyageAIEmbedderTest {
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("test-embedder");
 
-        // Should fail with parse error
         RuntimeException exception = assertThrows(RuntimeException.class, () -> embedder.embed("test", context, targetType));
-        assertTrue(exception.getMessage().contains("Failed to parse") ||
-                   exception.getMessage().contains("parse"));
+        assertEquals("VoyageAI API call failed: Unexpected character ('t' (code 116)): was expecting double-quote to start field name\n" +
+                " at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 3]", exception.getMessage());
     }
 
     // ===== Helper Methods =====
@@ -382,8 +430,6 @@ public class VoyageAIEmbedderTest {
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
-        configBuilder.maxRetries(10);
-        configBuilder.timeout(5000);
 
         return new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
     }

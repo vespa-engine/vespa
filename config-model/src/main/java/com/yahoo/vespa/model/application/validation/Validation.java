@@ -13,6 +13,7 @@ import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeVali
 import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentTypeRemovalValidator;
+import com.yahoo.vespa.model.application.validation.change.DataplaneProxyChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.DataplaneTokenRemovalValidator;
 import com.yahoo.vespa.model.application.validation.change.GlobalDocumentChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
@@ -21,6 +22,7 @@ import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeVal
 import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForLocalLLMValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForOnnxModelChangesValidator;
+import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForSidecarValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
@@ -140,6 +142,8 @@ public class Validation {
         new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
         new RestartOnDeployForLocalLLMValidator().validate(execution);
         new DataplaneTokenRemovalValidator().validate(execution);
+        new DataplaneProxyChangeValidator().validate(execution);
+        new RestartOnDeployForSidecarValidator().validate(execution);
     }
 
     public interface Context {

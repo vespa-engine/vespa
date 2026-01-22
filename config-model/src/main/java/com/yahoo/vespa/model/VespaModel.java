@@ -658,4 +658,13 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
     public Set<ApplicationClusterInfo> applicationClusterInfo() {
         return Set.copyOf(getContainerClusters().values());
     }
+
+    @Override
+    public void markClustersForDeferredReconfiguration(Set<String> clusterNames) {
+        if (clusterNames.isEmpty()) return;
+
+        getContainerClusters().values().stream()
+                .filter(cluster -> clusterNames.contains(cluster.getName()))
+                .forEach(cluster -> cluster.setDeferChangesUntilRestart(true));
+    }
 }

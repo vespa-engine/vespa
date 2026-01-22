@@ -6,7 +6,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/bufferedlogger.h>
-LOG_SETUP(".distributor.operation.idealstate.split");
+LOG_SETUP(".distributor.operations.idealstate.split");
 
 using namespace storage::distributor;
 

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -311,6 +312,9 @@ func probeVisit(vArgs *visitArgs, service *vespa.Service) []string {
 func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 	vArgs.debugPrint(fmt.Sprintf("trying to visit: '%s'", vArgs.contentCluster))
 	totalDocuments := 0
+	const baseRetryBackoffMs = 200.0
+	const maxRetryBackoffMs = 10_000.0 // Actually up to 15s, see below
+	backoffBaselineMs := baseRetryBackoffMs
 	var continuationToken string
 	for {
 		var vvo *VespaVisitOutput
@@ -321,6 +325,18 @@ func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 			}
 			return res
 		}
+		if vvo == nil {
+			// Success without visit output implies transparent retry with randomized delay.
+			// Let randomized backoff be +/- 50% of the current backoff baseline, increasing
+			// by 1.5x for each subsequent failure up to a hard limit of 10s. Since the max
+			// real backoff is +50% this means we'll top out at 15 seconds of backoff.
+			randomizedBackoffMs := int64((backoffBaselineMs * 0.5) + (rand.Float64() * backoffBaselineMs))
+			vArgs.debugPrint(fmt.Sprintf("Transient overload; retrying in %d ms", randomizedBackoffMs))
+			backoffBaselineMs = min(backoffBaselineMs*1.5, maxRetryBackoffMs)
+			vArgs.cli.sleeper(time.Duration(randomizedBackoffMs) * time.Millisecond)
+			continue
+		}
+		backoffBaselineMs = baseRetryBackoffMs
 		vArgs.dumpDocuments(vvo.Documents)
 		vArgs.debugPrint(fmt.Sprintf("got %d documents", len(vvo.Documents)))
 		totalDocuments += len(vvo.Documents)
@@ -413,6 +429,8 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 		} else {
 			return nil, Failure("error reading response: " + err.Error())
 		}
+	case response.StatusCode == 429:
+		return nil, Success("Transient overload")
 	case response.StatusCode/100 == 4:
 		return vvo, FailureWithPayload("Invalid document operation: "+response.Status, ioutil.ReaderToJSON(response.Body))
 	default:

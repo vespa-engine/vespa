@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/memory.h>
+#include <cstdint>
 #include <vector>
 
 namespace document { class ByteBuffer; }

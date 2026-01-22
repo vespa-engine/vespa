@@ -138,6 +138,9 @@ public final class DocumentProtocol implements Protocol {
     /** Unique timestamp specified for new operation is already in use. */
     public static final int ERROR_TIMESTAMP_EXIST    = ErrorCode.APP_FATAL_ERROR + 2002;
 
+    /** Operation was rejected due to overload/rate limiting. Non-retryable. */
+    public static final int ERROR_OVERLOAD = ErrorCode.APP_FATAL_ERROR + 2003;
+
     /** Node not ready to perform operation. (Initializing VDS nodes) */
     public static final int ERROR_NODE_NOT_READY = ErrorCode.APP_TRANSIENT_ERROR + 1001;
 
@@ -441,6 +444,8 @@ public final class DocumentProtocol implements Protocol {
             return "PROCESSING_FAILURE";
         case ERROR_TIMESTAMP_EXIST:
             return "TIMESTAMP_EXIST";
+        case ERROR_OVERLOAD:
+            return "OVERLOAD";
         case ERROR_STALE_TIMESTAMP:
             return "STALE_TIMESTAMP";
         case ERROR_NODE_NOT_READY:

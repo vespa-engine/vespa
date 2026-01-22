@@ -144,7 +144,7 @@ private:
     int32_t _idx;
     bool _registered;
 
-    NewAnnotationRef(NewConfigBuilder& builder, int32_t annotation_idx);
+    explicit NewAnnotationRef(int32_t annotation_idx) noexcept;
 
 public:
     TypeRef ref();
@@ -174,7 +174,7 @@ private:
     };
     std::vector<AnnotationTypeData> _annotations;
 
-    NewDocTypeRep(NewConfigBuilder& builder, int32_t idx, std::string name, int32_t internalid);
+    NewDocTypeRep(NewConfigBuilder& builder, int32_t idx, std::string name);
 
     int32_t hashId(const std::string& name) const;
 

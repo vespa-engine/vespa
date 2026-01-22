@@ -6,7 +6,7 @@
 #include <vespa/storageapi/message/bucket.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.operation.idealstate.setactive");
+LOG_SETUP(".distributor.operations.idealstate.set_bucket_state");
 
 namespace storage::distributor {
 

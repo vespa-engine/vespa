@@ -11,7 +11,7 @@
 
     <!-- Text to display as description on Preferences/Settings | Plugin page -->
     <description><![CDATA[    <p>Support for editing Vespa.ai
-    <a href="https://docs.vespa.ai/en/reference/schema-reference.html">schema files</a>.</p>
+    <a href="https://docs.vespa.ai/en/reference/schemas/schemas.html">schema files</a>.</p>
     <p>Features:</p>
     <ul>
     <li>Syntax highlighting</li>

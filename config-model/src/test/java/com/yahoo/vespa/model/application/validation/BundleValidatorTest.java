@@ -68,10 +68,10 @@ public class BundleValidatorTest {
         String output = buffer.toString();
         assertTrue(output
                 .contains("JAR file 'import-warnings.jar' imports the packages [org.json] from 'org.json:json'. \n" +
-                        "This bundle is no longer provided on Vespa 8 - see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime."));
+                        "This bundle is no longer provided on Vespa 8 - see https://docs.vespa.ai/en/reference/release-notes/vespa8.html#container-runtime."));
         assertTrue(output
                 .contains("JAR file 'import-warnings.jar' imports the packages [org.eclipse.jetty.client.api] from 'jetty'. \n" +
-                        "The Jetty bundles are no longer provided on Vespa 8 - see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime."));
+                        "The Jetty bundles are no longer provided on Vespa 8 - see https://docs.vespa.ai/en/reference/release-notes/vespa8.html#container-runtime."));
     }
 
     static DeployState createDeployState(StringBuffer buffer) {

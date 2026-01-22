@@ -851,23 +851,6 @@ Proton::ping(std::unique_ptr<MonitorRequest>, MonitorClient &)
     return reply;
 }
 
-bool
-Proton::triggerFlush()
-{
-    if (!_flushEngine || ! _flushEngine->has_thread()) {
-        return false;
-    }
-    _flushEngine->triggerFlush();
-    return true;
-}
-
-bool
-Proton::prepareRestart()
-{
-    BootstrapConfig::SP configSnapshot = getActiveConfigSnapshot();
-    return _prepareRestartHandler->prepareRestart(configSnapshot->getProtonConfig());
-}
-
 SetStrategyResult
 Proton::trigger_flush2()
 {

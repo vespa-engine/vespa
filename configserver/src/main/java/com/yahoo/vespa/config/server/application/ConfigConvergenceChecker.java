@@ -52,6 +52,7 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERC
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
+import static java.util.logging.Level.FINE;
 
 /**
  * Checks for convergence of config generation for a given application.
@@ -97,10 +98,10 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
-                                        .filter(serviceInfo -> shouldCheckService(hostsToCheck, application, serviceInfo))
+                                        .filter(service -> shouldCheckService(hostsToCheck, application, service))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
-        log.log(Level.FINE, () -> "Services to check for config convergence: " + servicesToCheck);
+        log.log(FINE, () -> "Services to check for config convergence: " + servicesToCheck);
         return getServiceGenerations(servicesToCheck, timeoutPerService);
     }
 
@@ -158,6 +159,8 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                                                      .stream()
                                                                      .filter(ApplicationClusterInfo::getDeferChangesUntilRestart)
                                                                      .collect(Collectors.toSet());
+        log.log(FINE, "Exclude services from these clusters when checking config convergence: " +
+                excludeFromChecking.stream().map(ApplicationClusterInfo::name).collect(Collectors.joining(", ")));
 
         return excludeFromChecking.stream().noneMatch(info -> info.name().equals(serviceInfo.getProperty("clustername").orElse("")));
     }
@@ -178,7 +181,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                 temporaryResult.put(service, result);
                             } else {
                                 log.log(
-                                        Level.FINE,
+                                        FINE,
                                         error,
                                         () -> String.format("Failed to retrieve service config generation for '%s': %s", service, error.getMessage()));
                                 temporaryResult.put(service, -1L);

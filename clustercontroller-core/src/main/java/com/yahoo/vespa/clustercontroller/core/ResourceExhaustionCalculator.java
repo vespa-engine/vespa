@@ -79,7 +79,7 @@ public class ResourceExhaustionCalculator {
 
     public static String decoratedMessage(ContentCluster cluster, String msg) {
         // Disambiguate content cluster and add a user-friendly documentation link to the error message
-        return "in content cluster '%s': %s. See https://docs.vespa.ai/en/operations/feed-block.html".formatted(cluster.getName(), msg);
+        return "in content cluster '%s': %s. See https://docs.vespa.ai/en/writing/feed-block.html".formatted(cluster.getName(), msg);
     }
 
     public ClusterStateBundle.FeedBlock inferContentClusterFeedBlockOrNull(ContentCluster cluster) {

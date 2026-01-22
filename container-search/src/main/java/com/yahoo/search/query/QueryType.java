@@ -21,11 +21,13 @@ public class QueryType {
     private Composite composite;
     private Tokenization tokenization;
     private Syntax syntax;
+    private String profile;
     private boolean isYqlDefault;
 
     public static final String COMPOSITE = "composite";
     public static final String TOKENIZATION = "tokenization";
     public static final String SYNTAX = "syntax";
+    public static final String PROFILE = "profile";
     public static final String IS_YQL_DEFAULT = "isYqlDefault";
 
     static {
@@ -36,6 +38,7 @@ public class QueryType {
         argumentType.addField(new FieldDescription(COMPOSITE, "string"));
         argumentType.addField(new FieldDescription(TOKENIZATION, "string"));
         argumentType.addField(new FieldDescription(SYNTAX, "string"));
+        argumentType.addField(new FieldDescription(PROFILE, "string"));
         argumentType.addField(new FieldDescription(IS_YQL_DEFAULT, "boolean"));
         argumentType.freeze();
     }
@@ -47,10 +50,15 @@ public class QueryType {
     }
 
     public QueryType(Query.Type type, Composite composite, Tokenization tokenization, Syntax syntax, boolean isYqlDefault) {
+        this(type, composite, tokenization, syntax, null, isYqlDefault);
+    }
+
+    public QueryType(Query.Type type, Composite composite, Tokenization tokenization, Syntax syntax, String profile, boolean isYqlDefault) {
         this.type = type;
         this.composite = composite;
         this.tokenization = tokenization;
         this.syntax = syntax;
+        this.profile = profile;
         this.isYqlDefault = isYqlDefault;
     }
 
@@ -118,6 +126,23 @@ public class QueryType {
     }
 
     /**
+     * Returns the token processing profile to apply in the linguistics module, in cases where it can have multiple.
+     * Returns null if none is set (meaning the default should be used).
+     */
+    public String getProfile() { return profile; }
+
+    /**
+     * Sets the token processing profile to apply in the linguistics module, in cases where it can have multiple.
+     *
+     * @param profile the profile to use, or null to use the default of the linguistics module
+     * @return this for chaining
+     */
+    public QueryType setProfile(String profile) {
+        this.profile = profile;
+        return this;
+    }
+
+    /**
      * Returns whether this should be taken as the default 'grammar' settings when parsing YQL user queries.
      * Default is false.
      */
@@ -147,19 +172,23 @@ public class QueryType {
         if (other.composite != this.composite) return false;
         if (other.tokenization != this.tokenization) return false;
         if (other.syntax != this.syntax) return false;
+        if ( ! Objects.equals(other.profile, this.profile)) return false;
         if (other.isYqlDefault != this.isYqlDefault) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, composite, tokenization, syntax, isYqlDefault);
+        return Objects.hash(type, composite, tokenization, syntax, profile, isYqlDefault);
     }
 
     @Override
     public String toString() {
         return "query type " + type +
-               " [composite: " + composite + ", tokenization: " + tokenization + ", syntax: " + syntax + "]";
+               " [" +
+               "composite: " + composite + ", tokenization: " + tokenization + ", syntax: " + syntax +
+               (profile == null ? "" : (", profile: " + profile)) +
+               "]";
     }
 
     public enum Composite { and, or, phrase, weakAnd, near, oNear }

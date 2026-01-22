@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
-import io.airlift.compress.zstd.ZstdInputStream;
 import com.yahoo.compress.ZstdOutputStream;
+import io.airlift.compress.zstd.ZstdInputStream;
 import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -134,6 +135,7 @@ public class FileReferenceCompressor {
         };
     }
 
+    @SuppressWarnings("deprecation")
     private InputStream decompressedInputStream(File inputFile) throws IOException {
         return switch (type) {
             case compressed -> switch (compressionType) {

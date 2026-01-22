@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
@@ -154,6 +155,8 @@ public class AllocatedHostsSerializer {
 
             var commandCursor = cursor.setArray("command");
             sidecar.command().forEach(commandCursor::addString);
+
+            sidecar.livenessProbe().ifPresent(probe -> sidecarProbeToSlime(probe, cursor.setObject("livenessProbe")));
         }
     }
 
@@ -347,7 +350,7 @@ public class AllocatedHostsSerializer {
             var command = new ArrayList<String>();
             specInspector.field("command").traverse((ArrayTraverser) (idx, elem) -> command.add(elem.asString()));
 
-            var sidecar = SidecarSpec.builder()
+            var builder = SidecarSpec.builder()
                     .id(id)
                     .name(name)
                     .image(image)
@@ -357,12 +360,65 @@ public class AllocatedHostsSerializer {
                     .hasGpu(hasGpu)
                     .volumeMounts(volumeMounts)
                     .envs(envs)
-                    .command(command)
-                    .build();
+                    .command(command);
+
+            var livenessProbeInspector = specInspector.field("livenessProbe");
+            if (livenessProbeInspector.valid()) {
+                builder.livenessProbe(sidecarProbeFromSlime(livenessProbeInspector));
+            }
+
+            var sidecar = builder.build();
 
             sidecars.add(sidecar);
         });
 
         return sidecars;
+    }
+
+    private static void sidecarProbeToSlime(SidecarProbe probe, Cursor cursor) {
+        cursor.setLong("initialDelaySeconds", probe.initialDelaySeconds());
+        cursor.setLong("periodSeconds", probe.periodSeconds());
+        cursor.setLong("timeoutSeconds", probe.timeoutSeconds());
+        cursor.setLong("failureThreshold", probe.failureThreshold());
+
+        var actionCursor = cursor.setObject("action");
+        var action = probe.action();
+        
+        if (action instanceof SidecarProbe.HttpGetAction httpGet) {
+            actionCursor.setString("type", "httpGet");
+            actionCursor.setString("path", httpGet.path());
+            actionCursor.setLong("port", httpGet.port());
+        } else if (action instanceof SidecarProbe.ExecAction exec) {
+            actionCursor.setString("type", "exec");
+            var commandCursor = actionCursor.setArray("command");
+            for (String cmd : exec.command()) {
+                commandCursor.addString(cmd);
+            }
+        }
+    }
+
+    private static SidecarProbe sidecarProbeFromSlime(Inspector probeInspector) {
+        var initialDelaySeconds = (int) probeInspector.field("initialDelaySeconds").asLong();
+        var periodSeconds = (int) probeInspector.field("periodSeconds").asLong();
+        var timeoutSeconds = (int) probeInspector.field("timeoutSeconds").asLong();
+        var failureThreshold = (int) probeInspector.field("failureThreshold").asLong();
+
+        var actionInspector = probeInspector.field("action");
+        var type = actionInspector.field("type").asString();
+
+        SidecarProbe.Action action = switch (type) {
+            case "httpGet" -> new SidecarProbe.HttpGetAction(
+                    actionInspector.field("path").asString(),
+                    (int) actionInspector.field("port").asLong());
+            case "exec" -> {
+                var commandList = new ArrayList<String>();
+                actionInspector.field("command").traverse((ArrayTraverser) (idx, elem) ->
+                        commandList.add(elem.asString()));
+                yield new SidecarProbe.ExecAction(commandList);
+            }
+            default -> throw new IllegalArgumentException("Unknown probe action type: " + type);
+        };
+
+        return new SidecarProbe(action, initialDelaySeconds, periodSeconds, timeoutSeconds, failureThreshold);
     }
 }

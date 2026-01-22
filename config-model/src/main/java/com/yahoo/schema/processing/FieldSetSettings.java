@@ -9,10 +9,13 @@ import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.Matching;
 import com.yahoo.schema.document.NormalizeLevel;
+import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.logging.Level;
 
 /**
@@ -26,7 +29,7 @@ import java.util.logging.Level;
 // (this requires adding normalizing and stemming settings to FieldSet).
 public class FieldSetSettings extends Processor {
 
-    private static final String fieldSetDocUrl = "https://docs.vespa.ai/en/reference/schema-reference.html#fieldset";
+    private static final String fieldSetDocUrl = "https://docs.vespa.ai/en/reference/schemas/schemas.html#fieldset";
 
     public FieldSetSettings(Schema schema,
                             DeployLogger deployLogger,
@@ -44,6 +47,7 @@ public class FieldSetSettings extends Processor {
             checkNormalization(schema, fieldSet);
             checkStemming(schema, fieldSet);
             checkTypes(schema, fieldSet);
+            assignLinguistics(schema, fieldSet);
         }
     }
 
@@ -71,7 +75,7 @@ public class FieldSetSettings extends Processor {
                 matching = fieldMatching;
             } else {
                 if ( ! matching.equals(fieldMatching)) {
-                    final var buf = new StringBuilder();
+                    var buf = new StringBuilder();
                     buf.append("For schema '").append(schema.getName()).append("': ");
                     buf.append("The matching settings in ").append(fieldSet);
                     buf.append(" are inconsistent (explicitly or because of field type). ");
@@ -128,10 +132,10 @@ public class FieldSetSettings extends Processor {
             } else {
                 if ( ! stemming.equals(fieldStemming)) {
                     warn(schema, field.asField(),
-                            "The stemming settings for the fields in the fieldset '"+fieldSet.getName()+
-                                    "' are inconsistent (explicitly or because of field type). " +
-                                    "This may lead to recall and ranking issues. " +
-                                    "See " + fieldSetDocUrl);
+                         "The stemming settings for the fields in the fieldset '" + fieldSet.getName()+
+                         "' are inconsistent (explicitly or because of field type). " +
+                         "This may lead to recall and ranking issues. " +
+                         "See " + fieldSetDocUrl);
                 }
             }
         }
@@ -149,9 +153,30 @@ public class FieldSetSettings extends Processor {
             }
         }
         if (!tensorFields.isEmpty() && !nonTensorFields.isEmpty()) {
-            throw new IllegalArgumentException("For schema '" + schema.getName() + "', fieldset '" + fieldSet.getName() + "': " +
-                    "Illegal mixing of tensor fields ['" + String.join("','", tensorFields) + "'] " +
-                    "and non-tensor fields ['" + String.join("','", nonTensorFields) + "']");
+            throw new IllegalArgumentException(forFieldSet(schema, fieldSet) +
+                                               "Illegal mixing of tensor fields ['" + String.join("','", tensorFields) + "'] " +
+                                               "and non-tensor fields ['" + String.join("','", nonTensorFields) + "']");
         }
     }
+
+    private void assignLinguistics(Schema schema, FieldSet fieldSet) {
+        if (fieldSet.getFieldNames().size() < 2) return;
+        Iterator<String> fieldNames = fieldSet.getFieldNames().iterator();
+        var firstField = schema.getField(fieldNames.next());
+        while (fieldNames.hasNext()) {
+            var field = schema.getField(fieldNames.next());
+            if ( ! Objects.equals(field.getSearchLinguisticsProfile(), firstField.getSearchLinguisticsProfile()))
+                throw new IllegalArgumentException(forFieldSet(schema, fieldSet) +
+                                                   "Illegal mixing of linguistics search profiles: " +
+                                                   firstField + " sets '" + firstField.getSearchLinguisticsProfile() + "'" +
+                                                   ", while " + field + " sets '" + field.getSearchLinguisticsProfile() + "'");
+
+        }
+        fieldSet.setLinguisticsProfile(firstField.getSearchLinguisticsProfile());
+    }
+
+    private String forFieldSet(Schema schema, FieldSet fieldSet) {
+        return "For " + schema + ", " + fieldSet + ": ";
+    }
+
 }

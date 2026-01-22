@@ -29,7 +29,7 @@
 </ul>
 
 <h2>Requirements</h4>
-The plugin requires <a href="https://docs.vespa.ai/en/vespa-cli.html">Vespa CLI</a> to be installed to be able to run Vespa Queries from <code>.yql</code> files.
+The plugin requires <a href="https://docs.vespa.ai/en/clients/vespa-cli.html">Vespa CLI</a> to be installed to be able to run Vespa Queries from <code>.yql</code> files.
 
   ]]></description>
   <depends>com.intellij.modules.platform</depends>

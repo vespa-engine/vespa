@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * Signifies that the annotated Java type/method/constructor is under development and may still change before they stabilize.
  * Should only be used on a type that part of a package annotated with {@link PublicApi}.
  *
- * @see <a href="https://docs.vespa.ai/en/vespa-versions.html">https://docs.vespa.ai/en/vespa-versions.html</a>
+ * @see <a href="https://docs.vespa.ai/en/learn/releases.html#versions">https://docs.vespa.ai/en/learn/releases.html#versions</a>
  *
  * @author bjorncs
  */

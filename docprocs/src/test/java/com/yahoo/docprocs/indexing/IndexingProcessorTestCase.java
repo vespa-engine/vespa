@@ -2,7 +2,7 @@
 package com.yahoo.docprocs.indexing;
 
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.docproc.Processing;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentOperation;
@@ -14,20 +14,22 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
-import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
-import com.yahoo.processing.response.Data;
+import com.yahoo.language.process.InvocationContext;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.Tensors;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.Tensors;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -348,6 +350,163 @@ public class IndexingProcessorTestCase {
         AssignValueUpdate valueUpdate = (AssignValueUpdate)embeddingUpdate.getValueUpdate(0);
         assertEquals(Tensor.from("tensor<int8>(x[16]):[-110, 73, 36, -110, 73, 36, -110, 73, 36, -110, 73, 36, -110, 73, 36, -110]"),
                                  valueUpdate.getValue().getWrappedValue());
+    }
+
+    @Test
+    public void testDeadlinePropagationToEmbedder() {
+        class DeadlineCapturingEmbedder extends AbstractComponent implements Embedder {
+            Instant deadline;
+            @Override public List<Integer> embed(String text, Context context) { return List.of(); }
+
+            @Override
+            public Tensor embed(String text, Context context, TensorType tensorType) {
+                deadline = context.getDeadline().map(InvocationContext.Deadline::asInstant).orElse(null);
+                return Tensor.Builder.of(tensorType).build();
+            }
+        }
+
+        var documentTypes = new DocumentTypeManager();
+        var testType = new DocumentType("test");
+        testType.addField("text", DataType.STRING);
+        testType.addField("embedding", new TensorDataType(TensorType.fromSpec("tensor<float>(x[4])")));
+        documentTypes.register(testType);
+
+        var embedder = new DeadlineCapturingEmbedder();
+
+        var config = new IlscriptsConfig.Builder();
+        config.ilscript(new IlscriptsConfig.Ilscript.Builder()
+            .doctype("test")
+            .content("input text | embed | attribute embedding")
+            .docfield("text"));
+
+        var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null,
+                                        Chunker.throwsOnUse.asMap(),
+                                        Map.of("test", embedder),
+                                        FieldGenerator.throwsOnUse.asMap());
+
+        var processor = new IndexingProcessor(documentTypes, scripts);
+        var input = new DocumentPut(testType, "id:ns:test::");
+        input.getDocument().setFieldValue("text", new StringFieldValue("hello world"));
+
+        var proc = new Processing();
+        proc.getDocumentOperations().add(input);
+        proc.setExpiresAt(Instant.now().plus(Duration.ofSeconds(5)));
+        processor.process(proc);
+
+        assertNotNull("Deadline should be set", embedder.deadline);
+        assertTrue(embedder.deadline.isAfter(Instant.EPOCH));
+        assertTrue(embedder.deadline.isBefore(Instant.MAX));
+    }
+
+    @Test
+    public void testOverloadExceptionPropagation() {
+        class OverloadThrowingEmbedder implements Embedder {
+            @Override public List<Integer> embed(String text, Context context) { return List.of(); }
+
+            @Override
+            public Tensor embed(String text, Context context, TensorType tensorType) {
+                throw new com.yahoo.language.process.OverloadException("Embedder overloaded: rate limit exceeded");
+            }
+        }
+        // Set up document type with embedding field
+        var documentTypes = new DocumentTypeManager();
+        var testType = new DocumentType("test");
+        testType.addField("text", DataType.STRING);
+        testType.addField("embedding", new TensorDataType(
+            TensorType.fromSpec("tensor<float>(x[4])")
+        ));
+        documentTypes.register(testType);
+
+        var embedder = new OverloadThrowingEmbedder();
+
+        // Configure indexing script
+        var config = new IlscriptsConfig.Builder();
+        config.ilscript(new IlscriptsConfig.Ilscript.Builder()
+            .doctype("test")
+            .content("input text | embed | attribute embedding")
+            .docfield("text"));
+
+        var scripts = new ScriptManager(
+            documentTypes,
+            new IlscriptsConfig(config),
+            null,
+            Chunker.throwsOnUse.asMap(),
+            Map.of("test", embedder),
+            FieldGenerator.throwsOnUse.asMap()
+        );
+
+        var processor = new IndexingProcessor(documentTypes, scripts);
+
+        // Create document operation
+        var input = new DocumentPut(testType, "id:ns:test::");
+        input.getDocument().setFieldValue("text", new StringFieldValue("hello world"));
+
+        var proc = new Processing();
+        proc.getDocumentOperations().add(input);
+
+        // Process and verify Progress.OVERLOAD is returned
+        var progress = processor.process(proc);
+
+        assertEquals(com.yahoo.docproc.DocumentProcessor.Progress.OVERLOAD, progress);
+        assertTrue(progress.getReason().isPresent());
+        var reason = progress.getReason().get();
+        assertEquals("Operation on 'id:ns:test::' rejected due to overload: Embedder overloaded: rate limit exceeded", reason);
+    }
+
+    @Test
+    public void testTimeoutExceptionPropagation() {
+        class TimeoutThrowingEmbedder implements Embedder {
+            @Override public List<Integer> embed(String text, Context context) { return List.of(); }
+
+            @Override
+            public Tensor embed(String text, Context context, TensorType tensorType) {
+                throw new TimeoutException("Embedder call timed out after 5000ms");
+            }
+        }
+        // Set up document type with embedding field
+        var documentTypes = new DocumentTypeManager();
+        var testType = new DocumentType("test");
+        testType.addField("text", DataType.STRING);
+        testType.addField("embedding", new TensorDataType(
+                TensorType.fromSpec("tensor<float>(x[4])")
+        ));
+        documentTypes.register(testType);
+
+        var embedder = new TimeoutThrowingEmbedder();
+
+        // Configure indexing script
+        var config = new IlscriptsConfig.Builder();
+        config.ilscript(new IlscriptsConfig.Ilscript.Builder()
+                .doctype("test")
+                .content("input text | embed | attribute embedding")
+                .docfield("text"));
+
+        var scripts = new ScriptManager(
+                documentTypes,
+                new IlscriptsConfig(config),
+                null,
+                Chunker.throwsOnUse.asMap(),
+                Map.of("test", embedder),
+                FieldGenerator.throwsOnUse.asMap()
+        );
+
+        var processor = new IndexingProcessor(documentTypes, scripts);
+
+        // Create document operation
+        var input = new DocumentPut(testType, "id:ns:test::");
+        input.getDocument().setFieldValue("text", new StringFieldValue("hello world"));
+
+        var proc = new Processing();
+        proc.getDocumentOperations().add(input);
+
+        // Process and verify Progress.TIMEOUT is returned
+        var progress = processor.process(proc);
+
+        assertEquals(com.yahoo.docproc.DocumentProcessor.Progress.TIMEOUT, progress);
+        assertTrue(progress.getReason().isPresent());
+        String reason = progress.getReason().get();
+        assertTrue("Expected reason to contain 'timed out', got: " + reason, reason.contains("timed out"));
+        assertTrue("Expected reason to contain '5000ms', got: " + reason, reason.contains("5000ms"));
     }
 
     static class PartialUpdateTester {

@@ -12,7 +12,7 @@ import com.yahoo.document.select.rule.ExpressionNode;
  * A document selector is a filter which accepts or rejects documents
  * based on their type and content. A document selector has a textual
  * representation which is called the
- * <a href="https://docs.vespa.ai/en/reference/document-select-language.html">document selection language</a>.
+ * <a href="https://docs.vespa.ai/en/reference/schemas/document-select-language.html">document selection language</a>.
  *
  * Document selectors are multithread safe.
  *

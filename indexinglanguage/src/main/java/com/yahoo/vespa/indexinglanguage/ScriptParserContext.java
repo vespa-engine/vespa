@@ -59,7 +59,7 @@ public class ScriptParserContext {
     public Map<String, Embedder> getEmbedders() {
         return Collections.unmodifiableMap(embedders);
     }
-    
+
     public Map<String, FieldGenerator> getGenerators() {
         return Collections.unmodifiableMap(generators);
     }

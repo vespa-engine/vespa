@@ -23,12 +23,10 @@ public class LuceneLinguistics extends SimpleLinguistics {
 
     private static final Logger log = Logger.getLogger(LuceneLinguistics.class.getName());
     private final LuceneTokenizer tokenizer;
-    private final LuceneAnalysisConfig config;
 
     @Inject
     public LuceneLinguistics(LuceneAnalysisConfig config, ComponentRegistry<Analyzer> analyzers) {
         log.config("Creating LuceneLinguistics with: " + config);
-        this.config = config;
         this.tokenizer = new LuceneTokenizer(config, analyzers);
     }
 
@@ -38,7 +36,7 @@ public class LuceneLinguistics extends SimpleLinguistics {
     @Override
     public boolean equals(Linguistics other) {
         // Config actually determines if Linguistics are equal
-        return (other instanceof LuceneLinguistics) && config.equals(((LuceneLinguistics) other).config);
+        return (other instanceof LuceneLinguistics) && tokenizer.equals(((LuceneLinguistics) other).tokenizer);
     }
 
     @Override

@@ -111,7 +111,19 @@ public class UserInputTestCase {
         URIBuilder builder = searchUri();
         builder.setParameter("yql", "select * from sources * where myArray contains sameElement({grammar:'all'}userInput('a b'))");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where myArray contains sameElement(default contains \"a\" AND default contains \"b\")",
+        assertEquals("select * from sources * where myArray contains sameElement(\"a\" AND \"b\")",
+                     query.yqlRepresentation());
+    }
+
+    /** weakAnd in SameElement: Not supported, will be stopped by downstream query validation */
+    @Test
+    void testSameElementUserInputWithWeakAnd() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql",
+                             "select * from sources * where a contains 'b' and c contains sameElement(userInput(@query))");
+        builder.setParameter("query", "c d");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where (a contains \"b\" AND c contains sameElement(weakAnd(\"c\", \"d\")))",
                      query.yqlRepresentation());
     }
 
@@ -238,6 +250,17 @@ public class UserInputTestCase {
                 "select * from sources * where {defaultIndex: \"glompf\"}userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where weakAnd(glompf contains \"nalle\")", query.yqlRepresentation());
+    }
+
+    @Test
+    void testNegativeUserInput() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql",
+                             "select * from sources * where a contains 'b' and !({grammar:'all',defaultIndex:'e'}userInput(@query))");
+        builder.setParameter("query", "c d");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where (a contains \"b\") AND !((e contains \"c\" AND e contains \"d\"))",
+                     query.yqlRepresentation());
     }
 
     @Test

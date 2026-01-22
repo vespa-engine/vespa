@@ -3,6 +3,7 @@
 #include "documentupdate.h"
 #include "documentupdateflags.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/serialization/util.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -24,19 +25,11 @@ namespace document {
 
 namespace {
 
-std::string_view
-readCStr(nbostream & stream) {
-    const char * s = stream.peek();
-    size_t sz = strnlen(s, stream.size());
-    stream.adjustReadPos(sz+1);
-    return std::string_view(s, sz);
-}
-
 const DocumentType *
 deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostream & stream, std::string_view & documentId)
 {
-    documentId = readCStr(stream);
-    std::string_view typestr = readCStr(stream);
+    documentId = read_cstr(stream);
+    std::string_view typestr = read_cstr(stream);
     int16_t version = 0;
     stream >> version;
     const DocumentType * docType =  repo.getDocumentType(typestr);

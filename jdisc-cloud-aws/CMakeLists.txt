@@ -1,3 +1,0 @@
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-install_configserver_component(jdisc-cloud-aws)
-install_config_definitions()

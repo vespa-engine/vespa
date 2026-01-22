@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
@@ -52,18 +53,17 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     private final Map<ConfigCacheKey, Subscriber> subscribers = new ConcurrentHashMap<>();
     private final MemoryCache memoryCache;
     private final DelayedResponses delayedResponses;
-    private final ScheduledExecutorService nextConfigScheduler =
-            Executors.newScheduledThreadPool(1, new DaemonThreadFactory("next config"));
+    private final ScheduledExecutorService nextConfigScheduler = createExecutor("next config");
+
     private final ScheduledFuture<?> nextConfigFuture;
     private final JrtConfigRequesters requesters;
     // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
-    private final ScheduledExecutorService delayedResponsesScheduler =
-            Executors.newScheduledThreadPool(1, new DaemonThreadFactory("delayed responses"));
+    private final ScheduledExecutorService delayedResponsesScheduler = createExecutor("delayed responses");
     private final ScheduledFuture<?> delayedResponsesFuture;
 
     RpcConfigSourceClient(ResponseHandler responseHandler, ConfigSourceSet configSourceSet) {
-        this.responseHandler = responseHandler;
-        this.configSourceSet = configSourceSet;
+        this.responseHandler = Objects.requireNonNull(responseHandler);
+        this.configSourceSet = Objects.requireNonNull(configSourceSet);
         this.memoryCache = new MemoryCache();
         this.delayedResponses = new DelayedResponses();
         checkConfigSources();
@@ -77,7 +77,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
      * Checks if config sources are available
      */
     private void checkConfigSources() {
-        if (configSourceSet == null || configSourceSet.getSources() == null || configSourceSet.getSources().size() == 0)
+        if (configSourceSet.getSources() == null || configSourceSet.getSources().isEmpty())
             throw new IllegalArgumentException("No config sources defined, could not check connection");
 
         Request req = new Request("ping");
@@ -228,7 +228,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         long generation = config.getGeneration();
         log.log(Level.FINE, () -> "Config updated for " + key + "," + generation);
         DelayQueue<DelayedResponse> responseDelayQueue = delayedResponses.responses();
-        if (responseDelayQueue.size() == 0) return;
+        if (responseDelayQueue.isEmpty()) return;
 
         log.log(Level.FINE, () -> "Delayed response queue has " + responseDelayQueue.size() + " elements");
         log.log(Level.FINEST, () -> "Delayed response queue: " + responseDelayQueue);
@@ -276,6 +276,10 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         return new TimingValues()
                 .setFixedDelay((long) (new TimingValues().getFixedDelay() * timingValuesRatio))
                 .setSubscribeTimeout((long) (new TimingValues().getSubscribeTimeout() * timingValuesRatio));
+    }
+
+    private static ScheduledExecutorService createExecutor(String name) {
+        return Executors.newScheduledThreadPool(1, new DaemonThreadFactory(name));
     }
 
 }

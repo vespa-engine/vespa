@@ -28,7 +28,7 @@ The extension requires Java 17 or greater. Upon activation, the extension will l
 - JDK_HOME environment variable
 - JAVA_HOME environment variable
 
-The extension also requires [Vespa CLI](https://docs.vespa.ai/en/vespa-cli.html) to run Vespa Queries from `.yql` files.
+The extension also requires [Vespa CLI](https://docs.vespa.ai/en/clients/vespa-cli.html) to run Vespa Queries from `.yql` files.
 
 ## XML support
 This extension bundles with an extension to the [LemMinX XML Language server](https://github.com/eclipse/lemminx).

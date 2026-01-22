@@ -22,6 +22,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
+import com.yahoo.net.AcceptHeaderMatcher;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.parser.ParseException;
@@ -239,6 +240,11 @@ public class SearchHandler extends LoggingRequestHandler {
                                          .setZoneInfo(zoneInfo)
                                          .setSchemaInfo(executionFactory.schemaInfo())
                                          .build();
+
+        // If format not explicitly set, use Accept header to determine response format
+        if (!requestMap.containsKey("format") && !requestMap.containsKey("presentation.format")) {
+            setFormatFromAcceptHeader(request, query);
+        }
 
         boolean benchmarking = VespaHeaders.benchmarkOutput(request);
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarking, request.getJDiscRequest().headers());
@@ -467,12 +473,12 @@ public class SearchHandler extends LoggingRequestHandler {
         if (query.getHits() > maxHits) {
             return new Result(query, ErrorMessage.createIllegalQuery(query.getHits() +
                               " hits requested, configured limit: " + maxHits +
-                              ". See https://docs.vespa.ai/en/reference/query-api-reference.html#native-execution-parameters"));
+                              ". See https://docs.vespa.ai/en/reference/api/query.html#native-execution-parameters"));
 
         } else if (query.getOffset() > maxOffset) {
             return new Result(query, ErrorMessage.createIllegalQuery("Offset of " + query.getOffset() +
                               " requested, configured limit: " + maxOffset +
-                              ". See https://docs.vespa.ai/en/reference/query-api-reference.html#native-execution-parameters"));
+                              ". See https://docs.vespa.ai/en/reference/api/query.html#native-execution-parameters"));
         }
         return null;
     }
@@ -507,6 +513,24 @@ public class SearchHandler extends LoggingRequestHandler {
             header = header.substring(0, semi);
         }
         return com.yahoo.text.Lowercase.toLowerCase(header.trim());
+    }
+
+    private static final String CBOR_CONTENT_TYPE = "application/cbor";
+
+    /** Sets the response format based on the Accept header if CBOR is preferred over JSON */
+    private static void setFormatFromAcceptHeader(HttpRequest request, Query query) {
+        String acceptHeader = request.getHeader(com.yahoo.jdisc.http.HttpHeaders.Names.ACCEPT);
+        if (acceptHeader == null || acceptHeader.isEmpty()) return;
+
+        try {
+            var acceptMatcher = new AcceptHeaderMatcher(acceptHeader);
+            var preferred = acceptMatcher.preferredExactMediaTypes(CBOR_CONTENT_TYPE, JSON_CONTENT_TYPE);
+            if (!preferred.isEmpty() && CBOR_CONTENT_TYPE.equals(preferred.get(0))) {
+                query.getPresentation().setFormat("cbor");
+            }
+        } catch (IllegalArgumentException e) {
+            query.trace("Ignoring malformed Accept header: " + e.getMessage(), 2);
+        }
     }
 
     /** Add properties POSTed as a JSON payload, if any, to the request map */

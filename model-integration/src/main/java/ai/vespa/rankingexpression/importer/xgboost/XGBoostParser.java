@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 /**
  * @author grace-lam
  */
-class XGBoostParser {
+class XGBoostParser extends AbstractXGBoostParser {
 
     private final List<XGBoostTree> xgboostTrees;
 
@@ -47,37 +47,6 @@ class XGBoostParser {
             }
         }
         return ret.toString();
-    }
-
-    /**
-     * Recursive helper function for toRankingExpression().
-     *
-     * @param node XGBoost tree node to convert.
-     * @return Vespa ranking expression for input node.
-     */
-    private String treeToRankExp(XGBoostTree node) {
-        if (node.isLeaf()) {
-            return Double.toString(node.getLeaf());
-        } else {
-            assert node.getChildren().size() == 2;
-            String trueExp;
-            String falseExp;
-            if (node.getYes() == node.getChildren().get(0).getNodeid()) {
-                trueExp = treeToRankExp(node.getChildren().get(0));
-                falseExp = treeToRankExp(node.getChildren().get(1));
-            } else {
-                trueExp = treeToRankExp(node.getChildren().get(1));
-                falseExp = treeToRankExp(node.getChildren().get(0));
-            }
-            String condition;
-            if (node.getMissing() == node.getYes()) {
-                // Note: this is for handling missing features, as the backend handles comparison with NaN as false.
-                condition = "!(" + node.getSplit() + " >= " + node.getSplit_condition() + ")";
-            } else {
-                condition = node.getSplit() + " < " + node.getSplit_condition();
-            }
-            return "if (" + condition + ", " + trueExp + ", " + falseExp + ")";
-        }
     }
 
 }

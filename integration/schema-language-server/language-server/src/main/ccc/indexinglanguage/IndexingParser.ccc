@@ -217,6 +217,7 @@ TOKEN :
     <OPTIMIZE_PREDICATE: "optimize_predicate"> |
     <PACK_BITS: "pack_bits"> |
     <PASSTHROUGH: "passthrough"> |
+    <PROFILE: "profile"> |
     <RANDOM: "random"> |
     <REMOVE_IF_ZERO: "remove_if_zero"> |
     <SELECT_INPUT: "select_input"> |
@@ -795,13 +796,15 @@ Expression tokenizeExp() :
 AnnotatorConfig annotatorConfig() :
 {
     AnnotatorConfig val = new AnnotatorConfig(globalAnnotatorConfig);
-    String str = "SHORTEST";
+    String stemMode = "SHORTEST";
+    String profile;
     Integer maxLength;
     Integer maxTermOccurrences;
     Integer maxTokenLength;
 }
  
-    ( <STEM> ( <COLON> str = stringLiteral() ) ? { val.setStemMode(str); } |
+    ( <STEM> ( <COLON> stemMode = stringLiteral() ) ? { val.setStemMode(stemMode); } |
+      <PROFILE> <COLON> profile = stringLiteral() { val.setProfile(profile); } |
       <MAX_LENGTH> <COLON>  maxLength = integerValue() { val.setMaxTokenizeLength(maxLength); } |
       <MAX_OCCURRENCES> <COLON>  maxTermOccurrences = integerValue() { val.setMaxTermOccurrences(maxTermOccurrences); } |
       <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integerValue() { val.setMaxTokenLength(maxTokenLength); } |
@@ -976,6 +979,7 @@ String identifierStr() :
         <NOW>                    |
         <OPTIMIZE_PREDICATE>     |
         <PASSTHROUGH>            |
+        <PROFILE>                |
         <RANDOM>                 |
         <REMOVE_IF_ZERO>         |
         <SELECT_INPUT>           |

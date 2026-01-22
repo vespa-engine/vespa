@@ -175,7 +175,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(1, messages.size());
         assertEquals("In cluster 'storage': min-node-ratio-per-group should be set to 1 when there are 3 or more groups (3)" +
                              " and there are 3 or fewer nodes in the group (2)." +
-                             " See https://docs.vespa.ai/en/reference/services-content.html?mode=cloud#min-node-ratio-per-group",
+                             " See https://docs.vespa.ai/en/reference/services/content.html?mode=cloud#min-node-ratio-per-group",
                      messages.get(0));
     }
 
@@ -1596,7 +1596,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(warnings, "Content cluster 'mockcluster' has 1 node(s), but the highest distribution " +
                                "key is 101. Having much higher distribution keys than the number of nodes " +
                                "is not recommended, as it may negatively affect performance. " +
-                               "See https://docs.vespa.ai/en/reference/services-content.html#node\n");
+                               "See https://docs.vespa.ai/en/reference/services/content.html#node\n");
     }
 
     @Test

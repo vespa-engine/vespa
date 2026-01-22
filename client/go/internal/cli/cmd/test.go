@@ -35,7 +35,7 @@ func newTestCmd(cli *CLI) *cobra.Command {
 
 Runs all JSON test files in the specified directory, or the single JSON test file specified.
 
-See https://docs.vespa.ai/en/reference/testing.html for details.`,
+See https://docs.vespa.ai/en/reference/applications/testing.html for details.`,
 		Example: `$ vespa test src/test/application/tests/system-test
 $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 		Args:              cobra.ExactArgs(1),
@@ -75,13 +75,13 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter) (int, []st
 	count := 0
 	failed := make([]string, 0)
 	if stat, err := os.Stat(rootPath); err != nil {
-		return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/testing")
+		return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	} else if stat.IsDir() {
 		tests, err := os.ReadDir(rootPath)
 		if err != nil {
-			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/testing")
+			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/applications/testing.html")
 		}
-		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, clusters: map[string]*vespa.Service{}}
+		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, authMethod: cli.selectAuthMethod(), clusters: map[string]*vespa.Service{}}
 		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
@@ -102,7 +102,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter) (int, []st
 			}
 		}
 	} else if strings.HasSuffix(stat.Name(), ".json") {
-		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli, clusters: map[string]*vespa.Service{}}, waiter)
+		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli, authMethod: cli.selectAuthMethod(), clusters: map[string]*vespa.Service{}}, waiter)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -112,7 +112,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter) (int, []st
 		count++
 	}
 	if count == 0 {
-		return 0, nil, errHint(fmt.Errorf("failed to find any tests at %s", rootPath), "See https://docs.vespa.ai/en/reference/testing")
+		return 0, nil, errHint(fmt.Errorf("failed to find any tests at %s", rootPath), "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	}
 	return count, failed, nil
 }
@@ -122,10 +122,10 @@ func runTest(testPath string, context testContext, waiter *Waiter) (string, erro
 	var test test
 	testBytes, err := os.ReadFile(testPath)
 	if err != nil {
-		return "", errHint(err, "See https://docs.vespa.ai/en/reference/testing")
+		return "", errHint(err, "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	}
 	if err = json.Unmarshal(testBytes, &test); err != nil {
-		return "", errHint(fmt.Errorf("failed parsing test at %s: %w", testPath, err), "See https://docs.vespa.ai/en/reference/testing")
+		return "", errHint(fmt.Errorf("failed parsing test at %s: %w", testPath, err), "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	}
 
 	testName := test.Name
@@ -139,12 +139,12 @@ func runTest(testPath string, context testContext, waiter *Waiter) (string, erro
 	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, filepath.Dir(testPath))
 	if err != nil {
 		fmt.Fprintln(context.cli.Stderr)
-		return "", errHint(fmt.Errorf("invalid default parameters for %s: %w", testName, err), "See https://docs.vespa.ai/en/reference/testing")
+		return "", errHint(fmt.Errorf("invalid default parameters for %s: %w", testName, err), "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	}
 
 	if len(test.Steps) == 0 {
 		fmt.Fprintln(context.cli.Stderr)
-		return "", errHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://docs.vespa.ai/en/reference/testing")
+		return "", errHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://docs.vespa.ai/en/reference/applications/testing.html")
 	}
 	seen := make(seenClusters)
 	for i, step := range test.Steps {
@@ -156,7 +156,7 @@ func runTest(testPath string, context testContext, waiter *Waiter) (string, erro
 		failure, longFailure, err := verify(step, test.Defaults.Cluster, defaultParameters, context, waiter)
 		if err != nil {
 			fmt.Fprintln(context.cli.Stderr)
-			return "", errHint(fmt.Errorf("error in %s: %w", stepName, err), "See https://docs.vespa.ai/en/reference/testing")
+			return "", errHint(fmt.Errorf("error in %s: %w", stepName, err), "See https://docs.vespa.ai/en/reference/applications/testing.html")
 		}
 		if !context.dryRun {
 			if failure != "" {
@@ -209,6 +209,11 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 	if header.Get("Content-Type") == "" { // Set default if not specified by test
 		header.Set("Content-Type", "application/json")
 	}
+	if context.authMethod == "token" {
+		if err := context.cli.addBearerToken(&header); err != nil {
+			return "", "", err
+		}
+	}
 
 	var service *vespa.Service
 	requestUri := step.Request.URI
@@ -232,9 +237,13 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		service, ok = context.clusters[cluster]
 		if !ok && waiter != nil {
 			// Cache service so we don't have to discover it for every step
-			service, err = waiter.Service(target, cluster)
+			service, err = waiter.ServiceWithAuthMethod(target, cluster, context.authMethod)
 			if err != nil {
 				return "", "", err
+			}
+			if context.authMethod == "token" {
+				service.TLSOptions.CertificateFile = ""
+				service.TLSOptions.PrivateKeyFile = ""
 			}
 			context.clusters[cluster] = service
 		}
@@ -292,13 +301,18 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 	defer response.Body.Close()
 
 	if statusCode != response.StatusCode {
+		hint := ""
+		if response.StatusCode == 403 && context.authMethod == "token" {
+			hint = "\nHint: Make sure the VESPA_CLI_DATA_PLANE_TOKEN environment variable is set to a valid token"
+		}
 		return fmt.Sprintf("Unexpected status code: %s", color.RedString(strconv.Itoa(response.StatusCode))),
-			fmt.Sprintf("Unexpected status code\nExpected: %s\nActual:   %s\nRequested: %s at %s\nResponse:\n%s",
+			fmt.Sprintf("Unexpected status code\nExpected: %s\nActual:   %s\nRequested: %s at %s\nResponse:\n%s%s",
 				color.CyanString(strconv.Itoa(statusCode)),
 				color.RedString(strconv.Itoa(response.StatusCode)),
 				color.CyanString(method),
 				color.CyanString(requestUrl.String()),
-				ioutil.ReaderToJSON(response.Body)), nil
+				ioutil.ReaderToJSON(response.Body),
+				hint), nil
 	}
 
 	if responseBodySpec == nil {
@@ -500,6 +514,7 @@ type testContext struct {
 	lazyTarget vespa.Target
 	testsPath  string
 	dryRun     bool
+	authMethod string // "mtls" or "token"
 	// Cache of services by their cluster name
 	clusters map[string]*vespa.Service
 }
@@ -571,10 +586,14 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 	service, ok := context.clusters[cluster]
 	if !ok {
 		context.cli.printDebug("warmup: discovering service for cluster ", cluster)
-		service, err = waiter.Service(target, cluster)
+		service, err = waiter.ServiceWithAuthMethod(target, cluster, context.authMethod)
 		if err != nil {
 			context.cli.printInfo("warmup: failed to discover service for cluster ", cluster, ": ", err)
 			return
+		}
+		if context.authMethod == "token" {
+			service.TLSOptions.CertificateFile = ""
+			service.TLSOptions.PrivateKeyFile = ""
 		}
 		context.clusters[cluster] = service
 	}
@@ -589,6 +608,12 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")
+	if context.authMethod == "token" {
+		if err := context.cli.addBearerToken(&header); err != nil {
+			context.cli.printInfo("warmup: failed to add bearer token: ", err)
+			return
+		}
+	}
 
 	context.cli.printDebug("warmup: sending GET ", warmupUrl.String(), " for cluster ", cluster)
 

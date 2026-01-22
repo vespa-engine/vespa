@@ -4,6 +4,7 @@
 
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <cstdint>
 #include <memory>
 #include <vector>
 

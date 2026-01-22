@@ -185,12 +185,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>jrt</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -285,7 +279,7 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.lz4</groupId>
+      <groupId>at.yawk.lz4</groupId>
       <artifactId>lz4-java</artifactId>
     </dependency>
   </dependencies>

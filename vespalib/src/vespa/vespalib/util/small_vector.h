@@ -5,6 +5,7 @@
 #include "alloc.h"
 #include "traits.h"
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <iterator>

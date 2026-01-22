@@ -91,7 +91,7 @@ This bug was introduced in Vespa-7.277.38, and fixed in Vespa-7.292.82.
 The following needs to happen to trigger the bug:
 
 * visibility-delay is non-zero. Note that the default is zero, so for this to trigger,
-  [visibility-delay](https://docs.vespa.ai/en/reference/services-content.html#visibility-delay)
+  [visibility-delay](https://docs.vespa.ai/en/reference/applications/services/content.html#visibility-delay)
   must have been set.
 * A new config change is deployed that contains changes to proton.
   This config snapshot is stored in the transaction log on the content node.

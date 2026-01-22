@@ -32,7 +32,7 @@
 #include <algorithm>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor-main");
+LOG_SETUP(".distributor.top_level_distributor");
 
 using namespace std::chrono_literals;
 
@@ -128,7 +128,7 @@ TopLevelDistributor::~TopLevelDistributor()
 DistributorMetricSet&
 TopLevelDistributor::getMetrics()
 {
-    return _total_metrics->bucket_db_updater_metrics();
+    return _total_metrics->top_level_metrics();
 }
 
 void
@@ -438,15 +438,17 @@ TopLevelDistributor::propagate_and_aggregate_metrics_from_stripes()
 
 void
 TopLevelDistributor::update_top_level_metrics() {
-    propagate_and_aggregate_metrics_from_stripes();
     // We only track current and max, so pretend min == current
     auto mut_mem_usage = _shared_memory_usage_tracker.relaxed_snapshot();
     _shared_memory_usage_tracker.reset_max_observed_bytes(); // Destructive sampling of max
     // It's a bit of a cheat to have last != max with count == 1 (since diverging values
     // should only be observable with multiple metric samples), but it is what it is.
     // These will be emitted as distinct time series at a higher level either way.
-    _total_metrics->mutatating_op_memory_usage().addTotalValueBatch(
+    metrics().mutatating_op_memory_usage.addTotalValueBatch(
             mut_mem_usage.bytes_total, 1, mut_mem_usage.bytes_total, mut_mem_usage.max_observed_bytes);
+    // Must be done _after_ setting top-level metrics explicitly, since aggregation patches
+    // in the combined view of top-level and strip-level metrics.
+    propagate_and_aggregate_metrics_from_stripes();
 }
 
 void

@@ -190,7 +190,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
             if (maxDocumentSize > 128)
                 deployLogger.log(WARNING, "max-document-size value is set to '" + configuredValue +
                         "', setting this above 128 MiB is strongly discouraged, as it may cause major performance issues. " +
-                        "See https://docs.vespa.ai/en/reference/services-content.html#max-document-size");
+                        "See https://docs.vespa.ai/en/reference/services/content.html#max-document-size");
         }
         return maxDocumentSize;
     }

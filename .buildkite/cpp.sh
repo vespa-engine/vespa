@@ -12,6 +12,12 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
+mydir=${0%/*}
+shlim=${mydir}/show-limits.sh
+if [ -x "${shlim}" ]; then
+    "${shlim}" || echo "failed: ${shlim}"
+fi
+
 echo "--- ⚙️ Building C++ components"
 # shellcheck disable=1091
 source /etc/profile.d/enable-gcc-toolset.sh

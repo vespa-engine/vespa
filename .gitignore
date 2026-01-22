@@ -30,6 +30,7 @@ Testing
 /.cmake/
 /.mvn/
 /.ninja_deps
+/.ninja_lock
 /.ninja_log
 /build.ninja
 /rules.ninja

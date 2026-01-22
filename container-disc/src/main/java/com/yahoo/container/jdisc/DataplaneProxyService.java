@@ -77,6 +77,7 @@ public final class DataplaneProxyService extends AbstractComponent {
         nginxConf = root.resolve("conf/nginx/nginx.conf");
 
         executorService = new ScheduledThreadPoolExecutor(1);
+        executorService.setMaximumPoolSize(1); // Ensure only one task runs at a time
         executorService.scheduleAtFixedRate(this::converge, reloadPeriodMinutes, reloadPeriodMinutes, TimeUnit.MINUTES);
     }
 
@@ -184,10 +185,23 @@ public final class DataplaneProxyService extends AbstractComponent {
     public void deconstruct() {
         super.deconstruct();
         wantedState = NginxState.STOPPED;
+
+        // Trigger one final converge to stop nginx (before shutdown)
+        executorService.execute(this::converge);
+
+        // Shut down executor to prevent new scheduled tasks
+        executorService.shutdown();
+
+        // Wait for executor (and converge) to complete
         try {
-            executorService.awaitTermination(30, TimeUnit.SECONDS);
+            if (!executorService.awaitTermination(2, TimeUnit.MINUTES)) {
+                logger.log(Level.WARNING, "Executor did not terminate within 2 minutes, forcing shutdown");
+                executorService.shutdownNow();
+            }
         } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Error shutting down proxy reload thread", e);
+            logger.log(Level.WARNING, "Interrupted while waiting for executor shutdown", e);
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -243,6 +257,7 @@ public final class DataplaneProxyService extends AbstractComponent {
             String corsMap = isDevEnvironment ? """
                     map $http_origin $allow_origin {
                             ~^https://.*\\.vespa-cloud.com$ $http_origin;
+                            ~^https://.*\\.cd-vespa-cloud.com$ $http_origin;
                             ~^https?://localhost(:\\d+)?$ $http_origin;
                             default "";
                         }

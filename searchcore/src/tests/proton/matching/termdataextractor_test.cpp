@@ -13,7 +13,6 @@
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/weight.h>
-#include <vespa/searchlib/queryeval/same_element_flags.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <string>
 #include <vector>
@@ -32,7 +31,6 @@ using search::query::Point;
 using search::query::QueryBuilder;
 using search::query::Range;
 using search::query::Weight;
-using search::queryeval::SameElementFlags;
 using std::string;
 using std::vector;
 using namespace proton::matching;
@@ -187,20 +185,10 @@ same_element_query_ids(bool structured, bool ranked, bool negative)
 
 TEST(TermDataExtractorTest, requireThatSameElementIsExtractedAsExpectedNumberOfTerms)
 {
-    {
-        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(false);
-        EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(true, true, false));
-        EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, true, false));
-        EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, true, true));
-        EXPECT_EQ((std::vector<uint32_t>{id[3], id[2]}), same_element_query_ids(false, false, false));
-    }
-    {
-        SameElementFlags::ExposeDescendantsTweak expose_descendants_tweak(true);
-        EXPECT_EQ((std::vector<uint32_t>{id[3], id[0], id[1], id[2]}), same_element_query_ids(true, true, false));
-        EXPECT_EQ((std::vector<uint32_t>{id[0], id[1], id[2]}), same_element_query_ids(false, true, false));
-        EXPECT_EQ((std::vector<uint32_t>{id[3], id[0], id[2]}), same_element_query_ids(false, true, true));
-        EXPECT_EQ((std::vector<uint32_t>{id[3], id[0], id[2]}), same_element_query_ids(false, false, false));
-    }
+    EXPECT_EQ((std::vector<uint32_t>{id[3], id[0], id[1], id[2]}), same_element_query_ids(true, true, false));
+    EXPECT_EQ((std::vector<uint32_t>{id[0], id[1], id[2]}), same_element_query_ids(false, true, false));
+    EXPECT_EQ((std::vector<uint32_t>{id[3], id[0], id[2]}), same_element_query_ids(false, true, true));
+    EXPECT_EQ((std::vector<uint32_t>{id[3], id[0], id[2]}), same_element_query_ids(false, false, false));
 }
 
 }  // namespace

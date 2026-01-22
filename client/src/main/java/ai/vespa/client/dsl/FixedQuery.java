@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 /**
  * FixedQuery contains a 'Query'.
  * This object holds vespa or user defined parameters
- * https://docs.vespa.ai/en/reference/query-api-reference.html
+ * https://docs.vespa.ai/en/reference/api/query.html
  */
 public class FixedQuery {
 

@@ -1,5 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
+
+#include <cstdint>
 
 namespace searchcorespi::index {
 
@@ -30,6 +33,7 @@ public:
     }
     bool valid() const noexcept { return _id != 0u; }
     bool is_fusion_index() const noexcept { return _fusion; }
+    bool is_fusion_index_or_first_flush_index() const noexcept { return _fusion || _id == 1u; }
     uint64_t get_id() const noexcept { return _id; }
 };
 

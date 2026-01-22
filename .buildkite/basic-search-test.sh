@@ -26,7 +26,7 @@ echo "--- 🧪 Setting up system test environment"
 SYSTEM_TEST_DIR=$WORKDIR/system-test
 if [[ ! -d $SYSTEM_TEST_DIR ]]; then
     echo "Cloning system-test repository..."
-    git clone --depth 1 https://github.com/vespa-engine/system-test "$SYSTEM_TEST_DIR"
+    git clone --quiet --depth 1 https://github.com/vespa-engine/system-test "$SYSTEM_TEST_DIR"
 else
     echo "Using existing system-test repository"
 fi

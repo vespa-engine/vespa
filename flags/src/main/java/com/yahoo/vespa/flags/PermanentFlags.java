@@ -57,8 +57,8 @@ public class PermanentFlags {
     public static final UnboundIntFlag HEAP_SIZE_PERCENTAGE = defineIntFlag(
             "heap-size-percentage", 69,
             "Sets default jvm heap size percentage",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
+            "Takes effect at redeployment (requires restart)",
+            INSTANCE_ID, CLUSTER_ID);
 
     public static final UnboundDoubleFlag QUERY_DISPATCH_WARMUP = defineDoubleFlag(
             "query-dispatch-warmup", 5,
@@ -178,7 +178,7 @@ public class PermanentFlags {
             "Specifies customer rpm services to run on enclave tenant hosts.",
             "Takes effect on next host admin tick.",
             __ -> true,
-            TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE);
+            TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE);
 
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");

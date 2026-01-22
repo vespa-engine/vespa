@@ -19,7 +19,6 @@ import com.yahoo.tensor.TensorType;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -219,10 +218,22 @@ public class EmbedExpression extends Expression  {
     }
 
     private Tensor embed(String input, TensorType targetType, ExecutionContext context) {
-        return embedder.component().embed(input,
-                                          new Embedder.Context(destination, context.getCache()).setLanguage(context.resolveLanguage(linguistics))
-                                                                                               .setEmbedderId(embedder.id()),
-                                          targetType);
+        var embedderContext = new Embedder.Context(destination, context.getCache())
+                .setLanguage(context.resolveLanguage(linguistics))
+                .setEmbedderId(embedder.id());
+
+        context.getDeadline().ifPresent(instant ->
+                embedderContext.setDeadline(com.yahoo.language.process.InvocationContext.Deadline.of(instant)));
+
+        try {
+            return embedder.component().embed(input, embedderContext, targetType);
+        } catch (com.yahoo.language.process.OverloadException e) {
+            throw new OverloadException(e.getMessage(), e);
+        } catch (com.yahoo.language.process.TimeoutException e) {
+            throw new TimeoutException(e.getMessage(), e);
+        } catch (com.yahoo.language.process.InvalidInputException e) {
+            throw new InvalidInputException(e.getMessage(), e);
+        }
     }
 
     /**

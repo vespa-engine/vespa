@@ -7,3 +7,13 @@ vespa_add_executable(searchlib_queryeval_global_filter_test_app TEST
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_queryeval_global_filter_test_app COMMAND searchlib_queryeval_global_filter_test_app)
+
+vespa_add_executable(searchlib_queryeval_lazy_filter_test_app TEST
+        SOURCES
+        lazy_filter_test.cpp
+        DEPENDS
+        searchlib_test
+        vespa_searchlib
+        GTest::gtest
+)
+vespa_add_test(NAME searchlib_queryeval_lazy_filter_test_app COMMAND searchlib_queryeval_lazy_filter_test_app)

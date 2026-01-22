@@ -184,7 +184,7 @@ public class Presentation implements Cloneable {
 
     /**
      * Returns whether tensors should use short form in JSON and textual representations, see
-     * <a href="https://docs.vespa.ai/en/reference/document-json-format.html#tensor">https://docs.vespa.ai/en/reference/document-json-format.html#tensor</a>.
+     * <a href="https://docs.vespa.ai/en/reference/schemas/document-json-format.html#tensor">https://docs.vespa.ai/en/reference/document-json-format.html#tensor</a>.
      * Default is true.
      */
     public boolean getTensorShortForm() { return tensorShortForm; }
@@ -254,7 +254,7 @@ public class Presentation implements Cloneable {
      * Returns whether tensor content should be rendered directly, or inside a JSON object containing a
      * "type" entry having the tensor type, and a "cells"/"values"/"blocks" entry (depending on type),
      * having the tensor content. See
-     * <a href="https://docs.vespa.ai/en/reference/document-json-format.html#tensor">https://docs.vespa.ai/en/reference/document-json-format.html#tensor</a>.
+     * <a href="https://docs.vespa.ai/en/reference/schemas/document-json-format.html#tensor">https://docs.vespa.ai/en/reference/schemas/document-json-format.html#tensor</a>.
      * Default is false: Render wrapped in a JSON object.
      */
     public boolean getTensorDirectValues() { return tensorDirectValues; }

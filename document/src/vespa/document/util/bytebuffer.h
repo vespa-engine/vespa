@@ -15,6 +15,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/alloc.h>
+#include <cstdint>
 
 namespace document {
 

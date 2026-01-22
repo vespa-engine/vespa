@@ -195,14 +195,14 @@ namespace {
     class StringMetric {
     public:
         StringMetric(const TmpString & s, Metric * m) : first(s), second(m) { }
-        bool operator == (const StringMetric & b) const { return first == b.first; }
-        bool operator == (const TmpString & b) const { return first == b; }
-        bool operator <(const StringMetric & b) const { return first < b.first; }
-        bool operator <(const TmpString & b) const { return first < b; }
+        bool operator == (const StringMetric & b) const noexcept { return first == b.first; }
+        bool operator == (const TmpString & b) const noexcept { return first == b; }
+        bool operator <(const StringMetric & b) const noexcept { return first < b.first; }
+        bool operator <(const TmpString & b) const noexcept { return first < b; }
         TmpString   first;
         Metric    * second;
     };
-    bool operator < (const TmpString & a, const StringMetric & b) { return a < b.first; }
+    bool operator < (const TmpString & a, const StringMetric & b) noexcept { return a < b.first; }
 
     using SortedVector = std::vector<StringMetric>;
     

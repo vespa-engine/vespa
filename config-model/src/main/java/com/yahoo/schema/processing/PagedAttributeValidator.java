@@ -19,7 +19,7 @@ import java.util.Optional;
 public class PagedAttributeValidator extends Processor {
 
     private static final String disavantagesUrl =
-            "https://docs.vespa.ai/en/attributes.html#paged-attributes-disadvantages";
+            "https://docs.vespa.ai/en/content/attributes.html#paged-attributes-disadvantages";
 
     public PagedAttributeValidator(Schema schema,
                                    DeployLogger deployLogger,

@@ -48,7 +48,10 @@ public:
       : _profiler(profiler), _search(std::move(search)),
         _initRange_tag(initRange_tag), _doSeek_tag(doSeek_tag),
         _doUnpack_tag(doUnpack_tag), _get_hits_tag(get_hits_tag),
-        _or_hits_into_tag(or_hits_into_tag), _and_hits_into_tag(and_hits_into_tag) {}
+        _or_hits_into_tag(or_hits_into_tag), _and_hits_into_tag(and_hits_into_tag)
+    {
+        set_id(_search->id());
+    }
     ~ProfiledIterator() override;
     void initRange(uint32_t begin_id, uint32_t end_id) override;
     void doSeek(uint32_t docid) override;

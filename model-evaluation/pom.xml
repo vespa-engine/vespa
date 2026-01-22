@@ -35,7 +35,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-core</artifactId>
+      <artifactId>container-disc</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -81,7 +81,7 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.lz4</groupId>
+      <groupId>at.yawk.lz4</groupId>
       <artifactId>lz4-java</artifactId>
     </dependency>
   </dependencies>

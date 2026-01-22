@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.parser;
 
-import com.yahoo.schema.ElementGap;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfile.MatchPhaseSettings;
 import com.yahoo.schema.RankProfile.DiversitySettings;
 import com.yahoo.schema.RankProfile.MutateOperation;
+import com.yahoo.search.query.ranking.ElementGap;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.Reference;
 

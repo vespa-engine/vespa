@@ -5,9 +5,8 @@
 #include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 
-#include <vespa/log/log.h>
-
-LOG_SETUP(".distributor.operation.idealstate.remove");
+#include <vespa/log/bufferedlogger.h>
+LOG_SETUP(".distributor.operations.idealstate.remove_bucket");
 
 namespace storage::distributor {
 
@@ -16,7 +15,7 @@ RemoveBucketOperation::~RemoveBucketOperation() = default;
 bool
 RemoveBucketOperation::onStartInternal(DistributorStripeMessageSender& sender)
 {
-    std::vector<std::pair<uint16_t, std::shared_ptr<api::DeleteBucketCommand> > > msgs;
+    std::vector<std::pair<uint16_t, std::shared_ptr<api::DeleteBucketCommand>>> msgs;
 
     BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
 
@@ -55,7 +54,7 @@ RemoveBucketOperation::onStart(DistributorStripeMessageSender& sender)
 }
 
 bool
-RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply> &msg)
+RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply>& msg)
 {
     auto* rep = dynamic_cast<api::DeleteBucketReply*>(msg.get());
 
@@ -84,12 +83,14 @@ RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply
                                rep->getBucketInfo()),
                     DatabaseUpdate::CREATE_IF_NONEXISTING);
         } else {
-            LOG(info,
-                "Remove operation on bucket %s failed. This distributor "
-                "has already removed the bucket from the bucket database, "
-                "so it is not possible to retry this operation. Failure code: %s",
-                getBucketId().toString().c_str(),
-                rep->getResult().toString().c_str());
+            // If a node is failing, we'll likely see _many_ failures of maintenance operations and not
+            // just a few. Buffer log output to avoid spamming the log with per-bucket messages.
+            LOGBP(info,
+                  "Remove operation on bucket %s failed. This distributor "
+                  "has already removed the bucket from the bucket database, "
+                  "so it is not possible to retry this operation. Failure code: %s",
+                  getBucketId().toString().c_str(),
+                  rep->getResult().toString().c_str());
         }
 
         _ok = false;
@@ -100,7 +101,7 @@ RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply
 
 
 void
-RemoveBucketOperation::onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply> &msg)
+RemoveBucketOperation::onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>& msg)
 {
     if (onReceiveInternal(msg)) {
         done();

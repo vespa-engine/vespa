@@ -142,6 +142,7 @@ public:
     void fetchPostings(const queryeval::ExecuteInfo &execInfo, bool strict) override;
     std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
     HitEstimate calc_hit_estimate() const override;
+    double posting_list_merge_factor() const override { return 1.0; }
     uint32_t get_committed_docid_limit() const noexcept override;
 };
 

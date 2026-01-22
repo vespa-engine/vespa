@@ -56,6 +56,7 @@ type CLI struct {
 
 	now           func() time.Time
 	retryInterval time.Duration
+	sleeper       func(time.Duration)
 
 	cmd     *cobra.Command
 	config  *Config
@@ -146,10 +147,7 @@ use a token for Vespa Cloud access:
 
 $ export VESPA_CLI_DATA_PLANE_TOKEN='value-of-token'
 
-To get started, see the following quick start guides:
-
-- Local Vespa instance: https://docs.vespa.ai/en/vespa-quick-start.html
-- Vespa Cloud: https://docs.vespa.ai/en/cloud/getting-started.html
+To get started, follow https://docs.vespa.ai/en/basics/deploy-an-application.html
 
 The complete Vespa documentation is available at https://docs.vespa.ai.
 
@@ -231,6 +229,7 @@ For detailed description of flags and configuration, see 'vespa help config'.
 		exec:          &execSubprocess{},
 		now:           time.Now,
 		retryInterval: 2 * time.Second,
+		sleeper:       time.Sleep,
 
 		version: version,
 		cmd:     cmd,

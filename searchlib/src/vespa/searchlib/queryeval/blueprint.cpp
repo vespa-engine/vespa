@@ -7,6 +7,7 @@
 #include "field_spec.hpp"
 #include "flow_tuning.h"
 #include "full_search.h"
+#include "global_filter.h"
 #include "leaf_blueprints.h"
 #include "matching_elements_search.h"
 #include "orsearch.h"
@@ -202,6 +203,11 @@ Blueprint::set_global_filter(const GlobalFilter &, double)
 {
 }
 
+void
+Blueprint::set_lazy_filter(const GlobalFilter &)
+{
+}
+
 const Blueprint &
 Blueprint::root() const
 {
@@ -366,6 +372,11 @@ Blueprint::create_default_filter(FilterConstraint constraint)
         REQUIRE_EQ(constraint, FilterConstraint::LOWER_BOUND);
         return std::make_unique<EmptySearch>();
     }
+}
+
+std::shared_ptr<GlobalFilter>
+Blueprint::create_lazy_filter() const {
+    return GlobalFilter::create();
 }
 
 std::string
@@ -656,6 +667,14 @@ IntermediateBlueprint::set_global_filter(const GlobalFilter &global_filter, doub
         if (child->want_global_filter(limits)) {
             child->set_global_filter(global_filter, estimated_hit_ratio);
         }
+    }
+}
+
+void
+IntermediateBlueprint::set_lazy_filter(const GlobalFilter &lazy_filter)
+{
+    for (auto & child : _children) {
+        child->set_lazy_filter(lazy_filter);
     }
 }
 

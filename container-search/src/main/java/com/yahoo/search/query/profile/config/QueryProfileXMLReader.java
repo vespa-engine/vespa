@@ -196,10 +196,10 @@ public class QueryProfileXMLReader {
 
     private void readInheritedTypes(Element element,QueryProfileType type, QueryProfileTypeRegistry registry) {
         String inheritedString = element.getAttribute("inherits");
-        if (inheritedString.equals("")) return;
+        if (inheritedString.isEmpty()) return;
         for (String inheritedId : inheritedString.split(" ")) {
             inheritedId = inheritedId.trim();
-            if (inheritedId.equals("")) continue;
+            if (inheritedId.isEmpty()) continue;
             QueryProfileType inheritedType = registry.getComponent(inheritedId);
             if (inheritedType == null)
                 throw new IllegalArgumentException("Could not resolve inherited query profile type '" + inheritedId);
@@ -249,7 +249,7 @@ public class QueryProfileXMLReader {
         if (inheritedString.isEmpty()) return;
         for (String inheritedId : inheritedString.split(" ")) {
             inheritedId = inheritedId.trim();
-            if (inheritedId.equals("")) continue;
+            if (inheritedId.isEmpty()) continue;
             QueryProfile inheritedProfile = registry.getComponent(inheritedId);
             if (inheritedProfile == null)
                 throw new IllegalArgumentException("Could not resolve inherited query profile '" +
@@ -266,6 +266,7 @@ public class QueryProfileXMLReader {
             String name = field.getAttribute("name");
             if (name.isEmpty())
                 throw new IllegalArgumentException("A field in " + sourceDescription + " has no 'name' attribute");
+
             try {
                 Boolean overridable = getBooleanAttribute("overridable", null, field);
                 if (overridable != null)

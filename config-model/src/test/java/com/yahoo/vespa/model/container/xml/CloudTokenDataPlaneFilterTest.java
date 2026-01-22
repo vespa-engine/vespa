@@ -60,8 +60,9 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     private static final List<DataplaneToken> defaultTokens = List.of(new DataplaneToken("my-token", List.of(
             new DataplaneToken.Version("myfingerprint1", "myaccesshash1", Optional.empty()),
             new DataplaneToken.Version("myfingerprint2", "myaccesshash2", Optional.of(Instant.EPOCH.plus(Duration.ofDays(100000)))))));
-    private static final ContainerEndpoint tokenEndpoint = new ContainerEndpoint("cluster", ApplicationClusterEndpoint.Scope.zone, List.of("token"), OptionalInt.empty(), ApplicationClusterEndpoint.RoutingMethod.exclusive, ApplicationClusterEndpoint.AuthMethod.token);
-    private static final ContainerEndpoint mtlsEndpoint = new ContainerEndpoint("cluster", ApplicationClusterEndpoint.Scope.zone, List.of("mtls"), OptionalInt.empty(), ApplicationClusterEndpoint.RoutingMethod.exclusive, ApplicationClusterEndpoint.AuthMethod.mtls);
+    private static final ContainerEndpoint tokenEndpoint = new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("token"), OptionalInt.empty(), ApplicationClusterEndpoint.RoutingMethod.exclusive, ApplicationClusterEndpoint.AuthMethod.token);
+    private static final ContainerEndpoint mtlsEndpoint = new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("mtls"), OptionalInt.empty(), ApplicationClusterEndpoint.RoutingMethod.exclusive, ApplicationClusterEndpoint.AuthMethod.mtls);
+
     @TempDir
     public File applicationFolder;
 

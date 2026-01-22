@@ -44,7 +44,7 @@ public class EndQuery {
 
     /**
      * Offset.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#limit-offset
+     * https://docs.vespa.ai/en/reference/querying/yql.html#limit-offset
      *
      * @param offset the offset
      * @return the end query
@@ -55,7 +55,7 @@ public class EndQuery {
 
     /**
      * Timeout.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#timeout
+     * https://docs.vespa.ai/en/reference/querying/yql.html#timeout
      *
      * @param timeout the timeout
      * @return the end query
@@ -66,7 +66,7 @@ public class EndQuery {
 
     /**
      * Limit.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#limit-offset
+     * https://docs.vespa.ai/en/reference/querying/yql.html#limit-offset
      *
      * @param limit the limit
      * @return the end query
@@ -93,7 +93,7 @@ public class EndQuery {
 
     /**
      * Group.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#grouping
+     * https://docs.vespa.ai/en/reference/querying/yql.html#grouping
      *
      * @param group the group
      * @return the end query
@@ -104,7 +104,7 @@ public class EndQuery {
 
     /**
      * Group.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#grouping
+     * https://docs.vespa.ai/en/reference/querying/yql.html#grouping
      *
      * @param groupQueryStr the group str
      * @return the end query
@@ -116,7 +116,7 @@ public class EndQuery {
 
     /**
      * Order by asc.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#order-by
+     * https://docs.vespa.ai/en/reference/querying/yql.html#order-by
      *
      * @param annotation the annotation
      * @param fieldName the field name
@@ -129,7 +129,7 @@ public class EndQuery {
 
     /**
      * Order by asc.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#order-by
+     * https://docs.vespa.ai/en/reference/querying/yql.html#order-by
      *
      * @param fieldName the field name
      * @return the end query
@@ -141,7 +141,7 @@ public class EndQuery {
 
     /**
      * Order by desc.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#order-by
+     * https://docs.vespa.ai/en/reference/querying/yql.html#order-by
      *
      * @param annotation the annotation
      * @param fieldName the field name
@@ -154,7 +154,7 @@ public class EndQuery {
 
     /**
      * Order by desc.
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#order-by
+     * https://docs.vespa.ai/en/reference/querying/yql.html#order-by
      *
      * @param fieldName the field name
      * @return the end query

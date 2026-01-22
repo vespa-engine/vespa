@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/alloc.h>
+#include <cstdint>
 #include <string>
 
 namespace vespalib {

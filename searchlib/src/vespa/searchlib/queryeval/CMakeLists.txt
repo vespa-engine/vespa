@@ -33,6 +33,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     isourceselector.cpp
     iterator_pack.cpp
     iterators.cpp
+    lazy_filter.cpp
     leaf_blueprints.cpp
     matching_elements_search.cpp
     monitoring_dump_iterator.cpp
@@ -50,7 +51,6 @@ vespa_add_library(searchlib_queryeval OBJECT
     profiled_iterator.cpp
     ranksearch.cpp
     same_element_blueprint.cpp
-    same_element_flags.cpp
     same_element_search.cpp
     searchable.cpp
     searchiterator.cpp

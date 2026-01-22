@@ -89,9 +89,6 @@ public:
     void start_stripe_pool();
 
     DistributorMetricSet& getMetrics();
-    const DistributorTotalMetrics& total_metrics() const noexcept {
-        return *_total_metrics;
-    }
 
     const NodeIdentity& node_identity() const noexcept { return _node_identity; }
 

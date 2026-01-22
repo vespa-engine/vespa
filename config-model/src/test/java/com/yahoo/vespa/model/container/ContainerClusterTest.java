@@ -51,7 +51,7 @@ import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.applic
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.global;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.zone;
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.vespa.model.container.xml.ContainerModelBuilderTestBase.createModel;
+import static com.yahoo.vespa.model.container.ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -125,7 +125,7 @@ public class ContainerClusterTest {
         ApplicationContainerCluster cluster = newClusterWithSearch(root, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
         cluster.getConfig(qsB);
-        QrStartConfig qsC= new QrStartConfig(qsB);
+        QrStartConfig qsC = new QrStartConfig(qsB);
         assertEquals(expectedMemoryPercentage, qsC.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals(0, qsC.jvm().compressedClassSpaceSize());
     }
@@ -134,16 +134,20 @@ public class ContainerClusterTest {
     void requireThatHeapSizeAsPercentageOfPhysicalMemoryForHostedAndNot() {
         int heapSizeInFlag = 89;
         boolean hosted = true;
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted), null, ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag), null, heapSizeInFlag);
+        var containerId = "container1";
+        // Various combinations of setting explicit memory (will take precedence over feature flag), setting
+        // feature flag, setting none of those, and setting feature flag for another cluster.
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted), null, defaultHeapSizePercentageOfAvailableMemory);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag, containerId), null, heapSizeInFlag);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag, "unknownContainerId"), null, defaultHeapSizePercentageOfAvailableMemory);
         verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted), null, 85);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag), null, 89);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag, containerId), null, 89);
         verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted),  null, 0);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag), null, 0);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag, containerId), null, 0);
 
         // Explicit value overrides all defaults
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag),  67, 67);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag), 69, 69);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag, containerId),  67, 67);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag, containerId), 69, 69);
     }
 
     private void verifyJvmArgs(boolean isHosted, String expectedArgs, String jvmArgs) {
@@ -443,11 +447,12 @@ public class ContainerClusterTest {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(isHosted)).build();
         return createRoot(state);
     }
-    private static MockRoot createRoot(boolean isHosted, int heapSizePercentage) {
+
+    private static MockRoot createRoot(boolean isHosted, int heapSizePercentage, String containerId) {
         DeployState state = new DeployState.Builder().properties(
                 new TestProperties()
                         .setHostedVespa(isHosted)
-                        .setHeapSizePercentage(heapSizePercentage)).build();
+                        .setHeapSizePercentage(containerId, heapSizePercentage)).build();
         return createRoot(state);
     }
 

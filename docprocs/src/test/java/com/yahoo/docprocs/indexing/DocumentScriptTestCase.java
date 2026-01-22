@@ -177,7 +177,7 @@ public class DocumentScriptTestCase {
         DocumentUpdate executeWithUpdate(String fieldName, FieldPathUpdate updateIn) {
             DocumentUpdate update = new DocumentUpdate(type, "id:ns:documentType::");
             update.addFieldPathUpdate(updateIn);
-            return newScript(type, fieldName).execute(fieldValuesFactory, update);
+            return newScript(type, fieldName).execute(fieldValuesFactory, update, null);
         }
 
         FieldPathUpdate executeWithUpdateAndExpectFieldPath(String fieldName, FieldPathUpdate updateIn) {
@@ -237,7 +237,7 @@ public class DocumentScriptTestCase {
         docType.addField("myField", fieldValue.getDataType());
         Document doc = new Document(docType, "id:ns:myDocumentType::");
         doc.setFieldValue("myField", fieldValue.clone());
-        doc = newScript(docType).execute(fieldValuesFactory, doc, false);
+        doc = newScript(docType).execute(fieldValuesFactory, doc, false, null);
         return doc.getFieldValue("myField");
     }
 
@@ -246,7 +246,7 @@ public class DocumentScriptTestCase {
         docType.addField("myField", fieldValue.getDataType());
         DocumentUpdate update = new DocumentUpdate(docType, "id:ns:myDocumentType::");
         update.addFieldUpdate(FieldUpdate.createAssign(docType.getField("myField"), fieldValue));
-        update = newScript(docType).execute(fieldValuesFactory, update);
+        update = newScript(docType).execute(fieldValuesFactory, update, null);
         return update.getFieldUpdate("myField").getValueUpdate(0);
     }
 
@@ -255,7 +255,7 @@ public class DocumentScriptTestCase {
         docType.addField("myField", fieldValue.getDataType());
         DocumentUpdate update = new DocumentUpdate(docType, "id:ns:myDocumentType::");
         update.addFieldPathUpdate(new AssignFieldPathUpdate(docType, "myField", fieldValue));
-        update = newScript(docType).execute(fieldValuesFactory, update);
+        update = newScript(docType).execute(fieldValuesFactory, update, null);
         return update.getFieldUpdate("myField").getValueUpdate(0);
     }
 
@@ -347,11 +347,11 @@ public class DocumentScriptTestCase {
     }
 
     private static Document execute(Document document) {
-        return newScript(document.getDataType()).execute(new FieldValuesFactory(), document, false);
+        return newScript(document.getDataType()).execute(new FieldValuesFactory(), document, false, null);
     }
 
     private static DocumentUpdate execute(DocumentUpdate update) {
-        return newScript(update.getType()).execute(new FieldValuesFactory(), update);
+        return newScript(update.getType()).execute(new FieldValuesFactory(), update, null);
     }
 
 }

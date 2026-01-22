@@ -72,6 +72,7 @@ public class ErrorCodesTest {
         codes.put("ERROR_TEST_AND_SET_CONDITION_FAILED", DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED);
         codes.put("ERROR_PROCESSING_FAILURE", DocumentProtocol.ERROR_PROCESSING_FAILURE);
         codes.put("ERROR_TIMESTAMP_EXIST", DocumentProtocol.ERROR_TIMESTAMP_EXIST); // (sic)
+        codes.put("ERROR_OVERLOAD", DocumentProtocol.ERROR_OVERLOAD);
         codes.put("ERROR_NODE_NOT_READY", DocumentProtocol.ERROR_NODE_NOT_READY);
         codes.put("ERROR_WRONG_DISTRIBUTION", DocumentProtocol.ERROR_WRONG_DISTRIBUTION);
         codes.put("ERROR_ABORTED", DocumentProtocol.ERROR_ABORTED);

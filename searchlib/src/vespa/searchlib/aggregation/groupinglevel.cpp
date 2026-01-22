@@ -118,6 +118,18 @@ GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & result
     }
 }
 
+void
+GroupingLevel::SingleValueGrouper::group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const
+{
+    groupDoc(g, result, doc, rank);
+}
+
+void
+GroupingLevel::SingleValueGrouper::group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const
+{
+    groupDoc(g, result, doc, rank);
+}
+
 template<typename Doc>
 void
 GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
@@ -128,6 +140,18 @@ GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result,
         _currentIndex.set(i);
         SingleValueGrouper::groupDoc(g, sr, doc, rank);
     }
+}
+
+void
+GroupingLevel::MultiValueGrouper::group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const
+{
+    groupDoc(g, result, doc, rank);
+}
+
+void
+GroupingLevel::MultiValueGrouper::group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const
+{
+    groupDoc(g, result, doc, rank);
 }
 
 void

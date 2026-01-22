@@ -36,7 +36,7 @@
           <artifactId>org.apache.felix.resolver</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.lz4</groupId>
+          <groupId>at.yawk.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>
       </exclusions>
@@ -61,7 +61,7 @@
 
     </dependency>
 
-    <!-- Dependencies used by container-core -->
+    <!-- Dependencies used by container-disc -->
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>

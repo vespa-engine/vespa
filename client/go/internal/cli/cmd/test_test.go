@@ -65,7 +65,7 @@ func TestIllegalFileReference(t *testing.T) {
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("test", "testdata/tests/production-test/illegal-reference.json"))
 	assertRequests([]*http.Request{createRequest("GET", "https://domain.tld", "{}")}, client, t)
-	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
+	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://docs.vespa.ai/en/reference/applications/testing.html\n", stderr.String())
 }
 
 func TestIllegalRequestUri(t *testing.T) {
@@ -76,7 +76,7 @@ func TestIllegalRequestUri(t *testing.T) {
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("test", "testdata/tests/production-test/illegal-uri.json"))
 	assertRequests([]*http.Request{createRequest("GET", "https://domain.tld/my-api", "")}, client, t)
-	assert.Equal(t, "\nError: error in Step 2: production tests may not specify requests against Vespa endpoints\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
+	assert.Equal(t, "\nError: error in Step 2: production tests may not specify requests against Vespa endpoints\nHint: See https://docs.vespa.ai/en/reference/applications/testing.html\n", stderr.String())
 }
 
 func TestProductionTest(t *testing.T) {
@@ -93,13 +93,13 @@ func TestProductionTest(t *testing.T) {
 func TestTestWithoutAssertions(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	assert.NotNil(t, cli.Run("test", "testdata/tests/system-test/foo/query.json"))
-	assert.Equal(t, "\nError: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
+	assert.Equal(t, "\nError: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://docs.vespa.ai/en/reference/applications/testing.html\n", stderr.String())
 }
 
 func TestSuiteWithoutTests(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	assert.NotNil(t, cli.Run("test", "testdata/tests/staging-test"))
-	assert.Equal(t, "Error: failed to find any tests at testdata/tests/staging-test\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
+	assert.Equal(t, "Error: failed to find any tests at testdata/tests/staging-test\nHint: See https://docs.vespa.ai/en/reference/applications/testing.html\n", stderr.String())
 }
 
 func TestSingleTest(t *testing.T) {
@@ -165,6 +165,68 @@ func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 	rawUrl := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
 	warmupRequest := createSearchRequest(baseUrl + "/")
 	assertRequests([]*http.Request{warmupRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createRequestWithCustomHeader(rawUrl)}, client, t)
+}
+
+func TestSingleTestWithCloudAndTokenAuth(t *testing.T) {
+	apiKey, err := vespa.CreateAPIKey()
+	require.Nil(t, err)
+
+	client := &mock.HTTPClient{}
+	cli, stdout, stderr := newTestCLI(
+		t,
+		"VESPA_CLI_API_KEY="+string(apiKey),
+		"VESPA_CLI_DATA_PLANE_TOKEN=my-secret-token",
+		"VESPA_CLI_ENDPOINTS={\"endpoints\":[{\"cluster\":\"container\",\"url\":\"https://url\",\"authMethod\":\"token\"}]}",
+	)
+	cli.httpClient = client
+
+	searchResponse, err := os.ReadFile("testdata/tests/response.json")
+	require.Nil(t, err)
+	client.NextStatus(200) // Warmup GET /
+	client.NextStatus(200) // First feed
+	client.NextStatus(200) // Second feed
+	client.NextResponseString(200, string(searchResponse))
+	client.NextResponseString(200, string(searchResponse))
+
+	assert.Nil(t, cli.Run("test", "testdata/tests/system-test/test.json", "-t", "cloud", "-a", "t.a.i"))
+	expectedBytes, err := os.ReadFile("testdata/tests/expected.out")
+	require.Nil(t, err)
+	assert.Equal(t, "", stderr.String())
+	assert.Equal(t, string(expectedBytes), stdout.String())
+
+	baseUrl := "https://url"
+	rawUrl := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
+	warmupRequest := createRequestWithToken(baseUrl+"/", "")
+	assertRequests([]*http.Request{
+		warmupRequest,
+		createRequestWithToken(baseUrl+"/document/v1/test/music/docid/doc?timeout=3.4s", "{\"fields\":{\"artist\":\"Foo Fighters\"}}"),
+		createRequestWithToken(baseUrl+"/document/v1/test/music/docid/doc?timeout=3.4s", "{\"fields\":{\"artist\":\"Foo Fighters\"}}"),
+		createRequestWithToken(rawUrl, ""),
+		createRequestWithTokenAndCustomHeader(rawUrl),
+	}, client, t)
+}
+
+func createRequestWithToken(uri string, body string) *http.Request {
+	requestUrl, _ := url.ParseRequestURI(uri)
+	method := "GET"
+	if body != "" {
+		method = "POST"
+	}
+	r := &http.Request{
+		URL:    requestUrl,
+		Method: method,
+		Header: http.Header{},
+		Body:   io.NopCloser(strings.NewReader(body)),
+	}
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Authorization", "Bearer my-secret-token")
+	return r
+}
+
+func createRequestWithTokenAndCustomHeader(url string) *http.Request {
+	r := createRequestWithToken(url, "")
+	r.Header.Set("X-Foo", "bar")
+	return r
 }
 
 func createFeedRequest(urlPrefix string) *http.Request {

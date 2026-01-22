@@ -1225,7 +1225,7 @@ public class DocumentV1ApiTest {
         assertSameJson("{" +
                 "  \"pathId\": \"/document/v1\"," +
                 "  \"message\": \"The request contained an unparseable HTTP Accept header. See: " +
-                                 "https://docs.vespa.ai/en/reference/document-v1-api-reference.html#accept\"" +
+                                 "https://docs.vespa.ai/en/reference/api/document-v1.html#accept\"" +
                 "}", response.readAll());
         assertEquals(400, response.getStatus());
         driver.close();
@@ -1421,7 +1421,7 @@ public class DocumentV1ApiTest {
         assertEquals(413, response.getStatus());
         var message = Json.of(response.readAll()).f("message").asString();         
         assertEquals("Document operation request size 2000026 bytes exceeds maximum size of 1048576 bytes. " +
-                "See https://docs.vespa.ai/en/document-v1-api-guide.html#request-size-limit", message);
+                "See https://docs.vespa.ai/en/writing/document-v1-api-guide.html#request-size-limit", message);
         handler.dispatchEnqueued();
         driver.close();
     }

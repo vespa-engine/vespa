@@ -20,18 +20,23 @@ std::string
 ElementwiseUtils::feature_name(const std::string& nested_feature_base_name, const fef::ParameterList& params)
 {
     FeatureNameBuilder builder;
-    constexpr size_t extra_params = 2;
-    builder.baseName(nested_feature_base_name);
+    builder.baseName(_elementwise_feature_base_name);
+    builder.parameter(nested_feature_name(nested_feature_base_name, params));
     size_t num_params = params.size();
-    size_t param_idx = 0;
-    for (; param_idx + extra_params < num_params; ++param_idx) {
+    size_t offset = num_params - extra_params;
+    for (size_t param_idx = offset; param_idx < num_params; ++param_idx) {
         builder.parameter(params[param_idx].getValue());
     }
-    auto nested_feature_name = builder.buildName();
-    builder.baseName(_elementwise_feature_base_name);
-    builder.clearParameters();
-    builder.parameter(nested_feature_name);
-    for (; param_idx < num_params; ++param_idx) {
+    return builder.buildName();
+}
+
+std::string
+ElementwiseUtils::nested_feature_name(const std::string& nested_feature_base_name, const fef::ParameterList& params)
+{
+    FeatureNameBuilder builder;
+    builder.baseName(nested_feature_base_name);
+    size_t num_params = params.size();
+    for (size_t param_idx = 0; param_idx + extra_params < num_params; ++param_idx) {
         builder.parameter(params[param_idx].getValue());
     }
     return builder.buildName();

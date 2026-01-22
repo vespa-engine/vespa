@@ -49,16 +49,16 @@ public class StemmerImplTestCase {
                                    new StemList("p"),
                                    new StemList("p")),
                      stemmer.stem("c++",
-                                  new LinguisticsParameters(Language.ENGLISH, StemMode.SHORTEST, true, true)));
+                                  new LinguisticsParameters(null, Language.ENGLISH, StemMode.SHORTEST, true, true)));
 
         token.setSpecialToken(true);
         assertEquals(List.of(new StemList("c++")),
-                     stemmer.stem("c++", new LinguisticsParameters(Language.ENGLISH, StemMode.SHORTEST, true, true)));
+                     stemmer.stem("c++", new LinguisticsParameters(null, Language.ENGLISH, StemMode.SHORTEST, true, true)));
     }
 
     private static void assertStem(String input, List<String> expectedStems, boolean removeAccents) {
         Stemmer stemmer = new StemmerImpl(new SimpleTokenizer(new SimpleNormalizer()));
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, removeAccents, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, removeAccents, true);
         List<String> got = new ArrayList<>();
         for (StemList word : stemmer.stem(input, parameters)) {
             got.add(word.get(0));

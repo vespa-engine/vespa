@@ -112,7 +112,7 @@ public class PagedAttributeValidatorTestCase {
         assertEquals(1, logger.warnings.size());
         assertEquals("For schema 'test', field 'pos': " +
                 "The 'paged' attribute setting in combination with HNSW indexing is strongly discouraged, see " +
-                "https://docs.vespa.ai/en/attributes.html#paged-attributes-disadvantages for details",
+                "https://docs.vespa.ai/en/content/attributes.html#paged-attributes-disadvantages for details",
                 logger.warnings.get(0));
     }
 

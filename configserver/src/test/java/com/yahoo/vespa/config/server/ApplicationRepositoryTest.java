@@ -467,7 +467,7 @@ public class ApplicationRepositoryTest {
 
         applicationRepository.prepare(sessionId2, prepareParams());
         exceptionRule.expect(ActivationConflictException.class);
-        exceptionRule.expectMessage("app:test1.testapp.default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)");
+        exceptionRule.expectMessage("app:test1.testapp.default This session 3 was prepared when session 2 was active, but session 4 has since become active: refusing to activate this session, please redeploy");
         activate(applicationId(), sessionId2, timeoutBudget);
     }
 

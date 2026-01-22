@@ -25,7 +25,7 @@ class GenerateHashTable {
     struct Bucket {
         Idx slot;
         std::vector<KeyT> keys;
-        bool operator< (const Bucket& other) const {
+        bool operator< (const Bucket& other) const noexcept {
             return keys.size() > other.keys.size();
         }
     };

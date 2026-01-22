@@ -4,6 +4,7 @@
 
 #include "variablemap.h"
 #include "modificationstatus.h"
+#include <cstdint>
 #include <vector>
 
 namespace document::fieldvalue {

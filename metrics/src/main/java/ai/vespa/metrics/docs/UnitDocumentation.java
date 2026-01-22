@@ -21,6 +21,8 @@ public class UnitDocumentation {
                         ---
                         # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
                         title: "Metric Units Reference"
+                        redirect_from:
+                        - en/reference/unit-metrics-reference.html
                         ---
 
 
@@ -33,7 +35,7 @@ public class UnitDocumentation {
                         </table>
                         """, htmlRows(units)));
 
-        try (FileWriter fileWriter = new FileWriter(path + "/unit-metrics-reference.html")) {
+        try (FileWriter fileWriter = new FileWriter(path + "/metric-units.html")) {
             fileWriter.write(referenceBuilder.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
+import com.yahoo.data.JsonProducer;
 import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.component.ComponentId;
@@ -51,6 +52,7 @@ import com.yahoo.search.statistics.ElapsedTimeTestCase.UselessSearcher;
 import com.yahoo.search.statistics.TimeTracker;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
@@ -80,6 +82,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -401,6 +404,39 @@ public class JsonRendererTestCase {
         result3.hits().add(h);
         result3.setTotalHitCount(1L);
         assertEqualJson(expected, render(result3));
+    }
+
+    @Test
+    @Timeout(300)
+    void testNonFiniteFloats() throws ExecutionException, InterruptedException, IOException {
+        String expected = """
+                {
+                  "root": {
+                    "id": "toplevel",
+                    "relevance": 1.0,
+                    "fields": {
+                      "totalCount": 1
+                    },
+                    "children": [{
+                      "id": "specialFloats",
+                      "relevance": 1.0,
+                      "fields": {
+                        "tensor_special": {
+                          "type": "tensor(x[3])",
+                          "values": [null, null, null]
+                        }
+                      }
+                    }]
+                  }
+                }""";
+        Result r = newEmptyResult();
+        Hit h = new Hit("specialFloats");
+        Tensor specialTensor = Tensor.from("tensor(x[3]):[NaN, Infinity, -Infinity]");
+        h.setField("tensor_special", new TensorFieldValue(specialTensor));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        String summary = render(r);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -1864,4 +1900,152 @@ public class JsonRendererTestCase {
         return one;
     }
 
+    class ObjectJsonProducer implements JsonProducer {
+        @Override
+        public StringBuilder writeJson(StringBuilder target) {
+            return target.append(SlimeUtils.toJson(SlimeUtils.jsonToSlime("{a:1, b: [true, false], c: {x: 'y'}}")));
+        }
+    }
+
+    @Test
+    void testRendererJsonProducerObject() throws Exception {
+        Result r = newEmptyResult();
+        Hit h = new Hit("jsonObj");
+        h.setField("bar", new ObjectJsonProducer());
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+
+        String expected = """
+                {
+                  "root": {
+                    "children": [
+                      {
+                        "fields": {
+                          "bar": {"a":1,"b":[true,false],"c":{"x":"y"}}
+                        },
+                        "id": "jsonObj",
+                        "relevance": 1.0
+                      }
+                    ],
+                    "fields": { "totalCount": 1 },
+                    "id": "toplevel",
+                    "relevance": 1.0
+                  }
+                }
+                """;
+
+        String actual = render(r);
+        assertEqualJsonContent(expected, actual);
+    }
+
+    @Test
+    void testCborRendererBasic() throws Exception {
+        Result r = newEmptyResult();
+        Hit h = new Hit("testHit");
+        h.setField("stringField", "value");
+        h.setField("intField", 42);
+        h.setField("boolField", true);
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+
+        String expected = """
+                {
+                  "root": {
+                    "children": [
+                      {
+                        "fields": {
+                          "stringField": "value",
+                          "intField": 42,
+                          "boolField": true
+                        },
+                        "id": "testHit",
+                        "relevance": 1.0
+                      }
+                    ],
+                    "fields": { "totalCount": 1 },
+                    "id": "toplevel",
+                    "relevance": 1.0
+                  }
+                }
+                """;
+
+        String actual = renderWithCbor(r);
+        assertEqualJsonContent(expected, actual);
+    }
+
+    @Test
+    void testCborRendererJsonProducerObject() throws Exception {
+        // JsonProducer has a different code path for CBOR (converts via JsonDataSource)
+        Result r = newEmptyResult();
+        Hit h = new Hit("jsonObj");
+        h.setField("bar", new ObjectJsonProducer());
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+
+        String expected = """
+                {
+                  "root": {
+                    "children": [
+                      {
+                        "fields": {
+                          "bar": {"a":1,"b":[true,false],"c":{"x":"y"}}
+                        },
+                        "id": "jsonObj",
+                        "relevance": 1.0
+                      }
+                    ],
+                    "fields": { "totalCount": 1 },
+                    "id": "toplevel",
+                    "relevance": 1.0
+                  }
+                }
+                """;
+
+        String actual = renderWithCbor(r);
+        assertEqualJsonContent(expected, actual);
+    }
+
+    @Test
+    void testCborRendererMimeType() {
+        CborRenderer cborRenderer = new CborRenderer(executor);
+        cborRenderer.init();
+        assertEquals("application/cbor", cborRenderer.getMimeType());
+        cborRenderer.deconstruct();
+    }
+
+    @Test
+    void testCborRendererReturnsErrorForJsonCallback() throws Exception {
+        // JSONP callback wrapping would produce invalid CBOR, so an error is included in the response.
+        // We can't return an HTTP error status because the incompatibility is detected during async
+        // rendering, after HTTP headers have already been sent. Since JSONP is obsolete (superseded
+        // by CORS), it's not worth refactoring to detect this earlier.
+        String jsonCallback = "some_function_name";
+        Result r = newEmptyResult(new String[]{"query=a", "jsoncallback=" + jsonCallback});
+        Hit h = new Hit("testHit");
+        h.setField("foo", "bar");
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+
+        String json = renderWithCbor(r);
+        assertTrue(json.contains("jsoncallback"), "Response should contain error about jsoncallback: " + json);
+        assertTrue(json.contains("errors"), "Response should contain an error: " + json);
+    }
+
+    private String renderWithCbor(Result r) throws InterruptedException, ExecutionException, IOException {
+        CborRenderer cborRenderer = new CborRenderer(executor);
+        cborRenderer.init();
+        try {
+            Execution execution = new Execution(Execution.Context.createContextStub());
+            ByteArrayOutputStream bs = new ByteArrayOutputStream();
+            CompletableFuture<Boolean> f = cborRenderer.renderResponse(bs, r, execution, null);
+            assertTrue(f.get());
+            // Parse CBOR and convert back to JSON for comparison
+            var cborMapper = new com.fasterxml.jackson.databind.ObjectMapper(new com.fasterxml.jackson.dataformat.cbor.CBORFactory());
+            var jsonMapper = Jackson.mapper();
+            Object cborData = cborMapper.readValue(bs.toByteArray(), Object.class);
+            return jsonMapper.writeValueAsString(cborData);
+        } finally {
+            cborRenderer.deconstruct();
+        }
+    }
 }

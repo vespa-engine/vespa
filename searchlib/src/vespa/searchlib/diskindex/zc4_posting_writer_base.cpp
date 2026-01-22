@@ -5,7 +5,6 @@
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <cassert>
-#include <limits>
 
 using search::index::PostingListCounts;
 using search::index::PostingListParams;
@@ -210,7 +209,7 @@ Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts &counts)
       _writePos(0),
       _dynamicK(false),
       _encode_interleaved_features(false),
-      _features_size_flush_bits(std::numeric_limits<uint64_t>::max()),
+      _features_size_flush_bits(256_Mi),
       _zcDocIds(),
       _l1Skip(),
       _l2Skip(),

@@ -48,6 +48,7 @@ import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.documentapi.metrics.DocumentOperationStatus;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.net.AcceptHeaderMatcher;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.Response.Status;
@@ -795,7 +796,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         loggingException(() -> {
             var message = String.format(
                     "Document operation request size %d bytes exceeds maximum size of %d bytes. " + 
-                            "See https://docs.vespa.ai/en/document-v1-api-guide.html#request-size-limit", bytesRead,
+                            "See https://docs.vespa.ai/en/writing/document-v1-api-guide.html#request-size-limit", bytesRead,
                     maxDocumentOperationRequestSizeBytes
             );
             log.log(FINE, () -> "Too large document operation request " + request.getMethod() + " " + request.getUri().getRawPath() + ": " + message);
@@ -969,6 +970,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                     case INSUFFICIENT_STORAGE -> jsonResponse.commit(Response.Status.INSUFFICIENT_STORAGE);
                     case TIMEOUT -> jsonResponse.commit(Response.Status.GATEWAY_TIMEOUT);
                     case REJECTED -> jsonResponse.commit(Response.Status.BAD_REQUEST);
+                    case OVERLOAD -> jsonResponse.commit(Response.Status.TOO_MANY_REQUESTS);
                     case ERROR -> {
                         log.log(FINE, () -> "Exception performing document operation: " + response.getTextMessage());
                         jsonResponse.commit(Status.INTERNAL_SERVER_ERROR);
@@ -1000,6 +1002,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             case SUCCESS -> incrementMetricSucceeded();
             case NOT_FOUND -> incrementMetricNotFound();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
+            case OVERLOAD -> { /* Transient overload - don't count as failure */ }
             case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
             case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
             case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
@@ -1013,6 +1016,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             case SUCCESS -> incrementMetricSucceeded();
             case NOT_FOUND -> incrementMetricNotFound();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
+            case OVERLOAD -> { /* Transient overload - don't count as failure */ }
             case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
             case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
             case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
@@ -1024,6 +1028,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         switch (outcome) {
             case SUCCESS,NOT_FOUND -> incrementMetricSucceeded();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
+            case OVERLOAD -> { /* Transient overload - don't count as failure */ }
             case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
             case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
             case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
@@ -1295,7 +1300,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                 // likely to cause more confusion than it clears up. Just return a generic error with
                 // a link to relevant documentation. IllegalArgumentExceptions are mapped to 400 Bad Request.
                 throw new IllegalArgumentException("The request contained an unparseable HTTP Accept header. See: " +
-                                                   "https://docs.vespa.ai/en/reference/document-v1-api-reference.html#accept");
+                                                   "https://docs.vespa.ai/en/reference/api/document-v1.html#accept");
             }
         } // else: for backwards compatibility, always assume application/json is accepted
         return false;

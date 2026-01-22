@@ -147,21 +147,21 @@ private:
         uint32_t _len;
 
     public:
-        PositionRange(uint32_t start, uint32_t len)
+        PositionRange(uint32_t start, uint32_t len) noexcept
             : _start(start),
               _len(len)
         {
         }
 
-        bool operator<(const PositionRange &rhs) const {
+        bool operator<(const PositionRange &rhs) const noexcept {
             if (_start != rhs._start) {
                 return _start < rhs._start;
             }
             return _len < rhs._len;
         }
 
-        uint32_t getStart() const { return _start; }
-        uint32_t getLen() const   { return _len; }
+        uint32_t getStart() const noexcept { return _start; }
+        uint32_t getLen() const noexcept   { return _len; }
     };
 
     using UInt32Vector = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;

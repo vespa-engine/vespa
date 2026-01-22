@@ -311,7 +311,7 @@ class FieldContext
 public:
     FieldContext(ISequencedTaskExecutor &writer, AttributeVector *attr);
     ~FieldContext();
-    bool operator<(const FieldContext &rhs) const;
+    bool operator<(const FieldContext &rhs) const noexcept;
     ExecutorId getExecutorId() const { return _executorId; }
     AttributeVector *getAttribute() const { return _attr; }
     bool use_two_phase_put() const { return _use_two_phase_put; }
@@ -328,7 +328,7 @@ FieldContext::FieldContext(ISequencedTaskExecutor &writer, AttributeVector *attr
 FieldContext::~FieldContext() = default;
 
 bool
-FieldContext::operator<(const FieldContext &rhs) const
+FieldContext::operator<(const FieldContext &rhs) const noexcept
 {
     if (_executorId != rhs._executorId) {
         return _executorId < rhs._executorId;

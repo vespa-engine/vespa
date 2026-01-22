@@ -103,7 +103,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
-    private final int documentV1QueueSize;
     private final int maxDocumentOperationRequestSizeMib;
 
     /** The heap size % of total memory available to the JVM process. */
@@ -148,14 +147,14 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addTestrunnerComponentsIfTester(deployState);
         transport_connections_per_target = deployState.featureFlags().mbusJavaRpcNumTargets();
         transport_events_before_wakeup = deployState.featureFlags().mbusJavaEventsBeforeWakeup();
-        heapSizePercentageOfAvailableMemory = deployState.featureFlags().heapSizePercentage() > 0
-                ? Math.min(99, deployState.featureFlags().heapSizePercentage())
+        var heapSizeFromFlag = deployState.featureFlags().heapSizePercentage(Optional.of(getName()));
+        heapSizePercentageOfAvailableMemory = heapSizeFromFlag > 0
+                ? Math.min(99, heapSizeFromFlag)
                 : defaultHeapSizePercentageOfAvailableMemory;
         onnxModelCost = deployState.onnxModelCost();
         onnxModelCostCalculator = deployState.onnxModelCost().newCalculator(
                 deployState.getApplicationPackage(), deployState.getProperties().applicationId(), ClusterSpec.Id.from(clusterId));
         logger = deployState.getDeployLogger();
-        documentV1QueueSize = deployState.featureFlags().documentV1QueueSize();
         maxDocumentOperationRequestSizeMib = deployState.featureFlags().maxDocumentOperationRequestSizeMib();
     }
 
@@ -442,10 +441,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     @Override
     public void getConfig(DocumentOperationExecutorConfig.Builder builder) {
-        if (documentV1QueueSize >= 0) {
-            builder.maxThrottled(documentV1QueueSize);
-        }
-        
         builder.maxDocumentOperationRequestSizeMib(maxDocumentOperationRequestSizeMib);
     }
 

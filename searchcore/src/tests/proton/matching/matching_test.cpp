@@ -1229,6 +1229,15 @@ TEST_F(MatchingTest, require_that_same_element_search_works)
     EXPECT_EQ(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
 }
 
+TEST_F(MatchingTest, require_that_invalid_queries_are_handled)
+{
+    MyWorld world(shared_state());
+    world.basicSetup();
+    SearchRequest::SP request = MyWorld::createRequest("This is an invalid query!");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    EXPECT_EQ(reply->hits.size(), 0u);
+}
+
 TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_same_element_blueprint)
 {
     MyWorld world(shared_state());

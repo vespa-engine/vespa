@@ -115,6 +115,18 @@ ImportedSearchContext::calc_hit_estimate() const
     }
 }
 
+double ImportedSearchContext::posting_list_merge_factor() const {
+    uint32_t target_est_hits = _target_search_context->calc_hit_estimate().est_hits();
+    // The reasoning here is as follows: for each hit in the parent,
+    // we will get a posting list with hits for this context, and
+    // these lists have to be merged.  A single posting list gives no
+    // extra merging, so should give a factor of 1, and the cost
+    // should be logarithmic.  It's possible we should have a scale factor
+    // on target_est_hits (need to do some careful measurements for that).
+    double extra_factor = std::log2(1.0 + target_est_hits);
+    return extra_factor * _target_search_context->posting_list_merge_factor();
+}
+
 std::unique_ptr<queryeval::SearchIterator>
 ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool strict) {
     if (_zero_hits.load(std::memory_order_relaxed)) {

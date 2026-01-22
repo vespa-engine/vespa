@@ -8,7 +8,7 @@ function param(name, type, props = {}) {
   return Object.assign({ name, type }, children && { children }, props);
 }
 
-// https://docs.vespa.ai/en/reference/query-api-reference.html
+// https://docs.vespa.ai/en/reference/querying/yql.html
 export default param('root', [
   param('yql', 'String'),
 

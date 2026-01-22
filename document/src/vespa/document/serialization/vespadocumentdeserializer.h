@@ -4,6 +4,7 @@
 
 #include <vespa/document/fieldvalue/fieldvaluevisitor.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <cstdint>
 #include <memory>
 
 namespace vespalib { class nbostream; }

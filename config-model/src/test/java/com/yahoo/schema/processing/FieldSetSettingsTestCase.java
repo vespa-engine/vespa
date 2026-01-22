@@ -34,10 +34,10 @@ public class FieldSetSettingsTestCase {
                         "The matching settings in fieldset 'default' are inconsistent (explicitly or because of field type). " +
                         "This may lead to recall and ranking issues. The fieldset will use matching TEXT. " +
                         "[ Field 'ci' has matching TEXT,  Field 'ps' has matching WORD] " +
-                        "See https://docs.vespa.ai/en/reference/schema-reference.html#fieldset",
+                        "See https://docs.vespa.ai/en/reference/schemas/schemas.html#fieldset",
                 "For schema 'child', field 'ps': " +
                         "The normalization settings for the fields in fieldset 'default' are inconsistent (explicitly or because of field type). " +
-                        "This may lead to recall and ranking issues. See https://docs.vespa.ai/en/reference/schema-reference.html#fieldset"},
+                        "This may lead to recall and ranking issues. See https://docs.vespa.ai/en/reference/schemas/schemas.html#fieldset"},
                 logger.warnings.toArray());
     }
 
@@ -45,6 +45,49 @@ public class FieldSetSettingsTestCase {
     public void illegalFieldTypeMix() {
         var e = assertThrows(IllegalArgumentException.class, () -> createFromStrings(new BaseDeployLogger(), childSd( "fieldset default { fields: ci, pt }"), parentSd()));
         assertEquals("For schema 'child', fieldset 'default': Illegal mixing of tensor fields ['pt'] and non-tensor fields ['ci']", e.getMessage());
+    }
+
+    @Test
+    public void illegalLinguisticsProfileMix() {
+        var schema = """
+                schema test {
+                  document test {
+                    field s1 type string {
+                      indexing: index
+                      linguistics {
+                        profile: p1
+                      }
+                    }
+                    field s2 type string {
+                      indexing: index
+                      linguistics {
+                        profile {
+                          index: p2
+                          search: p1   # Legal combination with s1 since only the query side need to be consistent
+                        }
+                      }
+                    }
+                    field s3 type string {
+                      indexing: index
+                      linguistics {
+                        profile {
+                          index: p1
+                          search: p2   # Not legal combination with s1
+                        }
+                      }
+                    }
+                  }
+                  fieldset p1p2 {
+                    fields: s1, s2
+                  }
+                  fieldset p1p3 {
+                    fields: s1, s3
+                  }
+                }
+                """;
+        var e = assertThrows(IllegalArgumentException.class, () -> createFromStrings(new BaseDeployLogger(), schema));
+        assertEquals("For schema 'test', fieldset 'p1p3': Illegal mixing of linguistics search profiles" +
+                     ": field 's1' sets 'p1', while field 's3' sets 'p2'", e.getMessage());
     }
 
     @Test
@@ -61,7 +104,7 @@ public class FieldSetSettingsTestCase {
     public void inconsistentMatchingShouldStillSetMatchingForFieldSet() throws ParseException {
         var logger = new TestableDeployLogger();
 
-        // a is field with word mathcing => word matching for fieldset
+        // a is field with word matching => word matching for fieldset
         var builder = createFromStrings(logger, schemaWithMatchSettings("fieldset default { fields: a, b }", "a", "b"));
         assertMatchType(builder, WORD);
 

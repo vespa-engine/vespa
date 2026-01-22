@@ -42,8 +42,7 @@ Bm25Utils::lookup_param(const std::string& param, double& result) const
             result = std::stod(value.get());
             return Trinary::True;
         } catch (const std::invalid_argument& ex) {
-            LOG(warning, "Not able to convert rank property '%s': '%s' to a double value",
-                key.c_str(), value.get().c_str());
+            _error_message = std::format("Not able to convert rank property '{}': '{}' to a double value", key, value.get());
             return Trinary::Undefined;
         }
     }

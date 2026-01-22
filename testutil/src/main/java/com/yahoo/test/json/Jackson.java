@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Utility class to get jackson json parsers with common settings.
  * TODO Belong in vespajlib, but due to OSGI resides here for testing .
- * There master resides in container-core for use in OSGI modules
+ * There master resides in container-disc for use in OSGI modules
  */public class Jackson {
     private static final ObjectMapper mapperInstance = createMapper();
     /// Create an ObjectMapper based on given factory, adds additional recommended settings

@@ -21,7 +21,7 @@ public:
     }
     uint64_t nameId() const               { return _nameId; }
     std::string createName(const std::string &baseName) const;
-    bool operator<(const DataStoreFileChunkId &rhs) const {
+    bool operator<(const DataStoreFileChunkId &rhs) const noexcept {
         return _nameId < rhs._nameId;
     }
 };

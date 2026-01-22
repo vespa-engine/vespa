@@ -65,6 +65,12 @@ func main() {
 		exitCode = standalone.StartStandaloneContainer(os.Args[1:])
 	case "start-c-binary":
 		exitCode = startcbinary.Run(os.Args[1:])
+	case "vespa-start-java":
+		err := jvm.RunJava(os.Args[1:])
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			exitCode = 1
+		}
 	case "export-env":
 		vespa.ExportDefaultEnvToSh()
 	case "security-env", "vespa-security-env":

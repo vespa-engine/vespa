@@ -52,7 +52,7 @@ public:
         uint32_t _seq;
 
     public:
-        PendingOp(uint32_t wordIdx, uint32_t docId)
+        PendingOp(uint32_t wordIdx, uint32_t docId) noexcept
             : _wordIdx(wordIdx),
               _docId(docId),
               _features(),
@@ -60,7 +60,7 @@ public:
               _seq(0)
         {}
 
-        PendingOp(uint32_t wordIdx, uint32_t docId, EntryRef features)
+        PendingOp(uint32_t wordIdx, uint32_t docId, EntryRef features) noexcept
             : _wordIdx(wordIdx),
               _docId(docId),
               _features(features),
@@ -74,7 +74,7 @@ public:
         EntryRef getFeatureRef() const { return _features; }
         bool getRemove() const { return _removal; }
 
-        bool operator<(const PendingOp &rhs) const {
+        bool operator<(const PendingOp &rhs) const noexcept {
             if (_wordIdx != rhs._wordIdx)
                 return _wordIdx < rhs._wordIdx;
             if (_docId != rhs.getDocId())

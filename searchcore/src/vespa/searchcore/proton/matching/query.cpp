@@ -15,15 +15,17 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/lazy_filter.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/searchlib/query/proto_tree_converter.h>
-#include <vespa/searchlib/query/proto_tree_converter.hpp>
 #include <vespa/searchlib/query/tree/querytreecreator.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.query");
+
+#include <vespa/searchlib/query/proto_tree_converter.hpp>
 
 using document::PositionDataType;
 using search::common::GeoLocation;
@@ -272,10 +274,10 @@ Query::fetchPostings(const ExecuteInfo & executeInfo)
 void
 Query::handle_global_filter(const IRequestContext & requestContext, uint32_t docid_limit,
                             double global_filter_lower_limit, double global_filter_upper_limit,
-                            search::engine::Trace& trace, bool sort_by_cost)
+                            search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter)
 {
     if (!handle_global_filter(*_blueprint, docid_limit, global_filter_lower_limit, global_filter_upper_limit,
-                              requestContext.thread_bundle(), &trace))
+                              requestContext.thread_bundle(), &trace, use_lazy_filter))
     {
         return;
     }
@@ -291,7 +293,7 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
 bool
 Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
                             double global_filter_lower_limit, double global_filter_upper_limit,
-                            vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace)
+                            vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace, bool use_lazy_filter)
 {
     using search::queryeval::GlobalFilter;
     using search::queryeval::Blueprint;
@@ -315,6 +317,14 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
         return false;
     }
 
+    std::shared_ptr<search::queryeval::GlobalFilter> lazy_filter;
+    if (use_lazy_filter) {
+        if (trace && trace->shouldTrace(5)) {
+            trace->addEvent(5, "Calculate lazy filter");
+        }
+        lazy_filter = blueprint.create_lazy_filter();
+    }
+
     std::shared_ptr<GlobalFilter> global_filter;
     if (estimated_hit_ratio <= effective_upper_limit) {
         if (trace && trace->shouldTrace(5)) {
@@ -334,6 +344,15 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
                                                      estimated_hit_ratio, effective_upper_limit));
         }
         global_filter = GlobalFilter::create();
+    }
+    if (use_lazy_filter) {
+        if (lazy_filter->is_active()) {
+            if (trace && trace->shouldTrace(5)) {
+                    trace->addEvent(5, vespalib::make_string("Apply active lazy filter (estimate is %f)",
+                                                                               lazy_filter->size() > 0 ? static_cast<double>(lazy_filter->count()) / lazy_filter->size() : 1.0));
+            }
+            blueprint.set_lazy_filter(*lazy_filter);
+        }
     }
     if (trace) {
         trace->addEvent(5, "Handle global filter in query execution plan");

@@ -70,17 +70,9 @@ public:
     MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier>, FirstPhaseRankLookup* first_phase_rank_lookup, std::function<void()> before_second_phsae);
     ~MatchLoopCommunicator();
 
-    double estimate_match_frequency(const Matches &matches) override {
-        return _estimate_match_frequency.rendezvous(matches);
-    }
-
-    TaggedHits get_second_phase_work(SortedHitSequence sortedHits, size_t thread_id) override {
-        return _get_second_phase_work.rendezvous(sortedHits, thread_id);
-    }
-
-    std::pair<Hits,RangePair> complete_second_phase(TaggedHits my_results, size_t thread_id) override {
-        return _complete_second_phase.rendezvous(std::move(my_results), thread_id);
-    }
+    double estimate_match_frequency(const Matches &matches) override;
+    TaggedHits get_second_phase_work(SortedHitSequence sortedHits, size_t thread_id) override;
+    std::pair<Hits,RangePair> complete_second_phase(TaggedHits my_results, size_t thread_id) override;
 };
 
 }

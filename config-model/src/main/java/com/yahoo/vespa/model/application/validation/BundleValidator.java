@@ -76,10 +76,10 @@ public class BundleValidator extends AbstractBundleValidator {
     private enum DeprecatedProvidedBundle {
         ORG_JSON("org.json:json",
                 "This bundle is no longer provided on Vespa 8 - " +
-                        "see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.",
+                        "see https://docs.vespa.ai/en/reference/release-notes/vespa8.html#container-runtime.",
                 Set.of("org\\.json")),
         JETTY("jetty", "The Jetty bundles are no longer provided on Vespa 8 - " +
-                      "see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.",
+                      "see https://docs.vespa.ai/en/reference/release-notes/vespa8.html#container-runtime.",
               Set.of("org\\.eclipse\\.jetty.*"));
 
         final String name;

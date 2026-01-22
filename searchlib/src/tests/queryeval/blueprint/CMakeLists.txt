@@ -22,5 +22,6 @@ vespa_add_executable(searchlib_intermediate_blueprints_test_app TEST
     searchlib_queryeval_test
     vespa_searchlib
     searchlib_test
+    GTest::gmock
 )
 vespa_add_test(NAME searchlib_intermediate_blueprints_test_app COMMAND searchlib_intermediate_blueprints_test_app)

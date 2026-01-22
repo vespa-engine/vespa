@@ -9,6 +9,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <cstdint>
 #include <cassert>
 
 using search::engine::Trace;

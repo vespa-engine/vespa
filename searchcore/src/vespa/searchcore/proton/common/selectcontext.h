@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/document/select/context.h>
+#include <cstdint>
 
 namespace search::attribute { class IAttributeVector; }
 

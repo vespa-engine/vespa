@@ -959,6 +959,7 @@
       "public final com.yahoo.searchlib.rankingexpression.rule.Operator binaryOperator()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode value()",
       "public final com.yahoo.searchlib.rankingexpression.rule.IfNode ifExpression()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.SwitchNode switchExpression()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ReferenceNode feature()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ReferenceNode legacyQueryFeature()",
       "public final java.lang.String outs()",
@@ -1094,6 +1095,9 @@
       "public static final int STRING",
       "public static final int IF",
       "public static final int IN",
+      "public static final int SWITCH",
+      "public static final int CASE",
+      "public static final int SWITCHDEFAULT",
       "public static final int F",
       "public static final int NOT",
       "public static final int AND",
@@ -1709,6 +1713,29 @@
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
       "public com.yahoo.searchlib.rankingexpression.rule.SetMembershipNode setChildren(java.util.List)",
+      "public int hashCode()",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.searchlib.rankingexpression.rule.SwitchNode" : {
+    "superClass" : "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode, java.util.List, java.util.List, com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getDiscriminant()",
+      "public java.util.List getCaseValues()",
+      "public java.util.List getCaseResults()",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode getDefaultResult()",
+      "public java.util.List children()",
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public com.yahoo.searchlib.rankingexpression.rule.SwitchNode setChildren(java.util.List)",
       "public int hashCode()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
     ],

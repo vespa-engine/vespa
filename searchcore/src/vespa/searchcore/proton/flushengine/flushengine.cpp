@@ -166,12 +166,6 @@ FlushEngine::close()
     return *this;
 }
 
-void
-FlushEngine::triggerFlush()
-{
-    setStrategy(std::make_shared<FlushAllStrategy>());
-}
-
 flushengine::SetStrategyResult
 FlushEngine::trigger_flush2()
 {
@@ -691,22 +685,6 @@ FlushEngine::set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy)
             _priority_strategy_queue.push_back(std::move(strategy));
             return _priority_strategy_queue.back()->get_id();
         }
-    }
-}
-
-void
-FlushEngine::setStrategy(IFlushStrategy::SP strategy)
-{
-    auto notifier = _lowest_strategy_id_notifier;
-    std::lock_guard<std::mutex> setStrategyGuard(_setStrategyLock);
-    uint32_t wait_strategy_id = set_strategy_helper(std::move(strategy));
-    /*
-     * Wait for flushes started before the strategy change, for
-     * flushes initiated by the strategy, and for flush engine to call
-     * prune() afterwards.
-     */
-    if (wait_strategy_id != 0u) {
-        notifier->wait_gt_strategy_id(wait_strategy_id);
     }
 }
 

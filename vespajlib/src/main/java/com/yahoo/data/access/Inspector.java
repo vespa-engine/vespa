@@ -2,6 +2,9 @@
 package com.yahoo.data.access;
 
 
+import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.data.disclosure.DataSource;
+
 import java.util.Map;
 
 /**
@@ -15,7 +18,7 @@ import java.util.Map;
  * 
  * @author havardpe
  */
-public interface Inspector extends Inspectable {
+public interface Inspector extends Inspectable, DataSource {
 
     /**
      * Check if the inspector is valid.
@@ -109,7 +112,7 @@ public interface Inspector extends Inspectable {
     Inspector entry(int idx);
 
     /**
-     * Access an field in an object.
+     * Access a field in an object.
      *
      * If the current Inspector doesn't connect to an object value, or
      * the object value does not contain a field with the given symbol
@@ -132,4 +135,34 @@ public interface Inspector extends Inspectable {
      */
     Iterable<Map.Entry<String,Inspector>> fields();
 
+    /**
+     * Default implementation of emitting an inspector. Defaults to converting
+     * strings to UTF-16.
+     */
+    @Override
+    default void emit(DataSink sink) {
+        switch (type()) {
+            case EMPTY -> sink.emptyValue();
+            case BOOL -> sink.booleanValue(asBool());
+            case LONG -> sink.longValue(asLong());
+            case DOUBLE -> sink.doubleValue(asDouble());
+            case STRING -> sink.stringValue(asString());
+            case DATA -> sink.dataValue(asData());
+            case ARRAY -> {
+                sink.startArray();
+                for (var entry : entries()) {
+                    entry.emit(sink);
+                }
+                sink.endArray();
+            }
+            case OBJECT -> {
+                sink.startObject();
+                for (var field : fields()) {
+                    sink.fieldName(field.getKey());
+                    field.getValue().emit(sink);
+                }
+                sink.endObject();
+            }
+        }
+    }
 }
