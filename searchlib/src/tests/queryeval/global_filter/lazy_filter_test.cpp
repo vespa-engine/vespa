@@ -172,6 +172,7 @@ protected:
     FieldSpec _field_spec_my_location_many;
     AttributeVector::SP   _location_attribute;
     AttributeVector::SP   _location_attribute_many;
+    std::deque<Location>  _locations;
 
 public:
     LocationLazyFilterTest()
@@ -179,7 +180,8 @@ public:
           _field_spec_my_location("my_location", 1, 1),
           _field_spec_my_location_many("my_location_many", 2, 2),
           _location_attribute(create_location_attribute(_field_spec_my_location.getName(), 10)),
-          _location_attribute_many(create_location_attribute(_field_spec_my_location_many.getName(), 1000)) {
+          _location_attribute_many(create_location_attribute(_field_spec_my_location_many.getName(), 1000)),
+          _locations() {
     }
     ~LocationLazyFilterTest() override;
 
@@ -224,12 +226,14 @@ public:
         }
     }
 
-    std::shared_ptr<LocationLazyFilter> create_lazy_filter(const GeoLocation &geo_location, uint32_t est_hits = 2, bool empty = false) const {
-        Location location(geo_location);
-        location.setVec(*_location_attribute);
+    std::shared_ptr<LocationLazyFilter> create_lazy_filter(const GeoLocation &geo_location, uint32_t est_hits = 2, bool empty = false) {
+        // LocationLazyFilter stores a reference to the Location (but not to the HitEstimate)
+        // We store the Location in a std::deque to get a reference that remains valid
+        _locations.emplace_back(geo_location);
+        _locations.back().setVec(*_location_attribute);
 
         Blueprint::HitEstimate estimate(est_hits, empty);
-        return LocationLazyFilter::create(location, estimate);
+        return LocationLazyFilter::create(_locations.back(), estimate);
     }
 };
 LocationLazyFilterTest::~LocationLazyFilterTest() = default; // Defined here to avoid warning

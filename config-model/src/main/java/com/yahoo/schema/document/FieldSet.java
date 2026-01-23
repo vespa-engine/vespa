@@ -8,7 +8,7 @@ import java.util.TreeSet;
 import static java.util.Comparator.comparing;
 
 /**
- * Searchable collection of fields.
+ * A set of fields that can be searched as one.
  * 
  * @author baldersheim
  */
@@ -19,12 +19,16 @@ public class FieldSet {
     private final Set<String> fieldNames = new TreeSet<>();
     private final Set<ImmutableSDField> fields = new TreeSet<>(comparing(ImmutableSDField::asField));
     private Matching matching = null;
+    private String linguisticsProfile = null;
 
     public FieldSet(String name) { this.name = name; }
     public String getName() { return name; }
     public FieldSet addFieldName(String field) { fieldNames.add(field); return this; }
     public Set<String> getFieldNames() { return fieldNames; }
+
+    /** Returns the immutable set of fields of this. The fields are not assigned until the derive step. */
     public Set<ImmutableSDField> fields() { return fields; }
+
     public Set<String> queryCommands() { return queryCommands; }
 
     public void setMatching(Matching matching) {
@@ -33,6 +37,15 @@ public class FieldSet {
 
     public Matching getMatching() {
         return matching;
+    }
+
+    public void setLinguisticsProfile(String profile) {
+        this.linguisticsProfile = profile;
+    }
+
+    /** Returns the (search side) linguistics profile to use in this, or null if none/not yet assigned. */
+    public String getLinguisticsProfile() {
+        return linguisticsProfile;
     }
 
     @Override

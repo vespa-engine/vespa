@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/idestructorcallback.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 

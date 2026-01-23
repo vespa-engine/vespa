@@ -32,6 +32,7 @@ func (cpc *ConfigProxyJvm) ConfigureOptions(configsources []string, userargs str
 	opts := cpc.jvmOpts
 	opts.jarWithDeps = PROXY_JAR_FILE
 	opts.mainClass = PROXY_MAIN_CLASS
+	opts.VersionOptions(NoExtraJvmFeatures)
 	opts.AddOption("-XX:+ExitOnOutOfMemoryError")
 	opts.AddOption("-XX:+PreserveFramePointer")
 	opts.AddOption("-XX:CompressedClassSpaceSize=32m")

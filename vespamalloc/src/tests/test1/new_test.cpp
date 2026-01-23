@@ -114,8 +114,10 @@ TEST(NewTest, verify_new_with_alignment_64_with_single_element) {
 }
 
 #if __GLIBC_PREREQ(2, 26)
+
+void* (*call_reallocarray)(void*,size_t,size_t) = reallocarray;
+
 TEST(NewTest, verify_reallocarray) {
-    std::function<void*(void*,size_t,size_t)> call_reallocarray = [](void *ptr, size_t nmemb, size_t size) noexcept { return reallocarray(ptr, nmemb, size); };
     void *arr = calloc(5,5);
     //Used to ensure that 'arr' can not resized in place.
     std::vector<std::unique_ptr<char[]>> dummies;

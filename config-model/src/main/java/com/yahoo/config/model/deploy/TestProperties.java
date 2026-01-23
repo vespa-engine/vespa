@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Quota;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -52,6 +53,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedNiceness = 0.0;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantVault> tenantVaults = List.of();
+    private List<TenantSecretStore> tenantSecretStores = List.of();
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = List.of();
     private double resourceLimitDisk = 0.75;
@@ -66,7 +68,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int rpc_num_targets = 2;
     private int rpc_events_before_wakeup = 1;
     private int mbus_network_threads = 1;
-    private Map<String, Integer> heapSizePercentage = new HashMap<>();
+    private final Map<String, Integer> heapSizePercentage = new HashMap<>();
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
@@ -74,11 +76,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int searchCoreMaxOutstandingMoveOps = 100;
-    private Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
+    private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private boolean useNewPrepareForRestart = true;
-    private Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
+    private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
-    private double docprocHandlerThreadpool = 1.0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -105,6 +106,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double feedNiceness() { return feedNiceness; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantVault> tenantVaults() { return tenantVaults; }
+    @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
@@ -137,7 +139,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
     }
     @Override public boolean useTriton() { return useTriton; }
-    @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -229,6 +230,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setTenantVaults(List<TenantVault> tenantVaults) {
         this.tenantVaults = List.copyOf(tenantVaults);
+        return this;
+    }
+
+    public TestProperties setTenantSecretStores(List<TenantSecretStore> secretStores) {
+        this.tenantSecretStores = List.copyOf(secretStores);
         return this;
     }
 
@@ -326,10 +332,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     public TestProperties setSearchCoreMaxOutstandingMoveOps(int value) {
         this.searchCoreMaxOutstandingMoveOps = value;
         return this;
-    }
-
-    public void setDocprocHandlerThreadpool(double threads) {
-        this.docprocHandlerThreadpool = threads;
     }
 
     public TestProperties setMallocImpl(ClusterSpec.Type clusterType, String mallocImpl) {

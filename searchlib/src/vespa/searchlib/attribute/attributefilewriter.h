@@ -3,6 +3,7 @@
 #pragma once
 
 #include "iattributefilewriter.h"
+#include <cstdint>
 #include <string>
 
 class FastOS_FileInterface;

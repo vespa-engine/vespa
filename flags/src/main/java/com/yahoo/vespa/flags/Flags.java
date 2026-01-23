@@ -15,7 +15,9 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
+import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
+import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
@@ -55,6 +57,13 @@ public class Flags {
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
+
+    public static final UnboundBooleanFlag SOFT_DELETE_TENANT = defineFeatureFlag(
+            "soft-delete-tenant", false,
+            List.of("hakonhall"), "2026-01-20", "2026-03-20",
+            "When deleting /config/v2/tenants/TENANT recursively - whether to give up (true) or retry (false) on NotEmptyException",
+            "Takes effect immediately",
+            TENANT_ID);
 
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
             "locked-gcp-provision", true,
@@ -370,13 +379,6 @@ public class Flags {
             TENANT_ID
     );
 
-    public static final UnboundBooleanFlag AZURE_IPV6 = defineFeatureFlag(
-            "azure-ipv6", false,
-            List.of("olaa"), "2025-06-10", "2026-02-01",
-            "Whether Azure hosts should be provisioned with IPv6 addresses",
-            "Takes effect immediately"
-    );
-
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
             "use-new-prepare-for-restart-method", true,
             List.of("hmusum"), "2025-06-17", "2026-02-01",
@@ -416,6 +418,16 @@ public class Flags {
             "Whether to increase max JVM heap size based on total number of content nodes in application",
             "Takes effect at next restart after next deployment",
             APPLICATION, INSTANCE_ID
+    );
+
+    public static final UnboundDoubleFlag HOST_MEMORY_SERVICES_MIXING_FACTOR = defineDoubleFlag(
+            "host-memory-services-mixing-factor", 0.0,
+            List.of("boeker"), "2026-01-16", "2026-04-16",
+            "How much of the sum of the memory limits specified for the customer rpm services should be added to " +
+            "the memory reserved for host's management processes. " +
+            "0.0 means none at all, 1.0 means the sum of the memory limits.",
+            "Affects future deployments, JVM settings for new config server Podman containers, auto scaling modelling.",
+            TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

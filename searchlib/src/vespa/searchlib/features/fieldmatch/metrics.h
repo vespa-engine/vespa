@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>

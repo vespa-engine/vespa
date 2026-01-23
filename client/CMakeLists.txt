@@ -37,6 +37,7 @@ install_symlink(libexec/vespa/vespa-wrapper bin/vespa-sentinel-cmd)
 install_symlink(libexec/vespa/vespa-wrapper bin/vespa-route)
 install_symlink(libexec/vespa/vespa-wrapper bin/vespa-transactionlog-inspect)
 install_symlink(libexec/vespa/vespa-wrapper bin/vespa-print-default)
+install_symlink(libexec/vespa/vespa-wrapper bin/vespa-start-java)
 
 install_symlink(libexec/vespa/vespa-wrapper sbin/vespa-distributord)
 install_symlink(libexec/vespa/vespa-wrapper sbin/vespa-proton)

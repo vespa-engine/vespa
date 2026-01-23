@@ -28,6 +28,8 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
+import com.yahoo.vespa.indexinglanguage.expressions.OverloadException;
+import com.yahoo.vespa.indexinglanguage.expressions.TimeoutException;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Instant;
@@ -117,6 +119,18 @@ public class IndexingProcessor extends DocumentProcessor {
                         op.getId() != null
                         ? "Operation on '%s' contains invalid input: %s".formatted(op.getId().toString(), message)
                         : "Operation contains invalid input: %s".formatted(message));
+            } catch (OverloadException e) {
+                String message = Exceptions.toMessageString(e);
+                return Progress.OVERLOAD.withReason(
+                        op.getId() != null
+                        ? "Operation on '%s' rejected due to overload: %s".formatted(op.getId().toString(), message)
+                        : "Operation rejected due to overload: %s".formatted(message));
+            } catch (TimeoutException e) {
+                String message = Exceptions.toMessageString(e);
+                return Progress.TIMEOUT.withReason(
+                        op.getId() != null
+                        ? "Operation on '%s' timed out: %s".formatted(op.getId().toString(), message)
+                        : "Operation timed out: %s".formatted(message));
             }
         }
         proc.getDocumentOperations().clear();

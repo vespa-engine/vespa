@@ -20,6 +20,21 @@ search indexsettings {
         stemming: multiple
     }
 
+    field l1 type string {
+        linguistics {
+            profile: p1
+        }
+    }
+
+    field l2 type string {
+        linguistics {
+            profile {
+                search: p1
+                index: p2
+            }
+        }
+    }
+
   }
 
 }

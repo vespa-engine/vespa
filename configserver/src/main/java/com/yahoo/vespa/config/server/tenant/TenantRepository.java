@@ -37,7 +37,9 @@ import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.state.ConnectionState;
@@ -109,6 +111,7 @@ public class TenantRepository {
     private final FileDistributionFactory fileDistributionFactory;
     private final ExecutorService deployHelperExecutor;
     private final FlagSource flagSource;
+    private final BooleanFlag softDeleteTenantFlag;
     private final HostProvisionerProvider hostProvisionerProvider;
     private final ConfigserverConfig configserverConfig;
     private final ConfigServerDB configServerDB;
@@ -199,6 +202,7 @@ public class TenantRepository {
         this.zkSessionWatcherExecutor = zkSessionWatcherExecutor;
         this.fileDistributionFactory = fileDistributionFactory;
         this.flagSource = flagSource;
+        this.softDeleteTenantFlag = Flags.SOFT_DELETE_TENANT.bindTo(flagSource);
         this.hostProvisionerProvider = hostProvisionerProvider;
         this.configServerDB = configServerDB;
         this.zone = zone;
@@ -466,26 +470,36 @@ public class TenantRepository {
             throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
         if ( ! tenants.containsKey(name))
             throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");
+        if ( ! activeApplications(name).isEmpty())
+            throw new IllegalArgumentException("Cannot delete tenant '" + name + "', it has active applications: " + activeApplications(name));
 
         // Deletes the tenant tree from ZooKeeper (application and session status for the tenant)
         // and triggers Tenant.close().
-        try (Lock lock = tenantLocks.lock(name)) {
-            Path path = tenants.get(name).getPath();
-            closeTenant(name);
-            curator.delete(path);
-        }
-        log.log(Level.INFO, "Deleted tenant '" + name + "'");
-    }
-
-    private void closeTenant(TenantName name) {
         try (Lock lock = tenantLocks.lock(name)) {
             Tenant tenant = tenants.remove(name);
             if (tenant == null)
                 throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");
 
-            log.log(Level.FINE, "Closing tenant '" + name + "'");
+            log.log(Level.INFO, "Closing tenant '" + name + "'");
             notifyRemovedTenant(name);
             tenant.close();
+            if (softDeleteTenantFlag.with(name).value()) {
+                // Because each config server has a PathDirectoryCache on the `sessions` and `applications` children:
+                //  1. Once the first config server (say cfg1) reaches this point, the caches on cfg2-3 will recreate
+                //    `sessions` and `applications` immediately after they are deleted by this tryDelete(), likely
+                //    failing this deletion.
+                //  2. Once the next config server (say cfg2) also reaches this point, the caches on cfg3 will recreate
+                //     `sessions` and `applications`, possibly failing this deletion.
+                //  3. Once the last config server (cfg3) reaches this point, the delete should succeed.
+                if (curator.tryDelete(tenant.getPath())) {
+                    log.log(Level.INFO, "Deleted tenant '" + name + "'");
+                } else {
+                    log.log(Level.INFO, "Deleted tenant '" + name + "' (" + tenant.getPath() + " to be removed by other cfgs)");
+                }
+            } else {
+                curator.delete(tenant.getPath());
+                log.log(Level.INFO, "Deleted tenant '" + name + "'");
+            }
         }
     }
 
@@ -635,5 +649,19 @@ public class TenantRepository {
     public com.yahoo.vespa.curator.Curator getCurator() { return curator; }
 
     public HostProvisionerProvider hostProvisionerProvider() { return hostProvisionerProvider; }
+
+    public Set<TenantName> deleteUnusedTenants(Duration ttlForUnusedTenant, Instant now) {
+        return getAllTenantNames().stream()
+                .filter(tenantName -> activeApplications(tenantName).isEmpty())
+                .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
+                .filter(tenantName -> !tenantName.equals(HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
+                .filter(tenantName -> getTenantMetaData(getTenant(tenantName)).lastDeployTimestamp().isBefore(now.minus(ttlForUnusedTenant)))
+                .peek(this::deleteTenant)
+                .collect(Collectors.toSet());
+    }
+
+    private List<ApplicationId> activeApplications(TenantName tenantName) {
+        return getTenant(tenantName).getApplicationRepo().activeApplications();
+    }
 
 }

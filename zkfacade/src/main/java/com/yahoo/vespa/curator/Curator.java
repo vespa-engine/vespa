@@ -180,7 +180,20 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         return CuratorCompletionWaiter.createAndInitialize(this, barrierPath, id, waitForAll);
     }
 
-    /** Creates a listenable cache which keeps in sync with changes to all the immediate children of a path */
+    /**
+     * Creates a listenable cache which keeps in sync with changes to all the immediate children of a path.
+     *
+     * <p>WARNING: The directory cache ensures the path exists, which complicates removal of parent nodes.
+     * For example, as of 2026-01-20, each of the 3 config servers sets up a directory cache on
+     * `/config/v2/tenants/TENANT/sessions` (and `applications`).  The first config server to decide this
+     * tenant is unused and should be removed, will close the caches then delete TENANT recursively.
+     * However, the other config servers' caches recreate `sessions` (and `applications`) as soon as they
+     * are removed, which results in the first config server trying to delete the children of TENANT again.
+     * It has been observed that the first will delete just-created nodes >5900 times.  It eventually completes
+     * when the first config server is able to delete TENANT (however short-lived), which triggers a watcher
+     * on the other config servers to delete that tenant.  A better design would be to put the `sessions`
+     * directory (and directory cache) at `/config/v2/tenantSessions` (and `tenantApplications`).</p>
+     */
     public DirectoryCache createDirectoryCache(String path, boolean cacheData, boolean dataIsCompressed, ExecutorService executorService) {
         return new PathChildrenCacheWrapper(framework(), path, cacheData, dataIsCompressed, executorService);
     }
@@ -299,12 +312,83 @@ public class Curator extends AbstractComponent implements AutoCloseable {
 
     public void delete(Path path, int expectedVersion, boolean recursive) {
         try {
-            if (recursive) framework().delete().guaranteed().deletingChildrenIfNeeded().withVersion(expectedVersion).forPath(path.getAbsolute());
-            else           framework().delete().guaranteed()                           .withVersion(expectedVersion).forPath(path.getAbsolute());
+            if (recursive) deleteRecursively(path, expectedVersion);
+            else           framework().delete().guaranteed().withVersion(expectedVersion).forPath(path.getAbsolute());
         } catch (KeeperException.NoNodeException e) {
             // Do nothing
         } catch (Exception e) {
             throw new RuntimeException("Could not delete " + path.getAbsolute(), e);
+        }
+    }
+
+    /** Delete path and all children, giving up and returning false if some children were created concurrently. */
+    public boolean tryDelete(Path path) {
+        final List<String> children;
+        try {
+            children = framework().getChildren().forPath(path.getAbsolute());
+        } catch (KeeperException.NoNodeException e) {
+            return true;
+        } catch (Exception e) {
+            throw new RuntimeException("Could not get children of " + path.getAbsolute(), e);
+        }
+
+        for (var child : children) {
+            if (!tryDelete(path.append(child))) return false;
+        }
+
+        try {
+            framework().delete().guaranteed().forPath(path.getAbsolute());
+        } catch (KeeperException.NotEmptyException e) {
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("Could not delete " + path.getAbsolute(), e);
+        }
+
+        return true;
+    }
+
+    private void deleteRecursively(Path path, int expectedVersion) {
+        // This method avoids using Curator's recursive delete (deletingChildrenIfNeeded())
+        // because it calls ZKPaths.deleteChildren() RECURSIVELY on KeeperException.NotEmptyException.
+        //
+        // This recursion is believed to be the cause of an incident:
+        //   1. Each of the 3 config servers had a PathChildrenCache (PCC) on `/config/v2/tenants/TENANT/sessions`,
+        //      and one on `/config/v2/tenants/TENANT/applications`.
+        //   2. On config server "cfg1" the tenant was deleted, so the two PCCs were closed and TENANT was deleted.
+        //   3. But because the other two cfgs have PCCs on sessions and applications, the PCC will compete to
+        //      recreate these nodes via watchers.  Each time cfg1 tried to delete TENANT after one of these 4 PCC
+        //      had recreated sessions or applications, the Curator implementation would get a NotEmptyException,
+        //      and retry the deletion of the children via a recursion (+1 stack frame).
+        //   4. The incident heap dump had a stack frame depth of 5900 in ZKPaths.  A StackOverflowError was thrown,
+        //      triggering JDK-8318888, and deadlocking the config server.
+        //
+        // This implementation uses iteration instead of recursion on NotEmptyException.
+
+        for (int attempt = 1;; attempt++) {
+            final List<String> children;
+            try {
+                children = framework().getChildren().forPath(path.getAbsolute());
+            } catch (KeeperException.NoNodeException e) {
+                return;
+            } catch (Exception e) {
+                throw new RuntimeException("Could not get children of " + path.getAbsolute(), e);
+            }
+
+            for (var child : children) {
+                deleteRecursively(path.append(child), -1);
+            }
+
+            try {
+                framework().delete().guaranteed().withVersion(expectedVersion).forPath(path.getAbsolute());
+                return;
+            } catch (KeeperException.NotEmptyException e) {
+                // retry by iteration
+                if (attempt % 1000 == 0) {
+                    LOG.warning("Have made " + attempt + " attempts to delete " + path.getAbsolute() + ": still trying");
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Could not delete " + path.getAbsolute(), e);
+            }
         }
     }
 

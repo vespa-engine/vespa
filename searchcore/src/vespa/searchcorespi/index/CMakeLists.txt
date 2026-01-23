@@ -4,6 +4,7 @@ vespa_add_library(searchcorespi_index STATIC OBJECT
     diskindexcleaner.cpp
     disk_indexes.cpp
     disk_index_stats.cpp
+    disk_index_with_destructor_cleanup.cpp
     eventlogger.cpp
     fusionrunner.cpp
     iindexmanager.cpp

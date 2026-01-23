@@ -211,6 +211,13 @@ TEST(MemoryFlushTest, can_order_by_disk_gain_with_small_values)
         MemoryFlush flush({1000, 20_Gi, 0.0000015, 1000, 10.0, minutes(1)});
         assertOrder({"t4", "t3", "t2", "t1"}, cb.flush_targets(flush));
     }
+    cb.add(createTargetD("t5", DiskGain(50, 100))); // gain -50
+    {   // trigger totalDiskGain > totalBloatValue.
+        // Negative gain from t5 is considered zero gain for the total gain calculation.
+        // total gain: 160 / 100M = 0.0000016 -> bloat factor 0.0000015 to trigger
+        MemoryFlush flush({1000, 20_Gi, 0.0000015, 1000, 10.0, minutes(1)});
+        assertOrder({"t4", "t3", "t2", "t1", "t5"}, cb.flush_targets(flush));
+    }
 }
 
 TEST(MemoryFlushTest, can_order_by_age)

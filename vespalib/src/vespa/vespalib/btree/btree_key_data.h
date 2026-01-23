@@ -45,7 +45,7 @@ public:
      * This operator only works when using direct keys.  References to
      * externally stored keys will not be properly sorted.
      */
-    bool operator<(const BTreeKeyData &rhs) const {
+    bool operator<(const BTreeKeyData &rhs) const noexcept {
         return _key < rhs._key;
     }
 };
@@ -74,7 +74,7 @@ public:
      * This operator only works when using direct keys.  References to
      * externally stored keys will not be properly sorted.
      */
-    bool operator<(const BTreeKeyData &rhs) const {
+    bool operator<(const BTreeKeyData &rhs) const noexcept {
         return _key < rhs._key;
     }
 };

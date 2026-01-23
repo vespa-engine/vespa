@@ -18,7 +18,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -112,7 +111,7 @@ public class DocumentProcessingTask implements Runnable {
                     location = "no processing instance";
                 }
                 log.log(Level.FINE, () -> "Time is up for '" + processing + " failed, " + location + "'.");
-                requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE, "Time is up.");
+                requestContext.processingFailed(RequestContext.ErrorCode.ERROR_TIMEOUT, "Request deadline exceeded");
                 return progress;
             }
 
@@ -143,6 +142,17 @@ public class DocumentProcessingTask implements Runnable {
                 logProcessingFailure(processing, null);
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE,
                                                 progress.getReason().orElse("Document processing failed."));
+                return progress;
+            } else if (DocumentProcessor.Progress.OVERLOAD.equals(progress)) {
+                log.log(Level.FINE,
+                        () -> "Overload/busy for '" + processing + "' at " + processing.callStack().getLastPopped());
+                requestContext.processingFailed(RequestContext.ErrorCode.ERROR_OVERLOAD,
+                                                progress.getReason().orElse("Document processing rejected due to overload."));
+            } else if (DocumentProcessor.Progress.TIMEOUT.equals(progress)) {
+                log.log(Level.FINE,
+                        () -> "Timeout for '" + processing + "' at " + processing.callStack().getLastPopped());
+                requestContext.processingFailed(RequestContext.ErrorCode.ERROR_TIMEOUT,
+                                                progress.getReason().orElse("Document processing timed out."));
                 return progress;
             }
         }

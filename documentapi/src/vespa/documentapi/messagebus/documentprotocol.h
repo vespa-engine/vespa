@@ -181,6 +181,8 @@ public:
         ERROR_PROCESSING_FAILURE            = mbus::ErrorCode::APP_FATAL_ERROR + 2001,
         /** Unique timestamp specified for new operation is already in use. */
         ERROR_TIMESTAMP_EXIST               = mbus::ErrorCode::APP_FATAL_ERROR + 2002,
+        /** Operation was rejected due to overload/rate limiting. Non-retryable. */
+        ERROR_OVERLOAD                      = mbus::ErrorCode::APP_FATAL_ERROR + 2003,
 
         /**
          * The given node have gotten a critical error and have suspended

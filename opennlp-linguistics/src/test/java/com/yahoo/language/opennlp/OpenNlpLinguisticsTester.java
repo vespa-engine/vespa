@@ -48,7 +48,7 @@ public class OpenNlpLinguisticsTester {
     Normalizer normalizer() { return normalizer; }
 
     Iterable<Token> tokenize(String input, Language language) {
-        var parameters = new LinguisticsParameters(language, StemMode.SHORTEST, true, true);
+        var parameters = new LinguisticsParameters(null, language, StemMode.SHORTEST, true, true);
         return tokenizer.tokenize(input, parameters);
     }
 
@@ -57,7 +57,7 @@ public class OpenNlpLinguisticsTester {
     }
 
     String stemAndNormalize(String input, Language language) {
-        var parameters = new LinguisticsParameters(language, StemMode.SHORTEST, true, true);
+        var parameters = new LinguisticsParameters(null, language, StemMode.SHORTEST, true, true);
         var stemListList = stemmer.stem(input, parameters);
         return normalizer.normalize(stemListList.get(0).get(0));
     }
@@ -85,7 +85,7 @@ public class OpenNlpLinguisticsTester {
     }
 
     void assertTokenize(String input, List<String> indexed, List<String> orig) {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.NONE, false, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.NONE, false, true);
         assertTokenize(input, parameters, indexed, orig);
     }
 

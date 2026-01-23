@@ -77,6 +77,11 @@
       <artifactId>datasketches-java</artifactId>
       <version>${org.apache.datasketches.vespa.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.datasketches</groupId>
+      <artifactId>datasketches-memory</artifactId>
+      <version>${org.apache.datasketches.memory.vespa.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

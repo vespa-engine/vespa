@@ -41,7 +41,7 @@ class TT
 {
 public:
     TT(uint64_t v) : _v(v) { }
-    bool operator < (const TT & rhs) const { return _v < rhs._v; }
+    bool operator < (const TT & rhs) const noexcept { return _v < rhs._v; }
 private:
     uint64_t _v;
     uint8_t  _payLoad[N - sizeof(uint64_t)];
@@ -52,7 +52,7 @@ class I
 {
 public:
     I(const T * p) : _p(p) { }
-    bool operator < (const I & rhs) const { return *_p < *rhs._p; }
+    bool operator < (const I & rhs) const noexcept { return *_p < *rhs._p; }
 private:
     const T * _p;
 };

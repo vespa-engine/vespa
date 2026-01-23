@@ -2,3 +2,6 @@
 install_jar(container-disc-jar-with-dependencies.jar)
 
 install_config_definitions()
+vespa_install_script(src/main/sh/find-pid libexec/vespa)
+vespa_install_script(src/main/sh/vespa-load-balancer-status libexec/vespa)
+vespa_install_script(src/main/sh/vespa-jvm-dumper bin)

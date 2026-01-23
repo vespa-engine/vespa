@@ -74,7 +74,7 @@ public interface ModelContext {
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"hakonhall"}) default boolean useNonPublicEndpointForTest() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"hmusum"}) default String responseSequencerType() { return  "ADAPTIVE"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double queryDispatchWarmup() { return 5.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int defaultNumResponseThreads() { return 2; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int mbusNetworkThreads() { return 1; }
@@ -121,7 +121,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean useNewPrepareForRestart() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
         @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter="8.616") default boolean adjustCCMaxHeap() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

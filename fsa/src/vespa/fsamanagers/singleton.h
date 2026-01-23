@@ -11,9 +11,7 @@
 #pragma once
 
 #include <list>
-
-#include "mutex.h"
-
+#include <mutex>
 
 namespace fsa {
 
@@ -132,7 +130,7 @@ private:
   /** Destroy function - this will be registered with the exit handler. */
   static void destroy();
 
-  static Mutex _lock;  /**< Mutex for synchronization. */
+  static std::mutex _lock;  /**< Mutex for synchronization. */
 
   static T* _instance; /**< Instance pointer.          */
 };
@@ -151,12 +149,11 @@ template<typename T> void Singleton<T>::destroy()
 template<typename T> T& Singleton<T>::instance()
 {
   if (_instance == nullptr) {
-    _lock.lock();
+    std::lock_guard guard(_lock);
     if (_instance == nullptr) {
       SingletonExitHandler::instance()->registerSingletonDestroyer(&destroy);
       _instance = new T();
     }
-    _lock.unlock();
   }
 
   return *_instance;
@@ -164,7 +161,7 @@ template<typename T> T& Singleton<T>::instance()
 
 template<typename T> T* Singleton<T>::_instance = nullptr;
 
-template<typename T> Mutex Singleton<T>::_lock;
+template<typename T> std::mutex Singleton<T>::_lock;
 
 // }}}
 

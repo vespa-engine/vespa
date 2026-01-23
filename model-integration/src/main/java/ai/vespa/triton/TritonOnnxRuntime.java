@@ -42,6 +42,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     private final TritonOnnxClient tritonClient;
     private final boolean isModelControlExplicit;
     private final Path modelRepositoryPath;
+    private final ProcessTerminator processTerminator;
 
     // The key is a model name containing hash of model content and options
     private final ConcurrentMap<String, TritonModelResource> modelResources = new ConcurrentHashMap<>();
@@ -90,33 +91,39 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     // Injectable tritonClient and ProcessTerminator for testing.
     TritonOnnxRuntime(TritonConfig config, TritonOnnxClient tritonClient, ProcessTerminator processTerminator) {
-        log.info(() -> "Creating Triton ONNX runtime");
-
+        log.info("Creating Triton ONNX runtime");
+        
         this.config = config;
         this.tritonClient = tritonClient;
-        
-        try {
-            var isTritonHealthy = tritonClient.isHealthy();
-            if (!isTritonHealthy) {
-                processTerminator.logAndDie("Die because Triton server is not healthy at %s".formatted(config.target()));
-            }
-        } catch (TritonOnnxClient.TritonException e) {
-            processTerminator.logAndDie("Die because Triton server can't be reached at %s".formatted(config.target()));
-        }
+        this.processTerminator = processTerminator;
 
         isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
         modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
 
         if (isModelControlExplicit) {
-            tritonClient.unloadAllModels();
+            try {
+                if (tritonClient.isHealthy()) {
+                    tritonClient.unloadAllModels();
+                }
+            } catch (TritonOnnxClient.TritonException e) {
+                // Ignore this since Triton might not be needed because there are no ONNX models in the app.
+            }
+            
             deleteAllModelFilesFromModelRepository();
         }
     }
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        if (!tritonClient.isHealthy()) {
-            throw new IllegalStateException("Triton server is not healthy, target: " + config.target());
+        // Needs a healthy Triton server to load a model.
+        try {
+            var isTritonHealthy = tritonClient.isHealthy();
+            
+            if (!isTritonHealthy) {
+                processTerminator.logAndDie("Die because Triton server is not healthy at %s".formatted(config.target()));
+            }
+        } catch (TritonOnnxClient.TritonException e) {
+            processTerminator.logAndDie("Die because Triton server can't be reached at %s".formatted(config.target()));
         }
 
         var modelName = generateModelName(modelPath, options);
