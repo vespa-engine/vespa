@@ -12,6 +12,8 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.service.ServerProvider;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.metrics.simple.MetricSettings;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -34,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,12 +58,18 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
 
     @Inject // ServerProvider implementors must use com.google.inject.Inject
     public JettyHttpServer(Metric metric,
+                           MetricReceiver metricReceiver,
                            ServerConfig serverConfig,
                            ComponentRegistry<ConnectorFactory> connectorFactories,
                            RequestLog requestLog,
                            ConnectionLog connectionLog) {
         if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
+
+        var histogramSettings = new MetricSettings.Builder().histogram(true).build();
+        metricReceiver.declareGauge(MetricDefinitions.TOTAL_SUCCESSFUL_LATENCY, Optional.empty(), histogramSettings);
+        metricReceiver.declareGauge(MetricDefinitions.TOTAL_FAILED_LATENCY, Optional.empty(), histogramSettings);
+        metricReceiver.declareGauge(MetricDefinitions.TIME_TO_FIRST_BYTE, Optional.empty(), histogramSettings);
 
         this.config = serverConfig;
         server = new Server();
