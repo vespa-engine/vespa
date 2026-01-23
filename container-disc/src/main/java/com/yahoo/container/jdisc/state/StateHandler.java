@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
+import com.yahoo.container.Container;
 import com.yahoo.json.Jackson;
 import ai.vespa.metrics.ContainerMetrics;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,6 +36,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
@@ -59,15 +61,17 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
     private final static MetricDimensions NULL_DIMENSIONS = StateMetricContext.newInstance(null);
     private final StateMonitor monitor;
     private final Timer timer;
-    private final JsonNode config;
+    private final ApplicationMetadataConfig config;
     private final SnapshotProvider snapshotProvider;
+    private final Container vespaContainer;
 
     @Inject
     public StateHandler(StateMonitor monitor, Timer timer, ApplicationMetadataConfig config,
-                        ComponentRegistry<SnapshotProvider> snapshotProviders) {
+                        ComponentRegistry<SnapshotProvider> snapshotProviders, Container vespaContainer) {
         this.monitor = monitor;
         this.timer = timer;
-        this.config = buildConfigJson(config);
+        this.config = config;
+        this.vespaContainer = vespaContainer;
         snapshotProvider = getSnapshotProviderOrThrow(snapshotProviders);
     }
 
@@ -81,7 +85,6 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
             throw new IllegalArgumentException("At least one snapshot provider is required.");
         }
     }
-
 
     private static class MyContentChannel implements ContentChannel {
         private final List<ByteBuffer> buffers;
@@ -136,7 +139,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
             String suffix = resolvePath(requestUri);
             return switch (suffix) {
                 case "" -> ByteBuffer.wrap(apiLinks(requestUri));
-                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(config));
+                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(buildConfigJson(config, vespaContainer.getApplyOnRestartConfigGeneration())));
                 case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
                 case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix, requestUri.getQuery()));
                 case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
@@ -181,12 +184,16 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         return path;
     }
 
-    private static JsonNode buildConfigJson(ApplicationMetadataConfig config) {
-        return jsonMapper.createObjectNode()
-                .set(CONFIG_GENERATION_PATH, jsonMapper.createObjectNode()
-                     .put("generation", config.generation())
-                     .set("container", jsonMapper.createObjectNode()
-                          .put("generation", config.generation())));
+    private static JsonNode buildConfigJson(ApplicationMetadataConfig config, Optional<Long> applyOnRestartConfigGeneration) {
+        var generationInfo = jsonMapper.createObjectNode();
+        
+        generationInfo.put("generation", config.generation())
+                .set("container", jsonMapper.createObjectNode()
+                        .put("generation", config.generation()));
+        
+        applyOnRestartConfigGeneration.ifPresent(value -> generationInfo.put("applyOnRestartConfigGeneration", value));
+        
+        return jsonMapper.createObjectNode().set(CONFIG_GENERATION_PATH, generationInfo);
     }
 
     private static byte[] buildVersionOutput() throws JsonProcessingException {

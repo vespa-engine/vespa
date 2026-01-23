@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import static java.util.logging.Level.FINE;
 
@@ -166,6 +167,18 @@ public final class ConfigRetriever {
 
     public long getComponentsGeneration() {
         return componentSubscriber.generation();
+    }
+
+    /**
+     * Returns the pending generation that is waiting to be applied after restart.
+     */
+    public Optional<Long> getApplyOnRestartConfigGeneration() {
+        return Stream.of(
+            bootstrapSubscriber.getApplyOnRestartGeneration(),
+            componentSubscriber.getApplyOnRestartGeneration()
+        )
+        .flatMap(Optional::stream)
+        .max(Long::compareTo);
     }
 
     public static class ConfigSnapshot {

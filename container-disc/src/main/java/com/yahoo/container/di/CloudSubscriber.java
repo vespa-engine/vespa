@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -55,6 +56,12 @@ public class CloudSubscriber  implements Subscriber {
     @Override
     public long generation() {
         return generation;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Optional<Long> getApplyOnRestartGeneration() {
+        return subscriber.getApplyOnRestartGeneration();
     }
 
     //mapValues returns a view, so we need to force evaluation of it here to prevent deferred evaluation.

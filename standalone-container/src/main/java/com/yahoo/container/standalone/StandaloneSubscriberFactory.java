@@ -13,6 +13,7 @@ import com.yahoo.vespa.model.VespaModel;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -79,6 +80,11 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
         @Override
         public long generation() {
             return generation;
+        }
+
+        @Override
+        public Optional<Long> getApplyOnRestartGeneration() {
+            return Optional.empty();
         }
     }
 

@@ -11,6 +11,7 @@ import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.vespa.config.ConfigTransformer;
 import com.yahoo.vespa.config.UrlDownloader;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,6 +32,7 @@ public class Container {
     private volatile ComponentRegistry<AbstractComponent> componentRegistry;
     private volatile FileAcquirer fileAcquirer;
     private volatile UrlDownloader urlDownloader;
+    private volatile Optional<Long> applyOnRestartConfigGeneration = Optional.empty();
 
     // TODO: Make this final again.
     private static Container instance = new Container();
@@ -134,4 +136,12 @@ public class Container {
         disabledUrlDownloader = true;
     }
 
+    public void setApplyOnRestartConfigGeneration(Optional<Long> applyOnRestartConfigGeneration) {
+        this.applyOnRestartConfigGeneration = applyOnRestartConfigGeneration;
+    }
+
+
+    public Optional<Long> getApplyOnRestartConfigGeneration() {
+        return applyOnRestartConfigGeneration;
+    }
 }

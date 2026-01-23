@@ -5,6 +5,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Tony Vaagenes
@@ -20,4 +21,8 @@ public interface Subscriber {
 
     void close();
 
+    /**
+     * Returns the pending generation that is waiting to be applied after restart.
+     */
+    Optional<Long> getApplyOnRestartGeneration();
 }

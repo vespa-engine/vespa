@@ -406,4 +406,144 @@ public class ContainerTest extends ContainerTestBase {
         return componentGraph.getInstance(ComponentTakingConfig.class);
     }
 
+    @Test
+    void applyOnRestartConfigGeneration_is_updated_when_getting_new_component_graph() {
+        writeBootstrapConfigs();
+        dirConfigSource.writeConfig("test", "stringVal \"myString\"");
+
+        com.yahoo.container.Container vespaContainer = new com.yahoo.container.Container();
+        Container container = new Container(
+                new CloudSubscriberFactory(dirConfigSource.configSource()),
+                vespaContainer,
+                dirConfigSource.configId(),
+                new TestDeconstructor(osgi),
+                osgi);
+
+        // Initially should be empty
+        assertFalse(vespaContainer.getApplyOnRestartConfigGeneration().isPresent(),
+                   "applyOnRestartConfigGeneration should be empty initially");
+
+        // Set a dummy value to verify it gets updated
+        vespaContainer.setApplyOnRestartConfigGeneration(java.util.Optional.of(999L));
+        assertTrue(vespaContainer.getApplyOnRestartConfigGeneration().isPresent(),
+                  "applyOnRestartConfigGeneration should be present after manual set");
+        assertEquals(999L, vespaContainer.getApplyOnRestartConfigGeneration().get());
+
+        // After getting the first graph, the value should be updated (refreshed)
+        ComponentGraph graph = getNewComponentGraph(container);
+
+        // Value should have been updated (will be empty in this test scenario, but proves update happened)
+        assertFalse(vespaContainer.getApplyOnRestartConfigGeneration().isPresent(),
+                   "applyOnRestartConfigGeneration should be refreshed after graph generation");
+
+        container.shutdownConfigRetriever();
+        container.shutdown(graph);
+    }
+
+    @Test
+    void applyOnRestartConfigGeneration_is_updated_during_reconfiguration() {
+        writeBootstrapConfigs();
+        dirConfigSource.writeConfig("test", "stringVal \"original\"");
+
+        com.yahoo.container.Container vespaContainer = new com.yahoo.container.Container();
+        Container container = new Container(
+                new CloudSubscriberFactory(dirConfigSource.configSource()),
+                vespaContainer,
+                dirConfigSource.configId(),
+                new TestDeconstructor(osgi),
+                osgi);
+
+        // Get initial graph
+        ComponentGraph graph = getNewComponentGraph(container);
+        assertFalse(vespaContainer.getApplyOnRestartConfigGeneration().isPresent());
+
+        // Set a dummy value to track that update happens
+        vespaContainer.setApplyOnRestartConfigGeneration(java.util.Optional.of(888L));
+        assertEquals(888L, vespaContainer.getApplyOnRestartConfigGeneration().get());
+
+        // Update config and reload
+        dirConfigSource.writeConfig("test", "stringVal \"updated\"");
+        container.reloadConfig(2);
+
+        // Get new graph - this triggers waitForNextGraphGeneration which should update the value
+        ComponentGraph newGraph = getNewComponentGraph(container, graph);
+
+        // Verify vespaContainer was updated (value refreshed back to empty)
+        assertFalse(vespaContainer.getApplyOnRestartConfigGeneration().isPresent(),
+                   "applyOnRestartConfigGeneration should be refreshed during reconfiguration");
+
+        container.shutdownConfigRetriever();
+        container.shutdown(newGraph);
+    }
+
+    @Test
+    void applyOnRestartConfigGeneration_is_updated_when_graph_creation_succeeds() {
+        writeBootstrapConfigs();
+        dirConfigSource.writeConfig("test", "stringVal \"original\"");
+
+        com.yahoo.container.Container vespaContainer = new com.yahoo.container.Container();
+        Container container = new Container(
+                new CloudSubscriberFactory(dirConfigSource.configSource()),
+                vespaContainer,
+                dirConfigSource.configId(),
+                new TestDeconstructor(osgi),
+                osgi);
+
+        ComponentGraph oldGraph = getNewComponentGraph(container);
+        assertFalse(vespaContainer.getApplyOnRestartConfigGeneration().isPresent());
+
+        // Set a value to verify it gets updated
+        vespaContainer.setApplyOnRestartConfigGeneration(java.util.Optional.of(777L));
+
+        // Change components to trigger getConfigsAndCreateGraph
+        writeBootstrapConfigs("newComponent", ComponentTakingConfig.class);
+        dirConfigSource.writeConfig("test", "stringVal \"updated\"");
+        container.reloadConfig(2);
+
+        ComponentGraph newGraph = getNewComponentGraph(container, oldGraph);
+
+        // Verify vespaContainer was updated
+        assertFalse(vespaContainer.getApplyOnRestartConfigGeneration().isPresent(),
+                   "applyOnRestartConfigGeneration should be refreshed after successful graph creation");
+
+        container.shutdownConfigRetriever();
+        container.shutdown(newGraph);
+    }
+
+    @Test
+    void applyOnRestartConfigGeneration_is_updated_even_when_graph_creation_fails() {
+        ComponentEntry simpleComponentEntry = new ComponentEntry("simpleComponent", SimpleComponent.class);
+
+        writeBootstrapConfigs(simpleComponentEntry);
+        com.yahoo.container.Container vespaContainer = new com.yahoo.container.Container();
+        Container container = new Container(
+                new CloudSubscriberFactory(dirConfigSource.configSource()),
+                vespaContainer,
+                dirConfigSource.configId(),
+                new TestDeconstructor(osgi),
+                osgi);
+        ComponentGraph currentGraph = getNewComponentGraph(container);
+
+        // Initially empty
+        assertFalse(vespaContainer.getApplyOnRestartConfigGeneration().isPresent());
+
+        // Set a value
+        vespaContainer.setApplyOnRestartConfigGeneration(java.util.Optional.of(666L));
+        assertEquals(666L, vespaContainer.getApplyOnRestartConfigGeneration().get());
+
+        // Try to create a graph that will fail
+        writeBootstrapConfigs("thrower", ComponentThrowingExceptionInConstructor.class);
+        container.reloadConfig(2);
+        assertNewComponentGraphFails(container, currentGraph, ComponentConstructorException.class);
+
+        // The value should be updated even though graph creation failed, because
+        // updateApplyOnRestartConfigGeneration is called during config retrieval,
+        // which happens before graph construction
+        assertFalse(vespaContainer.getApplyOnRestartConfigGeneration().isPresent(),
+                   "applyOnRestartConfigGeneration should be refreshed during config retrieval, even when graph creation fails");
+
+        container.shutdownConfigRetriever();
+        container.shutdown(currentGraph);
+    }
+
 }

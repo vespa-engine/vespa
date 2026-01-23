@@ -3,7 +3,9 @@ package com.yahoo.container.jdisc.state;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Vtag;
+import com.yahoo.container.Container;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
+import com.yahoo.json.Jackson;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +25,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
     @BeforeEach
     public void setupHandler() {
-        stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry);
+        stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, new Container());
         testDriver = new RequestHandlerTestDriver(stateHandler);
     }
 
@@ -206,5 +208,44 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
         JsonNode version = root.get("version");
         assertEquals(Vtag.currentVersion.toString(), version.asText());
+    }
+
+    @Test
+    void testStateConfigWithoutApplyOnRestartGeneration() throws Exception {
+        var root = requestAsJson(V1_URI + "config");
+        var config = root.get("config");
+        var container = config.get("container");
+
+        assertEquals(META_GENERATION, container.get("generation").asLong());
+        assertFalse(
+                config.has("applyOnRestartConfigGeneration"),
+                "applyOnRestartConfigGeneration should not be present when not set"
+        );
+    }
+
+    @Test
+    void testStateConfigWithApplyOnRestartGeneration() throws Exception {
+        // Setup: Set a pending config generation waiting for restart
+        var container = new Container();
+        var pendingGeneration = 123L;
+        container.setApplyOnRestartConfigGeneration(java.util.Optional.of(pendingGeneration));
+
+        // Create new handler with the container that has pending generation
+        var handlerWithPendingConfig = new StateHandler(
+                monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, container);
+        var testDriverWithPendingConfig = new RequestHandlerTestDriver(handlerWithPendingConfig);
+
+        // Request config and verify the pending generation is included
+        var response = testDriverWithPendingConfig.sendRequest(V1_URI + "config").readAll();
+        var root = Jackson.mapper().readTree(response);
+
+        var config = root.get("config");
+        var containerNode = config.get("container");
+        assertEquals(META_GENERATION, containerNode.get("generation").asLong());
+        assertTrue(
+                config.has("applyOnRestartConfigGeneration"),
+                "applyOnRestartConfigGeneration should be present when set"
+        );
+        assertEquals(pendingGeneration, config.get("applyOnRestartConfigGeneration").asLong());
     }
 }

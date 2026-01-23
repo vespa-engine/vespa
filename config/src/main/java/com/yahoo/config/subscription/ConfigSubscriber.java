@@ -12,6 +12,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.lang.ref.Cleaner;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -473,6 +474,19 @@ public class ConfigSubscriber implements AutoCloseable {
         synchronized (monitor) {
             return generation;
         }
+    }
+
+    /**
+     * Returns the pending generation that is waiting to be applied after restart.
+     */
+    public Optional<Long> getApplyOnRestartGeneration() {
+        synchronized (monitor) {
+            if (applyOnRestart) {
+                return Optional.of(generation);
+            }
+        }
+        
+        return Optional.empty();
     }
 
     /**
