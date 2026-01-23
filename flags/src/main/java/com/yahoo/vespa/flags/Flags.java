@@ -58,6 +58,13 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
+    public static final UnboundBooleanFlag SOFT_DELETE_TENANT = defineFeatureFlag(
+            "soft-delete-tenant", false,
+            List.of("hakonhall"), "2026-01-20", "2026-03-20",
+            "When deleting /config/v2/tenants/TENANT recursively - whether to give up (true) or retry (false) on NotEmptyException",
+            "Takes effect immediately",
+            TENANT_ID);
+
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
             "locked-gcp-provision", true,
             List.of("hakonhall"), "2025-08-05", "2026-02-15",

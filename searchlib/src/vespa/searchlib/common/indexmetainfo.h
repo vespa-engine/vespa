@@ -19,12 +19,12 @@ public:
         Snapshot() noexcept : valid(false), syncToken(0), dirName() {}
         Snapshot(bool valid_, uint64_t syncToken_, const std::string &dirName_)
             : valid(valid_), syncToken(syncToken_), dirName(dirName_) {}
-        bool operator==(const Snapshot &rhs) const {
+        bool operator==(const Snapshot &rhs) const noexcept {
             return (valid == rhs.valid
                     && syncToken == rhs.syncToken
                     && dirName == rhs.dirName);
         }
-        bool operator<(const Snapshot &rhs) const {
+        bool operator<(const Snapshot &rhs) const noexcept {
             return syncToken < rhs.syncToken;
         }
     };

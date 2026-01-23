@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
+#include <cstdint>
 
 namespace proton::test {
 

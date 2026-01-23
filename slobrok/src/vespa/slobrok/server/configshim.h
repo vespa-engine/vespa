@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/slobrok/cfg.h>
+#include <cstdint>
 #include <string>
 
 namespace slobrok {

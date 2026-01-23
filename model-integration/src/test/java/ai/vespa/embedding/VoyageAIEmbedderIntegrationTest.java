@@ -1,17 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
-import ai.vespa.secret.Secret;
-import ai.vespa.secret.Secrets;
 import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
+import ai.vespa.secret.Secrets;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvalidInputException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for VoyageAI embedder with real API.
@@ -28,9 +31,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithVoyage3() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -57,9 +58,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithVoyage3Lite() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3-lite");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3-lite");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[512])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -74,9 +73,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithCaching() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -100,44 +97,8 @@ public class VoyageAIEmbedderIntegrationTest {
     }
 
     @Test
-    public void testRealAPIWithNormalization() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretRef("test_key");
-        configBuilder.model("voyage-3");
-        configBuilder.normalize(true);
-
-        VoyageAIEmbedder embedder = new VoyageAIEmbedder(
-                configBuilder.build(),
-                Embedder.Runtime.testInstance(),
-                createSecrets(apiKey)
-        );
-
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
-        Embedder.Context context = new Embedder.Context("integration-test");
-
-        Tensor result = embedder.embed("Normalization test", context, targetType);
-
-        // Calculate L2 norm
-        double sumSquares = 0.0;
-        for (int i = 0; i < 1024; i++) {
-            double val = result.get(TensorAddress.of(i));
-            sumSquares += val * val;
-        }
-        double norm = Math.sqrt(sumSquares);
-
-        // Should be normalized to ~1.0
-        assertEquals(1.0, norm, 0.01);
-
-        embedder.deconstruct();
-    }
-
-    @Test
     public void testRealAPISemanticSimilarity() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -162,9 +123,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIInputTypes() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
 
@@ -188,9 +147,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPILongText() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -206,11 +163,40 @@ public class VoyageAIEmbedderIntegrationTest {
     }
 
     @Test
-    public void testRealAPIWithMultimodal35DefaultDimension() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
+    public void testRealAPIWithTruncationDisabledThrowsException() {
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .model("voyage-3")
+                .truncate(false);
 
+        var embedder = new VoyageAIEmbedder(
+                configBuilder.build(),
+                Embedder.Runtime.testInstance(),
+                createSecrets(getApiKey()));
+
+        try {
+            var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+            var context = new Embedder.Context("integration-test");
+
+            // Generate very long text that exceeds token limit
+            var veryLongText = "This is a test sentence. ".repeat(10000);
+
+            var exception = assertThrows(InvalidInputException.class, () ->
+                    embedder.embed(veryLongText, context, targetType)
+            );
+            assertEquals("VoyageAI API bad request (400): Request to model 'voyage-3' failed. " +
+                    "The example at index 0 in your batch has too many tokens and does not fit into the " +
+                    "model's context window of 32000 tokens. Please lower the number of tokens in the listed " +
+                    "example(s) or use truncation.", exception.getMessage());
+        } finally {
+            embedder.deconstruct();
+        }
+    }
+
+    @Test
+    public void testRealAPIWithMultimodal35DefaultDimension() {
         // voyage-multimodal-3.5 should auto-select the multimodal embeddings endpoint
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-multimodal-3.5");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-multimodal-3.5");
 
         // Default dimension is 1024
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
@@ -237,18 +223,15 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithMultimodal35CustomDimension() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // Test with custom output dimension (512) - dimension is inferred from tensor type
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.model("voyage-multimodal-3.5");
-        configBuilder.timeout(30000);
 
         VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
                 Embedder.Runtime.testInstance(),
-                createSecrets(apiKey)
+                createSecrets(getApiKey())
         );
 
         // Dimension is inferred from tensor type specification
@@ -265,8 +248,6 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithMultimodal35AllDimensions() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // Test all supported dimensions: 256, 512, 1024, 2048
         // Dimension is inferred from the tensor type specification
         int[] dimensions = {256, 512, 1024, 2048};
@@ -275,12 +256,11 @@ public class VoyageAIEmbedderIntegrationTest {
             VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
             configBuilder.apiKeySecretRef("test_key");
             configBuilder.model("voyage-multimodal-3.5");
-            configBuilder.timeout(30000);
 
             VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                     configBuilder.build(),
                     Embedder.Runtime.testInstance(),
-                    createSecrets(apiKey)
+                    createSecrets(getApiKey())
             );
 
             // Dimension is inferred from tensor type
@@ -298,10 +278,8 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithContextual3() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // voyage-context-3 should auto-select the contextualized embeddings endpoint
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-context-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-context-3");
 
         // voyage-context-3 outputs 1024 dimensions
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
@@ -328,9 +306,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithContextual3SemanticSimilarity() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
-        VoyageAIEmbedder embedder = createEmbedder(apiKey, "voyage-context-3");
+        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-context-3");
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -355,18 +331,15 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithContextual3CustomDimension() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // Test with custom output dimension (512) - dimension is inferred from tensor type
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.model("voyage-context-3");
-        configBuilder.timeout(30000);
 
         VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
                 Embedder.Runtime.testInstance(),
-                createSecrets(apiKey)
+                createSecrets(getApiKey())
         );
 
         // Dimension is inferred from tensor type specification
@@ -383,8 +356,6 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithContextual3AllDimensions() {
-        String apiKey = System.getenv("VOYAGE_API_KEY");
-
         // voyage-context-3 supports: 256, 512, 1024, 2048
         // Dimension is inferred from the tensor type specification
         int[] dimensions = {256, 512, 1024, 2048};
@@ -393,12 +364,11 @@ public class VoyageAIEmbedderIntegrationTest {
             VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
             configBuilder.apiKeySecretRef("test_key");
             configBuilder.model("voyage-context-3");
-            configBuilder.timeout(30000);
 
             VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                     configBuilder.build(),
                     Embedder.Runtime.testInstance(),
-                    createSecrets(apiKey)
+                    createSecrets(getApiKey())
             );
 
             // Dimension is inferred from tensor type
@@ -416,11 +386,12 @@ public class VoyageAIEmbedderIntegrationTest {
 
     // ===== Helper Methods =====
 
+    private String getApiKey() { return System.getenv("VOYAGE_API_KEY"); }
+
     private VoyageAIEmbedder createEmbedder(String apiKey, String model) {
         VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.model(model);
-        configBuilder.timeout(30000);
 
         return new VoyageAIEmbedder(
                 configBuilder.build(),

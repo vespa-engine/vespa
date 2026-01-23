@@ -57,7 +57,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     protected double maintain() {
         AtomicInteger attempts = new AtomicInteger(0);
         AtomicInteger failures = new AtomicInteger(0);
-        for (Tenant tenant : applicationRepository.tenantRepository().getAllTenants()) {
+        for (Tenant tenant : tenantRepository.getAllTenants()) {
             ApplicationCuratorDatabase database = tenant.getApplicationRepo().database();
             for (ApplicationId id : database.activeApplications())
                 applicationRepository.getActiveApplicationVersions(id)

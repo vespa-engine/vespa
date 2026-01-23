@@ -149,7 +149,6 @@
                     <i>com.yahoo.vespa:config-model:*:*</i>
                     <i>com.yahoo.vespa:configdefinitions:*:*</i>
                     <i>com.yahoo.vespa:configgen:*:*</i>
-                    <i>com.yahoo.vespa:container-core:*:*</i>
                     <i>com.yahoo.vespa:container-disc:*:*</i>
                     <i>com.yahoo.vespa:container-documentapi:*:*</i>
                     <i>com.yahoo.vespa:container-messagebus:*:*</i>

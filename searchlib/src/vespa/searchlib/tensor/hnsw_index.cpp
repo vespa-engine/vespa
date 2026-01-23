@@ -77,7 +77,7 @@ struct PairDist {
       : id_first(i1), id_second(i2), distance(d)
     {}
 };
-bool operator< (const PairDist &a, const PairDist &b) {
+bool operator< (const PairDist &a, const PairDist &b) noexcept {
     return (a.distance < b.distance);
 }
 

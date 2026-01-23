@@ -21,19 +21,17 @@ import com.yahoo.yolean.Exceptions;
 /**
  * Handler to create, get and delete a tenant, and listing of tenants.
  *
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 public class TenantHandler extends RestApiRequestHandler<TenantHandler> {
 
     private static final String TENANT_NAME_REGEXP = "[\\w-]+";
     private final TenantRepository tenantRepository;
-    private final ApplicationRepository applicationRepository;
 
     @Inject
     public TenantHandler(Context ctx, ApplicationRepository applicationRepository) {
         super(ctx, TenantHandler::defineApi);
         this.tenantRepository = applicationRepository.tenantRepository();
-        this.applicationRepository = applicationRepository;
     }
 
     private RestApi defineApi() {
@@ -77,7 +75,7 @@ public class TenantHandler extends RestApiRequestHandler<TenantHandler> {
         if ( ! tenantRepository.checkThatTenantExists(name))
             throw new RestApiException.NotFound("Tenant '" + name + "' was not found.");
 
-        applicationRepository.deleteTenant(name);
+        tenantRepository.deleteTenant(name);
         return new TenantDeleteResponse(name);
     }
 

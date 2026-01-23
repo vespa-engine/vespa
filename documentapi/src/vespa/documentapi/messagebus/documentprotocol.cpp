@@ -215,6 +215,7 @@ DocumentProtocol::getErrorName(uint32_t errorCode) {
         case ERROR_INTERNAL_FAILURE:              return "INTERNAL_FAILURE";
         case ERROR_PROCESSING_FAILURE:            return "PROCESSING_FAILURE";
         case ERROR_TIMESTAMP_EXIST:               return "TIMESTAMP_EXIST";
+        case ERROR_OVERLOAD:                      return "OVERLOAD";
         case ERROR_STALE_TIMESTAMP:               return "STALE_TIMESTAMP";
         case ERROR_NODE_NOT_READY:                return "NODE_NOT_READY";
         case ERROR_WRONG_DISTRIBUTION:            return "WRONG_DISTRIBUTION";

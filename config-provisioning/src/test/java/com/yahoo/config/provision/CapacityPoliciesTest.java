@@ -79,4 +79,92 @@ public class CapacityPoliciesTest {
                      0.01);
     }
 
+    @Test
+    void testUnspecifiedDiskIsIncreasedForContainerNodes() {
+        var zone = new Zone(SystemName.Public, Environment.prod, RegionName.from("us-east"));
+        var capacityPolicies = new CapacityPolicies(zone, exclusivity, ApplicationId.defaultId(),
+                                                    new CapacityPolicies.Tuning(arm64, 0.0, 0));
+        var containerCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"))
+                                         .vespaVersion("8.0")
+                                         .build();
+
+        // Request 48 GB memory with unspecified disk (0)
+        // Default would be 50GB, but minimum is 2x48 = 96GB
+        NodeResources requestedResources = new NodeResources(2, 48, 0, 0.3);
+        NodeResources specifiedResources = capacityPolicies.specifyFully(requestedResources, containerCluster);
+
+        assertEquals(48, specifiedResources.memoryGiB(), 0.01);
+        assertEquals(96, specifiedResources.diskGb(), 0.01, "Disk should be increased to 2x memory for container nodes");
+    }
+
+    @Test
+    void testUnspecifiedDiskIsIncreasedForContentNodes() {
+        var zone = new Zone(SystemName.Public, Environment.prod, RegionName.from("us-east"));
+        var capacityPolicies = new CapacityPolicies(zone, exclusivity, ApplicationId.defaultId(),
+                                                    new CapacityPolicies.Tuning(arm64, 0.0, 0));
+        var contentCluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"))
+                                       .vespaVersion("8.0")
+                                       .build();
+
+        // Request 128 GB memory with unspecified disk (0)
+        // Default would be 300GB, but minimum is 3x128 = 384GB
+        NodeResources requestedResources = new NodeResources(4, 128, 0, 0.3);
+        NodeResources specifiedResources = capacityPolicies.specifyFully(requestedResources, contentCluster);
+
+        assertEquals(128, specifiedResources.memoryGiB(), 0.01);
+        assertEquals(384, specifiedResources.diskGb(), 0.01, "Disk should be increased to 3x memory for content nodes");
+    }
+
+    @Test
+    void testUnspecifiedDiskUsesDefaultWhenSufficient() {
+        var zone = new Zone(SystemName.Public, Environment.prod, RegionName.from("us-east"));
+        var capacityPolicies = new CapacityPolicies(zone, exclusivity, ApplicationId.defaultId(),
+                                                    new CapacityPolicies.Tuning(arm64, 0.0, 0));
+        var containerCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"))
+                                         .vespaVersion("8.0")
+                                         .build();
+
+        // Request 20 GB memory with unspecified disk (0)
+        // Minimum is 2x20 = 40GB, default is 50GB -> default is sufficient
+        NodeResources requestedResources = new NodeResources(2, 20, 0, 0.3);
+        NodeResources specifiedResources = capacityPolicies.specifyFully(requestedResources, containerCluster);
+
+        assertEquals(20, specifiedResources.memoryGiB(), 0.01);
+        assertEquals(50, specifiedResources.diskGb(), 0.01, "Disk should use default when it's already sufficient");
+    }
+
+    @Test
+    void testExplicitlySpecifiedDiskIsPreserved() {
+        var zone = new Zone(SystemName.Public, Environment.prod, RegionName.from("us-east"));
+        var capacityPolicies = new CapacityPolicies(zone, exclusivity, ApplicationId.defaultId(),
+                                                    new CapacityPolicies.Tuning(arm64, 0.0, 0));
+        var containerCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"))
+                                         .vespaVersion("8.0")
+                                         .build();
+
+        // Request 48 GB memory with explicit 150 GB disk (more than 2x minimum of 96GB)
+        NodeResources requestedResources = new NodeResources(2, 48, 150, 0.3);
+        NodeResources specifiedResources = capacityPolicies.specifyFully(requestedResources, containerCluster);
+
+        assertEquals(48, specifiedResources.memoryGiB(), 0.01);
+        assertEquals(150, specifiedResources.diskGb(), 0.01, "Explicitly specified disk should be preserved");
+    }
+
+    @Test
+    void testExplicitlySpecifiedInsufficientDiskIsPreserved() {
+        var zone = new Zone(SystemName.Public, Environment.prod, RegionName.from("us-east"));
+        var capacityPolicies = new CapacityPolicies(zone, exclusivity, ApplicationId.defaultId(),
+                                                    new CapacityPolicies.Tuning(arm64, 0.0, 0));
+        var contentCluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"))
+                                       .vespaVersion("8.0")
+                                       .build();
+
+        // Request 128 GB memory with explicit 300 GB disk (less than 3x minimum of 384GB)
+        NodeResources requestedResources = new NodeResources(4, 128, 300, 0.3);
+        NodeResources specifiedResources = capacityPolicies.specifyFully(requestedResources, contentCluster);
+
+        assertEquals(128, specifiedResources.memoryGiB(), 0.01);
+        assertEquals(300, specifiedResources.diskGb(), 0.01, "Explicitly specified disk should be preserved even when insufficient");
+    }
+
 }

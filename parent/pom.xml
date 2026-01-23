@@ -71,6 +71,13 @@
                             <_fixupmessages>"Classes found in the wrong directory"</_fixupmessages>
                         </instructions>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>biz.aQute.bnd</groupId>
+                            <artifactId>biz.aQute.bndlib</artifactId>
+                            <version>7.2.0</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -86,6 +93,7 @@
                         <showWarnings>true</showWarnings>
                         <showDeprecation>false</showDeprecation>
                         <compilerArgs>
+                            <arg>${vespaCompilerArgs.preview}</arg>
                             <arg>${vespaCompilerArgs.xlint}</arg>
                             <arg>-Xlint:-serial</arg>
                             <arg>-Xlint:-try</arg>
@@ -93,6 +101,13 @@
                             <arg>-Werror</arg>
                         </compilerArgs>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${asm.vespa.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -145,6 +160,13 @@
                         <!-- see http://jira.codehaus.org/browse/MNG-5346 -->
                         <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${asm.vespa.version}</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>mojo-descriptor</id>
@@ -219,6 +241,13 @@
                         <argLine>-Djava.io.tmpdir=${project.build.directory} ${ffm.args}</argLine>
                         <excludedEnvironmentVariables>VESPA_HOME,VESPA_USER</excludedEnvironmentVariables>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${asm.vespa.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -253,6 +282,13 @@
                         <useCommonAssemblyIds>true</useCommonAssemblyIds>
                         <failOnWarnings>true</failOnWarnings>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${asm.vespa.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>com.yahoo.vespa</groupId>
@@ -355,16 +391,6 @@
                             <artifactId>maven-compiler-plugin</artifactId>
                             <configuration>
                                 <release>21</release>
-                                <compilerArgs>
-                                    <arg>--enable-preview</arg>
-                                    <arg>-Xlint:all</arg>
-                                    <arg>-Xlint:-this-escape</arg>
-                                    <arg>-Xlint:-preview</arg>
-                                    <arg>-Xlint:-serial</arg>
-                                    <arg>-Xlint:-try</arg>
-                                    <arg>-Xlint:-processing</arg>
-                                    <arg>-Werror</arg>
-                                </compilerArgs>
                             </configuration>
                         </plugin>
                         <plugin>
@@ -381,6 +407,30 @@
                 </pluginManagement>
             </build>
         </profile>
+
+        <profile>
+            <id>ffm-native</id>
+            <activation><jdk>[25,26)</jdk></activation>
+            <properties>
+                <ffm.args></ffm.args>
+                <org.apache.datasketches.memory.vespa.version>${project.version}</org.apache.datasketches.memory.vespa.version>
+                <org.apache.datasketches.vespa.version>9.0.0</org.apache.datasketches.vespa.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-compiler-plugin</artifactId>
+                            <configuration>
+                                <release>25</release>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
         <profile>
             <id>attach-sources</id>
             <activation>
@@ -508,6 +558,16 @@
             <id>java21VespaCompilerArgs</id>
             <activation>
                 <jdk>[21,25)</jdk>
+            </activation>
+            <properties>
+                <vespaCompilerArgs.xlint>-Xlint:all,-this-escape,-preview</vespaCompilerArgs.xlint>
+                <vespaCompilerArgs.preview>--enable-preview</vespaCompilerArgs.preview>
+            </properties>
+        </profile>
+        <profile>
+            <id>java25VespaCompilerArgs</id>
+            <activation>
+                <jdk>[25,26)</jdk>
             </activation>
             <properties>
                 <vespaCompilerArgs.xlint>-Xlint:all,-this-escape</vespaCompilerArgs.xlint>

@@ -234,6 +234,7 @@ public:
     uint32_t maxConcurrentTotal() const { return _maxConcurrentNormal + 1; }
     uint32_t maxConcurrentNormal() const { return _maxConcurrentNormal; }
     const std::shared_ptr<flushengine::FlushHistory>& get_flush_history() const noexcept { return _flush_history; }
+    uint64_t calculate_reserved_disk() const;
 };
 
 } // namespace proton

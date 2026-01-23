@@ -12,6 +12,7 @@
 #pragma once
 
 #include <vespa/document/fieldset/fieldset.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 

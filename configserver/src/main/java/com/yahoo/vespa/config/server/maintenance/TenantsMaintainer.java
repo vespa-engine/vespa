@@ -34,7 +34,7 @@ public class TenantsMaintainer extends ConfigServerMaintainer {
 
         log.log(Level.FINE, "Starting deletion of unused tenants");
         try {
-            Set<TenantName> tenants = applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, clock.instant());
+            Set<TenantName> tenants = tenantRepository.deleteUnusedTenants(ttlForUnusedTenant, clock.instant());
             if (!tenants.isEmpty()) {
                 log.log(Level.INFO, "Deleted tenants " + tenants);
             }
