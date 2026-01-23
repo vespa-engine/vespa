@@ -348,6 +348,7 @@ public:
 class ReservedDiskSpaceTask : public SimpleTask {
     IFlushTarget::DiskGain& _disk_gain;
     void on_run() override {
+        // Assume that future flushes will use the same amount of disk space (no more growth).
         _disk_gain = IFlushTarget::DiskGain(_disk_gain.getAfter(), _disk_gain.getAfter());
     }
 public:
@@ -983,6 +984,11 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
     auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4}), "handler", 9);
     f.putFlushHandler("handler", handler);
 
+    /*
+     * Reserved disk space for flush is limited by 3 total flush threads
+     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for growth: 10 + 100 + 1000 + 10000
+     */
     EXPECT_EQ(33310, f.engine.calculate_reserved_disk());
     f.engine.start();
 
@@ -992,22 +998,46 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
     EXPECT_FALSE(target4->_initDone.await(SHORT_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target1", "handler.target2"});
     EXPECT_FALSE(target3->_initDone.await(SHORT_TIMEOUT));
+    /*
+     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for growth: 10 + 100 + 1000 + 10000
+     */
     EXPECT_EQ(33310, f.engine.calculate_reserved_disk());
     target1->_proceed.countDown();
     EXPECT_TRUE(target1->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target3"});
+    /*
+     * Assumes no more growth for target1, cf. ReservedDiskSpaceTask::on_run
+     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for growth: 100 + 1000 + 10000
+     */
     EXPECT_EQ(33300, f.engine.calculate_reserved_disk());
     target3->_proceed.countDown();
     EXPECT_TRUE(target3->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target4"});
+    /*
+     * Assumes no more growth for target1 and target3
+     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for growth: 100 + 10000
+     */
     EXPECT_EQ(32300, f.engine.calculate_reserved_disk());
     target2->_proceed.countDown();
     EXPECT_TRUE(target2->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target4"});
+    /*
+     * Assumes no more growth for target1, target2 and target3
+     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for growth: 10000
+     */
     EXPECT_EQ(32200, f.engine.calculate_reserved_disk());
     target4->_proceed.countDown();
     EXPECT_TRUE(target4->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {});
+    /*
+     * Assumes no more growth for target1, target2, target3 and target4
+     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for growth: 0
+     */
     EXPECT_EQ(22200, f.engine.calculate_reserved_disk());
 }
 

@@ -35,6 +35,11 @@ TEST_F(ReservedDiskSpaceCalculatorTest, calc_reserved_disk_space)
     EXPECT_EQ(0, calc_reserved_disk_space(1, {}));
     EXPECT_EQ(20, calc_reserved_disk_space(1, {{20, 20}}));
     EXPECT_EQ(30, calc_reserved_disk_space(1, {{10, 20}}));
+    /*
+     * Reserved disk space for growth is calculated for all targets.
+     * Reserved disk space for flush limited by the total number of flush threads, using the targets with the largest
+     * reported disk space after flush (which is considered reserved disk space for flush for that target).
+     */
     EXPECT_EQ(200, calc_reserved_disk_space(1, {{20, 20}, {200, 200}}));
     EXPECT_EQ(210, calc_reserved_disk_space(1, {{10, 20}, {200, 200}}));
     EXPECT_EQ(300, calc_reserved_disk_space(1, {{20, 20}, {100, 200}}));

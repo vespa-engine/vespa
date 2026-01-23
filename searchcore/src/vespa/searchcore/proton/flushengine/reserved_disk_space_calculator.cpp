@@ -27,15 +27,19 @@ ReservedDiskSpaceCalculator::track_disk_gain(const IFlushTarget::DiskGain &gain)
 uint64_t
 ReservedDiskSpaceCalculator::get_reserved_disk()
 {
-    uint64_t reserved = _reserved_grow;
     if (_concurrent < _candidates.size()) {
+        /*
+         * Retain the _concurrent biggest candidates. They are later used to calculate reserved
+         * disk space for flush.
+         */
         std::nth_element(_candidates.begin(), _candidates.begin() + _concurrent, _candidates.end());
         _candidates.resize(_concurrent);
     }
+    uint64_t reserved_flush = 0;
     for (auto &candidate : _candidates) {
-        reserved += candidate.reserved();
+        reserved_flush += candidate.reserved();
     }
-    return reserved;
+    return _reserved_grow + reserved_flush;
 }
 
 }

@@ -7,11 +7,15 @@
 namespace proton::flushengine {
 
 class ReservedDiskSpaceCalculator {
+    /*
+     * Candidate for tracking reserved disk space for flush, used to calculate worst case need for reserved disk
+     * space. The number of total flush threads determinates how many candidates to use.
+     */
     class Candidate {
         uint64_t _reserved;
 
     public:
-        Candidate(uint64_t reserved_in) noexcept
+        explicit Candidate(uint64_t reserved_in) noexcept
             : _reserved(reserved_in)
         {
         }
@@ -30,7 +34,7 @@ class ReservedDiskSpaceCalculator {
     uint64_t _reserved_grow;
 
 public:
-    ReservedDiskSpaceCalculator(size_t concurrent) noexcept;
+    explicit ReservedDiskSpaceCalculator(size_t concurrent) noexcept;
     ~ReservedDiskSpaceCalculator();
     void track_disk_gain(const searchcorespi::IFlushTarget::DiskGain& gain);
     uint64_t get_reserved_disk();
