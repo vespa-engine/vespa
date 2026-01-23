@@ -118,9 +118,11 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
         String inputType = detectInputType(context);
         var outputDataType = resolveOutputDataType(targetType);
-        CacheKey cacheKey = new CacheKey(context.getEmbedderId(), text, inputType);
-        Tensor result = context.computeCachedValueIfAbsent(cacheKey, () ->
-                callVoyageAI(text, inputType, outputDataType, targetType, context));
+        long timeoutMs = calculateTimeoutMs(context);
+        var cacheKey = new CacheKey(context.getEmbedderId(), text, inputType, outputDataType);
+        var embeddingData = context.computeCachedValueIfAbsent(cacheKey, () ->
+                callVoyageAI(text, inputType, outputDataType, timeoutMs));
+        var result = createTensorFromEmbedding(embeddingData, outputDataType, targetType);
 
         runtime.sampleSequenceLength(text.length(), context);
         runtime.sampleEmbeddingLatency((System.nanoTime() - startTime) / 1_000_000_000.0, context);
@@ -214,18 +216,16 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         };
     }
 
-    private Tensor callVoyageAI(String text, String inputType, String outputDataType, TensorType targetType, Context context) {
+    private List<Number> callVoyageAI(String text, String inputType, String outputDataType, long timeoutMs) {
         var jsonRequest = createAndSerializeRequest(text, inputType, outputDataType);
         log.fine(() -> "VoyageAI request: " + jsonRequest);
-        List<Number> embeddingData;
         if (isContextualModel()) {
-            var response = doRequest(jsonRequest, ContextualResponse.class, context);
-            embeddingData = response.data.get(0).data.get(0).embedding;
+            var response = doRequest(jsonRequest, ContextualResponse.class, timeoutMs);
+            return response.data.get(0).data.get(0).embedding;
         } else {
-            var response = doRequest(jsonRequest, VoyageAIResponse.class, context);
-            embeddingData = response.data.get(0).embedding;
+            var response = doRequest(jsonRequest, VoyageAIResponse.class, timeoutMs);
+            return response.data.get(0).embedding;
         }
-        return createTensorFromEmbedding(embeddingData, outputDataType, targetType);
     }
 
     private String createAndSerializeRequest(String text, String inputType, String outputDataType) {
@@ -247,9 +247,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         }
     }
 
-    private <T> T doRequest(String jsonRequest, Class<T> responseType, Context context) {
-        long startTime = System.currentTimeMillis();
-
+    private <T> T doRequest(String jsonRequest, Class<T> responseType, long timeoutMs) {
         var httpRequest = new Request.Builder()
                 .url(resolvedEndpoint)
                 .header("Authorization", "Bearer " + apiKey.current())
@@ -258,7 +256,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 .build();
 
         var call = httpClient.newCall(httpRequest);
-        var timeoutMs = calculateTimeoutMs(context, startTime);
         call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS);
 
         try (var response = call.execute()) {
@@ -297,13 +294,12 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         return Optional.empty();
     }
 
-    private long calculateTimeoutMs(Context context, long startTime) {
-        long remainingMs = context.getDeadline().isPresent()
-                ? context.getDeadline().get().timeRemaining().toMillis()
-                : config.timeout() - (System.currentTimeMillis() - startTime);
-        if (remainingMs <= 0) {
+    private long calculateTimeoutMs(Context context) {
+        long remainingMs = context.getDeadline()
+                .map(d -> d.timeRemaining().toMillis())
+                .orElse((long) config.timeout());
+        if (remainingMs <= 0)
             throw new TimeoutException("Request deadline exceeded before VoyageAI API call");
-        }
         return remainingMs;
     }
 
@@ -479,5 +475,5 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     // ===== Cache Key =====
 
-    private record CacheKey(String embedderId, String text, String inputType) {}
+    private record CacheKey(String embedderId, String text, String inputType, String outputDataType) {}
 }
