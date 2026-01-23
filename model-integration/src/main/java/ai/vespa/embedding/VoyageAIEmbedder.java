@@ -231,10 +231,10 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private String createAndSerializeRequest(String text, String inputType, String outputDataType) {
         Object request;
         if (isMultimodalModel()) {
-            request = new MultimodalRequest(
+            request = MultimodalRequest.of(
                     text, config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         } else if (isContextualModel()) {
-            request = new ContextualRequest(
+            request = ContextualRequest.of(
                     text, config.model(), inputType, config.dimensions(), outputDataType);
         } else {
             request = new VoyageAIRequest(
@@ -395,190 +395,87 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     // ===== Request/Response DTOs =====
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class VoyageAIRequest {
-        @JsonProperty("input")
-        public List<String> input;
-
-        @JsonProperty("model")
-        public String model;
-
-        @JsonProperty("input_type")
-        public String inputType;
-
-        @JsonProperty("truncation")
-        public boolean truncation;
-
-        @JsonProperty("output_dimension")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        public Integer outputDimension;
-
-        @JsonProperty("output_dtype")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        public String outputDtype;
-
-        public VoyageAIRequest(List<String> input, String model, String inputType, boolean truncation,
-                               Integer outputDimension, String outputDtype) {
-            this.input = input;
-            this.model = model;
-            this.inputType = inputType;
-            this.truncation = truncation;
-            this.outputDimension = outputDimension;
-            this.outputDtype = outputDtype;
-        }
-    }
+    private record VoyageAIRequest(
+            @JsonProperty("input") List<String> input,
+            @JsonProperty("model") String model,
+            @JsonProperty("input_type") String inputType,
+            @JsonProperty("truncation") boolean truncation,
+            @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
+            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class VoyageAIResponse {
-        @JsonProperty("data")
-        public List<EmbeddingData> data;
-
-        @JsonProperty("model")
-        public String model;
-
-        @JsonProperty("usage")
-        public Usage usage;
-    }
+    private record VoyageAIResponse(
+            @JsonProperty("data") List<EmbeddingData> data,
+            @JsonProperty("model") String model,
+            @JsonProperty("usage") Usage usage) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class EmbeddingData {
-        @JsonProperty("embedding")
-        public List<Number> embedding;
-
-        @JsonProperty("index")
-        public int index;
-    }
+    private record EmbeddingData(
+            @JsonProperty("embedding") List<Number> embedding,
+            @JsonProperty("index") int index) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class Usage {
-        @JsonProperty("total_tokens")
-        public int totalTokens;
-    }
+    private record Usage(@JsonProperty("total_tokens") int totalTokens) {}
 
     // ===== Contextual Request/Response DTOs =====
 
-    /**
-     * Request format for contextual embeddings API (voyage-context-*).
-     * Uses "inputs" as array of document chunks: [["chunk1", "chunk2"], ["chunk1", "chunk2"]]
-     * For single text embedding, we treat it as a single-chunk document: [["text"]]
-     * Note: Contextual API does not support truncation parameter.
-     * Supports output_dimension: 2048, 1024 (default), 512, 256
-     */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class ContextualRequest {
-        @JsonProperty("inputs")
-        public List<List<String>> inputs;
+    private record ContextualRequest(
+            @JsonProperty("inputs") List<List<String>> inputs,
+            @JsonProperty("model") String model,
+            @JsonProperty("input_type") @JsonInclude(JsonInclude.Include.NON_NULL) String inputType,
+            @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
+            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
 
-        @JsonProperty("model")
-        public String model;
-
-        @JsonProperty("input_type")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        public String inputType;
-
-        @JsonProperty("output_dimension")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        public Integer outputDimension;
-
-        @JsonProperty("output_dtype")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        public String outputDtype;
-
-        public ContextualRequest(String text, String model, String inputType, Integer outputDimension, String outputDtype) {
-            // Single text is treated as a single-chunk document
-            this.inputs = List.of(List.of(text));
-            this.model = model;
-            this.inputType = inputType;
-            this.outputDimension = outputDimension;
-            this.outputDtype = outputDtype;
+        static ContextualRequest of(String text, String model, String inputType,
+                                    Integer outputDimension, String outputDtype) {
+            return new ContextualRequest(List.of(List.of(text)), model, inputType,
+                                         outputDimension, outputDtype);
         }
     }
 
-    /**
-     * Response format for contextual embeddings API.
-     * The actual response structure is nested: data[document].data[chunk].embedding
-     * {"object":"list","data":[{"object":"list","data":[{"object":"embedding","embedding":[...]}]}]}
-     */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class ContextualResponse {
-        @JsonProperty("data")
-        public List<ContextualDocumentResult> data;
-    }
+    private record ContextualResponse(@JsonProperty("data") List<ContextualDocumentResult> data) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class ContextualDocumentResult {
-        @JsonProperty("data")
-        public List<EmbeddingData> data;  // Reuse existing EmbeddingData class
-    }
+    private record ContextualDocumentResult(@JsonProperty("data") List<EmbeddingData> data) {}
 
     // ===== Multimodal Request DTOs =====
 
-    /**
-     * Request format for multimodal embeddings API.
-     * Uses "inputs" with content array instead of "input" with string list.
-     */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class MultimodalRequest {
-        @JsonProperty("inputs")
-        public List<MultimodalInput> inputs;
+    private record MultimodalRequest(
+            @JsonProperty("inputs") List<MultimodalInput> inputs,
+            @JsonProperty("model") String model,
+            @JsonProperty("input_type") @JsonInclude(JsonInclude.Include.NON_NULL) String inputType,
+            @JsonProperty("truncation") boolean truncation,
+            @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
+            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
 
-        @JsonProperty("model")
-        public String model;
-
-        @JsonProperty("input_type")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        public String inputType;
-
-        @JsonProperty("truncation")
-        public boolean truncation;
-
-        @JsonProperty("output_dimension")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        public Integer outputDimension;
-
-        @JsonProperty("output_dtype")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        public String outputDtype;
-
-        public MultimodalRequest(String text, String model, String inputType, boolean truncation,
-                                Integer outputDimension, String outputDtype) {
-            this.inputs = List.of(new MultimodalInput(text));
-            this.model = model;
-            this.inputType = inputType;
-            this.truncation = truncation;
-            this.outputDimension = outputDimension;
-            this.outputDtype = outputDtype;
+        static MultimodalRequest of(String text, String model, String inputType,
+                                    boolean truncation, Integer outputDimension, String outputDtype) {
+            return new MultimodalRequest(List.of(MultimodalInput.of(text)), model, inputType,
+                                         truncation, outputDimension, outputDtype);
         }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class MultimodalInput {
-        @JsonProperty("content")
-        public List<ContentItem> content;
+    private record MultimodalInput(@JsonProperty("content") List<ContentItem> content) {
 
-        public MultimodalInput(String text) {
-            this.content = List.of(new ContentItem(text));
+        static MultimodalInput of(String text) {
+            return new MultimodalInput(List.of(ContentItem.of(text)));
         }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class ContentItem {
-        @JsonProperty("type")
-        public String type;
+    private record ContentItem(
+            @JsonProperty("type") String type,
+            @JsonProperty("text") String text) {
 
-        @JsonProperty("text")
-        public String text;
-
-        public ContentItem(String text) {
-            this.type = "text";
-            this.text = text;
-        }
+        static ContentItem of(String text) { return new ContentItem("text", text); }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class ErrorResponse {
-        @JsonProperty("detail")
-        public String detail;
-    }
+    private record ErrorResponse(@JsonProperty("detail") String detail) {}
 
     // ===== Cache Key =====
 
