@@ -67,8 +67,7 @@ public class PlatformBundles {
             EVALUATION_BUNDLE_NAME,
             INTEGRATION_BUNDLE_NAME,
             ONNXRUNTIME_BUNDLE_NAME,
-            LLAMA_BUNDLE_NAME,
-            "mcp-server-jar-with-dependencies.jar"
+            LLAMA_BUNDLE_NAME
     );
 
     private static Set<Path> toBundlePaths(String... bundleNames) {

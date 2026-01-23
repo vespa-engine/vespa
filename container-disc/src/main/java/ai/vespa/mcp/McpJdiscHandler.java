@@ -14,10 +14,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.component.annotation.Inject;
 
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
-import com.yahoo.search.searchchain.ExecutionFactory;
-
-
 /**
  * JDisc handler for handling MCP requests.
  * This handler processes HTTP requests directed to the MCP endpoint, and routes them to the appropriate methods in McpHttpTransport .
