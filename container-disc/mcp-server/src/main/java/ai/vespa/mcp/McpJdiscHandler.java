@@ -30,12 +30,9 @@ public class McpJdiscHandler extends ThreadedHttpRequestHandler{
     private final JdiscMcpServer mcpServer;
     
     @Inject
-    public McpJdiscHandler(Executor executor,
-                           Metric metrics,
-                           ExecutionFactory executionFactory, CompiledQueryProfileRegistry queryProfileRegistry) {
+    public McpJdiscHandler(Executor executor, Metric metrics, JdiscMcpServer McpServer) {
         super(executor, metrics, true);
-        var tools = new McpTools(executionFactory, queryProfileRegistry);
-        mcpServer = new JdiscMcpServer(tools);
+        this.mcpServer = McpServer;
         this.transport = mcpServer.getTransport();
     }
 
