@@ -99,7 +99,6 @@ public class Container {
             }
             Collection<Bundle> unusedBundlesFromPreviousGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.SUCCESS);
             Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, unusedBundlesFromPreviousGen);
-            updateApplyOnRestartConfigGeneration();
             return new ComponentGraphResult(newGraph, cleanupTask);
         } catch (Throwable t) {
             invalidateGeneration(oldGraph.generation(), t);
