@@ -2,15 +2,9 @@ package ai.vespa.mcp;
 
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 
 import com.yahoo.component.annotation.Inject;

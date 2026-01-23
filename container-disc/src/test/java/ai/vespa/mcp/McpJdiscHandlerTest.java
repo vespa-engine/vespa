@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.mcp;
 
 import com.yahoo.container.jdisc.HttpRequest;
@@ -5,9 +6,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
-import com.yahoo.search.searchchain.ExecutionFactory;
-import com.yahoo.search.searchchain.SearchChainRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -34,32 +32,20 @@ public class McpJdiscHandlerTest {
 
     private McpJdiscHandler handler;
     private McpHttpTransport mockTransport;
-    private JdiscMcpServer mockServerComponent;
+    private JdiscMcpServer mockMcpServer;
     private Executor executor;
     private Metric mockMetric;
-    private ExecutionFactory mockExecutionFactory;
-    private CompiledQueryProfileRegistry mockCompiledQueryProfileRegistry;
 
     @BeforeEach
     public void setUp() {
-        // Create mocks for dependencies
         mockTransport = Mockito.mock(McpHttpTransport.class);
-        mockServerComponent = Mockito.mock(JdiscMcpServer.class);
+        mockMcpServer = Mockito.mock(JdiscMcpServer.class);
         mockMetric = Mockito.mock(Metric.class);
-        mockExecutionFactory = Mockito.mock(ExecutionFactory.class);
-        mockCompiledQueryProfileRegistry = Mockito.mock(CompiledQueryProfileRegistry.class);
-
-        // Mock the SearchChainRegistry to prevent NullPointerException
-        when(mockExecutionFactory.searchChainRegistry()).thenReturn(Mockito.mock(SearchChainRegistry.class));
-
-        // Use a real executor for simplicity
         executor = Executors.newSingleThreadExecutor();
-        
-//        // Set up the mock server component to return the mock transport
-//        when(mockServerComponent.getTransport()).thenReturn(mockTransport);
-        
-        // Create the handler with the mocked dependencies
-        handler = new McpJdiscHandler(executor, mockMetric, mockExecutionFactory, mockCompiledQueryProfileRegistry);
+
+        when(mockMcpServer.getTransport()).thenReturn(mockTransport);
+
+        handler = new McpJdiscHandler(executor, mockMetric, mockMcpServer);
     }
 
     @Test
@@ -98,7 +84,6 @@ public class McpJdiscHandlerTest {
         );
         HttpResponse response = handler.handle(request, null);
         assertEquals(405, response.getStatus());
-        // verify(mockTransport).handleGet(request);
     }
 
     @Test
@@ -113,12 +98,14 @@ public class McpJdiscHandlerTest {
         );
         HttpResponse response = handler.handle(request, null);
         assertEquals(405, response.getStatus());
-        // verify(mockTransport).handleDelete(request);
     }
 
     @Test
     public void testPostRoutesToTransport() {
         String requestBody = "{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"params\":{},\"id\":1}";
+        HttpResponse mockResponse = createMockResponse(200, "{\"jsonrpc\":\"2.0\"}");
+        when(mockTransport.handlePost(any(HttpRequest.class), any(byte[].class))).thenReturn(mockResponse);
+
         HttpRequest request = createTestRequest(
                 "http://localhost:8080/mcp/",
                 Method.POST,

@@ -1,5 +1,6 @@
-package ai.vespa.mcp;
+package com.yahoo.search.mcp;
 
+import ai.vespa.mcp.McpPackage;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures;
@@ -23,7 +24,6 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.search.schema.Field;
 import com.yahoo.search.schema.FieldInfo;
 import com.yahoo.search.schema.FieldSet;
-import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.tensor.Tensor;

@@ -39,7 +39,7 @@ public class McpHttpTransport implements McpStatelessServerTransport {
 
     public McpHttpTransport() {
         this.mapper = new ObjectMapper();
-        this.contextExtractor = (request, context) -> context; // Change later??
+        this.contextExtractor = (request, context) -> context;
     }
 
     @Override
