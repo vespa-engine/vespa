@@ -160,6 +160,7 @@ public class VoyageAIEmbedderTest {
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
+        configBuilder.dimensions(1024);
         configBuilder.timeout(100); // 100ms timeout
         embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
 
@@ -209,6 +210,7 @@ public class VoyageAIEmbedderTest {
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
+        configBuilder.dimensions(1024);
 
         VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
@@ -241,6 +243,7 @@ public class VoyageAIEmbedderTest {
                 .apiKeySecretRef("test_key")
                 .endpoint(mockServer.url("/v1/embeddings").toString())
                 .model("voyage-3")
+                .dimensions(1024)
                 .maxRetries(100);
         var embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
 
@@ -271,6 +274,7 @@ public class VoyageAIEmbedderTest {
         configBuilder.apiKeySecretRef("test_key");
         configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
         configBuilder.model("voyage-3");
+        configBuilder.dimensions(1024);
 
         VoyageAIEmbedder embedder = new VoyageAIEmbedder(
                 configBuilder.build(),
@@ -310,24 +314,6 @@ public class VoyageAIEmbedderTest {
         // Should fail with authentication error
         RuntimeException exception = assertThrows(RuntimeException.class, () -> embedder.embed("test", context, targetType));
         assertTrue(exception.getMessage().contains("authentication"));
-    }
-
-    @Test
-    public void testDimensionMismatch() {
-        // Mock response with 512 dimensions
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(createSuccessResponse(512)));
-
-        embedder = createEmbedder();
-
-        // Request 1024 dimensions but API returns 512
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
-        Embedder.Context context = new Embedder.Context("test-embedder");
-
-        // Should fail with dimension mismatch error
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> embedder.embed("test", context, targetType));
-        assertTrue(exception.getMessage().contains("dimension"));
     }
 
     @Test
@@ -423,13 +409,153 @@ public class VoyageAIEmbedderTest {
                 " at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 3]", exception.getMessage());
     }
 
+    @Test
+    public void testAutoQuantizationWithFloatTensor() throws Exception {
+        embedder = createEmbedder(1024, "auto");
+
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createFloatSuccessResponse(1024)));
+
+        TensorType targetType = TensorType.fromSpec("tensor<float>(x[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+
+        Tensor result = embedder.embed("test", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(1024, result.size());
+        assertEquals(TensorType.Value.FLOAT, result.type().valueType());
+
+        // Verify request contains output_dtype=float and output_dimension=1024
+        RecordedRequest request = mockServer.takeRequest();
+        String body = request.getBody().readUtf8();
+        assertTrue(body.contains("\"output_dtype\":\"float\""));
+        assertTrue(body.contains("\"output_dimension\":1024"));
+    }
+
+    @Test
+    public void testAutoQuantizationWithInt8Tensor() throws Exception {
+        embedder = createEmbedder(1024, "auto");
+
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createInt8SuccessResponse(1024)));
+
+        TensorType targetType = TensorType.fromSpec("tensor<int8>(x[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+
+        Tensor result = embedder.embed("test", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(1024, result.size());
+        assertEquals(TensorType.Value.INT8, result.type().valueType());
+
+        // Verify request contains output_dtype=int8
+        RecordedRequest request = mockServer.takeRequest();
+        String body = request.getBody().readUtf8();
+        assertTrue(body.contains("\"output_dtype\":\"int8\""));
+        assertTrue(body.contains("\"output_dimension\":1024"));
+    }
+
+    @Test
+    public void testAutoQuantizationWithBinaryTensor() throws Exception {
+        embedder = createEmbedder(1024, "auto");
+
+        // Binary embedding has 1/8 dimension (1024/8 = 128)
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createInt8SuccessResponse(128)));
+
+        TensorType targetType = TensorType.fromSpec("tensor<int8>(x[128])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+
+        Tensor result = embedder.embed("test", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(128, result.size());
+        assertEquals(TensorType.Value.INT8, result.type().valueType());
+
+        // Verify request contains output_dtype=binary but output_dimension=1024 (full dimension)
+        RecordedRequest request = mockServer.takeRequest();
+        String body = request.getBody().readUtf8();
+        assertTrue(body.contains("\"output_dtype\":\"binary\""));
+        assertTrue(body.contains("\"output_dimension\":1024"));
+    }
+
+    @Test
+    public void testExplicitFloatQuantizationValidation() {
+        // Float quantization requires float tensor
+        embedder = createEmbedder(1024, "float");
+
+        TensorType int8Type = TensorType.fromSpec("tensor<int8>(x[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> embedder.embed("test", context, int8Type));
+        assertEquals("Quantization 'float' is incompatible with tensor type tensor<int8>(x[1024]).", exception.getMessage());
+    }
+
+    @Test
+    public void testExplicitInt8QuantizationValidation() {
+        // Int8 quantization requires int8 tensor
+        embedder = createEmbedder(1024, "int8");
+
+        TensorType floatType = TensorType.fromSpec("tensor<float>(x[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> embedder.embed("test", context, floatType));
+        assertEquals("Quantization 'int8' is incompatible with tensor type tensor<float>(x[1024]).", exception.getMessage());
+    }
+
+    @Test
+    public void testExplicitBinaryQuantizationValidation() {
+        // Binary quantization requires int8 tensor with dimension/8
+        embedder = createEmbedder(1024, "binary");
+
+        // Tensor has full dimension instead of 1/8
+        var targetType = TensorType.fromSpec("tensor<int8>(x[1024])");
+        var context = new Embedder.Context("test-embedder");
+
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> embedder.embed("test", context, targetType));
+        assertEquals("Tensor dimension 1024 does not match required dimension 128.", exception.getMessage());
+    }
+
+    @Test
+    public void testDimensionMismatchBetweenConfigAndTensorType() {
+        embedder = createEmbedder(512, "auto");
+
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createFloatSuccessResponse(512)));
+
+        // Tensor type has different dimension than config
+        var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        var context = new Embedder.Context("test-embedder");
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> embedder.embed("test", context, targetType));
+        assertEquals("Tensor dimension 1024 does not match configured dimension 512.", exception.getMessage());
+    }
+
     // ===== Helper Methods =====
 
     private VoyageAIEmbedder createEmbedder() {
-        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretRef("test_key");
-        configBuilder.endpoint(mockServer.url("/v1/embeddings").toString());
-        configBuilder.model("voyage-3");
+        return createEmbedder(1024, "auto");
+    }
+
+    private VoyageAIEmbedder createEmbedder(int dimensions, String quantization) {
+        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .endpoint(mockServer.url("/v1/embeddings").toString())
+                .model("voyage-3")
+                .dimensions(dimensions)
+                .quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(quantization.toUpperCase()))
+                .timeout(5000);
 
         return new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
     }
@@ -444,11 +570,42 @@ public class VoyageAIEmbedderTest {
     }
 
     private String createSuccessResponse(int dimensions) {
+        return createFloatSuccessResponse(dimensions);
+    }
+
+    private String createFloatSuccessResponse(int dimensions) {
         StringBuilder embedding = new StringBuilder("[");
         for (int i = 0; i < dimensions; i++) {
             if (i > 0) embedding.append(",");
             // Create deterministic values for testing
             embedding.append(String.format("%.6f", Math.sin(i * 0.1)));
+        }
+        embedding.append("]");
+
+        return String.format("""
+                {
+                  "object": "list",
+                  "data": [
+                    {
+                      "object": "embedding",
+                      "embedding": %s,
+                      "index": 0
+                    }
+                  ],
+                  "model": "voyage-3",
+                  "usage": {
+                    "total_tokens": 10
+                  }
+                }
+                """, embedding);
+    }
+
+    private String createInt8SuccessResponse(int dimensions) {
+        StringBuilder embedding = new StringBuilder("[");
+        for (int i = 0; i < dimensions; i++) {
+            if (i > 0) embedding.append(",");
+            // Create int8 values (-128 to 127)
+            embedding.append(i % 128);
         }
         embedding.append("]");
 

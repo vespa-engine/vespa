@@ -5,6 +5,7 @@ import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -116,9 +117,10 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         long startTime = System.nanoTime();
 
         String inputType = detectInputType(context);
+        var outputDataType = resolveOutputDataType(targetType);
         CacheKey cacheKey = new CacheKey(context.getEmbedderId(), text, inputType);
         Tensor result = context.computeCachedValueIfAbsent(cacheKey, () ->
-                callVoyageAI(text, inputType, targetType, context));
+                callVoyageAI(text, inputType, outputDataType, targetType, context));
 
         runtime.sampleSequenceLength(text.length(), context);
         runtime.sampleEmbeddingLatency((System.nanoTime() - startTime) / 1_000_000_000.0, context);
@@ -126,16 +128,60 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         return result;
     }
 
-    private void validateTensorType(TensorType targetType) {
-        if (targetType.dimensions().size() != 1) {
+    private void validateTensorType(TensorType targetTensorType) {
+        if (targetTensorType.dimensions().size() != 1)
             throw new IllegalArgumentException(
-                "Error in embedding to type '" + targetType + "': should only have one indexed dimension."
-            );
-        }
-        if (!targetType.dimensions().get(0).isIndexed()) {
+                    "Error in embedding to type '" + targetTensorType + "': should only have one dimension.");
+        var tensorDimension = targetTensorType.dimensions().get(0);
+        if (!tensorDimension.isIndexed())
             throw new IllegalArgumentException(
-                "Error in embedding to type '" + targetType + "': dimension should be indexed."
-            );
+                    "Error in embedding to type '" + targetTensorType + "': dimension should be indexed.");
+        var valueType = targetTensorType.valueType();
+
+        int configuredDim = config.dimensions();
+        long tensorDim = tensorDimension.size().orElseThrow();
+
+        switch (config.quantization()) {
+            case AUTO:
+                if (valueType == TensorType.Value.FLOAT) {
+                    if (tensorDim != configuredDim)
+                        throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
+                                .formatted(tensorDim, configuredDim));
+                } else if (valueType == TensorType.Value.INT8) {
+                    if (tensorDim != configuredDim && tensorDim != configuredDim / 8)
+                        throw new IllegalArgumentException(("Tensor dimension %d does not match configured dimension. " +
+                                "Expected %d or %d.").formatted(tensorDim, configuredDim, configuredDim / 8));
+                } else {
+                    throw new IllegalArgumentException(
+                            "Quantization 'auto' is incompatible with tensor type " + targetTensorType + ".");
+                }
+                break;
+            case FLOAT:
+                if (valueType != TensorType.Value.FLOAT)
+                    throw new IllegalArgumentException(
+                            "Quantization 'float' is incompatible with tensor type " + targetTensorType + ".");
+                if (tensorDim != configuredDim)
+                    throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
+                            .formatted(tensorDim, configuredDim));
+                break;
+            case INT8:
+                if (valueType != TensorType.Value.INT8)
+                    throw new IllegalArgumentException(
+                            "Quantization 'int8' is incompatible with tensor type " + targetTensorType + ".");
+                if (tensorDim != configuredDim)
+                    throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
+                            .formatted(tensorDim, configuredDim));
+                break;
+            case BINARY:
+                if (valueType != TensorType.Value.INT8)
+                    throw new IllegalArgumentException(
+                            "Quantization 'binary' is incompatible with tensor type " + targetTensorType + ".");
+                if (tensorDim != configuredDim / 8)
+                    throw new IllegalArgumentException("Tensor dimension %d does not match required dimension %d."
+                            .formatted(tensorDim, configuredDim / 8));
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported quantization: " + config.quantization());
         }
     }
 
@@ -147,109 +193,58 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         return "document";
     }
 
-    private boolean isMultimodalModel() {
-        return config.model() != null && config.model().startsWith("voyage-multimodal-");
+    private boolean isMultimodalModel() { return config.model().startsWith("voyage-multimodal-"); }
+    private boolean isContextualModel() { return config.model().startsWith("voyage-context-"); }
+
+    private String resolveOutputDataType(TensorType targetType) {
+        return switch (config.quantization()) {
+            case AUTO -> {
+                if (targetType.valueType() == TensorType.Value.FLOAT) {
+                    yield "float";
+                } else if (targetType.valueType() == TensorType.Value.INT8) {
+                    long tensorDim = targetType.dimensions().get(0).size().orElseThrow();
+                    yield (tensorDim == config.dimensions()) ? "int8" : "binary";
+                } else {
+                    throw new IllegalStateException();
+                }
+            }
+            case FLOAT -> "float";
+            case INT8 -> "int8";
+            case BINARY -> "binary";
+        };
     }
 
-    private boolean isContextualModel() {
-        return config.model() != null && config.model().startsWith("voyage-context-");
-    }
-
-    /**
-     * Validate and get the output dimension from the target tensor type.
-     * For models that support variable dimensions, validates that the dimension is one of: 256, 512, 1024, 2048.
-     * Returns null if the model doesn't support variable dimensions (use model's default).
-     */
-    private Optional<Integer> getOutputDimensionFromTensorType(TensorType targetType) {
-        long dim = targetType.dimensions().get(0).size().orElse(-1L);
-        if (dim == -1) {
-            return Optional.empty();  // Unbound dimension, use model default
-        }
-        if (!(isMultimodalModel() || isContextualModel())) {
-            return Optional.empty();  // Model doesn't support variable dimensions, API will return default
-        }
-
-        int dimension = (int) dim;
-        if (dimension != 256 && dimension != 512 && dimension != 1024 && dimension != 2048) {
-            throw new IllegalArgumentException(
-                "Invalid output dimension " + dimension + " for model '" + config.model() + "'. " +
-                "Supported dimensions are: 256, 512, 1024, 2048. " +
-                "Please adjust your schema's tensor type accordingly."
-            );
-        }
-        return Optional.of(dimension);
-    }
-
-    private Tensor callVoyageAI(String text, String inputType, TensorType targetType, Context context) {
-
-        Integer outputDimension = getOutputDimensionFromTensorType(targetType).orElse(null);
-
-        String jsonRequest;
-        if (isMultimodalModel()) {
-            MultimodalRequest request = new MultimodalRequest(
-                    text,
-                    config.model(),
-                    inputType,
-                    config.truncate(),
-                    outputDimension
-            );
-            try {
-                jsonRequest = objectMapper.writeValueAsString(request);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to serialize multimodal request", e);
-            }
-        } else if (isContextualModel()) {
-            // Contextual API uses array of document chunks format
-            // For single text, we treat it as a single-chunk document
-            ContextualRequest request = new ContextualRequest(
-                    text,
-                    config.model(),
-                    inputType,
-                    outputDimension
-            );
-            try {
-                jsonRequest = objectMapper.writeValueAsString(request);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to serialize contextual request", e);
-            }
-
-            log.fine(() -> "VoyageAI request: " + jsonRequest);
-
-            var response = doRequest(jsonRequest, ContextualResponse.class, context);
-
-            if (response.data == null || response.data.isEmpty() ||
-                response.data.get(0).data == null || response.data.get(0).data.isEmpty()) {
-                throw new RuntimeException("VoyageAI contextual API returned empty response");
-            }
-
-            // Get embedding from first chunk of first document
-            float[] embedding = response.data.get(0).data.get(0).embedding;
-            return createTensor(embedding, targetType);
-        } else {
-            VoyageAIRequest request = new VoyageAIRequest(
-                    List.of(text),
-                    config.model(),
-                    inputType,
-                    config.truncate(),
-                    outputDimension
-            );
-            try {
-                jsonRequest = objectMapper.writeValueAsString(request);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to serialize request", e);
-            }
-        }
-
+    private Tensor callVoyageAI(String text, String inputType, String outputDataType, TensorType targetType, Context context) {
+        var jsonRequest = createAndSerializeRequest(text, inputType, outputDataType);
         log.fine(() -> "VoyageAI request: " + jsonRequest);
-
-        var response = doRequest(jsonRequest, VoyageAIResponse.class, context);
-
-        if (response.data == null || response.data.isEmpty()) {
-            throw new RuntimeException("VoyageAI API returned empty response");
+        List<Number> embeddingData;
+        if (isContextualModel()) {
+            var response = doRequest(jsonRequest, ContextualResponse.class, context);
+            embeddingData = response.data.get(0).data.get(0).embedding;
+        } else {
+            var response = doRequest(jsonRequest, VoyageAIResponse.class, context);
+            embeddingData = response.data.get(0).embedding;
         }
+        return createTensorFromEmbedding(embeddingData, outputDataType, targetType);
+    }
 
-        float[] embedding = response.data.get(0).embedding;
-        return createTensor(embedding, targetType);
+    private String createAndSerializeRequest(String text, String inputType, String outputDataType) {
+        Object request;
+        if (isMultimodalModel()) {
+            request = new MultimodalRequest(
+                    text, config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
+        } else if (isContextualModel()) {
+            request = new ContextualRequest(
+                    text, config.model(), inputType, config.dimensions(), outputDataType);
+        } else {
+            request = new VoyageAIRequest(
+                    List.of(text), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
+        }
+        try {
+            return objectMapper.writeValueAsString(request);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize VoyageAI request", e);
+        }
     }
 
     private <T> T doRequest(String jsonRequest, Class<T> responseType, Context context) {
@@ -312,24 +307,34 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         return remainingMs;
     }
 
-    private Tensor createTensor(float[] embedding, TensorType targetType) {
-        long expectedDim = targetType.dimensions().get(0).size().orElse(-1L);
-        if (expectedDim != -1 && embedding.length != expectedDim) {
-            throw new IllegalArgumentException(
-                "VoyageAI returned " + embedding.length + " dimensions but target type expects " + expectedDim +
-                ". Please ensure the model '" + config.model() + "' outputs the correct dimensions."
-            );
-        }
+    private Tensor createTensorFromEmbedding(List<Number> embeddingData, String outputDtype, TensorType targetType) {
+        String dimensionName = targetType.dimensions().get(0).name();
+        return switch (outputDtype) {
+            case "float" -> createFloatTensor(embeddingData, dimensionName);
+            case "int8", "binary" -> createInt8Tensor(embeddingData, dimensionName);
+            default -> throw new IllegalArgumentException("Unsupported output_dtype: " + outputDtype);
+        };
+    }
 
-        TensorType.Builder typeBuilder = new TensorType.Builder(TensorType.Value.FLOAT);
-        typeBuilder.indexed(targetType.dimensions().get(0).name(), embedding.length);
-        TensorType type = typeBuilder.build();
-
+    private Tensor createFloatTensor(List<Number> embedding, String dimensionName) {
+        TensorType type = new TensorType.Builder(TensorType.Value.FLOAT)
+                .indexed(dimensionName, embedding.size())
+                .build();
         IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);
-        for (int i = 0; i < embedding.length; i++) {
-            builder.cell(embedding[i], i);
+        for (int i = 0; i < embedding.size(); i++) {
+            builder.cell(embedding.get(i).floatValue(), i);
         }
+        return builder.build();
+    }
 
+    private Tensor createInt8Tensor(List<Number> embedding, String dimensionName) {
+        TensorType type = new TensorType.Builder(TensorType.Value.INT8)
+                .indexed(dimensionName, embedding.size())
+                .build();
+        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);
+        for (int i = 0; i < embedding.size(); i++) {
+            builder.cell(embedding.get(i).byteValue(), i);
+        }
         return builder.build();
     }
 
@@ -404,15 +409,21 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         public boolean truncation;
 
         @JsonProperty("output_dimension")
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         public Integer outputDimension;
 
-        public VoyageAIRequest(List<String> input, String model, String inputType, boolean truncation, Integer outputDimension) {
+        @JsonProperty("output_dtype")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public String outputDtype;
+
+        public VoyageAIRequest(List<String> input, String model, String inputType, boolean truncation,
+                               Integer outputDimension, String outputDtype) {
             this.input = input;
             this.model = model;
             this.inputType = inputType;
             this.truncation = truncation;
             this.outputDimension = outputDimension;
+            this.outputDtype = outputDtype;
         }
     }
 
@@ -431,7 +442,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class EmbeddingData {
         @JsonProperty("embedding")
-        public float[] embedding;
+        public List<Number> embedding;
 
         @JsonProperty("index")
         public int index;
@@ -461,19 +472,24 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         public String model;
 
         @JsonProperty("input_type")
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         public String inputType;
 
         @JsonProperty("output_dimension")
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         public Integer outputDimension;
 
-        public ContextualRequest(String text, String model, String inputType, Integer outputDimension) {
+        @JsonProperty("output_dtype")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public String outputDtype;
+
+        public ContextualRequest(String text, String model, String inputType, Integer outputDimension, String outputDtype) {
             // Single text is treated as a single-chunk document
             this.inputs = List.of(List.of(text));
             this.model = model;
             this.inputType = inputType;
             this.outputDimension = outputDimension;
+            this.outputDtype = outputDtype;
         }
     }
 
@@ -509,22 +525,28 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         public String model;
 
         @JsonProperty("input_type")
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         public String inputType;
 
         @JsonProperty("truncation")
         public boolean truncation;
 
         @JsonProperty("output_dimension")
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         public Integer outputDimension;
 
-        public MultimodalRequest(String text, String model, String inputType, boolean truncation, Integer outputDimension) {
+        @JsonProperty("output_dtype")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public String outputDtype;
+
+        public MultimodalRequest(String text, String model, String inputType, boolean truncation,
+                                Integer outputDimension, String outputDtype) {
             this.inputs = List.of(new MultimodalInput(text));
             this.model = model;
             this.inputType = inputType;
             this.truncation = truncation;
             this.outputDimension = outputDimension;
+            this.outputDtype = outputDtype;
         }
     }
 

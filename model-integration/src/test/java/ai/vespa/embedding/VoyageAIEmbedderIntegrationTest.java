@@ -2,7 +2,6 @@
 package ai.vespa.embedding;
 
 import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
-import ai.vespa.secret.Secrets;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.InvalidInputException;
 import com.yahoo.tensor.Tensor;
@@ -21,17 +20,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * These tests are disabled by default and require a real VoyageAI API key.
  * To run these tests:
- * 1. Set environment variable: export VOYAGE_API_KEY="your-api-key"
+ * 1. Set environment variable: export VESPA_TEST_VOYAGE_API_KEY="your-api-key"
  * 2. Run with: mvn test -Dtest=VoyageAIEmbedderIntegrationTest
  *
- * NOTE: These tests make real API calls and may incur costs.
+ * @author bjorncs
  */
-@EnabledIfEnvironmentVariable(named = "VOYAGE_API_KEY", matches = ".+")
+@EnabledIfEnvironmentVariable(named = "VESPA_TEST_VOYAGE_API_KEY", matches = "pa-.+")
 public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithVoyage3() {
-        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
+        var embedder = createEmbedder();
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -58,7 +57,12 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithVoyage3Lite() {
-        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3-lite");
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+            .apiKeySecretRef("test_key")
+            .model("voyage-3-lite")
+            .dimensions(512);
+
+        var embedder = createEmbedder(configBuilder);
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[512])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -73,7 +77,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIWithCaching() {
-        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
+        var embedder = createEmbedder();
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -98,7 +102,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPISemanticSimilarity() {
-        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
+        var embedder = createEmbedder();
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -123,7 +127,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPIInputTypes() {
-        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
+        var embedder = createEmbedder();
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
 
@@ -147,7 +151,7 @@ public class VoyageAIEmbedderIntegrationTest {
 
     @Test
     public void testRealAPILongText() {
-        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-3");
+        var embedder = createEmbedder();
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -167,12 +171,10 @@ public class VoyageAIEmbedderIntegrationTest {
         var configBuilder = new VoyageAiEmbedderConfig.Builder()
                 .apiKeySecretRef("test_key")
                 .model("voyage-3")
+                .dimensions(1024)
                 .truncate(false);
 
-        var embedder = new VoyageAIEmbedder(
-                configBuilder.build(),
-                Embedder.Runtime.testInstance(),
-                createSecrets(getApiKey()));
+        var embedder = createEmbedder(configBuilder);
 
         try {
             var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
@@ -194,59 +196,6 @@ public class VoyageAIEmbedderIntegrationTest {
     }
 
     @Test
-    public void testRealAPIWithMultimodal35DefaultDimension() {
-        // voyage-multimodal-3.5 should auto-select the multimodal embeddings endpoint
-        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-multimodal-3.5");
-
-        // Default dimension is 1024
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
-        Embedder.Context context = new Embedder.Context("integration-test");
-
-        Tensor result = embedder.embed("Testing multimodal embeddings", context, targetType);
-
-        assertNotNull(result);
-        assertEquals(1024, result.size());
-
-        // Verify non-zero embeddings
-        boolean hasNonZero = false;
-        for (int i = 0; i < 1024; i++) {
-            double val = result.get(TensorAddress.of(i));
-            if (Math.abs(val) > 0.0001) {
-                hasNonZero = true;
-                break;
-            }
-        }
-        assertTrue(hasNonZero, "Embedding should contain non-zero values");
-
-        embedder.deconstruct();
-    }
-
-    @Test
-    public void testRealAPIWithMultimodal35CustomDimension() {
-        // Test with custom output dimension (512) - dimension is inferred from tensor type
-        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretRef("test_key");
-        configBuilder.model("voyage-multimodal-3.5");
-
-        VoyageAIEmbedder embedder = new VoyageAIEmbedder(
-                configBuilder.build(),
-                Embedder.Runtime.testInstance(),
-                createSecrets(getApiKey())
-        );
-
-        // Dimension is inferred from tensor type specification
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[512])");
-        Embedder.Context context = new Embedder.Context("integration-test");
-
-        Tensor result = embedder.embed("Testing multimodal with custom dimension", context, targetType);
-
-        assertNotNull(result);
-        assertEquals(512, result.size());
-
-        embedder.deconstruct();
-    }
-
-    @Test
     public void testRealAPIWithMultimodal35AllDimensions() {
         // Test all supported dimensions: 256, 512, 1024, 2048
         // Dimension is inferred from the tensor type specification
@@ -256,12 +205,9 @@ public class VoyageAIEmbedderIntegrationTest {
             VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
             configBuilder.apiKeySecretRef("test_key");
             configBuilder.model("voyage-multimodal-3.5");
+            configBuilder.dimensions(dim);
 
-            VoyageAIEmbedder embedder = new VoyageAIEmbedder(
-                    configBuilder.build(),
-                    Embedder.Runtime.testInstance(),
-                    createSecrets(getApiKey())
-            );
+            var embedder = createEmbedder(configBuilder);
 
             // Dimension is inferred from tensor type
             TensorType targetType = TensorType.fromSpec("tensor<float>(d0[" + dim + "])");
@@ -279,7 +225,11 @@ public class VoyageAIEmbedderIntegrationTest {
     @Test
     public void testRealAPIWithContextual3() {
         // voyage-context-3 should auto-select the contextualized embeddings endpoint
-        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-context-3");
+        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder()
+            .apiKeySecretRef("test_key")
+            .model("voyage-context-3")
+            .dimensions(1024);
+        var embedder = createEmbedder(configBuilder);
 
         // voyage-context-3 outputs 1024 dimensions
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
@@ -289,24 +239,64 @@ public class VoyageAIEmbedderIntegrationTest {
 
         assertNotNull(result);
         assertEquals(1024, result.size());
+        assertNonZeroTensor(result);
 
-        // Verify non-zero embeddings
-        boolean hasNonZero = false;
-        for (int i = 0; i < 1024; i++) {
-            double val = result.get(TensorAddress.of(i));
-            if (Math.abs(val) > 0.0001) {
-                hasNonZero = true;
-                break;
-            }
-        }
-        assertTrue(hasNonZero, "Embedding should contain non-zero values");
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithInt8Quantization() {
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+            .apiKeySecretRef("test_key")
+            .model("voyage-4-large")
+            .dimensions(1024)
+            .quantization(VoyageAiEmbedderConfig.Quantization.INT8);
+
+        var embedder = createEmbedder(configBuilder);
+
+        TensorType targetType = TensorType.fromSpec("tensor<int8>(d0[1024])");
+        Embedder.Context context = new Embedder.Context("integration-test");
+
+        Tensor result = embedder.embed("Testing int8 quantization", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(1024, result.size());
+        assertEquals(targetType, result.type());
+        assertNonZeroTensor(result);
+
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithBinaryQuantization() {
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+            .apiKeySecretRef("test_key")
+            .model("voyage-4-large")
+            .dimensions(1024)
+            .quantization(VoyageAiEmbedderConfig.Quantization.BINARY);
+
+        var embedder = createEmbedder(configBuilder);
+
+        TensorType targetType = TensorType.fromSpec("tensor<int8>(d0[128])");
+        Embedder.Context context = new Embedder.Context("integration-test");
+
+        Tensor result = embedder.embed("Testing binary quantization", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(128, result.size());
+        assertEquals(targetType, result.type());
+        assertNonZeroTensor(result);
 
         embedder.deconstruct();
     }
 
     @Test
     public void testRealAPIWithContextual3SemanticSimilarity() {
-        VoyageAIEmbedder embedder = createEmbedder(getApiKey(), "voyage-context-3");
+        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder()
+            .apiKeySecretRef("test_key")
+            .model("voyage-context-3")
+            .dimensions(1024);
+        var embedder = createEmbedder(configBuilder);
 
         TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
         Embedder.Context context = new Embedder.Context("integration-test");
@@ -330,31 +320,6 @@ public class VoyageAIEmbedderIntegrationTest {
     }
 
     @Test
-    public void testRealAPIWithContextual3CustomDimension() {
-        // Test with custom output dimension (512) - dimension is inferred from tensor type
-        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretRef("test_key");
-        configBuilder.model("voyage-context-3");
-
-        VoyageAIEmbedder embedder = new VoyageAIEmbedder(
-                configBuilder.build(),
-                Embedder.Runtime.testInstance(),
-                createSecrets(getApiKey())
-        );
-
-        // Dimension is inferred from tensor type specification
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[512])");
-        Embedder.Context context = new Embedder.Context("integration-test");
-
-        Tensor result = embedder.embed("Testing contextual with custom dimension", context, targetType);
-
-        assertNotNull(result);
-        assertEquals(512, result.size());
-
-        embedder.deconstruct();
-    }
-
-    @Test
     public void testRealAPIWithContextual3AllDimensions() {
         // voyage-context-3 supports: 256, 512, 1024, 2048
         // Dimension is inferred from the tensor type specification
@@ -364,12 +329,9 @@ public class VoyageAIEmbedderIntegrationTest {
             VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
             configBuilder.apiKeySecretRef("test_key");
             configBuilder.model("voyage-context-3");
+            configBuilder.dimensions(dim);
 
-            VoyageAIEmbedder embedder = new VoyageAIEmbedder(
-                    configBuilder.build(),
-                    Embedder.Runtime.testInstance(),
-                    createSecrets(getApiKey())
-            );
+            var embedder = createEmbedder(configBuilder);
 
             // Dimension is inferred from tensor type
             TensorType targetType = TensorType.fromSpec("tensor<float>(d0[" + dim + "])");
@@ -386,22 +348,19 @@ public class VoyageAIEmbedderIntegrationTest {
 
     // ===== Helper Methods =====
 
-    private String getApiKey() { return System.getenv("VOYAGE_API_KEY"); }
+    private VoyageAIEmbedder createEmbedder() {
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .dimensions(1024)
+                .model("voyage-3");
+        return createEmbedder(configBuilder);
+    }
 
-    private VoyageAIEmbedder createEmbedder(String apiKey, String model) {
-        VoyageAiEmbedderConfig.Builder configBuilder = new VoyageAiEmbedderConfig.Builder();
-        configBuilder.apiKeySecretRef("test_key");
-        configBuilder.model(model);
-
+    private VoyageAIEmbedder createEmbedder(VoyageAiEmbedderConfig.Builder configBuilder) {
         return new VoyageAIEmbedder(
                 configBuilder.build(),
                 Embedder.Runtime.testInstance(),
-                createSecrets(apiKey)
-        );
-    }
-
-    private Secrets createSecrets(String apiKey) {
-        return key -> () -> apiKey;
+                key -> () -> System.getenv("VESPA_TEST_VOYAGE_API_KEY"));
     }
 
     private double cosineSimilarity(Tensor a, Tensor b) {
@@ -418,5 +377,12 @@ public class VoyageAIEmbedderIntegrationTest {
         }
 
         return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    }
+
+    private void assertNonZeroTensor(Tensor tensor) {
+        for (int i = 0; i < tensor.size(); i++) {
+            if (Math.abs(tensor.get(TensorAddress.of(i))) > 0.0001) return;
+        }
+        throw new AssertionError("Embedding should contain non-zero values");
     }
 }
