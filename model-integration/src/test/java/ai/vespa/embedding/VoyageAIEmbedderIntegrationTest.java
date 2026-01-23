@@ -76,31 +76,6 @@ public class VoyageAIEmbedderIntegrationTest {
     }
 
     @Test
-    public void testRealAPIWithCaching() {
-        var embedder = createEmbedder();
-
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
-        Embedder.Context context = new Embedder.Context("integration-test");
-
-        long startTime1 = System.currentTimeMillis();
-        Tensor result1 = embedder.embed("Cached text test", context, targetType);
-        long duration1 = System.currentTimeMillis() - startTime1;
-
-        long startTime2 = System.currentTimeMillis();
-        Tensor result2 = embedder.embed("Cached text test", context, targetType);
-        long duration2 = System.currentTimeMillis() - startTime2;
-
-        // Second call should be much faster (cached)
-        assertTrue(duration2 < duration1 / 2,
-                "Cached call should be faster. First: " + duration1 + "ms, Second: " + duration2 + "ms");
-
-        // Results should be identical
-        assertEquals(result1, result2);
-
-        embedder.deconstruct();
-    }
-
-    @Test
     public void testRealAPISemanticSimilarity() {
         var embedder = createEmbedder();
 

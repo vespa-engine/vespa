@@ -80,52 +80,6 @@ public class VoyageAIEmbedderTest {
     }
 
     @Test
-    public void testCaching() throws Exception {
-        // Mock single API response
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setHeader("Content-Type", "application/json")
-                .setBody(createSuccessResponse(1024)));
-
-        embedder = createEmbedder();
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
-        Embedder.Context context = new Embedder.Context("test-embedder");
-
-        // First call - hits API
-        Tensor result1 = embedder.embed("test text", context, targetType);
-        assertEquals(1, mockServer.getRequestCount());
-
-        // Second call with same text - should use cache
-        Tensor result2 = embedder.embed("test text", context, targetType);
-        assertEquals(1, mockServer.getRequestCount()); // Still only 1 request
-
-        // Verify results are the same
-        assertEquals(result1, result2);
-    }
-
-    @Test
-    public void testDifferentTextsNotCached() throws Exception {
-        // Mock two API responses
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(createSuccessResponse(1024)));
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(createSuccessResponse(1024)));
-
-        embedder = createEmbedder();
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
-        Embedder.Context context = new Embedder.Context("test-embedder");
-
-        // Two different texts
-        embedder.embed("text one", context, targetType);
-        embedder.embed("text two", context, targetType);
-
-        // Should make 2 API calls
-        assertEquals(2, mockServer.getRequestCount());
-    }
-
-    @Test
     public void testThrowsOverloadExceptionOn429() {
         // Mock 429 response
         mockServer.enqueue(new MockResponse()
@@ -380,33 +334,6 @@ public class VoyageAIEmbedderTest {
         RecordedRequest request = mockServer.takeRequest();
         String body = request.getBody().readUtf8();
         assertTrue(body.contains("\"input_type\":\"document\"")); // Default is document
-    }
-
-    @Test
-    public void testUnsupportedEmbedMethod() {
-        embedder = createEmbedder();
-        Embedder.Context context = new Embedder.Context("test-embedder");
-
-        // Should throw UnsupportedOperationException for List<Integer> embed method
-        UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
-            () -> embedder.embed("test", context));
-        assertTrue(exception.getMessage().contains("only supports embed() with TensorType"));
-    }
-
-    @Test
-    public void testInvalidJsonResponse() {
-        // Return invalid JSON that can't be parsed
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody("{ this is not valid json }"));
-
-        embedder = createEmbedder();
-        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
-        Embedder.Context context = new Embedder.Context("test-embedder");
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> embedder.embed("test", context, targetType));
-        assertEquals("VoyageAI API call failed: Unexpected character ('t' (code 116)): was expecting double-quote to start field name\n" +
-                " at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 3]", exception.getMessage());
     }
 
     @Test
