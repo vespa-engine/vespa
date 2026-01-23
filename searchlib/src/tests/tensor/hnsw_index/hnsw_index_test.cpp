@@ -289,7 +289,7 @@ public:
         auto qv = vectors.get_vector(docid, 0);
         NearestNeighborIndex::Stats stats;
         auto df = index->distance_function_factory().for_query_vector(qv);
-        auto rv = index->top_k_candidates(stats, *df, k, exploration_slack, global_filter->ptr_if_active(), filter_first, 0.3, _doom->get_doom()).peek();
+        auto rv = index->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(), filter_first, 0.3, _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
         for (const auto & hit : rv) {
@@ -317,8 +317,8 @@ public:
         NearestNeighborIndex::Stats stats;
         auto df = index->distance_function_factory().for_query_vector(qv_cells);
         auto got_by_docid = (global_filter->is_active()) ?
-                            index->find_top_k_with_filter(stats, k, *df, *global_filter, filter_first, 0.3, explore_k, exploration_slack, _doom->get_doom(), 10000.0) :
-                            index->find_top_k(stats, k, *df, explore_k, exploration_slack, _doom->get_doom(), 10000.0);
+                            index->find_top_k_with_filter(stats, k, *df, *global_filter, filter_first, 0.3, explore_k, exploration_slack, false, _doom->get_doom(), 10000.0) :
+                            index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_doom(), 10000.0);
         return stats;
     }
     void check_with_distance_threshold(uint32_t docid, double exploration_slack = 0.0) {
@@ -326,7 +326,7 @@ public:
         NearestNeighborIndex::Stats stats;
         auto df = index->distance_function_factory().for_query_vector(qv);
         uint32_t k = 3;
-        auto rv = index->top_k_candidates(stats, *df, k, exploration_slack, global_filter->ptr_if_active(), false, 0.3, _doom->get_doom()).peek();
+        auto rv = index->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(), false, 0.3, _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         EXPECT_EQ(rv.size(), 3);
         EXPECT_LE(rv[0].distance, rv[1].distance);
