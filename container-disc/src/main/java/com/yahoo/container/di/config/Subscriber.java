@@ -22,7 +22,9 @@ public interface Subscriber {
     void close();
 
     /**
-     * Returns the pending generation that is waiting to be applied after restart.
+     * The first generation that required the restart after the last restart.
+     * It can be behind the current generation.
+     * The restart is still required no matter whether the current generation requires it. 
      */
     Optional<Long> getApplyOnRestartGeneration();
 }

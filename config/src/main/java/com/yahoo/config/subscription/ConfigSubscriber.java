@@ -49,6 +49,12 @@ public class ConfigSubscriber implements AutoCloseable {
      * once there is a generation which require restart.
      */
     private boolean applyOnRestart = false;
+    
+    /** 
+     * The first generation which requires a restart after the last restart, i.e. when applyOnRestart is updated to true.
+     * It can be different from {@link #generation} set after applyOnRestart is updated.
+     */
+    private Optional<Long> applyOnRestartGeneration = Optional.empty();
 
     /**
      * The states of the subscriber. Affects the validity of calling certain methods.
@@ -299,6 +305,7 @@ public class ConfigSubscriber implements AutoCloseable {
                         log.log(Level.INFO, "Config generation " + generation + " requires restart; " +
                                             "further config changes will not take effect until restart");
                         applyOnRestart = true;
+                        applyOnRestartGeneration = Optional.of(generation);
                     }
                 }
             }
@@ -480,13 +487,7 @@ public class ConfigSubscriber implements AutoCloseable {
      * Returns the pending generation that is waiting to be applied after restart.
      */
     public Optional<Long> getApplyOnRestartGeneration() {
-        synchronized (monitor) {
-            if (applyOnRestart) {
-                return Optional.of(generation);
-            }
-        }
-        
-        return Optional.empty();
+        return applyOnRestartGeneration;
     }
 
     /**

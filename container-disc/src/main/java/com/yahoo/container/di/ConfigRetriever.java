@@ -170,7 +170,7 @@ public final class ConfigRetriever {
     }
 
     /**
-     * Returns the pending generation that is waiting to be applied after restart.
+     * @see Subscriber#getApplyOnRestartGeneration()
      */
     public Optional<Long> getApplyOnRestartConfigGeneration() {
         return Stream.of(

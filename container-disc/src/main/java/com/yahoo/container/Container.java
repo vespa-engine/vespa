@@ -3,6 +3,7 @@ package com.yahoo.container;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirerFactory;
 import com.yahoo.jdisc.handler.RequestHandler;
@@ -32,6 +33,10 @@ public class Container {
     private volatile ComponentRegistry<AbstractComponent> componentRegistry;
     private volatile FileAcquirer fileAcquirer;
     private volatile UrlDownloader urlDownloader;
+
+    /**
+     * @see Subscriber#getApplyOnRestartGeneration()
+     */
     private volatile Optional<Long> applyOnRestartConfigGeneration = Optional.empty();
 
     // TODO: Make this final again.
@@ -136,11 +141,16 @@ public class Container {
         disabledUrlDownloader = true;
     }
 
+    /**
+     * @see com.yahoo.container.di.config.Subscriber#getApplyOnRestartGeneration()
+     */
     public void setApplyOnRestartConfigGeneration(Optional<Long> applyOnRestartConfigGeneration) {
         this.applyOnRestartConfigGeneration = applyOnRestartConfigGeneration;
     }
 
-
+    /**
+     * @see com.yahoo.container.di.config.Subscriber#getApplyOnRestartGeneration()
+     */
     public Optional<Long> getApplyOnRestartConfigGeneration() {
         return applyOnRestartConfigGeneration;
     }

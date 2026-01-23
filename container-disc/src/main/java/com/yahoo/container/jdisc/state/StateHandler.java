@@ -190,7 +190,11 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         generationInfo.put("generation", config.generation())
                 .set("container", jsonMapper.createObjectNode()
                         .put("generation", config.generation()));
-        
+
+        // The presence of this field signals whether a restart is required to apply a new config.
+        // It contains the first generation that required the restart after the last restart.
+        // It can be behind the current generation.
+        // The restart is still required no matter whether the current generation requires it. 
         applyOnRestartConfigGeneration.ifPresent(value -> generationInfo.put("applyOnRestartConfigGeneration", value));
         
         return jsonMapper.createObjectNode().set(CONFIG_GENERATION_PATH, generationInfo);

@@ -309,7 +309,10 @@ public class Container {
 
         return key.getConfigClass().cast(inst);
     }
-    
+
+    /**
+     * @see com.yahoo.container.di.config.Subscriber#getApplyOnRestartGeneration()
+     */
     public void updateApplyOnRestartConfigGeneration() {
         vespaContainer.setApplyOnRestartConfigGeneration(retriever.getApplyOnRestartConfigGeneration());
     }
