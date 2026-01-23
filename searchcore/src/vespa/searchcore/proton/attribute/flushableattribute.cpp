@@ -207,7 +207,7 @@ FlushableAttribute::getApproxMemoryGain() const
 IFlushTarget::DiskGain
 FlushableAttribute::getApproxDiskGain() const
 {
-    return DiskGain(0, 0);
+    return DiskGain(_attr->size_on_disk(), _attr->getEstimatedSaveByteSize());
 }
 
 IFlushTarget::Time
