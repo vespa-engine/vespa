@@ -12,6 +12,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
+import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,13 +55,14 @@ class LuceneTokenizer implements Tokenizer {
 
         CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
         OffsetAttribute offsetAttribute = tokenStream.addAttribute(OffsetAttribute.class);
+        PositionIncrementAttribute posIncAttribute = tokenStream.addAttribute(PositionIncrementAttribute.class);
         try {
             tokenStream.reset();
             SimpleToken current = null;
             while (tokenStream.incrementToken()) {
                 String originalString = text.substring(offsetAttribute.startOffset(), offsetAttribute.endOffset());
                 String tokenString = charTermAttribute.toString();
-                if (isAtSamePositionAs(current, offsetAttribute)) {
+                if (isAtSamePosition(current, posIncAttribute)) {
                     current.addStem(tokenString);
                 }
                 else {
@@ -82,9 +84,9 @@ class LuceneTokenizer implements Tokenizer {
         return tokens;
     }
 
-    private boolean isAtSamePositionAs(Token token, OffsetAttribute offsetAttribute) {
+    private boolean isAtSamePosition(Token token, PositionIncrementAttribute posIncAttribute) {
         if (token == null) return false;
-        return offsetAttribute.startOffset() == token.getOffset();
+        return posIncAttribute.getPositionIncrement() == 0;
     }
 
     @Override
