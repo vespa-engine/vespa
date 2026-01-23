@@ -30,7 +30,7 @@ public:
      * data needed in before invoking `prefetch_vector`.
      */
     virtual void prefetch_docid(uint32_t docid) const noexcept {
-        (void)doc_id;
+        (void)docid;
     }
 
     /**
