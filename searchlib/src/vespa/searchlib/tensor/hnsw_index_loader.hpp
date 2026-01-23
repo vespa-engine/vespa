@@ -35,7 +35,7 @@ HnswIndexLoader<ReaderType, type>::HnswIndexLoader(HnswGraph<type>& graph, IdMap
 {
     init();
 
-    graph.nodes.ensure_size(_num_nodes);
+    graph.nodes.reserve(_num_nodes);
 }
 
 template <typename ReaderType, HnswIndexType type>
