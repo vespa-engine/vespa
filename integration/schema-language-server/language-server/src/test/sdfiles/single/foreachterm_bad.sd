@@ -1,0 +1,16 @@
+schema foreachtermBad {
+    document foreachtermBad {
+        field title type string {
+            indexing: index | summary
+        }
+    }
+
+    rank-profile test-profile {
+        first-phase {
+            expression: foreach(terms, A, term(A).significance, true, max)
+        }
+        second-phase {
+            expression: term(bar).significance
+        }
+    }
+}
