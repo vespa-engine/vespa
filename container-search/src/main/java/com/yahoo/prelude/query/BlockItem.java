@@ -2,6 +2,8 @@
 package com.yahoo.prelude.query;
 
 
+import com.yahoo.search.query.QueryType;
+
 /**
  * An interface used for anything which represents a single block of query input.
  *
@@ -28,6 +30,12 @@ public interface BlockItem extends HasIndexItem {
 
     /** Returns whether this item represents normal text */
     boolean isWords();
+
+    /** Returns the query parsing type that created this, or null if none. */
+    QueryType getQueryType();
+
+    /** Sets the query parsing type that created this. */
+    void setQueryType(QueryType type);
 
     /**
      * If the block has to be resegmented, what operator should be chosen if it
