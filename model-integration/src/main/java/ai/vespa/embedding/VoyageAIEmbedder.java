@@ -112,22 +112,14 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public Tensor embed(String text, Context context, TensorType targetType) {
-        validateTensorType(targetType);
+        return invokeVoyageAI(List.of(text), context, targetType)
+                .get(0);
+    }
 
-        long startTime = System.nanoTime();
-
-        String inputType = detectInputType(context);
-        var outputDataType = resolveOutputDataType(targetType);
-        long timeoutMs = calculateTimeoutMs(context);
-        var cacheKey = new CacheKey(context.getEmbedderId(), text, inputType, outputDataType);
-        var embeddingData = context.computeCachedValueIfAbsent(cacheKey, () ->
-                callVoyageAI(text, inputType, outputDataType, timeoutMs));
-        var result = createTensorFromEmbedding(embeddingData, outputDataType, targetType);
-
-        runtime.sampleSequenceLength(text.length(), context);
-        runtime.sampleEmbeddingLatency((System.nanoTime() - startTime) / 1_000_000_000.0, context);
-
-        return result;
+    @Override
+    public List<Tensor> embed(List<String> texts, Context context, TensorType targetType) {
+        if (!isContextualModel()) return Embedder.super.embed(texts, context, targetType);
+        return invokeVoyageAI(texts, context, targetType);
     }
 
     private void validateTensorType(TensorType targetTensorType) {
@@ -216,29 +208,67 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         };
     }
 
-    private List<Number> callVoyageAI(String text, String inputType, String outputDataType, long timeoutMs) {
-        var jsonRequest = createAndSerializeRequest(text, inputType, outputDataType);
-        log.fine(() -> "VoyageAI request: " + jsonRequest);
-        if (isContextualModel()) {
-            var response = doRequest(jsonRequest, ContextualResponse.class, timeoutMs);
-            return response.data.get(0).data.get(0).embedding;
-        } else {
-            var response = doRequest(jsonRequest, VoyageAIResponse.class, timeoutMs);
-            return response.data.get(0).embedding;
+    private void sampleMetrics(long startTimeNanos, Context context) {
+        runtime.sampleEmbeddingLatency((System.nanoTime() - startTimeNanos) / 1_000_000_000.0, context);
+    }
+
+    private List<Tensor> invokeVoyageAI(List<String> texts, Context context, TensorType targetType) {
+        long startTime = System.nanoTime();
+        validateTensorType(targetType);
+        var inputType = detectInputType(context);
+        var outputDataType = resolveOutputDataType(targetType);
+        var timeoutMs = calculateTimeoutMs(context);
+
+        var cacheKey = new CacheKey(context.getEmbedderId(), texts, inputType, outputDataType);
+        var responseBody = context.computeCachedValueIfAbsent(cacheKey, () -> {
+            var jsonRequest = createJsonRequest(texts, inputType, outputDataType);
+            log.fine(() -> "VoyageAI request: " + jsonRequest);
+            return doRequest(jsonRequest, timeoutMs);
+        });
+
+        var tensors = toTensors(responseBody, targetType, outputDataType);
+        sampleMetrics(startTime, context);
+        return tensors;
+    }
+
+    private List<Tensor> toTensors(String responseBody, TensorType targetType, String outputDtype) {
+        try {
+            List<List<Number>> embeddings;
+            if (isContextualModel()) {
+                var response = objectMapper.readValue(responseBody, ContextualResponse.class);
+                embeddings = response.data.get(0).data.stream()
+                        .map(EmbeddingData::embedding)
+                        .toList();
+            } else {
+                var response = objectMapper.readValue(responseBody, VoyageAIResponse.class);
+                embeddings = response.data.stream()
+                        .map(EmbeddingData::embedding)
+                        .toList();
+            }
+            String dimensionName = targetType.dimensions().get(0).name();
+            return embeddings.stream()
+                    .map(embedding -> switch (outputDtype) {
+                        case "float" -> createFloatTensor(embedding, dimensionName);
+                        case "int8", "binary" -> createInt8Tensor(embedding, dimensionName);
+                        default -> throw new IllegalArgumentException("Unsupported output_dtype: " + outputDtype);
+                    })
+                    .toList();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to parse VoyageAI response", e);
         }
     }
 
-    private String createAndSerializeRequest(String text, String inputType, String outputDataType) {
+    private String createJsonRequest(List<String> texts, String inputType, String outputDataType) {
         Object request;
         if (isMultimodalModel()) {
             request = MultimodalRequest.of(
-                    text, config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
+                    texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         } else if (isContextualModel()) {
             request = ContextualRequest.of(
-                    text, config.model(), inputType, config.dimensions(), outputDataType);
+                    texts, config.model(), inputType, config.dimensions(), outputDataType);
         } else {
-            request = new VoyageAIRequest(
-                    List.of(text), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
+            request = VoyageAIRequest.of(
+                    texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         }
         try {
             return objectMapper.writeValueAsString(request);
@@ -247,7 +277,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         }
     }
 
-    private <T> T doRequest(String jsonRequest, Class<T> responseType, long timeoutMs) {
+    private String doRequest(String jsonRequest, long timeoutMs) {
         var httpRequest = new Request.Builder()
                 .url(resolvedEndpoint)
                 .header("Authorization", "Bearer " + apiKey.current())
@@ -262,7 +292,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             var responseBody = response.body() != null ? response.body().string() : "";
             log.fine(() -> "VoyageAI response with code " + response.code() + ": " + responseBody);
             if (response.isSuccessful()) {
-                return objectMapper.readValue(responseBody, responseType);
+                return responseBody;
             } else if (response.code() == 429) {
                 throw new OverloadException("VoyageAI API rate limited (429)");
             } else if (response.code() == 401) {
@@ -301,15 +331,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         if (remainingMs <= 0)
             throw new TimeoutException("Request deadline exceeded before VoyageAI API call");
         return remainingMs;
-    }
-
-    private Tensor createTensorFromEmbedding(List<Number> embeddingData, String outputDtype, TensorType targetType) {
-        String dimensionName = targetType.dimensions().get(0).name();
-        return switch (outputDtype) {
-            case "float" -> createFloatTensor(embeddingData, dimensionName);
-            case "int8", "binary" -> createInt8Tensor(embeddingData, dimensionName);
-            default -> throw new IllegalArgumentException("Unsupported output_dtype: " + outputDtype);
-        };
     }
 
     private Tensor createFloatTensor(List<Number> embedding, String dimensionName) {
@@ -397,7 +418,13 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("input_type") String inputType,
             @JsonProperty("truncation") boolean truncation,
             @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
-            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {}
+            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
+
+        static VoyageAIRequest of(String texts, String model, String inputType,
+                                  boolean truncation, Integer outputDimension, String outputDtype) {
+            return new VoyageAIRequest(List.of(texts), model, inputType, truncation, outputDimension, outputDtype);
+        }
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record VoyageAIResponse(
@@ -423,9 +450,9 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
             @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
 
-        static ContextualRequest of(String text, String model, String inputType,
+        static ContextualRequest of(List<String> texts, String model, String inputType,
                                     Integer outputDimension, String outputDtype) {
-            return new ContextualRequest(List.of(List.of(text)), model, inputType,
+            return new ContextualRequest(List.of(texts), model, inputType,
                                          outputDimension, outputDtype);
         }
     }
@@ -475,5 +502,5 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     // ===== Cache Key =====
 
-    private record CacheKey(String embedderId, String text, String inputType, String outputDataType) {}
+    private record CacheKey(String embedderId, List<String> texts, String inputType, String outputDataType) {}
 }

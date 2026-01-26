@@ -65,6 +65,19 @@ public interface Embedder {
      */
     Tensor embed(String text, Context context, TensorType tensorType);
 
+    /**
+     * Same as {@link #embed(String, Context, TensorType)}, but operates on a list of text strings.
+     * This will typically be the chunks of a multi-value document field.
+     * Embedders supporting contextualized chunk embeddings or batch processing may override this method.
+     *
+     * @see #embed(String, Context, TensorType)
+     */
+    default List<Tensor> embed(List<String> texts, Context context, TensorType tensorType) {
+        return texts.stream()
+                .map(text -> embed(text, context, tensorType))
+                .toList();
+    }
+
     class Context extends InvocationContext<Context> {
 
         public Context(String destination) {
