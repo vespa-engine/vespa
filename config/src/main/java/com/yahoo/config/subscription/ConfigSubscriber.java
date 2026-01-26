@@ -487,7 +487,9 @@ public class ConfigSubscriber implements AutoCloseable {
      * Returns the pending generation that is waiting to be applied after restart.
      */
     public Optional<Long> getApplyOnRestartGeneration() {
-        return applyOnRestartGeneration;
+        synchronized (monitor) {
+            return applyOnRestartGeneration;
+        }
     }
 
     /**
