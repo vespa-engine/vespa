@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import static java.util.logging.Level.FINE;
 
@@ -170,16 +169,10 @@ public final class ConfigRetriever {
     }
 
     /**
-     * @see Subscriber#getApplyOnRestartGeneration()
-     * @return the lowest generation among bootstrap and component subscribers that requires a restart, normally it
-     * is the component one.
+     * @see Subscriber#applyOnRestart() 
      */
-    public Optional<Long> getApplyOnRestartConfigGeneration() {
-        return Stream.of(
-                        bootstrapSubscriber.getApplyOnRestartGeneration(),
-                        componentSubscriber.getApplyOnRestartGeneration())
-                .flatMap(Optional::stream)
-                .min(Long::compareTo);
+    public boolean applyOnRestart() {
+        return bootstrapSubscriber.applyOnRestart() || componentSubscriber.applyOnRestart();
     }
 
     public static class ConfigSnapshot {

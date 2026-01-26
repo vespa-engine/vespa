@@ -3,7 +3,6 @@ package com.yahoo.container;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirerFactory;
 import com.yahoo.jdisc.handler.RequestHandler;
@@ -12,7 +11,6 @@ import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.vespa.config.ConfigTransformer;
 import com.yahoo.vespa.config.UrlDownloader;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,9 +33,9 @@ public class Container {
     private volatile UrlDownloader urlDownloader;
 
     /**
-     * @see Subscriber#getApplyOnRestartGeneration()
+     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
      */
-    private volatile Optional<Long> applyOnRestartConfigGeneration = Optional.empty();
+    private volatile boolean applyOnRestart = false;
 
     // TODO: Make this final again.
     private static Container instance = new Container();
@@ -142,16 +140,16 @@ public class Container {
     }
 
     /**
-     * @see com.yahoo.container.di.config.Subscriber#getApplyOnRestartGeneration()
+     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
      */
-    public void setApplyOnRestartConfigGeneration(Optional<Long> applyOnRestartConfigGeneration) {
-        this.applyOnRestartConfigGeneration = applyOnRestartConfigGeneration;
+    public void setApplyOnRestart(boolean applyOnRestart) {
+        this.applyOnRestart = applyOnRestart;
     }
 
     /**
-     * @see com.yahoo.container.di.config.Subscriber#getApplyOnRestartGeneration()
+     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
      */
-    public Optional<Long> getApplyOnRestartConfigGeneration() {
-        return applyOnRestartConfigGeneration;
+    public boolean applyOnRestart() {
+        return applyOnRestart;
     }
 }

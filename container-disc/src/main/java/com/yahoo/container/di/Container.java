@@ -120,7 +120,7 @@ public class Container {
         ConfigSnapshot snapshot;
         while (true) {
             snapshot = retriever.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
-            updateApplyOnRestartConfigGeneration();
+            updateApplyOnRestart();
 
             if (log.isLoggable(FINE))
                 log.log(FINE, String.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
@@ -311,10 +311,10 @@ public class Container {
     }
 
     /**
-     * @see com.yahoo.container.di.config.Subscriber#getApplyOnRestartGeneration()
+     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
      */
-    public void updateApplyOnRestartConfigGeneration() {
-        vespaContainer.setApplyOnRestartConfigGeneration(retriever.getApplyOnRestartConfigGeneration());
+    public void updateApplyOnRestart() {
+        vespaContainer.setApplyOnRestart(retriever.applyOnRestart());
     }
 
     private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {

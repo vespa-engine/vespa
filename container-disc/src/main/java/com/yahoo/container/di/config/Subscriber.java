@@ -5,7 +5,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author Tony Vaagenes
@@ -22,9 +21,9 @@ public interface Subscriber {
     void close();
 
     /**
-     * The first generation that required the restart after the last restart.
-     * It can be behind the current generation.
-     * The restart is still required no matter whether the current generation requires it. 
+     * Whether the last generation should only be applied on restart, not immediately.
+     * Once this is set it will not be unset, as no future generation should be applied
+     * once there is a generation which require restart.
      */
-    Optional<Long> getApplyOnRestartGeneration();
+    boolean applyOnRestart();
 }

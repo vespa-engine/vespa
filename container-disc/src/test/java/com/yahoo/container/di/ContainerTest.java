@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,11 +31,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Tony Vaagenes
@@ -419,17 +413,17 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     /**
-     * Allows setting applyOnRestartGeneration for testing. 
+     * Allows setting applyOnRestart for testing.
      */
     private static class TestSubscriberFactory extends CloudSubscriberFactory {
-        private volatile Optional<Long> applyOnRestartGeneration = Optional.empty();
+        private volatile boolean applyOnRestart = false;
 
         TestSubscriberFactory(ConfigSource configSource) {
             super(configSource);
         }
 
-        void setApplyOnRestartGeneration(Long generation) {
-            this.applyOnRestartGeneration = Optional.ofNullable(generation);
+        void setApplyOnRestart(boolean applyOnRestart) {
+            this.applyOnRestart = applyOnRestart;
         }
 
         @Override
@@ -463,21 +457,21 @@ public class ContainerTest extends ContainerTestBase {
                 }
 
                 @Override
-                public Optional<Long> getApplyOnRestartGeneration() {
-                    return applyOnRestartGeneration;
+                public boolean applyOnRestart() {
+                    return applyOnRestart;
                 }
             };
         }
     }
 
     @Test
-    void applyOnRestartConfigGeneration_updated_when_getting_new_component_graph() {
+    void applyOnRestart_updated_when_getting_new_component_graph() {
         writeBootstrapConfigs();
         dirConfigSource.writeConfig("test", "stringVal \"myString\"");
 
         var vespaContainer = new com.yahoo.container.Container();
         var testFactory = new TestSubscriberFactory(dirConfigSource.configSource());
-        testFactory.setApplyOnRestartGeneration(100L);
+        testFactory.setApplyOnRestart(true);
 
         var container = new Container(
                 testFactory,
@@ -486,14 +480,13 @@ public class ContainerTest extends ContainerTestBase {
                 new TestDeconstructor(osgi),
                 osgi);
 
-        assertTrue(vespaContainer.getApplyOnRestartConfigGeneration().isEmpty(), 
-                "applyOnRestartConfigGeneration is initially empty");
+        assertFalse(vespaContainer.applyOnRestart(),
+                "applyOnRestart is initially false");
 
         var graph = getNewComponentGraph(container);
 
-        assertTrue(vespaContainer.getApplyOnRestartConfigGeneration().isPresent(),
-                  "Container should set applyOnRestartConfigGeneration from config retriever");
-        assertEquals(100L, vespaContainer.getApplyOnRestartConfigGeneration().get());
+        assertTrue(vespaContainer.applyOnRestart(),
+                  "Container should set applyOnRestart from config retriever");
 
         container.shutdownConfigRetriever();
         container.shutdown(graph);

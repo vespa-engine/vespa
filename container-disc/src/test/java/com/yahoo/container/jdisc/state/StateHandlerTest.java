@@ -211,41 +211,23 @@ public class StateHandlerTest extends StateHandlerTestBase {
     }
 
     @Test
-    void testStateConfigWithoutApplyOnRestartGeneration() throws Exception {
-        var root = requestAsJson(V1_URI + "config");
-        var config = root.get("config");
-        var container = config.get("container");
-
-        assertEquals(META_GENERATION, container.get("generation").asLong());
-        assertFalse(
-                config.has("applyOnRestartConfigGeneration"),
-                "applyOnRestartConfigGeneration should not be present when not set"
-        );
-    }
-
-    @Test
-    void testStateConfigWithApplyOnRestartGeneration() throws Exception {
-        // Setup: Set a pending config generation waiting for restart
+    void testStateConfigWithApplyOnRestart() throws Exception {
         var container = new Container();
-        var pendingGeneration = 123L;
-        container.setApplyOnRestartConfigGeneration(java.util.Optional.of(pendingGeneration));
 
-        // Create new handler with the container that has pending generation
-        var handlerWithPendingConfig = new StateHandler(
-                monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, container);
-        var testDriverWithPendingConfig = new RequestHandlerTestDriver(handlerWithPendingConfig);
+        var stateHandler =
+                new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, container);
+        var requestHandler = new RequestHandlerTestDriver(stateHandler);
 
-        // Request config and verify the pending generation is included
-        var response = testDriverWithPendingConfig.sendRequest(V1_URI + "config").readAll();
+        var response = requestHandler.sendRequest(V1_URI + "config").readAll();
         var root = Jackson.mapper().readTree(response);
-
         var config = root.get("config");
-        var containerNode = config.get("container");
-        assertEquals(META_GENERATION, containerNode.get("generation").asLong());
-        assertTrue(
-                config.has("applyOnRestartConfigGeneration"),
-                "applyOnRestartConfigGeneration should be present when set"
-        );
-        assertEquals(pendingGeneration, config.get("applyOnRestartConfigGeneration").asLong());
+        assertFalse(config.get("applyOnRestart").asBoolean());
+
+        container.setApplyOnRestart(true);
+
+        response = requestHandler.sendRequest(V1_URI + "config").readAll();
+        root = Jackson.mapper().readTree(response);
+        config = root.get("config");
+        assertTrue(config.get("applyOnRestart").asBoolean());
     }
 }

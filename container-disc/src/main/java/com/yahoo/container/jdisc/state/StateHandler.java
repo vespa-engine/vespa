@@ -139,7 +139,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
             String suffix = resolvePath(requestUri);
             return switch (suffix) {
                 case "" -> ByteBuffer.wrap(apiLinks(requestUri));
-                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(buildConfigJson(config, vespaContainer.getApplyOnRestartConfigGeneration())));
+                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(buildConfigJson(config, vespaContainer.applyOnRestart())));
                 case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
                 case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix, requestUri.getQuery()));
                 case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
@@ -184,20 +184,16 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         return path;
     }
 
-    private static JsonNode buildConfigJson(ApplicationMetadataConfig config, Optional<Long> applyOnRestartConfigGeneration) {
-        var generationInfo = jsonMapper.createObjectNode();
-        
-        generationInfo.put("generation", config.generation())
-                .set("container", jsonMapper.createObjectNode()
-                        .put("generation", config.generation()));
-
-        // The presence of this field signals whether a restart is required to apply a new config.
-        // It contains the first generation that required the restart after the last restart.
-        // It can be behind the current generation.
-        // The restart is still required no matter whether the current generation requires it. 
-        applyOnRestartConfigGeneration.ifPresent(value -> generationInfo.put("applyOnRestartConfigGeneration", value));
-        
-        return jsonMapper.createObjectNode().set(CONFIG_GENERATION_PATH, generationInfo);
+    /**
+     * @param applyOnRestart {@link com.yahoo.container.di.config.Subscriber#applyOnRestart()}
+     */
+    private static JsonNode buildConfigJson(ApplicationMetadataConfig config, boolean applyOnRestart) {
+        return jsonMapper.createObjectNode()
+                .set(CONFIG_GENERATION_PATH, jsonMapper.createObjectNode()
+                        .put("generation", config.generation())
+                        .put("applyOnRestart", applyOnRestart)
+                        .set("container", jsonMapper.createObjectNode()
+                                .put("generation", config.generation())));
     }
 
     private static byte[] buildVersionOutput() throws JsonProcessingException {
