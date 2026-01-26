@@ -171,14 +171,15 @@ public final class ConfigRetriever {
 
     /**
      * @see Subscriber#getApplyOnRestartGeneration()
+     * @return the lowest generation among bootstrap and component subscribers that requires a restart, normally it
+     * is the component one.
      */
     public Optional<Long> getApplyOnRestartConfigGeneration() {
         return Stream.of(
-            bootstrapSubscriber.getApplyOnRestartGeneration(),
-            componentSubscriber.getApplyOnRestartGeneration()
-        )
-        .flatMap(Optional::stream)
-        .max(Long::compareTo);
+                        bootstrapSubscriber.getApplyOnRestartGeneration(),
+                        componentSubscriber.getApplyOnRestartGeneration())
+                .flatMap(Optional::stream)
+                .min(Long::compareTo);
     }
 
     public static class ConfigSnapshot {
