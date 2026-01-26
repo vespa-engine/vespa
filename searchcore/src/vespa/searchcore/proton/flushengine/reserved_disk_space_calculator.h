@@ -36,7 +36,7 @@ class ReservedDiskSpaceCalculator {
 
 public:
     using IFlushTarget = searchcorespi::IFlushTarget;
-    explicit ReservedDiskSpaceCalculator(size_t concurrent, uint64_t max_summary_file_size) noexcept;
+    ReservedDiskSpaceCalculator(size_t concurrent, uint64_t max_summary_file_size) noexcept;
     ~ReservedDiskSpaceCalculator();
     void track_disk_gain(const IFlushTarget::DiskGain& gain, IFlushTarget::Type type,
                          IFlushTarget::Component component);
