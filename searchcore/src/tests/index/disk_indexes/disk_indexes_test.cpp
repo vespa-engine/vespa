@@ -157,6 +157,27 @@ TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
     EXPECT_EQ(0, transient_size());
 }
 
+TEST_F(DiskIndexesTest, get_size_on_disk)
+{
+    EXPECT_EQ(0, get_size_on_disk(true));
+    setActive("index.fusion.1", 1000000);
+    EXPECT_EQ(1000000, get_size_on_disk(false));
+    setActive("index.flush.2", 500000);
+    EXPECT_EQ(1500000, get_size_on_disk(false));
+    setActive("index.flush.3", 200000);
+    EXPECT_EQ(1700000, get_size_on_disk(false));
+    setActive("index.fusion.3", 1600000);
+    EXPECT_EQ(1600000, get_size_on_disk(false));
+    EXPECT_EQ(3300000, get_size_on_disk(true));
+    notActive("index.fusion.1");
+    notActive("index.flush.2");
+    notActive("index.flush.3");
+    EXPECT_TRUE(remove(get_index_disk_dir("index.fusion.1")));
+    EXPECT_TRUE(remove(get_index_disk_dir("index.flush.2")));
+    EXPECT_TRUE(remove(get_index_disk_dir("index.flush.3")));
+    EXPECT_EQ(1600000, get_size_on_disk(true));
+}
+
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
