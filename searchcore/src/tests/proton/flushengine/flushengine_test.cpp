@@ -13,6 +13,7 @@
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <limits>
 #include <mutex>
 #include <thread>
 
@@ -491,7 +492,7 @@ struct Fixture
     Fixture(uint32_t numThreads, vespalib::duration idleInterval, SimpleStrategy::SP strategy_)
         : tlsStatsFactory(std::make_shared<SimpleTlsStatsFactory>()),
           strategy(strategy_),
-          engine(tlsStatsFactory, strategy, numThreads, idleInterval)
+          engine(tlsStatsFactory, strategy, numThreads, idleInterval, std::numeric_limits<uint64_t>::max())
     { }
 
     Fixture(uint32_t numThreads, vespalib::duration idleInterval)

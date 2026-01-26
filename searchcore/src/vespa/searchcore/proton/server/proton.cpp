@@ -396,7 +396,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup(protonConfig.basedir + "/swapdirs");
     _tls->start(_transport, hwInfo.cpu().cores());
     _flushEngine = std::make_unique<FlushEngine>(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
-                                                 strategy, flush.maxconcurrent, vespalib::from_s(flush.idleinterval));
+                                                 strategy, flush.maxconcurrent, vespalib::from_s(flush.idleinterval),
+                                                 protonConfig.summary.log.maxfilesize);
     _metricsEngine->addExternalMetrics(_summaryEngine->getMetrics());
 
     LOG(debug, "Start proton server with root at %s and cwd at %s",
@@ -495,6 +496,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
     const std::shared_ptr<const DocumentTypeRepo> repo = configSnapshot->getDocumentTypeRepoSP();
 
     _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()), *_scheduler);
+    _flushEngine->configure(protonConfig.summary.log.maxfilesize);
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();

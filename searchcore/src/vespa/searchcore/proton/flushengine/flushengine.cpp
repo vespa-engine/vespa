@@ -103,7 +103,8 @@ FlushEngine::FlushInfo::FlushInfo(uint32_t taskId, const std::string& handler_na
 }
 
 FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory,
-                         IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleInterval)
+                         IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleInterval,
+                         uint64_t max_summary_file_size)
     : _closed(false),
       _maxConcurrentNormal(numThreads),
       _idleInterval(idleInterval),
@@ -128,7 +129,8 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _pendingPrune(),
       _normal_flush_token(std::make_shared<search::FlushToken>()),
       _gc_flush_token(std::make_shared<search::FlushToken>()),
-      _flush_history(std::make_shared<FlushHistory>(_strategy->name(), _strategy_id, _maxConcurrentNormal))
+      _flush_history(std::make_shared<FlushHistory>(_strategy->name(), _strategy_id, _maxConcurrentNormal)),
+      _max_summary_file_size(max_summary_file_size)
 {
     _flushing_strategies[_strategy_id] = 1u; // Account for initial flush strategy
 }
@@ -706,10 +708,16 @@ FlushEngine::poll_strategy(uint32_t wait_strategy_id)
     return SetStrategyResult(wait_strategy_id, std::move(notifier), std::move(flush_history));
 }
 
+void
+FlushEngine::configure(uint64_t max_summary_file_size)
+{
+    _max_summary_file_size.store(max_summary_file_size, std::memory_order_relaxed);
+}
+
 uint64_t
 FlushEngine::calculate_reserved_disk() const
 {
-    flushengine::ReservedDiskSpaceCalculator calc(maxConcurrentTotal());
+    flushengine::ReservedDiskSpaceCalculator calc(maxConcurrentTotal(), get_max_summary_file_size());
     {
         std::lock_guard guard(_lock);
         for (const auto& it : _handlers) {
@@ -718,13 +726,14 @@ FlushEngine::calculate_reserved_disk() const
             for (const auto& target : lst) {
                 if (!isFlushing(guard, FlushContext::createName(handler, *target))) {
                     auto gain = target->getApproxDiskGain();
-                    calc.track_disk_gain(gain);
+                    calc.track_disk_gain(gain, target->getType(), target->getComponent());
                 }
             }
         }
         for (auto& entry : _flushing) {
-            auto gain = entry.second._target->getApproxDiskGain();
-            calc.track_disk_gain(gain);
+            auto& target = entry.second._target;
+            auto gain = target->getApproxDiskGain();
+            calc.track_disk_gain(gain, target->getType(), target->getComponent());;
         }
     }
     return calc.get_reserved_disk();
