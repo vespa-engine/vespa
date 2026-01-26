@@ -157,7 +157,7 @@ TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
     EXPECT_EQ(0, transient_size());
 }
 
-TEST_F(DiskIndexesTest, get_size_on_disk)
+TEST_F(DiskIndexesTest, get_size_on_disk_considers_index_staleness)
 {
     EXPECT_EQ(0, get_size_on_disk(true));
     setActive("index.fusion.1", 1000000);
@@ -167,6 +167,7 @@ TEST_F(DiskIndexesTest, get_size_on_disk)
     setActive("index.flush.3", 200000);
     EXPECT_EQ(1700000, get_size_on_disk(false));
     setActive("index.fusion.3", 1600000);
+    // index.fusion.1, index.flush.2 and index.flush.3 are marked stale due to index.fusion.3 being marked active
     EXPECT_EQ(1600000, get_size_on_disk(false));
     EXPECT_EQ(3300000, get_size_on_disk(true));
     notActive("index.fusion.1");

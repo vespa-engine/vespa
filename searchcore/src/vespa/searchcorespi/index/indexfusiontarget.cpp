@@ -59,9 +59,11 @@ IndexFusionTarget::getApproxMemoryGain() const
 IFlushTarget::DiskGain
 IndexFusionTarget::getApproxDiskGain() const
 {
+    constexpr double max_relative_gain = 2.0;
     uint64_t diskUsageBefore = _fusionStats.diskUsage;
-    uint64_t diskUsageGain = static_cast<uint64_t>(0.1 * (diskUsageBefore *
-                                                          std::clamp<int>(_fusionStats.numUnfused - 1, 0, 20)));
+    double relative_gain = std::clamp<double>(0.1 * (static_cast<int>(_fusionStats.numUnfused) - 1),
+                                              0.0, max_relative_gain);
+    uint64_t diskUsageGain = static_cast<uint64_t>(relative_gain * diskUsageBefore);
     diskUsageGain = std::min(diskUsageGain, diskUsageBefore);
     if (!_fusionStats._canRunFusion) {
         diskUsageGain = 0;
