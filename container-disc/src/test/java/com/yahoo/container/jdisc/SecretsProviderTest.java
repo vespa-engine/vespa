@@ -24,6 +24,7 @@ class SecretsProviderTest {
     void converts_snake_case_to_env_name() {
         assertEquals("VESPA_SECRET_VOYAGE_API_KEY", SecretsProvider.EnvironmentSecrets.toEnvName("voyage_api_key"));
         assertEquals("VESPA_SECRET_OPEN_AI_API_KEY", SecretsProvider.EnvironmentSecrets.toEnvName("open_ai_api_key"));
+        assertEquals("VESPA_SECRET_OPENAI_API_KEY", SecretsProvider.EnvironmentSecrets.toEnvName("OPENAI_API_KEY"));
     }
 
     @Test
