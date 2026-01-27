@@ -18,7 +18,7 @@ import java.util.List;
 class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.Producer {
 
     private static final String CLASS = "com.yahoo.jdisc.http.filter.security.cloud.CloudDataPlaneFilter";
-    private static final String BUNDLE = "cloud-common";
+    private static final String BUNDLE = "cloud-tenant";
 
     private final Collection<Client> clients;
     private final boolean clientsLegacyMode;
