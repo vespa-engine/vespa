@@ -55,6 +55,9 @@ private:
     std::optional<uint32_t> _global_filter_hits;
     std::optional<double> _global_filter_hit_ratio;
     std::shared_ptr<const GlobalFilter> _lazy_filter;
+    std::optional<uint32_t> _lazy_filter_hits;
+    std::optional<double> _lazy_filter_hit_ratio;
+    bool _low_hit_ratio;
     const vespalib::Doom& _doom;
     MatchingPhase _matching_phase;
     search::tensor::NearestNeighborIndex::Stats _nni_stats;
