@@ -33,7 +33,7 @@ class CloudTokenDataPlaneFilter extends Filter implements CloudTokenDataPlaneFil
                 new BundleInstantiationSpecification(
                         new ComponentSpecification("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneFilter"),
                         null,
-                        new ComponentSpecification("cloud-common")),
+                        new ComponentSpecification("cloud-tenant")),
                 Dependencies.emptyDependencies());
     }
 

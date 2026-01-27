@@ -774,7 +774,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Set up handler that tells what fingerprints are known to the container
         class CloudTokenDataPlaneHandler extends Handler implements CloudTokenDataPlaneFilterConfig.Producer {
             CloudTokenDataPlaneHandler() {
-                super(new ComponentModel("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneHandler", null, "cloud-common", null));
+                super(new ComponentModel("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneHandler", null, "cloud-tenant", null));
                 addServerBindings(SystemBindingPattern.fromHttpPortAndPath(Defaults.getDefaults().vespaWebServicePort(), "/data-plane-tokens/v1"));
             }
             @Override public void getConfig(Builder builder) { tokenFilter.getConfig(builder); }
