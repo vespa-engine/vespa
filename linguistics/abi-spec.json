@@ -443,6 +443,8 @@
     "methods" : [
       "public abstract void sampleEmbeddingLatency(double, com.yahoo.language.process.Embedder$Context)",
       "public abstract void sampleSequenceLength(long, com.yahoo.language.process.Embedder$Context)",
+      "public abstract void sampleRequestCount(com.yahoo.language.process.Embedder$Context)",
+      "public abstract void sampleRequestFailure(com.yahoo.language.process.Embedder$Context, int)",
       "public static com.yahoo.language.process.Embedder$Runtime testInstance()"
     ],
     "fields" : [ ]
