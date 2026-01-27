@@ -104,7 +104,6 @@ private:
     std::unique_ptr<TLS>                   _tls;
     std::shared_ptr<ResourceUsageWriteFilter> _write_filter;
     std::shared_ptr<ResourceUsageNotifier> _resource_usage_notifier;
-    std::unique_ptr<DiskMemUsageSampler>   _diskMemUsageSampler;
     std::unique_ptr<PersistenceEngine>     _persistenceEngine;
     std::shared_ptr<AttributeUsageNotifier> _attribute_usage_notifier;
     DocumentDBMap                          _documentDBMap;
@@ -112,6 +111,7 @@ private:
     std::unique_ptr<SummaryEngine>         _summaryEngine;
     MemoryFlushConfigUpdater::UP           _memoryFlushConfigUpdater;
     std::unique_ptr<FlushEngine>           _flushEngine;
+    std::unique_ptr<DiskMemUsageSampler>   _diskMemUsageSampler;
     std::unique_ptr<PrepareRestartHandler> _prepareRestartHandler;
     RPCHooks::UP                           _rpcHooks;
     HealthAdapter                          _healthAdapter;
