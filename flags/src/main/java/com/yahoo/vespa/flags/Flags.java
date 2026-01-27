@@ -168,26 +168,26 @@ public class Flags {
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
             "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2026-02-01",
+            List.of("hmusum"), "2023-12-15", "2026-06-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
             "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2026-02-01",
+            List.of("hmusum"), "2023-05-16", "2026-06-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2026-03-01",
+            List.of("hmusum"), "2023-07-19", "2026-06-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2026-03-01",
+            List.of("hmusum"), "2023-07-19", "2026-06-01",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -229,7 +229,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
-            List.of("johsol"), "2025-10-17", "2026-02-01",
+            List.of("johsol"), "2025-10-17", "2026-03-01",
             "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
             "Takes effect at redeployment",
             APPLICATION);
@@ -321,7 +321,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB = defineIntFlag(
             "max-document-operation-request-size-mib", 2048,
-            List.of("glebashnik"), "2025-09-04", "2026-02-01",
+            List.of("glebashnik"), "2025-09-04", "2026-06-01",
             "Sets the maximum size in MiB of a document operation request (POST or PUT). " +
             "This is the size of a serialized request, which can be several times larger than " +
             "the content of the document, especially for tensors in JSON." +
@@ -341,7 +341,7 @@ public class Flags {
 
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2026-02-01",
+            List.of("glebashnik"), "2025-04-25", "2026-03-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             __ -> true,
@@ -381,7 +381,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
             "use-new-prepare-for-restart-method", true,
-            List.of("hmusum"), "2025-06-17", "2026-02-01",
+            List.of("hmusum"), "2025-06-17", "2026-03-01",
             "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
             "Takes effect at next tick",
             HOSTNAME
@@ -389,14 +389,14 @@ public class Flags {
 
     public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
             "search-core-max-outstanding-move-ops", 100,
-            List.of("hmusum"), "2025-07-09", "2026-02-01",
+            List.of("hmusum"), "2025-07-09", "2026-06-01",
             "The max outstanding move operations a maintenance job can have before being blocked.",
             "Takes effect at next deployment of the application",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_VESPA_NODE_CTL = defineFeatureFlag(
             "use-vespa-node-ctl", true,
-            List.of("hmusum"), "2025-08-12", "2026-02-01",
+            List.of("hmusum"), "2025-08-12", "2026-06-01",
             "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
             "or do this directly from host-admin.",
             "Takes effect at next tick",
