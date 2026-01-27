@@ -7,15 +7,18 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <filesystem>
+#include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
 
 using vespalib::makeLambdaTask;
 
 namespace proton {
 
 DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, ResourceUsageWriteFilter& filter,
-                                         ResourceUsageNotifier& resource_usage_notifier)
+                                         ResourceUsageNotifier& resource_usage_notifier,
+                                         const IReservedDiskSpaceProvider& reserved_disk_space_provider)
     : _filter(filter),
       _notifier(resource_usage_notifier),
+      _reserved_disk_space_provider(reserved_disk_space_provider),
       _path(path_in),
       _sampleInterval(60s),
       _lastSampleTime(),
@@ -67,7 +70,8 @@ DiskMemUsageSampler::sampleAndReportUsage()
      */
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
     uint64_t diskUsage = sampleDiskUsage();
-    _notifier.set_resource_usage(transientUsage, memoryStats, diskUsage);
+    uint64_t reserved_disk_space = _reserved_disk_space_provider.get_reserved_disk_space();
+    _notifier.set_resource_usage(transientUsage, memoryStats, diskUsage, reserved_disk_space);
     _lastSampleTime = vespalib::steady_clock::now();
 }
 

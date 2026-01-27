@@ -715,7 +715,7 @@ FlushEngine::configure(uint64_t max_summary_file_size)
 }
 
 uint64_t
-FlushEngine::calculate_reserved_disk() const
+FlushEngine::get_reserved_disk_space() const
 {
     flushengine::ReservedDiskSpaceCalculator calc(maxConcurrentTotal(), get_max_summary_file_size());
     {

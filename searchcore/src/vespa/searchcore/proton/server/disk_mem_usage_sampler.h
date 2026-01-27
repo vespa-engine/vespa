@@ -10,18 +10,20 @@ namespace vespalib { class IDestructorCallback; }
 
 namespace proton {
 
+class IReservedDiskSpaceProvider;
 class ITransientResourceUsageProvider;
 
 /*
  * Class to sample disk and memory usage used for filtering write operations.
  */
 class DiskMemUsageSampler {
-    ResourceUsageWriteFilter& _filter;
-    ResourceUsageNotifier&    _notifier;
-    std::filesystem::path     _path;
-    vespalib::duration        _sampleInterval;
-    vespalib::steady_time     _lastSampleTime;
-    std::mutex                _lock;
+    ResourceUsageWriteFilter&         _filter;
+    ResourceUsageNotifier&            _notifier;
+    const IReservedDiskSpaceProvider& _reserved_disk_space_provider;
+    std::filesystem::path             _path;
+    vespalib::duration                _sampleInterval;
+    vespalib::steady_time             _lastSampleTime;
+    std::mutex                        _lock;
     std::vector<std::shared_ptr<const ITransientResourceUsageProvider>> _transient_usage_providers;
     std::unique_ptr<vespalib::IDestructorCallback> _periodicHandle;
 
@@ -54,7 +56,8 @@ public:
     };
 
     DiskMemUsageSampler(const std::string &path_in, ResourceUsageWriteFilter& filter,
-                        ResourceUsageNotifier& resource_usage_notifier);
+                        ResourceUsageNotifier& resource_usage_notifier,
+                        const IReservedDiskSpaceProvider& reserved_disk_space_provider);
     ~DiskMemUsageSampler();
     void close();
 
