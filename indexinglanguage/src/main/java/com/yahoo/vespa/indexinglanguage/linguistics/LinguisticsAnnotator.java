@@ -140,7 +140,7 @@ public class LinguisticsAnnotator {
                                     TermOccurrences termOccurrences) {
         if (!token.isSpecialToken()) {
             if (token.getNumComponents() > 0) {
-                for (int i = 0; i < token.getNumComponents(); ++i) {
+                for (int i = 0; i < token.getNumComponents(); i++) {
                     addAnnotationSimple(simple, input, token.getComponent(i), termOccurrences);
                 }
                 return;
@@ -155,7 +155,7 @@ public class LinguisticsAnnotator {
         if (from + length > input.length()) return;
 
         if (config.getStemMode() == StemMode.ALL) {
-            addAllStemsSimple(simple, input, token, from, length, termOccurrences);
+            addAllStemsSimple(simple, token, from, length, termOccurrences);
         } else {
             String term = token.getTokenString();
             if (term == null || term.trim().isEmpty()) return;
@@ -167,7 +167,7 @@ public class LinguisticsAnnotator {
         }
     }
 
-    private void addAllStemsSimple(SimpleIndexingAnnotations simple, String input, Token token,
+    private void addAllStemsSimple(SimpleIndexingAnnotations simple, Token token,
                                    int from, int length, TermOccurrences termOccurrences) {
         String indexableOriginal = config.getLowercase() ? toLowerCase(token.getOrig()) : token.getOrig();
         String term = token.getTokenString();
@@ -186,7 +186,7 @@ public class LinguisticsAnnotator {
 
         for (int i = 0; i < token.getNumStems(); i++) {
             String stem = token.getStem(i);
-            if (stem.equals(indexableOriginal) || (term != null && stem.equals(term))) continue;
+            if (stem.equals(indexableOriginal) || stem.equals(term)) continue;
             if (stem.length() > config.getMaxTokenLength()) continue;
             if (!termOccurrences.termCountBelowLimit(stem)) continue;
             simple.add(from, length, stem);

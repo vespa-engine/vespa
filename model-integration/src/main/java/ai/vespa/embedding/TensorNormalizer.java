@@ -10,24 +10,27 @@ import com.yahoo.tensor.TensorType;
  *
  * @author bjorncs
  */
-class EmbeddingNormalizer {
-    private EmbeddingNormalizer() {}
+class TensorNormalizer {
 
-    static Tensor normalize(Tensor embedding, TensorType tensorType) {
+    private TensorNormalizer() {}
+
+    /** L2 (unit length) normalize the given tensor */
+    static Tensor normalize(Tensor tensor) {
         double sumOfSquares = 0.0;
 
-        Tensor.Builder builder = Tensor.Builder.of(tensorType);
-        for (int i = 0; i < tensorType.dimensions().get(0).size().get(); i++) {
-            double item = embedding.get(TensorAddress.of(i));
+        Tensor.Builder builder = Tensor.Builder.of(tensor.type());
+        for (int i = 0; i < tensor.type().dimensions().get(0).size().get(); i++) {
+            double item = tensor.get(TensorAddress.of(i));
             sumOfSquares += item * item;
         }
 
         double magnitude = Math.sqrt(sumOfSquares);
 
-        for (int i = 0; i < tensorType.dimensions().get(0).size().get(); i++) {
-            double value = embedding.get(TensorAddress.of(i));
+        for (int i = 0; i < tensor.type().dimensions().get(0).size().get(); i++) {
+            double value = tensor.get(TensorAddress.of(i));
             builder.cell(value / magnitude, i);
         }
         return builder.build();
     }
+
 }

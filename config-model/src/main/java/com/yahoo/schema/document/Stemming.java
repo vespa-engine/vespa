@@ -52,13 +52,12 @@ public enum Stemming {
     }
 
     public StemMode toStemMode() {
-        switch(this) {
-            case SHORTEST: return StemMode.SHORTEST;
-            case MULTIPLE: return StemMode.ALL;
-            case BEST : return StemMode.BEST;
-            case NONE: return StemMode.NONE;
-            default: throw new IllegalStateException("Inconvertible stem mode " + this);
-        }
+        return switch (this) {
+            case SHORTEST -> StemMode.SHORTEST;
+            case MULTIPLE -> StemMode.ALL;
+            case BEST -> StemMode.BEST;
+            case NONE -> StemMode.NONE;
+        };
     }
 
 }
