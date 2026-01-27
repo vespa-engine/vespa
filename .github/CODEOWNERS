@@ -7,7 +7,6 @@
 ./bundle-plugin-test/* @gjoranv
 ./bundle-plugin/* @gjoranv
 ./client/go/* @evgiz @arnej27959
-./cloud-tenant-base-dependencies-enforcer/* @bjorncs
 ./cloud-tenant-base/* @bjorncs
 ./cloud-tenant-cd/* @bjorncs
 ./clustercontroller-apps/* @vekterli @hakonhall
