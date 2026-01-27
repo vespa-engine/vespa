@@ -3,6 +3,7 @@ package com.yahoo.schema.derived;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.io.IOUtils;
@@ -57,8 +58,13 @@ public class DerivedConfiguration {
     }
 
     DerivedConfiguration(Schema schema, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles) {
-        this(new DeployState.Builder().rankProfileRegistry(rankProfileRegistry).queryProfiles(queryProfiles).build(),
-                schema, SchemaInfo.IndexMode.INDEX);
+        this(new DeployState.Builder()
+                     .rankProfileRegistry(rankProfileRegistry)
+                     .queryProfiles(queryProfiles)
+                     .properties(new TestProperties())
+                     .build(),
+             schema,
+             SchemaInfo.IndexMode.INDEX);
     }
 
     /**

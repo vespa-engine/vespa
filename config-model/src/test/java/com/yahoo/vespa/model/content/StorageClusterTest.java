@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -32,13 +33,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class StorageClusterTest {
 
     StorageCluster parse(String xml, Flavor flavor) {
-        MockRoot root = new MockRoot("", new DeployState.Builder()
+        MockRoot root = new MockRoot("", TestDeployState.createBuilder()
                 .applicationPackage(new MockApplicationPackage.Builder().build())
                 .modelHostProvisioner(new SingleNodeProvisioner(flavor)).build());
         return parse(xml, root);
     }
     StorageCluster parse(String xml, Flavor flavor, ModelContext.Properties properties) {
-        MockRoot root = new MockRoot("", new DeployState.Builder()
+        MockRoot root = new MockRoot("", TestDeployState.createBuilder()
                 .applicationPackage(new MockApplicationPackage.Builder().build())
                 .modelHostProvisioner(new SingleNodeProvisioner(flavor))
                 .properties(properties).build());

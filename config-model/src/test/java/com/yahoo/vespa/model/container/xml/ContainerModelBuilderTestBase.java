@@ -6,6 +6,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.vespa.model.VespaModel;
@@ -83,11 +84,11 @@ public abstract class ContainerModelBuilderTestBase {
     }
 
     public static List<ContainerModel> createModel(MockRoot root, Element... containerElems) {
-        return createModel(root, DeployState.createTestState(), null, containerElems);
+        return createModel(root, TestDeployState.create(), null, containerElems);
     }
 
     public static void createModel(MockRoot root, DeployLogger testLogger, Element... containerElems) {
-        createModel(root, DeployState.createTestState(testLogger), null, containerElems);
+        createModel(root, TestDeployState.create(testLogger), null, containerElems);
     }
 
     private static void generateDefaultSearchChains(ContainerCluster<?> cluster) {

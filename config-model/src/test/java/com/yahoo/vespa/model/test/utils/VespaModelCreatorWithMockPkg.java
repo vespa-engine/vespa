@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.api.ValidationParameters.CheckRouting;
 import com.yahoo.config.model.application.provider.SchemaValidators;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.model.VespaModel;
@@ -50,7 +51,7 @@ public class VespaModelCreatorWithMockPkg {
     }
 
     public VespaModel create() {
-        DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).build();
+        DeployState deployState = TestDeployState.create(appPkg);
         return create(true, deployState);
     }
 

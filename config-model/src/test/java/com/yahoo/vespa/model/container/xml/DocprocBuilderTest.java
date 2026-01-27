@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
@@ -40,7 +40,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
 
     @BeforeEach
     public void setupCluster() {
-        ContainerModel model = new ContainerModelBuilder(false, Networking.disable).build(DeployState.createTestState(), null, null, root, servicesXml());
+        ContainerModel model = new ContainerModelBuilder(false, Networking.disable).build(TestDeployState.create(), null, null, root, servicesXml());
         cluster = (ApplicationContainerCluster) model.getCluster();
         cluster.getDocproc().getChains().addServersAndClientsForChains();
         root.freezeModelTopology();

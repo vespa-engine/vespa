@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.junit.jupiter.api.Test;
@@ -68,7 +68,7 @@ public class StrictFilteringTest extends DomBuilderTest {
     }
 
     private void buildContainerCluster(Element containerElem) {
-        new ContainerModelBuilder(true, ContainerModelBuilder.Networking.enable).build(DeployState.createTestState(), null, null, root, containerElem);
+        new ContainerModelBuilder(true, ContainerModelBuilder.Networking.enable).build(TestDeployState.create(), null, null, root, containerElem);
         root.freezeModelTopology();
     }
 }

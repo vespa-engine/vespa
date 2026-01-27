@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -31,7 +32,7 @@ public class ContentClusterUtils {
     }
 
     private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> schemas) {
-        return createMockRoot(provisioner, schemas, new DeployState.Builder());
+        return createMockRoot(provisioner, schemas, TestDeployState.createBuilder());
     }
 
     public static MockRoot createMockRoot(HostProvisioner provisioner, List<String> schemas, DeployState.Builder deployStateBuilder) {
@@ -79,11 +80,11 @@ public class ContentClusterUtils {
     }
 
     public static ContentCluster createCluster(String clusterXml, List<String> schemas) throws Exception {
-        return createCluster(clusterXml, schemas, new DeployState.Builder());
+        return createCluster(clusterXml, schemas, TestDeployState.createBuilder());
     }
 
     public static ContentCluster createCluster(String clusterXml) throws Exception {
-        return createCluster(clusterXml, SchemaBuilder.createSchemas("test"), new DeployState.Builder());
+        return createCluster(clusterXml, SchemaBuilder.createSchemas("test"), TestDeployState.createBuilder());
     }
 
     public static ContentCluster createCluster(String clusterXml, DeployState.Builder deployStateBuilder) throws Exception {
