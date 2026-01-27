@@ -115,6 +115,7 @@ private:
     std::shared_ptr<search::FlushToken> _normal_flush_token;
     std::shared_ptr<search::FlushToken> _gc_flush_token;
     std::shared_ptr<flushengine::FlushHistory> _flush_history;
+    std::atomic<uint64_t>                      _max_summary_file_size;
 
     FlushContext::List getTargetList(bool includeFlushingTargets) const;
     BoundFlushContextList getSortedTargetList();
@@ -139,6 +140,9 @@ private:
     std::string checkAndFlush(std::string prev);
     bool is_closed() const noexcept { return _closed.load(std::memory_order_relaxed); }
     uint32_t set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy);
+    uint64_t get_max_summary_file_size() const noexcept {
+        return _max_summary_file_size.load(std::memory_order_relaxed);
+    }
 
     friend class FlushTask;
     friend class FlushEngineExplorer;
@@ -160,7 +164,8 @@ public:
      * @param idleInterval The interval between when flushes are checked whne there are no one progressing.
      */
     FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory,
-                IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleInterval);
+                IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleInterval,
+                uint64_t max_summary_file_size);
 
     /**
      * Destructor. Waits for all pending tasks to complete.
@@ -234,6 +239,7 @@ public:
     uint32_t maxConcurrentTotal() const { return _maxConcurrentNormal + 1; }
     uint32_t maxConcurrentNormal() const { return _maxConcurrentNormal; }
     const std::shared_ptr<flushengine::FlushHistory>& get_flush_history() const noexcept { return _flush_history; }
+    void configure(uint64_t max_summary_file_size);
     uint64_t calculate_reserved_disk() const;
 };
 

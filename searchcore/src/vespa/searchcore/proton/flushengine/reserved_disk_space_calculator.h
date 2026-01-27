@@ -29,14 +29,17 @@ class ReservedDiskSpaceCalculator {
         uint64_t reserved() const noexcept { return _reserved; }
     };
 
-    size_t _concurrent;
+    size_t                 _concurrent;
+    uint64_t               _max_summary_file_size;
     std::vector<Candidate> _candidates; // Used to calculate worst case for concurrent flushes
-    uint64_t _reserved_grow;
+    uint64_t               _reserved_grow;
 
 public:
-    explicit ReservedDiskSpaceCalculator(size_t concurrent) noexcept;
+    using IFlushTarget = searchcorespi::IFlushTarget;
+    ReservedDiskSpaceCalculator(size_t concurrent, uint64_t max_summary_file_size) noexcept;
     ~ReservedDiskSpaceCalculator();
-    void track_disk_gain(const searchcorespi::IFlushTarget::DiskGain& gain);
+    void track_disk_gain(const IFlushTarget::DiskGain& gain, IFlushTarget::Type type,
+                         IFlushTarget::Component component);
     uint64_t get_reserved_disk();
 };
 
