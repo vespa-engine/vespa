@@ -17,7 +17,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.operation.checkers");
+LOG_SETUP(".distributor.state_checkers");
 
 using document::BucketSpace;
 

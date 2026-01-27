@@ -9,6 +9,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.ListFlag;
@@ -28,6 +29,7 @@ import java.util.Set;
 public abstract class ConfigServerMaintainer extends Maintainer {
 
     protected final ApplicationRepository applicationRepository;
+    protected final TenantRepository tenantRepository;
 
     /** Creates a maintainer where maintainers on different nodes in this cluster run with even delay. */
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
@@ -41,6 +43,7 @@ public abstract class ConfigServerMaintainer extends Maintainer {
         super(null, interval, clock, new JobControl(new JobControlFlags(curator, flagSource)),
               new ConfigServerJobMetrics(applicationRepository.metric()), cluster(curator), ignoreCollision, 1.0, acquireLock);
         this.applicationRepository = applicationRepository;
+        this.tenantRepository = applicationRepository.tenantRepository();
     }
 
 

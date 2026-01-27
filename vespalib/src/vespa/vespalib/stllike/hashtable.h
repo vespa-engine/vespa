@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/traits.h>
 #include <vespa/vespalib/util/alloc.h>
 #include <algorithm>
+#include <cstdint>
 #include <iterator>
 #include <vector>
 

@@ -30,6 +30,7 @@ public enum ConfigServerMetrics implements VespaMetrics {
 
     MAINTENANCE_SUCCESS_FACTOR_DEVIATION("maintenance.successFactorDeviation", Unit.FRACTION, "Configserver: Maintenance Success Factor Deviation"),
     MAINTENANCE_DURATION("maintenance.duration", Unit.MILLISECOND, "Configserver: Maintenance Duration"),
+    MAINTENANCE_CONGESTION("maintenance.congestion", Unit.FAILURE, "Configserver: Maintenance Congestion"),
 
     // ZooKeeper related metrics
     ZK_CONNECTION_LOST("configserver.zkConnectionLost", Unit.CONNECTION, "Number of ZooKeeper connections lost"),

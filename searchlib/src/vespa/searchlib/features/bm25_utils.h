@@ -30,6 +30,7 @@ class Bm25Utils {
     static std::string _average_field_length;
     static std::string _b;
     static std::string _k1;
+    mutable std::string _error_message;
 public:
     struct QueryTerm {
         fef::TermFieldHandle handle;
@@ -48,6 +49,7 @@ public:
     ~Bm25Utils();
     vespalib::Trinary lookup_param(const std::string& param, double& result) const;
     vespalib::Trinary lookup_param(const std::string& param, std::optional<double>& result) const;
+    const std::string& last_error() const { return _error_message; }
     static double calculate_inverse_document_frequency(search::fef::DocumentFrequency doc_freq) noexcept;
     static double get_inverse_document_frequency(const fef::ITermFieldData &term_field,
                                                  const fef::IQueryEnvironment &env,

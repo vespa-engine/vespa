@@ -53,6 +53,10 @@
           <groupId>javax.annotation</groupId>
           <artifactId>javax.annotation-api</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.dev-smart</groupId>
+          <artifactId>ubjson</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -142,6 +146,10 @@
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-cbor</artifactId>
     </dependency>
 
     <dependency>

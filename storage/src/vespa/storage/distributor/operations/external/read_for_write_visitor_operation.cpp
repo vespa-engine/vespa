@@ -9,7 +9,7 @@
 #include <cassert>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".operations.external.read_for_write_visitor_operation");
+LOG_SETUP(".distributor.operations.external.read_for_write_visitor");
 
 namespace storage::distributor {
 

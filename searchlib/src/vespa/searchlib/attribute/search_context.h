@@ -33,6 +33,8 @@ public:
     ~SearchContext() override = default;
 
     HitEstimate calc_hit_estimate() const override;
+    double posting_list_merge_factor() const override;
+
     std::unique_ptr<queryeval::SearchIterator> createIterator(fef::TermFieldMatchData* matchData, bool strict) override;
     void fetchPostings(const queryeval::ExecuteInfo& execInfo, bool strict) override;
     bool valid() const override { return false; }

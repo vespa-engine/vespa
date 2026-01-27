@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.yahoo.vespa</groupId>
@@ -16,56 +16,56 @@
     <version>8-SNAPSHOT</version>
     <name>defaults</name>
     <description>
-	Library with the defaults for Vespa.
+        Library with the defaults for Vespa.
     </description>
 
     <repositories>
-	<repository>
-	    <id>apache-org</id>
-	    <name>apache.org Repository for Maven</name>
-	    <url>https://repository.apache.org/content/groups/public</url>
-	    <releases>
-		<updatePolicy>never</updatePolicy>
-	    </releases>
-	    <snapshots>
-		<enabled>false</enabled>
-	    </snapshots>
-	</repository>
+        <repository>
+            <id>apache-org</id>
+            <name>apache.org Repository for Maven</name>
+            <url>https://repository.apache.org/content/groups/public</url>
+            <releases>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
     <dependencies>
-	<dependency>
-	    <groupId>com.yahoo.vespa</groupId>
-	    <artifactId>annotations</artifactId>
-	    <version>${project.version}</version>
-	    <scope>provided</scope>
-	</dependency>
-	<dependency>
-	    <groupId>junit</groupId>
-	    <artifactId>junit</artifactId>
-	    <scope>test</scope>
-	</dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>annotations</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-	<plugins>
-	    <plugin>
-			<groupId>com.yahoo.vespa</groupId>
-			<artifactId>bundle-plugin</artifactId>
-			<extensions>true</extensions>
-			<configuration>
-				<bundleType>CORE</bundleType>
-				<suppressWarningMissingImportPackages>true</suppressWarningMissingImportPackages>
-			</configuration>
-		</plugin>
-	    <plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-deploy-plugin</artifactId>
-	    </plugin>
-	    <plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-compiler-plugin</artifactId>
-	    </plugin>
+        <plugins>
+            <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <bundleType>CORE</bundleType>
+                    <suppressWarningMissingImportPackages>true</suppressWarningMissingImportPackages>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -77,14 +77,14 @@
                     </environmentVariables>
                 </configuration>
             </plugin>
-	    <plugin>
-		<groupId>org.apache.maven.plugins</groupId>
-		<artifactId>maven-install-plugin</artifactId>
-	    </plugin>
-		<plugin>
-			<groupId>com.yahoo.vespa</groupId>
-			<artifactId>abi-check-plugin</artifactId>
-		</plugin>
-	</plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>abi-check-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
 </project>

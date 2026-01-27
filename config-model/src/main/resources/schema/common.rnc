@@ -158,14 +158,10 @@ VoyageAIEmbedder =
    attribute type { "voyage-ai-embedder" } &
    element model { xsd:string } &
    element api-key-secret-ref { xsd:string } &
+   element dimensions { "256" | "512" | "1024" | "1536" | "2048" } &
+   element quantization { "auto" | "float" | "int8" | "binary" }? &
    element endpoint { xsd:string }? &
-   element timeout { xsd:positiveInteger }? &
-   element max-retries { xsd:nonNegativeInteger }? &
-   element default-input-type { "query" | "document" }? &
-   element auto-detect-input-type { xsd:boolean }? &
-   element normalize { xsd:boolean }? &
-   element truncate { xsd:boolean }? &
-   element max-idle-connections { xsd:positiveInteger }?
+   element truncate { xsd:boolean }?
 
 OnnxModelExecutionParams =
     element onnx-execution-mode { "parallel" | "sequential" }? &

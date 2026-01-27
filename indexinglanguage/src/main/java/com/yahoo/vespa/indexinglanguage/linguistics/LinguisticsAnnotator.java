@@ -97,8 +97,6 @@ public class LinguisticsAnnotator {
      * @return whether anything was annotated
      */
     public boolean annotate(StringFieldValue text, DocumentId docId, boolean isReindexingOperation) {
-        if (text.hasAnnotations(SpanTrees.LINGUISTICS)) return true;  // Already annotated with LINGUISTICS.
-
         Tokenizer tokenizer = factory.getTokenizer();
         String input = (text.getString().length() <= config.getMaxTokenizeLength())
                        ? text.getString()

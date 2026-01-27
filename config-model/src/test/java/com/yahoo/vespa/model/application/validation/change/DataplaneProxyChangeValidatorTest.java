@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.deploy.DeployState;
@@ -55,22 +56,6 @@ public class DataplaneProxyChangeValidatorTest {
             </services>
             """;
 
-    private static final ContainerEndpoint TOKEN_ENDPOINT = new ContainerEndpoint(
-            "default",
-            ApplicationClusterEndpoint.Scope.zone,
-            List.of("token.example.com"),
-            OptionalInt.empty(),
-            ApplicationClusterEndpoint.RoutingMethod.exclusive,
-            ApplicationClusterEndpoint.AuthMethod.token);
-
-    private static final ContainerEndpoint MTLS_ENDPOINT = new ContainerEndpoint(
-            "default",
-            ApplicationClusterEndpoint.Scope.zone,
-            List.of("mtls.example.com"),
-            OptionalInt.empty(),
-            ApplicationClusterEndpoint.RoutingMethod.exclusive,
-            ApplicationClusterEndpoint.AuthMethod.mtls);
-
     @BeforeEach
     public void setup() throws IOException {
         var securityFolder = applicationFolder.toPath().resolve("security");
@@ -89,30 +74,36 @@ public class DataplaneProxyChangeValidatorTest {
 
     @Test
     void restart_when_token_endpoint_enabled() {
-        var previous = createModel(Set.of(MTLS_ENDPOINT));
-        var next = createModel(Set.of(TOKEN_ENDPOINT, MTLS_ENDPOINT));
+        var previous = createModel(Set.of(mtlsEndpoint("default")));
+        var next = createModel(Set.of(tokenEndpoint("default"), mtlsEndpoint("default")));
         var result = validateModel(previous, next);
 
         assertEquals(1, result.size());
         assertTrue(result.get(0).getMessage().contains("Token endpoint was enabled"));
         assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     @Test
     void restart_when_token_endpoint_disabled() {
-        var previous = createModel(Set.of(TOKEN_ENDPOINT, MTLS_ENDPOINT));
-        var next = createModel(Set.of(MTLS_ENDPOINT));
+        var previous = createModel(Set.of(tokenEndpoint("default"), mtlsEndpoint("default")));
+        var next = createModel(Set.of(mtlsEndpoint("default")));
         var result = validateModel(previous, next);
 
         assertEquals(1, result.size());
         assertTrue(result.get(0).getMessage().contains("Token endpoint was disabled"));
         assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     @Test
     void no_restart_when_token_endpoint_unchanged() {
-        var previous = createModel(Set.of(TOKEN_ENDPOINT, MTLS_ENDPOINT));
-        var next = createModel(Set.of(TOKEN_ENDPOINT, MTLS_ENDPOINT));
+        var previous = createModel(Set.of(tokenEndpoint("default"), mtlsEndpoint("default")));
+        var next = createModel(Set.of(tokenEndpoint("default"), mtlsEndpoint("default")));
         var result = validateModel(previous, next);
 
         assertTrue(result.isEmpty());
@@ -120,11 +111,47 @@ public class DataplaneProxyChangeValidatorTest {
 
     @Test
     void no_restart_when_token_endpoint_not_used() {
-        var previous = createModel(Set.of(MTLS_ENDPOINT));
-        var next = createModel(Set.of(MTLS_ENDPOINT));
+        var previous = createModel(Set.of(mtlsEndpoint("default")));
+        var next = createModel(Set.of(mtlsEndpoint("default")));
         var result = validateModel(previous, next);
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void no_restart_when_cluster_with_token_endpoint_is_removed() {
+        var servicesXmlWithOtherCluster = """
+                <services version='1.0'>
+                    <container id='other-cluster' version='1.0'>
+                        <nodes count='1'/>
+                    </container>
+                </services>
+                """;
+
+        var previous = createModel(Set.of(tokenEndpoint("default")));
+        var next = createModel(servicesXmlWithOtherCluster, Set.of(tokenEndpoint("other-cluster")));
+        var result = validateModel(previous, next);
+        assertTrue(result.isEmpty());
+    }
+
+    private static ContainerEndpoint tokenEndpoint(String clusterId) {
+        return new ContainerEndpoint(
+                clusterId,
+                ApplicationClusterEndpoint.Scope.zone,
+                List.of("token.example.com"),
+                OptionalInt.empty(),
+                ApplicationClusterEndpoint.RoutingMethod.exclusive,
+                ApplicationClusterEndpoint.AuthMethod.token);
+    }
+
+    private static ContainerEndpoint mtlsEndpoint(String clusterId) {
+        return new ContainerEndpoint(
+                clusterId,
+                ApplicationClusterEndpoint.Scope.zone,
+                List.of("mtls.example.com"),
+                OptionalInt.empty(),
+                ApplicationClusterEndpoint.RoutingMethod.exclusive,
+                ApplicationClusterEndpoint.AuthMethod.mtls);
     }
 
     private List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
@@ -135,9 +162,13 @@ public class DataplaneProxyChangeValidatorTest {
     }
 
     private VespaModel createModel(Set<ContainerEndpoint> endpoints) {
+        return createModel(SERVICES_XML, endpoints);
+    }
+
+    private VespaModel createModel(String servicesXml, Set<ContainerEndpoint> endpoints) {
         var applicationPackage = new MockApplicationPackage.Builder()
                 .withRoot(applicationFolder)
-                .withServices(SERVICES_XML)
+                .withServices(servicesXml)
                 .build();
         return new VespaModelCreatorWithMockPkg(applicationPackage)
                 .create(deployStateBuilder(endpoints));

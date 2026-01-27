@@ -28,11 +28,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * An indexing language script derived from a schema. An indexing script contains a set of indexing
- * statements, organized in a composite structure of indexing code snippets.
+ * statements, organized in a composite structure of indexing expressions.
  *
  * @author bratseth
  */
@@ -105,7 +104,61 @@ public final class IndexingScript extends Derived {
         export(toDirectory, builder.build());
     }
 
+    private void addContentInOrder(IlscriptsConfig.Ilscript.Builder ilscriptBuilder) {
+        Set<String> touchedFields = new HashSet<>();
+        for (Expression expression : expressions) {
+            if (isStreaming) {
+                expression = expression.convertChildren(new DropTokenize());
+                expression = expression.convertChildren(new DropZcurve());
+            }
+            ilscriptBuilder.content(expression.toString());
+            FieldScanVisitor fieldFetcher = new FieldScanVisitor();
+            fieldFetcher.visit(expression);
+            touchedFields.addAll(fieldFetcher.touchedFields());
+        }
+        generateSyntheticStatementsForUntouchedFields(ilscriptBuilder, touchedFields);
+    }
+
+    private void generateSyntheticStatementsForUntouchedFields(Builder ilscriptBuilder, Set<String> touchedFields) {
+        Set<String> fieldsWithSyntheticStatements = new HashSet<>(docFields);
+        fieldsWithSyntheticStatements.removeAll(touchedFields);
+        List<String> orderedFields = new ArrayList<>(fieldsWithSyntheticStatements);
+        Collections.sort(orderedFields);
+        for (String fieldName : orderedFields) {
+            StatementExpression copyField = new StatementExpression(new InputExpression(fieldName),
+                    new PassthroughExpression(fieldName));
+            ilscriptBuilder.content(copyField.toString());
+        }
+    }
+
+    private static class FieldScanVisitor extends ExpressionVisitor {
+
+        List<String> touchedFields = new ArrayList<>();
+        List<String> candidates = new ArrayList<>();
+
+        @Override
+        protected void doVisit(Expression exp) {
+            if (exp instanceof OutputExpression) {
+                touchedFields.add(((OutputExpression) exp).getFieldName());
+            }
+            if (exp instanceof InputExpression) {
+                candidates.add(((InputExpression) exp).getFieldName());
+            }
+            if (exp instanceof ZCurveExpression) {
+                touchedFields.addAll(candidates);
+            }
+        }
+
+        Collection<String> touchedFields() {
+            Collection<String> output = touchedFields;
+            touchedFields = null; // deny re-use to try and avoid obvious bugs
+            return output;
+        }
+
+    }
+
     private static class DropTokenize extends ExpressionConverter {
+
         @Override
         protected boolean shouldConvert(Expression exp) {
             return exp instanceof TokenizeExpression;
@@ -115,10 +168,12 @@ public final class IndexingScript extends Derived {
         protected Expression doConvert(Expression exp) {
             return null;
         }
+
     }
 
     // for streaming, drop zcurve conversion to attribute with suffix
     private static class DropZcurve extends ExpressionConverter {
+
         private static final String zSuffix = "_zcurve";
         private static final int zSuffixLen = zSuffix.length();
         private boolean seenZcurve = false;
@@ -145,166 +200,12 @@ public final class IndexingScript extends Derived {
                 int len = orig.length();
                 if (len > zSuffixLen && orig.endsWith(zSuffix)) {
                     String fieldName = orig.substring(0, len - zSuffixLen);
-                    var result = new AttributeExpression(fieldName);
-                    return result;
+                    return new AttributeExpression(fieldName);
                 }
             }
             return exp;
         }
-    }
-
-    private void addContentInOrder(IlscriptsConfig.Ilscript.Builder ilscriptBuilder) {
-        List<Expression> ordered = orderExpressions(expressions);
-        Set<String> touchedFields = new HashSet<>();
-        for (Expression expression : ordered) {
-            if (isStreaming) {
-                expression = expression.convertChildren(new DropTokenize());
-                expression = expression.convertChildren(new DropZcurve());
-            }
-            ilscriptBuilder.content(expression.toString());
-            FieldScanVisitor fieldFetcher = new FieldScanVisitor();
-            fieldFetcher.visit(expression);
-            touchedFields.addAll(fieldFetcher.touchedFields());
-        }
-        generateSyntheticStatementsForUntouchedFields(ilscriptBuilder, touchedFields);
-    }
-
-    private List<Expression> orderExpressions(List<Expression> expressions) {
-        List<Expression> result = new ArrayList<>();
-        List<ToProcess> toProcess = expressions.stream().map(ToProcess::new).collect(Collectors.toList());
-        for (var entry : toProcess) {
-            if (entry.done)
-                continue;
-            for (String modifyingField : entry.modifiesSelf) {
-                // NOTE: loops over same list for simplicity
-                for (var checkUsing : toProcess) {
-                    if (checkUsing.done || checkUsing == entry)
-                        continue;
-                    if (checkUsing.inputs.contains(modifyingField)) {
-                        result.add(checkUsing.getExpression());
-                    }
-                }
-            }
-            result.add(entry.getExpression());
-        }
-        return result;
-    }
-
-    private static class ToProcess {
-        boolean done = false;
-        final Set<String> inputs = new HashSet();
-        final Set<String> outputs = new HashSet();
-        final Set<String> modifiesSelf = new HashSet();
-        private Expression expr;
-
-        // should only be called once
-        Expression getExpression() {
-            done = true;
-            return expr;
-        }
-
-        ToProcess(Expression expr) {
-            this.expr = expr;
-            // analyze expression:
-            var visitor = new GetIOVisitor();
-            visitor.visit(expr);
-            for (String out : outputs) {
-                if (inputs.contains(out)) {
-                    modifiesSelf.add(out);
-                }
-            }
-        }
-
-        private class GetIOVisitor extends ExpressionVisitor {
-            @Override
-            protected void doVisit(Expression expression) {
-                if (expression instanceof InputExpression in) {
-                    inputs.add(in.getFieldName());
-                }
-                if (expression instanceof OutputExpression out) {
-                    outputs.add(out.getFieldName());
-                }
-            }
-        }
-    }
-
-    private void generateSyntheticStatementsForUntouchedFields(Builder ilscriptBuilder, Set<String> touchedFields) {
-        Set<String> fieldsWithSyntheticStatements = new HashSet<>(docFields);
-        fieldsWithSyntheticStatements.removeAll(touchedFields);
-        List<String> orderedFields = new ArrayList<>(fieldsWithSyntheticStatements);
-        Collections.sort(orderedFields);
-        for (String fieldName : orderedFields) {
-            StatementExpression copyField = new StatementExpression(new InputExpression(fieldName),
-                    new PassthroughExpression(fieldName));
-            ilscriptBuilder.content(copyField.toString());
-        }
-    }
-
-    private boolean setsLanguage(Expression expression) {
-        SetsLanguageVisitor visitor = new SetsLanguageVisitor();
-        visitor.visit(expression);
-        return visitor.setsLanguage;
-    }
-
-    private boolean modifiesSelf(Expression expression) {
-        ModifiesSelfVisitor visitor = new ModifiesSelfVisitor();
-        visitor.visit(expression);
-        return visitor.modifiesSelf();
-    }
-
-    private static class ModifiesSelfVisitor extends ExpressionVisitor {
-
-        private String inputField = null;
-        private String outputField = null;
-
-        public boolean modifiesSelf() { return outputField != null && outputField.equals(inputField); }
-
-        @Override
-        protected void doVisit(Expression expression) {
-            if (modifiesSelf()) return;
-
-            if (expression instanceof InputExpression) {
-                inputField = ((InputExpression) expression).getFieldName();
-            }
-            if (expression instanceof OutputExpression) {
-                outputField = ((OutputExpression) expression).getFieldName();
-            }
-        }
-    }
-
-    private static class SetsLanguageVisitor extends ExpressionVisitor {
-
-        boolean setsLanguage = false;
-
-        @Override
-        protected void doVisit(Expression expression) {
-            if (expression instanceof SetLanguageExpression)
-                setsLanguage = true;
-        }
 
     }
 
-    private static class FieldScanVisitor extends ExpressionVisitor {
-        List<String> touchedFields = new ArrayList<>();
-        List<String> candidates = new ArrayList<>();
-
-        @Override
-        protected void doVisit(Expression exp) {
-            if (exp instanceof OutputExpression) {
-                touchedFields.add(((OutputExpression) exp).getFieldName());
-            }
-            if (exp instanceof InputExpression) {
-                candidates.add(((InputExpression) exp).getFieldName());
-            }
-            if (exp instanceof ZCurveExpression) {
-                touchedFields.addAll(candidates);
-            }
-        }
-
-        Collection<String> touchedFields() {
-            Collection<String> output = touchedFields;
-            touchedFields = null; // deny re-use to try and avoid obvious bugs
-            return output;
-        }
-    }
 }

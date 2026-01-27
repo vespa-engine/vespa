@@ -21,7 +21,7 @@
 #include <thread>
 
 #include <vespa/log/bufferedlogger.h>
-LOG_SETUP(".distributor.bucketdb.updater");
+LOG_SETUP(".distributor.top_level_bucket_db_updater");
 
 using storage::lib::Node;
 using storage::lib::NodeType;

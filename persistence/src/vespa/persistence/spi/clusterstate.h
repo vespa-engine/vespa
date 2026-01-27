@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
 #include <vespa/vespalib/util/trinary.h>
+#include <cstdint>
+#include <memory>
 
 namespace vespalib { class nbostream; }
 namespace storage::lib {

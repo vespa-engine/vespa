@@ -4,6 +4,7 @@
 
 #include "iattributefilewriter.h"
 #include <vespa/searchlib/util/bufferwriter.h>
+#include <cstdint>
 
 namespace search {
 

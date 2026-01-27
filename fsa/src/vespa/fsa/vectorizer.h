@@ -104,7 +104,7 @@ public:
      * @param v Other vector item.
      * @return True is this item<other item.
      */
-    bool operator<(const VectorItem & v) const
+    bool operator<(const VectorItem & v) const noexcept
     {
       if(_weight>v._weight) return true;
       if(_weight<v._weight) return false;

@@ -61,10 +61,12 @@ public class WordItem extends TermItem {
         setWord(word);
     }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.WORD;
     }
 
+    @Override
     public String getName() {
         return "WORD";
     }
@@ -81,7 +83,7 @@ public class WordItem extends TermItem {
         putString(getEncodedWord(), buffer);
     }
 
-    /** Returns the word for encoding. By default simply the word */
+    /** Returns the word for encoding. By default, simply the word. */
     protected String getEncodedWord() {
         return getIndexedString();
     }
@@ -133,7 +135,7 @@ public class WordItem extends TermItem {
         this.segmentIndex = segmentIndex;
     }
 
-    /** Word items uses a empty heading instead of "WORD " */
+    /** Word items uses an empty heading instead of "WORD " */
     @Override
     protected void appendHeadingString(StringBuilder buffer) {}
 

@@ -315,6 +315,32 @@ TEST_P(ExactNearestNeighborIteratorParameterizedTest, require_that_iterator_coll
     auto param = GetParam();
     verify_iterator_collects_statistics(param.attribute_tensor_type_spec, param.query_tensor_type_spec);
 }
+
+TEST(NnsIndexIteratorTest, require_that_iterator_collects_statistics_for_multiple_subspaces) {
+    auto u = SimpleValue::from_spec(TensorSpec(mixed_spec).add({{"m", "a"},{"x", 0}}, 1.0)
+                                            .add({{"m", "a"},{"x", 1}}, 2.0)
+                                            .add({{"m", "b"},{"x", 0}}, 3.0)
+                                            .add({{"m", "b"},{"x", 1}}, 4.0));
+    auto v = SimpleValue::from_spec(TensorSpec(mixed_spec).add({{"m", "a"},{"x", 0}}, 1.0)
+                                            .add({{"m", "a"},{"x", 1}}, 2.0));
+    Fixture fixture(mixed_spec);
+    fixture.ensureSpace(2);
+    fixture.setTensor(1, *u);
+    fixture.setTensor(2, *v);
+
+    auto nullTensor = createTensor(denseSpecDouble, 0.0, 0.0);
+    auto stats = get_search_stats<true>(fixture, *nullTensor);
+    EXPECT_EQ(stats->exact_nns_distances_computed(), 3);
+    stats = get_search_stats<false>(fixture, *nullTensor);
+    EXPECT_EQ(stats->exact_nns_distances_computed(), 3);
+
+    fixture.setFilter({1});
+    stats = get_search_stats<true>(fixture, *nullTensor);
+    EXPECT_EQ(stats->exact_nns_distances_computed(), 2);
+    stats = get_search_stats<false>(fixture, *nullTensor);
+    EXPECT_EQ(stats->exact_nns_distances_computed(), 2);
+}
+
 template <bool strict>
 std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto md = MatchData::makeTestInstance(2, 2);

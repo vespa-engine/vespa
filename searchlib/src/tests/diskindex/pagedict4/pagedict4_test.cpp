@@ -130,8 +130,7 @@ public:
     uint64_t _bitLength;
     uint64_t _accNumDocs;
 
-    WordIndexCounts(uint64_t bitLength,
-              uint32_t numDocs)
+    WordIndexCounts(uint64_t bitLength, uint32_t numDocs) noexcept
         : _numDocs(numDocs),
           _fileOffset(0),
           _bitLength(bitLength),
@@ -139,7 +138,7 @@ public:
     {
     }
 
-    WordIndexCounts()
+    WordIndexCounts() noexcept
         : _numDocs(0),
           _fileOffset(0),
           _bitLength(0),
@@ -155,7 +154,7 @@ public:
     WordIndexCounts _counts;
 
     bool
-    operator!=(const WordCounts &rhs) const
+    operator!=(const WordCounts &rhs) const noexcept
     {
         return _word != rhs._word;
     }
@@ -167,7 +166,7 @@ public:
     }
 
     bool
-    operator<(const WordCounts &rhs) const
+    operator<(const WordCounts &rhs) const noexcept
     {
         return _word < rhs._word;
     }

@@ -337,6 +337,8 @@
       "public abstract boolean isFromQuery()",
       "public abstract boolean isStemmed()",
       "public abstract boolean isWords()",
+      "public abstract com.yahoo.search.query.QueryType getQueryType()",
+      "public abstract void setQueryType(com.yahoo.search.query.QueryType)",
       "public abstract com.yahoo.prelude.query.SegmentingRule getSegmentingRule()"
     ],
     "fields" : [ ]
@@ -1500,7 +1502,9 @@
   },
   "com.yahoo.prelude.query.SameElementItem" : {
     "superClass" : "com.yahoo.prelude.query.NonReducibleCompositeItem",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.prelude.query.HasIndexItem"
+    ],
     "attributes" : [
       "public"
     ],
@@ -1513,6 +1517,8 @@
       "public java.lang.String getName()",
       "public java.lang.String getFieldName()",
       "public void setIndexName(java.lang.String)",
+      "public java.lang.String getIndexName()",
+      "public int getNumWords()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
@@ -1536,6 +1542,8 @@
       "public boolean isFromQuery()",
       "public boolean isStemmed()",
       "public void setStemmed(boolean)",
+      "public com.yahoo.search.query.QueryType getQueryType()",
+      "public void setQueryType(com.yahoo.search.query.QueryType)",
       "public void lock()",
       "public boolean isLocked()",
       "public int getNumWords()",
@@ -1782,6 +1790,8 @@
       "public void setOrigin(com.yahoo.prelude.query.Substring)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public int getTermCount()",
+      "public com.yahoo.search.query.QueryType getQueryType()",
+      "public void setQueryType(com.yahoo.search.query.QueryType)",
       "public boolean isNormalizable()",
       "public void setNormalizable(boolean)",
       "public boolean isLowercased()",
@@ -1832,7 +1842,7 @@
     "methods" : [
       "public void <init>()",
       "public abstract boolean visit(com.yahoo.prelude.query.Item)",
-      "public void onExit()"
+      "public void onExit(com.yahoo.prelude.query.Item)"
     ],
     "fields" : [ ]
   },
@@ -5711,6 +5721,7 @@
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
       "public void <init>(com.yahoo.search.Query$Type, com.yahoo.search.query.QueryType$Composite, com.yahoo.search.query.QueryType$Tokenization, com.yahoo.search.query.QueryType$Syntax)",
       "public void <init>(com.yahoo.search.Query$Type, com.yahoo.search.query.QueryType$Composite, com.yahoo.search.query.QueryType$Tokenization, com.yahoo.search.query.QueryType$Syntax, boolean)",
+      "public void <init>(com.yahoo.search.Query$Type, com.yahoo.search.query.QueryType$Composite, com.yahoo.search.query.QueryType$Tokenization, com.yahoo.search.query.QueryType$Syntax, java.lang.String, boolean)",
       "public com.yahoo.search.Query$Type getType()",
       "public com.yahoo.search.query.QueryType$Composite getComposite()",
       "public com.yahoo.search.query.QueryType setComposite(com.yahoo.search.query.QueryType$Composite)",
@@ -5721,6 +5732,8 @@
       "public com.yahoo.search.query.QueryType$Syntax getSyntax()",
       "public com.yahoo.search.query.QueryType setSyntax(com.yahoo.search.query.QueryType$Syntax)",
       "public com.yahoo.search.query.QueryType setSyntax(java.lang.String)",
+      "public java.lang.String getProfile()",
+      "public com.yahoo.search.query.QueryType setProfile(java.lang.String)",
       "public boolean isYqlDefault()",
       "public com.yahoo.search.query.QueryType setYqlDefault(boolean)",
       "public void validate()",
@@ -5734,6 +5747,7 @@
       "public static final java.lang.String COMPOSITE",
       "public static final java.lang.String TOKENIZATION",
       "public static final java.lang.String SYNTAX",
+      "public static final java.lang.String PROFILE",
       "public static final java.lang.String IS_YQL_DEFAULT"
     ]
   },
@@ -5801,16 +5815,16 @@
       "public static final java.lang.String RERANKCOUNT",
       "public static final java.lang.String KEEPRANKCOUNT",
       "public static final java.lang.String RANKSCOREDROPLIMIT",
+      "public static final java.lang.String ELEMENT_GAP",
+      "public static final java.lang.String FEATURES",
+      "public static final java.lang.String PROPERTIES",
       "public static final java.lang.String MATCH_PHASE",
       "public static final java.lang.String SECOND_PHASE",
       "public static final java.lang.String GLOBAL_PHASE",
       "public static final java.lang.String DIVERSITY",
       "public static final java.lang.String SIGNIFICANCE",
       "public static final java.lang.String SOFTTIMEOUT",
-      "public static final java.lang.String MATCHING",
-      "public static final java.lang.String FEATURES",
-      "public static final java.lang.String PROPERTIES",
-      "public static final java.lang.String ELEMENT_GAP"
+      "public static final java.lang.String MATCHING"
     ]
   },
   "com.yahoo.search.query.Select" : {
@@ -7311,8 +7325,11 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String DIVERSITY",
       "public static final java.lang.String ATTRIBUTE",
       "public static final java.lang.String MINGROUPS",
+      "public static final java.lang.String CUTOFF_FACTOR",
+      "public static final java.lang.String CUTOFF_STRATEGY",
       "public static final java.lang.String CUTOFF",
       "public static final java.lang.String FACTOR",
       "public static final java.lang.String STRATEGY"
@@ -7357,7 +7374,9 @@
       "public com.yahoo.search.query.ranking.GlobalPhase clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final java.lang.String GLOBAL_PHASE"
+    ]
   },
   "com.yahoo.search.query.ranking.MatchPhase" : {
     "superClass" : "java.lang.Object",
@@ -7387,6 +7406,7 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String MATCH_PHASE",
       "public static final java.lang.String ATTRIBUTE",
       "public static final java.lang.String ASCENDING",
       "public static final java.lang.String MAX_HITS",
@@ -7414,6 +7434,7 @@
       "public java.lang.Double getFilterFirstExploration()",
       "public java.lang.Double getExplorationSlack()",
       "public java.lang.Double getTargetHitsMaxAdjustmentFactor()",
+      "public java.lang.Boolean getLazyFilter()",
       "public java.lang.Double getFilterThreshold()",
       "public com.yahoo.search.query.ranking.WeakAnd getWeakAnd()",
       "public void setTermwiselimit(double)",
@@ -7426,6 +7447,7 @@
       "public void setFilterFirstExploration(double)",
       "public void setExplorationSlack(double)",
       "public void setTargetHitsMaxAdjustmentFactor(double)",
+      "public void setLazyFilter(boolean)",
       "public void setFilterThreshold(double)",
       "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
       "public com.yahoo.search.query.ranking.Matching clone()",
@@ -7434,6 +7456,7 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String MATCHING",
       "public static final java.lang.String TERMWISELIMIT",
       "public static final java.lang.String NUMTHREADSPERSEARCH",
       "public static final java.lang.String NUMSEARCHPARTITIIONS",
@@ -7444,6 +7467,7 @@
       "public static final java.lang.String FILTER_FIRST_THRESHOLD",
       "public static final java.lang.String FILTER_FIRST_EXPLORATION",
       "public static final java.lang.String TARGET_HITS_MAX_ADJUSTMENT_FACTOR",
+      "public static final java.lang.String LAZY_FILTER",
       "public static final java.lang.String FILTER_THRESHOLD",
       "public static final java.lang.String WEAKAND",
       "public java.lang.Double termwiseLimit"
@@ -7525,7 +7549,9 @@
       "public com.yahoo.search.query.ranking.SecondPhase clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final java.lang.String SECOND_PHASE"
+    ]
   },
   "com.yahoo.search.query.ranking.Significance" : {
     "superClass" : "java.lang.Object",
@@ -7546,6 +7572,7 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String SIGNIFICANCE",
       "public static final java.lang.String USE_MODEL"
     ]
   },
@@ -7573,6 +7600,7 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String SOFTTIMEOUT",
       "public static final java.lang.String ENABLE",
       "public static final java.lang.String FACTOR",
       "public static final java.lang.String TAILCOST",
@@ -7888,6 +7916,18 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.rendering.CborRenderer" : {
+    "superClass" : "com.yahoo.search.rendering.JsonRenderer",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(java.util.concurrent.Executor)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.rendering.EventRenderer" : {
     "superClass" : "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
     "interfaces" : [ ],
@@ -7904,6 +7944,50 @@
       "public void endResponse()",
       "public java.lang.String getEncoding()",
       "public java.lang.String getMimeType()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.rendering.JsonDataSource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSource"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public static com.yahoo.search.rendering.JsonDataSource fromJson(java.lang.String)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.rendering.JsonGeneratorDataSink" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSink"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator)",
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
+      "public void fieldName(java.lang.String, byte[])",
+      "public void startObject()",
+      "public void endObject()",
+      "public void startArray()",
+      "public void endArray()",
+      "public void emptyValue()",
+      "public void booleanValue(boolean)",
+      "public void longValue(long)",
+      "public void intValue(int)",
+      "public void shortValue(short)",
+      "public void byteValue(byte)",
+      "public void doubleValue(double)",
+      "public void floatValue(float)",
+      "public void stringValue(java.lang.String, byte[])",
+      "public void dataValue(byte[])"
     ],
     "fields" : [ ]
   },
@@ -7961,6 +8045,37 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.rendering.NonFiniteToNullDataSink" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [
+      "com.yahoo.data.disclosure.DataSink"
+    ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.data.disclosure.DataSink)",
+      "public void doubleValue(double)",
+      "public void floatValue(float)",
+      "public void fieldName(java.lang.String, byte[])",
+      "public void startObject()",
+      "public void endObject()",
+      "public void startArray()",
+      "public void endArray()",
+      "public void emptyValue()",
+      "public void booleanValue(boolean)",
+      "public void longValue(long)",
+      "public void stringValue(java.lang.String, byte[])",
+      "public void dataValue(byte[])",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public com.yahoo.data.disclosure.DataSink delegate()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.rendering.Renderer" : {
     "superClass" : "com.yahoo.processing.rendering.Renderer",
     "interfaces" : [ ],
@@ -8001,6 +8116,7 @@
       "public static final com.yahoo.component.ComponentId xmlRendererId",
       "public static final com.yahoo.component.ComponentId pageRendererId",
       "public static final com.yahoo.component.ComponentId jsonRendererId",
+      "public static final com.yahoo.component.ComponentId cborRendererId",
       "public static final com.yahoo.component.ComponentId eventRendererId",
       "public static final com.yahoo.component.ComponentId defaultRendererId"
     ]
@@ -8335,7 +8451,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [
       "com.yahoo.data.access.Inspectable",
-      "com.yahoo.data.JsonProducer"
+      "com.yahoo.data.JsonProducer",
+      "com.yahoo.data.disclosure.DataSource"
     ],
     "attributes" : [
       "public"
@@ -8346,9 +8463,11 @@
       "public static com.yahoo.search.result.FeatureData empty()",
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toJson()",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public java.lang.String toJson(boolean)",
       "public java.lang.String toJson(boolean, boolean)",
       "public java.lang.String toJson(com.yahoo.tensor.serialization.JsonFormat$EncodeOptions)",
+      "public com.yahoo.data.disclosure.DataSource asDataSource(com.yahoo.tensor.serialization.JsonFormat$EncodeOptions)",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
       "public java.lang.Double getDouble(java.lang.String)",
       "public com.yahoo.tensor.Tensor getTensor(java.lang.String)",
@@ -8647,7 +8766,8 @@
     "interfaces" : [
       "com.yahoo.data.access.Inspectable",
       "com.yahoo.data.JsonProducer",
-      "com.yahoo.data.XmlProducer"
+      "com.yahoo.data.XmlProducer",
+      "com.yahoo.data.disclosure.DataSource"
     ],
     "attributes" : [
       "public"
@@ -8657,6 +8777,7 @@
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toString()",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)",
       "public java.lang.StringBuilder writeXML(java.lang.StringBuilder)"
     ],
     "fields" : [ ]
@@ -8686,7 +8807,8 @@
     "interfaces" : [
       "com.yahoo.data.access.Inspectable",
       "com.yahoo.data.JsonProducer",
-      "com.yahoo.data.XmlProducer"
+      "com.yahoo.data.XmlProducer",
+      "com.yahoo.data.disclosure.DataSource"
     ],
     "attributes" : [
       "public"
@@ -8697,7 +8819,8 @@
       "public java.lang.String toString()",
       "public java.lang.StringBuilder writeXML(java.lang.StringBuilder)",
       "public java.lang.String toJson()",
-      "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)"
+      "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
+      "public void emit(com.yahoo.data.disclosure.DataSink)"
     ],
     "fields" : [ ]
   },

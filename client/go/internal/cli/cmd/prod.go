@@ -49,8 +49,8 @@ advanced configuration see the relevant Vespa Cloud documentation and make
 changes to deployment.xml and services.xml directly.
 
 Reference:
-https://docs.vespa.ai/en/reference/services/services.html
-https://docs.vespa.ai/en/reference/services/deployment.html`,
+https://docs.vespa.ai/en/reference/applications/services/services.html
+https://docs.vespa.ai/en/reference/applications/deployment.html`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -311,7 +311,7 @@ func promptNodes(cli *CLI, r *bufio.Reader, clusterID string, defaultValue xml.N
 
 func promptNodeCount(cli *CLI, stdin *bufio.Reader, clusterID string, nodeCount string) (string, error) {
 	fmt.Fprintln(cli.Stdout, color.CyanString("\n> Node count: "+clusterID+" cluster"))
-	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://docs.vespa.ai/en/reference/services/services.html"))
+	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://docs.vespa.ai/en/reference/applications/services/services.html"))
 	fmt.Fprintf(cli.Stdout, "Example: %s\nExample: %s\n\n", color.YellowString("4"), color.YellowString("[2,8]"))
 	validator := func(input string) error {
 		min, _, err := xml.ParseNodeCount(input)
@@ -325,7 +325,7 @@ func promptNodeCount(cli *CLI, stdin *bufio.Reader, clusterID string, nodeCount 
 
 func promptResources(cli *CLI, stdin *bufio.Reader, clusterID string, resources string) (string, error) {
 	fmt.Fprintln(cli.Stdout, color.CyanString("\n> Node resources: "+clusterID+" cluster"))
-	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://docs.vespa.ai/en/reference/services/services.html"))
+	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://docs.vespa.ai/en/reference/applications/services/services.html"))
 	fmt.Fprintf(cli.Stdout, "Example: %s\nExample: %s\n\n", color.YellowString("auto"), color.YellowString("vcpu=4,memory=8Gb,disk=100Gb"))
 	validator := func(input string) error {
 		if input == "auto" {

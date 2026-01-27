@@ -12,7 +12,7 @@
 #include <vespa/vespalib/util/assert.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.idealstatemanager");
+LOG_SETUP(".distributor.ideal_state_manager");
 
 using document::BucketSpace;
 using storage::lib::Node;

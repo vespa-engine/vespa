@@ -32,9 +32,10 @@ bool FSAManager::load(const std::string &id, const std::string &url)
   {
     unsigned int pos=url.find_last_of('/');
     if(pos==url.size()-1) return false;
-    _cacheLock.lock();
-    file=_cacheDir;
-    _cacheLock.unlock();
+    {
+      std::lock_guard guard(_cacheLock);
+      file = _cacheDir;
+    }
     if(file.size()>0 && file[file.size()-1]!='/') file+='/';
     file+=url.substr(pos+1);
     if(!getUrl(url,file)) return false;
@@ -46,7 +47,7 @@ bool FSAManager::load(const std::string &id, const std::string &url)
     return false;
   }
 
-  _lock.wrLock();
+  std::lock_guard guard(_lock);
   {
     LibraryIterator it = _library.find(id);
     if(it!=_library.end()){
@@ -56,7 +57,6 @@ bool FSAManager::load(const std::string &id, const std::string &url)
     else
       _library.insert(Library::value_type(id,newdict));
   }
-  _lock.unlock();
 
   return true;
 }
@@ -76,14 +76,13 @@ bool FSAManager::getUrl(const std::string &url, const std::string &file)
 FSA::Handle* FSAManager::get(const std::string &id) const
 {
   FSA::Handle *newhandle=nullptr;
-  _lock.rdLock();
+  std::shared_lock guard(_lock);
   {
     LibraryConstIterator it = _library.find(id);
     if(it!=_library.end()){
       newhandle = new FSA::Handle(*(it->second));
     }
   }
-  _lock.unlock();
   return newhandle;
 }
 
@@ -92,7 +91,7 @@ FSA::Handle* FSAManager::get(const std::string &id) const
 
 void FSAManager::drop(const std::string &id)
 {
-  _lock.wrLock();
+  std::lock_guard guard(_lock);
   {
     LibraryIterator it = _library.find(id);
     if(it!=_library.end()){
@@ -100,7 +99,6 @@ void FSAManager::drop(const std::string &id)
       _library.erase(it);
     }
   }
-  _lock.unlock();
 }
 
 // }}}
@@ -108,13 +106,12 @@ void FSAManager::drop(const std::string &id)
 
 void FSAManager::clear()
 {
-  _lock.wrLock();
+  std::lock_guard guard(_lock);
   {
     for(LibraryIterator it = _library.begin(); it!=_library.end(); ++it)
       delete it->second;
     _library.clear();
   }
-  _lock.unlock();
 }
 
 // }}}
@@ -122,9 +119,8 @@ void FSAManager::clear()
 
 void FSAManager::setCacheDir(const std::string &dir)
 {
-  _cacheLock.lock();
+  std::lock_guard guard(_cacheLock);
   _cacheDir = dir;
-  _cacheLock.unlock();
 }
 
 // }}}

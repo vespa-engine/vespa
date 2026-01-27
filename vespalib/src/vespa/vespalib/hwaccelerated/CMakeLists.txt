@@ -11,6 +11,7 @@ endif()
 vespa_add_library(vespa_hwaccelerated
     SOURCES
     fn_table.cpp
+    float8_luts.cpp
     iaccelerated.cpp
     highway.cpp
     target_info.cpp

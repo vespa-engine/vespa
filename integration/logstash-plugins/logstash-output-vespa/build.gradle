@@ -16,7 +16,7 @@ plugins {
 ext {
     snakeYamlVersion = '2.2'
     shadowGradlePluginVersion = '8.1.1'
-    log4jVersion = '2.17.1'
+    log4jVersion = '2.25.3'
 }
 
 apply from: LOGSTASH_CORE_PATH + "/../rubyUtils.gradle"

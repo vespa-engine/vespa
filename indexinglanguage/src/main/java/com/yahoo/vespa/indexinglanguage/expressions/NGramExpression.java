@@ -59,12 +59,7 @@ public final class NGramExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        StringFieldValue input = (StringFieldValue) context.getCurrentValue();
-        if (input.getSpanTree(SpanTrees.LINGUISTICS) != null) {
-            // This expression is already executed for this input instance
-            return;
-        }
-        StringFieldValue output = input.clone();
+        StringFieldValue output = (StringFieldValue) context.getCurrentValue().clone();
         context.setCurrentValue(output);
 
         // Try simple path first

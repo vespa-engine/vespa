@@ -5,19 +5,12 @@ import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.TensorFieldValue;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Chunker;
-import com.yahoo.language.process.Embedder;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
+import com.yahoo.language.process.InvocationContext.Deadline;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 
@@ -60,6 +53,8 @@ public class ChunkExpression extends Expression  {
         Array<StringFieldValue> output = new Array<>(DataType.getArray(DataType.STRING));
         if (!input.isEmpty()) {
             var chunkContext = new Chunker.Context(destination, chunker.arguments(), context.getCache());
+            context.getDeadline().ifPresent(instant -> chunkContext.setDeadline(Deadline.of(instant)));
+
             for (Chunker.Chunk chunk : chunker.component().chunk(input, chunkContext)) {
                 output.add(new StringFieldValue(chunk.text()));
             }

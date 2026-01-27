@@ -18,6 +18,7 @@ import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.Message;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -102,7 +103,7 @@ class ProcessingFactory {
         Processing processing = new Processing();
         processing.addDocumentOperation(documentOperation);
         processing.setServiceName(serviceName);
-        processing.setExpiresAt(SystemTimer.INSTANCE.instant().plusMillis(message.getTimeRemainingNow()));
+        processing.setExpiresAt(Instant.now().plusMillis(message.getTimeRemainingNow()));
         processing.setVariable("route", message.getRoute());
         processing.setVariable("timeout", message.getTimeRemaining());
         return processing;

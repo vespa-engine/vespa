@@ -25,6 +25,21 @@ public interface Segmenter {
      * @return the resulting list of segments
      * @throws ProcessingException if an exception is encountered during processing
      */
-    List<String> segment(String input, Language language);
+    @Deprecated // TODO: Remove on Vespa 9
+    default List<String> segment(String input, Language language) {
+        return segment(input, new LinguisticsParameters(null, language, StemMode.NONE, false, false));
+    }
+
+    /**
+     * Returns a list of segments produced from a string.
+     *
+     * @param input the text to segment
+     * @param parameters the linguistics parameters to apply
+     * @return the resulting list of segments
+     * @throws ProcessingException if an exception is encountered during processing
+     */
+    default List<String> segment(String input, LinguisticsParameters parameters) {
+        return segment(input, parameters.language());
+    }
 
 }

@@ -81,7 +81,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter) (int, []st
 		if err != nil {
 			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/applications/testing.html")
 		}
-		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, clusters: map[string]*vespa.Service{}}
+		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, authMethod: cli.selectAuthMethod(), clusters: map[string]*vespa.Service{}}
 		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
@@ -102,7 +102,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter) (int, []st
 			}
 		}
 	} else if strings.HasSuffix(stat.Name(), ".json") {
-		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli, clusters: map[string]*vespa.Service{}}, waiter)
+		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli, authMethod: cli.selectAuthMethod(), clusters: map[string]*vespa.Service{}}, waiter)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -209,6 +209,11 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 	if header.Get("Content-Type") == "" { // Set default if not specified by test
 		header.Set("Content-Type", "application/json")
 	}
+	if context.authMethod == "token" {
+		if err := context.cli.addBearerToken(&header); err != nil {
+			return "", "", err
+		}
+	}
 
 	var service *vespa.Service
 	requestUri := step.Request.URI
@@ -232,9 +237,13 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		service, ok = context.clusters[cluster]
 		if !ok && waiter != nil {
 			// Cache service so we don't have to discover it for every step
-			service, err = waiter.Service(target, cluster)
+			service, err = waiter.ServiceWithAuthMethod(target, cluster, context.authMethod)
 			if err != nil {
 				return "", "", err
+			}
+			if context.authMethod == "token" {
+				service.TLSOptions.CertificateFile = ""
+				service.TLSOptions.PrivateKeyFile = ""
 			}
 			context.clusters[cluster] = service
 		}
@@ -292,13 +301,18 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 	defer response.Body.Close()
 
 	if statusCode != response.StatusCode {
+		hint := ""
+		if response.StatusCode == 403 && context.authMethod == "token" {
+			hint = "\nHint: Make sure the VESPA_CLI_DATA_PLANE_TOKEN environment variable is set to a valid token"
+		}
 		return fmt.Sprintf("Unexpected status code: %s", color.RedString(strconv.Itoa(response.StatusCode))),
-			fmt.Sprintf("Unexpected status code\nExpected: %s\nActual:   %s\nRequested: %s at %s\nResponse:\n%s",
+			fmt.Sprintf("Unexpected status code\nExpected: %s\nActual:   %s\nRequested: %s at %s\nResponse:\n%s%s",
 				color.CyanString(strconv.Itoa(statusCode)),
 				color.RedString(strconv.Itoa(response.StatusCode)),
 				color.CyanString(method),
 				color.CyanString(requestUrl.String()),
-				ioutil.ReaderToJSON(response.Body)), nil
+				ioutil.ReaderToJSON(response.Body),
+				hint), nil
 	}
 
 	if responseBodySpec == nil {
@@ -500,6 +514,7 @@ type testContext struct {
 	lazyTarget vespa.Target
 	testsPath  string
 	dryRun     bool
+	authMethod string // "mtls" or "token"
 	// Cache of services by their cluster name
 	clusters map[string]*vespa.Service
 }
@@ -571,10 +586,14 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 	service, ok := context.clusters[cluster]
 	if !ok {
 		context.cli.printDebug("warmup: discovering service for cluster ", cluster)
-		service, err = waiter.Service(target, cluster)
+		service, err = waiter.ServiceWithAuthMethod(target, cluster, context.authMethod)
 		if err != nil {
 			context.cli.printInfo("warmup: failed to discover service for cluster ", cluster, ": ", err)
 			return
+		}
+		if context.authMethod == "token" {
+			service.TLSOptions.CertificateFile = ""
+			service.TLSOptions.PrivateKeyFile = ""
 		}
 		context.clusters[cluster] = service
 	}
@@ -589,6 +608,12 @@ func (s seenClusters) warmup(step step, defaultCluster string, defaultParameters
 
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")
+	if context.authMethod == "token" {
+		if err := context.cli.addBearerToken(&header); err != nil {
+			context.cli.printInfo("warmup: failed to add bearer token: ", err)
+			return
+		}
+	}
 
 	context.cli.printDebug("warmup: sending GET ", warmupUrl.String(), " for cluster ", cluster)
 

@@ -5,7 +5,7 @@
 #include <algorithm>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.operations.merge.limiter");
+LOG_SETUP(".distributor.operations.idealstate.merge_limiter");
 
 namespace storage::distributor {
 

@@ -8,7 +8,7 @@
 #include <sstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.statechecker");
+LOG_SETUP(".distributor.state_checker");
 
 namespace storage::distributor {
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/config-attributes.h>
+#include <cstdint>
 
 namespace proton {
 

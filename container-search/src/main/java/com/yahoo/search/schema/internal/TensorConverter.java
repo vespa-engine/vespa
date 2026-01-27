@@ -3,10 +3,12 @@ package com.yahoo.search.schema.internal;
 
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.processing.request.Properties;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +32,11 @@ public class TensorConverter {
     }
 
     public Tensor convertTo(TensorType type, String key, Object value, Language language,
-                            Map<String, String> contextValues, Properties properties) {
+                            Map<String, String> contextValues, Properties properties, Instant deadline) {
         var context = new Embedder.Context(key).setLanguage(language);
+        if (deadline != null) {
+            context.setDeadline(InvocationContext.Deadline.of(deadline));
+        }
         Tensor tensor = toTensor(type, value, context, contextValues, properties);
         if (tensor == null) return null;
         if (! tensor.type().isAssignableTo(type))

@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "refcountable.h"
 #include <vespa/fsa/fsa.h>
+#include <memory>
 #include <string>
 
 namespace fsa {
@@ -39,12 +39,7 @@ private:
    */
   Handle& operator=(const Handle&);
 
-  class RefCountableFSA: public FSA, public RefCountable<FSA> {
-  public:
-    RefCountableFSA(const char *file, FileAccessMethod fam = FILE_ACCESS_UNDEF) : FSA(file,fam) {}
-  };
-
-  RefCountableFSA *_fsa; /**< The FSA object itself. */
+  std::shared_ptr<FSA> _fsa; /**< The FSA object itself. */
 
   /**
    * @brief Get a pointer to the referred FSA object.
@@ -53,7 +48,7 @@ private:
    */
   const FSA* getFSA() const
   {
-    return _fsa;
+    return _fsa.get();
   }
 
 public:
@@ -65,9 +60,9 @@ public:
    *
    * @param h Reference to handle to duplicate.
    */
-  Handle(const Handle& h) : _fsa(h._fsa)
+  Handle(const Handle& h)
+    : _fsa(h._fsa)
   {
-    _fsa->addReference();
   }
 
   /**
@@ -79,10 +74,9 @@ public:
    * @param fam File access mode (read or mmap). If not set, the
    *            global preferred access mode will be used.
    */
-  Handle(const char *file, FileAccessMethod fam = FILE_ACCESS_UNDEF) :
-    _fsa(new RefCountableFSA(file,fam))
+  Handle(const char *file, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+    : _fsa(std::make_shared<FSA>(file, fam))
   {
-    _fsa->addReference();
   }
 
   /**
@@ -94,10 +88,9 @@ public:
    * @param fam File access mode (read or mmap). If not set, the
    *            global preferred access mode will be used.
    */
-  Handle(const std::string &file, FileAccessMethod fam = FILE_ACCESS_UNDEF) :
-    _fsa(new RefCountableFSA(file.c_str(),fam))
+  Handle(const std::string &file, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+    : _fsa(std::make_shared<FSA>(file, fam))
   {
-    _fsa->addReference();
   }
 
   /**
@@ -105,10 +98,7 @@ public:
    *
    * Remove reference to the FSA object.
    */
-  ~Handle()
-  {
-    _fsa->removeReference();
-  }
+  ~Handle() = default;
 
   /**
    * @brief Dereference operator, provides access to Metadata
@@ -124,7 +114,7 @@ public:
    *
    * @return Pointer the Metadata object.
    */
-  const FSA* operator->() const { return _fsa; }
+  const FSA* operator->() const { return _fsa.get(); }
 
   /**
    * @brief Check if %FSA was properly constructed.
@@ -173,18 +163,17 @@ public:
    *
    * @return iterator pointing to the first string in the fsa.
    */
-  FSA::iterator begin() const { return FSA::iterator(_fsa); }
+  FSA::iterator begin() const { return FSA::iterator(_fsa.get()); }
 
   /**
    * @brief Get iterator pointing past the end of the fsa.
    *
    * @return iterator pointing past the last string in the fsa.
    */
-  FSA::iterator end() const { return FSA::iterator(_fsa,true); }
+  FSA::iterator end() const { return FSA::iterator(_fsa.get(),true); }
 
 };
 
 // }}}
 
 } // namespace fsa
-

@@ -5,14 +5,14 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.search.Query;
+import com.yahoo.search.query.profile.QueryProfile;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.schema.Cluster;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.RankProfile.InputType;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
-import com.yahoo.search.query.profile.QueryProfile;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
@@ -20,11 +20,16 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests queries towards rank profiles using input declarations.
@@ -312,6 +317,37 @@ public class RankProfileInputTest {
         clusters.add(new Cluster.Builder("a").addSchema("a").build());
         return new SchemaInfo(schemas, clusters);
     }
+
+    @Test
+    void testDeadlinePropagation() {
+        class MockEmbedderWithDeadlineCheck implements Embedder {
+            Instant receivedDeadline;
+            @Override public List<Integer> embed(String text, Context context) { return List.of(); }
+
+            @Override
+            public Tensor embed(String text, Context context, TensorType tensorType) {
+                receivedDeadline = context.getDeadline().get().asInstant();
+                return Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
+            }
+        }
+
+        var embedderWithDeadline = new MockEmbedderWithDeadlineCheck();
+        new Query.Builder()
+                .setRequest(HttpRequest.createTestRequest(
+                        "?" + urlEncode("ranking.features.query(myTensor4)") +
+                                "=" + urlEncode("embed(" + "text to embed" + ")") +
+                                "&ranking=commonProfile&timeout=5",
+                        com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                .setSchemaInfo(createSchemaInfo())
+                .setQueryProfile(createQueryProfile())
+                .setEmbedders(embedderWithDeadline.asMap())
+                .build();
+
+        assertNotNull(embedderWithDeadline.receivedDeadline);
+        assertTrue(embedderWithDeadline.receivedDeadline.isAfter(Instant.EPOCH));
+        assertTrue(embedderWithDeadline.receivedDeadline.isBefore(Instant.MAX));
+    }
+
 
     private static final class MockEmbedder implements Embedder {
 

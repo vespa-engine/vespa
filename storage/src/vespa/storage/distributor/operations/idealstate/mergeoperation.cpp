@@ -14,7 +14,7 @@
 #include <array>
 
 #include <vespa/log/bufferedlogger.h>
-LOG_SETUP(".distributor.operation.idealstate.merge");
+LOG_SETUP(".distributor.operations.idealstate.merge");
 
 using vespalib::to_utc;
 using vespalib::to_string;

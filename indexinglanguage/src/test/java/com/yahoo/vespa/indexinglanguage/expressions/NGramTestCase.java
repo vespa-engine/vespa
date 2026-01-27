@@ -21,13 +21,7 @@ import java.util.Iterator;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author bratseth
@@ -47,9 +41,9 @@ public class NGramTestCase {
     public void requireThatHashCodeAndEqualsAreImplemented() {
         Linguistics linguistics = new SimpleLinguistics();
         NGramExpression exp = new NGramExpression(linguistics, 69);
-        assertFalse(exp.equals(new Object()));
-        assertFalse(exp.equals(new NGramExpression(Mockito.mock(Linguistics.class), 96)));
-        assertFalse(exp.equals(new NGramExpression(linguistics, 96)));
+        assertNotEquals(exp, new Object());
+        assertNotEquals(exp, new NGramExpression(Mockito.mock(Linguistics.class), 96));
+        assertNotEquals(exp, new NGramExpression(linguistics, 96));
         assertEquals(exp, new NGramExpression(linguistics, 69));
         assertEquals(exp.hashCode(), new NGramExpression(new SimpleLinguistics(), 69).hashCode());
     }
@@ -113,22 +107,6 @@ public class NGramTestCase {
         } finally {
             com.yahoo.document.annotation.internal.SimpleIndexingAnnotations.setEnabled(oldValue);
         }
-    }
-
-    @Test
-    public void requireThatExecuteCanBeCalledMultipleTimes() {
-        ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
-        context.setCurrentValue(new StringFieldValue("some random text string"));
-        NGramExpression expression = new NGramExpression(new SimpleLinguistics(), 3);
-
-        expression.execute(context);
-        SpanTree firstTree = ((StringFieldValue)context.getCurrentValue()).getSpanTree(SpanTrees.LINGUISTICS);
-        assertNotNull(firstTree);
-
-        expression.execute(context);
-        SpanTree secondTree = ((StringFieldValue)context.getCurrentValue()).getSpanTree(SpanTrees.LINGUISTICS);
-        // The span tree instance should be the same.
-        assertEquals(firstTree, secondTree);
     }
 
     private void assertSimpleSpan(int from, int length, Iterator<SpanNode> i, SpanTree tree, String termValue) {

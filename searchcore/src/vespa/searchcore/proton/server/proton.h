@@ -211,8 +211,6 @@ public:
 
     metrics::MetricManager & getMetricManager();
 
-    bool triggerFlush();
-    bool prepareRestart();
     flushengine::SetStrategyResult trigger_flush2();
     flushengine::SetStrategyResult prepare_restart2(uint32_t wait_strategy_id);
 

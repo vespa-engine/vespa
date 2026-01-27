@@ -460,7 +460,8 @@
       "public java.util.Map asMap(java.lang.String)",
       "public abstract java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
       "public java.lang.String decode(java.util.List, com.yahoo.language.process.Embedder$Context)",
-      "public abstract com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
+      "public abstract com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
+      "public java.util.List embed(java.util.List, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
     ],
     "fields" : [
       "public static final java.lang.String defaultEmbedderId",
@@ -564,6 +565,33 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.language.process.InvalidInputException" : {
+    "superClass" : "java.lang.IllegalArgumentException",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Exception)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.process.InvocationContext$Deadline" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public static com.yahoo.language.process.InvocationContext$Deadline of(java.time.Duration)",
+      "public static com.yahoo.language.process.InvocationContext$Deadline of(java.time.Instant)",
+      "public boolean isExpired()",
+      "public java.time.Duration timeRemaining()",
+      "public java.time.Instant asInstant()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.language.process.InvocationContext" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -578,6 +606,8 @@
       "public com.yahoo.language.process.InvocationContext setLanguage(com.yahoo.language.Language)",
       "public java.lang.String getDestination()",
       "public com.yahoo.language.process.InvocationContext setDestination(java.lang.String)",
+      "public java.util.Optional getDeadline()",
+      "public com.yahoo.language.process.InvocationContext setDeadline(com.yahoo.language.process.InvocationContext$Deadline)",
       "public java.lang.String getComponentId()",
       "public com.yahoo.language.process.InvocationContext setComponentId(java.lang.String)",
       "protected java.util.Map getCache()",
@@ -597,9 +627,11 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean, boolean)",
+      "public void <init>(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean, boolean)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
+      "public java.lang.String profile()",
       "public com.yahoo.language.Language language()",
       "public com.yahoo.language.process.StemMode stemMode()",
       "public boolean removeAccents()",
@@ -617,6 +649,18 @@
     ],
     "methods" : [
       "public abstract java.lang.String normalize(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.process.OverloadException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
     "fields" : [ ]
   },
@@ -641,7 +685,8 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract java.util.List segment(java.lang.String, com.yahoo.language.Language)"
+      "public java.util.List segment(java.lang.String, com.yahoo.language.Language)",
+      "public java.util.List segment(java.lang.String, com.yahoo.language.process.LinguisticsParameters)"
     ],
     "fields" : [ ]
   },
@@ -655,7 +700,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.language.process.Tokenizer)",
-      "public java.util.List segment(java.lang.String, com.yahoo.language.Language)"
+      "public java.util.List segment(java.lang.String, com.yahoo.language.process.LinguisticsParameters)"
     ],
     "fields" : [ ]
   },
@@ -781,6 +826,18 @@
       "public void <init>(com.yahoo.language.process.Tokenizer)",
       "public java.util.List stem(java.lang.String, com.yahoo.language.process.LinguisticsParameters)",
       "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.process.TimeoutException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
     "fields" : [ ]
   },

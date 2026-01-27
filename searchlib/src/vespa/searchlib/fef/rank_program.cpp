@@ -40,7 +40,7 @@ struct Override
     Override(const BlueprintResolver::FeatureRef &r, Value::UP v) noexcept
     : ref(r), number(), object(std::move(v)) {}
 
-    bool operator<(const Override &rhs) const {
+    bool operator<(const Override &rhs) const noexcept {
         return (ref.executor < rhs.ref.executor);
     }
 };

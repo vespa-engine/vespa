@@ -40,7 +40,7 @@ public class TextMatch extends Processor {
 
             DataType fieldType = field.getDataType();
             if (fieldType instanceof CollectionDataType) {
-                fieldType = ((CollectionDataType)fieldType).getNestedType();
+                fieldType = fieldType.getNestedType();
             }
             if (fieldType != DataType.STRING) continue;
 
@@ -54,30 +54,31 @@ public class TextMatch extends Processor {
     }
 
     private AnnotatorConfig findAnnotatorConfig(Schema schema, SDField field) {
-        AnnotatorConfig ret = new AnnotatorConfig();
+        AnnotatorConfig config = new AnnotatorConfig();
         Stemming activeStemming = field.getStemming();
         if (activeStemming == null) {
             activeStemming = schema.getStemming();
         }
-        ret.setStemMode(activeStemming.toStemMode());
-        ret.setRemoveAccents(field.getNormalizing().doRemoveAccents());
-        ret.setLowercase(field.getMatching().getCase() != Case.CASED);
+        config.setStemMode(activeStemming.toStemMode());
+        config.setRemoveAccents(field.getNormalizing().doRemoveAccents());
+        config.setLowercase(field.getMatching().getCase() != Case.CASED);
+        config.setProfile(field.getIndexLinguisticsProfile());
         var fieldMatching = field.getMatching();
         if (fieldMatching != null) {
             var maxLength = fieldMatching.maxLength();
             if (maxLength != null) {
-                ret.setMaxTokenizeLength(maxLength);
+                config.setMaxTokenizeLength(maxLength);
             }
             var maxTermOccurrences = fieldMatching.maxTermOccurrences();
             if (maxTermOccurrences != null) {
-                ret.setMaxTermOccurrences(maxTermOccurrences);
+                config.setMaxTermOccurrences(maxTermOccurrences);
             }
             var maxTokenLength = fieldMatching.maxTokenLength();
             if (maxTokenLength != null) {
-                ret.setMaxTokenLength(maxTokenLength);
+                config.setMaxTokenLength(maxTokenLength);
             }
         }
-        return ret;
+        return config;
     }
 
     private static class MyVisitor extends ExpressionVisitor {

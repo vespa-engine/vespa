@@ -24,6 +24,7 @@ vespa_add_library(searchlib_common OBJECT
     matching_elements_fields.cpp
     packets.cpp
     partialbitvector.cpp
+    proto_to_json.cpp
     resultset.cpp
     schedule_sequenced_task_callback.cpp
     serialized_query_tree.cpp

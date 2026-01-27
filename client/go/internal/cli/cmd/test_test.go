@@ -167,6 +167,68 @@ func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 	assertRequests([]*http.Request{warmupRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createRequestWithCustomHeader(rawUrl)}, client, t)
 }
 
+func TestSingleTestWithCloudAndTokenAuth(t *testing.T) {
+	apiKey, err := vespa.CreateAPIKey()
+	require.Nil(t, err)
+
+	client := &mock.HTTPClient{}
+	cli, stdout, stderr := newTestCLI(
+		t,
+		"VESPA_CLI_API_KEY="+string(apiKey),
+		"VESPA_CLI_DATA_PLANE_TOKEN=my-secret-token",
+		"VESPA_CLI_ENDPOINTS={\"endpoints\":[{\"cluster\":\"container\",\"url\":\"https://url\",\"authMethod\":\"token\"}]}",
+	)
+	cli.httpClient = client
+
+	searchResponse, err := os.ReadFile("testdata/tests/response.json")
+	require.Nil(t, err)
+	client.NextStatus(200) // Warmup GET /
+	client.NextStatus(200) // First feed
+	client.NextStatus(200) // Second feed
+	client.NextResponseString(200, string(searchResponse))
+	client.NextResponseString(200, string(searchResponse))
+
+	assert.Nil(t, cli.Run("test", "testdata/tests/system-test/test.json", "-t", "cloud", "-a", "t.a.i"))
+	expectedBytes, err := os.ReadFile("testdata/tests/expected.out")
+	require.Nil(t, err)
+	assert.Equal(t, "", stderr.String())
+	assert.Equal(t, string(expectedBytes), stdout.String())
+
+	baseUrl := "https://url"
+	rawUrl := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
+	warmupRequest := createRequestWithToken(baseUrl+"/", "")
+	assertRequests([]*http.Request{
+		warmupRequest,
+		createRequestWithToken(baseUrl+"/document/v1/test/music/docid/doc?timeout=3.4s", "{\"fields\":{\"artist\":\"Foo Fighters\"}}"),
+		createRequestWithToken(baseUrl+"/document/v1/test/music/docid/doc?timeout=3.4s", "{\"fields\":{\"artist\":\"Foo Fighters\"}}"),
+		createRequestWithToken(rawUrl, ""),
+		createRequestWithTokenAndCustomHeader(rawUrl),
+	}, client, t)
+}
+
+func createRequestWithToken(uri string, body string) *http.Request {
+	requestUrl, _ := url.ParseRequestURI(uri)
+	method := "GET"
+	if body != "" {
+		method = "POST"
+	}
+	r := &http.Request{
+		URL:    requestUrl,
+		Method: method,
+		Header: http.Header{},
+		Body:   io.NopCloser(strings.NewReader(body)),
+	}
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Authorization", "Bearer my-secret-token")
+	return r
+}
+
+func createRequestWithTokenAndCustomHeader(url string) *http.Request {
+	r := createRequestWithToken(url, "")
+	r.Header.Set("X-Foo", "bar")
+	return r
+}
+
 func createFeedRequest(urlPrefix string) *http.Request {
 	return createRequest("POST",
 		urlPrefix+"/document/v1/test/music/docid/doc?timeout=3.4s",

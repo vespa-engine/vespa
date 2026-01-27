@@ -11,9 +11,9 @@
 #pragma once
 
 #include "singleton.h"
-#include "rwlock.h"
 #include "metadatahandle.h"
 #include <map>
+#include <shared_mutex>
 #include <string>
 
 namespace fsa {
@@ -50,7 +50,7 @@ private:
   using LibraryConstIterator = std::map<std::string,MetaData::Handle*>::const_iterator;
 
   Library           _library;    /**< Library of MetaData objects.                 */
-  mutable RWLock    _lock;       /**< Read-write lock for library synchronization. */
+  mutable std::shared_mutex    _lock;       /**< Read-write lock for library synchronization. */
 
 public:
 

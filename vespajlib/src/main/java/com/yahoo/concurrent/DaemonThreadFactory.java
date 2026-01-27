@@ -23,7 +23,7 @@ public class DaemonThreadFactory implements ThreadFactory {
     }
 
     /**
-     * Creates a deamon thread factory that creates threads with the default names
+     * Creates a daemon thread factory that creates threads with the default names
      * provided by <code>Executors.defaultThreadFactory()</code> prepended by the
      * specified prefix.
      *

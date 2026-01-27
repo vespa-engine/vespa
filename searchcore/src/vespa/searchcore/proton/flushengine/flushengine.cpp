@@ -7,6 +7,7 @@
 #include "flush_history.h"
 #include "flush_strategy_id_notifier.h"
 #include "flushtask.h"
+#include "reserved_disk_space_calculator.h"
 #include "tls_stats_factory.h"
 #include "tls_stats_map.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
@@ -164,12 +165,6 @@ FlushEngine::close()
     }
     _executor.shutdown().sync();
     return *this;
-}
-
-void
-FlushEngine::triggerFlush()
-{
-    setStrategy(std::make_shared<FlushAllStrategy>());
 }
 
 flushengine::SetStrategyResult
@@ -694,22 +689,6 @@ FlushEngine::set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy)
     }
 }
 
-void
-FlushEngine::setStrategy(IFlushStrategy::SP strategy)
-{
-    auto notifier = _lowest_strategy_id_notifier;
-    std::lock_guard<std::mutex> setStrategyGuard(_setStrategyLock);
-    uint32_t wait_strategy_id = set_strategy_helper(std::move(strategy));
-    /*
-     * Wait for flushes started before the strategy change, for
-     * flushes initiated by the strategy, and for flush engine to call
-     * prune() afterwards.
-     */
-    if (wait_strategy_id != 0u) {
-        notifier->wait_gt_strategy_id(wait_strategy_id);
-    }
-}
-
 SetStrategyResult
 FlushEngine::set_strategy(std::shared_ptr<IFlushStrategy> strategy)
 {
@@ -725,6 +704,30 @@ FlushEngine::poll_strategy(uint32_t wait_strategy_id)
     auto notifier = _lowest_strategy_id_notifier;
     auto flush_history = _flush_history;
     return SetStrategyResult(wait_strategy_id, std::move(notifier), std::move(flush_history));
+}
+
+uint64_t
+FlushEngine::calculate_reserved_disk() const
+{
+    flushengine::ReservedDiskSpaceCalculator calc(maxConcurrentTotal());
+    {
+        std::lock_guard guard(_lock);
+        for (const auto& it : _handlers) {
+            auto& handler(*it.second);
+            auto lst = handler.getFlushTargets();
+            for (const auto& target : lst) {
+                if (!isFlushing(guard, FlushContext::createName(handler, *target))) {
+                    auto gain = target->getApproxDiskGain();
+                    calc.track_disk_gain(gain);
+                }
+            }
+        }
+        for (auto& entry : _flushing) {
+            auto gain = entry.second._target->getApproxDiskGain();
+            calc.track_disk_gain(gain);
+        }
+    }
+    return calc.get_reserved_disk();
 }
 
 } // namespace proton

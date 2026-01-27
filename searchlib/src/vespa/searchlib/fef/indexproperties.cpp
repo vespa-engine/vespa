@@ -556,6 +556,12 @@ TargetHitsMaxAdjustmentFactor::lookup(const Properties& props, double defaultVal
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const std::string LazyFilter::NAME("vespa.matching.nns.lazy_filter");
+const bool LazyFilter::DEFAULT_VALUE(false);
+bool LazyFilter::check(const Properties &props, bool fallback) {
+    return lookupBool(props, NAME, fallback);
+}
+
 const std::string FuzzyAlgorithm::NAME("vespa.matching.fuzzy.algorithm");
 const vespalib::FuzzyMatchingAlgorithm FuzzyAlgorithm::DEFAULT_VALUE(vespalib::FuzzyMatchingAlgorithm::DfaTable);
 

@@ -22,7 +22,7 @@ protected:
         {
         }
 
-        bool operator<(const Ref &rhs) const { return *_ref < *rhs._ref; }
+        bool operator<(const Ref &rhs) const noexcept { return *_ref < *rhs._ref; }
         Reader *get() const noexcept { return _ref; }
     };
 

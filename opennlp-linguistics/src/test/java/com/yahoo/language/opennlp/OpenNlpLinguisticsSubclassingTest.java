@@ -21,10 +21,10 @@ public class OpenNlpLinguisticsSubclassingTest {
 
     @Test
     public void testOpenNlpLinguisticsSubclassing() {
-        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, true, true);
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, true, true);
         var subclass = new OpenNlpLinguisticsSubclass();
         assertEquals("the only token", subclass.getTokenizer().tokenize("whatever", parameters).iterator().next().getTokenString());
-        assertEquals("the only token", subclass.getSegmenter().segment("whatever", parameters.language()).iterator().next());
+        assertEquals("the only token", subclass.getSegmenter().segment("whatever", parameters).iterator().next());
         assertEquals("the only token", subclass.getStemmer().stem("whatever", parameters).get(0).get(0));
     }
 

@@ -4,7 +4,9 @@ package com.yahoo.language.tools;
 
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.Segmenter;
+import com.yahoo.language.process.StemMode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -53,9 +55,9 @@ public class EmbedderTester {
     }
 
     public void assertSegmented(Language language, String input, String... expectedSegments) {
-        List<String> segments = ((Segmenter)embedder).segment(input, language);
+        List<String> segments = ((Segmenter)embedder).segment(input, new LinguisticsParameters(null, language, StemMode.NONE, false, true));
         assertArrayEquals("Actual segments: " + segments,
-                          expectedSegments, ((Segmenter)embedder).segment(input, language).toArray());
+                          expectedSegments, ((Segmenter)embedder).segment(input, new LinguisticsParameters(null, language, StemMode.NONE, false, true)).toArray());
     }
 
     public void assertDecoded(String input) {

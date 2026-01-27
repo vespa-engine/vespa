@@ -34,7 +34,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
@@ -148,7 +147,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private final AtomicBoolean bootstrapping = new AtomicBoolean(true);
 
-    private final TenantRepository tenantRepository;
+    public final TenantRepository tenantRepository;
     private final Optional<Provisioner> hostProvisioner;
     private final Optional<InfraDeployer> infraDeployer;
     private final ConfigConvergenceChecker convergeChecker;
@@ -175,7 +174,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  TesterClient testerClient,
                                  HealthCheckerProvider healthCheckers,
                                  Metric metric,
-                                 SecretStore secretStore,
                                  FlagSource flagSource) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
@@ -456,8 +454,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
 
-        Optional<Instant> activatedTime = getActiveSession(tenant, application).map(Session::getActivatedTime);
-        log.log(Level.FINEST, application + " last activated " + activatedTime.orElse(Instant.EPOCH));
+        Optional<Session> activeSession = getActiveSession(tenant, application);
+        Optional<Instant> activatedTime = activeSession.map(Session::statusChanged);
+        long sessionId = activeSession.map(Session::getSessionId).orElse(-1L);
+        log.log(Level.FINE, application + " last activated " + activatedTime.orElse(Instant.EPOCH) + ", active session: " + sessionId);
         return activatedTime;
     }
 
@@ -538,14 +538,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                             ", current active session=" + activeSessionSessionId);
         if (activeSession.isNewerThan(activeSessionAtCreate) &&
             activeSessionSessionId != sessionId) {
-            String errMsg = activeSession.logPre() + "Cannot activate session " + sessionId +
-                            " because the currently active session (" + activeSessionSessionId +
-                            ") has changed since session " + sessionId + " was created (was " +
-                            activeSessionAtCreate + " at creation time)";
+            String errMsg = activeSession.logPre() + "This session " + sessionId +
+                            " was prepared when session "+ activeSessionAtCreate + " was active," +
+                            " but session " + activeSessionSessionId + " has since become active:";
             if (ignoreStaleSessionFailure) {
-                log.warning(errMsg + " (Continuing because of force.)");
+                log.warning(errMsg + " will activate anyway (by force)");
             } else {
-                throw new ActivationConflictException(errMsg);
+                throw new ActivationConflictException(errMsg + " refusing to activate this session, please redeploy");
             }
         }
     }
@@ -555,7 +554,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (sessionId < currentActiveSessionId) {
             throw new ActivationConflictException("Cannot activate session " + sessionId +
                                                   ", because it is older than current active session (" +
-                                                  currentActiveSessionId + ")");
+                                                  currentActiveSessionId + "), please try deploying again from start");
         }
     }
 
@@ -955,28 +954,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public TenantRepository tenantRepository() {
         return tenantRepository;
-    }
-
-    public Set<TenantName> deleteUnusedTenants(Duration ttlForUnusedTenant, Instant now) {
-        return tenantRepository.getAllTenantNames().stream()
-                .filter(tenantName -> activeApplications(tenantName).isEmpty())
-                .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
-                .filter(tenantName -> !tenantName.equals(HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
-                .filter(tenantName -> getTenantMetaData(tenantRepository.getTenant(tenantName)).lastDeployTimestamp().isBefore(now.minus(ttlForUnusedTenant)))
-                .peek(tenantRepository::deleteTenant)
-                .collect(Collectors.toSet());
-    }
-
-    public void deleteTenant(TenantName tenantName) {
-        List<ApplicationId> activeApplications = activeApplications(tenantName);
-        if (activeApplications.isEmpty())
-            tenantRepository.deleteTenant(tenantName);
-        else
-            throw new IllegalArgumentException("Cannot delete tenant '" + tenantName + "', it has active applications: " + activeApplications);
-    }
-
-    private List<ApplicationId> activeApplications(TenantName tenantName) {
-        return tenantRepository.getTenant(tenantName).getApplicationRepo().activeApplications();
     }
 
     // ---------------- SearchNode Metrics ------------------------------------------------------------------------

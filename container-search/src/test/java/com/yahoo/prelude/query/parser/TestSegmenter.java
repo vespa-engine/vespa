@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query.parser;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.Segmenter;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public class TestSegmenter implements Segmenter {
      * "bc" and "d", but will instead split into "bc" and "cd".</p>
      */
     @Override
-    public List<String> segment(String string, Language language) {
+    public List<String> segment(String string, LinguisticsParameters parameters) {
         List<String> tokens = new java.util.ArrayList<>();
 
         // Tokenize

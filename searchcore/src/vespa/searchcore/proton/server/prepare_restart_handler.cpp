@@ -12,27 +12,8 @@ using proton::flushengine::SetStrategyResult;
 namespace proton {
 
 PrepareRestartHandler::PrepareRestartHandler(FlushEngine &flushEngine)
-    : _flushEngine(flushEngine),
-      _mutex(),
-      _cond(),
-      _running(false)
+    : _flushEngine(flushEngine)
 {
-}
-
-bool
-PrepareRestartHandler::prepareRestart(const ProtonConfig &protonCfg)
-{
-    std::unique_lock lock(_mutex);
-    if (!_flushEngine.has_thread()) {
-        return false;
-    }
-    if (!_running) {
-        performPrepareRestart(protonCfg, lock);
-    } else {
-        _cond.wait(lock, [this] { return !_running; });
-        LOG(info, "prepareRestart(): Waited for another thread performing prepareRestart()");
-    }
-    return true;
 }
 
 namespace {
@@ -59,17 +40,6 @@ PrepareRestartHandler::prepare_restart2(const ProtonConfig &protonCfg, uint32_t 
     } else {
         return _flushEngine.poll_strategy(wait_strategy_id);
     }
-}
-
-void
-PrepareRestartHandler::performPrepareRestart(const ProtonConfig &protonCfg, std::unique_lock<std::mutex> &lock)
-{
-    _running = true;
-    lock.unlock();
-    _flushEngine.setStrategy(std::make_shared<PrepareRestartFlushStrategy>(createPrepareRestartConfig(protonCfg)));
-    lock.lock();
-    _running = false;
-    _cond.notify_all();
 }
 
 }

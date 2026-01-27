@@ -20,6 +20,7 @@ import static com.yahoo.vespa.flags.Dimension.APPLICATION;
 import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CERTIFICATE_PROVIDER;
 import static com.yahoo.vespa.flags.Dimension.CLAVE;
+import static com.yahoo.vespa.flags.Dimension.CLOUD;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
@@ -29,6 +30,7 @@ import static com.yahoo.vespa.flags.Dimension.FLAVOR;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
+import static com.yahoo.vespa.flags.Dimension.SYSTEM;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.Dimension.ZONE_ID;
@@ -57,8 +59,8 @@ public class PermanentFlags {
     public static final UnboundIntFlag HEAP_SIZE_PERCENTAGE = defineIntFlag(
             "heap-size-percentage", 69,
             "Sets default jvm heap size percentage",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
+            "Takes effect at redeployment (requires restart)",
+            INSTANCE_ID, CLUSTER_ID);
 
     public static final UnboundDoubleFlag QUERY_DISPATCH_WARMUP = defineDoubleFlag(
             "query-dispatch-warmup", 5,
@@ -89,6 +91,15 @@ public class PermanentFlags {
             "keep-provisioned-expired-hosts-max", 0,
             "The maximum number of provisioned expired hosts to keep for investigation of provisioning issues.",
             "Takes effect on next run of ProvisionedExpirer");
+
+    public static final UnboundIntFlag OS_MAJOR_VERSION = defineIntFlag(
+            "os-major-version", 0,
+            "The OS major version to use for provisioned hosts. " +
+            "Value 0 means use lowest major version available. " +
+            "Common values: 8 (AlmaLinux 8), 9 (AlmaLinux 9).",
+            "Takes effect when a host is provisioned",
+            SYSTEM, CLOUD, ENVIRONMENT, ZONE_ID, // Note: will be used by controller
+            CLAVE, NODE_TYPE, CLOUD_ACCOUNT, HOSTNAME);
 
     public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
             "shared-host", SharedHost.createDisabled(), SharedHost.class,
@@ -178,7 +189,7 @@ public class PermanentFlags {
             "Specifies customer rpm services to run on enclave tenant hosts.",
             "Takes effect on next host admin tick.",
             __ -> true,
-            TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE);
+            TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE);
 
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");

@@ -32,6 +32,13 @@ public:
     virtual HitEstimate calc_hit_estimate() const = 0;
 
     /**
+     * What is the extra cost to produce each hit because we have to
+     * merge posting lists?
+     * Default implementation: no extra cost.
+     */
+    virtual double posting_list_merge_factor() const { return 1.0; }
+
+    /**
      * Creates an attribute search iterator associated with this
      * search context.
      *

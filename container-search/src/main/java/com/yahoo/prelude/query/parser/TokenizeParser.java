@@ -36,12 +36,17 @@ public final class TokenizeParser extends AbstractParser {
 
     /** Returns the item representing this token if it is searchable, and null otherwise */
     private Item toTerm(Token token) {
-        if (token.kind == WORD)
+        if (token.kind == WORD) {
             return segment("", token, false);
-        else if (token.kind == NUMBER)
-            return new IntItem(token.image);
-        else
+        }
+        else if (token.kind == NUMBER) {
+            var item = new IntItem(token.image);
+            item.setQueryType(environment.getType());
+            return item;
+        }
+        else {
             return null;
+        }
     }
 
 }

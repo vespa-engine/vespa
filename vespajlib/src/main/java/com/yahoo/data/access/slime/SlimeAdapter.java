@@ -1,7 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.data.access.slime;
 
+import com.yahoo.data.disclosure.DataSink;
+import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Type;
+import com.yahoo.slime.Visitor;
+
+import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.ObjectTraverser;
 
 import java.util.Map;
 import java.util.AbstractMap;
@@ -183,4 +189,68 @@ public final class SlimeAdapter implements com.yahoo.data.access.Inspector {
         return list;
     }
 
+    @Override
+    public void emit(DataSink sink) {
+        inspector.accept(new InspectorVisitor(sink));
+    }
+
+    private record InspectorVisitor(DataSink sink) implements Visitor {
+
+        @Override
+        public void visitInvalid() {
+            sink.emptyValue();
+        }
+
+        @Override
+        public void visitNix() {
+            sink.emptyValue();
+        }
+
+        @Override
+        public void visitBool(boolean bit) {
+            sink.booleanValue(bit);
+        }
+
+        @Override
+        public void visitLong(long l) {
+            sink.longValue(l);
+        }
+
+        @Override
+        public void visitDouble(double d) {
+            sink.doubleValue(d);
+        }
+
+        @Override
+        public void visitString(String str) {
+            sink.stringValue(str);
+        }
+
+        @Override
+        public void visitString(byte[] utf8) {
+            sink.stringValue(utf8);
+        }
+
+        @Override
+        public void visitData(byte[] data) {
+            sink.dataValue(data);
+        }
+
+        @Override
+        public void visitArray(Inspector arr) {
+            sink.startArray();
+            arr.traverse((ArrayTraverser) (idx, value) -> value.accept(this));
+            sink.endArray();
+        }
+
+        @Override
+        public void visitObject(Inspector obj) {
+            sink.startObject();
+            obj.traverse((ObjectTraverser) (fieldName, value) -> {
+                sink.fieldName(fieldName);
+                value.accept(this);
+            });
+            sink.endObject();
+        }
+    }
 }

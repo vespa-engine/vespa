@@ -13,31 +13,19 @@ endpoint                 string default="https://api.voyageai.com/v1/embeddings"
 # VoyageAI model name (e.g., voyage-3.5, voyage-3.5-lite, voyage-code-3, voyage-finance-2)
 model                    string
 
-# Request Settings
+# Output dimension
+dimensions int
 
-# Request timeout in milliseconds (also bounds retry attempts - retries will stop when timeout is reached)
-timeout int default=30000
+# Output quantization mode
+quantization enum { AUTO, FLOAT, INT8, BINARY } default=AUTO
 
-# Maximum number of retry attempts for failed requests (safety limit in addition to timeout)
-maxRetries int default=10
+# Maximum number of retry attempts for failed requests
+maxRetries int default=3
+
+# HTTP client timeout in milliseconds for read/write operations
+timeout int default=60000
 
 # Input Processing
 
-# Default input type when auto-detection is disabled
-defaultInputType enum { query, document } default=document
-
-# Automatically detect input type from Context (query vs document)
-autoDetectInputType bool default=true
-
 # Truncate inputs that exceed model's maximum token limit
 truncate bool default=true
-
-# Performance Settings
-
-# Maximum number of idle HTTP connections to keep in the pool
-maxIdleConnections int default=5
-
-# Output Processing
-
-# Apply L2 normalization to output embeddings
-normalize bool default=false

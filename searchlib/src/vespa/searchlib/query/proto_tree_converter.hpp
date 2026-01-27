@@ -6,6 +6,7 @@
 #include "tree/querybuilder.h"
 
 #include <vespa/searchlib/common/geo_location.h>
+#include <vespa/searchlib/common/proto_to_json.h>
 #include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
@@ -31,6 +32,8 @@ public:
         if (ok) {
             return _builder.build();
         } else {
+            LOG(error, "invalid serialized query tree >>>\n%s\n<<<",
+                search::common::protobuf_message_to_json(_proto).c_str());
             return {};
         }
     }
@@ -266,8 +269,7 @@ public:
         uint32_t arity = item.children_size();
         auto &term = _builder.addPhrase(arity, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag) term.setRanked(false);
-        // not meaningful?
-        // if (d.noPositionDataFlag) term.setPositionData(false);
+        // not meaningful: d.noPositionDataFlag
         for (const auto &child : item.children()) {
             if (!handle_item(child)) {
                 return false;
@@ -523,12 +525,12 @@ public:
             _builder.addLocationTerm(loc, d.index_view, d.uniqueId, d.weight);
             return true;
         } else {
+            LOG(error, "GeoLocation item %s missing vital data",
+                search::common::protobuf_message_to_json(item).c_str());
             return false;
         }
         // not meaningful?
         // if (d.noRankFlag) term.setRanked(false);
-        // not meaningful:
-        // if (d.noPositionDataFlag) term.setPositionData(false);
     }
 
 
@@ -645,8 +647,10 @@ public:
             return handle(qti.item_geo_location_term());
 
         case IC::ITEM_NOT_SET:
+            LOG(error, "missing item in serialized query tree");
             return false;
         }
+        LOG(error, "unknown item type %d in serialized query tree", (int)qti.item_case());
         return false;
     }
 };

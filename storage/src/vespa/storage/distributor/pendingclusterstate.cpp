@@ -11,7 +11,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/bufferedlogger.h>
-LOG_SETUP(".pendingclusterstate");
+LOG_SETUP(".distributor.pending_cluster_state");
 
 using document::BucketSpace;
 

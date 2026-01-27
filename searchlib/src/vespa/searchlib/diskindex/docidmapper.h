@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/array.h>
+#include <cstdint>
 #include <cassert>
 #include <span>
 #include <string>

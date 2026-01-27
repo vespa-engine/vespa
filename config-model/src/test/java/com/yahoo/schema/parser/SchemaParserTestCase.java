@@ -383,7 +383,6 @@ public class SchemaParserTestCase {
         checkFileParses("src/test/derived/nearestneighbor/test.sd");
         checkFileParses("src/test/derived/newrank/newrank.sd");
         checkFileParses("src/test/derived/nuwa/newsindex.sd");
-        checkFileParses("src/test/derived/orderilscripts/orderilscripts.sd");
         checkFileParses("src/test/derived/position_array/position_array.sd");
         checkFileParses("src/test/derived/position_attribute/position_attribute.sd");
         checkFileParses("src/test/derived/position_extra/position_extra.sd");

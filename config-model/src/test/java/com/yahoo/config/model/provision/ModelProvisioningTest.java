@@ -16,6 +16,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.SystemName;
@@ -1613,7 +1614,7 @@ public class ModelProvisioningTest {
             fail("expected failure");
         } catch (IllegalArgumentException e) {
             assertEquals("In content cluster 'bar': Clusters in hosted environments must have a <nodes count='N'> tag\n" +
-                         "matching all zones, and having no <node> subtags,\nsee https://docs.vespa.ai/en/reference/services/services.html#nodes",
+                         "matching all zones, and having no <node> subtags,\nsee https://docs.vespa.ai/en/reference/applications/services/services.html#nodes",
                          Exceptions.toMessageString(e));
         }
     }
@@ -2715,12 +2716,16 @@ public class ModelProvisioningTest {
         assertTrue(clusterSpec.isPresent());
         assertFalse(clusterSpec.get().sidecars().isEmpty());
 
-        var expectedSidecarSpec = SidecarSpec.builder().id(0).name("triton").image(
-                DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.09-py3")).minCpu(1).hasGpu(false).volumeMounts(
-                List.of("/models")).command(List.of(
-                "tritonserver", "--log-verbose=1", "--model-repository=/models",
-                "--model-control-mode=explicit"
-        )).build();
+        var expectedSidecarSpec = SidecarSpec.builder()
+                .id(0)
+                .name("triton")
+                .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.12-py3"))
+                .minCpu(1)
+                .hasGpu(false)
+                .volumeMounts(List.of("/models"))
+                .command(List.of("tritonserver", "--model-repository=/models", "--model-control-mode=explicit"))
+                .livenessProbe(new SidecarProbe(new SidecarProbe.HttpGetAction("/v2/health/live", 8000), 10, 5, 2, 3))
+                .build();
         var actualSidecarSpec = clusterSpec.get().sidecars().get(0);
         assertEquals(expectedSidecarSpec, actualSidecarSpec);
     }

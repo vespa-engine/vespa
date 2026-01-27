@@ -11,7 +11,7 @@
 #include <algorithm>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".pendingbucketspacedbtransition");
+LOG_SETUP(".distributor.pending_bucket_space_db_transition");
 
 namespace storage::distributor {
 

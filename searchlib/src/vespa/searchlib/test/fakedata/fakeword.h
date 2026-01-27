@@ -32,7 +32,7 @@ public:
         int32_t _elementWeight;
         uint32_t _elementLen;
 
-        bool operator<(const DocWordPosFeature &rhs) const {
+        bool operator<(const DocWordPosFeature &rhs) const noexcept {
             if (_elementId != rhs._elementId)
                 return _elementId < rhs._elementId;
             return _wordPos < rhs._wordPos;
@@ -76,13 +76,13 @@ public:
 
         Randomizer() : _random(0), _ref(0) {}
 
-        bool operator<(const Randomizer &rhs) const {
+        bool operator<(const Randomizer &rhs) const noexcept {
             if (_random != rhs._random)
                 return _random < rhs._random;
             return _ref < rhs._ref;
         }
 
-        bool operator==(const Randomizer &rhs) const {
+        bool operator==(const Randomizer &rhs) const noexcept {
             return _random == rhs._random && _ref == rhs._ref;
         }
 

@@ -2,7 +2,9 @@
 package com.yahoo.prelude.query.parser;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.Segmenter;
+import com.yahoo.language.process.StemMode;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
@@ -366,35 +368,47 @@ public abstract class AbstractParser implements CustomParser {
             WordItem w = new WordItem(token.toString(), true, token.substring);
             w.setWords(false);
             w.setFromSpecialToken(true);
+            w.setQueryType(environment.getType());
             return w;
         }
 
         if (language == Language.UNKNOWN) {
-            return new WordItem(normalizedToken, true, token.substring);
+            var word = new WordItem(normalizedToken, true, token.substring);
+            word.setQueryType(environment.getType());
+            return word;
         }
 
-
         Segmenter segmenter = environment.getLinguistics().getSegmenter();
-        List<String> segments = segmenter.segment(normalizedToken, language);
+        List<String> segments = segmenter.segment(normalizedToken,
+                                                  new LinguisticsParameters(linguisticsProfileFor(indexName),
+                                                                            language,
+                                                                            StemMode.NONE,
+                                                                            false,
+                                                                            false));
         if (segments.isEmpty()) {
             return null;
         }
 
         if (segments.size() == 1) {
-            return new WordItem(segments.get(0), "", true, token.substring);
+            var word = new WordItem(segments.get(0), "", true, token.substring);
+            word.setQueryType(environment.getType());
+            return word;
         }
 
         CompositeItem composite;
         if (indexFacts.getIndex(indexName).getPhraseSegmenting() || quoted) {
             composite = new PhraseSegmentItem(token.toString(), normalizedToken, true, false, token.substring);
+            ((PhraseSegmentItem)composite).setQueryType(environment.getType());
         }
         else {
             composite = new AndSegmentItem(token.toString(), true, false);
+            ((AndSegmentItem)composite).setQueryType(environment.getType());
         }
         int n = 0;
         WordItem previous = null;
         for (String segment : segments) {
             WordItem w = new WordItem(segment, "", true, token.substring);
+            w.setQueryType(environment.getType());
             w.setFromSegmented(true);
             w.setSegmentIndex(n++);
             w.setStemmed(false);
@@ -417,6 +431,15 @@ public abstract class AbstractParser implements CustomParser {
             case phrase  -> new PhraseItem();
             case weakAnd -> new WeakAndItem();
         };
+    }
+
+    protected String linguisticsProfileFor(String field) {
+        String queryAssignedProfile = environment.getType().getProfile();
+        if (queryAssignedProfile != null) return queryAssignedProfile;
+        if (indexFacts == null) return null;
+        Index index = indexFacts.getIndex(field);
+        if (index == null) return null;
+        return index.getLinguisticsProfile();
     }
 
 }

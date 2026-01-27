@@ -27,8 +27,11 @@ class IndexDiskLayout;
  */
 class DiskIndexes {
     std::map<IndexDiskDir, IndexDiskDirState> _active;
+    uint64_t _sum_size_on_disk;
+    uint64_t _sum_stale_size_on_disk;
     mutable std::mutex _lock;
 
+    void remove_from_sum(const IndexDiskDirState& state);
 public:
     using SP = std::shared_ptr<DiskIndexes>;
     DiskIndexes();
@@ -40,7 +43,7 @@ public:
     bool isActive(const std::string & index) const;
     void add_not_active(IndexDiskDir index_disk_dir);
     bool remove(IndexDiskDir index_disk_dir);
-    uint64_t get_transient_size(IndexDiskLayout& layout, IndexDiskDir index_disk_dir) const;
+    uint64_t get_transient_size(const IndexDiskLayout& layout) const;
 };
 
 }

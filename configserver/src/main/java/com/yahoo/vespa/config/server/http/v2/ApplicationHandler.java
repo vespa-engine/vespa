@@ -289,10 +289,10 @@ public class ApplicationHandler extends HttpHandler {
                                         .setEmptyValue("Changed reindexing of no document types of application " + applicationId));
         var deployment = applicationRepository.deployFromLocalActive(applicationId);
         if (deployment.isPresent()) {
-            log.log(Level.INFO, "Modified reindexing status for " + applicationId, ", deploying to make changes effective");
+            log.log(Level.INFO, "Modified reindexing status for " + applicationId + ", deploying to make changes effective");
             deployment.get().activate();
         } else {
-            log.log(Level.INFO, "Modified reindexing status for " + applicationId, ", but unable to deploy to make changes effective");
+            log.log(Level.INFO, "Modified reindexing status for " + applicationId + ", but unable to deploy to make changes effective");
         }
         return response;
     }

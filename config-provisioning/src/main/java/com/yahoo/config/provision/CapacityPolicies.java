@@ -6,12 +6,10 @@ import com.yahoo.config.provision.NodeResources.DiskSpeed;
 
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Logger;
 
 import static com.yahoo.config.provision.NodeResources.Architecture;
 import static com.yahoo.config.provision.NodeResources.Architecture.x86_64;
 import static java.util.Objects.requireNonNull;
-import static java.util.logging.Level.INFO;
 
 /**
  * Defines the policies for assigning cluster capacity in various environments.
@@ -20,7 +18,6 @@ import static java.util.logging.Level.INFO;
  */
 public class CapacityPolicies {
 
-    private static final Logger log = Logger.getLogger(CapacityPolicies.class.getName());
     private static final NodeResources MIN_KUBERNETES_RESOURCES = new NodeResources(0.5, 1, 10, 0.3);
 
     public record Tuning(Architecture adminClusterArchitecture, double logserverMemoryGiB,
@@ -117,7 +114,17 @@ public class CapacityPolicies {
     }
 
     public NodeResources specifyFully(NodeResources resources, ClusterSpec clusterSpec) {
-        return resources.withUnspecifiedFieldsFrom(defaultResources(clusterSpec).with(DiskSpeed.any));
+        boolean diskWasUnspecified = resources.diskIsUnspecified();
+        NodeResources specified = resources.withUnspecifiedFieldsFrom(defaultResources(clusterSpec).with(DiskSpeed.any));
+
+        // Ensure disk size meets minimum requirements based on cluster type, but only if it was originally unspecified
+        if (diskWasUnspecified) {
+            double minDiskGb = minDiskGbForClusterType(specified, clusterSpec);
+            if (specified.diskGb() < minDiskGb) {
+                specified = specified.withDiskGb(minDiskGb);
+            }
+        }
+        return specified;
     }
 
     private NodeResources defaultResources(ClusterSpec clusterSpec) {
@@ -180,12 +187,7 @@ public class CapacityPolicies {
         var step = Math.min(4, count / 50); // max 4 steps (200+ nodes)
         double adjustment = step * adjustmentFactor;
 
-        double newMemory = memory + adjustment;
-        if (adjustment > 0) {
-            log.log(INFO, "Adjusted cluster controller memory (" + count + " content nodes): " +
-                    " from " + memory + " GiB " + "to " + newMemory + " GiB");
-        }
-        return newMemory;
+        return memory + adjustment;
     }
 
     private NodeResources logserverResources(Architecture architecture) {
@@ -229,6 +231,22 @@ public class CapacityPolicies {
         return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
                               "no default resources applicable for " + spec + " among: " + resources)
                        .getValue();
+    }
+
+    /**
+     * Calculates the minimum disk size (in GiB) for the given cluster based on both
+     * the memory specified in {@code resources} and the {@link ClusterSpec.Type}.
+     * <p>
+     * For content clusters, the minimum disk is 3x the memory; for all other cluster
+     * types, it is 2x the memory. If memory is unspecified, this returns 0.
+     */
+    private double minDiskGbForClusterType(NodeResources resources, ClusterSpec clusterSpec) {
+        if (resources.memoryIsUnspecified()) return 0;
+
+        return resources.memoryGiB() * switch (clusterSpec.type()) {
+            case content -> 3.0;  // 3x memory for content nodes
+            default -> 2.0; // 2x memory for other nodes
+        };
     }
 
 }

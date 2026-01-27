@@ -155,6 +155,18 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    void testPhraseInNear() {
+        parseAndConfirm("default contains ({distance: 18}near(\"sales\", phrase(\"m\\u16C1\", \"ampersandsign\\u16C1\", \"a\")))",
+                        "default contains ({distance: 18}near('sales',phrase('mᛁ','ampersandsignᛁ','a')))");
+    }
+
+    @Test
+    void testEquivInNear() {
+        parseAndConfirm("default contains ({distance: 5}near(\"A\", equiv(\"B\", \"C\")))",
+                        "default CONTAINS ({distance:5,exclusionDistance:5}near('A', !equiv('B', 'C')))");
+    }
+
+    @Test
     void testNearestNeighbor() {
         parseAndConfirm("{label: \"foo\", targetHits: 1000}nearestNeighbor(semantic_embedding, my_property)");
         parseAndConfirm("{targetHits: 42}nearestNeighbor(semantic_embedding, my_property)");

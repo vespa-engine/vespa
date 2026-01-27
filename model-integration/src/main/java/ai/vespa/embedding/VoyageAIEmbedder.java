@@ -1,128 +1,104 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
+import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
-import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvalidInputException;
+import com.yahoo.language.process.OverloadException;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import okhttp3.ConnectionPool;
+import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * VoyageAI embedder that uses the VoyageAI Embeddings API to generate
- * high-quality semantic embeddings for text.
- *
- * <p>Features:
- * <ul>
- *   <li>Supports all VoyageAI models (voyage-3, voyage-code-3, etc.)</li>
- *   <li>LRU caching to reduce API calls</li>
- *   <li>Auto-detection of input type (query vs document)</li>
- *   <li>Exponential backoff retry on rate limits</li>
- * </ul>
- *
- * <p><b>Future Enhancement:</b> Request batching - Currently each embed() call results
- * in a separate API request. A future enhancement will support batching multiple texts
- * in a single API request for improved efficiency and reduced latency when processing
- * multiple documents.
- *
- * <p>Configuration example in services.xml:
- * <pre>{@code
- * <component id="voyage" type="voyage-ai-embedder">
- *   <model>voyage-3</model>
- *   <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
- * </component>
- * }</pre>
+ * VoyageAI embedder that uses the VoyageAI Embeddings API.
  *
  * @see <a href="https://docs.voyageai.com/">VoyageAI Documentation</a>
  * @author VoyageAI team
+ * @author bjorncs
  */
 @Beta
 public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     private static final Logger log = Logger.getLogger(VoyageAIEmbedder.class.getName());
-    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    // VoyageAI API endpoints - auto-selected based on model name
+    private static final String EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/embeddings";
+    private static final String MULTIMODAL_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/multimodalembeddings";
+    private static final String CONTEXTUALIZED_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/contextualizedembeddings";
 
     // Configuration
     private final VoyageAiEmbedderConfig config;
     private final Embedder.Runtime runtime;
     private final Secret apiKey;
     private final OkHttpClient httpClient;
+    private final String resolvedEndpoint;
 
     @Inject
     public VoyageAIEmbedder(VoyageAiEmbedderConfig config, Embedder.Runtime runtime, Secrets secretStore) {
         this.config = config;
         this.runtime = runtime;
-        this.apiKey = getApiKey(config, secretStore);
+        this.apiKey = secretStore.get(config.apiKeySecretRef());
         this.httpClient = createHttpClient(config);
+        this.resolvedEndpoint = resolveEndpoint(config);
 
-        log.info("VoyageAI embedder initialized with model: " + config.model());
+        log.fine(() -> "VoyageAI embedder initialized with model: %s, endpoint: %s".formatted(config.model(), resolvedEndpoint));
     }
 
-    /**
-     * Retrieve API key from Vespa's secret store.
-     */
-    private Secret getApiKey(VoyageAiEmbedderConfig config, Secrets secretStore) {
-        String secretName = config.apiKeySecretRef();
-
-        if (secretName == null || secretName.isEmpty()) {
-            throw new IllegalArgumentException(
-                "api-key-secret-ref must be configured for VoyageAI embedder. " +
-                "Please set it in services.xml and ensure the secret is in the secret store."
-            );
+    private String resolveEndpoint(VoyageAiEmbedderConfig config) {
+        // If user explicitly configured an endpoint, use it
+        String configuredEndpoint = config.endpoint();
+        if (configuredEndpoint != null && !configuredEndpoint.equals(EMBEDDINGS_ENDPOINT)) {
+            return configuredEndpoint;
         }
 
-        try {
-            Secret secret = secretStore.get(secretName);
-            if (secret == null) {
-                throw new IllegalArgumentException(
-                    "Secret not found in secret store: " + secretName + ". " +
-                    "Please add it using: vespa secret add " + secretName + " --value YOUR_API_KEY"
-                );
+        // Auto-select endpoint based on model name
+        String model = config.model();
+        if (model != null) {
+            if (model.startsWith("voyage-multimodal-")) {
+                return MULTIMODAL_EMBEDDINGS_ENDPOINT;
             }
-            return secret;
-        } catch (UnsupportedOperationException e) {
-            throw new IllegalArgumentException(
-                "Secret store is not configured. Cannot retrieve API key for VoyageAI embedder.", e
-            );
-        } catch (Exception e) {
-            throw new IllegalArgumentException(
-                "Failed to retrieve API key from secret store. Secret name: " + secretName, e
-            );
+            if (model.startsWith("voyage-context-")) {
+                return CONTEXTUALIZED_EMBEDDINGS_ENDPOINT;
+            }
         }
+
+        return EMBEDDINGS_ENDPOINT;
     }
 
-    /**
-     * Create HTTP client with connection pooling and timeouts.
-     */
     private OkHttpClient createHttpClient(VoyageAiEmbedderConfig config) {
         return new OkHttpClient.Builder()
-                .connectTimeout(Duration.ofMillis(config.timeout()))
+                .addInterceptor(new RetryInterceptor(config.maxRetries()))
+                .retryOnConnectionFailure(true)
+                .connectTimeout(Duration.ofSeconds(10))
                 .readTimeout(Duration.ofMillis(config.timeout()))
                 .writeTimeout(Duration.ofMillis(config.timeout()))
-                .callTimeout(Duration.ofMillis(config.timeout()))
-                .connectionPool(new ConnectionPool(config.maxIdleConnections(), 5, TimeUnit.MINUTES))
+                .connectionPool(new ConnectionPool(10, 1, TimeUnit.MINUTES))
                 .build();
     }
 
@@ -136,194 +112,247 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public Tensor embed(String text, Context context, TensorType targetType) {
-        validateTensorType(targetType);
+        return invokeVoyageAI(List.of(text), context, targetType)
+                .get(0);
+    }
 
-        long startTime = System.nanoTime();
+    @Override
+    public List<Tensor> embed(List<String> texts, Context context, TensorType targetType) {
+        if (!isContextualModel()) return Embedder.super.embed(texts, context, targetType);
+        return invokeVoyageAI(texts, context, targetType);
+    }
 
-        try {
-            // Check cache first using Context's cache mechanism
-            String inputType = detectInputType(context);
-            CacheKey cacheKey = new CacheKey(context.getEmbedderId(), text, inputType);
+    private void validateTensorType(TensorType targetTensorType) {
+        if (targetTensorType.dimensions().size() != 1)
+            throw new IllegalArgumentException(
+                    "Error in embedding to type '" + targetTensorType + "': should only have one dimension.");
+        var tensorDimension = targetTensorType.dimensions().get(0);
+        if (!tensorDimension.isIndexed())
+            throw new IllegalArgumentException(
+                    "Error in embedding to type '" + targetTensorType + "': dimension should be indexed.");
+        var valueType = targetTensorType.valueType();
 
-            Tensor result = context.computeCachedValueIfAbsent(cacheKey, () -> {
-                try {
-                    return callVoyageAI(text, inputType, targetType);
-                } catch (IOException | InterruptedException e) {
-                    throw new RuntimeException("Failed to call VoyageAI API: " + e.getMessage(), e);
+        int configuredDim = config.dimensions();
+        long tensorDim = tensorDimension.size().orElseThrow();
+
+        switch (config.quantization()) {
+            case AUTO:
+                if (valueType == TensorType.Value.FLOAT) {
+                    if (tensorDim != configuredDim)
+                        throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
+                                .formatted(tensorDim, configuredDim));
+                } else if (valueType == TensorType.Value.INT8) {
+                    if (tensorDim != configuredDim && tensorDim != configuredDim / 8)
+                        throw new IllegalArgumentException(("Tensor dimension %d does not match configured dimension. " +
+                                "Expected %d or %d.").formatted(tensorDim, configuredDim, configuredDim / 8));
+                } else {
+                    throw new IllegalArgumentException(
+                            "Quantization 'auto' is incompatible with tensor type " + targetTensorType + ".");
                 }
-            });
-
-            // Record metrics
-            runtime.sampleSequenceLength(text.length(), context);
-            runtime.sampleEmbeddingLatency((System.nanoTime() - startTime) / 1_000_000_000.0, context);
-
-            return result;
-
-        } catch (RuntimeException e) {
-            log.log(Level.WARNING, "VoyageAI embedding failed for model: " + config.model(), e);
-            throw e;
+                break;
+            case FLOAT:
+                if (valueType != TensorType.Value.FLOAT)
+                    throw new IllegalArgumentException(
+                            "Quantization 'float' is incompatible with tensor type " + targetTensorType + ".");
+                if (tensorDim != configuredDim)
+                    throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
+                            .formatted(tensorDim, configuredDim));
+                break;
+            case INT8:
+                if (valueType != TensorType.Value.INT8)
+                    throw new IllegalArgumentException(
+                            "Quantization 'int8' is incompatible with tensor type " + targetTensorType + ".");
+                if (tensorDim != configuredDim)
+                    throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
+                            .formatted(tensorDim, configuredDim));
+                break;
+            case BINARY:
+                if (valueType != TensorType.Value.INT8)
+                    throw new IllegalArgumentException(
+                            "Quantization 'binary' is incompatible with tensor type " + targetTensorType + ".");
+                if (tensorDim != configuredDim / 8)
+                    throw new IllegalArgumentException("Tensor dimension %d does not match required dimension %d."
+                            .formatted(tensorDim, configuredDim / 8));
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported quantization: " + config.quantization());
         }
     }
 
-    /**
-     * Validate that the target tensor type is appropriate for embeddings.
-     */
-    private void validateTensorType(TensorType targetType) {
-        if (targetType.dimensions().size() != 1) {
-            throw new IllegalArgumentException(
-                "Error in embedding to type '" + targetType + "': should only have one indexed dimension."
-            );
-        }
-        if (!targetType.dimensions().get(0).isIndexed()) {
-            throw new IllegalArgumentException(
-                "Error in embedding to type '" + targetType + "': dimension should be indexed."
-            );
-        }
-    }
-
-    /**
-     * Auto-detect input type (query vs document) from context.
-     */
     private String detectInputType(Context context) {
-        if (!config.autoDetectInputType()) {
-            return config.defaultInputType().toString().toLowerCase();
-        }
-
-        // Use context destination to determine type
         String destination = context.getDestination();
-        if (destination != null && destination.toLowerCase().contains("query")) {
+        if (destination != null && destination.startsWith("query(")) {
             return "query";
         }
         return "document";
     }
 
-    /**
-     * Call VoyageAI API to get embeddings.
-     */
-    private Tensor callVoyageAI(String text, String inputType, TensorType targetType)
-            throws IOException, InterruptedException {
+    private boolean isMultimodalModel() { return config.model().startsWith("voyage-multimodal-"); }
+    private boolean isContextualModel() { return config.model().startsWith("voyage-context-"); }
 
-        VoyageAIRequest request = new VoyageAIRequest(
-                List.of(text),
-                config.model(),
-                inputType,
-                config.truncate()
-        );
-
-        String jsonRequest = objectMapper.writeValueAsString(request);
-        log.fine(() -> "VoyageAI request: " + jsonRequest);
-
-        VoyageAIResponse response = callAPIWithRetry(jsonRequest);
-
-        if (response.data == null || response.data.isEmpty()) {
-            throw new IOException("VoyageAI API returned empty response");
-        }
-
-        float[] embedding = response.data.get(0).embedding;
-        return createTensor(embedding, targetType);
-    }
-
-    /**
-     * Call VoyageAI API with retry on transient failures.
-     *
-     * <p>Retry strategy:
-     * - Retries on rate limits (429) and server errors (5xx)
-     * - Uses fixed 1-second delay between retry attempts
-     * - Bounded by global timeout: will not retry if it would exceed the configured timeout
-     * - maxRetries provides an additional safety limit to prevent excessive retry attempts
-     */
-    private VoyageAIResponse callAPIWithRetry(String jsonRequest)
-            throws IOException, InterruptedException {
-
-        long startTime = System.currentTimeMillis();
-        long timeoutMs = config.timeout();
-        int retries = 0;
-        long retryDelay = 1000; // Fixed 1 second delay
-
-        while (true) {
-            try {
-                RequestBody body = RequestBody.create(jsonRequest, JSON);
-                Request httpRequest = new Request.Builder()
-                        .url(config.endpoint())
-                        .header("Authorization", "Bearer " + apiKey.current())
-                        .header("Content-Type", "application/json")
-                        .post(body)
-                        .build();
-
-                try (Response response = httpClient.newCall(httpRequest).execute()) {
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    if (response.isSuccessful()) {
-                        return objectMapper.readValue(responseBody, VoyageAIResponse.class);
-                    } else if (response.code() == 429 || response.code() >= 500) {
-                        // Calculate time remaining
-                        long elapsedTime = System.currentTimeMillis() - startTime;
-                        long timeRemaining = timeoutMs - elapsedTime;
-
-                        // Check if we have time for another retry
-                        if (timeRemaining <= retryDelay) {
-                            String errorType = response.code() == 429 ? "rate limit" : "server error";
-                            throw new IOException("VoyageAI API " + errorType + " (" + response.code() +
-                                    "). Cannot retry: would exceed timeout of " + timeoutMs + "ms. Response: " + responseBody);
-                        }
-
-                        // Safety limit check
-                        if (retries >= config.maxRetries()) {
-                            String errorType = response.code() == 429 ? "rate limited" : "server error";
-                            throw new IOException("VoyageAI API " + errorType + " (" + response.code() +
-                                    "). Max retries (" + config.maxRetries() + ") exceeded. Response: " + responseBody);
-                        }
-
-                        // Retry with fixed delay
-                        retries++;
-                        String errorMsg = response.code() == 429 ? "rate limited" : "server error (" + response.code() + ")";
-                        log.warning("VoyageAI API " + errorMsg + ". Retry " + retries +
-                                " after " + retryDelay + "ms (timeout remaining: " + timeRemaining + "ms)");
-
-                        Thread.sleep(retryDelay);
-
-                    } else if (response.code() == 401) {
-                        throw new IOException("VoyageAI API authentication failed. Please check your API key. Response: " + responseBody);
-
-                    } else {
-                        throw new IOException("VoyageAI API request failed with status " + response.code() + ": " + responseBody);
-                    }
+    private String resolveOutputDataType(TensorType targetType) {
+        return switch (config.quantization()) {
+            case AUTO -> {
+                if (targetType.valueType() == TensorType.Value.FLOAT) {
+                    yield "float";
+                } else if (targetType.valueType() == TensorType.Value.INT8) {
+                    long tensorDim = targetType.dimensions().get(0).size().orElseThrow();
+                    yield (tensorDim == config.dimensions()) ? "int8" : "binary";
+                } else {
+                    throw new IllegalStateException();
                 }
-            } catch (JsonProcessingException e) {
-                throw new IOException("Failed to parse VoyageAI API response", e);
             }
+            case FLOAT -> "float";
+            case INT8 -> "int8";
+            case BINARY -> "binary";
+        };
+    }
+
+    private void sampleMetrics(long startTimeNanos, Context context) {
+        runtime.sampleEmbeddingLatency((System.nanoTime() - startTimeNanos) / 1_000_000_000.0, context);
+    }
+
+    private List<Tensor> invokeVoyageAI(List<String> texts, Context context, TensorType targetType) {
+        long startTime = System.nanoTime();
+        validateTensorType(targetType);
+        var inputType = detectInputType(context);
+        var outputDataType = resolveOutputDataType(targetType);
+        var timeoutMs = calculateTimeoutMs(context);
+
+        var cacheKey = new CacheKey(context.getEmbedderId(), texts, inputType, outputDataType);
+        var responseBody = context.computeCachedValueIfAbsent(cacheKey, () -> {
+            var jsonRequest = createJsonRequest(texts, inputType, outputDataType);
+            log.fine(() -> "VoyageAI request: " + jsonRequest);
+            return doRequest(jsonRequest, timeoutMs);
+        });
+
+        var tensors = toTensors(responseBody, targetType, outputDataType);
+        sampleMetrics(startTime, context);
+        return tensors;
+    }
+
+    private List<Tensor> toTensors(String responseBody, TensorType targetType, String outputDtype) {
+        try {
+            List<List<Number>> embeddings;
+            if (isContextualModel()) {
+                var response = objectMapper.readValue(responseBody, ContextualResponse.class);
+                embeddings = response.data.get(0).data.stream()
+                        .map(EmbeddingData::embedding)
+                        .toList();
+            } else {
+                var response = objectMapper.readValue(responseBody, VoyageAIResponse.class);
+                embeddings = response.data.stream()
+                        .map(EmbeddingData::embedding)
+                        .toList();
+            }
+            String dimensionName = targetType.dimensions().get(0).name();
+            return embeddings.stream()
+                    .map(embedding -> switch (outputDtype) {
+                        case "float" -> createFloatTensor(embedding, dimensionName);
+                        case "int8", "binary" -> createInt8Tensor(embedding, dimensionName);
+                        default -> throw new IllegalArgumentException("Unsupported output_dtype: " + outputDtype);
+                    })
+                    .toList();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to parse VoyageAI response", e);
         }
     }
 
-    /**
-     * Create Vespa tensor from embedding array.
-     */
-    private Tensor createTensor(float[] embedding, TensorType targetType) {
-        long expectedDim = targetType.dimensions().get(0).size().orElse(-1L);
-        if (expectedDim != -1 && embedding.length != expectedDim) {
-            throw new IllegalArgumentException(
-                "VoyageAI returned " + embedding.length + " dimensions but target type expects " + expectedDim +
-                ". Please ensure the model '" + config.model() + "' outputs the correct dimensions."
-            );
+    private String createJsonRequest(List<String> texts, String inputType, String outputDataType) {
+        Object request;
+        if (isMultimodalModel()) {
+            request = MultimodalRequest.of(
+                    texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
+        } else if (isContextualModel()) {
+            request = ContextualRequest.of(
+                    texts, config.model(), inputType, config.dimensions(), outputDataType);
+        } else {
+            request = VoyageAIRequest.of(
+                    texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         }
+        try {
+            return objectMapper.writeValueAsString(request);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize VoyageAI request", e);
+        }
+    }
 
-        TensorType.Builder typeBuilder = new TensorType.Builder(TensorType.Value.FLOAT);
-        typeBuilder.indexed(targetType.dimensions().get(0).name(), embedding.length);
-        TensorType type = typeBuilder.build();
+    private String doRequest(String jsonRequest, long timeoutMs) {
+        var httpRequest = new Request.Builder()
+                .url(resolvedEndpoint)
+                .header("Authorization", "Bearer " + apiKey.current())
+                .header("Content-Type", "application/json")
+                .post(RequestBody.create(jsonRequest, MediaType.get("application/json; charset=utf-8")))
+                .build();
 
+        var call = httpClient.newCall(httpRequest);
+        call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS);
+
+        try (var response = call.execute()) {
+            var responseBody = response.body() != null ? response.body().string() : "";
+            log.fine(() -> "VoyageAI response with code " + response.code() + ": " + responseBody);
+            if (response.isSuccessful()) {
+                return responseBody;
+            } else if (response.code() == 429) {
+                throw new OverloadException("VoyageAI API rate limited (429)");
+            } else if (response.code() == 401) {
+                throw new RuntimeException("VoyageAI API authentication failed. Please check your API key: " + responseBody);
+            } else if (response.code() == 400) {
+                String errorMessage = parseErrorDetail(responseBody).orElse(responseBody);
+                throw new InvalidInputException("VoyageAI API bad request (400): " + errorMessage);
+            } else {
+                throw new RuntimeException("VoyageAI API request failed with status " + response.code() + ": " + responseBody);
+            }
+        } catch (InterruptedIOException e) {
+            // Covers both OkHttp timeout (InterruptedIOException) and socket timeout (SocketTimeoutException extends InterruptedIOException)
+            throw new TimeoutException(
+                    "VoyageAI API call timed out after " + timeoutMs + "ms", e);
+        } catch (IOException e) {
+            throw new RuntimeException("VoyageAI API call failed: " + e.getMessage(), e);
+        }
+    }
+
+    private Optional<String> parseErrorDetail(String responseBody) {
+        try {
+            ErrorResponse errorResponse = objectMapper.readValue(responseBody, ErrorResponse.class);
+            if (errorResponse.detail != null && !errorResponse.detail.isEmpty()) {
+                return Optional.of(errorResponse.detail);
+            }
+        } catch (JsonProcessingException e) {
+            log.fine(() -> "Failed to parse error response as JSON: " + e.getMessage());
+        }
+        return Optional.empty();
+    }
+
+    private long calculateTimeoutMs(Context context) {
+        long remainingMs = context.getDeadline()
+                .map(d -> d.timeRemaining().toMillis())
+                .orElse((long) config.timeout());
+        if (remainingMs <= 0)
+            throw new TimeoutException("Request deadline exceeded before VoyageAI API call");
+        return remainingMs;
+    }
+
+    private Tensor createFloatTensor(List<Number> embedding, String dimensionName) {
+        TensorType type = new TensorType.Builder(TensorType.Value.FLOAT)
+                .indexed(dimensionName, embedding.size())
+                .build();
         IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);
-        for (int i = 0; i < embedding.length; i++) {
-            builder.cell(embedding[i], i);
+        for (int i = 0; i < embedding.size(); i++) {
+            builder.cell(embedding.get(i).floatValue(), i);
         }
+        return builder.build();
+    }
 
-        Tensor result = builder.build();
-
-        // Apply normalization if configured
-        if (config.normalize()) {
-            result = EmbeddingNormalizer.normalize(result, type);
+    private Tensor createInt8Tensor(List<Number> embedding, String dimensionName) {
+        TensorType type = new TensorType.Builder(TensorType.Value.INT8)
+                .indexed(dimensionName, embedding.size())
+                .build();
+        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);
+        for (int i = 0; i < embedding.size(); i++) {
+            builder.cell(embedding.get(i).byteValue(), i);
         }
-
-        return result;
+        return builder.build();
     }
 
     @Override
@@ -333,43 +362,145 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         super.deconstruct();
     }
 
+    private static class RetryInterceptor implements Interceptor {
+        static final long RETRY_DELAY_MS = 100;
+        private final int maxRetries;
+
+        RetryInterceptor(int maxRetries) {
+            this.maxRetries = maxRetries;
+        }
+
+        @Override
+        public okhttp3.Response intercept(Chain chain) throws IOException {
+            var request = chain.request();
+            int lastStatusCode = 0;
+            String lastResponseBody = "";
+
+            for (int attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    var response = chain.proceed(request);
+
+                    int code = response.code();
+                    boolean shouldRetry = code == 500 || code == 502 || code == 503 || code == 504;
+                    if (response.isSuccessful() || !shouldRetry) return response;
+
+                    // Capture response details before closing
+                    lastStatusCode = code;
+                    if (response.body() != null) {
+                        lastResponseBody = response.body().string();
+                    }
+                    response.close();
+
+                    if (attempt < maxRetries) {
+                        int retryNumber = attempt + 1;
+                        log.fine(() -> "VoyageAI API server error (%d). Retry %d of %d after %dms"
+                                .formatted(code, retryNumber + 1, maxRetries, RETRY_DELAY_MS));
+                        Thread.sleep(RETRY_DELAY_MS);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Retry interrupted", e);
+                }
+            }
+
+            var errorMsg = "Max retries exceeded for VoyageAI API (%d). Last response: %d - %s"
+                    .formatted(maxRetries, lastStatusCode, lastResponseBody);
+            throw new IOException(errorMsg);
+        }
+    }
+
     // ===== Request/Response DTOs =====
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private record VoyageAIRequest(
             @JsonProperty("input") List<String> input,
             @JsonProperty("model") String model,
             @JsonProperty("input_type") String inputType,
-            @JsonProperty("truncation") boolean truncation
-    ) {}
+            @JsonProperty("truncation") boolean truncation,
+            @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
+            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class VoyageAIResponse {
-        @JsonProperty("data")
-        public List<EmbeddingData> data;
-
-        @JsonProperty("model")
-        public String model;
-
-        @JsonProperty("usage")
-        public Usage usage;
+        static VoyageAIRequest of(String texts, String model, String inputType,
+                                  boolean truncation, Integer outputDimension, String outputDtype) {
+            return new VoyageAIRequest(List.of(texts), model, inputType, truncation, outputDimension, outputDtype);
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class EmbeddingData {
-        @JsonProperty("embedding")
-        public float[] embedding;
+    private record VoyageAIResponse(
+            @JsonProperty("data") List<EmbeddingData> data,
+            @JsonProperty("model") String model,
+            @JsonProperty("usage") Usage usage) {}
 
-        @JsonProperty("index")
-        public int index;
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EmbeddingData(
+            @JsonProperty("embedding") List<Number> embedding,
+            @JsonProperty("index") int index) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record Usage(@JsonProperty("total_tokens") int totalTokens) {}
+
+    // ===== Contextual Request/Response DTOs =====
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record ContextualRequest(
+            @JsonProperty("inputs") List<List<String>> inputs,
+            @JsonProperty("model") String model,
+            @JsonProperty("input_type") @JsonInclude(JsonInclude.Include.NON_NULL) String inputType,
+            @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
+            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
+
+        static ContextualRequest of(List<String> texts, String model, String inputType,
+                                    Integer outputDimension, String outputDtype) {
+            return new ContextualRequest(List.of(texts), model, inputType,
+                                         outputDimension, outputDtype);
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class Usage {
-        @JsonProperty("total_tokens")
-        public int totalTokens;
+    private record ContextualResponse(@JsonProperty("data") List<ContextualDocumentResult> data) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record ContextualDocumentResult(@JsonProperty("data") List<EmbeddingData> data) {}
+
+    // ===== Multimodal Request DTOs =====
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record MultimodalRequest(
+            @JsonProperty("inputs") List<MultimodalInput> inputs,
+            @JsonProperty("model") String model,
+            @JsonProperty("input_type") @JsonInclude(JsonInclude.Include.NON_NULL) String inputType,
+            @JsonProperty("truncation") boolean truncation,
+            @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
+            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
+
+        static MultimodalRequest of(String text, String model, String inputType,
+                                    boolean truncation, Integer outputDimension, String outputDtype) {
+            return new MultimodalRequest(List.of(MultimodalInput.of(text)), model, inputType,
+                                         truncation, outputDimension, outputDtype);
+        }
     }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record MultimodalInput(@JsonProperty("content") List<ContentItem> content) {
+
+        static MultimodalInput of(String text) {
+            return new MultimodalInput(List.of(ContentItem.of(text)));
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record ContentItem(
+            @JsonProperty("type") String type,
+            @JsonProperty("text") String text) {
+
+        static ContentItem of(String text) { return new ContentItem("text", text); }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record ErrorResponse(@JsonProperty("detail") String detail) {}
 
     // ===== Cache Key =====
 
-    private record CacheKey(String embedderId, String text, String inputType) {}
+    private record CacheKey(String embedderId, List<String> texts, String inputType, String outputDataType) {}
 }

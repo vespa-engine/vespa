@@ -4,7 +4,7 @@
 #include "i_enum_store_dictionary.h"
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/datastore/i_unique_store_dictionary_read_snapshot.h>
-
+#include <cmath>
 
 namespace search::attribute {
 
@@ -60,6 +60,10 @@ EnumHintSearchContext::calc_hit_estimate() const
     return (_uniqueValues == 0u)
         ? HitEstimate(0u)
         : HitEstimate::unknown(std::max(uint64_t(_docIdLimit), _numValues));
+}
+
+double EnumHintSearchContext::posting_list_merge_factor() const {
+    return std::log2(1.0 + _uniqueValues);
 }
 
 }

@@ -6,7 +6,14 @@ import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.opennlp.OpenNlpLinguistics;
+import com.yahoo.language.process.LinguisticsParameters;
+import com.yahoo.language.process.StemList;
+import com.yahoo.language.process.Stemmer;
+import com.yahoo.language.process.StemmerImpl;
+import com.yahoo.language.process.Token;
+import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.language.simple.SimpleTokenizer;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexFactsFactory;
@@ -15,6 +22,7 @@ import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.*;
 import com.yahoo.prelude.querytransform.StemmingSearcher;
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.searchchain.Execution;
@@ -23,6 +31,7 @@ import com.yahoo.search.test.QueryTestCase;
 import com.yahoo.search.yql.MinimalQueryInserter;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -176,8 +185,7 @@ public class StemmingSearcherTestCase {
         var yql = "select * from sources * where {targetHits: 500}userInput(@query)";
         var input = "˘͈ᵕ˘͈ meaning in english";
         var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode(input));
-        var result = new Execution(new Chain<>(new MinimalQueryInserter(linguistics), new StemmingSearcher(linguistics)),
-                                   Execution.Context.createContextStub(new IndexFacts(indexModel), linguistics)).search(query);
+        var result = search(linguistics, indexModel, query);
         if (result.hits().getError() != null)
             throw new RuntimeException(result.hits().getError().toString());
         assertEquals("WEAKAND(500) (AND default:ᴗ default:͈) default:meaning default:in default:english", query.getModel().getQueryTree().toString());
@@ -189,14 +197,52 @@ public class StemmingSearcherTestCase {
         builder.setRequest(QueryTestCase.httpEncode("/search?query=trees"));
         var query = builder.build();
         var word = getFirstWord(query);
-        assert(word.isPresent());
+        assertTrue(word.isPresent());
         word.get().setDocumentFrequency(new DocumentFrequency(13, 100));
         executeStemming(query);
         var stemmedWord = getFirstWord(query);
-        assert(stemmedWord.isPresent());
-        assert(word != stemmedWord);
+        assertTrue(stemmedWord.isPresent());
+        assertTrue(word != stemmedWord);
         assertNotEquals(word.get().getWord(), stemmedWord.get().getWord());
         assertEquals(Optional.of(new DocumentFrequency(13, 100)), stemmedWord.get().getDocumentFrequency());
+    }
+
+    @Test
+    void testLinguisticsProfileIsApplied() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        index.setLinguisticsProfile("p1");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var mockLinguistics = new MockLinguistics();
+
+        // Assign profile=p1 by schema
+        var yql = "select * from sources * where userInput(@query)";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("hello"));
+        search(mockLinguistics, indexModel, query);
+        assertEquals("p1", mockLinguistics.lastLinguisticsProfile);
+
+        // Assign profile=p2 by model.type
+        yql = "select * from sources * where userInput(@query)";
+        query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("hello") +
+                          "&model.type.profile=p2&model.type.isYqlDefault");
+        search(mockLinguistics, indexModel, query);
+        assertEquals("p2", mockLinguistics.lastLinguisticsProfile,
+                     "Query setting overrides profile from schema");
+
+        // Assign profile=p3 by grammar.type
+        yql = "select * from sources * where {grammar.profile:'p3'}userInput(@query)";
+        query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("hello"));
+        search(mockLinguistics, indexModel, query);
+        assertEquals("p3", mockLinguistics.lastLinguisticsProfile,
+                     "YQL grammar setting overrides profile from schema");
+    }
+
+    private Result search(Linguistics linguistics, IndexModel indexModel, Query query) {
+        return new Execution(new Chain<>(new MinimalQueryInserter(linguistics), new StemmingSearcher(linguistics)),
+                             Execution.Context.createContextStub(new IndexFacts(indexModel), linguistics)).search(query);
+
     }
 
     private static Optional<WordItem> getFirstWord(Query query) {
@@ -226,6 +272,31 @@ public class StemmingSearcherTestCase {
         Query query = new Query(QueryTestCase.httpEncode(queryString));
         executeStemming(query);
         assertEquals(expectedQueryTree, query.getModel().getQueryTree().getRoot().toString());
+    }
+
+    private static class MockLinguistics extends SimpleLinguistics {
+
+        String lastLinguisticsProfile = null;
+
+        @Override
+        public Stemmer getStemmer() {
+            return new MockStemmer(getTokenizer());
+        }
+
+        private class MockStemmer extends StemmerImpl {
+
+            public MockStemmer(Tokenizer tokenizer) {
+                super(tokenizer);
+            }
+
+            @Override
+            public List<StemList> stem(String input, LinguisticsParameters parameters) {
+                lastLinguisticsProfile = parameters.profile();
+                return super.stem(input, parameters);
+            }
+
+        }
+
     }
 
 }

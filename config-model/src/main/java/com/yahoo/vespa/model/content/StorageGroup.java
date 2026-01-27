@@ -451,7 +451,7 @@ public class StorageGroup {
                 throw new IllegalArgumentException("""
                                                            Clusters in hosted environments must have a <nodes count='N'> tag
                                                            matching all zones, and having no <node> subtags,
-                                                           see https://docs.vespa.ai/en/reference/services/services.html#nodes""");
+                                                           see https://docs.vespa.ai/en/reference/applications/services/services.html#nodes""");
             else // Nodes or groups explicitly listed - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();
 

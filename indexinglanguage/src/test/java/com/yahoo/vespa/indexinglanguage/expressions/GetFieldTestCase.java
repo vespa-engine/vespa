@@ -12,7 +12,6 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.vespa.indexinglanguage.SimpleDocumentFieldValues;
 import org.junit.Test;
 
-import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;

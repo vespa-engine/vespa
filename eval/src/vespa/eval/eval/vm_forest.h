@@ -3,6 +3,7 @@
 #pragma once
 
 #include "gbdt.h"
+#include <cstdint>
 
 namespace vespalib {
 namespace eval {

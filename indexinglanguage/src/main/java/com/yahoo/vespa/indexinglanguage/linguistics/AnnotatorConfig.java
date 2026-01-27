@@ -13,6 +13,7 @@ import java.util.Objects;
  */
 public class AnnotatorConfig implements Cloneable {
 
+    private String profile = null;
     private Language language;
     private StemMode stemMode;
     private boolean removeAccents;
@@ -51,6 +52,7 @@ public class AnnotatorConfig implements Cloneable {
     }
 
     public AnnotatorConfig(AnnotatorConfig other) {
+        profile = other.profile;
         language = other.language;
         stemMode = other.stemMode;
         removeAccents = other.removeAccents;
@@ -60,6 +62,14 @@ public class AnnotatorConfig implements Cloneable {
         maxTokenizeLength = other.maxTokenizeLength;
         maxReplacementCharactersRatio = other.maxReplacementCharactersRatio;
         maxReplacementCharacters = other.maxReplacementCharacters;
+    }
+
+    /** Returns the target field this is annotating the value of, or null if not set. */
+    public String getProfile() { return profile; }
+
+    public AnnotatorConfig setProfile(String profile) {
+        this.profile = profile;
+        return this;
     }
 
     public Language getLanguage() {
@@ -159,12 +169,13 @@ public class AnnotatorConfig implements Cloneable {
     }
 
     public LinguisticsParameters asLinguisticsParameters() {
-        return new LinguisticsParameters(language, stemMode, removeAccents, lowercase);
+        return new LinguisticsParameters(profile, language, stemMode, removeAccents, lowercase);
     }
 
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof AnnotatorConfig other)) return false;
+        if (!Objects.equals(profile, other.profile)) return false;
         if (!language.equals(other.language)) return false;
         if (!stemMode.equals(other.stemMode)) return false;
         if (removeAccents != other.removeAccents) return false;
@@ -179,9 +190,19 @@ public class AnnotatorConfig implements Cloneable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(getClass(), language.hashCode(), stemMode.hashCode(),
+        return Objects.hash(getClass(), profile, language.hashCode(), stemMode.hashCode(),
                             removeAccents, lowercase, maxTermOccurrences, maxTokenLength, maxTokenizeLength,
                             maxReplacementCharactersRatio, maxReplacementCharacters);
+    }
+
+    @Override
+    public AnnotatorConfig clone() {
+        try {
+            return (AnnotatorConfig) super.clone();
+        }
+        catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -195,6 +216,8 @@ public class AnnotatorConfig implements Cloneable {
             ret.append(" normalize");
         if ( ! getLowercase())
             ret.append(" keep-case");
+        if (getProfile() != null)
+            ret.append(" profile:\"" + getProfile() + "\"");
         if (getStemMode() != StemMode.NONE)
             ret.append(" stem:\"" + getStemMode() + "\"");
         if (hasNonDefaultMaxTokenizeLength())

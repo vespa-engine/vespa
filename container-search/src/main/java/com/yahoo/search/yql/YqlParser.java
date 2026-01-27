@@ -29,10 +29,12 @@ import com.yahoo.language.process.Segmenter;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.Tokenizer;
+import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Location;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
+import com.yahoo.prelude.query.BlockItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DocumentFrequency;
@@ -142,6 +144,7 @@ public class YqlParser implements Parser {
     private static final String USER_INPUT_GRAMMAR_COMPOSITE = "grammar." + QueryType.COMPOSITE;
     private static final String USER_INPUT_GRAMMAR_TOKENIZATION = "grammar." + QueryType.TOKENIZATION;
     private static final String USER_INPUT_GRAMMAR_SYNTAX = "grammar." + QueryType.SYNTAX;
+    private static final String USER_INPUT_GRAMMAR_PROFILE = "grammar." + QueryType.PROFILE;
     public static final String USER_INPUT_LANGUAGE = "language";
     private static final String USER_INPUT_GRAMMAR_RAW = "raw";
     private static final String USER_INPUT_GRAMMAR_SEGMENT = "segment";
@@ -226,6 +229,7 @@ public class YqlParser implements Parser {
     private static final CompoundName modelTypeComposite = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.COMPOSITE);
     private static final CompoundName modelTypeTokenization = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.TOKENIZATION);
     private static final CompoundName modelTypeSyntax = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.SYNTAX);
+    private static final CompoundName modelTypeProfile = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.PROFILE);
     private static final CompoundName modelTypeIsYqlDefault = CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.IS_YQL_DEFAULT);
 
     private final IndexFacts indexFacts;
@@ -269,10 +273,6 @@ public class YqlParser implements Parser {
             return true;
         }
 
-        @Override
-        public void onExit() {
-            // NOP
-        }
     };
 
     public YqlParser(ParserEnvironment environment) {
@@ -421,7 +421,7 @@ public class YqlParser implements Parser {
             case PREDICATE: return buildPredicate(ast);
             case RANK: return buildRank(ast, currentField);
             case WEAK_AND: return buildWeakAnd(ast);
-            case USER_INPUT: return buildUserInput(ast);
+            case USER_INPUT: return buildUserInput(ast, currentField);
             case NON_EMPTY: return ensureNonEmpty(ast);
             default: {
                 if (currentField != null)
@@ -832,7 +832,7 @@ public class YqlParser implements Parser {
         phrase.setIndexName(field);
 
         if (getAnnotation(ast, IMPLICIT_TRANSFORMS, Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION)) {
-            words = segmenter.segment(origin.getValue(), currentlyParsing.getLanguage());
+            words = segmenter.segment(origin.getValue(), new LinguisticsParameters(linguisticsProfileFor(field), currentlyParsing.getLanguage(), StemMode.NONE, false, false));
         }
 
         if (words != null && words.size() > 0) {
@@ -929,7 +929,7 @@ public class YqlParser implements Parser {
         return userQuery.getModel().getQueryTree().getRoot();
     }
 
-    private Item buildUserInput(OperatorNode<ExpressionOperator> ast) {
+    private Item buildUserInput(OperatorNode<ExpressionOperator> ast, String currentField) {
         // TODO: Add support for default arguments if property results in nothing
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         String wordData = getStringContents(args.get(0));
@@ -938,16 +938,20 @@ public class YqlParser implements Parser {
         if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
 
         String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
-                                            String.class, "default", "default index for user input terms");
+                                            String.class,
+                                            currentField != null ? null : "default", // if there's a current field, we're in sameElement
+                                            "default index for user input terms");
         Language language = decideParsingLanguage(ast, wordData);
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.WEAKAND.toString(), "The overall query type of the user input");
+        QueryType queryType = buildQueryType(ast);
         if (USER_INPUT_GRAMMAR_RAW.equals(grammar)) {
-            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language);
+            return assignQueryType(instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language),
+                                   queryType);
         } else if (USER_INPUT_GRAMMAR_SEGMENT.equals(grammar)) {
-            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
+            return assignQueryType(instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language),
+                                   queryType);
         } else {
-            QueryType queryType = buildQueryType(ast);
             Item item = parseUserInput(queryType, defaultIndex, wordData, language, allowEmpty);
             propagateUserInputAnnotationsRecursively(ast, item);
 
@@ -969,6 +973,12 @@ public class YqlParser implements Parser {
         }
     }
 
+    private Item assignQueryType(Item item, QueryType queryType) {
+        if (item instanceof BlockItem)
+            ((BlockItem)item).setQueryType(queryType);
+        return item;
+    }
+
     private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
         var queryType = QueryType.from(Query.Type.WEAKAND);
         if (userQuery != null) {
@@ -976,6 +986,7 @@ public class YqlParser implements Parser {
             queryType = queryType.setComposite(userQuery.properties().getString(modelTypeComposite));
             queryType = queryType.setTokenization(userQuery.properties().getString(modelTypeTokenization));
             queryType = queryType.setSyntax(userQuery.properties().getString(modelTypeSyntax));
+            queryType = queryType.setProfile(userQuery.properties().getString(modelTypeProfile));
             queryType = queryType.setYqlDefault(userQuery.properties().getBoolean(modelTypeIsYqlDefault));
         }
         if ( ! queryType.isYqlDefault())
@@ -983,6 +994,8 @@ public class YqlParser implements Parser {
 
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        null, "The overall query type of the user input");
+        if (USER_INPUT_GRAMMAR_RAW.equals(grammar) || USER_INPUT_GRAMMAR_SEGMENT.equals(grammar))
+            grammar = "linguistics"; // raw and segment are not separate types since they don't cause parsing - use linguistics to annotate the term
         if (grammar != null)
             queryType = QueryType.from(grammar);
 
@@ -992,9 +1005,14 @@ public class YqlParser implements Parser {
                                             null, "The tokenization type to apply to the user input string");
         String syntax = getAnnotation(ast, USER_INPUT_GRAMMAR_SYNTAX, String.class,
                                       null, "The syntax type of the user input");
+        String profile = getAnnotation(ast, USER_INPUT_GRAMMAR_PROFILE, String.class,
+                                      null, "The linguistics profile type of the user input");
+        if (profile == null)
+            profile = queryType.getProfile();
         return queryType.setComposite(composite)
                         .setTokenization(tokenization)
                         .setSyntax(syntax)
+                        .setProfile(profile)
                         .setYqlDefault(queryType.isYqlDefault());
     }
 
@@ -1637,7 +1655,7 @@ public class YqlParser implements Parser {
             uriItem.addStartAnchorItem();
 
         String uriString = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1).get(0).getArgument(0);
-        for (String token : segmenter.segment(uriString, Language.ENGLISH))
+        for (String token : segmenter.segment(uriString, new LinguisticsParameters(linguisticsProfileFor(field), Language.ENGLISH, StemMode.NONE, false, false)))
             uriItem.addItem(new WordItem(token, field, true));
 
         if (getAnnotation(ast, END_ANCHOR, Boolean.class, endAnchorDefault,
@@ -1804,7 +1822,7 @@ public class YqlParser implements Parser {
     }
 
     private TaggableItem segment(String field, OperatorNode<ExpressionOperator> ast, String wordData, String toSegment, boolean fromQuery, Class<?> parent, Language language) {
-        List<String> segments = segmenter.segment(toSegment, language);
+        List<String> segments = segmenter.segment(toSegment, new LinguisticsParameters(linguisticsProfileFor(field), language, StemMode.NONE, false, false));
         if (segments.isEmpty()) {
             return instantiateWordItem(wordData, field, fromQuery, ast); // TODO: This should use toSegment?
         } else if (segments.size() == 1 || !phraseSegmentChildSupported(parent)) {
@@ -1823,7 +1841,7 @@ public class YqlParser implements Parser {
 
     private TaggableItem tokenize(String field, OperatorNode<ExpressionOperator> ast, String wordData, String toSegment, boolean fromQuery, Class<?> parent, Language language) {
         // We're in 'linguistics' mode, so these parameters should be ignored by the linguistics component
-        var parameters = new LinguisticsParameters(language, StemMode.BEST, true, true);
+        var parameters = new LinguisticsParameters(linguisticsProfileFor(field), language, StemMode.BEST, true, true);
         List<Token> tokens = new ArrayList<>();
         for (Token token : tokenizer.tokenize(toSegment, parameters)) {
             if (token.isIndexable())
@@ -2174,6 +2192,14 @@ public class YqlParser implements Parser {
         return expectedClass.cast(value);
     }
 
+    protected String linguisticsProfileFor(String field) {
+        String queryAssignedProfile = environment.getType().getProfile();
+        if (queryAssignedProfile != null) return queryAssignedProfile;
+        Index index = indexFactsSession.getIndex(field);
+        if (index == null) return null;
+        return index.getLinguisticsProfile();
+    }
+
     private static IllegalArgumentException newUnexpectedArgumentException(Object actual, Object... expected) {
         StringBuilder out = new StringBuilder("Expected ");
         for (int i = 0, len = expected.length; i < len; ++i) {
@@ -2235,10 +2261,6 @@ public class YqlParser implements Parser {
             return true;
         }
 
-        @Override
-        public void onExit() {
-            // intentionally left blank
-        }
     }
 
 }
