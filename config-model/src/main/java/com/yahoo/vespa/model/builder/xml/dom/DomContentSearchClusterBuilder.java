@@ -52,8 +52,7 @@ public class DomContentSearchClusterBuilder extends VespaDomBuilder.DomConfigPro
     }
 
     private boolean getFlushOnShutdown(Boolean flushOnShutdownElem, DeployState deployState) {
-        boolean useNewPrepareForRestart = deployState.featureFlags().useNewPrepareForRestart();
-        return Objects.requireNonNullElse(flushOnShutdownElem, !deployState.isHosted() || !useNewPrepareForRestart);
+        return Objects.requireNonNullElse(flushOnShutdownElem, !deployState.isHosted());
     }
 
     private Double getQueryTimeout(ModelElement clusterElem) {
