@@ -137,7 +137,6 @@
 ./vespa-3party-bundles/* @gjoranv
 ./vespa-3party-jars/* @bjorncs
 ./vespa-application-maven-plugin/* @gjoranv
-./vespa-athenz/* @bjorncs
 ./vespa-dependencies-enforcer/* @bjorncs
 ./vespa-documentgen-plugin/* @kkraune
 ./vespa-feed-client-cli/* @bjorncs
