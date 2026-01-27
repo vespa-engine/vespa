@@ -29,7 +29,6 @@
         <module>bundle-plugin-test</module>
         <module>client</module>
         <module>cloud-tenant-base</module>
-        <module>cloud-tenant-base-dependencies-enforcer</module>
         <module>cloud-tenant-cd</module>
         <module>clustercontroller-apps</module>
         <module>clustercontroller-core</module>
@@ -83,7 +82,6 @@
         <module>indexinglanguage</module>
         <!--<module>integration/intellij</module>-->
         <module>jaxrs_utils</module>
-        <module>jdisc-security-filters</module>
         <module>jdisc_core</module>
         <module>jdisc_core_test</module>
         <module>jrt</module>
@@ -118,7 +116,6 @@
         <module>vespaclient-core</module>
         <module>vespaclient-container-plugin</module>
         <module>vespaclient-java</module>
-        <module>vespa-athenz</module>
         <module>vespa-dependencies-enforcer</module>
         <module>vespa-documentgen-plugin</module>
         <module>vespa-feed-client</module>

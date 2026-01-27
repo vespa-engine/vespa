@@ -506,7 +506,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      */
     public void addCommonVespaBundles() {
         PlatformBundles.COMMON_VESPA_BUNDLES.forEach(this::addPlatformBundle);
-        PlatformBundles.VESPA_SECURITY_BUNDLES.forEach(this::addPlatformBundle);
+        if (isHostedVespa) {
+            PlatformBundles.VESPA_SECURITY_BUNDLES.forEach(this::addPlatformBundle);
+        }
         PlatformBundles.VESPA_ZK_BUNDLES.forEach(this::addPlatformBundle);
     }
 
