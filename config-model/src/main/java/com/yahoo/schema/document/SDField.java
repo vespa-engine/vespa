@@ -89,7 +89,7 @@ public class SDField extends Field implements ImmutableSDField {
 
     /**
      * The stemming setting of this field, or null to use the default.
-     * Default is determined by the owning search definition.
+     * Default is determined by the owning schema.
      */
     private Stemming stemming = null;
 
