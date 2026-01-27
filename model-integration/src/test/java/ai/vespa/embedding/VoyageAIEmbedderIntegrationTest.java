@@ -10,6 +10,8 @@ import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -316,6 +318,68 @@ public class VoyageAIEmbedderIntegrationTest {
 
             assertNotNull(result, "Result should not be null for dimension " + dim);
             assertEquals(dim, result.size(), "Embedding should have " + dim + " dimensions");
+
+            embedder.deconstruct();
+        }
+    }
+
+    @Test
+    public void testRealAPIWithContextual3BatchEmbedding() {
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+            .apiKeySecretRef("test_key")
+            .model("voyage-context-3")
+            .dimensions(1024);
+        var embedder = createEmbedder(configBuilder);
+
+        var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        var context = new Embedder.Context("integration-test");
+
+        var chunks = List.of(
+            "Machine learning is a branch of artificial intelligence.",
+            "It enables computers to learn from data.",
+            "Deep learning is a subset of machine learning."
+        );
+
+        var results = embedder.embed(chunks, context, targetType);
+
+        assertEquals(3, results.size());
+        for (var result : results) {
+            assertNotNull(result);
+            assertEquals(1024, result.size());
+            assertNonZeroTensor(result);
+        }
+
+        // Related chunks should have reasonable similarity
+        double sim01 = cosineSimilarity(results.get(0), results.get(1));
+        double sim02 = cosineSimilarity(results.get(0), results.get(2));
+        assertTrue(sim01 > 0.5, "Related chunks should have reasonable similarity. Sim(0,1)=" + sim01);
+        assertTrue(sim02 > 0.5, "Related chunks should have reasonable similarity. Sim(0,2)=" + sim02);
+
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testRealAPIWithContextual3BatchAllDimensions() {
+        int[] dimensions = {256, 512, 1024, 2048};
+
+        for (int dim : dimensions) {
+            var configBuilder = new VoyageAiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .model("voyage-context-3")
+                .dimensions(dim);
+            var embedder = createEmbedder(configBuilder);
+
+            var targetType = TensorType.fromSpec("tensor<float>(d0[" + dim + "])");
+            var context = new Embedder.Context("integration-test");
+
+            var chunks = List.of("First chunk", "Second chunk");
+            var results = embedder.embed(chunks, context, targetType);
+
+            assertEquals(2, results.size(), "Should return 2 embeddings for dimension " + dim);
+            for (var result : results) {
+                assertNotNull(result, "Result should not be null for dimension " + dim);
+                assertEquals(dim, result.size(), "Embedding should have " + dim + " dimensions");
+            }
 
             embedder.deconstruct();
         }

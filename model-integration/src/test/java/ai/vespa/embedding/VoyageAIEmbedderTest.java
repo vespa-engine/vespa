@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.function.IntFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -394,7 +395,7 @@ public class VoyageAIEmbedderTest {
         mockServer.enqueue(new MockResponse()
                 .setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
-                .setBody(createInt8SuccessResponse(128)));
+                .setBody(createBinarySuccessResponse(128)));
 
         TensorType targetType = TensorType.fromSpec("tensor<int8>(x[128])");
         Embedder.Context context = new Embedder.Context("test-embedder");
@@ -496,61 +497,25 @@ public class VoyageAIEmbedderTest {
         };
     }
 
-    private String createSuccessResponse(int dimensions) {
-        return createFloatSuccessResponse(dimensions);
-    }
-
-    private String createFloatSuccessResponse(int dimensions) {
-        StringBuilder embedding = new StringBuilder("[");
+    private static String createSuccessResponse(int dimensions, IntFunction<String> valueGenerator) {
+        var embedding = new StringBuilder("[");
         for (int i = 0; i < dimensions; i++) {
             if (i > 0) embedding.append(",");
-            // Create deterministic values for testing
-            embedding.append(String.format("%.6f", Math.sin(i * 0.1)));
+            embedding.append(valueGenerator.apply(i));
         }
         embedding.append("]");
-
-        return String.format("""
+        return """
                 {
                   "object": "list",
-                  "data": [
-                    {
-                      "object": "embedding",
-                      "embedding": %s,
-                      "index": 0
-                    }
-                  ],
+                  "data": [{"object": "embedding", "embedding": %s, "index": 0}],
                   "model": "voyage-3",
-                  "usage": {
-                    "total_tokens": 10
-                  }
+                  "usage": {"total_tokens": 10}
                 }
-                """, embedding);
+                """.formatted(embedding);
     }
 
-    private String createInt8SuccessResponse(int dimensions) {
-        StringBuilder embedding = new StringBuilder("[");
-        for (int i = 0; i < dimensions; i++) {
-            if (i > 0) embedding.append(",");
-            // Create int8 values (-128 to 127)
-            embedding.append(i % 128);
-        }
-        embedding.append("]");
-
-        return String.format("""
-                {
-                  "object": "list",
-                  "data": [
-                    {
-                      "object": "embedding",
-                      "embedding": %s,
-                      "index": 0
-                    }
-                  ],
-                  "model": "voyage-3",
-                  "usage": {
-                    "total_tokens": 10
-                  }
-                }
-                """, embedding);
-    }
+    private static String createSuccessResponse(int dimensions) { return createFloatSuccessResponse(dimensions); }
+    private static String createFloatSuccessResponse(int dimensions) { return createSuccessResponse(dimensions, i -> "%.6f".formatted(Math.sin(i * 0.1))); }
+    private static String createInt8SuccessResponse(int dimensions) { return createSuccessResponse(dimensions, i -> String.valueOf(i % 128)); }
+    private static String createBinarySuccessResponse(int dimensions) { return createInt8SuccessResponse(dimensions); }
 }

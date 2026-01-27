@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 
 /**
@@ -164,8 +165,10 @@ public class EmbedExpression extends Expression  {
     private void embedArrayValueToRank2Tensor(Array<StringFieldValue> input,
                                               MixedTensor.BoundBuilder builder,
                                               ExecutionContext context) {
-        for (int i = 0; i < input.size(); i++) {
-            IndexedTensor tensor = embedAsIndexed1d(input.get(i).getString(), builder.type().indexedSubtype(), context);
+        var texts = input.stream().map(StringFieldValue::getString).toList();
+        var embeddings = embedBatch(texts, builder.type().indexedSubtype(), context);
+        for (int i = 0; i < embeddings.size(); i++) {
+            var tensor = asIndexed1d(embeddings.get(i));
             var denseSubspaceBuilder = builder.denseSubspaceBuilder(TensorAddress.of(i));
             for (long j = 0; j < tensor.size(); j++) {
                 denseSubspaceBuilder.cellByDirectIndex(j, tensor.get(j));
@@ -183,8 +186,10 @@ public class EmbedExpression extends Expression  {
         var innerType = new TensorType.Builder(builder.type().valueType()).mapped(innerMappedDimension).indexed(indexedDimension,indexedDimensionSize).build();
         int innerMappedDimensionIndex = innerType.indexOfDimensionAsInt(innerMappedDimension);
         int indexedDimensionIndex = innerType.indexOfDimensionAsInt(indexedDimension);
-        for (int i = 0; i < input.size(); i++) {
-            Tensor tensor = embed(input.get(i).getString(), innerType, context);
+        var texts = input.stream().map(StringFieldValue::getString).toList();
+        var embeddings = embedBatch(texts, innerType, context);
+        for (int i = 0; i < embeddings.size(); i++) {
+            var tensor = embeddings.get(i);
             for (Iterator<Tensor.Cell> cells = tensor.cellIterator(); cells.hasNext(); ) {
                 Tensor.Cell cell = cells.next();
                 builder.cell()
@@ -205,8 +210,10 @@ public class EmbedExpression extends Expression  {
         var innerType = new TensorType.Builder(getOutputTensorType().valueType()).mapped(innerMappedDimension).build();
         int innerMappedDimensionIndex = innerType.indexOfDimensionAsInt(innerMappedDimension);
 
-        for (int i = 0; i < input.size(); i++) {
-            Tensor tensor = embed(input.get(i).getString(), innerType, context);
+        var texts = input.stream().map(StringFieldValue::getString).toList();
+        var embeddings = embedBatch(texts, innerType, context);
+        for (int i = 0; i < embeddings.size(); i++) {
+            var tensor = embeddings.get(i);
             for (Iterator<Tensor.Cell> cells = tensor.cellIterator(); cells.hasNext(); ) {
                 Tensor.Cell cell = cells.next();
                 builder.cell()
@@ -218,6 +225,14 @@ public class EmbedExpression extends Expression  {
     }
 
     private Tensor embed(String input, TensorType targetType, ExecutionContext context) {
+        return invokeEmbedder(ctx -> embedder.component().embed(input, ctx, targetType), context);
+    }
+
+    private List<Tensor> embedBatch(List<String> texts, TensorType targetType, ExecutionContext context) {
+        return invokeEmbedder(ctx -> embedder.component().embed(texts, ctx, targetType), context);
+    }
+
+    private <T> T invokeEmbedder(Function<Embedder.Context, T> embedFn, ExecutionContext context) {
         var embedderContext = new Embedder.Context(destination, context.getCache())
                 .setLanguage(context.resolveLanguage(linguistics))
                 .setEmbedderId(embedder.id());
@@ -226,7 +241,7 @@ public class EmbedExpression extends Expression  {
                 embedderContext.setDeadline(com.yahoo.language.process.InvocationContext.Deadline.of(instant)));
 
         try {
-            return embedder.component().embed(input, embedderContext, targetType);
+            return embedFn.apply(embedderContext);
         } catch (com.yahoo.language.process.OverloadException e) {
             throw new OverloadException(e.getMessage(), e);
         } catch (com.yahoo.language.process.TimeoutException e) {
@@ -239,15 +254,10 @@ public class EmbedExpression extends Expression  {
     /**
      * Helper method that calls embed, checks that the result is a 1-d indexed tensor, and returns it as an IndexedTensor.
      *
-     * @param input the string to embed
-     * @param targetType the expected tensor type
-     * @param context the execution context
      * @return the embedded tensor as an IndexedTensor
      * @throws IllegalArgumentException if the result is not a 1-d indexed tensor
      */
-    private IndexedTensor embedAsIndexed1d(String input, TensorType targetType, ExecutionContext context) {
-        Tensor result = embed(input, targetType, context);
-
+    private static IndexedTensor asIndexed1d(Tensor result) {
         if (!(result instanceof IndexedTensor indexedResult)) {
             throw new IllegalArgumentException("Expected embed to return an IndexedTensor, but got " +
                                              result.getClass().getSimpleName());
