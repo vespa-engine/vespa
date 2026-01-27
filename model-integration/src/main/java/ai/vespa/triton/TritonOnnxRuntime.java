@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.triton;
 
-import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
@@ -98,7 +97,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         this.processTerminator = processTerminator;
 
         isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
-        modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
+        modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepository()));
 
         if (isModelControlExplicit) {
             try {
@@ -120,10 +119,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             var isTritonHealthy = tritonClient.isHealthy();
             
             if (!isTritonHealthy) {
-                processTerminator.logAndDie("Die because Triton server is not healthy at %s".formatted(config.target()));
+                processTerminator.logAndDie("Die because Triton server is not healthy at %s".formatted(config.grpcEndpoint()));
             }
         } catch (TritonOnnxClient.TritonException e) {
-            processTerminator.logAndDie("Die because Triton server can't be reached at %s".formatted(config.target()));
+            processTerminator.logAndDie("Die because Triton server can't be reached at %s".formatted(config.grpcEndpoint()));
         }
 
         var modelName = generateModelName(modelPath, options);

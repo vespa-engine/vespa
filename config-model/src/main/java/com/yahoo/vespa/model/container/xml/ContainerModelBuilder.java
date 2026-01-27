@@ -87,6 +87,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SignificanceModelRegistry;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+import com.yahoo.vespa.model.container.component.TritonOnnxRuntime;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
@@ -232,7 +233,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addNodes(cluster, spec, context);
 
-        addModelEvaluationRuntime(deployState, cluster);
+        addModelEvaluationRuntime(spec, deployState, cluster);
         addModelEvaluation(spec, cluster, context); // NOTE: Must be done after addNodes
         addInferenceMemory(spec, cluster);
 
@@ -967,8 +968,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.setInferenceMemory(inferenceMemoryBytes);
         }
     }
-
-    protected void addModelEvaluationRuntime(DeployState deployState, ApplicationContainerCluster cluster) {
+    
+    protected void addModelEvaluationRuntime(Element spec, DeployState deployState, ApplicationContainerCluster cluster) {
         /* These bundles are added to all application container clusters, even if they haven't
          * declared 'model-evaluation' in services.xml, because there are many public API packages
          * in the model-evaluation bundle that could be used by customer code. */
@@ -976,9 +977,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE);
         cluster.addPlatformBundle(ContainerModelEvaluation.ONNXRUNTIME_BUNDLE_FILE);
         /* The ONNX runtime is always available for injection to any component */
-        if (deployState.featureFlags().useTriton()) {
-            cluster.addSimpleComponent(
-                    ContainerModelEvaluation.TRITON_ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
+        var tritonElement = XML.getChild(spec, "triton");
+        if (tritonElement != null || deployState.featureFlags().useTriton()) {
+            cluster.addComponent(new TritonOnnxRuntime(tritonElement));
         } else {
             cluster.addSimpleComponent(
                     ContainerModelEvaluation.EMBEDDED_ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);

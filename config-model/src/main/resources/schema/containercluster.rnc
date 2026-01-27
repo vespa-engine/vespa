@@ -27,6 +27,7 @@ ContainerServices =
     GenericConfig* &
     Clients? &
     Inference? &
+    Triton? &
     Threadpool?
 
 # TODO(ogronnesby): Change this configuration syntax
@@ -357,7 +358,14 @@ DocumentBinding = element document {
     attribute bundle { xsd:NCName }
 }
 
-# Inference runtime configuration in container 
+# Inference runtime configuration in container
 Inference = element inference {
     element memory { xsd:string }?
+}
+
+# Triton Inference Server configuration
+Triton = element triton {
+    element grpcEndpoint { xsd:string }? &
+    element modelRepository { xsd:string }? &
+    element modelControlMode { "NONE" | "POLL" | "EXPLICIT" }?
 }

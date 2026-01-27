@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the Apache License, Version 2.0.
 package ai.vespa.triton;
 
-import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import com.yahoo.container.protect.ProcessTerminator;
@@ -191,18 +190,18 @@ class TritonOnnxRuntimeTest {
 
     private TritonOnnxClient createClient() {
         var tritonConfig = new TritonConfig.Builder()
-                .target(tritonContainer.getGrpcEndpoint())
+                .grpcEndpoint(tritonContainer.getGrpcEndpoint())
                 .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
-                .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
+                .modelRepository(tritonContainer.getModelRepositoryPath().toString())
                 .build();
         return new TritonOnnxClient(tritonConfig);
     }
 
     private TritonOnnxRuntime createRuntime() {
         var tritonConfig = new TritonConfig.Builder()
-                .target(tritonContainer.getGrpcEndpoint())
+                .grpcEndpoint(tritonContainer.getGrpcEndpoint())
                 .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
-                .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
+                .modelRepository(tritonContainer.getModelRepositoryPath().toString())
                 .build();
         return new TritonOnnxRuntime(tritonConfig);
     }
@@ -259,7 +258,7 @@ class TritonOnnxRuntimeTest {
     @Test
     void die_when_triton_server_is_unreachable() {
         var config = new TritonConfig.Builder()
-                .target("localhost:9999")  // Non-existent server
+                .grpcEndpoint("localhost:9999")  // Non-existent server
                 .build();
         var mockTerminator = new MockProcessTerminator();
 
@@ -276,7 +275,7 @@ class TritonOnnxRuntimeTest {
     @Test
     void die_when_triton_server_is_unhealthy() {
         var config = new TritonConfig.Builder()
-                .target(tritonContainer.getGrpcEndpoint())
+                .grpcEndpoint(tritonContainer.getGrpcEndpoint())
                 .build();
         
         var mockClient = new TritonOnnxClient(config) {
@@ -300,9 +299,9 @@ class TritonOnnxRuntimeTest {
     @Test
     void not_die_when_triton_server_is_healthy() {
         var config = new TritonConfig.Builder()
-                .target(tritonContainer.getGrpcEndpoint())
+                .grpcEndpoint(tritonContainer.getGrpcEndpoint())
                 .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
-                .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
+                .modelRepository(tritonContainer.getModelRepositoryPath().toString())
                 .build();
 
         var mockTerminator = new MockProcessTerminator();
