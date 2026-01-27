@@ -88,7 +88,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
             builder.cell(rawEmbedding[i], i);
         }
         var embedding = builder.build();
-        return normalize ? TensorNormalizer.normalize(embedding) : embedding;
+        return normalize ? embedding.l2Normalize(embedding.type().dimensions().getFirst().name()) : embedding;
     }
 
     @Override

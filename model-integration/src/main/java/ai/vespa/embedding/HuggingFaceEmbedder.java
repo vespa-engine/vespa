@@ -245,7 +245,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                                          indexed(targetType.indexedSubtype().dimensions().get(0).name(), targetDimensions)
                                          .build();
         Tensor result = analysis.poolingStrategy().toSentenceEmbedding(poolingType, embeddingResult.output(), embeddingResult.attentionMask());
-        return normalize ? TensorNormalizer.normalize(result) : result;
+        return normalize ? result.l2Normalize(result.type().dimensions().getFirst().name()) : result;
     }
 
     private IndexedTensor createTensorRepresentation(List<Long> input, String dimension) {
