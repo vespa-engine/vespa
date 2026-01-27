@@ -96,6 +96,10 @@ public:
         read(&result, sizeof(result));
         return result;
     }
+
+    void readNHostOrder(T* buf, size_t n) {
+        read(buf, sizeof(T) * n);
+    }
 };
 
 template <typename T>
