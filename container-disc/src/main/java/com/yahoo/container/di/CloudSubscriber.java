@@ -57,6 +57,12 @@ public class CloudSubscriber  implements Subscriber {
         return generation;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public boolean applyOnRestart() {
+        return subscriber.applyOnRestart();
+    }
+
     //mapValues returns a view, so we need to force evaluation of it here to prevent deferred evaluation.
     @Override
     public Map<ConfigKey<ConfigInstance>, ConfigInstance> config() {

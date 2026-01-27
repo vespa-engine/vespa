@@ -32,6 +32,11 @@ public class Container {
     private volatile FileAcquirer fileAcquirer;
     private volatile UrlDownloader urlDownloader;
 
+    /**
+     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
+     */
+    private volatile boolean applyOnRestart = false;
+
     // TODO: Make this final again.
     private static Container instance = new Container();
 
@@ -134,4 +139,17 @@ public class Container {
         disabledUrlDownloader = true;
     }
 
+    /**
+     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
+     */
+    public void setApplyOnRestart(boolean applyOnRestart) {
+        this.applyOnRestart = applyOnRestart;
+    }
+
+    /**
+     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
+     */
+    public boolean applyOnRestart() {
+        return applyOnRestart;
+    }
 }
