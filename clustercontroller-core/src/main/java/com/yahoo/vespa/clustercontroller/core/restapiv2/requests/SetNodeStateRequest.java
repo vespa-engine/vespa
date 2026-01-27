@@ -161,7 +161,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
             NodeListener stateListener,
             boolean probe) {
         if (result.allowed()) {
-            setNewWantedState(nodeInfo, newWantedState, stateListener, probe);
+            setNewWantedState(nodeInfo, newWantedState, stateListener, cluster, probe);
         }
 
         // True if the wanted state was or has just been set to newWantedState
@@ -210,16 +210,18 @@ public class SetNodeStateRequest extends Request<SetResponse> {
         if (newWantedState.getState() != currentWantedState.getState() ||
                 !Objects.equals(newWantedState.getDescription(),
                         currentWantedState.getDescription())) {
-            setNewWantedState(nodeInfo, newWantedState, stateListener, probe);
+            setNewWantedState(nodeInfo, newWantedState, stateListener, cluster, probe);
         }
     }
 
     private static void setNewWantedState(NodeInfo nodeInfo,
                                           NodeState newWantedState,
                                           NodeListener stateListener,
+                                          ContentCluster cluster,
                                           boolean probe) {
         if (probe) return;
         nodeInfo.setWantedState(newWantedState);
+        nodeInfo.setWantedStateOrchestrationDecisionGeneration(cluster.orchestrationDecisionGeneration());
         stateListener.handleNewWantedNodeState(nodeInfo, newWantedState);
     }
 }

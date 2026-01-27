@@ -30,6 +30,8 @@ public final class ContentCluster {
 
     private int slobrokGenerationCount = 0;
     private Distribution distribution;
+    // See `orchestrationDecisionGeneration()` below for semantics on this value
+    private long orchestrationDecisionGeneration = 0;
 
     public ContentCluster(String clusterName, Collection<ConfiguredNode> configuredNodes, Distribution distribution) {
         this(clusterName, configuredNodes, distribution, -1);
@@ -119,6 +121,40 @@ public final class ContentCluster {
     public int getSlobrokGenerationCount() { return slobrokGenerationCount; }
 
     public void setSlobrokGenerationCount(int count) { slobrokGenerationCount = count; }
+
+    /**
+     * Returns a value that represents the current generation of this cluster controller
+     * instance's orchestration decision "context" (distribution config, leadership, ...).
+     *
+     * Generations can be compared to ensure that decisions are not made based on arbitrary,
+     * stale contexts. This is used to avoid ABA-style situations where the cluster controller
+     * may otherwise make suboptimal orchestration decisions based on wanted states set when
+     * the cluster had an incompatible orchestration configuration (e.g. flat vs grouped)
+     *
+     * This generation is monotonically increasing within the process' lifetime.
+     *
+     * Note that this is currently an entirely transient value, so a controller restart
+     * or leadership reelection will invalidate the existing generation even if there
+     * may have been no material changes to the underlying state of the cluster. This does
+     * not affect correctness, but may cause the orchestration process to take more time
+     * than necessary in situations where this happens.
+     *
+     * @return orchestration generation that only has useful semantics on this particular
+     *         cluster controller instance for the lifetime of the process.
+     */
+    public long orchestrationDecisionGeneration() {
+        return this.orchestrationDecisionGeneration;
+    }
+
+    /**
+     * Indicate that future orchestration decisions can not look at existing nodes set into
+     * Maintenance as "proof" that it's safe to set <em>further</em> nodes into Maintenance.
+     * The existing node(s) will first have to come back up and allow the cluster to get
+     * back into sync.
+     */
+    public void bumpOrchestrationDecisionGeneration() {
+        this.orchestrationDecisionGeneration++;
+    }
 
     /**
      * Checks if a node can be upgraded
