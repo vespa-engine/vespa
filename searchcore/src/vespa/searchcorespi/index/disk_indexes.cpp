@@ -122,7 +122,7 @@ DiskIndexes::get_transient_size(const IndexDiskLayout& layout) const
     std::unique_lock guard(_lock);
     uint64_t transient_size = _sum_stale_size_on_disk;
     std::vector<IndexDiskDir> deferred;
-    for (auto &entry: _active) {
+    for (auto &entry : _active) {
         auto &state = entry.second;
         /*
          * Indexes after last fusion index can be partially
@@ -143,6 +143,17 @@ DiskIndexes::get_transient_size(const IndexDiskLayout& layout) const
         }
     }
     return transient_size;
+}
+
+uint64_t
+DiskIndexes::get_size_on_disk(bool include_stale) const
+{
+    std::lock_guard guard(_lock);
+    uint64_t size_on_disk = _sum_size_on_disk;
+    if (!include_stale) {
+        size_on_disk -= _sum_stale_size_on_disk;
+    }
+    return size_on_disk;
 }
 
 }
