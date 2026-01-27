@@ -68,9 +68,6 @@
         <asm.vespa.version>9.9</asm.vespa.version>
         <assertj.vespa.version>3.27.7</assertj.vespa.version>
 
-        <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.vespa.version>1.11.63</athenz.vespa.version>
-        <!-- Athenz END -->
         <bouncycastle.vespa.version>1.78.1</bouncycastle.vespa.version>
         <byte-buddy.vespa.version>1.17.6</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
@@ -109,8 +106,6 @@
         <huggingface.vespa.version>0.33.0</huggingface.vespa.version>
         <icu4j.vespa.version>75.1</icu4j.vespa.version>
         <io-perfmark.vespa.version>0.27.0</io-perfmark.vespa.version>
-        <java-jjwt.vespa.version>0.11.5</java-jjwt.vespa.version>
-        <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
         <jaxb.runtime.vespa.version>4.0.5</jaxb.runtime.vespa.version>
         <jetty.vespa.version>12.0.30</jetty.vespa.version>

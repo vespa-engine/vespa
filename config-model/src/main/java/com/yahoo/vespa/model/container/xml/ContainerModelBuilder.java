@@ -558,7 +558,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 new ChainedComponentModel(
                         new BundleInstantiationSpecification(
                                 new ComponentSpecification("com.yahoo.jdisc.http.filter.security.misc.NoopFilter"),
-                                null, new ComponentSpecification("jdisc-security-filters")),
+                                null, new ComponentSpecification("container-disc")),
                         Dependencies.emptyDependencies())));
         cluster.getHttp().getFilterChains().add(insecureChain);
         var insecureChainComponentSpec = new ComponentSpecification(insecureChain.getComponentId().toString());
@@ -774,7 +774,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Set up handler that tells what fingerprints are known to the container
         class CloudTokenDataPlaneHandler extends Handler implements CloudTokenDataPlaneFilterConfig.Producer {
             CloudTokenDataPlaneHandler() {
-                super(new ComponentModel("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneHandler", null, "jdisc-security-filters", null));
+                super(new ComponentModel("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneHandler", null, "cloud-common", null));
                 addServerBindings(SystemBindingPattern.fromHttpPortAndPath(Defaults.getDefaults().vespaWebServicePort(), "/data-plane-tokens/v1"));
             }
             @Override public void getConfig(Builder builder) { tokenFilter.getConfig(builder); }
