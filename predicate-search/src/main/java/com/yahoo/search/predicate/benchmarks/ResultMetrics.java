@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.benchmarks;
 
+import com.yahoo.text.Text;
 import java.util.Map;
 
 /**
@@ -76,7 +77,7 @@ public class ResultMetrics {
     }
 
     private static String latencyToString(double averageLatency) {
-        return String.format("%.2fms", averageLatency);
+        return Text.format("%.2fms", averageLatency);
     }
 
     private static double toLatency(int index) {

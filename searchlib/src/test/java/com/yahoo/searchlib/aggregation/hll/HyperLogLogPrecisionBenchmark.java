@@ -7,6 +7,7 @@ import net.jpountz.xxhash.XXHashFactory;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -37,7 +38,7 @@ public class HyperLogLogPrecisionBenchmark {
             long min = samples.stream().min(Long::compare).get();
             long max = samples.stream().max(Long::compare).get();
             double standardDeviation = getStandardDeviation(samples, average);
-            System.out.printf("%d; %.2f; %.4f; %.4f; %d; %d\n", val, average, standardDeviation / average, standardDeviation, min, max);
+            System.out.printf(Locale.US, "%d; %.2f; %.4f; %.4f; %d; %d\n", val, average, standardDeviation / average, standardDeviation, min, max);
         }
     }
 

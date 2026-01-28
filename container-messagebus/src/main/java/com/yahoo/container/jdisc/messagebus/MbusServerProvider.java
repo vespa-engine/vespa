@@ -8,6 +8,7 @@ import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.messagebus.IntermediateSessionParams;
 import com.yahoo.messagebus.jdisc.MbusServer;
 import com.yahoo.messagebus.shared.SharedIntermediateSession;
+import com.yahoo.text.Text;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,7 +52,7 @@ public class MbusServerProvider implements Provider<MbusServer> {
         server.close();
         server.release();
         sessionRef.getReference().close();
-        log.log(Level.INFO, String.format("Mbus server deconstruction completed in %.3f seconds",
+        log.log(Level.INFO, Text.format("Mbus server deconstruction completed in %.3f seconds",
                 (System.currentTimeMillis()-start)/1000D));
     }
 
