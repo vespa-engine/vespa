@@ -35,6 +35,7 @@ public final class LinguisticsParser extends AbstractParser {
     @Override
     Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
                IndexFacts.Session indexFacts, String defaultIndex, Parsable parsable) {
+        setState(language, indexFacts, defaultIndex);
         var parameters = new LinguisticsParameters(linguisticsProfileFor(defaultIndex),
                                                    parsingLanguage,
                                                    StemMode.BEST,
