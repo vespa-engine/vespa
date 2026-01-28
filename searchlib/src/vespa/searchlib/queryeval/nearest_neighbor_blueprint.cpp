@@ -217,6 +217,8 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
         visitor.visitBool("filter_first_heuristic_used", _low_hit_ratio);
     }
     if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
+        visitor.visitInt("distances_computed", _nni_stats.distances_computed());
+        visitor.visitInt("nodes_visited", _nni_stats.nodes_visited());
         visitor.visitInt("top_k_hits", _found_hits.size());
     }
 
