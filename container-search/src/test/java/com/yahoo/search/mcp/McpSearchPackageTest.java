@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
  */
 public class McpSearchPackageTest {
 
-    private McpSearchPackage mcpSearchPackage;
+    private McpSearchSpecProvider mcpSearchPackage;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
@@ -41,7 +41,7 @@ public class McpSearchPackageTest {
         when(mockSearchChainRegistry.getChain("native")).thenReturn(mockSearchChain);
         when(mockSchemaInfo.schemas()).thenReturn(Map.of());
 
-        mcpSearchPackage = new McpSearchPackage(mockExecutionFactory, mockQueryProfileRegistry);
+        mcpSearchPackage = new McpSearchSpecProvider(mockExecutionFactory, mockQueryProfileRegistry);
     }
 
     @Test

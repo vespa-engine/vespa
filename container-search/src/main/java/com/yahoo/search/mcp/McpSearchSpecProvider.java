@@ -1,11 +1,25 @@
 package com.yahoo.search.mcp;
 
-import ai.vespa.mcp.McpPackage;
+import ai.vespa.mcp.api.McpSpecProvider;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.component.chain.Chain;
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.Searcher;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
+import com.yahoo.search.result.Coverage;
+import com.yahoo.search.result.Hit;
+import com.yahoo.search.schema.Field;
+import com.yahoo.search.schema.FieldInfo;
+import com.yahoo.search.schema.FieldSet;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
+import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.ExecutionFactory;
+import com.yahoo.tensor.Tensor;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
-
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -20,29 +34,13 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.yahoo.component.chain.Chain;
-import com.yahoo.search.schema.Field;
-import com.yahoo.search.schema.FieldInfo;
-import com.yahoo.search.schema.FieldSet;
-import com.yahoo.search.schema.Schema;
-import com.yahoo.search.schema.SchemaInfo;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.search.searchchain.ExecutionFactory;
-import com.yahoo.search.Query;
-import com.yahoo.search.Result;
-import com.yahoo.search.Searcher;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
-import com.yahoo.search.result.Coverage;
-import com.yahoo.search.result.Hit;
-import com.yahoo.search.searchchain.Execution;
-
 /**
  * Basic MCP (Model Context Protocol) "package" with prewritten tools, resources and prompts related to search.
  *
  * @author edvardwd
  */
-public class McpSearchPackage extends AbstractComponent implements McpPackage {
-    private static final Logger logger = Logger.getLogger(McpSearchPackage.class.getName());
+public class McpSearchSpecProvider extends AbstractComponent implements McpSpecProvider {
+    private static final Logger logger = Logger.getLogger(McpSearchSpecProvider.class.getName());
     private static final com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     private final ArrayList<McpStatelessServerFeatures.SyncToolSpecification> toolSpecs;
@@ -73,7 +71,7 @@ public class McpSearchPackage extends AbstractComponent implements McpPackage {
      * Construct a search package and populate tools/resources/prompts using Vespa components.
      */
     @Inject
-    public McpSearchPackage(ExecutionFactory executionFactory, CompiledQueryProfileRegistry queryProfileRegistry) {
+    public McpSearchSpecProvider(ExecutionFactory executionFactory, CompiledQueryProfileRegistry queryProfileRegistry) {
         this.toolSpecs = new ArrayList<>();
         this.resourceSpecs = new ArrayList<>();
         this.promptSpecs = new ArrayList<>();
