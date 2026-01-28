@@ -7,11 +7,11 @@ grpcEndpoint string default="triton:8001"
 
 # Model repository location where models and their configuration files are stored as described in Triton docs:
 # https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_repository.html
-# Default to Triton sidecar model repository path.
+# The default value corresponds to Triton sidecar model repository path.
 modelRepository string default="/sidecars/triton/models"
 
 # Model control mode as described in documentation as described in Triton docs:
 # https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_management.html
 # Triton client will only issue model load/unload requests if mode is EXPLICIT.
-# Default to EXPLICIT as required by Triton sidecar.
+# The default value is set to EXPLICIT as required by Triton sidecar.
 modelControlMode enum {NONE, POLL, EXPLICIT} default=EXPLICIT
