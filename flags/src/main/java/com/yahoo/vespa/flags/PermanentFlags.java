@@ -656,6 +656,13 @@ public class PermanentFlags {
             TENANT_ID, APPLICATION
     );
 
+    public static final UnboundIntFlag BACKUP_INTERVAL = defineIntFlag(
+            "backup-interval", 0,
+            "The interval in hours between automatic backup snapshots. " +
+                    "Value 0 disables automatic backups.",
+            "Takes effect on next maintainer run",
+            CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
