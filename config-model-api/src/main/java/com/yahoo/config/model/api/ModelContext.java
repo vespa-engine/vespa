@@ -89,7 +89,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int maxUnCommittedMemory() { return 130000; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter="8.621") default int heapSizePercentage() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int heapSizePercentage(Optional<String> clusterId) { return  0;}
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
