@@ -781,6 +781,9 @@ DocumentDB::getDocsums(const DocsumRequest & request)
 IFlushTarget::List
 DocumentDB::getFlushTargets()
 {
+    if (!_state->get_load_done()) {
+        return {};
+    }
     IFlushTarget::List flushTargets = _subDBs.getFlushTargets();
     return _jobTrackers.trackFlushTargets(flushTargets);
 }
