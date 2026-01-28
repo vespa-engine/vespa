@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.mcp.api;
 
+import java.util.Collection;
 import java.util.List;
 
 import static io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncPromptSpecification;
@@ -17,7 +18,7 @@ import static io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncTool
  */
 
 public interface McpSpecProvider {
-    default List<SyncToolSpecification> getToolSpecs() { return List.of(); }
-    default List<SyncResourceSpecification> getResourceSpecs() { return List.of(); }
-    default List<SyncPromptSpecification> getPromptSpecs() { return List.of(); }
+    default Collection<SyncToolSpecification> getToolSpecs() { return List.of(); }
+    default Collection<SyncResourceSpecification> getResourceSpecs() { return List.of(); }
+    default Collection<SyncPromptSpecification> getPromptSpecs() { return List.of(); }
 }
