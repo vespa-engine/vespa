@@ -35,6 +35,7 @@ import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.CJKSearcher;
+import com.yahoo.prelude.querytransform.test.StemmingSearcherTestCase;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -1412,8 +1413,12 @@ public class QueryTestCase {
     }
 
     private String parse(String yql, Linguistics linguistics, QueryProfile profile) {
+        return parse(yql, linguistics, profile, null);
+    }
+    private String parse(String yql, Linguistics linguistics, QueryProfile profile, IndexModel indexModel) {
         var query = new Query(httpEncode("?yql=" + yql), profile.compile(null));
-        var result = new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub(null, linguistics)).search(query);
+        var context = Execution.Context.createContextStub(indexModel != null ? new IndexFacts(indexModel) : null, linguistics);
+        var result = new Execution(new Chain<>(new MinimalQueryInserter()), context).search(query);
         assertNull(result.hits().getError(), result.hits().getError() == null ? "" : result.hits().getError().toString());
         query.getModel().prepare(query.getRanking()); // Test serialization/deserialization of these additional annotations
 
@@ -1524,6 +1529,22 @@ public class QueryTestCase {
         parse("select * from sources * where userInput('hello world')", mockLinguistics, profile);
         assertEquals("p2", mockLinguistics.lastLinguisticsProfile);
 
+    }
+
+    @Test
+    void testLinguisticsProfileWithLinguisticsParsing() {
+        var mockLinguistics = new MockTokenizerLinguistics();
+
+        var schema = new SearchDefinition("test");
+        var index = new Index("testField");
+        index.setStemMode("BEST");
+        index.setLinguisticsProfile("p1");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+
+        parse("select * from sources * where {defaultIndex:'testField', grammar:'linguistics'}userInput('hello world')",
+              mockLinguistics, new QueryProfile("test"), indexModel);
+        assertEquals("p1", mockLinguistics.lastLinguisticsProfile);
     }
 
     private QueryType type(String type) {
