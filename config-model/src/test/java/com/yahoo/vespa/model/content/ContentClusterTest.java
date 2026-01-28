@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
@@ -169,10 +170,7 @@ public class ContentClusterTest extends ContentBaseTest {
                 messages.add(message);
             }
         };
-        var deployState = new DeployState.Builder()
-                .applicationPackage(new MockApplicationPackage.Builder().withServices(services).build())
-                .deployLogger(logger)
-                .build();
+        var deployState = TestDeployState.create(logger, new MockApplicationPackage.Builder().withServices(services).build());
         new TestDriver().buildModel(deployState);
         assertEquals(1, messages.size());
         assertEquals("In cluster 'storage': min-node-ratio-per-group should be set to 1 when there are 3 or more groups (3)" +
@@ -735,7 +733,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertDistributionBitsInConfig(root.getConfigModels(Content.class).get(0).getCluster(), 8);
 
         // Build model and supply previous model that was a model built with 5 nodes
-        var deployState = new DeployState.Builder().applicationPackage(appTwoNodes).previousModel(modelForAppWithFiveNodes).build();
+        var deployState = TestDeployState.createBuilder().applicationPackage(appTwoNodes).previousModel(modelForAppWithFiveNodes).build();
         root = new TestDriver().buildModel(deployState);
         // But reducing number of nodes for a running system should not change distribution bits (should still be 16 bits)
         assertDistributionBitsInConfig(root.getConfigModels(Content.class).get(0).getCluster(), 16);
@@ -998,16 +996,6 @@ public class ContentClusterTest extends ContentBaseTest {
     @Test
     void flush_on_shutdown_can_be_turned_on_for_hosted() throws Exception {
         assertPrepareRestartCommand(createClusterWithFlushOnShutdownOverride(true, true));
-    }
-
-    @Test
-    void flush_on_shutdown_follows_feature_flag_for_use_new_prepare_for_restart() throws Exception {
-        assertNoPreShutdownCommand(createOneNodeCluster(new TestProperties().setHostedVespa(true).useNewPrepareForRestart(true)));
-        assertPrepareRestartCommand(createOneNodeCluster(new TestProperties().setHostedVespa(true).useNewPrepareForRestart(false)));
-
-        // Always flush on non-hosted
-        assertPrepareRestartCommand(createOneNodeCluster(new TestProperties().setHostedVespa(false).useNewPrepareForRestart(true)));
-        assertPrepareRestartCommand(createOneNodeCluster(new TestProperties().setHostedVespa(false).useNewPrepareForRestart(false)));
     }
 
     private static String oneNodeClusterXml() {

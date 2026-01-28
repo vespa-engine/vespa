@@ -10,12 +10,13 @@ namespace proton {
 
 /**
  * Class used to describe state of resource usage relative to configured limits.
- * In addition relative transient disk and memory usage are tracked.
+ * In addition, relative transient disk and memory usage are tracked.
  */
 class ResourceUsageState
 {
     ResourceUsageWithLimit _diskState;
     ResourceUsageWithLimit _memoryState;
+    double                 _reserved_disk_space;
     double                 _transient_disk_usage;
     double                 _transient_memory_usage;
     ResourceUsageWithLimit _max_attribute_address_space_state;
@@ -24,11 +25,15 @@ class ResourceUsageState
 public:
     ResourceUsageState();
     ResourceUsageState(const ResourceUsageWithLimit &diskState_,
-                       const ResourceUsageWithLimit &memoryState_,
-                       double transient_disk_usage_ = 0,
-                       double transient_memory_usage_ = 0);
+                       const ResourceUsageWithLimit &memoryState_);
     ResourceUsageState(const ResourceUsageWithLimit &diskState_,
                        const ResourceUsageWithLimit &memoryState_,
+                       double reserved_disk_space_,
+                       double transient_disk_usage_,
+                       double transient_memory_usage_);
+    ResourceUsageState(const ResourceUsageWithLimit &diskState_,
+                       const ResourceUsageWithLimit &memoryState_,
+                       double reserved_disk_space_,
                        double transient_disk_usage_,
                        double transient_memory_usage_,
                        const ResourceUsageWithLimit& max_attribute_address_space_state,
@@ -38,6 +43,7 @@ public:
     bool operator!=(const ResourceUsageState &rhs) const;
     const ResourceUsageWithLimit &diskState() const noexcept { return _diskState; }
     const ResourceUsageWithLimit &memoryState() const noexcept { return _memoryState; }
+    double reserved_disk_space() const noexcept { return _reserved_disk_space; }
     double transient_disk_usage() const noexcept { return _transient_disk_usage; }
     double transient_memory_usage() const noexcept { return _transient_memory_usage; }
     double non_transient_disk_usage() const { return std::max(0.0, _diskState.usage() - _transient_disk_usage); }

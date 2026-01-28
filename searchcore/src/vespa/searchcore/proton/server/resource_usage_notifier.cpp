@@ -12,6 +12,7 @@ ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
       _hwInfo(filter.get_hw_info()),
       _memoryStats(),
       _diskUsedSizeBytes(),
+      _reserved_disk_space(0),
       _transient_usage(),
       _attribute_usage(),
       _config(),
@@ -31,6 +32,7 @@ ResourceUsageNotifier::recalcState(const Guard &guard, bool disk_mem_sample)
     double attribute_address_space_used = _attribute_usage.max_address_space_usage().getUsage().usage();
     ResourceUsageState usage(ResourceUsageWithLimit(diskUsed, _config._diskLimit),
                              ResourceUsageWithLimit(memoryUsed, _config._memoryLimit),
+                             get_relative_reserved_disk_space(guard),
                              get_relative_transient_disk_usage(guard),
                              get_relative_transient_memory_usage(guard),
                              ResourceUsageWithLimit(attribute_address_space_used,
@@ -55,6 +57,12 @@ ResourceUsageNotifier::getDiskUsedRatio(const Guard&) const
 }
 
 double
+ResourceUsageNotifier::get_relative_reserved_disk_space(const Guard&) const
+{
+    return  static_cast<double>(_reserved_disk_space) / _hwInfo.disk().sizeBytes();
+}
+
+double
 ResourceUsageNotifier::get_relative_transient_memory_usage(const Guard&) const
 {
     return  static_cast<double>(_transient_usage.memory()) / _hwInfo.memory().sizeBytes();
@@ -67,9 +75,13 @@ ResourceUsageNotifier::get_relative_transient_disk_usage(const Guard&) const
 }
 
 void
-ResourceUsageNotifier::set_resource_usage(const TransientResourceUsage& transient_usage, vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes) {
+ResourceUsageNotifier::set_resource_usage(const TransientResourceUsage& transient_usage,
+                                          vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes,
+                                          uint64_t reserved_disk_space)
+{
     Guard guard(_lock);
     _transient_usage = transient_usage;
+    _reserved_disk_space = reserved_disk_space;
     _memoryStats = memoryStats;
     _diskUsedSizeBytes = diskUsedSizeBytes;
     recalcState(guard, true);

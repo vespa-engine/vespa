@@ -7,6 +7,7 @@ import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -125,7 +126,7 @@ public class DedicatedAdminV4Test {
                 "  </container>" +
                 "</services>";
 
-        VespaModel model = createModel(hosts, servicesWith3JdiscClusters);
+        VespaModel model = createModel(hosts, servicesWith3JdiscClusters, TestDeployState.createBuilder());
         assertEquals(4, model.getHosts().size());
 
         // 4 slobroks, 2 per cluster where possible
@@ -247,7 +248,7 @@ public class DedicatedAdminV4Test {
     }
 
     private VespaModel createModel(String hosts, String services) throws IOException, SAXException {
-        return createModel(hosts, services, new DeployState.Builder());
+        return createModel(hosts, services, TestDeployState.createBuilder());
     }
 
     private VespaModel createModel(String hosts, String services, DeployState.Builder deployStateBuilder) throws IOException, SAXException {

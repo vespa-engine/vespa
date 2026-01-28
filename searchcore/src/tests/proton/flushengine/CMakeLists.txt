@@ -2,6 +2,7 @@
 vespa_add_executable(searchcore_flushengine_test_app TEST
     SOURCES
     flushengine_test.cpp
+    reserved_disk_space_calculator_test.cpp
     DEPENDS
     searchcore_flushengine
     searchcore_pcommon

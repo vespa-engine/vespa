@@ -12,6 +12,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.lang.ref.Cleaner;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -295,7 +296,7 @@ public class ConfigSubscriber implements AutoCloseable {
             if (applyOnRestartOnly && ! isInitializing) { // disable any reconfig until restart
                 synchronized (monitor) {
                     if ( ! applyOnRestart) {
-                        log.log(Level.INFO, "Config generation " + generation + " requires restart; " +
+                        log.log(Level.INFO, "Config generation " + currentGen + " requires restart; " +
                                             "further config changes will not take effect until restart");
                         applyOnRestart = true;
                     }
@@ -472,6 +473,15 @@ public class ConfigSubscriber implements AutoCloseable {
     public long getGeneration() {
         synchronized (monitor) {
             return generation;
+        }
+    }
+
+    /**
+     * @see ConfigSubscriber#applyOnRestart
+     */
+    public boolean applyOnRestart() {
+        synchronized (monitor) {
+            return applyOnRestart;
         }
     }
 

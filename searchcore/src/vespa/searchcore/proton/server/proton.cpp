@@ -285,7 +285,6 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _fileHeaderContext(progName),
       _attribute_interlock(std::make_shared<search::attribute::Interlock>()),
       _tls(),
-      _diskMemUsageSampler(),
       _persistenceEngine(),
       _attribute_usage_notifier(),
       _documentDBMap(),
@@ -293,6 +292,7 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _summaryEngine(),
       _memoryFlushConfigUpdater(),
       _flushEngine(),
+      _diskMemUsageSampler(),
       _prepareRestartHandler(),
       _rpcHooks(),
       _healthAdapter(*this),
@@ -359,7 +359,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     setFS4Compression(protonConfig);
     _write_filter = std::make_shared<ResourceUsageWriteFilter>(hwInfo);
     _resource_usage_notifier = std::make_shared<ResourceUsageNotifier>(*_write_filter);
-    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, *_write_filter, *_resource_usage_notifier);
     _posting_list_cache = make_posting_list_cache(protonConfig);
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
@@ -396,8 +395,11 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup(protonConfig.basedir + "/swapdirs");
     _tls->start(_transport, hwInfo.cpu().cores());
     _flushEngine = std::make_unique<FlushEngine>(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
-                                                 strategy, flush.maxconcurrent, vespalib::from_s(flush.idleinterval));
+                                                 strategy, flush.maxconcurrent, vespalib::from_s(flush.idleinterval),
+                                                 protonConfig.summary.log.maxfilesize);
     _metricsEngine->addExternalMetrics(_summaryEngine->getMetrics());
+    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, *_write_filter,
+                                                                 *_resource_usage_notifier, *_flushEngine);
 
     LOG(debug, "Start proton server with root at %s and cwd at %s",
         protonConfig.basedir.c_str(), std::filesystem::current_path().string().c_str());
@@ -495,6 +497,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
     const std::shared_ptr<const DocumentTypeRepo> repo = configSnapshot->getDocumentTypeRepoSP();
 
     _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()), *_scheduler);
+    _flushEngine->configure(protonConfig.summary.log.maxfilesize);
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();
@@ -904,6 +907,8 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.disk_usage.total.set(dm_metrics.total_disk_usage());
         metrics.resourceUsage.disk_usage.total_util.set(dm_metrics.total_disk_utilization());
         metrics.resourceUsage.disk_usage.transient.set(dm_metrics.transient_disk_usage());
+        metrics.resourceUsage.disk_usage.reserved.set(dm_metrics.reserved_disk_space());
+        metrics.resourceUsage.disk_usage.used_and_reserved.set(dm_metrics.non_transient_disk_usage_and_reserved_disk_space());
 
         metrics.resourceUsage.memory.set(dm_metrics.non_transient_memory_usage());
         metrics.resourceUsage.memory_usage.total.set(dm_metrics.total_memory_usage());

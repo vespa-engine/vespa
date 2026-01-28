@@ -21,7 +21,7 @@ public interface TaggableItem {
      * This is used to influence ranking features taking proximity into account: nativeRank and a subset of the
      * fieldMatch features.
      * <p>
-     * By default consecutive query terms are 'somewhat' connected, meaning ranking features will score higher in documents
+     * By default, consecutive query terms are 'somewhat' connected, meaning ranking features will score higher in documents
      * where the terms are found close to each other. This effect can be increased or decreased by manipulating the
      * connectivity value. Typical use is to increase the connectivity between terms in the query that we believe are
      * semantically connected. E.g., in the query 'new york hotel', it is a good idea to increase the connectivity between

@@ -74,7 +74,7 @@ public class HandlersConfigurerDi {
                                 OsgiWrapper osgiWrapper) {
 
         this.vespaContainer = vespaContainer;
-        container = new Container(subscriberFactory, configId, deconstructor, osgiWrapper);
+        container = new Container(subscriberFactory, vespaContainer, configId, deconstructor, osgiWrapper);
         Runnable cleanupTask = waitForNextGraphGeneration(discInjector, true);
         cleanupTask.run();
     }

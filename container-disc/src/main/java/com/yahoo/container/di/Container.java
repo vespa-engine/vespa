@@ -24,7 +24,6 @@ import org.osgi.framework.Bundle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,12 +50,18 @@ public class Container {
     private final Osgi osgi;
 
     private final ConfigRetriever retriever;
+    private final com.yahoo.container.Container vespaContainer;
     private List<String> platformBundles;  // Used to verify that platform bundles don't change.
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
 
-    public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor destructor, Osgi osgi) {
+    public Container(SubscriberFactory subscriberFactory,
+                     com.yahoo.container.Container vespaContainer,
+                     String configId,
+                     ComponentDeconstructor destructor,
+                     Osgi osgi) {
         this.subscriberFactory = subscriberFactory;
+        this.vespaContainer = vespaContainer;
         this.destructor = destructor;
         this.osgi = osgi;
 
@@ -115,6 +120,7 @@ public class Container {
         ConfigSnapshot snapshot;
         while (true) {
             snapshot = retriever.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
+            updateApplyOnRestart();
 
             if (log.isLoggable(FINE))
                 log.log(FINE, String.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
@@ -302,6 +308,13 @@ public class Container {
         }
 
         return key.getConfigClass().cast(inst);
+    }
+
+    /**
+     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
+     */
+    public void updateApplyOnRestart() {
+        vespaContainer.setApplyOnRestart(retriever.applyOnRestart());
     }
 
     private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {

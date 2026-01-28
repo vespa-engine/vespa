@@ -61,10 +61,12 @@ public class WordItem extends TermItem {
         setWord(word);
     }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.WORD;
     }
 
+    @Override
     public String getName() {
         return "WORD";
     }

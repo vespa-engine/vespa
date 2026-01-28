@@ -332,6 +332,8 @@ abstract class StructuredParser extends AbstractParser {
             if (item != null && ! endOfNumber()) {
                 item = null;
             }
+            if (item != null)
+                item.setQueryType(environment.getType());
             return item;
         } finally {
             if (item == null) {
@@ -380,7 +382,7 @@ abstract class StructuredParser extends AbstractParser {
             item = new IntItem(range + "]", true);
             item.setOrigin(new Substring(initial.substring.start, tokens.currentNoIgnore().substring.start,
                                          initial.getSubstring().getSuperstring())); // XXX: Unsafe end?
-
+            item.setQueryType(environment.getType());
             return item;
         } finally {
             if (item == null) {
@@ -403,6 +405,7 @@ abstract class StructuredParser extends AbstractParser {
             item = new IntItem("<" + (negative ? "-" : "") + tokens.next() + decimalPart(), true);
             item.setOrigin(new Substring(initial.substring.start, tokens.currentNoIgnore().substring.start,
                                          initial.getSubstring().getSuperstring())); // XXX: Unsafe end?
+            item.setQueryType(environment.getType());
             return item;
         } finally {
             if (item == null) {
@@ -425,6 +428,7 @@ abstract class StructuredParser extends AbstractParser {
             item = new IntItem(">" + (negative ? "-" : "") + tokens.next() + decimalPart(), true);
             item.setOrigin(new Substring(initial.substring.start, tokens.currentNoIgnore().substring.start,
                                          initial.getSubstring().getSuperstring())); // XXX: Unsafe end?
+            item.setQueryType(environment.getType());
             return item;
         } finally {
             if (item == null) {
@@ -449,10 +453,10 @@ abstract class StructuredParser extends AbstractParser {
             if (item == null && tokens.currentIs(NUMBER)) {
                 Token t = tokens.next();
                 if (insidePhrase) {
-                    item = new WordItem(t, true);
+                    item = setQueryType(new WordItem(t, true));
                 } else {
-                    item = new IntItem(t.toString(), true);
-                    ((TermItem) item).setOrigin(t.substring);
+                    item = setQueryType(new IntItem(t.toString(), true));
+                    ((TermItem)item).setOrigin(t.substring);
                 }
             }
 
@@ -484,7 +488,7 @@ abstract class StructuredParser extends AbstractParser {
             Token word = tokens.next();
 
             if (submodes.url) {
-                item = new WordItem(word, true);
+                item = setQueryType(new WordItem(word, true));
             } else {
                 item = segment(indexName, word, quoted);
             }
@@ -505,7 +509,7 @@ abstract class StructuredParser extends AbstractParser {
                     Substring termSubstring = ((BlockItem) item).getOrigin();
                     Substring substring = new Substring(termSubstring.start, token.substring.start, termSubstring.getSuperstring()); // XXX: Unsafe end?
                     String str = buffer.toString();
-                    item = new WordItem(str, "", true, substring);
+                    item = setQueryType(new WordItem(str, "", true, substring));
                 }
             }
             return item;
@@ -628,8 +632,7 @@ abstract class StructuredParser extends AbstractParser {
                     composite.addItem(MarkerWordItem.createStartOfHost());
                 }
                 if (firstWord instanceof IntItem asInt) {
-                    firstWord = new WordItem(asInt.stringValue(), asInt.getIndexName(),
-                                             true, asInt.getOrigin());
+                    firstWord = setQueryType(new WordItem(asInt.stringValue(), asInt.getIndexName(), true, asInt.getOrigin()));
                 }
                 composite.addItem(firstWord);
                 composite.addItem(word);
@@ -677,7 +680,7 @@ abstract class StructuredParser extends AbstractParser {
                     composite.addItem(MarkerWordItem.createStartOfHost());
                 }
                 if (firstWord instanceof IntItem asInt) {
-                    firstWord = new WordItem(asInt.stringValue(), asInt.getIndexName(), true, asInt.getOrigin());
+                    firstWord = setQueryType(new WordItem(asInt.stringValue(), asInt.getIndexName(), true, asInt.getOrigin()));
                 }
                 composite.addItem(firstWord);
                 if (!starAfterFirst) {
@@ -690,12 +693,12 @@ abstract class StructuredParser extends AbstractParser {
                 // prefix, suffix or substring
                 if (starAfterFirst) {
                     if (starBeforeFirst) {
-                        return new SubstringItem(firstTerm.stringValue(), true);
+                        return setQueryType(new SubstringItem(firstTerm.stringValue(), true));
                     } else {
-                        return new PrefixItem(firstTerm.stringValue(), true);
+                        return setQueryType(new PrefixItem(firstTerm.stringValue(), true));
                     }
                 } else {
-                    return new SuffixItem(firstTerm.stringValue(), true);
+                    return setQueryType(new SuffixItem(firstTerm.stringValue(), true));
                 }
             }
             return firstWord;
@@ -710,13 +713,12 @@ abstract class StructuredParser extends AbstractParser {
             var subItems = ((AndSegmentItem) nextToLast).items();
             nextToLast = subItems.get(subItems.size() - 1);
         }
-        if ( ! (nextToLast instanceof TermItem)) return;
+        if ( ! (nextToLast instanceof TermItem t1)) return;
         Item last = composite.items().get(items - 1);
         if (last instanceof AndSegmentItem) {
             last = ((AndSegmentItem) last).items().get(0);
         }
         if (last instanceof TaggableItem) {
-            TermItem t1 = (TermItem) nextToLast;
             t1.setConnectivity(last, 1);
         }
     }
@@ -831,6 +833,12 @@ abstract class StructuredParser extends AbstractParser {
     private boolean URLModePhraseChar() {
         if (!submodes.url) return false;
         return !(tokens.currentIsNoIgnore(RBRACE) || tokens.currentIsNoIgnore(SPACE));
+    }
+
+    private Item setQueryType(Item item) {
+        if (item instanceof BlockItem block)
+            block.setQueryType(environment.getType());
+        return item;
     }
 
 }

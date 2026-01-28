@@ -16,6 +16,8 @@ DiskMemUsageMetrics::DiskMemUsageMetrics(const ResourceUsageState& usage) noexce
       _total_disk_utilization(usage.diskState().utilization()),
       _transient_disk_usage(usage.transient_disk_usage()),
       _non_transient_disk_usage(usage.non_transient_disk_usage()),
+      _reserved_disk_space(usage.reserved_disk_space()),
+      _non_transient_disk_usage_and_reserved_disk_space(usage.non_transient_disk_usage() + usage.reserved_disk_space()),
       _total_memory_usage(usage.memoryState().usage()),
       _total_memory_utilization(usage.memoryState().utilization()),
       _transient_memory_usage(usage.transient_memory_usage()),
@@ -30,6 +32,10 @@ DiskMemUsageMetrics::merge(const ResourceUsageState& usage) noexcept
     _total_disk_utilization = std::max(_total_disk_utilization, usage.diskState().utilization());
     _transient_disk_usage = std::max(_transient_disk_usage, usage.transient_disk_usage());
     _non_transient_disk_usage = std::max(_non_transient_disk_usage, usage.non_transient_disk_usage());
+    _reserved_disk_space = std::max(_reserved_disk_space, usage.reserved_disk_space());
+    _non_transient_disk_usage_and_reserved_disk_space = std::max(_non_transient_disk_usage_and_reserved_disk_space,
+                                                                 usage.non_transient_disk_usage() +
+                                                                 usage.reserved_disk_space());
     _total_memory_usage = std::max(_total_memory_usage, usage.memoryState().usage());
     _total_memory_utilization = std::max(_total_memory_utilization, usage.memoryState().utilization());
     _transient_memory_usage = std::max(_transient_memory_usage, usage.transient_memory_usage());

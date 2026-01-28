@@ -70,10 +70,12 @@ public final class LinguisticsParser extends AbstractParser {
             for (int i = 0; i < token.getNumStems(); i++)
                 alternatives.add(new WordAlternativesItem.Alternative(token.getStem(i), 1.0));
             item = new WordAlternativesItem(defaultIndex, true, new Substring(token.getOrig()), alternatives);
+            item.setQueryType(environment.getType());
             item.setNormalizable(false); // Disable downstream normalizing
             item.setLowercased(true); // Disable downstream lowercasing
         }
         item.setIndexName(defaultIndex);
+        item.setQueryType(environment.getType());
         return item;
     }
 

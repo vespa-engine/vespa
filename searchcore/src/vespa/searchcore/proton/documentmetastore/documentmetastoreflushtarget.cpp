@@ -202,7 +202,7 @@ DocumentMetaStoreFlushTarget::getApproxMemoryGain() const
 IFlushTarget::DiskGain
 DocumentMetaStoreFlushTarget::getApproxDiskGain() const
 {
-    return DiskGain(0, 0);
+    return DiskGain(_dms->size_on_disk(), _dms->getEstimatedSaveByteSize());
 }
 
 

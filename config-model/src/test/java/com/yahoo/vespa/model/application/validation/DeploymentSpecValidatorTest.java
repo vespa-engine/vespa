@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
@@ -78,9 +78,8 @@ public class DeploymentSpecValidatorTest {
                 .withServices(services)
                 .withDeploymentSpec(deploymentXml)
                 .build();
-        var builder = new DeployState.Builder().applicationPackage(app);
+        var deployState = TestDeployState.create(app);
         try {
-            var deployState = builder.build();
             VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
             ValidationTester.validate(new DeploymentSpecValidator(), model, deployState);
             fail("Did not get expected exception");

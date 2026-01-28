@@ -3,7 +3,9 @@ package com.yahoo.container.jdisc.state;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Vtag;
+import com.yahoo.container.Container;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
+import com.yahoo.json.Jackson;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +25,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
     @BeforeEach
     public void setupHandler() {
-        stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry);
+        stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, new Container());
         testDriver = new RequestHandlerTestDriver(stateHandler);
     }
 
@@ -206,5 +208,26 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
         JsonNode version = root.get("version");
         assertEquals(Vtag.currentVersion.toString(), version.asText());
+    }
+
+    @Test
+    void testStateConfigWithApplyOnRestart() throws Exception {
+        var container = new Container();
+
+        var stateHandler =
+                new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, container);
+        var requestHandler = new RequestHandlerTestDriver(stateHandler);
+
+        var response = requestHandler.sendRequest(V1_URI + "config").readAll();
+        var root = Jackson.mapper().readTree(response);
+        var config = root.get("config");
+        assertFalse(config.get("applyOnRestart").asBoolean());
+
+        container.setApplyOnRestart(true);
+
+        response = requestHandler.sendRequest(V1_URI + "config").readAll();
+        root = Jackson.mapper().readTree(response);
+        config = root.get("config");
+        assertTrue(config.get("applyOnRestart").asBoolean());
     }
 }

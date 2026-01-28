@@ -16,6 +16,7 @@ import com.yahoo.jdisc.http.server.jetty.JettyHttpServer;
 import com.yahoo.jdisc.http.server.jetty.JettyHttpServerContext;
 import com.yahoo.jdisc.http.server.jetty.VoidConnectionLog;
 import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.security.SslContextBuilder;
 
 import javax.net.ssl.SSLContext;
@@ -94,6 +95,7 @@ public class TestDriver implements AutoCloseable {
                         bind(FilterBindings.class).toInstance(new FilterBindings.Builder().setStrictFiltering(serverConfig.strictFiltering()).build());
                         bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
                         bind(RequestLog.class).toInstance(new VoidRequestLog());
+                        bind(MetricReceiver.class).toInstance(MetricReceiver.nullImplementation);
                     }
                 },
                 new ConnectorFactoryRegistryModule(connectorConfig));

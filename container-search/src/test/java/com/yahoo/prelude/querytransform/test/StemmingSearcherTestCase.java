@@ -217,17 +217,26 @@ public class StemmingSearcherTestCase {
         var indexModel = new IndexModel(schema);
         var mockLinguistics = new MockLinguistics();
 
+        // Assign profile=p1 by schema
         var yql = "select * from sources * where userInput(@query)";
         var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("hello"));
         search(mockLinguistics, indexModel, query);
         assertEquals("p1", mockLinguistics.lastLinguisticsProfile);
 
+        // Assign profile=p2 by model.type
         yql = "select * from sources * where userInput(@query)";
         query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("hello") +
-                          "&model.type.profile=p2");
+                          "&model.type.profile=p2&model.type.isYqlDefault");
         search(mockLinguistics, indexModel, query);
         assertEquals("p2", mockLinguistics.lastLinguisticsProfile,
                      "Query setting overrides profile from schema");
+
+        // Assign profile=p3 by grammar.type
+        yql = "select * from sources * where {grammar.profile:'p3'}userInput(@query)";
+        query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("hello"));
+        search(mockLinguistics, indexModel, query);
+        assertEquals("p3", mockLinguistics.lastLinguisticsProfile,
+                     "YQL grammar setting overrides profile from schema");
     }
 
     private Result search(Linguistics linguistics, IndexModel indexModel, Query query) {

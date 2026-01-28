@@ -44,6 +44,7 @@ public:
     void add_not_active(IndexDiskDir index_disk_dir);
     bool remove(IndexDiskDir index_disk_dir);
     uint64_t get_transient_size(const IndexDiskLayout& layout) const;
+    uint64_t get_size_on_disk(bool include_stale) const;
 };
 
 }

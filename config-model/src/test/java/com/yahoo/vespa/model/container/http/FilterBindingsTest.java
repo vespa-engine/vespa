@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.BindingPattern;
@@ -36,7 +36,7 @@ public class FilterBindingsTest extends DomBuilderTest {
 
 
     private void buildContainerCluster(Element containerElem) {
-        ContainerModel model = new ContainerModelBuilder(true, Networking.enable).build(DeployState.createTestState(), null, null, root, containerElem);
+        ContainerModel model = new ContainerModelBuilder(true, Networking.enable).build(TestDeployState.create(), null, null, root, containerElem);
         root.freezeModelTopology();
     }
 

@@ -304,19 +304,20 @@ public class UserConfiguredFilesTest {
 
     @Test
     void require_that_using_empty_dir_fails(@TempDir Path tempDir) {
-        String relativeTempDir = tempDir.toString().substring(tempDir.toString().lastIndexOf("target") + 7);
+        Path foobarDir = tempDir.resolve("foobar");
+        foobarDir.toFile().mkdir();
         ApplicationPackage applicationPackage =
                 new MockApplicationPackage.Builder()
-                        .withRoot(tempDir.toFile().getParentFile())
-                        .withFiles(Map.of(com.yahoo.path.Path.fromString(tempDir.toFile().getAbsolutePath()), ""))
+                        .withRoot(tempDir.toFile())
+                        .withFiles(Map.of(com.yahoo.path.Path.fromString(foobarDir.toAbsolutePath().toString()), ""))
                         .build();
 
         var logger = new TestDeployLogger();
         def.addPathDef("pathVal");
-        builder.setField("pathVal", relativeTempDir);
-        fileRegistry.pathToRef.put(relativeTempDir, new FileReference("bazshash"));
+        builder.setField("pathVal", "foobar");
+        fileRegistry.pathToRef.put("foobar", new FileReference("bazshash"));
         userConfiguredFiles(applicationPackage, logger).register(producer);
-        assertEquals("Directory '" + relativeTempDir + "' is empty", logger.log);
+        assertEquals("Directory 'foobar' is empty", logger.log);
     }
 
     @Test

@@ -453,4 +453,35 @@ public class EmbeddingScriptTestCase {
         }
     }
 
+    @Test
+    public void testArrayEmbedUsesBatchMethod() {
+        var mockEmbedder = new EmbeddingScriptTester.MockBatchAwareEmbedder("myDocument.mySparseTensor");
+        var tester = new EmbeddingScriptTester(Map.of("emb1", mockEmbedder));
+
+        var tensorType = TensorType.fromSpec("tensor(passage{}, d[4])");
+        var expression = tester.expressionFrom("input myTextArray | embed | attribute 'mySparseTensor'");
+
+        var adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myTextArray", new ArrayDataType(DataType.STRING)));
+
+        var tensorField = new Field("mySparseTensor", new TensorDataType(tensorType));
+        adapter.createField(tensorField);
+
+        var array = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
+        array.add(new StringFieldValue("first"));
+        array.add(new StringFieldValue("second"));
+        array.add(new StringFieldValue("third"));
+        adapter.setValue("myTextArray", array);
+        expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
+        expression.resolve(new TypeContext(adapter));
+
+        var context = new ExecutionContext(adapter);
+        context.setCurrentValue(array);
+        expression.execute(context);
+
+        // Verify batch method was called once with all texts, not individual embed calls
+        assertEquals(1, mockEmbedder.batchCallCount);
+        assertEquals(0, mockEmbedder.singleCallCount);
+    }
+
 }

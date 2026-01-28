@@ -50,7 +50,6 @@ public class PlatformBundles {
     );
 
     public static final Set<Path> VESPA_SECURITY_BUNDLES = toBundlePaths(
-            "jdisc-security-filters",
             "vespa-athenz"
     );
 

@@ -2,16 +2,22 @@
 package com.yahoo.container.di;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.di.IntConfig;
+import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.test.TestConfig;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent;
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException;
+import com.yahoo.container.di.config.Subscriber;
+import com.yahoo.vespa.config.ConfigKey;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -406,4 +412,83 @@ public class ContainerTest extends ContainerTestBase {
         return componentGraph.getInstance(ComponentTakingConfig.class);
     }
 
+    /**
+     * Allows setting applyOnRestart for testing.
+     */
+    private static class TestSubscriberFactory extends CloudSubscriberFactory {
+        private volatile boolean applyOnRestart = false;
+
+        TestSubscriberFactory(ConfigSource configSource) {
+            super(configSource);
+        }
+
+        void setApplyOnRestart(boolean applyOnRestart) {
+            this.applyOnRestart = applyOnRestart;
+        }
+
+        @Override
+        public Subscriber getSubscriber(
+                Set<? extends ConfigKey<?>> configKeys, String name) {
+            var delegate = super.getSubscriber(configKeys, name);
+            return new Subscriber() {
+                @Override
+                public long waitNextGeneration(boolean isInitializing) {
+                    return delegate.waitNextGeneration(isInitializing);
+                }
+
+                @Override
+                public long generation() {
+                    return delegate.generation();
+                }
+
+                @Override
+                public boolean configChanged() {
+                    return delegate.configChanged();
+                }
+
+                @Override
+                public Map<ConfigKey<ConfigInstance>, ConfigInstance> config() {
+                    return delegate.config();
+                }
+
+                @Override
+                public void close() {
+                    delegate.close();
+                }
+
+                @Override
+                public boolean applyOnRestart() {
+                    return applyOnRestart;
+                }
+            };
+        }
+    }
+
+    @Test
+    void applyOnRestart_updated_when_getting_new_component_graph() {
+        writeBootstrapConfigs();
+        dirConfigSource.writeConfig("test", "stringVal \"myString\"");
+
+        var vespaContainer = new com.yahoo.container.Container();
+        var testFactory = new TestSubscriberFactory(dirConfigSource.configSource());
+        testFactory.setApplyOnRestart(true);
+
+        var container = new Container(
+                testFactory,
+                vespaContainer,
+                dirConfigSource.configId(),
+                new TestDeconstructor(osgi),
+                osgi);
+
+        assertFalse(vespaContainer.applyOnRestart(),
+                "applyOnRestart is initially false");
+
+        var graph = getNewComponentGraph(container);
+
+        assertTrue(vespaContainer.applyOnRestart(),
+                  "Container should set applyOnRestart from config retriever");
+
+        container.shutdownConfigRetriever();
+        container.shutdown(graph);
+    }
 }

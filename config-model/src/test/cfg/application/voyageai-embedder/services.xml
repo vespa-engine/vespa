@@ -9,6 +9,7 @@
         <component id="voyage-full" type="voyage-ai-embedder">
             <model>voyage-3.5</model>
             <api-key-secret-ref>voyage_api_key</api-key-secret-ref>
+            <dimensions>1024</dimensions>
             <endpoint>https://api.voyageai.com/v1/embeddings</endpoint>
             <truncate>true</truncate>
         </component>
@@ -17,6 +18,7 @@
         <component id="voyage-minimal" type="voyage-ai-embedder">
             <model>voyage-3.5</model>
             <api-key-secret-ref>voyage_key</api-key-secret-ref>
+            <dimensions>1024</dimensions>
         </component>
     </container>
 </services>

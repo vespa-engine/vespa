@@ -32,14 +32,21 @@ struct ResourceUsageMetrics : metrics::MetricSet
         ~DetailedResourceMetrics();
     };
 
-    metrics::DoubleValueMetric disk;
-    metrics::DoubleValueMetric memory;
-    DetailedResourceMetrics disk_usage;
-    DetailedResourceMetrics memory_usage;
-    metrics::LongValueMetric openFileDescriptors;
-    metrics::LongValueMetric feedingBlocked;
-    metrics::LongValueMetric mallocArena;
-    CpuUtilMetrics           cpu_util;
+    struct DetailedDiskResourceMetrics : public DetailedResourceMetrics {
+        metrics::DoubleValueMetric reserved;
+        metrics::DoubleValueMetric used_and_reserved; // transient disk space not included
+        DetailedDiskResourceMetrics(metrics::MetricSet* parent);
+        ~DetailedDiskResourceMetrics();
+    };
+
+    metrics::DoubleValueMetric  disk;
+    metrics::DoubleValueMetric  memory;
+    DetailedDiskResourceMetrics disk_usage;
+    DetailedResourceMetrics     memory_usage;
+    metrics::LongValueMetric    openFileDescriptors;
+    metrics::LongValueMetric    feedingBlocked;
+    metrics::LongValueMetric    mallocArena;
+    CpuUtilMetrics              cpu_util;
 
     ResourceUsageMetrics(metrics::MetricSet *parent);
     ~ResourceUsageMetrics();

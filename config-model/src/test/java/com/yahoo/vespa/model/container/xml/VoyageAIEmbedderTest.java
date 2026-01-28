@@ -33,6 +33,7 @@ public class VoyageAIEmbedderTest {
         // Verify all configuration values
         assertEquals("voyage-3.5", config.model());
         assertEquals("voyage_api_key", config.apiKeySecretRef());
+        assertEquals(1024, config.dimensions());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint());
         assertTrue(config.truncate());
     }
@@ -50,6 +51,7 @@ public class VoyageAIEmbedderTest {
         // Verify required fields
         assertEquals("voyage_key", config.apiKeySecretRef());
         assertEquals("voyage-3.5", config.model());
+        assertEquals(1024, config.dimensions());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint()); // Default endpoint
         assertEquals(3, config.maxRetries()); // Default retries
         assertTrue(config.truncate()); // Default truncate
@@ -64,6 +66,7 @@ public class VoyageAIEmbedderTest {
                         <component id="voyage" type="voyage-ai-embedder">
                             <api-key-secret-ref>key</api-key-secret-ref>
                             <model>invalid-model-name</model>
+                            <dimensions>1024</dimensions>
                         </component>
                     </container>
                 </services>
@@ -72,6 +75,54 @@ public class VoyageAIEmbedderTest {
         // Should fail because model name must start with 'voyage'
         Exception exception = assertThrows(IllegalArgumentException.class, () -> buildModelFromXml(servicesXml));
         assertTrue(exception.getMessage().contains("voyage"));
+    }
+
+    @Test
+    void testVoyageAIEmbedderQuantizationSettings() throws Exception {
+        // Test AUTO (default)
+        String xmlAuto = """
+                <?xml version="1.0" encoding="utf-8" ?>
+                <services version="1.0">
+                    <container id="container" version="1.0">
+                        <component id="voyage" type="voyage-ai-embedder">
+                            <api-key-secret-ref>key</api-key-secret-ref>
+                            <model>voyage-3</model>
+                            <dimensions>1024</dimensions>
+                        </component>
+                    </container>
+                </services>
+                """;
+        var modelAuto = buildModelFromXml(xmlAuto);
+        var configAuto = getVoyageAIEmbedderConfig(modelAuto.getContainerClusters().get("container"), "voyage");
+        assertEquals(VoyageAiEmbedderConfig.Quantization.Enum.AUTO, configAuto.quantization());
+
+        // Test explicit quantization values
+        String[] quantizations = {"float", "int8", "binary"};
+        VoyageAiEmbedderConfig.Quantization.Enum[] expectedEnums = {
+            VoyageAiEmbedderConfig.Quantization.Enum.FLOAT,
+            VoyageAiEmbedderConfig.Quantization.Enum.INT8,
+            VoyageAiEmbedderConfig.Quantization.Enum.BINARY
+        };
+
+        for (int i = 0; i < quantizations.length; i++) {
+            String xml = """
+                    <?xml version="1.0" encoding="utf-8" ?>
+                    <services version="1.0">
+                        <container id="container" version="1.0">
+                            <component id="voyage" type="voyage-ai-embedder">
+                                <api-key-secret-ref>key</api-key-secret-ref>
+                                <model>voyage-3</model>
+                                <dimensions>1024</dimensions>
+                                <quantization>%s</quantization>
+                            </component>
+                        </container>
+                    </services>
+                    """.formatted(quantizations[i]);
+
+            var model = buildModelFromXml(xml);
+            var config = getVoyageAIEmbedderConfig(model.getContainerClusters().get("container"), "voyage");
+            assertEquals(expectedEnums[i], config.quantization());
+        }
     }
 
     @Test

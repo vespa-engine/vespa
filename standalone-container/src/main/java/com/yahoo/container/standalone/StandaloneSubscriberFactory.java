@@ -80,6 +80,11 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
         public long generation() {
             return generation;
         }
+
+        @Override
+        public boolean applyOnRestart() {
+            return false;
+        }
     }
 
     @Override

@@ -38,6 +38,7 @@ public class ContainerTestBase {
     protected Container newContainer(DirConfigSource dirConfigSource,
                                             ComponentDeconstructor deconstructor) {
         return new Container(new CloudSubscriberFactory(dirConfigSource.configSource()),
+                             new com.yahoo.container.Container(),
                              dirConfigSource.configId(),
                              deconstructor,
                              osgi);

@@ -11,6 +11,7 @@ import com.yahoo.jdisc.application.GuiceRepository;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.server.jetty.testutils.ConnectorFactoryRegistryModule;
 import com.yahoo.jdisc.test.ServerProviderConformanceTest;
+import com.yahoo.metrics.simple.MetricReceiver;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.methods.HttpGet;
@@ -776,6 +777,7 @@ public class HttpServerConformanceIT extends ServerProviderConformanceTest {
                             bind(ServerConfig.class).toInstance(new ServerConfig(new ServerConfig.Builder()));
                             bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
                             bind(RequestLog.class).toInstance(new VoidRequestLog());
+                            bind(MetricReceiver.class).toInstance(MetricReceiver.nullImplementation);
                         }
                     },
                     new ConnectorFactoryRegistryModule());

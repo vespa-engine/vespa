@@ -5,27 +5,38 @@
 namespace proton {
 
 ResourceUsageState::ResourceUsageState()
-    : ResourceUsageState(ResourceUsageWithLimit(), ResourceUsageWithLimit(), 0.0, 0.0)
+    : ResourceUsageState(ResourceUsageWithLimit(), ResourceUsageWithLimit(), 0.0, 0.0, 0.0,
+                         ResourceUsageWithLimit(), AttributeUsageStats())
 {
 }
 
 ResourceUsageState::ResourceUsageState(const ResourceUsageWithLimit &diskState_,
-                                       const ResourceUsageWithLimit &memoryState_,
-                                       double transient_disk_usage_,
-                                       double transient_memory_usage_)
-    : ResourceUsageState(diskState_, memoryState_, transient_disk_usage_, transient_memory_usage_,
+                                       const ResourceUsageWithLimit &memoryState_)
+    : ResourceUsageState(diskState_, memoryState_, 0.0, 0.0, 0.0,
                          ResourceUsageWithLimit(), AttributeUsageStats())
 {
 }
 
 ResourceUsageState::ResourceUsageState(const ResourceUsageWithLimit &diskState_,
                                        const ResourceUsageWithLimit &memoryState_,
+                                       double reserved_disk_space_,
+                                       double transient_disk_usage_,
+                                       double transient_memory_usage_)
+    : ResourceUsageState(diskState_, memoryState_, reserved_disk_space_, transient_disk_usage_, transient_memory_usage_,
+                         ResourceUsageWithLimit(), AttributeUsageStats())
+{
+}
+
+ResourceUsageState::ResourceUsageState(const ResourceUsageWithLimit &diskState_,
+                                       const ResourceUsageWithLimit &memoryState_,
+                                       double reserved_disk_space_,
                                        double transient_disk_usage_,
                                        double transient_memory_usage_,
                                        const ResourceUsageWithLimit& max_attribute_address_space_state,
                                        const AttributeUsageStats& attribute_usage)
     : _diskState(diskState_),
       _memoryState(memoryState_),
+      _reserved_disk_space(reserved_disk_space_),
       _transient_disk_usage(transient_disk_usage_),
       _transient_memory_usage(transient_memory_usage_),
       _max_attribute_address_space_state(max_attribute_address_space_state),
