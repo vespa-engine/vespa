@@ -33,11 +33,26 @@ ResourceUsageMetrics::DetailedResourceMetrics::DetailedResourceMetrics(const std
 
 ResourceUsageMetrics::DetailedResourceMetrics::~DetailedResourceMetrics() = default;
 
+ResourceUsageMetrics::DetailedDiskResourceMetrics::DetailedDiskResourceMetrics(metrics::MetricSet* parent)
+    : DetailedResourceMetrics("disk", parent),
+      reserved("reserved", {},
+               "The relative amount of reserved disk space on this content node (value in the range [0, 1])",
+               this),
+      used_and_reserved("used_and_reserved", {},
+                        "The relative amount of disk used and reserved disk space on this content node"
+                        " (transient usage not included, value in the range [0, 1])",
+                        this)
+{
+
+}
+
+ResourceUsageMetrics::DetailedDiskResourceMetrics::~DetailedDiskResourceMetrics() = default;
+
 ResourceUsageMetrics::ResourceUsageMetrics(metrics::MetricSet *parent)
     : MetricSet("resource_usage", {}, "Usage metrics for various resources in this content node", parent),
       disk("disk", {}, "The relative amount of disk used by this content node (transient usage not included, value in the range [0, 1]). Same value as reported to the cluster controller", this),
       memory("memory", {}, "The relative amount of memory used by this content node (transient usage not included, value in the range [0, 1]). Same value as reported to the cluster controller", this),
-      disk_usage("disk", this),
+      disk_usage(this),
       memory_usage("memory", this),
       openFileDescriptors("open_file_descriptors", {}, "The number of open files", this),
       feedingBlocked("feeding_blocked", {}, "Whether feeding is blocked due to resource limits being reached (value is either 0 or 1)", this),

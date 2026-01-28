@@ -907,6 +907,8 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.disk_usage.total.set(dm_metrics.total_disk_usage());
         metrics.resourceUsage.disk_usage.total_util.set(dm_metrics.total_disk_utilization());
         metrics.resourceUsage.disk_usage.transient.set(dm_metrics.transient_disk_usage());
+        metrics.resourceUsage.disk_usage.reserved.set(dm_metrics.reserved_disk_space());
+        metrics.resourceUsage.disk_usage.used_and_reserved.set(dm_metrics.non_transient_disk_usage_and_reserved_disk_space());
 
         metrics.resourceUsage.memory.set(dm_metrics.non_transient_memory_usage());
         metrics.resourceUsage.memory_usage.total.set(dm_metrics.total_memory_usage());
