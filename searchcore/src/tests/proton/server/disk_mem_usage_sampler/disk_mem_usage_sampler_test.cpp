@@ -10,6 +10,7 @@
 #include <thread>
 
 #include <vespa/log/log.h>
+#include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
 LOG_SETUP("disk_mem_usage_sampler_test");
 
 using namespace proton;
@@ -40,18 +41,32 @@ public:
     TransientResourceUsage get_transient_resource_usage() const override { return {_disk_usage, _memory_usage}; }
 };
 
+class MyReservedDiskSpaceProvider : public IReservedDiskSpaceProvider {
+public:
+    MyReservedDiskSpaceProvider() noexcept
+        : IReservedDiskSpaceProvider()
+    {
+    }
+    ~MyReservedDiskSpaceProvider() override;
+    uint64_t get_reserved_disk_space() const override { return 42; }
+};
+
+MyReservedDiskSpaceProvider::~MyReservedDiskSpaceProvider() = default;
+
 struct DiskMemUsageSamplerTest : public ::testing::Test {
     Transport transport;
     ScheduledExecutor executor;
     std::unique_ptr<ResourceUsageWriteFilter> write_filter;
     std::shared_ptr<ResourceUsageNotifier> notifier;
+    std::unique_ptr<IReservedDiskSpaceProvider> reserved_disk_space_provider;
     std::unique_ptr<DiskMemUsageSampler> sampler;
     DiskMemUsageSamplerTest()
         : transport(),
           executor(transport.transport()),
           write_filter(std::make_unique<ResourceUsageWriteFilter>(make_hw_info())),
           notifier(std::make_shared<ResourceUsageNotifier>(*write_filter)),
-          sampler(std::make_unique<DiskMemUsageSampler>(".", *write_filter, *notifier))
+          reserved_disk_space_provider(std::make_unique<MyReservedDiskSpaceProvider>()),
+          sampler(std::make_unique<DiskMemUsageSampler>(".", *write_filter, *notifier, *reserved_disk_space_provider))
     {
         sampler->setConfig(DiskMemUsageSampler::Config(0.8, 0.8, AttributeUsageFilterConfig(),
                                                        50ms, make_hw_info()), executor);
@@ -89,6 +104,7 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
     EXPECT_EQ(150.0 / memory_size_bytes, notifier->usageState().transient_memory_usage());
     EXPECT_EQ(350, notifier->get_transient_resource_usage().disk());
     EXPECT_EQ(350.0 / disk_size_bytes, notifier->usageState().transient_disk_usage());
+    EXPECT_EQ(42.0 / disk_size_bytes, notifier->usageState().reserved_disk_space());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

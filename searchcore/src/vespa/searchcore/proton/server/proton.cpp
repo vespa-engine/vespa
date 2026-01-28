@@ -285,7 +285,6 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _fileHeaderContext(progName),
       _attribute_interlock(std::make_shared<search::attribute::Interlock>()),
       _tls(),
-      _diskMemUsageSampler(),
       _persistenceEngine(),
       _attribute_usage_notifier(),
       _documentDBMap(),
@@ -293,6 +292,7 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _summaryEngine(),
       _memoryFlushConfigUpdater(),
       _flushEngine(),
+      _diskMemUsageSampler(),
       _prepareRestartHandler(),
       _rpcHooks(),
       _healthAdapter(*this),
@@ -359,7 +359,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     setFS4Compression(protonConfig);
     _write_filter = std::make_shared<ResourceUsageWriteFilter>(hwInfo);
     _resource_usage_notifier = std::make_shared<ResourceUsageNotifier>(*_write_filter);
-    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, *_write_filter, *_resource_usage_notifier);
     _posting_list_cache = make_posting_list_cache(protonConfig);
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
@@ -399,6 +398,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                  strategy, flush.maxconcurrent, vespalib::from_s(flush.idleinterval),
                                                  protonConfig.summary.log.maxfilesize);
     _metricsEngine->addExternalMetrics(_summaryEngine->getMetrics());
+    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, *_write_filter,
+                                                                 *_resource_usage_notifier, *_flushEngine);
 
     LOG(debug, "Start proton server with root at %s and cwd at %s",
         protonConfig.basedir.c_str(), std::filesystem::current_path().string().c_str());

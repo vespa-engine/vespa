@@ -990,7 +990,7 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 10 + 100 + 1000 + 10000
      */
-    EXPECT_EQ(33310, f.engine.calculate_reserved_disk());
+    EXPECT_EQ(33310, f.engine.get_reserved_disk_space());
     f.engine.start();
 
     EXPECT_TRUE(target1->_initDone.await(LONG_TIMEOUT));
@@ -1003,7 +1003,7 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 10 + 100 + 1000 + 10000
      */
-    EXPECT_EQ(33310, f.engine.calculate_reserved_disk());
+    EXPECT_EQ(33310, f.engine.get_reserved_disk_space());
     target1->_proceed.countDown();
     EXPECT_TRUE(target1->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target3"});
@@ -1012,7 +1012,7 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 100 + 1000 + 10000
      */
-    EXPECT_EQ(33300, f.engine.calculate_reserved_disk());
+    EXPECT_EQ(33300, f.engine.get_reserved_disk_space());
     target3->_proceed.countDown();
     EXPECT_TRUE(target3->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target4"});
@@ -1021,7 +1021,7 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 100 + 10000
      */
-    EXPECT_EQ(32300, f.engine.calculate_reserved_disk());
+    EXPECT_EQ(32300, f.engine.get_reserved_disk_space());
     target2->_proceed.countDown();
     EXPECT_TRUE(target2->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target4"});
@@ -1030,7 +1030,7 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 10000
      */
-    EXPECT_EQ(32200, f.engine.calculate_reserved_disk());
+    EXPECT_EQ(32200, f.engine.get_reserved_disk_space());
     target4->_proceed.countDown();
     EXPECT_TRUE(target4->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {});
@@ -1039,7 +1039,7 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 0
      */
-    EXPECT_EQ(22200, f.engine.calculate_reserved_disk());
+    EXPECT_EQ(22200, f.engine.get_reserved_disk_space());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

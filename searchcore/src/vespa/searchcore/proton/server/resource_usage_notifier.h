@@ -59,6 +59,7 @@ private:
     // Following member variables are protected by _lock
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
+    uint64_t                     _reserved_disk_space;
     TransientResourceUsage       _transient_usage;
     AttributeUsageStats          _attribute_usage;
     Config                       _config;
@@ -70,6 +71,7 @@ private:
     void recalcState(const Guard &guard, bool disk_mem_sample); // called with _lock held
     double getMemoryUsedRatio(const Guard &guard) const;
     double getDiskUsedRatio(const Guard &guard) const;
+    double get_relative_reserved_disk_space(const Guard& guard) const;
     double get_relative_transient_memory_usage(const Guard& guard) const;
     double get_relative_transient_disk_usage(const Guard& guard) const;
     void notify_resource_usage(const Guard &guard, ResourceUsageState state, bool disk_mem_sample);
@@ -77,7 +79,9 @@ private:
 public:
     ResourceUsageNotifier(ResourceUsageWriteFilter& filter);
     ~ResourceUsageNotifier() override;
-    void set_resource_usage(const TransientResourceUsage& transient_usage, vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes);
+
+    void set_resource_usage(const TransientResourceUsage &transient_usage, vespalib::ProcessMemoryStats memoryStats,
+                            uint64_t diskUsedSizeBytes, uint64_t reserved_disk_space);
     [[nodiscard]] bool setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
