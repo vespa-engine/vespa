@@ -412,14 +412,6 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
     );
 
-    public static final UnboundBooleanFlag ADJUST_JVM_HEAP_FOR_CC_BASED_ON_CONTENT_NODE_COUNT = defineFeatureFlag(
-            "adjust-jvm-heap-for-cc-based-on-content-node-count", true,
-            List.of("hmusum"), "2025-11-04", "2026-02-04",
-            "Whether to increase max JVM heap size based on total number of content nodes in application",
-            "Takes effect at next restart after next deployment",
-            APPLICATION, INSTANCE_ID
-    );
-
     public static final UnboundDoubleFlag HOST_MEMORY_SERVICES_MIXING_FACTOR = defineDoubleFlag(
             "host-memory-services-mixing-factor", 0.0,
             List.of("boeker"), "2026-01-16", "2026-04-16",
