@@ -8,6 +8,7 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.security.tls.Capability;
+import com.yahoo.text.Text;
 import net.jpountz.xxhash.StreamingXXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 import java.io.File;
@@ -271,7 +272,7 @@ public class FileReceiver {
                 retval = 1;
             }
             double completeness = (double) session.currentFileSize / (double) session.fileSize;
-            log.log(Level.FINEST, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
+            log.log(Level.FINEST, () -> Text.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
             downloads.setDownloadStatus(reference, completeness);
         }
         req.returnValues().add(new Int32Value(retval));

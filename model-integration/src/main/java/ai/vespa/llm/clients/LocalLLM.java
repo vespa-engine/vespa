@@ -10,6 +10,7 @@ import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.text.Text;
 import de.kherud.llama.LlamaModel;
 import de.kherud.llama.ModelParameters;
 import de.kherud.llama.Pair;
@@ -73,7 +74,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         long startLoad = System.nanoTime();
         model = new LlamaModel(modelParams);
         long loadTime = System.nanoTime() - startLoad;
-        logger.fine(() -> String.format("Loaded model %s in %.2f sec", modelFile, (loadTime*1.0/1000000000)));
+        logger.fine(() -> Text.format("Loaded model %s in %.2f sec", modelFile, (loadTime*1.0/1000000000)));
 
         // Executor for continuously batching requests that are fed to LLM to maximizing compute utilization.
         executor = new ThreadPoolExecutor(
@@ -94,7 +95,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         maxTokens = config.maxTokens();
         maxPromptTokens = config.maxPromptTokens();
         contextSizePerRequest = config.contextSize() / config.parallelRequests();
-        logger.fine(() -> String.format("Context size per request: %d", contextSizePerRequest));
+        logger.fine(() -> Text.format("Context size per request: %d", contextSizePerRequest));
         contextOverflowPolicy = config.contextOverflowPolicy();
     }
 
@@ -187,14 +188,14 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
 
         var numPromptTokens = promptTokens.length;
         var numRequestTokens = numPromptTokens + maxTokens;
-        logger.fine(() -> String.format("Prompt tokens: %d, max tokens: %d, request tokens: %d",
+        logger.fine(() -> Text.format("Prompt tokens: %d, max tokens: %d, request tokens: %d",
                 numPromptTokens, maxTokens, numRequestTokens));
 
         // Do something when context size is too small for this request
         if (numRequestTokens > contextSizePerRequest) {
             switch (contextOverflowPolicy) {
                 case FAIL:
-                    var errorMessage = String.format(
+                    var errorMessage = Text.format(
                             "Context size per request (%d tokens) is too small " +
                                     "to fit the prompt (%d) and completion (%d) tokens.",
                             contextSizePerRequest, promptTokens.length, maxTokens);
@@ -264,6 +265,6 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     private String rejectedExecutionErrorMessage(String prefix) {
         int activeCount = executor.getActiveCount();
         int queueSize = executor.getQueue().size();
-        return String.format("%s, %d active, %d in queue", prefix, activeCount, queueSize);
+        return Text.format("%s, %d active, %d in queue", prefix, activeCount, queueSize);
     }
 }

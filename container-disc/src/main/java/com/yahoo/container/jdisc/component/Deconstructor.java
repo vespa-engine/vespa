@@ -7,6 +7,7 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
+import com.yahoo.text.Text;
 import com.yahoo.yolean.UncheckedInterruptedException;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
@@ -115,7 +116,7 @@ public class Deconstructor implements ComponentDeconstructor {
         @Override
         public void run() {
             long start = System.currentTimeMillis();
-            log.info(String.format("Starting deconstruction of %d components and %d bundles from generation %d",
+            log.info(Text.format("Starting deconstruction of %d components and %d bundles from generation %d",
                     components.size(), bundles.size(), generation));
             for (var component : components) {
                 log.log(FINE, () -> "Starting deconstruction of " + component);
@@ -147,7 +148,7 @@ public class Deconstructor implements ComponentDeconstructor {
                     log.log(SEVERE, "Could not uninstall bundle " + bundle);
                 }
             }
-            log.info(String.format("Completed deconstruction in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
+            log.info(Text.format("Completed deconstruction in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
             // NOTE: It could be tempting to refresh packages here, but if active bundles were using any of
             //       the removed ones, they would switch wiring in the middle of a generation's lifespan.
             //       This would happen if the dependent active bundle has not been rebuilt with a new version

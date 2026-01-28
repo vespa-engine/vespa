@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -505,11 +506,11 @@ public class Utf8TestCase {
 
         Map.of("ascii", ascii, "unicode", unicode).forEach((type, b) -> {
             long time1 = benchmark(() -> decode(Utf8::toString, b, iterations));
-            System.out.printf("Utf8::toString of %s string took %d ms\n", type, time1);
+            System.out.printf(Locale.US, "Utf8::toString of %s string took %d ms\n", type, time1);
             long time2 = benchmark(() -> decode((b1) -> new String(b1, StandardCharsets.UTF_8), b, iterations));
-            System.out.printf("String::new of %s string took %d ms\n", type, time2);
+            System.out.printf(Locale.US, "String::new of %s string took %d ms\n", type, time2);
             double change = ((double) time2 / (double) time1) - 1;
-            System.out.printf("Change = %.02f%%\n", change * 100);
+            System.out.printf(Locale.US, "Change = %.02f%%\n", change * 100);
         });
     }
 
@@ -522,11 +523,11 @@ public class Utf8TestCase {
 
         Map.of("ascii", ascii, "unicode", unicode).forEach((type, s) -> {
             long time1 = benchmark(() -> encode(Utf8::toBytes, s, iterations));
-            System.out.printf("Utf8::toBytes of %s string took %d ms\n", type, time1);
+            System.out.printf(Locale.US, "Utf8::toBytes of %s string took %d ms\n", type, time1);
             long time2 = benchmark(() -> encode((s1) -> s1.getBytes(StandardCharsets.UTF_8), s, iterations));
-            System.out.printf("String::getBytes of %s string took %d ms\n", type, time2);
+            System.out.printf(Locale.US, "String::getBytes of %s string took %d ms\n", type, time2);
             double change = ((double) time2 / (double) time1) - 1;
-            System.out.printf("Change = %.02f%%\n", change * 100);
+            System.out.printf(Locale.US, "Change = %.02f%%\n", change * 100);
         });
     }
 

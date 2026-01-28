@@ -339,7 +339,9 @@ public class Index {
 
     public String getLinguisticsProfile() { return linguisticsProfile; }
 
-    public void setLinguisticsProfile(String profile) { this.linguisticsProfile = profile; }
+    public void setLinguisticsProfile(String profile) {
+        this.linguisticsProfile = profile;
+    }
 
     /** Returns all the literal command strings given as arguments to addCommand in this instance */
     public List<String> allCommands() { return allCommands; }

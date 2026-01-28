@@ -8,6 +8,7 @@ import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.text.Text;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -504,7 +505,7 @@ public class VoyageAIEmbedderTest {
             embedding.append(valueGenerator.apply(i));
         }
         embedding.append("]");
-        return """
+        return  """
                 {
                   "object": "list",
                   "data": [{"object": "embedding", "embedding": %s, "index": 0}],
@@ -515,7 +516,7 @@ public class VoyageAIEmbedderTest {
     }
 
     private static String createSuccessResponse(int dimensions) { return createFloatSuccessResponse(dimensions); }
-    private static String createFloatSuccessResponse(int dimensions) { return createSuccessResponse(dimensions, i -> "%.6f".formatted(Math.sin(i * 0.1))); }
+    private static String createFloatSuccessResponse(int dimensions) { return createSuccessResponse(dimensions, i -> Text.format("%.6f", Math.sin(i * 0.1))); }
     private static String createInt8SuccessResponse(int dimensions) { return createSuccessResponse(dimensions, i -> String.valueOf(i % 128)); }
     private static String createBinarySuccessResponse(int dimensions) { return createInt8SuccessResponse(dimensions); }
 }

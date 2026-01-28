@@ -14,6 +14,7 @@ import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.MetricSettings;
+import com.yahoo.text.Text;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -161,7 +162,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         pool.setMaxThreads(maxThreads);
         int minThreads = config.minWorkerThreads() >= 0 ? config.minWorkerThreads() : 16 + cpus;
         pool.setMinThreads(minThreads);
-        log.info(String.format("Threadpool size: min=%d, max=%d", minThreads, maxThreads));
+        log.info(Text.format("Threadpool size: min=%d, max=%d", minThreads, maxThreads));
     }
 
     private static JMXServiceURL createJmxLoopbackOnlyServiceUrl(int port) {
@@ -200,7 +201,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
                 var sslContextFactory = sslConnectionFactory.getSslContextFactory();
                 String protocols = Arrays.toString(sslContextFactory.getSelectedProtocols());
                 String cipherSuites = Arrays.toString(sslContextFactory.getSelectedCipherSuites());
-                log.info(String.format("TLS for port '%d': %s with %s", localPort, protocols, cipherSuites));
+                log.info(Text.format("TLS for port '%d': %s with %s", localPort, protocols, cipherSuites));
             }
         }
     }
@@ -208,11 +209,11 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
     @Override
     public void close() {
         try {
-            log.log(Level.INFO, String.format("Shutting down Jetty server (graceful=%b, timeout=%.1fs)",
+            log.log(Level.INFO, Text.format("Shutting down Jetty server (graceful=%b, timeout=%.1fs)",
                     isGracefulShutdownEnabled(), server.getStopTimeout()/1000d));
             long start = System.currentTimeMillis();
             server.stop();
-            log.log(Level.INFO, String.format("Jetty server shutdown completed in %.3f seconds",
+            log.log(Level.INFO, Text.format("Jetty server shutdown completed in %.3f seconds",
                     (System.currentTimeMillis()-start)/1000D));
         } catch (final Exception e) {
             log.log(Level.SEVERE, "Jetty server shutdown threw an unexpected exception.", e);
