@@ -3,22 +3,17 @@ package ai.vespa.mcp;
 
 import ai.vespa.mcp.api.McpSpecProvider;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest.Method;
-import org.junit.jupiter.api.BeforeEach;
+import com.yahoo.restapi.RestApiTestDriver;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
-import static com.yahoo.container.jdisc.HttpRequest.createTestRequest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -26,88 +21,77 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * @author Edvard Dingsør
  */
-public class McpRequestHandlerTest {
+class McpRequestHandlerTest {
 
-    private McpRequestHandler handler;
-    private Executor executor;
-    private Metric mockMetric;
-
-    @BeforeEach
-    public void setUp() {
-        mockMetric = Mockito.mock(Metric.class);
-        executor = Executors.newSingleThreadExecutor();
+    private RestApiTestDriver createTestDriver() {
         var registry = new ComponentRegistry<McpSpecProvider>();
-        handler = new McpRequestHandler(executor, mockMetric, registry);
+        return RestApiTestDriver.newBuilder(context -> new McpRequestHandler(context, registry)).build();
     }
 
     @Test
-    public void testInvalidPathReturns404() {
-        var request = createTestRequest(
-                "http://localhost:8080/invalid/path",
-                Method.POST,
-                new ByteArrayInputStream(new byte[0])
-        );
-        var response = handler.handle(request, null);
+    void testInvalidPathReturns404() {
+        var testDriver = createTestDriver();
+        var request = HttpRequestBuilder.create(Method.POST, "/invalid/path").build();
+        var response = testDriver.executeRequest(request);
         assertEquals(404, response.getStatus());
     }
 
     @Test
-    public void testUnsupportedMethodReturns405() {
-        var request = createTestRequest("http://localhost:8080/mcp/", Method.PUT);
-        var response = handler.handle(request);
+    void testUnsupportedMethodReturns405() {
+        var testDriver = createTestDriver();
+        var request = HttpRequestBuilder.create(Method.PUT, "/mcp/").build();
+        var response = testDriver.executeRequest(request);
         assertEquals(405, response.getStatus());
     }
 
     @Test
-    public void testGetRoutesToTransport() {
-        var request = createTestRequest(
-                "http://localhost:8080/mcp/",
-                Method.GET,
-                new ByteArrayInputStream(new byte[0])
-        );
-        var response = handler.handle(request, null);
+    void testGetReturns405() {
+        var testDriver = createTestDriver();
+        var request = HttpRequestBuilder.create(Method.GET, "/mcp/").build();
+        var response = testDriver.executeRequest(request);
         assertEquals(405, response.getStatus());
     }
 
     @Test
-    public void testDeleteRoutesToTransport() {
-        var request = createTestRequest(
-                "http://localhost:8080/mcp/",
-                Method.DELETE,
-                new ByteArrayInputStream(new byte[0])
-        );
-        var response = handler.handle(request, null);
+    void testDeleteReturns405() {
+        var testDriver = createTestDriver();
+        var request = HttpRequestBuilder.create(Method.DELETE, "/mcp/").build();
+        var response = testDriver.executeRequest(request);
         assertEquals(405, response.getStatus());
     }
 
     @Test
-    public void testPostReturnsValidJsonRpcResponse() throws IOException {
+    void testPostReturnsValidJsonRpcResponse() throws IOException {
+        var testDriver = createTestDriver();
         var requestBody = "{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"params\":{},\"id\":1}";
-        var request = createTestRequest(
-                "http://localhost:8080/mcp/",
-                Method.POST,
-                new ByteArrayInputStream(requestBody.getBytes(StandardCharsets.UTF_8))
-        );
-        request.getJDiscRequest().headers().add("Accept", "application/json");
+        var request = HttpRequestBuilder.create(Method.POST, "/mcp/")
+                .withRequestContent(new ByteArrayInputStream(requestBody.getBytes(StandardCharsets.UTF_8)))
+                .withHeader("Accept", "application/json")
+                .build();
 
-        var response = handler.handle(request, null);
+        var response = testDriver.executeRequest(request);
         assertEquals(200, response.getStatus());
 
-        var out = new ByteArrayOutputStream();
-        response.render(out);
-        var body = out.toString(StandardCharsets.UTF_8);
+        var body = renderResponse(response);
         assertEquals("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tools\":[]}}", body);
     }
 
     @Test
-    public void testPostWithInvalidJsonReturns400() throws IOException {
+    void testPostWithInvalidJsonReturns400() {
+        var testDriver = createTestDriver();
         var requestBody = "not valid json";
-        var request = createTestRequest(
-                "http://localhost:8080/mcp/",
-                Method.POST,
-                new ByteArrayInputStream(requestBody.getBytes(StandardCharsets.UTF_8))
-        );
-        var response = handler.handle(request, null);
+        var request = HttpRequestBuilder.create(Method.POST, "/mcp/")
+                .withRequestContent(new ByteArrayInputStream(requestBody.getBytes(StandardCharsets.UTF_8)))
+                .withHeader("Accept", "application/json")
+                .build();
+
+        var response = testDriver.executeRequest(request);
         assertEquals(400, response.getStatus());
+    }
+
+    private static String renderResponse(HttpResponse response) throws IOException {
+        var out = new ByteArrayOutputStream();
+        response.render(out);
+        return out.toString(StandardCharsets.UTF_8);
     }
 }
