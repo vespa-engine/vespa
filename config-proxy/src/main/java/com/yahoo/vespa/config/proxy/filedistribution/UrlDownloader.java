@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy.filedistribution;
 
+import com.yahoo.text.Text;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -67,7 +68,7 @@ class UrlDownloader {
                 Files.move(tempFile, target);
                 new RequestTracker().trackRequest(downloadDir);
                 log.log(Level.FINE, () -> "URL '" + uri + "' available at " + target);
-                log.log(Level.INFO, String.format("Download of URL '%s' done in %.3f seconds",
+                log.log(Level.INFO, Text.format("Download of URL '%s' done in %.3f seconds",
                                                   uri, (System.currentTimeMillis() - start) / 1000.0));
                 return Optional.of(target.toFile());
             } else {

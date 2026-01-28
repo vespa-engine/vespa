@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
@@ -270,7 +271,7 @@ public class ResourcesReductionValidatorTest {
     private static String containerServices(int nodes, NodeResources resources) {
         String resourcesStr = resources == null ?
                 "" :
-                String.format("        <resources vcpu='%.0f' memory='%.0fG' disk='%.0fG'/>",
+                Text.format("        <resources vcpu='%.0f' memory='%.0fG' disk='%.0fG'/>",
                         resources.vcpu(), resources.memoryGiB(), resources.diskGb());
         return "<services version='1.0'>" +
                 "  <container id='default' version='1.0'>" +
@@ -284,7 +285,7 @@ public class ResourcesReductionValidatorTest {
     private static String contentServices(int nodes, NodeResources resources) {
         String resourcesStr = resources == null ?
                               "" :
-                              String.format("        <resources vcpu='%.0f' memory='%.0fG' disk='%.0fG'/>",
+                              Text.format("        <resources vcpu='%.0f' memory='%.0fG' disk='%.0fG'/>",
                                             resources.vcpu(), resources.memoryGiB(), resources.diskGb());
         return "<services version='1.0'>" +
                "  <content id='default' version='1.0'>" +
