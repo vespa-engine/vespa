@@ -38,6 +38,12 @@ func (n annNode) makeRows(tab *table) {
 	} else if hit_ratio := n.root.Field("lazy_filter").Field("hit_ratio"); hit_ratio.Valid() {
 		tab.str("lazy filter").str(fmt.Sprintf("%.3f hit ratio", hit_ratio.AsDouble())).commit()
 	}
+	if nodes_visited := n.root.Field("nodes_visited"); nodes_visited.Valid() {
+		tab.str("visited nodes").str(fmt.Sprintf("%d", nodes_visited.AsLong())).commit()
+	}
+	if distances_computed := n.root.Field("distances_computed"); distances_computed.Valid() {
+		tab.str("computed distances").str(fmt.Sprintf("%d", distances_computed.AsLong())).commit()
+	}
 	if top_k_hits := n.root.Field("top_k_hits"); top_k_hits.Valid() {
 		tab.str("found hits").str(fmt.Sprintf("%d", top_k_hits.AsLong())).commit()
 	}
