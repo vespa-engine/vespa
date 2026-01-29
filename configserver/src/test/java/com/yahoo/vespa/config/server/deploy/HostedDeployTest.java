@@ -14,6 +14,7 @@ import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.HostedConfigModelRegistry;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
@@ -610,6 +611,27 @@ public class HostedDeployTest {
         assertTrue(deployment.isPresent());
         deployment.get().activate();
         assertEquals(cloudAccount, ((Deployment) deployment.get()).session().getCloudAccount().get());
+    }
+
+    @Test
+    public void testHostsXmlIsIgnoredInHostedVespa() {
+        // Application package contains a hosts.xml file with duplicate hostnames.
+        // In hosted Vespa, hosts.xml should be ignored since the node repository manages hosts.
+        // The hosts.xml file is only valid for self-hosted Vespa deployments.
+        // This test verifies that deployment succeeds even when hosts.xml is present and contains
+        // invalid content that would fail if parsed (duplicate hostnames).
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(Zone.defaultZone())
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
+                .build();
+
+        // This should succeed - hosts.xml should be ignored in hosted Vespa
+        tester.deployApp("src/test/apps/hosted-with-duplicated-hosts-in-hosts-xml/", "4.5.6");
+
+        // Verify the deployment was successful by checking that we can get allocated hosts
+        // (which are provisioned by the node repository, not from hosts.xml)
+        AllocatedHosts allocatedHosts = tester.getAllocatedHostsOf(tester.applicationId());
+        assertFalse("Should have allocated hosts from node repository", allocatedHosts.getHosts().isEmpty());
     }
 
     /** Create the given number of hosts using the supplied versions--the last version is repeated as needed. */
