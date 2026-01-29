@@ -208,10 +208,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         };
     }
 
-    private void sampleMetrics(long startTimeNanos, Context context) {
-        runtime.sampleEmbeddingLatency((System.nanoTime() - startTimeNanos) / 1_000_000_000.0, context);
-    }
-
     private List<Tensor> invokeVoyageAI(List<String> texts, Context context, TensorType targetType) {
         long startTime = System.nanoTime();
         validateTensorType(targetType);
@@ -223,28 +219,33 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         var responseBody = context.computeCachedValueIfAbsent(cacheKey, () -> {
             var jsonRequest = createJsonRequest(texts, inputType, outputDataType);
             log.fine(() -> "VoyageAI request: " + jsonRequest);
-            return doRequest(jsonRequest, timeoutMs);
+            return doRequest(jsonRequest, timeoutMs, context);
         });
 
-        var tensors = toTensors(responseBody, targetType, outputDataType);
-        sampleMetrics(startTime, context);
+        var tensors = toTensors(responseBody, targetType, outputDataType, context);
+        var latency = Duration.ofNanos(System.nanoTime() - startTime);
+        runtime.sampleEmbeddingLatency(latency.toMillis(), context);
         return tensors;
     }
 
-    private List<Tensor> toTensors(String responseBody, TensorType targetType, String outputDtype) {
+    private List<Tensor> toTensors(String responseBody, TensorType targetType, String outputDtype, Context context) {
         try {
+            Response response;
             List<List<Number>> embeddings;
             if (isContextualModel()) {
-                var response = objectMapper.readValue(responseBody, ContextualResponse.class);
-                embeddings = response.data.get(0).data.stream()
-                        .map(EmbeddingData::embedding)
+                var contextualResponse = objectMapper.readValue(responseBody, ContextualResponse.class);
+                response = contextualResponse;
+                embeddings = contextualResponse.data.get(0).data.stream()
+                        .map(TextEmbeddingData::embedding)
                         .toList();
             } else {
-                var response = objectMapper.readValue(responseBody, VoyageAIResponse.class);
-                embeddings = response.data.stream()
-                        .map(EmbeddingData::embedding)
+                var voyageResponse = objectMapper.readValue(responseBody, TextResponse.class);
+                response = voyageResponse;
+                embeddings = voyageResponse.data.stream()
+                        .map(TextEmbeddingData::embedding)
                         .toList();
             }
+            runtime.sampleSequenceLength(response.usage().totalTokens(), context);
             String dimensionName = targetType.dimensions().get(0).name();
             return embeddings.stream()
                     .map(embedding -> switch (outputDtype) {
@@ -267,7 +268,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             request = ContextualRequest.of(
                     texts, config.model(), inputType, config.dimensions(), outputDataType);
         } else {
-            request = VoyageAIRequest.of(
+            request = TextRequest.of(
                     texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         }
         try {
@@ -277,7 +278,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         }
     }
 
-    private String doRequest(String jsonRequest, long timeoutMs) {
+    private String doRequest(String jsonRequest, long timeoutMs, Context context) {
         var httpRequest = new Request.Builder()
                 .url(resolvedEndpoint)
                 .header("Authorization", "Bearer " + apiKey.current())
@@ -285,6 +286,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 .post(RequestBody.create(jsonRequest, MediaType.get("application/json; charset=utf-8")))
                 .build();
 
+        runtime.sampleRequestCount(context);
         var call = httpClient.newCall(httpRequest);
         call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS);
 
@@ -294,20 +296,26 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             if (response.isSuccessful()) {
                 return responseBody;
             } else if (response.code() == 429) {
+                runtime.sampleRequestFailure(context, response.code());
                 throw new OverloadException("VoyageAI API rate limited (429)");
             } else if (response.code() == 401) {
+                runtime.sampleRequestFailure(context, response.code());
                 throw new RuntimeException("VoyageAI API authentication failed. Please check your API key: " + responseBody);
             } else if (response.code() == 400) {
+                runtime.sampleRequestFailure(context, response.code());
                 String errorMessage = parseErrorDetail(responseBody).orElse(responseBody);
                 throw new InvalidInputException("VoyageAI API bad request (400): " + errorMessage);
             } else {
+                runtime.sampleRequestFailure(context, response.code());
                 throw new RuntimeException("VoyageAI API request failed with status " + response.code() + ": " + responseBody);
             }
         } catch (InterruptedIOException e) {
             // Covers both OkHttp timeout (InterruptedIOException) and socket timeout (SocketTimeoutException extends InterruptedIOException)
+            runtime.sampleRequestFailure(context, 0);
             throw new TimeoutException(
                     "VoyageAI API call timed out after " + timeoutMs + "ms", e);
         } catch (IOException e) {
+            runtime.sampleRequestFailure(context, 0);
             throw new RuntimeException("VoyageAI API call failed: " + e.getMessage(), e);
         }
     }
@@ -409,10 +417,24 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         }
     }
 
-    // ===== Request/Response DTOs =====
+    // ===== Generic Request/Response DTOs =====
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record VoyageAIRequest(
+    private record Usage(@JsonProperty("total_tokens") int totalTokens) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static abstract class Response {
+        @JsonProperty("usage") private Usage usage;
+        Usage usage() { return usage; }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record ErrorResponse(@JsonProperty("detail") String detail) {}
+
+    // ===== Text Request/Response DTOs =====
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record TextRequest(
             @JsonProperty("input") List<String> input,
             @JsonProperty("model") String model,
             @JsonProperty("input_type") String inputType,
@@ -420,25 +442,21 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
             @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
 
-        static VoyageAIRequest of(String texts, String model, String inputType,
-                                  boolean truncation, Integer outputDimension, String outputDtype) {
-            return new VoyageAIRequest(List.of(texts), model, inputType, truncation, outputDimension, outputDtype);
+        static TextRequest of(String texts, String model, String inputType,
+                              boolean truncation, Integer outputDimension, String outputDtype) {
+            return new TextRequest(List.of(texts), model, inputType, truncation, outputDimension, outputDtype);
         }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record VoyageAIResponse(
-            @JsonProperty("data") List<EmbeddingData> data,
-            @JsonProperty("model") String model,
-            @JsonProperty("usage") Usage usage) {}
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record EmbeddingData(
+    private record TextEmbeddingData(
             @JsonProperty("embedding") List<Number> embedding,
             @JsonProperty("index") int index) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record Usage(@JsonProperty("total_tokens") int totalTokens) {}
+    private static class TextResponse extends Response {
+        @JsonProperty("data") List<TextEmbeddingData> data;
+    }
 
     // ===== Contextual Request/Response DTOs =====
 
@@ -458,10 +476,12 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record ContextualResponse(@JsonProperty("data") List<ContextualDocumentResult> data) {}
+    private static class ContextualResponse extends Response {
+        @JsonProperty("data") List<ContextualDocumentResult> data;
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record ContextualDocumentResult(@JsonProperty("data") List<EmbeddingData> data) {}
+    private record ContextualDocumentResult(@JsonProperty("data") List<TextEmbeddingData> data) {}
 
     // ===== Multimodal Request DTOs =====
 
@@ -482,23 +502,20 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record MultimodalInput(@JsonProperty("content") List<ContentItem> content) {
+    private record MultimodalInput(@JsonProperty("content") List<MultimodalContentItem> content) {
 
         static MultimodalInput of(String text) {
-            return new MultimodalInput(List.of(ContentItem.of(text)));
+            return new MultimodalInput(List.of(MultimodalContentItem.of(text)));
         }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record ContentItem(
+    private record MultimodalContentItem(
             @JsonProperty("type") String type,
             @JsonProperty("text") String text) {
 
-        static ContentItem of(String text) { return new ContentItem("text", text); }
+        static MultimodalContentItem of(String text) { return new MultimodalContentItem("text", text); }
     }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record ErrorResponse(@JsonProperty("detail") String detail) {}
 
     // ===== Cache Key =====
 

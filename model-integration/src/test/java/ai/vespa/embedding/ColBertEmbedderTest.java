@@ -323,8 +323,9 @@ public class ColBertEmbedderTest {
             embeddingsDone++;
         }
 
-        @Override
-        public void sampleSequenceLength(long length, Embedder.Context ctx) { }
+        @Override public void sampleSequenceLength(long length, Embedder.Context ctx) { }
+        @Override public void sampleRequestCount(Embedder.Context ctx) { }
+        @Override public void sampleRequestFailure(Embedder.Context ctx, int statusCode) { }
 
     }
 
