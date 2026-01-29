@@ -277,7 +277,8 @@ public class Group implements Comparable<Group> {
         public boolean equals(Object o) {
             if (o == this) return true;
             if ( ! (o instanceof Distribution other)) return false;
-            return (distributionSpec == other.distributionSpec && preCalculatedResults.length == other.preCalculatedResults.length);
+            return (Arrays.equals(distributionSpec, other.distributionSpec) &&
+                    preCalculatedResults.length == other.preCalculatedResults.length);
         }
 
         @Override

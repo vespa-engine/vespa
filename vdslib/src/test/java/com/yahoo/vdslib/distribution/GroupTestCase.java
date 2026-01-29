@@ -12,6 +12,7 @@ import java.util.StringTokenizer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -197,6 +198,22 @@ public class GroupTestCase {
         assertEquals("/mario/toad", toad.getUnixStylePath());
         assertEquals("/mario/yoshi", yoshi.getUnixStylePath());
         assertEquals("/luigi", luigi.getUnixStylePath());
+    }
+
+    @Test
+    public void group_distribution_equality_considers_spec_and_max_redundancy() throws Exception {
+        var a0 = new Group.Distribution("*", 1);
+        assertEquals(a0, a0); // Trivially so (casually ignore the linter self-equals warning)
+        var a1 = new Group.Distribution("*", 1);
+        assertEquals(a0, a1); // Same semantics, must be object reference invariant
+        assertEquals(a1, a0);
+        var b0 = new Group.Distribution("*", 2);
+        assertNotEquals(a0, b0);
+        var c0 = new Group.Distribution("*|*", 2);
+        var c1 = new Group.Distribution("*|*", 2);
+        assertEquals(c0, c1);
+        assertNotEquals(b0, c0);
+        assertNotEquals(a0, c0);
     }
 
 }
