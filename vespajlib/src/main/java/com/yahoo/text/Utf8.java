@@ -562,6 +562,14 @@ public final class Utf8 {
         }
     }
 
+    /**
+     * Create a FileReader for reading text files using UTF-8 encoding.
+     *
+     * @param file the file to be opened for reading
+     * @return a FileReader configured to use UTF-8 charset
+     * @throws FileNotFoundException if the file does not exist, is a directory
+     *         rather than a regular file, or cannot be opened for reading
+     */
     public static FileReader createReader(File file) throws FileNotFoundException {
         try {
             return new FileReader(file, UTF_8);
@@ -572,6 +580,14 @@ public final class Utf8 {
         }
     }
 
+    /**
+     * Create a FileReader for reading text files using UTF-8 encoding.
+     *
+     * @param file the name of the file to be opened for reading
+     * @return a FileReader configured to use UTF-8 charset
+     * @throws FileNotFoundException if the named file does not exist, is a directory
+     *         rather than a regular file, or cannot be opened for reading
+     */
     public static FileReader createReader(String file) throws FileNotFoundException {
         try {
             return new FileReader(file, UTF_8);
@@ -582,10 +598,28 @@ public final class Utf8 {
         }
     }
 
+    /**
+     * Create a FileWriter for writing text files using UTF-8 encoding.
+     *
+     * @param file the file to be opened for writing
+     * @return a FileWriter configured to use UTF-8 charset
+     * @throws IOException if the file exists but is a directory rather than
+     *         a regular file, does not exist but cannot be created, or cannot
+     *         be opened for any other reason
+     */
     public static FileWriter createWriter(File file) throws IOException {
         return new FileWriter(file, UTF_8);
     }
 
+    /**
+     * Create a FileWriter for writing text files using UTF-8 encoding.
+     *
+     * @param file the name of the file to be opened for writing
+     * @return a FileWriter configured to use UTF-8 charset
+     * @throws IOException if the named file exists but is a directory rather than
+     *         a regular file, does not exist but cannot be created, or cannot
+     *         be opened for any other reason
+     */
     public static FileWriter createWriter(String file) throws IOException {
         return new FileWriter(file, UTF_8);
     }
