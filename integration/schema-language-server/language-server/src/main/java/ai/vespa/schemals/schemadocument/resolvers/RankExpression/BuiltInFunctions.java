@@ -14,6 +14,7 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelA
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.EnumArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.ExpressionArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IdentifierArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.StringArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.SymbolArgument;
@@ -38,11 +39,19 @@ public class BuiltInFunctions {
     public static final Map<String, GenericFunction> rankExpressionBuiltInFunctions = new HashMap<>() {{
         // ==== Query features ====
         put("query", new GenericFunction("query", new FunctionSignature(new SymbolArgument(SymbolType.QUERY_INPUT, "value"))));
-        put("term", new GenericFunction("term", new IntegerArgument(), Set.of(
-            "", // empty is not actually allowed, but here for completion
-            "significance",
-            "weight",
-            "connectedness"
+        put("term", new GenericFunction("term", List.of(
+            new FunctionSignature(new IntegerArgument(), Set.of(
+                "", // empty is not actually allowed, but here for completion
+                "significance",
+                "weight",
+                "connectedness"
+            )),
+            new FunctionSignature(new IdentifierArgument(), Set.of(
+                "", // empty is not actually allowed, but here for completion
+                "significance",
+                "weight",
+                "connectedness"
+            ))
         )));
         put("queryTermCount", new GenericFunction("queryTermCount"));
         
