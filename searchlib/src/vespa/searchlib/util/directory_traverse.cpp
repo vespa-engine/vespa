@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "dirtraverse.h"
+#include "directory_traverse.h"
 #include "disk_space_calculator.h"
 #include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
@@ -22,10 +22,14 @@ try_get_tree_size(const std::string& base_dir)
         return 0;
     }
 
-    uint64_t total_size = 0;
+    uint64_t total_size = DiskSpaceCalculator::directory_placeholder_size();
     DiskSpaceCalculator calc;
     for (const auto &elem : dir_itr) {
-        if (fs::is_regular_file(elem.path()) && !fs::is_symlink(elem.path())) {
+        if (elem.is_symlink()) {
+            total_size += DiskSpaceCalculator::symlink_placeholder_size();
+        } else if (elem.is_directory()) {
+            total_size += DiskSpaceCalculator::directory_placeholder_size();
+        } else if (elem.is_regular_file()) {
             const auto size = elem.file_size(ec);
             if (!ec) {
                 total_size += calc(size);
@@ -36,6 +40,13 @@ try_get_tree_size(const std::string& base_dir)
 }
 
 }
+
+DirectoryTraverse::DirectoryTraverse(const std::string& base_dir)
+    : _base_dir(base_dir)
+{
+}
+
+DirectoryTraverse::~DirectoryTraverse() = default;
 
 uint64_t
 DirectoryTraverse::GetTreeSize()
@@ -53,11 +64,11 @@ DirectoryTraverse::GetTreeSize()
     return 0;
 }
 
-DirectoryTraverse::DirectoryTraverse(const std::string& base_dir)
-    : _base_dir(base_dir)
+uint64_t
+DirectoryTraverse::get_tree_size(const std::string& base_dir)
 {
+    DirectoryTraverse traverse(base_dir);
+    return traverse.GetTreeSize();
 }
-
-DirectoryTraverse::~DirectoryTraverse() = default;
 
 } // namespace search

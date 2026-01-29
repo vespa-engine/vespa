@@ -18,6 +18,7 @@ public:
     uint64_t GetTreeSize(); // Returns size of directory in bytes
     explicit DirectoryTraverse(const std::string& base_dir);
     ~DirectoryTraverse();
+    static uint64_t get_tree_size(const std::string& base_dir);
 };
 
 } // namespace search
