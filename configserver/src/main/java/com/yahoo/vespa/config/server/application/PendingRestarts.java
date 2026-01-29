@@ -1,7 +1,6 @@
 package com.yahoo.vespa.config.server.application;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -11,7 +10,13 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
 /**
- * @author jonmv
+ *
+ * Restarts for a set of hostnames. A pending restart is created for a specific config generation
+ * and a set of hostnames.
+ *
+ * @author Jon Marius Venstad
+ *
+ *
  */
 public class PendingRestarts {
 
@@ -46,12 +51,17 @@ public class PendingRestarts {
     }
 
     public Set<String> hostnames() {
-        return restartsReadyAt(Long.MAX_VALUE);
+        LinkedHashSet<String> all = new LinkedHashSet<>();
+        generationsForRestarts.forEach((g, hostnames) -> all.addAll(hostnames));
+        return all;
     }
 
+    // Restarts are ready to be done for all hostnames that report a config generation (through
+    // convergence checker) that is equal to or larger than the config generation that the restaart
+    // should happen on
     public Set<String> restartsReadyAt(long generation) {
         LinkedHashSet<String> ready = new LinkedHashSet<>();
-        generationsForRestarts.forEach((g, hosts) -> { if (g <= generation) ready.addAll(hosts); });
+        generationsForRestarts.forEach((g, hostnames) -> { if (generation >= g) ready.addAll(hostnames); });
         return ready;
     }
 

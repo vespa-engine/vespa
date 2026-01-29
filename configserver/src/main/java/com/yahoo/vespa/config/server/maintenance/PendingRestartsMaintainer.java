@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 public class PendingRestartsMaintainer extends ConfigServerMaintainer {
 
