@@ -171,8 +171,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
             return nodeRepositoryProvisioner.get();
         }
 
-        HostProvisioner defaultHostProvisioner = DeployState.getDefaultModelHostProvisioner(applicationPackage);
-        return defaultHostProvisioner;
+        return DeployState.getDefaultModelHostProvisioner(applicationPackage);
     }
 
     private Optional<File> getAppDir(ApplicationPackage applicationPackage) {
