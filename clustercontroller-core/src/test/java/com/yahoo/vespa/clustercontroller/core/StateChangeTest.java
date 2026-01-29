@@ -1317,49 +1317,97 @@ public class StateChangeTest extends FleetControllerTest {
         }
     }
 
-    @Test
-    void changed_distribution_topology_bumps_internal_orchestration_generation() throws Exception {
-        var cfgBefore = DistributionBuilder.configForFlatCluster(6);
+    private void assertBumpedOrchestrationGenerationByConfigChange(
+            StorDistributionConfig cfgBefore, StorDistributionConfig cfgAfter) throws Exception {
         var f = new BaseFixture(defaultOptions().setDistributionConfig(cfgBefore));
 
         long orchestrationGenBefore = ctrl.getCluster().orchestrationDecisionGeneration();
-
-        var cfgAfter = DistributionBuilder.configForFlatCluster(7);
         f.updateWithNewConfig(cfgAfter);
 
         long changeGenAfter = ctrl.getCluster().orchestrationDecisionGeneration();
         assertThat(changeGenAfter, greaterThan(orchestrationGenBefore));
     }
 
-    @Test
-    void changed_distribution_redundancy_bumps_internal_orchestration_generation() throws Exception {
-        int redundancy = 1;
-        int searchableCopies = 1;
-        int nodeCount = 7;
-        var cfgBefore = DistributionBuilder.configForFlatCluster(redundancy, searchableCopies, nodeCount);
+    private void assertNoBumpedOrchestrationGenerationByConfigChange(
+            StorDistributionConfig cfgBefore, StorDistributionConfig cfgAfter) throws Exception {
         var f = new BaseFixture(defaultOptions().setDistributionConfig(cfgBefore));
 
         long orchestrationGenBefore = ctrl.getCluster().orchestrationDecisionGeneration();
-
-        var cfgAfter = DistributionBuilder.configForFlatCluster(redundancy+1, searchableCopies, nodeCount);
-        f.updateWithNewConfig(cfgAfter);
-
-        long changeGenAfter = ctrl.getCluster().orchestrationDecisionGeneration();
-        assertThat(changeGenAfter, greaterThan(orchestrationGenBefore));
-    }
-
-    @Test
-    void unchanged_distribution_config_does_not_bump_internal_orchestration_generation() throws Exception {
-        var cfgBefore = DistributionBuilder.configForFlatCluster(6);
-        var f = new BaseFixture(defaultOptions().setDistributionConfig(cfgBefore));
-
-        long orchestrationGenBefore = ctrl.getCluster().orchestrationDecisionGeneration();
-
-        var cfgAfter = DistributionBuilder.configForFlatCluster(6); // Same structure as before
         f.updateWithNewConfig(cfgAfter);
 
         long changeGenAfter = ctrl.getCluster().orchestrationDecisionGeneration();
         assertThat(changeGenAfter, equalTo(orchestrationGenBefore));
+    }
+
+    @Test
+    void changed_flat_distribution_node_set_bumps_internal_orchestration_generation() throws Exception {
+        var cfgBefore = DistributionBuilder.configForFlatCluster(6);
+        var cfgAfter  = DistributionBuilder.configForFlatCluster(7);
+        assertBumpedOrchestrationGenerationByConfigChange(cfgBefore, cfgAfter);
+    }
+
+    @Test
+    void changed_grouped_distribution_group_count_bumps_internal_orchestration_generation() throws Exception {
+        // 2 groups x 3 nodes -> 3 groups x 3 nodes
+        var cfgBefore = DistributionBuilder.configForHierarchicCluster(
+                DistributionBuilder.withGroups(2).eachWithNodeCount(3));
+        var cfgAfter  = DistributionBuilder.configForHierarchicCluster(
+                DistributionBuilder.withGroups(3).eachWithNodeCount(3));
+        assertBumpedOrchestrationGenerationByConfigChange(cfgBefore, cfgAfter);
+    }
+
+    @Test
+    void changed_grouped_distribution_group_node_count_bumps_internal_orchestration_generation() throws Exception {
+        // 2 groups x 3 nodes -> 2 groups x 4 nodes
+        var cfgBefore = DistributionBuilder.configForHierarchicCluster(
+                DistributionBuilder.withGroups(2).eachWithNodeCount(3));
+        var cfgAfter  = DistributionBuilder.configForHierarchicCluster(
+                DistributionBuilder.withGroups(2).eachWithNodeCount(4));
+        assertBumpedOrchestrationGenerationByConfigChange(cfgBefore, cfgAfter);
+    }
+
+    @Test
+    void change_from_flat_to_grouped_topology_bumps_internal_orchestration_generation() throws Exception {
+        var cfgBefore = DistributionBuilder.configForFlatCluster(6);
+        var cfgAfter  = DistributionBuilder.configForHierarchicCluster(
+                DistributionBuilder.withGroups(2).eachWithNodeCount(3));
+        assertBumpedOrchestrationGenerationByConfigChange(cfgBefore, cfgAfter);
+    }
+
+    @Test
+    void change_from_grouped_to_flat_topology_bumps_internal_orchestration_generation() throws Exception {
+        var cfgBefore = DistributionBuilder.configForHierarchicCluster(
+                DistributionBuilder.withGroups(2).eachWithNodeCount(3));
+        var cfgAfter  = DistributionBuilder.configForFlatCluster(6);
+        assertBumpedOrchestrationGenerationByConfigChange(cfgBefore, cfgAfter);
+    }
+
+    @Test
+    void changed_distribution_redundancy_bumps_internal_orchestration_generation() throws Exception {
+        int redundancy       = 1;
+        int searchableCopies = 1;
+        int nodeCount        = 7;
+        var cfgBefore = DistributionBuilder.configForFlatCluster(redundancy, searchableCopies, nodeCount);
+        var cfgAfter  = DistributionBuilder.configForFlatCluster(redundancy + 1, searchableCopies, nodeCount);
+        assertBumpedOrchestrationGenerationByConfigChange(cfgBefore, cfgAfter);
+    }
+
+    @Test
+    void unchanged_flat_distribution_config_does_not_bump_internal_orchestration_generation() throws Exception {
+        // Note: we want distinct objects to detect any reference equality checking silliness
+        var cfgBefore = DistributionBuilder.configForFlatCluster(6);
+        var cfgAfter  = DistributionBuilder.configForFlatCluster(6);
+        assertNoBumpedOrchestrationGenerationByConfigChange(cfgBefore, cfgAfter);
+    }
+
+    @Test
+    void unchanged_grouped_distribution_config_does_not_bump_internal_orchestration_generation() throws Exception {
+        // Note: we want distinct objects to detect any reference equality checking silliness
+        var cfgBefore = DistributionBuilder.configForHierarchicCluster(
+                DistributionBuilder.withGroups(2).eachWithNodeCount(3));
+        var cfgAfter = DistributionBuilder.configForHierarchicCluster(
+                DistributionBuilder.withGroups(2).eachWithNodeCount(3));
+        assertNoBumpedOrchestrationGenerationByConfigChange(cfgBefore, cfgAfter);
     }
 
     @Test
