@@ -80,7 +80,7 @@ public abstract class IOUtils {
         return new BufferedReader(new InputStreamReader(new FileInputStream(filename), encoding));
     }
 
-    /** Creates a buffered reader in the default encoding */
+    /** Creates a buffered reader using UTF-8 encoding */
     public static BufferedReader createReader(String filename) throws IOException {
         return new BufferedReader(new FileReader(filename, utf8Charset));
     }
