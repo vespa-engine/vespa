@@ -416,7 +416,7 @@ public class NodeStateChangeCheckerTest {
                 currentClusterStateVersion));
         // Pretend we got a reconfig or leadership change, causing our knowledge of the old world
         // to be too spotty to trust.
-        cluster.bumpOrchestrationDecisionGeneration();
+        cluster.bumpOrchestrationGeneration();
         // Denied for node1 in group 0, since node 0 in group 0 is in maintenance with an outdated context
         settingToMaintenanceIsNotAllowed(1, cluster, clusterStateWith0InMaintenance,
                 NodeStateChangeChecker.STALE_ORCHESTRATOR_CONTEXT_MSG);
@@ -1032,14 +1032,14 @@ public class NodeStateChangeCheckerTest {
         NodeState nodeState = new NodeState(STORAGE, state);
         var nodeInfo = cluster.clusterInfo().getStorageNodeInfo(nodeIndex);
         nodeInfo.setWantedState(nodeState.setDescription(description));
-        nodeInfo.setWantedStateOrchestrationDecisionGeneration(cluster.orchestrationDecisionGeneration());
+        nodeInfo.setWantedStateOrchestrationGeneration(cluster.orchestrationGeneration());
     }
 
     private void setDistributorNodeWantedState(ContentCluster cluster, int nodeIndex, State state, String description) {
         NodeState nodeState = new NodeState(DISTRIBUTOR, state);
         var nodeInfo = cluster.clusterInfo().getDistributorNodeInfo(nodeIndex);
         nodeInfo.setWantedState(nodeState.setDescription(description));
-        nodeInfo.setWantedStateOrchestrationDecisionGeneration(cluster.orchestrationDecisionGeneration());
+        nodeInfo.setWantedStateOrchestrationGeneration(cluster.orchestrationGeneration());
     }
 
     private Result evaluateTransition(ContentCluster cluster, Node node, ClusterState clusterState,

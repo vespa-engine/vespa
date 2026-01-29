@@ -1321,10 +1321,10 @@ public class StateChangeTest extends FleetControllerTest {
             StorDistributionConfig cfgBefore, StorDistributionConfig cfgAfter) throws Exception {
         var f = new BaseFixture(defaultOptions().setDistributionConfig(cfgBefore));
 
-        long orchestrationGenBefore = ctrl.getCluster().orchestrationDecisionGeneration();
+        long orchestrationGenBefore = ctrl.getCluster().orchestrationGeneration();
         f.updateWithNewConfig(cfgAfter);
 
-        long changeGenAfter = ctrl.getCluster().orchestrationDecisionGeneration();
+        long changeGenAfter = ctrl.getCluster().orchestrationGeneration();
         assertThat(changeGenAfter, greaterThan(orchestrationGenBefore));
     }
 
@@ -1332,10 +1332,10 @@ public class StateChangeTest extends FleetControllerTest {
             StorDistributionConfig cfgBefore, StorDistributionConfig cfgAfter) throws Exception {
         var f = new BaseFixture(defaultOptions().setDistributionConfig(cfgBefore));
 
-        long orchestrationGenBefore = ctrl.getCluster().orchestrationDecisionGeneration();
+        long orchestrationGenBefore = ctrl.getCluster().orchestrationGeneration();
         f.updateWithNewConfig(cfgAfter);
 
-        long changeGenAfter = ctrl.getCluster().orchestrationDecisionGeneration();
+        long changeGenAfter = ctrl.getCluster().orchestrationGeneration();
         assertThat(changeGenAfter, equalTo(orchestrationGenBefore));
     }
 
@@ -1413,11 +1413,11 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     void leadership_win_bumps_internal_orchestration_generation() throws Exception {
         var f = new BaseFixture(optionsWithZeroTransitionTime().setCount(3));
-        long orchestrationGenBefore = ctrl.getCluster().orchestrationDecisionGeneration();
+        long orchestrationGenBefore = ctrl.getCluster().orchestrationGeneration();
 
         f.winLeadership();
 
-        long changeGenAfter = ctrl.getCluster().orchestrationDecisionGeneration();
+        long changeGenAfter = ctrl.getCluster().orchestrationGeneration();
         assertThat(changeGenAfter, greaterThan(orchestrationGenBefore));
     }
 

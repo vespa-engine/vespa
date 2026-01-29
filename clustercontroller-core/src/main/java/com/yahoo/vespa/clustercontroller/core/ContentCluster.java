@@ -30,8 +30,8 @@ public final class ContentCluster {
 
     private int slobrokGenerationCount = 0;
     private Distribution distribution;
-    // See `orchestrationDecisionGeneration()` below for semantics on this value
-    private long orchestrationDecisionGeneration = 0;
+    // See `orchestrationGeneration()` below for semantics on this value
+    private long orchestrationGeneration = 0;
 
     public ContentCluster(String clusterName, Collection<ConfiguredNode> configuredNodes, Distribution distribution) {
         this(clusterName, configuredNodes, distribution, -1);
@@ -142,8 +142,8 @@ public final class ContentCluster {
      * @return orchestration generation that only has useful semantics on this particular
      *         cluster controller instance for the lifetime of the process.
      */
-    public long orchestrationDecisionGeneration() {
-        return this.orchestrationDecisionGeneration;
+    public long orchestrationGeneration() {
+        return this.orchestrationGeneration;
     }
 
     /**
@@ -152,8 +152,8 @@ public final class ContentCluster {
      * The existing node(s) will first have to come back up and allow the cluster to get
      * back into sync.
      */
-    public void bumpOrchestrationDecisionGeneration() {
-        this.orchestrationDecisionGeneration++;
+    public void bumpOrchestrationGeneration() {
+        this.orchestrationGeneration++;
     }
 
     /**

@@ -593,7 +593,7 @@ public class NodeStateChangeChecker {
         return nodeInfos.stream().allMatch(nodeInfo -> {
             // Only consider node a match if its wanted state decision was made in the
             // same orchestration context that the current decision will be made in.
-            return nodeInfo.wantedStateOrchestrationDecisionGeneration() == cluster.orchestrationDecisionGeneration();
+            return nodeInfo.wantedStateOrchestrationGeneration() == cluster.orchestrationGeneration();
         });
     }
 

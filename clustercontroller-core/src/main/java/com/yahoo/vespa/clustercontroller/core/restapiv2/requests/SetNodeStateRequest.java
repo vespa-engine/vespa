@@ -221,7 +221,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
                                           boolean probe) {
         if (probe) return;
         nodeInfo.setWantedState(newWantedState);
-        nodeInfo.setWantedStateOrchestrationDecisionGeneration(cluster.orchestrationDecisionGeneration());
+        nodeInfo.setWantedStateOrchestrationGeneration(cluster.orchestrationGeneration());
         stateListener.handleNewWantedNodeState(nodeInfo, newWantedState);
     }
 }

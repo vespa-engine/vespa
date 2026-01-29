@@ -35,9 +35,9 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     private final List<Pair<GetNodeStateRequest, Long>> pendingNodeStateRequests = new LinkedList<>();
     private NodeState reportedState;
     private NodeState wantedState;
-    // Must have a lower initial value than ContentCluster#orchestrationDecisionGeneration
+    // Must have a lower initial value than ContentCluster#orchestrationGeneration
     // to prevent confusion when that number is incremented.
-    private long wantedStateOrchestrationDecisionGeneration = -1;
+    private long wantedStateOrchestrationGeneration = -1;
 
     /** Whether this node has been configured to be retired and should therefore always return retired as its wanted state */
     private boolean configuredRetired;
@@ -286,13 +286,13 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
      * it means the wanted state of the node was set by this controller in a cluster
      * configuration (topology, redundancy, ...) that is the same as the current one.
      *
-     * @see ContentCluster#orchestrationDecisionGeneration()
+     * @see ContentCluster#orchestrationGeneration()
      */
-    public long wantedStateOrchestrationDecisionGeneration() {
-        return wantedStateOrchestrationDecisionGeneration;
+    public long wantedStateOrchestrationGeneration() {
+        return wantedStateOrchestrationGeneration;
     }
-    public void setWantedStateOrchestrationDecisionGeneration(long generation) {
-        wantedStateOrchestrationDecisionGeneration = generation;
+    public void setWantedStateOrchestrationGeneration(long generation) {
+        wantedStateOrchestrationGeneration = generation;
     }
 
     public long getTimeOfFirstFailingConnectionAttempt() {

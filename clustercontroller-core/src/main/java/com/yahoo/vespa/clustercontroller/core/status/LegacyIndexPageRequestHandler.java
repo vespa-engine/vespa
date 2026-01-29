@@ -130,7 +130,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
 
     private void writeOrchestrationGeneration(StringBuilder sb) {
         sb.append("<p>Internal orchestration generation: ")
-          .append(cluster.orchestrationDecisionGeneration())
+          .append(cluster.orchestrationGeneration())
           .append("</p>\n");
     }
 

@@ -492,7 +492,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         eventLog.setMaxSize(options.eventLogMaxSize(), options.eventNodeLogMaxSize());
         if (changesDistributionConfig(options.storageDistribution())) {
             // Distribution config changes must invalidate any assumptions used for wanted states set on nodes
-            cluster.bumpOrchestrationDecisionGeneration();
+            cluster.bumpOrchestrationGeneration();
         }
         cluster.setDistribution(options.storageDistribution());
         cluster.setNodes(options.nodes(), databaseContext.getNodeStateUpdateListener());
@@ -1023,7 +1023,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 stateVersionTracker.setVersionRetrievedFromZooKeeper(database.getLatestSystemStateVersion());
                 // A freshly elected leader can't depend on potentially arbitrarily stale node
                 // state meta information from any of its previous terms.
-                cluster.bumpOrchestrationDecisionGeneration();
+                cluster.bumpOrchestrationGeneration();
                 ClusterStateBundle previousBundle = database.getLatestClusterStateBundle();
                 database.loadStartTimestamps(cluster);
                 database.loadWantedStates(databaseContext);
