@@ -163,6 +163,23 @@
       <artifactId>HdrHistogram</artifactId>
     </dependency>
 
+    <!-- MCP SDK -->
+    <dependency>
+      <groupId>io.modelcontextprotocol.sdk</groupId>
+      <artifactId>mcp</artifactId>
+      <version>${mcp-sdk.vespa.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
     <!-- START JETTY embedded jars -->
     <dependency>
       <!-- Required for JDK9ServerALPNProcessor through ServiceLoader API -->

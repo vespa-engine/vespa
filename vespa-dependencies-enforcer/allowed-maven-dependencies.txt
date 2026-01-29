@@ -89,7 +89,7 @@ io.grpc:grpc-util:${grpc.vespa.version}
 io.micrometer:micrometer-commons:${micrometer.vespa.version}
 io.micrometer:micrometer-core:${micrometer.vespa.version}
 io.micrometer:micrometer-observation:${micrometer.vespa.version}
-io.modelcontextprotocol.sdk:mcp:0.11.2
+io.modelcontextprotocol.sdk:mcp:${mcp-sdk.vespa.version}
 io.netty:netty-buffer:${netty.vespa.version}
 io.netty:netty-codec:${netty.vespa.version}
 io.netty:netty-common:${netty.vespa.version}
