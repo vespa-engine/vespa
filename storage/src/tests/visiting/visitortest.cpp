@@ -717,6 +717,10 @@ TEST_F(VisitorTest, no_visitor_notification_for_transient_failures) {
     // time when initiating remote migrations et al.
     getMessagesAndReply(1, getSession(0), meta, api::ReturnCode::WRONG_DISTRIBUTION);
     ASSERT_EQ(0, meta.infoMessages.size());
+    // OVERLOAD should not be reported (TODO reconsider this?)
+    getMessagesAndReply(1, getSession(0), meta, static_cast<api::ReturnCode::Result>(
+            documentapi::DocumentProtocol::ERROR_OVERLOAD));
+    ASSERT_EQ(0, meta.infoMessages.size());
 
     // Complete message successfully to finish the visitor.
     getMessagesAndReply(1, getSession(0), meta, api::ReturnCode::OK);
