@@ -286,6 +286,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 .post(RequestBody.create(jsonRequest, MediaType.get("application/json; charset=utf-8")))
                 .build();
 
+        runtime.sampleRequestCount(context);
         var call = httpClient.newCall(httpRequest);
         call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS);
 
@@ -293,7 +294,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             var responseBody = response.body() != null ? response.body().string() : "";
             log.fine(() -> "VoyageAI response with code " + response.code() + ": " + responseBody);
             if (response.isSuccessful()) {
-                runtime.sampleRequestCount(context);
                 return responseBody;
             } else if (response.code() == 429) {
                 runtime.sampleRequestFailure(context, response.code());
