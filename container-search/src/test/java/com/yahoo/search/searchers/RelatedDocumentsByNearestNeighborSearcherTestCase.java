@@ -80,9 +80,9 @@ public class RelatedDocumentsByNearestNeighborSearcherTestCase {
         var result = executeWithCapture(searcher, query, sourceHit, capturedQuery);
 
         assertNotNull(result.hits().getError(), "Expected error but got none");
-        assertTrue(result.hits().getError().getDetailedMessage().contains("Could not find document") || 
-                   result.hits().getError().getDetailedMessage().contains("has no embedding"),
-                "Error message was: " + result.hits().getError().getDetailedMessage());
+        String errorMsg = result.hits().getError().getDetailedMessage();
+        assertTrue(errorMsg.contains("Could not find document") && errorMsg.contains("has no embedding"),
+                "Error message was: " + errorMsg);
     }
 
     @Test
