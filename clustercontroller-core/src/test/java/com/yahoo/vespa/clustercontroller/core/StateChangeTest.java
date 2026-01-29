@@ -1281,15 +1281,11 @@ public class StateChangeTest extends FleetControllerTest {
                                  """);
     }
 
-    class DistributionConfigInBundleFixture {
-        StorDistributionConfig bootstrapConfig;
+    class BaseFixture {
         FleetControllerOptions.Builder options;
 
-        DistributionConfigInBundleFixture(boolean enableConfigInBundle) throws Exception {
-            bootstrapConfig = DistributionBuilder.configForFlatCluster(7);
-            options = defaultOptions()
-                    .setIncludeDistributionConfigInClusterStateBundles(enableConfigInBundle)
-                    .setDistributionConfig(bootstrapConfig);
+        BaseFixture(FleetControllerOptions.Builder options) throws Exception {
+            this.options = options;
             initialize(options);
             ctrl.tick();
         }
@@ -1298,6 +1294,93 @@ public class StateChangeTest extends FleetControllerTest {
             ctrl.updateOptions(options.setDistributionConfig(newConfig).build());
             ctrl.tick(); // Propagate options internally
             ctrl.tick(); // New options actually take effect
+        }
+
+        // Only makes sense for tests with more than 1 controller
+        void winLeadership() throws Exception {
+            Map<Integer, Integer> leaderVotes = new HashMap<>();
+            leaderVotes.put(0, 0);
+            leaderVotes.put(1, 0);
+            leaderVotes.put(2, 0);
+            ctrl.handleFleetData(leaderVotes);
+            ctrl.tick();
+        }
+
+        void loseLeadership() throws Exception {
+            // Receive leadership loss event; other nodes not voting for us anymore.
+            Map<Integer, Integer> leaderVotes = new HashMap<>();
+            leaderVotes.put(0, 0);
+            leaderVotes.put(1, 1);
+            leaderVotes.put(2, 1);
+            ctrl.handleFleetData(leaderVotes);
+            ctrl.tick();
+        }
+    }
+
+    @Test
+    void changed_distribution_topology_bumps_internal_orchestration_generation() throws Exception {
+        var cfgBefore = DistributionBuilder.configForFlatCluster(6);
+        var f = new BaseFixture(defaultOptions().setDistributionConfig(cfgBefore));
+
+        long orchestrationGenBefore = ctrl.getCluster().orchestrationDecisionGeneration();
+
+        var cfgAfter = DistributionBuilder.configForFlatCluster(7);
+        f.updateWithNewConfig(cfgAfter);
+
+        long changeGenAfter = ctrl.getCluster().orchestrationDecisionGeneration();
+        assertThat(changeGenAfter, greaterThan(orchestrationGenBefore));
+    }
+
+    @Test
+    void changed_distribution_redundancy_bumps_internal_orchestration_generation() throws Exception {
+        int redundancy = 1;
+        int searchableCopies = 1;
+        int nodeCount = 7;
+        var cfgBefore = DistributionBuilder.configForFlatCluster(redundancy, searchableCopies, nodeCount);
+        var f = new BaseFixture(defaultOptions().setDistributionConfig(cfgBefore));
+
+        long orchestrationGenBefore = ctrl.getCluster().orchestrationDecisionGeneration();
+
+        var cfgAfter = DistributionBuilder.configForFlatCluster(redundancy+1, searchableCopies, nodeCount);
+        f.updateWithNewConfig(cfgAfter);
+
+        long changeGenAfter = ctrl.getCluster().orchestrationDecisionGeneration();
+        assertThat(changeGenAfter, greaterThan(orchestrationGenBefore));
+    }
+
+    @Test
+    void unchanged_distribution_config_does_not_bump_internal_orchestration_generation() throws Exception {
+        var cfgBefore = DistributionBuilder.configForFlatCluster(6);
+        var f = new BaseFixture(defaultOptions().setDistributionConfig(cfgBefore));
+
+        long orchestrationGenBefore = ctrl.getCluster().orchestrationDecisionGeneration();
+
+        var cfgAfter = DistributionBuilder.configForFlatCluster(6); // Same structure as before
+        f.updateWithNewConfig(cfgAfter);
+
+        long changeGenAfter = ctrl.getCluster().orchestrationDecisionGeneration();
+        assertThat(changeGenAfter, equalTo(orchestrationGenBefore));
+    }
+
+    @Test
+    void leadership_win_bumps_internal_orchestration_generation() throws Exception {
+        var f = new BaseFixture(optionsWithZeroTransitionTime().setCount(3));
+        long orchestrationGenBefore = ctrl.getCluster().orchestrationDecisionGeneration();
+
+        f.winLeadership();
+
+        long changeGenAfter = ctrl.getCluster().orchestrationDecisionGeneration();
+        assertThat(changeGenAfter, greaterThan(orchestrationGenBefore));
+    }
+
+    class DistributionConfigInBundleFixture extends BaseFixture {
+        StorDistributionConfig bootstrapConfig;
+
+        DistributionConfigInBundleFixture(boolean enableConfigInBundle) throws Exception {
+            super(defaultOptions()
+                    .setIncludeDistributionConfigInClusterStateBundles(enableConfigInBundle)
+                    .setDistributionConfig(DistributionBuilder.configForFlatCluster(7)));
+            bootstrapConfig = DistributionBuilder.configForFlatCluster(7);
         }
     }
 
@@ -1389,10 +1472,9 @@ public class StateChangeTest extends FleetControllerTest {
 
     // TODO ideally we'd break this out so it doesn't depend on fields in the parent test instance, but
     // fleet controller tests have a _lot_ of state, so risk of duplicating a lot of that...
-    class RemoteTaskFixture {
+    class RemoteTaskFixture extends BaseFixture {
         RemoteTaskFixture(FleetControllerOptions.Builder options) throws Exception {
-            initialize(options);
-            ctrl.tick();
+            super(options);
         }
 
         MockTask scheduleTask(MockTask task) throws Exception {
@@ -1439,26 +1521,6 @@ public class StateChangeTest extends FleetControllerTest {
                 ctrl.tick(); // Process activation ACKs
             }
             ctrl.tick(); // Iff ACKs were received, process version dependent task(s)
-        }
-
-        // Only makes sense for tests with more than 1 controller
-        void winLeadership() throws Exception {
-            Map<Integer, Integer> leaderVotes = new HashMap<>();
-            leaderVotes.put(0, 0);
-            leaderVotes.put(1, 0);
-            leaderVotes.put(2, 0);
-            ctrl.handleFleetData(leaderVotes);
-            ctrl.tick();
-        }
-
-        void loseLeadership() throws Exception {
-            // Receive leadership loss event; other nodes not voting for us anymore.
-            Map<Integer, Integer> leaderVotes = new HashMap<>();
-            leaderVotes.put(0, 0);
-            leaderVotes.put(1, 1);
-            leaderVotes.put(2, 1);
-            ctrl.handleFleetData(leaderVotes);
-            ctrl.tick();
         }
     }
 

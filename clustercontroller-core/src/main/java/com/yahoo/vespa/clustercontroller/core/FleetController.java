@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
+import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -462,6 +463,14 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         return false;
     }
 
+    private boolean changesDistributionConfig(Distribution newDistribution) {
+        // TODO Ideally we'd also look at searchable-copies, but that's currently
+        //  not exposed via the Distribution domain class.
+        var currentDistribution = cluster.getDistribution();
+        return (newDistribution.getRedundancy() != currentDistribution.getRedundancy()) ||
+               !newDistribution.getRootGroup().equals(currentDistribution.getRootGroup());
+    }
+
     /** This is called when the options field has been set to a new set of options */
     private void propagateOptions() {
         verifyInControllerThread();
@@ -481,6 +490,10 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             ((SlobrokClient) nodeLookup).setSlobrokConnectionSpecs(options.slobrokConnectionSpecs());
         }
         eventLog.setMaxSize(options.eventLogMaxSize(), options.eventNodeLogMaxSize());
+        if (changesDistributionConfig(options.storageDistribution())) {
+            // Distribution config changes must invalidate any assumptions used for wanted states set on nodes
+            cluster.bumpOrchestrationDecisionGeneration();
+        }
         cluster.setDistribution(options.storageDistribution());
         cluster.setNodes(options.nodes(), databaseContext.getNodeStateUpdateListener());
         database.setZooKeeperAddress(options.zooKeeperServerAddress(), databaseContext);
@@ -1008,6 +1021,9 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 systemStateBroadcaster.resetBroadcastedClusterStateBundle();
 
                 stateVersionTracker.setVersionRetrievedFromZooKeeper(database.getLatestSystemStateVersion());
+                // A freshly elected leader can't depend on potentially arbitrarily stale node
+                // state meta information from any of its previous terms.
+                cluster.bumpOrchestrationDecisionGeneration();
                 ClusterStateBundle previousBundle = database.getLatestClusterStateBundle();
                 database.loadStartTimestamps(cluster);
                 database.loadWantedStates(databaseContext);
