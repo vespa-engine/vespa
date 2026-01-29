@@ -1333,7 +1333,6 @@
       "public double feedNiceness()",
       "public int maxUnCommittedMemory()",
       "public boolean containerDumpHeapOnShutdownTimeout()",
-      "public int heapSizePercentage()",
       "public int heapSizePercentage(java.util.Optional)",
       "public java.util.List allowedAthenzProxyIdentities()",
       "public int maxActivationInhibitedOutOfSyncGroups()",
