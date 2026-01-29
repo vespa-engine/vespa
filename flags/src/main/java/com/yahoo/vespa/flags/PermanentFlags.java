@@ -98,7 +98,6 @@ public class PermanentFlags {
             "Value 0 means use lowest major version available. " +
             "Common values: 8 (AlmaLinux 8), 9 (AlmaLinux 9).",
             "Takes effect when a host is provisioned",
-            SYSTEM, CLOUD, ENVIRONMENT, ZONE_ID, // Note: will be used by controller
             CLAVE, NODE_TYPE, CLOUD_ACCOUNT, HOSTNAME);
 
     public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
