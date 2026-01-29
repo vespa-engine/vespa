@@ -420,28 +420,32 @@ TEST(Float4E2M1WideningTest, can_widen_fp4_e2m1_to_fp8_types) {
     }
 }
 
-/*namespace N_NEON_BF16 { // tee hee
-void test_fp8_to_fp16(const uint8_t* buf, uint16_t* out, size_t n);
+namespace N_NEON_BF16 { // tee hee
+void test_fp8_to_fp16_2(const uint8_t* buf, uint16_t* out, size_t n);
+}
+namespace N_SVE_256 { // tee hee 2
+void test_fp8_to_fp16_2(const uint8_t* buf, uint16_t* out, size_t n);
 }
 
-TEST(Float8Alternate, prototyping) {
-    uint8_t buf[8] = {};
-    uint16_t out[8] = {};
+TEST(Float8Alternate, DISABLED_prototyping) {
+    uint8_t buf[16] = {};
+    uint16_t out[16] = {};
     for (uint32_t i = 0; i < 256; i+= 8) {
-        for (uint32_t j = 0; j < 8; ++j) {
+        for (uint32_t j = 0; j < 16; ++j) {
             buf[j] = i + j;
             //std::print(std::cout, " {}", std::float16_t(Float8E4M3FN(i+j).to_float()));
         }
         //std::println(std::cout);
-        N_NEON_BF16::test_fp8_to_fp16(buf, out, 8);
-        for (uint32_t j = 0; j < 8; ++j) {
+        //fprintf(stderr, "\n");
+        N_SVE_256::test_fp8_to_fp16_2(buf, out, 16);
+        for (uint32_t j = 0; j < 16; ++j) {
             // Compare bit patterns instead of floats since fp NaN != NaN
             uint16_t expected_fp16_bits = std::bit_cast<uint16_t>(std::float16_t(Float8E4M3FN(i+j).to_float()));
             uint16_t actual_fp16_bits = out[j];
             ASSERT_EQ(actual_fp16_bits, expected_fp16_bits) << " for fp8 raw u8 value " << std::hex << i+j;
         }
     }
-}*/
+}
 
 } // vespalib::hwaccelerated
 
