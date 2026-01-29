@@ -218,16 +218,16 @@ public class Group implements Comparable<Group> {
                 }
             }
             // Verify sanity of the distribution spec
-            int firstAsterix = distributionSpec.length;
+            int firstWildcard = distributionSpec.length;
             for (int i=0; i<distributionSpec.length; ++i) {
-                if (i > firstAsterix) {
+                if (i > firstWildcard) {
                     if (distributionSpec[i] != 0) {
-                        throw new ParseException("Illegal distribution spec \"" + serialized + "\". Asterix specification must be tailing the specification.", i);
+                        throw new ParseException("Illegal distribution spec \"" + serialized + "\". Wildcard specification must be tailing the specification.", i);
                     }
                     continue;
                 }
-                if (i < firstAsterix && distributionSpec[i] == 0) {
-                    firstAsterix = i;
+                if (i < firstWildcard && distributionSpec[i] == 0) {
+                    firstWildcard = i;
                     continue;
                 }
                 if (distributionSpec[i] <= 0 || distributionSpec[i] >= 256) {
@@ -239,7 +239,7 @@ public class Group implements Comparable<Group> {
             if (maxRedundancy <= 0 || maxRedundancy > 255) {
                 throw new IllegalArgumentException("The max redundancy (" + maxRedundancy + ") must be a positive number in the range 1-255.");
             }
-            int asterixCount = distributionSpec.length - firstAsterix;
+            int wildcardCount = distributionSpec.length - firstWildcard;
             int[][] preCalculations = new int[maxRedundancy + 1][];
             for (int i=1; i<=maxRedundancy; ++i) {
                 List<Integer> spec = new ArrayList<>();
@@ -247,14 +247,14 @@ public class Group implements Comparable<Group> {
                     spec.add(k);
                 }
                 int remainingRedundancy = i;
-                for (int j=0; j<firstAsterix; ++j) {
+                for (int j=0; j<firstWildcard; ++j) {
                     spec.set(j, Math.min(remainingRedundancy, spec.get(j)));
                     remainingRedundancy -= spec.get(j);
                 }
-                int divided = remainingRedundancy / asterixCount;
-                remainingRedundancy = remainingRedundancy % asterixCount;
-                for (int j=firstAsterix; j<spec.size(); ++j) {
-                    spec.set(j, divided + (j - firstAsterix < remainingRedundancy ? 1 : 0));
+                int divided = remainingRedundancy / wildcardCount;
+                remainingRedundancy = remainingRedundancy % wildcardCount;
+                for (int j=firstWildcard; j<spec.size(); ++j) {
+                    spec.set(j, divided + (j - firstWildcard < remainingRedundancy ? 1 : 0));
                 }
                 while (spec.get(spec.size() - 1) == 0) {
                     spec.remove(spec.size() - 1);
