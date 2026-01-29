@@ -13,6 +13,9 @@ inline namespace directory_traverse_test {
 
 std::filesystem::path testdir("testdir");
 
+constexpr uint32_t block_size = 4_Ki;
+constexpr uint32_t directory_placeholder_size = block_size;
+
 }
 
 class DirectoryTraverseTest : public ::testing::Test {
@@ -55,7 +58,7 @@ TEST_F(DirectoryTraverseTest, missing_dir)
 
 TEST_F(DirectoryTraverseTest, empty_dir)
 {
-    EXPECT_EQ(4_Ki, get_tree_size(testdir));
+    EXPECT_EQ(directory_placeholder_size, get_tree_size(testdir));
 }
 
 TEST_F(DirectoryTraverseTest, dir_with_file)
@@ -65,7 +68,7 @@ TEST_F(DirectoryTraverseTest, dir_with_file)
     of << "Some text" << std::endl;
     of.close();
     EXPECT_EQ(0, get_tree_size(file_path));
-    EXPECT_EQ(8_Ki, get_tree_size(testdir));
+    EXPECT_EQ(directory_placeholder_size + block_size, get_tree_size(testdir));
     std::filesystem::remove(file_path);
 }
 
@@ -74,10 +77,10 @@ TEST_F(DirectoryTraverseTest, nested_dir_with_file)
     auto dir_path = testdir / "dir";
     auto file_path = dir_path / "file";
     std::filesystem::create_directory(dir_path);
-    EXPECT_EQ(8_Ki, get_tree_size(testdir));
+    EXPECT_EQ(2 * directory_placeholder_size, get_tree_size(testdir));
     std::ofstream of(file_path.string());
     of << "Some text" << std::endl;
     of.close();
-    EXPECT_EQ(12_Ki, get_tree_size(testdir));
+    EXPECT_EQ(2 * directory_placeholder_size + block_size, get_tree_size(testdir));
     std::filesystem::remove_all(dir_path);
 }
