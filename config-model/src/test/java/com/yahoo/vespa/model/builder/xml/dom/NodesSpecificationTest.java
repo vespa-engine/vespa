@@ -167,9 +167,61 @@ public class NodesSpecificationTest {
         assertEquals(30, spec.minResources().nodes());
         assertEquals( 3, spec.minResources().groups());
         assertEquals(30, spec.maxResources().nodes());
-        assertEquals( 30, spec.maxResources().groups());
+        assertEquals(30, spec.maxResources().groups());
         assertTrue(spec.groupSize().from().isEmpty());
         assertEquals(10, spec.groupSize().to().getAsInt());
+    }
+
+
+    @Test
+    void testVariableGroupCount() {
+        var spec = nodesSpecification("<nodes groups='[1,2]' group-size='3'/>");
+        assertEquals( 3, spec.minResources().nodes());
+        assertEquals( 1, spec.minResources().groups());
+        assertEquals( 6, spec.maxResources().nodes());
+        assertEquals( 2, spec.maxResources().groups());
+        assertEquals( 3, spec.groupSize().from().getAsInt());
+        assertEquals( 3, spec.groupSize().to().getAsInt());
+    }
+
+    @Test
+    void testVariableGroupCount2() {
+        var spec = nodesSpecification("<nodes groups='[,4]' group-size='3'/>");
+        assertEquals( 3, spec.minResources().nodes());
+        assertEquals( 1, spec.minResources().groups()); // No lower limit means 1
+        assertEquals(12, spec.maxResources().nodes());
+        assertEquals( 4, spec.maxResources().groups());
+        assertEquals( 3, spec.groupSize().from().getAsInt());
+        assertEquals( 3, spec.groupSize().to().getAsInt());
+    }
+
+    @Test
+    void testVariableGroupCount3() {
+        var spec = nodesSpecification("<nodes groups='[1, ]' group-size='3'/>");
+        assertEquals(3, spec.minResources().nodes());
+        assertEquals(1, spec.minResources().groups());
+        assertEquals(3, spec.maxResources().nodes());
+        assertEquals(1, spec.maxResources().groups()); // No upper limit means 1
+        assertEquals(3, spec.groupSize().from().getAsInt());
+        assertEquals(3, spec.groupSize().to().getAsInt());
+    }
+
+    @Test
+    void testVariableNodeCount() {
+        var spec = nodesSpecification("<nodes count='[,10]' groups='2'/>");
+        assertEquals( 1, spec.minResources().nodes()); // No lower limit means 1
+        assertEquals( 2, spec.minResources().groups());
+        assertEquals(10, spec.maxResources().nodes());
+        assertEquals( 2, spec.maxResources().groups());
+    }
+
+    @Test
+    void testVariableNodeCount2() {
+        var spec = nodesSpecification("<nodes count='[1,]' groups='2'/>");
+        assertEquals(1, spec.minResources().nodes());
+        assertEquals(2, spec.minResources().groups());
+        assertEquals(1, spec.maxResources().nodes()); // No upper limit means 1
+        assertEquals(2, spec.maxResources().groups());
     }
 
     private NodesSpecification nodesSpecification(String nodesElement) {
