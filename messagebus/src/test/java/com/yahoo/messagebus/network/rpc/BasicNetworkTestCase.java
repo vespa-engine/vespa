@@ -4,7 +4,12 @@ package com.yahoo.messagebus.network.rpc;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.IntermediateSession;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
@@ -50,55 +55,72 @@ public class BasicNetworkTestCase {
         slobrok.stop();
     }
 
-    @Test
-    void testNetwork() {
+    private class Fixture {
         // set up receptors
         Receptor src_rr = new Receptor();
         Receptor pxy_mr = new Receptor();
         Receptor pxy_rr = new Receptor();
         Receptor dst_mr = new Receptor();
 
-        // set up sessions
-        SourceSessionParams sp = new SourceSessionParams();
-        sp.setTimeout(30.0);
+        SourceSession       ss;
+        IntermediateSession is;
+        DestinationSession  ds;
 
-        SourceSession       ss = src.mb.createSourceSession(src_rr, sp);
-        IntermediateSession is = pxy.mb.createIntermediateSession("session", true, pxy_mr, pxy_rr);
-        DestinationSession  ds = dst.mb.createDestinationSession("session", true, dst_mr);
+        Fixture() {
+            // set up sessions
+            SourceSessionParams sp = new SourceSessionParams();
+            sp.setTimeout(30.0);
 
-        // wait for slobrok registration
-        assertTrue(src.waitSlobrok("test/pxy/session", 1));
-        assertTrue(src.waitSlobrok("test/dst/session", 1));
-        assertTrue(pxy.waitSlobrok("test/dst/session", 1));
+            ss = src.mb.createSourceSession(src_rr, sp);
+            is = pxy.mb.createIntermediateSession("session", true, pxy_mr, pxy_rr);
+            ds = dst.mb.createDestinationSession("session", true, dst_mr);
 
+            // wait for slobrok registration
+            assertTrue(src.waitSlobrok("test/pxy/session", 1));
+            assertTrue(src.waitSlobrok("test/dst/session", 1));
+            assertTrue(pxy.waitSlobrok("test/dst/session", 1));
+        }
+
+        void destroy() {
+            ss.destroy();
+            is.destroy();
+            ds.destroy();
+        }
+    }
+
+    @Test
+    void testNetwork() {
+        var f = new Fixture();
         // send message on client
-        ss.send(new SimpleMessage("test message"), "test");
+        f.ss.send(new SimpleMessage("test message"), "test");
 
         // check message on proxy
-        Message msg = pxy_mr.getMessage(60);
+        Message msg = f.pxy_mr.getMessage(60);
         assertNotNull(msg);
         assertEquals(SimpleProtocol.MESSAGE, msg.getType());
         SimpleMessage sm = (SimpleMessage) msg;
         assertEquals("test message", sm.getValue());
+        assertFalse(sm.hasMetadata());
 
         // forward message on proxy
         sm.setValue(sm.getValue() + " pxy");
-        is.forward(sm);
+        f.is.forward(sm);
 
         // check message on server
-        msg = dst_mr.getMessage(60);
+        msg = f.dst_mr.getMessage(60);
         assertNotNull(msg);
         assertEquals(SimpleProtocol.MESSAGE, msg.getType());
         sm = (SimpleMessage) msg;
         assertEquals("test message pxy", sm.getValue());
+        assertFalse(sm.hasMetadata());
 
         // send reply on server
         SimpleReply sr = new SimpleReply("test reply");
         sm.swapState(sr);
-        ds.reply(sr);
+        f.ds.reply(sr);
 
         // check reply on proxy
-        Reply reply = pxy_rr.getReply(60);
+        Reply reply = f.pxy_rr.getReply(60);
         assertNotNull(reply);
         assertEquals(SimpleProtocol.REPLY, reply.getType());
         sr = (SimpleReply) reply;
@@ -106,18 +128,67 @@ public class BasicNetworkTestCase {
 
         // forward reply on proxy
         sr.setValue(sr.getValue() + " pxy");
-        is.forward(sr);
+        f.is.forward(sr);
 
         // check reply on client
-        reply = src_rr.getReply(60);
+        reply = f.src_rr.getReply(60);
         assertNotNull(reply);
         assertEquals(SimpleProtocol.REPLY, reply.getType());
         sr = (SimpleReply) reply;
         assertEquals("test reply pxy", sr.getValue());
 
-        ss.destroy();
-        is.destroy();
-        ds.destroy();
+        f.destroy();
+    }
+
+    void doTestMetadataKvsAreForwarded(String fooMeta, String barMeta) {
+        var f = new Fixture();
+
+        var msgToSend = new SimpleMessage("test message");
+        msgToSend.setFooMeta(fooMeta);
+        msgToSend.setBarMeta(barMeta);
+        f.ss.send(msgToSend, "test");
+
+        Message msg = f.pxy_mr.getMessage(60);
+        assertNotNull(msg);
+        SimpleMessage sm = (SimpleMessage)msg;
+        assertEquals(fooMeta, sm.getFooMeta());
+        assertEquals(barMeta, sm.getBarMeta());
+        f.is.forward(msg);
+
+        msg = f.dst_mr.getMessage(60);
+        assertNotNull(msg);
+        sm = (SimpleMessage)msg;
+        assertEquals(fooMeta, sm.getFooMeta());
+        assertEquals(barMeta, sm.getBarMeta());
+
+        // Unwind to avoid dangling messages
+        SimpleReply sr = new SimpleReply("test reply");
+        msg.swapState(sr);
+        f.ds.reply(sr);
+
+        Reply reply = f.pxy_rr.getReply(60);
+        assertNotNull(reply);
+        f.is.forward(reply);
+
+        reply = f.src_rr.getReply(60);
+        assertNotNull(reply);
+
+        f.destroy();
+    }
+
+    @Test
+    void empty_kv_map_is_propagated() {
+        doTestMetadataKvsAreForwarded(null, null);
+    }
+
+    @Test
+    void single_header_kv_is_propagated() {
+        doTestMetadataKvsAreForwarded("marve", null);
+    }
+
+    @Test
+    void multiple_header_kvs_are_propagated() {
+        doTestMetadataKvsAreForwarded("marve", "fleksnes");
     }
 
     @Test

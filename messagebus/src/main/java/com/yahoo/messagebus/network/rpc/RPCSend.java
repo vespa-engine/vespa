@@ -12,6 +12,7 @@ import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MetadataExtractor;
 import com.yahoo.messagebus.Protocol;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.ReplyHandler;
@@ -154,6 +155,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
         Utf8Array protocolName;
         byte [] payload;
         int traceLevel;
+        MetadataExtractor metadataExtractor;
     }
 
     @Override
@@ -202,6 +204,10 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
         if (msg.getTrace().shouldTrace(TraceLevel.SEND_RECEIVE)) {
             msg.getTrace().trace(TraceLevel.SEND_RECEIVE,
                     "Message (type " + msg.getType() + ") received at " + serverIdent + " for session '" + p.session + "'.");
+        }
+        if (p.metadataExtractor != null) {
+            // TODO wrap in a try-catch just in case?
+            msg.extractMetadata(p.metadataExtractor);
         }
         net.getOwner().deliverMessage(msg, p.session);
     }

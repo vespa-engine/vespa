@@ -13,6 +13,7 @@ import com.yahoo.jrt.Values;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MetadataExtractor;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.TraceNode;
@@ -23,6 +24,8 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.text.Utf8Array;
+
+import java.util.Optional;
 
 /**
  * Implements the request adapter for method "mbus.slime".
@@ -61,6 +64,9 @@ public class RPCSendV2 extends RPCSend {
                 .returnDesc(5, "body_payload", "Slime encoded body payload.");
         return method;
     }
+    // Header fields:
+    private static final String KVS_F = "kvs";
+    // Body fields:
     private static final String VERSION_F = "version";
     private static final String ROUTE_F = "route";
     private static final String SESSION_F = "session";
@@ -77,17 +83,34 @@ public class RPCSendV2 extends RPCSend {
     private static final String BLOB_F = "msg";
     private static final String MSG_F = "msg";
 
+    private void encodeHeaderMetadataIfPresent(Values v, Message msg) {
+        // The KV header is never compressed. This is intentional and is done to prevent
+        // compression oracle attacks (a-la CRIME/BREACH) that can be used to deduce the
+        // value of secret tokens from observing the change in ciphertext sizes on the
+        // wire across many messages.
+        v.add(new Int8Value(CompressionType.NONE.getCode()));
+        if (!msg.hasMetadata()) {
+            v.add(new Int32Value(0));
+            v.add(new DataValue(new byte[0]));
+        } else {
+            Slime slime = new Slime();
+            Cursor root = slime.setObject();
+            Cursor kvs = root.setObject(KVS_F);
+            msg.injectMetadata(kvs::setString);
+            byte[] hdrBlob = BinaryFormat.encode(slime);
+            v.add(new Int32Value(hdrBlob.length));
+            v.add(new DataValue(hdrBlob));
+        }
+    }
+
     @Override
     protected Request encodeRequest(Version version, Route route, RPCServiceAddress address, Message msg,
                                     long timeRemaining, byte[] payload, int traceLevel)
     {
-
         Request req = new Request(METHOD_NAME);
         Values v = req.parameters();
 
-        v.add(new Int8Value(CompressionType.NONE.getCode()));
-        v.add(new Int32Value(0));
-        v.add(new DataValue(new byte[0]));
+        encodeHeaderMetadataIfPresent(v, msg);
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();
@@ -153,12 +176,30 @@ public class RPCSendV2 extends RPCSend {
         return reply;
     }
 
+    private static MetadataExtractor metadataExtractorFromHeaderOrNull(Values args) {
+        int hdrLen = args.get(1).asInt32();
+        if (hdrLen > 0 && (CompressionType.valueOf(args.get(0).asInt8()) == CompressionType.NONE)) {
+            byte[] hdrBlob = args.get(2).asData();
+            Slime hdrSlime = BinaryFormat.decode(hdrBlob);
+            Inspector root = hdrSlime.get();
+            Inspector kvs = root.field(KVS_F);
+            if (kvs.valid() && kvs.fields() > 0) {
+                return key -> {
+                    Inspector maybeVal = kvs.field(key);
+                    return (maybeVal.valid()) ? Optional.of(maybeVal.asString()) : Optional.empty();
+                };
+            }
+        }
+        return null;
+    }
+
     protected Params toParams(Values args) {
+        Params p = new Params();
+        p.metadataExtractor = metadataExtractorFromHeaderOrNull(args);
         CompressionType compression = CompressionType.valueOf(args.get(3).asInt8());
         byte[] slimeBytes = compressor.decompress(args.get(5).asData(), compression, args.get(4).asInt32());
         Slime slime = BinaryFormat.decode(slimeBytes);
         Inspector root = slime.get();
-        Params p = new Params();
         p.version = new Version(new Utf8Array(root.field(VERSION_F).asUtf8()));
         p.route = root.field(ROUTE_F).asString();
         p.session = root.field(SESSION_F).asString();
@@ -173,6 +214,10 @@ public class RPCSendV2 extends RPCSend {
 
     @Override
     protected void createResponse(Values ret, Reply reply, Version version, byte [] payload) {
+        // We don't currently encode headers for replies, only requests. This is
+        // partly because MessageBus may transparently merge multiple replies from
+        // forked message request paths, and it's not clear what the correct conflict
+        // resolution strategy would be for multiple values for the same key.
         ret.add(new Int8Value(CompressionType.NONE.getCode()));
         ret.add(new Int32Value(0));
         ret.add(new DataValue(new byte[0]));

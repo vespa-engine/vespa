@@ -285,6 +285,9 @@
       "public void swapState(com.yahoo.messagebus.Routable)",
       "public com.yahoo.messagebus.routing.Route getRoute()",
       "public com.yahoo.messagebus.Message setRoute(com.yahoo.messagebus.routing.Route)",
+      "public boolean hasMetadata()",
+      "public void injectMetadata(com.yahoo.messagebus.MetadataInjector)",
+      "public void extractMetadata(com.yahoo.messagebus.MetadataExtractor)",
       "public long getTimeReceived()",
       "public com.yahoo.messagebus.Message setTimeReceived(long)",
       "public com.yahoo.messagebus.Message setTimeReceivedNow()",
@@ -621,6 +624,32 @@
       "public void sync()",
       "public boolean destroy()",
       "public void run()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.messagebus.MetadataExtractor" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.util.Optional extractValue(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.messagebus.MetadataInjector" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract void injectKeyValue(java.lang.String, java.lang.String)"
     ],
     "fields" : [ ]
   },
