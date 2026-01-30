@@ -34,6 +34,22 @@ public class CustomerRpmService {
     private final String packageName;
 
     /**
+     * Optional exact version of package to use.
+     * Useful to orchestrate roll out of new versions.
+     *  Note: Must be used together with package release!
+     */
+    @JsonProperty(value = "version")
+    private final String packageVersion;
+
+    /**
+     * Optional exact release of package to use.
+     * Useful to orchestrate roll out of new versions.
+     *  Note: Must be used together with package version!
+     */
+    @JsonProperty(value = "release")
+    private final String packageRelease;
+
+    /**
      * Memory limit in mebibytes (MiB) for the service unit.
      * This limit will be enforced by the host operating system.
      */
@@ -65,6 +81,8 @@ public class CustomerRpmService {
     public CustomerRpmService(
         @JsonProperty(value = "unit") String unit,
         @JsonProperty(value = "package") String packageName,
+        @JsonProperty(value = "version") String packageVersion,
+        @JsonProperty(value = "release") String packageRelease,
         @JsonProperty(value = "memory") Double memoryLimitMib,
         @JsonProperty("cpu") Double cpuLimitCores,
         @JsonProperty("repositories") List<String> repositories,
@@ -72,6 +90,8 @@ public class CustomerRpmService {
     ) {
         this.unit = Objects.requireNonNull(unit);
         this.packageName = packageName;
+        this.packageVersion = packageVersion;
+        this.packageRelease = packageRelease;
         this.memoryLimitMib = Objects.requireNonNull(memoryLimitMib);
         this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
         this.repositories = repositories == null ? List.of() : repositories;
@@ -84,6 +104,14 @@ public class CustomerRpmService {
 
     public String packageName() {
         return packageName == null ? unitName() : packageName;
+    }
+
+    public Optional<String> packageVersion() {
+        return Optional.ofNullable(this.packageVersion);
+    }
+
+    public Optional<String> packageRelease() {
+        return Optional.ofNullable(this.packageRelease);
     }
 
     public double memoryLimitMib() {
