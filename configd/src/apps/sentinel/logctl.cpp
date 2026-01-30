@@ -2,20 +2,19 @@
 
 #include "logctl.h"
 
+#include <cerrno>
+#include <cstring>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <cerrno>
-#include <cstring>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sentinel.logctl");
 
 namespace config::sentinel {
 
-void justRunLogctl(const char *cspec, const char *lspec)
-{
+void justRunLogctl(const char *cspec, const char *lspec) {
     const char *progName = "vespa-logctl";
     pid_t pid = fork();
     if (pid == 0) {
@@ -59,4 +58,4 @@ void justRunLogctl(const char *cspec, const char *lspec)
     }
 }
 
-}
+} // namespace config::sentinel

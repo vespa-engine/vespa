@@ -17,9 +17,9 @@ struct StartMetrics {
     unsigned long totalRestartsCounter;
     vespalib::steady_time startedTime;
     Counter sentinel_restarts;
-    Gauge   sentinel_totalRestarts;
-    Gauge   sentinel_running;
-    Gauge   sentinel_uptime;
+    Gauge sentinel_totalRestarts;
+    Gauge sentinel_running;
+    Gauge sentinel_uptime;
     vespalib::steady_time lastRestartTime;
 
     StartMetrics();
@@ -30,4 +30,4 @@ struct StartMetrics {
     void reset();
 };
 
-}
+} // namespace config::sentinel

@@ -3,13 +3,12 @@
 #pragma once
 
 #include "cc-result.h"
-#include <vespa/vespalib/util/count_down_latch.h>
-#include <vespa/fnet/frt/supervisor.h>
+#include <string>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <string>
+#include <vespa/vespalib/util/count_down_latch.h>
 
 namespace config::sentinel {
 
@@ -18,25 +17,19 @@ struct OutwardCheckContext {
     std::string targetHostname;
     int targetPortnum;
     FRT_Supervisor &orb;
-    OutwardCheckContext(size_t count,
-                        const std::string &hostname,
-                        int portnumber,
-                        FRT_Supervisor &supervisor)
-      : latch(count),
-        targetHostname(hostname),
-        targetPortnum(portnumber),
-        orb(supervisor)
-    {}
+    OutwardCheckContext(size_t count, const std::string &hostname, int portnumber, FRT_Supervisor &supervisor)
+        : latch(count), targetHostname(hostname), targetPortnum(portnumber), orb(supervisor) {}
     ~OutwardCheckContext();
 };
 
-class OutwardCheck  : public FRT_IRequestWait {
+class OutwardCheck : public FRT_IRequestWait {
 private:
     CcResult _result = CcResult::UNKNOWN;
     FRT_Target *_target = nullptr;
     FRT_RPCRequest *_req = nullptr;
     std::string _spec;
     OutwardCheckContext &_context;
+
 public:
     OutwardCheck(const std::string &spec, OutwardCheckContext &context, int ping_timeout);
     virtual ~OutwardCheck();
@@ -46,4 +39,4 @@ public:
     void classifyResult(CcResult value);
 };
 
-}
+} // namespace config::sentinel

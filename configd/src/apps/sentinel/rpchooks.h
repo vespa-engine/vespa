@@ -3,8 +3,8 @@
 #pragma once
 
 #include "model-owner.h"
-#include <vespa/fnet/frt/invokable.h>
 #include <memory>
+#include <vespa/fnet/frt/invokable.h>
 
 class FNET_Task;
 class FRT_Supervisor;
@@ -21,15 +21,16 @@ class CommandQueue;
  * invoking the right internal method, and (in most cases)
  * packaging and returning the result of the request.
  **/
-class RPCHooks : public FRT_Invokable
-{
+class RPCHooks : public FRT_Invokable {
 private:
     CommandQueue &_commands;
     FRT_Supervisor &_orb;
     ModelOwner &_modelOwner;
+
 public:
     RPCHooks(CommandQueue &commands, FRT_Supervisor &supervisor, ModelOwner &modelOwner);
     ~RPCHooks() override;
+
 private:
     void initRPC(FRT_Supervisor *supervisor);
 

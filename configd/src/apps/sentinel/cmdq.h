@@ -16,8 +16,7 @@ public:
     enum CmdType { LIST, RESTART, START, STOP };
 
     Cmd(FRT_RPCRequest *req, CmdType cmdType, const char *service = "")
-      : _req(req), _cmdType(cmdType), _serviceName(service)
-    {}
+        : _req(req), _cmdType(cmdType), _serviceName(service) {}
 
     CmdType type() const { return _cmdType; }
     const char *serviceName() const { return _serviceName; }
@@ -26,17 +25,18 @@ public:
     void retValue(const char *valueString) const;
 
     ~Cmd();
+
 private:
     FRT_RPCRequest *_req;
     CmdType _cmdType;
     const char *_serviceName;
 };
 
-class CommandQueue
-{
+class CommandQueue {
 private:
     std::mutex _lock;
     std::vector<Cmd::UP> _queue;
+
 public:
     CommandQueue() = default;
     ~CommandQueue() = default;
@@ -52,7 +52,6 @@ public:
         r.swap(_queue);
         return r;
     }
-
 };
 
 } // namespace config::sentinel

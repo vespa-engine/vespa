@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <mutex>
+#include <optional>
 #include <vespa/config-model.h>
 #include <vespa/config/subscription/configsubscriber.h>
-#include <optional>
-#include <mutex>
 
 using cloud::config::ModelConfig;
 
@@ -21,6 +21,7 @@ private:
     config::ConfigHandle<ModelConfig>::UP _modelHandle;
     std::mutex _lock;
     std::unique_ptr<ModelConfig> _modelConfig;
+
 public:
     ModelOwner(const std::string &configId);
     ~ModelOwner();
@@ -29,4 +30,4 @@ public:
     std::optional<ModelConfig> getModelConfig();
 };
 
-}
+} // namespace config::sentinel

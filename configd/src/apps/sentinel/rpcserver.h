@@ -11,8 +11,7 @@
 
 namespace config::sentinel {
 
-class RpcServer
-{
+class RpcServer {
 private:
     fnet::frt::StandaloneFRT _server;
     RPCHooks _rpcHooks;

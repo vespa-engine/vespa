@@ -10,9 +10,7 @@ namespace config::sentinel {
 OutwardCheckContext::~OutwardCheckContext() = default;
 
 OutwardCheck::OutwardCheck(const std::string &spec, OutwardCheckContext &context, int ping_timeout_ms)
-  : _spec(spec),
-    _context(context)
-{
+    : _spec(spec), _context(context) {
     _target = context.orb.GetTarget(spec.c_str());
     _req = context.orb.AllocRPCRequest();
     _req->SetMethodName("sentinel.check.connectivity");
@@ -34,23 +32,18 @@ void OutwardCheck::RequestDone(FRT_RPCRequest *req) {
             LOG(debug, "ping to %s with reverse connectivity OK", _spec.c_str());
             _result = CcResult::ALL_OK;
         } else if (answer == "bad") {
-            LOG(debug, "connected to %s, but reverse connectivity fails: %s",
-                _spec.c_str(), answer.c_str());
+            LOG(debug, "connected to %s, but reverse connectivity fails: %s", _spec.c_str(), answer.c_str());
             _result = CcResult::INDIRECT_PING_FAIL;
         } else {
-            LOG(warning, "connected to %s, but strange reverse connectivity: %s",
-                _spec.c_str(), answer.c_str());
+            LOG(warning, "connected to %s, but strange reverse connectivity: %s", _spec.c_str(), answer.c_str());
             _result = CcResult::INDIRECT_PING_UNAVAIL;
         }
-    } else if (req->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD ||
-               req->GetErrorCode() == FRTE_RPC_WRONG_PARAMS ||
-               req->GetErrorCode() == FRTE_RPC_WRONG_RETURN)
-    {
+    } else if (req->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD || req->GetErrorCode() == FRTE_RPC_WRONG_PARAMS ||
+               req->GetErrorCode() == FRTE_RPC_WRONG_RETURN) {
         LOG(debug, "Connected OK to %s but no reverse connectivity check available", _spec.c_str());
         _result = CcResult::INDIRECT_PING_UNAVAIL;
     } else {
-        LOG(debug, "error on request to %s : %s (%d)", _spec.c_str(),
-            req->GetErrorMessage(), req->GetErrorCode());
+        LOG(debug, "error on request to %s : %s (%d)", _spec.c_str(), req->GetErrorMessage(), req->GetErrorCode());
         _result = CcResult::CONN_FAIL;
     }
     _req->internal_subref();
@@ -65,4 +58,4 @@ void OutwardCheck::classifyResult(CcResult value) {
     _result = value;
 }
 
-}
+} // namespace config::sentinel

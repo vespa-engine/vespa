@@ -13,8 +13,8 @@ private:
     bool _eof;
 
     LineSplitter();
-    LineSplitter& operator =(const LineSplitter&);
-    LineSplitter(const LineSplitter&);
+    LineSplitter &operator=(const LineSplitter &);
+    LineSplitter(const LineSplitter &);
 
     bool resize();
     bool fill();
@@ -27,5 +27,4 @@ public:
     ~LineSplitter();
 };
 
-}
-
+} // namespace config::sentinel

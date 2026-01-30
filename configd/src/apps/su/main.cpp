@@ -1,17 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <pwd.h>
 #include <grp.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 /**
  * small utility to use instead of "su" when we want to just
  * switch to the vespa user without any more fuss
  **/
 
-int main(int argc, char** argv)
-{
+int main(int argc, char **argv) {
     if (argc < 2) {
         fprintf(stderr, "missing arguments, usage: vespa-run-as-vespa-user <cmd> [args ...]\n");
         return 1;
@@ -38,7 +37,7 @@ int main(int argc, char** argv)
         group_arr_sz = 0;
     } else {
         for (int i = 0; i < group_arr_sz; ++i) {
-            grouplist[i] = (gid_t) mac_groups[i];
+            grouplist[i] = (gid_t)mac_groups[i];
         }
     }
 #else

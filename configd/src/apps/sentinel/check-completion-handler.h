@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "status-callback.h"
 #include "peer-check.h"
+#include "status-callback.h"
 
 namespace config::sentinel {
 
@@ -15,10 +15,11 @@ namespace config::sentinel {
 class CheckCompletionHandler : public StatusCallback {
 private:
     FRT_RPCRequest *_parentRequest;
+
 public:
     CheckCompletionHandler(FRT_RPCRequest *parentRequest);
     virtual ~CheckCompletionHandler();
     void returnStatus(bool ok) override;
 };
 
-}
+} // namespace config::sentinel

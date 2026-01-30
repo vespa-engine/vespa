@@ -3,7 +3,9 @@
 
 #include "line-splitter.h"
 
-namespace ns_log { class LLParser; }
+namespace ns_log {
+class LLParser;
+}
 
 namespace config::sentinel {
 
@@ -15,8 +17,8 @@ private:
 
     // Unused constructors/assignment operator:
     OutputConnection();
-    OutputConnection(const OutputConnection&);
-    OutputConnection& operator =(const OutputConnection&);
+    OutputConnection(const OutputConnection &);
+    OutputConnection &operator=(const OutputConnection &);
 
 public:
     explicit OutputConnection(int fd, ns_log::LLParser *p);
@@ -26,4 +28,4 @@ public:
     int fd() const { return _fd; }
 };
 
-}
+} // namespace config::sentinel

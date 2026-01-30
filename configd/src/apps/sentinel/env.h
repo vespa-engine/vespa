@@ -32,6 +32,7 @@ public:
     void statePort(int portnum);
 
     void notifyConfigUpdated();
+
 private:
     void respondAsEmpty();
     ConfigOwner _cfgOwner;
@@ -44,4 +45,4 @@ private:
     int _statePort;
 };
 
-}
+} // namespace config::sentinel

@@ -1,27 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "service.h"
-#include "output-connection.h"
 #include "logctl.h"
-#include <vespa/vespalib/util/stringfmt.h>
+#include "output-connection.h"
 #include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
-#include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sentinel.service");
 #include <vespa/log/llparser.h>
 
-static bool stop()
-{
-    return (vespalib::SignalHandler::INT.check() ||
-            vespalib::SignalHandler::TERM.check());
-}
+static bool stop() { return (vespalib::SignalHandler::INT.check() || vespalib::SignalHandler::TERM.check()); }
 
 using vespalib::make_string;
 
@@ -35,22 +31,13 @@ std::string getVespaTempDir() {
     return tmp;
 }
 
-}
+} // namespace
 
-Service::Service(const SentinelConfig::Service& service, const SentinelConfig::Application& application,
+Service::Service(const SentinelConfig::Service &service, const SentinelConfig::Application &application,
                  std::list<OutputConnection *> &ocs, StartMetrics &metrics)
-    : _pid(-1),
-      _rawState(READY),
-      _state(_rawState),
-      _exitStatus(0),
-      _config(new SentinelConfig::Service(service)),
-      _isAutomatic(true),
-      _restartPenalty(0),
-      _last_start(vespalib::steady_time::min()),
-      _application(application),
-      _outputConnections(ocs),
-      _metrics(metrics)
-{
+    : _pid(-1), _rawState(READY), _state(_rawState), _exitStatus(0), _config(new SentinelConfig::Service(service)),
+      _isAutomatic(true), _restartPenalty(0), _last_start(vespalib::steady_time::min()), _application(application),
+      _outputConnections(ocs), _metrics(metrics) {
     LOG(debug, "%s: created", name().c_str());
     LOG(debug, "  command: %s", _config->command.c_str());
     LOG(debug, " configid: %s", _config->id.c_str());
@@ -73,17 +60,16 @@ void unApplyLogctl(const cloud::config::SentinelConfig::Service &config) {
     }
 }
 
-void
-Service::reconfigure(const SentinelConfig::Service& config)
-{
+void Service::reconfigure(const SentinelConfig::Service &config) {
     if (config.command != _config->command) {
-        LOG(debug, "%s: reconfigured command '%s' -> '%s' - this will "
-            "take effect at next restart", name().c_str(),
-            _config->command.c_str(), config.command.c_str());
+        LOG(debug,
+            "%s: reconfigured command '%s' -> '%s' - this will "
+            "take effect at next restart",
+            name().c_str(), _config->command.c_str(), config.command.c_str());
     }
     if (config.id != _config->id) {
-        LOG(warning, "%s: reconfigured config id '%s' -> '%s' - signaling service restart",
-            name().c_str(), _config->id.c_str(), config.id.c_str());
+        LOG(warning, "%s: reconfigured config id '%s' -> '%s' - signaling service restart", name().c_str(),
+            _config->id.c_str(), config.id.c_str());
         terminate();
     }
 
@@ -100,15 +86,12 @@ Service::reconfigure(const SentinelConfig::Service& config)
     }
 }
 
-Service::~Service()
-{
+Service::~Service() {
     terminate(false, false);
     delete _config;
 }
 
-void
-Service::prepare_for_shutdown()
-{
+void Service::prepare_for_shutdown() {
     auto cmd = _config->preShutdownCommand;
     if (cmd.empty()) {
         return;
@@ -122,9 +105,7 @@ Service::prepare_for_shutdown()
     }
 }
 
-int
-Service::terminate(bool catchable, bool dumpState)
-{
+int Service::terminate(bool catchable, bool dumpState) {
     if (isRunning()) {
         LOG(debug, "%s: terminate(%s)", name().c_str(), catchable ? "cleanly" : "NOW");
         resetRestartPenalty();
@@ -135,8 +116,7 @@ Service::terminate(bool catchable, bool dumpState)
                 if (ret == 0) {
                     setState(TERMINATING);
                 } else {
-                    LOG(warning, "%s: kill -SIGTERM %d failed: %s",
-                        name().c_str(), (int)_pid, strerror(errno));
+                    LOG(warning, "%s: kill -SIGTERM %d failed: %s", name().c_str(), (int)_pid, strerror(errno));
                 }
                 return ret;
             }
@@ -144,8 +124,8 @@ Service::terminate(bool catchable, bool dumpState)
             return 0;
         } else {
             if (dumpState && _state != KILLING) {
-                std::string pstackCmd = make_string("ulimit -c 0; pstack %d > %s/%s.pstack.%d 2>&1",
-                                                         _pid, getVespaTempDir().c_str(), name().c_str(), _pid);
+                std::string pstackCmd = make_string("ulimit -c 0; pstack %d > %s/%s.pstack.%d 2>&1", _pid,
+                                                    getVespaTempDir().c_str(), name().c_str(), _pid);
                 LOG(info, "%s:%d failed to stop. Stack dumping with %s", name().c_str(), _pid, pstackCmd.c_str());
                 int pstackRet = system(pstackCmd.c_str());
                 if (pstackRet != 0) {
@@ -155,8 +135,7 @@ Service::terminate(bool catchable, bool dumpState)
             setState(KILLING);
             int ret = kill(_pid, SIGKILL);
             if (ret != 0) {
-                LOG(warning, "%s: kill -SIGKILL %d failed: %s",
-                    name().c_str(), (int)_pid, strerror(errno));
+                LOG(warning, "%s: kill -SIGKILL %d failed: %s", name().c_str(), (int)_pid, strerror(errno));
             }
             return ret;
         }
@@ -165,24 +144,21 @@ Service::terminate(bool catchable, bool dumpState)
     return 0; // Not running, so all is ok.
 }
 
-void
-Service::runCommand(const std::string & command)
-{
+void Service::runCommand(const std::string &command) {
     int ret = system(command.c_str());
     if (ret == -1) {
         LOG(error, "%s: unable to run shutdown command (%s): %s", name().c_str(), command.c_str(), strerror(errno));
     } else if (WIFSIGNALED(ret)) {
         LOG(error, "%s: shutdown command (%s) terminated by signal %d", name().c_str(), command.c_str(), WTERMSIG(ret));
     } else if (ret != 0) {
-        LOG(warning, "%s: shutdown command (%s) failed with exit status %d", name().c_str(), command.c_str(), WEXITSTATUS(ret));
+        LOG(warning, "%s: shutdown command (%s) failed with exit status %d", name().c_str(), command.c_str(),
+            WEXITSTATUS(ret));
     } else {
         LOG(info, "%s: shutdown command (%s) completed normally.", name().c_str(), command.c_str());
     }
 }
 
-void
-Service::start()
-{
+void Service::start() {
     if (_state == REMOVING) {
         LOG(warning, "tried to start '%s' in REMOVING state", name().c_str());
         return;
@@ -197,8 +173,7 @@ Service::start()
     err |= pipe(stderrpipes);
 
     if (err == -1) {
-        LOG(error, "%s: Attempted to start, but pipe() failed: %s", name().c_str(),
-            strerror(errno));
+        LOG(error, "%s: Attempted to start, but pipe() failed: %s", name().c_str(), strerror(errno));
         setState(FAILED);
         return;
     }
@@ -206,8 +181,7 @@ Service::start()
     fflush(nullptr);
     _pid = fork();
     if (_pid == -1) {
-        LOG(error, "%s: Attempted to start, but fork() failed: %s", name().c_str(),
-            strerror(errno));
+        LOG(error, "%s: Attempted to start, but fork() failed: %s", name().c_str(), strerror(errno));
         setState(FAILED);
         close(stdoutpipes[0]);
         close(stdoutpipes[1]);
@@ -228,8 +202,7 @@ Service::start()
         dup2(stderrpipes[1], 2);
         close(stderrpipes[1]);
 
-        LOG(debug, "%s: Started as pid %d", name().c_str(),
-            static_cast<int>(getpid()));
+        LOG(debug, "%s: Started as pid %d", name().c_str(), static_cast<int>(getpid()));
         signal(SIGTERM, SIG_DFL);
         signal(SIGINT, SIG_DFL);
         if (stop()) {
@@ -252,8 +225,7 @@ Service::start()
     p->setService(_config->name.c_str());
     p->setComponent("stdout");
     p->setPid(_pid);
-    fcntl(stdoutpipes[0], F_SETFL,
-          fcntl(stdoutpipes[0], F_GETFL) | O_NONBLOCK);
+    fcntl(stdoutpipes[0], F_SETFL, fcntl(stdoutpipes[0], F_GETFL) | O_NONBLOCK);
     OutputConnection *c = new OutputConnection(stdoutpipes[0], p);
     _outputConnections.push_back(c);
 
@@ -262,39 +234,31 @@ Service::start()
     p->setComponent("stderr");
     p->setPid(_pid);
     p->setDefaultLevel(ns_log::Logger::warning);
-    fcntl(stderrpipes[0], F_SETFL,
-          fcntl(stderrpipes[0], F_GETFL) | O_NONBLOCK);
+    fcntl(stderrpipes[0], F_SETFL, fcntl(stderrpipes[0], F_GETFL) | O_NONBLOCK);
     c = new OutputConnection(stderrpipes[0], p);
     _outputConnections.push_back(c);
 }
 
-void
-Service::remove()
-{
+void Service::remove() {
     LOG(info, "%s: removed from config", name().c_str());
     setAutomatic(false);
     terminate(false, false);
     setState(REMOVING);
 }
 
-void
-Service::youExited(int status)
-{
+void Service::youExited(int status) {
     // Someone did a waitpid() and figured out that we exited.
     _exitStatus = status;
-    bool expectedDeath = (_state == KILLING || _state == TERMINATING
-                          || _state == REMOVING
-                          || _state == KILLED  || _state == TERMINATED);
+    bool expectedDeath =
+        (_state == KILLING || _state == TERMINATING || _state == REMOVING || _state == KILLED || _state == TERMINATED);
     if (WIFEXITED(status)) {
-        LOG(debug, "%s: Exited with exit code %d", name().c_str(),
-            WEXITSTATUS(status));
+        LOG(debug, "%s: Exited with exit code %d", name().c_str(), WEXITSTATUS(status));
         EV_STOPPED(name().c_str(), _pid, WEXITSTATUS(status));
         setState(FINISHED);
     } else if (WIFSIGNALED(status)) {
         if (expectedDeath) {
             EV_STOPPED(name().c_str(), _pid, WTERMSIG(status));
-            LOG(debug, "%s: Exited expectedly by signal %d", name().c_str(),
-                WTERMSIG(status));
+            LOG(debug, "%s: Exited expectedly by signal %d", name().c_str(), WTERMSIG(status));
             if (_state == TERMINATING) {
                 setState(TERMINATED);
             } else if (_state == KILLING) {
@@ -314,7 +278,7 @@ Service::youExited(int status)
     _metrics.currentlyRunningServices--;
     _metrics.sentinel_running.sample(_metrics.currentlyRunningServices);
 
-    if (! expectedDeath) {
+    if (!expectedDeath) {
         // make sure the service does not restart in a tight loop:
         vespalib::steady_time now = vespalib::steady_clock::now();
         vespalib::duration diff = now - _last_start;
@@ -337,9 +301,7 @@ Service::youExited(int status)
     }
 }
 
-void
-Service::runChild()
-{
+void Service::runChild() {
     // child process - this should exec or signal error
     for (int n = 3; n < 1024; ++n) { // Close all open fds on exec()
         fcntl(n, F_SETFD, FD_CLOEXEC);
@@ -368,8 +330,10 @@ Service::runChild()
     int fd = open("/dev/null", O_RDONLY | O_NOCTTY, 0666);
     if (fd != 0) {
         char buf[200];
-        snprintf(buf, sizeof buf, "open /dev/null for fd 0: got %d "
-                                  "(%s)", fd, strerror(errno));
+        snprintf(buf, sizeof buf,
+                 "open /dev/null for fd 0: got %d "
+                 "(%s)",
+                 fd, strerror(errno));
         [[maybe_unused]] auto writeRes = write(2, buf, strlen(buf));
         std::_Exit(EXIT_FAILURE);
     }
@@ -378,21 +342,14 @@ Service::runChild()
     execl("/bin/sh", "/bin/sh", "-c", _config->command.c_str(), nullptr);
 
     char buf[200];
-    snprintf(buf, sizeof buf, "exec error: %s for /bin/sh -c '%s'",
-             strerror(errno), _config->command.c_str());
+    snprintf(buf, sizeof buf, "exec error: %s for /bin/sh -c '%s'", strerror(errno), _config->command.c_str());
     [[maybe_unused]] auto writeRes = write(2, buf, strlen(buf));
     std::_Exit(EXIT_FAILURE);
 }
 
-const std::string &
-Service::name() const
-{
-    return _config->name;
-}
+const std::string &Service::name() const { return _config->name; }
 
-bool
-Service::isRunning() const
-{
+bool Service::isRunning() const {
     switch (_state) {
     case READY:
     case FINISHED:
@@ -412,9 +369,7 @@ Service::isRunning() const
     return true; // this will not be reached
 }
 
-bool
-Service::wantsRestart() const
-{
+bool Service::wantsRestart() const {
     if (_state == RESTARTING) {
         if (vespalib::steady_clock::now() > _last_start + _restartPenalty) {
             return true;
@@ -423,18 +378,12 @@ Service::wantsRestart() const
     return false;
 }
 
-
-void
-Service::setAutomatic(bool autoStatus)
-{
+void Service::setAutomatic(bool autoStatus) {
     _isAutomatic = autoStatus;
     resetRestartPenalty();
 }
 
-
-void
-Service::incrementRestartPenalty()
-{
+void Service::incrementRestartPenalty() {
     _restartPenalty += 1s;
     _restartPenalty *= 2;
     if (_restartPenalty > MAX_RESTART_PENALTY) {
@@ -443,10 +392,7 @@ Service::incrementRestartPenalty()
     LOG(info, "%s: incremented restart penalty to %2.3f seconds", name().c_str(), vespalib::to_s(_restartPenalty));
 }
 
-
-void
-Service::setState(ServiceState state)
-{
+void Service::setState(ServiceState state) {
     if (_state == REMOVING) {
         // ignore further changes
         return;
@@ -462,23 +408,32 @@ Service::setState(ServiceState state)
     }
 }
 
-const char *
-Service::stateName(ServiceState state) const
-{
+const char *Service::stateName(ServiceState state) const {
     switch (state) {
-    case READY: return "READY";
-    case STARTING: return "STARTING";
-    case RUNNING: return "RUNNING";
-    case TERMINATING: return "TERMINATING";
-    case KILLING: return "KILLING";
-    case FINISHED: return "FINISHED";
-    case TERMINATED: return "TERMINATED";
-    case KILLED: return "KILLED";
-    case FAILED: return "FAILED";
-    case RESTARTING: return "RESTARTING";
-    case REMOVING: return "REMOVING";
+    case READY:
+        return "READY";
+    case STARTING:
+        return "STARTING";
+    case RUNNING:
+        return "RUNNING";
+    case TERMINATING:
+        return "TERMINATING";
+    case KILLING:
+        return "KILLING";
+    case FINISHED:
+        return "FINISHED";
+    case TERMINATED:
+        return "TERMINATED";
+    case KILLED:
+        return "KILLED";
+    case FAILED:
+        return "FAILED";
+    case RESTARTING:
+        return "RESTARTING";
+    case REMOVING:
+        return "REMOVING";
     }
     return "--BAD--";
 }
 
-}
+} // namespace config::sentinel

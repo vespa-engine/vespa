@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "peer-check.h"
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/log/log.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 LOG_SETUP(".sentinel.peer-check");
 
@@ -11,13 +11,7 @@ using vespalib::make_string_short::fmt;
 namespace config::sentinel {
 
 PeerCheck::PeerCheck(StatusCallback &callback, const std::string &host, int port, FRT_Supervisor &orb, int timeout_ms)
-  : _callback(callback),
-    _hostname(host),
-    _portnum(port),
-    _target(nullptr),
-    _req(nullptr),
-    _statusOk(false)
-{
+    : _callback(callback), _hostname(host), _portnum(port), _target(nullptr), _req(nullptr), _statusOk(false) {
     auto spec = fmt("tcp/%s:%d", _hostname.c_str(), _portnum);
     _target = orb.GetTarget(spec.c_str());
     _req = orb.AllocRPCRequest();
@@ -33,8 +27,8 @@ PeerCheck::~PeerCheck() {
 void PeerCheck::RequestDone(FRT_RPCRequest *req) {
     LOG_ASSERT(req == _req);
     if (req->IsError()) {
-        LOG(debug, "error on ping to %s [port %d]: %s (%d)", _hostname.c_str(), _portnum,
-            req->GetErrorMessage(), req->GetErrorCode());
+        LOG(debug, "error on ping to %s [port %d]: %s (%d)", _hostname.c_str(), _portnum, req->GetErrorMessage(),
+            req->GetErrorCode());
     } else {
         LOG(debug, "OK ping to %s [port %d]", _hostname.c_str(), _portnum);
         _statusOk = true;
@@ -47,4 +41,4 @@ void PeerCheck::RequestDone(FRT_RPCRequest *req) {
     _callback.returnStatus(_statusOk);
 }
 
-}
+} // namespace config::sentinel

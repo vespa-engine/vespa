@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "platform-specific.h"
-#include <vespa/vespalib/util/error.h>
 #include <cstdlib>
 #include <string_view>
+#include <vespa/vespalib/util/error.h>
 #ifdef __linux__
 #include <sys/prctl.h>
 #endif
@@ -17,12 +17,12 @@ namespace config::platform_specific {
 namespace {
 
 [[maybe_unused]] [[nodiscard]]
-bool is_env_toggled(const char* var_name) {
-    const char* maybe_toggled = getenv(var_name);
+bool is_env_toggled(const char *var_name) {
+    const char *maybe_toggled = getenv(var_name);
     return (maybe_toggled && (maybe_toggled == "true"sv || maybe_toggled == "yes"sv));
 }
 
-}
+} // namespace
 
 void pledge_no_new_privileges_if_env_configured() {
 #ifdef __linux__
@@ -42,4 +42,4 @@ void pledge_no_new_privileges_if_env_configured() {
 #endif
 }
 
-}
+} // namespace config::platform_specific

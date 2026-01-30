@@ -7,17 +7,17 @@
 #include "rpcserver.h"
 #include "service.h"
 #include "state-api.h"
+#include <poll.h>
+#include <sys/select.h>
+#include <sys/types.h>
 #include <vespa/config-sentinel.h>
 #include <vespa/vespalib/net/http/state_server.h>
-#include <poll.h>
-#include <sys/types.h>
-#include <sys/select.h>
 
 #include <list>
 
 using cloud::config::SentinelConfig;
-using config::ConfigSubscriber;
 using config::ConfigHandle;
+using config::ConfigSubscriber;
 
 namespace config::sentinel {
 
@@ -37,19 +37,20 @@ private:
     ServiceMap _orphans;
     std::list<OutputConnection *> _outputConnections;
 
-    Manager(const Manager&) = delete;
-    Manager& operator =(const Manager&) = delete;
+    Manager(const Manager &) = delete;
+    Manager &operator=(const Manager &) = delete;
 
     Service *serviceByPid(pid_t pid);
-    Service *serviceByName(const std::string & name);
+    Service *serviceByName(const std::string &name);
     void handleCommands();
-    void handleCmd(const Cmd& cmd);
+    void handleCmd(const Cmd &cmd);
     void handleOutputs();
     void handleChildDeaths();
     void handleRestarts();
 
     void terminateServices(bool catchable, bool printDebug = false);
     void doConfigure();
+
 public:
     Manager(Env &env);
     virtual ~Manager();
@@ -58,4 +59,4 @@ public:
     void updateActiveFdset(std::vector<pollfd> &fds);
 };
 
-}
+} // namespace config::sentinel

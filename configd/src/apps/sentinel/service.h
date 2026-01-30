@@ -2,10 +2,10 @@
 #pragma once
 
 #include "metrics.h"
-#include <vespa/vespalib/util/time.h>
-#include <vespa/config-sentinel.h>
 #include <list>
 #include <string>
+#include <vespa/config-sentinel.h>
+#include <vespa/vespalib/util/time.h>
 
 using cloud::config::SentinelConfig;
 
@@ -13,17 +13,26 @@ namespace config::sentinel {
 
 class OutputConnection;
 
-class Service
-{
+class Service {
 private:
     Service(const Service &);
-    Service& operator=(const Service &);
+    Service &operator=(const Service &);
 
     pid_t _pid;
-    enum ServiceState { READY, STARTING, RUNNING, TERMINATING, KILLING,
-                        RESTARTING, REMOVING,
-                        FINISHED, TERMINATED, KILLED, FAILED } _rawState;
-    const enum ServiceState& _state;
+    enum ServiceState {
+        READY,
+        STARTING,
+        RUNNING,
+        TERMINATING,
+        KILLING,
+        RESTARTING,
+        REMOVING,
+        FINISHED,
+        TERMINATED,
+        KILLED,
+        FAILED
+    } _rawState;
+    const enum ServiceState &_state;
     int _exitStatus;
     SentinelConfig::Service *_config;
     bool _isAutomatic;
@@ -34,7 +43,7 @@ private:
 
     [[noreturn]] void runChild();
     void setState(ServiceState state);
-    void runCommand(const std::string & command);
+    void runCommand(const std::string &command);
     const char *stateName(ServiceState state) const;
 
     const SentinelConfig::Application _application;
@@ -45,30 +54,26 @@ private:
 public:
     using UP = std::unique_ptr<Service>;
     ~Service();
-    Service(const SentinelConfig::Service& config,
-            const SentinelConfig::Application& application,
-			std::list<OutputConnection *> &ocs,
-			StartMetrics &metrics);
-    void reconfigure(const SentinelConfig::Service& config);
+    Service(const SentinelConfig::Service &config, const SentinelConfig::Application &application,
+            std::list<OutputConnection *> &ocs, StartMetrics &metrics);
+    void reconfigure(const SentinelConfig::Service &config);
     int pid() const { return _pid; }
     void prepare_for_shutdown();
     int terminate(bool catchable, bool dumpState);
-    int terminate() {
-        return terminate(true, false);
-    }
+    int terminate() { return terminate(true, false); }
     void start();
     void remove();
     void youExited(int status); // Call this if waitpid says it exited
-    const std::string & name() const;
+    const std::string &name() const;
     const char *stateName() const { return stateName(_state); }
     bool isRunning() const;
     bool wantsRestart() const;
     int exitStatus() const { return _exitStatus; }
-    const SentinelConfig::Service& serviceConfig() const { return *_config; }
+    const SentinelConfig::Service &serviceConfig() const { return *_config; }
     void setAutomatic(bool autoStatus);
     bool isAutomatic() const { return _isAutomatic; }
     void resetRestartPenalty() { _restartPenalty = vespalib::duration::zero(); }
     void incrementRestartPenalty();
 };
 
-}
+} // namespace config::sentinel
