@@ -1,16 +1,18 @@
+# Vespa Query Examples
 This is a resource file containing example queries for the MCP client to help the client understand how to query a Vespa application.
 The example queries demonstrate how to transform Command-line queries into the format required by the MCP client.:
 - A String: yql
 - A Map: params
 
-# Note: The examples are based on the Vespa application and schemas used in the news tutorial.
+> Note: The examples are based on the Vespa application and schemas used in the news tutorial.
 Most likely the Vespa application will be different so the example queries is meant for demonstration purposes only for the MCP client.
 The MCP client would need to adapt the queries to the specific application and schemas it is working with.
 For other queries, consult Vespa's query language documentation.
 
 The examples are based on the news tutorial application with the following schemas:
 
-# news.sd
+### news.sd
+```
 schema news {
     document news {
 
@@ -76,9 +78,11 @@ schema news {
     
     }
 }
+```
 
 
-# user.sd
+### user.sd
+```
 schema user {
     document user {
         
@@ -92,36 +96,41 @@ schema user {
     }
 
 }
-
-# Example queries 
+```
+## Example queries 
 
 1. Search all documents of type news
 - Command-line query:
-    vespa query 'yql=select * from news where true'
+    `vespa query 'yql=select * from news where true'`
 - MCP client query:
+```json
     {
         "yql": "select * from sources where true",
         "parameters": {
             "sources": "news"
         }
     }
+```
 
 
 2. Search all documents of the news schema with field abstract containing the word "election"
 - Command-line query:
-    vespa query 'yql=select * from news where abstract contains "election"'
+    `vespa query 'yql=select * from news where abstract contains "election"'`
 - MCP client query:
+```json
     {
         "yql": "select * from sources where abstract contains 'election'",
         "parameters": {
             "sources": "news"
         }
     }
+```
 
-3. Search all documents of the news schema with fieldset default containing the words "music" and "festival", and retrieving only two hits.
+3. Search all documents of the news schema with fieldset default containing the words "music" and "festival", and retrieve only two hits.
 - Command-line query:
-    vespa query 'yql=select * from news where default contains "music" and default contains "festival"' 'hits=2'
+    `vespa query 'yql=select * from news where default contains "music" and default contains "festival"' 'hits=2'`
 - MCP client query:
+```json
     {
         "yql": "select * from sources where default contains 'music' and default contains 'festival'",
         "parameters": {
@@ -129,39 +138,39 @@ schema user {
             "hits": 2
         }
     }
+```
 
 4. Search all documents of the news schema with range search on field date.
 - Command-line query:
-    vespa query 'yql=select * from news where date <= 20191110 AND date >= 20191108'
+    `vespa query 'yql=select * from news where date <= 20191110 AND date >= 20191108'`
 - MCP client query:
+```json
     {
         "yql": "select * from sources where date <= 20191110 AND date >= 20191108",
         "parameters": {
             "sources": "news"
         }
     }
+```
 
 5. Search all documents of the news schema with fieldset default containing the phrase "music festival" and order by date descending.
 - Command-line query:
-    vespa query 'yql=select date from news where default contains phrase("music","festival") order by date desc'
+    `vespa query 'yql=select date from news where default contains phrase("music","festival") order by date desc'`
 - MCP client query:
+```json
     {
         "yql": "select * from sources where default contains phrase('music','festival') order by date desc",
         "parameters": {
             "sources": "news"
         }
     }
+```
 
-6. Search all documents of the news schema grouped by category, with a maximum of 3 hits per category, ordered by count of hits in descending order.
+6. Search all documents of the news schema with fieldset default containing the word "music" and ranking by popularity.
 - Command-line query:
-    vespa query 'yql=select * from news where true limit 0 | all(group(category) max(3) order(-count())each(output(count())))'
+    `vespa query 'yql=select * from news where default contains "music"' 'ranking=popularity'`
 - MCP client query:
-    Doesn't work at the moment
-
-7. Search all documents of the news schema with fieldset default containing the word "music" and ranking by popularity.
-- Command-line query:
-    vespa query 'yql=select * from news where default contains "music"' 'ranking=popularity'
-- MCP client query:
+```json
     {
         "yql": "select * from sources where default contains 'music'",
         "parameters": {
@@ -169,25 +178,26 @@ schema user {
             "ranking": "popularity"
         }
     }
+```
 
-8. Search all documents of the user schema with field user_id equal to "U33527" and retrieving only the field embedding.
+7. Search all documents of the user schema with field user_id equal to "U33527" and retrieve only the field embedding.
 - Command-line query:
-    vespa query 'yql=select embedding from user where user_id contains "U33527"'
-- MCP client query: # Problem: Retrieving more than embeddings
+    `vespa query 'yql=select embedding from user where user_id contains "U33527"'`
+- MCP client query:
+```json
     {
         "yql": "select embedding from sources where user_id contains 'U33527'",
         "parameters": {
-            "sources": "user",
+            "sources": "user"
         }
     }
+```
 
-9. Search all documents of the news schema and retrieving three documents for user "U33527" based on nearest neighbor search on the embedding field.
+8. Search all documents of the news schema and retrieve three documents for user "U33527" based on nearest neighbor search on the embedding field.
 - Command-line query:
-    vespa query 'yql=select * from sources news where {targetHits:3}nearestNeighbor(embedding, user_embedding)' \
-    'hits=3' \
-    'ranking.features.query(user_embedding)={<U33527 embedding>}' \
-    'ranking.profile=recommendation'
+    `vespa query 'yql=select * from sources news where {targetHits:3}nearestNeighbor(embedding, user_embedding)' 'hits=3' 'ranking.features.query(user_embedding)={<U33527 embedding>}' 'ranking.profile=recommendation'`
 - MCP client query:
+```json
     {
         "yql": "select * from sources where {targetHits:3}nearestNeighbor(embedding, user_embedding)",
         "parameters": {
@@ -197,3 +207,4 @@ schema user {
             "ranking": "recommendation"
         }
     }
+```

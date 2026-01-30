@@ -383,7 +383,7 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
         return McpStatelessServerFeatures.SyncToolSpecification.builder()
             .tool(tool)
             .callHandler((context, request) -> {
-                try (InputStream is = getClass().getClassLoader().getResourceAsStream("queryExamples.txt")) {
+                try (InputStream is = getClass().getClassLoader().getResourceAsStream("queryExamples.md")) {
                     if (is == null) {
                         return new McpSchema.CallToolResult("{\"error\": \"Query examples not found\"}", true);
                     }
@@ -422,9 +422,9 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
         return new McpStatelessServerFeatures.SyncResourceSpecification(
             defResource,
             (context, request) -> {
-                try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("queryExamples.txt")) {
+                try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("queryExamples.md")) {
                     if (inputStream == null) {
-                        throw new FileNotFoundException("Resource not found: queryExamples.txt");
+                        throw new FileNotFoundException("Resource not found: queryExamples.md");
                     }
                     String examples = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
 
