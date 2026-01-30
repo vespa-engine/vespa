@@ -7,6 +7,8 @@
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/error.h>
+#include <vespa/messagebus/metadata_extractor.h>
+#include <vespa/messagebus/metadata_injector.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/compressor.h>
@@ -33,6 +35,9 @@ const char *METHOD_NAME   = "mbus.slime";
 const char *METHOD_PARAMS = "bixbix";
 const char *METHOD_RETURN = "bixbix";
 
+// Header fields:
+Memory KVS_F("kvs");
+// Body fields:
 Memory VERSION_F("version");
 Memory ROUTE_F("route");
 Memory SESSION_F("session");
@@ -103,7 +108,40 @@ private:
 };
 OutputBuf::~OutputBuf() = default;
 
+class SlimeMetadataInjector final : public MetadataInjector {
+    Cursor& _kv_cursor;
+public:
+    explicit SlimeMetadataInjector(Cursor& kv_cursor) noexcept : _kv_cursor(kv_cursor) {}
+    ~SlimeMetadataInjector() override = default;
+
+    void inject_key_value(std::string_view key, std::string_view value) override {
+        _kv_cursor.setString(key, value);
+    }
+};
+
+void encode_message_header_metadata(FRT_Values& args, const Message& msg) {
+    // The KV header is never compressed. This is intentional and is done to prevent
+    // compression oracle attacks (a-la CRIME/BREACH) that can be used to deduce the
+    // value of secret tokens from observing the change in ciphertext sizes on the
+    // wire across many messages.
+    args.AddInt8(CompressionConfig::NONE);
+    if (!msg.hasMetadata()) {
+        args.AddInt32(0);
+        args.AddData("", 0);
+    } else {
+        Slime slime;
+        Cursor& root = slime.setObject();
+        Cursor& kvs = root.setObject(KVS_F);
+        SlimeMetadataInjector injector(kvs);
+        msg.injectMetadata(injector);
+        OutputBuf hdr_buf(128); // TODO empirically choose this based on likely header KV sizes
+        BinaryFormat::encode(slime, hdr_buf);
+        args.AddInt32(hdr_buf.getBuf().getDataLen());
+        args.AddData(hdr_buf.getBuf().getData(), hdr_buf.getBuf().getDataLen());
+    }
 }
+
+} // namespace
 
 void
 RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Route & route,
@@ -112,10 +150,7 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
 {
     FRT_Values &args = *req.GetParams();
     req.SetMethodName(METHOD_NAME);
-    // Place holder for auxillary data to be transfered later.
-    args.AddInt8(CompressionConfig::NONE);
-    args.AddInt32(0);
-    args.AddData("", 0);
+    encode_message_header_metadata(args, msg);
 
     Slime slime;
     Cursor & root = slime.setObject();
@@ -145,12 +180,52 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
 
 namespace {
 
-class ParamsV2 : public RPCSend::Params
+class SlimeMetadataExtractor final : public MetadataExtractor {
+    Slime _slime;
+    const Inspector& _kvs_inspector;
+public:
+    SlimeMetadataExtractor(Slime slime, const Inspector& kvs_inspector) noexcept
+        : _slime(std::move(slime)),
+          _kvs_inspector(kvs_inspector)
+    {}
+    ~SlimeMetadataExtractor() override = default;
+
+    std::optional<std::string> extract_value(std::string_view key) const override {
+        const Inspector& v = _kvs_inspector[key];
+        return v.valid() ? std::optional(v.asString().make_string()) : std::nullopt;
+    }
+};
+
+class ParamsV2 final : public RPCSend::Params
 {
 public:
     explicit ParamsV2(const FRT_Values &arg)
-        : _slime()
+        : _slime(),
+          _meta_extractor()
     {
+        decode_header_if_present(arg);
+        decode_body(arg);
+    }
+
+    void decode_header_if_present(const FRT_Values& arg) {
+        const uint8_t encoding = arg[0]._intval8;
+        const uint32_t hdr_blob_size = arg[1]._intval32;
+        // DataBuffer::getDataLen() has different semantics depending on ctor buffer constness...
+        const DataBuffer hdr_blob(static_cast<const void*>(arg[2]._data._buf), arg[2]._data._len);
+        if ((hdr_blob_size > 0) && (hdr_blob.getDataLen() == hdr_blob_size) &&
+            CompressionConfig::toType(encoding) == CompressionConfig::NONE)
+        {
+            Slime slime;
+            BinaryFormat::decode(Memory(hdr_blob.getData(), hdr_blob.getDataLen()), slime);
+            Inspector& slime_kvs = slime.get()[KVS_F];
+            if (slime_kvs.valid() && slime_kvs.fields() > 0) {
+                // Assumption: inspector remains valid after Slime instance has been moved
+                _meta_extractor = std::make_unique<SlimeMetadataExtractor>(std::move(slime), slime_kvs);
+            }
+        }
+    }
+
+    void decode_body(const FRT_Values& arg) {
         uint8_t encoding = arg[3]._intval8;
         uint32_t uncompressedSize = arg[4]._intval32;
         DataBuffer uncompressed(arg[5]._data._buf, arg[5]._data._len);
@@ -181,8 +256,12 @@ public:
         Memory m = _slime.get()[BLOB_F].asData();
         return BlobRef(m.data, m.size);
     }
+    std::unique_ptr<MetadataExtractor> get_metadata_extractor_once() noexcept override {
+        return std::move(_meta_extractor);
+    }
 private:
     Slime _slime;
+    std::unique_ptr<SlimeMetadataExtractor> _meta_extractor; // nullptr if no header metadata
 };
 
 }
@@ -234,7 +313,10 @@ RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
 void
 RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & reply, Blob payload) const
 {
-    // Place holder for auxillary data to be transfered later.
+    // We don't currently encode headers for replies, only requests. This is
+    // partly because MessageBus may transparently merge multiple replies from
+    // forked message request paths, and it's not clear what the correct conflict
+    // resolution strategy would be for multiple values for the same key.
     ret.AddInt8(CompressionConfig::NONE);
     ret.AddInt32(0);
     ret.AddData("", 0);
