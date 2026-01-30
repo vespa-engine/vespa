@@ -11,8 +11,16 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
+
+	"github.com/fxamacker/cbor/v2"
 )
+
+// cborDecMode is configured to decode maps with string keys for JSON compatibility.
+var cborDecMode, _ = cbor.DecOptions{
+	DefaultMapType: reflect.TypeOf(map[string]interface{}(nil)),
+}.DecMode()
 
 // Exists returns true if the given path exists.
 func Exists(path string) bool {
@@ -68,6 +76,32 @@ func ReaderToJSON(reader io.Reader) string {
 
 // StringToJSON returns string s as indented JSON.
 func StringToJSON(s string) string { return ReaderToJSON(strings.NewReader(s)) }
+
+// CBORToJSON converts CBOR data to indented JSON string.
+func CBORToJSON(data []byte) (string, error) {
+	var v interface{}
+	if err := cborDecMode.Unmarshal(data, &v); err != nil {
+		return "", err
+	}
+	jsonBytes, err := json.MarshalIndent(v, "", "    ")
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
+// CBORToJSONCompact converts CBOR data to compact JSON string.
+func CBORToJSONCompact(data []byte) (string, error) {
+	var v interface{}
+	if err := cborDecMode.Unmarshal(data, &v); err != nil {
+		return "", err
+	}
+	jsonBytes, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
 
 // AtomicWriteFile atomically writes data to filename.
 func AtomicWriteFile(filename string, data []byte) error {
