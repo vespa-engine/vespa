@@ -442,6 +442,14 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(PROCESSING_HANDLER_CLASS, config.bundle());
     }
 
+    @Test
+    void mcpSearchSpecProvider_is_added_when_search_is_enabled() {
+        createClusterWithProcessingAndSearchChains();
+        ComponentsConfig.Components config = getComponentInConfig(componentsConfig(), "com.yahoo.search.mcp.McpSearchSpecProvider");
+        assertNotNull(config);
+        assertEquals("container-search-and-docproc", config.bundle());
+    }
+
     private void createClusterWithProcessingAndSearchChains() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>" +

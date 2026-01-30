@@ -856,6 +856,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addSearchHandler(deployState, cluster, searchElement, context);
 
+        cluster.addComponent(new SimpleComponent(new ComponentModel(
+                "com.yahoo.search.mcp.McpSearchSpecProvider", null,
+                PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE, null)));
+
         validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
 
         addSignificance(deployState, searchElement, cluster);
