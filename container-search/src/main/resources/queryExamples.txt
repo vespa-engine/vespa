@@ -1,12 +1,12 @@
-This is a resource file containing example queries for the Mcp client to help the client understand how to query a Vespa application.
-The example queries demonstrate how to transform Command-line queries into the format required by the Mcp client.:
-- A String yql 
-- A Map params 
+This is a resource file containing example queries for the MCP client to help the client understand how to query a Vespa application.
+The example queries demonstrate how to transform Command-line queries into the format required by the MCP client.:
+- A String: yql
+- A Map: params
 
 # Note: The examples are based on the Vespa application and schemas used in the news tutorial.
-Most likely the Vespa application will be different so the example queries is meant for demonstration purposes only for the Mcp client.
+Most likely the Vespa application will be different so the example queries is meant for demonstration purposes only for the MCP client.
 The MCP client would need to adapt the queries to the specific application and schemas it is working with.
-For other queries use the getDocumentation tool to find relevant documentation on Vespa's query language, as the examples are not covering all possible queries.
+For other queries, consult Vespa's query language documentation.
 
 The examples are based on the news tutorial application with the following schemas:
 
