@@ -294,6 +294,9 @@ RPCSend::doRequest(FRT_RPCRequest *req)
                               make_string("Message (type %d) received at %s for session '%s'.",
                                           msg->getType(), _serverIdent.c_str(), string(params->getSession()).c_str()));
     }
+    if (auto header_kvs = params->get_header_key_values_once()) {
+        msg->set_header_key_values(std::move(header_kvs));
+    }
     _net->getOwner().deliverMessage(std::move(msg), params->getSession());
 }
 

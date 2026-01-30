@@ -23,7 +23,7 @@ TEST(MessagesTest, concrete_types_have_expected_sizes) {
     EXPECT_EQ(sizeof(GetDocumentMessage),    sizeof(DocumentMessage) + sizeof(document::DocumentId) + sizeof(std::string) + sizeof(std::optional<uint16_t>) + /* padding */ 4);
     EXPECT_EQ(sizeof(GetDocumentReply),      128u);
     EXPECT_EQ(sizeof(TestAndSetCondition),   sizeof(std::string) + sizeof(uint64_t));
-    EXPECT_EQ(sizeof(DocumentMessage),       112u);
+    EXPECT_EQ(sizeof(DocumentMessage),       120u);
     EXPECT_EQ(sizeof(TestAndSetMessage),     sizeof(TestAndSetCondition) + sizeof(DocumentMessage));
     EXPECT_EQ(sizeof(PutDocumentMessage),    sizeof(TestAndSetMessage) + 40);
     EXPECT_EQ(sizeof(WriteDocumentReply),    112u);

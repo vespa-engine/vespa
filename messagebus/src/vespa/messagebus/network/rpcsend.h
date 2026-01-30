@@ -16,6 +16,7 @@ namespace vespalib { class Trace; }
 namespace mbus {
 
 class Error;
+class HeaderKeyValues;
 class Route;
 class Message;
 class RPCServiceAddress;
@@ -48,6 +49,7 @@ public:
         virtual std::string_view getRoute() const = 0;
         virtual std::string_view getSession() const = 0;
         virtual BlobRef getPayload() const = 0;
+        virtual std::unique_ptr<HeaderKeyValues> get_header_key_values_once() noexcept = 0;
     };
 protected:
     RPCNetwork *_net;

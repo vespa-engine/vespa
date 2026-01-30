@@ -7,6 +7,7 @@
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/error.h>
+#include <vespa/messagebus/header_key_values.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/compressor.h>
@@ -33,6 +34,9 @@ const char *METHOD_NAME   = "mbus.slime";
 const char *METHOD_PARAMS = "bixbix";
 const char *METHOD_RETURN = "bixbix";
 
+// Header fields:
+Memory KVS_F("kvs");
+// Body fields:
 Memory VERSION_F("version");
 Memory ROUTE_F("route");
 Memory SESSION_F("session");
@@ -103,19 +107,39 @@ private:
 };
 OutputBuf::~OutputBuf() = default;
 
+void encode_message_header_kvs(FRT_Values& args, const HeaderKeyValues& header_kvs) {
+    // The KV header is never compressed. This is intentional and is done to prevent
+    // compression oracle attacks (a-la CRIME/BREACH) that can be used to deduce the
+    // value of secret tokens from observing the change in ciphertext sizes on the
+    // wire across many messages.
+    args.AddInt8(CompressionConfig::NONE);
+    if (header_kvs.empty()) {
+        args.AddInt32(0);
+        args.AddData("", 0);
+    } else {
+        Slime slime;
+        Cursor& root = slime.setObject();
+        Cursor& kvs = root.setObject(KVS_F);
+        for (const auto& kv : header_kvs) {
+            kvs.setString(kv.first, kv.second);
+        }
+        OutputBuf hdr_buf(128); // TODO empirically choose this based on likely header KV sizes
+        BinaryFormat::encode(slime, hdr_buf);
+        args.AddInt32(hdr_buf.getBuf().getDataLen());
+        args.AddData(hdr_buf.getBuf().getData(), hdr_buf.getBuf().getDataLen());
+    }
 }
 
+} // anon ns
+
 void
-RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Route & route,
+RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Route& route,
                          const RPCServiceAddress & address, const Message & msg, uint32_t traceLevel,
                          const PayLoadFiller &filler, duration timeRemaining) const
 {
     FRT_Values &args = *req.GetParams();
     req.SetMethodName(METHOD_NAME);
-    // Place holder for auxillary data to be transfered later.
-    args.AddInt8(CompressionConfig::NONE);
-    args.AddInt32(0);
-    args.AddData("", 0);
+    encode_message_header_kvs(args, msg.header_key_values());
 
     Slime slime;
     Cursor & root = slime.setObject();
@@ -145,12 +169,52 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
 
 namespace {
 
-class ParamsV2 : public RPCSend::Params
+template <typename Fn>
+class FnObjectTraverser final : public ObjectTraverser {
+    Fn _fn;
+public:
+    explicit FnObjectTraverser(Fn fn) : _fn(std::move(fn)) {}
+    ~FnObjectTraverser() override = default;
+    void field(const Memory& symbol, const Inspector& inspector) override {
+        _fn(symbol, inspector);
+    }
+};
+
+template <typename Fn>
+auto make_fn_traverser(Fn fn) {
+    return FnObjectTraverser<Fn>(std::move(fn));
+}
+
+class ParamsV2 final : public RPCSend::Params
 {
 public:
     explicit ParamsV2(const FRT_Values &arg)
-        : _slime()
+        : _slime(),
+          _header_kvs()
     {
+        decode_header_if_present(arg);
+        decode_body(arg);
+    }
+
+    void decode_header_if_present(const FRT_Values& arg) {
+        const uint8_t encoding = arg[0]._intval8;
+        const uint32_t hdr_blob_size = arg[1]._intval32;
+        const DataBuffer hdr_blob(arg[2]._data._buf, arg[2]._data._len);
+        if ((hdr_blob_size > 0) && (hdr_blob.getDataLen() == hdr_blob_size) &&
+            CompressionConfig::toType(encoding) == CompressionConfig::NONE)
+        {
+            Slime slime;
+            BinaryFormat::decode(Memory(hdr_blob.getData(), hdr_blob.getDataLen()), slime);
+            HeaderKeyValues::Map header_kvs;
+            auto traverser = make_fn_traverser([&header_kvs](const Memory& symbol, const Inspector& inspector) {
+                header_kvs[symbol.make_string()] = inspector.asString().make_string();
+            });
+            slime.get()[KVS_F].traverse(traverser);
+            _header_kvs = std::make_unique<HeaderKeyValues>(std::move(header_kvs));
+        }
+    }
+
+    void decode_body(const FRT_Values& arg) {
         uint8_t encoding = arg[3]._intval8;
         uint32_t uncompressedSize = arg[4]._intval32;
         DataBuffer uncompressed(arg[5]._data._buf, arg[5]._data._len);
@@ -181,8 +245,12 @@ public:
         Memory m = _slime.get()[BLOB_F].asData();
         return BlobRef(m.data, m.size);
     }
+    std::unique_ptr<HeaderKeyValues> get_header_key_values_once() noexcept override {
+        return std::move(_header_kvs);
+    }
 private:
     Slime _slime;
+    std::unique_ptr<HeaderKeyValues> _header_kvs;
 };
 
 }

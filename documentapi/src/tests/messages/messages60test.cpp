@@ -265,7 +265,7 @@ TEST_F(Messages60Test, testPutDocumentMessage) {
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
     EXPECT_EQ(sizeof(std::string) + sizeof(uint64_t), sizeof(TestAndSetCondition));
-    EXPECT_EQ(112u, sizeof(DocumentMessage));
+    EXPECT_EQ(120u, sizeof(DocumentMessage));
     EXPECT_EQ(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
     EXPECT_EQ(sizeof(TestAndSetMessage) + 40, sizeof(PutDocumentMessage));
     int size_of_create_if_non_existent_flag = 1;

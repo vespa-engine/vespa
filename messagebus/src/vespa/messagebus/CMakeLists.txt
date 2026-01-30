@@ -11,6 +11,7 @@ vespa_add_library(vespa_messagebus
     emptyreply.cpp
     error.cpp
     errorcode.cpp
+    header_key_values.cpp
     intermediatesession.cpp
     intermediatesessionparams.cpp
     message.cpp

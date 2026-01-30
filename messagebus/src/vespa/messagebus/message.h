@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "header_key_values.h"
 #include "routable.h"
 #include <vespa/messagebus/routing/route.h>
 
@@ -181,12 +182,17 @@ public:
      * @return This, to allow chaining.
      */
     Message &setRetry(uint32_t retry) { _retry = retry; return *this; }
+
+    void set_header_key_values(std::unique_ptr<HeaderKeyValues> kvs) noexcept;
+
+    [[nodiscard]] const HeaderKeyValues& header_key_values() const noexcept;
 private:
-    Route         _route;
-    time_point    _timeReceived;
-    duration      _timeRemaining;
-    bool          _retryEnabled;
-    uint32_t      _retry;
+    Route                            _route;
+    std::unique_ptr<HeaderKeyValues> _header_kvs;
+    time_point                       _timeReceived;
+    duration                         _timeRemaining;
+    bool                             _retryEnabled;
+    uint32_t                         _retry;
 };
 
 } // namespace mbus

@@ -28,8 +28,8 @@ TEST(SimpleProtocolTest, simpleprotocol_test) {
     }
     {
         // test SimpleMessage
-        EXPECT_EQ(104u, sizeof(Message));
-        EXPECT_EQ(120u + sizeof(std::string), sizeof(SimpleMessage));
+        EXPECT_EQ(168u, sizeof(Message));
+        EXPECT_EQ(sizeof(Message) + 16u + sizeof(std::string), sizeof(SimpleMessage));
         auto msg = std::make_unique<SimpleMessage>("test");
         EXPECT_TRUE(!msg->isReply());
         EXPECT_TRUE(msg->getProtocol() == SimpleProtocol::NAME);

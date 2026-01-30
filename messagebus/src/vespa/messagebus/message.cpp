@@ -15,6 +15,7 @@ namespace mbus {
 
 Message::Message() :
     _route(),
+    _header_kvs(),
     _timeReceived(),
     _timeRemaining(0),
     _retryEnabled(true),
@@ -66,6 +67,21 @@ duration
 Message::getTimeRemainingNow() const
 {
     return std::max(0ns, _timeRemaining - (vespalib::steady_clock::now() - _timeReceived));
+}
+
+void
+Message::set_header_key_values(std::unique_ptr<HeaderKeyValues> kvs) noexcept {
+    _header_kvs = std::move(kvs);
+}
+
+const HeaderKeyValues&
+Message::header_key_values() const noexcept {
+    if (!_header_kvs) {
+        static const HeaderKeyValues empty_kvs;
+        return empty_kvs; // shall never be mutated by the caller
+    } else {
+        return *_header_kvs;
+    }
 }
 
 } // namespace mbus
