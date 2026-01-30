@@ -6,6 +6,9 @@
 
 namespace mbus {
 
+class MetadataInjector;
+class MetadataExtractor;
+
 /**
  * A Message is a question, a Reply is the answer.
  */
@@ -146,6 +149,47 @@ public:
      * @return 1
      */
     virtual uint32_t getApproxSize() const { return 1; }
+
+    /**
+     * Returns whether a Message may have metadata it wishes to propagate to destinations.
+     *
+     * Note that if a Message subclass contains metadata, it has the responsibility to
+     * ensure swapState(Routable) correctly handles this metadata.
+     */
+    [[nodiscard]] virtual bool hasMetadata() const noexcept { return false; }
+
+    /**
+     * At the time of serializing a Message to the underlying transport carrier the
+     * network subsystem will call hasMetadata(). Iff it returns true, this method will
+     * then be subsequently invoked to inject any metadata key/value pairs the Message
+     * wants to propagate to the receiver.
+     *
+     * The newly materialized Message instance on the receiver side will have
+     * extractMetadata(MetadataExtractor) invoked on it with an extractor that can read
+     * the values set by the sender.
+     *
+     * The transport carrier shall guarantee that the metadata injected will not be
+     * compressed during transport.
+     *
+     * @param injector used to set metadata key/value pairs in the underlying
+     *                 message carrier.
+     */
+    virtual void injectMetadata(MetadataInjector& injector) const {
+        (void)injector; // no-op by default
+    }
+
+    /**
+     * Lets a Message subclass extract specific metadata values received via the
+     * underlying transport for this particular Message.
+     *
+     * This method is always invoked by the transport layer right after it has
+     * been decoded but _before_ it is passed to any message handlers.
+     *
+     * @param extractor used to extract values for specific keys
+     */
+    virtual void extractMetadata(const MetadataExtractor& extractor) {
+        (void)extractor; // no-op by default
+    }
 
     /**
      * Sets whether or not this message can be resent.

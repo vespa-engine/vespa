@@ -7,6 +7,7 @@
 #include <vespa/messagebus/tracelevel.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/metadata_extractor.h>
 #include <vespa/fnet/channel.h>
 #include <vespa/fnet/frt/reflection.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -293,6 +294,9 @@ RPCSend::doRequest(FRT_RPCRequest *req)
         msg->getTrace().trace(TraceLevel::SEND_RECEIVE,
                               make_string("Message (type %d) received at %s for session '%s'.",
                                           msg->getType(), _serverIdent.c_str(), string(params->getSession()).c_str()));
+    }
+    if (auto meta_extractor = params->get_metadata_extractor_once()) {
+        msg->extractMetadata(*meta_extractor);
     }
     _net->getOwner().deliverMessage(std::move(msg), params->getSession());
 }
