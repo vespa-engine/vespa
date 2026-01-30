@@ -856,9 +856,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addSearchHandler(deployState, cluster, searchElement, context);
 
-        cluster.addComponent(new SimpleComponent(new ComponentModel(
-                "com.yahoo.search.mcp.McpSearchSpecProvider", null,
-                PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE, null)));
+        // Skip MCP spec provider when running locally through the 'application' test framework
+        if (!System.getProperty("vespa.local", "false").equals("true")) {
+            cluster.addComponent(new SimpleComponent(new ComponentModel(
+                    "com.yahoo.search.mcp.McpSearchSpecProvider", null,
+                    PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE, null)));
+        }
 
         validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
 
@@ -1322,6 +1325,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addMcpHandler(DeployState deployState, ApplicationContainerCluster cluster, ConfigModelContext context) {
+        // Skip MCP handler when running locally through the 'application' test framework,
+        // as the MCP SDK classes are not on the classpath in that environment.
+        if (System.getProperty("vespa.local", "false").equals("true")) return;
+
         var bindings = McpHandler.defaultBindings();
         if (isHostedTenantApplication(context)) {
             bindings = McpHandler.bindingPattern(getDataplanePorts(deployState, cluster));
