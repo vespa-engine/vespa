@@ -51,6 +51,9 @@ void create_directory(const std::string& path) {
     std::filesystem::create_directory(std::filesystem::path(path));
 }
 
+constexpr uint32_t block_size = 4_Ki;
+constexpr uint32_t placeholder_directory_size = block_size;
+
 }
 
 class Fixture : public DirectoryHandler {
@@ -358,23 +361,23 @@ class TransientDiskUsageTest : public TransientDiskUsageFixture, public testing:
 TEST_F(TransientDiskUsageTest, disk_usage_of_snapshots_can_count_towards_transient_usage)
 {
     create_invalid_snapshot(3);
-    EXPECT_EQ(0, transient_disk_usage());
+    EXPECT_EQ(placeholder_directory_size, transient_disk_usage());
     write_snapshot_file(3, 64);
     // Note: search::DirectoryTraverse rounds each file size up to a block size of 4 KiB.
     // Writing of snapshot 3 is ongoing and counts towards transient disk usage.
-    EXPECT_EQ(4_Ki, transient_disk_usage());
+    EXPECT_EQ(placeholder_directory_size + block_size, transient_disk_usage());
     writer->markValidSnapshot(3);
     // Snapshot 3 is now the best and does NOT count towards transient disk usage.
     EXPECT_EQ(0, transient_disk_usage());
 
     create_invalid_snapshot(5);
-    EXPECT_EQ(0, transient_disk_usage());
-    write_snapshot_file(5, 4_Ki + 1);
+    EXPECT_EQ(placeholder_directory_size, transient_disk_usage());
+    write_snapshot_file(5, block_size + 1);
     // Writing of snapshot 5 is ongoing and counts towards transient disk usage.
-    EXPECT_EQ(8_Ki, transient_disk_usage());
+    EXPECT_EQ(placeholder_directory_size + 2 * block_size, transient_disk_usage());
     writer->markValidSnapshot(5);
     // Snapshot 5 is now the best and only 3 counts towards transient disk usage.
-    EXPECT_EQ(4_Ki, transient_disk_usage());
+    EXPECT_EQ(placeholder_directory_size + block_size, transient_disk_usage());
 
     // Snapshot 3 is removed.
     writer->invalidateOldSnapshots();
@@ -388,14 +391,14 @@ TEST(TransientDiskUsageLoadTest, disk_usage_of_snapshots_are_calculated_when_loa
         TransientDiskUsageFixture f;
         f.cleanup(false);
         f.create_valid_snapshot(3, 64);
-        f.create_valid_snapshot(5, 4_Ki + 1);
+        f.create_valid_snapshot(5, block_size + 1);
         f.writer->invalidateOldSnapshots();
-        EXPECT_EQ(4_Ki, f.transient_disk_usage());
+        EXPECT_EQ(placeholder_directory_size + block_size, f.transient_disk_usage());
     }
     {
         TransientDiskUsageFixture f;
         // Snapshot 5 is the best and only 3 counts towards transient disk usage.
-        EXPECT_EQ(4_Ki, f.transient_disk_usage());
+        EXPECT_EQ(placeholder_directory_size + block_size, f.transient_disk_usage());
         // Snapshot 3 is removed.
         f.writer->removeInvalidSnapshots();
         EXPECT_EQ(0, f.transient_disk_usage());

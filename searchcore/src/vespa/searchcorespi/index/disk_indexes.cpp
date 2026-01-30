@@ -4,7 +4,7 @@
 #include "indexdisklayout.h"
 #include "index_disk_dir.h"
 #include "index_disk_dir_state.h"
-#include <vespa/searchlib/util/dirtraverse.h>
+#include <vespa/searchlib/util/directory_traverse.h>
 #include <cassert>
 #include <vector>
 
