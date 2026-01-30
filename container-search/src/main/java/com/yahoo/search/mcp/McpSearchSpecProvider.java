@@ -134,29 +134,6 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
         }
     }
 
-    /**
-     * Type-safe casting helper for Map objects from JSON parsing.
-     *
-     * @param obj The object to cast.
-     * @return The cast object if it is a Map, or null if not.
-     */
-    @SuppressWarnings("unchecked")
-    private static <T> T safeMapCast(Object obj) { return obj instanceof Map ? (T) obj : null; }
-
-    /**
-     * Type-safe casting helper for List objects from JSON parsing.
-     *
-     * @param obj The object to cast.
-     * @return The cast object if it is a List, or null if not.
-     */
-    @SuppressWarnings("unchecked")
-    private static <T> T safeListCast(Object obj) { return obj instanceof List ? (T) obj : null; }
-
-    private Map<String, Object> error(String message, Exception e) {
-        logger.log(Level.SEVERE, message, e);
-        return Map.of("error", message + ": " + e.getMessage());
-    }
-
     /** Extracts field or fieldset information from a map of FieldInfo objects. */
     private Map<String, Object> fieldsOrFieldsetsInfo(Map<String, ? extends FieldInfo> fields) {
         Map<String, Object> result = new LinkedHashMap<>();
