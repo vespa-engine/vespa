@@ -53,20 +53,6 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
     private final SchemaInfo schemaInfo;
     private final CompiledQueryProfileRegistry queryProfileRegistry;
 
-//    /**
-//     * Construct a search package with no tools initialized.
-//     * Useful when the package is created before Vespa components are available.
-//     */
-//    public McpSearchPackage() {
-//        this.toolSpecs = new ArrayList<>();
-//        this.resourceSpecs = new ArrayList<>();
-//        this.promptSpecs = new ArrayList<>();
-//        this.executionFactory = null;
-//        this.queryProfileRegistry = null;
-//        this.searchChain = null;
-//        this.schemaInfo = null;
-//    }
-
     /**
      * Construct a search package and populate tools/resources/prompts using Vespa components.
      */

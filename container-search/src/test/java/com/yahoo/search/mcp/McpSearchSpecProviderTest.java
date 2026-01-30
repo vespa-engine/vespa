@@ -17,13 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for the McpSearchPackage class.
+ * Unit tests for the McpSearchSpecProvider class.
  *
  * @author Edvard Dingsør
  */
-public class McpSearchPackageTest {
+public class McpSearchSpecProviderTest {
 
-    private McpSearchSpecProvider mcpSearchPackage;
+    private McpSearchSpecProvider mcpSearchSpec;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
@@ -41,12 +41,12 @@ public class McpSearchPackageTest {
         when(mockSearchChainRegistry.getChain("native")).thenReturn(mockSearchChain);
         when(mockSchemaInfo.schemas()).thenReturn(Map.of());
 
-        mcpSearchPackage = new McpSearchSpecProvider(mockExecutionFactory, mockQueryProfileRegistry);
+        mcpSearchSpec = new McpSearchSpecProvider(mockExecutionFactory, mockQueryProfileRegistry);
     }
 
     @Test
     public void testToolSpecsAreRegistered() {
-        var toolSpecs = mcpSearchPackage.getToolSpecs();
+        var toolSpecs = mcpSearchSpec.getToolSpecs();
         assertNotNull(toolSpecs);
         assertEquals(3, toolSpecs.size());
 
@@ -59,14 +59,14 @@ public class McpSearchPackageTest {
 
     @Test
     public void testResourceSpecsAreRegistered() {
-        var resourceSpecs = mcpSearchPackage.getResourceSpecs();
+        var resourceSpecs = mcpSearchSpec.getResourceSpecs();
         assertNotNull(resourceSpecs);
         assertEquals(1, resourceSpecs.size());
     }
 
     @Test
     public void testPromptSpecsAreRegistered() {
-        var promptSpecs = mcpSearchPackage.getPromptSpecs();
+        var promptSpecs = mcpSearchSpec.getPromptSpecs();
         assertNotNull(promptSpecs);
         assertEquals(1, promptSpecs.size());
     }
