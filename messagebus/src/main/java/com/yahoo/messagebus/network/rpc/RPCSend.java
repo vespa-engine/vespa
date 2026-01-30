@@ -23,6 +23,8 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingNode;
 import com.yahoo.text.Utf8Array;
 
+import java.util.Map;
+
 /**
  * Implements the request adapter for method "mbus.send1/mbus.slime".
  *
@@ -154,6 +156,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
         Utf8Array protocolName;
         byte [] payload;
         int traceLevel;
+        Map<String, String> headerKVs;
     }
 
     @Override
@@ -202,6 +205,9 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
         if (msg.getTrace().shouldTrace(TraceLevel.SEND_RECEIVE)) {
             msg.getTrace().trace(TraceLevel.SEND_RECEIVE,
                     "Message (type " + msg.getType() + ") received at " + serverIdent + " for session '" + p.session + "'.");
+        }
+        if (p.headerKVs != null) {
+            msg.setHeaderKeyValues(p.headerKVs);
         }
         net.getOwner().deliverMessage(msg, p.session);
     }

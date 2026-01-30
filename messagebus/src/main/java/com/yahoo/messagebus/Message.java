@@ -4,6 +4,10 @@ package com.yahoo.messagebus;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.messagebus.routing.Route;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
+
 /**
  * A message is a child of Routable, it is not a reply, and it has a sequencing identifier. Furthermore, a message
  * contains a retry counter that holds what retry the message is currently on. See the method comment {@link #getRetry}
@@ -14,6 +18,7 @@ import com.yahoo.messagebus.routing.Route;
 public abstract class Message extends Routable {
 
     private Route route = null;
+    private Map<String, String> headerKeyValues = Map.of();
     private long timeReceived = 0;
     private long timeRemaining = 0;
     private boolean retryEnabled = true;
@@ -44,6 +49,10 @@ public abstract class Message extends Routable {
             long timeRemaining = this.timeRemaining;
             this.timeRemaining = msg.timeRemaining;
             msg.timeRemaining = timeRemaining;
+
+            var headerKvs = this.headerKeyValues;
+            this.headerKeyValues = msg.headerKeyValues;
+            msg.headerKeyValues = headerKvs;
         }
     }
 
@@ -54,6 +63,16 @@ public abstract class Message extends Routable {
     public Message setRoute(Route route) {
         this.route = new Route(route);
         return this;
+    }
+
+    /** Returns an immutable mapping of header key/values */
+    public Map<String, String> getHeaderKeyValues() {
+        return headerKeyValues;
+    }
+
+    public void setHeaderKeyValues(Map<String, String> kvs) {
+        Objects.requireNonNull(kvs);
+        headerKeyValues = Collections.unmodifiableMap(kvs);
     }
 
     /**

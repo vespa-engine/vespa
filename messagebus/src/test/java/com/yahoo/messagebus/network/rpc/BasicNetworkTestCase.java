@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -72,7 +73,10 @@ public class BasicNetworkTestCase {
         assertTrue(pxy.waitSlobrok("test/dst/session", 1));
 
         // send message on client
-        ss.send(new SimpleMessage("test message"), "test");
+        var msgToSend = new SimpleMessage("test message");
+        var hdrKvs = Map.of("foo", "bar", "baz", "zoid");
+        msgToSend.setHeaderKeyValues(hdrKvs);
+        ss.send(msgToSend, "test");
 
         // check message on proxy
         Message msg = pxy_mr.getMessage(60);
@@ -80,6 +84,7 @@ public class BasicNetworkTestCase {
         assertEquals(SimpleProtocol.MESSAGE, msg.getType());
         SimpleMessage sm = (SimpleMessage) msg;
         assertEquals("test message", sm.getValue());
+        assertEquals(hdrKvs, sm.getHeaderKeyValues());
 
         // forward message on proxy
         sm.setValue(sm.getValue() + " pxy");
@@ -91,6 +96,7 @@ public class BasicNetworkTestCase {
         assertEquals(SimpleProtocol.MESSAGE, msg.getType());
         sm = (SimpleMessage) msg;
         assertEquals("test message pxy", sm.getValue());
+        assertEquals(hdrKvs, sm.getHeaderKeyValues());
 
         // send reply on server
         SimpleReply sr = new SimpleReply("test reply");
