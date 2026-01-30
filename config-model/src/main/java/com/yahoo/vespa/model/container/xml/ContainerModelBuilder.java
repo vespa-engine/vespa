@@ -224,6 +224,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addDefaultThreadpool(deployState, spec, cluster);
 
         cluster.addDefaultHandlersExceptStatus();
+        addMcpHandler(deployState, cluster, context);
         addStatusHandlers(cluster, context.getDeployState().isHosted());
         addUserHandlers(deployState, cluster, spec, context);
 
@@ -1314,6 +1315,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Add as child to SearchHandler to get the correct chains config.
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
+    }
+
+    private void addMcpHandler(DeployState deployState, ApplicationContainerCluster cluster, ConfigModelContext context) {
+        var bindings = McpHandler.defaultBindings();
+        if (isHostedTenantApplication(context)) {
+            bindings = McpHandler.bindingPattern(getDataplanePorts(deployState, cluster));
+        }
+        var handler = new McpHandler();
+        bindings.forEach(handler::addServerBindings);
+        cluster.addComponent(handler);
     }
 
     private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, ApplicationContainerCluster cluster, Element searchElement, Collection<BindingPattern> defaultBindings) {

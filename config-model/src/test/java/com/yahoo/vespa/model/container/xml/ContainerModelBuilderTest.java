@@ -377,6 +377,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         JdiscBindingsConfig.Handlers metricsV2Handler = config.handlers(MetricsV2Handler.class.getName());
         assertThat(metricsV2Handler.serverBindings(), contains("http://*/metrics/v2", "http://*/metrics/v2/*"));
+
+        JdiscBindingsConfig.Handlers mcpHandler = config.handlers("ai.vespa.mcp.McpRequestHandler");
+        assertThat(mcpHandler.serverBindings(), contains("http://*/mcp/*"));
     }
 
     @Test
