@@ -1,0 +1,13 @@
+schema foreachterm {
+    document foreachterm {
+        field title type string {
+            indexing: index | summary
+        }
+    }
+
+    rank-profile test-profile {
+        first-phase {
+            expression: foreach(terms, N, term(N).significance, true, max)
+        }
+    }
+}
