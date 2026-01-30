@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -316,6 +317,38 @@ public class RankProfileInputTest {
         clusters.add(new Cluster.Builder("ab").addSchema("a").addSchema("b").build());
         clusters.add(new Cluster.Builder("a").addSchema("a").build());
         return new SchemaInfo(schemas, clusters);
+    }
+
+    @Test
+    void testBlankTextEmbedReturnsNull() {
+        Tensor embedding = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
+
+        Map<String, Embedder> embedders = Map.of(
+                "emb1", new MockEmbedder("should not be called", Language.UNKNOWN, embedding)
+        );
+
+        // Empty string - should return null (no tensor set)
+        assertBlankEmbedReturnsNull("embed('')", "query(myTensor4)", embedders);
+        assertBlankEmbedReturnsNull("embed(\"\")", "query(myTensor4)", embedders);
+        // Whitespace-only string - should return null
+        assertBlankEmbedReturnsNull("embed('   ')", "query(myTensor4)", embedders);
+        assertBlankEmbedReturnsNull("embed(emb1, '')", "query(myTensor4)", embedders);
+        assertBlankEmbedReturnsNull("embed(emb1, '   ')", "query(myTensor4)", embedders);
+    }
+
+    private void assertBlankEmbedReturnsNull(String embed, String destination, Map<String, Embedder> embedders) {
+        Query query = new Query.Builder().setRequest(HttpRequest.createTestRequest(
+                                                 "?" + urlEncode("ranking.features." + destination) +
+                                                 "=" + urlEncode(embed) +
+                                                 "&ranking=commonProfile",
+                                                 com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                                         .setSchemaInfo(createSchemaInfo())
+                                         .setQueryProfile(createQueryProfile())
+                                         .setEmbedders(embedders)
+                                         .build();
+        assertEquals(0, query.errors().size());
+        // Blank text should result in null (no tensor set)
+        assertNull(query.properties().get("ranking.features." + destination));
     }
 
     @Test

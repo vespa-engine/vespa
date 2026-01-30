@@ -87,7 +87,9 @@ public class TensorConverter {
             embedderId = entry.getKey();
             embedder = entry.getValue();
         }
-        return embedder.embed(resolve(argument, contextValues, properties), embedderContext.copy().setEmbedderId(embedderId), type);
+        var text = resolve(argument, contextValues, properties);
+        if (text.isBlank()) return null;
+        return embedder.embed(text, embedderContext.copy().setEmbedderId(embedderId), type);
     }
 
     private Embedder requireEmbedder(String embedderId) {
