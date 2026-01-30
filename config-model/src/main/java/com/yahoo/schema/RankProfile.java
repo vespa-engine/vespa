@@ -108,6 +108,7 @@ public class RankProfile implements Cloneable {
     private Double filterFirstThreshold = null;
     private Double filterFirstExploration = null;
     private Double explorationSlack = null;
+    private Boolean prefetchTensors = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private Double weakandStopwordLimit = null;
     private Boolean weakandAllowDropAll = null;
@@ -804,6 +805,7 @@ public class RankProfile implements Cloneable {
     public void setFilterFirstThreshold(double threshold) { this.filterFirstThreshold = threshold; }
     public void setFilterFirstExploration(double exploration) { this.filterFirstExploration = exploration; }
     public void setExplorationSlack(double slack) { this.explorationSlack = slack; }
+    public void setPrefetchTensors(boolean value) { this.prefetchTensors = value; }
     public void setTargetHitsMaxAdjustmentFactor(double factor) { this.targetHitsMaxAdjustmentFactor = factor; }
     public void setWeakandStopwordLimit(double limit) { this.weakandStopwordLimit = limit; }
     public void setWeakandAdjustTarget(double target) { this.weakandAdjustTarget = target; }
@@ -849,6 +851,13 @@ public class RankProfile implements Cloneable {
             return OptionalDouble.of(explorationSlack);
         }
         return uniquelyInherited(RankProfile::getExplorationSlack, OptionalDouble::isPresent, "exploration-slack").orElse(OptionalDouble.empty());
+    }
+
+    public Boolean getPrefetchTensors() {
+        if (prefetchTensors != null) {
+            return prefetchTensors;
+        }
+        return uniquelyInherited(RankProfile::getPrefetchTensors, "prefetch-tensors").orElse(null);
     }
 
     public OptionalDouble getTargetHitsMaxAdjustmentFactor() {

@@ -153,6 +153,7 @@ public:
         std::optional<double> distance_threshold;
         std::optional<double> approximate_threshold;
         std::optional<double> exploration_slack;
+        std::optional<bool> prefetch_tensors;
         std::optional<double> filter_first_exploration;
         std::optional<double> filter_first_threshold;
         std::optional<double> post_filter_threshold;

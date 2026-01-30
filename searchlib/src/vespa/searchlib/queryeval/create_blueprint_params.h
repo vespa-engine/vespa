@@ -18,6 +18,7 @@ struct CreateBlueprintParams
     double filter_first_upper_limit;
     double filter_first_exploration;
     double exploration_slack;
+    bool prefetch_tensors;
     double target_hits_max_adjustment_factor;
     vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm;
     queryeval::wand::StopWordStrategy weakand_stop_word_strategy;
@@ -28,6 +29,7 @@ struct CreateBlueprintParams
                           double filter_first_upper_limit_in,
                           double filter_first_exploration_in,
                           double exploration_slack_in,
+                          bool prefetch_tensors_in,
                           double target_hits_max_adjustment_factor_in,
                           vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm_in,
                           queryeval::wand::StopWordStrategy weakand_stop_word_strategy_in,
@@ -37,6 +39,7 @@ struct CreateBlueprintParams
           filter_first_upper_limit(filter_first_upper_limit_in),
           filter_first_exploration(filter_first_exploration_in),
           exploration_slack(exploration_slack_in),
+          prefetch_tensors(prefetch_tensors_in),
           target_hits_max_adjustment_factor(target_hits_max_adjustment_factor_in),
           fuzzy_matching_algorithm(fuzzy_matching_algorithm_in),
           weakand_stop_word_strategy(weakand_stop_word_strategy_in),
@@ -50,6 +53,7 @@ struct CreateBlueprintParams
                                 fef::indexproperties::matching::FilterFirstUpperLimit::DEFAULT_VALUE,
                                 fef::indexproperties::matching::FilterFirstExploration::DEFAULT_VALUE,
                                 fef::indexproperties::matching::ExplorationSlack::DEFAULT_VALUE,
+                                fef::indexproperties::matching::TensorsPrefetch::DEFAULT_VALUE,
                                 fef::indexproperties::matching::TargetHitsMaxAdjustmentFactor::DEFAULT_VALUE,
                                 fef::indexproperties::matching::FuzzyAlgorithm::DEFAULT_VALUE,
                                 queryeval::wand::StopWordStrategy::none(),
