@@ -21,10 +21,28 @@ func (n annNode) makeRows(tab *table) {
 	}
 	tab.str("explore additional hits").str(fmt.Sprintf("%d", n.root.Field("explore_additional_hits").AsLong())).commit()
 	tab.str("algorithm").str(n.root.Field("algorithm").AsString()).commit()
+	if filter_first_heuristic := n.root.Field("filter_first_heuristic_used"); filter_first_heuristic.Valid() {
+		if filter_first_heuristic.AsBool() {
+			tab.str("filter-first heuristic").str("used").commit()
+		} else {
+			tab.str("filter-first heuristic").str("not used").commit()
+		}
+	}
 	if calculated := n.root.Field("global_filter").Field("calculated"); calculated.Valid() && !calculated.AsBool() {
 		tab.str("global filter").str("not calculated").commit()
 	} else if hit_ratio := n.root.Field("global_filter").Field("hit_ratio"); hit_ratio.Valid() {
 		tab.str("global filter").str(fmt.Sprintf("%.3f hit ratio", hit_ratio.AsDouble())).commit()
+	}
+	if constructed := n.root.Field("lazy_filter").Field("constructed"); constructed.Valid() && !constructed.AsBool() {
+		tab.str("lazy filter").str("not constructed").commit()
+	} else if hit_ratio := n.root.Field("lazy_filter").Field("hit_ratio"); hit_ratio.Valid() {
+		tab.str("lazy filter").str(fmt.Sprintf("%.3f hit ratio", hit_ratio.AsDouble())).commit()
+	}
+	if nodes_visited := n.root.Field("nodes_visited"); nodes_visited.Valid() {
+		tab.str("visited nodes").str(fmt.Sprintf("%d", nodes_visited.AsLong())).commit()
+	}
+	if distances_computed := n.root.Field("distances_computed"); distances_computed.Valid() {
+		tab.str("computed distances").str(fmt.Sprintf("%d", distances_computed.AsLong())).commit()
 	}
 	if top_k_hits := n.root.Field("top_k_hits"); top_k_hits.Valid() {
 		tab.str("found hits").str(fmt.Sprintf("%d", top_k_hits.AsLong())).commit()
