@@ -11,6 +11,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -34,6 +35,7 @@ LOG_SETUP("attribute_test");
 
 using namespace document;
 using std::shared_ptr;
+using search::DiskSpaceCalculator;
 using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::attribute::BasicType;
@@ -100,31 +102,49 @@ expectZero(const string &b)
 }
 
 uint64_t
-statSize(const string &fileName)
+stat_save_file_size(const string& fileName, bool pad)
 {
     std::error_code ec;
     uint64_t sz = fs::file_size(fs::path(fileName), ec);
     EXPECT_FALSE(ec);
+    if (pad) {
+        DiskSpaceCalculator calc;
+        sz = calc(sz);
+    }
     return sz;
+}
+
+uint64_t
+stat_save_files_size(const AttributeVector &a, bool pad)
+{
+    std::string baseFileName = a.getBaseFileName();
+    uint64_t resultSize = stat_save_file_size(baseFileName + ".dat", pad);
+    if (a.hasMultiValue()) {
+        resultSize += stat_save_file_size(baseFileName + ".idx", pad);
+    }
+    if (a.hasWeightedSetType()) {
+        resultSize += stat_save_file_size(baseFileName + ".weight", pad);
+    }
+    if (a.hasEnum() && a.getEnumeratedSave()) {
+        resultSize += stat_save_file_size(baseFileName + ".udat", pad);
+    }
+    if (pad) {
+        resultSize += DiskSpaceCalculator::directory_placeholder_size();
+    }
+    return resultSize;
 }
 
 uint64_t
 statSize(const AttributeVector &a)
 {
-    std::string baseFileName = a.getBaseFileName();
-    uint64_t resultSize = statSize(baseFileName + ".dat");
-    if (a.hasMultiValue()) {
-        resultSize += statSize(baseFileName + ".idx");
-    }
-    if (a.hasWeightedSetType()) {
-        resultSize += statSize(baseFileName + ".weight");
-    }
-    if (a.hasEnum() && a.getEnumeratedSave()) {
-        resultSize += statSize(baseFileName + ".udat");
-    }
-    return resultSize;
+    return stat_save_files_size(a, false);
 }
 
+uint64_t
+stat_size_on_disk(const AttributeVector &a)
+{
+    return stat_save_files_size(a, true);
+}
 
 bool
 preciseEstimatedSize(const AttributeVector &a)
@@ -509,6 +529,7 @@ void AttributeTest::testReload(const AttributePtr & a)
     {
         double actSize = statSize(*b);
         EXPECT_LE(actSize, a->size_on_disk());
+        EXPECT_EQ(stat_size_on_disk(*b), a->size_on_disk());
         if (preciseEstimatedSize(*a)) {
             EXPECT_EQ(actSize, a->getEstimatedSaveByteSize());
         } else {
