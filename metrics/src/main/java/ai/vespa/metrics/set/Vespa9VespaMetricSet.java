@@ -177,6 +177,8 @@ public class Vespa9VespaMetricSet {
         // Embedders
         addMetric(metrics, ContainerMetrics.EMBEDDER_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.EMBEDDER_SEQUENCE_LENGTH, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_REQUEST_COUNT, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_REQUEST_FAILURE_COUNT, EnumSet.of(max, sum, count));
 
         return metrics;
     }
