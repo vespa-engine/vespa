@@ -35,6 +35,9 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     private final List<Pair<GetNodeStateRequest, Long>> pendingNodeStateRequests = new LinkedList<>();
     private NodeState reportedState;
     private NodeState wantedState;
+    // Must have a lower initial value than ContentCluster#orchestrationGeneration
+    // to prevent confusion when that number is incremented.
+    private long wantedStateOrchestrationGeneration = -1;
 
     /** Whether this node has been configured to be retired and should therefore always return retired as its wanted state */
     private boolean configuredRetired;
@@ -276,6 +279,21 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     /** Returns the wanted state set directly by a user (i.e. not configured) */
     public NodeState getUserWantedState() { return wantedState; }
+
+    /**
+     * Returns a value that can be compared for equality against the ContentCluster's
+     * current orchestration decision generation. If (and only if) the two are equal
+     * it means the wanted state of the node was set by this controller in a cluster
+     * configuration (topology, redundancy, ...) that is the same as the current one.
+     *
+     * @see ContentCluster#orchestrationGeneration()
+     */
+    public long wantedStateOrchestrationGeneration() {
+        return wantedStateOrchestrationGeneration;
+    }
+    public void setWantedStateOrchestrationGeneration(long generation) {
+        wantedStateOrchestrationGeneration = generation;
+    }
 
     public long getTimeOfFirstFailingConnectionAttempt() {
         return timeOfFirstFailingConnectionAttempt;

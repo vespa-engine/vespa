@@ -94,6 +94,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         }
         // State of master election
         masterElectionHandler.writeHtmlState(content);
+        writeOrchestrationGeneration(content);
         // Overview of current config
         writeHtmlState(content, options);
         // Event log
@@ -126,6 +127,12 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             }
             sb.append("</table>\n");
         }
+    }
+
+    private void writeOrchestrationGeneration(StringBuilder sb) {
+        sb.append("<p>Internal orchestration generation: ")
+          .append(cluster.orchestrationGeneration())
+          .append("</p>\n");
     }
 
     private static void writeClusterStates(StringBuilder sb, ClusterStateBundle clusterStates) {
