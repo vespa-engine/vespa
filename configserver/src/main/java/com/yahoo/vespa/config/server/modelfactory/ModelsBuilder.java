@@ -299,18 +299,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                             ApplicationId applicationId,
                                             Provisioned provisioned) {
         Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
-        // Note: nodeRepositoryProvisioner will always be present when hosted is true
-        Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(applicationId, provisioned);
-
-        if (hosted) {
-            // In hosted Vespa, always use node repository provisioner - never read hosts.xml
-            // (which may be included by customers migrating from self-hosted but is not used in cloud)
-            if (allocatedHosts.isPresent())
-                return createStaticProvisionerForHosted(allocatedHosts.get(), nodeRepositoryProvisioner.get());
-            return nodeRepositoryProvisioner.get();
-        }
-
-        // Non-hosted: use hosts.xml if available
+        if (hosted && allocatedHosts.isPresent())
+            return createStaticProvisionerForHosted(allocatedHosts.get(), createNodeRepositoryProvisioner(applicationId, provisioned).get());
         return DeployState.getDefaultModelHostProvisioner(applicationPackage);
     }
 
