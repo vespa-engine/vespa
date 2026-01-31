@@ -53,6 +53,7 @@ public class RankProfileInputProperties extends Properties {
                                                       context,
                                                       query.properties(),
                                                       deadline);
+                    if (value == null) return; // Blank text to embed - skip setting the feature
                 }
             }
             catch (IllegalArgumentException e) {
