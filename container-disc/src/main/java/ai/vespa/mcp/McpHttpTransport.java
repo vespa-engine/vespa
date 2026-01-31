@@ -1,26 +1,22 @@
 package ai.vespa.mcp;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-
-
 import io.modelcontextprotocol.server.DefaultMcpTransportContext;
 import io.modelcontextprotocol.server.McpStatelessServerHandler;
 import io.modelcontextprotocol.server.McpTransportContext;
 import io.modelcontextprotocol.server.McpTransportContextExtractor;
-import io.modelcontextprotocol.spec.*;
-
+import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpStatelessServerTransport;
 import reactor.core.publisher.Mono;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * McpHttpTransport is a transport implementation for a stateless MCP server.
@@ -28,7 +24,7 @@ import reactor.core.publisher.Mono;
  * It also provides methods for creating HTTP responses and handling errors.
  * @author Edvard Dingsør
  */
-public class McpHttpTransport implements McpStatelessServerTransport {
+class McpHttpTransport implements McpStatelessServerTransport {
 
     private static final Logger logger = Logger.getLogger(McpHttpTransport.class.getName());
 
@@ -37,9 +33,9 @@ public class McpHttpTransport implements McpStatelessServerTransport {
     private final McpTransportContextExtractor<HttpRequest> contextExtractor;
     private volatile boolean isClosing = false;
 
-    public McpHttpTransport() {
+    McpHttpTransport() {
         this.mapper = new ObjectMapper();
-        this.contextExtractor = (request, context) -> context; // Change later??
+        this.contextExtractor = (request, context) -> context;
     }
 
     @Override
@@ -79,7 +75,7 @@ public class McpHttpTransport implements McpStatelessServerTransport {
      * @param e the exception that caused the error (can be null)
      * @return an HttpResponse object with the specified status code and error message in JSON format
      */
-    public HttpResponse createErrorResponse(int statusCode, String errorMsg, Exception e) {
+    HttpResponse createErrorResponse(int statusCode, String errorMsg, Exception e) {
         if (e != null) {
             logger.log(Level.SEVERE, errorMsg, e);
         }
@@ -91,7 +87,7 @@ public class McpHttpTransport implements McpStatelessServerTransport {
      * @param request The HTTP request to handle.
      * @return  a 405 Method Not Allowed response.
      */
-    public HttpResponse handleGet(HttpRequest request) {
+    HttpResponse handleGet(HttpRequest request) {
         return createHttpResponse(405, null);
     }
 
@@ -102,7 +98,7 @@ public class McpHttpTransport implements McpStatelessServerTransport {
      * @param requestBody The body of the HTTP request, expected to be a JSON-RPC message.
      * @return an HttpResponse containing the result of processing the request.
      */
-    public HttpResponse handlePost(HttpRequest request, byte[] requestBody) {
+    HttpResponse handlePost(HttpRequest request, byte[] requestBody) {
         String accept = request.getHeader("Accept");
         if (accept == null || !accept.contains("application/json")) {
             return createErrorResponse(400, "application/json must be in the Accept header", null);
@@ -168,7 +164,7 @@ public class McpHttpTransport implements McpStatelessServerTransport {
      * @param request The HTTP request to handle.
      * @return a 405 Method Not Allowed response.
      */
-    public HttpResponse handleDelete(HttpRequest request) {
+    HttpResponse handleDelete(HttpRequest request) {
         return createHttpResponse(405, null);
     }
 

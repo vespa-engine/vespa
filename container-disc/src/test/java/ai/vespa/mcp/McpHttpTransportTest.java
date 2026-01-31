@@ -40,7 +40,6 @@ public class McpHttpTransportTest {
         transport.setMcpHandler(mockHandler);
     }
 
-
     @Test
     public void testUnsupportedRequest() {
         HttpRequest getRequest = createTestRequest("http://localhost:8080/mcp/", Method.GET);
@@ -54,29 +53,25 @@ public class McpHttpTransportTest {
 
     @Test
     public void testHandlePostWithMissingAcceptHeader() {
-        // Create a POST request without an Accept header
         HttpRequest request = createTestRequest("http://localhost:8080/mcp/", Method.POST);
         HttpResponse response = transport.handlePost(request, new byte[0]);
         assertEquals(400, response.getStatus());
-        
-        // Verify the response body contains the expected error message
+
         String responseBody = renderResponse(response);
         assertTrue(responseBody.contains("application/json must be in the Accept header"));
     }
 
     @Test
     public void testHandlePostWithInvalidJson() {
-        // Create a POST request with an Accept header but invalid JSON body
         HttpRequest request = createTestRequest(
                 "http://localhost:8080/mcp/",
                 Method.POST,
                 new ByteArrayInputStream("invalid json".getBytes(StandardCharsets.UTF_8)),
                 java.util.Map.of("Accept", "application/json")
         );
-        
+
         HttpResponse response = transport.handlePost(request, "invalid json".getBytes(StandardCharsets.UTF_8));
 
-        // Verify that a 400 Bad Request response with an error message is returned
         assertEquals(400, response.getStatus());
         String responseBody = renderResponse(response);
         assertTrue(responseBody != null && !responseBody.isEmpty());
@@ -84,7 +79,6 @@ public class McpHttpTransportTest {
 
     @Test
     public void testHandlePostWithValidJsonRpcRequest() throws Exception {
-        // Create a POST request with an Accept header and a simple JSON-RPC request body
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"123\",\"method\":\"tools/list\",\"params\":{}}";
         HttpRequest request = createTestRequest(
                 "http://localhost:8080/mcp/",
@@ -113,18 +107,14 @@ public class McpHttpTransportTest {
 
     @Test
     public void testCreateErrorResponse() {
-        // Create an error response
         HttpResponse response = transport.createErrorResponse(400, "Test error message", null);
-        
-        // Verify that a 400 Bad Request response with the error message is returned
+
         assertEquals(400, response.getStatus());
         String responseBody = renderResponse(response);
         assertTrue(responseBody.contains("Test error message"));
     }
 
-    /**
-     * Helper method to render an HttpResponse to a String.
-     */
+    /** Helper method to render an HttpResponse to a String. */
     public static String renderResponse(HttpResponse response) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
