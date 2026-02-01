@@ -70,7 +70,7 @@ public class PendingRestartsMaintainer extends ConfigServerMaintainer {
                             } catch (RuntimeException e) {
                                 log.log(
                                         Level.INFO,
-                                        "Failed to update reindexing status for " + id + ": "
+                                        "Failed to update pending restarts for " + id + ": "
                                                 + Exceptions.toMessageString(e));
                                 failures.incrementAndGet();
                             }
