@@ -121,6 +121,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter="8.636") default boolean useNewPrepareForRestart() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
         @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
+        @ModelFeatureFlag(owners = {"glebashnik"}) default boolean waitForApplyOnRestart() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
