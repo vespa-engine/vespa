@@ -32,7 +32,7 @@ public class ClusterCapacity {
     private final String diskSpeed;
     private final String storageType;
     private final String architecture;
-    private final String           clusterType;
+    private final String clusterType;
     private final Optional<String> cloudAccount;
 
     @JsonCreator
