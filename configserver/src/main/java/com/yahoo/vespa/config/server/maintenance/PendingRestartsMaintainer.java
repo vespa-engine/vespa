@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.model.api.ServiceConfigState;
@@ -88,7 +89,25 @@ public class PendingRestartsMaintainer extends ConfigServerMaintainer {
                 .configConvergenceChecker()
                 .getServiceConfigStates(application, Duration.ofSeconds(10), restartingHostnames);
         return configStates.entrySet().stream()
-                .collect(Collectors.toMap(entry -> entry.getKey().getHostName(), Map.Entry::getValue));
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().getHostName(),
+                        Map.Entry::getValue,
+                        PendingRestartsMaintainer::mergeServiceConfigStates));
+    }
+
+    /**
+     * Merges config states from multiple services with the same hostname.
+     * This intends to trigger restart if all services are ready.
+     */
+    static ServiceConfigState mergeServiceConfigStates(ServiceConfigState state1, ServiceConfigState state2) {
+        long maxCurrentGeneration = Math.max(state1.currentGeneration(), state2.currentGeneration());
+        // Empty (unknown) applyOnRestart is treated as true for backwards compatibility.
+        boolean applyOnRestart1 =
+                (state1.applyOnRestart().isEmpty() || state1.applyOnRestart().get());
+        boolean applyOnRestart2 =
+                state2.applyOnRestart().isEmpty() || state2.applyOnRestart().get();
+        boolean minApplyOnRestart = applyOnRestart1 && applyOnRestart2;
+        return new ServiceConfigState(maxCurrentGeneration, Optional.of(minApplyOnRestart));
     }
 
     private void restart(ApplicationId id, Set<String> nodesToRestart) {

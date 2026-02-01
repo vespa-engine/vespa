@@ -171,4 +171,27 @@ class PendingRestartsMaintainerTest {
                                 log)
                         .generationsForRestarts());
     }
+
+    @Test
+    void test_mergeServiceConfigStates() {
+        assertEquals(new ServiceConfigState(2, Optional.of(true)),
+                PendingRestartsMaintainer.mergeServiceConfigStates(
+                        new ServiceConfigState(1, Optional.of(true)),
+                        new ServiceConfigState(2, Optional.of(true))));
+
+        assertEquals(new ServiceConfigState(2, Optional.of(true)),
+                PendingRestartsMaintainer.mergeServiceConfigStates(
+                        new ServiceConfigState(1, Optional.empty()),
+                        new ServiceConfigState(2, Optional.of(true))));
+
+        assertEquals(new ServiceConfigState(2, Optional.of(false)),
+                PendingRestartsMaintainer.mergeServiceConfigStates(
+                        new ServiceConfigState(1, Optional.empty()),
+                        new ServiceConfigState(2, Optional.of(false))));
+
+        assertEquals(new ServiceConfigState(2, Optional.of(false)),
+                PendingRestartsMaintainer.mergeServiceConfigStates(
+                        new ServiceConfigState(1, Optional.of(false)),
+                        new ServiceConfigState(2, Optional.of(false))));
+    }
 }

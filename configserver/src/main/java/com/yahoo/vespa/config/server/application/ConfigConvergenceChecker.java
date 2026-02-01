@@ -154,7 +154,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             client.start();
             if ( ! hostInApplication(application, hostAndPortToCheck))
                 return new ServiceResponse(ServiceResponse.Status.hostNotFound, wantedGeneration);
-            ServiceConfigState serviceConfigState = getServicConfigState(
+            ServiceConfigState serviceConfigState = getServiceConfigState(
                             client, URI.create("http://" + hostAndPortToCheck), timeout)
                     .get();
             long currentGeneration = serviceConfigState.currentGeneration();
@@ -201,7 +201,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                 int statePort = getStatePort(service).orElse(0);
                 if (statePort <= 0) continue;
                 URI uri = URI.create("http://" + service.getHostName() + ":" + statePort);
-                CompletableFuture<Void> inprogressRequest = getServicConfigState(client, uri, timeout)
+                CompletableFuture<Void> inprogressRequest = getServiceConfigState(client, uri, timeout)
                         .handle((result, error) -> {
                             if (result != null) {
                                 temporaryResult.put(service, result);
@@ -227,7 +227,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     /** Get service generation of service at given URL */
-    private CompletableFuture<ServiceConfigState> getServicConfigState(CloseableHttpAsyncClient client, URI serviceUrl, Duration timeout) {
+    private CompletableFuture<ServiceConfigState> getServiceConfigState(CloseableHttpAsyncClient client, URI serviceUrl, Duration timeout) {
         SimpleHttpRequest request = SimpleRequestBuilder.get(createApiUri(serviceUrl)).build();
         request.setConfig(createRequestConfig(timeout));
 
