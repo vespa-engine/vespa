@@ -280,7 +280,8 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     }
 
     private String getContentType(String query) {
-        if ("format=prometheus".equals(query)) {
+        var queryMap = parseQuery(query);
+        if ("prometheus".equals(queryMap.get("format"))) {
             return "text/plain;charset=utf-8";
         }
         return "application/json";
