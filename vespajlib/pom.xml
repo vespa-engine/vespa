@@ -129,7 +129,8 @@
         <configuration>
           <!-- Illegal reflective access by com.yahoo.io.NativeIO -->
           <argLine>
-            --add-opens=java.base/java.io=ALL-UNNAMED
+              -Djava.io.tmpdir=${project.build.directory}
+              --add-opens=java.base/java.io=ALL-UNNAMED
           </argLine>
         </configuration>
       </plugin>
