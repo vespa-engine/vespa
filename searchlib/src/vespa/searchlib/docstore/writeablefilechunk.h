@@ -61,6 +61,7 @@ public:
     vespalib::system_time getModificationTime() const override;
     void freeze(vespalib::CpuUsage::Category cpu_category);
     size_t getDiskFootprint() const override;
+    uint64_t get_size_on_disk() const override;
     size_t getMemoryFootprint() const override;
     size_t getMemoryMetaFootprint() const override;
     vespalib::MemoryUsage getMemoryUsage() const override;
@@ -102,6 +103,7 @@ private:
     void updateChunkInfo(const ProcessedChunkQ & chunks, const ChunkMetaV & cmetaV);
     void updateCurrentDiskFootprint(const std::lock_guard<std::mutex>&);
     size_t getDiskFootprint(const unique_lock & guard) const;
+    uint64_t get_size_on_disk(const unique_lock & guard) const;
     std::unique_ptr<FastOS_FileInterface> openIdx();
     const Chunk& get_chunk(uint32_t chunk) const;
 
@@ -121,12 +123,13 @@ private:
     uint64_t          _pendingIdx;
     uint64_t          _pendingDat;
     uint64_t          _idxFileSize;          // protected by _lock
-    uint64_t          _currentDiskFootprint; // protected by _lock, data written to disk
+    uint64_t          _currentDiskDatFootprint; // protected by _lock, data written to disk
+    uint64_t          _currentDiskIdxFootprint; // protected by _lock, data written to disk
     /*
-     * _pendingDiskFootprint is maintained to avoid going too far beyond max file size,
+     * _pendingDiskDatFootprint is maintained to avoid going too far beyond max file size,
      * cf. LogDataStore::requireSpace.
      */
-    uint64_t          _pendingDiskFootprint; // protected by _lock, only considers dat file
+    uint64_t          _pendingDiskDatFootprint; // protected by _lock, only considers dat file
     uint32_t          _nextChunkId;
     Chunk::UP         _active;
     size_t            _alignment;

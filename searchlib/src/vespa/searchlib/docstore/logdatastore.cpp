@@ -3,6 +3,7 @@
 #include "logdatastore.h"
 #include "storebybucket.h"
 #include "compacter.h"
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -582,6 +583,18 @@ LogDataStore::getDiskFootprint() const
     return sz;
 }
 
+uint64_t
+LogDataStore::get_size_on_disk() const
+{
+    MonitorGuard guard(_updateLock);
+    uint64_t sz(DiskSpaceCalculator::directory_placeholder_size());
+    for (const auto & fc : _fileChunks) {
+        if (fc) {
+            sz += fc->get_size_on_disk();
+        }
+    }
+    return sz;
+}
 
 size_t
 LogDataStore::getDiskHeaderFootprint() const
@@ -1194,13 +1207,14 @@ DataStoreStorageStats
 LogDataStore::getStorageStats() const
 {
     uint64_t diskFootprint = getDiskFootprint();
+    uint64_t size_on_disk = get_size_on_disk();
     uint64_t diskBloat = getDiskBloat();
     double maxBucketSpread = getMaxBucketSpread();
     // Note: Naming consistency issue
     SerialNum lastSerialNum = tentativeLastSyncToken();
     SerialNum lastFlushedSerialNum = lastSyncToken();
     uint32_t docIdLimit = getDocIdLimit();
-    return DataStoreStorageStats(diskFootprint, diskBloat, maxBucketSpread,
+    return DataStoreStorageStats(diskFootprint, size_on_disk, diskBloat, maxBucketSpread,
                                  lastSerialNum, lastFlushedSerialNum, docIdLimit);
 }
 
