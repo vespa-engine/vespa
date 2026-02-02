@@ -144,20 +144,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    // Do not use. Removing
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2026-02-01",
+            List.of("olaa"), "2022-09-23", "2026-02-07",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             TENANT_ID, APPLICATION, INSTANCE_ID);
-
-    public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
-            "otelcol-logs", List.of(), String.class,
-            List.of("olaa"), "2024-01-15", "2026-02-01",
-            "Determines log files handled by the OpenTelemetry collector",
-            "Takes effect at next tick",
-            TENANT_ID, APPLICATION, INSTANCE_ID
-    );
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
@@ -236,14 +229,14 @@ public class Flags {
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("andreer", "olaa"), "2023-10-06", "2026-02-01",
+            List.of("andreer", "olaa"), "2023-10-06", "2026-05-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2026-02-01",
+            List.of("olaa"), "2024-04-03", "2026-05-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -271,14 +264,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
             "monitoring-jwt", false,
-            List.of("olaa"), "2024-07-05", "2026-02-01",
+            List.of("olaa"), "2024-07-05", "2026-05-01",
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
-            List.of("olaa"), "2024-10-22", "2026-02-01",
+            List.of("olaa"), "2024-10-22", "2026-05-01",
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
 
@@ -329,14 +322,6 @@ public class Flags {
             "and will not be added to the message bus queue.",
             "Takes effect immediately",
             INSTANCE_ID
-    );
-
-    public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
-            "defer-os-upgrade", false,
-            List.of("olaa"), "2025-04-09", "2026-02-01",
-            "Whether OS upgrade should be deferred",
-            "Takes effect immediately",
-            CLOUD_ACCOUNT
     );
 
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(

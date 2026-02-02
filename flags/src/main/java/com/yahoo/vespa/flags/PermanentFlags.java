@@ -190,6 +190,22 @@ public class PermanentFlags {
             __ -> true,
             TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE);
 
+
+    public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
+            "defer-os-upgrade", false,
+            "Whether OS upgrade should be deferred",
+            "Takes effect immediately",
+            CLOUD_ACCOUNT
+    );
+
+
+    public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
+            "otelcol-logs", List.of(), String.class,
+            "Determines log files handled by the OpenTelemetry collector",
+            "Takes effect at next tick",
+            TENANT_ID, APPLICATION, INSTANCE_ID
+    );
+
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");
     private static final Pattern VERSION_PATTERN = Pattern.compile("^\\d\\.\\d\\.\\d(\\." + VERSION_QUALIFIER_REGEX + ")?$");
