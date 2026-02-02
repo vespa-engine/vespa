@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalDouble;
 
 import static com.yahoo.vespa.flags.custom.Validation.requireNonNegative;
@@ -21,6 +20,7 @@ import static com.yahoo.vespa.flags.custom.Validation.validateEnum;
 /**
  * @author freva
  */
+// @Immutable
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public class ClusterCapacity {
@@ -33,7 +33,6 @@ public class ClusterCapacity {
     private final String storageType;
     private final String architecture;
     private final String clusterType;
-    private final Optional<String> cloudAccount;
 
     @JsonCreator
     public ClusterCapacity(@JsonProperty("count") Integer count,
@@ -44,8 +43,7 @@ public class ClusterCapacity {
                            @JsonProperty("diskSpeed") String diskSpeed,
                            @JsonProperty("storageType") String storageType,
                            @JsonProperty("architecture") String architecture,
-                           @JsonProperty("clusterType") String clusterType,
-                           @JsonProperty("cloudAccount") String cloudAccount) {
+                           @JsonProperty("clusterType") String clusterType) {
         this.count = count == null ? 1 : (int) requireNonNegative("count", count);
         this.vcpu = vcpu == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("vcpu", vcpu));
         this.memoryGb = memoryGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("memoryGb", memoryGb));
@@ -55,13 +53,12 @@ public class ClusterCapacity {
         this.storageType = validateEnum("storageType", validStorageTypes, storageType == null ? "any" : storageType);
         this.architecture = validateEnum("architecture", validArchitectures, architecture == null ? "x86_64" : architecture);
         this.clusterType = clusterType == null ? null : validateEnum("clusterType", validClusterTypes, clusterType);
-        this.cloudAccount = Optional.ofNullable(cloudAccount);
     }
 
     /** Returns a new ClusterCapacity equal to {@code this}, but with the given count. */
     public ClusterCapacity withCount(int count) {
         return new ClusterCapacity(count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull(),
-                                   diskSpeed, storageType, architecture, clusterType, cloudAccountOrNull());
+                                   diskSpeed, storageType, architecture, clusterType);
     }
 
     @JsonGetter("count") public int count() { return count; }
@@ -81,28 +78,25 @@ public class ClusterCapacity {
     @JsonGetter("storageType") public String storageType() { return storageType; }
     @JsonGetter("architecture") public String architecture() { return architecture; }
     @JsonGetter("clusterType") public String clusterType() { return clusterType; }
-    @JsonGetter("cloudAccount") public String cloudAccountOrNull() { return cloudAccount.orElse(null); }
 
     @JsonIgnore public Double vcpu() { return vcpu.orElse(0.0); }
     @JsonIgnore public Double memoryGb() { return memoryGb.orElse(0.0); }
     @JsonIgnore public Double diskGb() { return diskGb.orElse(0.0); }
     @JsonIgnore public double bandwidthGbps() { return bandwidthGbps.orElse(1.0); }
-    @JsonIgnore public Optional<String> cloudAccount() { return cloudAccount; }
 
     @Override
     public String toString() {
         return "ClusterCapacity{" +
-               "count=" + count +
-               ", vcpu=" + vcpu +
-               ", memoryGb=" + memoryGb +
-               ", diskGb=" + diskGb +
-               ", bandwidthGbps=" + bandwidthGbps +
-               ", diskSpeed=" + diskSpeed +
-               ", storageType=" + storageType +
-               ", architecture=" + architecture +
-               ", clusterType=" + clusterType +
-               (cloudAccount.isPresent() ? ", cloudAccount=" + cloudAccount : "") +
-               '}';
+                "count=" + count +
+                ", vcpu=" + vcpu +
+                ", memoryGb=" + memoryGb +
+                ", diskGb=" + diskGb +
+                ", bandwidthGbps=" + bandwidthGbps +
+                ", diskSpeed=" + diskSpeed +
+                ", storageType=" + storageType +
+                ", architecture=" + architecture +
+                ", clusterType=" + clusterType +
+                '}';
     }
 
     @Override
@@ -118,13 +112,12 @@ public class ClusterCapacity {
                 diskSpeed.equals(that.diskSpeed) &&
                 storageType.equals(that.storageType) &&
                 architecture.equals(that.architecture) &&
-                clusterType.equals(that.clusterType) &&
-                cloudAccount.equals(that.cloudAccount);
+                clusterType.equals(that.clusterType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType, cloudAccount);
+        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType);
     }
 
 }
