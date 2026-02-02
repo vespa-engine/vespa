@@ -41,7 +41,7 @@ public interface Stemmer {
      */
     @Deprecated // TODO: Remove on Vespa 9
     default List<StemList> stem(String input, StemMode mode, Language language) {
-        return stem(input, new LinguisticsParameters(null, language, mode, true, true));
+        return stem(input, new LinguisticsParameters(null, language, mode, false, true));
     }
 
     /**
