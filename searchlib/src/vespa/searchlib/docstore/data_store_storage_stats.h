@@ -30,7 +30,14 @@ public:
           _lastFlushedSerialNum(lastFlushedSerialNum_in),
           _docIdLimit(docIdLimit_in)
     { }
+    /*
+     * Sum of file sizes.
+     */
     uint64_t diskUsage() const            { return _diskUsage; }
+    /*
+     * Sum of file sizes each aligned up to assumed file system block size and a placeholder directory size
+     * (when not part of DataStoreFileChunkStats).
+     */
     uint64_t size_on_disk() const noexcept { return _size_on_disk; }
     uint64_t diskBloat() const            { return _diskBloat; }
     double   maxBucketSpread() const      { return _maxBucketSpread; }
