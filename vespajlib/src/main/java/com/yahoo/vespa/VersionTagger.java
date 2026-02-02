@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
+import com.yahoo.text.Utf8;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
@@ -46,7 +46,7 @@ public class VersionTagger {
     private Map<String, String> readVtagMap(String path) {
         Map<String, String> map = new HashMap<>();
         try {
-            BufferedReader in = new BufferedReader(new FileReader(path));
+            BufferedReader in = new BufferedReader(Utf8.createReader(path));
             String line;
             while ((line = in.readLine()) != null) {
                 if (line.isBlank()) continue;
