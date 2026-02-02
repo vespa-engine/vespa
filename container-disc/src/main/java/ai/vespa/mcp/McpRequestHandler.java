@@ -71,8 +71,7 @@ public class McpRequestHandler extends RestApiRequestHandler<McpRequestHandler> 
     private static RestApi createRestApiDefinition(McpRequestHandler self) {
         return RestApi.builder()
                 .addRoute(RestApi.route("/mcp/{*}")
-                        .post(self::handleMcpPost)
-                        .defaultHandler(self::handleMethodNotAllowed))
+                        .post(self::handleMcpPost))
                 .build();
     }
 
@@ -86,13 +85,9 @@ public class McpRequestHandler extends RestApiRequestHandler<McpRequestHandler> 
         }
 
         logger.fine(() -> "=== RECEIVED REQUEST: POST " + context.request().getUri().getPath() + " ===");
-        logger.info(() -> "=== BODY: " + new String(body, StandardCharsets.UTF_8) + " ===");
+        logger.fine(() -> "=== BODY: " + new String(body, StandardCharsets.UTF_8) + " ===");
 
         return transport.handlePost(context.request(), body);
-    }
-
-    private HttpResponse handleMethodNotAllowed(RestApi.RequestContext context) {
-        return transport.createErrorResponse(405, "Only POST requests are allowed", null);
     }
 
     @Override
