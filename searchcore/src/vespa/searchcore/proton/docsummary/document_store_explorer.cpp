@@ -36,6 +36,7 @@ DocumentStoreExplorer::get_state(const Inserter &inserter, bool full) const
     search::IDocumentStore &store = _mgr->getBackingStore();
     DataStoreStorageStats storageStats(store.getStorageStats());
     object.setLong("diskUsage", storageStats.diskUsage());
+    object.setLong("size_on_disk", storageStats.size_on_disk());
     object.setLong("diskBloat", storageStats.diskBloat());
     object.setDouble("maxBucketSpread", storageStats.maxBucketSpread());
     object.setLong("lastFlushedSerialNum", storageStats.lastFlushedSerialNum());
@@ -50,6 +51,7 @@ DocumentStoreExplorer::get_state(const Inserter &inserter, bool full) const
         for (const auto &chunk : chunks) {
             Cursor &chunkCursor = fileChunksArrayCursor.addObject();
             chunkCursor.setLong("diskUsage", chunk.diskUsage());
+            chunkCursor.setLong("size_on_disk", chunk.size_on_disk());
             chunkCursor.setLong("diskBloat", chunk.diskBloat());
             chunkCursor.setDouble("bucketSpread", chunk.maxBucketSpread());
             chunkCursor.setLong("lastFlushedSerialNum", chunk.lastFlushedSerialNum());

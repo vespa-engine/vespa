@@ -105,6 +105,8 @@ public:
      */
     virtual size_t getDiskFootprint() const = 0;
 
+    virtual size_t get_size_on_disk() const = 0;
+
     /**
      * Calculates how much disk is used by file headers.
      * @return disk space used.
