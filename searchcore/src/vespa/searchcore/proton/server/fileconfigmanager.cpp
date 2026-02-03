@@ -9,6 +9,8 @@
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchlib/util/directory_traverse.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-attributes.h>
@@ -24,10 +26,13 @@
 #include <fcntl.h>
 
 #include <vespa/log/log.h>
+#include <vespa/searchlib/features/utils.h>
 LOG_SETUP(".proton.server.fileconfigmanager");
 
 using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
+using search::DirectoryTraverse;
+using search::DiskSpaceCalculator;
 using search::IndexMetaInfo;
 using search::SerialNum;
 using search::index::Schema;
@@ -228,7 +233,9 @@ FileConfigManager::FileConfigManager(FNET_Transport & transport,
       _configId(configId),
       _docTypeName(docTypeName),
       _info(baseDir),
-      _protonConfig()
+      _protonConfig(),
+      _config_sizes_on_disk(),
+      _size_on_disk(0)
 {
     std::filesystem::create_directory(std::filesystem::path(baseDir));
     vespalib::File::sync(vespalib::dirname(baseDir));
@@ -236,6 +243,7 @@ FileConfigManager::FileConfigManager(FNET_Transport & transport,
         _info.save();
     removeInvalid();
     _protonConfig.reset(new ProtonConfig());
+    calc_initial_sizes_on_disk();
 }
 
 FileConfigManager::~FileConfigManager() = default;
@@ -293,6 +301,9 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serial
     bool saveValidSnap = _info.save();
     assert(saveValidSnap);
     (void) saveValidSnap;
+    auto size = DirectoryTraverse::get_tree_size(snapDir);
+    _config_sizes_on_disk.emplace(serialNum, size);
+    _size_on_disk.fetch_add(size);
 }
 
 void
@@ -375,12 +386,16 @@ FileConfigManager::removeInvalid()
         }
     }
     vespalib::File::sync(_baseDir);
+    uint64_t removed_size_on_disk = 0;
     for (const auto &serial : toRem) {
         _info.removeSnapshot(serial);
+        removed_size_on_disk += _config_sizes_on_disk[serial];
+        _config_sizes_on_disk.erase(serial);
     }
     bool saveRemInvalidSnap = _info.save();
     assert(saveRemInvalidSnap);
     (void) saveRemInvalidSnap;
+    _size_on_disk.fetch_sub(removed_size_on_disk);
 }
 
 void
@@ -396,7 +411,7 @@ FileConfigManager::prune(SerialNum serialNum)
     }
     std::sort(toPrune.begin(), toPrune.end());
     if (!toPrune.empty())
-        toPrune.pop_back(); // Keep newest old entry
+        toPrune.pop_back(); // Keep the newest old entry
     if (toPrune.empty())
         return;
     for (const auto &serial : toPrune) {
@@ -477,6 +492,9 @@ FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream &stream)
         bool saveValidSnap = _info.save();
         assert(saveValidSnap);
         (void) saveValidSnap;
+        auto size = DirectoryTraverse::get_tree_size(snapDir);
+        _config_sizes_on_disk.emplace(snap.syncToken, size);
+        _size_on_disk.fetch_add(size);
     }
 }
 
@@ -484,6 +502,30 @@ void
 FileConfigManager::setProtonConfig(const ProtonConfigSP &protonConfig)
 {
     _protonConfig = protonConfig;
+}
+
+void
+FileConfigManager::calc_initial_sizes_on_disk()
+{
+    DiskSpaceCalculator calc;
+    constexpr uint32_t placeholder_meta_info_txt_size = 1000;
+    uint64_t size_on_disk = DiskSpaceCalculator::directory_placeholder_size() + calc(placeholder_meta_info_txt_size);
+    const auto& snaps = _info.snapshots();
+    for (const auto& snap : snaps) {
+        if (snap.valid) {
+            auto snap_dir(_baseDir + "/" + makeSnapDirBaseName(snap.syncToken));
+            auto size = DirectoryTraverse::get_tree_size(snap_dir);
+            _config_sizes_on_disk.emplace(snap.syncToken, size);
+            size_on_disk += size;
+        }
+    }
+    _size_on_disk.store(size_on_disk, std::memory_order_relaxed);
+}
+
+uint64_t
+FileConfigManager::get_size_on_disk() const
+{
+    return _size_on_disk.load(std::memory_order_relaxed);
 }
 
 } // namespace proton

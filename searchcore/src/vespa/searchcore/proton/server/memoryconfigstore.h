@@ -38,6 +38,7 @@ public:
     void serializeConfig(SerialNum, vespalib::nbostream &) override;
     void deserializeConfig(SerialNum, vespalib::nbostream &) override;
     void setProtonConfig(const ProtonConfigSP &) override;
+    uint64_t get_size_on_disk() const override;
 };
 
 // Holds the state of a set of MemoryConfigStore objects, making stored
