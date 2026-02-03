@@ -320,23 +320,23 @@ public class RankProfileInputTest {
     }
 
     @Test
-    void testBlankTextEmbedReturnsNull() {
+    void testBlankTextEmbedReturnsZeroTensor() {
         Tensor embedding = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
 
         Map<String, Embedder> embedders = Map.of(
                 "emb1", new MockEmbedder("should not be called", Language.UNKNOWN, embedding)
         );
 
-        // Empty string - should return null (no tensor set)
-        assertBlankEmbedReturnsNull("embed('')", "query(myTensor4)", embedders);
-        assertBlankEmbedReturnsNull("embed(\"\")", "query(myTensor4)", embedders);
-        // Whitespace-only string - should return null
-        assertBlankEmbedReturnsNull("embed('   ')", "query(myTensor4)", embedders);
-        assertBlankEmbedReturnsNull("embed(emb1, '')", "query(myTensor4)", embedders);
-        assertBlankEmbedReturnsNull("embed(emb1, '   ')", "query(myTensor4)", embedders);
+        // Empty string - should return zero tensor
+        assertBlankEmbedReturnsZeroTensor("embed('')", "query(myTensor4)", embedders);
+        assertBlankEmbedReturnsZeroTensor("embed(\"\")", "query(myTensor4)", embedders);
+        // Whitespace-only string - should return zero tensor
+        assertBlankEmbedReturnsZeroTensor("embed('   ')", "query(myTensor4)", embedders);
+        assertBlankEmbedReturnsZeroTensor("embed(emb1, '')", "query(myTensor4)", embedders);
+        assertBlankEmbedReturnsZeroTensor("embed(emb1, '   ')", "query(myTensor4)", embedders);
     }
 
-    private void assertBlankEmbedReturnsNull(String embed, String destination, Map<String, Embedder> embedders) {
+    private void assertBlankEmbedReturnsZeroTensor(String embed, String destination, Map<String, Embedder> embedders) {
         Query query = new Query.Builder().setRequest(HttpRequest.createTestRequest(
                                                  "?" + urlEncode("ranking.features." + destination) +
                                                  "=" + urlEncode(embed) +
@@ -347,8 +347,10 @@ public class RankProfileInputTest {
                                          .setEmbedders(embedders)
                                          .build();
         assertEquals(0, query.errors().size());
-        // Blank text should result in null (no tensor set)
-        assertNull(query.properties().get("ranking.features." + destination));
+        // Blank text should result in a zero tensor being set
+        var result = (Tensor) query.properties().get("ranking.features." + destination);
+        assertNotNull(result);
+        assertEquals(0.0, result.sum().asDouble(), 0.0001);
     }
 
     @Test
