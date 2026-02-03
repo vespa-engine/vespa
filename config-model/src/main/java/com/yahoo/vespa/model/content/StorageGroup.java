@@ -19,7 +19,6 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.cluster.RedundancyBuilder;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -446,7 +445,6 @@ public class StorageGroup {
             return new GroupBuilder(group, subGroups, explicitNodes, nodeRequirement);
         }
 
-        @Nonnull
         private Optional<NodesSpecification> getNodesSpecification(Optional<ModelElement> nodesElement, List<GroupBuilder> subGroups) {
             if (nodesElement.isEmpty()) {
                 return handleMissingNodesElement(subGroups);
