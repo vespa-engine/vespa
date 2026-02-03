@@ -19,7 +19,6 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.cluster.RedundancyBuilder;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -332,7 +331,7 @@ public class StorageGroup {
                 distributor.initService(deployState);
                 return storageNode;
             }
-
+            
             /**
              * Builds a storage group for a hosted environment
              *
@@ -441,65 +440,22 @@ public class StorageGroup {
             if (!subGroups.isEmpty() && nodesElement.isPresent())
                 throw new IllegalArgumentException("A group can contain either explicit subgroups or a nodes specification, but not both.");
 
-            Optional<NodesSpecification> nodeRequirement = getNodesSpecification(nodesElement, subGroups);
+            Optional<NodesSpecification> nodeRequirement;
+            if (nodesElement.isPresent() && nodesElement.get().stringAttribute("count") != null ) // request these nodes
+                nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
+            else if (nodesElement.isPresent() && context.getDeployState().isHosted() && context.getDeployState().zone().environment().isManuallyDeployed() ) // default to 1 node
+                nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
+            else if (nodesElement.isEmpty() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
+                nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context));
+            else if (nodesElement.isPresent() && nodesElement.get().stringAttribute("count") == null && context.getDeployState().isHosted())
+                throw new IllegalArgumentException("""
+                                                           Clusters in hosted environments must have a <nodes count='N'> tag
+                                                           matching all zones, and having no <node> subtags,
+                                                           see https://docs.vespa.ai/en/reference/applications/services/services.html#nodes""");
+            else // Nodes or groups explicitly listed - resolve in GroupBuilder
+                nodeRequirement = Optional.empty();
 
             return new GroupBuilder(group, subGroups, explicitNodes, nodeRequirement);
-        }
-
-        @Nonnull
-        private Optional<NodesSpecification> getNodesSpecification(Optional<ModelElement> nodesElement, List<GroupBuilder> subGroups) {
-            if (nodesElement.isEmpty()) {
-                return handleMissingNodesElement(subGroups);
-            }
-
-            ModelElement nodes = nodesElement.get();
-            boolean isHosted = context.getDeployState().isHosted();
-            boolean hasCountAttribute = hasCountAttribute(nodes);
-            boolean hasGroupAttributes = hasGroupAttributes(nodes);
-
-            if (hasCountAttribute || hasGroupAttributes) {
-                return Optional.of(NodesSpecification.from(nodes, context));
-            }
-
-            if (isHosted) {
-                return handleHostedEnvironment(nodes);
-            }
-
-            // Nodes explicitly listed - resolve in GroupBuilder
-            return Optional.empty();
-        }
-
-        private Optional<NodesSpecification> handleMissingNodesElement(List<GroupBuilder> subGroups) {
-            boolean isHosted = context.getDeployState().isHosted();
-            if (subGroups.isEmpty() && isHosted) {
-                return Optional.of(NodesSpecification.nonDedicated(1, context));
-            }
-            return Optional.empty();
-        }
-
-        private Optional<NodesSpecification> handleHostedEnvironment(ModelElement nodes) {
-            boolean isManuallyDeployed = context.getDeployState().zone().environment().isManuallyDeployed();
-            if (isManuallyDeployed) {
-                return Optional.of(NodesSpecification.from(nodes, context));
-            }
-
-            if (!hasCountAttribute(nodes) && !hasGroupAttributes(nodes)) {
-                throw new IllegalArgumentException("""
-                        Clusters in hosted environments must have a <nodes count='N'> tag
-                        matching all zones, and having no <node> subtags,
-                        or <nodes groups='N' and group-size='N'> tags
-                        see https://docs.vespa.ai/en/reference/applications/services/services.html#nodes""");
-            }
-
-            return Optional.empty();
-        }
-
-        private boolean hasCountAttribute(ModelElement nodes) {
-            return nodes.stringAttribute("count") != null;
-        }
-
-        private boolean hasGroupAttributes(ModelElement nodes) {
-            return nodes.stringAttribute("groups") != null && nodes.stringAttribute("group-size") != null;
         }
 
         private Optional<String> childAsString(Optional<ModelElement> element, String childTagName) {

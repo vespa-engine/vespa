@@ -239,7 +239,7 @@ ContentNodes = element nodes {
     attribute vespamalloc-debug-stacktrace { xsd:NMTOKENS }? &
     (
       (
-        attribute count { xsd:positiveInteger | xsd:string }? &
+        attribute count { xsd:positiveInteger | xsd:string } &
         attribute flavor { xsd:string }? &
         attribute required { xsd:boolean }? &
         attribute exclusive { xsd:boolean }? &
