@@ -402,7 +402,7 @@ public class ModelProvisioningTest {
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
-                "     <nodes count='30' groups='30'/>" +
+                "     <nodes group-size='1' groups='30'/>" +
                 "   </content>" +
                 "</services>";
 
@@ -1614,8 +1614,11 @@ public class ModelProvisioningTest {
             VespaModel model = tester.createModel(new Zone(Environment.staging, RegionName.from("us-central-1")), services, true);
             fail("expected failure");
         } catch (IllegalArgumentException e) {
-            assertEquals("In content cluster 'bar': Clusters in hosted environments must have a <nodes count='N'> tag\n" +
-                         "matching all zones, and having no <node> subtags,\nsee https://docs.vespa.ai/en/reference/applications/services/services.html#nodes",
+            assertEquals("""
+                                 In content cluster 'bar': Clusters in hosted environments must have a <nodes count='N'> tag
+                                 matching all zones, and having no <node> subtags,
+                                 or <nodes groups='N' and group-size='N'> tags
+                                 see https://docs.vespa.ai/en/reference/applications/services/services.html#nodes""",
                          Exceptions.toMessageString(e));
         }
     }
