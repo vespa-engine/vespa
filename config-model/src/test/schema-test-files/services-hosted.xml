@@ -31,11 +31,4 @@
     <coverage-policy>group</coverage-policy>
   </content>
 
-  <content id="ml2" version="1.0">
-    <min-redundancy>2</min-redundancy>
-    <nodes flavor="large" groups="[1,3]" group-size="[1,2]">
-      <resources vcpu="4" memory="33Gb" disk="1Tb"/>
-    </nodes>
-  </content>
-
 </services>
