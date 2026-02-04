@@ -116,7 +116,7 @@ public class PendingRestartsMaintainer extends ConfigServerMaintainer {
 
     /**
      * Check which pending restarts can be triggered based on the following criteria:
-     * 1. Observed config generation for other services running on the same hosts as the pending restart services
+     * 1. Observed config generation for other services running with the same hostname as the pending restart services should be greater or equal than pending restart services.
      * 2. Observed applyOnRestart flag in config state. Currently shielded with a feature flag.
      */
     static PendingRestarts triggerPendingRestarts(Function<Set<String>, ServiceListResponse> convergenceChecker,
