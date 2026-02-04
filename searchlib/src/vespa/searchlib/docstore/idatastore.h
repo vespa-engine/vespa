@@ -111,7 +111,7 @@ public:
      *
      * @return estimated disk space used.
      */
-    virtual size_t get_size_on_disk() const = 0;
+    virtual uint64_t get_size_on_disk() const = 0;
 
     /**
      * Calculates how much disk is used by file headers.
