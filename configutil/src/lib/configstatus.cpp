@@ -2,36 +2,28 @@
 
 #include "configstatus.h"
 #include "tags.h"
-#include <vespa/vespalib/data/slime/slime.h>
+#include <iostream>
+#include <vbench/http/http_client.h>
 #include <vbench/http/http_result_handler.h>
 #include <vbench/http/server_spec.h>
-#include <vbench/http/http_client.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
-#include <iostream>
+#include <vespa/vespalib/data/slime/slime.h>
 
 using configdefinitions::tagsContain;
 
-struct ComponentTraverser : public vespalib::slime::ObjectTraverser
-{
+struct ComponentTraverser : public vespalib::slime::ObjectTraverser {
     const std::string _configId;
     std::string _component;
-    enum {
-        ROOT,
-        COMPONENT
-    } _state;
+    enum { ROOT, COMPONENT } _state;
     std::map<std::string, int64_t> &_generations;
 
-    ComponentTraverser(std::string configId,
-                       std::map<std::string, int64_t> &generations)
-        : _configId(configId), _state(ROOT), _generations(generations)
-    {}
+    ComponentTraverser(std::string configId, std::map<std::string, int64_t> &generations)
+        : _configId(configId), _state(ROOT), _generations(generations) {}
 
     ~ComponentTraverser() override;
 
-    void object(const vespalib::slime::Inspector &inspector) {
-        inspector.traverse(*this);
-    }
+    void object(const vespalib::slime::Inspector &inspector) { inspector.traverse(*this); }
 
     static void collect(const std::string configId, const vespalib::Slime &slime,
                         std::map<std::string, int64_t> &generations) {
@@ -52,15 +44,14 @@ struct ComponentTraverser : public vespalib::slime::ObjectTraverser
             int64_t value;
             if (key == "generation") {
                 if (inspector.type().getId() == vespalib::slime::DOUBLE::ID) {
-                    value = (int64_t) inspector.asDouble();
+                    value = (int64_t)inspector.asDouble();
                     _generations[_component] = value;
                 } else if (inspector.type().getId() == vespalib::slime::LONG::ID) {
                     value = inspector.asLong();
                     _generations[_component] = value;
                 } else {
                     value = 0;
-                    std::cerr << _configId << ":" << _component <<
-                        "Generation has wrong type" << std::endl;
+                    std::cerr << _configId << ":" << _component << "Generation has wrong type" << std::endl;
                 }
             }
 
@@ -78,43 +69,31 @@ private:
     std::string _configId;
 
 public:
-
-    MyHttpHandler(std::string configId)
-        : _json(), _error(), _configId(configId)
-    {}
+    MyHttpHandler(std::string configId) : _json(), _error(), _configId(configId) {}
     ~MyHttpHandler() override;
 
     void handleHeader(const vbench::string &name, const vbench::string &value) override {
-        (void) name;
-        (void) value;
+        (void)name;
+        (void)value;
     }
 
-    void handleContent(const vbench::Memory &data) override {
-        _json += std::string(data.data, data.size);
-    }
+    void handleContent(const vbench::Memory &data) override { _json += std::string(data.data, data.size); }
 
     void handleFailure(const vbench::string &reason) override {
         std::cerr << _configId << ": Failed to fetch json: " << reason << std::endl;
         _error = reason;
     }
 
-    bool failed() {
-        return(_error.size() > 0);
-    }
+    bool failed() { return (_error.size() > 0); }
 
-    std::string getJson() {
-        return _json;
-    }
+    std::string getJson() { return _json; }
 };
 
 MyHttpHandler::~MyHttpHandler() = default;
 
-ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri &uri)
-    : _cfg(), _flags(flags), _generation(0)
-{
+ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri &uri) : _cfg(), _flags(flags), _generation(0) {
     if (_flags.verbose) {
-        std::cerr << "Subscribing to model config with config id " <<
-            uri.getConfigId() << std::endl;
+        std::cerr << "Subscribing to model config with config id " << uri.getConfigId() << std::endl;
     }
     try {
         config::ConfigSubscriber subscriber(uri.getContext());
@@ -123,7 +102,7 @@ ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri &uri)
         subscriber.nextConfigNow();
         _cfg = handle->getConfig();
         _generation = subscriber.getGeneration();
-    } catch(config::ConfigRuntimeException &e) {
+    } catch (config::ConfigRuntimeException &e) {
         std::cerr << e.getMessage() << std::endl;
     }
 
@@ -135,9 +114,7 @@ ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri &uri)
 
 ConfigStatus::~ConfigStatus() = default;
 
-int
-ConfigStatus::action()
-{
+int ConfigStatus::action() {
     bool allUpToDate = true;
 
     for (size_t i = 0; i < _cfg->hosts.size(); i++) {
@@ -156,16 +133,12 @@ ConfigStatus::action()
 
             for (size_t k = 0; k < svc.ports.size(); k++) {
                 std::string tags = svc.ports[k].tags;
-                if (tagsContain(tags, "http") &&
-                    tagsContain(tags, "state")) {
-                    bool upToDate = checkServiceGeneration(svc.configid, hconf.name,
-                                                           svc.ports[k].number,
-                                                           "/state/v1/config");
+                if (tagsContain(tags, "http") && tagsContain(tags, "state")) {
+                    bool upToDate =
+                        checkServiceGeneration(svc.configid, hconf.name, svc.ports[k].number, "/state/v1/config");
 
                     if (!upToDate) {
-                        if (svc.type == "searchnode" ||
-                            svc.type == "logd")
-                        {
+                        if (svc.type == "searchnode" || svc.type == "logd") {
                             std::cerr << "[generation not up-to-date ignored]" << std::endl;
                         } else {
                             allUpToDate = false;
@@ -180,10 +153,7 @@ ConfigStatus::action()
     return allUpToDate ? 0 : 1;
 }
 
-bool
-ConfigStatus::fetch_json(std::string configId, std::string host, int port,
-                         std::string path, std::string &data)
-{
+bool ConfigStatus::fetch_json(std::string configId, std::string host, int port, std::string path, std::string &data) {
     MyHttpHandler myHandler(configId);
     auto crypto = vespalib::CryptoEngine::get_default();
     bool ok = vbench::HttpClient::fetch(*crypto, vbench::ServerSpec(host, port), path, myHandler);
@@ -196,9 +166,7 @@ ConfigStatus::fetch_json(std::string configId, std::string host, int port,
     }
 }
 
-bool
-ConfigStatus::checkServiceGeneration(std::string configId, std::string host, int port, std::string path)
-{
+bool ConfigStatus::checkServiceGeneration(std::string configId, std::string host, int port, std::string path) {
     std::string data;
     vespalib::Slime slime;
 
@@ -224,13 +192,13 @@ ConfigStatus::checkServiceGeneration(std::string configId, std::string host, int
         std::map<std::string, int64_t>::iterator iter;
         for (iter = generations.begin(); iter != generations.end(); iter++) {
             if (iter->second != _generation) {
-                std::cout << configId << ":" << iter->first << " has generation " <<
-                    iter->second << " not " << _generation << std::endl;
+                std::cout << configId << ":" << iter->first << " has generation " << iter->second << " not "
+                          << _generation << std::endl;
                 upToDate = false;
             } else {
                 if (_flags.verbose) {
-                    std::cout << configId << ":" << iter->first <<
-                        " has the latest generation " << iter->second << std::endl;
+                    std::cout << configId << ":" << iter->first << " has the latest generation " << iter->second
+                              << std::endl;
                 }
             }
         }

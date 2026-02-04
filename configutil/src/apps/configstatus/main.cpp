@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/defaults.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include "lib/configstatus.h"
-#include <vespa/config/subscription/sourcespec.h>
-#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <unistd.h>
+#include <vespa/config/subscription/sourcespec.h>
+#include <vespa/defaults.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-config-status");
@@ -18,6 +18,7 @@ class Application {
     int parseOpts(int argc, char **argv);
     std::string getSources();
     HostFilter parse_host_set(std::string_view raw_arg) const;
+
 public:
     void usage(const char *self);
     int main(int argc, char **argv);
@@ -26,12 +27,8 @@ public:
     ~Application();
 };
 
-Application::Application()
-    : _flags(),
-      _cfgId("admin/model"),
-      _specString("")
-{}
-Application::~Application() { }
+Application::Application() : _flags(), _cfgId("admin/model"), _specString("") {}
+Application::~Application() {}
 
 int Application::parseOpts(int argc, char **argv) {
     int c = '?';
@@ -68,7 +65,7 @@ HostFilter Application::parse_host_set(std::string_view raw_arg) const {
     tokenizer.removeEmptyTokens();
 
     HostFilter::HostSet hosts;
-    for (auto& host : tokenizer) {
+    for (auto &host : tokenizer) {
         hosts.emplace(host);
     }
     return HostFilter(std::move(hosts));
@@ -97,7 +94,8 @@ int Application::main(int argc, char **argv) {
 std::string Application::getSources() {
     std::string specs;
     for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
-        if (! specs.empty()) specs += ",";
+        if (!specs.empty())
+            specs += ",";
         specs += v;
     }
     return specs;
