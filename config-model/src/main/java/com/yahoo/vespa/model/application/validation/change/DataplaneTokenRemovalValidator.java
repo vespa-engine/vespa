@@ -51,8 +51,7 @@ public class DataplaneTokenRemovalValidator implements ChangeValidator {
                                         .map(DataplaneToken::tokenId)
                                         .toList();
 
-        logger.log(Level.FINE, "Tokens for cluster %s: Current: [%s], Next: [%s]"
-                .formatted(clusterId,
+        logger.log(Level.FINE, String.format(java.util.Locale.ROOT, "Tokens for cluster %s: Current: [%s], Next: [%s]", clusterId,
                            currentTokenIds.stream().collect(Collectors.joining(", ")),
                            nextTokenIds.stream().collect(Collectors.joining(", "))));
 

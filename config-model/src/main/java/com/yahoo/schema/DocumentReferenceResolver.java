@@ -57,7 +57,7 @@ public class DocumentReferenceResolver {
     private DocumentReference createDocumentReference(Field field) {
         if (!isAttribute(field)) {
             throw new IllegalArgumentException(
-                    String.format(
+                    String.format(java.util.Locale.ROOT,
                             "The field '%s' is an invalid document reference. The field must be an attribute.",
                             field.getName()));
         }
@@ -66,7 +66,7 @@ public class DocumentReferenceResolver {
         Schema schema = schemaMapping.get(targetDocumentName);
         if (schema == null) {
             throw new IllegalArgumentException(
-                    String.format("Invalid document reference '%s': " +
+                    String.format(java.util.Locale.ROOT, "Invalid document reference '%s': " +
                                   "Could not find document type '%s'", field.getName(), targetDocumentName));
         }
         return new DocumentReference(field, schema);

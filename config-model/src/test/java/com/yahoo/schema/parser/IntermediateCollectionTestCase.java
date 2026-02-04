@@ -3,6 +3,7 @@ package com.yahoo.schema.parser;
 
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.io.reader.NamedReader;
+import com.yahoo.text.Utf8;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import java.nio.charset.StandardCharsets;
@@ -70,7 +71,7 @@ public class IntermediateCollectionTestCase {
 
     NamedReader readerOf(String fileName) throws Exception {
         File f = new File(fileName);
-        FileReader fr = new FileReader(f, StandardCharsets.UTF_8);
+        FileReader fr = Utf8.createReader(f);
         BufferedReader br = new BufferedReader(fr);
         return new NamedReader(fileName, br);
     }

@@ -39,11 +39,11 @@ public class ContainerInCloudValidatorTest {
     }
 
     private static void runValidatorOnApp(boolean isHosted, String container) throws IOException, SAXException {
-        String servicesXml = """
+        String servicesXml = String.format(java.util.Locale.ROOT, """
                         <services version='1.0'>
                           %s
                         </services>
-                """.formatted(container);
+                """, container);
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();

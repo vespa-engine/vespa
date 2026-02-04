@@ -51,7 +51,7 @@ public class ComplexFieldsWithStructFieldAttributesValidator implements Validato
     }
 
     private static String getErrorMessage(String clusterName, Schema schema, String unsupportedFields) {
-        return String.format("For cluster '%s', search '%s': The following complex fields do not support using struct field attributes: %s. " +
+        return String.format(java.util.Locale.ROOT, "For cluster '%s', search '%s': The following complex fields do not support using struct field attributes: %s. " +
                              "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types. " +
                              "The supported primitive types are: byte, int, long, float, double and string",
                              clusterName, schema.getName(), unsupportedFields);

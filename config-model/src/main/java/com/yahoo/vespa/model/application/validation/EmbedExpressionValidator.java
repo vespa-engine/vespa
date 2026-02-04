@@ -40,7 +40,7 @@ public class EmbedExpressionValidator implements Validator {
                                         ee.requestedEmbedderId().ifPresent(id -> {
                                             var fieldName = field.getName();
                                             var schemaName = schema.fullSchema().getName();
-                                            log.log(Level.FINE, () -> "Found embedder '%s' for field '%s' in schema '%s'".formatted(id, fieldName, schemaName));
+                                            log.log(Level.FINE, () -> String.format(java.util.Locale.ROOT, "Found embedder '%s' for field '%s' in schema '%s'", id, fieldName, schemaName));
                                             fieldToEmbedderId.put(new SchemaAndField(schemaName, fieldName), id);
                                         });
                                     }
@@ -57,7 +57,7 @@ public class EmbedExpressionValidator implements Validator {
                 containerCluster.getAllComponents()
                         .forEach(component -> {
                             var id = component.getComponentId().getName();
-                            log.log(Level.FINE, () -> "Found component id '%s'".formatted(id));
+                            log.log(Level.FINE, () -> String.format(java.util.Locale.ROOT, "Found component id '%s'", id));
                             allComponentIds.add(id);
                         }));
 
@@ -65,9 +65,7 @@ public class EmbedExpressionValidator implements Validator {
         fieldToEmbedderId.forEach((field, requestedEmbedderId) -> {
             if (!allComponentIds.contains(requestedEmbedderId)) {
                 context.illegal(
-                        ("The 'embed' expression for field '%s' in schema '%s' refers to an embedder with id '%s'. " +
-                                "No component with that id is configured.").formatted(
-                                        field.fieldName(), field.schemaName(), requestedEmbedderId));
+                        String.format(java.util.Locale.ROOT, "The 'embed' expression for field '%s' in schema '%s' refers to an embedder with id '%s'. " + "No component with that id is configured.", field.fieldName(), field.schemaName(), requestedEmbedderId));
             }
         });
     }

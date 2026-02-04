@@ -42,7 +42,7 @@ public class RestartOnDeployForTritonOnnxRuntimeValidator implements ChangeValid
                 var message = hasTritonRuntime
                         ? "Triton ONNX runtime was enabled for cluster '%s', services require restart"
                         : "Triton ONNX runtime was disabled for cluster '%s', services require restart";
-                var action = createRestartAction(currentCluster, message.formatted(clusterId), DEFER_UNTIL_RESTART);
+                var action = createRestartAction(currentCluster, String.format(java.util.Locale.ROOT, message, clusterId), DEFER_UNTIL_RESTART);
                 context.require(action);
             }
         }

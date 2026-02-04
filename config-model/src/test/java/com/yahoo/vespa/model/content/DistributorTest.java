@@ -355,7 +355,7 @@ public class DistributorTest {
     }
 
     private String createServices(String maxDocumentSize) {
-        return """
+        return String.format(java.util.Locale.ROOT, """
                       <content id="foo">
                         <redundancy>1</redundancy>
                         <documents/>
@@ -366,7 +366,7 @@ public class DistributorTest {
                           <max-document-size>%s</max-document-size>
                         </tuning>
                       </content>
-                      """.formatted(maxDocumentSize);
+                      """, maxDocumentSize);
     }
 
     private StorDistributormanagerConfig parseAndGetConfig(String servicesXml) {

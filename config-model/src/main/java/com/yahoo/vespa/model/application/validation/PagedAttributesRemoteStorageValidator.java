@@ -51,10 +51,11 @@ public class PagedAttributesRemoteStorageValidator implements Validator {
                 .collect(Collectors.toList());
         if (fields.isEmpty()) return;
 
-        logger.logApplicationPackage(WARNING, ("Cluster '%s' has nodes with remote storage and fields with paged attributes." +
-                " This might lead to performance issues when doing I/O." +
-                " Consider using storage-type='local' or removing 'paged' setting for these fields: %s")
-                .formatted(clusterName, join(fields)));
+        logger.logApplicationPackage(WARNING, String.format(java.util.Locale.ROOT,
+                        "Cluster '%s' has nodes with remote storage and fields with paged attributes." +
+                        " This might lead to performance issues when doing I/O." +
+                        " Consider using storage-type='local' or removing 'paged' setting for these fields: %s",
+                        clusterName, join(fields)));
     }
 
     private static String join(List<Attribute> fields) {

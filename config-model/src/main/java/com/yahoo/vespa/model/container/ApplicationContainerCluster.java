@@ -109,7 +109,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final int heapSizePercentageOfAvailableMemory;
 
     private Integer memoryPercentage = null;
-    
+
     // When set, overrides estimated ONNX model memory cost
     private Optional<Long> inferenceMemoryBytes = Optional.empty();
 
@@ -219,7 +219,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
-    
+
     public void setInferenceMemory(long bytes) { this.inferenceMemoryBytes = Optional.of(bytes); }
 
     public Optional<Long> getInferenceMemory() { return inferenceMemoryBytes; }
@@ -240,9 +240,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             double availableMemoryGb = Math.max(0, totalMemoryMinusOverhead - onnxModelCostGb);
             int memoryPercentageOfAvailable = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryMinusOverhead);
             int memoryPercentageOfTotal = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryGb);
-            logger.log(FINE, () -> ("%s: memoryPercentageOfAvailable=%d, memoryPercentageOfTotal=%d, " +
-                                    "availableMemoryGb=%f, totalMemoryGb=%f, heapSizePercentageOfAvailable=%d, onnxModelCostGb=%f")
-                    .formatted(id(), memoryPercentageOfAvailable, memoryPercentageOfTotal,
+            logger.log(FINE, () -> String.format(java.util.Locale.ROOT, ("%s: memoryPercentageOfAvailable=%d, memoryPercentageOfTotal=%d, " +
+                                    "availableMemoryGb=%f, totalMemoryGb=%f, heapSizePercentageOfAvailable=%d, onnxModelCostGb=%f"), id(), memoryPercentageOfAvailable, memoryPercentageOfTotal,
                                availableMemoryGb, totalMemoryGb, heapSizePercentageOfAvailable, onnxModelCostGb));
             return Optional.of(JvmMemoryPercentage.of(memoryPercentageOfAvailable, memoryPercentageOfTotal,
                                                       availableMemoryGb * heapSizePercentageOfAvailable * 1e-2));

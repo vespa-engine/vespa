@@ -325,7 +325,7 @@ public class NodesSpecification {
 
     private static double parseGbAmount(String byteAmount, String unit) {
         byteAmount = byteAmount.strip();
-        byteAmount = byteAmount.toUpperCase();
+        byteAmount = byteAmount.toUpperCase(java.util.Locale.ROOT);
         if (byteAmount.endsWith(unit))
             byteAmount = byteAmount.substring(0, byteAmount.length() - unit.length());
 

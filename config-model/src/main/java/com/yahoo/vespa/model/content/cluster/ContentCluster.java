@@ -110,7 +110,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         public Builder(Admin admin) {
             this.admin = Objects.requireNonNull(admin, "admin cannot be null");
         }
-        
+
         public ContentCluster build(ConfigModelContext context, Element w3cContentElement) {
             ModelElement contentElement = new ModelElement(w3cContentElement);
             DeployState deployState = context.getDeployState();
@@ -305,11 +305,12 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             int warnThreshold = 100; // ... Not scientifically chosen
             if (!deployState.isHosted() && (aggr.highestNodeDistributionKey - aggr.nodeCount) >= warnThreshold) {
                 deployState.getDeployLogger().logApplicationPackage(WARNING,
-                        ("Content cluster '%s' has %d node(s), but the highest distribution key is %d. " +
-                         "Having much higher distribution keys than the number of nodes is not recommended, " +
-                         "as it may negatively affect performance. " +
-                         "See https://docs.vespa.ai/en/reference/services/content.html#node")
-                        .formatted(clusterId, aggr.nodeCount, aggr.highestNodeDistributionKey));
+                        String.format(java.util.Locale.ROOT,
+                                "Content cluster '%s' has %d node(s), but the highest distribution key is %d. " +
+                                "Having much higher distribution keys than the number of nodes is not recommended, " +
+                                "as it may negatively affect performance. " +
+                                "See https://docs.vespa.ai/en/reference/services/content.html#node",
+                                clusterId, aggr.nodeCount, aggr.highestNodeDistributionKey));
             }
         }
 

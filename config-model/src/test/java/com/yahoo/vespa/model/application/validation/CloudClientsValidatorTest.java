@@ -46,6 +46,6 @@ class CloudClientsValidatorTest {
     private static X509Certificate readTestCertificate(String filename) {
         return X509CertificateUtils.fromPem(new String(uncheck(
                 () -> CloudClientsValidatorTest.class.getResourceAsStream(
-                        "/cloud-clients-validator/%s".formatted(filename)).readAllBytes())));
+                        String.format(java.util.Locale.ROOT, "/cloud-clients-validator/%s", filename)).readAllBytes()), java.nio.charset.StandardCharsets.UTF_8));
     }
 }

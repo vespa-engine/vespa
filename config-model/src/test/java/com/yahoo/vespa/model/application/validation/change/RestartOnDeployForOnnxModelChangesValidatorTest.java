@@ -161,7 +161,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     }
 
     private static VespaModel hostedModel(DeployState.Builder builder, String executionMode, String modelId) {
-        var servicesXml  = """
+        var servicesXml  = String.format(java.util.Locale.ROOT, """
                           <services version='1.0'>
                             <container id='cluster1' version='1.0'>
                               <component id="hf-embedder" type="hugging-face-embedder">
@@ -174,7 +174,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
                               </nodes>
                             </container>
                           </services>
-                          """.formatted(modelId, modelId, executionMode);
+                          """, modelId, modelId, executionMode);
 
         var deploymentXml = """
                             <deployment version='1.0' empty-host-ttl='1d'>
@@ -197,7 +197,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     }
 
     private static VespaModel nonHostedModel(DeployState.Builder builder, String executionMode, String modelId) {
-        var xml = """
+        var xml = String.format(java.util.Locale.ROOT, """
                                        <services version='1.0'>
                                          <container id='cluster1' version='1.0'>
                                            <http>
@@ -210,7 +210,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
                                          </component>
                                          </container>
                                        </services>
-                """.formatted(modelId, modelId, executionMode);
+                """, modelId, modelId, executionMode);
 
         return new VespaModelCreatorWithMockPkg(null, xml).create(builder);
     }

@@ -89,7 +89,7 @@ public class StreamingValidator implements Validator {
         for (Attribute attribute : derived.getAttributeFields().attributes()) {
             DataType dataType = attribute.getDataType();
             if (dataType instanceof NewDocumentReferenceDataType) {
-                String errorMessage = String.format("For search cluster '%s', streaming schema '%s': Attribute '%s' has type '%s'. " +
+                String errorMessage = String.format(java.util.Locale.ROOT, "For search cluster '%s', streaming schema '%s': Attribute '%s' has type '%s'. " +
                                                     "Document references and imported fields are not allowed in streaming search.",
                                                     cluster, derived.getSchema().getName(), attribute.getName(), dataType.getName());
                 context.illegal(errorMessage);

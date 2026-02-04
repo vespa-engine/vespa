@@ -2254,7 +2254,7 @@ public class ModelProvisioningTest {
         {
             VespaModelTester tester = new VespaModelTester();
             tester.addHosts(6);
-            VespaModel model = tester.createModel(servicesXml.formatted("node", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
+            VespaModel model = tester.createModel(String.format(java.util.Locale.ROOT, servicesXml, "node", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
 
             var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
             model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
@@ -2264,7 +2264,7 @@ public class ModelProvisioningTest {
         {
             VespaModelTester tester = new VespaModelTester();
             tester.addHosts(6);
-            VespaModel model = tester.createModel(servicesXml.formatted("group", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
+            VespaModel model = tester.createModel(String.format(java.util.Locale.ROOT, servicesXml, "group", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
 
             var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
             model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
@@ -2275,7 +2275,7 @@ public class ModelProvisioningTest {
             VespaModelTester tester = new VespaModelTester();
             tester.addHosts(6);
             assertThrows(IllegalArgumentException.class, () ->
-            tester.createModel(servicesXml.formatted("node",
+            tester.createModel(String.format(java.util.Locale.ROOT, servicesXml, "node",
                                                      """
                                                      <tuning>
                                                        <cluster-controller>
@@ -2543,7 +2543,7 @@ public class ModelProvisioningTest {
     }
 
     private static String multipleContentClusters(int count1, int count2) {
-        return """
+        return String.format(java.util.Locale.ROOT, """
                 <?xml version="1.0" encoding="utf-8" ?>
                 <services>
                   <content version='1.0' id='foo'>
@@ -2564,7 +2564,7 @@ public class ModelProvisioningTest {
                        <resources vcpu="1" memory="128Gb" disk="100Gb" disk-speed="any"/>
                      </nodes>
                    </content>
-                </services>""".formatted(count1, count2);
+                </services>""", count1, count2);
     }
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {
@@ -2660,14 +2660,14 @@ public class ModelProvisioningTest {
         tester.setHosted(true);
         tester.addHosts(new NodeResources(1, 4, 10, 1), 1);
         VespaModel model = tester.createModel(services, true, deployStateWithClusterEndpoints("container"));
-        
+
         ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
         assertNotNull(cluster);
 
         // Verify inference memory
         assertTrue(cluster.getInferenceMemory().isPresent());
         assertEquals(2L * 1024 * 1024 * 1024, cluster.getInferenceMemory().get());
-        
+
         // Verify memory percentage left for JVM
         var memoryPercentage = cluster.getMemoryPercentage();
         assertTrue(memoryPercentage.isPresent());
@@ -2701,7 +2701,7 @@ public class ModelProvisioningTest {
         var zone = new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName());
 
         // Triton sidecar is enabled only for apps with ONNX models.
-        // Mocking OnnModelCost since DisabledOnnxModelCost used by default returns no models.  
+        // Mocking OnnModelCost since DisabledOnnxModelCost used by default returns no models.
         var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {
             @Override
             public Map<String, ModelInfo> models() {

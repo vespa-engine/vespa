@@ -44,7 +44,7 @@ import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateS
  *     VespaModel model = tester.createModel(servicesString);
  *     ... assert on model
  * </code>
- * 
+ *
  * @author bratseth
  */
 public class VespaModelTester {
@@ -86,7 +86,7 @@ public class VespaModelTester {
             // Let host names sort in the opposite order of the order the hosts are added
             // This allows us to test index vs. name order selection when subsets of hosts are selected from a cluster
             // (for e.g cluster controllers and slobrok nodes)
-            String hostname = String.format("%s-%03d",
+            String hostname = String.format(java.util.Locale.ROOT, "%s-%03d",
                                             "node" + "-" + Math.round(resources.vcpu()) +
                                                      "-" + Math.round(resources.memoryGiB()) +
                                                      "-" + Math.round(resources.diskGb()),

@@ -91,7 +91,7 @@ public class DispatchTuning {
         }
 
         public static DispatchPolicy toDispatchPolicy(String policy) {
-            return switch (policy.toLowerCase()) {
+            return switch (policy.toLowerCase(java.util.Locale.ROOT)) {
                 // TODO: Remove support for 'random' on Vespa 9 (already removed from doc)
                 case "adaptive", "random" -> DispatchPolicy.ADAPTIVE;
                 case "round-robin" -> DispatchPolicy.ROUNDROBIN; // TODO: Undocumented, document it or remove it?

@@ -22,7 +22,7 @@ public class SecretStoreValidator implements Validator {
 
         for (ContainerCluster<?> cluster : context.model().getContainerClusters().values()) {
             if (cluster.getSecretStore().isPresent() && ! hasIdentityProvider(cluster))
-                    context.illegal(String.format(
+                    context.illegal(String.format(java.util.Locale.ROOT,
                             "Container cluster '%s' uses a secret store, so an Athenz domain and an Athenz service" +
                             " must be declared in deployment.xml.", cluster.getName()));
         }
