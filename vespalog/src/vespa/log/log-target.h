@@ -11,8 +11,8 @@ class LogTarget {
 private:
     char _name[256];
     LogTarget();
-    LogTarget& operator =(const LogTarget &);
-    LogTarget(const LogTarget&);
+    LogTarget &operator=(const LogTarget &);
+    LogTarget(const LogTarget &);
 
 public:
     LogTarget(const char *name);
@@ -25,4 +25,3 @@ public:
 };
 
 } // end namespace ns_log
-

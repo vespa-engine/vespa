@@ -1,17 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <sys/types.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <csignal>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 
-LOG_SETUP("logtest",
-          "$Id$");
+LOG_SETUP("logtest", "$Id$");
 
-int
-main(int, char **argv)
-{
+int main(int, char **argv) {
     EV_STARTING("logtest");
     LOG(info, "Starting up, called as %s", argv[0]);
     EV_STARTED("logtest");
@@ -19,7 +16,7 @@ main(int, char **argv)
     EV_PROGRESS("batch-index", 7, 100);
     EV_PROGRESS("unbounded-batch-index", 9);
     EV_COUNT("hits", 3);
-    EV_VALUE("some value", 1./3);
+    EV_VALUE("some value", 1. / 3);
 
     LOG(info, "backslash: \\");
     int n;

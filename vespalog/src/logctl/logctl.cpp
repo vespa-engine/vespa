@@ -1,30 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/defaults.h>
+#include <vespa/log/component.h>
 #include <vespa/log/control-file.h>
 #include <vespa/log/internal.h>
-#include <vespa/log/component.h>
 
-#include <optional>
 #include <cstring>
-#include <unistd.h>
 #include <dirent.h>
+#include <optional>
 #include <sys/stat.h>
+#include <unistd.h>
 
 LOG_SETUP("vespa-logctl");
 
-
 using namespace ns_log;
 
-static void modifyLevels(const char *file, const char *component, const char *levels,
-                         bool shouldCreateFile, bool shouldCreateEntry);
+static void modifyLevels(const char *file, const char *component, const char *levels, bool shouldCreateFile,
+                         bool shouldCreateEntry);
 static void readLevels(const char *file, const char *component);
 
-
-static void
-usage(const char *name)
-{
-    fprintf(stderr, "Usage: %s [OPTION] <service>[:component-specification]\n"
+static void usage(const char *name) {
+    fprintf(stderr,
+            "Usage: %s [OPTION] <service>[:component-specification]\n"
             "  or:  %s [OPTION] <service>[:component-spec] <level-mods>\n"
             "Print or modify log levels for a VESPA service.\n\n"
             " -c          Create the control file if it does not exist (implies -n)\n"
@@ -44,12 +41,11 @@ usage(const char *name)
             " x               : Matches component x and all its sub-components\n\n"
             "Example: %s container:log all=on,spam=off,debug=off  : For service\n"
             "container, set log and all sub-components of log to enable all\n"
-            "except spam and debug.\n\n", name, name, name);
+            "except spam and debug.\n\n",
+            name, name, name);
 }
 
-static std::vector<std::string>
-findAllFiles(const char *dir)
-{
+static std::vector<std::string> findAllFiles(const char *dir) {
     std::vector<std::string> rv;
     DIR *d = opendir(dir);
     if (d == nullptr) {
@@ -60,8 +56,10 @@ findAllFiles(const char *dir)
 
     struct dirent *entry;
     while ((entry = readdir(d)) != nullptr) {
-        if (strcmp(entry->d_name, ".")  == 0) continue;
-        if (strcmp(entry->d_name, "..") == 0) continue;
+        if (strcmp(entry->d_name, ".") == 0)
+            continue;
+        if (strcmp(entry->d_name, "..") == 0)
+            continue;
 
         const char *suffix = ".logcontrol";
 
@@ -90,10 +88,7 @@ findAllFiles(const char *dir)
     return rv;
 }
 
-
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     vespa::Defaults::bootstrap(argv[0]);
 
     const char *dir = getenv("VESPA_LOG_CONTROL_DIR");
@@ -137,7 +132,6 @@ main(int argc, char **argv)
             return EXIT_SUCCESS;
         }
     }
-
 
     char buf[PATH_MAX];
     if (!dir && !file) {
@@ -201,9 +195,9 @@ main(int argc, char **argv)
     bool hadFailure = false;
     bool hadSuccess = false;
 
-    for (const auto & service : services) {
+    for (const auto &service : services) {
         std::string serviceFile(dir);
-        if (! doOnlyFile) {
+        if (!doOnlyFile) {
             serviceFile.append("/").append(service).append(".logcontrol");
             file = serviceFile.c_str();
         }
@@ -216,25 +210,23 @@ main(int argc, char **argv)
                 readLevels(file, component.c_str());
             }
             hadSuccess = true;
-        } catch (InvalidLogException& x) {
+        } catch (InvalidLogException &x) {
             fprintf(stderr, "Failed: %s\n", x.what());
             hadFailure = true;
         }
     }
-    if (hadFailure) return EXIT_FAILURE;
-    if (! hadSuccess) {
+    if (hadFailure)
+        return EXIT_FAILURE;
+    if (!hadSuccess) {
         fprintf(stderr, "no logcontrol files updates\n");
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
 }
 
-static void
-modifyLevels(const char *file, const char *componentPattern, const char *levels,
-             bool shouldCreateFile, bool shouldCreateEntry)
-{
-    ControlFile cf(file, shouldCreateFile
-                   ? ControlFile::CREATE : ControlFile::READWRITE);
+static void modifyLevels(const char *file, const char *componentPattern, const char *levels, bool shouldCreateFile,
+                         bool shouldCreateEntry) {
+    ControlFile cf(file, shouldCreateFile ? ControlFile::CREATE : ControlFile::READWRITE);
     Component *c;
     if (shouldCreateEntry) {
         cf.ensureComponent(componentPattern);
@@ -249,9 +241,7 @@ modifyLevels(const char *file, const char *componentPattern, const char *levels,
     cf.flush();
 }
 
-static void
-readLevels(const char *file, const char *componentPattern)
-{
+static void readLevels(const char *file, const char *componentPattern) {
     ControlFile cf(file, ControlFile::READONLY);
     Component *c;
     ComponentIterator iter(cf.getComponentIterator());
@@ -262,4 +252,3 @@ readLevels(const char *file, const char *componentPattern)
         }
     }
 }
-

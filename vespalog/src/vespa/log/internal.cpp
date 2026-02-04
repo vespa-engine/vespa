@@ -1,15 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <sys/types.h>
-#include <stdarg.h>
 #include <cstdio>
+#include <stdarg.h>
+#include <sys/types.h>
 
 #include "internal.h"
 
 namespace ns_log {
 
-void
-throwInvalid(const char *format, ...)
-{
+void throwInvalid(const char *format, ...) {
     char buf[4000];
     va_list args;
 

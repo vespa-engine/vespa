@@ -1,15 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <string>
 #include <vespa/log/log.h>
 #include <vespa/log/reject-filter.h>
-#include <string>
 
 namespace ns_log {
 
 class LogTarget;
-class LLParser
-{
+class LLParser {
 private:
     static const char _hexdigit[17];
 
@@ -21,16 +20,15 @@ private:
 
     LogTarget *_target;
     RejectFilter _rejectFilter;
-    void makeMessage(const char *tmf, const char *hsf, const char *pdf,
-                     const char *svf, const char *cmf, Logger::LogLevel l,
-                     char *msg);
+    void makeMessage(const char *tmf, const char *hsf, const char *pdf, const char *svf, const char *cmf,
+                     Logger::LogLevel l, char *msg);
     void sendMessage(const char *msg);
 
 public:
     void doInput(char *line);
     LLParser();
-    LLParser(const LLParser & ) = delete;
-    LLParser& operator = (const LLParser &) = delete;
+    LLParser(const LLParser &) = delete;
+    LLParser &operator=(const LLParser &) = delete;
     ~LLParser();
     void setService(const char *s) { _defService = s; }
     void setComponent(const char *c) { _defComponent = c; }
@@ -38,5 +36,4 @@ public:
     void setDefaultLevel(Logger::LogLevel level) { _defLevel = level; }
 };
 
-} // namespace
-
+} // namespace ns_log

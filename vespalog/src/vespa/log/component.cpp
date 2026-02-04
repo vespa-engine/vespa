@@ -13,9 +13,7 @@ LOG_SETUP_INDIRECT(".log.control", "$Id$");
 
 namespace ns_log {
 
-bool
-Component::matches(const char *pattern)
-{
+bool Component::matches(const char *pattern) {
     // Return true if pattern matches the name of this component,
     // false otherwise.
     int pLen = strlen(pattern);
@@ -30,24 +28,17 @@ Component::matches(const char *pattern)
     }
 
     if (pattern[pLen - 1] == '.') {
-        LOG(spam, "Component::matches -- exact match of '%s' vs name '%s'",
-            pattern, _name);
-        matched = (strncmp(pattern, _name, pLen - 1) == 0)
-                  && _name[pLen - 1] == ':';
+        LOG(spam, "Component::matches -- exact match of '%s' vs name '%s'", pattern, _name);
+        matched = (strncmp(pattern, _name, pLen - 1) == 0) && _name[pLen - 1] == ':';
     } else {
-        LOG(spam, "Component::matches -- prefix match of '%s' vs name '%s'",
-            pattern, _name);
-        matched = strncmp(pattern, _name, pLen) == 0
-                  && (_name[pLen] == '.' || _name[pLen] == ':');
+        LOG(spam, "Component::matches -- prefix match of '%s' vs name '%s'", pattern, _name);
+        matched = strncmp(pattern, _name, pLen) == 0 && (_name[pLen] == '.' || _name[pLen] == ':');
     }
-    LOG(spam, "Component::matches: Pattern '%s' %s match name '%s'",
-        pattern, matched ? "did" : "did not", _name);
+    LOG(spam, "Component::matches: Pattern '%s' %s match name '%s'", pattern, matched ? "did" : "did not", _name);
     return matched;
 }
 
-void
-Component::modifyLevels(const char *levels)
-{
+void Component::modifyLevels(const char *levels) {
     // levels is a comma-separated list of level={on|off} pairs.
 
     // the levels string can always be converted to a
@@ -56,8 +47,7 @@ Component::modifyLevels(const char *levels)
     std::string levels_copy(levels);
     char *s = &levels_copy[0];
 
-    LOG(spam, "Will modify levels for '%.*s' according to \"%s\"",
-        (int)strcspn(_name, " :\n"), _name, levels);
+    LOG(spam, "Will modify levels for '%.*s' according to \"%s\"", (int)strcspn(_name, " :\n"), _name, levels);
 
     while (s && *s) {
         char *eq = strchr(s, '=');
@@ -84,7 +74,8 @@ Component::modifyLevels(const char *levels)
             newValue = CHARS_TO_UINT(' ', 'O', 'F', 'F');
         } else {
             throwInvalid("Invalid modification string at \"%s\", expected "
-                         "\"on\" or \"off\"", mod);
+                         "\"on\" or \"off\"",
+                         mod);
         }
         if (*s == ',') {
             ++s;
@@ -101,23 +92,17 @@ Component::modifyLevels(const char *levels)
     display();
 }
 
-void
-Component::display()
-{
+void Component::display() {
     int nlen = strcspn(_name, ":\n ");
-    printf("%-30.*s %.*s\n", nlen, _name,
-           (int)(sizeof(unsigned int) * Logger::NUM_LOGLEVELS), _charLevels);
+    printf("%-30.*s %.*s\n", nlen, _name, (int)(sizeof(unsigned int) * Logger::NUM_LOGLEVELS), _charLevels);
 }
 
 Component::Component(char *s)
-    : _name(s),
-      _charLevels(ControlFile::alignLevels(strchr(s, ':') + 2)),
-      _intLevels(reinterpret_cast<unsigned int *>(_charLevels))
-{
+    : _name(s), _charLevels(ControlFile::alignLevels(strchr(s, ':') + 2)),
+      _intLevels(reinterpret_cast<unsigned int *>(_charLevels)) {
     if (_charLevels == reinterpret_cast<char *>(4)) {
         throwInvalid("Invalid component instantiated");
     }
-
 }
 
-} // end namesmace ns_log
+} // namespace ns_log

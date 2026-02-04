@@ -7,7 +7,7 @@ namespace ns_log {
 
 class Component {
     Component();
-    Component& operator = (const Component &);
+    Component &operator=(const Component &);
     Component(const Component &);
     char *_name;
     char *_charLevels;
@@ -17,7 +17,7 @@ public:
     bool matches(const char *pattern);
     void modifyLevels(const char *levels);
     void display();
-    const char *endPointer() const { return _charLevels + Logger::NUM_LOGLEVELS*sizeof(int); }
+    const char *endPointer() const { return _charLevels + Logger::NUM_LOGLEVELS * sizeof(int); }
     explicit Component(char *);
 };
 

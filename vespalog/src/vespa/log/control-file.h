@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "log.h"
 #include "lock.h"
+#include "log.h"
 #include <string>
 
 namespace ns_log {
@@ -13,18 +13,17 @@ class ComponentIterator;
 class ControlFile {
     friend class ComponentIterator;
     friend class Component;
+
 public:
     enum Mode { READONLY, READWRITE, CREATE };
+
 private:
     Lock _fileBacking;
     int _fileSize;
     enum Mode _mode;
     std::string _fileName;
     void ensureHeader();
-    bool hasPrefix() { return (_prefix != nullptr &&
-                               _prefix[0] != '\0' &&
-                               _prefix[0] != ' ' &&
-                               _prefix[0] != '\n'); }
+    bool hasPrefix() { return (_prefix != nullptr && _prefix[0] != '\0' && _prefix[0] != ' ' && _prefix[0] != '\n'); }
     void ensureMapping();
     void freeMapping();
     bool extendMapping();
@@ -41,16 +40,14 @@ private:
     static const int _maxPrefix = 64;
 
     ControlFile(const ControlFile &);
-    ControlFile& operator = (const ControlFile &);
+    ControlFile &operator=(const ControlFile &);
 
     static bool hasWord(const char *word, const char *haystack);
     static bool hasNegWord(const char *word, const char *haystack);
 
-    static void makeLogLevelArray(unsigned int *levels, unsigned int size,
-                                  const char *env);
+    static void makeLogLevelArray(unsigned int *levels, unsigned int size, const char *env);
     static char *alignLevels(char *addr);
-    static unsigned int findOnOffStatus(Logger::LogLevel level,
-                                        const char *levelsString);
+    static unsigned int findOnOffStatus(Logger::LogLevel level, const char *levelsString);
 
 public:
     ComponentIterator getComponentIterator();
@@ -76,7 +73,7 @@ private:
     ControlFile *_cf;
     char *_next;
 
-    ComponentIterator& operator = (const ComponentIterator &);
+    ComponentIterator &operator=(const ComponentIterator &);
 
 public:
     ComponentIterator(const ComponentIterator &ci);
@@ -86,4 +83,3 @@ public:
 };
 
 } // end namespace ns_log
-

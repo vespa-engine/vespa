@@ -1,16 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/bufferedlogger.h>
 #include <array>
-#include <iostream>
-#include <thread>
-#include <chrono>
 #include <atomic>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
+#include <iostream>
+#include <sys/stat.h>
+#include <thread>
+#include <unistd.h>
 #include <vector>
+#include <vespa/log/bufferedlogger.h>
 
 using std::string;
 using namespace std::chrono_literals;
@@ -18,19 +18,19 @@ using namespace std::chrono;
 
 LOG_SETUP(".threadtest");
 
-class FileThread
-{
+class FileThread {
     std::atomic<bool> _done;
     string _file;
+
 public:
     FileThread(string file) : _done(false), _file(file) {}
     void entry();
     void stop() { _done.store(true, std::memory_order_relaxed); }
 };
 
-class LoggerThread
-{
+class LoggerThread {
     std::atomic<bool> _done;
+
 public:
     std::atomic<bool> _useLogBuffer;
     LoggerThread() : _done(false), _useLogBuffer(false) {}
@@ -38,9 +38,7 @@ public:
     void stop() { _done.store(true, std::memory_order_relaxed); }
 };
 
-void
-FileThread::entry()
-{
+void FileThread::entry() {
     unlink(_file.c_str());
     while (!_done.load(std::memory_order_relaxed)) {
         int fd = open(_file.c_str(), O_RDWR | O_CREAT | O_APPEND, 0644);
@@ -62,10 +60,7 @@ FileThread::entry()
     }
 }
 
-
-void
-LoggerThread::entry()
-{
+void LoggerThread::entry() {
     int counter = 0;
     while (!_done.load(std::memory_order_relaxed)) {
         if (_useLogBuffer.load(std::memory_order_relaxed)) {
@@ -76,9 +71,7 @@ LoggerThread::entry()
     }
 }
 
-
-class ThreadTester
-{
+class ThreadTester {
 public:
     int _argc = 0;
     char **_argv = nullptr;
@@ -90,10 +83,7 @@ public:
     }
 };
 
-
-int
-ThreadTester::Main()
-{
+int ThreadTester::Main() {
     std::cerr << "Testing that logging is threadsafe. 5 sec test.\n";
     std::vector<std::thread> threads;
 
@@ -107,11 +97,11 @@ ThreadTester::Main()
         char filename[100];
         snprintf(filename, sizeof(filename), "empty.%d", i);
         writers[i] = std::make_unique<FileThread>(filename);
-        threads.emplace_back([obj = writers[i].get()](){ obj->entry(); });
+        threads.emplace_back([obj = writers[i].get()]() { obj->entry(); });
     }
     for (int i = 0; i < numLoggers; i++) {
         loggers[i] = std::make_unique<LoggerThread>();
-        threads.emplace_back([obj = loggers[i].get()](){ obj->entry(); });
+        threads.emplace_back([obj = loggers[i].get()]() { obj->entry(); });
     }
 
     steady_clock::time_point start = steady_clock::now();
@@ -121,7 +111,7 @@ ThreadTester::Main()
         unlink(_argv[1]);
         std::this_thread::sleep_for(1ms);
     }
-        // Then set to use logbuffer and continue
+    // Then set to use logbuffer and continue
     for (int i = 0; i < numLoggers; i++) {
         loggers[i]->_useLogBuffer.store(true, std::memory_order_relaxed);
     }
@@ -138,17 +128,14 @@ ThreadTester::Main()
         writers[i]->stop();
     }
 
-    for (auto &thread: threads) {
+    for (auto &thread : threads) {
         thread.join();
     }
 
     return 0;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     ThreadTester app;
     return app.Entry(argc, argv);
 }
-
-

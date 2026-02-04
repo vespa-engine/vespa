@@ -7,26 +7,15 @@ LOG_SETUP("");
 
 namespace ns_log {
 
-void log_assert_fail(const char *assertion,
-                     const char *file,
-                     uint32_t line)
-{
-    LOG(error, "%s:%d: Failed assertion: '%s'",
-        file, line, assertion);
-    fprintf(stderr, "%s:%d: Failed assertion: '%s'\n",
-            file, line, assertion);
+void log_assert_fail(const char *assertion, const char *file, uint32_t line) {
+    LOG(error, "%s:%d: Failed assertion: '%s'", file, line, assertion);
+    fprintf(stderr, "%s:%d: Failed assertion: '%s'\n", file, line, assertion);
     abort();
 }
 
-
-void log_abort(const char *message,
-               const char *file,
-               unsigned int line)
-{
-    LOG(error, "%s:%d: Abort called. Reason: %s",
-        file, line, message);
-    fprintf(stderr, "%s:%d: Abort called. Reason: %s\n",
-            file, line, message);
+void log_abort(const char *message, const char *file, unsigned int line) {
+    LOG(error, "%s:%d: Abort called. Reason: %s", file, line, message);
+    fprintf(stderr, "%s:%d: Abort called. Reason: %s\n", file, line, message);
     abort();
 }
 

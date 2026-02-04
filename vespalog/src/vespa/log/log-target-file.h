@@ -2,21 +2,19 @@
 #pragma once
 
 #include "log-target.h"
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 namespace ns_log {
 
 class LogTargetFile : public LogTarget {
 private:
     char _fname[256];
-    enum FailState {
-        FS_OK, FS_CHECKING, FS_ROTATING, FS_FAILED
-    } _failstate;
+    enum FailState { FS_OK, FS_CHECKING, FS_ROTATING, FS_FAILED } _failstate;
 
     LogTargetFile();
-    LogTargetFile(const LogTargetFile&);
-    LogTargetFile& operator =(const LogTargetFile&);
+    LogTargetFile(const LogTargetFile &);
+    LogTargetFile &operator=(const LogTargetFile &);
 
 public:
     explicit LogTargetFile(const char *target);
@@ -24,6 +22,4 @@ public:
     int write(const char *buf, int len) override;
 };
 
-
-} // end namespace log
-
+} // namespace ns_log
