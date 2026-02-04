@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <map>
 #include <vespa/slobrok/server/mock_map_listener.h>
 #include <vespa/slobrok/server/service_map_mirror.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <map>
 
 using namespace vespalib;
 using namespace slobrok;
@@ -14,17 +14,16 @@ using Map = std::map<std::string, std::string>;
 
 Map dump(const ServiceMapMirror &mirror) {
     Map result;
-    for (const auto & entry : mirror.allMappings()) {
+    for (const auto &entry : mirror.allMappings()) {
         result[entry.name] = entry.spec;
     }
     return result;
 }
 
-
 void addTo(ServiceMapMirror &target, const ServiceMapping &mapping) {
     auto cur = target.currentGeneration();
     std::vector<std::string> removes = {};
-    ServiceMappingList updates = { mapping };
+    ServiceMappingList updates = {mapping};
     auto nxt = cur;
     nxt.add();
     MapDiff diff{cur, removes, updates, nxt};
@@ -33,8 +32,8 @@ void addTo(ServiceMapMirror &target, const ServiceMapping &mapping) {
 
 void removeFrom(ServiceMapMirror &target, const ServiceMapping &mapping) {
     auto cur = target.currentGeneration();
-    std::vector<std::string> removes = { mapping.name };
-    ServiceMappingList updates = { };
+    std::vector<std::string> removes = {mapping.name};
+    ServiceMappingList updates = {};
     auto nxt = cur;
     nxt.add();
     MapDiff diff{cur, removes, updates, nxt};
@@ -59,7 +58,7 @@ TEST(ServiceMapMirrorTest, full_inspection) {
     for (int i = 0; i < 1984; ++i) {
         EXPECT_EQ(mirror.currentGeneration(), GenCnt(i));
         auto name = fmt("key/%d/name", i);
-        auto spec = fmt("tcp/host%d.domain.tld:19099", 10000+i);
+        auto spec = fmt("tcp/host%d.domain.tld:19099", 10000 + i);
         ServiceMapping toAdd{name, spec};
         addTo(mirror, toAdd);
         EXPECT_EQ(observer.last_event, MockEvent::ADD);
@@ -94,23 +93,13 @@ TEST(ServiceMapMirrorTest, full_inspection) {
     EXPECT_EQ(map.size(), 1983ul);
 
     auto cur = mirror.currentGeneration();
-    std::vector<std::string> removes = {
-        "key/123/name",
-        "key/1983/name",
-        "key/234/name",
-        "key/345/name",
-        "key/123/name",
-        "key/456/name"
-    };
+    std::vector<std::string> removes = {"key/123/name", "key/1983/name", "key/234/name",
+                                        "key/345/name", "key/123/name",  "key/456/name"};
     ServiceMappingList updates = {
-        ServiceMapping{ "key/567/name", "bar/1/foo" },
-        ServiceMapping{ "key/678/name", "bar/2/foo" },
-        ServiceMapping{ "key/234/name", "bar/3/foo" },
-        ServiceMapping{ "key/345/name", "bar/4/foo" },
-        ServiceMapping{ "key/789/name", "bar/5/foo" },
-        ServiceMapping{ "key/666/name", "bar/6/foo" },
-        ServiceMapping{ "key/567/name", "bar/7/foo" }
-    };
+        ServiceMapping{"key/567/name", "bar/1/foo"}, ServiceMapping{"key/678/name", "bar/2/foo"},
+        ServiceMapping{"key/234/name", "bar/3/foo"}, ServiceMapping{"key/345/name", "bar/4/foo"},
+        ServiceMapping{"key/789/name", "bar/5/foo"}, ServiceMapping{"key/666/name", "bar/6/foo"},
+        ServiceMapping{"key/567/name", "bar/7/foo"}};
     auto nxt = cur;
     nxt.add();
     nxt.add();
@@ -136,6 +125,4 @@ TEST(ServiceMapMirrorTest, full_inspection) {
     EXPECT_EQ(map.size(), 1981ul);
 }
 
-
 GTEST_MAIN_RUN_ALL_TESTS()
-

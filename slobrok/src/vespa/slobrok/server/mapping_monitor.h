@@ -3,14 +3,15 @@
 #pragma once
 
 #include "service_mapping.h"
-#include <memory>
 #include <functional>
+#include <memory>
 
 namespace slobrok {
 
 struct MappingMonitorOwner {
     virtual void up(const ServiceMapping& mapping) = 0;
     virtual void down(const ServiceMapping& mapping) = 0;
+
 protected:
     virtual ~MappingMonitorOwner() = default;
 };
@@ -22,7 +23,6 @@ struct MappingMonitor {
     virtual ~MappingMonitor() = default;
 };
 
-using MappingMonitorFactory = std::function<MappingMonitor::UP(MappingMonitorOwner &)>;
+using MappingMonitorFactory = std::function<MappingMonitor::UP(MappingMonitorOwner&)>;
 
 } // namespace slobrok
-

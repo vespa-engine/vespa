@@ -13,8 +13,7 @@ struct MockMapListener : public MapListener {
     virtual ~MockMapListener();
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;
-    void update(const ServiceMapping &old_mapping,
-                const ServiceMapping &new_mapping) override;
+    void update(const ServiceMapping &old_mapping, const ServiceMapping &new_mapping) override;
 
     MockEvent last_event = MockEvent::NONE;
     ServiceMapping last_add = {{}, {}};
@@ -23,4 +22,4 @@ struct MockMapListener : public MapListener {
     void clear() { last_event = MockEvent::NONE; }
 };
 
-}
+} // namespace slobrok

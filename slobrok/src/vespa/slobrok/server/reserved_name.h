@@ -15,12 +15,12 @@ namespace slobrok {
  * a reservation expires 15 seconds after it is created.
  **/
 
-class ReservedName: public NamedService
-{
+class ReservedName : public NamedService {
 private:
     using steady_clock = std::chrono::steady_clock;
     steady_clock::time_point _reservedTime;
     int64_t milliseconds() const;
+
 public:
     const bool isLocal;
 
@@ -31,4 +31,3 @@ public:
 //-----------------------------------------------------------------------------
 
 } // namespace slobrok
-

@@ -14,13 +14,14 @@ private:
     MapSource &_source;
     MapListener &_listener;
     struct Tag {};
+
 public:
     MapSubscription(MapSource &source, MapListener &listener, Tag);
 
     MapSubscription(const MapSubscription &) = delete;
     MapSubscription(MapSubscription &&) = delete;
-    MapSubscription& operator=(const MapSubscription &) = delete;
-    MapSubscription& operator=(MapSubscription &&) = delete;
+    MapSubscription &operator=(const MapSubscription &) = delete;
+    MapSubscription &operator=(MapSubscription &&) = delete;
 
     ~MapSubscription();
 
@@ -32,6 +33,7 @@ public:
  **/
 struct MapSource {
     virtual ~MapSource();
+
 private:
     friend class MapSubscription;
     virtual void registerListener(MapListener &listener) = 0;
@@ -39,4 +41,3 @@ private:
 };
 
 } // namespace slobrok
-

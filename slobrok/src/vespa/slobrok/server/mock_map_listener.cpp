@@ -17,12 +17,10 @@ void MockMapListener::remove(const ServiceMapping &mapping) {
     last_remove = mapping;
 }
 
-void MockMapListener::update(const ServiceMapping &old_mapping,
-                             const ServiceMapping &new_mapping)
-{
+void MockMapListener::update(const ServiceMapping &old_mapping, const ServiceMapping &new_mapping) {
     last_event = MockEvent::UPDATE;
     last_remove = old_mapping;
     last_add = new_mapping;
 }
 
-}
+} // namespace slobrok

@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/gencnt.h>
-#include <vespa/vespalib/util/arrayqueue.hpp>
+#include "map_diff.h"
 #include "map_listener.h"
 #include "service_mapping.h"
-#include "map_diff.h"
 #include <map>
 #include <string>
+#include <vespa/vespalib/util/arrayqueue.hpp>
+#include <vespa/vespalib/util/gencnt.h>
 
 namespace slobrok {
 
@@ -16,14 +16,12 @@ namespace slobrok {
  * @class ServiceMapHistory
  * @brief API to generate incremental updates for a collection of name->spec mappings
  **/
-class ServiceMapHistory : public MapListener
-{
+class ServiceMapHistory : public MapListener {
 public:
     using Generation = vespalib::GenCnt;
 
     /** implement this interface to receive the result of an async generation diff */
-    class DiffCompletionHandler
-    {
+    class DiffCompletionHandler {
     public:
         /**
          * Handle the result of asyncGenerationDiff()
@@ -31,6 +29,7 @@ public:
          * @param updateDiff changes from the generation requested
          **/
         virtual void handle(MapDiff updateDiff) = 0;
+
     protected:
         virtual ~DiffCompletionHandler() = default;
     };
@@ -51,9 +50,9 @@ private:
     using Waiter = std::pair<DiffCompletionHandler *, Generation>;
     using WaitList = std::vector<Waiter>;
 
-    Map        _map;
-    WaitList   _waitList;
-    UpdateLog  _log;
+    Map _map;
+    WaitList _waitList;
+    UpdateLog _log;
 
     void notify_updated();
 
@@ -94,4 +93,3 @@ public:
 //-----------------------------------------------------------------------------
 
 } // namespace slobrok
-

@@ -2,16 +2,15 @@
 #pragma once
 
 #include "rpchooks.h"
+#include <chrono>
 #include <vespa/vespalib/net/http/metrics_producer.h>
 #include <vespa/vespalib/net/http/simple_metrics_producer.h>
-#include <chrono>
 
 class FNET_Transport;
 
 namespace slobrok {
 
-class MetricsProducer : public vespalib::MetricsProducer
-{
+class MetricsProducer : public vespalib::MetricsProducer {
 private:
     const RPCHooks &_rpcHooks;
     RPCHooks::Metrics _lastMetrics;
@@ -30,6 +29,4 @@ public:
     ~MetricsProducer() override;
 };
 
-
 } // namespace slobrok
-

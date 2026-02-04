@@ -41,6 +41,7 @@ public:
 
     /** check if the list contains a given spec */
     bool contains(const std::string &spec);
+
 private:
     std::mutex _lock;
     std::vector<std::string> _slobrokSpecs;
@@ -49,4 +50,4 @@ private:
     size_t _retryCount;
 };
 
-}
+} // namespace slobrok::api

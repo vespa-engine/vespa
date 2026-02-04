@@ -1,17 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/slobrok/server/slobrokserver.h>
+#include <thread>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <thread>
+#include <vespa/slobrok/server/slobrokserver.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 //-----------------------------------------------------------------------------
 
-class Server : public FRT_Invokable
-{
+class Server : public FRT_Invokable {
 private:
     fnet::frt::StandaloneFRT _server;
-    std::string    _name;
+    std::string _name;
 
 public:
     Server(std::string name, int port);
@@ -19,16 +18,11 @@ public:
     void rpc_listNamesServed(FRT_RPCRequest *req);
 };
 
-
-Server::Server(std::string name, int port)
-    : _server(),
-      _name(name)
-{
+Server::Server(std::string name, int port) : _server(), _name(name) {
     {
         FRT_ReflectionBuilder rb(&_server.supervisor());
         //---------------------------------------------------------------------
-        rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
-                        FRT_METHOD(Server::rpc_listNamesServed), this);
+        rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", FRT_METHOD(Server::rpc_listNamesServed), this);
         rb.MethodDesc("Look up a rpcserver");
         rb.ReturnDesc("names", "The rpcserver names on this server");
         //---------------------------------------------------------------------
@@ -36,30 +30,23 @@ Server::Server(std::string name, int port)
     _server.supervisor().Listen(port);
 }
 
-
-void
-Server::rpc_listNamesServed(FRT_RPCRequest *req)
-{
+void Server::rpc_listNamesServed(FRT_RPCRequest *req) {
     FRT_Values &dst = *req->GetReturn();
     FRT_StringValue *names = dst.AddStringArray(1);
     dst.SetString(&names[0], _name.c_str());
 }
 
-
 Server::~Server() = default;
 
 namespace {
 
-bool checkOk(FRT_RPCRequest *req)
-{
+bool checkOk(FRT_RPCRequest *req) {
     if (req == nullptr) {
         fprintf(stderr, "req is null pointer, this is bad\n");
         return false;
     }
     if (req->IsError()) {
-        fprintf(stderr, "req FAILED [code %d]: %s\n",
-                req->GetErrorCode(),
-                req->GetErrorMessage());
+        fprintf(stderr, "req FAILED [code %d]: %s\n", req->GetErrorCode(), req->GetErrorMessage());
         fprintf(stderr, "req method is: '%s' with params:\n", req->GetMethodName());
         req->GetParams()->Print();
         fflush(stdout); // flushes output from Print() on previous line
@@ -69,45 +56,37 @@ bool checkOk(FRT_RPCRequest *req)
     }
 }
 
-template<typename T>
-class SubReferer
-{
+template <typename T> class SubReferer {
 private:
-    T* &_t;
+    T *&_t;
+
 public:
-    SubReferer(T* &t) : _t(t) {}
+    SubReferer(T *&t) : _t(t) {}
     ~SubReferer() {
-        if (_t != nullptr) _t->internal_subref();
+        if (_t != nullptr)
+            _t->internal_subref();
     }
 };
 
-
-template<typename T>
-class ShutDowner
-{
+template <typename T> class ShutDowner {
 private:
     T &_t;
+
 public:
     ShutDowner(T &t) : _t(t) {}
-    ~ShutDowner() {
-        _t.ShutDown(true);
-    }
+    ~ShutDowner() { _t.ShutDown(true); }
 };
 
-
-template<typename T>
-class Stopper
-{
+template <typename T> class Stopper {
 private:
     T &_t;
+
 public:
     Stopper(T &t) : _t(t) {}
-    ~Stopper() {
-        _t.stop();
-    }
+    ~Stopper() { _t.stop(); }
 };
 
-} // namespace <unnamed>
+} // namespace
 
 //-----------------------------------------------------------------------------
 
@@ -116,15 +95,15 @@ TEST(StandaloneTest, standalone) {
     Stopper<slobrok::SlobrokServer> ssCleaner(slobrokServer);
 
     fnet::frt::StandaloneFRT server;
-    FRT_Supervisor & orb = server.supervisor();
+    FRT_Supervisor &orb = server.supervisor();
 
-    FRT_Target     *sb  = orb.GetTarget(18541);
+    FRT_Target *sb = orb.GetTarget(18541);
     SubReferer<FRT_Target> sbCleaner(sb);
 
     FRT_RPCRequest *req = nullptr;
     SubReferer<FRT_RPCRequest> reqCleaner(req);
 
-    for (int retry=0; retry < 5*61; retry++) {
+    for (int retry = 0; retry < 5 * 61; retry++) {
         // test ping against slobrok
         req = orb.AllocRPCRequest(req);
         req->SetMethodName("frt.rpc.ping");

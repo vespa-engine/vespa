@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/host_name.h>
-#include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/fnet/frt/supervisor.h>
-#include <vespa/fnet/frt/invoker.h>
-#include <vespa/fnet/transport.h>
-#include <vespa/fnet/frt/target.h>
 #include <sstream>
 #include <unistd.h>
+#include <vespa/fnet/frt/invoker.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/vespalib/util/host_name.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("testrpcserver");
@@ -20,15 +20,14 @@ namespace testrpcserver {
 
 class RPCHooks;
 
-class TstEnv : public FRT_IRequestWait
-{
+class TstEnv : public FRT_IRequestWait {
 private:
-    FNET_Transport    *_transport;
-    FRT_Supervisor    *_supervisor;
+    FNET_Transport *_transport;
+    FRT_Supervisor *_supervisor;
 
-    int                _myport;
-    int                _sbport;
-    RPCHooks          *_rpcHooks;
+    int _myport;
+    int _sbport;
+    RPCHooks *_rpcHooks;
 
     FNET_Transport *getTransport() { return _transport; }
     FRT_Supervisor *getSupervisor() { return _supervisor; }
@@ -36,7 +35,7 @@ private:
     TstEnv(const TstEnv &);            // Not used
     TstEnv &operator=(const TstEnv &); // Not used
 public:
-    const char * const _id;
+    const char *const _id;
 
     explicit TstEnv(int sbp, int myp, const char *n);
     ~TstEnv() override;
@@ -44,7 +43,7 @@ public:
     int MainLoop();
 
     void shutdown() { getTransport()->ShutDown(false); }
-    void RequestDone(FRT_RPCRequest* req) override {
+    void RequestDone(FRT_RPCRequest *req) override {
         if (req->IsError()) {
             LOG(error, "registration failed: %s", req->GetErrorMessage());
         } else {
@@ -53,9 +52,7 @@ public:
     }
 };
 
-
-class RPCHooks : public FRT_Invokable
-{
+class RPCHooks : public FRT_Invokable {
 private:
     TstEnv &_env;
 
@@ -66,43 +63,30 @@ public:
     ~RPCHooks() override;
 
     void initRPC(FRT_Supervisor *supervisor);
+
 private:
     void rpc_listNamesServed(FRT_RPCRequest *req);
 
     void rpc_stop(FRT_RPCRequest *req);
 };
 
+RPCHooks::RPCHooks(TstEnv &env) : _env(env) {}
+RPCHooks::~RPCHooks() {}
 
-RPCHooks::RPCHooks(TstEnv &env)
-    : _env(env)
-{
-}
-RPCHooks::~RPCHooks()
-{
-}
-
-
-void
-RPCHooks::initRPC(FRT_Supervisor *supervisor)
-{
+void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
 
     FRT_ReflectionBuilder rb(supervisor);
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
-                    FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
+    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
     rb.MethodDesc("Look up a rpcserver");
     rb.ReturnDesc("names", "The rpcserver names on this server");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("system.stop", "", "",
-                    FRT_METHOD(RPCHooks::rpc_stop), this);
+    rb.DefineMethod("system.stop", "", "", FRT_METHOD(RPCHooks::rpc_stop), this);
     rb.MethodDesc("Shut down the application");
     //-------------------------------------------------------------------------
 }
 
-
-void
-RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req) {
     std::vector<const char *> rpcsrvlist;
     rpcsrvlist.push_back("testrpcsrv/17");
     rpcsrvlist.push_back("testrpcsrv/191");
@@ -120,42 +104,26 @@ RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
     }
 }
 
-
 // System API methods
-void
-RPCHooks::rpc_stop(FRT_RPCRequest *req)
-{
-    (void) req;
+void RPCHooks::rpc_stop(FRT_RPCRequest *req) {
+    (void)req;
     LOG(debug, "RPC: Shutdown");
     _env.shutdown();
 }
 
-
 TstEnv::TstEnv(int sbp, int myp, const char *n)
-    : _transport(new FNET_Transport()),
-      _supervisor(new FRT_Supervisor(_transport)),
-      _myport(myp),
-      _sbport(sbp),
-      _rpcHooks(nullptr),
-      _id(n)
-{
+    : _transport(new FNET_Transport()), _supervisor(new FRT_Supervisor(_transport)), _myport(myp), _sbport(sbp),
+      _rpcHooks(nullptr), _id(n) {
     _rpcHooks = new RPCHooks(*this);
     _rpcHooks->initRPC(getSupervisor());
 }
 
+TstEnv::~TstEnv() { delete _rpcHooks; }
 
-TstEnv::~TstEnv()
-{
-    delete _rpcHooks;
-}
-
-
-int
-TstEnv::MainLoop()
-{
+int TstEnv::MainLoop() {
     srandom(time(nullptr));
 
-    if (! getSupervisor()->Listen(_myport)) {
+    if (!getSupervisor()->Listen(_myport)) {
         LOG(error, "TestRpcServer: unable to listen to port %d", _myport);
         return 1;
     }
@@ -180,9 +148,7 @@ TstEnv::MainLoop()
     return 0;
 }
 
-
-class App
-{
+class App {
 public:
     int main(int argc, char **argv) {
         int sbport = 2773;

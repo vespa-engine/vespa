@@ -7,12 +7,8 @@ LOG_SETUP(".slobrok.server.service_map_history");
 
 namespace slobrok {
 
-ServiceMapHistory::UpdateLog::UpdateLog()
-  : startGeneration(1),
-    currentGeneration(1),
-    updates(keep_items + 1)
-{}
-        
+ServiceMapHistory::UpdateLog::UpdateLog() : startGeneration(1), currentGeneration(1), updates(keep_items + 1) {}
+
 ServiceMapHistory::UpdateLog::~UpdateLog() = default;
 
 void ServiceMapHistory::UpdateLog::add(const std::string &name) {
@@ -23,13 +19,12 @@ void ServiceMapHistory::UpdateLog::add(const std::string &name) {
         updates.pop();
     }
 }
-        
+
 bool ServiceMapHistory::UpdateLog::isInRange(const Generation &gen) const {
     return gen.inRangeInclusive(startGeneration, currentGeneration);
 }
 
-std::vector<std::string>
-ServiceMapHistory::UpdateLog::updatedSince(const Generation &gen) const {
+std::vector<std::string> ServiceMapHistory::UpdateLog::updatedSince(const Generation &gen) const {
     std::vector<std::string> result;
     uint32_t skip = startGeneration.distance(gen);
     uint32_t last = startGeneration.distance(currentGeneration);
@@ -39,24 +34,16 @@ ServiceMapHistory::UpdateLog::updatedSince(const Generation &gen) const {
     return result;
 }
 
-
 //-----------------------------------------------------------------------------
 
-ServiceMapHistory::ServiceMapHistory()
-  : _map(),
-    _waitList(),
-    _log()
-{}
+ServiceMapHistory::ServiceMapHistory() : _map(), _waitList(), _log() {}
 
-
-ServiceMapHistory::~ServiceMapHistory() {
-    notify_updated();
-}
+ServiceMapHistory::~ServiceMapHistory() { notify_updated(); }
 
 void ServiceMapHistory::notify_updated() {
     WaitList waitList;
     std::swap(waitList, _waitList);
-    for (auto & [ handler, gen ] : waitList) {
+    for (auto &[handler, gen] : waitList) {
         handler->handle(makeDiffFrom(gen));
     }
 }
@@ -102,7 +89,7 @@ MapDiff ServiceMapHistory::makeDiffFrom(const Generation &fromGen) const {
         std::vector<std::string> removes;
         ServiceMappingList updates;
         auto changes = _log.updatedSince(fromGen);
-        for (const std::string & name : changes) {
+        for (const std::string &name : changes) {
             if (_map.contains(name)) {
                 updates.emplace_back(name, _map.at(name));
             } else {
@@ -112,7 +99,7 @@ MapDiff ServiceMapHistory::makeDiffFrom(const Generation &fromGen) const {
         return MapDiff(fromGen, removes, updates, myGen());
     } else {
         ServiceMappingList mappings;
-        for (const auto & [ name, spec ] : _map) {
+        for (const auto &[name, spec] : _map) {
             mappings.emplace_back(name, spec);
         }
         return MapDiff(mappings, myGen());

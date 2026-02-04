@@ -24,41 +24,39 @@ class SBEnv;
  * Handles a collection of RemoteSlobrok objects; contains classes and
  * methods for operating on all remote slobroks in parallel.
  **/
-class ExchangeManager
-{
+class ExchangeManager {
 private:
     using PartnerMap = std::unordered_map<std::string, std::unique_ptr<RemoteSlobrok>>;
     PartnerMap _partners;
 
     class WorkPackage;
 
-    class IWorkPkgWait
-    {
+    class IWorkPkgWait {
     public:
         virtual void donePackage(WorkPackage *pkg, bool somedenied) = 0;
         virtual ~IWorkPkgWait() = default;
     };
 
-    class WorkPackage
-    {
+    class WorkPackage {
     private:
-        class WorkItem: public FRT_IRequestWait
-        {
+        class WorkItem : public FRT_IRequestWait {
         private:
-            WorkPackage    &_pkg;
+            WorkPackage &_pkg;
             FRT_RPCRequest *_pendingReq;
-            RemoteSlobrok  *_remslob;
+            RemoteSlobrok *_remslob;
+
         public:
             void expedite();
             void RequestDone(FRT_RPCRequest *req) override;
             WorkItem(WorkPackage &pkg, RemoteSlobrok *rem, FRT_RPCRequest *req);
-            WorkItem(const WorkItem&) = delete;
-            WorkItem& operator= (const WorkItem&) = delete;
+            WorkItem(const WorkItem &) = delete;
+            WorkItem &operator=(const WorkItem &) = delete;
             ~WorkItem();
         };
         std::vector<std::unique_ptr<WorkItem>> _work;
-        size_t        _doneCnt;
-        size_t        _numDenied;
+        size_t _doneCnt;
+        size_t _numDenied;
+
     public:
         ExchangeManager &_exchanger;
         enum op_type { OP_REMOVE };
@@ -67,13 +65,13 @@ private:
         void addItem(RemoteSlobrok *partner);
         void doneItem(bool denied);
         void expedite();
-        WorkPackage(const WorkPackage&) = delete;
-        WorkPackage& operator= (const WorkPackage&) = delete;
+        WorkPackage(const WorkPackage &) = delete;
+        WorkPackage &operator=(const WorkPackage &) = delete;
         WorkPackage(op_type op, const ServiceMapping &mapping, ExchangeManager &exchanger);
         ~WorkPackage();
     };
 
-    SBEnv             &_env;
+    SBEnv &_env;
     vespalib::steady_time _lastFullConsensusTime;
 
     std::string diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs);
@@ -84,15 +82,15 @@ public:
     ExchangeManager(SBEnv &env);
     ~ExchangeManager();
 
-    SBEnv             &env() { return _env; }
+    SBEnv &env() { return _env; }
 
-    OkState addPartner(const std::string & spec);
-    void removePartner(const std::string & spec);
+    OkState addPartner(const std::string &spec);
+    void removePartner(const std::string &spec);
     std::vector<std::string> getPartnerList();
 
-    void forwardRemove(const std::string & name, const std::string & spec);
+    void forwardRemove(const std::string &name, const std::string &spec);
 
-    RemoteSlobrok *lookupPartner(const std::string & name) const;
+    RemoteSlobrok *lookupPartner(const std::string &name) const;
     void healthCheck();
 };
 

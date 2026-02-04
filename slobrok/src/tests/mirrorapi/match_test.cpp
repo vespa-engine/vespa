@@ -1,19 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/slobrok/sbmirror.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
-class MatchTester : public slobrok::api::IMirrorAPI
-{
-    SpecList lookup(std::string_view ) const override {
-        return SpecList();
-    }
+class MatchTester : public slobrok::api::IMirrorAPI {
+    SpecList lookup(std::string_view) const override { return SpecList(); }
     uint32_t updates() const override { return 0; }
     bool ready() const override { return true; }
 
     const std::string name;
 
-    void testMatch(const char *n, const char *p, bool expected)
-    {
+    void testMatch(const char *n, const char *p, bool expected) {
         SCOPED_TRACE(n);
         SCOPED_TRACE(p);
         EXPECT_EQ(expected, match(n, p));
@@ -22,14 +18,9 @@ class MatchTester : public slobrok::api::IMirrorAPI
 public:
     MatchTester(const std::string &n) : name(n) {}
 
-    void mustMatch(const std::string &pattern) {
-        testMatch(name.c_str(), pattern.c_str(), true);
-    }
-    void mustNotMatch(const std::string &pattern) {
-        testMatch(name.c_str(), pattern.c_str(), false);
-    }
+    void mustMatch(const std::string &pattern) { testMatch(name.c_str(), pattern.c_str(), true); }
+    void mustNotMatch(const std::string &pattern) { testMatch(name.c_str(), pattern.c_str(), false); }
 };
-
 
 TEST(MatchTest, require_that_pattern_matches_same_string) {
     std::string pattern = "foo/bar*zot/qux?foo**bar*/*nop*";

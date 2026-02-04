@@ -62,4 +62,4 @@ public:
     virtual bool ready() const = 0;
 };
 
-}
+} // namespace slobrok::api

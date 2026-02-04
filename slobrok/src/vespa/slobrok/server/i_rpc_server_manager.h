@@ -18,8 +18,7 @@ class ManagedRpcServer;
  * Interface class.
  **/
 
-class IRpcServerManager
-{
+class IRpcServerManager {
 public:
     virtual void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) = 0;
     virtual void notifyOkRpcSrv(ManagedRpcServer *rpcsrv) = 0;

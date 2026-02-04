@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/invokable.h>
 #include <memory>
+#include <vespa/fnet/frt/invokable.h>
 
 class FNET_Task;
 class FRT_Supervisor;
@@ -22,10 +22,8 @@ class ServiceMapHistory;
  * invoking the right internal method, and (in most cases)
  * packaging and returning the result of the request.
  **/
-class RPCHooks : public FRT_Invokable
-{
+class RPCHooks : public FRT_Invokable {
 public:
-
     struct Metrics {
         unsigned long heartBeatFails;
         unsigned long registerReqs;
@@ -36,7 +34,7 @@ public:
         unsigned long adminReqs;
         unsigned long otherReqs;
         unsigned long missingConsensusTime;
-        static Metrics zero() { return Metrics{0,0,0,0,0,0,0,0,0}; }
+        static Metrics zero() { return Metrics{0, 0, 0, 0, 0, 0, 0, 0, 0}; }
     };
 
 private:
@@ -53,11 +51,10 @@ public:
 
     void initRPC(FRT_Supervisor *supervisor);
     void reportMetrics();
-    const Metrics& getMetrics() const { return _cnts; }
+    const Metrics &getMetrics() const { return _cnts; }
     void countFailedHeartbeat() { _cnts.heartBeatFails++; }
-    void setConsensusTime(unsigned long value) {
-        _cnts.missingConsensusTime = value;
-    }
+    void setConsensusTime(unsigned long value) { _cnts.missingConsensusTime = value; }
+
 private:
     void rpc_registerRpcServer(FRT_RPCRequest *req);
     void rpc_unregisterRpcServer(FRT_RPCRequest *req);
@@ -82,4 +79,3 @@ private:
 };
 
 } // namespace slobrok
-

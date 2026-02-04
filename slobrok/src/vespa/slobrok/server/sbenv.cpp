@@ -1,16 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "reconfigurable_stateserver.h"
 #include "sbenv.h"
+#include "reconfigurable_stateserver.h"
 #include "remote_check.h"
-#include <vespa/vespalib/util/host_name.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <sstream>
+#include <thread>
+#include <vespa/config/helper/configfetcher.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/config/helper/configfetcher.h>
-#include <thread>
-#include <sstream>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/host_name.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.server.sbenv");
@@ -21,9 +21,7 @@ namespace slobrok {
 
 namespace {
 
-std::string
-createSpec(int port)
-{
+std::string createSpec(int port) {
     if (port == 0) {
         return std::string();
     }
@@ -35,9 +33,7 @@ createSpec(int port)
     return str.str();
 }
 
-void
-discard(std::vector<std::string> &vec, const std::string & val)
-{
+void discard(std::vector<std::string> &vec, const std::string &val) {
     uint32_t i = 0;
     uint32_t size = vec.size();
     while (i < size) {
@@ -52,39 +48,28 @@ discard(std::vector<std::string> &vec, const std::string & val)
     LOG_ASSERT(size == vec.size());
 }
 
-
-class ConfigTask : public FNET_Task
-{
+class ConfigTask : public FNET_Task {
 private:
-    Configurator& _configurator;
+    Configurator &_configurator;
 
     ConfigTask(const ConfigTask &);
     ConfigTask &operator=(const ConfigTask &);
+
 public:
-    ConfigTask(FNET_Scheduler *sched, Configurator& configurator);
+    ConfigTask(FNET_Scheduler *sched, Configurator &configurator);
 
     ~ConfigTask() override;
     void PerformTask() override;
 };
 
-
-ConfigTask::ConfigTask(FNET_Scheduler *sched, Configurator& configurator)
-    : FNET_Task(sched),
-      _configurator(configurator)
-{
+ConfigTask::ConfigTask(FNET_Scheduler *sched, Configurator &configurator)
+    : FNET_Task(sched), _configurator(configurator) {
     Schedule(1.0);
 }
 
+ConfigTask::~ConfigTask() { Kill(); }
 
-ConfigTask::~ConfigTask()
-{
-    Kill();
-}
-
-
-void
-ConfigTask::PerformTask()
-{
+void ConfigTask::PerformTask() {
     Schedule(1.0);
     LOG(spam, "checking for new config");
     try {
@@ -95,28 +80,20 @@ ConfigTask::PerformTask()
     }
 }
 
-} // namespace slobrok::<unnamed>
+} // namespace
 
 SBEnv::SBEnv(const ConfigShim &shim)
     : _transport(std::make_unique<FNET_Transport>(fnet::TransportConfig().drop_empty_buffers(true))),
-      _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
-      _configShim(shim),
-      _configurator(shim.factory().create(*this)),
-      _shuttingDown(false),
-      _partnerList(),
+      _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())), _configShim(shim),
+      _configurator(shim.factory().create(*this)), _shuttingDown(false), _partnerList(),
       _me(createSpec(_configShim.portNumber())),
-      _localRpcMonitorMap(getScheduler(),
-                          [this] (MappingMonitorOwner &owner) {
-                              return std::make_unique<RpcMappingMonitor>(*_supervisor, owner);
-                          }),
+      _localRpcMonitorMap(
+          getScheduler(),
+          [this](MappingMonitorOwner &owner) { return std::make_unique<RpcMappingMonitor>(*_supervisor, owner); }),
       _globalVisibleHistory(),
       _rpcHooks(*this), // Transitively references _localRpcMonitorMap and _globalVisibleHistory
-      _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _exchanger)),
-      _health(),
-      _metrics(_rpcHooks, *_transport),
-      _components(),
-      _exchanger(*this)
-{
+      _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _exchanger)), _health(),
+      _metrics(_rpcHooks, *_transport), _components(), _exchanger(*this) {
     srandom(time(nullptr) ^ getpid());
     // note: feedback loop between these two:
     _localMonitorSubscription = MapSubscription::subscribe(_consensusMap, _localRpcMonitorMap);
@@ -125,46 +102,35 @@ SBEnv::SBEnv(const ConfigShim &shim)
     _rpcHooks.initRPC(getSupervisor());
 }
 
-
 SBEnv::~SBEnv() = default;
 
-FNET_Scheduler *
-SBEnv::getScheduler() {
-    return _transport->GetScheduler();
-}
+FNET_Scheduler *SBEnv::getScheduler() { return _transport->GetScheduler(); }
 
-void
-SBEnv::shutdown()
-{
+void SBEnv::shutdown() {
     _shuttingDown = true;
     getTransport()->ShutDown(false);
 }
 
-void
-SBEnv::resume()
-{
+void SBEnv::resume() {
     // nop
 }
 
 namespace {
 
-std::string
-toString(const std::vector<std::string> & v) {
+std::string toString(const std::vector<std::string> &v) {
     vespalib::asciistream os;
     os << "[" << '\n';
-    for (const std::string & partner : v) {
+    for (const std::string &partner : v) {
         os << "    " << partner << '\n';
     }
     os << ']';
     return os.str();
 }
 
-} // namespace <unnamed>
+} // namespace
 
-int
-SBEnv::MainLoop()
-{
-    if (! getSupervisor()->Listen(_configShim.portNumber())) {
+int SBEnv::MainLoop() {
+    if (!getSupervisor()->Listen(_configShim.portNumber())) {
         LOG(error, "unable to listen to port %d", _configShim.portNumber());
         EV_STOPPING("slobrok", "could not listen");
         return 1;
@@ -174,7 +140,8 @@ SBEnv::MainLoop()
 
     std::unique_ptr<ReconfigurableStateServer> stateServer;
     if (_configShim.enableStateServer()) {
-        stateServer = std::make_unique<ReconfigurableStateServer>(config::ConfigUri(_configShim.configId()), _health, _metrics, _components);
+        stateServer = std::make_unique<ReconfigurableStateServer>(config::ConfigUri(_configShim.configId()), _health,
+                                                                  _metrics, _components);
     }
 
     try {
@@ -198,14 +165,10 @@ SBEnv::MainLoop()
     return 0;
 }
 
-void
-SBEnv::setup(const std::vector<std::string> &cfg)
-{
+void SBEnv::setup(const std::vector<std::string> &cfg) {
     _partnerList = cfg;
     std::vector<std::string> oldList = _exchanger.getPartnerList();
-    LOG(debug, "(re-)configuring. oldlist size %d, configuration list size %d",
-        (int)oldList.size(),
-        (int)cfg.size());
+    LOG(debug, "(re-)configuring. oldlist size %d, configuration list size %d", (int)oldList.size(), (int)cfg.size());
     for (uint32_t i = 0; i < cfg.size(); ++i) {
         std::string slobrok = cfg[i];
         discard(oldList, slobrok);
@@ -227,9 +190,7 @@ SBEnv::setup(const std::vector<std::string> &cfg)
     _components.addConfig(current);
 }
 
-OkState
-SBEnv::addPeer(const std::string &name, const std::string &spec)
-{
+OkState SBEnv::addPeer(const std::string &name, const std::string &spec) {
     if (name != spec) {
         return OkState(FRTE_RPC_METHOD_FAILED, "peer location brokers must have name equal to spec");
     }
@@ -237,29 +198,27 @@ SBEnv::addPeer(const std::string &name, const std::string &spec)
         return OkState(FRTE_RPC_METHOD_FAILED, "cannot add my own spec as peer");
     }
     if (_partnerList.size() != 0) {
-        for (const std::string & partner : _partnerList) {
+        for (const std::string &partner : _partnerList) {
             if (partner == spec) {
                 return OkState(0, "already configured with peer");
             }
         }
         std::string peers = toString(_partnerList);
         LOG(warning, "got addPeer with non-configured peer %s, check config consistency. configured peers = %s",
-                     spec.c_str(), peers.c_str());
+            spec.c_str(), peers.c_str());
         _partnerList.push_back(spec);
     }
     return _exchanger.addPartner(spec);
 }
 
-OkState
-SBEnv::removePeer(const std::string &name, const std::string &spec)
-{
+OkState SBEnv::removePeer(const std::string &name, const std::string &spec) {
     if (name != spec) {
         return OkState(FRTE_RPC_METHOD_FAILED, "peer location brokers must have name equal to spec");
     }
     if (spec == mySpec()) {
         return OkState(FRTE_RPC_METHOD_FAILED, "cannot remove my own spec as peer");
     }
-    for (const std::string & partner : _partnerList) {
+    for (const std::string &partner : _partnerList) {
         if (partner == spec) {
             return OkState(FRTE_RPC_METHOD_FAILED, "configured partner list contains peer, cannot remove");
         }

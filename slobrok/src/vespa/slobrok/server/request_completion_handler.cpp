@@ -5,10 +5,7 @@
 
 namespace slobrok {
 
-RequestCompletionHandler::RequestCompletionHandler(FRT_RPCRequest *parent)
-    : _parentRequest(parent)
-{
-}
+RequestCompletionHandler::RequestCompletionHandler(FRT_RPCRequest *parent) : _parentRequest(parent) {}
 
 RequestCompletionHandler::~RequestCompletionHandler() {
     if (_parentRequest) {
@@ -27,4 +24,4 @@ void RequestCompletionHandler::doneHandler(OkState result) {
     }
 }
 
-}
+} // namespace slobrok

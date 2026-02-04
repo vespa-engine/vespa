@@ -1,17 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/slobrok/sbmirror.h>
-#include <vespa/slobrok/sbregister.h>
-#include <vespa/slobrok/server/slobrokserver.h>
-#include <vespa/config/common/configcontext.h>
-#include <vespa/config-slobroks.h>
-#include <vespa/fnet/transport.h>
-#include <vespa/fnet/frt/supervisor.h>
-#include <vespa/vespalib/util/host_name.h>
 #include <algorithm>
 #include <iostream>
 #include <thread>
+#include <vespa/config-slobroks.h>
+#include <vespa/config/common/configcontext.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/slobrok/sbmirror.h>
+#include <vespa/slobrok/sbregister.h>
+#include <vespa/slobrok/server/slobrokserver.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/host_name.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("configure_test");
@@ -20,12 +20,10 @@ using slobrok::api::MirrorAPI;
 using slobrok::api::RegisterAPI;
 
 using slobrok::ConfigShim;
-using slobrok::SlobrokServer;
 using slobrok::ConfiguratorFactory;
+using slobrok::SlobrokServer;
 
-std::string
-createSpec(int port)
-{
+std::string createSpec(int port) {
     if (port == 0) {
         return std::string();
     }
@@ -37,20 +35,15 @@ createSpec(int port)
     return str.str();
 }
 
-
-struct SpecList
-{
+struct SpecList {
     MirrorAPI::SpecList _specList;
     SpecList() : _specList() {}
     SpecList(MirrorAPI::SpecList input) : _specList(input) {}
     SpecList &add(const char *name, const char *spec) {
-        _specList.push_back(make_pair(std::string(name),
-                                      std::string(spec)));
+        _specList.push_back(make_pair(std::string(name), std::string(spec)));
         return *this;
     }
-    void sort() {
-        std::sort(_specList.begin(), _specList.end());
-    }
+    void sort() { std::sort(_specList.begin(), _specList.end()); }
     bool operator==(SpecList &rhs) { // NB: MUTATE!
         sort();
         rhs.sort();
@@ -59,10 +52,7 @@ struct SpecList
     std::string strVal() {
         sort();
         std::string ret = "{";
-        for (MirrorAPI::SpecList::iterator it = _specList.begin();
-             it != _specList.end();
-             ++it)
-        {
+        for (MirrorAPI::SpecList::iterator it = _specList.begin(); it != _specList.end(); ++it) {
             ret += "[";
             ret += (*it).first;
             ret += " -> ";
@@ -74,10 +64,7 @@ struct SpecList
     }
 };
 
-
-bool
-compare(MirrorAPI &api, const char *pattern, SpecList expect)
-{
+bool compare(MirrorAPI &api, const char *pattern, SpecList expect) {
     for (int i = 0; i < 600; ++i) {
         SpecList actual(api.lookup(pattern));
         if (actual == expect) {
@@ -150,13 +137,8 @@ TEST(ConfigureTest, configure_test) {
     reg1.registerName("A");
     reg2.registerName("B");
 
-    EXPECT_TRUE(compare(mirror1, "*", SpecList()
-                       .add("A", myspec1.c_str())
-                       .add("B", myspec2.c_str())));
-    EXPECT_TRUE(compare(mirror2, "*", SpecList()
-                       .add("A", myspec1.c_str())
-                       .add("B", myspec2.c_str())));
-
+    EXPECT_TRUE(compare(mirror1, "*", SpecList().add("A", myspec1.c_str()).add("B", myspec2.c_str())));
+    EXPECT_TRUE(compare(mirror2, "*", SpecList().add("A", myspec1.c_str()).add("B", myspec2.c_str())));
 
     reg1.unregisterName("A");
     reg2.unregisterName("B");
@@ -177,8 +159,8 @@ TEST(ConfigureTest, configure_test) {
 
     fnet::frt::StandaloneFRT orb3;
     fnet::frt::StandaloneFRT orb4;
-    RegisterAPI  reg3(orb3.supervisor(), cliConfig1);
-    RegisterAPI  reg4(orb4.supervisor(), cliConfig2);
+    RegisterAPI reg3(orb3.supervisor(), cliConfig1);
+    RegisterAPI reg4(orb4.supervisor(), cliConfig2);
     orb3.supervisor().Listen(18528);
     orb4.supervisor().Listen(18529);
     std::string myspec3 = createSpec(orb3.supervisor().GetListenPort());
@@ -186,22 +168,15 @@ TEST(ConfigureTest, configure_test) {
     reg3.registerName("B");
     reg4.registerName("A");
 
-    EXPECT_TRUE(compare(mirror1, "*", SpecList()
-                       .add("A", myspec1.c_str())
-                       .add("B", myspec3.c_str())));
-    EXPECT_TRUE(compare(mirror2, "*", SpecList()
-                       .add("A", myspec4.c_str())
-                       .add("B", myspec2.c_str())));
-
+    EXPECT_TRUE(compare(mirror1, "*", SpecList().add("A", myspec1.c_str()).add("B", myspec3.c_str())));
+    EXPECT_TRUE(compare(mirror2, "*", SpecList().add("A", myspec4.c_str()).add("B", myspec2.c_str())));
 
     // test mirror API reconfiguration
     cli3Builder.slobrok.resize(1);
     cli3Builder.slobrok[0].connectionspec = createSpec(18525);
     cfgCtx->reload();
 
-    EXPECT_TRUE(compare(mirror1, "*", SpecList()
-                       .add("A", myspec4.c_str())
-                       .add("B", myspec2.c_str())));
+    EXPECT_TRUE(compare(mirror1, "*", SpecList().add("A", myspec4.c_str()).add("B", myspec2.c_str())));
 
     serverOne.stop();
     serverTwo.stop();

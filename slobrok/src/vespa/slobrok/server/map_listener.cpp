@@ -9,13 +9,10 @@ namespace slobrok {
 
 MapListener::~MapListener() = default;
 
-void MapListener::update(const ServiceMapping &old_mapping,
-                         const ServiceMapping &new_mapping)
-{
+void MapListener::update(const ServiceMapping &old_mapping, const ServiceMapping &new_mapping) {
     LOG_ASSERT(old_mapping.name == new_mapping.name);
     remove(old_mapping);
     add(new_mapping);
 }
 
 } // namespace slobrok
-

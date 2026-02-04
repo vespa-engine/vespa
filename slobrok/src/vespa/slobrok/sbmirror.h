@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "imirrorapi.h"
 #include "backoff.h"
+#include "imirrorapi.h"
 #include "sblist.h"
-#include <vespa/vespalib/util/gencnt.h>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/fnet/frt/invoker.h>
 #include <atomic>
+#include <vespa/fnet/frt/invoker.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/gencnt.h>
 
 class FRT_Target;
 
@@ -21,10 +21,7 @@ namespace slobrok::api {
  * fetched in the background. Lookups against this object is done
  * using an internal mirror of the service repository.
  **/
-class MirrorAPI : public FNET_Task,
-                  public FRT_IRequestWait,
-                  public IMirrorAPI
-{
+class MirrorAPI : public FNET_Task, public FRT_IRequestWait, public IMirrorAPI {
 public:
     /**
      * @brief vector of <string> pairs.
@@ -41,7 +38,7 @@ public:
      * @param orb      the Supervisor to use
      * @param config   how to get the connect spec list
      **/
-    MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config);
+    MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory &config);
     MirrorAPI(const MirrorAPI &) = delete;
     MirrorAPI &operator=(const MirrorAPI &) = delete;
 
@@ -89,22 +86,22 @@ private:
 
     void reSched(double seconds);
 
-    FRT_Supervisor          &_orb;
-    mutable std::mutex       _lock;
-    bool                     _reqPending;
-    bool                     _scheduled;
-    std::atomic<bool>        _reqDone;
-    bool                     _logOnSuccess;
-    SpecMap                  _specs;
-    vespalib::GenCnt         _specsGen;
-    vespalib::GenCnt         _updates;
-    SlobrokList              _slobrokSpecs;
-    Configurator::UP         _configurator;
-    std::string              _currSlobrok;
-    int                      _rpc_ms;
-    BackOff                  _backOff;
-    FRT_Target              *_target;
-    FRT_RPCRequest          *_req;
+    FRT_Supervisor &_orb;
+    mutable std::mutex _lock;
+    bool _reqPending;
+    bool _scheduled;
+    std::atomic<bool> _reqDone;
+    bool _logOnSuccess;
+    SpecMap _specs;
+    vespalib::GenCnt _specsGen;
+    vespalib::GenCnt _updates;
+    SlobrokList _slobrokSpecs;
+    Configurator::UP _configurator;
+    std::string _currSlobrok;
+    int _rpc_ms;
+    BackOff _backOff;
+    FRT_Target *_target;
+    FRT_RPCRequest *_req;
 };
 
 } // namespace slobrok::api

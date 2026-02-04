@@ -10,9 +10,7 @@ class FRT_Supervisor;
 
 namespace slobrok {
 
-class IncrementalFetch : public FNET_Task,
-                         public ServiceMapHistory::DiffCompletionHandler
-{
+class IncrementalFetch : public FNET_Task, public ServiceMapHistory::DiffCompletionHandler {
 private:
     FRT_RPCRequest *_req;
     ServiceMapHistory &_smh;
@@ -20,7 +18,7 @@ private:
 
 public:
     IncrementalFetch(const IncrementalFetch &) = delete;
-    IncrementalFetch& operator=(const IncrementalFetch &) = delete;
+    IncrementalFetch &operator=(const IncrementalFetch &) = delete;
 
     IncrementalFetch(FRT_Supervisor *orb, FRT_RPCRequest *req, ServiceMapHistory &smh, vespalib::GenCnt gen);
     ~IncrementalFetch();
@@ -32,4 +30,3 @@ public:
 };
 
 } // namespace slobrok
-

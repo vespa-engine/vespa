@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <map>
 #include <vespa/slobrok/server/service_map_history.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <map>
 
 using namespace vespalib;
 using namespace slobrok;
@@ -13,9 +13,7 @@ using Map = std::map<std::string, std::string>;
 
 struct Dumper : ServiceMapHistory::DiffCompletionHandler {
     std::unique_ptr<MapDiff> got = {};
-    void handle(MapDiff diff) override {
-        got = std::make_unique<MapDiff>(std::move(diff));
-    }
+    void handle(MapDiff diff) override { got = std::make_unique<MapDiff>(std::move(diff)); }
 };
 
 MapDiff diffGen(ServiceMapHistory &history, uint32_t gen) {
@@ -29,12 +27,11 @@ Map dump(ServiceMapHistory &history) {
     MapDiff full = diffGen(history, 0);
     EXPECT_TRUE(full.is_full_dump());
     Map result;
-    for (const auto & [ k, v ] : full.updated) {
+    for (const auto &[k, v] : full.updated) {
         result[k] = v;
     }
     return result;
 }
-
 
 std::string lookup(ServiceMapHistory &history, const std::string &name) {
     auto map = dump(history);
@@ -88,7 +85,7 @@ TEST(ServiceMapHistoryTest, full_inspection) {
         ServiceMapHistory p;
         for (int i = 0; i < 1984; ++i) {
             auto name = fmt("key/%d/name", i);
-            auto spec = fmt("tcp/host%d.domain.tld:19099", 10000+i);
+            auto spec = fmt("tcp/host%d.domain.tld:19099", 10000 + i);
             p.add(ServiceMapping{name, spec});
         }
         EXPECT_EQ(p.currentGen(), GenCnt(1985));
@@ -98,7 +95,7 @@ TEST(ServiceMapHistoryTest, full_inspection) {
         EXPECT_EQ(p.currentGen(), GenCnt(1987));
 
         auto map = dump(p);
-        
+
         EXPECT_FALSE(map.contains("foo"));
         EXPECT_TRUE(map.contains("key/0/name"));
         EXPECT_FALSE(map.contains("key/666/name"));
@@ -117,25 +114,25 @@ TEST(ServiceMapHistoryTest, full_inspection) {
 
         foo = map["key/1969/name"];
         EXPECT_EQ(foo, "tcp/woodstock:19069");
-        
+
         EXPECT_EQ(map.size(), 1983ul);
 
         auto gen = p.currentGen();
-        
+
         auto diff2 = diffGen(p, 42);
         EXPECT_TRUE(diff2.is_full_dump());
         EXPECT_EQ(diff2.fromGen, GenCnt(0));
         EXPECT_TRUE(diff2.removed.empty());
         EXPECT_EQ(diff2.updated.size(), 1983ul);
         EXPECT_EQ(diff2.toGen, gen);
-        
+
         auto diff3 = diffGen(p, 1984);
         EXPECT_FALSE(diff3.is_full_dump());
         EXPECT_EQ(diff3.fromGen, GenCnt(1984));
         EXPECT_EQ(diff3.removed.size(), 1ul);
         EXPECT_EQ(diff3.updated.size(), 2ul);
         EXPECT_EQ(diff3.toGen, gen);
-        
+
         p.asyncGenerationDiff(&dumper, gen);
         EXPECT_FALSE(dumper.got);
     }
@@ -225,4 +222,3 @@ TEST(ServiceMapHistoryTest, handlers_test) {
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

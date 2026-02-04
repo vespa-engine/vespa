@@ -14,15 +14,14 @@ class ProxyMapSource : public MapSource, public MapListener {
     std::set<MapListener *> _listeners;
     void registerListener(MapListener &listener) override;
     void unregisterListener(MapListener &listener) override;
+
 public:
     ProxyMapSource();
-     ~ProxyMapSource();
+    ~ProxyMapSource();
 
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;
-    void update(const ServiceMapping &old_mapping,
-                const ServiceMapping &new_mapping) override;
+    void update(const ServiceMapping &old_mapping, const ServiceMapping &new_mapping) override;
 };
 
 } // namespace slobrok
-

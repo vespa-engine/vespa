@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
+#include <map>
+#include <vespa/fnet/scheduler.h>
 #include <vespa/slobrok/server/local_rpc_monitor_map.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/fnet/scheduler.h>
-#include <map>
 
 using namespace vespalib;
 using namespace slobrok;
@@ -15,8 +15,8 @@ struct MapCall {
     std::string name;
     ServiceMapping mapping;
     ServiceMapping old;
-    static MapCall add(const ServiceMapping &m) { return {"add", m, {"",""}}; }
-    static MapCall remove(const ServiceMapping &m) { return {"remove", m, {"",""}}; }
+    static MapCall add(const ServiceMapping &m) { return {"add", m, {"", ""}}; }
+    static MapCall remove(const ServiceMapping &m) { return {"remove", m, {"", ""}}; }
     static MapCall update(const ServiceMapping &o, const ServiceMapping &m) { return {"update", m, o}; }
     void check(const MapCall &rhs) const {
         EXPECT_EQ(name, rhs.name);
@@ -42,18 +42,18 @@ struct MonitorCall {
 };
 MonitorCall::~MonitorCall() = default;
 
-template <typename Call>
-class CallLog {
+template <typename Call> class CallLog {
 private:
     std::vector<Call> _calls;
     size_t _checked;
+
 public:
     CallLog() noexcept : _calls(), _checked(0) {}
     ~CallLog() { EXPECT_EQ(_calls.size(), _checked); }
     void log(Call call) { _calls.push_back(call); }
     void expect(std::initializer_list<Call> list) {
         ASSERT_EQ(list.size(), (_calls.size() - _checked));
-        for (const auto &call: list) {
+        for (const auto &call : list) {
             call.check(_calls[_checked++]);
         }
     }
@@ -61,15 +61,9 @@ public:
 
 struct MapLog : CallLog<MapCall>, MapListener {
     ~MapLog() override;
-    void add(const ServiceMapping &mapping) override {
-        log(MapCall::add(mapping));
-    }
-    void remove(const ServiceMapping &mapping) override {
-        log(MapCall::remove(mapping));
-    }
-    void update(const ServiceMapping &old_mapping,
-                const ServiceMapping &new_mapping) override
-    {
+    void add(const ServiceMapping &mapping) override { log(MapCall::add(mapping)); }
+    void remove(const ServiceMapping &mapping) override { log(MapCall::remove(mapping)); }
+    void update(const ServiceMapping &old_mapping, const ServiceMapping &new_mapping) override {
         log(MapCall::update(old_mapping, new_mapping));
     }
 };
@@ -77,23 +71,15 @@ struct MapLog : CallLog<MapCall>, MapListener {
 MapLog::~MapLog() = default;
 
 struct MonitorLog : CallLog<MonitorCall>, MappingMonitor {
-    void start(const ServiceMapping& mapping, bool hurry) override {
-        log(MonitorCall::start(mapping, hurry));
-    }
-    void stop(const ServiceMapping& mapping) override {
-        log(MonitorCall::stop(mapping));
-    }
+    void start(const ServiceMapping &mapping, bool hurry) override { log(MonitorCall::start(mapping, hurry)); }
+    void stop(const ServiceMapping &mapping) override { log(MonitorCall::stop(mapping)); }
 };
 
 struct MyMappingMonitor : MappingMonitor {
     MonitorLog &monitor;
     explicit MyMappingMonitor(MonitorLog &m) : monitor(m) {}
-    void start(const ServiceMapping& mapping, bool hurry) override {
-        monitor.start(mapping, hurry);
-    }
-    void stop(const ServiceMapping& mapping) override {
-        monitor.stop(mapping);
-    }
+    void start(const ServiceMapping &mapping, bool hurry) override { monitor.start(mapping, hurry); }
+    void stop(const ServiceMapping &mapping) override { monitor.stop(mapping); }
 };
 
 struct LocalRpcMonitorMapTest : public ::testing::Test {
@@ -106,17 +92,14 @@ struct LocalRpcMonitorMapTest : public ::testing::Test {
     ServiceMapping mapping;
     ServiceMapping mapping_conflict;
     LocalRpcMonitorMapTest()
-      : time(duration::zero()),
-        scheduler(&time), monitor_log(), map_log(),
-        map(&scheduler, [this](auto &owner)
-            {
-                EXPECT_EQ(&owner, &map);
-                return std::make_unique<MyMappingMonitor>(monitor_log);
-            }),
-        subscription(MapSubscription::subscribe(map.dispatcher(), map_log)),
-        mapping("dummy_service", "dummy_spec"),
-        mapping_conflict("dummy_service", "conflicting_dummy_spec")
-    {}
+        : time(duration::zero()), scheduler(&time), monitor_log(), map_log(),
+          map(&scheduler,
+              [this](auto &owner) {
+                  EXPECT_EQ(&owner, &map);
+                  return std::make_unique<MyMappingMonitor>(monitor_log);
+              }),
+          subscription(MapSubscription::subscribe(map.dispatcher(), map_log)), mapping("dummy_service", "dummy_spec"),
+          mapping_conflict("dummy_service", "conflicting_dummy_spec") {}
     void tick(duration elapsed = FNET_Scheduler::tick_ms) {
         time += elapsed;
         scheduler.CheckTasks();
@@ -170,14 +153,9 @@ LocalRpcMonitorMapTest::~LocalRpcMonitorMapTest() = default;
 struct MyAddLocalHandler : CompletionHandler {
     std::unique_ptr<OkState> &state;
     bool &handler_deleted;
-    MyAddLocalHandler(std::unique_ptr<OkState> &s, bool &hd)
-      : state(s), handler_deleted(hd) {} 
-    void doneHandler(OkState result) override {
-        state = std::make_unique<OkState>(result);
-    }
-    ~MyAddLocalHandler() override {
-        handler_deleted = true;
-    }
+    MyAddLocalHandler(std::unique_ptr<OkState> &s, bool &hd) : state(s), handler_deleted(hd) {}
+    void doneHandler(OkState result) override { state = std::make_unique<OkState>(result); }
+    ~MyAddLocalHandler() override { handler_deleted = true; }
 };
 
 TEST_F(LocalRpcMonitorMapTest, external_add_remove_while_up) {

@@ -2,7 +2,4 @@
 
 #include "mapping_monitor.h"
 
-namespace slobrok {
-
-} // namespace slobrok
-
+namespace slobrok {} // namespace slobrok

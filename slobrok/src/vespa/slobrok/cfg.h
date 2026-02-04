@@ -2,11 +2,11 @@
 #pragma once
 
 #include <vespa/config-slobroks.h>
-#include <vespa/config/subscription/configuri.h>
 #include <vespa/config/subscription/confighandle.h>
+#include <vespa/config/subscription/configuri.h>
 
 namespace config {
-    class ConfigSubscriber;
+class ConfigSubscriber;
 }
 namespace slobrok {
 
@@ -16,14 +16,14 @@ public:
     virtual ~Configurable() = default;
 };
 
-
 class Configurator {
 private:
     std::unique_ptr<config::ConfigSubscriber> _subscriber;
     std::unique_ptr<config::ConfigHandle<cloud::config::SlobroksConfig>> _handle;
     Configurable &_target;
+
 public:
-    Configurator(Configurable &target, const config::ConfigUri & uri);
+    Configurator(Configurable &target, const config::ConfigUri &uri);
     ~Configurator();
     bool poll();
     using UP = std::unique_ptr<Configurator>;
@@ -34,13 +34,13 @@ public:
 class ConfiguratorFactory {
 private:
     config::ConfigUri _uri;
+
 public:
-    explicit ConfiguratorFactory(const config::ConfigUri & uri);
+    explicit ConfiguratorFactory(const config::ConfigUri &uri);
     // Convenience. Might belong somewhere else
-    explicit ConfiguratorFactory(const std::vector<std::string> & spec);
+    explicit ConfiguratorFactory(const std::vector<std::string> &spec);
 
     Configurator::UP create(Configurable &target) const;
 };
 
 } // namespace slobrok
-

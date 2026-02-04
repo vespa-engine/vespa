@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/slobrok/server/rpc_mapping_monitor.h>
+#include <map>
+#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport_debugger.h>
 #include <vespa/fnet/transport_thread.h>
-#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/slobrok/server/rpc_mapping_monitor.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <map>
 
 using namespace vespalib;
 using namespace slobrok;
@@ -29,14 +29,11 @@ struct Server : FRT_Invokable {
         }
     }
     Server(fnet::TimeTools::SP time_tools)
-        : frt(fnet::TransportConfig().time_tools(time_tools)),
-          names(),
-          inject_fail_cnt(0),
-          last_conn(nullptr)
-    {
+        : frt(fnet::TransportConfig().time_tools(time_tools)), names(), inject_fail_cnt(0), last_conn(nullptr) {
         FRT_ReflectionBuilder rb(&frt.supervisor());
         rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", FRT_METHOD(Server::rpc_listNamesServed), this);
-        rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "", FRT_METHOD(Server::rpc_notifyUnregistered), this);
+        rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "", FRT_METHOD(Server::rpc_notifyUnregistered),
+                        this);
         REQUIRE(frt.supervisor().Listen(0));
     }
     ~Server() override;
@@ -58,10 +55,7 @@ struct Server : FRT_Invokable {
     void rpc_notifyUnregistered(FRT_RPCRequest *) {}
 };
 
-Server::~Server()
-{
-    set_last_conn(nullptr);
-}
+Server::~Server() { set_last_conn(nullptr); }
 
 enum class State { ANY, UP, DOWN };
 
@@ -83,7 +77,7 @@ struct States {
     }
     size_t samples(State state = State::ANY) const {
         size_t n = 0;
-        for (const auto &entry: hist) {
+        for (const auto &entry : hist) {
             if ((entry.state == state) || (state == State::ANY)) {
                 n += entry.cnt;
             }
@@ -110,16 +104,9 @@ struct RpcMappingMonitorTest : public ::testing::Test {
     ServiceMapping bar_a;
     ServiceMapping baz_b;
     RpcMappingMonitorTest()
-      : debugger(),
-        my_frt(fnet::TransportConfig().time_tools(debugger.time_tools())),
-        a(debugger.time_tools()),
-        b(debugger.time_tools()),
-        hist(),
-        monitor(),
-        foo_a("foo", a.spec()),
-        bar_a("bar", a.spec()),
-        baz_b("baz", b.spec())
-    {
+        : debugger(), my_frt(fnet::TransportConfig().time_tools(debugger.time_tools())), a(debugger.time_tools()),
+          b(debugger.time_tools()), hist(), monitor(), foo_a("foo", a.spec()), bar_a("bar", a.spec()),
+          baz_b("baz", b.spec()) {
         debugger.attach({*my_frt.supervisor().GetTransport(), a.transport(), b.transport()});
         monitor = std::make_unique<RpcMappingMonitor>(my_frt.supervisor(), hist);
         a.names.push_back(foo_a.name);
@@ -129,8 +116,7 @@ struct RpcMappingMonitorTest : public ::testing::Test {
     ~RpcMappingMonitorTest() override;
 };
 
-RpcMappingMonitorTest::~RpcMappingMonitorTest()
-{
+RpcMappingMonitorTest::~RpcMappingMonitorTest() {
     monitor.reset();
     debugger.detach();
 }
@@ -140,9 +126,9 @@ TEST_F(RpcMappingMonitorTest, services_can_be_monitored) {
     monitor->start(bar_a, false);
     monitor->start(baz_b, false);
     EXPECT_TRUE(debugger.step_until([&]() {
-                return ((hist.map[foo_a].samples() >= 3) &&
-                        (hist.map[bar_a].samples() >= 3) &&
-                        (hist.map[baz_b].samples() >= 3)); }));
+        return ((hist.map[foo_a].samples() >= 3) && (hist.map[bar_a].samples() >= 3) &&
+                (hist.map[baz_b].samples() >= 3));
+    }));
     EXPECT_EQ(hist.map[foo_a].samples(State::DOWN), 0);
     EXPECT_EQ(hist.map[bar_a].samples(State::DOWN), 0);
     EXPECT_EQ(hist.map[baz_b].samples(State::DOWN), 0);
@@ -152,14 +138,12 @@ TEST_F(RpcMappingMonitorTest, hurry_means_faster) {
     monitor->start(foo_a, false);
     monitor->start(baz_b, true);
     auto t0 = debugger.time();
-    EXPECT_TRUE(debugger.step_until([&]() {
-                return ((hist.map[baz_b].samples() > 0)); }));
+    EXPECT_TRUE(debugger.step_until([&]() { return ((hist.map[baz_b].samples() > 0)); }));
     EXPECT_EQ(hist.map[foo_a].samples(), 0);
     auto t1 = debugger.time();
-    EXPECT_TRUE(debugger.step_until([&]() {
-                return ((hist.map[foo_a].samples() > 0)); }));
+    EXPECT_TRUE(debugger.step_until([&]() { return ((hist.map[foo_a].samples() > 0)); }));
     auto t2 = debugger.time();
-    fprintf(stderr, "hurry: ~%" PRIu64 " ms, normal: ~%" PRIu64 " ms\n", count_ms(t1-t0), count_ms(t2-t0));
+    fprintf(stderr, "hurry: ~%" PRIu64 " ms, normal: ~%" PRIu64 " ms\n", count_ms(t1 - t0), count_ms(t2 - t0));
     EXPECT_GT((t2 - t0), 10 * (t1 - t0));
     EXPECT_EQ(hist.map[foo_a].state(), State::UP);
     EXPECT_EQ(hist.map[baz_b].state(), State::UP);
@@ -168,11 +152,9 @@ TEST_F(RpcMappingMonitorTest, hurry_means_faster) {
 TEST_F(RpcMappingMonitorTest, stop_means_stop) {
     monitor->start(foo_a, false);
     monitor->start(baz_b, true);
-    EXPECT_TRUE(debugger.step_until([&]() {
-                return ((hist.map[baz_b].samples() == 1)); }));
+    EXPECT_TRUE(debugger.step_until([&]() { return ((hist.map[baz_b].samples() == 1)); }));
     monitor->stop(baz_b);
-    EXPECT_TRUE(debugger.step_until([&]() {
-                return ((hist.map[foo_a].samples() == 3)); }));
+    EXPECT_TRUE(debugger.step_until([&]() { return ((hist.map[foo_a].samples() == 3)); }));
     EXPECT_EQ(hist.map[baz_b].samples(), 1);
     EXPECT_EQ(hist.map[foo_a].state(), State::UP);
     EXPECT_EQ(hist.map[baz_b].state(), State::UP);
@@ -186,8 +168,7 @@ TEST_F(RpcMappingMonitorTest, health_checks_may_fail) {
     monitor->start(bad_spec, true);
     monitor->start(failed_ping, true);
     monitor->start(missing_name, true);
-    EXPECT_TRUE(debugger.step_until([&]() {
-                return (hist.map[failed_ping].state() == State::UP); }));
+    EXPECT_TRUE(debugger.step_until([&]() { return (hist.map[failed_ping].state() == State::UP); }));
     EXPECT_EQ(hist.map[bad_spec].state(), State::DOWN);
     EXPECT_EQ(hist.map[missing_name].state(), State::DOWN);
     EXPECT_EQ(hist.map[failed_ping].samples(State::DOWN), 2);
@@ -197,18 +178,15 @@ TEST_F(RpcMappingMonitorTest, health_checks_may_fail) {
 
 TEST_F(RpcMappingMonitorTest, loss_of_idle_connection_is_detected_and_recovered) {
     monitor->start(foo_a, true);
-    EXPECT_TRUE(debugger.step_until([&]() {
-                return (hist.map[foo_a].state() == State::UP); }));
+    EXPECT_TRUE(debugger.step_until([&]() { return (hist.map[foo_a].state() == State::UP); }));
     ASSERT_TRUE(a.last_conn);
     a.last_conn->Owner()->Close(a.last_conn);
     a.set_last_conn(nullptr);
-    EXPECT_TRUE(debugger.step_until([&]() {
-                return (hist.map[foo_a].state() == State::DOWN); }));
+    EXPECT_TRUE(debugger.step_until([&]() { return (hist.map[foo_a].state() == State::DOWN); }));
     // down without new rpc check, will re-connect and come back up
     EXPECT_FALSE(a.last_conn);
-    EXPECT_TRUE(debugger.step_until([&]() {
-                return (hist.map[foo_a].state() == State::UP); }));
-    EXPECT_EQ(hist.map[foo_a].samples(State::DOWN), 1);    
+    EXPECT_TRUE(debugger.step_until([&]() { return (hist.map[foo_a].state() == State::UP); }));
+    EXPECT_EQ(hist.map[foo_a].samples(State::DOWN), 1);
 }
 
 TEST_F(RpcMappingMonitorTest, up_connection_is_reused) {
@@ -229,7 +207,7 @@ TEST_F(RpcMappingMonitorTest, detect_ping_interval) {
     a.set_last_conn(nullptr);
     EXPECT_TRUE(debugger.step_until([&]() { return (a.last_conn); }));
     auto t2 = debugger.time();
-    fprintf(stderr, "ping interval: ~%" PRIu64 " ms\n", count_ms(t2-t1));
+    fprintf(stderr, "ping interval: ~%" PRIu64 " ms\n", count_ms(t2 - t1));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

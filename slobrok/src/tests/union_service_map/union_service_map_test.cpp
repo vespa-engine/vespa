@@ -138,6 +138,4 @@ TEST(UnionServiceMapTest, handles_conflicts) {
     EXPECT_EQ(observer.last_add, two_q);
 }
 
-
 GTEST_MAIN_RUN_ALL_TESTS()
-

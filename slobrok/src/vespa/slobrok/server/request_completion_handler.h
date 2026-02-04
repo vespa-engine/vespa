@@ -19,10 +19,11 @@ struct CompletionHandler {
 class RequestCompletionHandler : public CompletionHandler {
 private:
     FRT_RPCRequest *_parentRequest;
+
 public:
     RequestCompletionHandler(FRT_RPCRequest *parentRequest);
     virtual ~RequestCompletionHandler();
     void doneHandler(OkState result) override;
 };
 
-}
+} // namespace slobrok
