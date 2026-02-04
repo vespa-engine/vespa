@@ -13,17 +13,16 @@ using vespalib::Double;
 
 namespace metrics {
 
-#define ASSERT_AVERAGE(metric, avg, min, max, count, last) \
-    EXPECT_EQ(Double(avg), Double(metric.getAverage())); \
-    EXPECT_EQ(Double(count), Double(metric.getCount())); \
-    EXPECT_EQ(Double(last), Double(metric.getLast())); \
-    if (metric.getCount() > 0) { \
-    EXPECT_EQ(Double(min), Double(metric.getMinimum())); \
-    EXPECT_EQ(Double(max), Double(metric.getMaximum())); \
+#define ASSERT_AVERAGE(metric, avg, min, max, count, last)                                                             \
+    EXPECT_EQ(Double(avg), Double(metric.getAverage()));                                                               \
+    EXPECT_EQ(Double(count), Double(metric.getCount()));                                                               \
+    EXPECT_EQ(Double(last), Double(metric.getLast()));                                                                 \
+    if (metric.getCount() > 0) {                                                                                       \
+        EXPECT_EQ(Double(min), Double(metric.getMinimum()));                                                           \
+        EXPECT_EQ(Double(max), Double(metric.getMaximum()));                                                           \
     }
 
-TEST(ValueMetricTest, test_double_value_metric)
-{
+TEST(ValueMetricTest, test_double_value_metric) {
     DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(100);
     ASSERT_AVERAGE(m, 100, 100, 100, 1, 100);
@@ -46,8 +45,7 @@ TEST(ValueMetricTest, test_double_value_metric)
     o = n + m2;
     ASSERT_AVERAGE(o, 140, 40, 100, 4, 100);
 
-    std::string expected(
-            "test average=80 last=40 min=40 max=100 count=3 total=240");
+    std::string expected("test average=80 last=40 min=40 max=100 count=3 total=240");
     EXPECT_EQ(expected, m2.toString());
     expected = "m2 average=140 last=100";
     EXPECT_EQ(expected, o.toString());
@@ -69,8 +67,7 @@ TEST(ValueMetricTest, test_double_value_metric)
     EXPECT_EQ(int64_t(240), m2.getLongValue("total"));
 }
 
-TEST(ValueMetricTest, test_double_value_metric_not_updated_on_nan)
-{
+TEST(ValueMetricTest, test_double_value_metric_not_updated_on_nan) {
     DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(std::numeric_limits<double>::quiet_NaN());
     EXPECT_EQ(std::string(), m.toString());
@@ -85,8 +82,7 @@ TEST(ValueMetricTest, test_double_value_metric_not_updated_on_nan)
     EXPECT_EQ(std::string(), m.toString());
 }
 
-TEST(ValueMetricTest, test_double_value_metric_not_updated_on_infinity)
-{
+TEST(ValueMetricTest, test_double_value_metric_not_updated_on_infinity) {
     DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(std::numeric_limits<double>::infinity());
     EXPECT_EQ(std::string(), m.toString());
@@ -101,8 +97,7 @@ TEST(ValueMetricTest, test_double_value_metric_not_updated_on_infinity)
     EXPECT_EQ(std::string(), m.toString());
 }
 
-TEST(ValueMetricTest, test_long_value_metric)
-{
+TEST(ValueMetricTest, test_long_value_metric) {
     LongValueMetric m("test", {{"tag"}}, "description");
     m.addValue(100);
     ASSERT_AVERAGE(m, 100, 100, 100, 1, 100);
@@ -125,14 +120,13 @@ TEST(ValueMetricTest, test_long_value_metric)
     o = n + m2;
     ASSERT_AVERAGE(o, 140.25, 41, 100, 4, 101);
 
-    std::string expected(
-            "test average=80.3333 last=41 min=41 max=100 count=3 total=241");
+    std::string expected("test average=80.3333 last=41 min=41 max=100 count=3 total=241");
     EXPECT_EQ(expected, m2.toString());
     expected = "m2 average=140.25 last=101";
     EXPECT_EQ(expected, o.toString());
 
     EXPECT_EQ(Double(41), Double(m2.getDoubleValue("value")));
-    EXPECT_EQ(Double(241.0/3), Double(m2.getDoubleValue("average")));
+    EXPECT_EQ(Double(241.0 / 3), Double(m2.getDoubleValue("average")));
     EXPECT_EQ(Double(41), Double(m2.getDoubleValue("min")));
     EXPECT_EQ(Double(100), Double(m2.getDoubleValue("max")));
     EXPECT_EQ(Double(41), Double(m2.getDoubleValue("last")));
@@ -148,8 +142,7 @@ TEST(ValueMetricTest, test_long_value_metric)
     EXPECT_EQ(int64_t(241), m2.getLongValue("total"));
 }
 
-TEST(ValueMetricTest, test_small_average)
-{
+TEST(ValueMetricTest, test_small_average) {
     DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(0.0001);
     m.addValue(0.0002);
@@ -161,8 +154,7 @@ TEST(ValueMetricTest, test_small_average)
     EXPECT_EQ(expect, c->toString());
 }
 
-TEST(ValueMetricTest, test_add_value_batch)
-{
+TEST(ValueMetricTest, test_add_value_batch) {
     DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValueBatch(100, 3, 80, 120);
     ASSERT_AVERAGE(m, 100, 80, 120, 3, 100);
@@ -178,7 +170,7 @@ std::string extractMetricJson(std::string_view s) {
         if (st[i].find("\"name\":\"") != std::string::npos) {
             vespalib::asciistream as;
             as << "'\n";
-            for (uint32_t j=i-1; j<st.size() - 2; ++j) {
+            for (uint32_t j = i - 1; j < st.size() - 2; ++j) {
                 as << st[j].substr(4) << "\n";
             }
             as << "'";
@@ -198,71 +190,69 @@ std::string getJson(MetricManager& mm) {
     return as.str();
 }
 
-}
+} // namespace
 
-TEST(ValueMetricTest, test_json)
-{
+TEST(ValueMetricTest, test_json) {
     MetricManager mm;
     DoubleValueMetric m("test", {{"tag"}}, "description");
     mm.registerMetric(mm.getMetricLock(), m);
 
     std::string expected("'\n"
-        "{\n"
-        "  \"name\":\"test\",\n"
-        "  \"description\":\"description\",\n"
-        "  \"values\":\n"
-        "  {\n"
-        "    \"average\":0.0,\n"
-        "    \"sum\":0.0,\n"
-        "    \"count\":0,\n"
-        "    \"min\":0.0,\n"
-        "    \"max\":0.0,\n"
-        "    \"last\":0.0\n"
-        "  },\n"
-        "  \"dimensions\":\n"
-        "  {\n"
-        "  }\n"
-        "}\n'"
-    );
+                         "{\n"
+                         "  \"name\":\"test\",\n"
+                         "  \"description\":\"description\",\n"
+                         "  \"values\":\n"
+                         "  {\n"
+                         "    \"average\":0.0,\n"
+                         "    \"sum\":0.0,\n"
+                         "    \"count\":0,\n"
+                         "    \"min\":0.0,\n"
+                         "    \"max\":0.0,\n"
+                         "    \"last\":0.0\n"
+                         "  },\n"
+                         "  \"dimensions\":\n"
+                         "  {\n"
+                         "  }\n"
+                         "}\n'");
     EXPECT_EQ(expected, extractMetricJson(getJson(mm)));
     m.addValue(100);
     expected = "'\n"
-        "{\n"
-        "  \"name\":\"test\",\n"
-        "  \"description\":\"description\",\n"
-        "  \"values\":\n"
-        "  {\n"
-        "    \"average\":100.0,\n"
-        "    \"sum\":100.0,\n"
-        "    \"count\":1,\n"
-        "    \"min\":100.0,\n"
-        "    \"max\":100.0,\n"
-        "    \"last\":100.0\n"
-        "  },\n"
-        "  \"dimensions\":\n"
-        "  {\n"
-        "  }\n"
-        "}\n'";
+               "{\n"
+               "  \"name\":\"test\",\n"
+               "  \"description\":\"description\",\n"
+               "  \"values\":\n"
+               "  {\n"
+               "    \"average\":100.0,\n"
+               "    \"sum\":100.0,\n"
+               "    \"count\":1,\n"
+               "    \"min\":100.0,\n"
+               "    \"max\":100.0,\n"
+               "    \"last\":100.0\n"
+               "  },\n"
+               "  \"dimensions\":\n"
+               "  {\n"
+               "  }\n"
+               "}\n'";
     EXPECT_EQ(expected, extractMetricJson(getJson(mm)));
     m.addValue(500);
     expected = "'\n"
-        "{\n"
-        "  \"name\":\"test\",\n"
-        "  \"description\":\"description\",\n"
-        "  \"values\":\n"
-        "  {\n"
-        "    \"average\":300.0,\n"
-        "    \"sum\":600.0,\n"
-        "    \"count\":2,\n"
-        "    \"min\":100.0,\n"
-        "    \"max\":500.0,\n"
-        "    \"last\":500.0\n"
-        "  },\n"
-        "  \"dimensions\":\n"
-        "  {\n"
-        "  }\n"
-        "}\n'";
+               "{\n"
+               "  \"name\":\"test\",\n"
+               "  \"description\":\"description\",\n"
+               "  \"values\":\n"
+               "  {\n"
+               "    \"average\":300.0,\n"
+               "    \"sum\":600.0,\n"
+               "    \"count\":2,\n"
+               "    \"min\":100.0,\n"
+               "    \"max\":500.0,\n"
+               "    \"last\":500.0\n"
+               "  },\n"
+               "  \"dimensions\":\n"
+               "  {\n"
+               "  }\n"
+               "}\n'";
     EXPECT_EQ(expected, extractMetricJson(getJson(mm)));
 }
 
-}
+} // namespace metrics

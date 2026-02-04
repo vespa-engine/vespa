@@ -19,31 +19,30 @@ using system_time = vespalib::system_time;
 
 class MetricManager;
 
-class MetricSnapshot
-{
+class MetricSnapshot {
     Metric::String _name;
-        // Period length of this snapshot
+    // Period length of this snapshot
     system_time::duration _period;
-        // Time this snapshot was last updated.
+    // Time this snapshot was last updated.
     system_time _fromTime;
-        // If set to 0, use _fromTime + _period.
+    // If set to 0, use _fromTime + _period.
     system_time _toTime;
-        // Keeps the metrics set view of the snapshot
+    // Keeps the metrics set view of the snapshot
     std::unique_ptr<MetricSet> _snapshot;
-        // Snapshots must own their own metrics
+    // Snapshots must own their own metrics
     mutable std::vector<Metric::UP> _metrics;
 
 public:
     /** Create a fresh empty top level snapshot. */
     MetricSnapshot(const Metric::String& name);
     /** Create a snapshot of another metric source. */
-    MetricSnapshot(const Metric::String& name, system_time::duration period,
-                   const MetricSet& source, bool copyUnset);
+    MetricSnapshot(const Metric::String& name, system_time::duration period, const MetricSet& source, bool copyUnset);
     ~MetricSnapshot();
 
     void addToSnapshot(MetricSnapshot& other, bool reset_, system_time currentTime) {
         _snapshot->addToSnapshot(other.getMetrics(), other._metrics);
-        if (reset_) reset(currentTime);
+        if (reset_)
+            reset(currentTime);
         other._toTime = currentTime;
     }
     void addToSnapshot(MetricSnapshot& other, system_time currentTime) const {
@@ -71,16 +70,17 @@ public:
 };
 
 class MetricSnapshotSet {
-    const uint32_t _count; // Number of times we need to add to building period
-                           // before we have a full time window.
-    uint32_t _builderCount; // Number of times we've currently added to the
-                            // building instance.
-    std::unique_ptr<MetricSnapshot> _current; // The last full period
+    const uint32_t _count;                     // Number of times we need to add to building period
+                                               // before we have a full time window.
+    uint32_t _builderCount;                    // Number of times we've currently added to the
+                                               // building instance.
+    std::unique_ptr<MetricSnapshot> _current;  // The last full period
     std::unique_ptr<MetricSnapshot> _building; // The building period
     bool _current_is_assigned;
+
 public:
-    MetricSnapshotSet(const Metric::String& name, system_time::duration period, uint32_t count,
-                      const MetricSet& source, bool snapshotUnsetMetrics);
+    MetricSnapshotSet(const Metric::String& name, system_time::duration period, uint32_t count, const MetricSet& source,
+                      bool snapshotUnsetMetrics);
     ~MetricSnapshotSet();
 
     const Metric::String& getName() const { return _current->getName(); }
@@ -90,12 +90,8 @@ public:
     system_time getNextWorkTime() const { return getToTime() + getPeriod(); }
     uint32_t getCount() const { return _count; }
     uint32_t getBuilderCount() const { return _builderCount; }
-    MetricSnapshot& getSnapshot() {
-        return getSnapshot(false);
-    }
-    MetricSnapshot& getSnapshot(bool temporary) {
-        return *((temporary && _count > 1) ? _building : _current);
-    }
+    MetricSnapshot& getSnapshot() { return getSnapshot(false); }
+    MetricSnapshot& getSnapshot(bool temporary) { return *((temporary && _count > 1) ? _building : _current); }
 
     const MetricSnapshot& getSnapshot(bool temporary) const {
         return *((temporary && _count > 1) ? _building : _current);
@@ -112,13 +108,8 @@ public:
     void addMemoryUsage(MemoryConsumption&) const;
     void setFromTime(system_time fromTime);
 
-    [[nodiscard]] bool current_is_assigned() const noexcept {
-        return _current_is_assigned;
-    }
-    void tag_current_as_assigned() noexcept {
-        _current_is_assigned = true;
-    }
+    [[nodiscard]] bool current_is_assigned() const noexcept { return _current_is_assigned; }
+    void tag_current_as_assigned() noexcept { _current_is_assigned = true; }
 };
 
-} // metrics
-
+} // namespace metrics

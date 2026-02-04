@@ -4,15 +4,10 @@
 
 namespace metrics {
 
-MetricLockGuard::MetricLockGuard(std::mutex & mutex)
-    : _guard(mutex)
-{}
+MetricLockGuard::MetricLockGuard(std::mutex& mutex) : _guard(mutex) {}
 
-bool
-MetricLockGuard::owns(const std::mutex & mutex) const {
-    return (_guard.mutex() == &mutex) && _guard.owns_lock();
-}
+bool MetricLockGuard::owns(const std::mutex& mutex) const { return (_guard.mutex() == &mutex) && _guard.owns_lock(); }
 
 MetricLockGuard::~MetricLockGuard() = default;
 
-}
+} // namespace metrics

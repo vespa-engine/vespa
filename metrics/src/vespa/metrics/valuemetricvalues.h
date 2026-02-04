@@ -18,47 +18,37 @@
 
 namespace metrics {
 
-template<typename AvgVal, typename TotVal>
-struct ValueMetricValues : MetricValueClass {
+template <typename AvgVal, typename TotVal> struct ValueMetricValues : MetricValueClass {
     uint32_t _count;
     AvgVal _min, _max, _last;
     TotVal _total;
 
     struct AtomicImpl {
         AtomicImpl() noexcept
-            : _count(0),
-              _min(std::numeric_limits<AvgVal>::max()),
-              _max(std::numeric_limits<AvgVal>::min()),
-              _last(0),
-              _total(0)
-        {}
-        AtomicImpl(const AtomicImpl & rhs) noexcept
-                : _count(rhs._count.load(std::memory_order_relaxed)),
-                  _min(rhs._min.load(std::memory_order_relaxed)),
-                  _max(rhs._max.load(std::memory_order_relaxed)),
-                  _last(rhs._last.load(std::memory_order_relaxed)),
-                  _total(rhs._total.load(std::memory_order_relaxed))
-        {}
+            : _count(0), _min(std::numeric_limits<AvgVal>::max()), _max(std::numeric_limits<AvgVal>::min()), _last(0),
+              _total(0) {}
+        AtomicImpl(const AtomicImpl& rhs) noexcept
+            : _count(rhs._count.load(std::memory_order_relaxed)), _min(rhs._min.load(std::memory_order_relaxed)),
+              _max(rhs._max.load(std::memory_order_relaxed)), _last(rhs._last.load(std::memory_order_relaxed)),
+              _total(rhs._total.load(std::memory_order_relaxed)) {}
         std::atomic<uint32_t> _count;
-        std::atomic<AvgVal>   _min;
-        std::atomic<AvgVal>   _max;
-        std::atomic<AvgVal>   _last;
-        std::atomic<TotVal>   _total;
+        std::atomic<AvgVal> _min;
+        std::atomic<AvgVal> _max;
+        std::atomic<AvgVal> _last;
+        std::atomic<TotVal> _total;
     };
 
     ValueMetricValues();
     void relaxedStoreInto(AtomicImpl& target) const noexcept;
     void relaxedLoadFrom(const AtomicImpl& source) noexcept;
 
-    template<typename T>
-    T getValue(string_view id) const;
+    template <typename T> T getValue(string_view id) const;
     double getDoubleValue(string_view id) const override;
     uint64_t getLongValue(string_view id) const override;
     void output(const std::string& id, std::ostream& out) const override;
     void output(const std::string& id, vespalib::JsonStream& stream) const override;
-    template<typename A, typename T>
-    friend std::ostream & operator << (std::ostream & os, const ValueMetricValues<A, T> & v);
+    template <typename A, typename T>
+    friend std::ostream& operator<<(std::ostream& os, const ValueMetricValues<A, T>& v);
 };
 
-} // metrics
-
+} // namespace metrics

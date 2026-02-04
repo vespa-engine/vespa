@@ -2,14 +2,16 @@
 #pragma once
 
 #include "metric.h"
+#include <variant>
+#include <vector>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/small_vector.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/time.h>
-#include <variant>
-#include <vector>
 
-namespace vespalib { class asciistream; }
+namespace vespalib {
+class asciistream;
+}
 
 namespace metrics {
 
@@ -32,34 +34,29 @@ class PrometheusWriter : public MetricVisitor {
     struct TimeSeriesSample {
         // All referenced strings shall be either arena-allocated or static
         std::span<const std::string_view> metric_path;
-        std::string_view                          aggr;
+        std::string_view aggr;
         // Labels are laid out in key/value pairs, that is size() is always % 2 == 0
         std::span<const std::string_view> labels;
-        I64OrDouble                                  value;
+        I64OrDouble value;
 
 #if !defined(__cpp_aggregate_paren_init)
         // P0960R3 is supported by gcc >= 10, Clang >= 16 and AppleClang >= 16
 
-        TimeSeriesSample(std::span<const std::string_view> metric_path_in,
-                         std::string_view aggr_in,
-                         std::span<const std::string_view> labels_in,
-                         I64OrDouble value_in) noexcept
-            : metric_path(std::move(metric_path_in)),
-              aggr(std::move(aggr_in)),
-              labels(std::move(labels_in)),
-              value(std::move(value_in))
-        {
-        }
+        TimeSeriesSample(std::span<const std::string_view> metric_path_in, std::string_view aggr_in,
+                         std::span<const std::string_view> labels_in, I64OrDouble value_in) noexcept
+            : metric_path(std::move(metric_path_in)), aggr(std::move(aggr_in)), labels(std::move(labels_in)),
+              value(std::move(value_in)) {}
 #endif
         bool operator<(const TimeSeriesSample& rhs) const noexcept;
     };
 
-    vespalib::Stash                         _arena;
-    std::string                             _timestamp_str;
-    std::vector<TimeSeriesSample>           _samples;
+    vespalib::Stash _arena;
+    std::string _timestamp_str;
+    std::vector<TimeSeriesSample> _samples;
     vespalib::hash_set<std::string_view> _unique_str_refs;
-    std::vector<std::string_view>        _path;
-    vespalib::asciistream&                  _out;
+    std::vector<std::string_view> _path;
+    vespalib::asciistream& _out;
+
 public:
     explicit PrometheusWriter(vespalib::asciistream& out);
     ~PrometheusWriter() override;
@@ -88,4 +85,4 @@ private:
     void doneVisiting() override;
 };
 
-}
+} // namespace metrics

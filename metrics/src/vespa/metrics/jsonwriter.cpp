@@ -2,73 +2,49 @@
 #include "jsonwriter.h"
 
 #include "countmetric.h"
-#include "valuemetric.h"
 #include "metricsnapshot.h"
+#include "valuemetric.h"
 
-#include <iterator>
 #include <cassert>
+#include <iterator>
 
 namespace metrics {
 
 JsonWriter::JsonWriter(vespalib::JsonStream& stream)
-    : _stream(stream),
-      _flag(NOT_STARTED),
-      _dimensionStack(),
-      _period(0)
-{
-}
+    : _stream(stream), _flag(NOT_STARTED), _dimensionStack(), _period(0) {}
 
-bool
-JsonWriter::visitSnapshot(const MetricSnapshot& snapshot)
-{
-    _stream << Object()
-        << "snapshot" << Object()
-            << "from" << vespalib::count_s(snapshot.getFromTime().time_since_epoch())
-            << "to" << vespalib::count_s(snapshot.getToTime().time_since_epoch())
-        << End()
-        << "values" << Array();
+bool JsonWriter::visitSnapshot(const MetricSnapshot& snapshot) {
+    _stream << Object() << "snapshot" << Object() << "from"
+            << vespalib::count_s(snapshot.getFromTime().time_since_epoch()) << "to"
+            << vespalib::count_s(snapshot.getToTime().time_since_epoch()) << End() << "values" << Array();
     _flag = SNAPSHOT_STARTED;
     _period = vespalib::count_s(snapshot.getPeriod()); // Only prints second resolution
     return true;
 }
 
-void
-JsonWriter::doneVisitingSnapshot(const MetricSnapshot&)
-{
+void JsonWriter::doneVisitingSnapshot(const MetricSnapshot&) {
     assert(_flag == SNAPSHOT_STARTED);
     _stream << End() << End();
     _flag = NOT_STARTED;
     _period = 0;
 }
 
-bool
-JsonWriter::visitMetricSet(const MetricSet& set, bool)
-{
+bool JsonWriter::visitMetricSet(const MetricSet& set, bool) {
     _dimensionStack.push_back(set.getTags());
     return true;
 }
 
-void
-JsonWriter::doneVisitingMetricSet(const MetricSet&)
-{
-    _dimensionStack.pop_back();
-}
+void JsonWriter::doneVisitingMetricSet(const MetricSet&) { _dimensionStack.pop_back(); }
 
-void
-JsonWriter::writeCommonPrefix(const Metric& m)
-{
+void JsonWriter::writeCommonPrefix(const Metric& m) {
     if (_flag == NOT_STARTED) {
         _stream << Array();
         _flag = METRICS_WRITTEN;
     }
-    _stream << Object()
-        << "name" << m.getPath()
-        << "description" << m.getDescription();
+    _stream << Object() << "name" << m.getPath() << "description" << m.getDescription();
 }
 
-void
-JsonWriter::writeDimensions(const DimensionSet& dimensions)
-{
+void JsonWriter::writeDimensions(const DimensionSet& dimensions) {
     for (const auto& dimension : dimensions) {
         if (!dimension.key().empty() && !dimension.value().empty()) {
             _stream << dimension.key() << dimension.value();
@@ -76,25 +52,19 @@ JsonWriter::writeDimensions(const DimensionSet& dimensions)
     }
 }
 
-void
-JsonWriter::writeInheritedDimensions()
-{
+void JsonWriter::writeInheritedDimensions() {
     for (const auto& dimensions : _dimensionStack) {
         writeDimensions(dimensions);
     }
 }
 
-void
-JsonWriter::writeMetricSpecificDimensions(const Metric& m)
-{
+void JsonWriter::writeMetricSpecificDimensions(const Metric& m) {
     if (isLeafMetric(m)) {
         writeDimensions(m.getTags());
     }
 }
 
-void
-JsonWriter::writeCommonPostfix(const Metric& m)
-{
+void JsonWriter::writeCommonPostfix(const Metric& m) {
     _stream << "dimensions" << Object();
 
     writeInheritedDimensions();
@@ -103,13 +73,10 @@ JsonWriter::writeCommonPostfix(const Metric& m)
     _stream << End() << End();
 }
 
-bool
-JsonWriter::visitCountMetric(const AbstractCountMetric& m, bool)
-{
+bool JsonWriter::visitCountMetric(const AbstractCountMetric& m, bool) {
     writeCommonPrefix(m);
     uint64_t count = m.getLongValue("count");
-    _stream << "values" << Object()
-        << "count" << count;
+    _stream << "values" << Object() << "count" << count;
     if (_period > 0) {
         uint64_t rate = 1000000 * count / _period;
         _stream << "rate" << (rate / 1000000.0);
@@ -119,18 +86,14 @@ JsonWriter::visitCountMetric(const AbstractCountMetric& m, bool)
     return true;
 }
 
-bool
-JsonWriter::visitValueMetric(const AbstractValueMetric& m, bool)
-{
+bool JsonWriter::visitValueMetric(const AbstractValueMetric& m, bool) {
     writeCommonPrefix(m);
     MetricValueClass::UP values(m.getValues());
-    _stream << "values" << Object()
-        << "average";
+    _stream << "values" << Object() << "average";
     if (values->getLongValue("count") == 0) {
         _stream << 0.0;
     } else {
-        _stream << (values->getDoubleValue("total")
-                    / values->getDoubleValue("count"));
+        _stream << (values->getDoubleValue("total") / values->getDoubleValue("count"));
     }
     _stream << "sum" << values->getDoubleValue("total");
     _stream << "count";
@@ -150,9 +113,7 @@ JsonWriter::visitValueMetric(const AbstractValueMetric& m, bool)
     return true;
 }
 
-void
-JsonWriter::doneVisiting()
-{
+void JsonWriter::doneVisiting() {
     if (_flag == METRICS_WRITTEN) {
         _stream << End();
         _flag = NOT_STARTED;
@@ -160,4 +121,4 @@ JsonWriter::doneVisiting()
     assert(_flag == NOT_STARTED);
 }
 
-} // metrics
+} // namespace metrics

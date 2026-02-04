@@ -14,19 +14,17 @@
 
 namespace metrics {
 
-class MetricSet : public Metric
-{
+class MetricSet : public Metric {
     std::vector<Metric*> _metricOrder; // Keep added order for reporting
-    bool _registrationAltered; // Set to true if metrics have been
-                               // registered/unregistered since last time
-                               // it was reset
+    bool _registrationAltered;         // Set to true if metrics have been
+                                       // registered/unregistered since last time
+                                       // it was reset
 
 public:
-    MetricSet(const String& name, Tags dimensions, const String& description) :
-            MetricSet(name, std::move(dimensions), description, nullptr)
-    {}
+    MetricSet(const String& name, Tags dimensions, const String& description)
+        : MetricSet(name, std::move(dimensions), description, nullptr) {}
     MetricSet(const String& name, Tags dimensions, const String& description, MetricSet* owner);
-    MetricSet(const MetricSet&, std::vector<Metric::UP> &ownerList, CopyType, MetricSet* owner, bool includeUnused);
+    MetricSet(const MetricSet&, std::vector<Metric::UP>& ownerList, CopyType, MetricSet* owner, bool includeUnused);
     // Do not generate default copy constructor or assignment operator
     // These would screw up metric registering
     MetricSet(const MetricSet&) = delete;
@@ -48,7 +46,8 @@ public:
     void registerMetric(Metric& m);
     void unregisterMetric(Metric& m);
 
-    MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType type, MetricSet* owner, bool includeUnused) const override;
+    MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType type, MetricSet* owner,
+                     bool includeUnused) const override;
 
     void reset() override;
 
@@ -65,14 +64,14 @@ public:
         return const_cast<Metric*>(const_cast<const MetricSet*>(this)->getMetric(name));
     }
 
-    void addToSnapshot(Metric& m, std::vector<Metric::UP> &o) const override { addTo(m, &o); }
+    void addToSnapshot(Metric& m, std::vector<Metric::UP>& o) const override { addTo(m, &o); }
 
     const std::vector<Metric*>& getRegisteredMetrics() const { return _metricOrder; }
 
     bool used() const override;
     void addMemoryUsage(MemoryConsumption&) const override;
 
-    void printDebug(std::ostream&, const std::string& indent="") const override;
+    void printDebug(std::ostream&, const std::string& indent = "") const override;
     bool isMetricSet() const override { return true; }
     void addToPart(Metric& m) const override { addTo(m, 0); }
 
@@ -80,8 +79,7 @@ private:
     void tagRegistrationAltered();
     const Metric* getMetricInternal(string_view name) const;
 
-    virtual void addTo(Metric&, std::vector<Metric::UP> *ownerList) const;
+    virtual void addTo(Metric&, std::vector<Metric::UP>* ownerList) const;
 };
 
-} // metrics
-
+} // namespace metrics

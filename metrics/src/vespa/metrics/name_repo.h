@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/metrics/handle.h>
 #include <string>
+#include <vespa/vespalib/metrics/handle.h>
 
 namespace metrics {
 
@@ -28,5 +28,4 @@ struct NameRepo {
     static const std::string& tagValue(TagValueId id);
 };
 
-} // metrics
-
+} // namespace metrics

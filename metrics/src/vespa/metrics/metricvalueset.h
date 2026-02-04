@@ -27,11 +27,11 @@
  */
 #pragma once
 
-#include <vespa/vespalib/util/jsonstream.h>
 #include <array>
 #include <atomic>
 #include <string>
 #include <vector>
+#include <vespa/vespalib/util/jsonstream.h>
 
 namespace metrics {
 
@@ -47,15 +47,15 @@ struct MetricValueClass {
     std::string toString(const std::string& id);
 };
 
-template<typename ValueClass>
-class MetricValueSet {
+template <typename ValueClass> class MetricValueSet {
     using AtomicValues = typename ValueClass::AtomicImpl;
     std::array<AtomicValues, 3> _values;
-    std::atomic<uint32_t>       _activeValueIndex;
-    std::atomic<uint32_t>       _flags;
+    std::atomic<uint32_t> _activeValueIndex;
+    std::atomic<uint32_t> _flags;
 
     enum Flag { RESET = 1 };
     bool isReset() const noexcept { return hasFlag(RESET); }
+
 public:
     MetricValueSet() noexcept;
     MetricValueSet(const MetricValueSet&) noexcept;
@@ -73,26 +73,19 @@ public:
      */
     bool setValues(const ValueClass& values);
 
-    void reset() {
-        setFlag(RESET);
-    }
+    void reset() { setFlag(RESET); }
 
     std::string toString();
 
     uint32_t size() const noexcept { return _values.size(); }
 
-    bool hasFlag(uint32_t flags) const noexcept {
-        return ((_flags.load(std::memory_order_relaxed) & flags) != 0);
-    }
+    bool hasFlag(uint32_t flags) const noexcept { return ((_flags.load(std::memory_order_relaxed) & flags) != 0); }
     void setFlag(uint32_t flags) {
-        _flags.store(_flags.load(std::memory_order_relaxed) | flags,
-                     std::memory_order_relaxed);
+        _flags.store(_flags.load(std::memory_order_relaxed) | flags, std::memory_order_relaxed);
     }
     void removeFlag(uint32_t flags) noexcept {
-        _flags.store(_flags.load(std::memory_order_relaxed) & ~flags,
-                     std::memory_order_relaxed);
+        _flags.store(_flags.load(std::memory_order_relaxed) & ~flags, std::memory_order_relaxed);
     }
 };
 
-} // metrics
-
+} // namespace metrics

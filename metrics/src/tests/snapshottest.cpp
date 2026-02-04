@@ -21,26 +21,18 @@ struct SubSubMetricSet : public MetricSet {
     DoubleAverageMetric average2;
     SumMetric<DoubleAverageMetric> averageSum;
 
-    explicit SubSubMetricSet(const std::string & name, MetricSet* owner = nullptr);
+    explicit SubSubMetricSet(const std::string& name, MetricSet* owner = nullptr);
     ~SubSubMetricSet() override;
-    MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
-                     metrics::MetricSet* owner, bool includeUnused) const override;
+    MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, metrics::MetricSet* owner,
+                     bool includeUnused) const override;
     void incValues();
 };
 
-SubSubMetricSet::SubSubMetricSet(const std::string & name, MetricSet* owner)
-    : MetricSet(name, {}, "", owner),
-      incVal(1),
-      count1("count1", {}, "", this),
-      count2("count2", {}, "", this),
-      countSum("countSum", {}, "", this),
-      value1("value1", {}, "", this),
-      value2("value2", {}, "", this),
-      valueSum("valueSum", {}, "", this),
-      average1("average1", {}, "", this),
-      average2("average2", {}, "", this),
-      averageSum("averageSum", {}, "", this)
-{
+SubSubMetricSet::SubSubMetricSet(const std::string& name, MetricSet* owner)
+    : MetricSet(name, {}, "", owner), incVal(1), count1("count1", {}, "", this), count2("count2", {}, "", this),
+      countSum("countSum", {}, "", this), value1("value1", {}, "", this), value2("value2", {}, "", this),
+      valueSum("valueSum", {}, "", this), average1("average1", {}, "", this), average2("average2", {}, "", this),
+      averageSum("averageSum", {}, "", this) {
     countSum.addMetricToSum(count1);
     countSum.addMetricToSum(count2);
     valueSum.addMetricToSum(value1);
@@ -50,19 +42,15 @@ SubSubMetricSet::SubSubMetricSet(const std::string & name, MetricSet* owner)
 }
 SubSubMetricSet::~SubSubMetricSet() = default;
 
-MetricSet*
-SubSubMetricSet::clone(std::vector<Metric::UP> &ownerList,
-                       CopyType copyType, metrics::MetricSet* owner,
-                       bool includeUnused) const
-{
+MetricSet* SubSubMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType, metrics::MetricSet* owner,
+                                  bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (SubSubMetricSet*) (new SubSubMetricSet(getName(), owner))->assignValues(*this);
+    return (SubSubMetricSet*)(new SubSubMetricSet(getName(), owner))->assignValues(*this);
 }
 
-void
-SubSubMetricSet::incValues() {
+void SubSubMetricSet::incValues() {
     count1.inc(incVal);
     count2.inc(incVal);
     value1.set(incVal);
@@ -71,44 +59,36 @@ SubSubMetricSet::incValues() {
     average2.set(incVal);
 }
 
-
 struct SubMetricSet : public MetricSet {
     SubSubMetricSet set1;
     SubSubMetricSet set2;
     SumMetric<SubSubMetricSet> setSum;
 
-    explicit SubMetricSet(const std::string & name, MetricSet* owner = nullptr);
+    explicit SubMetricSet(const std::string& name, MetricSet* owner = nullptr);
     ~SubMetricSet() override;
 
-    MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
-                     metrics::MetricSet* owner, bool includeUnused) const override;
+    MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, metrics::MetricSet* owner,
+                     bool includeUnused) const override;
 
     void incValues();
 };
 
-SubMetricSet::SubMetricSet(const std::string & name, MetricSet* owner)
-    : MetricSet(name, {}, "", owner),
-      set1("set1", this),
-      set2("set2", this),
-      setSum("setSum", {}, "", this)
-{
+SubMetricSet::SubMetricSet(const std::string& name, MetricSet* owner)
+    : MetricSet(name, {}, "", owner), set1("set1", this), set2("set2", this), setSum("setSum", {}, "", this) {
     setSum.addMetricToSum(set1);
     setSum.addMetricToSum(set2);
 }
 SubMetricSet::~SubMetricSet() = default;
 
-MetricSet*
-SubMetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
-                    metrics::MetricSet* owner, bool includeUnused) const
-{
+MetricSet* SubMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType, metrics::MetricSet* owner,
+                               bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (SubMetricSet*) (new SubMetricSet(getName(), owner))->assignValues(*this);
+    return (SubMetricSet*)(new SubMetricSet(getName(), owner))->assignValues(*this);
 }
 
-void
-SubMetricSet::incValues() {
+void SubMetricSet::incValues() {
     set1.incValues();
     set2.incValues();
 }
@@ -118,26 +98,20 @@ struct TestMetricSet : public MetricSet {
     SubMetricSet set2;
     SumMetric<SubMetricSet> setSum;
 
-    TestMetricSet(const std::string & name);
+    TestMetricSet(const std::string& name);
     ~TestMetricSet() override;
 
     void incValues();
 };
 
-
-TestMetricSet::TestMetricSet(const std::string & name)
-    : MetricSet(name, {}, "", nullptr),
-      set1("set1", this),
-      set2("set2", this),
-      setSum("setSum", {}, "", this)
-{
+TestMetricSet::TestMetricSet(const std::string& name)
+    : MetricSet(name, {}, "", nullptr), set1("set1", this), set2("set2", this), setSum("setSum", {}, "", this) {
     setSum.addMetricToSum(set1);
     setSum.addMetricToSum(set2);
 }
 TestMetricSet::~TestMetricSet() = default;
 
-void
-TestMetricSet::incValues() {
+void TestMetricSet::incValues() {
     set1.incValues();
     set2.incValues();
 }
@@ -148,10 +122,9 @@ struct FakeTimer : public MetricManager::Timer {
     time_point getTime() const override { return time_point(vespalib::from_s<time_point::duration>(_timeInSecs)); }
 };
 
-void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *name) __attribute__((noinline));
+void ASSERT_VALUE(int32_t value, const MetricSnapshot& snapshot, const char* name) __attribute__((noinline));
 
-void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *name)
-{
+void ASSERT_VALUE(int32_t value, const MetricSnapshot& snapshot, const char* name) {
     const Metric* _metricValue_((snapshot).getMetrics().getMetric(name));
     if (_metricValue_ == nullptr) {
         FAIL() << ("Metric value '" + std::string(name) + "' not found in snapshot");
@@ -159,7 +132,7 @@ void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *na
     EXPECT_EQ(value, int32_t(_metricValue_->getLongValue("value")));
 }
 
-}
+} // namespace
 
 struct SnapshotTest : public ::testing::Test {
     void tick(MetricManager& mgr, time_t currentTime) {
@@ -167,8 +140,7 @@ struct SnapshotTest : public ::testing::Test {
     }
 };
 
-TEST_F(SnapshotTest, test_snapshot_two_days)
-{
+TEST_F(SnapshotTest, test_snapshot_two_days) {
     TestMetricSet set("test");
 
     FakeTimer* timer;
@@ -182,9 +154,9 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
             false);
     tick(mm, timer->_timeInSecs * 1000);
 
-    for (uint32_t days=0; days<2; ++days) {
-        for (uint32_t hour=0; hour<24; ++hour) {
-            for (uint32_t fiveMin=0; fiveMin<12; ++fiveMin) {
+    for (uint32_t days = 0; days < 2; ++days) {
+        for (uint32_t hour = 0; hour < 24; ++hour) {
+            for (uint32_t fiveMin = 0; fiveMin < 12; ++fiveMin) {
                 set.incValues();
                 timer->_timeInSecs += 5 * 60;
                 tick(mm, timer->_timeInSecs * 1000);
@@ -249,4 +221,4 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
     ASSERT_VALUE(1, *snap, "test.set1.set1.averageSum");
 }
 
-}
+} // namespace metrics

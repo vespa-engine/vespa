@@ -6,30 +6,21 @@
 
 namespace metrics {
 
-template<typename ValueClass>
-MetricValueSet<ValueClass>::MetricValueSet() noexcept
-    : _values(),
-      _activeValueIndex(0),
-      _flags(0)
-{ }
+template <typename ValueClass>
+MetricValueSet<ValueClass>::MetricValueSet() noexcept : _values(), _activeValueIndex(0), _flags(0) {}
 
-template<typename ValueClass>
+template <typename ValueClass>
 MetricValueSet<ValueClass>::MetricValueSet(const MetricValueSet& rhs) noexcept
-    : _values(rhs._values),
-      _activeValueIndex(rhs._activeValueIndex.load(std::memory_order_relaxed)),
-      _flags(rhs._flags.load(std::memory_order_relaxed))
-{ }
+    : _values(rhs._values), _activeValueIndex(rhs._activeValueIndex.load(std::memory_order_relaxed)),
+      _flags(rhs._flags.load(std::memory_order_relaxed)) {}
 
-template<typename ValueClass>
-MetricValueSet<ValueClass> & MetricValueSet<ValueClass>::operator=(const MetricValueSet& other) noexcept
-{
+template <typename ValueClass>
+MetricValueSet<ValueClass>& MetricValueSet<ValueClass>::operator=(const MetricValueSet& other) noexcept {
     setValues(other.getValues());
     return *this;
 }
 
-template<typename ValueClass>
-ValueClass
-MetricValueSet<ValueClass>::getValues() const {
+template <typename ValueClass> ValueClass MetricValueSet<ValueClass>::getValues() const {
     ValueClass v{};
     if (!isReset()) {
         // Must load with acquire to match release store in setValues.
@@ -42,9 +33,7 @@ MetricValueSet<ValueClass>::getValues() const {
     return v;
 }
 
-template<typename ValueClass>
-bool
-MetricValueSet<ValueClass>::setValues(const ValueClass& values) {
+template <typename ValueClass> bool MetricValueSet<ValueClass>::setValues(const ValueClass& values) {
     // Only setter-thread can write _activeValueIndex, so relaxed
     // load suffices.
     uint32_t nextIndex = (_activeValueIndex.load(std::memory_order_relaxed) + 1) % _values.size();
@@ -65,12 +54,9 @@ MetricValueSet<ValueClass>::setValues(const ValueClass& values) {
     }
 }
 
-template<typename ValueClass>
-std::string
-MetricValueSet<ValueClass>::toString() {
+template <typename ValueClass> std::string MetricValueSet<ValueClass>::toString() {
     std::ostringstream ost;
-    ost << "MetricValueSet(reset=" << (isReset() ? "true" : "false")
-        << ", active " << _activeValueIndex;
+    ost << "MetricValueSet(reset=" << (isReset() ? "true" : "false") << ", active " << _activeValueIndex;
 #if 0
     ost << "\n  empty: " << ValueClass().toString("unknown");
     for (uint32_t i=0; i<_values.size(); ++i) {
@@ -81,5 +67,4 @@ MetricValueSet<ValueClass>::toString() {
     return ost.str();
 }
 
-} // metrics
-
+} // namespace metrics

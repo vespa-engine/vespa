@@ -4,8 +4,7 @@
 
 namespace metrics {
 
-TEST(SumMetricTest, test_long_count_metric)
-{
+TEST(SumMetricTest, test_long_count_metric) {
     MetricSet parent("parent", {}, "");
     SumMetric<LongCountMetric> sum("foo", {}, "foodesc", &parent);
 
@@ -15,18 +14,17 @@ TEST(SumMetricTest, test_long_count_metric)
     sum.addMetricToSum(v1);
     sum.addMetricToSum(v2);
 
-        // Give them some values
+    // Give them some values
     v1.inc(3);
     v2.inc(7);
 
-        // Verify XML output. Should be in register order.
+    // Verify XML output. Should be in register order.
     std::string expected("foo count=10");
     EXPECT_EQ(expected, sum.toString());
     EXPECT_EQ(int64_t(10), sum.getLongValue("value"));
 }
 
-TEST(SumMetricTest, test_average_metric)
-{
+TEST(SumMetricTest, test_average_metric) {
     MetricSet parent("parent", {}, "");
     SumMetric<LongAverageMetric> sum("foo", {}, "foodesc", &parent);
 
@@ -36,11 +34,11 @@ TEST(SumMetricTest, test_average_metric)
     sum.addMetricToSum(v1);
     sum.addMetricToSum(v2);
 
-        // Give them some values
+    // Give them some values
     v1.addValue(3);
     v2.addValue(7);
 
-        // Verify XML output. Should be in register order.
+    // Verify XML output. Should be in register order.
     std::string expected("foo average=5 last=7 min=3 max=7 count=2 total=10");
     EXPECT_EQ(expected, sum.toString());
     EXPECT_EQ(int64_t(5), sum.getLongValue("value"));
@@ -48,8 +46,7 @@ TEST(SumMetricTest, test_average_metric)
     EXPECT_EQ(int64_t(7), sum.getLongValue("max"));
 }
 
-TEST(SumMetricTest, test_metric_set)
-{
+TEST(SumMetricTest, test_metric_set) {
     MetricSet parent("parent", {}, "");
     SumMetric<MetricSet> sum("foo", {}, "bar", &parent);
 
@@ -71,15 +68,13 @@ TEST(SumMetricTest, test_metric_set)
 
     // Verify XML output. Should be in register order.
     std::string expected("'\n"
-            "foo:\n"
-            "  c average=3 last=3 min=3 max=3 count=1 total=3\n"
-            "  e count=2'"
-    );
+                         "foo:\n"
+                         "  c average=3 last=3 min=3 max=3 count=1 total=3\n"
+                         "  e count=2'");
     EXPECT_EQ(expected, "'\n" + sum.toString() + "'");
 }
 
-TEST(SumMetricTest, test_remove)
-{
+TEST(SumMetricTest, test_remove) {
     MetricSet parent("parent", {}, "");
     SumMetric<LongCountMetric> sum("foo", {}, "foodesc", &parent);
 
@@ -101,8 +96,7 @@ TEST(SumMetricTest, test_remove)
     EXPECT_EQ(int64_t(13), sum.getLongValue("value"));
 }
 
-TEST(SumMetricTest, test_start_value)
-{
+TEST(SumMetricTest, test_start_value) {
     MetricSnapshot snapshot("active");
     SumMetric<LongValueMetric> sum("foo", {}, "foodesc", &snapshot.getMetrics());
     LongValueMetric start("start", {}, "", nullptr);
@@ -126,8 +120,7 @@ TEST(SumMetricTest, test_start_value)
 
 namespace {
 
-struct MetricSetWithSum : public MetricSet
-{
+struct MetricSetWithSum : public MetricSet {
     LongValueMetric _v1;
     LongValueMetric _v2;
     SumMetric<LongValueMetric> _sum;
@@ -136,21 +129,17 @@ struct MetricSetWithSum : public MetricSet
 };
 
 MetricSetWithSum::MetricSetWithSum()
-    : MetricSet("MetricSetWithSum", {}, ""),
-      _v1("v1", {}, "", this),
-      _v2("v2", {}, "", this),
-      _sum("sum", {}, "", this)
-{
+    : MetricSet("MetricSetWithSum", {}, ""), _v1("v1", {}, "", this), _v2("v2", {}, "", this),
+      _sum("sum", {}, "", this) {
     _sum.addMetricToSum(_v1);
     _sum.addMetricToSum(_v2);
 }
 
 MetricSetWithSum::~MetricSetWithSum() = default;
 
-}
+} // namespace
 
-TEST(SumMetricTest, test_nested_sum)
-{
+TEST(SumMetricTest, test_nested_sum) {
     MetricSetWithSum w1;
     MetricSetWithSum w2;
     MetricSetWithSum sum;
@@ -165,4 +154,4 @@ TEST(SumMetricTest, test_nested_sum)
     EXPECT_EQ(int64_t(79), sum._sum.getLongValue("value"));
 }
 
-}
+} // namespace metrics

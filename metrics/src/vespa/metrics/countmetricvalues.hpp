@@ -6,32 +6,20 @@
 
 namespace metrics {
 
-template <typename T>
-std::string
-CountMetricValues<T>::toString() const {
+template <typename T> std::string CountMetricValues<T>::toString() const {
     std::ostringstream ost;
     ost << _value;
     return ost.str();
 }
-template <typename T>
-double
-CountMetricValues<T>::getDoubleValue(string_view) const {
+template <typename T> double CountMetricValues<T>::getDoubleValue(string_view) const {
     return static_cast<double>(_value);
 }
-template <typename T>
-uint64_t
-CountMetricValues<T>::getLongValue(string_view) const {
+template <typename T> uint64_t CountMetricValues<T>::getLongValue(string_view) const {
     return static_cast<uint64_t>(_value);
 }
-template <typename T>
-void
-CountMetricValues<T>::output(const std::string&, std::ostream& out) const {
-    out << _value;
-}
-template <typename T>
-void
-CountMetricValues<T>::output(const std::string&, vespalib::JsonStream& stream) const {
+template <typename T> void CountMetricValues<T>::output(const std::string&, std::ostream& out) const { out << _value; }
+template <typename T> void CountMetricValues<T>::output(const std::string&, vespalib::JsonStream& stream) const {
     stream << _value;
 }
 
-} // metrics
+} // namespace metrics

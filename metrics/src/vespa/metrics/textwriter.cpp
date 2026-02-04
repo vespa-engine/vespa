@@ -11,48 +11,33 @@ using vespalib::to_string;
 
 namespace metrics {
 
-TextWriter::TextWriter(std::ostream& out, vespalib::duration period,
-                       const std::string& regex, bool verbose)
-    : _period(period), _out(out), _regex(), _verbose(verbose)
-{
+TextWriter::TextWriter(std::ostream& out, vespalib::duration period, const std::string& regex, bool verbose)
+    : _period(period), _out(out), _regex(), _verbose(verbose) {
     try {
         _regex = std::regex(regex);
-    } catch (std::regex_error &) {
+    } catch (std::regex_error&) {
     }
 }
 
 TextWriter::~TextWriter() = default;
 
-bool
-TextWriter::visitSnapshot(const MetricSnapshot& snapshot)
-{
-    _out << "snapshot \"" << snapshot.getName() << "\" from "
-         << to_string(snapshot.getFromTime()) << " to " << to_string(snapshot.getToTime())
-         << " period " << vespalib::count_s(snapshot.getPeriod());
+bool TextWriter::visitSnapshot(const MetricSnapshot& snapshot) {
+    _out << "snapshot \"" << snapshot.getName() << "\" from " << to_string(snapshot.getFromTime()) << " to "
+         << to_string(snapshot.getToTime()) << " period " << vespalib::count_s(snapshot.getPeriod());
     return true;
 }
 
-void
-TextWriter::doneVisitingSnapshot(const MetricSnapshot&)
-{
-}
+void TextWriter::doneVisitingSnapshot(const MetricSnapshot&) {}
 
-bool
-TextWriter::visitMetricSet(const MetricSet& set, bool)
-{
+bool TextWriter::visitMetricSet(const MetricSet& set, bool) {
     _path.push_back(set.getMangledName());
     return true;
 }
-void
-TextWriter::doneVisitingMetricSet(const MetricSet&) {
-    _path.pop_back();
-}
+void TextWriter::doneVisitingMetricSet(const MetricSet&) { _path.pop_back(); }
 
-bool
-TextWriter::writeCommon(const Metric& metric)
-{
+bool TextWriter::writeCommon(const Metric& metric) {
     std::ostringstream path;
-    for (uint32_t i=0; i<_path.size(); ++i) {
+    for (uint32_t i = 0; i < _path.size(); ++i) {
         path << _path[i] << ".";
     }
     std::string mypath(path.str());
@@ -66,27 +51,22 @@ TextWriter::writeCommon(const Metric& metric)
     return false;
 }
 
-bool
-TextWriter::visitCountMetric(const AbstractCountMetric& m, bool)
-{
+bool TextWriter::visitCountMetric(const AbstractCountMetric& m, bool) {
     if (writeCommon(m)) {
         if (_verbose || m.used()) {
             MetricValueClass::UP values(m.getValues());
-            _out << m.getMangledName()
-                 << (m.sumOnAdd() ? " count=" : " value=");
+            _out << m.getMangledName() << (m.sumOnAdd() ? " count=" : " value=");
             values->output("count", _out);
         }
     }
     return true;
 }
 
-bool
-TextWriter::visitValueMetric(const AbstractValueMetric& m, bool)
-{
+bool TextWriter::visitValueMetric(const AbstractValueMetric& m, bool) {
     if (writeCommon(m)) {
         m.print(_out, _verbose, "  ", vespalib::count_s(_period));
     }
     return true;
 }
 
-} // metrics
+} // namespace metrics

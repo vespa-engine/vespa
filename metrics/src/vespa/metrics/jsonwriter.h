@@ -39,5 +39,4 @@ private:
     static bool isLeafMetric(const Metric& m) { return !m.isMetricSet(); }
 };
 
-}
-
+} // namespace metrics

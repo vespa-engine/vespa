@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/printable.h>
 #include <memory>
+#include <vespa/vespalib/util/printable.h>
 
 namespace metrics {
 
@@ -94,10 +94,10 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     static std::string bval(uint32_t bytes);
+
 private:
-    std::unique_ptr<SeenStrings>   _seenStrings;
+    std::unique_ptr<SeenStrings> _seenStrings;
     std::unique_ptr<SnapShotUsage> _snapShotUsage;
 };
 
-} // metrics
-
+} // namespace metrics

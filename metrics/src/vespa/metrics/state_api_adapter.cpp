@@ -1,15 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "state_api_adapter.h"
 #include "jsonwriter.h"
 #include "metricmanager.h"
 #include "prometheus_writer.h"
-#include "state_api_adapter.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace metrics {
 
-std::string
-StateApiAdapter::getMetrics(const std::string &consumer, ExpositionFormat format)
-{
+std::string StateApiAdapter::getMetrics(const std::string& consumer, ExpositionFormat format) {
     MetricLockGuard guard(_manager.getMetricLock());
     auto periods = _manager.getSnapshotPeriods(guard);
     if (periods.empty() || !_manager.any_snapshots_taken(guard)) {
@@ -20,27 +18,23 @@ StateApiAdapter::getMetrics(const std::string &consumer, ExpositionFormat format
     // Using `switch` instead of `if` so that we fail with a compiler warning -> error if
     // we add another enum value and forget to add a case for it here.
     switch (format) {
-    case ExpositionFormat::JSON:
-        {
-            vespalib::JsonStream stream(out);
-            JsonWriter metricJsonWriter(stream);
-            _manager.visit(guard, snapshot, metricJsonWriter, consumer);
-            stream.finalize();
-            break;
-        }
-    case ExpositionFormat::Prometheus:
-        {
-            PrometheusWriter writer(out);
-            _manager.visit(guard, snapshot, writer, consumer);
-            break;
-        }
+    case ExpositionFormat::JSON: {
+        vespalib::JsonStream stream(out);
+        JsonWriter metricJsonWriter(stream);
+        _manager.visit(guard, snapshot, metricJsonWriter, consumer);
+        stream.finalize();
+        break;
+    }
+    case ExpositionFormat::Prometheus: {
+        PrometheusWriter writer(out);
+        _manager.visit(guard, snapshot, writer, consumer);
+        break;
+    }
     }
     return out.str();
 }
 
-std::string
-StateApiAdapter::getTotalMetrics(const std::string &consumer, ExpositionFormat format)
-{
+std::string StateApiAdapter::getTotalMetrics(const std::string& consumer, ExpositionFormat format) {
     _manager.updateMetrics();
     MetricLockGuard guard(_manager.getMetricLock());
     _manager.checkMetricsAltered(guard);
@@ -52,20 +46,18 @@ StateApiAdapter::getTotalMetrics(const std::string &consumer, ExpositionFormat f
     const MetricSnapshot& snapshot = *generated;
     vespalib::asciistream out;
     switch (format) {
-    case ExpositionFormat::JSON:
-        {
-            vespalib::JsonStream stream(out);
-            metrics::JsonWriter metricJsonWriter(stream);
-            _manager.visit(guard, snapshot, metricJsonWriter, consumer);
-            stream.finalize();
-            break;
-        }
-    case ExpositionFormat::Prometheus:
-        {
-            PrometheusWriter writer(out);
-            _manager.visit(guard, snapshot, writer, consumer);
-            break;
-        }
+    case ExpositionFormat::JSON: {
+        vespalib::JsonStream stream(out);
+        metrics::JsonWriter metricJsonWriter(stream);
+        _manager.visit(guard, snapshot, metricJsonWriter, consumer);
+        stream.finalize();
+        break;
+    }
+    case ExpositionFormat::Prometheus: {
+        PrometheusWriter writer(out);
+        _manager.visit(guard, snapshot, writer, consumer);
+        break;
+    }
     }
 
     return out.str();

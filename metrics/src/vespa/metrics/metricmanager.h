@@ -43,26 +43,24 @@
  */
 #pragma once
 
+#include "memoryconsumption.h"
 #include "metricset.h"
 #include "metricsnapshot.h"
-#include "memoryconsumption.h"
-#include "valuemetric.h"
 #include "updatehook.h"
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/util/jsonwriter.h>
-#include <vespa/metrics/config-metricsmanager.h>
+#include "valuemetric.h"
+#include <list>
+#include <map>
+#include <thread>
 #include <vespa/config/subscription/configsubscriber.h>
 #include <vespa/config/subscription/configuri.h>
-#include <map>
-#include <list>
-#include <thread>
+#include <vespa/metrics/config-metricsmanager.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/util/jsonwriter.h>
 
 namespace metrics {
 
-class MetricManager
-{
+class MetricManager {
 public:
-
     struct Timer {
         virtual ~Timer() = default;
         virtual time_point getTime() const;
@@ -76,14 +74,12 @@ public:
     struct ConsumerSpec {
         vespalib::hash_set<Metric::String> includedMetrics;
 
-        ConsumerSpec(ConsumerSpec &&) noexcept = default;
-        ConsumerSpec & operator= (ConsumerSpec &&) noexcept = default;
+        ConsumerSpec(ConsumerSpec&&) noexcept = default;
+        ConsumerSpec& operator=(ConsumerSpec&&) noexcept = default;
         ConsumerSpec();
         ~ConsumerSpec();
 
-        bool contains(const Metric& m) const {
-            return (includedMetrics.find(m.getPath()) != includedMetrics.end());
-        }
+        bool contains(const Metric& m) const { return (includedMetrics.find(m.getPath()) != includedMetrics.end()); }
 
         std::string toString() const;
 
@@ -116,11 +112,11 @@ private:
     LongAverageMetric _snapshotLatency;
     LongAverageMetric _sleepTimes;
     std::atomic<bool> _stop_requested;
-    std::thread       _thread;
+    std::thread _thread;
 
     void request_stop() { _stop_requested.store(true, std::memory_order_relaxed); }
     bool stop_requested() const { return _stop_requested.load(std::memory_order_relaxed); }
-    
+
 public:
     MetricManager();
     explicit MetricManager(std::unique_ptr<Timer> timer);
@@ -196,18 +192,15 @@ public:
      * of consumers. readConfig() will start a config subscription. It should
      * not be called multiple times.
      */
-    void init(const config::ConfigUri & uri, bool startThread);
-    void init(const config::ConfigUri & uri) {
-        init(uri, true);
-    }
+    void init(const config::ConfigUri& uri, bool startThread);
+    void init(const config::ConfigUri& uri) { init(uri, true); }
 
     /**
      * Visit a given snapshot for a given consumer. (Empty consumer name means
      * all metrics). This function can be used for various printing by using
      * various writer visitors in the metrics module, or your own.
      */
-    void visit(const MetricLockGuard & guard, const MetricSnapshot&,
-               MetricVisitor&, const std::string& consumer) const;
+    void visit(const MetricLockGuard& guard, const MetricSnapshot&, MetricVisitor&, const std::string& consumer) const;
 
     /**
      * The metric lock protects against changes in metric structure. After
@@ -217,9 +210,7 @@ public:
      * snapshots, you need to have this lock to prevent metric manager to alter
      * snapshots while you are accessing them.
      */
-    MetricLockGuard getMetricLock() const {
-        return {_waiter};
-    }
+    MetricLockGuard getMetricLock() const { return {_waiter}; }
 
     /** While accessing the active metrics you should have the metric lock. */
     MetricSnapshot& getActiveMetrics(const MetricLockGuard& l) {
@@ -237,16 +228,17 @@ public:
         return *_totalMetrics;
     }
     /** While accessing snapshots you should have the metric lock. */
-    const MetricSnapshot& getMetricSnapshot( const MetricLockGuard& guard, vespalib::duration period) const {
+    const MetricSnapshot& getMetricSnapshot(const MetricLockGuard& guard, vespalib::duration period) const {
         return getMetricSnapshot(guard, period, false);
     }
-    const MetricSnapshot& getMetricSnapshot( const MetricLockGuard&, vespalib::duration period, bool getInProgressSet) const;
+    const MetricSnapshot& getMetricSnapshot(const MetricLockGuard&, vespalib::duration period,
+                                            bool getInProgressSet) const;
     const MetricSnapshotSet& getMetricSnapshotSet(const MetricLockGuard&, vespalib::duration period) const;
 
     std::vector<time_point::duration> getSnapshotPeriods(const MetricLockGuard& l) const;
 
     // Public only for testing. The returned pointer is only valid while holding the lock.
-    const ConsumerSpec * getConsumerSpec(const MetricLockGuard & guard, const Metric::String& consumer) const;
+    const ConsumerSpec* getConsumerSpec(const MetricLockGuard& guard, const Metric::String& consumer) const;
 
     /**
      * If you add or remove metrics from the active metric sets, normally,
@@ -255,7 +247,7 @@ public:
      * can call this function in order to check whether snapshots needs to be
      * regenerated and regenerate them if needed.
      */
-    void checkMetricsAltered(const MetricLockGuard &);
+    void checkMetricsAltered(const MetricLockGuard&);
 
     /** Used by unit tests to verify that we have processed for a given time. */
     time_point getLastProcessedTime() const { return _lastProcessedTime.load(std::memory_order_relaxed); }
@@ -263,21 +255,21 @@ public:
     /** Used by unit tests to wake waiters after altering time. */
     void timeChangedNotification() const;
 
-    MemoryConsumption::UP getMemoryConsumption(const MetricLockGuard & guard) const;
+    MemoryConsumption::UP getMemoryConsumption(const MetricLockGuard& guard) const;
 
     bool isInitialized() const;
 
     [[nodiscard]] bool any_snapshots_taken(const MetricLockGuard&) const noexcept;
 
 private:
-    void takeSnapshots(const MetricLockGuard &, system_time timeToProcess);
+    void takeSnapshots(const MetricLockGuard&, system_time timeToProcess);
 
     friend struct MetricManagerTest;
     friend struct SnapshotTest;
 
-    void configure(const MetricLockGuard & guard, std::unique_ptr<MetricsmanagerConfig> conf);
+    void configure(const MetricLockGuard& guard, std::unique_ptr<MetricsmanagerConfig> conf);
     void run();
-    time_point tick(const MetricLockGuard & guard, time_point currentTime);
+    time_point tick(const MetricLockGuard& guard, time_point currentTime);
     /**
      * Utility function for updating periodic metrics.
      *
@@ -287,15 +279,14 @@ private:
      *                      without adjusting schedule for next update.
      * @return Time of next hook to be called in the future.
      */
-    time_point updatePeriodicMetrics(const MetricLockGuard & guard, time_point updateTime, bool outOfSchedule);
-    void updateSnapshotMetrics(const MetricLockGuard & guard);
+    time_point updatePeriodicMetrics(const MetricLockGuard& guard, time_point updateTime, bool outOfSchedule);
+    void updateSnapshotMetrics(const MetricLockGuard& guard);
 
-    void handleMetricsAltered(const MetricLockGuard & guard);
+    void handleMetricsAltered(const MetricLockGuard& guard);
 
     using SnapSpec = std::pair<time_point::duration, std::string>;
-    static std::vector<SnapSpec> createSnapshotPeriods( const MetricsmanagerConfig& config);
+    static std::vector<SnapSpec> createSnapshotPeriods(const MetricsmanagerConfig& config);
     void assertMetricLockLocked(const MetricLockGuard& g) const;
 };
 
-} // metrics
-
+} // namespace metrics
