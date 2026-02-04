@@ -188,7 +188,7 @@ public:
 
     std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view) const override;
 
-    TransientResourceUsage get_transient_resource_usage() const override;
+    ResourceUsage get_resource_usage() const override;
 };
 
 } // namespace proton

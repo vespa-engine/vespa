@@ -1,4 +1,7 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "dummy_document_sub_db.h"
+#include <vespa/searchcore/proton/common/resource_usage.h>
 
 namespace proton::test {
 
@@ -14,5 +17,11 @@ DummyDocumentSubDb::DummyDocumentSubDb(std::shared_ptr<bucketdb::BucketDBOwner> 
 { }
 
 DummyDocumentSubDb::~DummyDocumentSubDb() = default;
+
+ResourceUsage
+DummyDocumentSubDb::get_resource_usage() const
+{
+    return {};
+}
 
 }

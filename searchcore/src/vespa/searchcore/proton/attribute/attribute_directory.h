@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
+#include <vespa/searchcore/proton/common/transient_resource_usage.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/time.h>

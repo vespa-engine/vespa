@@ -3,6 +3,7 @@
 #include "flushableattribute.h"
 #include "attributedisklayout.h"
 #include "attribute_directory.h"
+#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/util/filekit.h>
@@ -185,10 +186,10 @@ FlushableAttribute::FlushableAttribute(AttributeVectorSP attr,
 
 FlushableAttribute::~FlushableAttribute() = default;
 
-TransientResourceUsage
-FlushableAttribute::get_transient_resource_usage() const
+ResourceUsage
+FlushableAttribute::get_resource_usage() const
 {
-    return _attrDir->get_transient_resource_usage();
+    return ResourceUsage{_attrDir->get_transient_resource_usage()};
 }
 
 IFlushTarget::SerialNum

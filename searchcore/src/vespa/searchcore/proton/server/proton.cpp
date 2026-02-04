@@ -786,7 +786,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     auto flushHandler = std::make_shared<FlushHandlerProxy>(ret);
     _flushEngine->putFlushHandler(docTypeName, flushHandler);
     _resource_usage_notifier->add_resource_usage_listener(ret->resource_usage_forwarder());
-    _diskMemUsageSampler->add_transient_usage_provider(ret->transient_usage_provider());
+    _diskMemUsageSampler->add_resource_usage_provider(ret->resource_usage_provider());
     return ret;
 }
 
@@ -825,7 +825,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
     _metricsEngine->removeMetricsHook(old->getMetricsUpdateHook());
     _metricsEngine->removeDocumentDBMetrics(old->getMetrics());
     _resource_usage_notifier->remove_resource_usage_listener(old->resource_usage_forwarder());
-    _diskMemUsageSampler->remove_transient_usage_provider(old->transient_usage_provider());
+    _diskMemUsageSampler->remove_resource_usage_provider(old->resource_usage_provider());
     // Caller should have removed & drained relevant timer tasks
     old->close();
 }

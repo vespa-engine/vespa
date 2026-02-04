@@ -4,7 +4,6 @@
 
 #include "i_attribute_factory.h"
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
-#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/serialnum.h>
@@ -22,6 +21,7 @@ namespace proton {
 class AttributeCollectionSpec;
 class IAttributeManagerReconfig;
 class ImportedAttributesRepo;
+class ResourceUsage;
 
 /**
  * Proton specific interface for an attribute manager that handles a set of attribute vectors.
@@ -105,7 +105,7 @@ struct IAttributeManager : public search::IAttributeManager
 
     virtual const ImportedAttributesRepo *getImportedAttributes() const = 0;
 
-    virtual TransientResourceUsage get_transient_resource_usage() const = 0;
+    virtual ResourceUsage get_resource_usage() const = 0;
 };
 
 } // namespace proton

@@ -13,7 +13,7 @@ ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
       _memoryStats(),
       _diskUsedSizeBytes(),
       _reserved_disk_space(0),
-      _transient_usage(),
+      _resource_usage(),
       _attribute_usage(),
       _config(),
       _usage_state(),
@@ -65,22 +65,22 @@ ResourceUsageNotifier::get_relative_reserved_disk_space(const Guard&) const
 double
 ResourceUsageNotifier::get_relative_transient_memory_usage(const Guard&) const
 {
-    return  static_cast<double>(_transient_usage.memory()) / _hwInfo.memory().sizeBytes();
+    return  static_cast<double>(_resource_usage.transient_memory()) / _hwInfo.memory().sizeBytes();
 }
 
 double
 ResourceUsageNotifier::get_relative_transient_disk_usage(const Guard&) const
 {
-    return  static_cast<double>(_transient_usage.disk()) / _hwInfo.disk().sizeBytes();
+    return  static_cast<double>(_resource_usage.transient_disk()) / _hwInfo.disk().sizeBytes();
 }
 
 void
-ResourceUsageNotifier::set_resource_usage(const TransientResourceUsage& transient_usage,
+ResourceUsageNotifier::set_resource_usage(const ResourceUsage& resource_usage,
                                           vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes,
                                           uint64_t reserved_disk_space)
 {
     Guard guard(_lock);
-    _transient_usage = transient_usage;
+    _resource_usage = resource_usage;
     _reserved_disk_space = reserved_disk_space;
     _memoryStats = memoryStats;
     _diskUsedSizeBytes = diskUsedSizeBytes;
@@ -119,11 +119,11 @@ ResourceUsageNotifier::getDiskUsedSize() const
     return _diskUsedSizeBytes;
 }
 
-TransientResourceUsage
-ResourceUsageNotifier::get_transient_resource_usage() const
+ResourceUsage
+ResourceUsageNotifier::get_resource_usage() const
 {
     Guard guard(_lock);
-    return _transient_usage;
+    return _resource_usage;
 }
 
 ResourceUsageNotifier::Config

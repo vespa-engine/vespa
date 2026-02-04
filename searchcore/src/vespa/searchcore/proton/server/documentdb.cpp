@@ -22,7 +22,8 @@
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
-#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
+#include <vespa/searchcore/proton/common/i_resource_usage_provider.h>
+#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/feedoperation/noopoperation.h>
@@ -92,7 +93,7 @@ public:
     }
 };
 
-class DocumentDBResourceUsageProvider : public ITransientResourceUsageProvider {
+class DocumentDBResourceUsageProvider : public IResourceUsageProvider {
 private:
     const DocumentDB& _doc_db;
 
@@ -101,11 +102,11 @@ public:
         : _doc_db(doc_db)
     {}
 
-    TransientResourceUsage get_transient_resource_usage() const override {
+    ResourceUsage get_resource_usage() const override {
         if (!_doc_db.get_state().get_load_done())  {
-            return {0, 0};
+            return ResourceUsage{};
         }
-        return _doc_db.getReadySubDB()->get_transient_resource_usage();
+        return _doc_db.getReadySubDB()->get_resource_usage();
     }
 };
 
@@ -207,7 +208,7 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _state(std::make_shared<DDBState>()),
       _resource_usage_forwarder(_writeService.master()),
       _writeFilter(),
-      _transient_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
+      _resource_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, *this, tlsWriterFactory)),
       _subDBs(*this, *this, *_feedHandler, _docTypeName,
               _writeService, shared_service.shared(), fileHeaderContext, std::move(attribute_interlock),
@@ -1117,10 +1118,10 @@ DocumentDB::getDistributionKey() const
     return _owner.getDistributionKey();
 }
 
-std::shared_ptr<const ITransientResourceUsageProvider>
-DocumentDB::transient_usage_provider()
+std::shared_ptr<const IResourceUsageProvider>
+DocumentDB::resource_usage_provider()
 {
-    return _transient_usage_provider;
+    return _resource_usage_provider;
 }
 
 void

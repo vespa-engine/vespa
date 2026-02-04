@@ -13,6 +13,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandlerinitializer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
+#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
 #include <vespa/searchcore/proton/docsummary/summarymanagerinitializer.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreinitializer.h>
@@ -613,10 +614,10 @@ addTags(vespalib::GenericHeader &header, const std::string &name) const
     header.putTag(Tag("subDB", _subDB));
 }
 
-TransientResourceUsage
-StoreOnlyDocSubDB::get_transient_resource_usage() const
+ResourceUsage
+StoreOnlyDocSubDB::get_resource_usage() const
 {
-    return _dmsFlushTarget->get_transient_resource_usage();
+    return _dmsFlushTarget->get_resource_usage();
 }
 
 } // namespace proton

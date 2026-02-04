@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
+#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
@@ -369,14 +370,15 @@ SearchableDocSubDB::get_attribute_writer() const
     return _rFeedView.get()->getAttributeWriter();
 }
 
-TransientResourceUsage
-SearchableDocSubDB::get_transient_resource_usage() const
+ResourceUsage
+SearchableDocSubDB::get_resource_usage() const
 {
-    auto result = FastAccessDocSubDB::get_transient_resource_usage();
+    auto result = FastAccessDocSubDB::get_resource_usage();
     // Transient disk usage is measured as the total disk usage of all current fusion indexes.
     // Transient memory usage is measured as the total memory usage of all memory indexes.
     auto stats = get_index_stats(false);
-    result.merge({stats.fusion_size_on_disk(), stats.memoryUsage().allocatedBytes()});
+    result.merge(ResourceUsage{TransientResourceUsage{stats.fusion_size_on_disk(),
+                                                      stats.memoryUsage().allocatedBytes()}});
     return result;
 }
 

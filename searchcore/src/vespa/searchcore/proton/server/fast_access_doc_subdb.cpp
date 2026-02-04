@@ -14,6 +14,7 @@
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
+#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/reprocess_documents_task.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
@@ -344,11 +345,11 @@ FastAccessDocSubDB::getNewestFlushedSerial()
     return highest;
 }
 
-TransientResourceUsage
-FastAccessDocSubDB::get_transient_resource_usage() const
+ResourceUsage
+FastAccessDocSubDB::get_resource_usage() const
 {
-    auto result = StoreOnlyDocSubDB::get_transient_resource_usage();
-    result.merge(getAttributeManager()->get_transient_resource_usage());
+    auto result = StoreOnlyDocSubDB::get_resource_usage();
+    result.merge(getAttributeManager()->get_resource_usage());
     return result;
 }
 
