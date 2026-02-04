@@ -9,7 +9,7 @@
         <artifactId>parent</artifactId>
         <groupId>com.yahoo.vespa</groupId>
         <version>8-SNAPSHOT</version>
-	<relativePath>../parent/pom.xml</relativePath>
+	<relativePath>../../parent/pom.xml</relativePath>
     </parent>
   <name>${project.artifactId}</name>
     <artifactId>hosted-api</artifactId>
