@@ -270,7 +270,10 @@ func fetchFilesFromConfigServer(deployment DeploymentOptions, contentURL *url.UR
 }
 
 // Prepare deployment and return the session ID
-func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
+func Prepare(deployment DeploymentOptions, timeout time.Duration) (PrepareResult, error) {
+	if timeout == 0 {
+		timeout = time.Second * 30
+	}
 	sessionURL, err := deployment.url("/application/v2/tenant/default/session")
 	if err != nil {
 		return PrepareResult{}, err
@@ -287,7 +290,7 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, err
 	}
-	response, err := deployServiceDo(req, time.Second*30, deployment)
+	response, err := deployServiceDo(req, timeout, deployment)
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -315,7 +318,10 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 }
 
 // Activate deployment with sessionID from a past prepare
-func Activate(sessionID int64, deployment DeploymentOptions) error {
+func Activate(sessionID int64, deployment DeploymentOptions, timeout time.Duration) error {
+	if timeout == 0 {
+		timeout = time.Second * 30
+	}
 	u, err := deployment.url(fmt.Sprintf("/application/v2/tenant/default/session/%d/active", sessionID))
 	if err != nil {
 		return err
@@ -324,7 +330,7 @@ func Activate(sessionID int64, deployment DeploymentOptions) error {
 	if err != nil {
 		return err
 	}
-	response, err := deployServiceDo(req, time.Second*30, deployment)
+	response, err := deployServiceDo(req, timeout, deployment)
 	if err != nil {
 		return err
 	}
