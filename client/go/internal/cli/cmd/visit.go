@@ -66,7 +66,7 @@ func (v *visitArgs) dumpDocuments(documents []DocumentBlob) {
 	} else if !v.jsonLines {
 		return
 	}
-	for _, value := range documents {
+	for i, value := range documents {
 		if pretty {
 			var prettyJSON bytes.Buffer
 			parseError := json.Indent(&prettyJSON, value.blob, "", "    ")
@@ -78,7 +78,8 @@ func (v *visitArgs) dumpDocuments(documents []DocumentBlob) {
 		} else {
 			v.writeBytes(value.blob)
 		}
-		if comma {
+		var lastDocument = i == (len(documents) - 1)
+		if comma && !lastDocument {
 			v.writeString(",\n")
 		} else {
 			v.writeString("\n")
