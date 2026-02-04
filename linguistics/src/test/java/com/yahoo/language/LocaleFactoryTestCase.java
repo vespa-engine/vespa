@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -41,6 +42,11 @@ public class LocaleFactoryTestCase {
         assertLocale("", "", "", "");
         assertLocale("z-foo", "", "", "");
         assertLocale("ojeroierhoiherohjdadsfodsfoifiopeoipefwoipfwe", "", "", "");
+
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> LocaleFactory.fromLanguageTag("foo-13"));
+        assertEquals("Unknown language tag 'foo-13', it must be a language tag corresponding to RFC5646",
+                     exception.getMessage());
     }
 
     private static void assertLocale(String tag, String language, String variant, String country) {

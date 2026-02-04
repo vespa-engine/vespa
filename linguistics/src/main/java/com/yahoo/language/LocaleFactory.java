@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language;
 
+import java.util.IllformedLocaleException;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -45,7 +46,11 @@ public final class LocaleFactory {
             }
         }
         if (language.isEmpty()) return UNKNOWN;
-        return new Locale.Builder().setLanguage(language).setScript(script).setRegion(region).build();
+        try {
+            return new Locale.Builder().setLanguage(language).setScript(script).setRegion(region).build();
+        } catch (IllformedLocaleException e) {
+            throw new IllegalArgumentException("Unknown language tag '" + tag + "', it must be a language tag corresponding to RFC5646");
+        }
     }
 
 }
