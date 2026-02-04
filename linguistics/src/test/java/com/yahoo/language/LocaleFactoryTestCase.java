@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -31,16 +32,22 @@ public class LocaleFactoryTestCase {
         assertLocale("es", "es", "", "");
         assertLocale("es-419", "es", "", "419");
 
-        try {
-            LocaleFactory.fromLanguageTag(null);
-            fail();
-        } catch (NullPointerException e) {
-
-        }
+        assertThrows(NullPointerException.class, () ->LocaleFactory.fromLanguageTag(null));
 
         assertLocale("", "", "", "");
         assertLocale("z-foo", "", "", "");
         assertLocale("ojeroierhoiherohjdadsfodsfoifiopeoipefwoipfwe", "", "", "");
+
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> LocaleFactory.fromLanguageTag("foo-13-ojeroierhoiherohjdadsfodsfoifiopeoipefwoipfwe"));
+        assertEquals("Illegal language tag 'foo-13-ojeroierhoiherohjdadsfodsfoifiopeo ...', it must be a language tag corresponding to RFC5646",
+                     exception.getMessage());
+
+        var languageTag = "this is part of a long string which should be cut off at 20 characters";
+        exception = assertThrows(IllegalArgumentException.class,
+                                     () -> LocaleFactory.fromLanguageTag(languageTag));
+        assertEquals("Illegal language tag 'this is part of a long string which shoul ...', language tags corresponding to RFC5646 cannot contain whitespace",
+                     exception.getMessage());
     }
 
     private static void assertLocale(String tag, String language, String variant, String country) {
