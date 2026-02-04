@@ -271,7 +271,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
-            "monitoring-jwt", false,
+            "monitoring-jwt", true,
             List.of("olaa"), "2024-07-05", "2026-05-01",
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
