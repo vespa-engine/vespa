@@ -40,6 +40,7 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.LongFlag;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.state.ConnectionState;
@@ -127,6 +128,7 @@ public class TenantRepository {
     private final List<EndpointCertificateSecretStore> endpointCertificateSecretStores;
     private final OnnxModelCost onnxModelCost;
     private final InheritableApplications inheritableApplications;
+    private final LongFlag deleteIdleTenantSecondsFlag;
 
     /**
      * Creates a new tenant repository
@@ -213,16 +215,17 @@ public class TenantRepository {
         this.tenantListener = tenantListener;
         this.zookeeperServerConfig = zookeeperServerConfig;
         this.endpointCertificateSecretStores = endpointCertificateSecretStores;
+        this.deleteIdleTenantSecondsFlag = Flags.DELETE_IDLE_TENANT_SECONDS.bindTo(flagSource);
         // This we should control with a feature flag.
         this.deployHelperExecutor = createModelBuilderExecutor();
         this.onnxModelCost = onnxModelCost;
         this.inheritableApplications = inheritableApplications;
 
-        curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
+        // THE BELOW CODE MAY INVOKE METHODS THAT REFER TO THE ABOVE FIELDS
 
+        curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
         createPaths();
         createSystemTenants(configserverConfig);
-
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
@@ -264,8 +267,12 @@ public class TenantRepository {
     }
 
     private TenantMetaData createMetaData(Tenant tenant) {
-        Instant deployTime = tenant.getSessionRepository().clock().instant();
-        Instant createdTime = getTenantMetaData(tenant).createdTimestamp();
+        Instant now = tenant.getSessionRepository().clock().instant();
+        TenantMetaData metadata = getTenantMetaData(tenant);
+        Instant deployTime = metadata.lastDeployTimestamp();
+        if (deployTime.equals(Instant.EPOCH) || deleteIdleTenantSecondsFlag.with(tenant.getName()).value() < 0)
+            deployTime = now;
+        Instant createdTime = metadata.createdTimestamp();
         if (createdTime.equals(Instant.EPOCH))
             createdTime = deployTime;
         return new TenantMetaData(tenant.getName(), deployTime, createdTime);
@@ -655,7 +662,11 @@ public class TenantRepository {
                 .filter(tenantName -> activeApplications(tenantName).isEmpty())
                 .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
                 .filter(tenantName -> !tenantName.equals(HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
-                .filter(tenantName -> getTenantMetaData(getTenant(tenantName)).lastDeployTimestamp().isBefore(now.minus(ttlForUnusedTenant)))
+                .filter(tenantName -> {
+                    long ttlSeconds = deleteIdleTenantSecondsFlag.with(tenantName).value();
+                    Duration ttl = ttlSeconds < 0 ? ttlForUnusedTenant : Duration.ofSeconds(ttlSeconds);
+                    return getTenantMetaData(getTenant(tenantName)).lastDeployTimestamp().isBefore(now.minus(ttl));
+                })
                 .peek(this::deleteTenant)
                 .collect(Collectors.toSet());
     }
