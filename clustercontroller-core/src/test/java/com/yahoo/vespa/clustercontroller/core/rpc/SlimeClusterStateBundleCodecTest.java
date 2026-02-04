@@ -6,6 +6,7 @@ import com.yahoo.vespa.clustercontroller.core.ClusterStateBundleUtil;
 import com.yahoo.vespa.clustercontroller.core.DistributionBuilder;
 import com.yahoo.vespa.clustercontroller.core.StateMapping;
 import org.junit.jupiter.api.Test;
+import java.util.Locale;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.lessThan;
@@ -45,7 +46,7 @@ public class SlimeClusterStateBundleCodecTest {
             allDownStates.append(" .").append(i).append(".s:d");
         }
         // Exact same state set string repeated twice; perfect compression fodder.
-        return ClusterStateBundleUtil.makeBundle(String.format("distributor:100%s storage:100%s",
+        return ClusterStateBundleUtil.makeBundle(String.format(Locale.ROOT, "distributor:100%s storage:100%s",
                 allDownStates, allDownStates));
     }
 

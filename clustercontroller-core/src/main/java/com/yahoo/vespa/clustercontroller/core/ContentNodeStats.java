@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import java.util.Locale;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 
 import java.util.Arrays;
@@ -171,7 +172,7 @@ public class ContentNodeStats {
 
     @Override
     public String toString() {
-        return String.format("{index=%d, bucketSpaces=[%s]}",
+        return String.format(Locale.ROOT, "{index=%d, bucketSpaces=[%s]}",
                 nodeIndex, Arrays.toString(bucketSpaces.entrySet().toArray()));
     }
 }

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core.status.statuspage;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  * Helper class in order to write HTML tables
@@ -142,7 +143,7 @@ public class HtmlTable {
                     sb.append(" bgcolor=\"#").append(getColor(properties.backgroundColor)).append('"');
                 }
                 if (properties.contentAlignment != null) {
-                    sb.append(" align=\"").append(properties.contentAlignment.name().toLowerCase()).append('"');
+                    sb.append(" align=\"").append(properties.contentAlignment.name().toLowerCase(Locale.ROOT)).append('"');
                 }
                 if (properties.colSpan != null) {
                     int colSpan = properties.colSpan;

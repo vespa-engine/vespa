@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -446,7 +447,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
                 && (wentDownAtClusterState == null || wentDownAtClusterState.getVersion() < stateBundle.getVersion())
                 && !stateBundle.getBaselineClusterState().getNodeState(node).getState().oneOf("dsm"))
             {
-                log.log(Level.FINE, () -> String.format("Clearing going down timestamp of node %s after " +
+                log.log(Level.FINE, () -> String.format(Locale.ROOT, "Clearing going down timestamp of node %s after " +
                         "receiving ack of cluster state bundle %s", node, stateBundle));
                 wentDownWithStartTime = 0;
             }

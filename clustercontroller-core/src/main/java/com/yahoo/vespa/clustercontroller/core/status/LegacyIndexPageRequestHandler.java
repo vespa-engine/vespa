@@ -117,7 +117,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             TimeZone tz = TimeZone.getTimeZone("UTC");
             sb.append("<h3 id=\"clusterstatehistory\">Cluster state history</h3>\n");
             sb.append("<table border=\"1\" cellspacing=\"0\"><tr>\n")
-              .append("  <th>Creation date (").append(tz.getDisplayName(false, TimeZone.SHORT)).append(")</th>\n")
+              .append("  <th>Creation date (").append(tz.getDisplayName(false, TimeZone.SHORT, Locale.ROOT)).append(")</th>\n")
               .append("  <th>Bucket space</th>\n")
               .append("  <th>Cluster state</th>\n")
               .append("</tr>\n");

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.CLUSTER;
@@ -75,7 +76,7 @@ public class MetricReporterTest {
     }
 
     private static String metricName(String subName) {
-        return "%s.%s".formatted(CLUSTER_CONTROLLER, subName);
+        return String.format(Locale.ROOT, "%s.%s", CLUSTER_CONTROLLER, subName);
     }
 
     @Test

@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -459,7 +460,7 @@ public class VdsClusterHtmlRenderer {
                 }
             } else {
                 row.addCell(new HtmlTable.Cell("Cluster " +
-                        state.getClusterState().name().toLowerCase()).addProperties(ERROR_PROPERTY));
+                        state.getClusterState().name().toLowerCase(Locale.ROOT)).addProperties(ERROR_PROPERTY));
             }
         }
 

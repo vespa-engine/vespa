@@ -5,6 +5,8 @@ import com.yahoo.vespa.clustercontroller.core.NodeEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+import java.util.Locale;
+
 public class EventTypeIs extends BaseMatcher<NodeEvent> {
     private final NodeEvent.Type expected;
 
@@ -22,13 +24,13 @@ public class EventTypeIs extends BaseMatcher<NodeEvent> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format("NodeEvent with description '%s'", expected));
+        description.appendText(String.format(Locale.ROOT, "NodeEvent with description '%s'", expected));
     }
 
     @Override
     public void describeMismatch(Object item, Description description) {
         NodeEvent other = (NodeEvent)item;
-        description.appendText(String.format("got description '%s'", other.getDescription()));
+        description.appendText(String.format(Locale.ROOT, "got description '%s'", other.getDescription()));
     }
 
     public static EventTypeIs eventTypeIs(NodeEvent.Type type) {

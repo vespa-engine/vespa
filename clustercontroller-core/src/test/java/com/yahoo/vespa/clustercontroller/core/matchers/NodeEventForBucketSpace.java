@@ -5,6 +5,7 @@ import com.yahoo.vespa.clustercontroller.core.NodeEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+import java.util.Locale;
 import java.util.Optional;
 
 public class NodeEventForBucketSpace extends BaseMatcher<NodeEvent> {
@@ -24,13 +25,13 @@ public class NodeEventForBucketSpace extends BaseMatcher<NodeEvent> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format("NodeEvent for bucket space '%s'", bucketSpace.orElse("null")));
+        description.appendText(String.format(Locale.ROOT, "NodeEvent for bucket space '%s'", bucketSpace.orElse("null")));
     }
 
     @Override
     public void describeMismatch(Object item, Description description) {
         NodeEvent other = (NodeEvent)item;
-        description.appendText(String.format("got bucket space '%s'", other.getBucketSpace().orElse("null")));
+        description.appendText(String.format(Locale.ROOT, "got bucket space '%s'", other.getBucketSpace().orElse("null")));
     }
 
     public static NodeEventForBucketSpace nodeEventForBucketSpace(String bucketSpace) {

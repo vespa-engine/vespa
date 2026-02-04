@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -58,7 +59,7 @@ public class DistributionDiff {
 
     private static void addIfDiffers(IntegerDiff diff, String name, List<String> diffs) {
         if (diff.differs()) {
-            diffs.add("%s: %d -> %d".formatted(name, diff.before, diff.after));
+            diffs.add(String.format(Locale.ROOT, "%s: %d -> %d", name, diff.before, diff.after));
         }
     }
 
