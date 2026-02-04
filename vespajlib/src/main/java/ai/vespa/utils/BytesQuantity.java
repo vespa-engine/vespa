@@ -63,7 +63,7 @@ public class BytesQuantity {
         var matcher = PATTERN.matcher(value);
         if (!matcher.matches())
             throw new IllegalArgumentException(
-                    "Bytes quantity '%s' does not match pattern '%s'".formatted(value, PATTERN.pattern()));
+                    String.format(Locale.ROOT, "Bytes quantity '%s' does not match pattern '%s'", value, PATTERN.pattern()));
         var digits = Long.parseLong(matcher.group("digits"));
         var unit = Unit.fromString(matcher.group("unit"));
         return BytesQuantity.of(digits, unit);
