@@ -507,7 +507,7 @@ public class Utf8TestCase {
     @Test
     @Ignore
     public void benchmarkDecoding() {
-        byte[] ascii = "This is just sort of random mix.".getBytes();
+        byte[] ascii = "This is just sort of random mix.".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         byte[] unicode = "This is just sort of random mix. \u5370\u57df\u60c5\u5831\u53EF\u4EE5\u6709x\u00e9\u00e8".getBytes(StandardCharsets.UTF_8);
         int iterations = 100_000; // Use 100_000+ for benchmarking
 
@@ -551,7 +551,7 @@ public class Utf8TestCase {
         String res = null;
         for (int i = 0; i < iterations; i++) {
             // Append counter to avoid String cache
-            byte[] counter = String.valueOf(i).getBytes();
+            byte[] counter = String.valueOf(i).getBytes(java.nio.charset.StandardCharsets.UTF_8);
             byte[] result = new byte[b.length + counter.length];
             System.arraycopy(b, 0, result, 0, b.length);
             System.arraycopy(counter, 0, result, b.length, counter.length);

@@ -4,6 +4,7 @@ package ai.vespa.validation;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.Objects;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -73,7 +74,7 @@ public class Validation {
     public static void requireNonNulls(Object... objs) {
         for (int i = 0; i < objs.length; i++) {
             int effectivelyFinal = i;
-            Objects.requireNonNull(objs[i], () -> "Argument at index %d is null".formatted(effectivelyFinal));
+            Objects.requireNonNull(objs[i], () -> String.format(Locale.ROOT, "Argument at index %d is null", effectivelyFinal));
         }
     }
 

@@ -96,7 +96,7 @@ public class CustomCollectors {
         private static final long serialVersionUID = 1L;
 
         DuplicateKeyException(Object key) {
-            super(String.format("Duplicate keys: %s", key));
+            super(String.format(java.util.Locale.ROOT, "Duplicate keys: %s", key));
         }
     }
 }

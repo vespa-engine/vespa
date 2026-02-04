@@ -16,7 +16,7 @@ class ZstdOutputStreamTest {
 
     @Test
     void output_stream_compresses_input() throws IOException {
-        byte[] inputData = "The quick brown fox jumps over the lazy dog".getBytes();
+        byte[] inputData = "The quick brown fox jumps over the lazy dog".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         ByteArrayOutputStream arrayOut = new ByteArrayOutputStream();
         try (ZstdOutputStream zstdOut = new ZstdOutputStream(arrayOut, 12)) {
             zstdOut.write(inputData[0]);
@@ -35,7 +35,7 @@ class ZstdOutputStreamTest {
         for (int i = 0; i < 100; i++) {
             builder.append("The quick brown fox jumps over the lazy dog").append('\n');
         }
-        byte[] inputData = builder.toString().getBytes();
+        byte[] inputData = builder.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         ByteArrayOutputStream arrayOut = new ByteArrayOutputStream();
         try (ZstdOutputStream zstdOut = new ZstdOutputStream(arrayOut)) {
             zstdOut.write(inputData);

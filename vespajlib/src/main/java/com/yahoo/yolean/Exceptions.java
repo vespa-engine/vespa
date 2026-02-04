@@ -84,7 +84,7 @@ public class Exceptions {
         try {
             runnable.run();
         } catch (IOException e) {
-            String message = String.format(format, (Object[]) args);
+            String message = String.format(java.util.Locale.ROOT, format, (Object[]) args);
             throw new UncheckedIOException(message, e);
         }
     }
@@ -141,7 +141,7 @@ public class Exceptions {
         try {
             return supplier.get();
         } catch (IOException e) {
-            String message = String.format(format, (Object[]) args);
+            String message = String.format(java.util.Locale.ROOT, format, (Object[]) args);
             throw new UncheckedIOException(message, e);
         }
     }

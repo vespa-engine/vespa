@@ -13,7 +13,7 @@ public class LZ4CompressorTest {
 
     @Test
     public void can_compress_and_decompress_partial_buffer_range() {
-        byte[] toCompress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".getBytes();
+        byte[] toCompress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         int compressBytes = 30;
         Compressor compressor = new Compressor();
         Compressor.Compression compressed = compressor.compress(CompressionType.LZ4, toCompress, Optional.of(compressBytes));

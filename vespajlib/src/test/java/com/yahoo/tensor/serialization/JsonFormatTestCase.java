@@ -55,7 +55,7 @@ public class JsonFormatTestCase {
         Tensor decoded = JsonFormat.decode(tensor.type(), json);
         assertEquals(tensor, decoded);
 
-        json = "{}".getBytes(); // short form variant of the above
+        json = "{}".getBytes(java.nio.charset.StandardCharsets.UTF_8); // short form variant of the above
         decoded = JsonFormat.decode(tensor.type(), json);
         assertEquals(tensor, decoded);
     }
