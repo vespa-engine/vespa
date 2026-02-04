@@ -283,6 +283,9 @@ AttributeDirectory::Writer::~Writer()
 TransientResourceUsage
 AttributeDirectory::get_transient_resource_usage() const
 {
+    // Transient disk usage is measured as the total disk usage of all attribute snapshots
+    // that are NOT the valid best one.
+    // Transient memory usage is zero.
     uint64_t total_size_on_disk = 0;
     std::vector<SerialNum> to_traverse;
     {

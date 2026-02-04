@@ -662,9 +662,6 @@ AttributeManager::readable_attribute_vector(std::string_view name) const
 ResourceUsage
 AttributeManager::get_resource_usage() const
 {
-    // Transient disk usage is measured as the total disk usage of all attribute snapshots
-    // that are NOT the valid best one.
-    // Transient memory usage is zero.
     ResourceUsage result;
     for (const auto& elem : _flushables) {
         auto usage = elem.second.getFlusher()->get_resource_usage();
