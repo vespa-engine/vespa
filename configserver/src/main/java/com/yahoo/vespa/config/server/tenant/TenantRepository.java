@@ -215,16 +215,17 @@ public class TenantRepository {
         this.tenantListener = tenantListener;
         this.zookeeperServerConfig = zookeeperServerConfig;
         this.endpointCertificateSecretStores = endpointCertificateSecretStores;
+        this.deleteIdleTenantSecondsFlag = Flags.DELETE_IDLE_TENANT_SECONDS.bindTo(flagSource);
         // This we should control with a feature flag.
         this.deployHelperExecutor = createModelBuilderExecutor();
         this.onnxModelCost = onnxModelCost;
         this.inheritableApplications = inheritableApplications;
 
-        curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
+        // THE BELOW CODE MAY INVOKE METHODS THAT REFER TO THE ABOVE FIELDS
 
+        curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
         createPaths();
         createSystemTenants(configserverConfig);
-
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
@@ -234,7 +235,6 @@ public class TenantRepository {
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   TimeUnit.SECONDS);
-        this.deleteIdleTenantSecondsFlag = Flags.DELETE_IDLE_TENANT_SECONDS.bindTo(flagSource);
     }
 
     private ExecutorService createModelBuilderExecutor() {
