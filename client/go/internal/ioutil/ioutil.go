@@ -29,6 +29,7 @@ func init() {
 		panic("failed to initialize CBOR decoder mode: " + err.Error())
 	}
 }
+
 // Exists returns true if the given path exists.
 func Exists(path string) bool {
 	info, err := os.Stat(path)
