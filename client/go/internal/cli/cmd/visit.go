@@ -285,7 +285,7 @@ func visitClusters(vArgs *visitArgs, service *vespa.Service) (res OperationResul
 		}
 	}
 	if vArgs.makeFeed {
-		vArgs.writeString("{}\n]\n")
+		vArgs.writeString("]\n")
 	}
 	return res
 }
