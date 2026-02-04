@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -33,7 +34,7 @@ public class ImportPackages {
                     Arrays.stream(version.get().split("\\.")).map(Integer::parseInt).limit(3).forEach(this.versionNumber::add);
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException(
-                            String.format("Invalid version number '%s' for package '%s'.", version.get(), packageName), e);
+                            String.format(Locale.ROOT, "Invalid version number '%s' for package '%s'.", version.get(), packageName), e);
                 }
             }
         }
@@ -61,7 +62,7 @@ public class ImportPackages {
             } else {
                 int upperLimit = isGuavaPackage() ? INFINITE_VERSION // guava increases major version for each release
                         : versionNumber.get(0) + 1;
-                return Optional.of(String.format("[%s,%d)", version(), upperLimit));
+                return Optional.of(String.format(Locale.ROOT, "[%s,%d)", version(), upperLimit));
             }
         }
 

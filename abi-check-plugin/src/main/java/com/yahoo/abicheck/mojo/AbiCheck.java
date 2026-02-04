@@ -31,11 +31,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.jar.JarFile;
@@ -66,7 +68,7 @@ public class AbiCheck extends AbstractMojo {
   // CLOVER:OFF
   // Testing that Gson can read JSON files is not very useful
   private static Map<String, JavaClassSignature> readSpec(File file) throws IOException {
-    try (FileReader reader = new FileReader(file)) {
+    try (FileReader reader = new FileReader(file, StandardCharsets.UTF_8)) {
       ObjectMapper mapper = new ObjectMapper();
       JavaType typeToken = mapper.getTypeFactory().constructMapType(HashMap.class, String.class, JavaClassSignature.class);
       return mapper.readValue(reader, typeToken);
@@ -76,7 +78,7 @@ public class AbiCheck extends AbstractMojo {
 
   private static class FinalNewlineWriter extends FileWriter {
     private boolean closed = false;
-    FinalNewlineWriter(File file) throws IOException { super(file); }
+    FinalNewlineWriter(File file) throws IOException { super(file, StandardCharsets.UTF_8); }
     @Override
     public void close() throws IOException {
       if (closed) return;
@@ -104,32 +106,32 @@ public class AbiCheck extends AbstractMojo {
     if (!expected.superClass.equals(actual.superClass)) {
       match = false;
       log.error(String
-          .format("Class %s: Expected superclass %s, found %s", className, expected.superClass,
+          .format(Locale.ROOT, "Class %s: Expected superclass %s, found %s", className, expected.superClass,
               actual.superClass));
     }
     if (!SetMatcher.compare(expected.interfaces, actual.interfaces,
         item -> true,
-        item -> log.error(String.format("Class %s: Missing interface %s", className, item)),
-        item -> log.error(String.format("Class %s: Extra interface %s", className, item)))) {
+        item -> log.error(String.format(Locale.ROOT, "Class %s: Missing interface %s", className, item)),
+        item -> log.error(String.format(Locale.ROOT, "Class %s: Extra interface %s", className, item)))) {
       match = false;
     }
     if (!SetMatcher
         .compare(new HashSet<>(expected.attributes), new HashSet<>(actual.attributes),
             item -> true,
-            item -> log.error(String.format("Class %s: Missing attribute %s", className, item)),
-            item -> log.error(String.format("Class %s: Extra attribute %s", className, item)))) {
+            item -> log.error(String.format(Locale.ROOT, "Class %s: Missing attribute %s", className, item)),
+            item -> log.error(String.format(Locale.ROOT, "Class %s: Extra attribute %s", className, item)))) {
       match = false;
     }
     if (!SetMatcher.compare(expected.methods, actual.methods,
         item -> true,
-        item -> log.error(String.format("Class %s: Missing method %s", className, item)),
-        item -> log.error(String.format("Class %s: Extra method %s", className, item)))) {
+        item -> log.error(String.format(Locale.ROOT, "Class %s: Missing method %s", className, item)),
+        item -> log.error(String.format(Locale.ROOT, "Class %s: Extra method %s", className, item)))) {
       match = false;
     }
     if (!SetMatcher.compare(expected.fields, actual.fields,
         item -> true,
-        item -> log.error(String.format("Class %s: Missing field %s", className, item)),
-        item -> log.error(String.format("Class %s: Extra field %s", className, item)))) {
+        item -> log.error(String.format(Locale.ROOT, "Class %s: Missing field %s", className, item)),
+        item -> log.error(String.format(Locale.ROOT, "Class %s: Extra field %s", className, item)))) {
       match = false;
     }
     return match;
@@ -177,8 +179,8 @@ public class AbiCheck extends AbstractMojo {
       Map<String, JavaClassSignature> actual, Log log) {
     return SetMatcher.compare(expected.keySet(), actual.keySet(),
         item -> matchingClasses(item, expected.get(item), actual.get(item), log),
-        item -> log.error(String.format("Missing class: %s", item)),
-        item -> log.error(String.format("Extra class: %s", item)));
+        item -> log.error(String.format(Locale.ROOT, "Missing class: %s", item)),
+        item -> log.error(String.format(Locale.ROOT, "Extra class: %s", item)));
   }
 
   // CLOVER:OFF

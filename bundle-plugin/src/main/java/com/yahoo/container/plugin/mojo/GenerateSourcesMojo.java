@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
@@ -94,7 +95,7 @@ public class GenerateSourcesMojo extends AbstractMojo {
             return parent.getVersion();
 
         String defaultConfigGenVersion = loadDefaultConfigGenVersion();
-        getLog().warn(String.format(
+        getLog().warn(String.format(Locale.ROOT,
                 "Did not find either container or container-dev artifact in project dependencies, "
                 + "using default version '%s' of the config class plugin.",
                 defaultConfigGenVersion));

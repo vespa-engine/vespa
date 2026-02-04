@@ -4,9 +4,11 @@ package com.yahoo.config.codegen;
 import java.io.*;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.security.MessageDigest;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -70,15 +72,15 @@ public class NormalizedDefinition {
         line = line.trim();
         Matcher m = intPattern.matcher(line);
         if (m.matches()) {
-            String formattedMax = new DecimalFormat("#.#").format(0x7fffffff);
-            String formattedMin = new DecimalFormat("#.#").format(-0x80000000);
+            String formattedMax = new DecimalFormat("#.#", DecimalFormatSymbols.getInstance(Locale.ROOT)).format(0x7fffffff);
+            String formattedMin = new DecimalFormat("#.#", DecimalFormatSymbols.getInstance(Locale.ROOT)).format(-0x80000000);
             line = line.replaceFirst("\\[,", "["+formattedMin+",");
             line = line.replaceFirst(",\\]", ","+formattedMax+"]");
         }
         m = doublePattern.matcher(line);
         if (m.matches()) {
-            String formattedMax = new DecimalFormat("#.#").format(1e308);
-            String formattedMin = new DecimalFormat("#.#").format(-1e308);
+            String formattedMax = new DecimalFormat("#.#", DecimalFormatSymbols.getInstance(Locale.ROOT)).format(1e308);
+            String formattedMin = new DecimalFormat("#.#", DecimalFormatSymbols.getInstance(Locale.ROOT)).format(-1e308);
             line = line.replaceFirst("\\[,", "["+formattedMin+",");
             line = line.replaceFirst(",\\]", ","+formattedMax+"]");
         }
@@ -124,7 +126,7 @@ public class NormalizedDefinition {
                 md5.update(toBytes(s));
             }
         }
-        defMd5 = toHexString(md5.digest()).toLowerCase();
+        defMd5 = toHexString(md5.digest()).toLowerCase(Locale.ROOT);
         //System.out.println("md5=" + defMd5) ;
         return defMd5;
     }
@@ -144,7 +146,7 @@ public class NormalizedDefinition {
     private String toHexString(byte[] bytes) {
         StringBuilder sb =  new StringBuilder(bytes.length * 2);
         for (byte aByte : bytes) {
-            sb.append(String.format("%02x", aByte));
+            sb.append(String.format(Locale.ROOT, "%02x", aByte));
         }
         return sb.toString();
     }
