@@ -10,8 +10,8 @@ import org.junit.Test;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author Simon Thoresen Hult
@@ -55,6 +55,13 @@ public class SetLanguageTestCase {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         new SetLanguageExpression().execute(ctx);
         assertEquals(Language.UNKNOWN, ctx.getLanguage());
+    }
+
+    @Test
+    public void testSettingIllegalValue() {
+        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
+        ctx.setCurrentValue(new StringFieldValue("this is part of a long string which is mistakenly used as language"));
+        assertThrows(IllegalArgumentException.class, () -> new SetLanguageExpression().execute(ctx));
     }
 
 }
