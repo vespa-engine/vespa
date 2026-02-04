@@ -53,21 +53,29 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2026-02-10",
+            List.of("hakonhall"), "2025-03-19", "2026-04-10",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
+    public static final UnboundLongFlag DELETE_IDLE_TENANT_SECONDS = defineLongFlag(
+            "delete-idle-tenant-seconds", -1,
+            List.of("hakonhall"), "2026-02-03", "2026-04-03",
+            "If >=0, then (A) the last deploy time is not updated on config server bootstrap, " +
+            "and (B) an idle tenant will be deleted after this many seconds (default 604800 = 1 week).",
+            "(A) takes effect on cfg bootstrap, (B) on next tick of TenantsMaintainer",
+            TENANT_ID);
+
     public static final UnboundBooleanFlag SOFT_DELETE_TENANT = defineFeatureFlag(
             "soft-delete-tenant", false,
-            List.of("hakonhall"), "2026-01-20", "2026-03-20",
+            List.of("hakonhall"), "2026-01-20", "2026-04-20",
             "When deleting /config/v2/tenants/TENANT recursively - whether to give up (true) or retry (false) on NotEmptyException",
             "Takes effect immediately",
             TENANT_ID);
 
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
             "locked-gcp-provision", true,
-            List.of("hakonhall"), "2025-08-05", "2026-02-15",
+            List.of("hakonhall"), "2025-08-05", "2026-04-15",
             "Whether to provision GCP hosts under the application- and unallocated- locks, even though it takes ~1m.",
             "Takes effect on next host being provisioned");
 
