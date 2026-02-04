@@ -8,88 +8,83 @@
  *
  */
 
-#include <list>
 #include <algorithm>
 #include <cmath>
+#include <list>
 
 #include "detector.h"
 #include "fsa.h"
 #include "ngram.h"
 
-
 namespace fsa {
 
 // {{{ Detector::detect
 
-void Detector::detect(const NGram &text, Detector::Hits &hits,
-                      unsigned int from, int length) const
-{
-  std::list<FSA::WordCounterState>            detectors;
-  std::list<FSA::WordCounterState>::iterator  det_it;
-  unsigned int i,to;
+void Detector::detect(const NGram &text, Detector::Hits &hits, unsigned int from, int length) const {
+    std::list<FSA::WordCounterState> detectors;
+    std::list<FSA::WordCounterState>::iterator det_it;
+    unsigned int i, to;
 
-  to = text.length();
-  if(length!=-1 && from+length<to)
-    to=from+length;
+    to = text.length();
+    if (length != -1 && from + length < to)
+        to = from + length;
 
-  i=from;
-  while(i<to){
-    detectors.push_back(FSA::WordCounterState(_dictionary));
+    i = from;
+    while (i < to) {
+        detectors.push_back(FSA::WordCounterState(_dictionary));
 
-    det_it=detectors.begin();
-    while(det_it!=detectors.end()){
-      det_it->deltaWord(text[i]);
-      if(det_it->isFinal()){
-        hits.add(text, i-det_it->getCounter()+1, det_it->getCounter(), *det_it);
-      }
+        det_it = detectors.begin();
+        while (det_it != detectors.end()) {
+            det_it->deltaWord(text[i]);
+            if (det_it->isFinal()) {
+                hits.add(text, i - det_it->getCounter() + 1, det_it->getCounter(), *det_it);
+            }
 
-      if(det_it->isValid())
-        ++det_it;
-      else{
-        det_it=detectors.erase(det_it);
-      }
+            if (det_it->isValid())
+                ++det_it;
+            else {
+                det_it = detectors.erase(det_it);
+            }
+        }
+        ++i;
     }
-    ++i;
-  }
 
-  detectors.clear();
+    detectors.clear();
 }
 
 // }}}
 // {{{ Detector::detectWithHash
 
-void Detector::detectWithHash(const NGram &text, Detector::Hits &hits,
-                              unsigned int from, int length) const
-{
-  std::list<FSA::HashedWordCounterState>            detectors;
-  std::list<FSA::HashedWordCounterState>::iterator  det_it;
-  unsigned int i,to;
+void Detector::detectWithHash(const NGram &text, Detector::Hits &hits, unsigned int from, int length) const {
+    std::list<FSA::HashedWordCounterState> detectors;
+    std::list<FSA::HashedWordCounterState>::iterator det_it;
+    unsigned int i, to;
 
-  to = text.length();
-  if(length!=-1 && from+length<to)
-    to=from+length;
+    to = text.length();
+    if (length != -1 && from + length < to)
+        to = from + length;
 
-  i=from;
-  while(i<to){
-    detectors.push_back(FSA::HashedWordCounterState(_dictionary));
+    i = from;
+    while (i < to) {
+        detectors.push_back(FSA::HashedWordCounterState(_dictionary));
 
-    det_it=detectors.begin();
-    while(det_it!=detectors.end()){
-      det_it->deltaWord(text[i]);
-      if(det_it->isFinal()){
-        hits.add(text, i-det_it->getCounter()+1, det_it->getCounter(), *det_it);
-      }
+        det_it = detectors.begin();
+        while (det_it != detectors.end()) {
+            det_it->deltaWord(text[i]);
+            if (det_it->isFinal()) {
+                hits.add(text, i - det_it->getCounter() + 1, det_it->getCounter(), *det_it);
+            }
 
-      if(det_it->isValid())
-        ++det_it;
-      else{
-        det_it=detectors.erase(det_it);
-      }
+            if (det_it->isValid())
+                ++det_it;
+            else {
+                det_it = detectors.erase(det_it);
+            }
+        }
+        ++i;
     }
-    ++i;
-  }
 
-  detectors.clear();
+    detectors.clear();
 }
 
 // }}}

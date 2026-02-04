@@ -10,9 +10,9 @@
 
 #pragma once
 
-#include <vespa/fsa/conceptnet.h>
 #include <memory>
 #include <string>
+#include <vespa/fsa/conceptnet.h>
 
 namespace fsa {
 
@@ -29,81 +29,71 @@ namespace fsa {
 class ConceptNet::Handle {
 
 private:
+    /**
+     * @brief Unimplemented private default constructor.
+     */
+    Handle();
+    /**
+     * @brief Unimplemented private assignment operator.
+     */
+    Handle &operator=(const Handle &);
 
-  /**
-   * @brief Unimplemented private default constructor.
-   */
-  Handle();
-  /**
-   * @brief Unimplemented private assignment operator.
-   */
-  Handle& operator=(const Handle&);
-
-  std::shared_ptr<ConceptNet> _conceptNet; /**< The ConceptNet object itself. */
+    std::shared_ptr<ConceptNet> _conceptNet; /**< The ConceptNet object itself. */
 
 public:
+    /**
+     * @brief Copy constructor.
+     *
+     * Duplicate a handle (and add new reference to the ConceptNet object.
+     *
+     * @param h Reference to existing ConceptNet::Handle.
+     */
+    Handle(const Handle &h) : _conceptNet(h._conceptNet) {}
 
-  /**
-   * @brief Copy constructor.
-   *
-   * Duplicate a handle (and add new reference to the ConceptNet object.
-   *
-   * @param h Reference to existing ConceptNet::Handle.
-   */
-  Handle(const Handle &h)
-    : _conceptNet(h._conceptNet)
-  {
-  }
+    /**
+     * @brief Constructor.
+     *
+     * @param fsafile %FSA file containing the units, with a perfect has
+     *                (used for indexing the data file).
+     * @param datafile Concept net data file.
+     * @param fam File access mode (read or mmap). If not set, the
+     *            global preferred access mode will be used.
+     */
+    Handle(const char *fsafile, const char *datafile = nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+        : _conceptNet(std::make_shared<ConceptNet>(fsafile, datafile, fam)) {}
 
-  /**
-   * @brief Constructor.
-   *
-   * @param fsafile %FSA file containing the units, with a perfect has
-   *                (used for indexing the data file).
-   * @param datafile Concept net data file.
-   * @param fam File access mode (read or mmap). If not set, the
-   *            global preferred access mode will be used.
-   */
-  Handle(const char *fsafile, const char *datafile=nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF)
-    : _conceptNet(std::make_shared<ConceptNet>(fsafile, datafile, fam))
-  {
-  }
+    /**
+     * @brief Constructor.
+     *
+     * @param fsafile %FSA file containing the units, with a perfect has
+     *                (used for indexing the data file).
+     * @param datafile Concept net data file.
+     * @param fam File access mode (read or mmap). If not set, the
+     *            global preferred access mode will be used.
+     */
+    Handle(const std::string &fsafile, const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+        : _conceptNet(std::make_shared<ConceptNet>(fsafile, datafile, fam)) {}
 
-  /**
-   * @brief Constructor.
-   *
-   * @param fsafile %FSA file containing the units, with a perfect has
-   *                (used for indexing the data file).
-   * @param datafile Concept net data file.
-   * @param fam File access mode (read or mmap). If not set, the
-   *            global preferred access mode will be used.
-   */
-  Handle(const std::string &fsafile, const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
-    : _conceptNet(std::make_shared<ConceptNet>(fsafile, datafile, fam))
-  {
-  }
+    /**
+     * @brief Destructor.
+     */
+    ~Handle() = default;
 
-  /**
-   * @brief Destructor.
-   */
-  ~Handle() = default;
+    /**
+     * @brief Dereference operator, provides access to ConceptNet
+     *        methods.
+     *
+     * @return Reference to the ConceptNet object.
+     */
+    const ConceptNet &operator*() const { return *_conceptNet; }
 
-  /**
-   * @brief Dereference operator, provides access to ConceptNet
-   *        methods.
-   *
-   * @return Reference to the ConceptNet object.
-   */
-  const ConceptNet& operator*() const { return *_conceptNet; }
-
-  /**
-   * @brief Dereference operator, provides access to ConceptNet
-   *        methods.
-   *
-   * @return Pointer the ConceptNet object.
-   */
-  const ConceptNet* operator->() const { return _conceptNet.get(); }
-
+    /**
+     * @brief Dereference operator, provides access to ConceptNet
+     *        methods.
+     *
+     * @return Pointer the ConceptNet object.
+     */
+    const ConceptNet *operator->() const { return _conceptNet.get(); }
 };
 
 // }}}

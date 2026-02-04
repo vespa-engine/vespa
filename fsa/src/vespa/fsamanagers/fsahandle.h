@@ -10,9 +10,9 @@
 
 #pragma once
 
-#include <vespa/fsa/fsa.h>
 #include <memory>
 #include <string>
+#include <vespa/fsa/fsa.h>
 
 namespace fsa {
 
@@ -29,149 +29,123 @@ namespace fsa {
 class FSA::Handle {
 
 private:
+    /**
+     * @brief Unimplemented private default constructor.
+     */
+    Handle();
+    /**
+     * @brief Unimplemented private assignment operator.
+     */
+    Handle& operator=(const Handle&);
 
-  /**
-   * @brief Unimplemented private default constructor.
-   */
-  Handle();
-  /**
-   * @brief Unimplemented private assignment operator.
-   */
-  Handle& operator=(const Handle&);
+    std::shared_ptr<FSA> _fsa; /**< The FSA object itself. */
 
-  std::shared_ptr<FSA> _fsa; /**< The FSA object itself. */
-
-  /**
-   * @brief Get a pointer to the referred FSA object.
-   *
-   * @return pointer to the referred FSA object.
-   */
-  const FSA* getFSA() const
-  {
-    return _fsa.get();
-  }
+    /**
+     * @brief Get a pointer to the referred FSA object.
+     *
+     * @return pointer to the referred FSA object.
+     */
+    const FSA* getFSA() const { return _fsa.get(); }
 
 public:
+    /**
+     * @brief Copy constructor.
+     *
+     * Duplicate a handle (and add new reference to the FSA object.
+     *
+     * @param h Reference to handle to duplicate.
+     */
+    Handle(const Handle& h) : _fsa(h._fsa) {}
 
-  /**
-   * @brief Copy constructor.
-   *
-   * Duplicate a handle (and add new reference to the FSA object.
-   *
-   * @param h Reference to handle to duplicate.
-   */
-  Handle(const Handle& h)
-    : _fsa(h._fsa)
-  {
-  }
+    /**
+     * @brief Constructor.
+     *
+     * Create a new FSA object (loaded from file) and add reference.
+     *
+     * @param file Name of the file containing the automaton.
+     * @param fam File access mode (read or mmap). If not set, the
+     *            global preferred access mode will be used.
+     */
+    Handle(const char* file, FileAccessMethod fam = FILE_ACCESS_UNDEF) : _fsa(std::make_shared<FSA>(file, fam)) {}
 
-  /**
-   * @brief Constructor.
-   *
-   * Create a new FSA object (loaded from file) and add reference.
-   *
-   * @param file Name of the file containing the automaton.
-   * @param fam File access mode (read or mmap). If not set, the
-   *            global preferred access mode will be used.
-   */
-  Handle(const char *file, FileAccessMethod fam = FILE_ACCESS_UNDEF)
-    : _fsa(std::make_shared<FSA>(file, fam))
-  {
-  }
+    /**
+     * @brief Constructor.
+     *
+     * Create a new FSA object (loaded from file) and add reference.
+     *
+     * @param file Name of the file containing the automaton.
+     * @param fam File access mode (read or mmap). If not set, the
+     *            global preferred access mode will be used.
+     */
+    Handle(const std::string& file, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+        : _fsa(std::make_shared<FSA>(file, fam)) {}
 
-  /**
-   * @brief Constructor.
-   *
-   * Create a new FSA object (loaded from file) and add reference.
-   *
-   * @param file Name of the file containing the automaton.
-   * @param fam File access mode (read or mmap). If not set, the
-   *            global preferred access mode will be used.
-   */
-  Handle(const std::string &file, FileAccessMethod fam = FILE_ACCESS_UNDEF)
-    : _fsa(std::make_shared<FSA>(file, fam))
-  {
-  }
+    /**
+     * @brief Destructor.
+     *
+     * Remove reference to the FSA object.
+     */
+    ~Handle() = default;
 
-  /**
-   * @brief Destructor.
-   *
-   * Remove reference to the FSA object.
-   */
-  ~Handle() = default;
+    /**
+     * @brief Dereference operator, provides access to Metadata
+     *        methods.
+     *
+     * @return Reference to the Metadata object.
+     */
+    const FSA& operator*() const { return *_fsa; }
 
-  /**
-   * @brief Dereference operator, provides access to Metadata
-   *        methods.
-   *
-   * @return Reference to the Metadata object.
-   */
-  const FSA& operator*() const { return *_fsa; }
+    /**
+     * @brief Dereference operator, provides access to Metadata
+     *        methods.
+     *
+     * @return Pointer the Metadata object.
+     */
+    const FSA* operator->() const { return _fsa.get(); }
 
-  /**
-   * @brief Dereference operator, provides access to Metadata
-   *        methods.
-   *
-   * @return Pointer the Metadata object.
-   */
-  const FSA* operator->() const { return _fsa.get(); }
+    /**
+     * @brief Check if %FSA was properly constructed.
+     *
+     * @return true iff underlying %FSA was properly constructed.
+     */
+    bool isOk() const { return _fsa->isOk(); }
 
-  /**
-   * @brief Check if %FSA was properly constructed.
-   *
-   * @return true iff underlying %FSA was properly constructed.
-   */
-  bool isOk() const
-  {
-    return _fsa->isOk();
-  }
+    /**
+     * @brief Get the fsa library version used for building this %FSA.
+     *
+     * @return fsa library version.
+     */
+    uint32_t version() const { return _fsa->version(); }
 
-  /**
-   * @brief Get the fsa library version used for building this %FSA.
-   *
-   * @return fsa library version.
-   */
-  uint32_t version() const
-  {
-    return _fsa->version();
-  }
+    /**
+     * @brief Get the serial number of the %FSA.
+     *
+     * @return Serial number.
+     */
+    uint32_t serial() const { return _fsa->serial(); }
 
-  /**
-   * @brief Get the serial number of the %FSA.
-   *
-   * @return Serial number.
-   */
-  uint32_t serial() const
-  {
-    return _fsa->serial();
-  }
+    /**
+     * @brief Check is the automaton has perfect hash built in.
+     *
+     * Returns true if the automaton was built with a perfect hash included.
+     *
+     * @return True if the automaton has perfect hash.
+     */
+    bool hasPerfectHash() const { return _fsa->hasPerfectHash(); }
 
-  /**
-   * @brief Check is the automaton has perfect hash built in.
-   *
-   * Returns true if the automaton was built with a perfect hash included.
-   *
-   * @return True if the automaton has perfect hash.
-   */
-  bool hasPerfectHash() const
-  {
-    return _fsa->hasPerfectHash();
-  }
+    /**
+     * @brief Get iterator pointing to the beginning of the fsa.
+     *
+     * @return iterator pointing to the first string in the fsa.
+     */
+    FSA::iterator begin() const { return FSA::iterator(_fsa.get()); }
 
-  /**
-   * @brief Get iterator pointing to the beginning of the fsa.
-   *
-   * @return iterator pointing to the first string in the fsa.
-   */
-  FSA::iterator begin() const { return FSA::iterator(_fsa.get()); }
-
-  /**
-   * @brief Get iterator pointing past the end of the fsa.
-   *
-   * @return iterator pointing past the last string in the fsa.
-   */
-  FSA::iterator end() const { return FSA::iterator(_fsa.get(),true); }
-
+    /**
+     * @brief Get iterator pointing past the end of the fsa.
+     *
+     * @return iterator pointing past the last string in the fsa.
+     */
+    FSA::iterator end() const { return FSA::iterator(_fsa.get(), true); }
 };
 
 // }}}

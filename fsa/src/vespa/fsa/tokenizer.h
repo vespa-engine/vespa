@@ -27,42 +27,39 @@ namespace fsa {
 class Tokenizer {
 
 public:
+    /**
+     * @brief Constructor.
+     */
+    Tokenizer() {}
 
-  /**
-   * @brief Constructor.
-   */
-  Tokenizer() {}
+    /**
+     * @brief Destructor.
+     */
+    virtual ~Tokenizer() = default;
 
-  /**
-   * @brief Destructor.
-   */
-  virtual ~Tokenizer() = default;
+    /**
+     * @brief Initialize the tokenizer.
+     *
+     * @param text Input text.
+     * @return True on success.
+     */
+    virtual bool init(const std::string &text) = 0;
 
-  /**
-   * @brief Initialize the tokenizer.
-   *
-   * @param text Input text.
-   * @return True on success.
-   */
-  virtual bool         init(const std::string &text) = 0;
+    /**
+     * @brief Check if there are more tokens available.
+     *
+     * @return True if there are more tokens.
+     */
+    virtual bool hasMore() = 0;
 
-  /**
-   * @brief Check if there are more tokens available.
-   *
-   * @return True if there are more tokens.
-   */
-  virtual bool         hasMore() = 0;
-
-  /**
-   * @brief Get next token.
-   *
-   * @return Next token, or empty string if there are no more tokens left.
-   */
-  virtual std::string  getNext() = 0;
-
+    /**
+     * @brief Get next token.
+     *
+     * @return Next token, or empty string if there are no more tokens left.
+     */
+    virtual std::string getNext() = 0;
 };
 
 // }}}
 
 } // namespace fsa
-

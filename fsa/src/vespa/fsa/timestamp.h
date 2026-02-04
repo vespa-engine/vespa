@@ -22,63 +22,52 @@ namespace fsa {
  */
 class TimeStamp {
 private:
-  struct timeval _ts;
+    struct timeval _ts;
+
 public:
-  /**
-   * @brief Constructor, registers current time.
-   */
-  TimeStamp() {
-    gettimeofday(&_ts,nullptr);
-  }
-  /**
-   * @brief Destructor.
-   */
-  ~TimeStamp() {}
+    /**
+     * @brief Constructor, registers current time.
+     */
+    TimeStamp() { gettimeofday(&_ts, nullptr); }
+    /**
+     * @brief Destructor.
+     */
+    ~TimeStamp() {}
 
-  /**
-   * @brief Reset timestamp.
-   *
-   * Set timestamp value to current time.
-   */
-  void reset()
-  {
-    gettimeofday(&_ts,nullptr);
-  }
+    /**
+     * @brief Reset timestamp.
+     *
+     * Set timestamp value to current time.
+     */
+    void reset() { gettimeofday(&_ts, nullptr); }
 
-  /**
-   * @brief Get timestamp value (= object creation or last reset time).
-   *
-   * @return Timestamp value in seconds.
-   */
-  double getVal() const
-  {
-    return double(_ts.tv_sec)+double(_ts.tv_usec)/1000000.0;
-  }
+    /**
+     * @brief Get timestamp value (= object creation or last reset time).
+     *
+     * @return Timestamp value in seconds.
+     */
+    double getVal() const { return double(_ts.tv_sec) + double(_ts.tv_usec) / 1000000.0; }
 
-  /**
-   * @brief Get elapsed time (since object creation time).
-   *
-   * @return Elapsed time in seconds.
-   */
-  double elapsed() const
-  {
-    struct timeval now;
-    gettimeofday(&now,nullptr);
-    return double(now.tv_sec)-double(_ts.tv_sec)+
-      (double(now.tv_usec)-double(_ts.tv_usec))/1000000.0;
-  }
+    /**
+     * @brief Get elapsed time (since object creation time).
+     *
+     * @return Elapsed time in seconds.
+     */
+    double elapsed() const {
+        struct timeval now;
+        gettimeofday(&now, nullptr);
+        return double(now.tv_sec) - double(_ts.tv_sec) + (double(now.tv_usec) - double(_ts.tv_usec)) / 1000000.0;
+    }
 
-  /**
-   * @brief Calculate difference between timestamps.
-   *
-   * @return Difference between timestamps in seconds.
-   */
-  double operator-(const TimeStamp &other) const
-  {
-    return double(_ts.tv_sec)-double(other._ts.tv_sec)+
-      (double(_ts.tv_usec)-double(other._ts.tv_usec))/1000000.0;
-  }
+    /**
+     * @brief Calculate difference between timestamps.
+     *
+     * @return Difference between timestamps in seconds.
+     */
+    double operator-(const TimeStamp &other) const {
+        return double(_ts.tv_sec) - double(other._ts.tv_sec) +
+               (double(_ts.tv_usec) - double(other._ts.tv_usec)) / 1000000.0;
+    }
 };
 
 } // namespace fsa
-

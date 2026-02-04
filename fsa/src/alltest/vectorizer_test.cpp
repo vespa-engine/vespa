@@ -8,33 +8,32 @@
  *
  */
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
 #include <vespa/fsa/vectorizer.h>
 
 using namespace fsa;
 
-int main(int argc, char **argv)
-{
-  FSA dict(argc>=2? argv[1] : "__testfsa__.__fsa__");
+int main(int argc, char **argv) {
+    FSA dict(argc >= 2 ? argv[1] : "__testfsa__.__fsa__");
 
-  Vectorizer v(dict);
-  Vectorizer::TermVector tv;
+    Vectorizer v(dict);
+    Vectorizer::TermVector tv;
 
-  std::string text;
-  NGram tokenized_text;
+    std::string text;
+    NGram tokenized_text;
 
-  while(!std::cin.eof()){
-    getline(std::cin,text);
+    while (!std::cin.eof()) {
+        getline(std::cin, text);
 
-    tokenized_text.set(text);
-    v.vectorize(tokenized_text,tv);
+        tokenized_text.set(text);
+        v.vectorize(tokenized_text, tv);
 
-    for(unsigned int i=0; i<tv.size(); i++){
-      std::cout << tv[i].term() << ", " << tv[i].weight() << std::endl;
+        for (unsigned int i = 0; i < tv.size(); i++) {
+            std::cout << tv[i].term() << ", " << tv[i].weight() << std::endl;
+        }
     }
-  }
 
-  return 0;
+    return 0;
 }

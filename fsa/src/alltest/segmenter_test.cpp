@@ -8,67 +8,59 @@
  *
  */
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
 #include <vespa/fsa/segmenter.h>
 
 using namespace fsa;
 
-int main(int argc, char **argv)
-{
-  FSA dict(argc>=2? argv[1] : "__testfsa__.__fsa__");
+int main(int argc, char **argv) {
+    FSA dict(argc >= 2 ? argv[1] : "__testfsa__.__fsa__");
 
-  Segmenter segmenter(dict);
-  Segmenter::Segments segments;
-  const Segmenter::Segmentation *segmentation;
+    Segmenter segmenter(dict);
+    Segmenter::Segments segments;
+    const Segmenter::Segmentation *segmentation;
 
-  std::string text;
-  while(!std::cin.eof()){
-    getline(std::cin,text);
+    std::string text;
+    while (!std::cin.eof()) {
+        getline(std::cin, text);
 
-    if(text.size()>3){
+        if (text.size() > 3) {
 
-      segmenter.segment(text,segments);
+            segmenter.segment(text, segments);
 
-      std::cout << "List of all segments:" << std::endl;
-      for(unsigned int i=0; i<segments.size(); i++){
-        std::cout << "  "
-                  << segments.sgm(i) << ":" << segments.conn(i) << " ["
-                  << segments.beg(i) << "," << segments.end(i)-1 << "]"
-                  << std::endl;
-      }
+            std::cout << "List of all segments:" << std::endl;
+            for (unsigned int i = 0; i < segments.size(); i++) {
+                std::cout << "  " << segments.sgm(i) << ":" << segments.conn(i) << " [" << segments.beg(i) << ","
+                          << segments.end(i) - 1 << "]" << std::endl;
+            }
 
-      segmentation=segments.segmentation(Segmenter::SEGMENTATION_WEIGHTED);
+            segmentation = segments.segmentation(Segmenter::SEGMENTATION_WEIGHTED);
 
-      std::cout << "Weighted segmentation:" << std::endl << "  ";
-      for(Segmenter::SegmentationConstIterator it=segmentation->begin();
-          it!=segmentation->end();++it){
-        std::cout << "(" << segments.sgm(*it) << ")";
-      }
-      std::cout << std::endl;
+            std::cout << "Weighted segmentation:" << std::endl << "  ";
+            for (Segmenter::SegmentationConstIterator it = segmentation->begin(); it != segmentation->end(); ++it) {
+                std::cout << "(" << segments.sgm(*it) << ")";
+            }
+            std::cout << std::endl;
 
-      segmentation=segments.segmentation(Segmenter::SEGMENTATION_RIGHTMOST_LONGEST);
+            segmentation = segments.segmentation(Segmenter::SEGMENTATION_RIGHTMOST_LONGEST);
 
-      std::cout << "Rightmost-longest segmentation:" << std::endl << "  ";
-      for(Segmenter::SegmentationConstIterator it=segmentation->begin();
-          it!=segmentation->end();++it){
-        std::cout << "(" << segments.sgm(*it) << ")";
-      }
-      std::cout << std::endl;
+            std::cout << "Rightmost-longest segmentation:" << std::endl << "  ";
+            for (Segmenter::SegmentationConstIterator it = segmentation->begin(); it != segmentation->end(); ++it) {
+                std::cout << "(" << segments.sgm(*it) << ")";
+            }
+            std::cout << std::endl;
 
-      segmentation=segments.segmentation(Segmenter::SEGMENTATION_LEFTMOST_LONGEST);
+            segmentation = segments.segmentation(Segmenter::SEGMENTATION_LEFTMOST_LONGEST);
 
-      std::cout << "Lefttmost-longest segmentation:" << std::endl << "  ";
-      for(Segmenter::SegmentationConstIterator it=segmentation->begin();
-          it!=segmentation->end();++it){
-        std::cout << "(" << segments.sgm(*it) << ")";
-      }
-      std::cout << std::endl;
-
+            std::cout << "Lefttmost-longest segmentation:" << std::endl << "  ";
+            for (Segmenter::SegmentationConstIterator it = segmentation->begin(); it != segmentation->end(); ++it) {
+                std::cout << "(" << segments.sgm(*it) << ")";
+            }
+            std::cout << std::endl;
+        }
     }
 
-  }
-
-  return 0;
+    return 0;
 }

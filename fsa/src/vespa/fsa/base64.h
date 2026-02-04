@@ -22,37 +22,34 @@ namespace fsa {
  */
 class Base64 {
 private:
-  /** Encoing table */
-  static const unsigned char _table[];
-  /** Padding character */
-  static const unsigned char _padding;
+    /** Encoing table */
+    static const unsigned char _table[];
+    /** Padding character */
+    static const unsigned char _padding;
 
-  /** Decode one symbol */
-  static inline int b2n(int b);
-  /** Encode one symbol */
-  static inline int n2b(int n);
+    /** Decode one symbol */
+    static inline int b2n(int b);
+    /** Encode one symbol */
+    static inline int n2b(int n);
 
 public:
+    /**
+     * @brief Decode a %Base64 encoded string.
+     *
+     * @param src Source %Base64 encoded string.
+     * @param dest Destination to hold the decoded string.
+     * @return Size of destination string.
+     */
+    static int decode(const std::string &src, std::string &dest);
 
-  /**
-   * @brief Decode a %Base64 encoded string.
-   *
-   * @param src Source %Base64 encoded string.
-   * @param dest Destination to hold the decoded string.
-   * @return Size of destination string.
-   */
-  static int decode(const std::string &src, std::string &dest);
-
-  /**
-   * @brief Decode a %Base64 encoded string.
-   *
-   * @param src Source string.
-   * @param dest Destination to hold %Base64 encoded string.
-   * @return Size of destination string.
-   */
-  static int encode(const std::string &src, std::string &dest);
-
+    /**
+     * @brief Decode a %Base64 encoded string.
+     *
+     * @param src Source string.
+     * @param dest Destination to hold %Base64 encoded string.
+     * @return Size of destination string.
+     */
+    static int encode(const std::string &src, std::string &dest);
 };
 
 } // namespace fsa
-

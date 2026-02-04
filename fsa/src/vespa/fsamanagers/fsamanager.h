@@ -33,107 +33,103 @@ namespace fsa {
 class FSAManager : public Singleton<FSAManager> {
 
 protected:
-  friend class Singleton<FSAManager>;
+    friend class Singleton<FSAManager>;
 
-  /** Default constructor. Protected to avoid accidental creation */
-  FSAManager() : _library(), _lock(), _cacheDir(), _cacheLock() {}
+    /** Default constructor. Protected to avoid accidental creation */
+    FSAManager() : _library(), _lock(), _cacheDir(), _cacheLock() {}
 
 private:
+    /** Private unimplemented copy constructor */
+    FSAManager(const FSAManager &);
+    /** Private unimplemented assignment operator */
+    FSAManager &operator=(const FSAManager &);
 
-  /** Private unimplemented copy constructor */
-  FSAManager(const FSAManager&);
-  /** Private unimplemented assignment operator */
-  FSAManager& operator=(const FSAManager&);
+    /** %FSA library type */
+    using Library = std::map<std::string, FSA::Handle *>;
+    /** %FSA library iterator type */
+    using LibraryIterator = std::map<std::string, FSA::Handle *>::iterator;
+    /** %FSA library const iterator type */
+    using LibraryConstIterator = std::map<std::string, FSA::Handle *>::const_iterator;
 
-  /** %FSA library type */
-  using Library = std::map<std::string,FSA::Handle*>;
-  /** %FSA library iterator type */
-  using LibraryIterator = std::map<std::string,FSA::Handle*>::iterator;
-  /** %FSA library const iterator type */
-  using LibraryConstIterator = std::map<std::string,FSA::Handle*>::const_iterator;
+    Library _library;                /**< Library of automata.                         */
+    mutable std::shared_mutex _lock; /**< Read-write lock for library synchronization. */
+    std::string _cacheDir;           /**< Cache directory.                             */
+    mutable std::mutex _cacheLock;   /**< Mutex for cache synchronization.             */
 
-  Library           _library;    /**< Library of automata.                         */
-  mutable std::shared_mutex    _lock;       /**< Read-write lock for library synchronization. */
-  std::string       _cacheDir;   /**< Cache directory.                             */
-  mutable std::mutex _cacheLock;  /**< Mutex for cache synchronization.             */
-
-  /**
-   * @brief Fetch an automaton from the net.
-   *
-   * @param url URL to automaton.
-   * @param file Name of local file to store automaton.
-   * @return True on success.
-   */
-  bool getUrl(const std::string &url, const std::string &file);
+    /**
+     * @brief Fetch an automaton from the net.
+     *
+     * @param url URL to automaton.
+     * @param file Name of local file to store automaton.
+     * @return True on success.
+     */
+    bool getUrl(const std::string &url, const std::string &file);
 
 public:
+    /** Destructor */
+    ~FSAManager();
 
-  /** Destructor */
-  ~FSAManager();
+    /**
+     * @brief Load automaton from file or fetch from the net.
+     *
+     * Load automaton from file or fetch from the net. If the url begins
+     * with "http://", and libcurl support is compiled in, the automaton
+     * is downloaded from the net an stored in the local cache, unless
+     * an automaton with that filename already exist in the cache, in which
+     * case the local copy is used. This behaviour is expected to change
+     * in the future, and it will use the serial number from the fsa
+     * header to decide whether an update is needed.
+     *
+     * If an automaton is already registered with the given ID, the old
+     * one is dropped as soon as the new is loaded. This does not
+     * effects handles to the old automaton which were acquired
+     * previously, as the old automaton will stay in memory until all
+     * handles are deleted.
+     *
+     * @param id Automaton ID (name) used by the application.
+     * @param url File name or URL (the latter if it begins with "http://").
+     * @return True on success.
+     */
+    bool load(const std::string &id, const std::string &url);
 
-  /**
-   * @brief Load automaton from file or fetch from the net.
-   *
-   * Load automaton from file or fetch from the net. If the url begins
-   * with "http://", and libcurl support is compiled in, the automaton
-   * is downloaded from the net an stored in the local cache, unless
-   * an automaton with that filename already exist in the cache, in which
-   * case the local copy is used. This behaviour is expected to change
-   * in the future, and it will use the serial number from the fsa
-   * header to decide whether an update is needed.
-   *
-   * If an automaton is already registered with the given ID, the old
-   * one is dropped as soon as the new is loaded. This does not
-   * effects handles to the old automaton which were acquired
-   * previously, as the old automaton will stay in memory until all
-   * handles are deleted.
-   *
-   * @param id Automaton ID (name) used by the application.
-   * @param url File name or URL (the latter if it begins with "http://").
-   * @return True on success.
-   */
-  bool         load(const std::string &id, const std::string &url);
+    /**
+     * @brief Get a handle to an automaton.
+     *
+     * @param id Automaton ID (name).
+     * @return Pointer to a new handle to the automaton, or NULL if not found.
+     *         The handle must be deleted when it is not needed
+     *         anymore. (In fact it should be deleted and re-requested
+     *         on a regular basis if automaton updates may be performed.)
+     */
+    FSA::Handle *get(const std::string &id) const;
 
-  /**
-   * @brief Get a handle to an automaton.
-   *
-   * @param id Automaton ID (name).
-   * @return Pointer to a new handle to the automaton, or NULL if not found.
-   *         The handle must be deleted when it is not needed
-   *         anymore. (In fact it should be deleted and re-requested
-   *         on a regular basis if automaton updates may be performed.)
-   */
-  FSA::Handle* get(const std::string &id) const;
+    /**
+     * @brief Drop an automaton from the library.
+     *
+     * Drop the automaton from the library. All new requests for the
+     * given ID will receive a NULL handle after this operation (unless
+     * an automaton with the same ID is later loaded again).
+     *
+     * @param id Automaton ID
+     */
+    void drop(const std::string &id);
 
-  /**
-   * @brief Drop an automaton from the library.
-   *
-   * Drop the automaton from the library. All new requests for the
-   * given ID will receive a NULL handle after this operation (unless
-   * an automaton with the same ID is later loaded again).
-   *
-   * @param id Automaton ID
-   */
-  void         drop(const std::string &id);
+    /**
+     * @brief Drop all automatons from the library.
+     */
+    void clear();
 
-  /**
-   * @brief Drop all automatons from the library.
-   */
-  void         clear();
-
-  /**
-   * @brief Set the local cache directory.
-   *
-   * Set the local cache directory (default is empty, which
-   * corresponds to the CWD (current working directory).
-   *
-   * @param dir Cache directory.
-   */
-  void         setCacheDir(const std::string &dir);
-
+    /**
+     * @brief Set the local cache directory.
+     *
+     * Set the local cache directory (default is empty, which
+     * corresponds to the CWD (current working directory).
+     *
+     * @param dir Cache directory.
+     */
+    void setCacheDir(const std::string &dir);
 };
 
 // }}}
 
 } // namespace fsa
-

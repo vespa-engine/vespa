@@ -7,7 +7,6 @@
  * @brief   Singleton pattern.
  */
 
-
 #pragma once
 
 #include <list>
@@ -25,48 +24,43 @@ namespace fsa {
  * destory all Singleton objects in reverse order as they were
  * created. It is also a singleton self.
  */
-class SingletonExitHandler
-{
+class SingletonExitHandler {
 private:
+    /** Default constructor */
+    SingletonExitHandler();
 
-  /** Default constructor */
-  SingletonExitHandler();
+    /** Method to call at exit, destroys all Singletons. */
+    static void atExit();
 
-  /** Method to call at exit, destroys all Singletons. */
-  static void atExit();
+    /** Instance pointer */
+    static SingletonExitHandler* _instance;
 
-  /** Instance pointer */
-  static SingletonExitHandler* _instance;
+    /** Destroy method -  does the dirty work */
+    void destroy();
 
-  /** Destroy method -  does the dirty work */
-  void destroy();
+    using FunctionList = std::list<void (*)()>;
+    using FunctionListIterator = std::list<void (*)()>::iterator;
 
-
-  using FunctionList = std::list<void(*)()>;
-  using FunctionListIterator = std::list<void(*)()>::iterator;
-
-  /** List of Singleton destroy functions */
-  FunctionList _functionList;
+    /** List of Singleton destroy functions */
+    FunctionList _functionList;
 
 public:
+    /** Destructor */
+    virtual ~SingletonExitHandler();
 
-  /** Destructor */
-  virtual ~SingletonExitHandler();
+    /**
+     * @brief Get instance pointer.
+     *
+     * @return pointer to instance.
+     */
+    static SingletonExitHandler* instance();
 
-  /**
-   * @brief Get instance pointer.
-   *
-   * @return pointer to instance.
-   */
-  static SingletonExitHandler* instance();
-
-  /**
-   * @brief Register a singleton.
-   *
-   * @param p Pointer to destroy function of the singleton.
-   */
-  void registerSingletonDestroyer(void (*p)());
-
+    /**
+     * @brief Register a singleton.
+     *
+     * @param p Pointer to destroy function of the singleton.
+     */
+    void registerSingletonDestroyer(void (*p)());
 };
 
 // }}}
@@ -94,76 +88,68 @@ public:
  *   MyClass::instance().MyMethod();
  *
  */
-template<typename T>
-class Singleton
-{
-  /** SingletonExitHandler handles destruction. */
-  friend class SingletonExitHandler;
+template <typename T> class Singleton {
+    /** SingletonExitHandler handles destruction. */
+    friend class SingletonExitHandler;
 
 public:
-  /** Destructor */
-  virtual ~Singleton();
+    /** Destructor */
+    virtual ~Singleton();
 
-  /**
-   * @brief Get reference to the instance.
-   *
-   * Get reference to the instance. The first call of this method will
-   * create the instance, and register the destroy function with the
-   * exit handler.
-   *
-   * @return Reference to the instance.
-   */
-  static T& instance();
+    /**
+     * @brief Get reference to the instance.
+     *
+     * Get reference to the instance. The first call of this method will
+     * create the instance, and register the destroy function with the
+     * exit handler.
+     *
+     * @return Reference to the instance.
+     */
+    static T& instance();
 
 protected:
-
-  /** Explicit constructor (to avoid implicit conversion). */
-  explicit Singleton();
+    /** Explicit constructor (to avoid implicit conversion). */
+    explicit Singleton();
 
 private:
+    /** Copy constructor (unimplemented) */
+    Singleton(const Singleton&);
+    /** Assignment operator (unimplemented) */
+    Singleton& operator=(const Singleton&);
 
-  /** Copy constructor (unimplemented) */
-  Singleton(const Singleton&);
-  /** Assignment operator (unimplemented) */
-  Singleton& operator=(const Singleton&);
+    /** Destroy function - this will be registered with the exit handler. */
+    static void destroy();
 
-  /** Destroy function - this will be registered with the exit handler. */
-  static void destroy();
+    static std::mutex _lock; /**< Mutex for synchronization. */
 
-  static std::mutex _lock;  /**< Mutex for synchronization. */
-
-  static T* _instance; /**< Instance pointer.          */
+    static T* _instance; /**< Instance pointer.          */
 };
 
+template <typename T> Singleton<T>::Singleton() {}
 
-template<typename T> Singleton<T>::Singleton() {}
+template <typename T> Singleton<T>::~Singleton() {}
 
-template<typename T> Singleton<T>::~Singleton() {}
-
-template<typename T> void Singleton<T>::destroy()
-{
-  delete _instance;
-  _instance = nullptr;
+template <typename T> void Singleton<T>::destroy() {
+    delete _instance;
+    _instance = nullptr;
 }
 
-template<typename T> T& Singleton<T>::instance()
-{
-  if (_instance == nullptr) {
-    std::lock_guard guard(_lock);
+template <typename T> T& Singleton<T>::instance() {
     if (_instance == nullptr) {
-      SingletonExitHandler::instance()->registerSingletonDestroyer(&destroy);
-      _instance = new T();
+        std::lock_guard guard(_lock);
+        if (_instance == nullptr) {
+            SingletonExitHandler::instance()->registerSingletonDestroyer(&destroy);
+            _instance = new T();
+        }
     }
-  }
 
-  return *_instance;
+    return *_instance;
 }
 
-template<typename T> T* Singleton<T>::_instance = nullptr;
+template <typename T> T* Singleton<T>::_instance = nullptr;
 
-template<typename T> std::mutex Singleton<T>::_lock;
+template <typename T> std::mutex Singleton<T>::_lock;
 
 // }}}
 
 } // namespace fsa
-

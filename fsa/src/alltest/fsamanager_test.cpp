@@ -8,18 +8,16 @@
 
 using namespace fsa;
 
-int main(int argc, char** argv)
-{
-  if(argc<3){
-    std::cerr << "usage: fsamanager_test cache_dir fsa_file_or_url [fsa_file_or_url ...]\n";
-    return 1;
-  }
+int main(int argc, char** argv) {
+    if (argc < 3) {
+        std::cerr << "usage: fsamanager_test cache_dir fsa_file_or_url [fsa_file_or_url ...]\n";
+        return 1;
+    }
 
-  FSAManager::instance().setCacheDir(argv[1]);
+    FSAManager::instance().setCacheDir(argv[1]);
 
-  for(int i=2;i<argc;i++){
-    std::cerr << "Loading " << argv[i] << " ... ";
-    std::cerr << (FSAManager::instance().load(argv[i],argv[i]) ? "ok":"failed") << "\n";
-  }
-
+    for (int i = 2; i < argc; i++) {
+        std::cerr << "Loading " << argv[i] << " ... ";
+        std::cerr << (FSAManager::instance().load(argv[i], argv[i]) ? "ok" : "failed") << "\n";
+    }
 }
