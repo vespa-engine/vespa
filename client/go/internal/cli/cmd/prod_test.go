@@ -262,3 +262,25 @@ func TestProdDeployInvalidZip(t *testing.T) {
 	assert.NotNil(t, cli.Run("prod", "deploy", zipFile))
 	assert.Equal(t, "Error: found invalid path inside zip: ../../../../../../../tmp/foo\n", stderr.String())
 }
+
+func TestProdDeployWarnsOnInstance(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	httpClient := &mock.HTTPClient{}
+	httpClient.NextResponseString(200, `{"build": 42}`)
+	cli, stdout, stderr := newTestCLI(t, "CI=true")
+	cli.httpClient = httpClient
+	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1"))
+	assert.Nil(t, cli.Run("config", "set", "instance", "my-instance"))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", "--no-add"))
+
+	stdout.Reset()
+	stderr.Reset()
+	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
+	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert", pkgDir))
+	assert.Contains(t, stderr.String(), "Warning: Instance is set in config but will be ignored for production deployments")
+	assert.Contains(t, stdout.String(), "Success: Deployed")
+}
