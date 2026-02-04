@@ -18,10 +18,17 @@ import (
 )
 
 // cborDecMode is configured to decode maps with string keys for JSON compatibility.
-var cborDecMode, _ = cbor.DecOptions{
-	DefaultMapType: reflect.TypeOf(map[string]interface{}(nil)),
-}.DecMode()
+var cborDecMode cbor.DecMode
 
+func init() {
+	var err error
+	cborDecMode, err = cbor.DecOptions{
+		DefaultMapType: reflect.TypeOf(map[string]interface{}(nil)),
+	}.DecMode()
+	if err != nil {
+		panic("failed to initialize CBOR decoder mode: " + err.Error())
+	}
+}
 // Exists returns true if the given path exists.
 func Exists(path string) bool {
 	info, err := os.Stat(path)
