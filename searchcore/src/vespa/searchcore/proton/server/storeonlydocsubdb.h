@@ -240,7 +240,7 @@ public:
     PendingLidTrackerBase & getUncommittedLidsTracker() override { return *_pendingLidsForCommit; }
     vespalib::datastore::CompactionStrategy computeCompactionStrategy(vespalib::datastore::CompactionStrategy strategy) const;
     bool is_node_retired_or_maintenance() const { return _node_retired_or_maintenance; }
-    TransientResourceUsage get_transient_resource_usage() const override;
+    ResourceUsage get_resource_usage() const override;
 
 };
 

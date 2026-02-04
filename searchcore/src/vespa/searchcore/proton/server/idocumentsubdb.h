@@ -42,7 +42,7 @@ class ISummaryManager;
 class PendingLidTrackerBase;
 class ReconfigParams;
 class RemoveDocumentsOperation;
-class TransientResourceUsage;
+class ResourceUsage;
 struct IAttributeManager;
 struct IBucketStateCalculator;
 struct IDocumentDBReferenceResolver;
@@ -131,7 +131,7 @@ public:
     virtual void tearDownReferences(IDocumentDBReferenceResolver &resolver) = 0;
     virtual void validateDocStore(FeedHandler &op, SerialNum serialNum) const = 0;
     virtual PendingLidTrackerBase & getUncommittedLidsTracker() = 0;
-    virtual TransientResourceUsage get_transient_resource_usage() const = 0;
+    virtual ResourceUsage get_resource_usage() const = 0;
 };
 
 } // namespace proton

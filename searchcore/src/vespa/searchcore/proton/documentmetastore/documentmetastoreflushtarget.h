@@ -14,7 +14,7 @@ class AttributeDirectory;
 class AttributeDiskLayout;
 class DocumentMetaStore;
 class ITlsSyncer;
-class TransientResourceUsage;
+class ResourceUsage;
 
 /**
  * Implementation of IFlushTarget interface for document meta store.
@@ -55,7 +55,7 @@ public:
 
     void setCleanUpAfterFlush(bool cleanUp) { _cleanUpAfterFlush = cleanUp; }
 
-    TransientResourceUsage get_transient_resource_usage() const;
+    ResourceUsage get_resource_usage() const;
 
     MemoryGain getApproxMemoryGain() const override;
     DiskGain getApproxDiskGain() const override;

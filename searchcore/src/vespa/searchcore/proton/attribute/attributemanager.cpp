@@ -10,6 +10,7 @@
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
+#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
@@ -658,15 +659,15 @@ AttributeManager::readable_attribute_vector(std::string_view name) const
     return _importedAttributes->get(name);
 }
 
-TransientResourceUsage
-AttributeManager::get_transient_resource_usage() const
+ResourceUsage
+AttributeManager::get_resource_usage() const
 {
     // Transient disk usage is measured as the total disk usage of all attribute snapshots
     // that are NOT the valid best one.
     // Transient memory usage is zero.
-    TransientResourceUsage result;
+    ResourceUsage result;
     for (const auto& elem : _flushables) {
-        auto usage = elem.second.getFlusher()->get_transient_resource_usage();
+        auto usage = elem.second.getFlusher()->get_resource_usage();
         result.merge(usage);
     }
     return result;

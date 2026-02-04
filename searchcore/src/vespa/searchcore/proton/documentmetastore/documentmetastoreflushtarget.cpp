@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
+#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
@@ -178,10 +179,10 @@ DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms, ITlsSyncer &tlsSyn
 
 DocumentMetaStoreFlushTarget::~DocumentMetaStoreFlushTarget() = default;
 
-TransientResourceUsage
-DocumentMetaStoreFlushTarget::get_transient_resource_usage() const
+ResourceUsage
+DocumentMetaStoreFlushTarget::get_resource_usage() const
 {
-    return _dmsDir->get_transient_resource_usage();
+    return ResourceUsage{_dmsDir->get_transient_resource_usage()};
 }
 
 IFlushTarget::SerialNum

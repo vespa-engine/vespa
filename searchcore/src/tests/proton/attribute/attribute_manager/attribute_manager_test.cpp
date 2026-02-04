@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
@@ -937,9 +938,9 @@ TEST_F(AttributeManagerTest, transient_resource_usage_is_zero_in_steady_state)
     Fixture f;
     f.addAttribute("a1");
     f.addAttribute("a2");
-    auto usage = f._m.get_transient_resource_usage();
-    EXPECT_EQ(0u, usage.disk());
-    EXPECT_EQ(0u, usage.memory());
+    auto usage = f._m.get_resource_usage();
+    EXPECT_EQ(0u, usage.transient_disk());
+    EXPECT_EQ(0u, usage.transient_memory());
 }
 
 TEST_F(AttributeManagerTest, late_create_serial_number_is_set_on_new_attributes)

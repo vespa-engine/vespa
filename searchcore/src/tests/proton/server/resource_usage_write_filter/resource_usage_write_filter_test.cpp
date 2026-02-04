@@ -65,7 +65,7 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test
         : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0))),
           _notifier(_filter)
     {
-        _notifier.set_resource_usage(TransientResourceUsage(), vespalib::ProcessMemoryStats(297, 298, 300), 20, 0);
+        _notifier.set_resource_usage(ResourceUsage(), vespalib::ProcessMemoryStats(297, 298, 300), 20, 0);
     }
 
     void testWrite(const std::string &exp) {
@@ -83,12 +83,12 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test
     }
 
     void triggerDiskLimit() {
-        _notifier.set_resource_usage(_notifier.get_transient_resource_usage(), _notifier.getMemoryStats(), 90, 0);
+        _notifier.set_resource_usage(_notifier.get_resource_usage(), _notifier.getMemoryStats(), 90, 0);
     }
 
     void triggerMemoryLimit()
     {
-        _notifier.set_resource_usage(TransientResourceUsage(), vespalib::ProcessMemoryStats(897, 898, 900),
+        _notifier.set_resource_usage(ResourceUsage(), vespalib::ProcessMemoryStats(897, 898, 900),
                                      _notifier.getDiskUsedSize(), 0);
     }
 
@@ -174,7 +174,8 @@ TEST_F(ResourceUsageWriteFilterTest, both_disk_limit_and_memory_limit_can_be_rea
 
 TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_disk_usage_tracked_in_usage_state_and_metrics)
 {
-    _notifier.set_resource_usage({15, 0}, _notifier.getMemoryStats(), _notifier.getDiskUsedSize(), 0);
+    _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{15, 0}},
+                                 _notifier.getMemoryStats(), _notifier.getDiskUsedSize(), 0);
     EXPECT_DOUBLE_EQ(0.15, _notifier.usageState().transient_disk_usage());
     EXPECT_DOUBLE_EQ(0.15, _notifier.get_metrics().transient_disk_usage());
     EXPECT_DOUBLE_EQ(0.05, _notifier.usageState().non_transient_disk_usage());
@@ -183,7 +184,8 @@ TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_disk_usage_trac
 
 TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_memory_usage_tracked_in_usage_state_and_metrics)
 {
-    _notifier.set_resource_usage({0, 100}, _notifier.getMemoryStats(), _notifier.getDiskUsedSize(), 0);
+    _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{0, 100}},
+                                 _notifier.getMemoryStats(), _notifier.getDiskUsedSize(), 0);
     EXPECT_DOUBLE_EQ(0.1, _notifier.usageState().transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.1, _notifier.get_metrics().transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.2, _notifier.usageState().non_transient_memory_usage());

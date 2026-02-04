@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
-#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
+#include <vespa/searchcore/proton/common/i_resource_usage_provider.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_sampler.h>
 #include <vespa/searchcore/proton/server/resource_usage_write_filter.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
@@ -28,7 +28,7 @@ make_hw_info()
                   HwInfo::Cpu(1));
 }
 
-class MyProvider : public ITransientResourceUsageProvider {
+class MyProvider : public IResourceUsageProvider {
 private:
     size_t _memory_usage;
     size_t _disk_usage;
@@ -38,7 +38,9 @@ public:
         : _memory_usage(memory_usage),
           _disk_usage(disk_usage)
     {}
-    TransientResourceUsage get_transient_resource_usage() const override { return {_disk_usage, _memory_usage}; }
+    ResourceUsage get_resource_usage() const override {
+        return ResourceUsage{TransientResourceUsage{_disk_usage, _memory_usage}};
+    }
 };
 
 class MyReservedDiskSpaceProvider : public IReservedDiskSpaceProvider {
@@ -70,8 +72,8 @@ struct DiskMemUsageSamplerTest : public ::testing::Test {
     {
         sampler->setConfig(DiskMemUsageSampler::Config(0.8, 0.8, AttributeUsageFilterConfig(),
                                                        50ms, make_hw_info()), executor);
-        sampler->add_transient_usage_provider(std::make_shared<MyProvider>(50, 200));
-        sampler->add_transient_usage_provider(std::make_shared<MyProvider>(100, 150));
+        sampler->add_resource_usage_provider(std::make_shared<MyProvider>(50, 200));
+        sampler->add_resource_usage_provider(std::make_shared<MyProvider>(100, 150));
     }
     ~DiskMemUsageSamplerTest() override;
     const ResourceUsageWriteFilter& filter() const { return *write_filter; }
@@ -86,7 +88,7 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
     // Poll for up to 20 seconds to get a sample.
     size_t i = 0;
     for (; i < static_cast<size_t>(20s / 50ms); ++i) {
-        if (notifier->get_transient_resource_usage().memory() > 0) {
+        if (notifier->get_resource_usage().transient_memory() > 0) {
             break;
         }
         std::this_thread::sleep_for(50ms);
@@ -100,9 +102,9 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
     EXPECT_EQ(notifier->getMemoryStats().getAnonymousRss(), 0);
 #endif
     EXPECT_GT(notifier->getDiskUsedSize(), 0);
-    EXPECT_EQ(150, notifier->get_transient_resource_usage().memory());
+    EXPECT_EQ(150, notifier->get_resource_usage().transient_memory());
     EXPECT_EQ(150.0 / memory_size_bytes, notifier->usageState().transient_memory_usage());
-    EXPECT_EQ(350, notifier->get_transient_resource_usage().disk());
+    EXPECT_EQ(350, notifier->get_resource_usage().transient_disk());
     EXPECT_EQ(350.0 / disk_size_bytes, notifier->usageState().transient_disk_usage());
     EXPECT_EQ(42.0 / disk_size_bytes, notifier->usageState().reserved_disk_space());
 }

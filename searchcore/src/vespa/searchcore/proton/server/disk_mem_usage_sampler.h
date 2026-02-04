@@ -11,7 +11,7 @@ namespace vespalib { class IDestructorCallback; }
 namespace proton {
 
 class IReservedDiskSpaceProvider;
-class ITransientResourceUsageProvider;
+class IResourceUsageProvider;
 
 /*
  * Class to sample disk and memory usage used for filtering write operations.
@@ -24,13 +24,13 @@ class DiskMemUsageSampler {
     vespalib::duration                _sampleInterval;
     vespalib::steady_time             _lastSampleTime;
     std::mutex                        _lock;
-    std::vector<std::shared_ptr<const ITransientResourceUsageProvider>> _transient_usage_providers;
+    std::vector<std::shared_ptr<const IResourceUsageProvider>> _resource_usage_providers;
     std::unique_ptr<vespalib::IDestructorCallback> _periodicHandle;
 
     void sampleAndReportUsage();
     uint64_t sampleDiskUsage();
     vespalib::ProcessMemoryStats sampleMemoryUsage();
-    TransientResourceUsage sample_transient_resource_usage();
+    ResourceUsage sample_resource_usage();
     [[nodiscard]] bool timeToSampleAgain() const noexcept;
 public:
     struct Config {
@@ -63,8 +63,8 @@ public:
 
     void setConfig(const Config &config, IScheduledExecutor & executor);
 
-    void add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
-    void remove_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
+    void add_resource_usage_provider(std::shared_ptr<const IResourceUsageProvider> provider);
+    void remove_resource_usage_provider(std::shared_ptr<const IResourceUsageProvider> provider);
 };
 
 } // namespace proton

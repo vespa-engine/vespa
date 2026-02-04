@@ -14,7 +14,7 @@ namespace vespalib { class ISequencedTaskExecutor; }
 namespace proton {
 
 class AttributeDirectory;
-class TransientResourceUsage;
+class ResourceUsage;
 
 /**
  * Implementation of IFlushTarget interface for attribute vectors.
@@ -63,7 +63,7 @@ public:
 
     void setCleanUpAfterFlush(bool cleanUp) { _cleanUpAfterFlush = cleanUp; }
 
-    TransientResourceUsage get_transient_resource_usage() const;
+    ResourceUsage get_resource_usage() const;
 
     // Implements IFlushTarget
     MemoryGain getApproxMemoryGain() const override;
