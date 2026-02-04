@@ -75,6 +75,7 @@ public class ParsedRankingConverter {
         parsed.getFilterFirstThreshold().ifPresent(profile::setFilterFirstThreshold);
         parsed.getFilterFirstExploration().ifPresent(profile::setFilterFirstExploration);
         parsed.getExplorationSlack().ifPresent(profile::setExplorationSlack);
+        parsed.getPrefetchTensors().ifPresent(profile::setPrefetchTensors);
         parsed.getTargetHitsMaxAdjustmentFactor().ifPresent(profile::setTargetHitsMaxAdjustmentFactor);
         parsed.getWeakandStopwordLimit().ifPresent(profile::setWeakandStopwordLimit);
         parsed.getWeakandAllowDropAll().ifPresent(profile::setWeakandAllowDropAll);

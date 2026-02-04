@@ -42,13 +42,15 @@ using vespalib::HwInfo;
 
 std::string myId("myconfigid");
 std::string base_dir("out");
+std::string document_type_name("dummy");
+std::string placeholder_document_type_name("test");
 
 DocumentDBConfig::SP
 makeBaseConfigSnapshot(FNET_Transport & transport)
 {
     ::config::DirSpec spec(TEST_PATH("cfg"));
 
-    DBCM dbcm(spec, "test");
+    DBCM dbcm(spec, placeholder_document_type_name);
     DocumenttypesConfigSP dtcfg(::config::ConfigGetter<DocumenttypesConfig>::getConfig("", spec).release());
     auto b = std::make_shared<BootstrapConfig>(1, dtcfg,
                                                std::make_shared<DocumentTypeRepo>(*dtcfg),
@@ -63,18 +65,29 @@ makeBaseConfigSnapshot(FNET_Transport & transport)
     return snap;
 }
 
-void
-saveBaseConfigSnapshot(FNET_Transport & transport, const DocumentDBConfig &snap, SerialNum num)
+std::vector<SerialNum>
+get_valid_serials(FileConfigManager& cm)
 {
-    FileConfigManager cm(transport, "out", myId, snap.getDocTypeName());
-    cm.saveConfig(snap, num);
+    std::vector<SerialNum> serials;
+    auto serial = cm.getPrevValidSerial(1000);
+    while (serial > 0) {
+        serials.emplace_back(serial);
+        serial = cm.getPrevValidSerial(serial);
+    };
+    return {serials.rbegin(), serials.rend()};
 }
 
+std::vector<SerialNum>
+make_serials(std::vector<SerialNum> serials)
+{
+    return serials;
+}
 
 DocumentDBConfig::SP
 makeEmptyConfigSnapshot()
 {
-    return test::DocumentDBConfigBuilder(0, std::make_shared<const Schema>(), "client", "test").build();
+    return test::DocumentDBConfigBuilder(0, std::make_shared<const Schema>(), "client",
+                                         placeholder_document_type_name).build();
 }
 
 void
@@ -132,95 +145,129 @@ addConfigsThatAreNotSavedToDisk(const DocumentDBConfig &cfg)
 
 class FileConfigManagerTest : public ::testing::Test {
 protected:
+    Transport                          _transport;
+    std::unique_ptr<FileConfigManager> _cm;
     FileConfigManagerTest();
     ~FileConfigManagerTest() override;
-    static void SetUpTestSuite();
-    static void TearDownTestSuite();
+    void SetUp() override;
+    void TearDown() override;
+    void make_file_config_manager();
 };
 
-FileConfigManagerTest::FileConfigManagerTest() = default;
+FileConfigManagerTest::FileConfigManagerTest()
+    : ::testing::Test(),
+        _transport(),
+        _cm()
+{
+}
+
 FileConfigManagerTest::~FileConfigManagerTest() = default;
 
 void
-FileConfigManagerTest::SetUpTestSuite()
+FileConfigManagerTest::SetUp()
 {
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
+    make_file_config_manager();
+}
+
+void
+FileConfigManagerTest::TearDown()
+{
+    _cm.reset();
     std::filesystem::remove_all(std::filesystem::path(base_dir));
 }
 
 void
-FileConfigManagerTest::TearDownTestSuite()
+FileConfigManagerTest::make_file_config_manager()
 {
-    std::filesystem::remove_all(std::filesystem::path(base_dir));
+    _cm.reset();
+    _cm = std::make_unique<FileConfigManager>(_transport.transport(), base_dir, myId, document_type_name);
 }
 
 TEST_F(FileConfigManagerTest, requireThatConfigCanBeSavedAndLoaded)
 {
-    Transport f1;
-    auto f2(makeBaseConfigSnapshot(f1.transport()));
-    DocumentDBConfig::SP fullCfg = addConfigsThatAreNotSavedToDisk(*f2);
-    saveBaseConfigSnapshot(f1.transport(), *fullCfg, 20);
+    auto initial_size_on_disk = _cm->get_size_on_disk();
+    EXPECT_LT(0, initial_size_on_disk);
+    auto f2(makeBaseConfigSnapshot(_transport.transport()));
+    auto fullCfg = addConfigsThatAreNotSavedToDisk(*f2);
+    _cm->saveConfig(*fullCfg, 20);
+    auto size_on_disk = _cm->get_size_on_disk();
+    EXPECT_LT(initial_size_on_disk, size_on_disk);
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
-    {
-        FileConfigManager cm(f1.transport(), "out", myId, "dummy");
-        cm.loadConfig(*esnap, 20, esnap);
-    }
+    make_file_config_manager();
+    _cm->loadConfig(*esnap, 20, esnap);
+    EXPECT_EQ(size_on_disk, _cm->get_size_on_disk());
     assertEqualSnapshot(*f2, *esnap);
 }
 
 TEST_F(FileConfigManagerTest, requireThatConfigCanBeSerializedAndDeserialized)
 {
-    Transport f1;
-    auto f2(makeBaseConfigSnapshot(f1.transport()));
-    saveBaseConfigSnapshot(f1.transport(), *f2, 30);
+    auto initial_size_on_disk = _cm->get_size_on_disk();
+    auto f2(makeBaseConfigSnapshot(_transport.transport()));
+    _cm->saveConfig(*f2, 30);
+    auto size_on_disk = _cm->get_size_on_disk();
+    auto delta_size_on_disk = size_on_disk - initial_size_on_disk;
     nbostream stream;
-    {
-        FileConfigManager cm(f1.transport(), "out", myId, "dummy");
-        cm.serializeConfig(30, stream);
-    }
-    {
-        FileConfigManager cm(f1.transport(), "out", myId, "dummy");
-        cm.deserializeConfig(40, stream);
-    }
-    DocumentDBConfig::SP fsnap(makeEmptyConfigSnapshot());
-    {
-        FileConfigManager cm(f1.transport(), "out", myId, "dummy");
-        cm.loadConfig(*fsnap, 40, fsnap);
-    }
+    _cm->serializeConfig(30, stream);
+    _cm->deserializeConfig(40, stream);
+    EXPECT_EQ(initial_size_on_disk + 2 * delta_size_on_disk, _cm->get_size_on_disk());
+    make_file_config_manager();
+    EXPECT_EQ(initial_size_on_disk + 2 * delta_size_on_disk, _cm->get_size_on_disk());
+    auto fsnap(makeEmptyConfigSnapshot());
+    _cm->loadConfig(*fsnap, 40, fsnap);
     assertEqualSnapshot(*f2, *fsnap);
-    EXPECT_EQ("dummy", fsnap->getDocTypeName());
+    EXPECT_EQ(document_type_name, fsnap->getDocTypeName());
 }
 
 TEST_F(FileConfigManagerTest, requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile)
 {
-    Transport f1;
-    auto f2(makeBaseConfigSnapshot(f1.transport()));
-    saveBaseConfigSnapshot(f1.transport(), *f2, 70);
+    auto f2(makeBaseConfigSnapshot(_transport.transport()));
+    _cm->saveConfig(*f2, 70);
     EXPECT_FALSE(std::filesystem::remove(std::filesystem::path("out/config-70/extraconfigs.dat")));
-    DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
-    {
-        FileConfigManager cm(f1.transport(), "out", myId, "dummy");
-        cm.loadConfig(*esnap, 70, esnap);
-    }
+    auto esnap(makeEmptyConfigSnapshot());
+    make_file_config_manager();
+    _cm->loadConfig(*esnap, 70, esnap);
 }
 
+TEST_F(FileConfigManagerTest, requireThatPruneKeepsLatestOldConfig)
+{
+    auto initial_size_on_disk = _cm->get_size_on_disk();
+    auto f2(makeBaseConfigSnapshot(_transport.transport()));
+    _cm->saveConfig(*f2, 30);
+    auto delta_size_on_disk = _cm->get_size_on_disk() - initial_size_on_disk;
+    _cm->saveConfig(*f2, 40);
+    _cm->saveConfig(*f2, 50);
+    _cm->saveConfig(*f2, 60);
+    EXPECT_EQ(make_serials({30, 40, 50, 60}), get_valid_serials(*_cm));
+    EXPECT_EQ(initial_size_on_disk + 4 * delta_size_on_disk, _cm->get_size_on_disk());
+    _cm->prune(50);
+    EXPECT_EQ(make_serials({50, 60}), get_valid_serials(*_cm));
+    EXPECT_EQ(initial_size_on_disk + 2 * delta_size_on_disk, _cm->get_size_on_disk());
+    _cm->prune(59);
+    EXPECT_EQ(make_serials({50, 60}), get_valid_serials(*_cm));
+    EXPECT_EQ(initial_size_on_disk + 2 * delta_size_on_disk, _cm->get_size_on_disk());
+    _cm->prune(60);
+    EXPECT_EQ(make_serials({60}), get_valid_serials(*_cm));
+    EXPECT_EQ(initial_size_on_disk + delta_size_on_disk, _cm->get_size_on_disk());
+    _cm->prune(70);
+    EXPECT_EQ(make_serials({60}), get_valid_serials(*_cm));
+    EXPECT_EQ(initial_size_on_disk + delta_size_on_disk, _cm->get_size_on_disk());
+}
 
 TEST_F(FileConfigManagerTest, requireThatVisibilityDelayIsPropagated)
 {
-    Transport f1;
-    auto f2(makeBaseConfigSnapshot(f1.transport()));
-    saveBaseConfigSnapshot(f1.transport(), *f2, 80);
+    auto f2(makeBaseConfigSnapshot(_transport.transport()));
+    _cm->saveConfig(*f2, 80);
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
-    {
-        ProtonConfigBuilder protonConfigBuilder;
-        ProtonConfigBuilder::Documentdb ddb;
-        ddb.inputdoctypename = "dummy";
-        ddb.visibilitydelay = 61.0;
-        protonConfigBuilder.documentdb.push_back(ddb);
-        protonConfigBuilder.maxvisibilitydelay = 100.0;
-        FileConfigManager cm(f1.transport(), "out", myId, "dummy");
-        cm.setProtonConfig(std::make_shared<ProtonConfig>(protonConfigBuilder));
-        cm.loadConfig(*esnap, 70, esnap);
-    }
+    make_file_config_manager();
+    ProtonConfigBuilder protonConfigBuilder;
+    ProtonConfigBuilder::Documentdb ddb;
+    ddb.inputdoctypename = document_type_name;
+    ddb.visibilitydelay = 61.0;
+    protonConfigBuilder.documentdb.push_back(ddb);
+    protonConfigBuilder.maxvisibilitydelay = 100.0;
+    _cm->setProtonConfig(std::make_shared<ProtonConfig>(protonConfigBuilder));
+    _cm->loadConfig(*esnap, 80, esnap);
     EXPECT_EQ(61s, esnap->getMaintenanceConfigSP()->getVisibilityDelay());
 }
 

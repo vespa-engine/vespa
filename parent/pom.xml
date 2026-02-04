@@ -132,9 +132,7 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven-failsafe-plugin.vespa.version}</version>
                     <configuration>
-                        <systemPropertyVariables>
-                            <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
-                        </systemPropertyVariables>
+                        <argLine>-Djava.io.tmpdir=${project.build.directory}</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -240,7 +238,6 @@
                         <systemPropertyVariables>
                             <config_model.ip_check>false</config_model.ip_check>
                             <jdisc.logger.level>INFO</jdisc.logger.level>
-                            <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
                         <trimStackTrace>false</trimStackTrace>
                         <argLine>-Djava.io.tmpdir=${project.build.directory} ${ffm.args}</argLine>

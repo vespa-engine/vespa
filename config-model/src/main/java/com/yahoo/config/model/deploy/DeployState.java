@@ -124,7 +124,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.vespaVersion = vespaVersion;
         this.previousModel = previousModel;
         this.accessLoggingEnabledByDefault = accessLoggingEnabledByDefault;
-        this.provisioner = hostProvisioner.orElse(getDefaultModelHostProvisioner(applicationPackage));
+        this.provisioner = hostProvisioner.orElseGet(() -> getDefaultModelHostProvisioner(applicationPackage));
         this.provisioned = provisioned;
         this.schemas = List.copyOf(application.schemas().values());
         this.documentModel = application.documentModel();

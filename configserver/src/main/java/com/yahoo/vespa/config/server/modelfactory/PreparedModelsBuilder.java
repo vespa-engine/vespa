@@ -154,18 +154,24 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     private HostProvisioner createHostProvisioner(ApplicationPackage applicationPackage, Provisioned provisioned) {
-        HostProvisioner defaultHostProvisioner = DeployState.getDefaultModelHostProvisioner(applicationPackage);
         // Note: nodeRepositoryProvisioner will always be present when hosted is true
         Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(params.getApplicationId(), provisioned);
         Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
 
-        if (allocatedHosts.isEmpty()) return nodeRepositoryProvisioner.orElse(defaultHostProvisioner);
+        if (hosted) {
+            // In hosted Vespa, always use node repository provisioner - never read hosts.xml
+            if (allocatedHosts.isEmpty()) return nodeRepositoryProvisioner.get();
+            // Nodes are already allocated by a model, and we should use them unless this model requests hosts from a
+            // previously unallocated cluster. This allows future models to stop allocate certain clusters.
+            return createStaticProvisionerForHosted(allocatedHosts.get(), nodeRepositoryProvisioner.get());
+        }
 
-        // Nodes are already allocated by a model and we should use them unless this model requests hosts from a
-        // previously unallocated cluster. This allows future models to stop allocate certain clusters.
-        if (hosted) return createStaticProvisionerForHosted(allocatedHosts.get(), nodeRepositoryProvisioner.get());
+        // Non-hosted: use nodeRepositoryProvisioner if available, otherwise fall back to hosts.xml
+        if (allocatedHosts.isEmpty() && nodeRepositoryProvisioner.isPresent()) {
+            return nodeRepositoryProvisioner.get();
+        }
 
-        return defaultHostProvisioner;
+        return DeployState.getDefaultModelHostProvisioner(applicationPackage);
     }
 
     private Optional<File> getAppDir(ApplicationPackage applicationPackage) {

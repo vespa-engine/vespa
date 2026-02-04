@@ -151,7 +151,7 @@ public class NodeStateChangeCheckerTest {
     void testSafeMaintenanceDisallowedWhenOtherStorageNodeInFlatClusterIsSuspended(int maxNumberOfGroupsAllowedToBeDown) {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         ContentCluster cluster = createCluster(4, maxNumberOfGroupsAllowedToBeDown);
-        setStorageNodeWantedStateToMaintenance(cluster, 0);
+        setStorageNodeWantedStateToOrchestratorMaintenance(cluster, 0);
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 storage:4 .0.s:m",
                 currentClusterStateVersion));
@@ -175,7 +175,7 @@ public class NodeStateChangeCheckerTest {
         {
             int nodeIndex = 0;
             settingToMaintenanceIsAllowed(nodeIndex, cluster, defaultAllUpClusterState());
-            setStorageNodeWantedStateToMaintenance(cluster, nodeIndex);
+            setStorageNodeWantedStateToOrchestratorMaintenance(cluster, nodeIndex);
         }
 
         // Node in group 0 in maintenance, set storage node in group 1 to maintenance
@@ -183,7 +183,7 @@ public class NodeStateChangeCheckerTest {
             ClusterState clusterState = clusterState(String.format("version:%d distributor:4 .0.s:d storage:4 .0.s:m", currentClusterStateVersion));
             int nodeIndex = 1;
             settingToMaintenanceIsAllowed(nodeIndex, cluster, clusterState);
-            setStorageNodeWantedStateToMaintenance(cluster, nodeIndex);
+            setStorageNodeWantedStateToOrchestratorMaintenance(cluster, nodeIndex);
         }
 
         // Nodes in group 0 and 1 in maintenance, try to set storage node in group 2 to maintenance while storage node 2 is down, should fail
@@ -222,7 +222,7 @@ public class NodeStateChangeCheckerTest {
         {
             int nodeIndex = 0;
             settingToMaintenanceIsAllowed(nodeIndex, cluster, defaultAllUpClusterState());
-            setStorageNodeWantedStateToMaintenance(cluster, nodeIndex);
+            setStorageNodeWantedStateToOrchestratorMaintenance(cluster, nodeIndex);
         }
 
         // One node in group 0 in maintenance, try to set another storage node in group 0 to maintenance, should fail
@@ -259,7 +259,7 @@ public class NodeStateChangeCheckerTest {
             ClusterState clusterState = defaultAllUpClusterState(8);
             int nodeIndex = 0;
             settingToMaintenanceIsAllowed(nodeIndex, cluster, clusterState);
-            setStorageNodeWantedStateToMaintenance(cluster, nodeIndex);
+            setStorageNodeWantedStateToOrchestratorMaintenance(cluster, nodeIndex);
         }
 
         // 1 Node in group 0 in maintenance, try to set node 1 in group 0 to maintenance
@@ -267,7 +267,7 @@ public class NodeStateChangeCheckerTest {
             ClusterState clusterState = clusterState(String.format("version:%d distributor:8 .0.s:d storage:8 .0.s:m", currentClusterStateVersion));
             int nodeIndex = 1;
             settingToMaintenanceIsAllowed(nodeIndex, cluster, clusterState);
-            setStorageNodeWantedStateToMaintenance(cluster, nodeIndex);
+            setStorageNodeWantedStateToOrchestratorMaintenance(cluster, nodeIndex);
         }
 
         // 2 nodes in group 0 in maintenance, try to set storage node 2 in group 1 to maintenance
@@ -275,7 +275,7 @@ public class NodeStateChangeCheckerTest {
             ClusterState clusterState = clusterState(String.format("version:%d distributor:8 storage:8 .0.s:m .1.s:m", currentClusterStateVersion));
             int nodeIndex = 2;
             settingToMaintenanceIsAllowed(nodeIndex, cluster, clusterState);
-            setStorageNodeWantedStateToMaintenance(cluster, nodeIndex);
+            setStorageNodeWantedStateToOrchestratorMaintenance(cluster, nodeIndex);
         }
 
         // 2 nodes in group 0 and 1 in group 1 in maintenance, try to set storage node 4 in group 2 to maintenance, should fail (different group)
@@ -283,7 +283,6 @@ public class NodeStateChangeCheckerTest {
             ClusterState clusterState = clusterState(String.format("version:%d distributor:8 storage:8 .0.s:m .1.s:m .2.s:m", currentClusterStateVersion));
             int nodeIndex = 4;
             settingToMaintenanceIsNotAllowed(nodeIndex, cluster, clusterState, "At most 2 groups can have wanted state: [0, 1]");
-
         }
 
         // 2 nodes in group 0 and 1 in group 1 in maintenance, try to set storage node 3 in group 1 to maintenance
@@ -291,7 +290,7 @@ public class NodeStateChangeCheckerTest {
             ClusterState clusterState = clusterState(String.format("version:%d distributor:8 storage:8 .0.s:m .1.s:m .2.s:m", currentClusterStateVersion));
             int nodeIndex = 3;
             settingToMaintenanceIsAllowed(nodeIndex, cluster, clusterState);
-            setStorageNodeWantedStateToMaintenance(cluster, nodeIndex);
+            setStorageNodeWantedStateToOrchestratorMaintenance(cluster, nodeIndex);
         }
 
         // 2 nodes in group 0 and 2 nodes in group 1 in maintenance, try to set storage node 4 in group 2 to maintenance, should fail
@@ -403,6 +402,27 @@ public class NodeStateChangeCheckerTest {
             // description Orchestrator, and it is in the same group
             settingToMaintenanceIsAllowed(1, cluster, clusterStateWith0InMaintenance);
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 1})
+    void safe_maintenance_disallowed_when_existing_node_state_set_in_outdated_context(int maxNumberOfGroupsAllowedToBeDown) {
+        // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
+        // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
+        ContentCluster cluster = createCluster(4, 2, maxNumberOfGroupsAllowedToBeDown);
+        setStorageNodeWantedStateToOrchestratorMaintenance(cluster, 0);
+        ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
+                "version:%d distributor:4 storage:4 .0.s:m",
+                currentClusterStateVersion));
+        // Pretend we got a reconfig or leadership change, causing our knowledge of the old world
+        // to be too spotty to trust.
+        cluster.bumpOrchestrationGeneration();
+        // Denied for node1 in group 0, since node 0 in group 0 is in maintenance with an outdated context
+        settingToMaintenanceIsNotAllowed(1, cluster, clusterStateWith0InMaintenance,
+                NodeStateChangeChecker.STALE_ORCHESTRATOR_CONTEXT_MSG);
+        // Renew the state context generation for node 0; should now be allowed
+        setStorageNodeWantedStateToOrchestratorMaintenance(cluster, 0);
+        settingToMaintenanceIsAllowed(1, cluster, clusterStateWith0InMaintenance);
     }
 
     @ParameterizedTest
@@ -1004,22 +1024,22 @@ public class NodeStateChangeCheckerTest {
         return result;
     }
 
-    private void setStorageNodeWantedStateToMaintenance(ContentCluster cluster, int nodeIndex) {
+    private void setStorageNodeWantedStateToOrchestratorMaintenance(ContentCluster cluster, int nodeIndex) {
         setStorageNodeWantedState(cluster, nodeIndex, MAINTENANCE, "Orchestrator");
     }
 
     private void setStorageNodeWantedState(ContentCluster cluster, int nodeIndex, State state, String description) {
         NodeState nodeState = new NodeState(STORAGE, state);
-        cluster.clusterInfo()
-               .getStorageNodeInfo(nodeIndex)
-               .setWantedState(nodeState.setDescription(description));
+        var nodeInfo = cluster.clusterInfo().getStorageNodeInfo(nodeIndex);
+        nodeInfo.setWantedState(nodeState.setDescription(description));
+        nodeInfo.setWantedStateOrchestrationGeneration(cluster.orchestrationGeneration());
     }
 
     private void setDistributorNodeWantedState(ContentCluster cluster, int nodeIndex, State state, String description) {
         NodeState nodeState = new NodeState(DISTRIBUTOR, state);
-        cluster.clusterInfo()
-               .getDistributorNodeInfo(nodeIndex)
-               .setWantedState(nodeState.setDescription(description));
+        var nodeInfo = cluster.clusterInfo().getDistributorNodeInfo(nodeIndex);
+        nodeInfo.setWantedState(nodeState.setDescription(description));
+        nodeInfo.setWantedStateOrchestrationGeneration(cluster.orchestrationGeneration());
     }
 
     private Result evaluateTransition(ContentCluster cluster, Node node, ClusterState clusterState,

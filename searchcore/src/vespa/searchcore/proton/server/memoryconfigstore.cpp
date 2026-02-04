@@ -80,6 +80,12 @@ MemoryConfigStore::deserializeConfig(SerialNum, vespalib::nbostream &) {
 void
 MemoryConfigStore::setProtonConfig(const ProtonConfigSP &) { }
 
+uint64_t
+MemoryConfigStore::get_size_on_disk() const
+{
+    return 0;
+}
+
 MemoryConfigStores::MemoryConfigStores() = default;
 MemoryConfigStores::~MemoryConfigStores() = default;
 

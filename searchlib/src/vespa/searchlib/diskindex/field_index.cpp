@@ -73,7 +73,7 @@ FieldIndex::~FieldIndex() = default;
 uint64_t
 FieldIndex::calculate_size_on_disk(const std::string& dir, const std::vector<std::string>& file_names)
 {
-    uint64_t size_on_disk = 0;
+    uint64_t size_on_disk = DiskSpaceCalculator::directory_placeholder_size();
     std::error_code ec;
     DiskSpaceCalculator calc;
     for (auto& file_name : file_names) {

@@ -12,6 +12,7 @@ import java.util.StringTokenizer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -52,8 +53,8 @@ public class GroupTestCase {
         assertDistribution("*|*|*|*", 5, "2,1,1,1");
 
         assertDistributionFailure("2|*", 0, "The max redundancy (0) must be a positive number in the range 1-255.");
-        assertDistributionFailure("*|2", 3, "Illegal distribution spec \"*|2\". Asterix specification must be tailing the specification.");
-        assertDistributionFailure("*|2|*", 3, "Illegal distribution spec \"*|2|*\". Asterix specification must be tailing the specification.");
+        assertDistributionFailure("*|2", 3, "Illegal distribution spec \"*|2\". Wildcard specification must be tailing the specification.");
+        assertDistributionFailure("*|2|*", 3, "Illegal distribution spec \"*|2|*\". Wildcard specification must be tailing the specification.");
         assertDistributionFailure("0|*", 3, "Illegal distribution spec \"0|*\". Copy counts must be in the range 1-255.");
         assertDistributionFailure("1|0|*", 3, "Illegal distribution spec \"1|0|*\". Copy counts must be in the range 1-255.");
         assertDistributionFailure("1|a|*", 3, "Illegal distribution spec \"1|a|*\". Copy counts must be integer values in the range 1-255.");
@@ -197,6 +198,22 @@ public class GroupTestCase {
         assertEquals("/mario/toad", toad.getUnixStylePath());
         assertEquals("/mario/yoshi", yoshi.getUnixStylePath());
         assertEquals("/luigi", luigi.getUnixStylePath());
+    }
+
+    @Test
+    public void group_distribution_equality_considers_spec_and_max_redundancy() throws Exception {
+        var a0 = new Group.Distribution("*", 1);
+        assertEquals(a0, a0); // Trivially so (casually ignore the linter self-equals warning)
+        var a1 = new Group.Distribution("*", 1);
+        assertEquals(a0, a1); // Same semantics, must be object reference invariant
+        assertEquals(a1, a0);
+        var b0 = new Group.Distribution("*", 2);
+        assertNotEquals(a0, b0);
+        var c0 = new Group.Distribution("*|*", 2);
+        var c1 = new Group.Distribution("*|*", 2);
+        assertEquals(c0, c1);
+        assertNotEquals(b0, c0);
+        assertNotEquals(a0, c0);
     }
 
 }

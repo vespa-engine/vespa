@@ -2,7 +2,7 @@
 
 #include "attribute_directory.h"
 #include "attributedisklayout.h"
-#include <vespa/searchlib/util/dirtraverse.h>
+#include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>

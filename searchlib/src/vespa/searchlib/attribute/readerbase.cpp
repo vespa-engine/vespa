@@ -5,6 +5,7 @@
 #include "load_utils.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/filesizecalculator.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
@@ -146,7 +147,8 @@ ReaderBase::getNextValueCount()
 uint64_t
 ReaderBase::size_on_disk() const
 {
-    return _datFile.size_on_disk() + _idxFile.size_on_disk() + _weightFile.size_on_disk();
+    return DiskSpaceCalculator::directory_placeholder_size() +
+        _datFile.size_on_disk() + _idxFile.size_on_disk() + _weightFile.size_on_disk();
 }
 
 }

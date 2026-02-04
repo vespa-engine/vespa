@@ -72,6 +72,7 @@ public:
     uint32_t getDocIdLimit() const override { return _backingStore.getDocIdLimit(); }
     size_t        memoryUsed() const override { return _backingStore.memoryUsed(); }
     size_t  getDiskFootprint() const override { return _backingStore.getDiskFootprint(); }
+    uint64_t  get_size_on_disk() const override { return _backingStore.get_size_on_disk(); }
     size_t      getDiskBloat() const override { return _backingStore.getDiskBloat(); }
     size_t getMaxSpreadAsBloat() const override { return _backingStore.getMaxSpreadAsBloat(); }
     vespalib::CacheStats getCacheStats() const override;

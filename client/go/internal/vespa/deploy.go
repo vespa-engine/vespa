@@ -182,7 +182,10 @@ func fetchFromController(deployment DeploymentOptions, path string) error {
 	if err := tmpFile.Close(); err != nil {
 		return err
 	}
-	return os.Rename(tmpFile.Name(), path)
+	if err = renameOrCopyTmpFile(tmpFile.Name(), path); err != nil {
+		return fmt.Errorf("Could neither rename nor copy %s to %s: %w", tmpFile.Name(), path, err)
+	}
+	return err
 }
 
 func fetchFromConfigServer(deployment DeploymentOptions, path string) error {

@@ -13,6 +13,7 @@ namespace {
 std::string base_dir("base");
 
 constexpr uint32_t block_size = 4_Ki;
+constexpr uint32_t placeholder_directory_size = block_size;
 
 }
 
@@ -136,7 +137,7 @@ TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
     /*
      * Fusion started, but no files written yet.
      */
-    EXPECT_EQ(0u, transient_size());
+    EXPECT_EQ(placeholder_directory_size, transient_size());
     constexpr uint32_t seek_pos = 999999;
     {
         std::string name = dir + "/foo";
@@ -149,7 +150,7 @@ TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
     /*
      * Fusion started, one file written.
      */
-    EXPECT_EQ((seek_pos + block_size) / block_size * block_size, transient_size());
+    EXPECT_EQ(placeholder_directory_size + (seek_pos + block_size) / block_size * block_size, transient_size());
     EXPECT_TRUE(remove(fusion2)); // stop tracking disk space for fusion output
     /*
      * Fusion aborted.

@@ -10,6 +10,7 @@
 #include <vespa/searchlib/predicate/i_saver.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/util/data_buffer_writer.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -248,7 +249,7 @@ PredicateAttribute::onLoad(vespalib::Executor *)
     _index->adjustDocIdLimit(highest_doc_id);
     setNumDocs(highest_doc_id + 1);
     setCommittedDocIdLimit(highest_doc_id + 1);
-    set_size_on_disk(loaded_buffer->size_on_disk());
+    set_size_on_disk(loaded_buffer->size_on_disk() + DiskSpaceCalculator::directory_placeholder_size());
     set_last_flush_duration(loaded_buffer->flush_duration());
     _index->onDeserializationCompleted();
     return true;
