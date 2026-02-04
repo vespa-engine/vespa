@@ -7,6 +7,8 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailu
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.UnknownMasterException;
 
+import java.util.Locale;
+
 public abstract class Request<Result> extends RemoteClusterControllerTask {
 
     public enum MasterState {
@@ -63,7 +65,7 @@ public abstract class Request<Result> extends RemoteClusterControllerTask {
 
     private static String failureStringWithPossibleMessage(String prefix, String message) {
         if (message != null && !message.isEmpty()) {
-            return String.format("%s: %s", prefix, message);
+            return String.format(Locale.ROOT, "%s: %s", prefix, message);
         }
         return prefix;
     }

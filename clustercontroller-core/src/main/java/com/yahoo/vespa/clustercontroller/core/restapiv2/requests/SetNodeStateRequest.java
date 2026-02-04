@@ -20,6 +20,7 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStat
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -71,7 +72,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     static NodeState getRequestedNodeState(Map<String, UnitState> newStates, Node n) throws StateRestApiException {
         UnitState newState = newStates.get("user");
         if (newState == null) throw new InvalidContentException("No new user state given in request");
-        State state = switch (newState.id().toLowerCase()) {
+        State state = switch (newState.id().toLowerCase(Locale.ROOT)) {
             case "up" -> State.UP;
             case "retired" -> State.RETIRED;
             case "maintenance" -> State.MAINTENANCE;

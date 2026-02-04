@@ -15,6 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -879,12 +880,12 @@ public class NodeStateChangeCheckerTest {
             // accidentally use the wrong dimension.
             return Stream.of("default", "global")
                     .map(bucketSpace ->
-                        """
+                        String.format(Locale.ROOT, """
                         {
                             "name":"vds.datastored.bucket_space.%s",
                             "values":{"last":%d},
                             "dimensions":{"bucketSpace":"%s"}
-                        },""".formatted(metric, (lastValueOrNull + (bucketSpace.equals("default") ? 0 : 123)), bucketSpace))
+                        },""", metric, (lastValueOrNull + (bucketSpace.equals("default") ? 0 : 123)), bucketSpace))
                     .collect(Collectors.joining("\n"));
         }
         return "";

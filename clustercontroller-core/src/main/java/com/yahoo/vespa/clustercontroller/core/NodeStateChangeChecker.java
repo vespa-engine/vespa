@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -134,7 +135,7 @@ public class NodeStateChangeChecker {
             return Optional.empty();
         }
         if (metrics.docs.isEmpty() || metrics.docs.get().getLast() == null) {
-            log.log(Level.WARNING, "Host info inconsistency: storage node %d reports entry count but not document count".formatted(nodeIndex));
+            log.log(Level.WARNING, String.format(Locale.ROOT, "Host info inconsistency: storage node %d reports entry count but not document count", nodeIndex));
             return Optional.of(disallow("The storage node host info reports stored entry count, but not document count"));
         }
         long lastEntries = metrics.entries.get().getLast();
@@ -142,20 +143,20 @@ public class NodeStateChangeChecker {
         if (lastEntries != 0) {
             long buckets    = metrics.buckets.map(Metrics.Value::getLast).orElse(-1L);
             long tombstones = lastEntries - lastDocs; // docs are a subset of entries, so |docs| <= |entries|
-            return Optional.of(disallow("The storage node stores %d documents and %d tombstones across %d buckets".formatted(lastDocs, tombstones, buckets)));
+            return Optional.of(disallow(String.format(Locale.ROOT, "The storage node stores %d documents and %d tombstones across %d buckets", lastDocs, tombstones, buckets)));
         }
         // At this point we believe we have zero entries. Cross-check with visible doc count; it should
         // always be present when an entry count of zero is present and transitively always be zero.
         if (lastDocs != 0) {
-            log.log(Level.WARNING, "Host info inconsistency: storage node %d reports 0 entries, but %d documents".formatted(nodeIndex, lastDocs));
-            return Optional.of(disallow("The storage node reports 0 entries, but %d documents".formatted(lastDocs)));
+            log.log(Level.WARNING, String.format(Locale.ROOT, "Host info inconsistency: storage node %d reports 0 entries, but %d documents", nodeIndex, lastDocs));
+            return Optional.of(disallow(String.format(Locale.ROOT, "The storage node reports 0 entries, but %d documents", lastDocs)));
         }
         return Optional.of(allow());
     }
 
     private static Result checkLegacyZeroBucketsStoredOnContentNode(long lastBuckets) {
         if (lastBuckets != 0) {
-            return disallow("The storage node manages %d buckets".formatted(lastBuckets));
+            return disallow(String.format(Locale.ROOT, "The storage node manages %d buckets", lastBuckets));
         }
         return allow();
     }
@@ -342,7 +343,7 @@ public class NodeStateChangeChecker {
             return Optional.of(allow());
         }
 
-        return Optional.of(disallow(String.format("At most %d groups can have wanted state: %s",
+        return Optional.of(disallow(String.format(Locale.ROOT, "At most %d groups can have wanted state: %s",
                                                   maxNumberOfGroupsAllowedToBeDown,
                                                   sortSetIntoList(retiredAndNotUpGroups))));
     }
@@ -402,13 +403,13 @@ public class NodeStateChangeChecker {
             var storageNodeInfo = clusterInfo.getStorageNodeInfo(index);
             State storageNodeWantedState = storageNodeInfo.getUserWantedState().getState();
             if (storageNodeWantedState != UP) {
-                return disallow(message.formatted(storageNodeInfo.type(), index, storageNodeWantedState));
+                return disallow(String.format(Locale.ROOT, message, storageNodeInfo.type(), index, storageNodeWantedState));
             }
 
             var distributorNodeInfo = clusterInfo.getDistributorNodeInfo(index);
             State distributorWantedState = distributorNodeInfo.getUserWantedState().getState();
             if (distributorWantedState != UP) {
-                return disallow(message.formatted(distributorNodeInfo.type(), index, distributorWantedState));
+                return disallow(String.format(Locale.ROOT, message, distributorNodeInfo.type(), index, distributorWantedState));
             }
         }
 
@@ -477,12 +478,12 @@ public class NodeStateChangeChecker {
             State wantedState = nodeInfo.getUserWantedState().getState();
             if (wantedState != UP && wantedState != RETIRED)
                 return disallow("Another " + nodeInfo.type() + " wants state " +
-                                wantedState.toString().toUpperCase() + ": " + nodeInfo.getNodeIndex());
+                                wantedState.toString().toUpperCase(Locale.ROOT) + ": " + nodeInfo.getNodeIndex());
 
             State state = clusterState.getNodeState(nodeInfo.getNode()).getState();
             if (state != UP && state != RETIRED)
                 return disallow("Another " + nodeInfo.type() + " has state " +
-                                state.toString().toUpperCase() + ": " + nodeInfo.getNodeIndex());
+                                state.toString().toUpperCase(Locale.ROOT) + ": " + nodeInfo.getNodeIndex());
         }
 
         return allow();

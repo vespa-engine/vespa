@@ -5,6 +5,7 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.ResponseStats;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -154,7 +155,7 @@ public class ContentNodeErrorStats {
 
     @Override
     public String toString() {
-        return String.format("{statsFromDistributors=[%s]}",
+        return String.format(Locale.ROOT, "{statsFromDistributors=[%s]}",
                              Arrays.toString(statsFromDistributors.entrySet().toArray()));
     }
 

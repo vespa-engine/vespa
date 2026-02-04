@@ -6,6 +6,7 @@ import com.yahoo.vespa.clustercontroller.core.NodeStateReason;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+import java.util.Locale;
 import java.util.Map;
 
 public class HasStateReasonForNode extends BaseMatcher<Map<Node, NodeStateReason>> {
@@ -27,7 +28,7 @@ public class HasStateReasonForNode extends BaseMatcher<Map<Node, NodeStateReason
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format("has node state reason %s", expected.toString()));
+        description.appendText(String.format(Locale.ROOT, "has node state reason %s", expected.toString()));
     }
 
     @Override
@@ -35,7 +36,7 @@ public class HasStateReasonForNode extends BaseMatcher<Map<Node, NodeStateReason
         @SuppressWarnings("unchecked")
         Map<Node, NodeStateReason> other = (Map<Node, NodeStateReason>)item;
         if (other.containsKey(node)) {
-            description.appendText(String.format("has reason %s", other.get(node).toString()));
+            description.appendText(String.format(Locale.ROOT, "has reason %s", other.get(node).toString()));
         } else {
             description.appendText("has no entry for node");
         }

@@ -5,6 +5,7 @@ import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -28,12 +29,12 @@ public class HasMetricContext extends BaseMatcher<MetricReporter.Context> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format("Context with dimensions %s", dimensions));
+        description.appendText(String.format(Locale.ROOT, "Context with dimensions %s", dimensions));
     }
 
     @Override
     public void describeMismatch(Object item, Description description) {
-        description.appendText(String.format("Context dimensions are %s", item.toString()));
+        description.appendText(String.format(Locale.ROOT, "Context dimensions are %s", item.toString()));
     }
 
     public static class Dimension {
