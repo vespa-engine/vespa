@@ -2,20 +2,15 @@
 
 #include "fileconfigsnapshotreader.h"
 #include "jsonconfigformatter.h"
-#include <vespa/config/common/exceptions.h>
 #include <fstream>
 #include <sstream>
+#include <vespa/config/common/exceptions.h>
 
 namespace config {
 
-FileConfigSnapshotReader::FileConfigSnapshotReader(const std::string & fileName)
-    : _fileName(fileName)
-{
-}
+FileConfigSnapshotReader::FileConfigSnapshotReader(const std::string& fileName) : _fileName(fileName) {}
 
-ConfigSnapshot
-FileConfigSnapshotReader::read()
-{
+ConfigSnapshot FileConfigSnapshotReader::read() {
     std::ifstream file(_fileName.c_str());
     if (!file.is_open())
         throw ConfigReadException("error: unable to read file '%s'", _fileName.c_str());

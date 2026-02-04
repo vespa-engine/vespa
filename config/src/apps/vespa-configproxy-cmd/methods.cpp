@@ -6,17 +6,16 @@
 namespace methods {
 
 const Method methods[] = {
-    { "cache", "listCachedConfig", 0 },
-    { "dumpcache", "dumpCache", 1 }, // filename
-    { "getConfig", "getConfig", 7 }, // defName defVersion defMD5 configid configXXhash64 timestamp timeout
-    { "getmode", "getMode", 0 },
-    { "invalidatecache", "invalidateCache", 0 },
-    { "cachefull", "listCachedConfigFull", 0 },
-    { "sources", "listSourceConnections", 0 },
-    { "setmode", "setMode", 1 }, // { default | memorycache }
-    { "updatesources", "updateSources", 1 },
-    { nullptr, nullptr, 0}
-};
+    {"cache", "listCachedConfig", 0},
+    {"dumpcache", "dumpCache", 1}, // filename
+    {"getConfig", "getConfig", 7}, // defName defVersion defMD5 configid configXXhash64 timestamp timeout
+    {"getmode", "getMode", 0},
+    {"invalidatecache", "invalidateCache", 0},
+    {"cachefull", "listCachedConfigFull", 0},
+    {"sources", "listSourceConnections", 0},
+    {"setmode", "setMode", 1}, // { default | memorycache }
+    {"updatesources", "updateSources", 1},
+    {nullptr, nullptr, 0}};
 
 const Method find(const std::string &name) {
     for (size_t i = 0; methods[i].shortName != nullptr; ++i) {
@@ -24,7 +23,7 @@ const Method find(const std::string &name) {
             return methods[i];
         }
     }
-    Method rv = { name.c_str(), name.c_str(), 0 };
+    Method rv = {name.c_str(), name.c_str(), 0};
     return rv;
 }
 
@@ -41,4 +40,4 @@ void dump() {
     std::cerr << std::endl;
 }
 
-};
+}; // namespace methods

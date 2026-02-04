@@ -48,5 +48,4 @@ public:
     static std::string getName(int error);
 };
 
-}
-
+} // namespace config

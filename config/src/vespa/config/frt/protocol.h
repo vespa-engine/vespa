@@ -1,17 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/data/memory.h>
-#include <vespa/config/common/compressiontype.h>
-#include <vespa/vespalib/util/alloc.h>
 #include <string>
+#include <vespa/config/common/compressiontype.h>
+#include <vespa/vespalib/data/memory.h>
+#include <vespa/vespalib/util/alloc.h>
 
 namespace vespalib {
-    class Slime;
-    namespace slime {
-        struct Inspector;
-    }
+class Slime;
+namespace slime {
+struct Inspector;
 }
+} // namespace vespalib
 
 namespace config::protocol {
 
@@ -21,9 +21,8 @@ CompressionType readProtocolCompressionType();
 
 struct Payload {
     virtual ~Payload() = default;
-    virtual const vespalib::slime::Inspector & getSlimePayload() const = 0;
+    virtual const vespalib::slime::Inspector &getSlimePayload() const = 0;
 };
-
 
 namespace v2 {
 
@@ -52,9 +51,9 @@ extern const vespalib::Memory RESPONSE_PAYLOAD;
 extern const vespalib::Memory RESPONSE_TRACE;
 extern const vespalib::Memory RESPONSE_APPLY_ON_RESTART;
 
-const vespalib::slime::Inspector & extractPayload(const vespalib::Slime & data);
+const vespalib::slime::Inspector &extractPayload(const vespalib::Slime &data);
 
-}
+} // namespace v2
 
 namespace v3 {
 
@@ -65,23 +64,17 @@ extern const vespalib::Memory RESPONSE_COMPRESSION_INFO_UNCOMPRESSED_SIZE;
 
 struct DecompressedData {
     DecompressedData(vespalib::alloc::Alloc mem, uint32_t sz)
-        : memory(std::move(mem)),
-          memRef(static_cast<const char *>(memory.get()), sz),
-          size(sz)
-    { }
-    DecompressedData(const vespalib::Memory & mem, uint32_t sz)
-        : memory(),
-          memRef(mem),
-          size(sz)
-    {}
+        : memory(std::move(mem)), memRef(static_cast<const char *>(memory.get()), sz), size(sz) {}
+    DecompressedData(const vespalib::Memory &mem, uint32_t sz) : memory(), memRef(mem), size(sz) {}
 
     vespalib::alloc::Alloc memory;
     vespalib::Memory memRef;
     uint32_t size;
 };
 
-DecompressedData decompress(const char * buf, uint32_t len, const CompressionType & compressionType, uint32_t uncompressedLength);
+DecompressedData decompress(const char *buf, uint32_t len, const CompressionType &compressionType,
+                            uint32_t uncompressedLength);
 
-}
+} // namespace v3
 
-}
+} // namespace config::protocol

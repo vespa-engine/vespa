@@ -1,22 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <unistd.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <unistd.h>
 
 #include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-ping-configproxy");
 
-
-class PingProxy
-{
+class PingProxy {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Target     *_target;
+    FRT_Target *_target;
 
 public:
     PingProxy(const PingProxy &) = delete;
@@ -29,35 +27,24 @@ public:
     int main(int argc, char **argv);
 };
 
-
-PingProxy::~PingProxy()
-{
+PingProxy::~PingProxy() {
     LOG_ASSERT(!_server);
     LOG_ASSERT(_target == nullptr);
 }
 
-
-int
-PingProxy::usage(const char *self)
-{
+int PingProxy::usage(const char *self) {
     fprintf(stderr, "usage: %s\n", self);
     fprintf(stderr, "-s [server]        (server hostname, default localhost)\n");
     fprintf(stderr, "-p [port]          (server port number, default 19090)\n");
     return 1;
 }
 
-
-void
-PingProxy::initRPC(const char *spec)
-{
+void PingProxy::initRPC(const char *spec) {
     _server = std::make_unique<fnet::frt::StandaloneFRT>();
-    _target     = _server->supervisor().GetTarget(spec);
+    _target = _server->supervisor().GetTarget(spec);
 }
 
-
-void
-PingProxy::finiRPC()
-{
+void PingProxy::finiRPC() {
     if (_target != nullptr) {
         _target->internal_subref();
         _target = nullptr;
@@ -65,10 +52,7 @@ PingProxy::finiRPC()
     _server.reset();
 }
 
-
-int
-PingProxy::main(int argc, char **argv)
-{
+int PingProxy::main(int argc, char **argv) {
     int retval = 0;
     bool debugging = false;
     int c = -1;
@@ -119,7 +103,7 @@ PingProxy::main(int argc, char **argv)
     }
     try {
         initRPC(spec);
-    } catch (std::exception& ex) {
+    } catch (std::exception &ex) {
         LOG(error, "Got exception while initializing RPC: '%s'", ex.what());
         return 1;
     }
@@ -132,8 +116,7 @@ PingProxy::main(int argc, char **argv)
 
     if (req->IsError()) {
         retval = 1;
-        fprintf(stderr, "error %d: %s\n",
-                req->GetErrorCode(), req->GetErrorMessage());
+        fprintf(stderr, "error %d: %s\n", req->GetErrorCode(), req->GetErrorMessage());
     } else {
         FRT_Values &answer = *(req->GetReturn());
         const char *atypes = answer.GetTypeString();

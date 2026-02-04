@@ -1,12 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/common/types.h>
-#include <memory>
 #include <climits>
+#include <memory>
+#include <vespa/config/common/types.h>
 
-namespace vespalib::slime { struct Cursor; }
-namespace config::protocol { struct Payload; }
+namespace vespalib::slime {
+struct Cursor;
+}
+namespace config::protocol {
+struct Payload;
+}
 namespace config {
 
 typedef std::shared_ptr<const protocol::Payload> PayloadPtr;
@@ -18,35 +22,34 @@ typedef std::shared_ptr<const protocol::Payload> PayloadPtr;
 class ConfigValue {
 public:
     explicit ConfigValue(StringVector lines);
-    ConfigValue(StringVector lines, const std::string & xxhash);
-    ConfigValue(PayloadPtr data, const std::string & xxhash);
+    ConfigValue(StringVector lines, const std::string &xxhash);
+    ConfigValue(PayloadPtr data, const std::string &xxhash);
     ConfigValue();
     ConfigValue(ConfigValue &&) noexcept = default;
-    ConfigValue & operator = (ConfigValue &&) noexcept = default;
+    ConfigValue &operator=(ConfigValue &&) noexcept = default;
     ConfigValue(const ConfigValue &);
-    ConfigValue & operator = (const ConfigValue &);
+    ConfigValue &operator=(const ConfigValue &);
     ~ConfigValue();
 
-    int operator==(const ConfigValue & rhs) const;
-    int operator!=(const ConfigValue & rhs) const;
+    int operator==(const ConfigValue &rhs) const;
+    int operator!=(const ConfigValue &rhs) const;
 
-    size_t numLines() const { return _lines.size();  }
-    const std::string & getLine(int i) const { return _lines.at(i);  }
-    const StringVector & getLines() const { return _lines;  }
+    size_t numLines() const { return _lines.size(); }
+    const std::string &getLine(int i) const { return _lines.at(i); }
+    const StringVector &getLines() const { return _lines; }
     StringVector getLegacyFormat() const;
     std::string asJson() const;
-    const std::string& getXxhash64() const { return _xxhash64; }
+    const std::string &getXxhash64() const { return _xxhash64; }
 
-    void serializeV1(::vespalib::slime::Cursor & cursor) const;
-    void serializeV2(::vespalib::slime::Cursor & cursor) const;
+    void serializeV1(::vespalib::slime::Cursor &cursor) const;
+    void serializeV2(::vespalib::slime::Cursor &cursor) const;
 
-    template <typename ConfigType>
-    std::unique_ptr<ConfigType> newInstance() const;
+    template <typename ConfigType> std::unique_ptr<ConfigType> newInstance() const;
 
 private:
-    PayloadPtr       _payload;
-    StringVector     _lines;
+    PayloadPtr _payload;
+    StringVector _lines;
     std::string _xxhash64;
 };
 
-} //namespace config
+} // namespace config

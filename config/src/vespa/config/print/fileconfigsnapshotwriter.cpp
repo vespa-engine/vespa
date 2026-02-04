@@ -2,19 +2,14 @@
 
 #include "fileconfigsnapshotwriter.h"
 #include "jsonconfigformatter.h"
-#include <vespa/config/common/exceptions.h>
 #include <fstream>
+#include <vespa/config/common/exceptions.h>
 
 namespace config {
 
-FileConfigSnapshotWriter::FileConfigSnapshotWriter(const std::string & fileName)
-    : _fileName(fileName)
-{
-}
+FileConfigSnapshotWriter::FileConfigSnapshotWriter(const std::string& fileName) : _fileName(fileName) {}
 
-bool
-FileConfigSnapshotWriter::write(const ConfigSnapshot & snapshot)
-{
+bool FileConfigSnapshotWriter::write(const ConfigSnapshot& snapshot) {
     std::ofstream file(_fileName.c_str());
     if (!file.is_open())
         throw ConfigWriteException("error: could not open output file '%s'\n", _fileName.c_str());

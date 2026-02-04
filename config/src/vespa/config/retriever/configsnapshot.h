@@ -14,8 +14,7 @@ class ConfigDataBuffer;
  * A ConfigSnapshot contains a map of config keys to config instances. You may
  * request an instance of a config by calling the getConfig method.
  */
-class ConfigSnapshot
-{
+class ConfigSnapshot {
 public:
     using SubscriptionList = std::vector<std::shared_ptr<ConfigSubscription>>;
 
@@ -25,7 +24,7 @@ public:
     ConfigSnapshot();
     ~ConfigSnapshot();
 
-    ConfigSnapshot(const ConfigSnapshot & rhs);
+    ConfigSnapshot(const ConfigSnapshot& rhs);
 
     /**
      * Construct a config snapshot from a list of subscriptions and their
@@ -35,7 +34,7 @@ public:
      *                         the snapshot.
      * @param generation The latest generation of configs.
      */
-    ConfigSnapshot(const SubscriptionList & subscriptionList, int64_t generation);
+    ConfigSnapshot(const SubscriptionList& subscriptionList, int64_t generation);
 
     /**
      * Instantiate one of the configs from this snapshot identified by its type
@@ -47,8 +46,7 @@ public:
      *         parse config.
      * @throws IllegalConfigKeyException if the config does not exist.
      */
-    template <typename ConfigType>
-    std::unique_ptr<ConfigType> getConfig(const std::string & configId) const;
+    template <typename ConfigType> std::unique_ptr<ConfigType> getConfig(const std::string& configId) const;
 
     /**
      * Query snapshot to check if a config of type ConfigType and id configId is
@@ -60,11 +58,10 @@ public:
      * @return true if changed, false if not.
      * @throws IllegalConfigKeyException if the config does not exist.
      */
-    template <typename ConfigType>
-    bool isChanged(const std::string & configId, int64_t currentGeneration) const;
+    template <typename ConfigType> bool isChanged(const std::string& configId, int64_t currentGeneration) const;
 
-    ConfigSnapshot & operator = (const ConfigSnapshot & rhs);
-    void swap(ConfigSnapshot & rhs);
+    ConfigSnapshot& operator=(const ConfigSnapshot& rhs);
+    void swap(ConfigSnapshot& rhs);
 
     /**
      * Query snapshot to check if a config of type ConfigType and id configId
@@ -73,8 +70,7 @@ public:
      * @param configId The configId of the instance to check.
      * @return true if exists, false if not.
      */
-    template <typename ConfigType>
-    bool hasConfig(const std::string & configId) const;
+    template <typename ConfigType> bool hasConfig(const std::string& configId) const;
 
     /**
      * Create a new snapshot as a subset of this snapshot based on a set of keys.
@@ -85,35 +81,36 @@ public:
      *               new snapshot.
      * @return a new snapshot.
      */
-    ConfigSnapshot subset(const ConfigKeySet & keySet) const;
+    ConfigSnapshot subset(const ConfigKeySet& keySet) const;
 
     int64_t getGeneration() const;
     size_t size() const;
     bool empty() const;
 
-    void serialize(ConfigDataBuffer & buffer) const;
-    void deserialize(const ConfigDataBuffer & buffer);
+    void serialize(ConfigDataBuffer& buffer) const;
+    void deserialize(const ConfigDataBuffer& buffer);
+
 private:
     using Value = std::pair<int64_t, ConfigValue>;
     using ValueMap = std::map<ConfigKey, Value>;
     const static int64_t SNAPSHOT_FORMAT_VERSION;
 
-    ConfigSnapshot(const ValueMap & valueMap, int64_t generation);
-    void serializeV1(vespalib::slime::Cursor & root) const;
-    void serializeKeyV1(vespalib::slime::Cursor & root, const ConfigKey & key) const;
-    void serializeValueV1(vespalib::slime::Cursor & root, const Value & value) const;
+    ConfigSnapshot(const ValueMap& valueMap, int64_t generation);
+    void serializeV1(vespalib::slime::Cursor& root) const;
+    void serializeKeyV1(vespalib::slime::Cursor& root, const ConfigKey& key) const;
+    void serializeValueV1(vespalib::slime::Cursor& root, const Value& value) const;
 
-    void deserializeV1(vespalib::slime::Inspector & root);
-    ConfigKey deserializeKeyV1(vespalib::slime::Inspector & inspector) const;
-    Value deserializeValueV1(vespalib::slime::Inspector & inspector) const;
+    void deserializeV1(vespalib::slime::Inspector& root);
+    ConfigKey deserializeKeyV1(vespalib::slime::Inspector& inspector) const;
+    Value deserializeValueV1(vespalib::slime::Inspector& inspector) const;
 
-    void serializeV2(vespalib::slime::Cursor & root) const;
-    void serializeValueV2(vespalib::slime::Cursor & root, const Value & value) const;
+    void serializeV2(vespalib::slime::Cursor& root) const;
+    void serializeValueV2(vespalib::slime::Cursor& root, const Value& value) const;
 
-    void deserializeV2(vespalib::slime::Inspector & root);
-    Value deserializeValueV2(vespalib::slime::Inspector & inspector) const;
+    void deserializeV2(vespalib::slime::Inspector& root);
+    Value deserializeValueV2(vespalib::slime::Inspector& inspector) const;
 
-    ValueMap::const_iterator find(const ConfigKey & key) const;
+    ValueMap::const_iterator find(const ConfigKey& key) const;
 
     ValueMap _valueMap;
     int64_t _generation;

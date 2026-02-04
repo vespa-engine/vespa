@@ -1,14 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "config-function-test.h"
+#include <cinttypes>
+#include <fstream>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/configgen/configpayload.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
-#include <fstream>
-#include <cinttypes>
 
 #include <vespa/log/log.h>
 
@@ -18,9 +18,7 @@ using namespace config;
 
 namespace {
 
-void
-checkVariableAccess(const FunctionTestConfig & config)
-{
+void checkVariableAccess(const FunctionTestConfig& config) {
     EXPECT_EQ(false, config.boolVal);
     EXPECT_EQ(true, config.boolWithDef);
     EXPECT_EQ(5, config.intVal);
@@ -32,8 +30,7 @@ checkVariableAccess(const FunctionTestConfig & config)
     EXPECT_EQ("foo", config.stringVal);
     EXPECT_EQ("bar", config.stringwithdef);
     EXPECT_EQ("FOOBAR", FunctionTestConfig::getEnumValName(config.enumVal));
-    EXPECT_EQ("BAR2",
-               FunctionTestConfig::getEnumwithdefName(config.enumwithdef));
+    EXPECT_EQ("BAR2", FunctionTestConfig::getEnumwithdefName(config.enumwithdef));
     EXPECT_EQ(":parent:", config.refval);
     EXPECT_EQ(":parent:", config.refwithdef);
     EXPECT_EQ("etc", config.fileVal);
@@ -75,9 +72,7 @@ checkVariableAccess(const FunctionTestConfig & config)
     EXPECT_EQ(-2, config.myarray[1].myStruct.b);
 }
 
-std::string
-readFile(const std::string & fileName)
-{
+std::string readFile(const std::string& fileName) {
     std::ifstream f(fileName.c_str());
     EXPECT_FALSE(f.fail());
     std::string content;
@@ -88,46 +83,38 @@ readFile(const std::string & fileName)
     return content;
 }
 
-}
+} // namespace
 
-struct LazyTestFixture
-{
+struct LazyTestFixture {
     const DirSpec _spec;
     ConfigSubscriber _subscriber;
     ConfigHandle<FunctionTestConfig>::UP _handle;
     std::unique_ptr<FunctionTestConfig> _config;
 
-    LazyTestFixture(const std::string & dirName);
+    LazyTestFixture(const std::string& dirName);
     ~LazyTestFixture();
 };
 
-LazyTestFixture::LazyTestFixture(const std::string & dirName)
-        : _spec(TEST_PATH(dirName)),
-          _subscriber(_spec),
-          _handle(_subscriber.subscribe<FunctionTestConfig>(""))
-{ }
-LazyTestFixture::~LazyTestFixture() { }
+LazyTestFixture::LazyTestFixture(const std::string& dirName)
+    : _spec(TEST_PATH(dirName)), _subscriber(_spec), _handle(_subscriber.subscribe<FunctionTestConfig>("")) {}
+LazyTestFixture::~LazyTestFixture() {}
 
-struct TestFixture : public LazyTestFixture
-{
-    TestFixture(const std::string & dirName)
-        : LazyTestFixture(dirName)
-    {
+struct TestFixture : public LazyTestFixture {
+    TestFixture(const std::string& dirName) : LazyTestFixture(dirName) {
         EXPECT_TRUE(_subscriber.nextConfigNow());
         _config = _handle->getConfig();
     }
 };
 
-struct ErrorFixture
-{
-    LazyTestFixture & f;
-    ErrorFixture(LazyTestFixture & f1) : f(f1) { }
+struct ErrorFixture {
+    LazyTestFixture& f;
+    ErrorFixture(LazyTestFixture& f1) : f(f1) {}
     void run() {
         f._subscriber.nextConfigNow();
         bool thrown = false;
         try {
             f._handle->getConfig();
-        } catch (const InvalidConfigException & e) {
+        } catch (const InvalidConfigException& e) {
             thrown = true;
             LOG(info, "Error: %s", e.getMessage().c_str());
         }
@@ -140,19 +127,16 @@ void attemptLacking(const std::string& param, bool isArray) {
     std::ostringstream config;
     std::string s;
     while (std::getline(in, s)) {
-        if (s.size() > param.size() &&
-            s.substr(0, param.size()) == param &&
-            (s[param.size()] == ' ' || s[param.size()] == '['))
-        {
+        if (s.size() > param.size() && s.substr(0, param.size()) == param &&
+            (s[param.size()] == ' ' || s[param.size()] == '[')) {
             // Ignore values matched
         } else {
             config << s << "\n";
-
         }
     }
-    //std::cerr << "Config lacking " << param << "\n"
-    //          << config.str() << "\n";
-    try{
+    // std::cerr << "Config lacking " << param << "\n"
+    //           << config.str() << "\n";
+    try {
         RawSpec spec(config.str());
         ConfigSubscriber subscriber(spec);
         ConfigHandle<FunctionTestConfig>::UP handle = subscriber.subscribe<FunctionTestConfig>("foo");
@@ -162,7 +146,7 @@ void attemptLacking(const std::string& param, bool isArray) {
             // Arrays are empty by default
             return;
         }
-        FAIL() << "Expected to fail when not specifying value " << param <<  " without default";
+        FAIL() << "Expected to fail when not specifying value " << param << " without default";
     } catch (InvalidConfigException& e) {
         if (isArray) {
             FAIL() << "Arrays should be empty by default.";
@@ -170,15 +154,12 @@ void attemptLacking(const std::string& param, bool isArray) {
     }
 }
 
-TEST(FunctionTest, testVariableAccess)
-{
+TEST(FunctionTest, testVariableAccess) {
     TestFixture f("variableaccess");
     checkVariableAccess(*f._config);
 }
 
-
-TEST(FunctionTest, test_variable_access_from_slime)
-{
+TEST(FunctionTest, test_variable_access_from_slime) {
     vespalib::Slime slime;
     std::string json(readFile(TEST_PATH("slime-payload.json")));
     vespalib::slime::JsonFormat::decode(json, slime);
@@ -186,8 +167,7 @@ TEST(FunctionTest, test_variable_access_from_slime)
     checkVariableAccess(config);
 }
 
-TEST(FunctionTest, testDefaultValues)
-{
+TEST(FunctionTest, testDefaultValues) {
     TestFixture f("defaultvalues");
     EXPECT_EQ(false, f._config->boolVal);
     EXPECT_EQ(false, f._config->boolWithDef);
@@ -200,8 +180,7 @@ TEST(FunctionTest, testDefaultValues)
     EXPECT_EQ("foo", f._config->stringVal);
     EXPECT_EQ("foobar", f._config->stringwithdef);
     EXPECT_EQ("FOOBAR", FunctionTestConfig::getEnumValName(f._config->enumVal));
-    EXPECT_EQ("BAR2",
-               FunctionTestConfig::getEnumwithdefName(f._config->enumwithdef));
+    EXPECT_EQ("BAR2", FunctionTestConfig::getEnumwithdefName(f._config->enumwithdef));
     EXPECT_EQ(":parent:", f._config->refval);
     EXPECT_EQ(":parent:", f._config->refwithdef);
     EXPECT_EQ("vespa.log", f._config->fileVal);
@@ -229,8 +208,7 @@ TEST(FunctionTest, testDefaultValues)
     EXPECT_EQ("display.sys", f._config->myarray[1].fileVal);
 }
 
-TEST(FunctionTest, testLackingDefaults)
-{
+TEST(FunctionTest, testLackingDefaults) {
     attemptLacking("bool_val", false);
     attemptLacking("int_val", false);
     attemptLacking("long_val", false);
@@ -266,8 +244,7 @@ TEST(FunctionTest, testLackingDefaults)
     attemptLacking("myarray[0].myStruct.a", false);
 }
 
-TEST(FunctionTest, testRandomOrder)
-{
+TEST(FunctionTest, testRandomOrder) {
     TestFixture f("randomorder");
     EXPECT_EQ(false, f._config->boolVal);
     EXPECT_EQ(true, f._config->boolWithDef);
@@ -280,8 +257,7 @@ TEST(FunctionTest, testRandomOrder)
     EXPECT_EQ("foo", f._config->stringVal);
     EXPECT_EQ("bar", f._config->stringwithdef);
     EXPECT_EQ("FOOBAR", FunctionTestConfig::getEnumValName(f._config->enumVal));
-    EXPECT_EQ("BAR2",
-    FunctionTestConfig::getEnumwithdefName(f._config->enumwithdef));
+    EXPECT_EQ("BAR2", FunctionTestConfig::getEnumwithdefName(f._config->enumwithdef));
     EXPECT_EQ(":parent:", f._config->refval);
     EXPECT_EQ(":parent:", f._config->refwithdef);
     EXPECT_EQ("autoexec.bat", f._config->fileVal);
@@ -296,22 +272,19 @@ TEST(FunctionTest, testRandomOrder)
     EXPECT_EQ(2u, f._config->myarray.size());
 }
 
-TEST(FunctionTest, testErrorRangeInt32)
-{
+TEST(FunctionTest, testErrorRangeInt32) {
     LazyTestFixture f1("errorval_int");
     ErrorFixture f2(f1);
     f2.run();
 }
 
-TEST(FunctionTest, testErrorRangeInt64)
-{
+TEST(FunctionTest, testErrorRangeInt64) {
     LazyTestFixture f1("errorval_long");
     ErrorFixture f2(f1);
     f2.run();
 }
 
-TEST(FunctionTest, testErrorRangeDouble)
-{
+TEST(FunctionTest, testErrorRangeDouble) {
     LazyTestFixture f1("errorval_double");
     ErrorFixture f2(f1);
     f2.run();

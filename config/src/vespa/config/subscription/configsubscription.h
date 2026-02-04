@@ -3,10 +3,10 @@
 #pragma once
 
 #include "subscriptionid.h"
+#include <atomic>
 #include <vespa/config/common/configkey.h>
 #include <vespa/config/common/source.h>
 #include <vespa/vespalib/util/time.h>
-#include <atomic>
 
 namespace config {
 
@@ -18,13 +18,13 @@ class ConfigValue;
  * A subscription can be polled for config updates, and handles interruption of
  * the nextUpdate call.
  */
-class ConfigSubscription
-{
+class ConfigSubscription {
 public:
     typedef std::unique_ptr<ConfigSubscription> UP;
     typedef std::shared_ptr<ConfigSubscription> SP;
 
-    ConfigSubscription(const SubscriptionId & id, const ConfigKey & key, std::shared_ptr<IConfigHolder> holder, std::unique_ptr<Source> source);
+    ConfigSubscription(const SubscriptionId& id, const ConfigKey& key, std::shared_ptr<IConfigHolder> holder,
+                       std::unique_ptr<Source> source);
     ~ConfigSubscription();
 
     /**
@@ -32,7 +32,7 @@ public:
      *
      * @return the current ConfigValue.
      */
-    const ConfigValue & getConfig() const;
+    const ConfigValue& getConfig() const;
 
     /**
      * Checks whether or not the config has changed.
@@ -48,7 +48,7 @@ public:
 
     /// Used by ConfigSubscriptionSet
     SubscriptionId getSubscriptionId() const noexcept { return _id; }
-    const ConfigKey & getKey() const noexcept { return _key; }
+    const ConfigKey& getKey() const noexcept { return _key; }
     bool nextUpdate(int64_t generation, vespalib::steady_time deadline);
     int64_t getGeneration() const;
     bool hasChanged() const;
@@ -61,18 +61,17 @@ public:
     void reload(int64_t generation);
 
 private:
-    const SubscriptionId           _id;
-    const ConfigKey                _key;
-    std::unique_ptr<Source>        _source;
+    const SubscriptionId _id;
+    const ConfigKey _key;
+    std::unique_ptr<Source> _source;
     std::shared_ptr<IConfigHolder> _holder;
-    std::unique_ptr<ConfigUpdate>  _next;
-    std::unique_ptr<ConfigUpdate>  _current;
-    bool                           _isChanged;
-    int64_t                        _lastGenerationChanged;
-    std::atomic<bool>              _closed;
+    std::unique_ptr<ConfigUpdate> _next;
+    std::unique_ptr<ConfigUpdate> _current;
+    bool _isChanged;
+    int64_t _lastGenerationChanged;
+    std::atomic<bool> _closed;
 };
 
 typedef std::vector<ConfigSubscription::SP> SubscriptionList;
 
 } // namespace config
-

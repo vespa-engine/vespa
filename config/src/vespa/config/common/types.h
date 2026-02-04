@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/allocator.h>
 #include <map>
 #include <string>
 #include <vector>
+#include <vespa/vespalib/stllike/allocator.h>
 
 namespace config {
 
@@ -19,4 +19,4 @@ using DoubleMap = std::map<std::string, double>;
 using LongMap = std::map<std::string, int64_t>;
 using IntMap = std::map<std::string, int32_t>;
 
-}
+} // namespace config

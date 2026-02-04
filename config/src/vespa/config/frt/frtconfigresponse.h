@@ -14,9 +14,10 @@ namespace config {
 class FRTConfigResponse : public ConfigResponse {
 private:
     FRTConfigResponse& operator=(const FRTConfigResponse&);
+
 public:
     typedef std::unique_ptr<FRTConfigResponse> UP;
-    FRTConfigResponse(FRT_RPCRequest * request);
+    FRTConfigResponse(FRT_RPCRequest* request);
     ~FRTConfigResponse();
 
     bool validateResponse() override;
@@ -24,16 +25,16 @@ public:
     std::string errorMessage() const override;
     int errorCode() const override;
     bool isError() const override;
-    virtual const std::string & getResponseTypes() const = 0;
+    virtual const std::string& getResponseTypes() const = 0;
 
 private:
     enum ResponseState { EMPTY, OK, ERROR };
 
-    FRT_RPCRequest * _request;
+    FRT_RPCRequest* _request;
     ResponseState _responseState;
+
 protected:
-    FRT_Values * _returnValues;
+    FRT_Values* _returnValues;
 };
 
 } // namespace config
-

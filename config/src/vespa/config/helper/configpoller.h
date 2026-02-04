@@ -3,9 +3,9 @@
 
 #include "ifetchercallback.h"
 #include "ihandle.h"
+#include <vector>
 #include <vespa/config/common/timingvalues.h>
 #include <vespa/vespalib/util/runnable.h>
-#include <vector>
 
 namespace config {
 
@@ -22,15 +22,17 @@ public:
     ~ConfigPoller() override;
     void run() override;
     template <typename ConfigType>
-    void subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, vespalib::duration subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
+    void subscribe(const std::string &configId, IFetcherCallback<ConfigType> *callback,
+                   vespalib::duration subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
     void poll();
     void close();
     int64_t getGeneration() const { return _generation; }
+
 private:
     int64_t _generation;
     std::unique_ptr<ConfigSubscriber> _subscriber;
-    std::vector<IHandle::UP>          _handleList;
-    std::vector<ICallback *>          _callbackList;
+    std::vector<IHandle::UP> _handleList;
+    std::vector<ICallback *> _callbackList;
 };
 
 } // namespace config

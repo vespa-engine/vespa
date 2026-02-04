@@ -9,8 +9,7 @@ struct CompressionInfo {
     CompressionInfo();
     CompressionType compressionType;
     uint32_t uncompressedSize;
-    void deserialize(const vespalib::slime::Inspector & inspector);
+    void deserialize(const vespalib::slime::Inspector& inspector);
 };
 
-}
-
+} // namespace config

@@ -1,38 +1,32 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <set>
+#include <sstream>
+#include <unistd.h>
 #include <vespa/config/frt/frtconnectionpool.h>
 #include <vespa/fnet/frt/error.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <sstream>
-#include <set>
-#include <unistd.h>
 
 using namespace config;
 
 class FRTConnectionPoolTest : public testing::Test {
 protected:
     ServerSpec::HostSpecList _sources;
-    FNET_Transport    _transport;
+    FNET_Transport _transport;
     void verifyAllSourcesInRotation(FRTConnectionPool& sourcePool);
     FRTConnectionPoolTest();
     ~FRTConnectionPoolTest() override;
 };
 
-FRTConnectionPoolTest::FRTConnectionPoolTest()
-    : testing::Test(),
-      _sources(),
-      _transport()
-{
+FRTConnectionPoolTest::FRTConnectionPoolTest() : testing::Test(), _sources(), _transport() {
     _sources.push_back("host0");
     _sources.push_back("host1");
     _sources.push_back("host2");
     _transport.Start();
 }
 
-FRTConnectionPoolTest::~FRTConnectionPoolTest() {
-    _transport.ShutDown(true);
-}
+FRTConnectionPoolTest::~FRTConnectionPoolTest() { _transport.ShutDown(true); }
 
 TimingValues timingValues;
 
@@ -48,8 +42,7 @@ void FRTConnectionPoolTest::verifyAllSourcesInRotation(FRTConnectionPool& source
 /**
  * Tests that basic round robin selection through the list works.
  */
-TEST_F(FRTConnectionPoolTest, test_basic_round_robin)
-{
+TEST_F(FRTConnectionPoolTest, test_basic_round_robin) {
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     for (int i = 0; i < 9; i++) {
@@ -63,8 +56,7 @@ TEST_F(FRTConnectionPoolTest, test_basic_round_robin)
 /**
  * Tests that hash-based selection through the list works.
  */
-TEST_F(FRTConnectionPoolTest, test_basic_hash_based_selection)
-{
+TEST_F(FRTConnectionPoolTest, test_basic_hash_based_selection) {
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     sourcePool.setHostname("a.b.com");
@@ -94,8 +86,7 @@ TEST_F(FRTConnectionPoolTest, test_basic_hash_based_selection)
  * Tests that a source is taken out of rotation when an error is reported,
  * and that it is taken back in when a success is reported.
  */
-TEST_F(FRTConnectionPoolTest, test_set_error_round_robin)
-{
+TEST_F(FRTConnectionPoolTest, test_set_error_round_robin) {
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     FRTConnection* source = sourcePool.getNextRoundRobin();
@@ -110,8 +101,7 @@ TEST_F(FRTConnectionPoolTest, test_set_error_round_robin)
 /**
  * Tests that all sources are in rotation when all sources have errors set.
  */
-TEST_F(FRTConnectionPoolTest, test_set_error_all_round_robin)
-{
+TEST_F(FRTConnectionPoolTest, test_set_error_all_round_robin) {
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     for (int i = 0; i < (int)_sources.size(); i++) {
@@ -125,8 +115,7 @@ TEST_F(FRTConnectionPoolTest, test_set_error_all_round_robin)
  * Tests that a source is not used when an error is reported,
  * and that the same source is used when a success is reported.
  */
-TEST_F(FRTConnectionPoolTest, test_set_error_hash_based)
-{
+TEST_F(FRTConnectionPoolTest, test_set_error_hash_based) {
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     FRTConnection* source = sourcePool.getNextHashBased();
@@ -141,8 +130,7 @@ TEST_F(FRTConnectionPoolTest, test_set_error_hash_based)
 /**
  * Tests that the same source is used when all sources have errors set.
  */
-TEST_F(FRTConnectionPoolTest, test_set_error_all_hash_based)
-{
+TEST_F(FRTConnectionPoolTest, test_set_error_all_hash_based) {
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     FRTConnection* firstSource = sourcePool.getNextHashBased();
@@ -174,13 +162,12 @@ TEST_F(FRTConnectionPoolTest, test_set_error_all_hash_based)
 /**
  * Tests that the source is put back into rotation when the suspension times out.
  */
-TEST_F(FRTConnectionPoolTest, test_suspension_timeout)
-{
+TEST_F(FRTConnectionPoolTest, test_suspension_timeout) {
     const ServerSpec spec(_sources);
     TimingValues short_transient_delay;
     short_transient_delay.transientDelay = 1s;
     FRTConnectionPool sourcePool(_transport, spec, short_transient_delay);
-    FRTConnection* source = dynamic_cast<FRTConnection *>(sourcePool.getCurrent());
+    FRTConnection* source = dynamic_cast<FRTConnection*>(sourcePool.getCurrent());
     source->setError(FRTE_RPC_CONNECTION);
     for (int i = 0; i < 9; i++) {
         EXPECT_NE(source->getAddress(), sourcePool.getCurrent()->getAddress());
@@ -193,8 +180,7 @@ TEST_F(FRTConnectionPoolTest, test_suspension_timeout)
  * Tests that when there are two sources and several clients
  * the sources will be chosen with equal probability.
  */
-TEST_F(FRTConnectionPoolTest, test_many_sources)
-{
+TEST_F(FRTConnectionPoolTest, test_many_sources) {
     std::vector<std::string> hostnames;
     for (int i = 0; i < 20; ++i) {
         hostnames.push_back("host-" + std::to_string(i) + ".example.yahoo.com");

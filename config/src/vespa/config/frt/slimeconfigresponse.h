@@ -2,13 +2,13 @@
 #pragma once
 
 #include "frtconfigresponse.h"
-#include <vespa/config/common/configkey.h>
-#include <vespa/config/common/configvalue.h>
-#include <vespa/config/common/trace.h>
-#include <vespa/config/common/configstate.h>
-#include <vespa/config/common/misc.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include "protocol.h"
+#include <vespa/config/common/configkey.h>
+#include <vespa/config/common/configstate.h>
+#include <vespa/config/common/configvalue.h>
+#include <vespa/config/common/misc.h>
+#include <vespa/config/common/trace.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 class FRT_RPCRequest;
 class FRT_Values;
@@ -20,14 +20,14 @@ namespace config {
  */
 class SlimeConfigResponse : public FRTConfigResponse {
 public:
-    SlimeConfigResponse(FRT_RPCRequest * request);
+    SlimeConfigResponse(FRT_RPCRequest* request);
     SlimeConfigResponse& operator=(const SlimeConfigResponse&) = delete;
     ~SlimeConfigResponse() override;
 
-    const ConfigKey & getKey() const override { return _key; }
-    const ConfigValue & getValue() const override { return _value; }
-    const ConfigState & getConfigState() const override { return _state; }
-    const Trace & getTrace() const override { return _trace; }
+    const ConfigKey& getKey() const override { return _key; }
+    const ConfigValue& getValue() const override { return _value; }
+    const ConfigState& getConfigState() const override { return _state; }
+    const Trace& getTrace() const override { return _trace; }
 
     std::string getHostName() const;
 
@@ -37,11 +37,11 @@ protected:
     virtual ConfigValue readConfigValue() const = 0;
 
 private:
-    ConfigKey   _key;
+    ConfigKey _key;
     ConfigValue _value;
     ConfigState _state;
-    Trace       _trace;
-    bool        _filled;
+    Trace _trace;
+    bool _filled;
 
     ConfigKey readKey() const;
     ConfigState readState() const;
@@ -52,4 +52,3 @@ protected:
 };
 
 } // namespace config
-

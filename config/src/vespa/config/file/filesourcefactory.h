@@ -12,15 +12,15 @@ class FileSpec;
 /**
  * Factory creating config payload from config instances.
  */
-class FileSourceFactory : public SourceFactory
-{
+class FileSourceFactory : public SourceFactory {
 public:
-    FileSourceFactory(const FileSpec & fileSpec);
+    FileSourceFactory(const FileSpec& fileSpec);
 
     /**
      * Create source handling config described by key.
      */
-    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
+    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey& key) const override;
+
 private:
     std::string _fileName;
 };
@@ -28,20 +28,18 @@ private:
 /**
  * Factory creating config payload from config instances.
  */
-class DirSourceFactory : public SourceFactory
-{
+class DirSourceFactory : public SourceFactory {
 public:
-    DirSourceFactory(const DirSpec & dirSpec);
+    DirSourceFactory(const DirSpec& dirSpec);
 
     /**
      * Create source handling config described by key.
      */
-    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
+    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey& key) const override;
+
 private:
     std::string _dirName;
     StringVector _fileNames;
 };
 
-
 } // namespace config
-

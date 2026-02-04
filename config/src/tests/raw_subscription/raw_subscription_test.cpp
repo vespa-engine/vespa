@@ -8,8 +8,7 @@
 
 using namespace config;
 
-TEST(RawSubscriptionTest, require_that_raw_spec_can_create_source_factory)
-{
+TEST(RawSubscriptionTest, require_that_raw_spec_can_create_source_factory) {
     RawSpec spec("myField \"foo\"\n");
     auto raw = spec.createSourceFactory(TimingValues());
     ASSERT_TRUE(raw);
@@ -21,16 +20,15 @@ TEST(RawSubscriptionTest, require_that_raw_spec_can_create_source_factory)
     ASSERT_TRUE(holder->poll());
     std::unique_ptr<ConfigUpdate> update(holder->provide());
     ASSERT_TRUE(update);
-    const ConfigValue & value(update->getValue());
+    const ConfigValue& value(update->getValue());
     ASSERT_EQ(1u, value.numLines());
     ASSERT_EQ("myField \"foo\"", value.getLine(0));
 }
 
-TEST(RawSubscriptionTest, requireThatRawSubscriptionReturnsCorrectConfig)
-{
+TEST(RawSubscriptionTest, requireThatRawSubscriptionReturnsCorrectConfig) {
     RawSpec spec("myField \"foo\"\n");
     ConfigSubscriber s(spec);
-    std::unique_ptr<ConfigHandle<MyConfig> > handle = s.subscribe<MyConfig>("myid");
+    std::unique_ptr<ConfigHandle<MyConfig>> handle = s.subscribe<MyConfig>("myid");
     s.nextConfigNow();
     std::unique_ptr<MyConfig> cfg = handle->getConfig();
     ASSERT_TRUE(cfg);

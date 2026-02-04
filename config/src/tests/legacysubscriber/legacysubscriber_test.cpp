@@ -1,22 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "config-my.h"
-#include "config-foo.h"
 #include "config-bar.h"
+#include "config-foo.h"
+#include "config-my.h"
+#include <fstream>
 #include <vespa/config/helper/legacysubscriber.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
-#include <fstream>
 
 using namespace config;
 
-template <typename ConfigType>
-class MyCallback : public IFetcherCallback<ConfigType>
-{
+template <typename ConfigType> class MyCallback : public IFetcherCallback<ConfigType> {
 public:
-    MyCallback() : _config(), _configured(false) { }
-    void configure(std::unique_ptr<ConfigType> config) override
-    {
+    MyCallback() : _config(), _configured(false) {}
+    void configure(std::unique_ptr<ConfigType> config) override {
         _configured = true;
         _config = std::move(config);
     }
@@ -24,16 +21,13 @@ public:
     bool _configured;
 };
 
-struct ConfigIdGenerator
-{
-    static std::string id(const std::string &type, const std::string &name)
-    {
+struct ConfigIdGenerator {
+    static std::string id(const std::string &type, const std::string &name) {
         return std::string(type + ":" + TEST_PATH(name));
     }
 };
 
-TEST(LegacySubscriberTest, requireThatFileLegacyWorks)
-{
+TEST(LegacySubscriberTest, requireThatFileLegacyWorks) {
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
@@ -42,19 +36,16 @@ TEST(LegacySubscriberTest, requireThatFileLegacyWorks)
     ASSERT_EQ("bar", cb._config->myField);
 }
 
-TEST(LegacySubscriberTest, requireThatDirLegacyWorks)
-{
+TEST(LegacySubscriberTest, requireThatDirLegacyWorks) {
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
-    s.subscribe<MyConfig>(ConfigIdGenerator::id("dir","testdir"), &cb);
+    s.subscribe<MyConfig>(ConfigIdGenerator::id("dir", "testdir"), &cb);
     ASSERT_TRUE(cb._configured);
     ASSERT_TRUE(cb._config.get() != nullptr);
     ASSERT_EQ("bar", cb._config->myField);
 }
 
-
-TEST(LegacySubscriberTest, requireThatDirMultiFileLegacyWorks)
-{
+TEST(LegacySubscriberTest, requireThatDirMultiFileLegacyWorks) {
     MyCallback<FooConfig> cb1;
     MyCallback<BarConfig> cb2;
 
@@ -71,8 +62,7 @@ TEST(LegacySubscriberTest, requireThatDirMultiFileLegacyWorks)
     ASSERT_EQ("foo", cb2._config->barValue);
 }
 
-TEST(LegacySubscriberTest, requireThatFileLegacyWorksMultipleTimes)
-{
+TEST(LegacySubscriberTest, requireThatFileLegacyWorksMultipleTimes) {
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
@@ -87,8 +77,7 @@ TEST(LegacySubscriberTest, requireThatFileLegacyWorksMultipleTimes)
     ASSERT_EQ("bar", cb._config->myField);
 }
 
-TEST(LegacySubscriberTest, requireThatRawLegacyWorks)
-{
+TEST(LegacySubscriberTest, requireThatRawLegacyWorks) {
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>("raw:myField \"bar\"\n", &cb);

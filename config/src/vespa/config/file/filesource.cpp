@@ -1,28 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filesource.h"
-#include <vespa/config/subscription/sourcespec.h>
-#include <vespa/config/common/misc.h>
-#include <vespa/config/common/iconfigholder.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <sys/stat.h>
+#include <vespa/config/common/iconfigholder.h>
+#include <vespa/config/common/misc.h>
+#include <vespa/config/subscription/sourcespec.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 using vespalib::asciistream;
 
 namespace config {
 
-FileSource::FileSource(std::shared_ptr<IConfigHolder> holder, const std::string & fileName)
-    : _holder(std::move(holder)),
-      _fileName(fileName),
-      _lastLoaded(-1),
-      _generation(1)
-{ }
+FileSource::FileSource(std::shared_ptr<IConfigHolder> holder, const std::string& fileName)
+    : _holder(std::move(holder)), _fileName(fileName), _lastLoaded(-1), _generation(1) {}
 
 FileSource::~FileSource() = default;
 
-void
-FileSource::getConfig()
-{
+void FileSource::getConfig() {
     StringVector lines(readConfigFile(_fileName));
     int64_t last = getLast(_fileName);
 
@@ -34,31 +28,20 @@ FileSource::getConfig()
     }
 }
 
-void
-FileSource::reload(int64_t generation)
-{
-    _generation = generation;
-}
+void FileSource::reload(int64_t generation) { _generation = generation; }
 
-int64_t
-FileSource::getLast(const std::string & fileName)
-{
+int64_t FileSource::getLast(const std::string& fileName) {
     struct stat filestat;
     memset(&filestat, 0, sizeof(filestat));
     stat(fileName.c_str(), &filestat);
     return filestat.st_mtime;
 }
 
-StringVector
-FileSource::readConfigFile(const std::string & fileName)
-{
+StringVector FileSource::readConfigFile(const std::string& fileName) {
     asciistream is(asciistream::createFromFile(fileName));
     return getlines(is);
 }
 
-void
-FileSource::close()
-{
-}
+void FileSource::close() {}
 
 } // namespace config

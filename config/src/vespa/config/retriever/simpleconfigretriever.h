@@ -3,8 +3,8 @@
 
 #include "configkeyset.h"
 #include "configsnapshot.h"
-#include <vespa/config/subscription/configsubscriptionset.h>
 #include <vespa/config/common/timingvalues.h>
+#include <vespa/config/subscription/configsubscriptionset.h>
 
 namespace config {
 
@@ -13,13 +13,11 @@ namespace config {
  * all of them. Once this is done, it cannot be resubscribed. You can poll this
  * for new snapshots.
  */
-class SimpleConfigRetriever
-{
+class SimpleConfigRetriever {
 public:
     typedef std::unique_ptr<SimpleConfigRetriever> UP;
 
-    SimpleConfigRetriever(const ConfigKeySet & keySet,
-                          std::shared_ptr<IConfigContext> context,
+    SimpleConfigRetriever(const ConfigKeySet& keySet, std::shared_ptr<IConfigContext> context,
                           vespalib::duration subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
     /**
@@ -38,4 +36,3 @@ private:
 };
 
 } // namespace config
-

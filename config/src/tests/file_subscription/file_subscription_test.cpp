@@ -1,18 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "config-my.h"
-#include "config-foo.h"
-#include "config-foodefault.h"
 #include "config-bar.h"
+#include "config-foo.h"
 #include "config-foobar.h"
-#include <vespa/config/subscription/configsubscriber.hpp>
+#include "config-foodefault.h"
+#include "config-my.h"
+#include <fstream>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/sourcefactory.h>
-#include <vespa/config/common/configcontext.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
-#include <fstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".filesubscription_test");
@@ -21,18 +21,15 @@ using namespace config;
 
 namespace {
 
-    void writeFile(const std::string & fileName, const std::string & myFieldVal)
-    {
-        std::ofstream of;
-        of.open(fileName.c_str());
-        of << "myField \"" << myFieldVal << "\"\n";
-        of.close();
-    }
+void writeFile(const std::string& fileName, const std::string& myFieldVal) {
+    std::ofstream of;
+    of.open(fileName.c_str());
+    of << "myField \"" << myFieldVal << "\"\n";
+    of.close();
 }
+} // namespace
 
-
-TEST(FileSubscriptionTest, requireThatFileSpecGivesCorrectKey)
-{
+TEST(FileSubscriptionTest, requireThatFileSpecGivesCorrectKey) {
     std::string str("/home/my/config.cfg");
     FileSpec spec(str);
     bool thrown = false;
@@ -42,7 +39,7 @@ TEST(FileSubscriptionTest, requireThatFileSpecGivesCorrectKey)
         FileSpec s3("fb.dch");
         FileSpec s4("fbcfg");
         FileSpec s5(".cfg");
-    } catch (const InvalidConfigSourceException & e) {
+    } catch (const InvalidConfigSourceException& e) {
         thrown = true;
     }
     ASSERT_TRUE(thrown);
@@ -52,14 +49,13 @@ TEST(FileSubscriptionTest, requireThatFileSpecGivesCorrectKey)
         FileSpec s1("fb.cfg");
         FileSpec s2("a.cfg");
         FileSpec s3("fljdlfjsalf.cfg");
-    } catch (const InvalidConfigSourceException & e) {
+    } catch (const InvalidConfigSourceException& e) {
         thrown = true;
     }
     ASSERT_FALSE(thrown);
 }
 
-TEST(FileSubscriptionTest, requireThatFileSpecGivesCorrectSource)
-{
+TEST(FileSubscriptionTest, requireThatFileSpecGivesCorrectSource) {
     writeFile("my.cfg", "foobar");
     FileSpec spec("my.cfg");
 
@@ -73,16 +69,15 @@ TEST(FileSubscriptionTest, requireThatFileSpecGivesCorrectSource)
     ASSERT_TRUE(holder->poll());
     std::unique_ptr<ConfigUpdate> update(holder->provide());
     ASSERT_TRUE(update);
-    const ConfigValue & value(update->getValue());
+    const ConfigValue& value(update->getValue());
     ASSERT_EQ(1u, value.numLines());
     ASSERT_EQ("myField \"foobar\"", value.getLine(0));
 }
 
-TEST(FileSubscriptionTest, requireThatFileSubscriptionReturnsCorrectConfig)
-{
+TEST(FileSubscriptionTest, requireThatFileSubscriptionReturnsCorrectConfig) {
     writeFile("my.cfg", "foobar");
     ConfigSubscriber s(FileSpec("my.cfg"));
-    std::unique_ptr<ConfigHandle<MyConfig> > handle = s.subscribe<MyConfig>("my");
+    std::unique_ptr<ConfigHandle<MyConfig>> handle = s.subscribe<MyConfig>("my");
     s.nextConfigNow();
     std::unique_ptr<MyConfig> cfg = handle->getConfig();
     ASSERT_TRUE(cfg);
@@ -91,13 +86,12 @@ TEST(FileSubscriptionTest, requireThatFileSubscriptionReturnsCorrectConfig)
     ASSERT_FALSE(s.nextConfig(100ms));
 }
 
-TEST(FileSubscriptionTest, requireThatReconfigIsCalledWhenConfigChanges)
-{
+TEST(FileSubscriptionTest, requireThatReconfigIsCalledWhenConfigChanges) {
     writeFile("my.cfg", "foo");
     {
         auto context = std::make_shared<ConfigContext>(FileSpec("my.cfg"));
         ConfigSubscriber s(context);
-        std::unique_ptr<ConfigHandle<MyConfig> > handle = s.subscribe<MyConfig>("");
+        std::unique_ptr<ConfigHandle<MyConfig>> handle = s.subscribe<MyConfig>("");
         s.nextConfigNow();
         std::unique_ptr<MyConfig> cfg = handle->getConfig();
         ASSERT_TRUE(cfg);
@@ -122,22 +116,20 @@ TEST(FileSubscriptionTest, requireThatReconfigIsCalledWhenConfigChanges)
     }
 }
 
-TEST(FileSubscriptionTest, requireThatMultipleSubscribersCanSubscribeToSameFile)
-{
+TEST(FileSubscriptionTest, requireThatMultipleSubscribersCanSubscribeToSameFile) {
     writeFile("my.cfg", "foobar");
     FileSpec spec("my.cfg");
     {
         ConfigSubscriber s1(spec);
-        std::unique_ptr<ConfigHandle<MyConfig> > h1 = s1.subscribe<MyConfig>("");
+        std::unique_ptr<ConfigHandle<MyConfig>> h1 = s1.subscribe<MyConfig>("");
         ASSERT_TRUE(s1.nextConfigNow());
         ConfigSubscriber s2(spec);
-        std::unique_ptr<ConfigHandle<MyConfig> > h2 = s2.subscribe<MyConfig>("");
+        std::unique_ptr<ConfigHandle<MyConfig>> h2 = s2.subscribe<MyConfig>("");
         ASSERT_TRUE(s2.nextConfigNow());
     }
 }
 
-TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectory)
-{
+TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectory) {
     DirSpec spec(TEST_PATH("cfgdir"));
     ConfigSubscriber s(spec);
     ConfigHandle<FooConfig>::UP fooHandle = s.subscribe<FooConfig>("");
@@ -153,8 +145,7 @@ TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectory)
     ASSERT_EQ("barbar", barCfg->barValue);
 }
 
-TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectoryWithEmptyCfgFile)
-{
+TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectoryWithEmptyCfgFile) {
     DirSpec spec(TEST_PATH("cfgemptyfile"));
     ConfigSubscriber s(spec);
     ConfigHandle<FoodefaultConfig>::UP fooHandle = s.subscribe<FoodefaultConfig>("");
@@ -170,8 +161,7 @@ TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectoryWithEmptyCfgFile)
     ASSERT_EQ("barbar", barCfg->barValue);
 }
 
-TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectoryWithNonExistingCfgFile)
-{
+TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectoryWithNonExistingCfgFile) {
     DirSpec spec(TEST_PATH("cfgnonexistingfile"));
     ConfigSubscriber s(spec);
     ConfigHandle<FoodefaultConfig>::UP fooHandle = s.subscribe<FoodefaultConfig>("");
@@ -187,8 +177,7 @@ TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectoryWithNonExistingCfgF
     ASSERT_EQ("barbar", barCfg->barValue);
 }
 
-TEST(FileSubscriptionTest, requireThatDirSpecDoesNotMixNames)
-{
+TEST(FileSubscriptionTest, requireThatDirSpecDoesNotMixNames) {
     DirSpec f(TEST_PATH("cfgdir2"));
     ConfigSubscriber s(f);
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
@@ -202,8 +191,7 @@ TEST(FileSubscriptionTest, requireThatDirSpecDoesNotMixNames)
     ASSERT_EQ("foobarlol", foobar->fooBarValue);
 }
 
-TEST(FileSubscriptionTest, require_that_can_subscribe_multiple_config_ids_of_same_config)
-{
+TEST(FileSubscriptionTest, require_that_can_subscribe_multiple_config_ids_of_same_config) {
     DirSpec f1(TEST_PATH("cfgdir3"));
     ConfigSubscriber s(f1);
     ConfigHandle<BarConfig>::UP fooHandle = s.subscribe<BarConfig>("foo");

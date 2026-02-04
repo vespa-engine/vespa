@@ -3,32 +3,23 @@
 #pragma once
 
 #include "asciiconfigreader.h"
-#include <vespa/config/common/types.h>
 #include <vespa/config/common/configvalue.h>
+#include <vespa/config/common/types.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace config {
 
-template <typename ConfigType>
-AsciiConfigReader<ConfigType>::AsciiConfigReader(vespalib::asciistream & is)
-    : _is(is)
-{
-}
+template <typename ConfigType> AsciiConfigReader<ConfigType>::AsciiConfigReader(vespalib::asciistream& is) : _is(is) {}
 
 template <typename ConfigType>
-std::unique_ptr<ConfigType>
-AsciiConfigReader<ConfigType>::read(const ConfigFormatter & formatter)
-{
+std::unique_ptr<ConfigType> AsciiConfigReader<ConfigType>::read(const ConfigFormatter& formatter) {
     ConfigDataBuffer buffer;
     buffer.setEncodedString(_is.view());
     formatter.decode(buffer);
     return std::make_unique<ConfigType>(buffer);
 }
 
-template <typename ConfigType>
-std::unique_ptr<ConfigType>
-AsciiConfigReader<ConfigType>::read()
-{
+template <typename ConfigType> std::unique_ptr<ConfigType> AsciiConfigReader<ConfigType>::read() {
     StringVector lines;
     std::string line;
     while (getline(_is, line)) {

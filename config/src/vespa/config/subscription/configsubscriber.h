@@ -2,11 +2,11 @@
 #pragma once
 
 #include "confighandle.h"
-#include "subscriptionid.h"
+#include "configprovider.h"
 #include "configsubscription.h"
 #include "configsubscriptionset.h"
-#include "configprovider.h"
 #include "sourcespec.h"
+#include "subscriptionid.h"
 #include <vespa/config/common/timingvalues.h>
 
 namespace config {
@@ -24,8 +24,7 @@ namespace config {
  * Note that this class is NOT thread safe and that you should design your
  * application so that you only need to use it from one thread.
  */
-class ConfigSubscriber
-{
+class ConfigSubscriber {
 public:
     typedef std::unique_ptr<ConfigSubscriber> UP;
 
@@ -35,7 +34,7 @@ public:
      *
      * @param spec The source spec from which to get config.
      */
-    ConfigSubscriber(const SourceSpec & spec = ServerSpec());
+    ConfigSubscriber(const SourceSpec &spec = ServerSpec());
 
     /**
      * Constructs a new ConfigSubscriber object which can be used to subscribe
@@ -46,7 +45,7 @@ public:
      */
     explicit ConfigSubscriber(std::shared_ptr<IConfigContext> context);
     ConfigSubscriber(const ConfigSubscriber &) = delete;
-    ConfigSubscriber & operator= (const ConfigSubscriber &) = delete;
+    ConfigSubscriber &operator=(const ConfigSubscriber &) = delete;
     ~ConfigSubscriber();
 
     /**
@@ -79,8 +78,8 @@ public:
      * @throws ConfigRuntimeException if subscriber has been closed.
      */
     template <typename ConfigType>
-    std::unique_ptr<ConfigHandle<ConfigType> >
-    subscribe(const std::string & configId, vespalib::duration timeout = DEFAULT_SUBSCRIBE_TIMEOUT);
+    std::unique_ptr<ConfigHandle<ConfigType>> subscribe(const std::string &configId,
+                                                        vespalib::duration timeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
     /**
      * Return the current generation number for configs.
@@ -103,7 +102,7 @@ public:
     bool isClosed() const;
 
 private:
-    ConfigSubscriptionSet _set;                   // The set of subscriptions for this set.
+    ConfigSubscriptionSet _set; // The set of subscriptions for this set.
 };
 
 } // namespace config

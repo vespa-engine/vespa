@@ -20,10 +20,9 @@ struct ConfigFixture {
     }
 };
 
-} // namespace <unnamed>
+} // namespace
 
-TEST(GetConfigTest, requireThatGetConfigReturnsCorrectConfig_from_raw)
-{
+TEST(GetConfigTest, requireThatGetConfigReturnsCorrectConfig_from_raw) {
     RawSpec spec("myField \"foo\"\n");
 
     std::unique_ptr<MyConfig> cfg = ConfigGetter<MyConfig>::getConfig("myid", spec);
@@ -32,9 +31,7 @@ TEST(GetConfigTest, requireThatGetConfigReturnsCorrectConfig_from_raw)
     ASSERT_EQ("foo", cfg->myField);
 }
 
-
-TEST(GetConfigTest, requireThatGetConfigReturnsCorrectConfig_from_file)
-{
+TEST(GetConfigTest, requireThatGetConfigReturnsCorrectConfig_from_file) {
     FileSpec spec(TEST_PATH("my.cfg"));
     std::unique_ptr<MyConfig> cfg = ConfigGetter<MyConfig>::getConfig("", spec);
     ASSERT_TRUE(cfg);
@@ -42,8 +39,7 @@ TEST(GetConfigTest, requireThatGetConfigReturnsCorrectConfig_from_file)
     ASSERT_EQ("foobar", cfg->myField);
 }
 
-TEST(GetConfigTest, require_that_ConfigGetter_can_be_used_to_obtain_config_generation)
-{
+TEST(GetConfigTest, require_that_ConfigGetter_can_be_used_to_obtain_config_generation) {
     ConfigFixture f1;
     f1.builder.myField = "foo";
     {

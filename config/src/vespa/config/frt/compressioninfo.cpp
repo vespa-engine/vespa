@@ -9,17 +9,11 @@ using namespace config::protocol;
 
 namespace config {
 
-CompressionInfo::CompressionInfo()
-    : compressionType(CompressionType::UNCOMPRESSED),
-      uncompressedSize(0)
-{
-}
+CompressionInfo::CompressionInfo() : compressionType(CompressionType::UNCOMPRESSED), uncompressedSize(0) {}
 
-void
-CompressionInfo::deserialize(const Inspector & inspector)
-{
+void CompressionInfo::deserialize(const Inspector& inspector) {
     compressionType = stringToCompressionType(inspector["compressionType"].asString().make_string());
     uncompressedSize = inspector["uncompressedSize"].asLong();
 }
 
-}
+} // namespace config

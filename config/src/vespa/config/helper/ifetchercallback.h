@@ -5,15 +5,13 @@
 
 namespace config {
 
-class IGenerationCallback
-{
+class IGenerationCallback {
 public:
     virtual void notifyGenerationChange(int64_t generation) = 0;
     virtual ~IGenerationCallback() = default;
 };
 
-class ICallback
-{
+class ICallback {
 public:
     virtual void configure(std::unique_ptr<const ConfigInstance> config) = 0;
     virtual ~ICallback() = default;
@@ -23,9 +21,7 @@ public:
  * Interface for callback methods used by ConfigFetcher, ConfigPoller and
  * LegacySubscriber.
  */
-template <typename ConfigType>
-class IFetcherCallback : public ICallback
-{
+template <typename ConfigType> class IFetcherCallback : public ICallback {
 protected:
     void configure(std::unique_ptr<const ConfigInstance> config) override {
         configure(std::unique_ptr<ConfigType>(static_cast<const ConfigType *>(config.release())));

@@ -1,29 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "proxycmd.h"
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <iostream>
 
 Flags::Flags(const Flags &) = default;
-Flags & Flags::operator=(const Flags &) = default;
-Flags::Flags()
-    : method("cache"),
-      args(),
-      targethost("localhost"),
-      portnumber(19090)
-{ }
+Flags &Flags::operator=(const Flags &) = default;
+Flags::Flags() : method("cache"), args(), targethost("localhost"), portnumber(19090) {}
 Flags::~Flags() = default;
 
-ProxyCmd::ProxyCmd(const Flags& flags)
-    : _server(),
-      _target(nullptr),
-      _req(nullptr),
-      _flags(flags)
-{ }
+ProxyCmd::ProxyCmd(const Flags &flags) : _server(), _target(nullptr), _req(nullptr), _flags(flags) {}
 
 ProxyCmd::~ProxyCmd() = default;
 
@@ -33,7 +23,8 @@ void ProxyCmd::initRPC() {
 }
 
 void ProxyCmd::invokeRPC() {
-    if (_req == nullptr) return;
+    if (_req == nullptr)
+        return;
     _target->InvokeSync(_req, 65.0);
 }
 
@@ -62,7 +53,7 @@ std::string ProxyCmd::makeSpec() {
 
 void ProxyCmd::autoPrint() {
     if (_req->IsError()) {
-        std::cerr << "FAILURE ["<< _req->GetMethodName() <<"]: " << _req->GetErrorMessage() << std::endl;
+        std::cerr << "FAILURE [" << _req->GetMethodName() << "]: " << _req->GetErrorMessage() << std::endl;
         return;
     }
     std::string retspec = _req->GetReturnSpec();
@@ -89,7 +80,8 @@ int ProxyCmd::action() {
         params.AddString(_flags.args[i].c_str(), _flags.args[i].size());
     }
     invokeRPC();
-    if (_req->IsError()) ++errors;
+    if (_req->IsError())
+        ++errors;
     autoPrint();
     finiRPC();
     return errors;

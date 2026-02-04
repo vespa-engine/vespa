@@ -5,16 +5,10 @@
 
 namespace config {
 
-template <typename ConfigType>
-IstreamConfigReader<ConfigType>::IstreamConfigReader(std::istream & is)
-    : _is(is)
-{
-}
+template <typename ConfigType> IstreamConfigReader<ConfigType>::IstreamConfigReader(std::istream& is) : _is(is) {}
 
 template <typename ConfigType>
-std::unique_ptr<ConfigType>
-IstreamConfigReader<ConfigType>::read(const ConfigFormatter & formatter)
-{
+std::unique_ptr<ConfigType> IstreamConfigReader<ConfigType>::read(const ConfigFormatter& formatter) {
     ConfigDataBuffer buffer;
     std::stringstream buf;
     buf << _is.rdbuf();
@@ -23,10 +17,7 @@ IstreamConfigReader<ConfigType>::read(const ConfigFormatter & formatter)
     return std::make_unique<ConfigType>(buffer);
 }
 
-template <typename ConfigType>
-std::unique_ptr<ConfigType>
-IstreamConfigReader<ConfigType>::read()
-{
+template <typename ConfigType> std::unique_ptr<ConfigType> IstreamConfigReader<ConfigType>::read() {
     StringVector lines;
     std::string line;
     while (getline(_is, line)) {

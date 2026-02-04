@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/config/configgen/value_converter.h>
+#include <climits>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/configgen/value_converter.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <climits>
 
 using namespace config;
 using namespace config::internal;
@@ -11,8 +11,7 @@ using namespace vespalib;
 using namespace vespalib::slime;
 
 struct MyType {
-    MyType(const ConfigPayload & payload)
-    {
+    MyType(const ConfigPayload& payload) {
         foo = payload.get()["foo"].asLong();
         bar = payload.get()["bar"].asLong();
     }
@@ -20,10 +19,9 @@ struct MyType {
     int bar;
 };
 
-TEST(ValueConverterTest, that_int32_ts_are_converted)
-{
+TEST(ValueConverterTest, that_int32_ts_are_converted) {
     Slime slime;
-    Cursor & root = slime.setArray();
+    Cursor& root = slime.setArray();
     root.addLong(3);
     root.addLong(-2);
     root.addLong(INT_MAX);
@@ -37,10 +35,9 @@ TEST(ValueConverterTest, that_int32_ts_are_converted)
     EXPECT_EQ(3, conv(root[4]));
 }
 
-TEST(ValueConverterTest, that_int64_ts_are_converted)
-{
+TEST(ValueConverterTest, that_int64_ts_are_converted) {
     Slime slime;
-    Cursor & root = slime.setArray();
+    Cursor& root = slime.setArray();
     root.addLong(3);
     root.addLong(-2);
     root.addLong(LONG_MAX);
@@ -62,10 +59,9 @@ TEST(ValueConverterTest, that_int64_ts_are_converted)
     EXPECT_EQ(3, conv(root[6]));
 }
 
-TEST(ValueConverterTest, that_values_can_be_parsed_as_strings)
-{
+TEST(ValueConverterTest, that_values_can_be_parsed_as_strings) {
     Slime slime;
-    Cursor & root = slime.setObject();
+    Cursor& root = slime.setObject();
     root.setString("intval", "1234");
     root.setString("longval", "42949672969");
     root.setString("boolval", "true");
@@ -80,10 +76,9 @@ TEST(ValueConverterTest, that_values_can_be_parsed_as_strings)
     EXPECT_NEAR(3.14, doubleConv(root["doubleval"]), 0.0001);
 }
 
-TEST(ValueConverterTest, that_incompatible_types_throws_exceptions)
-{
+TEST(ValueConverterTest, that_incompatible_types_throws_exceptions) {
     Slime slime;
-    Cursor & root = slime.setObject();
+    Cursor& root = slime.setObject();
     root.setBool("intval", true);
     root.setBool("longval", true);
     root.setBool("doubleval", true);
@@ -98,12 +93,12 @@ TEST(ValueConverterTest, that_incompatible_types_throws_exceptions)
     VESPA_EXPECT_EXCEPTION(boolConv(root["boolval"]), InvalidConfigException, "");
 }
 
-TEST(ValueConverterTest, that_non_valid_fields_throws_exception)
-{
+TEST(ValueConverterTest, that_non_valid_fields_throws_exception) {
     Slime slime;
-    Cursor & root = slime.setObject();
+    Cursor& root = slime.setObject();
     ValueConverter<int64_t> conv;
-    VESPA_EXPECT_EXCEPTION(conv("longval", root["longval"]), InvalidConfigException, "Value for 'longval' required but not found");
+    VESPA_EXPECT_EXCEPTION(conv("longval", root["longval"]), InvalidConfigException,
+                           "Value for 'longval' required but not found");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
