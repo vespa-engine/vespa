@@ -142,7 +142,7 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			var result vespa.PrepareResult
 			err = cli.spinner(cli.Stderr, "Uploading application package...", func() error {
-				result, err = vespa.Prepare(opts)
+				result, err = vespa.Prepare(opts, time.Duration(waitSecs)*time.Second)
 				return err
 			})
 			if err != nil {
@@ -182,7 +182,7 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 				return err
 			}
 			opts := vespa.DeploymentOptions{Target: target}
-			err = vespa.Activate(sessionID, opts)
+			err = vespa.Activate(sessionID, opts, time.Duration(waitSecs)*time.Second)
 			if err != nil {
 				return err
 			}
