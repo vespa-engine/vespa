@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Locale;
 
 /**
  * Embedder using GGUF file format through llama.cpp
@@ -38,7 +39,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
 
     @Inject
     public GgufEmbedder(GgufEmbedderConfig config, ModelPathHelper helper) {
-        log.fine(() -> "Config: %s".formatted(config));
+        log.fine(() -> String.format(Locale.ROOT, "Config: %s", config));
         var modelPath = helper.getModelPathResolvingIfNecessary(config.embeddingModelReference()).toString();
         var modelParams = new ModelParameters()
                 .enableEmbedding()
@@ -70,18 +71,17 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         var rawEmbedding = context.computeCachedValueIfAbsent(cacheKey, () -> generateRawEmbedding(prompt));
         if (tensorType.dimensions().size() != 1) {
             throw new IllegalArgumentException(
-                    "Error in embedding to type '%s': should only have one dimension.".formatted(tensorType));
+                    String.format(Locale.ROOT, "Error in embedding to type '%s': should only have one dimension.", tensorType));
         }
         var dimension = tensorType.dimensions().get(0);
         if (!dimension.isIndexed()) {
             throw new IllegalArgumentException(
-                    "Error in embedding to type '%s': dimension should be indexed.".formatted(tensorType));
+                    String.format(Locale.ROOT, "Error in embedding to type '%s': dimension should be indexed.", tensorType));
         }
         var dimensionSize = dimension.size().orElseThrow();
         if (rawEmbedding.length != dimensionSize) {
             throw new IllegalArgumentException(
-                    "Error in embedding to type '%s': expected dimension size %d, but got %d.".formatted(
-                            tensorType, dimensionSize, rawEmbedding.length));
+                    String.format(Locale.ROOT, "Error in embedding to type '%s': expected dimension size %d, but got %d.", tensorType, dimensionSize, rawEmbedding.length));
         }
         var builder = Tensor.Builder.of(tensorType);
         for (int i = 0; i < dimensionSize; i++) {
@@ -121,7 +121,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         var tokens = model.encode(text);
         var maxTruncatedLength = maxPromptTokens - 2; // Reserve space for start and end token
         if (tokens.length <= maxTruncatedLength) return text;
-        log.fine(() -> "Truncating prompt from %d to %d tokens".formatted(tokens.length, maxTruncatedLength));
+        log.fine(() -> String.format(Locale.ROOT, "Truncating prompt from %d to %d tokens", tokens.length, maxTruncatedLength));
         var truncatedTokens = Arrays.copyOfRange(tokens, 0, maxTruncatedLength);
         return model.decode(truncatedTokens);
     }
@@ -136,8 +136,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
                     && cause.getMessage().contains("input is too large to process")) {
                 // Illegal input must be propagated as IllegalArgumentException
                 throw new IllegalArgumentException(
-                        "Input text is too large (prompt UTF-16 length: %d). Either set max prompt tokens or adjust batch/context size."
-                                .formatted(prompt.length()),
+                        String.format(Locale.ROOT, "Input text is too large (prompt UTF-16 length: %d). Either set max prompt tokens or adjust batch/context size.", prompt.length()),
                         cause);
             }
             throw e;

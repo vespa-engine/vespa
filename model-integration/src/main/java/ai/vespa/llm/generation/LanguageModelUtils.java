@@ -2,6 +2,7 @@
 package ai.vespa.llm.generation;
 
 import ai.vespa.llm.LanguageModel;
+import java.util.Locale;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 
@@ -54,8 +55,7 @@ class LanguageModelUtils {
                 if (input != null) {
                     prompt = prompt.replace("{input}", input);
                 } else {
-                    throw new IllegalArgumentException("There no input to add to the prompt: %s"
-                            .formatted(prompt));
+                    throw new IllegalArgumentException(String.format(Locale.ROOT, "There no input to add to the prompt: %s", prompt));
                 }
             }
 
@@ -63,8 +63,7 @@ class LanguageModelUtils {
                 if (jsonSchema != null) {
                     prompt = prompt.replace("{jsonSchema}", jsonSchema);
                 } else {
-                    throw new IllegalArgumentException("There no JSON schema to add to the prompt: %s"
-                            .formatted(prompt));
+                    throw new IllegalArgumentException(String.format(Locale.ROOT, "There no JSON schema to add to the prompt: %s", prompt));
                 }
             }
 
@@ -78,8 +77,7 @@ class LanguageModelUtils {
                 if (jsonSchema != null) {
                     prompt = prompt.replace("{jsonSchema}", jsonSchema);
                 } else {
-                    throw new IllegalArgumentException("There no JSON schema to add to the prompt: %s"
-                            .formatted(prompt));
+                    throw new IllegalArgumentException(String.format(Locale.ROOT, "There no JSON schema to add to the prompt: %s", prompt));
                 }
             }
 

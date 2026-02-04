@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Locale;
 
 /**
  * ONNX Runtime implementation that uses Triton Inference Server for model inference.
@@ -120,10 +121,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             var isTritonHealthy = tritonClient.isHealthy();
             
             if (!isTritonHealthy) {
-                processTerminator.logAndDie("Die because Triton server is not healthy at %s".formatted(config.target()));
+                processTerminator.logAndDie(String.format(Locale.ROOT, "Die because Triton server is not healthy at %s", config.target()));
             }
         } catch (TritonOnnxClient.TritonException e) {
-            processTerminator.logAndDie("Die because Triton server can't be reached at %s".formatted(config.target()));
+            processTerminator.logAndDie(String.format(Locale.ROOT, "Die because Triton server can't be reached at %s", config.target()));
         }
 
         var modelName = generateModelName(modelPath, options);

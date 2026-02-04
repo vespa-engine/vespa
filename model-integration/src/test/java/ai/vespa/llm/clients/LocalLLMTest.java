@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -311,7 +312,7 @@ public class LocalLLMTest {
             if (expectException != null) {
                 var exception = assertThrows(LanguageModelException.class, () -> llm.complete(StringPrompt.from(promptStr), inferenceOptions));
                 assertEquals(expectException.code(), exception.code());
-                assertTrue(exception.getMessage().toLowerCase().contains(expectException.getMessage().toLowerCase()));
+                assertTrue(exception.getMessage().toLowerCase(Locale.ROOT).contains(expectException.getMessage().toLowerCase(Locale.ROOT)));
                 return;
             }
 
@@ -674,14 +675,14 @@ public class LocalLLMTest {
                 InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema
         )::get);
 
-        var promptStr = """
+        var promptStr = String.format(Locale.ROOT, """
             Extract all names of people from this text:
             Lynda Carter was born on July 24, 1951 in Phoenix, Arizona, USA. She is an actress, known for
             Wonder Woman (1975), The Elder Scrolls IV: Oblivion (2006) and The Dukes of Hazzard (2005).
             She has been married to Robert Altman since January 29, 1984. They have two children.
             The output must strictly adhere to the following JSON format:
             %s
-        """.formatted(jsonSchema);
+        """, jsonSchema);
 
         var completions = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
         var completionString = completions.get(0).text().trim();

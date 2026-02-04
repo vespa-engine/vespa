@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Locale;
 
 /**
  * Resolves external data files for an ONNX models.
@@ -50,14 +51,13 @@ public class OnnxExternalDataResolver {
         try {
             var externalDataLocations = OnnxStreamParser.getExternalDataLocations(localPath);
             if (externalDataLocations.isEmpty()) return localPath;
-            log.fine(() -> "Found external data locations for ONNX model '%s': %s".formatted(ref, externalDataLocations));
+            log.fine(() -> String.format(Locale.ROOT, "Found external data locations for ONNX model '%s': %s", ref, externalDataLocations));
             var url = ref.url().get().value();
             var urlPrefix = url.substring(0, url.lastIndexOf('/') + 1);
             var externalDataFiles = new HashMap<Path, Path>();
             for (var location : externalDataLocations) {
                 var dataFileUrl = urlPrefix + location;
-                log.info("Downloading external data file '%s' for ONNX model '%s' using URL '%s'"
-                        .formatted(location, localPath.getFileName(), dataFileUrl));
+                log.info(String.format(Locale.ROOT, "Downloading external data file '%s' for ONNX model '%s' using URL '%s'", location, localPath.getFileName(), dataFileUrl));
                 var externalDataRef = ModelReference.unresolved(
                         Optional.empty(),
                         Optional.of(new UrlReference(dataFileUrl)),
@@ -70,7 +70,7 @@ public class OnnxExternalDataResolver {
                     .resolve(localPath.getFileName());
         } catch (IOException e) {
             log.warning(
-                    "Failed to resolve external data files for ONNX model '%s': %s".formatted(ref, e.getMessage()));
+                    String.format(Locale.ROOT, "Failed to resolve external data files for ONNX model '%s': %s", ref, e.getMessage()));
             log.log(Level.FINE, e.toString(), e);
 
             // Fallback to returning local path
@@ -80,18 +80,18 @@ public class OnnxExternalDataResolver {
 
     private static boolean shouldSkipExternalDataResolution(ModelReference ref) {
         if (ref.path() != null && ref.path().isPresent()) {
-            log.fine(() -> "Model reference '%s' has no local path, cannot resolve external data files".formatted(ref));
+            log.fine(() -> String.format(Locale.ROOT, "Model reference '%s' has no local path, cannot resolve external data files", ref));
             return true;
         }
         //noinspection OptionalAssignedToNull
         if (ref.url() == null || ref.url().isEmpty()) {
-            log.fine(() -> "Model reference '%s' has no URL, cannot resolve external data files".formatted(ref));
+            log.fine(() -> String.format(Locale.ROOT, "Model reference '%s' has no URL, cannot resolve external data files", ref));
             return true;
         }
         var modelUrl = ref.url().get().value();
         if (!modelUrl.endsWith(".onnx") || !modelUrl.contains("/")) {
             log.fine(() ->
-                    "URL does refer to ONNX model file name: '%s'".formatted(modelUrl));
+                    String.format(Locale.ROOT, "URL does refer to ONNX model file name: '%s'", modelUrl));
             return true;
         }
         return false;
@@ -111,7 +111,7 @@ public class OnnxExternalDataResolver {
             throw new IllegalArgumentException("Model file does not exist: " + model);
 
         var targetModelPath = tempDir.resolve(model.getFileName());
-        log.fine(() -> "Creating symlink for '%s' to '%s'".formatted(model, targetModelPath));
+        log.fine(() -> String.format(Locale.ROOT, "Creating symlink for '%s' to '%s'", model, targetModelPath));
         Files.createSymbolicLink(targetModelPath, model.toAbsolutePath());
 
         // Create symlinks for all external data files
@@ -126,12 +126,12 @@ public class OnnxExternalDataResolver {
             var targetPath = tempDir.resolve(relativeLocation);
             var parentDir = targetPath.getParent();
             if (parentDir != null && !Files.exists(parentDir, LinkOption.NOFOLLOW_LINKS)) {
-                log.fine(() -> "Creating parent directory for symlink: '%s'".formatted(parentDir));
+                log.fine(() -> String.format(Locale.ROOT, "Creating parent directory for symlink: '%s'", parentDir));
                 Files.createDirectories(parentDir);
             }
 
             // Create the symlink to the external data file
-            log.fine(() -> "Creating symlink for external data file '%s' to '%s'".formatted(dataFile, targetPath));
+            log.fine(() -> String.format(Locale.ROOT, "Creating symlink for external data file '%s' to '%s'", dataFile, targetPath));
             Files.createSymbolicLink(targetPath, dataFile);
         }
         return tempDir;

@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import java.util.Locale;
 
 /**
  * Experimental model inference using Nvidia Triton as ONNX backend.
@@ -444,7 +445,7 @@ public class TritonOnnxClient implements AutoCloseable {
                     builder.cellByDirectIndex(i, longBuffer.get(i));
                 }
             }
-            default -> throw new TritonException("Unsupported type from ONNX output: %s".formatted(tritonType));
+            default -> throw new TritonException(String.format(Locale.ROOT, "Unsupported type from ONNX output: %s", tritonType));
         }
         return builder.build();
     }

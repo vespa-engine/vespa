@@ -27,6 +27,7 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.document.DataType;
 import com.yahoo.language.process.FieldGenerator;
 import org.junit.jupiter.api.Test;
+import java.util.Locale;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -316,11 +317,11 @@ public class LanguageModelFieldGeneratorTest {
             var completionStr = stringBuilder.toString().trim();
             
             if (params.get(InferenceParameters.OPTION_JSON_SCHEMA).isPresent())
-                completionStr = """
+                completionStr = String.format(Locale.ROOT, """
                        {
                         "doc.text": "%s"
                        }
-                       """.formatted(completionStr);
+                       """, completionStr);
             
             return List.of(Completion.from(completionStr));
         }

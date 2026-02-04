@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Locale;
 
 /**
  * Converts an ONNX graph to a Vespa IntermediateGraph which is the basis
@@ -76,7 +77,7 @@ class GraphImporter {
                                               String nodeName,
                                               AttributeConverter attributes,
                                               int outputIndex) {
-        switch (opType.toLowerCase()) {
+        switch (opType.toLowerCase(Locale.ROOT)) {
             case "abs":         return new Map(modelName, nodeName, inputs, ScalarFunctions.abs());
             case "acos":        return new Map(modelName, nodeName, inputs, ScalarFunctions.acos());
             case "add":         return new Join(modelName, nodeName, inputs, ScalarFunctions.add());

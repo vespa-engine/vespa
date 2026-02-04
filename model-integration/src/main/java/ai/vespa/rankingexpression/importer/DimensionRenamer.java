@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.Locale;
 
 /**
  * A constraint solver which finds suitable dimension names to reduce the
@@ -145,7 +146,7 @@ public class DimensionRenamer {
     public Optional<String> dimensionNameOf(String name) {
         if ( renames == null || ! renames.containsKey(name))
             return Optional.empty();
-        return Optional.of(String.format("%s%d", dimensionPrefix, renames.get(name)));
+        return Optional.of(String.format(Locale.ROOT, "%s%d", dimensionPrefix, renames.get(name)));
     }
 
     private static String renamesToString(Map<String, Integer> renames) {

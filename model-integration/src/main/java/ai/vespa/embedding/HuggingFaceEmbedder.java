@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGEST_FIRST;
+import java.util.Locale;
 
 @Beta
 public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
@@ -113,7 +114,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                 .addDefaultModel(tokenizerPath)
                 .setPadding(false);
         var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
-        log.fine(() -> "'%s' has info '%s'".formatted(tokenizerPath, info));
+        log.fine(() -> String.format(Locale.ROOT, "'%s' has info '%s'", tokenizerPath, info));
         if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
             // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
             int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()

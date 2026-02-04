@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.generation;
 
+import java.util.Locale;
+
 import ai.vespa.json.Json;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.yahoo.document.ArrayDataType;
@@ -40,8 +42,7 @@ class FieldGeneratorUtils {
         try {
             fieldValue = generateJsonSchemaForFieldValue(fieldType);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Failed to generate schema for field %s of type %s"
-                    .formatted(fieldPath, fieldType.getName()), e);
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "Failed to generate schema for field %s of type %s", fieldPath, fieldType.getName()), e);
         }
         
         properties.set(fieldPath, fieldValue);
@@ -97,7 +98,7 @@ class FieldGeneratorUtils {
                 required.add(fieldName);
             }
         } else {
-            throw new IllegalArgumentException("Failed to generate schema for field type %s".formatted(fieldType));
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "Failed to generate schema for field type %s", fieldType));
         }
 
         return field;
@@ -111,13 +112,13 @@ class FieldGeneratorUtils {
         // Create a dummy document operation to use JSON document parser API.
         // API for parsing individual fields is not exposed.
         var documentTypeName = "dummy"; // avoid built-in name "document".
-        var documentId = "id:generate:%s::0".formatted(documentTypeName);
-        var jsonDocumentOperation = """
+        var documentId = String.format(Locale.ROOT, "id:generate:%s::0", documentTypeName);
+        var jsonDocumentOperation = String.format(Locale.ROOT, """
                 {
                     "put": "%s",
                     "fields": %s
                 }
-                """.formatted(documentId, jsonFieldValue);
+                """, documentId, jsonFieldValue);
         
         // Create and register types
         var types = new DocumentTypeManager();
@@ -136,8 +137,7 @@ class FieldGeneratorUtils {
             parsedDocumentOperation = jsonReader.readSingleDocumentStreaming(DocumentOperationType.PUT, documentId);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
-                    "Failed to parse JSON value for field %s of type %s: %s"
-                            .formatted(fieldPath, fieldType.getName(), jsonFieldValue), e);
+                    String.format(Locale.ROOT, "Failed to parse JSON value for field %s of type %s: %s", fieldPath, fieldType.getName(), jsonFieldValue), e);
         }
         
         var documentOperation = (DocumentPut) parsedDocumentOperation.operation();

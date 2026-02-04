@@ -17,6 +17,7 @@ import com.yahoo.tensor.functions.TensorFunction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Locale;
 
 public class ExpandDims extends IntermediateOperation {
 
@@ -60,7 +61,7 @@ public class ExpandDims extends IntermediateOperation {
     }
 
     private void addDimension(int dimensionIndex, OrderedTensorType.Builder typeBuilder) {
-        String name = String.format("%s_%d", vespaName(), dimensionIndex);
+        String name = String.format(Locale.ROOT, "%s_%d", vespaName(), dimensionIndex);
         expandDimensions.add(name);
         typeBuilder.add(TensorType.Dimension.indexed(name, 1L));
     }

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode.wrapScalar;
+import java.util.Locale;
 
 public class Reshape extends IntermediateOperation {
 
@@ -102,7 +103,7 @@ public class Reshape extends IntermediateOperation {
     private OrderedTensorType buildOutputType(List<Integer> dimSizes) {
         OrderedTensorType.Builder outputTypeBuilder = new OrderedTensorType.Builder(resultValueType());
         for (int i = 0; i < dimSizes.size(); ++i) {
-            outputTypeBuilder.add(TensorType.Dimension.indexed(String.format("%s_%d", vespaName(), i), dimSizes.get(i)));
+            outputTypeBuilder.add(TensorType.Dimension.indexed(String.format(Locale.ROOT, "%s_%d", vespaName(), i), dimSizes.get(i)));
         }
         return outputTypeBuilder.build();
     }
