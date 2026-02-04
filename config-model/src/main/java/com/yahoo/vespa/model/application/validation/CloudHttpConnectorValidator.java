@@ -24,14 +24,15 @@ public class CloudHttpConnectorValidator implements Validator {
             if (http == null) return;
             var illegalConnectors = http.getHttpServer().stream().flatMap(s -> s.getConnectorFactories().stream()
                     .filter(c -> !isAllowedConnector(c)))
-                    .map(cf -> "%s@%d".formatted(cf.getName(), cf.getListenPort()))
+                    .map(cf -> String.format(java.util.Locale.ROOT, "%s@%d", cf.getName(), cf.getListenPort()))
                     .toList();
             if (illegalConnectors.isEmpty()) return;
             context.illegal(
-                    ("Adding additional or modifying existing HTTPS connectors is not allowed for Vespa Cloud applications." +
+                    String.format(java.util.Locale.ROOT,
+                            "Adding additional or modifying existing HTTPS connectors is not allowed for Vespa Cloud applications." +
                             " Violating connectors: %s. See https://docs.vespa.ai/en/security/whitepaper.html, " +
-                            "https://docs.vespa.ai/en/security/guide.html#data-plane.")
-                            .formatted(illegalConnectors));
+                            "https://docs.vespa.ai/en/security/guide.html#data-plane.",
+                            illegalConnectors));
         });
     }
 

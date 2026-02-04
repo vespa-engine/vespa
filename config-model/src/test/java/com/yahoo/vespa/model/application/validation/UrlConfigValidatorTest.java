@@ -54,7 +54,7 @@ public class UrlConfigValidatorTest {
     }
 
     private static String containerXml(boolean isExclusive) {
-        return """
+        return String.format(java.util.Locale.ROOT, """
                            <container version='1.0' id='default'>
                                <component id='transformer' class='ai.vespa.embedding.BertBaseEmbedder' bundle='model-integration'>
                                    <config name='embedding.bert-base-embedder'>
@@ -66,16 +66,16 @@ public class UrlConfigValidatorTest {
                                <document-api/>
                                <nodes count='2' exclusive='%s' />
                            </container>
-                """.formatted(Boolean.toString(isExclusive));
+                """, Boolean.toString(isExclusive));
     }
 
     private static void runValidatorOnApp(boolean isExclusive, SystemName systemName) throws IOException, SAXException {
         String container = containerXml(isExclusive);
-        String servicesXml = """
+        String servicesXml = String.format(java.util.Locale.ROOT, """
                         <services version='1.0'>
                           %s
                         </services>
-                """.formatted(container);
+                """, container);
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();

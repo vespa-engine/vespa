@@ -44,10 +44,9 @@ public class HnswValidator implements Validator {
                                      .toList();
         if (fields.isEmpty()) return;
 
-        var message = ("Cluster '%s' has searchable copies > 1 and fields with hnsw index:" +
+        var message = String.format(java.util.Locale.ROOT, ("Cluster '%s' has searchable copies > 1 and fields with hnsw index:" +
                 " %s." +
-                " This will use a lot of resources, consider using searchable-copies=1%s")
-                .formatted(cluster.getClusterName(),
+                " This will use a lot of resources, consider using searchable-copies=1%s"), cluster.getClusterName(),
                            String.join(", ", fields),
                            cluster.usesHierarchicDistribution()
                                    ? ""
@@ -66,7 +65,7 @@ public class HnswValidator implements Validator {
                            .toList();
         if (fields.isEmpty()) return Optional.empty();
 
-        return Optional.of("fields %s in schema %s".formatted(String.join(", ", fields), schema.name()));
+        return Optional.of(String.format(java.util.Locale.ROOT, "fields %s in schema %s", String.join(", ", fields), schema.name()));
     }
 
     private static Set<ContentCluster> clustersWithMoreThanOneSearchableCopy(Context context) {

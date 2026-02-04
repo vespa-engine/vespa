@@ -324,7 +324,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                                <nodes count='2' />
                              </container>
                              """;
-        String deploymentXml = """
+        String deploymentXml = String.format(java.util.Locale.ROOT, """
                                <deployment version='1.0'>
                                  <prod>
                                    <region>eu</region>
@@ -333,7 +333,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                                    %s
                                  </endpoints>
                                </deployment>
-                               """.formatted(endpointsTag);
+                               """, endpointsTag);
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).withDeploymentSpec(deploymentXml).build();
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, false, "host1.yahoo.com", "host2.yahoo.com");
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
@@ -752,7 +752,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     void createModelWithTesterNodes(String testerNodesXml) {
-        String containerXml = "<container id='default' version='1.0'>%s</container>".formatted(testerNodesXml);
+        String containerXml = String.format(java.util.Locale.ROOT, "<container id='default' version='1.0'>%s</container>", testerNodesXml);
         VespaModelTester tester = new VespaModelTester();
         tester.setApplicationId("t", "a", "i-t");
         tester.addHosts(3);
@@ -814,7 +814,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         return DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <search>",
-                String.format("    <renderer id='%s'/>", rendererId),
+                String.format(java.util.Locale.ROOT, "    <renderer id='%s'/>", rendererId),
                 "  </search>",
                 "</container>");
     }

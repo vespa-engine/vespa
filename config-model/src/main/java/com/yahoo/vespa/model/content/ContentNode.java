@@ -42,7 +42,7 @@ public abstract class ContentNode extends AbstractService
         // Only [0, UINT16_MAX - 1] is a valid range. UINT16_MAX is a special content layer-internal
         // sentinel value that must never be used by actual nodes.
         if (distributionKey < 0 || distributionKey >= 65535) {
-            throw new IllegalArgumentException("Distribution key %d is outside valid range [0, 65534]".formatted(distributionKey));
+            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Distribution key %d is outside valid range [0, 65534]", distributionKey));
         }
 
         initialize();

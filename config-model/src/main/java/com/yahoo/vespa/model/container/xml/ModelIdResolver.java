@@ -77,7 +77,7 @@ public class ModelIdResolver {
         register(m, "mistral-7b",      "https://data.vespa-cloud.com/gguf_models/mistral-7b-instruct-v0.1.Q6_K.gguf", Set.of(GGUF_MODEL));
         register(m, "mistral-7b-q8",   "https://data.vespa-cloud.com/gguf_models/mistral-7b-instruct-v0.1.Q8_0.gguf", Set.of(GGUF_MODEL));
         register(m, "phi-3.5-mini-q4", "https://data.vespa-cloud.com/gguf_models/Phi-3.5-mini-instruct-Q4_K_M.gguf", Set.of(GGUF_MODEL));
-        
+
         register(m, "significance-en-wikipedia-v1", "https://data.vespa-cloud.com/significance_models/significance-en-wikipedia-v1.json.zst", Set.of(SIGNIFICANCE_MODEL));
         return Map.copyOf(m);
     }
@@ -145,8 +145,7 @@ public class ModelIdResolver {
         var providedModel = providedModels.get(modelId);
         if ( ! providedModel.tags().containsAll(requiredTags)) {
             throw new IllegalArgumentException(
-                    "Model '%s' on '%s' has tags %s but are missing required tags %s"
-                            .formatted(modelId, valueName, providedModel.tags(), requiredTags));
+                    String.format(java.util.Locale.ROOT, "Model '%s' on '%s' has tags %s but are missing required tags %s", modelId, valueName, providedModel.tags(), requiredTags));
         }
         return providedModel.uri().toString();
     }

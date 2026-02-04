@@ -84,7 +84,7 @@ class UriBindingsValidator implements Validator {
     }
 
     private static String createErrorMessage(BindingPattern binding, String message) {
-        return String.format("For binding '%s': %s", binding.originalPatternString(), message);
+        return String.format(java.util.Locale.ROOT, "For binding '%s': %s", binding.originalPatternString(), message);
     }
 
 }

@@ -47,7 +47,7 @@ public class RestartOnDeployForLocalLLMValidatorTest {
     }
 
     private static VespaModel createModel(String component) {
-        var xml = """
+        var xml = String.format(java.util.Locale.ROOT, """
                 <services version='1.0'>
                   <container id='cluster1' version='1.0'>
                     <http>
@@ -56,7 +56,7 @@ public class RestartOnDeployForLocalLLMValidatorTest {
                     %s
                   </container>
                 </services>
-                """.formatted(component);
+                """, component);
         DeployState.Builder builder = deployStateBuilder();
         return new VespaModelCreatorWithMockPkg(null, xml).create(builder);
     }
@@ -66,7 +66,7 @@ public class RestartOnDeployForLocalLLMValidatorTest {
     }
 
     private static String withComponent(String componentClass) {
-        return "<component id='llm' class='%s' />".formatted(componentClass);
+        return String.format(java.util.Locale.ROOT, "<component id='llm' class='%s' />", componentClass);
     }
 
     private static DeployState.Builder deployStateBuilder() {

@@ -105,7 +105,7 @@ public class VoyageAIEmbedderTest {
         };
 
         for (int i = 0; i < quantizations.length; i++) {
-            String xml = """
+            String xml = String.format(java.util.Locale.ROOT, """
                     <?xml version="1.0" encoding="utf-8" ?>
                     <services version="1.0">
                         <container id="container" version="1.0">
@@ -117,7 +117,7 @@ public class VoyageAIEmbedderTest {
                             </component>
                         </container>
                     </services>
-                    """.formatted(quantizations[i]);
+                    """, quantizations[i]);
 
             var model = buildModelFromXml(xml);
             var config = getVoyageAIEmbedderConfig(model.getContainerClusters().get("container"), "voyage");

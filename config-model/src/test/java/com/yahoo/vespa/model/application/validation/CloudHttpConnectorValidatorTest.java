@@ -86,7 +86,7 @@ class CloudHttpConnectorValidatorTest {
     }
 
     private static void runValidatorOnApp(boolean hosted, String appTypeAttribute, String serverXml) throws Exception {
-        String servicesXml = """
+        String servicesXml = String.format(java.util.Locale.ROOT, """
                         <services version='1.0'%s>
                           <container version='1.0'>
                             <http>
@@ -94,7 +94,7 @@ class CloudHttpConnectorValidatorTest {
                             </http>
                           </container>
                         </services>
-                """.formatted(appTypeAttribute, serverXml);
+                """, appTypeAttribute, serverXml);
         var state = new DeployState.Builder()
                 .applicationPackage(
                         new MockApplicationPackage.Builder()

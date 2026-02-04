@@ -57,7 +57,7 @@ public abstract class AbstractBundleValidator implements Validator {
             Path path = Path.fromString(info.getPathRelativeToAppDir());
             try {
                 context.deployState().getDeployLogger()
-                        .log(Level.FINE, String.format("Validating bundle at '%s'", path));
+                        .log(Level.FINE, String.format(java.util.Locale.ROOT, "Validating bundle at '%s'", path));
                 JarFile jarFile = new JarFile(app.getFileReference(path));
                 validateJarFile(JarContext.of(context), jarFile);
             } catch (IOException e) {
@@ -97,7 +97,7 @@ public abstract class AbstractBundleValidator implements Validator {
     }
 
     protected final void log(DeployState state, Level level, String fmt, Object... args) {
-        state.getDeployLogger().logApplicationPackage(level, String.format(fmt, args));
+        state.getDeployLogger().logApplicationPackage(level, String.format(java.util.Locale.ROOT, fmt, args));
     }
 
     private static final Pattern POM_FILE_LOCATION = Pattern.compile("META-INF/maven/.+?/.+?/pom.xml");
@@ -107,16 +107,16 @@ public abstract class AbstractBundleValidator implements Validator {
                 .findFirst()
                 .map(f -> {
                     try {
-                        String text = new String(jar.getInputStream(f).readAllBytes());
+                        String text = new String(jar.getInputStream(f).readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
                         return XML.getDocumentBuilder(false)
                                 .parse(new InputSource(new StringReader(text)));
                     } catch (SAXException e) {
-                        String message = String.format("Unable to parse pom.xml from %s", filename(jar));
+                        String message = String.format(java.util.Locale.ROOT, "Unable to parse pom.xml from %s", filename(jar));
                         logger.log(Level.SEVERE, message);
                         context.accept(message, e);
                     } catch (IOException e) {
                         logger.log(Level.INFO,
-                                String.format("Unable to read '%s' from '%s'", f.getName(), jar.getName()));
+                                String.format(java.util.Locale.ROOT, "Unable to read '%s' from '%s'", f.getName(), jar.getName()));
                     }
                     return null;
                 });

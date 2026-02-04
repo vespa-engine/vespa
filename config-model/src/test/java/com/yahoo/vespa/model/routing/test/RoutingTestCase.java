@@ -2,10 +2,11 @@
 package com.yahoo.vespa.model.routing.test;
 
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.messagebus.MessagebusConfig;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.jupiter.api.Test;
@@ -133,7 +134,7 @@ public class RoutingTestCase {
         StringBuilder content = new StringBuilder();
 
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(files.get(fileName)));
+            BufferedReader reader = new BufferedReader(new FileReader(files.get(fileName), java.nio.charset.StandardCharsets.UTF_8));
             String line = reader.readLine();
             while (line != null) {
                 content.append(line).append("\n");
@@ -155,7 +156,7 @@ public class RoutingTestCase {
      * @param files           The filtered list of files within the application.
      * @param fileName        The name of the file whose content to check.
      * @param config          The config required in the file being checked.
-     * @throws IOException 
+     * @throws IOException
      */
     private static void assertConfigFileContains(File application, Map<String, File> files,
                                                  String fileName, ConfigInstance config) throws IOException {
@@ -184,7 +185,7 @@ public class RoutingTestCase {
             name = application.getCanonicalPath() + "/" + name;
             System.out.println("\tWriting file '" + name + "'.");
 
-            PrintWriter writer = new PrintWriter(new FileWriter(name));
+            PrintWriter writer = new PrintWriter(Utf8.createWriter(name));
             writer.print(content);
             writer.close();
 

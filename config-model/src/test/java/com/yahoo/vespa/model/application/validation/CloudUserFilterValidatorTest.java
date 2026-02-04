@@ -44,7 +44,7 @@ class CloudUserFilterValidatorTest {
     }
 
     private static void runValidatorOnApp(boolean isHosted, String applicationTypeAttribute) throws IOException, SAXException {
-        String servicesXml = """
+        String servicesXml = String.format(java.util.Locale.ROOT, """
                         <services version='1.0'%s>
                           <container version='1.0'>
                             <http>
@@ -57,7 +57,7 @@ class CloudUserFilterValidatorTest {
                             </http>
                           </container>
                         </services>
-                """.formatted(applicationTypeAttribute);
+                """, applicationTypeAttribute);
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();

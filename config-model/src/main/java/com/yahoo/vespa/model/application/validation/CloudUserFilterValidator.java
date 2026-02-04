@@ -27,7 +27,7 @@ public class CloudUserFilterValidator implements Validator {
             if (cluster.getHttp() == null) continue;
             for (var chain : cluster.getHttp().getFilterChains().allChains().allComponents()) {
                 if (chain.type() == HttpFilterChain.Type.USER) {
-                    var msg = "Found filter chain violation - chain '%s' in cluster '%s'".formatted(cluster.name(), chain.id());
+                    var msg = String.format(java.util.Locale.ROOT, "Found filter chain violation - chain '%s' in cluster '%s'", cluster.name(), chain.id());
                     context.deployState().getDeployLogger().log(Level.WARNING, msg);
                     violations.add(new Violation(cluster.name(), chain.id()));
                 }
@@ -35,9 +35,9 @@ public class CloudUserFilterValidator implements Validator {
         }
         if (violations.isEmpty()) return;
         var violationsStr = violations.stream()
-                .map(v -> "chain '%s' in cluster '%s'".formatted(v.chain(), v.cluster()))
+                .map(v -> String.format(java.util.Locale.ROOT, "chain '%s' in cluster '%s'", v.chain(), v.cluster()))
                 .collect(Collectors.joining(", ", "[", "]"));
-        var msg = ("HTTP filter chains are currently not supported in Vespa Cloud (%s)").formatted(violationsStr);
+        var msg = String.format(java.util.Locale.ROOT, "HTTP filter chains are currently not supported in Vespa Cloud (%s)", violationsStr);
         context.illegal(msg);
     }
 

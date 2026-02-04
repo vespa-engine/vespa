@@ -162,7 +162,7 @@ public class FieldSetSettingsTestCase {
     }
 
     private static String schemaWithMatchSettings(String fieldSet, String fieldNameWithWordMatching, String fieldNameWithExactMatching) {
-        return """
+        return String.format(java.util.Locale.ROOT, """
                   schema index_variants {
                     document index_variants {
                       field %s type string {
@@ -176,7 +176,7 @@ public class FieldSetSettingsTestCase {
                     }
                   %s
                   }
-                """.formatted(fieldNameWithWordMatching, fieldNameWithExactMatching, fieldSet);
+                """, fieldNameWithWordMatching, fieldNameWithExactMatching, fieldSet);
     }
 
 }

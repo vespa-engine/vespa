@@ -49,14 +49,14 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                 .map(prefix -> {
                     var parts = prefix.split(":");
                     if (parts.length != 3) {
-                        throw new IllegalArgumentException("Expected string of format 'prefix:sample-rate:max-entity-size', got '%s'".formatted(prefix));
+                        throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Expected string of format 'prefix:sample-rate:max-entity-size', got '%s'", prefix));
                     }
                     var pathPrefix = parts[0];
                     if (pathPrefix.isBlank())
                         throw new IllegalArgumentException("Path prefix must not be blank");
                     var sampleRate = Double.parseDouble(parts[1]);
                     if (sampleRate < 0 || sampleRate > 1)
-                        throw new IllegalArgumentException("Sample rate must be in range [0, 1], got '%s'".formatted(sampleRate));
+                        throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Sample rate must be in range [0, 1], got '%s'", sampleRate));
                     var maxEntitySize = BytesQuantity.fromString(parts[2]);
                     return new EntityLoggingEntry(pathPrefix, sampleRate, maxEntitySize);
                 })

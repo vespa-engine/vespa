@@ -49,7 +49,6 @@ public class CloudClientsValidator implements Validator {
     }
 
     private static String errorMessage(String clusterName, String clientId, String message) {
-        return "Client **%s** defined for cluster **%s** contains an invalid certificate: %s"
-                .formatted(clientId, clusterName, message);
+        return String.format(java.util.Locale.ROOT, "Client **%s** defined for cluster **%s** contains an invalid certificate: %s", clientId, clusterName, message);
     }
 }

@@ -55,7 +55,7 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         builder.apiKeySecretRef(apiKeySecretRef);
         builder.model(model);
         builder.dimensions(dimensions);
-        builder.quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(quantization.toUpperCase()));
+        builder.quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(quantization.toUpperCase(java.util.Locale.ROOT)));
 
         if (endpoint != null) {
             builder.endpoint(endpoint);

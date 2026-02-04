@@ -54,7 +54,7 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
                 case "bert-embedder" -> new BertEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 case "splade-embedder" -> new SpladeEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 case "voyage-ai-embedder" -> new VoyageAIEmbedder((ApplicationContainerCluster)ancestor, spec, state);
-                default -> throw new IllegalArgumentException("Unknown component type '%s'".formatted(type));
+                default -> throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Unknown component type '%s'", type));
             };
         } else {
             var bundleSpec = BundleInstantiationSpecificationBuilder.build(spec).nestInNamespace(namespace);

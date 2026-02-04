@@ -57,7 +57,7 @@ public class IdentityProvider extends SimpleComponent implements IdentityConfig.
 
     // TODO Move to Oath configmodel amender
     private String getConfigserverIdentityName() {
-        return String.format("%s.provider_%s_%s",
+        return String.format(java.util.Locale.ROOT, "%s.provider_%s_%s",
                              configServerDomain(),
                              zone.environment().value(),
                              zone.region().value());

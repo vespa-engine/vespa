@@ -62,7 +62,7 @@ public class ParsedDocument extends ParsedBlock {
     public void inherit(String other) { inherited.add(other); }
 
     public void addField(ParsedField field) {
-        String fieldName = field.name().toLowerCase();
+        String fieldName = field.name().toLowerCase(java.util.Locale.ROOT);
         verifyThat(! docFields.containsKey(fieldName),
                    "Duplicate (case insensitively) " + field + " in document type '" + this.name() + "'");
         docFields.put(fieldName, field);
