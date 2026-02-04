@@ -139,7 +139,7 @@ private:
     std::shared_ptr<DDBState>                        _state;
     ResourceUsageForwarder                           _resource_usage_forwarder;
     AttributeUsageFilter                             _writeFilter;
-    std::shared_ptr<IResourceUsageProvider> _resource_usage_provider;
+    std::shared_ptr<IResourceUsageProvider>          _resource_usage_provider;
     std::unique_ptr<FeedHandler>                     _feedHandler;
     DocumentSubDBCollection                          _subDBs;
     MaintenanceController                            _maintenanceController;
