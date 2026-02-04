@@ -3,7 +3,4 @@
 
 #include <vespamalloc/malloc/memblock.h>
 
-namespace vespamalloc {
-
-}
-
+namespace vespamalloc {}

@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <unistd.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespamalloc/malloc/allocchunk.h>
 #include <vespamalloc/malloc/mmappool.h>
-#include <unistd.h>
 
-TEST(AtomicTest, verify_lock_freeness_of_atomics){
+TEST(AtomicTest, verify_lock_freeness_of_atomics) {
     {
         std::atomic<uint32_t> uint32V;
         ASSERT_TRUE(uint32V.is_lock_free());
@@ -19,7 +19,6 @@ TEST(AtomicTest, verify_lock_freeness_of_atomics){
         // See https://gcc.gnu.org/ml/gcc-patches/2017-01/msg02344.html for background
         ASSERT_TRUE(taggedPtr.is_lock_free() || !taggedPtr.is_lock_free());
     }
-
 }
 
 TEST(AtomicTest, test_explicit_mmap_munmap) {
@@ -30,7 +29,7 @@ TEST(AtomicTest, test_explicit_mmap_munmap) {
     EXPECT_EQ(0u, mmapPool.getNumMappings());
     EXPECT_EQ(0u, mmapPool.getMmappedBytes());
 
-    void * mmap1 = mmapPool.mmap(mmap1_size);
+    void* mmap1 = mmapPool.mmap(mmap1_size);
     EXPECT_EQ(1u, mmapPool.getNumMappings());
     EXPECT_EQ(mmap1_size, mmapPool.getMmappedBytes());
     EXPECT_EQ(mmap1_size, mmapPool.get_size(mmap1));
@@ -42,7 +41,7 @@ TEST(AtomicTest, test_explicit_mmap_munmap) {
     EXPECT_EQ(mmap1_size, mmapPool.getMmappedBytes());
     EXPECT_EQ(mmap1_size, mmapPool.get_size(mmap1));
 
-    void * mmap2 = mmapPool.mmap(mmap2_size);
+    void* mmap2 = mmapPool.mmap(mmap2_size);
     EXPECT_EQ(2u, mmapPool.getNumMappings());
     EXPECT_EQ(mmap1_size + mmap2_size, mmapPool.getMmappedBytes());
     EXPECT_EQ(mmap1_size, mmapPool.get_size(mmap1));

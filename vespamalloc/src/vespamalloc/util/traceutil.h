@@ -1,67 +1,55 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <dlfcn.h>
-#include <csignal>
-#include <stdlib.h>
 #include <cassert>
+#include <csignal>
+#include <dlfcn.h>
+#include <stdlib.h>
 #include <vector>
-#include <vespamalloc/util/index.h>
-#include <vespamalloc/util/callstack.h>
 #include <vespamalloc/util/callgraph.h>
-
+#include <vespamalloc/util/callstack.h>
+#include <vespamalloc/util/index.h>
 
 namespace vespamalloc {
 
 using StackElem = StackEntry;
 typedef CallGraph<StackElem, 0x10000, Index> CallGraphT;
 
-class Aggregator
-{
+class Aggregator {
 public:
     Aggregator();
     ~Aggregator();
-    void push_back(size_t num, const string & s) { _map.emplace_back(num, s); }
-    friend asciistream & operator << (asciistream & os, const Aggregator & v);
+    void push_back(size_t num, const string& s) { _map.emplace_back(num, s); }
+    friend asciistream& operator<<(asciistream& os, const Aggregator& v);
+
 private:
-    typedef std::vector< std::pair<size_t, string> > Map;
+    typedef std::vector<std::pair<size_t, string>> Map;
     Map _map;
 };
 
-
-template<typename N>
-class DumpGraph
-{
+template <typename N> class DumpGraph {
 public:
-    DumpGraph(Aggregator * aggregator, const char * s="{ ", const char * end=" }") __attribute__ ((noinline));
-    ~DumpGraph() __attribute__ ((noinline));
-    void handle(const N & node) __attribute__ ((noinline));
+    DumpGraph(Aggregator* aggregator, const char* s = "{ ", const char* end = " }") __attribute__((noinline));
+    ~DumpGraph() __attribute__((noinline));
+    void handle(const N& node) __attribute__((noinline));
+
 private:
-    string       _string;
-    string       _endString;
-    size_t       _sum;
-    size_t       _min;
-    Aggregator * _aggregator;
+    string _string;
+    string _endString;
+    size_t _sum;
+    size_t _min;
+    Aggregator* _aggregator;
 };
 
-asciistream & operator << (asciistream & os, const Aggregator & v);
+asciistream& operator<<(asciistream& os, const Aggregator& v);
 
-template<typename N>
-DumpGraph<N>::DumpGraph(Aggregator * aggregator, const char * start, const char * end) :
-    _string(start),
-    _endString(end),
-    _sum(0),
-    _min(-1),
-    _aggregator(aggregator)
-{
-}
+template <typename N>
+DumpGraph<N>::DumpGraph(Aggregator* aggregator, const char* start, const char* end)
+    : _string(start), _endString(end), _sum(0), _min(-1), _aggregator(aggregator) {}
 
-template<typename N>
-DumpGraph<N>::~DumpGraph() = default;
+template <typename N> DumpGraph<N>::~DumpGraph() = default;
 
-template<typename N>
-void DumpGraph<N>::handle(const N & node)
-{
+template <typename N> void DumpGraph<N>::handle(const N& node) {
     _sum += node.count();
     if (node.count() < _min) {
         _min = node.count();
@@ -75,5 +63,4 @@ void DumpGraph<N>::handle(const N & node)
     }
 }
 
-}
-
+} // namespace vespamalloc

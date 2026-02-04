@@ -8,4 +8,4 @@ namespace vespamalloc {
 // Simple memcpy replacement to avoid calling code in other dso.
 void independent_non_inlined_memcpy(void *dest_in, const void *src_in, size_t n);
 
-}
+} // namespace vespamalloc

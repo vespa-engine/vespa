@@ -3,8 +3,7 @@
 
 namespace vespamalloc {
 
-static Allocator * createAllocator()
-{
+static Allocator* createAllocator() {
     if (_GmemP == nullptr) {
         _GmemP = new (_Gmem) Allocator(1, 0x7fffffffffffffffl);
     }
@@ -13,13 +12,12 @@ static Allocator * createAllocator()
 
 template void MemBlockBoundsCheckBaseT<20, 16>::dumpInfo(size_t);
 
-}
+} // namespace vespamalloc
 
 extern "C" {
 
-int is_vespamallocdst16_nl() __attribute__((visibility ("default")));
+int is_vespamallocdst16_nl() __attribute__((visibility("default")));
 int is_vespamallocdst16_nl() { return 1; }
-
 }
 
 #include <vespamalloc/malloc/overload.h>

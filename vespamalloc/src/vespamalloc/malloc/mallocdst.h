@@ -13,11 +13,9 @@ static char _Gmem[sizeof(Allocator)];
 static Allocator *_GmemP = nullptr;
 
 template <size_t MaxSizeClassMultiAllocC, size_t StackTraceLen>
-void MemBlockBoundsCheckBaseT<MaxSizeClassMultiAllocC, StackTraceLen>::dumpInfo(size_t level)
-{
+void MemBlockBoundsCheckBaseT<MaxSizeClassMultiAllocC, StackTraceLen>::dumpInfo(size_t level) {
     fprintf(_logFile, "mallocdst dumping at level %ld\n", level);
     _GmemP->info(_logFile, level);
 }
 
-}
-
+} // namespace vespamalloc
