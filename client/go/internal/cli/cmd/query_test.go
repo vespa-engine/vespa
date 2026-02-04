@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
@@ -195,6 +196,116 @@ func assertStreamingQuery(t *testing.T, expectedOutput, body string, args ...str
 	assert.Nil(t, cli.Run(append(args, "-t", "http://127.0.0.1:8080", "query", "select something")...))
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t, expectedOutput, stdout.String())
+}
+
+func TestQueryAcceptHeader(t *testing.T) {
+	client := &mock.HTTPClient{}
+	client.NextResponseString(200, "{\"query\":\"result\"}")
+	cli, _, _ := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "select from sources * where title contains 'foo'"))
+	assert.Equal(t, "application/cbor, application/json;q=0.9", client.LastRequest.Header.Get("Accept"))
+}
+
+func TestQueryAcceptHeaderCustom(t *testing.T) {
+	client := &mock.HTTPClient{}
+	client.NextResponseString(200, "{\"query\":\"result\"}")
+	cli, _, _ := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "--header", "Accept: application/json", "select from sources * where title contains 'foo'"))
+	assert.Equal(t, "application/json", client.LastRequest.Header.Get("Accept"))
+}
+
+func TestQueryCborResponse(t *testing.T) {
+	// Create CBOR-encoded response data
+	responseData := map[string]interface{}{"query": "result"}
+	cborBytes, err := cbor.Marshal(responseData)
+	require.Nil(t, err)
+
+	client := &mock.HTTPClient{}
+	response := mock.HTTPResponse{Status: 200, Header: make(http.Header)}
+	response.Header.Set("Content-Type", "application/cbor")
+	response.Body = cborBytes
+	client.NextResponse(response)
+
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "select from sources * where title contains 'foo'"))
+	assert.Equal(t, "", stderr.String())
+	assert.Equal(t, "{\n    \"query\": \"result\"\n}\n", stdout.String())
+}
+
+func TestQueryCborResponsePlain(t *testing.T) {
+	// Create CBOR-encoded response data
+	responseData := map[string]interface{}{"query": "result"}
+	cborBytes, err := cbor.Marshal(responseData)
+	require.Nil(t, err)
+
+	client := &mock.HTTPClient{}
+	response := mock.HTTPResponse{Status: 200, Header: make(http.Header)}
+	response.Header.Set("Content-Type", "application/cbor")
+	response.Body = cborBytes
+	client.NextResponse(response)
+
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "--format=plain", "query", "select from sources * where title contains 'foo'"))
+	assert.Equal(t, "", stderr.String())
+	assert.Equal(t, "{\"query\":\"result\"}\n", stdout.String())
+}
+
+func TestQueryJsonResponse(t *testing.T) {
+	client := &mock.HTTPClient{}
+	response := mock.HTTPResponse{Status: 200, Header: make(http.Header)}
+	response.Header.Set("Content-Type", "application/json")
+	response.Body = []byte("{\"query\":\"result\"}")
+	client.NextResponse(response)
+
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "select from sources * where title contains 'foo'"))
+	assert.Equal(t, "", stderr.String())
+	assert.Equal(t, "{\n    \"query\": \"result\"\n}\n", stdout.String())
+}
+
+func TestQueryJsonResponsePlain(t *testing.T) {
+	client := &mock.HTTPClient{}
+	response := mock.HTTPResponse{Status: 200, Header: make(http.Header)}
+	response.Header.Set("Content-Type", "application/json")
+	response.Body = []byte("{\"query\":\"result\"}")
+	client.NextResponse(response)
+
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "--format=plain", "query", "select from sources * where title contains 'foo'"))
+	assert.Equal(t, "", stderr.String())
+	assert.Equal(t, "{\"query\":\"result\"}\n", stdout.String())
+}
+
+func TestQueryCborErrorResponse(t *testing.T) {
+	// Create CBOR-encoded error response
+	errorData := map[string]interface{}{"error": "bad request"}
+	cborBytes, err := cbor.Marshal(errorData)
+	require.Nil(t, err)
+
+	client := &mock.HTTPClient{}
+	response := mock.HTTPResponse{Status: 400, Header: make(http.Header)}
+	response.Header.Set("Content-Type", "application/cbor")
+	response.Body = cborBytes
+	client.NextResponse(response)
+
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "select from sources * where title contains 'foo'"))
+	assert.Contains(t, stderr.String(), "invalid query")
+	assert.Contains(t, stderr.String(), "bad request")
 }
 
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
