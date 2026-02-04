@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,7 @@ public class NormalizedDefinitionTest {
     void testNormalizingFromFile() throws IOException {
         FileReader fileReader = null;
         try {
-            fileReader = new FileReader("src/test/resources/configgen.allfeatures.def");
+            fileReader = new FileReader("src/test/resources/configgen.allfeatures.def", StandardCharsets.UTF_8);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
