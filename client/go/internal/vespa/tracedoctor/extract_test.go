@@ -253,3 +253,21 @@ func TestIsObjectArrayAndIteration(t *testing.T) {
 		t.Fatal("should not be called")
 	})
 }
+
+func TestStripTemplateParams(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"MultiTermHashFilter<IntegerHashFilterWrapper<true> >::doSeek", "MultiTermHashFilter<...>::doSeek"},
+		{"vector<Bar>::push_back", "vector<...>::push_back"},
+		{"map<string, Bar>::insert", "map<...>::insert"},
+		{"SimpleClass::method", "SimpleClass::method"},
+		{"Outer<Inner<T>>::func", "Outer<...>::func"},
+		{"Class<A,B,C>::method", "Class<...>::method"},
+		{"NoTemplates", "NoTemplates"},
+	}
+	for _, tt := range tests {
+		assert.Equal(t, tt.expected, stripTemplateParams(tt.input))
+	}
+}
