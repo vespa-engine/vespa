@@ -119,7 +119,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 configDefinitionRepo,
                 fileRegistry,
                 executor,
-                new ApplicationCuratorDatabase(applicationId.tenant(), curator).readReindexingStatus(applicationId),
+                new ApplicationCuratorDatabase(applicationId.tenant(), curator, configserverConfig).readReindexingStatus(applicationId),
                 createHostProvisioner(applicationPackage, provisioned),
                 provisioned,
                 createModelContextProperties(modelFactory.version(), applicationPackage),

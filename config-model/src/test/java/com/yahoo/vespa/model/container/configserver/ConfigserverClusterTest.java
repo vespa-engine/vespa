@@ -75,6 +75,19 @@ public class ConfigserverClusterTest {
     }
 
     @Test
+    void configserverConfig() {
+        boolean hostedVespa = false;
+        long applicationLockTimeoutSeconds = 59;
+        TestOptions testOptions = createTestOptions(List.of(),
+                                                    List.of(),
+                                                    hostedVespa,
+                                                    applicationLockTimeoutSeconds);
+
+        ConfigserverConfig configserverConfig = getConfig(ConfigserverConfig.class, testOptions);
+        assertEquals(applicationLockTimeoutSeconds, configserverConfig.applicationLockTimeoutSeconds());
+    }
+
+    @Test
     void zookeeperConfig_uneven_number_of_config_servers_and_zk_ids() {
         assertThrows(IllegalArgumentException.class, () -> {
             TestOptions testOptions = createTestOptions(List.of("cfg1", "localhost", "cfg3"), List.of(1));
@@ -110,6 +123,7 @@ public class ConfigserverClusterTest {
         assertTrue(config.hostedVespa());
         assertEquals("test", config.environment());
         assertEquals("bar", config.region());
+        assertEquals(60, config.applicationLockTimeoutSeconds());
     }
 
     @Test
@@ -139,16 +153,32 @@ public class ConfigserverClusterTest {
     }
 
     private static TestOptions createTestOptions(List<String> configServerHostnames, List<Integer> configServerZkIds) {
-        return createTestOptions(configServerHostnames, configServerZkIds, true);
-
+        return createTestOptions(configServerHostnames,
+                                 configServerZkIds,
+                                 true,
+                                 new ConfigserverConfig(new ConfigserverConfig.Builder()).applicationLockTimeoutSeconds());
     }
-    private static TestOptions createTestOptions(List<String> configServerHostnames, List<Integer> configServerZkIds, boolean hostedVespa) {
+
+    private static TestOptions createTestOptions(List<String> configServerHostnames,
+                                                 List<Integer> configServerZkIds,
+                                                 boolean hostedVespa) {
+        return createTestOptions(configServerHostnames,
+                                 configServerZkIds,
+                                 hostedVespa,
+                                 new ConfigserverConfig(new ConfigserverConfig.Builder()).applicationLockTimeoutSeconds());
+    }
+
+    private static TestOptions createTestOptions(List<String> configServerHostnames,
+                                                 List<Integer> configServerZkIds,
+                                                 boolean hostedVespa,
+                                                 long applicationLockTimeoutSeconds) {
         TestOptions testOptions = new TestOptions()
                 .rpcPort(12345)
                 .useVespaVersionInRequest(true)
                 .hostedVespa(hostedVespa)
                 .environment("test")
-                .region("bar");
+                .region("bar")
+                .applicationLockTimeoutSeconds(applicationLockTimeoutSeconds);
 
         Optional.of(configServerHostnames)
                 .filter(hostnames -> !hostnames.isEmpty())
@@ -179,7 +209,7 @@ public class ConfigserverClusterTest {
         ContainerModel containerModel = new ConfigServerContainerModelBuilder(testOptions)
                 .build(TestDeployState.create(), null, null, root, XML.getDocument(services).getDocumentElement());
 
-        // Simulate the behaviour of StandaloneContainer
+        // Simulate the behavior of StandaloneContainer
         List<? extends Container> containers = containerModel.getCluster().getContainers();
         assertEquals(1, containers.size(), "Standalone container");
         HostResource hostResource = root.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);

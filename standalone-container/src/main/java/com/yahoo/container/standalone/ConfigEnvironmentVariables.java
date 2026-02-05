@@ -44,7 +44,13 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     @Override
     public Optional<Long> zookeeperBarrierTimeout() {
         return  Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_ZOOKEEPER_BARRIER_TIMEOUT"))
-                .map(Long::parseLong);
+                        .map(Long::parseLong);
+    }
+
+    @Override
+    public Optional<Long> applicationLockTimeoutSeconds() {
+        return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_APPLICATION_LOCK_TIMEOUT_SECONDS"))
+                       .map(Long::parseLong);
     }
 
     @Override
