@@ -9,6 +9,7 @@ import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Text;
+import com.yahoo.text.Utf8;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
@@ -483,7 +485,7 @@ public class VoyageAIEmbedderTest {
                 .endpoint(mockServer.url("/v1/embeddings").toString())
                 .model("voyage-3")
                 .dimensions(dimensions)
-                .quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(quantization.toUpperCase()))
+                .quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(quantization.toUpperCase(Locale.ROOT)))
                 .timeout(5000);
 
         return new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
@@ -505,14 +507,14 @@ public class VoyageAIEmbedderTest {
             embedding.append(valueGenerator.apply(i));
         }
         embedding.append("]");
-        return  """
+        return  Text.format("""
                 {
                   "object": "list",
                   "data": [{"object": "embedding", "embedding": %s, "index": 0}],
                   "model": "voyage-3",
                   "usage": {"total_tokens": 10}
                 }
-                """.formatted(embedding);
+                """, embedding);
     }
 
     private static String createSuccessResponse(int dimensions) { return createFloatSuccessResponse(dimensions); }

@@ -7,6 +7,7 @@ import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.config.ModelReference;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -311,7 +313,7 @@ public class LocalLLMTest {
             if (expectException != null) {
                 var exception = assertThrows(LanguageModelException.class, () -> llm.complete(StringPrompt.from(promptStr), inferenceOptions));
                 assertEquals(expectException.code(), exception.code());
-                assertTrue(exception.getMessage().toLowerCase().contains(expectException.getMessage().toLowerCase()));
+                assertTrue(exception.getMessage().toLowerCase(Locale.ROOT).contains(expectException.getMessage().toLowerCase(Locale.ROOT)));
                 return;
             }
 
@@ -674,14 +676,14 @@ public class LocalLLMTest {
                 InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema
         )::get);
 
-        var promptStr = """
+        var promptStr = Text.format("""
             Extract all names of people from this text:
             Lynda Carter was born on July 24, 1951 in Phoenix, Arizona, USA. She is an actress, known for
             Wonder Woman (1975), The Elder Scrolls IV: Oblivion (2006) and The Dukes of Hazzard (2005).
             She has been married to Robert Altman since January 29, 1984. They have two children.
             The output must strictly adhere to the following JSON format:
             %s
-        """.formatted(jsonSchema);
+        """, jsonSchema);
 
         var completions = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
         var completionString = completions.get(0).text().trim();

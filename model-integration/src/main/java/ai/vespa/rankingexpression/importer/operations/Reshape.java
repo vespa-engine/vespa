@@ -17,9 +17,11 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.TensorFunction;
+import com.yahoo.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode.wrapScalar;
@@ -102,7 +104,7 @@ public class Reshape extends IntermediateOperation {
     private OrderedTensorType buildOutputType(List<Integer> dimSizes) {
         OrderedTensorType.Builder outputTypeBuilder = new OrderedTensorType.Builder(resultValueType());
         for (int i = 0; i < dimSizes.size(); ++i) {
-            outputTypeBuilder.add(TensorType.Dimension.indexed(String.format("%s_%d", vespaName(), i), dimSizes.get(i)));
+            outputTypeBuilder.add(TensorType.Dimension.indexed(Text.format("%s_%d", vespaName(), i), dimSizes.get(i)));
         }
         return outputTypeBuilder.build();
     }

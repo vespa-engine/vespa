@@ -10,9 +10,11 @@ import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -316,11 +318,11 @@ public class LanguageModelFieldGeneratorTest {
             var completionStr = stringBuilder.toString().trim();
             
             if (params.get(InferenceParameters.OPTION_JSON_SCHEMA).isPresent())
-                completionStr = """
+                completionStr = Text.format("""
                        {
                         "doc.text": "%s"
                        }
-                       """.formatted(completionStr);
+                       """, completionStr);
             
             return List.of(Completion.from(completionStr));
         }

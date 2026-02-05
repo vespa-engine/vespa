@@ -17,8 +17,10 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensors;
+import com.yahoo.text.Text;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -113,7 +115,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                 .addDefaultModel(tokenizerPath)
                 .setPadding(false);
         var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
-        log.fine(() -> "'%s' has info '%s'".formatted(tokenizerPath, info));
+        log.fine(() -> Text.format("'%s' has info '%s'", tokenizerPath, info));
         if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
             // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
             int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()

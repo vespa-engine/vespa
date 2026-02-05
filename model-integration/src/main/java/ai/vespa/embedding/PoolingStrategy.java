@@ -7,6 +7,8 @@ package ai.vespa.embedding;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.text.Text;
+import java.util.Locale;
 
 /**
  * @author bjorncs
@@ -49,11 +51,11 @@ enum PoolingStrategy {
     abstract Tensor toSentenceEmbedding(TensorType type, Tensor tokenEmbeddings, Tensor attentionMask);
 
     static PoolingStrategy fromString(String strategy) {
-        return switch (strategy.toLowerCase()) {
+        return switch (strategy.toLowerCase(Locale.ROOT)) {
             case "mean" -> MEAN;
             case "none" -> NONE;
             case "cls" -> CLS;
-            default -> throw new IllegalArgumentException("Unknown pooling strategy '%s'".formatted(strategy));
+            default -> throw new IllegalArgumentException(Text.format("Unknown pooling strategy '%s'", strategy));
         };
     }
 }
