@@ -3,6 +3,7 @@
 #include "domain.h"
 #include "domainpart.h"
 #include "session.h"
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -128,10 +129,11 @@ DomainInfo
 Domain::getDomainInfo() const
 {
     std::unique_lock guard(_partsMutex);
-    DomainInfo info(SerialNumRange(begin(guard), end(guard)), size(guard), byteSize(guard), _maxSessionRunTime);
+    DomainInfo info(SerialNumRange(begin(guard), end(guard)), size(guard), byteSize(guard), get_size_on_disk(guard),
+                                   _maxSessionRunTime);
     for (const auto &entry: _parts) {
         const DomainPart &part = *entry.second;
-        info.parts.emplace_back(PartInfo(part.range(), part.size(), part.byteSize(), part.fileName()));
+        info.parts.emplace_back(PartInfo(part.range(), part.size(), part.byteSize(), part.get_size_on_disk(), part.fileName()));
     }
     return info;
 }
@@ -147,6 +149,7 @@ Domain::verifyLock(const UniqueLock & guard) const {
     assert(guard.mutex() == &_partsMutex);
     assert(guard.owns_lock());
 }
+
 SerialNum
 Domain::begin(const UniqueLock & guard) const
 {
@@ -189,6 +192,24 @@ Domain::byteSize(const UniqueLock & guard) const
     for (const auto &entry : _parts) {
         const DomainPart &part = *entry.second;
         size += part.byteSize();
+    }
+    return size;
+}
+
+uint64_t
+Domain::get_size_on_disk() const
+{
+    return get_size_on_disk(UniqueLock(_partsMutex));
+}
+
+uint64_t
+Domain::get_size_on_disk(const UniqueLock & guard) const
+{
+    verifyLock(guard);
+    size_t size = DiskSpaceCalculator::directory_placeholder_size();
+    for (const auto &entry : _parts) {
+        const DomainPart &part = *entry.second;
+        size += part.get_size_on_disk();
     }
     return size;
 }
