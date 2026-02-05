@@ -14,9 +14,11 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/fastos/file.h>
+#include <charconv>
 #include <exception>
 #include <filesystem>
 #include <future>
+#include <system_error>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.filechunk");
@@ -50,6 +52,20 @@ FileChunk::NameId::createName(const std::string &baseName) const {
     vespalib::asciistream os;
     os << baseName << '/' << vespalib::setfill('0') << vespalib::setw(19) << getId();
     return os.str();
+}
+
+std::optional<FileChunk::NameId>
+FileChunk::NameId::from_filename(const std::string& filename)
+{
+    auto dot_pos = filename.find('.');
+    if (dot_pos != std::string::npos) {
+        uint64_t val = 0;
+        auto result = std::from_chars(filename.data(), filename.data() + dot_pos, val, 10);
+        if (result.ec == std::errc{} && result.ptr == filename.data() + dot_pos) {
+            return NameId(val);
+        }
+    }
+    return std::nullopt;
 }
 
 std::string

@@ -104,7 +104,7 @@ private:
     void updateCurrentDiskFootprint(const std::lock_guard<std::mutex>&);
     size_t getDiskFootprint(const unique_lock & guard) const;
     uint64_t get_size_on_disk(const unique_lock & guard) const;
-    std::unique_ptr<FastOS_FileInterface> openIdx();
+    std::unique_ptr<FastOS_FileInterface> openIdx(bool create);
     const Chunk& get_chunk(uint32_t chunk) const;
 
     Config            _config;
