@@ -3506,7 +3506,8 @@
       "public static java.lang.String stripInvalidCharacters(java.lang.String)",
       "public static java.lang.String truncate(java.lang.String, int)",
       "public static java.lang.String substringByCodepoints(java.lang.String, int, int)",
-      "public static varargs java.lang.String format(java.lang.String, java.lang.Object[])"
+      "public static varargs java.lang.String format(java.lang.String, java.lang.Object[])",
+      "public static varargs java.lang.String fmt(java.lang.String, java.lang.Object[])"
     ],
     "fields" : [ ]
   },
@@ -3569,8 +3570,7 @@
       "public static java.io.FileReader createReader(java.io.File)",
       "public static java.io.FileReader createReader(java.lang.String)",
       "public static java.io.FileWriter createWriter(java.io.File)",
-      "public static java.io.FileWriter createWriter(java.lang.String)",
-      "public static varargs java.lang.String fmt(java.lang.String, java.lang.Object[])"
+      "public static java.io.FileWriter createWriter(java.lang.String)"
     ],
     "fields" : [ ]
   },

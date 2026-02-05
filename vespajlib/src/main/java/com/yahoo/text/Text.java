@@ -6,7 +6,7 @@ import java.util.OptionalInt;
 
 /**
  * Text utility functions. See also {com.yahoo.language.process.CharacterClasses}.
- * 
+ *
  * @author bratseth
  */
 public final class Text {
@@ -41,7 +41,7 @@ public final class Text {
     private Text() {}
 
     /**
-     * Returns whether the given codepoint is a valid text character, potentially suitable for 
+     * Returns whether the given codepoint is a valid text character, potentially suitable for
      * purposes such as indexing and display, see http://www.w3.org/TR/2006/REC-xml11-20060816/#charsets
      */
     public static boolean isTextCharacter(int codepoint) {
@@ -195,4 +195,19 @@ public final class Text {
 	return String.format(Locale.US, format, args);
     }
 
+    /**
+     * Locale-independent version of String.format() using Locale.ROOT.
+     *
+     * This method ensures consistent formatting behavior regardless of the system's
+     * default locale, which is important for generating output that needs to be parsed
+     * or compared across different locales (e.g., numeric values, dates).
+     *
+     * @param format a format string following the syntax defined by {@link java.util.Formatter}
+     * @param args arguments referenced by the format specifiers in the format string
+     * @return a formatted string
+     * @throws java.util.IllegalFormatException if the format string is invalid or incompatible with the arguments
+     */
+    public static String fmt(String format, Object... args) {
+        return String.format(Locale.ROOT, format, args);
+    }
 }
