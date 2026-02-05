@@ -109,7 +109,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistries(), modelFactory.version()).orElse(new MockFileRegistry()),
                 executor,
-                new ApplicationCuratorDatabase(tenant, curator).readReindexingStatus(applicationId),
+                new ApplicationCuratorDatabase(tenant, curator, configserverConfig).readReindexingStatus(applicationId),
                 createStaticProvisioner(applicationPackage, modelContextProperties.applicationId(), provisioned),
                 provisioned,
                 modelContextProperties,

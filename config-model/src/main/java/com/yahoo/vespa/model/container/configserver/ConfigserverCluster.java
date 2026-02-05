@@ -103,6 +103,7 @@ public class ConfigserverCluster extends TreeConfigProducer
         if (options.zookeeperBarrierTimeout().isPresent()) {
             builder.zookeeper(new ConfigserverConfig.Zookeeper.Builder().barrierTimeout(options.zookeeperBarrierTimeout().get()));
         }
+        options.applicationLockTimeoutSeconds().ifPresent(builder::applicationLockTimeoutSeconds);
         if (options.rpcPort().isPresent()) {
             builder.rpcport(options.rpcPort().get());
         }
