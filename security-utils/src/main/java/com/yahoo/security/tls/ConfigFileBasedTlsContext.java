@@ -20,6 +20,7 @@ import java.security.KeyStore;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -171,7 +172,7 @@ public class ConfigFileBasedTlsContext implements TlsContext {
                     reloadKeyManager(options, this.keyManager);
                 }
             } catch (Throwable t) {
-                log.log(Level.SEVERE, String.format("Failed to reload crypto material (path='%s'): %s", tlsOptionsConfigFile, t.getMessage()), t);
+                log.log(Level.SEVERE, String.format(Locale.ROOT, "Failed to reload crypto material (path='%s'): %s", tlsOptionsConfigFile, t.getMessage()), t);
             }
         }
     }

@@ -5,6 +5,7 @@ import java.security.KeyPair;
 import java.security.interfaces.XECPrivateKey;
 import java.security.interfaces.XECPublicKey;
 import java.util.Arrays;
+import java.util.Locale;
 
 import static com.yahoo.security.ArrayUtils.concat;
 import static com.yahoo.security.hpke.Constants.BASE_NONCE_LABEL;
@@ -163,16 +164,13 @@ public final class Hpke {
 
     static void verifyInputLengthRestrictions(byte[] psk, byte[] pskId, byte[] info) {
         if (psk.length > MAX_INPUT_LENGTH) {
-            throw new IllegalArgumentException("Input PSK length (%d) greater than max length (%d)"
-                                               .formatted(psk.length, MAX_INPUT_LENGTH));
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "Input PSK length (%d) greater than max length (%d)", psk.length, MAX_INPUT_LENGTH));
         }
         if (pskId.length > MAX_INPUT_LENGTH) {
-            throw new IllegalArgumentException("Input PSK ID length (%d) greater than max length (%d)"
-                                               .formatted(pskId.length, MAX_INPUT_LENGTH));
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "Input PSK ID length (%d) greater than max length (%d)", pskId.length, MAX_INPUT_LENGTH));
         }
         if (info.length > MAX_INPUT_LENGTH) {
-            throw new IllegalArgumentException("Input info length (%d) greater than max length (%d)"
-                                               .formatted(info.length, MAX_INPUT_LENGTH));
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "Input info length (%d) greater than max length (%d)", info.length, MAX_INPUT_LENGTH));
         }
     }
 

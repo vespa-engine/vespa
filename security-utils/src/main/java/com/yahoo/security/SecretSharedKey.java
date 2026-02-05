@@ -2,6 +2,7 @@
 package com.yahoo.security;
 
 import javax.crypto.SecretKey;
+import java.util.Locale;
 
 /**
  * A SecretSharedKey represents a pairing of both the secret and public parts of
@@ -18,7 +19,7 @@ public record SecretSharedKey(SecretKey secretKey, SealedSharedKey sealedSharedK
     // via an implicitly generated method. Only print the sealed key (which is entirely public).
     @Override
     public String toString() {
-        return "SharedSecretKey(sealed: %s)".formatted(sealedSharedKey.toTokenString());
+        return String.format(Locale.ROOT, "SharedSecretKey(sealed: %s)", sealedSharedKey.toTokenString());
     }
 
     /**

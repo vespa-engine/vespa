@@ -2,6 +2,7 @@
 package com.yahoo.security.token;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 import static com.yahoo.security.ArrayUtils.fromUtf8Bytes;
 import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
@@ -49,7 +50,7 @@ public record TokenDomain(byte[] checkHashContext) {
 
     @Override
     public String toString() {
-        return "'%s'".formatted(fromUtf8Bytes(checkHashContext));
+        return String.format(Locale.ROOT, "'%s'", fromUtf8Bytes(checkHashContext));
     }
 
     public static TokenDomain of(String checkHashContext) {

@@ -4,6 +4,7 @@ package com.yahoo.security.tls;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -82,7 +83,7 @@ class GlobPatternTest {
         GlobPattern p = globPattern(pattern, boundaries);
         assertTrue(
                 p.matches(value),
-                () -> String.format("Expected '%s' with boundaries '%s' to match '%s'",
+                () -> String.format(Locale.ROOT, "Expected '%s' with boundaries '%s' to match '%s'",
                         pattern, Arrays.toString(p.boundaries()), value));
     }
 
@@ -90,7 +91,7 @@ class GlobPatternTest {
         GlobPattern p = globPattern(pattern, boundaries);
         assertFalse(
                 p.matches(value),
-                () -> String.format("Expected '%s' with boundaries '%s' to not match '%s'",
+                () -> String.format(Locale.ROOT, "Expected '%s' with boundaries '%s' to not match '%s'",
                         pattern, Arrays.toString(p.boundaries()), value));
     }
 
