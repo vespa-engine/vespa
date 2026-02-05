@@ -132,7 +132,7 @@ WriteableFileChunk(vespalib::Executor &executor,
                            _dataFile.GetFileName(), getLastErrorString().c_str());
             }
         }
-        auto idxFile = openIdx();
+        auto idxFile = openIdx(true);
         readIdxHeader(*idxFile);
         if (_idxHeaderLen == 0) {
             _idxHeaderLen = writeIdxHeader(fileHeaderContext, _docIdLimit, *idxFile);
@@ -154,12 +154,16 @@ WriteableFileChunk(vespalib::Executor &executor,
 }
 
 std::unique_ptr<FastOS_FileInterface>
-WriteableFileChunk::openIdx() {
+WriteableFileChunk::openIdx(bool create) {
     auto file = std::make_unique<FastOS_File>(_idxFileName.c_str());
     if (_dataFile.useSyncWrites()) {
         file->EnableSyncWrites();
     }
-    if ( ! file->OpenReadWrite() ) {
+    auto open_flags = FASTOS_FILE_OPEN_READ | FASTOS_FILE_OPEN_WRITE;
+    if (!create) {
+        open_flags |= FASTOS_FILE_OPEN_EXISTING;
+    }
+    if ( ! file->Open(open_flags, nullptr) ) {
         throw SummaryException("Failed opening idx file", *file, VESPA_STRLOC);
     }
     return file;
@@ -953,7 +957,7 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const unique_lock &flushGu
         }
     }
     vespalib::system_time timeStamp(vespalib::system_clock::now());
-    auto idxFile = openIdx();
+    auto idxFile = openIdx(false);
     idxFile->SetPosition(idxFile->getSize());
     ssize_t wlen = idxFile->Write2(os.data(), os.size());
 

@@ -8,6 +8,7 @@
 #include <vespa/searchlib/docstore/chunkformats.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/storebybucket.h>
+#include <vespa/searchlib/docstore/summaryexceptions.h>
 #include <vespa/searchlib/docstore/visitcache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
@@ -23,7 +24,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/memory.h>
 #include <cassert>
-#include <charconv>
 #include <filesystem>
 #include <iomanip>
 #include <random>
@@ -34,6 +34,7 @@ using namespace search::docstore;
 using namespace search;
 using namespace vespalib::alloc;
 using vespalib::CacheStats;
+using search::SummaryException;
 using search::index::DummyFileHeaderContext;
 using search::test::DirectoryHandler;
 
@@ -167,8 +168,8 @@ protected:
 };
 
 LogDataStoreTest::LogDataStoreTest()
-: ::testing::Test(),
-TestData<LogDataStoreTest>()
+    : ::testing::Test(),
+      TestData<LogDataStoreTest>()
 {
 }
 
@@ -1251,12 +1252,10 @@ void rename_files_to_future_name_ids(const std::string& dir, vespalib::system_cl
         }
     }
     for (auto &file: files) {
-        auto dot_pos = file.find('.');
-        assert(dot_pos != std::string::npos);
-        uint64_t val = 0;
-        auto result = std::from_chars(file.data(), file.data() + dot_pos, val, 10);
-        if (result.ec == std::errc{} && result.ptr == file.data() + dot_pos) {
-            FileChunk::NameId id((vespalib::system_clock::duration(val) + time_step).count());
+        auto old_id = FileChunk::NameId::from_filename(file);
+        if (old_id.has_value()) {
+            FileChunk::NameId id((vespalib::system_clock::duration(old_id.value().getId()) + time_step).count());
+            auto dot_pos = file.find('.');
             std::string new_name = id.createName(dir) + file.substr(dot_pos);
             std::cout << "Renaming " << dir << "/" << file << " to " << new_name << std::endl;
             std::filesystem::rename(dir + "/" + file, new_name);
@@ -1298,6 +1297,44 @@ TEST_F(LogDataStoreTest, require_that_clock_stepping_backwards_is_handled)
         exp_limits.push_back(201);
         f.assertDocIdLimitInFileChunks(exp_limits, "write 3");
     }
+}
+
+namespace {
+
+void remove_active_idx_file(const std::string& dir)
+{
+    std::optional<FileChunk::NameId> active;
+    std::filesystem::directory_iterator dir_scan{std::filesystem::path(dir)};
+    for (auto &entry: dir_scan) {
+        auto file = entry.path().filename().string();
+        if (file.ends_with(".idx")) {
+            auto candidate = FileChunk::NameId::from_filename(file);
+            if (candidate.has_value() && (!active.has_value() || active.value().getId() < candidate.value().getId())) {
+                active.emplace(candidate.value());
+            }
+        }
+    }
+    ASSERT_TRUE(active.has_value());
+    std::filesystem::remove(active.value().createName(dir) + ".idx");
+}
+
+void write_with_missing_idx_file(const std::string& dir)
+{
+    Fixture f(dir, false);
+    f.write(1);
+    f.flush();
+    remove_active_idx_file(dir);
+    f.write(2);
+    f.flush();
+}
+
+}
+
+TEST_F(LogDataStoreTest, fail_if_active_idx_files_disappears)
+{
+    auto dir = build_testdata() + "/tmp10";
+    VESPA_EXPECT_EXCEPTION(write_with_missing_idx_file(dir), SummaryException, "Failed opening idx file");
+    std::filesystem::remove_all(dir);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

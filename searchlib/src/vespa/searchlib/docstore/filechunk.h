@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/time.h>
+#include <optional>
 
 class FastOS_FileInterface;
 
@@ -84,6 +85,7 @@ public:
         NameId next() const { return NameId(_id + 1); }
         static NameId first() { return NameId(0u); }
         static NameId last() { return NameId(std::numeric_limits<uint64_t>::max()); }
+        static std::optional<NameId> from_filename(const std::string& filename);
     private:
         uint64_t _id;
     };
