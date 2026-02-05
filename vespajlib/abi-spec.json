@@ -3569,7 +3569,8 @@
       "public static java.io.FileReader createReader(java.io.File)",
       "public static java.io.FileReader createReader(java.lang.String)",
       "public static java.io.FileWriter createWriter(java.io.File)",
-      "public static java.io.FileWriter createWriter(java.lang.String)"
+      "public static java.io.FileWriter createWriter(java.lang.String)",
+      "public static varargs java.lang.String fmt(java.lang.String, java.lang.Object[])"
     ],
     "fields" : [ ]
   },

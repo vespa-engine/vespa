@@ -14,6 +14,7 @@ import java.nio.ReadOnlyBufferException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
+import java.util.Locale;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -622,5 +623,21 @@ public final class Utf8 {
      */
     public static FileWriter createWriter(String file) throws IOException {
         return new FileWriter(file, UTF_8);
+    }
+
+    /**
+     * Locale-independent version of String.format() using Locale.ROOT.
+     *
+     * This method ensures consistent formatting behavior regardless of the system's
+     * default locale, which is important for generating output that needs to be parsed
+     * or compared across different locales (e.g., numeric values, dates).
+     *
+     * @param format a format string following the syntax defined by {@link java.util.Formatter}
+     * @param args arguments referenced by the format specifiers in the format string
+     * @return a formatted string
+     * @throws java.util.IllegalFormatException if the format string is invalid or incompatible with the arguments
+     */
+    public static String fmt(String format, Object... args) {
+        return String.format(Locale.ROOT, format, args);
     }
 }
