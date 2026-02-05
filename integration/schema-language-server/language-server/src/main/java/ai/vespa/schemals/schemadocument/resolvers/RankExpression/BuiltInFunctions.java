@@ -386,7 +386,7 @@ public class BuiltInFunctions {
         add("nativeProximity");
         add("randomNormal");
         add("randomNormalStable");
-        add("rankingExpression"); // TODO: deprecated (?)
+        add("rankingExpression");
 
         // TODO: these are only allowed in global-phase
         add("normalize_linear");

@@ -370,8 +370,13 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
         identifierNode.setSymbolStatus(SymbolStatus.DEFINITION);
         context.schemaIndex().insertSymbolDefinition(identifierNode.getSymbol());
 
-        Node argsNode = identifierNode.getNextSibling().getNextSibling();
+        Node argsNode = identifierNode.getNextSibling();
         if (argsNode == null) return;
+
+        argsNode = argsNode.getNextSibling();
+
+        if (argsNode == null) return;
+        if (argsNode.size() < 3) return;
 
         Node iteratorExpressionNode = argsNode.get(2);
         if (iteratorExpressionNode == null) return;

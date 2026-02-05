@@ -307,6 +307,12 @@ public class RankExpressionSymbolResolver {
         String identifier = featureNode.getSymbol().getShortIdentifier();
         GenericFunction functionHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get(identifier);
         if (functionHandler == null) {
+            if (BuiltInFunctions.simpleBuiltInFunctionsSet.contains(identifier)) {
+                featureNode.getSymbol().setType(SymbolType.FUNCTION);
+                featureNode.getSymbol().setStatus(SymbolStatus.BUILTIN_REFERENCE);
+                return;
+            }
+
             diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(featureNode.getSymbolNode().getRange())
                 .setMessage("Unknown ranking feature '" + identifier + "'.")
@@ -320,7 +326,7 @@ public class RankExpressionSymbolResolver {
         featureNode.getSymbol().setType(SymbolType.FUNCTION);
         featureNode.getSymbol().setStatus(SymbolStatus.BUILTIN_REFERENCE);
 
-        // Manual arg check on foreach feature
+        // The rest is a manual argument check on the foreach feature
 
         Optional<SchemaNode> property = featureNode.getProperty();
         Optional<String> propertyString = property.isPresent() ? 
