@@ -13,9 +13,16 @@ import ai.vespa.schemals.tree.rankingexpression.RankNode;
 public class StringArgument implements Argument {
 
     private String displayStr = "STRING";
+    private boolean removeSymbols;
 
     public StringArgument(String displayStr) {
         this.displayStr = displayStr;
+        this.removeSymbols = true;
+    }
+
+    public StringArgument(String displayStr, boolean removeSymbols) {
+        this.displayStr = displayStr;
+        this.removeSymbols = removeSymbols;
     }
 
     @Override
@@ -30,7 +37,9 @@ public class StringArgument implements Argument {
     
     @Override
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
-        ArgumentUtils.removeNodeSymbols(context, node);
+        if (removeSymbols) {
+            ArgumentUtils.removeNodeSymbols(context, node);
+        }
 
         return Optional.empty();
     }

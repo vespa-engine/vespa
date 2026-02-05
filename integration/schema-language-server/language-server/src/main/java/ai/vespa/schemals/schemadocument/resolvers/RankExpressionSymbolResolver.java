@@ -20,8 +20,12 @@ import ai.vespa.schemals.parser.ast.onnxModelInSchema;
 import ai.vespa.schemals.parser.rankingexpression.ast.rankPropertyFeature;
 import ai.vespa.schemals.parser.rankingexpression.ast.unaryFunctionName;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionSignature;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.GenericFunction;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.ArgumentUtils;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.IntegerArgument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.Node.LanguageType;
@@ -263,16 +267,16 @@ public class RankExpressionSymbolResolver {
     }
 
     private static void resolveForeach(RankNode node, ParseContext context, List<Diagnostic> diagnostics) {
-        // Note: children are already resolved.
-        GenericFunction foreachHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get("foreach");
-        diagnostics.addAll(foreachHandler.handleArgumentList(context, node, false));
-
-        // The third argument is quite special.
+        // The handler does all the 'easy' checks.
+        // However, the third argument of foreach is quite special.
         // 1. It has to be a pure rank feature (not arbitrary rank expression). 
         //    At least according to docs.
         // 2. The iterator variable is **string replaced** by the literal value.
         //    This means that, for example, a feature expecting an integer literal 
         //    can also accept the foreach iterator variable.
+
+        GenericFunction foreachHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get("foreach");
+        diagnostics.addAll(foreachHandler.handleArgumentList(context, node, false));
 
         if (node.getChildren().size() < 3) {
             // Incomplete parse
@@ -284,11 +288,6 @@ public class RankExpressionSymbolResolver {
         if (featureExpression.getChildren().isEmpty()) {
             // Incomplete parse
             return;
-        }
-
-        context.logger().info("Children:");
-        for (var child : featureExpression.getChildren()) {
-            context.logger().info(child.toString());
         }
 
         RankNode featureNode = featureExpression.getChildren().get(0);
@@ -319,5 +318,57 @@ public class RankExpressionSymbolResolver {
 
         featureNode.getSymbol().setType(SymbolType.FUNCTION);
         featureNode.getSymbol().setStatus(SymbolStatus.BUILTIN_REFERENCE);
+
+        // Manual arg check on foreach feature
+
+        Optional<SchemaNode> property = featureNode.getProperty();
+        Optional<String> propertyString = property.isPresent() ? 
+            Optional.of(property.get().getText()) : Optional.empty();
+
+        Optional<FunctionSignature> signature = functionHandler.findFunctionSignature(featureNode.getChildren(), propertyString);
+
+        // May fail to find signature due to iteration variable cluttering. In that case, safest to just ignore.
+        if (signature.isEmpty()) {
+            return;
+        }
+
+        context.logger().info(node.getChildren().get(0).getSchemaNode().getText());
+
+        Optional<Symbol> iteratorSymbol = ArgumentUtils.findRankNodeSymbol(node.getChildren().get(1));
+        String iterationTerm = node.getChildren().get(0).getSchemaNode().getText();
+        boolean iteratorIsInt = iterationTerm.equals("terms");
+
+        List<Argument> acceptedArguments = signature.get().getArgumentList();
+        List<RankNode> gotArguments = featureNode.getChildren();
+        for (int i = 0; i < gotArguments.size(); ++i) {
+            int j = Math.min(i, acceptedArguments.size() - 1);
+            RankNode argNode = gotArguments.get(i);
+            Argument arg = acceptedArguments.get(j);
+            Optional<Symbol> suppliedSymbol = ArgumentUtils.findRankNodeSymbol(argNode);
+
+            if (suppliedSymbol.isPresent() 
+                && iteratorSymbol.isPresent()
+                && iteratorSymbol.get().getShortIdentifier().equals(suppliedSymbol.get().getShortIdentifier())) {
+
+                // In this case, most argument types should be unchecked since we don't know what hides behind the iterator variable.
+
+                if (arg instanceof IntegerArgument && !iteratorIsInt) {
+                    diagnostics.add(new SchemaDiagnostic.Builder()
+                        .setRange(argNode.getRange())
+                        .setMessage("Integer argument required, but '" + iteratorSymbol.get().getShortIdentifier() + "' iterates over strings.")
+                        .setSeverity(DiagnosticSeverity.Error)
+                        .setCode(DiagnosticCode.FOREACH_INVALID)
+                        .build());
+                }
+            } else {
+                arg.parseArgument(context, argNode)
+                   .ifPresent(diagnostic -> diagnostics.add(diagnostic));
+            }
+
+            context.logger().info(arg.getClass().toString() + "(" + arg.displayString() + ") <-> " + argNode.toString());
+        }
+
+        Optional<SpecificFunction> specificFunction = functionHandler.instantiate(context, signature.get(), featureNode, false, diagnostics);
+        specificFunction.ifPresent(instantiation -> featureNode.setFunctionSignature(instantiation));
     }
 }

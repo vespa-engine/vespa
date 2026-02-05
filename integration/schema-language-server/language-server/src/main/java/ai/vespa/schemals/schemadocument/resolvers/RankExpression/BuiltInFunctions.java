@@ -339,21 +339,21 @@ public class BuiltInFunctions {
         put("foreach", new GenericFunction("foreach", List.of(
             new FunctionSignature(List.of(
                 new KeywordArgument("fields", "fields"), 
-                new StringArgument("variable"), 
+                new StringArgument("variable", false), 
                 new ExpressionArgument("feature"), 
                 new StringArgument("condition"),
                 new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
             )),
             new FunctionSignature(List.of(
                 new KeywordArgument("terms", "terms"), 
-                new StringArgument("variable"), 
+                new StringArgument("variable", false), 
                 new ExpressionArgument("feature"), 
                 new StringArgument("condition"),
                 new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
             )),
             new FunctionSignature(List.of(
                 new KeywordArgument("attributes", "attributes"), 
-                new StringArgument("variable"), 
+                new StringArgument("variable", false), 
                 new ExpressionArgument("feature"), 
                 new StringArgument("condition"),
                 new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
