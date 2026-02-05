@@ -291,7 +291,7 @@ BlueprintResolver::addSeed(std::string_view feature)
 
 namespace {
 #if defined(VESPA_USE_ADDRESS_SANITIZER)
-    constexpr size_t STACK_MULTIPLIER  = 8;
+    constexpr size_t STACK_MULTIPLIER  = 10;
 #else
     constexpr size_t STACK_MULTIPLIER  = 1;
 #endif
