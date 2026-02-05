@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>parent</artifactId>
+        <version>8-SNAPSHOT</version>
+        <relativePath>../../parent/pom.xml</relativePath>
+    </parent>
+    <artifactId>cloud</artifactId>
+    <packaging>pom</packaging>
+    <version>8-SNAPSHOT</version>
+    <name>${project.artifactId}</name>
+    <description>Aggregator for Vespa Cloud tenant modules.</description>
+
+    <profiles>
+        <profile>
+            <id>build-cloud-modules</id>
+            <activation>
+                <property>
+                    <name>!skipCloud</name>
+                </property>
+            </activation>
+            <modules>
+                <module>hosted-api</module>
+                <module>tenant-cd-api</module>
+                <module>tenant-cd-commons</module>
+                <module>cloud-tenant-cd</module>
+                <module>vespa-maven-plugin</module>
+                <module>hosted-tenant-base</module>
+                <module>cloud-tenant-base</module>
+            </modules>
+        </profile>
+    </profiles>
+
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+</project>

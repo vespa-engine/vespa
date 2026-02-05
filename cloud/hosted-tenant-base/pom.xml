@@ -17,7 +17,7 @@
         <artifactId>dependency-versions</artifactId>
         <groupId>com.yahoo.vespa</groupId>
         <version>8-SNAPSHOT</version>
-        <relativePath>../dependency-versions/pom.xml</relativePath>
+        <relativePath>../../dependency-versions/pom.xml</relativePath>
     </parent>
 
     <licenses>

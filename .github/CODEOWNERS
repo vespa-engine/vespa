@@ -7,8 +7,13 @@
 ./bundle-plugin-test/* @gjoranv
 ./bundle-plugin/* @gjoranv
 ./client/go/* @evgiz @arnej27959
-./cloud-tenant-base/* @bjorncs
-./cloud-tenant-cd/* @bjorncs
+./cloud/cloud-tenant-base/* @bjorncs
+./cloud/cloud-tenant-cd/* @bjorncs
+./cloud/hosted-api/* @hmusum
+./cloud/hosted-tenant-base/* @bjorncs
+./cloud/tenant-cd-api/* @hmusum
+./cloud/tenant-cd-commons/* @bjorncs
+./cloud/vespa-maven-plugin/* @hmusum
 ./clustercontroller-apps/* @vekterli @hakonhall
 ./clustercontroller-core/* @vekterli @hakonhall @hmusum
 ./clustercontroller-utils/* @vekterli @hakonhall
@@ -53,8 +58,6 @@
 ./flags/* @hakonhall
 ./fnet/* @havardpe
 ./fsa/* @hmusum
-./hosted-api/* @hmusum
-./hosted-tenant-base/* @bjorncs
 ./hosted-zone-api/* @bjorncs
 ./http-client/* @hmusum
 ./http-utils/* @bjorncs
@@ -129,8 +132,6 @@
 ./storage/* @vekterli
 ./storageserver/* @vekterli
 ./streamingvisitors/* @vekterli
-./tenant-cd-api/* @hmusum
-./tenant-cd-commons/* @bjorncs
 ./testutil/* @gjoranv
 ./vbench/* @havardpe
 ./vdslib/* @vekterli
@@ -141,7 +142,6 @@
 ./vespa-documentgen-plugin/* @kkraune
 ./vespa-feed-client-cli/* @bjorncs
 ./vespa-feed-client/* @bjorncs
-./vespa-maven-plugin/* @hmusum
 ./vespabase/* @hmusum @arnej27959
 ./vespaclient-container-plugin/* @bjorncs @vekterli
 ./vespaclient-core/* @bjorncs

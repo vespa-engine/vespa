@@ -28,8 +28,7 @@
         <module>application</module>
         <module>bundle-plugin-test</module>
         <module>client</module>
-        <module>cloud-tenant-base</module>
-        <module>cloud-tenant-cd</module>
+        <module>cloud</module>
         <module>clustercontroller-apps</module>
         <module>clustercontroller-core</module>
         <module>clustercontroller-reindexer</module>
@@ -74,8 +73,6 @@
         <module>filedistribution</module>
         <module>flags</module>
         <module>fsa</module>
-        <module>hosted-api</module>
-        <module>hosted-tenant-base</module>
         <module>hosted-zone-api</module>
         <module>http-client</module>
         <module>http-utils</module>
@@ -109,8 +106,6 @@
         <module>standalone-container</module>
         <module>storage</module>
         <module>streamingvisitors</module>
-        <module>tenant-cd-api</module>
-        <module>tenant-cd-commons</module>
         <module>testutil</module>
         <module>vdslib</module>
         <module>vespaclient-core</module>
@@ -121,7 +116,6 @@
         <module>vespa-feed-client</module>
         <module>vespa-feed-client-api</module>
         <module>vespa-feed-client-cli</module>
-        <module>vespa-maven-plugin</module>
         <module>vespa-3party-bundles</module>
         <module>vespa-3party-jars</module>
         <module>vespajlib</module>
