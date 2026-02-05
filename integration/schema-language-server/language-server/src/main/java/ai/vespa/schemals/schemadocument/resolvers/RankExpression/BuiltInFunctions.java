@@ -336,6 +336,8 @@ public class BuiltInFunctions {
         put("rawScore", new GenericFunction("rawScore", new FunctionSignature(new FieldArgument())));
         put("itemRawScore", new GenericFunction("itemRawScore", new FunctionSignature(new LabelArgument())));
 
+        
+        // See RankExpressionSymbolResolver.resolveForeach for more details
         put("foreach", new GenericFunction("foreach", List.of(
             new FunctionSignature(List.of(
                 new KeywordArgument("fields", "fields"), 

@@ -114,9 +114,9 @@ public class SchemaDocument implements DocumentManager {
             this.CST = parsingResult.CST().get();
             lexer.setCST(CST);
 
-            logger.info("======== CST for file: " + fileURI + " ========");
-     
-            CSTUtils.printTree(logger, CST);
+            // logger.info("======== CST for file: " + fileURI + " ========");
+
+            // CSTUtils.printTree(logger, CST);
         }
 
         //schemaIndex.dumpIndex();

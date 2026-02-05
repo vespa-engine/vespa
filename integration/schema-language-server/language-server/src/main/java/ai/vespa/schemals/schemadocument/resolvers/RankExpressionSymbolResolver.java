@@ -274,6 +274,7 @@ public class RankExpressionSymbolResolver {
         // 2. The iterator variable is **string replaced** by the literal value.
         //    This means that, for example, a feature expecting an integer literal 
         //    can also accept the foreach iterator variable.
+        // The strategy is then to validate arguments as usual *unless* the argument is the foreach iteration variable.
 
         GenericFunction foreachHandler = BuiltInFunctions.rankExpressionBuiltInFunctions.get("foreach");
         diagnostics.addAll(foreachHandler.handleArgumentList(context, node, false));
@@ -332,8 +333,6 @@ public class RankExpressionSymbolResolver {
             return;
         }
 
-        context.logger().info(node.getChildren().get(0).getSchemaNode().getText());
-
         Optional<Symbol> iteratorSymbol = ArgumentUtils.findRankNodeSymbol(node.getChildren().get(1));
         String iterationTerm = node.getChildren().get(0).getSchemaNode().getText();
         boolean iteratorIsInt = iterationTerm.equals("terms");
@@ -364,8 +363,6 @@ public class RankExpressionSymbolResolver {
                 arg.parseArgument(context, argNode)
                    .ifPresent(diagnostic -> diagnostics.add(diagnostic));
             }
-
-            context.logger().info(arg.getClass().toString() + "(" + arg.displayString() + ") <-> " + argNode.toString());
         }
 
         Optional<SpecificFunction> specificFunction = functionHandler.instantiate(context, signature.get(), featureNode, false, diagnostics);
