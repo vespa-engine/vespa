@@ -18,6 +18,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -52,7 +53,7 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
                                      MetricsConsumers metricsConsumers,
                                      ApplicationDimensions applicationDimensions,
                                      NodeDimensions nodeDimensions) {
-        super(executor);
+        super(executor, Duration.ofSeconds(60));
         this.metricsRetriever = metricsRetriever;
         this.metricsConsumers = metricsConsumers;
         this.applicationDimensions = applicationDimensions;

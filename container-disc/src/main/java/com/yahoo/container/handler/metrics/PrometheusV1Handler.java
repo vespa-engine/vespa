@@ -14,6 +14,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -32,7 +33,7 @@ public class PrometheusV1Handler extends HttpHandlerBase {
     static final String VALUES_PATH = V1_PATH + "/values";
 
     private static final int HTTP_CONNECT_TIMEOUT = 5000;
-    private static final int HTTP_SOCKET_TIMEOUT = 30000;
+    private static final int HTTP_SOCKET_TIMEOUT = 60000;
 
     private final String metricsProxyUri;
     private final CloseableHttpClient httpClient = createHttpClient();
@@ -40,7 +41,7 @@ public class PrometheusV1Handler extends HttpHandlerBase {
     @Inject
     public PrometheusV1Handler(Executor executor,
                                MetricsProxyApiConfig config) {
-        super(executor);
+        super(executor, Duration.ofSeconds(65));
         metricsProxyUri = "http://localhost:" + config.metricsPort() + config.prometheusApiPath();
     }
 
