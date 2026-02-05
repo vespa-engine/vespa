@@ -22,4 +22,17 @@ DomainConfig::setEncoding(Encoding v) {
     return *this;
 }
 
+DomainInfo::DomainInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, uint64_t size_on_disk_in, DurationSeconds maxSessionRunTime_in)
+    : range(range_in), numEntries(numEntries_in), byteSize(byteSize_in), size_on_disk(size_on_disk_in),
+      maxSessionRunTime(maxSessionRunTime_in), parts()
+{
+}
+
+DomainInfo::DomainInfo()
+        : range(), numEntries(0), byteSize(0), size_on_disk(0), maxSessionRunTime(), parts()
+{
+}
+
+DomainInfo::~DomainInfo() = default;
+
 }

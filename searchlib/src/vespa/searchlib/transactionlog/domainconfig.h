@@ -33,11 +33,13 @@ struct PartInfo {
     SerialNumRange range;
     size_t numEntries;
     size_t byteSize;
+    uint64_t size_on_disk;
     std::string file;
-    PartInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, std::string_view file_in)
+    PartInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, uint64_t size_on_disk_in, std::string_view file_in)
         : range(range_in),
           numEntries(numEntries_in),
           byteSize(byteSize_in),
+          size_on_disk(size_on_disk_in),
           file(file_in)
     {}
 };
@@ -47,12 +49,12 @@ struct DomainInfo {
     SerialNumRange range;
     size_t numEntries;
     size_t byteSize;
+    uint64_t size_on_disk;
     DurationSeconds maxSessionRunTime;
     std::vector<PartInfo> parts;
-    DomainInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, DurationSeconds maxSessionRunTime_in)
-            : range(range_in), numEntries(numEntries_in), byteSize(byteSize_in), maxSessionRunTime(maxSessionRunTime_in), parts() {}
-    DomainInfo()
-            : range(), numEntries(0), byteSize(0), maxSessionRunTime(), parts() {}
+    DomainInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, uint64_t size_on_disk_in, DurationSeconds maxSessionRunTime_in);
+    DomainInfo();
+    ~DomainInfo();
 };
 
 using DomainStats = std::map<std::string, DomainInfo>;
