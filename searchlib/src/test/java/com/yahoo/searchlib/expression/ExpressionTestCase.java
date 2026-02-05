@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Identifiable;
@@ -9,6 +10,7 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -708,7 +710,7 @@ public class ExpressionTestCase {
     private void compareAllPairwise(ResultNode... orderedNodes) {
         for (int i = 0; i < orderedNodes.length; ++i) {
             for (int j = 0; j < orderedNodes.length; ++j) {
-                var ctx = String.format("lhs(i=%d): %s, rhs(j=%d): %s", i, orderedNodes[i], j, orderedNodes[j]);
+                var ctx = Text.format("lhs(i=%d): %s, rhs(j=%d): %s", i, orderedNodes[i], j, orderedNodes[j]);
                 if (j < i) {
                     assertTrue(ctx, orderedNodes[i].compareTo(orderedNodes[j]) > 0);
                 } else if (j > i) {

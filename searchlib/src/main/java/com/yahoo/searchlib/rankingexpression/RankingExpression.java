@@ -11,6 +11,7 @@ import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.text.Text;
+import com.yahoo.text.Utf8;
 import static com.yahoo.searchlib.rankingexpression.Reference.RANKING_EXPRESSION_WRAPPER;
 
 import java.io.File;
@@ -145,7 +146,7 @@ public class RankingExpression implements Serializable {
     public RankingExpression(File file) throws ParseException {
         try {
             name = file.getName().split("\\.")[0];
-            root = parse(new FileReader(file));
+            root = parse(Utf8.createReader(file));
         }
         catch (FileNotFoundException e) {
             throw new IllegalArgumentException("Could not create a ranking expression", e);

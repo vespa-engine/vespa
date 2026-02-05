@@ -5,6 +5,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.GlobalId;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchlib.aggregation.hll.SparseSketch;
+import java.nio.charset.StandardCharsets;
 import com.yahoo.searchlib.expression.AddFunctionNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.CatFunctionNode;
@@ -42,6 +43,7 @@ import com.yahoo.searchlib.expression.TimeStampFunctionNode;
 import com.yahoo.searchlib.expression.XorBitFunctionNode;
 import com.yahoo.searchlib.expression.XorFunctionNode;
 import com.yahoo.searchlib.expression.ZCurveFunctionNode;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Identifiable;
 import com.yahoo.vespa.objects.ObjectDumper;
@@ -221,7 +223,7 @@ public class GroupingSerializationTest {
             t.assertMatch(new VdsHit());
             //TODO Verify the two structures below
             t.assertMatch(new VdsHit("100", new byte[0], 50.0));
-            t.assertMatch(new VdsHit("100", "rawsummary".getBytes(), 50.0));
+            t.assertMatch(new VdsHit("100", "rawsummary".getBytes(StandardCharsets.UTF_8), 50.0));
             t.assertMatch(new HitsAggregationResult());
             t.assertMatch(new HitsAggregationResult()
                     .setMaxHits(5)
@@ -240,9 +242,9 @@ public class GroupingSerializationTest {
             //TODO Verify content
             t.assertMatch(new HitsAggregationResult()
                     .setMaxHits(3)
-                    .addHit(new VdsHit("10", "100".getBytes(), 1.0))
-                    .addHit(new VdsHit("20", "200".getBytes(), 2.0))
-                    .addHit(new VdsHit("30", "300".getBytes(), 3.0))
+                    .addHit(new VdsHit("10", "100".getBytes(StandardCharsets.UTF_8), 1.0))
+                    .addHit(new VdsHit("20", "200".getBytes(StandardCharsets.UTF_8), 2.0))
+                    .addHit(new VdsHit("30", "300".getBytes(StandardCharsets.UTF_8), 3.0))
                     .setExpression(new ConstantNode(new IntegerResultNode(5))));
         }
     }
@@ -351,7 +353,7 @@ public class GroupingSerializationTest {
 
     private static GlobalId createGlobalId(int docId) {
         return new GlobalId(
-                new DocumentId(String.format("id:test:type::%d", docId)).getGlobalId());
+                new DocumentId(Text.format("id:test:type::%d", docId)).getGlobalId());
     }
 
     private static ExpressionNode createDummyExpression() {
@@ -407,7 +409,7 @@ public class GroupingSerializationTest {
             Identifiable deserializedObject = Identifiable.create(new BufferSerializer(originalData));
 
             if (!deserializedObject.equals(expectedObject)) {
-                fail(String.format("Serialized object in file '%s' does not equal expected values.\n" +
+                fail(Text.format("Serialized object in file '%s' does not equal expected values.\n" +
                                 "==================================================\n" +
                                 "Expected:\n" +
                                 "==================================================\n" +
@@ -427,7 +429,7 @@ public class GroupingSerializationTest {
             byte[] newData = new byte[buffer.limit()];
             buffer.get(newData);
             if (!Arrays.equals(newData, originalData)) {
-                fail(String.format("Serialized object data does not match the original serialized data from file.\n" +
+                fail(Text.format("Serialized object data does not match the original serialized data from file.\n" +
                                 "==================================================\n" +
                                 "Original:\n" +
                                 "==================================================\n" +
