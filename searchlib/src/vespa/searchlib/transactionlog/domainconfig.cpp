@@ -29,7 +29,7 @@ DomainInfo::DomainInfo(SerialNumRange range_in, size_t numEntries_in, size_t byt
 }
 
 DomainInfo::DomainInfo()
-        : range(), numEntries(0), byteSize(0), size_on_disk(0), maxSessionRunTime(), parts()
+    : range(), numEntries(0), byteSize(0), size_on_disk(0), maxSessionRunTime(), parts()
 {
 }
 
