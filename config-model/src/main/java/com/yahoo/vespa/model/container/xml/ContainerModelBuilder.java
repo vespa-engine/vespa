@@ -248,15 +248,18 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addParameterStoreValidationHandler(cluster, deployState);
     }
+    
+    private boolean shouldUseTriton(ApplicationContainerCluster cluster, DeployState deployState) {
+        var isPublicCloud = deployState.zone().system().isPublicCloudLike();
+        var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
+        var useTritonFeatureFlagValue = deployState.featureFlags().useTriton();
+        return useTritonFeatureFlagValue && isPublicCloud && hasOnnxModels;
+    }
 
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
         var sidecars = new ArrayList<SidecarSpec>();
-
-        var isPublicCloud = deployState.zone().system().isPublicCloudLike();
-        var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
-        var useTritonFlagValue = deployState.featureFlags().useTriton();
-
-        if (useTritonFlagValue && isPublicCloud && hasOnnxModels) {
+        
+        if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
 
             // Hardcoded values for changes to be reviewed and tested
@@ -974,7 +977,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE);
         cluster.addPlatformBundle(ContainerModelEvaluation.ONNXRUNTIME_BUNDLE_FILE);
         /* The ONNX runtime is always available for injection to any component */
-        if (deployState.featureFlags().useTriton()) {
+        if (shouldUseTriton(cluster, deployState)) {
             cluster.addSimpleComponent(
                     ContainerModelEvaluation.TRITON_ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
         } else {
