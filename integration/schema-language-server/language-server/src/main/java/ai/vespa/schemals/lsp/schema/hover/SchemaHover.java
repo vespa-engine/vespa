@@ -14,7 +14,6 @@ import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.SchemaLanguageServer;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
@@ -164,18 +163,21 @@ public class SchemaHover {
         return new Hover(new MarkupContent(MarkupKind.MARKDOWN, "```\n" + hoverText + "\n```"));
     }
 
-    private static Hover getSymbolHover(Node node, EventPositionContext context) {
+    private static Hover getSymbolHover(Node node, Path documentationPath, EventPositionContext context) {
         switch(node.getSymbol().getType()) {
             case STRUCT:
                 return getStructHover(node, context);
             case FIELD:
                 return getFieldHover(node, context);
+            case FOREACH:
+                return getFileHoverInformation(
+                        documentationPath.resolve("rankExpression"), 
+                        "foreach(dimension,variable,feature,condition,operation)", 
+                        node.getRange()).orElse(null);
+            case LABEL:
+                return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, "label"));
             default:
                 break;
-        }
-
-        if (node.getSymbol().getType() == SymbolType.LABEL) {
-            return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, "label"));
         }
 
         if (node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
@@ -299,7 +301,7 @@ public class SchemaHover {
         
         if (node != null && node.isSchemaNode()) {
             SchemaNode schemaNode = node.getSchemaNode();
-            Hover symbolHover = getSymbolHover(schemaNode, context);
+            Hover symbolHover = getSymbolHover(schemaNode, documentationPath, context);
 
             if (symbolHover == null) return null;
 
