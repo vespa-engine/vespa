@@ -70,6 +70,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_PEAK_CPU.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_PEAK_MEMORY.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_PEAK_DISK.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_BACKUP_AGE_FRACTION.last());
         addMetric(metrics, ConfigServerMetrics.NODES_EMPTY_EXCLUSIVE.max());
         addMetric(metrics, ConfigServerMetrics.NODES_EXPIRED_DEPROVISIONED.count());
         addMetric(metrics, ConfigServerMetrics.NODES_EXPIRED_DIRTY.count());
