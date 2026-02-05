@@ -313,6 +313,7 @@ class SchemaSemanticTokenConfig {
         put(SymbolType.DOCUMENT_SUMMARY, SemanticTokenTypes.Variable);
         put(SymbolType.FIELD, SemanticTokenTypes.Variable);
         put(SymbolType.FIELDSET, SemanticTokenTypes.Variable);
+        put(SymbolType.FOREACH, SemanticTokenTypes.Macro);
         put(SymbolType.FUNCTION, SemanticTokenTypes.Function);
         put(SymbolType.LABEL, SemanticTokenTypes.Variable);
         put(SymbolType.LAMBDA_FUNCTION, SemanticTokenTypes.Keyword);

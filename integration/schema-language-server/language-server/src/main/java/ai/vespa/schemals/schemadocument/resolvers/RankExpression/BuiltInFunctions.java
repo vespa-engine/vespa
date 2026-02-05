@@ -347,24 +347,26 @@ public class BuiltInFunctions {
         put("rawScore", new GenericFunction("rawScore", new FunctionSignature(new FieldArgument())));
         put("itemRawScore", new GenericFunction("itemRawScore", new FunctionSignature(new LabelArgument())));
 
+        
+        // See RankExpressionSymbolResolver.resolveForeach for more details
         put("foreach", new GenericFunction("foreach", List.of(
             new FunctionSignature(List.of(
-                new KeywordArgument("fields", "dimension"), 
-                new StringArgument("variable"), 
+                new KeywordArgument("fields", "fields"), 
+                new StringArgument("variable", false), 
                 new ExpressionArgument("feature"), 
                 new StringArgument("condition"),
                 new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
             )),
             new FunctionSignature(List.of(
-                new KeywordArgument("terms", "dimension"), 
-                new StringArgument("variable"), 
+                new KeywordArgument("terms", "terms"), 
+                new StringArgument("variable", false), 
                 new ExpressionArgument("feature"), 
                 new StringArgument("condition"),
                 new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
             )),
             new FunctionSignature(List.of(
-                new KeywordArgument("attributes", "dimension"), 
-                new StringArgument("variable"), 
+                new KeywordArgument("attributes", "attributes"), 
+                new StringArgument("variable", false), 
                 new ExpressionArgument("feature"), 
                 new StringArgument("condition"),
                 new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
@@ -395,7 +397,7 @@ public class BuiltInFunctions {
         add("nativeProximity");
         add("randomNormal");
         add("randomNormalStable");
-        add("rankingExpression"); // TODO: deprecated (?)
+        add("rankingExpression");
 
         // TODO: these are only allowed in global-phase
         add("normalize_linear");

@@ -406,8 +406,10 @@ public class SymbolReferenceResolver {
         Node identifierNode = argsNode.getParent().get(0);
         SchemaNode containingFeature = argsNode.getParent().getSchemaNode();
 
-        // we can be certain that this is a ReferenceNode
+        // we can be certain that this is a ReferenceNode, but it may be null if parsing is incomplete
         ReferenceNode functionExpressionNode = (ReferenceNode)((BaseNode)containingFeature.getOriginalRankExpressionNode()).expressionNode;
+        if (functionExpressionNode == null) return false;
+
         ExpressionNode myArg = ((BaseNode)argsChild.getOriginalRankExpressionNode()).expressionNode;
         int myArgIndex = functionExpressionNode.children().indexOf(myArg);
 
