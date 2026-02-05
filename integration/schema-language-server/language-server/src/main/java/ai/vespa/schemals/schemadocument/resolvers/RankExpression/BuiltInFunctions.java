@@ -88,6 +88,17 @@ public class BuiltInFunctions {
             ))
         )));
 
+        // TODO: requires you to write attribute(name)
+        put("tensorFromStructs", new GenericFunction("tensorFromStructs", new FunctionSignature(List.of(
+            new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType, "attribute"),
+            new StringArgument("key"),
+            new StringArgument("value"),
+            new EnumArgument("type", List.of(
+                "float",
+                "double"
+            ))
+        ))));
+
         // ==== Field match features - normalized ====
         put("fieldMatch", new GenericFunction("fieldMatch", new FieldArgument(FieldType.STRING), Set.of(
             "",
