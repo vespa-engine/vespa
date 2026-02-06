@@ -78,6 +78,10 @@ public class ModelIdResolver {
         register(m, "snowflake-arctic-embed-m-v2.0-int8", "https://data.vespa-cloud.com/onnx_models/snowflake-arctic-embed-m-v2.0-int8/model.onnx", Set.of(ONNX_MODEL));  
         register(m, "snowflake-arctic-embed-m-v2.0-vocab", "https://data.vespa-cloud.com/onnx_models/snowflake-arctic-embed-m-v2.0/tokenizer.json", Set.of(HF_TOKENIZER));            
         
+        register(m, "voyage-4-nano", "https://data.vespa-cloud.com/onnx_models/voyage-4-nano/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "voyage-4-nano-int8", "https://data.vespa-cloud.com/onnx_models/voyage-4-nano-int8/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "voyage-4-nano-vocab", "https://data.vespa-cloud.com/onnx_models/voyage-4-nano/tokenizer.json", Set.of(HF_TOKENIZER));  
+
         register(m, "llama-160m-chat-v1-q6", "https://data.vespa-cloud.com/gguf_models/Llama-160M-Chat-v1.Q6_K.gguf", Set.of(GGUF_MODEL));
         register(m, "llama-3.2-1b-q4", "https://data.vespa-cloud.com/gguf_models/llama-3.2-1b-instruct-q4_k_m.gguf", Set.of(GGUF_MODEL));
         register(m, "llama-3.2-1b",    "https://data.vespa-cloud.com/gguf_models/llama-3.2-1b-instruct-q8_0.gguf", Set.of(GGUF_MODEL));
