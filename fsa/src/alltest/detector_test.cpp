@@ -21,7 +21,7 @@ public:
     MyHits() {};
     ~MyHits() override;
 
-    void add(const NGram &text, unsigned int from, int length, const FSA::State &) override {
+    void add(const NGram& text, unsigned int from, int length, const FSA::State&) override {
         std::cout << "detected: [" << from << "," << from + length - 1 << "], '" << text.join(" ", from, length)
                   << "'\n";
     }
@@ -29,11 +29,11 @@ public:
 
 MyHits::~MyHits() = default;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     FSA dict(argc >= 2 ? argv[1] : "__testfsa__.__fsa__");
 
     Detector d(dict);
-    MyHits h;
+    MyHits   h;
 
     std::string text;
     while (!std::cin.eof()) {

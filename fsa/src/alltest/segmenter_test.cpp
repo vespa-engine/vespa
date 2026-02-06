@@ -15,12 +15,12 @@
 
 using namespace fsa;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     FSA dict(argc >= 2 ? argv[1] : "__testfsa__.__fsa__");
 
-    Segmenter segmenter(dict);
-    Segmenter::Segments segments;
-    const Segmenter::Segmentation *segmentation;
+    Segmenter                      segmenter(dict);
+    Segmenter::Segments            segments;
+    const Segmenter::Segmentation* segmentation;
 
     std::string text;
     while (!std::cin.eof()) {

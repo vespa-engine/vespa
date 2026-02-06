@@ -13,15 +13,15 @@ LOG_SETUP("vespa-config-status");
 
 class Application {
     ConfigStatus::Flags _flags;
-    std::string _cfgId;
-    std::string _specString;
-    int parseOpts(int argc, char **argv);
-    std::string getSources();
-    HostFilter parse_host_set(std::string_view raw_arg) const;
+    std::string         _cfgId;
+    std::string         _specString;
+    int                 parseOpts(int argc, char** argv);
+    std::string         getSources();
+    HostFilter          parse_host_set(std::string_view raw_arg) const;
 
 public:
-    void usage(const char *self);
-    int main(int argc, char **argv);
+    void usage(const char* self);
+    int  main(int argc, char** argv);
 
     Application();
     ~Application();
@@ -30,7 +30,7 @@ public:
 Application::Application() : _flags(), _cfgId("admin/model"), _specString("") {}
 Application::~Application() {}
 
-int Application::parseOpts(int argc, char **argv) {
+int Application::parseOpts(int argc, char** argv) {
     int c = '?';
     while ((c = getopt(argc, argv, "c:s:vC:f:")) != -1) {
         switch (c) {
@@ -65,13 +65,13 @@ HostFilter Application::parse_host_set(std::string_view raw_arg) const {
     tokenizer.removeEmptyTokens();
 
     HostFilter::HostSet hosts;
-    for (auto &host : tokenizer) {
+    for (auto& host : tokenizer) {
         hosts.emplace(host);
     }
     return HostFilter(std::move(hosts));
 }
 
-void Application::usage(const char *self) {
+void Application::usage(const char* self) {
     std::cerr << "vespa-config-status version 1.0\n"
               << "Usage: " << self << " [options]\n"
               << "options: [-v] for verbose\n"
@@ -81,12 +81,12 @@ void Application::usage(const char *self) {
               << std::endl;
 }
 
-int Application::main(int argc, char **argv) {
+int Application::main(int argc, char** argv) {
     parseOpts(argc, argv);
     fprintf(stderr, "Getting config from: %s\n", _specString.c_str());
     config::ServerSpec spec(_specString);
-    config::ConfigUri uri = config::ConfigUri::createFromSpec(_cfgId, spec);
-    ConfigStatus status(_flags, uri);
+    config::ConfigUri  uri = config::ConfigUri::createFromSpec(_cfgId, spec);
+    ConfigStatus       status(_flags, uri);
 
     return status.action();
 }
@@ -101,7 +101,7 @@ std::string Application::getSources() {
     return specs;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     Application app;
     return app.main(argc, argv);

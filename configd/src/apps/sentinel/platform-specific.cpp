@@ -17,8 +17,8 @@ namespace config::platform_specific {
 namespace {
 
 [[maybe_unused]] [[nodiscard]]
-bool is_env_toggled(const char *var_name) {
-    const char *maybe_toggled = getenv(var_name);
+bool is_env_toggled(const char* var_name) {
+    const char* maybe_toggled = getenv(var_name);
     return (maybe_toggled && (maybe_toggled == "true"sv || maybe_toggled == "yes"sv));
 }
 

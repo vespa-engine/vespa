@@ -9,7 +9,7 @@ namespace metrics {
 
 std::string StateApiAdapter::getMetrics(const std::string& consumer, ExpositionFormat format) {
     MetricLockGuard guard(_manager.getMetricLock());
-    auto periods = _manager.getSnapshotPeriods(guard);
+    auto            periods = _manager.getSnapshotPeriods(guard);
     if (periods.empty() || !_manager.any_snapshots_taken(guard)) {
         return ""; // no configuration or snapshots yet
     }
@@ -20,7 +20,7 @@ std::string StateApiAdapter::getMetrics(const std::string& consumer, ExpositionF
     switch (format) {
     case ExpositionFormat::JSON: {
         vespalib::JsonStream stream(out);
-        JsonWriter metricJsonWriter(stream);
+        JsonWriter           metricJsonWriter(stream);
         _manager.visit(guard, snapshot, metricJsonWriter, consumer);
         stream.finalize();
         break;
@@ -39,8 +39,8 @@ std::string StateApiAdapter::getTotalMetrics(const std::string& consumer, Exposi
     MetricLockGuard guard(_manager.getMetricLock());
     _manager.checkMetricsAltered(guard);
     system_time currentTime = vespalib::system_clock::now();
-    auto generated = std::make_unique<MetricSnapshot>("Total metrics from start until current time", 0s,
-                                                      _manager.getTotalMetricSnapshot(guard).getMetrics(), true);
+    auto        generated = std::make_unique<MetricSnapshot>("Total metrics from start until current time", 0s,
+                                                             _manager.getTotalMetricSnapshot(guard).getMetrics(), true);
     _manager.getActiveMetrics(guard).addToSnapshot(*generated, false, currentTime);
     generated->setFromTime(_manager.getTotalMetricSnapshot(guard).getFromTime());
     const MetricSnapshot& snapshot = *generated;
@@ -48,7 +48,7 @@ std::string StateApiAdapter::getTotalMetrics(const std::string& consumer, Exposi
     switch (format) {
     case ExpositionFormat::JSON: {
         vespalib::JsonStream stream(out);
-        metrics::JsonWriter metricJsonWriter(stream);
+        metrics::JsonWriter  metricJsonWriter(stream);
         _manager.visit(guard, snapshot, metricJsonWriter, consumer);
         stream.finalize();
         break;

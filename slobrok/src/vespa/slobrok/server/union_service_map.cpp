@@ -12,7 +12,7 @@ UnionServiceMap::~UnionServiceMap() = default;
 
 ServiceMappingList UnionServiceMap::currentConsensus() const {
     ServiceMappingList result;
-    for (const auto &[name, list] : _mappings) {
+    for (const auto& [name, list] : _mappings) {
         if (list.size() == 1u) {
             result.emplace_back(name, list[0].spec);
         }
@@ -20,29 +20,29 @@ ServiceMappingList UnionServiceMap::currentConsensus() const {
     return result;
 }
 
-bool UnionServiceMap::wouldConflict(const ServiceMapping &mapping) const {
-    const std::string &key = mapping.name;
-    auto iter = _mappings.find(key);
+bool UnionServiceMap::wouldConflict(const ServiceMapping& mapping) const {
+    const std::string& key = mapping.name;
+    auto               iter = _mappings.find(key);
     if (iter == _mappings.end()) {
         return false;
     }
-    const Mappings &values = iter->second;
+    const Mappings& values = iter->second;
     if (values.size() != 1) {
         return true;
     }
     return (values[0].spec != mapping.spec);
 }
 
-void UnionServiceMap::add(const ServiceMapping &mapping) {
-    const std::string &key = mapping.name;
-    auto iter = _mappings.find(key);
+void UnionServiceMap::add(const ServiceMapping& mapping) {
+    const std::string& key = mapping.name;
+    auto               iter = _mappings.find(key);
     if (iter == _mappings.end()) {
         _mappings[key].emplace_back(mapping.spec, 1u);
         LOG(debug, "add new %s->%s", mapping.name.c_str(), mapping.spec.c_str());
         ProxyMapSource::add(mapping);
     } else {
-        Mappings &values = iter->second;
-        for (CountedSpec &old : values) {
+        Mappings& values = iter->second;
+        for (CountedSpec& old : values) {
             if (old.spec == mapping.spec) {
                 LOG(debug, "add ref to existing %s->%s", mapping.name.c_str(), mapping.spec.c_str());
                 ++old.count;
@@ -59,17 +59,17 @@ void UnionServiceMap::add(const ServiceMapping &mapping) {
     }
 }
 
-void UnionServiceMap::remove(const ServiceMapping &mapping) {
-    const std::string &key = mapping.name;
-    auto iter = _mappings.find(key);
+void UnionServiceMap::remove(const ServiceMapping& mapping) {
+    const std::string& key = mapping.name;
+    auto               iter = _mappings.find(key);
     if (iter == _mappings.end()) {
         LOG(error, "Broken invariant: did not find %s in mappings", key.c_str());
         return;
     }
     LOG(debug, "remove ref from %s->%s", mapping.name.c_str(), mapping.spec.c_str());
-    Mappings &values = iter->second;
-    bool found = false;
-    for (CountedSpec &old : values) {
+    Mappings& values = iter->second;
+    bool      found = false;
+    for (CountedSpec& old : values) {
         if (old.spec == mapping.spec) {
             if (--old.count > 0u)
                 return;
@@ -81,7 +81,7 @@ void UnionServiceMap::remove(const ServiceMapping &mapping) {
         return;
     }
     size_t old_size = values.size();
-    std::erase_if(values, [](const CountedSpec &v) noexcept { return v.count == 0; });
+    std::erase_if(values, [](const CountedSpec& v) noexcept { return v.count == 0; });
     if (values.size() == 1u) {
         LOG_ASSERT(old_size == 2u);
         ServiceMapping toAdd{key, values[0].spec};
@@ -95,7 +95,7 @@ void UnionServiceMap::remove(const ServiceMapping &mapping) {
     }
 }
 
-void UnionServiceMap::update(const ServiceMapping &old_mapping, const ServiceMapping &new_mapping) {
+void UnionServiceMap::update(const ServiceMapping& old_mapping, const ServiceMapping& new_mapping) {
     LOG_ASSERT(old_mapping.name == new_mapping.name);
     remove(old_mapping);
     add(new_mapping);

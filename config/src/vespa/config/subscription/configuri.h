@@ -28,7 +28,7 @@ public:
      * @param configId The config id.
      * @param context A context object that can be shared with multiple URIs.
      */
-    ConfigUri(const std::string &configId, std::shared_ptr<IConfigContext> context);
+    ConfigUri(const std::string& configId, std::shared_ptr<IConfigContext> context);
 
     ~ConfigUri();
 
@@ -38,7 +38,7 @@ public:
      * @param configId The config id to give the new URI.
      * @return A new config URI.
      */
-    ConfigUri createWithNewId(const std::string &configId) const;
+    ConfigUri createWithNewId(const std::string& configId) const;
 
     /**
      * Create a config uri from a config instance. The instance does not need
@@ -46,7 +46,7 @@ public:
      * @param instance The config instance to use as source.
      * @return A config uri.
      */
-    static ConfigUri createFromInstance(const ConfigInstance &instance);
+    static ConfigUri createFromInstance(const ConfigInstance& instance);
 
     /**
      * Create uri from a config id and a source spec.
@@ -54,7 +54,7 @@ public:
      * @param configId The config id to subscribe to.
      * @param spec The source spec pointing to the config source.
      */
-    static ConfigUri createFromSpec(const std::string &configId, const SourceSpec &spec);
+    static ConfigUri createFromSpec(const std::string& configId, const SourceSpec& spec);
 
     /**
      * Create a new empty config uri as initialization convenience.
@@ -65,13 +65,13 @@ public:
      * Get this URIs config id. Used by subscriber.
      * @return The config id of this uri.
      */
-    const std::string &getConfigId() const;
+    const std::string& getConfigId() const;
 
     /**
      * Get the context for this uri. Used by subscriber.
      * @return The context.
      */
-    const std::shared_ptr<IConfigContext> &getContext() const;
+    const std::shared_ptr<IConfigContext>& getContext() const;
 
     /**
      * Empty if the original id was empty or created with createEmpty

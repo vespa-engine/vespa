@@ -20,9 +20,9 @@ class ManagedRpcServer;
 
 class IRpcServerManager {
 public:
-    virtual void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) = 0;
-    virtual void notifyOkRpcSrv(ManagedRpcServer *rpcsrv) = 0;
-    virtual FRT_Supervisor *getSupervisor() = 0;
+    virtual void            notifyFailedRpcSrv(ManagedRpcServer* rpcsrv, std::string errmsg) = 0;
+    virtual void            notifyOkRpcSrv(ManagedRpcServer* rpcsrv) = 0;
+    virtual FRT_Supervisor* getSupervisor() = 0;
     virtual ~IRpcServerManager() = default;
 };
 

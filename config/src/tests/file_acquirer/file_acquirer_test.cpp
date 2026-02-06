@@ -12,7 +12,7 @@ using namespace config;
 struct ServerFixture : FRT_Invokable {
     fnet::frt::StandaloneFRT server;
     FNET_Transport           transport;
-    FRT_Supervisor          &orb;
+    FRT_Supervisor&          orb;
     std::string              spec;
 
     void init_rpc() {
@@ -30,9 +30,9 @@ struct ServerFixture : FRT_Invokable {
         transport.Start();
     }
 
-    void RPC_waitFor(FRT_RPCRequest *req) {
-        FRT_Values &params = *req->GetParams();
-        FRT_Values &ret = *req->GetReturn();
+    void RPC_waitFor(FRT_RPCRequest* req) {
+        FRT_Values& params = *req->GetParams();
+        FRT_Values& ret = *req->GetReturn();
         if (strcmp(params[0]._string._str, "my_ref") == 0) {
             ret.AddString("my_path");
         } else {

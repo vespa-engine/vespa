@@ -20,7 +20,7 @@ LOG_SETUP(".threadtest");
 
 class FileThread {
     std::atomic<bool> _done;
-    string _file;
+    string            _file;
 
 public:
     FileThread(string file) : _done(false), _file(file) {}
@@ -73,10 +73,10 @@ void LoggerThread::entry() {
 
 class ThreadTester {
 public:
-    int _argc = 0;
-    char **_argv = nullptr;
-    int Main();
-    int Entry(int argc, char **argv) {
+    int    _argc = 0;
+    char** _argv = nullptr;
+    int    Main();
+    int    Entry(int argc, char** argv) {
         _argc = argc;
         _argv = argv;
         return Main();
@@ -128,14 +128,14 @@ int ThreadTester::Main() {
         writers[i]->stop();
     }
 
-    for (auto &thread : threads) {
+    for (auto& thread : threads) {
         thread.join();
     }
 
     return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     ThreadTester app;
     return app.Entry(argc, argv);
 }

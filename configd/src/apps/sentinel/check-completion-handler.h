@@ -14,10 +14,10 @@ namespace config::sentinel {
  **/
 class CheckCompletionHandler : public StatusCallback {
 private:
-    FRT_RPCRequest *_parentRequest;
+    FRT_RPCRequest* _parentRequest;
 
 public:
-    CheckCompletionHandler(FRT_RPCRequest *parentRequest);
+    CheckCompletionHandler(FRT_RPCRequest* parentRequest);
     virtual ~CheckCompletionHandler();
     void returnStatus(bool ok) override;
 };

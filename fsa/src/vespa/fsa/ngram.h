@@ -55,7 +55,7 @@ public:
      * @param from Starting token to keep (preceeding tokens are ignored).
      * @param length Number of tokens to keep.
      */
-    NGram(const char *text, unsigned int from = 0, int length = -1);
+    NGram(const char* text, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Constructor.
@@ -69,7 +69,7 @@ public:
      * @param length Number of tokens to keep.
      * @param tokenizer Tokenizer.
      */
-    NGram(const char *text, Tokenizer &tokenizer, unsigned int from = 0, int length = -1);
+    NGram(const char* text, Tokenizer& tokenizer, unsigned int from = 0, int length = -1);
 
     /**
      * @brief (Sort of) Copy constructor.
@@ -78,7 +78,7 @@ public:
      * @param from Starting token to keep (preceeding tokens are ignored).
      * @param length Number of tokens to keep.
      */
-    NGram(const NGram &g, unsigned int from = 0, int length = -1);
+    NGram(const NGram& g, unsigned int from = 0, int length = -1);
 
     /**
      * @brief (Sort of) Copy constructor.
@@ -88,7 +88,7 @@ public:
      * @param g NGram object to copy.
      * @param select Selector indicating which tokens to copy.
      */
-    NGram(const NGram &g, const Selector &select);
+    NGram(const NGram& g, const Selector& select);
 
     /**
      * @brief (Sort of) Copy constructor.
@@ -99,7 +99,7 @@ public:
      * @param p Permuter object.
      * @param id Permutation ID.
      */
-    NGram(const NGram &g, const Permuter &p, unsigned int id);
+    NGram(const NGram& g, const Permuter& p, unsigned int id);
 
     /**
      * @brief Constructor.
@@ -113,7 +113,7 @@ public:
      * @param from Starting token to keep (preceeding tokens are ignored).
      * @param length Number of tokens to keep.
      */
-    NGram(const std::string &s, unsigned int from = 0, int length = -1);
+    NGram(const std::string& s, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Constructor.
@@ -126,7 +126,7 @@ public:
      * @param length Number of tokens to keep.
      * @param tokenizer Tokenizer.
      */
-    NGram(const std::string &s, Tokenizer &tokenizer, unsigned int from = 0, int length = -1);
+    NGram(const std::string& s, Tokenizer& tokenizer, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Set the object.
@@ -141,7 +141,7 @@ public:
      * @param from Starting token to keep (preceeding tokens are ignored).
      * @param length Number of tokens to keep.
      */
-    void set(const char *text, unsigned int from = 0, int length = -1);
+    void set(const char* text, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Set the object.
@@ -155,7 +155,7 @@ public:
      * @param length Number of tokens to keep.
      * @param tokenizer Tokenizer.
      */
-    void set(const char *text, Tokenizer &tokenizer, unsigned int from = 0, int length = -1);
+    void set(const char* text, Tokenizer& tokenizer, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Set the object.
@@ -164,7 +164,7 @@ public:
      * @param from Starting token to keep (preceeding tokens are ignored).
      * @param length Number of tokens to keep.
      */
-    void set(const NGram &g, unsigned int from = 0, int length = -1);
+    void set(const NGram& g, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Set the object.
@@ -174,7 +174,7 @@ public:
      * @param g NGram object to copy.
      * @param select Selector indicating which tokens to copy.
      */
-    void set(const NGram &g, const Selector &select);
+    void set(const NGram& g, const Selector& select);
 
     /**
      * @brief Set the object.
@@ -185,7 +185,7 @@ public:
      * @param p Permuter object.
      * @param id Permutation ID.
      */
-    void set(const NGram &g, const Permuter &p, unsigned int id);
+    void set(const NGram& g, const Permuter& p, unsigned int id);
 
     /**
      * @brief Set the object.
@@ -199,7 +199,7 @@ public:
      * @param from Starting token to keep (preceeding tokens are ignored).
      * @param length Number of tokens to keep.
      */
-    void set(const std::string &s, unsigned int from = 0, int length = -1);
+    void set(const std::string& s, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Set the object.
@@ -212,7 +212,7 @@ public:
      * @param length Number of tokens to keep.
      * @param tokenizer Tokenizer.
      */
-    void set(const std::string &s, Tokenizer &tokenizer, unsigned int from = 0, int length = -1);
+    void set(const std::string& s, Tokenizer& tokenizer, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Set the object.
@@ -221,7 +221,7 @@ public:
      *
      * @param s Input string.
      */
-    void setOne(const std::string &s);
+    void setOne(const std::string& s);
 
     /**
      * @brief Append tokens to the object.
@@ -236,7 +236,7 @@ public:
      * @param from Starting token to keep (preceeding tokens are ignored).
      * @param length Number of tokens to keep.
      */
-    void append(const char *text, unsigned int from = 0, int length = -1);
+    void append(const char* text, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Append tokens to the object.
@@ -250,7 +250,7 @@ public:
      * @param length Number of tokens to keep.
      * @param tokenizer Tokenizer.
      */
-    void append(const char *text, Tokenizer &tokenizer, unsigned int from = 0, int length = -1);
+    void append(const char* text, Tokenizer& tokenizer, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Append tokens to the object.
@@ -259,7 +259,7 @@ public:
      * @param from Starting token to keep (preceeding tokens are ignored).
      * @param length Number of tokens to keep.
      */
-    void append(const NGram &g, unsigned int from = 0, int length = -1);
+    void append(const NGram& g, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Append tokens to the object.
@@ -269,7 +269,7 @@ public:
      * @param g NGram object to append.
      * @param select Selector indicating which tokens to copy.
      */
-    void append(const NGram &g, const Selector &select);
+    void append(const NGram& g, const Selector& select);
 
     /**
      * @brief Append tokens to the object.
@@ -280,7 +280,7 @@ public:
      * @param p Permuter object.
      * @param id Permutation ID.
      */
-    void append(const NGram &g, const Permuter &p, unsigned int id);
+    void append(const NGram& g, const Permuter& p, unsigned int id);
 
     /**
      * @brief Append tokens to the object.
@@ -294,7 +294,7 @@ public:
      * @param from Starting token to keep (preceeding tokens are ignored).
      * @param length Number of tokens to keep.
      */
-    void append(const std::string &s, unsigned int from = 0, int length = -1);
+    void append(const std::string& s, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Append tokens to the object.
@@ -307,7 +307,7 @@ public:
      * @param length Number of tokens to keep.
      * @param tokenizer Tokenizer.
      */
-    void append(const std::string &s, Tokenizer &tokenizer, unsigned int from = 0, int length = -1);
+    void append(const std::string& s, Tokenizer& tokenizer, unsigned int from = 0, int length = -1);
 
     /**
      * @brief Append a single token to the object.
@@ -316,7 +316,7 @@ public:
      *
      * @param s Input string.
      */
-    void appendOne(const std::string &s);
+    void appendOne(const std::string& s);
 
     /**
      * @brief Reset the object.
@@ -360,7 +360,7 @@ public:
      * @param length Number of tokens (default -1 which means all).
      * @return Joined tokens.
      */
-    std::string join(const std::string &separator = " ", unsigned int from = 0, int length = -1) const;
+    std::string join(const std::string& separator = " ", unsigned int from = 0, int length = -1) const;
 
     /**
      * @brief Index operator.
@@ -371,7 +371,7 @@ public:
      * @param i Index.
      * @return Reference to token.
      */
-    std::string &operator[](unsigned int i) { return _tokens[i]; }
+    std::string& operator[](unsigned int i) { return _tokens[i]; }
 
     /**
      * @brief Index operator.
@@ -382,7 +382,7 @@ public:
      * @param i Index.
      * @return Const reference to token.
      */
-    const std::string &operator[](unsigned int i) const { return _tokens[i]; }
+    const std::string& operator[](unsigned int i) const { return _tokens[i]; }
 
     /**
      * @brief Get permutation ID to another n-gram.
@@ -394,7 +394,7 @@ public:
      * @param p Permuter object.
      * @return Permutation ID.
      */
-    int getPermIdTo(const NGram &g, const Permuter &p) const;
+    int getPermIdTo(const NGram& g, const Permuter& p) const;
 
     /**
      * @brief Output operator.
@@ -403,7 +403,7 @@ public:
      * @param g n-gram.
      * @return Reference to output stream.
      */
-    friend std::ostream &operator<<(std::ostream &out, const NGram &g);
+    friend std::ostream& operator<<(std::ostream& out, const NGram& g);
 };
 
 // }}}

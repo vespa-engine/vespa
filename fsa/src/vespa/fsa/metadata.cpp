@@ -28,12 +28,12 @@ const uint32_t MetaData::MAGIC;
 
 // {{{ MetaData::MetaData()
 
-MetaData::MetaData(const char *datafile, FileAccessMethod fam)
+MetaData::MetaData(const char* datafile, FileAccessMethod fam)
     : _mmap_addr(nullptr), _mmap_length(0), _ok(false), _header(), _data(nullptr) {
     _ok = read(datafile, fam);
 }
 
-MetaData::MetaData(const std::string &datafile, FileAccessMethod fam)
+MetaData::MetaData(const std::string& datafile, FileAccessMethod fam)
     : _mmap_addr(nullptr), _mmap_length(0), _ok(false), _header(), _data(nullptr) {
     _ok = read(datafile.c_str(), fam);
 }
@@ -63,7 +63,7 @@ void MetaData::reset() {
 // }}}
 // {{{ MetaData::read()
 
-bool MetaData::read(const char *datafile, FileAccessMethod fam) {
+bool MetaData::read(const char* datafile, FileAccessMethod fam) {
     size_t r;
 
     reset();
@@ -115,7 +115,7 @@ bool MetaData::read(const char *datafile, FileAccessMethod fam) {
             return false;
         }
     } else {
-        _data = (void *)((uint8_t *)_mmap_addr + sizeof(_header));
+        _data = (void*)((uint8_t*)_mmap_addr + sizeof(_header));
     }
 
     ::close(fd);

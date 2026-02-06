@@ -28,28 +28,28 @@ unsigned int gram_count(unsigned int mg, unsigned int q) {
     return ct;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     const unsigned int MAXQUERY = 10;
     const unsigned int MAXGRAM = 6;
 
-    Permuter p;
-    NGram freq_s, query;
+    Permuter          p;
+    NGram             freq_s, query;
     WordCharTokenizer tokenizer(WordCharTokenizer::PUNCTUATION_WHITESPACEONLY);
-    unsigned int freq;
-    Selector s;
-    std::string qstr;
-    unsigned int qlen, glen;
+    unsigned int      freq;
+    Selector          s;
+    std::string       qstr;
+    unsigned int      qlen, glen;
 
     if (argc != 2) {
         std::cerr << "usage: " << argv[0] << " fsa_file" << std::endl;
         return 1;
     }
 
-    FSA fsa(argv[1]);
-    FSA::State state(fsa);
-    std::map<std::string, unsigned int> grams, gq;
+    FSA                                           fsa(argv[1]);
+    FSA::State                                    state(fsa);
+    std::map<std::string, unsigned int>           grams, gq;
     std::map<std::string, unsigned int>::iterator grams_it, gq_it;
-    std::string gram_str;
+    std::string                                   gram_str;
 
     while (!std::cin.eof()) {
         getline(std::cin, qstr);

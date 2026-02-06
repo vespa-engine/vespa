@@ -14,7 +14,7 @@ namespace config {
 class ErrorCode {
 private:
     ErrorCode();
-    ErrorCode(const ErrorCode &);
+    ErrorCode(const ErrorCode&);
 
 public:
     static const int UNKNOWN_CONFIG = 100000;

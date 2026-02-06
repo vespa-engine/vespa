@@ -17,11 +17,11 @@ class FRTConfigRequest;
  */
 class FRTSource : public Source, public FRT_IRequestWait {
 public:
-    FRTSource(std::shared_ptr<ConnectionFactory> connectionFactory, const FRTConfigRequestFactory &requestFactory,
-              std::unique_ptr<ConfigAgent> agent, const ConfigKey &key);
+    FRTSource(std::shared_ptr<ConnectionFactory> connectionFactory, const FRTConfigRequestFactory& requestFactory,
+              std::unique_ptr<ConfigAgent> agent, const ConfigKey& key);
     ~FRTSource() override;
 
-    void RequestDone(FRT_RPCRequest *request) override;
+    void RequestDone(FRT_RPCRequest* request) override;
     void close() override;
     void reload(int64_t generation) override;
     void getConfig() override;
@@ -29,12 +29,12 @@ public:
 private:
     class CleanupGuard;
     void                              scheduleNextGetConfig();
-    void                              erase(FRT_RPCRequest *);
-    std::shared_ptr<FRTConfigRequest> find(FRT_RPCRequest *);
+    void                              erase(FRT_RPCRequest*);
+    std::shared_ptr<FRTConfigRequest> find(FRT_RPCRequest*);
 
-    using RequestMap = std::map<FRT_RPCRequest *, std::shared_ptr<FRTConfigRequest>>;
+    using RequestMap = std::map<FRT_RPCRequest*, std::shared_ptr<FRTConfigRequest>>;
     std::shared_ptr<ConnectionFactory> _connectionFactory;
-    const FRTConfigRequestFactory     &_requestFactory;
+    const FRTConfigRequestFactory&     _requestFactory;
     std::unique_ptr<ConfigAgent>       _agent;
     const ConfigKey                    _key;
     std::mutex                         _lock; // Protects _inflight, _task and _state

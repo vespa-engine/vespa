@@ -24,7 +24,7 @@ const Blob Automaton::EMPTY_BLOB("");
 
 // {{{ Automaton::TransitionList::operator<()
 
-bool Automaton::TransitionList::operator<(const Automaton::TransitionList &tl) const {
+bool Automaton::TransitionList::operator<(const Automaton::TransitionList& tl) const {
     if (this == &tl)
         return false;
     if (_size < tl._size)
@@ -47,7 +47,7 @@ bool Automaton::TransitionList::operator<(const Automaton::TransitionList &tl) c
 // }}}
 // {{{ Automaton::TransitionList::operator>()
 
-bool Automaton::TransitionList::operator>(const Automaton::TransitionList &tl) const {
+bool Automaton::TransitionList::operator>(const Automaton::TransitionList& tl) const {
     if (this == &tl)
         return false;
     if (_size > tl._size)
@@ -70,7 +70,7 @@ bool Automaton::TransitionList::operator>(const Automaton::TransitionList &tl) c
 // }}}
 // {{{ Automaton::TransitionList::operator==()
 
-bool Automaton::TransitionList::operator==(const Automaton::TransitionList &tl) const {
+bool Automaton::TransitionList::operator==(const Automaton::TransitionList& tl) const {
     if (this == &tl)
         return true;
     if (_size != tl._size)
@@ -96,7 +96,7 @@ void Automaton::PackedAutomaton::reset() {
         _packed_ptr = nullptr;
     }
     if (_packed_idx != nullptr) {
-        if (sizeof(State *) != sizeof(state_t)) {
+        if (sizeof(State*) != sizeof(state_t)) {
             free(_packed_idx);
         }
         _packed_idx = nullptr;
@@ -136,14 +136,14 @@ void Automaton::PackedAutomaton::reset() {
 void Automaton::PackedAutomaton::init() {
     reset();
 
-    _packed_ptr = (State **)malloc(_ALLOC_CELLS * sizeof(State *));
-    if (sizeof(State *) != sizeof(state_t)) {
-        _packed_idx = (state_t *)malloc(_ALLOC_CELLS * sizeof(state_t));
+    _packed_ptr = (State**)malloc(_ALLOC_CELLS * sizeof(State*));
+    if (sizeof(State*) != sizeof(state_t)) {
+        _packed_idx = (state_t*)malloc(_ALLOC_CELLS * sizeof(state_t));
     } else {
-        _packed_idx = (state_t *)_packed_ptr;
+        _packed_idx = (state_t*)_packed_ptr;
     }
-    _symbol = (symbol_t *)malloc(_ALLOC_CELLS * sizeof(symbol_t));
-    _used = (bool *)malloc(_ALLOC_CELLS * sizeof(bool));
+    _symbol = (symbol_t*)malloc(_ALLOC_CELLS * sizeof(symbol_t));
+    _used = (bool*)malloc(_ALLOC_CELLS * sizeof(bool));
     _packed_size = _ALLOC_CELLS;
 
     assert(_packed_ptr != nullptr && _packed_idx != nullptr && _symbol != nullptr && _used != nullptr);
@@ -153,13 +153,13 @@ void Automaton::PackedAutomaton::init() {
         _symbol[i] = FSA::EMPTY_SYMBOL;
         _packed_ptr[i] = nullptr;
     }
-    if (sizeof(State *) != sizeof(state_t)) {
+    if (sizeof(State*) != sizeof(state_t)) {
         for (uint32_t i = 0; i < _packed_size; i++) {
             _packed_idx[i] = 0;
         }
     }
 
-    _blob = (data_t *)malloc(_ALLOC_BLOB);
+    _blob = (data_t*)malloc(_ALLOC_BLOB);
     _blob_size = _ALLOC_BLOB;
 
     assert(_blob != nullptr);
@@ -173,14 +173,14 @@ void Automaton::PackedAutomaton::init() {
 void Automaton::PackedAutomaton::expandCells() {
     uint32_t i;
 
-    _packed_ptr = (State **)realloc(_packed_ptr, (_packed_size + _ALLOC_CELLS) * sizeof(State *));
-    if (sizeof(State *) != sizeof(state_t)) {
-        _packed_idx = (state_t *)realloc(_packed_idx, (_packed_size + _ALLOC_CELLS) * sizeof(state_t));
+    _packed_ptr = (State**)realloc(_packed_ptr, (_packed_size + _ALLOC_CELLS) * sizeof(State*));
+    if (sizeof(State*) != sizeof(state_t)) {
+        _packed_idx = (state_t*)realloc(_packed_idx, (_packed_size + _ALLOC_CELLS) * sizeof(state_t));
     } else {
-        _packed_idx = (state_t *)_packed_ptr;
+        _packed_idx = (state_t*)_packed_ptr;
     }
-    _symbol = (symbol_t *)realloc(_symbol, (_packed_size + _ALLOC_CELLS) * sizeof(symbol_t));
-    _used = (bool *)realloc(_used, (_packed_size + _ALLOC_CELLS) * sizeof(bool));
+    _symbol = (symbol_t*)realloc(_symbol, (_packed_size + _ALLOC_CELLS) * sizeof(symbol_t));
+    _used = (bool*)realloc(_used, (_packed_size + _ALLOC_CELLS) * sizeof(bool));
 
     assert(_packed_ptr != nullptr && _packed_idx != nullptr && _symbol != nullptr && _used != nullptr);
 
@@ -188,7 +188,7 @@ void Automaton::PackedAutomaton::expandCells() {
         _used[i] = false;
         _symbol[i] = FSA::EMPTY_SYMBOL;
         _packed_ptr[i] = nullptr;
-        if (sizeof(State *) != sizeof(state_t)) {
+        if (sizeof(State*) != sizeof(state_t)) {
             _packed_idx[i] = 0;
         }
     }
@@ -201,7 +201,7 @@ void Automaton::PackedAutomaton::expandCells() {
 void Automaton::PackedAutomaton::expandBlob(uint32_t minExpand) {
     uint32_t expand = (minExpand / _ALLOC_BLOB + 1) * _ALLOC_BLOB;
 
-    _blob = (data_t *)realloc(_blob, _blob_size + expand);
+    _blob = (data_t*)realloc(_blob, _blob_size + expand);
 
     assert(_blob != nullptr);
 
@@ -227,10 +227,10 @@ uint32_t Automaton::PackedAutomaton::getEmptyCell() {
 // }}}
 // {{{ Automaton::PackedAutomaton::getCell()
 
-uint32_t Automaton::PackedAutomaton::getCell(const Automaton::SymList &t) {
+uint32_t Automaton::PackedAutomaton::getCell(const Automaton::SymList& t) {
     SymListConstIterator tit;
-    uint32_t cell = _last_packed > _BACKCHECK ? _last_packed - _BACKCHECK : 1;
-    bool found = false;
+    uint32_t             cell = _last_packed > _BACKCHECK ? _last_packed - _BACKCHECK : 1;
+    bool                 found = false;
     while (!found) {
         if (!_used[cell]) {
             if (cell + 256 >= _packed_size)
@@ -259,11 +259,11 @@ uint32_t Automaton::PackedAutomaton::getCell(const Automaton::SymList &t) {
 // }}}
 // {{{ Automaton::PackedAutomaton::packState()
 
-bool Automaton::PackedAutomaton::packState(Automaton::StateCellArrayIterator &it) {
-    SymList transitions;
-    uint32_t cell;
-    size_t i;
-    const TransitionList &tlist = it->state->getTransitionList();
+bool Automaton::PackedAutomaton::packState(Automaton::StateCellArrayIterator& it) {
+    SymList               transitions;
+    uint32_t              cell;
+    size_t                i;
+    const TransitionList& tlist = it->state->getTransitionList();
 
     if (_packable) {
         if (tlist.size() == 0) {
@@ -298,7 +298,7 @@ bool Automaton::PackedAutomaton::packState(Automaton::StateCellArrayIterator &it
 
 static const Blob nullBlob;
 
-uint32_t Automaton::PackedAutomaton::packBlob(const Blob *b) {
+uint32_t Automaton::PackedAutomaton::packBlob(const Blob* b) {
     PackMapIterator pi = _blob_map.find(b);
     if (pi != _blob_map.end()) {
         return pi->second;
@@ -322,7 +322,7 @@ uint32_t Automaton::PackedAutomaton::packBlob(const Blob *b) {
 // }}}
 // {{{ Automaton::PackedAutomaton::finalize()
 
-void Automaton::PackedAutomaton::finalize(const StateCellArray &queue) {
+void Automaton::PackedAutomaton::finalize(const StateCellArray& queue) {
     uint32_t i;
 
     if (_packable) {
@@ -338,15 +338,15 @@ void Automaton::PackedAutomaton::finalize(const StateCellArray &queue) {
         }
 
         // compact blobs if the size is constant
-        std::map<uint32_t, uint32_t> bcomp;
+        std::map<uint32_t, uint32_t>           bcomp;
         std::map<uint32_t, uint32_t>::iterator bcomp_it;
         bcomp[0] = 0;
-        uint32_t lastsize = *((uint32_t *)_blob), currsize;
+        uint32_t lastsize = *((uint32_t*)_blob), currsize;
         uint32_t i = lastsize + sizeof(uint32_t);
         uint32_t j = lastsize;
-        bool fixedsize = true;
+        bool     fixedsize = true;
         while (i < _blob_used) {
-            currsize = *((uint32_t *)(_blob + i));
+            currsize = *((uint32_t*)(_blob + i));
             if (currsize != lastsize) {
                 fixedsize = false;
                 break;
@@ -379,7 +379,7 @@ void Automaton::PackedAutomaton::finalize(const StateCellArray &queue) {
 
 hash_t Automaton::PackedAutomaton::computePerfectHash(state_t state) {
     symbol_t s;
-    hash_t count;
+    hash_t   count;
 
     if (_totals[state] != 0) {
         return _totals[state];
@@ -410,8 +410,8 @@ void Automaton::PackedAutomaton::addPerfectHash() {
 
     uint32_t size = _last_packed + 256;
 
-    _perf_hash = (hash_t *)malloc(size * sizeof(hash_t));
-    _totals = (hash_t *)malloc(size * sizeof(hash_t));
+    _perf_hash = (hash_t*)malloc(size * sizeof(hash_t));
+    _totals = (hash_t*)malloc(size * sizeof(hash_t));
 
     assert(_perf_hash != nullptr && _totals != nullptr);
 
@@ -429,12 +429,12 @@ void Automaton::PackedAutomaton::addPerfectHash() {
 // }}}
 // {{{ Automaton::PackedAutomaton::lookup()
 
-const data_t *Automaton::PackedAutomaton::lookup(const char *input) const {
+const data_t* Automaton::PackedAutomaton::lookup(const char* input) const {
     if (_packable || _start_state == 0) {
         return nullptr;
     }
-    state_t state = _start_state;
-    const char *p = input;
+    state_t     state = _start_state;
+    const char* p = input;
     while (*p) {
         if (_symbol[state + *p] == *p) {
             state = _packed_idx[state + *p];
@@ -452,7 +452,7 @@ const data_t *Automaton::PackedAutomaton::lookup(const char *input) const {
 // }}}
 // {{{ Automaton::PackedAutomaton::write()
 
-bool Automaton::PackedAutomaton::write(const char *filename, uint32_t serial) {
+bool Automaton::PackedAutomaton::write(const char* filename, uint32_t serial) {
     if (_packable || _packed_size == 0) // must be non-empty and finalized
         return false;
 
@@ -496,9 +496,9 @@ bool Automaton::PackedAutomaton::write(const char *filename, uint32_t serial) {
 // }}}
 // {{{ Automaton::PackedAutomaton::read()
 
-bool Automaton::PackedAutomaton::read(const char *filename) {
+bool Automaton::PackedAutomaton::read(const char* filename) {
     FSA::Header header;
-    size_t r;
+    size_t      r;
 
     reset();
     int fd = ::open(filename, O_RDONLY);
@@ -520,17 +520,17 @@ bool Automaton::PackedAutomaton::read(const char *filename) {
     _fixed_blob_size = header._fixed_data_size;
     _start_state = header._start;
 
-    _symbol = (symbol_t *)malloc(_packed_size * sizeof(symbol_t));
+    _symbol = (symbol_t*)malloc(_packed_size * sizeof(symbol_t));
     assert(_symbol != nullptr);
     ::read(fd, _symbol, _packed_size * (sizeof(symbol_t)));
-    _packed_idx = (state_t *)malloc(_packed_size * sizeof(state_t));
+    _packed_idx = (state_t*)malloc(_packed_size * sizeof(state_t));
     assert(_packed_idx != nullptr);
     ::read(fd, _packed_idx, _packed_size * (sizeof(state_t)));
-    _blob = (data_t *)malloc(_blob_used);
+    _blob = (data_t*)malloc(_blob_used);
     assert(_blob != nullptr);
     ::read(fd, _blob, _blob_used);
     if (header._has_perfect_hash) {
-        _perf_hash = (hash_t *)malloc(_packed_size * sizeof(hash_t));
+        _perf_hash = (hash_t*)malloc(_packed_size * sizeof(hash_t));
         assert(_perf_hash != nullptr);
         ::read(fd, _perf_hash, _packed_size * (sizeof(hash_t)));
     }
@@ -543,17 +543,17 @@ bool Automaton::PackedAutomaton::read(const char *filename) {
 // }}}
 // {{{ Automaton::PackedAutomaton::getFSA()
 
-bool Automaton::PackedAutomaton::getFSA(FSA::Descriptor &d) {
+bool Automaton::PackedAutomaton::getFSA(FSA::Descriptor& d) {
     if (_packable || _packed_size == 0) // must be non-empty and finalized
         return false;
 
     uint32_t size = _last_packed + 256;
 
-    _symbol = (symbol_t *)realloc(_symbol, size * sizeof(symbol_t));
-    _packed_idx = (state_t *)realloc(_packed_idx, size * sizeof(state_t));
-    _blob = (data_t *)realloc(_blob, _blob_used);
+    _symbol = (symbol_t*)realloc(_symbol, size * sizeof(symbol_t));
+    _packed_idx = (state_t*)realloc(_packed_idx, size * sizeof(state_t));
+    _blob = (data_t*)realloc(_blob, _blob_used);
     if (_perf_hash != nullptr) {
-        _perf_hash = (hash_t *)realloc(_perf_hash, size * sizeof(hash_t));
+        _perf_hash = (hash_t*)realloc(_perf_hash, size * sizeof(hash_t));
     }
 
     d._version = FSA::VER;
@@ -570,7 +570,7 @@ bool Automaton::PackedAutomaton::getFSA(FSA::Descriptor &d) {
 
     _symbol = nullptr;
     _packed_idx = nullptr;
-    if (sizeof(State *) == sizeof(state_t)) { // _packed_idx and _packed_ptr are overlayed
+    if (sizeof(State*) == sizeof(state_t)) { // _packed_idx and _packed_ptr are overlayed
         _packed_ptr = nullptr;
     }
     _blob = nullptr;
@@ -623,13 +623,13 @@ Automaton::~Automaton() { cleanUp(); }
 // }}}
 // {{{ Automaton::getCPLastState()
 
-Automaton::State *Automaton::getCPLastState(const char *input, const char *&suffix) {
+Automaton::State* Automaton::getCPLastState(const char* input, const char*& suffix) {
     if (_q0 == nullptr)
         return nullptr;
 
     unsigned int l = 0;
-    State *state = _q0;
-    State *next;
+    State*       state = _q0;
+    State*       next;
     while (input[l] != 0) {
         next = state->child(input[l]);
         if (next == nullptr) {
@@ -646,9 +646,9 @@ Automaton::State *Automaton::getCPLastState(const char *input, const char *&suff
 // }}}
 // {{{ Automaton::addSuffix()
 
-void Automaton::addSuffix(State *state, const char *suffix, const Blob *b) {
-    State *current = state;
-    State *child;
+void Automaton::addSuffix(State* state, const char* suffix, const Blob* b) {
+    State* current = state;
+    State* child;
 
     while (*suffix != 0) {
         child = current->addEmptyChild(*suffix);
@@ -664,7 +664,7 @@ void Automaton::addSuffix(State *state, const char *suffix, const Blob *b) {
         child = bi->second;
         current->addChild(FSA::FINAL_SYMBOL, child);
     } else {
-        const Blob *bcopy = (b == nullptr) ? new Blob(EMPTY_BLOB) : new Blob(*b);
+        const Blob* bcopy = (b == nullptr) ? new Blob(EMPTY_BLOB) : new Blob(*b);
         assert(bcopy != nullptr);
         child = current->addEmptyChild(FSA::FINAL_SYMBOL, bcopy);
         _blob_register[*bcopy] = child;
@@ -736,7 +736,7 @@ void Automaton::addPerfectHash() {
 // }}}
 // {{{ Automaton::write()
 
-bool Automaton::write(const char *file, uint32_t serial) {
+bool Automaton::write(const char* file, uint32_t serial) {
     if (!_finalized) {
         finalize();
     }
@@ -746,7 +746,7 @@ bool Automaton::write(const char *file, uint32_t serial) {
 // }}}
 // {{{ Automaton::getFSA()
 
-FSA *Automaton::getFSA() {
+FSA* Automaton::getFSA() {
     if (!_finalized) {
         finalize();
     }
@@ -756,7 +756,7 @@ FSA *Automaton::getFSA() {
     if (!_packed.getFSA(d))
         return nullptr;
 
-    FSA *fsa = new FSA(d);
+    FSA* fsa = new FSA(d);
 
     cleanUp();
 
@@ -766,21 +766,21 @@ FSA *Automaton::getFSA() {
 // }}}
 // {{{ Automaton::insertSortedString()
 
-void Automaton::insertSortedString(const std::string &input) { insertSortedString(input.c_str()); }
+void Automaton::insertSortedString(const std::string& input) { insertSortedString(input.c_str()); }
 
-void Automaton::insertSortedString(const std::string &input, const std::string &meta) {
+void Automaton::insertSortedString(const std::string& input, const std::string& meta) {
     Blob b(meta);
     insertSortedString(input.c_str(), &b);
 }
 
-void Automaton::insertSortedString(const char *input, const Blob &b) { insertSortedString(input, &b); }
+void Automaton::insertSortedString(const char* input, const Blob& b) { insertSortedString(input, &b); }
 
-void Automaton::insertSortedString(const char *input, const Blob *b) {
+void Automaton::insertSortedString(const char* input, const Blob* b) {
     if (_q0 == nullptr || _finalized)
         return;
 
-    const char *currentSuffix;
-    State *lastState = getCPLastState(input, currentSuffix);
+    const char* currentSuffix;
+    State*      lastState = getCPLastState(input, currentSuffix);
 
     if (lastState->hasChildren()) {
         replaceOrRegister(lastState);
@@ -791,8 +791,8 @@ void Automaton::insertSortedString(const char *input, const Blob *b) {
 // }}}
 // {{{ Automaton::replaceOrRegister()
 
-void Automaton::replaceOrRegister(Automaton::State *state) {
-    State *child = state->lastChild();
+void Automaton::replaceOrRegister(Automaton::State* state) {
+    State* child = state->lastChild();
     if (child != nullptr) {
         if (child->hasChildren()) {
             replaceOrRegister(child);

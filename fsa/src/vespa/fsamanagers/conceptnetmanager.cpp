@@ -24,8 +24,8 @@ ConceptNetManager::~ConceptNetManager() {
 
 // {{{ ConceptNetManager::load()
 
-bool ConceptNetManager::load(const std::string &id, const std::string &fsafile, const std::string &datafile) {
-    ConceptNet::Handle *newcn =
+bool ConceptNetManager::load(const std::string& id, const std::string& fsafile, const std::string& datafile) {
+    ConceptNet::Handle* newcn =
         new ConceptNet::Handle(fsafile.c_str(), datafile.length() > 0 ? datafile.c_str() : nullptr);
 
     if (newcn == nullptr || !(*newcn)->isOk()) {
@@ -49,9 +49,9 @@ bool ConceptNetManager::load(const std::string &id, const std::string &fsafile, 
 // }}}
 // {{{ ConceptNetManager::get()
 
-ConceptNet::Handle *ConceptNetManager::get(const std::string &id) const {
-    ConceptNet::Handle *newhandle = nullptr;
-    std::shared_lock guard(_lock);
+ConceptNet::Handle* ConceptNetManager::get(const std::string& id) const {
+    ConceptNet::Handle* newhandle = nullptr;
+    std::shared_lock    guard(_lock);
     {
         LibraryConstIterator it = _library.find(id);
         if (it != _library.end()) {
@@ -64,7 +64,7 @@ ConceptNet::Handle *ConceptNetManager::get(const std::string &id) const {
 // }}}
 // {{{ ConceptNetManager::drop()
 
-void ConceptNetManager::drop(const std::string &id) {
+void ConceptNetManager::drop(const std::string& id) {
     std::lock_guard guard(_lock);
     {
         LibraryIterator it = _library.find(id);

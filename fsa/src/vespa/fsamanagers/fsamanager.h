@@ -40,21 +40,21 @@ protected:
 
 private:
     /** Private unimplemented copy constructor */
-    FSAManager(const FSAManager &);
+    FSAManager(const FSAManager&);
     /** Private unimplemented assignment operator */
-    FSAManager &operator=(const FSAManager &);
+    FSAManager& operator=(const FSAManager&);
 
     /** %FSA library type */
-    using Library = std::map<std::string, FSA::Handle *>;
+    using Library = std::map<std::string, FSA::Handle*>;
     /** %FSA library iterator type */
-    using LibraryIterator = std::map<std::string, FSA::Handle *>::iterator;
+    using LibraryIterator = std::map<std::string, FSA::Handle*>::iterator;
     /** %FSA library const iterator type */
-    using LibraryConstIterator = std::map<std::string, FSA::Handle *>::const_iterator;
+    using LibraryConstIterator = std::map<std::string, FSA::Handle*>::const_iterator;
 
-    Library _library;                /**< Library of automata.                         */
-    mutable std::shared_mutex _lock; /**< Read-write lock for library synchronization. */
-    std::string _cacheDir;           /**< Cache directory.                             */
-    mutable std::mutex _cacheLock;   /**< Mutex for cache synchronization.             */
+    Library                   _library;   /**< Library of automata.                         */
+    mutable std::shared_mutex _lock;      /**< Read-write lock for library synchronization. */
+    std::string               _cacheDir;  /**< Cache directory.                             */
+    mutable std::mutex        _cacheLock; /**< Mutex for cache synchronization.             */
 
     /**
      * @brief Fetch an automaton from the net.
@@ -63,7 +63,7 @@ private:
      * @param file Name of local file to store automaton.
      * @return True on success.
      */
-    bool getUrl(const std::string &url, const std::string &file);
+    bool getUrl(const std::string& url, const std::string& file);
 
 public:
     /** Destructor */
@@ -90,7 +90,7 @@ public:
      * @param url File name or URL (the latter if it begins with "http://").
      * @return True on success.
      */
-    bool load(const std::string &id, const std::string &url);
+    bool load(const std::string& id, const std::string& url);
 
     /**
      * @brief Get a handle to an automaton.
@@ -101,7 +101,7 @@ public:
      *         anymore. (In fact it should be deleted and re-requested
      *         on a regular basis if automaton updates may be performed.)
      */
-    FSA::Handle *get(const std::string &id) const;
+    FSA::Handle* get(const std::string& id) const;
 
     /**
      * @brief Drop an automaton from the library.
@@ -112,7 +112,7 @@ public:
      *
      * @param id Automaton ID
      */
-    void drop(const std::string &id);
+    void drop(const std::string& id);
 
     /**
      * @brief Drop all automatons from the library.
@@ -127,7 +127,7 @@ public:
      *
      * @param dir Cache directory.
      */
-    void setCacheDir(const std::string &dir);
+    void setCacheDir(const std::string& dir);
 };
 
 // }}}

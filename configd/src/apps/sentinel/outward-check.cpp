@@ -9,7 +9,7 @@ namespace config::sentinel {
 
 OutwardCheckContext::~OutwardCheckContext() = default;
 
-OutwardCheck::OutwardCheck(const std::string &spec, OutwardCheckContext &context, int ping_timeout_ms)
+OutwardCheck::OutwardCheck(const std::string& spec, OutwardCheckContext& context, int ping_timeout_ms)
     : _spec(spec), _context(context) {
     _target = context.orb.GetTarget(spec.c_str());
     _req = context.orb.AllocRPCRequest();
@@ -24,7 +24,7 @@ OutwardCheck::OutwardCheck(const std::string &spec, OutwardCheckContext &context
 
 OutwardCheck::~OutwardCheck() = default;
 
-void OutwardCheck::RequestDone(FRT_RPCRequest *req) {
+void OutwardCheck::RequestDone(FRT_RPCRequest* req) {
     LOG_ASSERT(req == _req);
     if (req->CheckReturnTypes("s")) {
         std::string answer = _req->GetReturn()->GetValue(0)._string._str;

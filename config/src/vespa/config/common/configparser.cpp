@@ -16,11 +16,11 @@ void ConfigParser::throwNoDefaultValue(std::string_view key) {
                                  VESPA_STRLOC);
 }
 
-std::string ConfigParser::deQuote(const std::string &source) {
-    const char       *src = source.c_str();
-    const char       *s = src;
+std::string ConfigParser::deQuote(const std::string& source) {
+    const char*       src = source.c_str();
+    const char*       s = src;
     std::vector<char> dst(1 + source.length());
-    char             *d = &dst[0];
+    char*             d = &dst[0];
     bool              isQuoted;
 
     if (*s == '"') {
@@ -86,7 +86,7 @@ std::string ConfigParser::deQuote(const std::string &source) {
 
 namespace {
 
-bool getValueForKey(std::string_view key, std::string_view line, std::string &retval) {
+bool getValueForKey(std::string_view key, std::string_view line, std::string& retval) {
     if (line.length() <= key.length()) {
         return false;
     }
@@ -147,7 +147,7 @@ std::set<std::string> ConfigParser::getUniqueNonWhiteSpaceLines(Cfg config) {
     return unique;
 }
 
-void ConfigParser::stripLinesForKey(std::string_view key, std::set<std::string> &config) {
+void ConfigParser::stripLinesForKey(std::string_view key, std::set<std::string>& config) {
     std::string value;
     for (auto it = config.begin(); it != config.end();) {
         if (getValueForKey(key, *it, value)) {
@@ -272,7 +272,7 @@ std::string ConfigParser::arrayToString(Cfg array) {
     return ost.str();
 }
 
-template <> bool ConfigParser::convert<bool>(const StringVector &config) {
+template <> bool ConfigParser::convert<bool>(const StringVector& config) {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with bool value, "
                                      "got " +
@@ -290,7 +290,7 @@ template <> bool ConfigParser::convert<bool>(const StringVector &config) {
     }
 }
 
-template <> int32_t ConfigParser::convert<int32_t>(const StringVector &config) {
+template <> int32_t ConfigParser::convert<int32_t>(const StringVector& config) {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with int32_t value, "
                                      "got " +
@@ -299,8 +299,8 @@ template <> int32_t ConfigParser::convert<int32_t>(const StringVector &config) {
     }
     std::string value(deQuote(stripWhitespace(config[0])));
 
-    const char *startp = value.c_str();
-    char       *endp;
+    const char* startp = value.c_str();
+    char*       endp;
     errno = 0;
     int32_t ret = strtol(startp, &endp, 0);
     int     err = errno;
@@ -309,7 +309,7 @@ template <> int32_t ConfigParser::convert<int32_t>(const StringVector &config) {
     return ret;
 }
 
-template <> int64_t ConfigParser::convert<int64_t>(const StringVector &config) {
+template <> int64_t ConfigParser::convert<int64_t>(const StringVector& config) {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with int64_t value, "
                                      "got " +
@@ -318,8 +318,8 @@ template <> int64_t ConfigParser::convert<int64_t>(const StringVector &config) {
     }
     std::string value(deQuote(stripWhitespace(config[0])));
 
-    const char *startp = value.c_str();
-    char       *endp;
+    const char* startp = value.c_str();
+    char*       endp;
     errno = 0;
     int64_t ret = strtoll(startp, &endp, 0);
     int     err = errno;
@@ -328,7 +328,7 @@ template <> int64_t ConfigParser::convert<int64_t>(const StringVector &config) {
     return ret;
 }
 
-template <> double ConfigParser::convert<double>(const StringVector &config) {
+template <> double ConfigParser::convert<double>(const StringVector& config) {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with double value, "
                                      "got " +
@@ -337,8 +337,8 @@ template <> double ConfigParser::convert<double>(const StringVector &config) {
     }
     std::string value(deQuote(stripWhitespace(config[0])));
 
-    const char *startp = value.c_str();
-    char       *endp;
+    const char* startp = value.c_str();
+    char*       endp;
     errno = 0;
     double ret = vespalib::locale::c::strtod(startp, &endp);
     int    err = errno;
@@ -348,7 +348,7 @@ template <> double ConfigParser::convert<double>(const StringVector &config) {
     return ret;
 }
 
-template <> std::string ConfigParser::convert<std::string>(const StringVector &config) {
+template <> std::string ConfigParser::convert<std::string>(const StringVector& config) {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with string value, "
                                      "got " +

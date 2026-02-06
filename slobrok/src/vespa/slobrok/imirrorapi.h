@@ -12,7 +12,7 @@ namespace slobrok::api {
  **/
 class IMirrorAPI {
 protected:
-    static bool match(const char *name, const char *pattern);
+    static bool match(const char* name, const char* pattern);
 
 public:
     /**

@@ -11,7 +11,7 @@ LOG_SETUP(".log");
 
 namespace ns_log {
 
-LogTarget::LogTarget(const char *target) {
+LogTarget::LogTarget(const char* target) {
     memset(_name, 0, sizeof(_name));
     assert(strlen(target) < sizeof(_name));
     strcpy(_name, target);
@@ -19,12 +19,12 @@ LogTarget::LogTarget(const char *target) {
 
 LogTarget::~LogTarget() {}
 
-LogTarget *LogTarget::defaultTarget() {
+LogTarget* LogTarget::defaultTarget() {
     // Note! This function cannot LOG().
     return new LogTargetFd(2, "fd:2");
 }
 
-LogTarget *LogTarget::makeTarget(const char *const target) {
+LogTarget* LogTarget::makeTarget(const char* const target) {
     if (strncmp(target, "fd:", 3) == 0) {
         int fd_spec = strtol(target + 3, nullptr, 0);
         if (fd_spec > 0) {

@@ -25,7 +25,7 @@ Lock::Lock(int arg_fd) : _fd(dup(arg_fd)), _isLocked(false) {
     }
 }
 
-Lock::Lock(const char *filename, int mode) : _fd(open(filename, mode, 0666)), _isLocked(false) {
+Lock::Lock(const char* filename, int mode) : _fd(open(filename, mode, 0666)), _isLocked(false) {
     if (_fd == -1) {
         if (mode & O_CREAT) {
             unlink(filename);
@@ -61,7 +61,7 @@ void Lock::unlock() {
 
 int Lock::size() {
     struct stat st;
-    int err = fstat(_fd, &st);
+    int         err = fstat(_fd, &st);
     if (err == -1) {
         return -1;
     }

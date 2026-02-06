@@ -15,23 +15,23 @@ LOG_SETUP(".sentinel.manager");
 
 namespace config::sentinel {
 
-Manager::Manager(Env &env) : _env(env), _services(), _outputConnections() { doConfigure(); }
+Manager::Manager(Env& env) : _env(env), _services(), _outputConnections() { doConfigure(); }
 
 Manager::~Manager() {
     terminateServices(false);
-    for (OutputConnection *conn : _outputConnections) {
+    for (OutputConnection* conn : _outputConnections) {
         delete conn;
     }
 }
 
 void Manager::terminateServices(bool catchable, bool printDebug) {
-    for (const auto &entry : _services) {
-        Service *service = entry.second.get();
+    for (const auto& entry : _services) {
+        Service* service = entry.second.get();
         service->setAutomatic(false);
         service->prepare_for_shutdown();
     }
-    for (const auto &entry : _services) {
-        Service *service = entry.second.get();
+    for (const auto& entry : _services) {
+        Service* service = entry.second.get();
         if (printDebug && service->isRunning()) {
             LOG(info, "%s: killing", service->name().c_str());
         }
@@ -63,7 +63,7 @@ bool Manager::terminate() {
 
 void Manager::doConfigure() {
     LOG_ASSERT(_env.configOwner().hasConfig());
-    const SentinelConfig &config(_env.configOwner().getConfig());
+    const SentinelConfig& config(_env.configOwner().getConfig());
 
     _env.rpcPort(config.port.rpc);
     _env.statePort(config.port.telnet);
@@ -73,7 +73,7 @@ void Manager::doConfigure() {
         config.application.instance.c_str());
     ServiceMap services;
     for (unsigned int i = 0; i < config.service.size(); ++i) {
-        const SentinelConfig::Service &serviceConfig = config.service[i];
+        const SentinelConfig::Service& serviceConfig = config.service[i];
         const std::string              name(serviceConfig.name);
         auto                           found(_services.find(name));
         if (found == _services.end()) {
@@ -85,7 +85,7 @@ void Manager::doConfigure() {
         }
     }
     _services.swap(services);
-    for (auto &entry : services) {
+    for (auto& entry : services) {
         Service::UP svc = std::move(entry.second);
         if (svc && svc->isRunning()) {
             svc->remove();
@@ -111,7 +111,7 @@ bool Manager::doWork() {
     _env.metrics().maybeLog();
 
     // Check for active services.
-    for (const auto &service : _services) {
+    for (const auto& service : _services) {
         if (service.second->isRunning()) {
             return true;
         }
@@ -120,8 +120,8 @@ bool Manager::doWork() {
 }
 
 void Manager::handleRestarts() {
-    for (const auto &entry : _services) {
-        Service &svc = *(entry.second);
+    for (const auto& entry : _services) {
+        Service& svc = *(entry.second);
         if (svc.wantsRestart()) {
             svc.start();
         }
@@ -135,7 +135,7 @@ void Manager::handleChildDeaths() {
     pid_t pid;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
         // A child process has exited. find it.
-        Service *service = serviceByPid(pid);
+        Service* service = serviceByPid(pid);
         if (service != nullptr) {
             LOG(debug, "pid %d finished, Service:%s", (int)pid, service->name().c_str());
             service->youExited(status);
@@ -147,13 +147,13 @@ void Manager::handleChildDeaths() {
     }
 }
 
-void Manager::updateActiveFdset(std::vector<pollfd> &fds) {
+void Manager::updateActiveFdset(std::vector<pollfd>& fds) {
     fds.clear();
-    for (const OutputConnection *c : _outputConnections) {
+    for (const OutputConnection* c : _outputConnections) {
         int fd = c->fd();
         if (fd >= 0) {
             fds.emplace_back();
-            auto &ev = fds.back();
+            auto& ev = fds.back();
             ev.fd = fd;
             ev.events = POLLIN;
             ev.revents = 0;
@@ -162,13 +162,13 @@ void Manager::updateActiveFdset(std::vector<pollfd> &fds) {
 }
 
 void Manager::handleOutputs() {
-    std::list<OutputConnection *>::iterator       dst;
-    std::list<OutputConnection *>::const_iterator src;
+    std::list<OutputConnection*>::iterator       dst;
+    std::list<OutputConnection*>::const_iterator src;
 
     src = _outputConnections.begin();
     dst = _outputConnections.begin();
     while (src != _outputConnections.end()) {
-        OutputConnection *c = *src;
+        OutputConnection* c = *src;
         ++src;
         c->handleOutput();
         if (c->isFinished()) {
@@ -185,20 +185,20 @@ void Manager::handleOutputs() {
 void Manager::handleCommands() {
     // handle RPC commands
     std::vector<Cmd::UP> got = _env.commandQueue().drain();
-    for (const Cmd::UP &cmd : got) {
+    for (const Cmd::UP& cmd : got) {
         handleCmd(*cmd);
     }
     // implicit return via Cmd destructor
 }
 
-Service *Manager::serviceByPid(pid_t pid) {
-    for (const auto &service : _services) {
+Service* Manager::serviceByPid(pid_t pid) {
+    for (const auto& service : _services) {
         if (service.second->pid() == pid) {
             return service.second.get();
         }
     }
-    for (const auto &it : _orphans) {
-        Service *service = it.second.get();
+    for (const auto& it : _orphans) {
+        Service* service = it.second.get();
         if (service->pid() == pid) {
             return service;
         }
@@ -206,7 +206,7 @@ Service *Manager::serviceByPid(pid_t pid) {
     return nullptr;
 }
 
-Service *Manager::serviceByName(const std::string &name) {
+Service* Manager::serviceByName(const std::string& name) {
     auto found(_services.find(name));
     if (found != _services.end()) {
         return found->second.get();
@@ -214,16 +214,16 @@ Service *Manager::serviceByName(const std::string &name) {
     return nullptr;
 }
 
-void Manager::handleCmd(const Cmd &cmd) {
+void Manager::handleCmd(const Cmd& cmd) {
     switch (cmd.type()) {
     case Cmd::LIST: {
         char   retbuf[64_Ki];
         size_t left = 64_Ki;
         size_t pos = 0;
         retbuf[pos] = 0;
-        for (const auto &entry : _services) {
-            const Service                 *service = entry.second.get();
-            const SentinelConfig::Service &config = service->serviceConfig();
+        for (const auto& entry : _services) {
+            const Service*                 service = entry.second.get();
+            const SentinelConfig::Service& config = service->serviceConfig();
             int sz = snprintf(retbuf + pos, left, "%s state=%s mode=%s pid=%d exitstatus=%d id=\"%s\"\n",
                               service->name().c_str(), service->stateName(), service->isAutomatic() ? "AUTO" : "MANUAL",
                               service->pid(), service->exitStatus(), config.id.c_str());
@@ -236,7 +236,7 @@ void Manager::handleCmd(const Cmd &cmd) {
         cmd.retValue(retbuf);
     } break;
     case Cmd::RESTART: {
-        Service *service = serviceByName(cmd.serviceName());
+        Service* service = serviceByName(cmd.serviceName());
         if (service == nullptr) {
             cmd.retError("Cannot find named service");
             return;
@@ -250,7 +250,7 @@ void Manager::handleCmd(const Cmd &cmd) {
         }
     } break;
     case Cmd::START: {
-        Service *service = serviceByName(cmd.serviceName());
+        Service* service = serviceByName(cmd.serviceName());
         if (service == nullptr) {
             cmd.retError("Cannot find named service");
             return;
@@ -262,7 +262,7 @@ void Manager::handleCmd(const Cmd &cmd) {
         }
     } break;
     case Cmd::STOP: {
-        Service *service = serviceByName(cmd.serviceName());
+        Service* service = serviceByName(cmd.serviceName());
         if (service == nullptr) {
             cmd.retError("Cannot find named service");
             return;

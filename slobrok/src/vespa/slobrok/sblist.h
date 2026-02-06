@@ -21,7 +21,7 @@ public:
      * should be called at least once.
      * @param specList should not be an empty list.
      **/
-    void setup(const std::vector<std::string> &specList) override;
+    void setup(const std::vector<std::string>& specList) override;
 
     /**
      * retrieve the spec for next slobrok server to try.
@@ -40,14 +40,14 @@ public:
     std::string logString();
 
     /** check if the list contains a given spec */
-    bool contains(const std::string &spec);
+    bool contains(const std::string& spec);
 
 private:
-    std::mutex _lock;
+    std::mutex               _lock;
     std::vector<std::string> _slobrokSpecs;
-    size_t _nextSpec;
-    size_t _currSpec;
-    size_t _retryCount;
+    size_t                   _nextSpec;
+    size_t                   _currSpec;
+    size_t                   _retryCount;
 };
 
 } // namespace slobrok::api

@@ -10,12 +10,12 @@
 class Server : public FRT_Invokable {
 private:
     fnet::frt::StandaloneFRT _server;
-    std::string _name;
+    std::string              _name;
 
 public:
     Server(std::string name, int port);
     ~Server() override;
-    void rpc_listNamesServed(FRT_RPCRequest *req);
+    void rpc_listNamesServed(FRT_RPCRequest* req);
 };
 
 Server::Server(std::string name, int port) : _server(), _name(name) {
@@ -30,9 +30,9 @@ Server::Server(std::string name, int port) : _server(), _name(name) {
     _server.supervisor().Listen(port);
 }
 
-void Server::rpc_listNamesServed(FRT_RPCRequest *req) {
-    FRT_Values &dst = *req->GetReturn();
-    FRT_StringValue *names = dst.AddStringArray(1);
+void Server::rpc_listNamesServed(FRT_RPCRequest* req) {
+    FRT_Values&      dst = *req->GetReturn();
+    FRT_StringValue* names = dst.AddStringArray(1);
     dst.SetString(&names[0], _name.c_str());
 }
 
@@ -40,7 +40,7 @@ Server::~Server() = default;
 
 namespace {
 
-bool checkOk(FRT_RPCRequest *req) {
+bool checkOk(FRT_RPCRequest* req) {
     if (req == nullptr) {
         fprintf(stderr, "req is null pointer, this is bad\n");
         return false;
@@ -58,10 +58,10 @@ bool checkOk(FRT_RPCRequest *req) {
 
 template <typename T> class SubReferer {
 private:
-    T *&_t;
+    T*& _t;
 
 public:
-    SubReferer(T *&t) : _t(t) {}
+    SubReferer(T*& t) : _t(t) {}
     ~SubReferer() {
         if (_t != nullptr)
             _t->internal_subref();
@@ -70,19 +70,19 @@ public:
 
 template <typename T> class ShutDowner {
 private:
-    T &_t;
+    T& _t;
 
 public:
-    ShutDowner(T &t) : _t(t) {}
+    ShutDowner(T& t) : _t(t) {}
     ~ShutDowner() { _t.ShutDown(true); }
 };
 
 template <typename T> class Stopper {
 private:
-    T &_t;
+    T& _t;
 
 public:
-    Stopper(T &t) : _t(t) {}
+    Stopper(T& t) : _t(t) {}
     ~Stopper() { _t.stop(); }
 };
 
@@ -91,16 +91,16 @@ public:
 //-----------------------------------------------------------------------------
 
 TEST(StandaloneTest, standalone) {
-    slobrok::SlobrokServer slobrokServer(18541);
+    slobrok::SlobrokServer          slobrokServer(18541);
     Stopper<slobrok::SlobrokServer> ssCleaner(slobrokServer);
 
     fnet::frt::StandaloneFRT server;
-    FRT_Supervisor &orb = server.supervisor();
+    FRT_Supervisor&          orb = server.supervisor();
 
-    FRT_Target *sb = orb.GetTarget(18541);
+    FRT_Target*            sb = orb.GetTarget(18541);
     SubReferer<FRT_Target> sbCleaner(sb);
 
-    FRT_RPCRequest *req = nullptr;
+    FRT_RPCRequest*            req = nullptr;
     SubReferer<FRT_RPCRequest> reqCleaner(req);
 
     for (int retry = 0; retry < 5 * 61; retry++) {
@@ -232,8 +232,8 @@ TEST(StandaloneTest, standalone) {
         ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 2);
         ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 2);
         {
-            FRT_StringValue *name = req->GetReturn()->GetValue(0)._string_array._pt;
-            FRT_StringValue *spec = req->GetReturn()->GetValue(1)._string_array._pt;
+            FRT_StringValue* name = req->GetReturn()->GetValue(0)._string_array._pt;
+            FRT_StringValue* spec = req->GetReturn()->GetValue(1)._string_array._pt;
             if (strcmp(name[0]._str, "A") == 0) {
                 ASSERT_TRUE(strcmp(name[0]._str, "A") == 0);
                 ASSERT_TRUE(strcmp(name[1]._str, "B") == 0);

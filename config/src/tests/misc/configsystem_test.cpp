@@ -12,7 +12,7 @@ using namespace config;
 
 namespace {
 
-const char *VESPA_HOME = "VESPA_HOME";
+const char* VESPA_HOME = "VESPA_HOME";
 
 }
 

@@ -38,8 +38,8 @@ struct MetricManagerTest : public ::testing::Test {
 namespace {
 
 struct SubMetricSet : public MetricSet {
-    DoubleValueMetric val1;
-    DoubleValueMetric val2;
+    DoubleValueMetric            val1;
+    DoubleValueMetric            val2;
     SumMetric<DoubleValueMetric> valsum;
 
     explicit SubMetricSet(const Metric::String& name, MetricSet* owner = nullptr);
@@ -56,10 +56,10 @@ SubMetricSet::SubMetricSet(const Metric::String& name, MetricSet* owner)
 SubMetricSet::~SubMetricSet() = default;
 
 struct MultiSubMetricSet {
-    MetricSet set;
-    LongCountMetric count;
-    SubMetricSet a;
-    SubMetricSet b;
+    MetricSet            set;
+    LongCountMetric      count;
+    SubMetricSet         a;
+    SubMetricSet         b;
     SumMetric<MetricSet> sum;
 
     explicit MultiSubMetricSet(MetricSet* owner);
@@ -76,7 +76,7 @@ MultiSubMetricSet::MultiSubMetricSet(MetricSet* owner)
 MultiSubMetricSet::~MultiSubMetricSet() = default;
 
 struct TestMetricSet {
-    MetricSet set;
+    MetricSet         set;
     DoubleValueMetric val1;
     DoubleValueMetric val2;
     DoubleValueMetric val3;
@@ -85,7 +85,7 @@ struct TestMetricSet {
     DoubleValueMetric val6;
     DoubleValueMetric val7;
     DoubleValueMetric val8;
-    SubMetricSet val9;
+    SubMetricSet      val9;
     MultiSubMetricSet val10;
 
     TestMetricSet();
@@ -103,7 +103,7 @@ TestMetricSet::~TestMetricSet() = default;
 
 struct MetricNameVisitor : public MetricVisitor {
     std::ostringstream ost;
-    bool debug;
+    bool               debug;
 
     MetricNameVisitor(bool debug_ = false) : debug(debug_) {}
 
@@ -146,10 +146,10 @@ std::pair<std::string, std::string> getMatchedMetrics(const std::string& config)
 
 } // namespace
 
-#define ASSERT_CONSUMER_MATCH(name, expected, config)                                                                  \
-    {                                                                                                                  \
-        std::pair<std::string, std::string> consumerMatch(getMatchedMetrics(config));                                  \
-        EXPECT_EQ("\n" + expected, "\n" + consumerMatch.first) << (name + std::string(": ") + consumerMatch.second);   \
+#define ASSERT_CONSUMER_MATCH(name, expected, config)                                                                \
+    {                                                                                                                \
+        std::pair<std::string, std::string> consumerMatch(getMatchedMetrics(config));                                \
+        EXPECT_EQ("\n" + expected, "\n" + consumerMatch.first) << (name + std::string(": ") + consumerMatch.second); \
     }
 
 TEST_F(MetricManagerTest, test_consumer_visitor) {
@@ -329,7 +329,7 @@ public:
 };
 
 struct BriefValuePrinter : public MetricVisitor {
-    uint32_t count;
+    uint32_t           count;
     std::ostringstream ost;
 
     BriefValuePrinter() : count(0), ost() {}
@@ -358,20 +358,20 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
     std::ostringstream ost;
     ost << "\n";
     {
-        MetricLockGuard metricLock(mm.getMetricLock());
+        MetricLockGuard   metricLock(mm.getMetricLock());
         BriefValuePrinter briefValuePrinter;
         mm.visit(metricLock, mm.getActiveMetrics(metricLock), briefValuePrinter, consumer);
         ost << "Current: " << briefValuePrinter.ost.str() << "\n";
     }
     {
-        MetricLockGuard metricLock(mm.getMetricLock());
+        MetricLockGuard   metricLock(mm.getMetricLock());
         BriefValuePrinter briefValuePrinter;
         mm.visit(metricLock, mm.getTotalMetricSnapshot(metricLock), briefValuePrinter, consumer);
         ost << "Total: " << briefValuePrinter.ost.str() << "\n";
     }
 
     MetricLockGuard metricLock(mm.getMetricLock());
-    auto periods = mm.getSnapshotPeriods(metricLock);
+    auto            periods = mm.getSnapshotPeriods(metricLock);
     for (vespalib::duration period : periods) {
         const MetricSnapshotSet& set(mm.getMetricSnapshotSet(metricLock, period));
         ost << set.getName() << "\n";
@@ -379,7 +379,7 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
             if (set.getCount() == 1 && j == 1)
                 continue;
             const MetricSnapshot& snap(set.getSnapshot(j == 1));
-            BriefValuePrinter briefValuePrinter;
+            BriefValuePrinter     briefValuePrinter;
             mm.visit(metricLock, snap, briefValuePrinter, consumer);
             ost << "  " << count++ << " " << &snap.getMetrics() << ": " << briefValuePrinter.ost.str() << "\n";
         }
@@ -389,31 +389,31 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
 
 } // namespace
 
-#define ASSERT_VALUES(mm, period, expected)                                                                            \
-    {                                                                                                                  \
-        MetricLockGuard lockGuard(mm.getMetricLock());                                                                 \
-        BriefValuePrinter briefValuePrinter;                                                                           \
-        if (period < vespalib::duration::zero()) {                                                                     \
-            mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), briefValuePrinter, "snapper");                         \
-        } else if (period == vespalib::duration::zero()) {                                                             \
-            mm.visit(lockGuard, mm.getTotalMetricSnapshot(lockGuard), briefValuePrinter, "snapper");                   \
-        } else {                                                                                                       \
-            mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, period), briefValuePrinter, "snapper");                \
-        }                                                                                                              \
-        EXPECT_EQ(std::string(expected), briefValuePrinter.ost.view()) << dumpAllSnapshots(mm, "snapper");             \
+#define ASSERT_VALUES(mm, period, expected)                                                                \
+    {                                                                                                      \
+        MetricLockGuard   lockGuard(mm.getMetricLock());                                                   \
+        BriefValuePrinter briefValuePrinter;                                                               \
+        if (period < vespalib::duration::zero()) {                                                         \
+            mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), briefValuePrinter, "snapper");             \
+        } else if (period == vespalib::duration::zero()) {                                                 \
+            mm.visit(lockGuard, mm.getTotalMetricSnapshot(lockGuard), briefValuePrinter, "snapper");       \
+        } else {                                                                                           \
+            mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, period), briefValuePrinter, "snapper");    \
+        }                                                                                                  \
+        EXPECT_EQ(std::string(expected), briefValuePrinter.ost.view()) << dumpAllSnapshots(mm, "snapper"); \
     }
 
-#define ASSERT_PROCESS_TIME(mm, time)                                                                                  \
-    {                                                                                                                  \
-        LOG(info, "Waiting for processed time %s.", vespalib::to_string(time_point(time)).c_str());                    \
-        bool gotToCorrectProgress = waitForTimeProcessed(mm, (time));                                                  \
-        if (!gotToCorrectProgress)                                                                                     \
-            FAIL() << "Failed to get to processed time within timeout";                                                \
+#define ASSERT_PROCESS_TIME(mm, time)                                                               \
+    {                                                                                               \
+        LOG(info, "Waiting for processed time %s.", vespalib::to_string(time_point(time)).c_str()); \
+        bool gotToCorrectProgress = waitForTimeProcessed(mm, (time));                               \
+        if (!gotToCorrectProgress)                                                                  \
+            FAIL() << "Failed to get to processed time within timeout";                             \
     }
 
 TEST_F(MetricManagerTest, test_snapshots) {
-    auto timerImpl = std::make_unique<FakeTimer>(1000);
-    FakeTimer& timer = *timerImpl;
+    auto          timerImpl = std::make_unique<FakeTimer>(1000);
+    FakeTimer&    timer = *timerImpl;
     TestMetricSet mySet;
     MetricManager mm(std::move(timerImpl));
     {
@@ -514,8 +514,8 @@ TEST_F(MetricManagerTest, test_snapshots) {
 }
 
 TEST_F(MetricManagerTest, test_json_output) {
-    auto timerImpl = std::make_unique<FakeTimer>(1000);
-    FakeTimer& timer = *timerImpl;
+    auto          timerImpl = std::make_unique<FakeTimer>(1000);
+    FakeTimer&    timer = *timerImpl;
     MetricManager mm(std::move(timerImpl));
     TestMetricSet mySet;
     {
@@ -553,8 +553,8 @@ TEST_F(MetricManagerTest, test_json_output) {
 
     // Create json output
     vespalib::asciistream as;
-    vespalib::JsonStream jsonStream(as);
-    JsonWriter writer(jsonStream);
+    vespalib::JsonStream  jsonStream(as);
+    JsonWriter            writer(jsonStream);
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
@@ -564,7 +564,7 @@ TEST_F(MetricManagerTest, test_json_output) {
     // Parse it back
     using namespace vespalib::slime;
     vespalib::Slime slime;
-    size_t parsed = JsonFormat::decode(vespalib::Memory(jsonData), slime);
+    size_t          parsed = JsonFormat::decode(vespalib::Memory(jsonData), slime);
     if (parsed == 0) {
         vespalib::SimpleBuffer buffer;
         JsonFormat::encode(slime, buffer, false);
@@ -594,7 +594,7 @@ TEST_F(MetricManagerTest, test_json_output) {
     EXPECT_EQ(10.0, slime.get()["values"][10]["values"]["last"].asDouble()) << jsonData;
 
     metrics::StateApiAdapter adapter(mm);
-    std::string normal = adapter.getMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::JSON);
+    std::string              normal = adapter.getMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::JSON);
     EXPECT_EQ(std::string(jsonData), normal);
     std::string total = adapter.getTotalMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::JSON);
     EXPECT_GT(total.size(), 0);
@@ -605,9 +605,9 @@ namespace {
 
 struct MetricSnapshotTestFixture {
     MetricManagerTest& test;
-    FakeTimer* timer;
-    MetricManager manager;
-    MetricSet& mset;
+    FakeTimer*         timer;
+    MetricManager      manager;
+    MetricSet&         mset;
 
     MetricSnapshotTestFixture(MetricManagerTest& callerTest, MetricSet& metricSet)
         : test(callerTest), timer(new FakeTimer(1000)), manager(std::unique_ptr<MetricManager::Timer>(timer)),
@@ -635,8 +635,8 @@ struct MetricSnapshotTestFixture {
 
     std::string renderLastSnapshotAsJson() const {
         vespalib::asciistream as;
-        vespalib::JsonStream jsonStream(as, true);
-        JsonWriter writer(jsonStream);
+        vespalib::JsonStream  jsonStream(as, true);
+        JsonWriter            writer(jsonStream);
         {
             MetricLockGuard lockGuard(manager.getMetricLock());
             manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
@@ -647,7 +647,7 @@ struct MetricSnapshotTestFixture {
 
     std::string renderLastSnapshotAsText(const std::string& matchPattern = ".*") const {
         std::ostringstream ss;
-        TextWriter writer(ss, 300s, matchPattern, true);
+        TextWriter         writer(ss, 300s, matchPattern, true);
         {
             MetricLockGuard lockGuard(manager.getMetricLock());
             manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
@@ -657,7 +657,7 @@ struct MetricSnapshotTestFixture {
 
     std::string render_last_snapshot_as_prometheus() const {
         vespalib::asciistream os;
-        PrometheusWriter writer(os);
+        PrometheusWriter      writer(os);
         {
             MetricLockGuard lockGuard(manager.getMetricLock());
             manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
@@ -667,7 +667,7 @@ struct MetricSnapshotTestFixture {
 };
 
 class JsonMetricWrapper {
-    std::string _jsonText;
+    std::string     _jsonText;
     vespalib::Slime _tree;
 
 public:
@@ -708,7 +708,7 @@ JsonMetricWrapper::~JsonMetricWrapper() = default;
 
 struct DimensionTestMetricSet : MetricSet {
     DoubleValueMetric val1;
-    LongCountMetric val2;
+    LongCountMetric   val2;
 
     explicit DimensionTestMetricSet(MetricSet* owner = nullptr);
     ~DimensionTestMetricSet() override;
@@ -722,14 +722,14 @@ DimensionTestMetricSet::~DimensionTestMetricSet() = default;
 } // namespace
 
 TEST_F(MetricManagerTest, json_output_supports_multiple_dimensions) {
-    DimensionTestMetricSet mset;
+    DimensionTestMetricSet    mset;
     MetricSnapshotTestFixture fixture(*this, mset);
 
     mset.val1.addValue(2);
     mset.val2.inc();
 
     fixture.takeSnapshotsOnce();
-    std::string actual = fixture.renderLastSnapshotAsJson();
+    std::string       actual = fixture.renderLastSnapshotAsJson();
     JsonMetricWrapper json(actual);
 
     json.verifyDimensions(0, "temp.val1", {{"foo", "megafoo"}, {"bar", "hyperbar"}});
@@ -753,13 +753,13 @@ NestedDimensionTestMetricSet::~NestedDimensionTestMetricSet() = default;
 
 TEST_F(MetricManagerTest, json_output_can_nest_dimensions_from_multiple_metric_sets) {
     NestedDimensionTestMetricSet mset;
-    MetricSnapshotTestFixture fixture(*this, mset);
+    MetricSnapshotTestFixture    fixture(*this, mset);
 
     mset.nestedSet.val1.addValue(2);
     mset.nestedSet.val2.inc();
 
     fixture.takeSnapshotsOnce();
-    std::string actual = fixture.renderLastSnapshotAsJson();
+    std::string       actual = fixture.renderLastSnapshotAsJson();
     JsonMetricWrapper json(actual);
 
     json.verifyDimensions(0, "outer.temp.val1", {{"foo", "megafoo"}, {"bar", "hyperbar"}, {"fancy", "stuff"}});
@@ -795,14 +795,14 @@ SameNamesTestMetricSet::~SameNamesTestMetricSet() = default;
 } // namespace
 
 TEST_F(MetricManagerTest, json_output_can_have_multiple_sets_with_same_name) {
-    SameNamesTestMetricSet mset;
+    SameNamesTestMetricSet    mset;
     MetricSnapshotTestFixture fixture(*this, mset);
 
     mset.set1.val.addValue(2);
     mset.set2.val.addValue(5);
 
     fixture.takeSnapshotsOnce();
-    std::string actual = fixture.renderLastSnapshotAsJson();
+    std::string       actual = fixture.renderLastSnapshotAsJson();
     JsonMetricWrapper json(actual);
 
     // Note the identical names. Only difference is the dimensions per set.
@@ -847,7 +847,7 @@ TEST_F(MetricManagerTest, test_text_output) {
                          "temp.multisub.sum.val2 average=2 last=2 min=2 max=2 count=1 total=2\n"
                          "temp.multisub.sum.valsum average=10 last=10");
     std::ostringstream ost;
-    TextWriter writer(ost, 300s, ".*", true);
+    TextWriter         writer(ost, 300s, ".*", true);
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), writer, "snapper");
@@ -861,7 +861,7 @@ TEST_F(MetricManagerTest, test_text_output) {
 
 TEST_F(MetricManagerTest, text_output_supports_dimensions) {
     NestedDimensionTestMetricSet mset;
-    MetricSnapshotTestFixture fixture(*this, mset);
+    MetricSnapshotTestFixture    fixture(*this, mset);
 
     mset.nestedSet.val1.addValue(2);
     mset.nestedSet.val2.inc();
@@ -876,7 +876,7 @@ TEST_F(MetricManagerTest, text_output_supports_dimensions) {
 }
 
 TEST_F(MetricManagerTest, prometheus_output_groups_related_time_series) {
-    SameNamesTestMetricSet mset;
+    SameNamesTestMetricSet    mset;
     MetricSnapshotTestFixture fixture(*this, mset);
 
     mset.set1.val.addValue(2);
@@ -915,7 +915,7 @@ MetricSetWrapper::MetricSetWrapper() : MetricSet("top_level", {}, "stuff and jun
 MetricSetWrapper::~MetricSetWrapper() = default;
 
 TEST_F(MetricManagerTest, prometheus_output_only_emits_sum_metric_aggregate_values) {
-    MetricSetWrapper mset;
+    MetricSetWrapper          mset;
     MetricSnapshotTestFixture fixture(*this, mset);
 
     mset.sub.a.val1.addValue(21);
@@ -955,7 +955,7 @@ top_level_multisub_sum_valsum_sum 192 1300000
 }
 
 TEST_F(MetricManagerTest, prometheus_output_can_emit_inf_values_verbatim) {
-    SameNamesTestMetricSet mset;
+    SameNamesTestMetricSet    mset;
     MetricSnapshotTestFixture fixture(*this, mset);
 
     // We have explicit guards against setting Inf/NaN directly, so we have to fudge the numbers
@@ -998,7 +998,7 @@ SneakyNamesMetricSet::SneakyNamesMetricSet()
 SneakyNamesMetricSet::~SneakyNamesMetricSet() = default;
 
 TEST_F(MetricManagerTest, prometheus_output_normalizes_and_escapes_names_and_labels) {
-    SneakyNamesMetricSet mset;
+    SneakyNamesMetricSet      mset;
     MetricSnapshotTestFixture fixture(*this, mset);
 
     mset.val1.addValue(123);
@@ -1013,8 +1013,8 @@ TEST_F(MetricManagerTest, prometheus_output_normalizes_and_escapes_names_and_lab
 namespace {
 struct MyUpdateHook : public UpdateHook {
     std::ostringstream& _output;
-    std::mutex& _output_mutex;
-    FakeTimer& _timer;
+    std::mutex&         _output_mutex;
+    FakeTimer&          _timer;
 
     MyUpdateHook(std::ostringstream& output, std::mutex& output_mutex, const char* name,
                  vespalib::system_clock::duration period, FakeTimer& timer)
@@ -1029,10 +1029,10 @@ struct MyUpdateHook : public UpdateHook {
 } // namespace
 
 TEST_F(MetricManagerTest, test_update_hooks) {
-    std::mutex output_mutex;
+    std::mutex         output_mutex;
     std::ostringstream output;
-    auto timerImpl = std::make_unique<FakeTimer>(1000);
-    FakeTimer& timer = *timerImpl;
+    auto               timerImpl = std::make_unique<FakeTimer>(1000);
+    FakeTimer&         timer = *timerImpl;
     // Add a metric set just so one exist
     TestMetricSet mySet;
     MetricManager mm(std::move(timerImpl));
@@ -1144,7 +1144,7 @@ TEST_F(MetricManagerTest, test_update_hooks) {
                          "1450: AIL called\n");
     {
         std::lock_guard lock(output_mutex); // Need to ensure we observe all writes by metric mgr thread
-        std::string actual(output.str());
+        std::string     actual(output.str());
         EXPECT_EQ(expected, actual);
     }
 }

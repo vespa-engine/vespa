@@ -14,7 +14,7 @@ class BadLogLineException : public std::exception {
 public:
     BadLogLineException(std::string message);
     ~BadLogLineException() override;
-    const char *what() const noexcept override;
+    const char* what() const noexcept override;
 };
 
 } // namespace ns_log

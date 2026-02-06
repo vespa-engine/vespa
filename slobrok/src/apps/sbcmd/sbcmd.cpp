@@ -12,18 +12,18 @@ LOG_SETUP("vespa-slobrok-cmd");
 class Slobrok_CMD {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Target *_target;
+    FRT_Target*                               _target;
 
-    Slobrok_CMD(const Slobrok_CMD &);
-    Slobrok_CMD &operator=(const Slobrok_CMD &);
+    Slobrok_CMD(const Slobrok_CMD&);
+    Slobrok_CMD& operator=(const Slobrok_CMD&);
 
 public:
     Slobrok_CMD() : _server(), _target(nullptr) {}
     ~Slobrok_CMD();
-    int usage(const char *self);
-    void initRPC(const char *spec);
+    int  usage(const char* self);
+    void initRPC(const char* spec);
     void finiRPC();
-    int main(int argc, char **argv);
+    int  main(int argc, char** argv);
 };
 
 Slobrok_CMD::~Slobrok_CMD() {
@@ -31,7 +31,7 @@ Slobrok_CMD::~Slobrok_CMD() {
     LOG_ASSERT(_target == nullptr);
 }
 
-int Slobrok_CMD::usage(const char *self) {
+int Slobrok_CMD::usage(const char* self) {
     fprintf(stderr, "usage: %s <port|spec> <cmd> [args]\n", self);
     fprintf(stderr, "with cmd one of:\n");
     fprintf(stderr, "  slobrok.callback.listNamesServed\n");
@@ -48,7 +48,7 @@ int Slobrok_CMD::usage(const char *self) {
     return 1;
 }
 
-void Slobrok_CMD::initRPC(const char *spec) {
+void Slobrok_CMD::initRPC(const char* spec) {
     _server = std::make_unique<fnet::frt::StandaloneFRT>();
     _target = _server->supervisor().GetTarget(spec);
 }
@@ -63,7 +63,7 @@ void Slobrok_CMD::finiRPC() {
     }
 }
 
-int Slobrok_CMD::main(int argc, char **argv) {
+int Slobrok_CMD::main(int argc, char** argv) {
     if (argc < 3) {
         return usage(argv[0]);
     }
@@ -80,7 +80,7 @@ int Slobrok_CMD::main(int argc, char **argv) {
     bool threeTables = false;
     bool twoTables = false;
 
-    FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
+    FRT_RPCRequest* req = _server->supervisor().AllocRPCRequest();
 
     req->SetMethodName(argv[2]);
     if (strcmp(argv[2], "slobrok.admin.listAllRpcServers") == 0) {
@@ -114,8 +114,8 @@ int Slobrok_CMD::main(int argc, char **argv) {
     if (req->IsError()) {
         fprintf(stderr, "vespa-slobrok-cmd error %d: %s\n", req->GetErrorCode(), req->GetErrorMessage());
     } else {
-        FRT_Values &answer = *(req->GetReturn());
-        const char *atypes = answer.GetTypeString();
+        FRT_Values& answer = *(req->GetReturn());
+        const char* atypes = answer.GetTypeString();
         if (threeTables && strcmp(atypes, "SSS") == 0 && answer[0]._string_array._len > 0 &&
             answer[0]._string_array._len == answer[1]._string_array._len &&
             answer[0]._string_array._len == answer[2]._string_array._len) {
@@ -155,7 +155,7 @@ int Slobrok_CMD::main(int argc, char **argv) {
     return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     Slobrok_CMD sb_cmd;
     return sb_cmd.main(argc, argv);

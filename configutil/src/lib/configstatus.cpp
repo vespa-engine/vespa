@@ -14,24 +14,24 @@ using configdefinitions::tagsContain;
 
 struct ComponentTraverser : public vespalib::slime::ObjectTraverser {
     const std::string _configId;
-    std::string _component;
+    std::string       _component;
     enum { ROOT, COMPONENT } _state;
-    std::map<std::string, int64_t> &_generations;
+    std::map<std::string, int64_t>& _generations;
 
-    ComponentTraverser(std::string configId, std::map<std::string, int64_t> &generations)
+    ComponentTraverser(std::string configId, std::map<std::string, int64_t>& generations)
         : _configId(configId), _state(ROOT), _generations(generations) {}
 
     ~ComponentTraverser() override;
 
-    void object(const vespalib::slime::Inspector &inspector) { inspector.traverse(*this); }
+    void object(const vespalib::slime::Inspector& inspector) { inspector.traverse(*this); }
 
-    static void collect(const std::string configId, const vespalib::Slime &slime,
-                        std::map<std::string, int64_t> &generations) {
+    static void collect(const std::string configId, const vespalib::Slime& slime,
+                        std::map<std::string, int64_t>& generations) {
         ComponentTraverser traverser(configId, generations);
         slime.get()["config"].traverse(traverser);
     }
 
-    void field(const vespalib::Memory &symbol_name, const vespalib::slime::Inspector &inspector) override {
+    void field(const vespalib::Memory& symbol_name, const vespalib::slime::Inspector& inspector) override {
         switch (_state) {
         case ROOT:
             _component = symbol_name.make_string();
@@ -41,7 +41,7 @@ struct ComponentTraverser : public vespalib::slime::ObjectTraverser {
             break;
         case COMPONENT:
             const std::string key = symbol_name.make_string();
-            int64_t value;
+            int64_t           value;
             if (key == "generation") {
                 if (inspector.type().getId() == vespalib::slime::DOUBLE::ID) {
                     value = (int64_t)inspector.asDouble();
@@ -72,14 +72,14 @@ public:
     MyHttpHandler(std::string configId) : _json(), _error(), _configId(configId) {}
     ~MyHttpHandler() override;
 
-    void handleHeader(const vbench::string &name, const vbench::string &value) override {
+    void handleHeader(const vbench::string& name, const vbench::string& value) override {
         (void)name;
         (void)value;
     }
 
-    void handleContent(const vbench::Memory &data) override { _json += std::string(data.data, data.size); }
+    void handleContent(const vbench::Memory& data) override { _json += std::string(data.data, data.size); }
 
-    void handleFailure(const vbench::string &reason) override {
+    void handleFailure(const vbench::string& reason) override {
         std::cerr << _configId << ": Failed to fetch json: " << reason << std::endl;
         _error = reason;
     }
@@ -91,18 +91,18 @@ public:
 
 MyHttpHandler::~MyHttpHandler() = default;
 
-ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri &uri) : _cfg(), _flags(flags), _generation(0) {
+ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri& uri) : _cfg(), _flags(flags), _generation(0) {
     if (_flags.verbose) {
         std::cerr << "Subscribing to model config with config id " << uri.getConfigId() << std::endl;
     }
     try {
-        config::ConfigSubscriber subscriber(uri.getContext());
+        config::ConfigSubscriber                             subscriber(uri.getContext());
         config::ConfigHandle<cloud::config::ModelConfig>::UP handle =
             subscriber.subscribe<cloud::config::ModelConfig>(uri.getConfigId());
         subscriber.nextConfigNow();
         _cfg = handle->getConfig();
         _generation = subscriber.getGeneration();
-    } catch (config::ConfigRuntimeException &e) {
+    } catch (config::ConfigRuntimeException& e) {
         std::cerr << e.getMessage() << std::endl;
     }
 
@@ -118,7 +118,7 @@ int ConfigStatus::action() {
     bool allUpToDate = true;
 
     for (size_t i = 0; i < _cfg->hosts.size(); i++) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         // TODO PERF: don't fetch entire model when we're only looking for
         // a subset of hosts.
         if (!_flags.host_filter.includes(hconf.name)) {
@@ -126,7 +126,7 @@ int ConfigStatus::action() {
         }
 
         for (size_t j = 0; j < hconf.services.size(); j++) {
-            const cloud::config::ModelConfig::Hosts::Services &svc = hconf.services[j];
+            const cloud::config::ModelConfig::Hosts::Services& svc = hconf.services[j];
             if (svc.type == "configserver") {
                 continue;
             }
@@ -153,10 +153,10 @@ int ConfigStatus::action() {
     return allUpToDate ? 0 : 1;
 }
 
-bool ConfigStatus::fetch_json(std::string configId, std::string host, int port, std::string path, std::string &data) {
+bool ConfigStatus::fetch_json(std::string configId, std::string host, int port, std::string path, std::string& data) {
     MyHttpHandler myHandler(configId);
-    auto crypto = vespalib::CryptoEngine::get_default();
-    bool ok = vbench::HttpClient::fetch(*crypto, vbench::ServerSpec(host, port), path, myHandler);
+    auto          crypto = vespalib::CryptoEngine::get_default();
+    bool          ok = vbench::HttpClient::fetch(*crypto, vbench::ServerSpec(host, port), path, myHandler);
 
     if (ok) {
         data = myHandler.getJson();
@@ -167,7 +167,7 @@ bool ConfigStatus::fetch_json(std::string configId, std::string host, int port, 
 }
 
 bool ConfigStatus::checkServiceGeneration(std::string configId, std::string host, int port, std::string path) {
-    std::string data;
+    std::string     data;
     vespalib::Slime slime;
 
     if (!fetch_json(configId, host, port, path, data)) {

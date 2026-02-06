@@ -17,13 +17,13 @@ private:
     int64_t                        _lastLoaded;
     int64_t                        _generation;
 
-    StringVector readConfigFile(const std::string &fileName);
-    int64_t      getLast(const std::string &fileName);
+    StringVector readConfigFile(const std::string& fileName);
+    int64_t      getLast(const std::string& fileName);
 
 public:
-    FileSource(std::shared_ptr<IConfigHolder> holder, const std::string &fileName);
-    FileSource(const FileSource &) = delete;
-    FileSource &operator=(const FileSource &) = delete;
+    FileSource(std::shared_ptr<IConfigHolder> holder, const std::string& fileName);
+    FileSource(const FileSource&) = delete;
+    FileSource& operator=(const FileSource&) = delete;
     ~FileSource() override;
     void getConfig() override;
     void close() override;

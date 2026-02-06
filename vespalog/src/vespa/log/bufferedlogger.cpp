@@ -25,8 +25,8 @@ duration global_countFactor = VESPA_LOG_COUNTAGEFACTOR * 1s;
 // if in the same logger, you should have full control. Overlapping
 // tokens if you want is a feature.
 struct EntryKey {
-    Logger* const _logger;
-    const std::string _token;
+    Logger* const        _logger;
+    const std::string    _token;
     std::strong_ordering operator<=>(const EntryKey& entry) const = default;
     ~EntryKey();
 };
@@ -35,16 +35,16 @@ EntryKey::~EntryKey() = default;
 
 struct PayLoad {
     Logger::LogLevel level;
-    std::string file;
-    int line;
-    std::string message;
-    system_time timestamp;
+    std::string      file;
+    int              line;
+    std::string      message;
+    system_time      timestamp;
 };
 
 /** Struct keeping information about log message. */
 struct Entry : EntryKey {
-    uint64_t sequenceId = 0;
-    uint32_t _count = 1;
+    uint64_t      sequenceId = 0;
+    uint32_t      _count = 1;
     const PayLoad payload;
 
     Entry(const Entry&);
@@ -60,9 +60,9 @@ struct Entry : EntryKey {
     std::string toString() const;
 
     std::string repeatedMessage() const {
-        auto time_since_epoch = payload.timestamp.time_since_epoch();
-        auto s = count_s(time_since_epoch);
-        auto us = count_us(time_since_epoch) % 1000000;
+        auto               time_since_epoch = payload.timestamp.time_since_epoch();
+        auto               s = count_s(time_since_epoch);
+        auto               us = count_us(time_since_epoch) % 1000000;
         std::ostringstream ost;
         ost << payload.message << " (Repeated " << (_count - 1) << " times since " << s << "." << std::setw(6)
             << std::setfill('0') << us << ")";
@@ -100,7 +100,7 @@ struct Cache {
     }
     struct ByAgeCmp {
         const EntryOrder& map;
-        bool operator()(uint64_t a, uint64_t b) const {
+        bool              operator()(uint64_t a, uint64_t b) const {
             const auto& ea = deref(map.find(a));
             const auto& eb = deref(map.find(b));
             system_time ta = ea.getAgeFactor();
@@ -114,9 +114,9 @@ struct Cache {
     };
     using AgeOrder = std::set<uint64_t, ByAgeCmp>;
 
-    Entries _entry_map;
+    Entries    _entry_map;
     EntryOrder _entry_order;
-    AgeOrder _age_order;
+    AgeOrder   _age_order;
 
     Cache() : _entry_map(), _entry_order(), _age_order(ByAgeCmp(_entry_order)) {}
 
@@ -134,7 +134,7 @@ struct Cache {
         } else {
             // In order to add one to count, we need to remove and re-insert in age order set.
             uint64_t oldId = curEntry.sequenceId;
-            auto it = _age_order.find(oldId);
+            auto     it = _age_order.find(oldId);
             assert(it != _age_order.end());
             _age_order.erase(it);
             curEntry._count++;
@@ -158,8 +158,8 @@ struct Cache {
 
     struct iterator {
         EntryOrder::iterator place;
-        const Entry& operator*() { return deref(place); }
-        iterator& operator++() {
+        const Entry&         operator*() { return deref(place); }
+        iterator&            operator++() {
             ++place;
             return *this;
         }
@@ -265,10 +265,10 @@ BufferedLogger::~BufferedLogger() {
 void BufferedLogger::doLog(Logger& l, Logger::LogLevel level, const char* file, int line, const std::string& mytoken,
                            const char* fmt, ...) {
     std::string token(mytoken);
-    va_list args;
+    va_list     args;
     va_start(args, fmt);
 
-    const size_t sizeofPayload(4000);
+    const size_t      sizeofPayload(4000);
     std::vector<char> buffer(sizeofPayload);
     vsnprintf(&buffer[0], buffer.capacity(), fmt, args);
     std::string message(&buffer[0]);
@@ -284,7 +284,7 @@ void BackingBuffer::logImpl(Logger& l, Logger::LogLevel level, const char* file,
     Entry newEntry(level, file, line, token, message, _timer->getTimestamp(), l);
 
     std::lock_guard<std::mutex> guard(_mutex);
-    const Entry& entry = _cache.getOrAdd(newEntry);
+    const Entry&                entry = _cache.getOrAdd(newEntry);
     if (entry._count == 1) {
         // If entry didn't already exist, log it
         TimeStampWrapper wrapper(entry.payload.timestamp);

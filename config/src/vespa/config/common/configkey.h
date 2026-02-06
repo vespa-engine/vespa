@@ -11,24 +11,24 @@ public:
               std::string_view defMd5);
 
     ConfigKey(std::string_view configId, std::string_view defName, std::string_view defNamespace,
-              std::string_view defMd5, const StringVector &defSchema);
+              std::string_view defMd5, const StringVector& defSchema);
 
-    ConfigKey(const ConfigKey &);
-    ConfigKey &operator=(const ConfigKey &);
-    ConfigKey(ConfigKey &&) noexcept;
-    ConfigKey &operator=(ConfigKey &&) noexcept;
+    ConfigKey(const ConfigKey&);
+    ConfigKey& operator=(const ConfigKey&);
+    ConfigKey(ConfigKey&&) noexcept;
+    ConfigKey& operator=(ConfigKey&&) noexcept;
     ConfigKey();
     ~ConfigKey();
 
-    bool operator<(const ConfigKey &rhs) const;
-    bool operator>(const ConfigKey &rhs) const;
-    bool operator==(const ConfigKey &rhs) const;
+    bool operator<(const ConfigKey& rhs) const;
+    bool operator>(const ConfigKey& rhs) const;
+    bool operator==(const ConfigKey& rhs) const;
 
-    const std::string  &getDefName() const;
-    const std::string  &getConfigId() const;
-    const std::string  &getDefNamespace() const;
-    const std::string  &getDefMd5() const;
-    const StringVector &getDefSchema() const;
+    const std::string&  getDefName() const;
+    const std::string&  getConfigId() const;
+    const std::string&  getDefNamespace() const;
+    const std::string&  getDefMd5() const;
+    const StringVector& getDefSchema() const;
 
     template <typename ConfigType> static const ConfigKey create(std::string_view configId) {
         return ConfigKey(configId, ConfigType::CONFIG_DEF_NAME, ConfigType::CONFIG_DEF_NAMESPACE,

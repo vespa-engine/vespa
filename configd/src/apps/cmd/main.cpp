@@ -15,8 +15,8 @@ LOG_SETUP("vespa-sentinel-cmd");
 
 namespace {
 struct Method {
-    const char *name;
-    const char *rpcMethod;
+    const char* name;
+    const char* rpcMethod;
     bool        noArgNeeded;
     bool        needsTimeoutArg;
 };
@@ -31,13 +31,13 @@ const Method methods[] = {{"list", "sentinel.ls", true, false},
 class Cmd {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Target                               *_target;
+    FRT_Target*                               _target;
 
 public:
     Cmd() : _server(), _target(nullptr) {}
     ~Cmd();
-    int  run(const Method &cmd, const char *arg);
-    void initRPC(const char *spec);
+    int  run(const Method& cmd, const char* arg);
+    void initRPC(const char* spec);
     void finiRPC();
 };
 
@@ -56,7 +56,7 @@ void usage() {
     fprintf(stderr, "  connectivity [milliseconds]\n");
 }
 
-void Cmd::initRPC(const char *spec) {
+void Cmd::initRPC(const char* spec) {
     _server = std::make_unique<fnet::frt::StandaloneFRT>();
     _target = _server->supervisor().GetTarget(spec);
 }
@@ -69,15 +69,15 @@ void Cmd::finiRPC() {
     _server.reset();
 }
 
-int Cmd::run(const Method &cmd, const char *arg) {
+int Cmd::run(const Method& cmd, const char* arg) {
     int retval = 0;
     try {
         initRPC("tcp/localhost:19097");
-    } catch (vespalib::Exception &e) {
+    } catch (vespalib::Exception& e) {
         fprintf(stderr, "vespa-sentinel-cmd: exception in network initialization: %s\n", e.what());
         return 2;
     }
-    FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
+    FRT_RPCRequest* req = _server->supervisor().AllocRPCRequest();
     req->SetMethodName(cmd.rpcMethod);
 
     int pingTimeoutMs = 5000;
@@ -97,14 +97,14 @@ int Cmd::run(const Method &cmd, const char *arg) {
                 req->GetErrorMessage());
         retval = 1;
     } else {
-        FRT_Values &answer = *(req->GetReturn());
-        const char *atypes = answer.GetTypeString();
+        FRT_Values& answer = *(req->GetReturn());
+        const char* atypes = answer.GetTypeString();
         fprintf(stderr, "vespa-sentinel-cmd '%s' OK.\n", cmd.name);
         if (atypes && (strcmp(atypes, "SS") == 0)) {
             uint32_t         numHosts = answer[0]._string_array._len;
             uint32_t         numStats = answer[1]._string_array._len;
-            FRT_StringValue *hosts = answer[0]._string_array._pt;
-            FRT_StringValue *stats = answer[1]._string_array._pt;
+            FRT_StringValue* hosts = answer[0]._string_array._pt;
+            FRT_StringValue* stats = answer[1]._string_array._pt;
             uint32_t         ml = 0;
             uint32_t         j;
             for (j = 0; j < numHosts; ++j) {
@@ -141,8 +141,8 @@ int Cmd::run(const Method &cmd, const char *arg) {
     return retval;
 }
 
-const Method *parseCmd(const char *arg) {
-    for (const auto &method : methods) {
+const Method* parseCmd(const char* arg) {
+    for (const auto& method : methods) {
         if (strcmp(arg, method.name) == 0) {
             return &method;
         }
@@ -155,13 +155,13 @@ void hookSignals() {
     SIG::PIPE.ignore();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     int           retval = 1;
-    const Method *cmd = nullptr;
+    const Method* cmd = nullptr;
     if (argc > 1) {
         cmd = parseCmd(argv[1]);
     }
-    const char *extraArg = (argc > 2 ? argv[2] : nullptr);
+    const char* extraArg = (argc > 2 ? argv[2] : nullptr);
     if (cmd && (extraArg || cmd->noArgNeeded)) {
         hookSignals();
         Cmd runner;

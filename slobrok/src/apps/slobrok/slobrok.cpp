@@ -16,7 +16,7 @@ namespace slobrok {
 
 class App {
 public:
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 };
 
 static std::unique_ptr<SBEnv> mainobj;
@@ -40,8 +40,8 @@ static void hook_sigterm() {
     sigaction(SIGTERM, &act, nullptr);
 }
 
-int App::main(int argc, char **argv) {
-    uint32_t portnum = 2773;
+int App::main(int argc, char** argv) {
+    uint32_t    portnum = 2773;
     std::string cfgId;
 
     int c;
@@ -74,16 +74,16 @@ int App::main(int argc, char **argv) {
         }
         hook_sigterm();
         res = mainobj->MainLoop();
-    } catch (const config::ConfigTimeoutException &e) {
+    } catch (const config::ConfigTimeoutException& e) {
         LOG(error, "config timeout during construction : %s", e.what());
         EV_STOPPING("slobrok", "config timeout during construction");
         res = 1;
-    } catch (const vespalib::PortListenException &e) {
+    } catch (const vespalib::PortListenException& e) {
         LOG(error, "Failed listening to network port(%d) with protocol(%s): '%s'", e.get_port(),
             e.get_protocol().c_str(), e.what());
         EV_STOPPING("slobrok", "could not listen to our network port");
         res = 1;
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         LOG(error, "unknown exception during construction : %s", e.what());
         EV_STOPPING("slobrok", "unknown exception during construction");
         res = 2;
@@ -97,7 +97,7 @@ int App::main(int argc, char **argv) {
 
 } // namespace slobrok
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     slobrok::App slobrok;
     return slobrok.main(argc, argv);

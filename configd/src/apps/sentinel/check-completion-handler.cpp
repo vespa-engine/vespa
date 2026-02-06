@@ -4,12 +4,12 @@
 
 namespace config::sentinel {
 
-CheckCompletionHandler::CheckCompletionHandler(FRT_RPCRequest *parent) : _parentRequest(parent) {}
+CheckCompletionHandler::CheckCompletionHandler(FRT_RPCRequest* parent) : _parentRequest(parent) {}
 
 CheckCompletionHandler::~CheckCompletionHandler() = default;
 
 void CheckCompletionHandler::returnStatus(bool ok) {
-    FRT_Values *dst = _parentRequest->GetReturn();
+    FRT_Values* dst = _parentRequest->GetReturn();
     dst->AddString(ok ? "ok" : "bad");
     _parentRequest->Return();
 }

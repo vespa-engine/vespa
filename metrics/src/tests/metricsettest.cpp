@@ -9,7 +9,7 @@ namespace metrics {
 namespace {
 struct TestMetricVisitor : public MetricVisitor {
     std::ostringstream ost;
-    uint32_t setsToVisit;
+    uint32_t           setsToVisit;
 
     TestMetricVisitor(uint32_t setsToVisit_ = 100) : ost(), setsToVisit(setsToVisit_) {}
 
@@ -30,12 +30,12 @@ struct TestMetricVisitor : public MetricVisitor {
 
 TEST(MetricSetTest, test_normal_usage) {
     // Set up some metrics to test..
-    MetricSet set("a", {{"foo"}}, "");
+    MetricSet         set("a", {{"foo"}}, "");
     DoubleValueMetric v1("c", {{"foo"}}, "", &set);
     LongAverageMetric v2("b", {}, "", &set);
-    LongCountMetric v3("d", {{"bar"}}, "", &set);
-    MetricSet set2("e", {{"bar"}}, "", &set);
-    LongCountMetric v4("f", {{"foo"}}, "", &set2);
+    LongCountMetric   v3("d", {{"bar"}}, "", &set);
+    MetricSet         set2("e", {{"bar"}}, "", &set);
+    LongCountMetric   v4("f", {{"foo"}}, "", &set2);
 
     // Give them some values
     v1.addValue(4.2);
@@ -105,7 +105,7 @@ TEST(MetricSetTest, test_normal_usage) {
 }
 
 TEST(MetricSetTest, support_multiple_metrics_with_same_name_different_dimensions) {
-    MetricSet set("dimset", {{"foo", "bar"}}, "");
+    MetricSet         set("dimset", {{"foo", "bar"}}, "");
     DoubleValueMetric v1("stuff", {{"baz", "blarg"}}, "", &set);
     LongAverageMetric v2("stuff", {{"flarn", "yarn"}}, "", &set);
 
@@ -113,9 +113,9 @@ TEST(MetricSetTest, support_multiple_metrics_with_same_name_different_dimensions
 }
 
 TEST(MetricSetTest, unique_target_metrics_are_added_to_metric_set) {
-    MetricSet set1("a", {{"foo"}}, "");
+    MetricSet       set1("a", {{"foo"}}, "");
     LongCountMetric v1("wow", {{"foo"}}, "", &set1);
-    MetricSet set2("e", {{"bar"}}, "");
+    MetricSet       set2("e", {{"bar"}}, "");
     LongCountMetric v2("doge", {{"foo"}}, "", &set2);
 
     // Have to actually assign a value to metrics or they won't be carried over.

@@ -11,7 +11,7 @@ ServiceMapHistory::UpdateLog::UpdateLog() : startGeneration(1), currentGeneratio
 
 ServiceMapHistory::UpdateLog::~UpdateLog() = default;
 
-void ServiceMapHistory::UpdateLog::add(const std::string &name) {
+void ServiceMapHistory::UpdateLog::add(const std::string& name) {
     currentGeneration.add();
     updates.push(name);
     while (updates.size() > keep_items) {
@@ -20,14 +20,14 @@ void ServiceMapHistory::UpdateLog::add(const std::string &name) {
     }
 }
 
-bool ServiceMapHistory::UpdateLog::isInRange(const Generation &gen) const {
+bool ServiceMapHistory::UpdateLog::isInRange(const Generation& gen) const {
     return gen.inRangeInclusive(startGeneration, currentGeneration);
 }
 
-std::vector<std::string> ServiceMapHistory::UpdateLog::updatedSince(const Generation &gen) const {
+std::vector<std::string> ServiceMapHistory::UpdateLog::updatedSince(const Generation& gen) const {
     std::vector<std::string> result;
-    uint32_t skip = startGeneration.distance(gen);
-    uint32_t last = startGeneration.distance(currentGeneration);
+    uint32_t                 skip = startGeneration.distance(gen);
+    uint32_t                 last = startGeneration.distance(currentGeneration);
     for (uint32_t idx = skip; idx < last; ++idx) {
         result.push_back(updates.peek(idx));
     }
@@ -43,12 +43,12 @@ ServiceMapHistory::~ServiceMapHistory() { notify_updated(); }
 void ServiceMapHistory::notify_updated() {
     WaitList waitList;
     std::swap(waitList, _waitList);
-    for (auto &[handler, gen] : waitList) {
+    for (auto& [handler, gen] : waitList) {
         handler->handle(makeDiffFrom(gen));
     }
 }
 
-void ServiceMapHistory::asyncGenerationDiff(DiffCompletionHandler *handler, const Generation &fromGen) {
+void ServiceMapHistory::asyncGenerationDiff(DiffCompletionHandler* handler, const Generation& fromGen) {
     if (fromGen == myGen()) {
         _waitList.emplace_back(handler, fromGen);
         return;
@@ -56,12 +56,12 @@ void ServiceMapHistory::asyncGenerationDiff(DiffCompletionHandler *handler, cons
     handler->handle(makeDiffFrom(fromGen));
 }
 
-bool ServiceMapHistory::cancel(DiffCompletionHandler *handler) {
-    size_t removed = std::erase_if(_waitList, [=](const Waiter &elem) noexcept { return elem.first == handler; });
+bool ServiceMapHistory::cancel(DiffCompletionHandler* handler) {
+    size_t removed = std::erase_if(_waitList, [=](const Waiter& elem) noexcept { return elem.first == handler; });
     return (removed > 0);
 }
 
-void ServiceMapHistory::remove(const ServiceMapping &mapping) {
+void ServiceMapHistory::remove(const ServiceMapping& mapping) {
     auto iter = _map.find(mapping.name);
     if (iter == _map.end()) {
         LOG(debug, "already removed: %s", mapping.name.c_str());
@@ -73,7 +73,7 @@ void ServiceMapHistory::remove(const ServiceMapping &mapping) {
     notify_updated();
 }
 
-void ServiceMapHistory::add(const ServiceMapping &mapping) {
+void ServiceMapHistory::add(const ServiceMapping& mapping) {
     auto iter = _map.find(mapping.name);
     if (iter != _map.end() && iter->second == mapping.spec) {
         // already ok
@@ -84,12 +84,12 @@ void ServiceMapHistory::add(const ServiceMapping &mapping) {
     notify_updated();
 }
 
-MapDiff ServiceMapHistory::makeDiffFrom(const Generation &fromGen) const {
+MapDiff ServiceMapHistory::makeDiffFrom(const Generation& fromGen) const {
     if (_log.isInRange(fromGen)) {
         std::vector<std::string> removes;
-        ServiceMappingList updates;
-        auto changes = _log.updatedSince(fromGen);
-        for (const std::string &name : changes) {
+        ServiceMappingList       updates;
+        auto                     changes = _log.updatedSince(fromGen);
+        for (const std::string& name : changes) {
             if (_map.contains(name)) {
                 updates.emplace_back(name, _map.at(name));
             } else {
@@ -99,7 +99,7 @@ MapDiff ServiceMapHistory::makeDiffFrom(const Generation &fromGen) const {
         return MapDiff(fromGen, removes, updates, myGen());
     } else {
         ServiceMappingList mappings;
-        for (const auto &[name, spec] : _map) {
+        for (const auto& [name, spec] : _map) {
             mappings.emplace_back(name, spec);
         }
         return MapDiff(mappings, myGen());

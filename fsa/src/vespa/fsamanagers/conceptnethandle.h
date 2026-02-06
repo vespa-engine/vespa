@@ -36,7 +36,7 @@ private:
     /**
      * @brief Unimplemented private assignment operator.
      */
-    Handle &operator=(const Handle &);
+    Handle& operator=(const Handle&);
 
     std::shared_ptr<ConceptNet> _conceptNet; /**< The ConceptNet object itself. */
 
@@ -48,7 +48,7 @@ public:
      *
      * @param h Reference to existing ConceptNet::Handle.
      */
-    Handle(const Handle &h) : _conceptNet(h._conceptNet) {}
+    Handle(const Handle& h) : _conceptNet(h._conceptNet) {}
 
     /**
      * @brief Constructor.
@@ -59,7 +59,7 @@ public:
      * @param fam File access mode (read or mmap). If not set, the
      *            global preferred access mode will be used.
      */
-    Handle(const char *fsafile, const char *datafile = nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+    Handle(const char* fsafile, const char* datafile = nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF)
         : _conceptNet(std::make_shared<ConceptNet>(fsafile, datafile, fam)) {}
 
     /**
@@ -71,7 +71,7 @@ public:
      * @param fam File access mode (read or mmap). If not set, the
      *            global preferred access mode will be used.
      */
-    Handle(const std::string &fsafile, const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+    Handle(const std::string& fsafile, const std::string& datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
         : _conceptNet(std::make_shared<ConceptNet>(fsafile, datafile, fam)) {}
 
     /**
@@ -85,7 +85,7 @@ public:
      *
      * @return Reference to the ConceptNet object.
      */
-    const ConceptNet &operator*() const { return *_conceptNet; }
+    const ConceptNet& operator*() const { return *_conceptNet; }
 
     /**
      * @brief Dereference operator, provides access to ConceptNet
@@ -93,7 +93,7 @@ public:
      *
      * @return Pointer the ConceptNet object.
      */
-    const ConceptNet *operator->() const { return _conceptNet.get(); }
+    const ConceptNet* operator->() const { return _conceptNet.get(); }
 };
 
 // }}}

@@ -22,7 +22,7 @@ public:
     ~ConfigPoller() override;
     void run() override;
     template <typename ConfigType>
-    void    subscribe(const std::string &configId, IFetcherCallback<ConfigType> *callback,
+    void    subscribe(const std::string& configId, IFetcherCallback<ConfigType>* callback,
                       vespalib::duration subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
     void    poll();
     void    close();
@@ -32,7 +32,7 @@ private:
     int64_t                           _generation;
     std::unique_ptr<ConfigSubscriber> _subscriber;
     std::vector<IHandle::UP>          _handleList;
-    std::vector<ICallback *>          _callbackList;
+    std::vector<ICallback*>           _callbackList;
 };
 
 } // namespace config

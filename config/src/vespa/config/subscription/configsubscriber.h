@@ -34,7 +34,7 @@ public:
      *
      * @param spec The source spec from which to get config.
      */
-    ConfigSubscriber(const SourceSpec &spec = ServerSpec());
+    ConfigSubscriber(const SourceSpec& spec = ServerSpec());
 
     /**
      * Constructs a new ConfigSubscriber object which can be used to subscribe
@@ -44,8 +44,8 @@ public:
      * @param context A ConfigContext shared between all subscribers.
      */
     explicit ConfigSubscriber(std::shared_ptr<IConfigContext> context);
-    ConfigSubscriber(const ConfigSubscriber &) = delete;
-    ConfigSubscriber &operator=(const ConfigSubscriber &) = delete;
+    ConfigSubscriber(const ConfigSubscriber&) = delete;
+    ConfigSubscriber& operator=(const ConfigSubscriber&) = delete;
     ~ConfigSubscriber();
 
     /**
@@ -78,7 +78,7 @@ public:
      * @throws ConfigRuntimeException if subscriber has been closed.
      */
     template <typename ConfigType>
-    std::unique_ptr<ConfigHandle<ConfigType>> subscribe(const std::string &configId,
+    std::unique_ptr<ConfigHandle<ConfigType>> subscribe(const std::string& configId,
                                                         vespalib::duration timeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
     /**

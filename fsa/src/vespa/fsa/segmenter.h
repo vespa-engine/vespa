@@ -159,7 +159,7 @@ public:
              *
              * @param s Segment object to copy.
              */
-            Segment(const Segment &s) noexcept : _beg(s._beg), _end(s._end), _conn(s._conn) {}
+            Segment(const Segment& s) noexcept : _beg(s._beg), _end(s._end), _conn(s._conn) {}
 
             /**
              * @brief Destructor.
@@ -310,10 +310,10 @@ public:
         // }}}
 
     private:
-        NGram _text;                               /**< Tokenized text (e.g. query). */
-        std::vector<Segment> _segments;            /**< Detected segments.           */
-        SegmentMap _map;                           /**< Map of segments.             */
-        std::vector<Segmentation *> _segmentation; /**< Pre-built segmentations.     */
+        NGram                      _text;         /**< Tokenized text (e.g. query). */
+        std::vector<Segment>       _segments;     /**< Detected segments.           */
+        SegmentMap                 _map;          /**< Map of segments.             */
+        std::vector<Segmentation*> _segmentation; /**< Pre-built segmentations.     */
 
         /**
          * @brief Insert all single term segments.
@@ -342,7 +342,7 @@ public:
          * @param beg Beginning of the subquery to process.
          * @param end End the subquery to process.
          */
-        void buildSegmentationRecursive(Segmenter::SegmentationMethod method, Segmentation &segmentation,
+        void buildSegmentationRecursive(Segmenter::SegmentationMethod method, Segmentation& segmentation,
                                         unsigned int beg, unsigned int end);
 
     public:
@@ -354,7 +354,7 @@ public:
          *
          * @param text Input text.
          */
-        void setText(const NGram &text) {
+        void setText(const NGram& text) {
             _text.set(text);
             clear();
         }
@@ -364,7 +364,7 @@ public:
          *
          * @param text Input text.
          */
-        void setText(const std::string &text) {
+        void setText(const std::string& text) {
             _text.set(text);
             clear();
         }
@@ -374,7 +374,7 @@ public:
          *
          * @param text Input text.
          */
-        void setText(const char *text) {
+        void setText(const char* text) {
             _text.set(text);
             clear();
         }
@@ -387,7 +387,7 @@ public:
          *
          * return Reference to input text.
          */
-        const NGram &getText() const { return _text; }
+        const NGram& getText() const { return _text; }
 
         /**
          * @brief Clear all detected segments and built segmentations.
@@ -405,10 +405,10 @@ public:
          * @param length Number of tokens.
          * @param state Final state after detected phrase.
          */
-        void add(const NGram &text, unsigned int from, int length, const FSA::State &state) override {
+        void add(const NGram& text, unsigned int from, int length, const FSA::State& state) override {
             (void)text;
             unsigned int to = from + length;
-            int id = _map.get(from, to);
+            int          id = _map.get(from, to);
             if (id == -1) {
                 _map.set(from, to, _segments.size());
                 _segments.push_back(Segment(from, to, state.nData()));
@@ -499,7 +499,7 @@ public:
          * @return Pointer to the Segmentation object, valid as long as the
          *         Segments object is valid and not modified.
          */
-        const Segmenter::Segmentation *segmentation(Segmenter::SegmentationMethod method) {
+        const Segmenter::Segmentation* segmentation(Segmenter::SegmentationMethod method) {
             if (method < SEGMENTATION_WEIGHTED || method >= SEGMENTATION_METHODS)
                 method = SEGMENTATION_WEIGHTED;
             if (_segmentation[method] == nullptr) {
@@ -512,13 +512,13 @@ public:
     // }}}
 
 private:
-    const FSA &_dictionary; /**< Dictionary. */
-    Detector _detector;     /**< Detector.   */
+    const FSA& _dictionary; /**< Dictionary. */
+    Detector   _detector;   /**< Detector.   */
 
     /** Unimplemented private default constructor */
     Segmenter();
     /** Unimplemented private copy constructor */
-    Segmenter(const Segmenter &);
+    Segmenter(const Segmenter&);
 
 public:
     /**
@@ -528,7 +528,7 @@ public:
      *
      * @param dict Dictionary to use.
      */
-    Segmenter(const FSA &dict) : _dictionary(dict), _detector(_dictionary) {}
+    Segmenter(const FSA& dict) : _dictionary(dict), _detector(_dictionary) {}
 
     /**
      * @brief Constructor.
@@ -537,7 +537,7 @@ public:
      *
      * @param dict Dictionary to use.
      */
-    Segmenter(const FSA *dict) : _dictionary(*dict), _detector(_dictionary) {}
+    Segmenter(const FSA* dict) : _dictionary(*dict), _detector(_dictionary) {}
 
     /** Destructor */
     ~Segmenter() {}
@@ -547,7 +547,7 @@ public:
      *
      * @param segments %Segments object, input text already initialized.
      */
-    void segment(Segmenter::Segments &segments) const;
+    void segment(Segmenter::Segments& segments) const;
 
     /**
      * @brief %Segment a query.
@@ -555,7 +555,7 @@ public:
      * @param text Input text.
      * @param segments %Segments object to hold the results.
      */
-    void segment(const NGram &text, Segmenter::Segments &segments) const;
+    void segment(const NGram& text, Segmenter::Segments& segments) const;
 
     /**
      * @brief %Segment a query.
@@ -563,7 +563,7 @@ public:
      * @param text Input text.
      * @param segments %Segments object to hold the results.
      */
-    void segment(const std::string &text, Segmenter::Segments &segments) const;
+    void segment(const std::string& text, Segmenter::Segments& segments) const;
 
     /**
      * @brief %Segment a query.
@@ -571,7 +571,7 @@ public:
      * @param text Input text.
      * @param segments %Segments object to hold the results.
      */
-    void segment(const char *text, Segmenter::Segments &segments) const;
+    void segment(const char* text, Segmenter::Segments& segments) const;
 
     /**
      * @brief %Segment a query.
@@ -579,7 +579,7 @@ public:
      * @param text Input text.
      * @param segments %Segments object to hold the results.
      */
-    void segment(const char *text, Segmenter::Segments *segments) const { segment(text, *segments); }
+    void segment(const char* text, Segmenter::Segments* segments) const { segment(text, *segments); }
 };
 
 // }}}

@@ -14,8 +14,8 @@ LOG_SETUP(".sentinel.logctl");
 
 namespace config::sentinel {
 
-void justRunLogctl(const char *cspec, const char *lspec) {
-    const char *progName = "vespa-logctl";
+void justRunLogctl(const char* cspec, const char* lspec) {
+    const char* progName = "vespa-logctl";
     pid_t       pid = fork();
     if (pid == 0) {
         LOG(debug, "running '%s' '%s' '%s'", progName, cspec, lspec);

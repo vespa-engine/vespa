@@ -33,7 +33,7 @@ std::string createSpec(int port) {
     return str.str();
 }
 
-void discard(std::vector<std::string> &vec, const std::string &val) {
+void discard(std::vector<std::string>& vec, const std::string& val) {
     uint32_t i = 0;
     uint32_t size = vec.size();
     while (i < size) {
@@ -50,19 +50,19 @@ void discard(std::vector<std::string> &vec, const std::string &val) {
 
 class ConfigTask : public FNET_Task {
 private:
-    Configurator &_configurator;
+    Configurator& _configurator;
 
-    ConfigTask(const ConfigTask &);
-    ConfigTask &operator=(const ConfigTask &);
+    ConfigTask(const ConfigTask&);
+    ConfigTask& operator=(const ConfigTask&);
 
 public:
-    ConfigTask(FNET_Scheduler *sched, Configurator &configurator);
+    ConfigTask(FNET_Scheduler* sched, Configurator& configurator);
 
     ~ConfigTask() override;
     void PerformTask() override;
 };
 
-ConfigTask::ConfigTask(FNET_Scheduler *sched, Configurator &configurator)
+ConfigTask::ConfigTask(FNET_Scheduler* sched, Configurator& configurator)
     : FNET_Task(sched), _configurator(configurator) {
     Schedule(1.0);
 }
@@ -74,7 +74,7 @@ void ConfigTask::PerformTask() {
     LOG(spam, "checking for new config");
     try {
         _configurator.poll();
-    } catch (std::exception &e) {
+    } catch (std::exception& e) {
         LOG(warning, "ConfigTask: poll failed: %s", e.what());
         Schedule(10.0);
     }
@@ -82,14 +82,14 @@ void ConfigTask::PerformTask() {
 
 } // namespace
 
-SBEnv::SBEnv(const ConfigShim &shim)
+SBEnv::SBEnv(const ConfigShim& shim)
     : _transport(std::make_unique<FNET_Transport>(fnet::TransportConfig().drop_empty_buffers(true))),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())), _configShim(shim),
       _configurator(shim.factory().create(*this)), _shuttingDown(false), _partnerList(),
       _me(createSpec(_configShim.portNumber())),
       _localRpcMonitorMap(
           getScheduler(),
-          [this](MappingMonitorOwner &owner) { return std::make_unique<RpcMappingMonitor>(*_supervisor, owner); }),
+          [this](MappingMonitorOwner& owner) { return std::make_unique<RpcMappingMonitor>(*_supervisor, owner); }),
       _globalVisibleHistory(),
       _rpcHooks(*this), // Transitively references _localRpcMonitorMap and _globalVisibleHistory
       _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _exchanger)), _health(),
@@ -104,7 +104,7 @@ SBEnv::SBEnv(const ConfigShim &shim)
 
 SBEnv::~SBEnv() = default;
 
-FNET_Scheduler *SBEnv::getScheduler() { return _transport->GetScheduler(); }
+FNET_Scheduler* SBEnv::getScheduler() { return _transport->GetScheduler(); }
 
 void SBEnv::shutdown() {
     _shuttingDown = true;
@@ -117,10 +117,10 @@ void SBEnv::resume() {
 
 namespace {
 
-std::string toString(const std::vector<std::string> &v) {
+std::string toString(const std::vector<std::string>& v) {
     vespalib::asciistream os;
     os << "[" << '\n';
-    for (const std::string &partner : v) {
+    for (const std::string& partner : v) {
         os << "    " << partner << '\n';
     }
     os << ']';
@@ -152,11 +152,11 @@ int SBEnv::MainLoop() {
         getTransport()->Main();
         getTransport()->WaitFinished();
         LOG(debug, "slobrok: main event loop done");
-    } catch (vespalib::Exception &e) {
+    } catch (vespalib::Exception& e) {
         LOG(error, "invalid config: %s", e.what());
         EV_STOPPING("slobrok", "invalid config");
         return 1;
-    } catch (std::exception &e) {
+    } catch (std::exception& e) {
         LOG(error, "Unexpected std::exception : %s", e.what());
         EV_STOPPING("slobrok", "Unexpected std::exception");
         return 1;
@@ -165,7 +165,7 @@ int SBEnv::MainLoop() {
     return 0;
 }
 
-void SBEnv::setup(const std::vector<std::string> &cfg) {
+void SBEnv::setup(const std::vector<std::string>& cfg) {
     _partnerList = cfg;
     std::vector<std::string> oldList = _exchanger.getPartnerList();
     LOG(debug, "(re-)configuring. oldlist size %d, configuration list size %d", (int)oldList.size(), (int)cfg.size());
@@ -185,12 +185,12 @@ void SBEnv::setup(const std::vector<std::string> &cfg) {
         _exchanger.removePartner(oldList[i]);
         LOG(config, "removed peer %s", oldList[i].c_str());
     }
-    int64_t curGen = _configurator->getGeneration();
+    int64_t                                   curGen = _configurator->getGeneration();
     vespalib::ComponentConfigProducer::Config current("slobroks", curGen, "ok");
     _components.addConfig(current);
 }
 
-OkState SBEnv::addPeer(const std::string &name, const std::string &spec) {
+OkState SBEnv::addPeer(const std::string& name, const std::string& spec) {
     if (name != spec) {
         return OkState(FRTE_RPC_METHOD_FAILED, "peer location brokers must have name equal to spec");
     }
@@ -198,7 +198,7 @@ OkState SBEnv::addPeer(const std::string &name, const std::string &spec) {
         return OkState(FRTE_RPC_METHOD_FAILED, "cannot add my own spec as peer");
     }
     if (_partnerList.size() != 0) {
-        for (const std::string &partner : _partnerList) {
+        for (const std::string& partner : _partnerList) {
             if (partner == spec) {
                 return OkState(0, "already configured with peer");
             }
@@ -211,19 +211,19 @@ OkState SBEnv::addPeer(const std::string &name, const std::string &spec) {
     return _exchanger.addPartner(spec);
 }
 
-OkState SBEnv::removePeer(const std::string &name, const std::string &spec) {
+OkState SBEnv::removePeer(const std::string& name, const std::string& spec) {
     if (name != spec) {
         return OkState(FRTE_RPC_METHOD_FAILED, "peer location brokers must have name equal to spec");
     }
     if (spec == mySpec()) {
         return OkState(FRTE_RPC_METHOD_FAILED, "cannot remove my own spec as peer");
     }
-    for (const std::string &partner : _partnerList) {
+    for (const std::string& partner : _partnerList) {
         if (partner == spec) {
             return OkState(FRTE_RPC_METHOD_FAILED, "configured partner list contains peer, cannot remove");
         }
     }
-    const RemoteSlobrok *partner = _exchanger.lookupPartner(name);
+    const RemoteSlobrok* partner = _exchanger.lookupPartner(name);
     if (partner == nullptr) {
         return OkState(0, "remote location broker not a partner");
     }

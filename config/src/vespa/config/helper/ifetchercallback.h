@@ -24,7 +24,7 @@ public:
 template <typename ConfigType> class IFetcherCallback : public ICallback {
 protected:
     void configure(std::unique_ptr<const ConfigInstance> config) override {
-        configure(std::unique_ptr<ConfigType>(static_cast<const ConfigType *>(config.release())));
+        configure(std::unique_ptr<ConfigType>(static_cast<const ConfigType*>(config.release())));
     }
     virtual void configure(std::unique_ptr<ConfigType> config) = 0;
 };

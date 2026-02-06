@@ -22,12 +22,12 @@ public:
     Env();
     ~Env();
 
-    ConfigOwner  &configOwner() { return _cfgOwner; }
-    ModelOwner   &modelOwner() { return _modelOwner; }
-    CommandQueue &commandQueue() { return _rpcCommandQueue; }
-    StartMetrics &metrics() { return _startMetrics; }
+    ConfigOwner&  configOwner() { return _cfgOwner; }
+    ModelOwner&   modelOwner() { return _modelOwner; }
+    CommandQueue& commandQueue() { return _rpcCommandQueue; }
+    StartMetrics& metrics() { return _startMetrics; }
 
-    void boot(const std::string &configId);
+    void boot(const std::string& configId);
     void rpcPort(int portnum);
     void statePort(int portnum);
 

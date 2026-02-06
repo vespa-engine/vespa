@@ -35,7 +35,7 @@ void MetricSnapshot::reset(system_time currentTime) {
 
 void MetricSnapshot::recreateSnapshot(const MetricSet& metrics, bool copyUnset) {
     std::vector<Metric::UP> newMetrics;
-    Metric* m = metrics.clone(newMetrics, Metric::INACTIVE, nullptr, copyUnset);
+    Metric*                 m = metrics.clone(newMetrics, Metric::INACTIVE, nullptr, copyUnset);
     assert(m->isMetricSet());
     std::unique_ptr<MetricSet> newSnapshot(static_cast<MetricSet*>(m));
     newSnapshot->reset();
@@ -88,7 +88,7 @@ bool MetricSnapshotSet::haveCompletedNewPeriod(system_time newFromTime) {
 }
 
 bool MetricSnapshotSet::timeForAnotherSnapshot(system_time currentTime) {
-    system_time lastTime = getToTime();
+    system_time        lastTime = getToTime();
     vespalib::duration period = getPeriod();
     if (currentTime >= lastTime + period) {
         if (currentTime >= lastTime + 2 * period) {

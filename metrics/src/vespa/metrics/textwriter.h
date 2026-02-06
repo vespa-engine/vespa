@@ -10,11 +10,11 @@
 namespace metrics {
 
 class TextWriter : public MetricVisitor {
-    vespalib::duration _period;
-    std::ostream& _out;
-    std::vector<std::string> _path;
+    vespalib::duration        _period;
+    std::ostream&             _out;
+    std::vector<std::string>  _path;
     std::optional<std::regex> _regex;
-    bool _verbose;
+    bool                      _verbose;
 
 public:
     TextWriter(std::ostream& out, vespalib::duration period, const std::string& regex, bool verbose);

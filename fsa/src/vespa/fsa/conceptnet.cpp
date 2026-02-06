@@ -31,7 +31,7 @@ const uint32_t ConceptNet::MAGIC;
 
 // {{{ ConceptNet::ConceptNet()
 
-ConceptNet::ConceptNet(const char *fsafile, const char *datafile, FileAccessMethod fam)
+ConceptNet::ConceptNet(const char* fsafile, const char* datafile, FileAccessMethod fam)
     : _mmap_addr(nullptr), _mmap_length(0), _unit_fsa(fsafile, fam), _index_size(0), _index(nullptr), _info_size(0),
       _info(nullptr), _catindex_size(0), _catindex(nullptr), _strings_size(0), _strings(nullptr), _ok(false) {
     _ok = _unit_fsa.isOk();
@@ -39,7 +39,7 @@ ConceptNet::ConceptNet(const char *fsafile, const char *datafile, FileAccessMeth
         _ok = read(datafile, fam);
 }
 
-ConceptNet::ConceptNet(const std::string &fsafile, const std::string &datafile, FileAccessMethod fam)
+ConceptNet::ConceptNet(const std::string& fsafile, const std::string& datafile, FileAccessMethod fam)
     : _mmap_addr(nullptr), _mmap_length(0), _unit_fsa(fsafile, fam), _index_size(0), _index(nullptr), _info_size(0),
       _info(nullptr), _catindex_size(0), _catindex(nullptr), _strings_size(0), _strings(nullptr), _ok(false) {
     _ok = _unit_fsa.isOk();
@@ -82,7 +82,7 @@ void ConceptNet::reset() {
 // }}}
 // {{{ ConceptNet::read()
 
-bool ConceptNet::read(const char *datafile, FileAccessMethod fam) {
+bool ConceptNet::read(const char* datafile, FileAccessMethod fam) {
     Header header;
 
     size_t r;
@@ -144,7 +144,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam) {
             return false;
         }
     } else {
-        _index = (UnitData *)(void *)((uint8_t *)_mmap_addr + sizeof(header));
+        _index = (UnitData*)(void*)((uint8_t*)_mmap_addr + sizeof(header));
     }
 
     // read _info
@@ -157,7 +157,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam) {
             return false;
         }
     } else {
-        _info = (uint32_t *)(void *)((uint8_t *)_index + _index_size * sizeof(UnitData));
+        _info = (uint32_t*)(void*)((uint8_t*)_index + _index_size * sizeof(UnitData));
     }
 
     // read _catindex
@@ -170,7 +170,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam) {
             return false;
         }
     } else {
-        _catindex = (uint32_t *)(void *)((uint8_t *)_info + _info_size * sizeof(uint32_t));
+        _catindex = (uint32_t*)(void*)((uint8_t*)_info + _info_size * sizeof(uint32_t));
     }
 
     // read _strings
@@ -183,7 +183,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam) {
             return false;
         }
     } else {
-        _strings = (char *)((uint8_t *)_catindex + _catindex_size * sizeof(uint32_t));
+        _strings = (char*)((uint8_t*)_catindex + _catindex_size * sizeof(uint32_t));
     }
 
     ::close(fd);
@@ -195,7 +195,7 @@ bool ConceptNet::read(const char *datafile, FileAccessMethod fam) {
 
 // {{{ ConceptNet::lookup()
 
-int ConceptNet::lookup(const char *unit) const {
+int ConceptNet::lookup(const char* unit) const {
     FSA::HashedState hs(_unit_fsa);
     hs.start(unit);
     if (hs.isFinal()) {
@@ -204,7 +204,7 @@ int ConceptNet::lookup(const char *unit) const {
     return -1;
 }
 
-const char *ConceptNet::lookup(int idx) const {
+const char* ConceptNet::lookup(int idx) const {
 #ifndef NO_RANGE_CHECK
     if (idx < 0 || (uint32_t)idx >= _index_size) {
         return nullptr;
@@ -225,7 +225,7 @@ int ConceptNet::frq(int idx) const {
     return _index[idx]._frq;
 }
 
-int ConceptNet::frq(const char *unit) const { return frq(lookup(unit)); }
+int ConceptNet::frq(const char* unit) const { return frq(lookup(unit)); }
 
 // }}}
 // {{{ ConceptNet::cFrq()
@@ -239,7 +239,7 @@ int ConceptNet::cFrq(int idx) const {
     return _index[idx]._cfrq;
 }
 
-int ConceptNet::cFrq(const char *unit) const { return cFrq(lookup(unit)); }
+int ConceptNet::cFrq(const char* unit) const { return cFrq(lookup(unit)); }
 
 // }}}
 // {{{ ConceptNet::qFrq()
@@ -253,7 +253,7 @@ int ConceptNet::qFrq(int idx) const {
     return _index[idx]._qfrq;
 }
 
-int ConceptNet::qFrq(const char *unit) const { return qFrq(lookup(unit)); }
+int ConceptNet::qFrq(const char* unit) const { return qFrq(lookup(unit)); }
 
 // }}}
 // {{{ ConceptNet::sFrq()
@@ -267,7 +267,7 @@ int ConceptNet::sFrq(int idx) const {
     return _index[idx]._sfrq;
 }
 
-int ConceptNet::sFrq(const char *unit) const { return sFrq(lookup(unit)); }
+int ConceptNet::sFrq(const char* unit) const { return sFrq(lookup(unit)); }
 
 // }}}
 // {{{ ConceptNet::score()
@@ -281,7 +281,7 @@ double ConceptNet::score(int idx) const {
     return 100.0 * (double)_index[idx]._cfrq / (double)_index[idx]._qfrq;
 }
 
-double ConceptNet::score(const char *unit) const { return score(lookup(unit)); }
+double ConceptNet::score(const char* unit) const { return score(lookup(unit)); }
 
 // }}}
 // {{{ ConceptNet::strength()
@@ -295,7 +295,7 @@ double ConceptNet::strength(int idx) const {
     return 100.0 * (double)_index[idx]._qfrq / (double)_index[idx]._sfrq;
 }
 
-double ConceptNet::strength(const char *unit) const { return strength(lookup(unit)); }
+double ConceptNet::strength(const char* unit) const { return strength(lookup(unit)); }
 
 // }}}
 // {{{ ConceptNet::numExt()
@@ -440,7 +440,7 @@ int ConceptNet::cat(int idx, int j) const {
 // }}}
 // {{{ ConceptNet::catName()
 
-const char *ConceptNet::catName(int catIdx) const {
+const char* ConceptNet::catName(int catIdx) const {
     if (catIdx < 0 || (uint32_t)catIdx >= _catindex_size) {
         return nullptr;
     }

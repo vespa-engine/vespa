@@ -34,10 +34,10 @@ class PrometheusWriter : public MetricVisitor {
     struct TimeSeriesSample {
         // All referenced strings shall be either arena-allocated or static
         std::span<const std::string_view> metric_path;
-        std::string_view aggr;
+        std::string_view                  aggr;
         // Labels are laid out in key/value pairs, that is size() is always % 2 == 0
         std::span<const std::string_view> labels;
-        I64OrDouble value;
+        I64OrDouble                       value;
 
 #if !defined(__cpp_aggregate_paren_init)
         // P0960R3 is supported by gcc >= 10, Clang >= 16 and AppleClang >= 16
@@ -50,23 +50,23 @@ class PrometheusWriter : public MetricVisitor {
         bool operator<(const TimeSeriesSample& rhs) const noexcept;
     };
 
-    vespalib::Stash _arena;
-    std::string _timestamp_str;
-    std::vector<TimeSeriesSample> _samples;
+    vespalib::Stash                      _arena;
+    std::string                          _timestamp_str;
+    std::vector<TimeSeriesSample>        _samples;
     vespalib::hash_set<std::string_view> _unique_str_refs;
-    std::vector<std::string_view> _path;
-    vespalib::asciistream& _out;
+    std::vector<std::string_view>        _path;
+    vespalib::asciistream&               _out;
 
 public:
     explicit PrometheusWriter(vespalib::asciistream& out);
     ~PrometheusWriter() override;
 
 private:
-    [[nodiscard]] std::string_view arena_stable_string_ref(std::string_view str);
+    [[nodiscard]] std::string_view                  arena_stable_string_ref(std::string_view str);
     [[nodiscard]] std::span<const std::string_view> as_prometheus_labels(const Metric& m);
     [[nodiscard]] std::span<const std::string_view> metric_to_path_ref(std::string_view leaf_metric_name);
-    [[nodiscard]] std::string_view stable_name_string_ref(std::string_view raw_name);
-    [[nodiscard]] std::string_view stable_label_value_string_ref(std::string_view raw_label_value);
+    [[nodiscard]] std::string_view                  stable_name_string_ref(std::string_view raw_name);
+    [[nodiscard]] std::string_view                  stable_label_value_string_ref(std::string_view raw_label_value);
     void build_labels_upto_root(vespalib::SmallVector<std::string_view, 16>& out, const Metric& m);
 
     [[nodiscard]] static std::string escaped_label_value(std::string_view value);

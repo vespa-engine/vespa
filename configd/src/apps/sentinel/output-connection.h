@@ -13,15 +13,15 @@ class OutputConnection {
 private:
     int               _fd;
     LineSplitter      _lines;
-    ns_log::LLParser *_parser;
+    ns_log::LLParser* _parser;
 
     // Unused constructors/assignment operator:
     OutputConnection();
-    OutputConnection(const OutputConnection &);
-    OutputConnection &operator=(const OutputConnection &);
+    OutputConnection(const OutputConnection&);
+    OutputConnection& operator=(const OutputConnection&);
 
 public:
-    explicit OutputConnection(int fd, ns_log::LLParser *p);
+    explicit OutputConnection(int fd, ns_log::LLParser* p);
     ~OutputConnection();
     bool isFinished() const;
     void handleOutput();

@@ -11,23 +11,23 @@
 
 using namespace fsa;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     const unsigned int MAXQUERY = 10;
     const unsigned int MAXGRAM = 6;
 
-    Permuter p;
-    NGram freq_s, gram, sorted_gram;
+    Permuter     p;
+    NGram        freq_s, gram, sorted_gram;
     unsigned int freq;
-    Selector s(10);
-    std::string gstr;
+    Selector     s(10);
+    std::string  gstr;
 
     if (argc != 3) {
         std::cerr << "usage: " << argv[0] << " plain_count_fsa_file sorted_count_fsa_file" << std::endl;
         return 1;
     }
 
-    FSA plain_fsa(argv[1]);
-    FSA sorted_fsa(argv[2]);
+    FSA        plain_fsa(argv[1]);
+    FSA        sorted_fsa(argv[2]);
     FSA::State state1(plain_fsa), state2(sorted_fsa);
 
     while (!std::cin.eof()) {
@@ -47,8 +47,8 @@ int main(int argc, char **argv) {
             }
             if (state1.isFinal() && state2.isFinal()) {
                 unsigned int c1, c2;
-                c1 = *((unsigned int *)state1.data());
-                c2 = *((unsigned int *)state2.data());
+                c1 = *((unsigned int*)state1.data());
+                c2 = *((unsigned int*)state2.data());
                 std::cout << gram << "\t" << c1 << "," << c2 << "," << (double)c1 / (double)c2 << std::endl;
             }
         }

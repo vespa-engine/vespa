@@ -8,16 +8,16 @@
 
 class Application {
     Flags _flags;
-    bool  parseOpts(int argc, char **argv);
+    bool  parseOpts(int argc, char** argv);
 
 public:
     void usage();
-    int  main(int argc, char **argv);
+    int  main(int argc, char** argv);
 
     Application() : _flags() {}
 };
 
-bool Application::parseOpts(int argc, char **argv) {
+bool Application::parseOpts(int argc, char** argv) {
     int c = '?';
     while ((c = getopt(argc, argv, "m:s:p:h")) != -1) {
         switch (c) {
@@ -63,7 +63,7 @@ void Application::usage() {
     methods::dump();
 }
 
-int Application::main(int argc, char **argv) {
+int Application::main(int argc, char** argv) {
     if (!parseOpts(argc, argv)) {
         usage();
         return 1;
@@ -72,7 +72,7 @@ int Application::main(int argc, char **argv) {
     return client.action();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     Application app;
     return app.main(argc, argv);

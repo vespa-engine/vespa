@@ -10,9 +10,9 @@ namespace fsa {
 const unsigned int Unicode::_BadUTF8Char;
 const unsigned int Unicode::_EOF;
 
-char *Unicode::utf8copy(char *dst, const ucs4_t *src) {
+char* Unicode::utf8copy(char* dst, const ucs4_t* src) {
     ucs4_t i;
-    char *p;
+    char*  p;
 
     p = dst;
     while ((i = *src++) != 0) {
@@ -49,11 +49,11 @@ char *Unicode::utf8copy(char *dst, const ucs4_t *src) {
     return p;
 }
 
-char *Unicode::utf8ncopy(char *dst, const ucs4_t *src, int maxdst, int maxsrc) {
-    ucs4_t i = 0;
-    char *p = dst;
-    char *edst = dst + maxdst;
-    const ucs4_t *esrc = src + maxsrc;
+char* Unicode::utf8ncopy(char* dst, const ucs4_t* src, int maxdst, int maxsrc) {
+    ucs4_t        i = 0;
+    char*         p = dst;
+    char*         edst = dst + maxdst;
+    const ucs4_t* esrc = src + maxsrc;
 
     while (src < esrc && (i = *src++) != 0 && p < edst) {
         if (i < 128)
@@ -100,11 +100,11 @@ char *Unicode::utf8ncopy(char *dst, const ucs4_t *src, int maxdst, int maxsrc) {
     return p;
 }
 
-int Unicode::utf8cmp(const char *s1, const ucs4_t *s2) {
+int Unicode::utf8cmp(const char* s1, const ucs4_t* s2) {
     ucs4_t i1;
     ucs4_t i2;
 
-    const unsigned char *ps1 = reinterpret_cast<const unsigned char *>(s1);
+    const unsigned char* ps1 = reinterpret_cast<const unsigned char*>(s1);
     do {
         i1 = getUTF8Char(ps1);
         i2 = *s2++;
@@ -116,10 +116,10 @@ int Unicode::utf8cmp(const char *s1, const ucs4_t *s2) {
     return 0;
 }
 
-int Unicode::utf8casecmp(const char *s1, const ucs4_t *s2) {
+int Unicode::utf8casecmp(const char* s1, const ucs4_t* s2) {
     ucs4_t i1, i2;
 
-    const unsigned char *ps1 = reinterpret_cast<const unsigned char *>(s1);
+    const unsigned char* ps1 = reinterpret_cast<const unsigned char*>(s1);
     do {
         i1 = toLower(getUTF8Char(ps1));
         i2 = toLower(*s2++);
@@ -131,7 +131,7 @@ int Unicode::utf8casecmp(const char *s1, const ucs4_t *s2) {
     return 0;
 }
 
-size_t Unicode::utf8len(const ucs4_t *str) {
+size_t Unicode::utf8len(const ucs4_t* str) {
     ucs4_t i;
     size_t res;
 
@@ -153,10 +153,10 @@ size_t Unicode::utf8len(const ucs4_t *str) {
     return res;
 }
 
-size_t Unicode::utf8nlen(const ucs4_t *str, int maxsrc) {
+size_t Unicode::utf8nlen(const ucs4_t* str, int maxsrc) {
     ucs4_t i;
     size_t res;
-    int n;
+    int    n;
 
     n = 0;
     res = 0;
@@ -179,18 +179,18 @@ size_t Unicode::utf8nlen(const ucs4_t *str, int maxsrc) {
     return res;
 }
 
-size_t Unicode::ucs4strlen(const ucs4_t *str) {
-    const ucs4_t *p = str;
+size_t Unicode::ucs4strlen(const ucs4_t* str) {
+    const ucs4_t* p = str;
     while (*p++ != 0) {
         /* Do nothing */
     }
     return p - 1 - str;
 }
 
-size_t Unicode::ucs4len(const char *str) {
-    ucs4_t i;
-    size_t res;
-    const unsigned char *pstr = reinterpret_cast<const unsigned char *>(str);
+size_t Unicode::ucs4len(const char* str) {
+    ucs4_t               i;
+    size_t               res;
+    const unsigned char* pstr = reinterpret_cast<const unsigned char*>(str);
 
     res = 0;
     while ((i = getUTF8Char(pstr)) != 0) {
@@ -200,11 +200,11 @@ size_t Unicode::ucs4len(const char *str) {
     return res;
 }
 
-size_t Unicode::ucs4nlen(const char *str, size_t n) {
-    ucs4_t i;
-    size_t res;
-    const unsigned char *pstr = reinterpret_cast<const unsigned char *>(str);
-    const unsigned char *end_str = pstr + n;
+size_t Unicode::ucs4nlen(const char* str, size_t n) {
+    ucs4_t               i;
+    size_t               res;
+    const unsigned char* pstr = reinterpret_cast<const unsigned char*>(str);
+    const unsigned char* end_str = pstr + n;
 
     res = 0;
     while ((pstr < end_str) && (i = getUTF8Char(pstr, end_str - pstr)) != 0) {
@@ -215,10 +215,10 @@ size_t Unicode::ucs4nlen(const char *str, size_t n) {
     return res;
 }
 
-ucs4_t *Unicode::ucs4copy(ucs4_t *dst, const char *src) {
-    ucs4_t i;
-    ucs4_t *p;
-    const unsigned char *psrc = reinterpret_cast<const unsigned char *>(src);
+ucs4_t* Unicode::ucs4copy(ucs4_t* dst, const char* src) {
+    ucs4_t               i;
+    ucs4_t*              p;
+    const unsigned char* psrc = reinterpret_cast<const unsigned char*>(src);
 
     p = dst;
     while ((i = getUTF8Char(psrc)) != 0) {
@@ -229,11 +229,11 @@ ucs4_t *Unicode::ucs4copy(ucs4_t *dst, const char *src) {
     return p;
 }
 
-ucs4_t *Unicode::ucs4ncopy(ucs4_t *dst, const char *src, int byteLength) {
-    ucs4_t i;
-    ucs4_t *p;
-    const unsigned char *psrc = reinterpret_cast<const unsigned char *>(src);
-    const unsigned char *end_src = psrc + byteLength;
+ucs4_t* Unicode::ucs4ncopy(ucs4_t* dst, const char* src, int byteLength) {
+    ucs4_t               i;
+    ucs4_t*              p;
+    const unsigned char* psrc = reinterpret_cast<const unsigned char*>(src);
+    const unsigned char* end_src = psrc + byteLength;
 
     p = dst;
     while ((psrc < end_src) && (i = getUTF8Char(psrc, end_src - psrc)) != 0) {
@@ -244,21 +244,21 @@ ucs4_t *Unicode::ucs4ncopy(ucs4_t *dst, const char *src, int byteLength) {
     return p;
 }
 
-char *Unicode::strdupUTF8(const char *src) {
-    char *res;
-    size_t reslen;
-    ucs4_t i;
-    const unsigned char *p;
-    char *q;
+char* Unicode::strdupUTF8(const char* src) {
+    char*                res;
+    size_t               reslen;
+    ucs4_t               i;
+    const unsigned char* p;
+    char*                q;
 
     reslen = 0;
-    p = reinterpret_cast<const unsigned char *>(src);
+    p = reinterpret_cast<const unsigned char*>(src);
     while ((i = getUTF8Char(p)) != 0) {
         if (i != _BadUTF8Char)
             reslen += utf8clen(i);
     }
-    res = static_cast<char *>(malloc(reslen + 1));
-    p = reinterpret_cast<const unsigned char *>(src);
+    res = static_cast<char*>(malloc(reslen + 1));
+    p = reinterpret_cast<const unsigned char*>(src);
     q = res;
     while ((i = getUTF8Char(p)) != 0) {
         if (i != _BadUTF8Char)
@@ -269,15 +269,15 @@ char *Unicode::strdupUTF8(const char *src) {
     return res;
 }
 
-char *Unicode::strlowdupUTF8(const char *src) {
-    char *res;
-    size_t reslen;
-    ucs4_t i;
-    const unsigned char *p;
-    char *q;
+char* Unicode::strlowdupUTF8(const char* src) {
+    char*                res;
+    size_t               reslen;
+    ucs4_t               i;
+    const unsigned char* p;
+    char*                q;
 
     reslen = 0;
-    p = reinterpret_cast<const unsigned char *>(src);
+    p = reinterpret_cast<const unsigned char*>(src);
     while ((i = getUTF8Char(p)) != 0) {
         if (i != _BadUTF8Char) {
             i = toLower(i);
@@ -285,8 +285,8 @@ char *Unicode::strlowdupUTF8(const char *src) {
                 reslen += utf8clen(i);
         }
     }
-    res = static_cast<char *>(malloc(reslen + 1));
-    p = reinterpret_cast<const unsigned char *>(src);
+    res = static_cast<char*>(malloc(reslen + 1));
+    p = reinterpret_cast<const unsigned char*>(src);
     q = res;
     while ((i = getUTF8Char(p)) != 0) {
         if (i != _BadUTF8Char) {
@@ -300,20 +300,20 @@ char *Unicode::strlowdupUTF8(const char *src) {
     return res;
 }
 
-char *Unicode::strdupLAT1(const char *src) {
-    char *res;
-    size_t reslen;
-    ucs4_t i;
-    const unsigned char *p;
-    char *q;
+char* Unicode::strdupLAT1(const char* src) {
+    char*                res;
+    size_t               reslen;
+    ucs4_t               i;
+    const unsigned char* p;
+    char*                q;
 
     reslen = 0;
-    p = reinterpret_cast<const unsigned char *>(src);
+    p = reinterpret_cast<const unsigned char*>(src);
     while ((i = *p++) != 0) {
         reslen += utf8clen(i);
     }
-    res = static_cast<char *>(malloc(reslen + 1));
-    p = reinterpret_cast<const unsigned char *>(src);
+    res = static_cast<char*>(malloc(reslen + 1));
+    p = reinterpret_cast<const unsigned char*>(src);
     q = res;
     while ((i = *p++) != 0) {
         q = utf8cput(q, i);
@@ -323,7 +323,7 @@ char *Unicode::strdupLAT1(const char *src) {
     return res;
 }
 
-ucs4_t Unicode::getUTF8Char(unsigned const char *&src, int length /* = -1 */) {
+ucs4_t Unicode::getUTF8Char(unsigned const char*& src, int length /* = -1 */) {
     ucs4_t retval;
 
     if (length != -1) {
@@ -425,9 +425,9 @@ ucs4_t Unicode::getUTF8Char(unsigned const char *&src, int length /* = -1 */) {
  * @return Number of bytes moved, or -1 if out of range.
  *        If -1 is returned, pos is unchanged.
  */
-int Unicode::utf8move(unsigned const char *start, size_t length, unsigned const char *&pos, off_t offset) {
-    int increment = offset > 0 ? 1 : -1;
-    unsigned const char *p = pos;
+int Unicode::utf8move(unsigned const char* start, size_t length, unsigned const char*& pos, off_t offset) {
+    int                  increment = offset > 0 ? 1 : -1;
+    unsigned const char* p = pos;
 
     /* If running backward we first need to get to the start of
      * the current character, that's an extra step.

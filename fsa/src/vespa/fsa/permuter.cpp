@@ -19,9 +19,9 @@ const unsigned int Permuter::MAX_UNIT_LENGTH;
 
 // {{{ Permuter::initRec()
 
-void Permuter::initRec(const std::string &input, std::string tail) {
+void Permuter::initRec(const std::string& input, std::string tail) {
     std::string temp;
-    int i;
+    int         i;
 
     if (input.length() == 0) {
         _permtab.push_back(tail);
@@ -59,7 +59,7 @@ Permuter::~Permuter() {}
 // }}}
 // {{{ Permuter::getPermId()
 
-int Permuter::getPermId(const std::string &perm) const {
+int Permuter::getPermId(const std::string& perm) const {
     std::string t(perm);
 
     if (t.length() > MAX_UNIT_LENGTH)

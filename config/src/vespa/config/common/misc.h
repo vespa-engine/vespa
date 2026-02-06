@@ -18,20 +18,20 @@ namespace config {
 /**
  * Miscellaneous utility functions specific to config.
  */
-std::string calculateContentXxhash64(const StringVector &fileContents);
+std::string calculateContentXxhash64(const StringVector& fileContents);
 
 bool isGenerationNewer(int64_t newGen, int64_t oldGen);
 
 // Helper for throwing invalid config exception
-[[noreturn]] void throwInvalid(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+[[noreturn]] void throwInvalid(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 
 typedef std::shared_ptr<const vespalib::Slime> SlimePtr;
 
 /**
  * Copy slime objects from under src to dest, recursively.
  */
-void copySlimeObject(const vespalib::slime::Inspector &src, vespalib::slime::Cursor &dest);
+void copySlimeObject(const vespalib::slime::Inspector& src, vespalib::slime::Cursor& dest);
 
-StringVector getlines(vespalib::asciistream &is, char delim = '\n');
+StringVector getlines(vespalib::asciistream& is, char delim = '\n');
 
 } // namespace config

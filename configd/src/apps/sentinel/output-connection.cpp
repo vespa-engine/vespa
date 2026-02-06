@@ -14,13 +14,13 @@ LOG_SETUP(".sentinel.output-connection");
 namespace config {
 namespace sentinel {
 
-OutputConnection::OutputConnection(int f, ns_log::LLParser *p) : _fd(f), _lines(f), _parser(p) {}
+OutputConnection::OutputConnection(int f, ns_log::LLParser* p) : _fd(f), _lines(f), _parser(p) {}
 
 bool OutputConnection::isFinished() const { return _lines.eof(); }
 
 void OutputConnection::handleOutput() {
     while (1) {
-        char *line = _lines.getLine();
+        char* line = _lines.getLine();
         if (!line) {
             return;
         }

@@ -11,13 +11,13 @@ LOG_SETUP(".config.file_acquirer");
 
 namespace config {
 
-RpcFileAcquirer::RpcFileAcquirer(FNET_Transport &transport, const std::string &spec)
+RpcFileAcquirer::RpcFileAcquirer(FNET_Transport& transport, const std::string& spec)
     : _orb(std::make_unique<FRT_Supervisor>(&transport)), _spec(spec) {}
 
-std::string RpcFileAcquirer::wait_for(const std::string &file_ref, double timeout_s) {
+std::string RpcFileAcquirer::wait_for(const std::string& file_ref, double timeout_s) {
     std::string     path;
-    FRT_Target     *target = _orb->GetTarget(_spec.c_str());
-    FRT_RPCRequest *req = _orb->AllocRPCRequest();
+    FRT_Target*     target = _orb->GetTarget(_spec.c_str());
+    FRT_RPCRequest* req = _orb->AllocRPCRequest();
     req->SetMethodName("waitFor");
     req->GetParams()->AddString(file_ref.data(), file_ref.size());
     target->InvokeSync(req, timeout_s);

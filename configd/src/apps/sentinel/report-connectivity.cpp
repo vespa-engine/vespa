@@ -13,7 +13,7 @@ using namespace std::chrono_literals;
 
 namespace config::sentinel {
 
-ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, int timeout_ms, FRT_Supervisor &orb, ModelOwner &modelOwner)
+ReportConnectivity::ReportConnectivity(FRT_RPCRequest* req, int timeout_ms, FRT_Supervisor& orb, ModelOwner& modelOwner)
     : _parentRequest(req), _checks() {
     auto cfg = modelOwner.getModelConfig();
     if (cfg.has_value()) {
@@ -21,7 +21,7 @@ ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, int timeout_ms, FRT_
         LOG(debug, "making connectivity report for %zd peers", map.size());
         _remaining = map.size();
         timeout_ms += 50 * map.size();
-        for (const auto &[hostname, port] : map) {
+        for (const auto& [hostname, port] : map) {
             _checks.emplace_back(std::make_unique<PeerCheck>(*this, hostname, port, orb, timeout_ms));
         }
     } else {
@@ -39,10 +39,10 @@ void ReportConnectivity::returnStatus(bool) {
 }
 
 void ReportConnectivity::finish() const {
-    FRT_Values      *dst = _parentRequest->GetReturn();
-    FRT_StringValue *pt_hn = dst->AddStringArray(_checks.size());
-    FRT_StringValue *pt_ss = dst->AddStringArray(_checks.size());
-    for (const auto &peer : _checks) {
+    FRT_Values*      dst = _parentRequest->GetReturn();
+    FRT_StringValue* pt_hn = dst->AddStringArray(_checks.size());
+    FRT_StringValue* pt_ss = dst->AddStringArray(_checks.size());
+    for (const auto& peer : _checks) {
         dst->SetString(pt_hn++, peer->getHostname().c_str());
         dst->SetString(pt_ss++, peer->okStatus() ? "ok" : "ping failed");
     }

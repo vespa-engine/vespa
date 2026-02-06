@@ -52,7 +52,7 @@ inline int Base64::n2b(int n) {
 
 // {{{ Base64::decode()
 
-int Base64::decode(const std::string &src, std::string &dest) {
+int Base64::decode(const std::string& src, std::string& dest) {
     if (src.length() & 0x03) { // source length should be 4*n
         dest.resize(0);
         return -1;
@@ -61,7 +61,7 @@ int Base64::decode(const std::string &src, std::string &dest) {
     dest.resize(3 * (src.length() >> 2), '\0');
 
     std::string::size_type i, index = 0;
-    int s1, s2, s3, s4;
+    int                    s1, s2, s3, s4;
 
     for (i = 0; i < src.length(); i += 4) {
         s1 = b2n(src[i]);
@@ -97,7 +97,7 @@ int Base64::decode(const std::string &src, std::string &dest) {
 // }}}
 // {{{ Base64::encode()
 
-int Base64::encode(const std::string &src, std::string &dest) {
+int Base64::encode(const std::string& src, std::string& dest) {
     dest.resize(4 * ((src.length() + 2) / 3), '\0');
 
     std::string::size_type i, index = 0;

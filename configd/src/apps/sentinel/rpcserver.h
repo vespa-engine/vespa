@@ -18,11 +18,11 @@ private:
     int                      _port;
 
 public:
-    RpcServer(int port, CommandQueue &cmdQ, ModelOwner &modelOwner);
+    RpcServer(int port, CommandQueue& cmdQ, ModelOwner& modelOwner);
     ~RpcServer();
 
     int             getPort() const { return _port; }
-    FRT_Supervisor &orb() { return _server.supervisor(); }
+    FRT_Supervisor& orb() { return _server.supervisor(); }
 };
 
 } // namespace config::sentinel

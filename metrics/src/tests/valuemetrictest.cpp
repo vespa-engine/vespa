@@ -13,13 +13,13 @@ using vespalib::Double;
 
 namespace metrics {
 
-#define ASSERT_AVERAGE(metric, avg, min, max, count, last)                                                             \
-    EXPECT_EQ(Double(avg), Double(metric.getAverage()));                                                               \
-    EXPECT_EQ(Double(count), Double(metric.getCount()));                                                               \
-    EXPECT_EQ(Double(last), Double(metric.getLast()));                                                                 \
-    if (metric.getCount() > 0) {                                                                                       \
-        EXPECT_EQ(Double(min), Double(metric.getMinimum()));                                                           \
-        EXPECT_EQ(Double(max), Double(metric.getMaximum()));                                                           \
+#define ASSERT_AVERAGE(metric, avg, min, max, count, last)   \
+    EXPECT_EQ(Double(avg), Double(metric.getAverage()));     \
+    EXPECT_EQ(Double(count), Double(metric.getCount()));     \
+    EXPECT_EQ(Double(last), Double(metric.getLast()));       \
+    if (metric.getCount() > 0) {                             \
+        EXPECT_EQ(Double(min), Double(metric.getMinimum())); \
+        EXPECT_EQ(Double(max), Double(metric.getMaximum())); \
     }
 
 TEST(ValueMetricTest, test_double_value_metric) {
@@ -148,8 +148,8 @@ TEST(ValueMetricTest, test_small_average) {
     m.addValue(0.0002);
     m.addValue(0.0003);
     std::vector<Metric::UP> ownerList;
-    Metric::UP c(m.clone(ownerList, Metric::INACTIVE, nullptr, false));
-    std::string expect("test average=0.0002 last=0.0003 min=0.0001 max=0.0003 count=3 total=0.0006");
+    Metric::UP              c(m.clone(ownerList, Metric::INACTIVE, nullptr, false));
+    std::string             expect("test average=0.0002 last=0.0003 min=0.0001 max=0.0003 count=3 total=0.0006");
     EXPECT_EQ(expect, m.toString());
     EXPECT_EQ(expect, c->toString());
 }
@@ -182,9 +182,9 @@ std::string extractMetricJson(std::string_view s) {
 
 std::string getJson(MetricManager& mm) {
     vespalib::asciistream as;
-    vespalib::JsonStream stream(as, true);
-    JsonWriter writer(stream);
-    MetricLockGuard guard(mm.getMetricLock());
+    vespalib::JsonStream  stream(as, true);
+    JsonWriter            writer(stream);
+    MetricLockGuard       guard(mm.getMetricLock());
     mm.visit(guard, mm.getActiveMetrics(guard), writer, "");
     stream.finalize();
     return as.str();
@@ -193,7 +193,7 @@ std::string getJson(MetricManager& mm) {
 } // namespace
 
 TEST(ValueMetricTest, test_json) {
-    MetricManager mm;
+    MetricManager     mm;
     DoubleValueMetric m("test", {{"tag"}}, "description");
     mm.registerMetric(mm.getMetricLock(), m);
 

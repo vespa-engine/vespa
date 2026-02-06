@@ -10,16 +10,16 @@
  * switch to the vespa user without any more fuss
  **/
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc < 2) {
         fprintf(stderr, "missing arguments, usage: vespa-run-as-vespa-user <cmd> [args ...]\n");
         return 1;
     }
-    const char *username = getenv("VESPA_USER");
+    const char* username = getenv("VESPA_USER");
     if (username == nullptr) {
         username = "vespa";
     }
-    struct passwd *p = getpwnam(username);
+    struct passwd* p = getpwnam(username);
     if (p == nullptr) {
         fprintf(stderr, "FATAL error: user '%s' missing in passwd file\n", username);
         return 1;

@@ -21,22 +21,22 @@ namespace slobrok {
  **/
 class Monitor : public FNET_IPacketHandler, public FNET_Task {
 private:
-    IMonitoredServer &_monitoredServer;
-    FNET_Channel *_channel;
-    bool _enabled;
-    Monitor(const Monitor &);
-    Monitor &operator=(const Monitor &);
+    IMonitoredServer& _monitoredServer;
+    FNET_Channel*     _channel;
+    bool              _enabled;
+    Monitor(const Monitor&);
+    Monitor& operator=(const Monitor&);
 
 public:
-    explicit Monitor(IMonitoredServer &owner, FRT_Supervisor &supervisor);
+    explicit Monitor(IMonitoredServer& owner, FRT_Supervisor& supervisor);
     ~Monitor();
-    void enable(FRT_Target *monitorTarget);
+    void enable(FRT_Target* monitorTarget);
     void disable();
 
 private:
-    void disconnect();
-    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
-    void PerformTask() override;
+    void       disconnect();
+    HP_RetCode HandlePacket(FNET_Packet* packet, FNET_Context context) override;
+    void       PerformTask() override;
 };
 
 //-----------------------------------------------------------------------------

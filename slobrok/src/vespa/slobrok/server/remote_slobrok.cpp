@@ -13,7 +13,7 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-RemoteSlobrok::RemoteSlobrok(const std::string &name, const std::string &spec, ExchangeManager &manager)
+RemoteSlobrok::RemoteSlobrok(const std::string& name, const std::string& spec, ExchangeManager& manager)
     : _exchanger(manager), _remote(nullptr), _serviceMapMirror(), _rpcserver(name, spec, *this),
       _reconnecter(getSupervisor()->GetScheduler(), *this), _failCnt(0),
       _consensusSubscription(MapSubscription::subscribe(_serviceMapMirror, _exchanger.env().consensusMap())),
@@ -59,16 +59,16 @@ void RemoteSlobrok::handleFetchResult() {
     LOG_ASSERT(_remFetchReq != nullptr);
     bool success = true;
     if (_remFetchReq->CheckReturnTypes("iSSSi")) {
-        FRT_Values &answer = *(_remFetchReq->GetReturn());
+        FRT_Values& answer = *(_remFetchReq->GetReturn());
 
-        uint32_t diff_from = answer[0]._intval32;
-        uint32_t numRemove = answer[1]._string_array._len;
-        FRT_StringValue *r = answer[1]._string_array._pt;
-        uint32_t numNames = answer[2]._string_array._len;
-        FRT_StringValue *n = answer[2]._string_array._pt;
-        uint32_t numSpecs = answer[3]._string_array._len;
-        FRT_StringValue *s = answer[3]._string_array._pt;
-        uint32_t diff_to = answer[4]._intval32;
+        uint32_t         diff_from = answer[0]._intval32;
+        uint32_t         numRemove = answer[1]._string_array._len;
+        FRT_StringValue* r = answer[1]._string_array._pt;
+        uint32_t         numNames = answer[2]._string_array._len;
+        FRT_StringValue* n = answer[2]._string_array._pt;
+        uint32_t         numSpecs = answer[3]._string_array._len;
+        FRT_StringValue* s = answer[3]._string_array._pt;
+        uint32_t         diff_to = answer[4]._intval32;
 
         std::vector<std::string> removed;
         for (uint32_t idx = 0; idx < numRemove; ++idx) {
@@ -112,7 +112,7 @@ void RemoteSlobrok::handleFetchResult() {
     }
 }
 
-void RemoteSlobrok::RequestDone(FRT_RPCRequest *req) {
+void RemoteSlobrok::RequestDone(FRT_RPCRequest* req) {
     if (req == _remFetchReq) {
         handleFetchResult();
         return;
@@ -120,9 +120,9 @@ void RemoteSlobrok::RequestDone(FRT_RPCRequest *req) {
     if (req == _remAddPeerReq) {
         // handle response after asking remote location broker to add me as a peer:
         if (req->IsError()) {
-            FRT_Values &args = *req->GetParams();
-            const char *myname = args[0]._string._str;
-            const char *myspec = args[1]._string._str;
+            FRT_Values& args = *req->GetParams();
+            const char* myname = args[0]._string._str;
+            const char* myspec = args[1]._string._str;
             LOG(info, "addPeer(%s, %s) on remote location broker %s at %s: %s", myname, myspec, getName().c_str(),
                 getSpec().c_str(), req->GetErrorMessage());
             req->internal_subref();
@@ -138,7 +138,7 @@ void RemoteSlobrok::RequestDone(FRT_RPCRequest *req) {
     }
 }
 
-void RemoteSlobrok::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) {
+void RemoteSlobrok::notifyFailedRpcSrv(ManagedRpcServer* rpcsrv, std::string errmsg) {
     if (++_failCnt > 10) {
         LOG(warning, "remote location broker at %s failed: %s", rpcsrv->getSpec().c_str(), errmsg.c_str());
     } else {
@@ -158,7 +158,7 @@ void RemoteSlobrok::fail() {
     _reconnecter.scheduleTryConnect();
 }
 
-void RemoteSlobrok::notifyOkRpcSrv(ManagedRpcServer *rpcsrv) {
+void RemoteSlobrok::notifyOkRpcSrv(ManagedRpcServer* rpcsrv) {
     LOG_ASSERT(rpcsrv == &_rpcserver);
     (void)rpcsrv;
 
@@ -185,11 +185,11 @@ void RemoteSlobrok::notifyOkRpcSrv(ManagedRpcServer *rpcsrv) {
 
 void RemoteSlobrok::tryConnect() { _rpcserver.healthCheck(); }
 
-FRT_Supervisor *RemoteSlobrok::getSupervisor() { return _exchanger.env().getSupervisor(); }
+FRT_Supervisor* RemoteSlobrok::getSupervisor() { return _exchanger.env().getSupervisor(); }
 
 //-----------------------------------------------------------------------------
 
-RemoteSlobrok::Reconnecter::Reconnecter(FNET_Scheduler *sched, RemoteSlobrok &owner)
+RemoteSlobrok::Reconnecter::Reconnecter(FNET_Scheduler* sched, RemoteSlobrok& owner)
     : FNET_Task(sched), _waittime(13), _owner(owner) {}
 
 RemoteSlobrok::Reconnecter::~Reconnecter() { Kill(); }
@@ -208,7 +208,7 @@ void RemoteSlobrok::Reconnecter::disable() {
 
 void RemoteSlobrok::Reconnecter::PerformTask() { _owner.tryConnect(); }
 
-void RemoteSlobrok::invokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *rwaiter) {
+void RemoteSlobrok::invokeAsync(FRT_RPCRequest* req, double timeout, FRT_IRequestWait* rwaiter) {
     LOG_ASSERT(isConnected());
     _remote->InvokeAsync(req, timeout, rwaiter);
 }

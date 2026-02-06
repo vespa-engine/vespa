@@ -1,7 +1,8 @@
 AccessModifierOffset: -4
-ColumnLimit:     120
-IndentWidth:     4
-DerivePointerAlignment: true
+ColumnLimit: 120
+IndentWidth: 4
+DerivePointerAlignment: false
 PointerAlignment: Left
 ReferenceAlignment: Pointer
 AlignConsecutiveDeclarations: Consecutive
+AlignEscapedNewlines: LeftWithLastLine

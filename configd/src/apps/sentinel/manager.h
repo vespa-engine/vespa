@@ -32,18 +32,18 @@ class Manager {
 private:
     typedef std::map<std::string, Service::UP> ServiceMap;
 
-    Env                          &_env;
-    ServiceMap                    _services;
-    ServiceMap                    _orphans;
-    std::list<OutputConnection *> _outputConnections;
+    Env&                         _env;
+    ServiceMap                   _services;
+    ServiceMap                   _orphans;
+    std::list<OutputConnection*> _outputConnections;
 
-    Manager(const Manager &) = delete;
-    Manager &operator=(const Manager &) = delete;
+    Manager(const Manager&) = delete;
+    Manager& operator=(const Manager&) = delete;
 
-    Service *serviceByPid(pid_t pid);
-    Service *serviceByName(const std::string &name);
+    Service* serviceByPid(pid_t pid);
+    Service* serviceByName(const std::string& name);
     void     handleCommands();
-    void     handleCmd(const Cmd &cmd);
+    void     handleCmd(const Cmd& cmd);
     void     handleOutputs();
     void     handleChildDeaths();
     void     handleRestarts();
@@ -52,11 +52,11 @@ private:
     void doConfigure();
 
 public:
-    Manager(Env &env);
+    Manager(Env& env);
     virtual ~Manager();
     bool terminate();
     bool doWork();
-    void updateActiveFdset(std::vector<pollfd> &fds);
+    void updateActiveFdset(std::vector<pollfd>& fds);
 };
 
 } // namespace config::sentinel

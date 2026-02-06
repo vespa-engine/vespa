@@ -13,20 +13,20 @@ private:
 
 public:
     Unaligned() = delete;
-    Unaligned(const Unaligned &) = delete;
-    Unaligned(Unaligned &&) = delete;
+    Unaligned(const Unaligned&) = delete;
+    Unaligned(Unaligned&&) = delete;
 
-    Unaligned &operator=(const Unaligned &) = default;
-    Unaligned &operator=(Unaligned &&) = default;
+    Unaligned& operator=(const Unaligned&) = default;
+    Unaligned& operator=(Unaligned&&) = default;
 
     static_assert(std::is_trivial_v<T>);
     static_assert(alignof(T) > 1, "value is always aligned");
 
-    constexpr static Unaligned &at(void *p) noexcept { return *reinterpret_cast<Unaligned *>(p); }
-    constexpr static const Unaligned &at(const void *p) noexcept { return *reinterpret_cast<const Unaligned *>(p); }
+    constexpr static Unaligned&       at(void* p) noexcept { return *reinterpret_cast<Unaligned*>(p); }
+    constexpr static const Unaligned& at(const void* p) noexcept { return *reinterpret_cast<const Unaligned*>(p); }
 
-    constexpr static Unaligned *ptr(void *p) noexcept { return reinterpret_cast<Unaligned *>(p); }
-    constexpr static const Unaligned *ptr(const void *p) noexcept { return reinterpret_cast<const Unaligned *>(p); }
+    constexpr static Unaligned*       ptr(void* p) noexcept { return reinterpret_cast<Unaligned*>(p); }
+    constexpr static const Unaligned* ptr(const void* p) noexcept { return reinterpret_cast<const Unaligned*>(p); }
 
     T read() const noexcept {
         T value;
@@ -34,12 +34,12 @@ public:
         memcpy(&value, _data, sizeof(value));
         return value;
     }
-    void write(const T &value) noexcept {
+    void write(const T& value) noexcept {
         static_assert(sizeof(_data) == sizeof(value));
         memcpy(_data, &value, sizeof(value));
     }
     operator T() const noexcept { return read(); }
-    Unaligned &operator=(const T &value) noexcept {
+    Unaligned& operator=(const T& value) noexcept {
         write(value);
         return *this;
     }

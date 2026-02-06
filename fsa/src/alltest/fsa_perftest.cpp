@@ -11,21 +11,21 @@
 using namespace fsa;
 
 int main(int, char**) {
-    FSA f("__testfsa__.__fsa__");
-    FSA::State s(f);
-    FSA::HashedState hs(f);
-    FSA::MemoryState ms(f);
+    FSA                    f("__testfsa__.__fsa__");
+    FSA::State             s(f);
+    FSA::HashedState       hs(f);
+    FSA::MemoryState       ms(f);
     FSA::HashedMemoryState hms(f);
-    FSA::CounterState cs(f);
-    std::string input("cucumber");
-    unsigned int count = 10000000, i;
+    FSA::CounterState      cs(f);
+    std::string            input("cucumber");
+    unsigned int           count = 10000000, i;
 
     std::cout << "Number of lookups: " << count << std::endl;
     std::cout << "Input string length: " << input.length() << std::endl;
     std::cout << std::endl;
 
     TimeStamp t;
-    double t0, t1;
+    double    t0, t1;
 
     t0 = t.elapsed();
     for (i = 0; i < count; i++) {

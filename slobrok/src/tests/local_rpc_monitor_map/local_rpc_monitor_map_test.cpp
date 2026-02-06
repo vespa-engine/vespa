@@ -12,13 +12,13 @@ using namespace slobrok;
 using vespalib::make_string_short::fmt;
 
 struct MapCall {
-    std::string name;
+    std::string    name;
     ServiceMapping mapping;
     ServiceMapping old;
-    static MapCall add(const ServiceMapping &m) { return {"add", m, {"", ""}}; }
-    static MapCall remove(const ServiceMapping &m) { return {"remove", m, {"", ""}}; }
-    static MapCall update(const ServiceMapping &o, const ServiceMapping &m) { return {"update", m, o}; }
-    void check(const MapCall &rhs) const {
+    static MapCall add(const ServiceMapping& m) { return {"add", m, {"", ""}}; }
+    static MapCall remove(const ServiceMapping& m) { return {"remove", m, {"", ""}}; }
+    static MapCall update(const ServiceMapping& o, const ServiceMapping& m) { return {"update", m, o}; }
+    void           check(const MapCall& rhs) const {
         EXPECT_EQ(name, rhs.name);
         EXPECT_EQ(mapping, rhs.mapping);
         EXPECT_EQ(old, rhs.old);
@@ -28,12 +28,12 @@ struct MapCall {
 MapCall::~MapCall() = default;
 
 struct MonitorCall {
-    std::string name;
-    ServiceMapping mapping;
-    bool hurry;
-    static MonitorCall start(const ServiceMapping &m, bool h) { return {"start", m, h}; }
-    static MonitorCall stop(const ServiceMapping &m) { return {"stop", m, false}; }
-    void check(const MonitorCall &rhs) const {
+    std::string        name;
+    ServiceMapping     mapping;
+    bool               hurry;
+    static MonitorCall start(const ServiceMapping& m, bool h) { return {"start", m, h}; }
+    static MonitorCall stop(const ServiceMapping& m) { return {"stop", m, false}; }
+    void               check(const MonitorCall& rhs) const {
         EXPECT_EQ(name, rhs.name);
         EXPECT_EQ(mapping, rhs.mapping);
         EXPECT_EQ(hurry, rhs.hurry);
@@ -45,7 +45,7 @@ MonitorCall::~MonitorCall() = default;
 template <typename Call> class CallLog {
 private:
     std::vector<Call> _calls;
-    size_t _checked;
+    size_t            _checked;
 
 public:
     CallLog() noexcept : _calls(), _checked(0) {}
@@ -53,7 +53,7 @@ public:
     void log(Call call) { _calls.push_back(call); }
     void expect(std::initializer_list<Call> list) {
         ASSERT_EQ(list.size(), (_calls.size() - _checked));
-        for (const auto &call : list) {
+        for (const auto& call : list) {
             call.check(_calls[_checked++]);
         }
     }
@@ -61,9 +61,9 @@ public:
 
 struct MapLog : CallLog<MapCall>, MapListener {
     ~MapLog() override;
-    void add(const ServiceMapping &mapping) override { log(MapCall::add(mapping)); }
-    void remove(const ServiceMapping &mapping) override { log(MapCall::remove(mapping)); }
-    void update(const ServiceMapping &old_mapping, const ServiceMapping &new_mapping) override {
+    void add(const ServiceMapping& mapping) override { log(MapCall::add(mapping)); }
+    void remove(const ServiceMapping& mapping) override { log(MapCall::remove(mapping)); }
+    void update(const ServiceMapping& old_mapping, const ServiceMapping& new_mapping) override {
         log(MapCall::update(old_mapping, new_mapping));
     }
 };
@@ -71,30 +71,30 @@ struct MapLog : CallLog<MapCall>, MapListener {
 MapLog::~MapLog() = default;
 
 struct MonitorLog : CallLog<MonitorCall>, MappingMonitor {
-    void start(const ServiceMapping &mapping, bool hurry) override { log(MonitorCall::start(mapping, hurry)); }
-    void stop(const ServiceMapping &mapping) override { log(MonitorCall::stop(mapping)); }
+    void start(const ServiceMapping& mapping, bool hurry) override { log(MonitorCall::start(mapping, hurry)); }
+    void stop(const ServiceMapping& mapping) override { log(MonitorCall::stop(mapping)); }
 };
 
 struct MyMappingMonitor : MappingMonitor {
-    MonitorLog &monitor;
-    explicit MyMappingMonitor(MonitorLog &m) : monitor(m) {}
-    void start(const ServiceMapping &mapping, bool hurry) override { monitor.start(mapping, hurry); }
-    void stop(const ServiceMapping &mapping) override { monitor.stop(mapping); }
+    MonitorLog& monitor;
+    explicit MyMappingMonitor(MonitorLog& m) : monitor(m) {}
+    void start(const ServiceMapping& mapping, bool hurry) override { monitor.start(mapping, hurry); }
+    void stop(const ServiceMapping& mapping) override { monitor.stop(mapping); }
 };
 
 struct LocalRpcMonitorMapTest : public ::testing::Test {
-    steady_time time;
-    FNET_Scheduler scheduler;
-    MonitorLog monitor_log;
-    MapLog map_log;
-    LocalRpcMonitorMap map;
+    steady_time                      time;
+    FNET_Scheduler                   scheduler;
+    MonitorLog                       monitor_log;
+    MapLog                           map_log;
+    LocalRpcMonitorMap               map;
     std::unique_ptr<MapSubscription> subscription;
-    ServiceMapping mapping;
-    ServiceMapping mapping_conflict;
+    ServiceMapping                   mapping;
+    ServiceMapping                   mapping_conflict;
     LocalRpcMonitorMapTest()
         : time(duration::zero()), scheduler(&time), monitor_log(), map_log(),
           map(&scheduler,
-              [this](auto &owner) {
+              [this](auto& owner) {
                   EXPECT_EQ(&owner, &map);
                   return std::make_unique<MyMappingMonitor>(monitor_log);
               }),
@@ -104,7 +104,7 @@ struct LocalRpcMonitorMapTest : public ::testing::Test {
         time += elapsed;
         scheduler.CheckTasks();
     }
-    void add_mapping(const ServiceMapping &m, bool is_up) {
+    void add_mapping(const ServiceMapping& m, bool is_up) {
         map.add(m); // <- add from consensus map
         monitor_log.expect({});
         tick(0ms); // <- process delayed add event
@@ -118,7 +118,7 @@ struct LocalRpcMonitorMapTest : public ::testing::Test {
             map_log.expect({});
         }
     }
-    void flip_up_state(const ServiceMapping &m, bool was_up, size_t cnt) {
+    void flip_up_state(const ServiceMapping& m, bool was_up, size_t cnt) {
         for (size_t i = 0; i < cnt; ++i) {
             if (was_up) {
                 map.up(m);
@@ -135,7 +135,7 @@ struct LocalRpcMonitorMapTest : public ::testing::Test {
         }
         monitor_log.expect({});
     }
-    void remove_mapping(const ServiceMapping &m, bool was_up) {
+    void remove_mapping(const ServiceMapping& m, bool was_up) {
         map.remove(m); // <- remove from consensus map
         monitor_log.expect({});
         tick(0ms); // <- process delayed remove event
@@ -151,9 +151,9 @@ struct LocalRpcMonitorMapTest : public ::testing::Test {
 LocalRpcMonitorMapTest::~LocalRpcMonitorMapTest() = default;
 
 struct MyAddLocalHandler : CompletionHandler {
-    std::unique_ptr<OkState> &state;
-    bool &handler_deleted;
-    MyAddLocalHandler(std::unique_ptr<OkState> &s, bool &hd) : state(s), handler_deleted(hd) {}
+    std::unique_ptr<OkState>& state;
+    bool&                     handler_deleted;
+    MyAddLocalHandler(std::unique_ptr<OkState>& s, bool& hd) : state(s), handler_deleted(hd) {}
     void doneHandler(OkState result) override { state = std::make_unique<OkState>(result); }
     ~MyAddLocalHandler() override { handler_deleted = true; }
 };
@@ -197,7 +197,7 @@ TEST_F(LocalRpcMonitorMapTest, multi_mapping) {
 
 TEST_F(LocalRpcMonitorMapTest, local_add_ok) {
     std::unique_ptr<OkState> state;
-    bool handler_deleted;
+    bool                     handler_deleted;
     map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
     monitor_log.expect({MonitorCall::start(mapping, true)});
     map_log.expect({});
@@ -211,7 +211,7 @@ TEST_F(LocalRpcMonitorMapTest, local_add_ok) {
 
 TEST_F(LocalRpcMonitorMapTest, local_add_already_up) {
     std::unique_ptr<OkState> state;
-    bool handler_deleted;
+    bool                     handler_deleted;
     add_mapping(mapping, true);
     map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
     monitor_log.expect({});
@@ -223,7 +223,7 @@ TEST_F(LocalRpcMonitorMapTest, local_add_already_up) {
 
 TEST_F(LocalRpcMonitorMapTest, local_add_unknown_comes_up) {
     std::unique_ptr<OkState> state;
-    bool handler_deleted;
+    bool                     handler_deleted;
     add_mapping(mapping, false);
     map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
     monitor_log.expect({MonitorCall::stop(mapping), MonitorCall::start(mapping, true)});
@@ -238,7 +238,7 @@ TEST_F(LocalRpcMonitorMapTest, local_add_unknown_comes_up) {
 
 TEST_F(LocalRpcMonitorMapTest, local_add_unknown_goes_down) {
     std::unique_ptr<OkState> state;
-    bool handler_deleted;
+    bool                     handler_deleted;
     add_mapping(mapping, false);
     map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
     monitor_log.expect({MonitorCall::stop(mapping), MonitorCall::start(mapping, true)});
@@ -253,7 +253,7 @@ TEST_F(LocalRpcMonitorMapTest, local_add_unknown_goes_down) {
 
 TEST_F(LocalRpcMonitorMapTest, local_add_conflict) {
     std::unique_ptr<OkState> state;
-    bool handler_deleted;
+    bool                     handler_deleted;
     add_mapping(mapping, true);
     map.addLocal(mapping_conflict, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
     monitor_log.expect({});
@@ -265,9 +265,9 @@ TEST_F(LocalRpcMonitorMapTest, local_add_conflict) {
 
 TEST_F(LocalRpcMonitorMapTest, local_multi_add) {
     std::unique_ptr<OkState> state1;
-    bool handler_deleted1;
+    bool                     handler_deleted1;
     std::unique_ptr<OkState> state2;
-    bool handler_deleted2;
+    bool                     handler_deleted2;
     map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state1, handler_deleted1));
     monitor_log.expect({MonitorCall::start(mapping, true)});
     map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state2, handler_deleted2));
@@ -297,7 +297,7 @@ TEST_F(LocalRpcMonitorMapTest, local_remove) {
 
 TEST_F(LocalRpcMonitorMapTest, local_add_local_remove) {
     std::unique_ptr<OkState> state;
-    bool handler_deleted;
+    bool                     handler_deleted;
     map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
     monitor_log.expect({MonitorCall::start(mapping, true)});
     map_log.expect({});

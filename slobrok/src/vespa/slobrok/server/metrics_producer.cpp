@@ -21,7 +21,7 @@ namespace {
 }
 
 class MetricsSnapshotter : public FNET_Task {
-    MetricsProducer &_owner;
+    MetricsProducer& _owner;
 
     void PerformTask() override {
         _owner.snapshot();
@@ -29,7 +29,7 @@ class MetricsSnapshotter : public FNET_Task {
     }
 
 public:
-    MetricsSnapshotter(FNET_Transport &transport, MetricsProducer &owner)
+    MetricsSnapshotter(FNET_Transport& transport, MetricsProducer& owner)
         : FNET_Task(transport.GetScheduler()), _owner(owner) {
         Schedule(60.0);
     }
@@ -39,15 +39,15 @@ public:
 
 class MetricSnapshot {
 private:
-    vespalib::Slime _data;
-    vespalib::slime::Cursor &_metrics;
-    vespalib::slime::Cursor &_snapshot;
-    vespalib::slime::Cursor &_values;
-    double _snapLen;
+    vespalib::Slime          _data;
+    vespalib::slime::Cursor& _metrics;
+    vespalib::slime::Cursor& _snapshot;
+    vespalib::slime::Cursor& _values;
+    double                   _snapLen;
 
 public:
     MetricSnapshot(system_clock::time_point prevTime, system_clock::time_point currTime);
-    void addCount(const char *name, const char *desc, uint32_t count);
+    void addCount(const char* name, const char* desc, uint32_t count);
 
     std::string asString() const { return _data.toString(); }
 };
@@ -63,17 +63,17 @@ MetricSnapshot::MetricSnapshot(system_clock::time_point prevTime, system_clock::
     }
 }
 
-void MetricSnapshot::addCount(const char *name, const char *desc, uint32_t count) {
+void MetricSnapshot::addCount(const char* name, const char* desc, uint32_t count) {
     using namespace vespalib::slime::convenience;
-    Cursor &value = _values.addObject();
+    Cursor& value = _values.addObject();
     value.setString("name", name);
     value.setString("description", desc);
-    Cursor &inner = value.setObject("values");
+    Cursor& inner = value.setObject("values");
     inner.setLong("count", count);
     inner.setDouble("rate", count / _snapLen);
 }
 
-std::string make_json_snapshot(const RPCHooks::Metrics &prev, const RPCHooks::Metrics &curr,
+std::string make_json_snapshot(const RPCHooks::Metrics& prev, const RPCHooks::Metrics& curr,
                                system_clock::time_point prevTime, system_clock::time_point currTime) {
     MetricSnapshot snapshot(prevTime, currTime);
     snapshot.addCount("slobrok.heartbeats.failed", "count of failed heartbeat requests",
@@ -89,7 +89,7 @@ std::string make_json_snapshot(const RPCHooks::Metrics &prev, const RPCHooks::Me
     return snapshot.asString();
 }
 
-void emit_prometheus_counter(vespalib::asciistream &out, std::string_view name, std::string_view description,
+void emit_prometheus_counter(vespalib::asciistream& out, std::string_view name, std::string_view description,
                              uint64_t value, system_clock::time_point now) {
     // Prometheus naming conventions state that "_total" should be used for counter metrics.
     out << "# HELP " << name << "_total " << description << '\n';
@@ -97,7 +97,7 @@ void emit_prometheus_counter(vespalib::asciistream &out, std::string_view name, 
     out << name << "_total " << value << ' ' << ms_since_epoch(now).count() << '\n';
 }
 
-void emit_prometheus_gauge(vespalib::asciistream &out, std::string_view name, std::string_view description,
+void emit_prometheus_gauge(vespalib::asciistream& out, std::string_view name, std::string_view description,
                            uint64_t value, system_clock::time_point now) {
     // Gauge metrics do not appear to have any convention for name suffixes, so emit name verbatim.
     out << "# HELP " << name << ' ' << description << '\n';
@@ -105,7 +105,7 @@ void emit_prometheus_gauge(vespalib::asciistream &out, std::string_view name, st
     out << name << ' ' << value << ' ' << ms_since_epoch(now).count() << '\n';
 }
 
-std::string make_prometheus_snapshot(const RPCHooks::Metrics &curr, system_clock::time_point now) {
+std::string make_prometheus_snapshot(const RPCHooks::Metrics& curr, system_clock::time_point now) {
     vespalib::asciistream out;
     emit_prometheus_counter(out, "slobrok_heartbeats_failed", "count of failed heartbeat requests", curr.heartBeatFails,
                             now);
@@ -123,18 +123,18 @@ std::string make_prometheus_snapshot(const RPCHooks::Metrics &curr, system_clock
 
 } // namespace
 
-MetricsProducer::MetricsProducer(const RPCHooks &hooks, FNET_Transport &transport)
+MetricsProducer::MetricsProducer(const RPCHooks& hooks, FNET_Transport& transport)
     : _rpcHooks(hooks), _lastMetrics(RPCHooks::Metrics::zero()), _producer(), _startTime(system_clock::now()),
       _lastSnapshotStart(_startTime), _snapshotter(std::make_unique<MetricsSnapshotter>(transport, *this)) {}
 
 MetricsProducer::~MetricsProducer() = default;
 
-std::string MetricsProducer::getMetrics(const std::string &consumer, ExpositionFormat format) {
+std::string MetricsProducer::getMetrics(const std::string& consumer, ExpositionFormat format) {
     return _producer.getMetrics(consumer, format);
 }
 
-std::string MetricsProducer::getTotalMetrics(const std::string &, ExpositionFormat format) {
-    const auto now = system_clock::now();
+std::string MetricsProducer::getTotalMetrics(const std::string&, ExpositionFormat format) {
+    const auto        now = system_clock::now();
     RPCHooks::Metrics current = _rpcHooks.getMetrics();
     if (format == ExpositionFormat::Prometheus) {
         return make_prometheus_snapshot(current, now);
@@ -145,7 +145,7 @@ std::string MetricsProducer::getTotalMetrics(const std::string &, ExpositionForm
 }
 
 void MetricsProducer::snapshot() {
-    const auto now = system_clock::now();
+    const auto        now = system_clock::now();
     RPCHooks::Metrics current = _rpcHooks.getMetrics();
     _producer.setMetrics(make_json_snapshot(_lastMetrics, current, _lastSnapshotStart, now), ExpositionFormat::JSON);
     _producer.setMetrics(make_prometheus_snapshot(current, now), ExpositionFormat::Prometheus);

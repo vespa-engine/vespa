@@ -13,27 +13,27 @@ using Map = std::map<std::string, std::string>;
 
 struct Dumper : ServiceMapHistory::DiffCompletionHandler {
     std::unique_ptr<MapDiff> got = {};
-    void handle(MapDiff diff) override { got = std::make_unique<MapDiff>(std::move(diff)); }
+    void                     handle(MapDiff diff) override { got = std::make_unique<MapDiff>(std::move(diff)); }
 };
 
-MapDiff diffGen(ServiceMapHistory &history, uint32_t gen) {
+MapDiff diffGen(ServiceMapHistory& history, uint32_t gen) {
     Dumper dumper;
     history.asyncGenerationDiff(&dumper, GenCnt(gen));
     EXPECT_TRUE(dumper.got);
     return std::move(*dumper.got);
 }
 
-Map dump(ServiceMapHistory &history) {
+Map dump(ServiceMapHistory& history) {
     MapDiff full = diffGen(history, 0);
     EXPECT_TRUE(full.is_full_dump());
     Map result;
-    for (const auto &[k, v] : full.updated) {
+    for (const auto& [k, v] : full.updated) {
         result[k] = v;
     }
     return result;
 }
 
-std::string lookup(ServiceMapHistory &history, const std::string &name) {
+std::string lookup(ServiceMapHistory& history, const std::string& name) {
     auto map = dump(history);
     auto iter = map.find(name);
     if (iter == map.end()) {
@@ -45,7 +45,7 @@ std::string lookup(ServiceMapHistory &history, const std::string &name) {
 
 TEST(ServiceMapHistoryTest, empty_inspection) {
     ServiceMapHistory p;
-    auto bar = dump(p);
+    auto              bar = dump(p);
     EXPECT_TRUE(bar.empty());
 
     auto gen = p.currentGen();
@@ -147,7 +147,7 @@ TEST(ServiceMapHistoryTest, full_inspection) {
 
 class MockListener : public ServiceMapHistory::DiffCompletionHandler {
 public:
-    bool got_update = false;
+    bool   got_update = false;
     GenCnt got_gen = GenCnt(0);
     size_t got_removes = 0;
     size_t got_updates = 0;

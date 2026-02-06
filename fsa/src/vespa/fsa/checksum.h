@@ -30,9 +30,9 @@ public:
      * @param size Size of the buffer.
      * @return 32-bit checksum value.
      */
-    static uint32_t compute(void *buffer, uint32_t size) {
+    static uint32_t compute(void* buffer, uint32_t size) {
         uint32_t checksum = 0, rest = 0, i = 0;
-        char *buf = (char *)buffer;
+        char*    buf = (char*)buffer;
 
         for (i = 0; i < (size >> 2); i++) {
             uint32_t tmp;
@@ -43,7 +43,7 @@ public:
         //@@@@@@BUG! should be if((size&3)>0) but that will break checksumming; postpone to next major .fsa format
         // change
         if (size & (3 > 0)) { // was if(size&3>0) but that generates a warning in GCC4
-            memcpy(&rest, (uint8_t *)buffer + 4 * i, size & 3);
+            memcpy(&rest, (uint8_t*)buffer + 4 * i, size & 3);
             checksum += rest;
         }
         return checksum;

@@ -24,21 +24,21 @@ namespace ns_log {
 
 system_time Timer::getTimestamp() const noexcept { return std::chrono::system_clock::now(); }
 
-LogTarget *Logger::_target = nullptr;
-int Logger::_numInstances = 0;
-bool Logger::fakePid = false;
-char Logger::_prefix[64] = {'\0'};
-const char Logger::_hexdigit[17] = "0123456789abcdef";
-char Logger::_controlName[1024] = {'\0'};
-char Logger::_hostname[1024] = {'\0'};
-char Logger::_serviceName[1024] = {'\0'};
-ControlFile *Logger::_controlFile = nullptr;
+LogTarget*   Logger::_target = nullptr;
+int          Logger::_numInstances = 0;
+bool         Logger::fakePid = false;
+char         Logger::_prefix[64] = {'\0'};
+const char   Logger::_hexdigit[17] = "0123456789abcdef";
+char         Logger::_controlName[1024] = {'\0'};
+char         Logger::_hostname[1024] = {'\0'};
+char         Logger::_serviceName[1024] = {'\0'};
+ControlFile* Logger::_controlFile = nullptr;
 
 namespace {
 
 class GetTid {
 public:
-    unsigned long operator()(const void *tid) const { return reinterpret_cast<uint64_t>(tid) >> 3; }
+    unsigned long operator()(const void* tid) const { return reinterpret_cast<uint64_t>(tid) >> 3; }
     unsigned long operator()(unsigned long tid) const { return tid; }
 };
 
@@ -59,22 +59,22 @@ void Logger::ensureControlName() {
 
 void Logger::ensureServiceName() {
     if (_serviceName[0] == '\0') {
-        const char *name = getenv("VESPA_SERVICE_NAME");
+        const char* name = getenv("VESPA_SERVICE_NAME");
         snprintf(_serviceName, sizeof _serviceName, "%s", name ? name : "-");
     }
 }
 
 void Logger::setTarget() {
     try {
-        char *name = getenv("VESPA_LOG_TARGET");
+        char* name = getenv("VESPA_LOG_TARGET");
         if (name) {
-            LogTarget *target = LogTarget::makeTarget(name);
+            LogTarget* target = LogTarget::makeTarget(name);
             delete _target;
             _target = target;
         } else {
             LOG(spam, "$VESPA_LOG_TARGET is not set, logging to stderr");
         }
-    } catch (InvalidLogException &x) {
+    } catch (InvalidLogException& x) {
         LOG(error,
             "Log target problem: %s. Logging to stderr. "
             "($VESPA_LOG_TARGET=\"%s\")",
@@ -82,10 +82,10 @@ void Logger::setTarget() {
     }
 }
 
-void Logger::ensurePrefix(const char *name) {
+void Logger::ensurePrefix(const char* name) {
     if (name[0] != '\0' && name[0] != '.') {
-        const char *end = strchr(name, '.');
-        int len = end ? end - name : strlen(name);
+        const char* end = strchr(name, '.');
+        int         len = end ? end - name : strlen(name);
 
         if (_prefix[0]) {
             // Make sure the prefix already set is identical to this one
@@ -112,12 +112,12 @@ void Logger::ensureHostname() {
     }
 }
 
-Logger::Logger(const char *name, const char *rcsId)
+Logger::Logger(const char* name, const char* rcsId)
     : _logLevels(ControlFile::defaultLevels()), _timer(std::make_unique<Timer>()) {
     _numInstances++;
     memset(_rcsId, 0, sizeof(_rcsId));
     memset(_appendix, 0, sizeof(_appendix));
-    const char *app(strchr(name, '.') ? strchr(name, '.') : "");
+    const char* app(strchr(name, '.') ? strchr(name, '.') : "");
     assert(strlen(app) < sizeof(_appendix));
     strcpy(_appendix, app);
     if (!_target) {
@@ -142,7 +142,7 @@ Logger::Logger(const char *name, const char *rcsId)
             }
             _logLevels = _controlFile->getLevels(_appendix);
             _controlFile->setPrefix(_prefix);
-        } catch (InvalidLogException &x) {
+        } catch (InvalidLogException& x) {
             LOG(error, "Problems initialising logging: %s.", x.what());
             LOG(warning, "Log control disabled, using default levels.");
         }
@@ -167,16 +167,16 @@ Logger::~Logger() {
 
 void Logger::setTimer(std::unique_ptr<Timer> timer) { _timer = std::move(timer); }
 
-int Logger::setRcsId(const char *id) {
-    const char *start = strchr(id, ',');
+int Logger::setRcsId(const char* id) {
+    const char* start = strchr(id, ',');
     if (start) {
         start += std::min((size_t)3, strlen(start)); // Skip 3 chars
     } else {
         start = id;
     }
 
-    int len = strlen(start);
-    const char *end = strchr(start, ' ');
+    int         len = strlen(start);
+    const char* end = strchr(start, ' ');
     if (!end) {
         end = start + len;
     }
@@ -187,8 +187,8 @@ int Logger::setRcsId(const char *id) {
     return 0;
 }
 
-int Logger::tryLog(int sizeofPayload, LogLevel level, const char *file, int line, const char *fmt, va_list args) {
-    char *payload(new char[sizeofPayload]);
+int Logger::tryLog(int sizeofPayload, LogLevel level, const char* file, int line, const char* fmt, va_list args) {
+    char*     payload(new char[sizeofPayload]);
     const int actualSize = vsnprintf(payload, sizeofPayload, fmt, args);
 
     if (actualSize < sizeofPayload) {
@@ -198,7 +198,7 @@ int Logger::tryLog(int sizeofPayload, LogLevel level, const char *file, int line
     return actualSize;
 }
 
-void Logger::doLog(LogLevel level, const char *file, int line, const char *fmt, ...) {
+void Logger::doLog(LogLevel level, const char* file, int line, const char* fmt, ...) {
     int sizeofPayload(0x400);
     int actualSize(sizeofPayload - 1);
     do {
@@ -211,15 +211,15 @@ void Logger::doLog(LogLevel level, const char *file, int line, const char *fmt, 
     ns_log::BufferedLogger::instance().trimCache();
 }
 
-void Logger::doLogCore(const Timer &timer, LogLevel level, const char *file, int line, const char *msg,
+void Logger::doLogCore(const Timer& timer, LogLevel level, const char* file, int line, const char* msg,
                        size_t msgSize) {
-    system_time timestamp = timer.getTimestamp();
+    system_time  timestamp = timer.getTimestamp();
     const size_t sizeofEscapedPayload(msgSize * 4 + 1);
     const size_t sizeofTotalMessage(sizeofEscapedPayload + 1000);
-    auto escapedPayload = std::make_unique<char[]>(sizeofEscapedPayload);
-    auto totalMessage = std::make_unique<char[]>(sizeofTotalMessage);
+    auto         escapedPayload = std::make_unique<char[]>(sizeofEscapedPayload);
+    auto         totalMessage = std::make_unique<char[]>(sizeofTotalMessage);
 
-    char *dst = escapedPayload.get();
+    char* dst = escapedPayload.get();
     for (size_t i(0); (i < msgSize) && msg[i]; i++) {
         unsigned char c = static_cast<unsigned char>(msg[i]);
         if ((c >= 32) && (c != '\\') && (c != 127)) {
@@ -250,7 +250,7 @@ void Logger::doLogCore(const Timer &timer, LogLevel level, const char *file, int
     // found to be too inaccurate.
     int32_t tid = (fakePid ? -1 : gettid(pthread_self()) % 0xffff);
 
-    time_t secs = count_s(timestamp.time_since_epoch());
+    time_t   secs = count_s(timestamp.time_since_epoch());
     uint32_t usecs_part = count_us(timestamp.time_since_epoch()) % 1000000;
     if (_target->makeHumanReadable()) {
         struct tm tmbuf;
@@ -272,7 +272,7 @@ void Logger::doLogCore(const Timer &timer, LogLevel level, const char *file, int
     _target->write(totalMessage.get(), strlen(totalMessage.get()));
 }
 
-const char *Logger::levelName(LogLevel level) {
+const char* Logger::levelName(LogLevel level) {
     switch (level) {
     case fatal:
         return "fatal"; // Deprecated, remove this later.
@@ -296,23 +296,23 @@ const char *Logger::levelName(LogLevel level) {
     return "--unknown--";
 }
 
-void Logger::doEventStarting(const char *name) { doLog(event, "", 0, "starting/1 name=\"%s\"", name); }
+void Logger::doEventStarting(const char* name) { doLog(event, "", 0, "starting/1 name=\"%s\"", name); }
 
-void Logger::doEventStopping(const char *name, const char *why) {
+void Logger::doEventStopping(const char* name, const char* why) {
     doLog(event, "", 0, "stopping/1 name=\"%s\" why=\"%s\"", name, why);
 }
 
-void Logger::doEventStarted(const char *name) { doLog(event, "", 0, "started/1 name=\"%s\"", name); }
+void Logger::doEventStarted(const char* name) { doLog(event, "", 0, "started/1 name=\"%s\"", name); }
 
-void Logger::doEventStopped(const char *name, pid_t pid, int exitCode) {
+void Logger::doEventStopped(const char* name, pid_t pid, int exitCode) {
     doLog(event, "", 0, "stopped/1 name=\"%s\" pid=%d exitcode=%d", name, static_cast<int>(pid), exitCode);
 }
 
-void Logger::doEventCrash(const char *name, pid_t pid, int signal) {
+void Logger::doEventCrash(const char* name, pid_t pid, int signal) {
     doLog(event, "", 0, "crash/1 name=\"%s\" pid=%d signal=\"%s\"", name, pid, strsignal(signal));
 }
 
-void Logger::doEventProgress(const char *name, double value, double total) {
+void Logger::doEventProgress(const char* name, double value, double total) {
     if (total > 0) {
         doLog(event, "", 0, "progress/1 name=\"%s\" value=%.18g total=%.18g", name, value, total);
     } else {
@@ -320,19 +320,19 @@ void Logger::doEventProgress(const char *name, double value, double total) {
     }
 }
 
-void Logger::doEventCount(const char *name, uint64_t value) {
+void Logger::doEventCount(const char* name, uint64_t value) {
     doLog(event, "", 0, "count/1 name=\"%s\" value=%" PRIu64, name, value);
 }
 
-void Logger::doEventValue(const char *name, double value) {
+void Logger::doEventValue(const char* name, double value) {
     doLog(event, "", 0, "value/1 name=\"%s\" value=%.18g", name, value);
 }
 
-void Logger::doEventState(const char *name, const char *value) {
+void Logger::doEventState(const char* name, const char* value) {
     doLog(event, "", 0, "state/1 name=\"%s\" value=\"%s\"", name, value);
 }
 
-LogTarget *Logger::getCurrentTarget() {
+LogTarget* Logger::getCurrentTarget() {
     if (_target == nullptr) {
         throwInvalid("No current log target");
     }

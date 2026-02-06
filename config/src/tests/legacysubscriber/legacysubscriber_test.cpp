@@ -22,7 +22,7 @@ public:
 };
 
 struct ConfigIdGenerator {
-    static std::string id(const std::string &type, const std::string &name) {
+    static std::string id(const std::string& type, const std::string& name) {
         return std::string(type + ":" + TEST_PATH(name));
     }
 };

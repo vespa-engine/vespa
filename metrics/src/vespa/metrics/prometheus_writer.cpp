@@ -234,8 +234,8 @@ void PrometheusWriter::render_label_pairs(asciistream& out, std::span<const std:
 void PrometheusWriter::render_sample_value(asciistream& out, I64OrDouble value) {
     if (std::holds_alternative<double>(value)) {
         const double v = std::get<double>(value);
-        const bool inf = std::isinf(v);
-        const bool nan = std::isnan(v);
+        const bool   inf = std::isinf(v);
+        const bool   nan = std::isnan(v);
         // Prometheus allows "-Inf", "+Inf" and "NaN" as special values for negative infinity,
         // positive infinity and "not a number", respectively.
         if (!inf && !nan) [[likely]] {
@@ -256,7 +256,7 @@ void PrometheusWriter::doneVisiting() {
     // Sort and implicitly group all related metrics together, ordered by name -> aggregation -> dimensions
     std::sort(_samples.begin(), _samples.end());
     std::span<const std::string_view> last_metric;
-    std::string_view last_aggr;
+    std::string_view                  last_aggr;
     for (const auto& s : _samples) {
         if ((s.aggr != last_aggr) || !arrays_eq(s.metric_path, last_metric)) {
             _out << "# TYPE ";

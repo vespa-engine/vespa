@@ -13,7 +13,7 @@ namespace slobrok {
  * Contains an error code (0 means success) and an error message string.
  **/
 struct OkState {
-    const uint32_t errorCode;
+    const uint32_t    errorCode;
     const std::string errorMsg;
 
     OkState(uint32_t code, std::string msg) : errorCode(code), errorMsg(msg) {}

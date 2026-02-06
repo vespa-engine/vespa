@@ -41,7 +41,7 @@ Env::Env()
 
 Env::~Env() = default;
 
-void Env::boot(const std::string &configId) {
+void Env::boot(const std::string& configId) {
     LOG(debug, "Reading configuration for ID: %s", configId.c_str());
     _cfgOwner.subscribe(configId, CONFIG_TIMEOUT_MS);
     _modelOwner.start(CONFIG_TIMEOUT_MS, true);
@@ -54,7 +54,7 @@ void Env::boot(const std::string &configId) {
         LOG_ASSERT(changed || retry > 0);
         if (changed) {
             LOG_ASSERT(_cfgOwner.hasConfig());
-            const auto &cfg = _cfgOwner.getConfig();
+            const auto& cfg = _cfgOwner.getConfig();
             LOG(config, "Booting sentinel '%s' with [stateserver port %d] and [rpc port %d]", configId.c_str(),
                 cfg.port.telnet, cfg.port.rpc);
             rpcPort(cfg.port.rpc);
@@ -121,7 +121,7 @@ void Env::notifyConfigUpdated() {
 
 void Env::respondAsEmpty() {
     auto commands = _rpcCommandQueue.drain();
-    for (Cmd::UP &cmd : commands) {
+    for (Cmd::UP& cmd : commands) {
         cmd->retError("still booting, not ready for all RPC commands");
     }
 }

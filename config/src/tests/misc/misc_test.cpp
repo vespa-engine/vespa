@@ -114,7 +114,7 @@ TEST(MiscTest, require_that_config_key_initializes_schema) {
     schema.push_back("foo");
     schema.push_back("bar");
     ConfigKey           key("id1", "def1", "namespace1", "xxhash1", schema);
-    const StringVector &vref(key.getDefSchema());
+    const StringVector& vref(key.getDefSchema());
     for (size_t i = 0; i < schema.size(); i++) {
         ASSERT_EQ(schema[i], vref[i]);
     }
@@ -148,7 +148,7 @@ TEST(MiscTest, require_that_error_codes_are_correctly_translated_to_strings) {
 }
 
 TEST(MiscTest, require_that_source_spec_parses_protocol_version) {
-    const char *envName = "VESPA_CONFIG_PROTOCOL_VERSION";
+    const char* envName = "VESPA_CONFIG_PROTOCOL_VERSION";
     EXPECT_EQ(3, ServerSpec().protocolVersion());
     setenv(envName, "2", 1);
     EXPECT_EQ(2, ServerSpec().protocolVersion());
@@ -164,7 +164,7 @@ TEST(MiscTest, require_that_source_spec_parses_protocol_version) {
 }
 
 TEST(MiscTest, require_that_source_spec_parses_trace_level) {
-    const char *envName = "VESPA_CONFIG_PROTOCOL_TRACELEVEL";
+    const char* envName = "VESPA_CONFIG_PROTOCOL_TRACELEVEL";
     EXPECT_EQ(0, ServerSpec().traceLevel());
     setenv(envName, "3", 1);
     EXPECT_EQ(3, ServerSpec().traceLevel());
@@ -174,7 +174,7 @@ TEST(MiscTest, require_that_source_spec_parses_trace_level) {
 }
 
 TEST(MiscTest, require_that_source_spec_parses_compression_type) {
-    const char *envName = "VESPA_CONFIG_PROTOCOL_COMPRESSION";
+    const char* envName = "VESPA_CONFIG_PROTOCOL_COMPRESSION";
     EXPECT_TRUE(CompressionType::LZ4 == ServerSpec().compressionType());
     setenv(envName, "UNCOMPRESSED", 1);
     EXPECT_TRUE(CompressionType::UNCOMPRESSED == ServerSpec().compressionType());

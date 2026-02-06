@@ -12,23 +12,23 @@ void RpcMappingMonitor::DelayedTasks::PerformTask() {
     std::swap(deleteAfterSwap, _deleteList);
 }
 
-RpcMappingMonitor::RpcMappingMonitor(FRT_Supervisor &orb, MappingMonitorOwner &owner)
+RpcMappingMonitor::RpcMappingMonitor(FRT_Supervisor& orb, MappingMonitorOwner& owner)
     : _orb(orb), _delayedTasks(orb.GetScheduler()), _map(), _owner(owner) {}
 
 RpcMappingMonitor::~RpcMappingMonitor() = default;
 
-void RpcMappingMonitor::start(const ServiceMapping &mapping, bool hurry) {
+void RpcMappingMonitor::start(const ServiceMapping& mapping, bool hurry) {
     LOG(spam, "start %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     LOG_ASSERT(_map.find(mapping) == _map.end());
-    auto up = std::make_unique<ManagedRpcServer>(mapping.name, mapping.spec, *this);
-    auto &managed = *up;
+    auto  up = std::make_unique<ManagedRpcServer>(mapping.name, mapping.spec, *this);
+    auto& managed = *up;
     _map.emplace(mapping, std::move(up));
     if (hurry) {
         managed.healthCheck();
     }
 }
 
-void RpcMappingMonitor::stop(const ServiceMapping &mapping) {
+void RpcMappingMonitor::stop(const ServiceMapping& mapping) {
     LOG(spam, "stop %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     auto iter = _map.find(mapping);
     LOG_ASSERT(iter != _map.end());
@@ -36,7 +36,7 @@ void RpcMappingMonitor::stop(const ServiceMapping &mapping) {
     _map.erase(iter);
 }
 
-bool RpcMappingMonitor::active(const ServiceMapping &mapping, ManagedRpcServer *rpcsrv) const {
+bool RpcMappingMonitor::active(const ServiceMapping& mapping, ManagedRpcServer* rpcsrv) const {
     auto iter = _map.find(mapping);
     if (iter == _map.end()) {
         return false;
@@ -44,7 +44,7 @@ bool RpcMappingMonitor::active(const ServiceMapping &mapping, ManagedRpcServer *
     return iter->second.get() == rpcsrv;
 }
 
-void RpcMappingMonitor::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) {
+void RpcMappingMonitor::notifyFailedRpcSrv(ManagedRpcServer* rpcsrv, std::string errmsg) {
     ServiceMapping mapping{rpcsrv->getName(), rpcsrv->getSpec()};
     LOG(spam, "notifyFailed %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     if (active(mapping, rpcsrv)) {
@@ -53,7 +53,7 @@ void RpcMappingMonitor::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string
     }
 }
 
-void RpcMappingMonitor::notifyOkRpcSrv(ManagedRpcServer *rpcsrv) {
+void RpcMappingMonitor::notifyOkRpcSrv(ManagedRpcServer* rpcsrv) {
     ServiceMapping mapping{rpcsrv->getName(), rpcsrv->getSpec()};
     LOG(spam, "notifyOk %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     if (active(mapping, rpcsrv)) {

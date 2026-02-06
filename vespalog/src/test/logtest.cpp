@@ -8,7 +8,7 @@
 
 LOG_SETUP("logtest", "$Id$");
 
-int main(int, char **argv) {
+int main(int, char** argv) {
     EV_STARTING("logtest");
     LOG(info, "Starting up, called as %s", argv[0]);
     EV_STARTED("logtest");

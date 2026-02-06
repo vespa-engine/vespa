@@ -16,7 +16,7 @@ using namespace config::protocol::v3;
 
 namespace config {
 
-std::string make_json(const Slime &slime, bool compact) {
+std::string make_json(const Slime& slime, bool compact) {
     vespalib::SimpleBuffer buf;
     vespalib::slime::JsonFormat::encode(slime, buf, compact);
     return buf.get().make_string();
@@ -26,7 +26,7 @@ class V3Payload : public Payload {
 public:
     explicit V3Payload(Slime::UP data) noexcept : _data(std::move(data)) {}
 
-    const Inspector &getSlimePayload() const override { return _data->get(); }
+    const Inspector& getSlimePayload() const override { return _data->get(); }
 
 private:
     Slime::UP _data;
@@ -34,9 +34,9 @@ private:
 
 const std::string FRTConfigResponseV3::RESPONSE_TYPES = "sx";
 
-FRTConfigResponseV3::FRTConfigResponseV3(FRT_RPCRequest *request) : SlimeConfigResponse(request) {}
+FRTConfigResponseV3::FRTConfigResponseV3(FRT_RPCRequest* request) : SlimeConfigResponse(request) {}
 
-const std::string &FRTConfigResponseV3::getResponseTypes() const { return RESPONSE_TYPES; }
+const std::string& FRTConfigResponseV3::getResponseTypes() const { return RESPONSE_TYPES; }
 
 ConfigValue FRTConfigResponseV3::readConfigValue() const {
     std::string     xxhash64(_data->get()[RESPONSE_CONFIG_XXHASH64].asString().make_string());

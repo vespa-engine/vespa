@@ -15,10 +15,10 @@
 namespace metrics {
 
 class MetricSet : public Metric {
-    std::vector<Metric*> _metricOrder; // Keep added order for reporting
-    bool _registrationAltered;         // Set to true if metrics have been
-                                       // registered/unregistered since last time
-                                       // it was reset
+    std::vector<Metric*> _metricOrder;         // Keep added order for reporting
+    bool                 _registrationAltered; // Set to true if metrics have been
+                                               // registered/unregistered since last time
+                                               // it was reset
 
 public:
     MetricSet(const String& name, Tags dimensions, const String& description)
@@ -57,10 +57,10 @@ public:
 
     // These should never be called on metrics set.
     int64_t getLongValue(string_view id) const override;
-    double getDoubleValue(string_view id) const override;
+    double  getDoubleValue(string_view id) const override;
 
     const Metric* getMetric(string_view name) const;
-    Metric* getMetric(string_view name) {
+    Metric*       getMetric(string_view name) {
         return const_cast<Metric*>(const_cast<const MetricSet*>(this)->getMetric(name));
     }
 
@@ -76,7 +76,7 @@ public:
     void addToPart(Metric& m) const override { addTo(m, 0); }
 
 private:
-    void tagRegistrationAltered();
+    void          tagRegistrationAltered();
     const Metric* getMetricInternal(string_view name) const;
 
     virtual void addTo(Metric&, std::vector<Metric::UP>* ownerList) const;

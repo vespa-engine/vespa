@@ -24,8 +24,8 @@ MetaDataManager::~MetaDataManager() {
 
 // {{{ MetaDataManager::load()
 
-bool MetaDataManager::load(const std::string &id, const std::string &datafile) {
-    MetaData::Handle *newmd = new MetaData::Handle(datafile.c_str());
+bool MetaDataManager::load(const std::string& id, const std::string& datafile) {
+    MetaData::Handle* newmd = new MetaData::Handle(datafile.c_str());
 
     if (newmd == nullptr || !(*newmd)->isOk()) {
         delete newmd;
@@ -48,9 +48,9 @@ bool MetaDataManager::load(const std::string &id, const std::string &datafile) {
 // }}}
 // {{{ MetaDataManager::get()
 
-MetaData::Handle *MetaDataManager::get(const std::string &id) const {
-    MetaData::Handle *newhandle = nullptr;
-    std::shared_lock guard(_lock);
+MetaData::Handle* MetaDataManager::get(const std::string& id) const {
+    MetaData::Handle* newhandle = nullptr;
+    std::shared_lock  guard(_lock);
     {
         LibraryConstIterator it = _library.find(id);
         if (it != _library.end()) {
@@ -63,7 +63,7 @@ MetaData::Handle *MetaDataManager::get(const std::string &id) const {
 // }}}
 // {{{ MetaDataManager::drop()
 
-void MetaDataManager::drop(const std::string &id) {
+void MetaDataManager::drop(const std::string& id) {
     std::lock_guard guard(_lock);
     {
         LibraryIterator it = _library.find(id);

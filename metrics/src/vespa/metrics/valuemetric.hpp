@@ -76,7 +76,7 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::addToPart(Metric& other) const {
 
 template <typename AvgVal, typename TotVal, bool SumOnAdd>
 void ValueMetric<AvgVal, TotVal, SumOnAdd>::add(const Values& values2, bool sumOnAdd) {
-    bool overflow;
+    bool   overflow;
     Values values;
     do {
         values = _values.getValues();
@@ -112,7 +112,7 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::add(const Values& values2, bool sumO
 
 template <typename AvgVal, typename TotVal, bool SumOnAdd>
 void ValueMetric<AvgVal, TotVal, SumOnAdd>::dec(const Values& values2) {
-    bool underflow;
+    bool   underflow;
     Values values;
     do {
         values = _values.getValues();

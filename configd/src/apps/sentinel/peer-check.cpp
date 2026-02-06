@@ -10,7 +10,7 @@ using vespalib::make_string_short::fmt;
 
 namespace config::sentinel {
 
-PeerCheck::PeerCheck(StatusCallback &callback, const std::string &host, int port, FRT_Supervisor &orb, int timeout_ms)
+PeerCheck::PeerCheck(StatusCallback& callback, const std::string& host, int port, FRT_Supervisor& orb, int timeout_ms)
     : _callback(callback), _hostname(host), _portnum(port), _target(nullptr), _req(nullptr), _statusOk(false) {
     auto spec = fmt("tcp/%s:%d", _hostname.c_str(), _portnum);
     _target = orb.GetTarget(spec.c_str());
@@ -24,7 +24,7 @@ PeerCheck::~PeerCheck() {
     LOG_ASSERT(_target == nullptr);
 }
 
-void PeerCheck::RequestDone(FRT_RPCRequest *req) {
+void PeerCheck::RequestDone(FRT_RPCRequest* req) {
     LOG_ASSERT(req == _req);
     if (req->IsError()) {
         LOG(debug, "error on ping to %s [port %d]: %s (%d)", _hostname.c_str(), _portnum, req->GetErrorMessage(),

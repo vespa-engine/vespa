@@ -37,19 +37,19 @@ protected:
 
 private:
     /** Private unimplemented copy constructor */
-    MetaDataManager(const MetaDataManager &);
+    MetaDataManager(const MetaDataManager&);
     /** Private unimplemented assignment operator */
-    MetaDataManager &operator=(const MetaDataManager &);
+    MetaDataManager& operator=(const MetaDataManager&);
 
     /** %MetaData library type */
-    using Library = std::map<std::string, MetaData::Handle *>;
+    using Library = std::map<std::string, MetaData::Handle*>;
     /** %MetaData library iterator type */
-    using LibraryIterator = std::map<std::string, MetaData::Handle *>::iterator;
+    using LibraryIterator = std::map<std::string, MetaData::Handle*>::iterator;
     /** %MetaData library const iterator type */
-    using LibraryConstIterator = std::map<std::string, MetaData::Handle *>::const_iterator;
+    using LibraryConstIterator = std::map<std::string, MetaData::Handle*>::const_iterator;
 
-    Library _library;                /**< Library of MetaData objects.                 */
-    mutable std::shared_mutex _lock; /**< Read-write lock for library synchronization. */
+    Library                   _library; /**< Library of MetaData objects.                 */
+    mutable std::shared_mutex _lock;    /**< Read-write lock for library synchronization. */
 
 public:
     /** Destructor */
@@ -61,7 +61,7 @@ public:
      * @param id MetaData id (to be used in later get() or drop() calls).
      * @param datafile Metadata file name
      */
-    bool load(const std::string &id, const std::string &datafile);
+    bool load(const std::string& id, const std::string& datafile);
 
     /**
      * @brief Get a handle to metadata.
@@ -70,7 +70,7 @@ public:
      * @return Newly allocated handle, must be deleted by the
      *         caller. (NULL if no metadata with the given id was found.)
      */
-    MetaData::Handle *get(const std::string &id) const;
+    MetaData::Handle* get(const std::string& id) const;
 
     /**
      * @brief Drop a metadata from the library.
@@ -81,7 +81,7 @@ public:
      *
      * @param id MetaData id.
      */
-    void drop(const std::string &id);
+    void drop(const std::string& id);
 
     /**
      * @brief Drop all metadatas from the library.

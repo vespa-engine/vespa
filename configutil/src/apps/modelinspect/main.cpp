@@ -13,15 +13,15 @@ LOG_SETUP("vespa-model-inspect");
 
 class Application {
     ModelInspect::Flags _flags;
-    std::string _cfgId;
-    std::string _specString;
-    int parseOpts(int argc, char **argv);
-    std::string getSources();
-    config::ConfigUri getConfigUri();
+    std::string         _cfgId;
+    std::string         _specString;
+    int                 parseOpts(int argc, char** argv);
+    std::string         getSources();
+    config::ConfigUri   getConfigUri();
 
 public:
-    void usage(const char *self);
-    int main(int argc, char **argv);
+    void usage(const char* self);
+    int  main(int argc, char** argv);
 
     Application();
     ~Application();
@@ -30,7 +30,7 @@ public:
 Application::Application() : _flags(), _cfgId("admin/model"), _specString("") {}
 Application::~Application() {}
 
-int Application::parseOpts(int argc, char **argv) {
+int Application::parseOpts(int argc, char** argv) {
     int c = '?';
     while ((c = getopt(argc, argv, "hvut:c:C:")) != -1) {
         switch (c) {
@@ -76,13 +76,13 @@ std::string Application::getSources() {
 config::ConfigUri Application::getConfigUri() {
     try {
         return config::ConfigUri::createFromSpec(_cfgId, config::ServerSpec(_specString));
-    } catch (std::exception &e) {
+    } catch (std::exception& e) {
         std::cerr << "FATAL ERROR: failed to set up model configuration: " << e.what() << "\n";
         std::_Exit(1);
     }
 }
 
-void Application::usage(const char *self) {
+void Application::usage(const char* self) {
     std::cerr << "vespa-model-inspect version 2.0" << std::endl
               << "Usage: " << self << " [options] <command> <options>" << std::endl
               << "options: [-u] for URLs, [-v] for verbose" << std::endl
@@ -103,7 +103,7 @@ void Application::usage(const char *self) {
               << std::endl;
 }
 
-int Application::main(int argc, char **argv) {
+int Application::main(int argc, char** argv) {
     int cnt = parseOpts(argc, argv);
     if (argc == cnt) {
         usage(argv[0]);
@@ -111,11 +111,11 @@ int Application::main(int argc, char **argv) {
     }
 
     config::ConfigUri uri = getConfigUri();
-    ModelInspect model(_flags, uri, std::cout);
+    ModelInspect      model(_flags, uri, std::cout);
     return model.action(argc - cnt, &argv[cnt]);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     vespa::Defaults::bootstrap(argv[0]);
     Application app;

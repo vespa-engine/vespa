@@ -10,7 +10,7 @@
 using ns_log::Logger;
 using ns_log::RejectFilter;
 
-void assertShouldNotReject(RejectFilter &filter, Logger::LogLevel level, const char *msg) {
+void assertShouldNotReject(RejectFilter& filter, Logger::LogLevel level, const char* msg) {
     std::cerr << "Filter should not reject level '" << Logger::levelName(level) << "' message '"
               << (msg == nullptr ? "nullptr" : msg) << "' ...: ";
     if (filter.shouldReject(level, msg)) {
@@ -20,7 +20,7 @@ void assertShouldNotReject(RejectFilter &filter, Logger::LogLevel level, const c
     std::cerr << "Success!\n";
 }
 
-void assertShouldReject(RejectFilter &filter, Logger::LogLevel level, const char *msg) {
+void assertShouldReject(RejectFilter& filter, Logger::LogLevel level, const char* msg) {
     std::cerr << "Filter should reject level '" << Logger::levelName(level) << "' message '"
               << (msg == nullptr ? "nullptr" : msg) << "' ...: ";
     if (!filter.shouldReject(level, msg)) {
@@ -30,7 +30,7 @@ void assertShouldReject(RejectFilter &filter, Logger::LogLevel level, const char
     std::cerr << "Success!\n";
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 

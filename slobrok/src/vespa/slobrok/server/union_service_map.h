@@ -18,8 +18,8 @@ class UnionServiceMap : public ProxyMapSource {
 private:
     struct CountedSpec {
         std::string spec;
-        size_t count;
-        CountedSpec(const std::string &spec_in, size_t count_in) noexcept : spec(spec_in), count(count_in) {}
+        size_t      count;
+        CountedSpec(const std::string& spec_in, size_t count_in) noexcept : spec(spec_in), count(count_in) {}
     };
     using Mappings = std::vector<CountedSpec>;
     std::map<std::string, Mappings> _mappings;
@@ -30,11 +30,11 @@ public:
 
     ServiceMappingList currentConsensus() const;
 
-    bool wouldConflict(const ServiceMapping &mapping) const;
+    bool wouldConflict(const ServiceMapping& mapping) const;
 
-    void add(const ServiceMapping &mapping) override;
-    void remove(const ServiceMapping &mapping) override;
-    void update(const ServiceMapping &old_mapping, const ServiceMapping &new_mapping) override;
+    void add(const ServiceMapping& mapping) override;
+    void remove(const ServiceMapping& mapping) override;
+    void update(const ServiceMapping& old_mapping, const ServiceMapping& new_mapping) override;
 };
 
 } // namespace slobrok

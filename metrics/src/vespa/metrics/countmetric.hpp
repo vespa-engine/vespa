@@ -23,8 +23,8 @@ template <typename T, bool SumOnAdd> MetricValueClass::UP CountMetric<T, SumOnAd
 
 template <typename T, bool SumOnAdd>
 CountMetric<T, SumOnAdd>& CountMetric<T, SumOnAdd>::operator+=(const CountMetric<T, SumOnAdd>& other) {
-    T otherValues(other.getValue());
-    bool overflow;
+    T      otherValues(other.getValue());
+    bool   overflow;
     Values values;
     do {
         values = _values.getValues();
@@ -40,8 +40,8 @@ CountMetric<T, SumOnAdd>& CountMetric<T, SumOnAdd>::operator+=(const CountMetric
 
 template <typename T, bool SumOnAdd>
 CountMetric<T, SumOnAdd>& CountMetric<T, SumOnAdd>::operator-=(const CountMetric<T, SumOnAdd>& other) {
-    T otherValues(other.getValue());
-    bool underflow;
+    T      otherValues(other.getValue());
+    bool   underflow;
     Values values;
     do {
         values = _values.getValues();
@@ -63,7 +63,7 @@ template <typename T, bool SumOnAdd> void CountMetric<T, SumOnAdd>::set(T value)
 }
 
 template <typename T, bool SumOnAdd> void CountMetric<T, SumOnAdd>::inc(T value) {
-    bool overflow;
+    bool   overflow;
     Values values;
     do {
         values = _values.getValues();
@@ -77,7 +77,7 @@ template <typename T, bool SumOnAdd> void CountMetric<T, SumOnAdd>::inc(T value)
 }
 
 template <typename T, bool SumOnAdd> void CountMetric<T, SumOnAdd>::dec(T value) {
-    bool underflow;
+    bool   underflow;
     Values values;
     do {
         values = _values.getValues();

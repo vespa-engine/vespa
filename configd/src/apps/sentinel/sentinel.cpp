@@ -18,7 +18,7 @@ using namespace config;
 
 static bool stop() { return (vespalib::SignalHandler::INT.check() || vespalib::SignalHandler::TERM.check()); }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     int c = getopt(argc, argv, "c:");
     if (c != 'c') {
         LOG(error, "Usage: %s -c <config-id>", argv[0]);
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
     std::string configId(optarg);
 
-    const char *rootDir = getenv("ROOT");
+    const char* rootDir = getenv("ROOT");
     if (!rootDir) {
         rootDir = vespa::Defaults::vespaHome();
         LOG(warning, "ROOT is not set, using %s", rootDir);
@@ -58,19 +58,19 @@ int main(int argc, char **argv) {
     LOG(debug, "Reading configuration");
     try {
         environment.boot(configId);
-    } catch (vespalib::FatalException &ex) {
+    } catch (vespalib::FatalException& ex) {
         LOG(error, "Stopping before boot complete: %s", ex.message());
         EV_STOPPING("config-sentinel", ex.message());
         return EXIT_FAILURE;
-    } catch (ConfigTimeoutException &ex) {
+    } catch (ConfigTimeoutException& ex) {
         LOG(warning, "Timeout getting config, please check your setup. Will exit and restart: %s", ex.message());
         EV_STOPPING("config-sentinel", ex.message());
         return EXIT_FAILURE;
-    } catch (InvalidConfigException &ex) {
+    } catch (InvalidConfigException& ex) {
         LOG(error, "Fatal: Invalid configuration, please check your setup: %s", ex.message());
         EV_STOPPING("config-sentinel", ex.message());
         return EXIT_FAILURE;
-    } catch (ConfigRuntimeException &ex) {
+    } catch (ConfigRuntimeException& ex) {
         LOG(error, "Fatal: Could not get config, please check your setup: %s", ex.message());
         EV_STOPPING("config-sentinel", ex.what());
         return EXIT_FAILURE;
@@ -83,13 +83,13 @@ int main(int argc, char **argv) {
         try {
             vespalib::SignalHandler::CHLD.clear();
             manager.doWork(); // Check for child procs & commands
-        } catch (InvalidConfigException &ex) {
+        } catch (InvalidConfigException& ex) {
             LOG(warning, "Configuration problem: (ignoring): %s", ex.message());
-        } catch (vespalib::PortListenException &ex) {
+        } catch (vespalib::PortListenException& ex) {
             LOG(error, "Fatal: %s", ex.message());
             EV_STOPPING("config-sentinel", ex.what());
             return EXIT_FAILURE;
-        } catch (vespalib::FatalException &ex) {
+        } catch (vespalib::FatalException& ex) {
             LOG(error, "Fatal: %s", ex.message());
             EV_STOPPING("config-sentinel", ex.what());
             return EXIT_FAILURE;

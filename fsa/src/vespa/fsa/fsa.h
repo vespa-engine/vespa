@@ -86,11 +86,11 @@ public:
             friend class iterator;
 
         private:
-            std::string _string;       /**< The current string.             */
-            std::list<state_t> _stack; /**< The stack of visited states.    */
-            symbol_t _symbol;          /**< Currently examined symbol.      */
-            state_t _state;            /**< Currently examined state.       */
-            const FSA *_fsa;           /**< Pointer to the FSA.             */
+            std::string        _string; /**< The current string.             */
+            std::list<state_t> _stack;  /**< The stack of visited states.    */
+            symbol_t           _symbol; /**< Currently examined symbol.      */
+            state_t            _state;  /**< Currently examined state.       */
+            const FSA*         _fsa;    /**< Pointer to the FSA.             */
 
             /**
              * @brief Default constructor; unimplemented.
@@ -102,7 +102,7 @@ public:
              *
              * @param fsa Pointer to the %FSA object the iterator is associated with.
              */
-            iteratorItem(const FSA *fsa) : _string(), _stack(), _symbol(0), _state(0), _fsa(fsa) {}
+            iteratorItem(const FSA* fsa) : _string(), _stack(), _symbol(0), _state(0), _fsa(fsa) {}
 
             /**
              * @brief Constructor.
@@ -110,17 +110,17 @@ public:
              * @param fsa Pointer to the %FSA object the iterator is associated with.
              * @param s State to use as start state.
              */
-            iteratorItem(const FSA *fsa, state_t s) : _string(), _stack(), _symbol(0), _state(s), _fsa(fsa) {}
+            iteratorItem(const FSA* fsa, state_t s) : _string(), _stack(), _symbol(0), _state(s), _fsa(fsa) {}
 
             /**
              * @brief Copy constructor.
              *
              * @param it Pointer to iterator item to copy.
              */
-            iteratorItem(const iteratorItem &it)
+            iteratorItem(const iteratorItem& it)
                 : _string(it._string), _stack(it._stack), _symbol(it._symbol), _state(it._state), _fsa(it._fsa) {}
 
-            iteratorItem &operator=(const iteratorItem &rhs) = default;
+            iteratorItem& operator=(const iteratorItem& rhs) = default;
 
             /**
              * @brief Destructor.
@@ -133,7 +133,7 @@ public:
              *
              * @return Current string.
              */
-            const std::string &str() const { return _string; }
+            const std::string& str() const { return _string; }
 
             /**
              * @brief Get the size of meta data which belongs to the current string.
@@ -147,7 +147,7 @@ public:
              *
              * @return Pointer to the meta data.
              */
-            const data_t *data() const { return _fsa->data(_state); }
+            const data_t* data() const { return _fsa->data(_state); }
         };
 
     private:
@@ -161,7 +161,7 @@ public:
          * @param fsa Pointer to the FSA object to assiociate with.
          * @param s State to use as initial state.
          */
-        iterator(const FSA *fsa, state_t s) : _item(fsa, s) {
+        iterator(const FSA* fsa, state_t s) : _item(fsa, s) {
             if (!fsa->isFinal(s))
                 operator++();
         }
@@ -180,7 +180,7 @@ public:
          *
          * @param it iterator object to copy.
          */
-        iterator(const iterator &it) : _item(it._item) {}
+        iterator(const iterator& it) : _item(it._item) {}
 
         /**
          * @brief Constructor.
@@ -190,7 +190,7 @@ public:
          *
          * @param s State to create the iterator from.
          */
-        iterator(const State &s) : _item(s._fsa, s._state) {
+        iterator(const State& s) : _item(s._fsa, s._state) {
             if (!s.isFinal())
                 operator++();
         }
@@ -203,7 +203,7 @@ public:
          * @param fsa Pointer to the FSA object to assiociate with.
          * @param atEnd True for end(), false for begin(). (Default is false.)
          */
-        iterator(const FSA *fsa, bool atEnd = false) : _item(fsa) {
+        iterator(const FSA* fsa, bool atEnd = false) : _item(fsa) {
             if (atEnd)
                 _item._symbol = 0xff;
             else
@@ -216,7 +216,7 @@ public:
          * @param it iterator object to set values from.
          * @return Reference to this iterator object.
          */
-        iterator &operator=(const iterator &it) {
+        iterator& operator=(const iterator& it) {
             _item = it._item;
             return *this;
         }
@@ -226,7 +226,7 @@ public:
          *
          * @return True if the two iterators do not point to the same poistion.
          */
-        bool operator!=(const iterator &it) const {
+        bool operator!=(const iterator& it) const {
             return _item._fsa != it._item._fsa || _item._symbol != it._item._symbol ||
                    _item._state != it._item._state || _item._string != it._item._string ||
                    _item._stack != it._item._stack;
@@ -240,21 +240,21 @@ public:
          *
          * @return Reference to this.
          */
-        iterator &operator++();
+        iterator& operator++();
 
         /**
          * @brief Dereference operator.
          *
          * @return Const reference to state object for data access.
          */
-        const iteratorItem &operator*() const { return _item; }
+        const iteratorItem& operator*() const { return _item; }
 
         /**
          * @brief Dereference operator.
          *
          * @return Const pointer to state object for data access.
          */
-        const iteratorItem *operator->() const { return &_item; }
+        const iteratorItem* operator->() const { return &_item; }
     };
 
     // }}}
@@ -270,7 +270,7 @@ public:
      */
     class State {
 
-        friend FSA::iterator::iterator(const State &);
+        friend FSA::iterator::iterator(const State&);
 
     private:
         /**
@@ -280,11 +280,11 @@ public:
         /**
          * @brief Unimplemented private assignment operator.
          */
-        State &operator=(const State &);
+        State& operator=(const State&);
 
     protected:
-        const FSA *_fsa; /**< Pointer to the FSA. */
-        state_t _state;  /**< Current state.      */
+        const FSA* _fsa;   /**< Pointer to the FSA. */
+        state_t    _state; /**< Current state.      */
 
     public:
         /**
@@ -295,7 +295,7 @@ public:
          *
          * @param f Reference to FSA.
          */
-        State(const FSA &f) noexcept : _fsa(&f), _state(_fsa->start()) {}
+        State(const FSA& f) noexcept : _fsa(&f), _state(_fsa->start()) {}
 
         /**
          * @brief Constructor.
@@ -305,7 +305,7 @@ public:
          *
          * @param f Pointer to FSA.
          */
-        State(const FSA *f) noexcept : _fsa(f), _state(_fsa->start()) {}
+        State(const FSA* f) noexcept : _fsa(f), _state(_fsa->start()) {}
 
         /**
          * @brief Copy constructor.
@@ -316,7 +316,7 @@ public:
          *
          * @param s Reference to state to be duplicated.
          */
-        State(const State &s) noexcept : _fsa(s._fsa), _state(s._state) {}
+        State(const State& s) noexcept : _fsa(s._fsa), _state(s._state) {}
 
         /**
          * @brief Destructor.
@@ -401,7 +401,7 @@ public:
          * @param  in     Input symbols, zero terminated.
          * @return        True if the resulting state is valid.
          */
-        virtual bool start(const symbol_t *in) {
+        virtual bool start(const symbol_t* in) {
             start();
             return delta(in);
         }
@@ -415,7 +415,7 @@ public:
          * @param  in     Input symbols, zero terminated.
          * @return        True if the resulting state is valid.
          */
-        virtual bool start(const char *in) {
+        virtual bool start(const char* in) {
             start();
             return delta(in);
         }
@@ -429,7 +429,7 @@ public:
          * @param  in     Input symbols.
          * @return        True if the resulting state is valid.
          */
-        virtual bool start(const std::string &in) {
+        virtual bool start(const std::string& in) {
             start();
             return delta(in);
         }
@@ -443,7 +443,7 @@ public:
          * @param  in     Input word.
          * @return        True if the resulting state is valid.
          */
-        virtual bool startWord(const std::string &in) {
+        virtual bool startWord(const std::string& in) {
             start();
             return delta(in);
         }
@@ -456,8 +456,8 @@ public:
          * @param  in     Input symbols, zero terminated.
          * @return        True if the resulting state is valid.
          */
-        virtual bool delta(const symbol_t *in) {
-            const symbol_t *p = in;
+        virtual bool delta(const symbol_t* in) {
+            const symbol_t* p = in;
 
             while (*p && _state > 0) {
                 delta(*p);
@@ -474,7 +474,7 @@ public:
          * @param  in     Input symbols, zero terminated.
          * @return        True if the resulting state is valid.
          */
-        virtual bool delta(const char *in) { return delta((const symbol_t *)in); }
+        virtual bool delta(const char* in) { return delta((const symbol_t*)in); }
 
         /**
          * @brief Delta transition.
@@ -484,7 +484,7 @@ public:
          * @param  in     Input symbols.
          * @return        True if the resulting state is valid.
          */
-        virtual bool delta(const std::string &in) {
+        virtual bool delta(const std::string& in) {
             unsigned int idx = 0;
 
             while (idx < in.length() && _state > 0) {
@@ -504,7 +504,7 @@ public:
          * @param  in     Input word.
          * @return        True if the resulting state is valid.
          */
-        virtual bool deltaWord(const std::string &in) {
+        virtual bool deltaWord(const std::string& in) {
             if (_state != _fsa->start())
                 delta(' ');
             return delta(in);
@@ -537,7 +537,7 @@ public:
          *
          * @return Pointer to data item, or nullptr if the state is not final.
          */
-        virtual const data_t *data() const { return _fsa->data(_state); }
+        virtual const data_t* data() const { return _fsa->data(_state); }
 
         /**
          * @brief Get the data item as a character string.
@@ -548,7 +548,7 @@ public:
          *
          * @return Pointer to data item, or nullptr if the state is not final.
          */
-        virtual const char *cData() const { return (const char *)(_fsa->data(_state)); }
+        virtual const char* cData() const { return (const char*)(_fsa->data(_state)); }
 
         /**
          * @brief Get the data item as an unsigned 32-bit integer.
@@ -561,13 +561,13 @@ public:
          * @return Numerical data.
          */
         virtual uint32_t nData() const {
-            const data_t *da = _fsa->data(_state);
-            int si = _fsa->dataSize(_state);
+            const data_t* da = _fsa->data(_state);
+            int           si = _fsa->dataSize(_state);
             if (si <= 0)
                 return 0;
             switch (si) {
             case 1:
-                return (uint32_t)((const uint8_t *)da)[0];
+                return (uint32_t)((const uint8_t*)da)[0];
             case 2:
             case 3:
                 return (uint32_t)Unaligned<uint16_t>::at(da).read();
@@ -596,7 +596,7 @@ public:
          * @param  in   Input string.
          * @return      Pointer to data item, or nullptr if the state is not final.
          */
-        virtual const data_t *lookup(const symbol_t *in) {
+        virtual const data_t* lookup(const symbol_t* in) {
             start(in);
             return data();
         }
@@ -612,7 +612,7 @@ public:
          * @param  in   Input string.
          * @return      Pointer to data item, or nullptr if the state is not final.
          */
-        virtual const data_t *lookup(const char *in) { return lookup((const symbol_t *)in); }
+        virtual const data_t* lookup(const char* in) { return lookup((const symbol_t*)in); }
 
         /**
          * @brief Perform a lookup.
@@ -625,7 +625,7 @@ public:
          * @param  in   Input string.
          * @return      Pointer to data item, or nullptr if the state is not final.
          */
-        virtual const data_t *lookup(const std::string &in) {
+        virtual const data_t* lookup(const std::string& in) {
             start(in);
             return data();
         }
@@ -678,7 +678,7 @@ public:
         /**
          * @brief Unimplemented private assignment operator.
          */
-        HashedState &operator=(const HashedState &);
+        HashedState& operator=(const HashedState&);
 
     protected:
         hash_t _hash; /**< Hash value.  */
@@ -692,7 +692,7 @@ public:
          *
          * @param f Reference to FSA.
          */
-        HashedState(const FSA &f) : State(f), _hash(0) {}
+        HashedState(const FSA& f) : State(f), _hash(0) {}
 
         /**
          * @brief Constructor.
@@ -702,7 +702,7 @@ public:
          *
          * @param f Pointer to FSA.
          */
-        HashedState(const FSA *f) : State(f), _hash(0) {}
+        HashedState(const FSA* f) : State(f), _hash(0) {}
 
         /**
          * @brief Copy constructor.
@@ -711,7 +711,7 @@ public:
          *
          * @param s Reference to hashed state to copy.
          */
-        HashedState(const HashedState &s) : State(s), _hash(s._hash) {}
+        HashedState(const HashedState& s) : State(s), _hash(s._hash) {}
 
         ~HashedState() override = default;
 
@@ -786,7 +786,7 @@ public:
         /**
          * @brief Unimplemented private assignment operator.
          */
-        CounterState &operator=(const CounterState &);
+        CounterState& operator=(const CounterState&);
 
     protected:
         uint32_t _counter; /**< Counter value.  */
@@ -800,7 +800,7 @@ public:
          *
          * @param f Reference to FSA.
          */
-        CounterState(const FSA &f) : State(f), _counter(0) {}
+        CounterState(const FSA& f) : State(f), _counter(0) {}
 
         /**
          * @brief Constructor.
@@ -810,7 +810,7 @@ public:
          *
          * @param f Pointer to FSA.
          */
-        CounterState(const FSA *f) : State(f), _counter(0) {}
+        CounterState(const FSA* f) : State(f), _counter(0) {}
 
         /**
          * @brief Copy constructor.
@@ -819,7 +819,7 @@ public:
          *
          * @param s Reference to hashed state to copy.
          */
-        CounterState(const CounterState &s) : State(s), _counter(s._counter) {}
+        CounterState(const CounterState& s) : State(s), _counter(s._counter) {}
 
         /**
          * @brief Destructor.
@@ -897,7 +897,7 @@ public:
         /**
          * @brief Unimplemented private assignment operator.
          */
-        WordCounterState &operator=(const WordCounterState &);
+        WordCounterState& operator=(const WordCounterState&);
 
     protected:
         uint32_t _counter; /**< Counter value.  */
@@ -911,7 +911,7 @@ public:
          *
          * @param f Reference to FSA.
          */
-        WordCounterState(const FSA &f) noexcept : State(f), _counter(0) {}
+        WordCounterState(const FSA& f) noexcept : State(f), _counter(0) {}
 
         /**
          * @brief Constructor.
@@ -921,7 +921,7 @@ public:
          *
          * @param f Pointer to FSA.
          */
-        WordCounterState(const FSA *f) noexcept : State(f), _counter(0) {}
+        WordCounterState(const FSA* f) noexcept : State(f), _counter(0) {}
 
         /**
          * @brief Copy constructor.
@@ -930,7 +930,7 @@ public:
          *
          * @param s Reference to hashed state to copy.
          */
-        WordCounterState(const WordCounterState &s) noexcept : State(s), _counter(s._counter) {}
+        WordCounterState(const WordCounterState& s) noexcept : State(s), _counter(s._counter) {}
 
         /**
          * @brief Destructor.
@@ -959,7 +959,7 @@ public:
          * @param  in     Input word.
          * @return        True if the resulting state is valid.
          */
-        bool startWord(const std::string &in) override {
+        bool startWord(const std::string& in) override {
             start();
             return deltaWord(in);
         }
@@ -974,7 +974,7 @@ public:
          * @param  in     Input word.
          * @return        True if the resulting state is valid.
          */
-        bool deltaWord(const std::string &in) override {
+        bool deltaWord(const std::string& in) override {
             if (in.length() == 0) {
                 return _state != 0;
             }
@@ -1027,7 +1027,7 @@ public:
         /**
          * @brief Unimplemented private assignment operator.
          */
-        MemoryState &operator=(const MemoryState &);
+        MemoryState& operator=(const MemoryState&);
 
     protected:
         std::string _memory; /**< Memory value.  */
@@ -1041,7 +1041,7 @@ public:
          *
          * @param f Reference to FSA.
          */
-        MemoryState(const FSA &f) : State(f), _memory() {}
+        MemoryState(const FSA& f) : State(f), _memory() {}
 
         /**
          * @brief Constructor.
@@ -1051,7 +1051,7 @@ public:
          *
          * @param f Pointer to FSA.
          */
-        MemoryState(const FSA *f) : State(f), _memory() {}
+        MemoryState(const FSA* f) : State(f), _memory() {}
 
         /**
          * @brief Constructor.
@@ -1063,7 +1063,7 @@ public:
          * @param f Reference to FSA.
          * @param res Size to pre-reserve.
          */
-        MemoryState(const FSA &f, unsigned int res) : State(f), _memory() { _memory.reserve(res); }
+        MemoryState(const FSA& f, unsigned int res) : State(f), _memory() { _memory.reserve(res); }
 
         /**
          * @brief Constructor.
@@ -1075,7 +1075,7 @@ public:
          * @param f Pointer to FSA.
          * @param res Size to pre-reserve.
          */
-        MemoryState(const FSA *f, unsigned int res) : State(f), _memory() { _memory.reserve(res); }
+        MemoryState(const FSA* f, unsigned int res) : State(f), _memory() { _memory.reserve(res); }
 
         /**
          * @brief Copy constructor.
@@ -1084,7 +1084,7 @@ public:
          *
          * @param s Reference to memory state to copy.
          */
-        MemoryState(const MemoryState &s) : State(s), _memory(s._memory) {}
+        MemoryState(const MemoryState& s) : State(s), _memory(s._memory) {}
 
         /**
          * @brief Destructor.
@@ -1164,10 +1164,10 @@ public:
         /**
          * @brief Unimplemented private assignment operator.
          */
-        HashedMemoryState &operator=(const HashedMemoryState &);
+        HashedMemoryState& operator=(const HashedMemoryState&);
 
     protected:
-        hash_t _hash;        /**< Hash value.   */
+        hash_t      _hash;   /**< Hash value.   */
         std::string _memory; /**< Memory value. */
 
     public:
@@ -1179,7 +1179,7 @@ public:
          *
          * @param f Reference to FSA.
          */
-        HashedMemoryState(const FSA &f) : State(f), _hash(0), _memory() {}
+        HashedMemoryState(const FSA& f) : State(f), _hash(0), _memory() {}
 
         /**
          * @brief Constructor.
@@ -1189,7 +1189,7 @@ public:
          *
          * @param f Pointer to FSA.
          */
-        HashedMemoryState(const FSA *f) : State(f), _hash(0), _memory() {}
+        HashedMemoryState(const FSA* f) : State(f), _hash(0), _memory() {}
 
         /**
          * @brief Constructor.
@@ -1201,7 +1201,7 @@ public:
          * @param f Reference to FSA.
          * @param res Size to pre-reserve.
          */
-        HashedMemoryState(const FSA &f, unsigned int res) : State(f), _hash(0), _memory() { _memory.reserve(res); }
+        HashedMemoryState(const FSA& f, unsigned int res) : State(f), _hash(0), _memory() { _memory.reserve(res); }
 
         /**
          * @brief Constructor.
@@ -1213,7 +1213,7 @@ public:
          * @param f Pointer to FSA.
          * @param res Size to pre-reserve.
          */
-        HashedMemoryState(const FSA *f, unsigned int res) : State(f), _hash(0), _memory() { _memory.reserve(res); }
+        HashedMemoryState(const FSA* f, unsigned int res) : State(f), _hash(0), _memory() { _memory.reserve(res); }
 
         /**
          * @brief Copy constructor.
@@ -1222,7 +1222,7 @@ public:
          *
          * @param s Reference to hashed memory state to copy.
          */
-        HashedMemoryState(const HashedMemoryState &s) : State(s), _hash(s._hash), _memory(s._memory) {}
+        HashedMemoryState(const HashedMemoryState& s) : State(s), _hash(s._hash), _memory(s._memory) {}
         /**
          * @brief Destructor.
          */
@@ -1322,10 +1322,10 @@ public:
         /**
          * @brief Unimplemented private assignment operator.
          */
-        HashedCounterState &operator=(const CounterState &);
+        HashedCounterState& operator=(const CounterState&);
 
     protected:
-        hash_t _hash;      /**< Hash value.   */
+        hash_t   _hash;    /**< Hash value.   */
         uint32_t _counter; /**< Counter value.  */
 
     public:
@@ -1337,7 +1337,7 @@ public:
          *
          * @param f Reference to FSA.
          */
-        HashedCounterState(const FSA &f) : State(f), _hash(0), _counter(0) {}
+        HashedCounterState(const FSA& f) : State(f), _hash(0), _counter(0) {}
 
         /**
          * @brief Constructor.
@@ -1347,7 +1347,7 @@ public:
          *
          * @param f Pointer to FSA.
          */
-        HashedCounterState(const FSA *f) : State(f), _hash(0), _counter(0) {}
+        HashedCounterState(const FSA* f) : State(f), _hash(0), _counter(0) {}
 
         /**
          * @brief Copy constructor.
@@ -1356,7 +1356,7 @@ public:
          *
          * @param s Reference to hashed state to copy.
          */
-        HashedCounterState(const HashedCounterState &s) : State(s), _hash(s._hash), _counter(s._counter) {}
+        HashedCounterState(const HashedCounterState& s) : State(s), _hash(s._hash), _counter(s._counter) {}
 
         /**
          * @brief Destructor.
@@ -1457,10 +1457,10 @@ public:
         /**
          * @brief Unimplemented private assignment operator.
          */
-        HashedWordCounterState &operator=(const HashedWordCounterState &);
+        HashedWordCounterState& operator=(const HashedWordCounterState&);
 
     protected:
-        hash_t _hash;      /**< Hash value.   */
+        hash_t   _hash;    /**< Hash value.   */
         uint32_t _counter; /**< Counter value.  */
 
         using State::delta;
@@ -1489,7 +1489,7 @@ public:
          *
          * @param f Reference to FSA.
          */
-        HashedWordCounterState(const FSA &f) noexcept : State(f), _hash(0), _counter(0) {}
+        HashedWordCounterState(const FSA& f) noexcept : State(f), _hash(0), _counter(0) {}
 
         /**
          * @brief Constructor.
@@ -1499,7 +1499,7 @@ public:
          *
          * @param f Pointer to FSA.
          */
-        HashedWordCounterState(const FSA *f) noexcept : State(f), _hash(0), _counter(0) {}
+        HashedWordCounterState(const FSA* f) noexcept : State(f), _hash(0), _counter(0) {}
 
         /**
          * @brief Copy constructor.
@@ -1508,7 +1508,7 @@ public:
          *
          * @param s Reference to hashed state to copy.
          */
-        HashedWordCounterState(const HashedWordCounterState &s) noexcept
+        HashedWordCounterState(const HashedWordCounterState& s) noexcept
             : State(s), _hash(s._hash), _counter(s._counter) {}
 
         /**
@@ -1539,7 +1539,7 @@ public:
          * @param  in     Input word.
          * @return        True if the resulting state is valid.
          */
-        bool startWord(const std::string &in) override {
+        bool startWord(const std::string& in) override {
             start();
             return deltaWord(in);
         }
@@ -1554,7 +1554,7 @@ public:
          * @param  in     Input word.
          * @return        True if the resulting state is valid.
          */
-        bool deltaWord(const std::string &in) override {
+        bool deltaWord(const std::string& in) override {
             if (in.length() == 0) {
                 return _state != 0;
             }
@@ -1679,40 +1679,40 @@ public:
      * objects (used by Automaton::getFSA()).
      */
     struct Descriptor {
-        uint32_t _version;
-        uint32_t _serial;
-        Unaligned<state_t> *_state;
-        symbol_t *_symbol;
-        uint32_t _size;
-        data_t *_data;
-        uint32_t _data_size;
-        uint32_t _data_type;
-        uint32_t _fixed_data_size;
-        Unaligned<hash_t> *_perf_hash;
-        uint32_t _start;
+        uint32_t            _version;
+        uint32_t            _serial;
+        Unaligned<state_t>* _state;
+        symbol_t*           _symbol;
+        uint32_t            _size;
+        data_t*             _data;
+        uint32_t            _data_size;
+        uint32_t            _data_type;
+        uint32_t            _fixed_data_size;
+        Unaligned<hash_t>*  _perf_hash;
+        uint32_t            _start;
     };
 
 private:
     static const FileAccessMethod _default_file_access_method =
         FILE_ACCESS_MMAP; /**< Default file access method (read/mmap). */
 
-    void *_mmap_addr;    /**< mmap address, nullptr is file has not been mmapped.   */
+    void*  _mmap_addr;   /**< mmap address, nullptr is file has not been mmapped.   */
     size_t _mmap_length; /**< mmap length.                                       */
 
     uint32_t _version; /**< Version of fsalib used to build this fsa. */
     uint32_t _serial;  /**< Serial number of this fsa.                */
 
-    Unaligned<state_t> *_state; /**< State table for transitions.       */
-    symbol_t *_symbol;          /**< Symbol table for transitions.      */
-    uint32_t _size;             /**< Size (number of cells).            */
+    Unaligned<state_t>* _state;  /**< State table for transitions.       */
+    symbol_t*           _symbol; /**< Symbol table for transitions.      */
+    uint32_t            _size;   /**< Size (number of cells).            */
 
-    data_t *_data;             /**< Data storage.                      */
+    data_t*  _data;            /**< Data storage.                      */
     uint32_t _data_size;       /**< Size of data storage.              */
     uint32_t _data_type;       /**< Type of data items (fixed or var.) */
     uint32_t _fixed_data_size; /**< Size of data items if fixed.       */
 
-    bool _has_perfect_hash;        /**< Indicator of perfect hash present. */
-    Unaligned<hash_t> *_perf_hash; /**< Perfect hash table, if present.    */
+    bool               _has_perfect_hash; /**< Indicator of perfect hash present. */
+    Unaligned<hash_t>* _perf_hash;        /**< Perfect hash table, if present.    */
 
     state_t _start; /**< Index of start state.              */
 
@@ -1728,8 +1728,8 @@ public:
      * @param fam File access mode (read or mmap). If not set, the
      *            global default access mode will be used.
      */
-    FSA(const char *file, FileAccessMethod fam = FILE_ACCESS_UNDEF);
-    FSA(const std::string &file, FileAccessMethod fam = FILE_ACCESS_UNDEF);
+    FSA(const char* file, FileAccessMethod fam = FILE_ACCESS_UNDEF);
+    FSA(const std::string& file, FileAccessMethod fam = FILE_ACCESS_UNDEF);
 
     /**
      * @brief Destructor.
@@ -1858,7 +1858,7 @@ public:
      * @param fs State.
      * @return Pointer to data item, or nullptr if the state is not final.
      */
-    const data_t *data(unsigned int fs) const {
+    const data_t* data(unsigned int fs) const {
         if (fs == 0)
             return nullptr;
         if (_symbol[fs + FINAL_SYMBOL] == FINAL_SYMBOL) {
@@ -1875,7 +1875,7 @@ public:
      *
      * @param out Output stream (std::cout if omitted).
      */
-    void printDot(std::ostream &out = std::cout) const;
+    void printDot(std::ostream& out = std::cout) const;
 
     /**
      * @brief Get iterator pointing to the beginning of the fsa.
@@ -1899,11 +1899,11 @@ private:
     /**
      * @brief Unimplemented private copy constructor.
      */
-    FSA(const FSA &);
+    FSA(const FSA&);
     /**
      * @brief Unimplemented private assignment operator.
      */
-    const FSA &operator=(const FSA &);
+    const FSA& operator=(const FSA&);
 
     /**
      * Automaton needs access to a private constructor.
@@ -1918,7 +1918,7 @@ private:
      *
      * @param d  Descriptor containing all FSA parameters.
      */
-    FSA(Descriptor &d)
+    FSA(Descriptor& d)
         : _mmap_addr(nullptr), _mmap_length(0), _version(d._version), _serial(d._serial), _state(d._state),
           _symbol(d._symbol), _size(d._size), _data(d._data), _data_size(d._data_size), _data_type(d._data_type),
           _fixed_data_size(d._fixed_data_size), _has_perfect_hash(d._perf_hash != nullptr), _perf_hash(d._perf_hash),
@@ -1939,7 +1939,7 @@ private:
      * @param filename Name of fsa file.
      * @return     True on success.
      */
-    bool read(const char *filename, FileAccessMethod fam = FILE_ACCESS_UNDEF);
+    bool read(const char* filename, FileAccessMethod fam = FILE_ACCESS_UNDEF);
 };
 
 // }}}

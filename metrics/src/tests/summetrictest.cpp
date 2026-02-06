@@ -5,7 +5,7 @@
 namespace metrics {
 
 TEST(SumMetricTest, test_long_count_metric) {
-    MetricSet parent("parent", {}, "");
+    MetricSet                  parent("parent", {}, "");
     SumMetric<LongCountMetric> sum("foo", {}, "foodesc", &parent);
 
     LongCountMetric v1("ff", {}, "", &parent);
@@ -25,7 +25,7 @@ TEST(SumMetricTest, test_long_count_metric) {
 }
 
 TEST(SumMetricTest, test_average_metric) {
-    MetricSet parent("parent", {}, "");
+    MetricSet                    parent("parent", {}, "");
     SumMetric<LongAverageMetric> sum("foo", {}, "foodesc", &parent);
 
     LongAverageMetric v1("ff", {}, "", &parent);
@@ -47,11 +47,11 @@ TEST(SumMetricTest, test_average_metric) {
 }
 
 TEST(SumMetricTest, test_metric_set) {
-    MetricSet parent("parent", {}, "");
+    MetricSet            parent("parent", {}, "");
     SumMetric<MetricSet> sum("foo", {}, "bar", &parent);
 
-    MetricSet set1("a", {}, "", &parent);
-    MetricSet set2("b", {}, "", &parent);
+    MetricSet       set1("a", {}, "", &parent);
+    MetricSet       set2("b", {}, "", &parent);
     LongValueMetric v1("c", {}, "", &set1);
     LongValueMetric v2("d", {}, "", &set2);
     LongCountMetric v3("e", {}, "", &set1);
@@ -75,7 +75,7 @@ TEST(SumMetricTest, test_metric_set) {
 }
 
 TEST(SumMetricTest, test_remove) {
-    MetricSet parent("parent", {}, "");
+    MetricSet                  parent("parent", {}, "");
     SumMetric<LongCountMetric> sum("foo", {}, "foodesc", &parent);
 
     LongCountMetric v1("ff", {}, "", &parent);
@@ -97,9 +97,9 @@ TEST(SumMetricTest, test_remove) {
 }
 
 TEST(SumMetricTest, test_start_value) {
-    MetricSnapshot snapshot("active");
+    MetricSnapshot             snapshot("active");
     SumMetric<LongValueMetric> sum("foo", {}, "foodesc", &snapshot.getMetrics());
-    LongValueMetric start("start", {}, "", nullptr);
+    LongValueMetric            start("start", {}, "", nullptr);
     start.set(50);
     sum.setStartValue(start);
 
@@ -121,8 +121,8 @@ TEST(SumMetricTest, test_start_value) {
 namespace {
 
 struct MetricSetWithSum : public MetricSet {
-    LongValueMetric _v1;
-    LongValueMetric _v2;
+    LongValueMetric            _v1;
+    LongValueMetric            _v2;
     SumMetric<LongValueMetric> _sum;
     MetricSetWithSum();
     ~MetricSetWithSum() override;

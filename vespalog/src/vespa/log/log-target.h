@@ -11,17 +11,17 @@ class LogTarget {
 private:
     char _name[256];
     LogTarget();
-    LogTarget &operator=(const LogTarget &);
-    LogTarget(const LogTarget &);
+    LogTarget& operator=(const LogTarget&);
+    LogTarget(const LogTarget&);
 
 public:
-    LogTarget(const char *name);
-    virtual int write(const char *buf, int bufLen) = 0;
+    LogTarget(const char* name);
+    virtual int write(const char* buf, int bufLen) = 0;
     virtual ~LogTarget();
-    static LogTarget *makeTarget(const char *target);
-    static LogTarget *defaultTarget();
-    virtual const char *name() const { return _name; }
-    virtual bool makeHumanReadable() const { return false; }
+    static LogTarget*   makeTarget(const char* target);
+    static LogTarget*   defaultTarget();
+    virtual const char* name() const { return _name; }
+    virtual bool        makeHumanReadable() const { return false; }
 };
 
 } // end namespace ns_log

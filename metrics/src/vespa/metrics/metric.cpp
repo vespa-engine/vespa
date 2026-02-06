@@ -32,7 +32,7 @@ bool MetricVisitor::visitMetric(const Metric&, bool) {
 
 namespace {
 std::string namePattern = "[a-zA-Z][_a-zA-Z0-9]*";
-std::regex name_pattern_regex(namePattern);
+std::regex  name_pattern_regex(namePattern);
 } // namespace
 
 Tag::Tag(std::string_view k) : _key(NameRepo::tagKeyId(k)), _value(TagValueId::empty_handle) {}

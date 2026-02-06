@@ -8,12 +8,12 @@
 
 #include <iostream>
 
-Flags::Flags(const Flags &) = default;
-Flags &Flags::operator=(const Flags &) = default;
+Flags::Flags(const Flags&) = default;
+Flags& Flags::operator=(const Flags&) = default;
 Flags::Flags() : method("cache"), args(), targethost("localhost"), portnumber(19090) {}
 Flags::~Flags() = default;
 
-ProxyCmd::ProxyCmd(const Flags &flags) : _server(), _target(nullptr), _req(nullptr), _flags(flags) {}
+ProxyCmd::ProxyCmd(const Flags& flags) : _server(), _target(nullptr), _req(nullptr), _flags(flags) {}
 
 ProxyCmd::~ProxyCmd() = default;
 
@@ -40,8 +40,8 @@ void ProxyCmd::finiRPC() {
     _server.reset();
 }
 
-void ProxyCmd::printArray(FRT_Values *rvals) {
-    FRT_Value &lines = rvals->GetValue(0);
+void ProxyCmd::printArray(FRT_Values* rvals) {
+    FRT_Value& lines = rvals->GetValue(0);
     for (size_t i = 0; i < lines._string_array._len; ++i) {
         std::cout << lines._string_array._pt[i]._str << std::endl;
     }
@@ -57,7 +57,7 @@ void ProxyCmd::autoPrint() {
         return;
     }
     std::string retspec = _req->GetReturnSpec();
-    FRT_Values *rvals = _req->GetReturn();
+    FRT_Values* rvals = _req->GetReturn();
     if (retspec == "S") {
         printArray(rvals);
     } else if (retspec == "s") {
@@ -75,7 +75,7 @@ int ProxyCmd::action() {
     std::string spec = makeSpec();
     _target = _server->supervisor().GetTarget(spec.c_str());
     _req->SetMethodName(_flags.method.c_str());
-    FRT_Values &params = *_req->GetParams();
+    FRT_Values& params = *_req->GetParams();
     for (size_t i = 0; i < _flags.args.size(); ++i) {
         params.AddString(_flags.args[i].c_str(), _flags.args[i].size());
     }

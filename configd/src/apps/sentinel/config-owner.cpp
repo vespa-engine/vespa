@@ -12,7 +12,7 @@ namespace config::sentinel {
 ConfigOwner::ConfigOwner() = default;
 ConfigOwner::~ConfigOwner() = default;
 
-void ConfigOwner::subscribe(const std::string &configId, std::chrono::milliseconds timeout) {
+void ConfigOwner::subscribe(const std::string& configId, std::chrono::milliseconds timeout) {
     _sentinelHandle = _subscriber.subscribe<SentinelConfig>(configId, timeout);
 }
 
@@ -20,8 +20,8 @@ void ConfigOwner::doConfigure() {
     _currConfig = _sentinelHandle->getConfig();
     LOG_ASSERT(_currConfig);
     _currGeneration = _subscriber.getGeneration();
-    const SentinelConfig &config(*_currConfig);
-    const auto           &app = config.application;
+    const SentinelConfig& config(*_currConfig);
+    const auto&           app = config.application;
     LOG(config,
         "Sentinel got %zd service elements [tenant(%s), application(%s), instance(%s)] for config generation %" PRId64,
         config.service.size(), app.tenant.c_str(), app.name.c_str(), app.instance.c_str(), _currGeneration);

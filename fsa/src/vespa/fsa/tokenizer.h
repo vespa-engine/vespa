@@ -43,7 +43,7 @@ public:
      * @param text Input text.
      * @return True on success.
      */
-    virtual bool init(const std::string &text) = 0;
+    virtual bool init(const std::string& text) = 0;
 
     /**
      * @brief Check if there are more tokens available.

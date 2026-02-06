@@ -92,7 +92,7 @@ struct Tag {
     bool hasValue() const { return (_value != TagValueId::empty_handle); }
 
 private:
-    TagKeyId _key;
+    TagKeyId   _key;
     TagValueId _value;
 };
 
@@ -118,11 +118,11 @@ public:
      * Get mangled name iff the metric contains any dimensions, otherwise
      * the original metric name is returned.
      */
-    const std::string& getMangledName() const { return NameRepo::metricName(_mangledName); }
-    std::string getPath() const;
+    const std::string&  getMangledName() const { return NameRepo::metricName(_mangledName); }
+    std::string         getPath() const;
     std::vector<String> getPathVector() const;
-    const std::string& getDescription() const { return NameRepo::description(_description); }
-    const Tags& getTags() const { return _tags; }
+    const std::string&  getDescription() const { return NameRepo::description(_description); }
+    const Tags&         getTags() const { return _tags; }
     /** Return whether there exists a tag with a key equal to 'tag' */
     bool hasTag(const String& tag) const;
 
@@ -165,7 +165,7 @@ public:
      *           metric have average,
      */
     virtual int64_t getLongValue(string_view id) const = 0;
-    virtual double getDoubleValue(string_view id) const = 0;
+    virtual double  getDoubleValue(string_view id) const = 0;
 
     /**
      * When snapshotting we need to be able to add data from one set of metrics
@@ -266,11 +266,11 @@ private:
     void registerWithOwnerIfRequired(MetricSet* owner);
 
 protected:
-    MetricNameId _name;
-    MetricNameId _mangledName;
-    DescriptionId _description;
+    MetricNameId     _name;
+    MetricNameId     _mangledName;
+    DescriptionId    _description;
     std::vector<Tag> _tags;
-    MetricSet* _owner;
+    MetricSet*       _owner;
 };
 
 } // namespace metrics

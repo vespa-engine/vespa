@@ -20,8 +20,8 @@ namespace metrics {
 
 template <typename AvgVal, typename TotVal> struct ValueMetricValues : MetricValueClass {
     uint32_t _count;
-    AvgVal _min, _max, _last;
-    TotVal _total;
+    AvgVal   _min, _max, _last;
+    TotVal   _total;
 
     struct AtomicImpl {
         AtomicImpl() noexcept
@@ -32,10 +32,10 @@ template <typename AvgVal, typename TotVal> struct ValueMetricValues : MetricVal
               _max(rhs._max.load(std::memory_order_relaxed)), _last(rhs._last.load(std::memory_order_relaxed)),
               _total(rhs._total.load(std::memory_order_relaxed)) {}
         std::atomic<uint32_t> _count;
-        std::atomic<AvgVal> _min;
-        std::atomic<AvgVal> _max;
-        std::atomic<AvgVal> _last;
-        std::atomic<TotVal> _total;
+        std::atomic<AvgVal>   _min;
+        std::atomic<AvgVal>   _max;
+        std::atomic<AvgVal>   _last;
+        std::atomic<TotVal>   _total;
     };
 
     ValueMetricValues();
@@ -43,10 +43,10 @@ template <typename AvgVal, typename TotVal> struct ValueMetricValues : MetricVal
     void relaxedLoadFrom(const AtomicImpl& source) noexcept;
 
     template <typename T> T getValue(string_view id) const;
-    double getDoubleValue(string_view id) const override;
-    uint64_t getLongValue(string_view id) const override;
-    void output(const std::string& id, std::ostream& out) const override;
-    void output(const std::string& id, vespalib::JsonStream& stream) const override;
+    double                  getDoubleValue(string_view id) const override;
+    uint64_t                getLongValue(string_view id) const override;
+    void                    output(const std::string& id, std::ostream& out) const override;
+    void                    output(const std::string& id, vespalib::JsonStream& stream) const override;
     template <typename A, typename T>
     friend std::ostream& operator<<(std::ostream& os, const ValueMetricValues<A, T>& v);
 };

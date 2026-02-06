@@ -12,20 +12,20 @@ namespace slobrok {
 
 class MetricsProducer : public vespalib::MetricsProducer {
 private:
-    const RPCHooks &_rpcHooks;
-    RPCHooks::Metrics _lastMetrics;
-    vespalib::SimpleMetricsProducer _producer;
+    const RPCHooks&                       _rpcHooks;
+    RPCHooks::Metrics                     _lastMetrics;
+    vespalib::SimpleMetricsProducer       _producer;
     std::chrono::system_clock::time_point _startTime;
     std::chrono::system_clock::time_point _lastSnapshotStart;
-    std::unique_ptr<FNET_Task> _snapshotter;
+    std::unique_ptr<FNET_Task>            _snapshotter;
 
 public:
-    std::string getMetrics(const std::string &consumer, ExpositionFormat format) override;
-    std::string getTotalMetrics(const std::string &consumer, ExpositionFormat format) override;
+    std::string getMetrics(const std::string& consumer, ExpositionFormat format) override;
+    std::string getTotalMetrics(const std::string& consumer, ExpositionFormat format) override;
 
     void snapshot();
 
-    MetricsProducer(const RPCHooks &hooks, FNET_Transport &transport);
+    MetricsProducer(const RPCHooks& hooks, FNET_Transport& transport);
     ~MetricsProducer() override;
 };
 

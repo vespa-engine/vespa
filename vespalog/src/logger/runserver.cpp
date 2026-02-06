@@ -53,17 +53,17 @@ bool whole_seconds(int cnt, int secs) {
 class PidFile {
 private:
     std::string _pidfile;
-    int _fd;
-    PidFile(const PidFile &);
-    PidFile &operator=(const PidFile &);
+    int         _fd;
+    PidFile(const PidFile&);
+    PidFile& operator=(const PidFile&);
 
 public:
-    PidFile(const char *pidfile) : _pidfile(pidfile), _fd(-1) {}
+    PidFile(const char* pidfile) : _pidfile(pidfile), _fd(-1) {}
     ~PidFile() {
         if (_fd >= 0)
             close(_fd);
     }
-    int readPid();
+    int  readPid();
     void writePid();
     bool writeOpen();
     bool anotherRunning();
@@ -108,7 +108,7 @@ void PidFile::writePid() {
     }
     char buf[100];
     snprintf(buf, sizeof(buf), "%d\n", getpid());
-    int l = strlen(buf);
+    int     l = strlen(buf);
     ssize_t didw = write(_fd, buf, l);
     if (didw != l) {
         fprintf(stderr, "could not write pid to %s: %s\n", _pidfile.c_str(), strerror(errno));
@@ -118,12 +118,12 @@ void PidFile::writePid() {
 }
 
 int PidFile::readPid() {
-    FILE *pf = fopen(_pidfile.c_str(), "r");
+    FILE* pf = fopen(_pidfile.c_str(), "r");
     if (pf == nullptr)
         return 0;
     char buf[100];
     strcpy(buf, "0");
-    char *fgetsres = fgets(buf, 100, pf);
+    char* fgetsres = fgets(buf, 100, pf);
     fclose(pf);
     return ((fgetsres != nullptr) ? atoi(buf) : 0);
 }
@@ -157,7 +157,7 @@ bool PidFile::canStealLock() {
 
 using namespace ns_log;
 
-int loop(const char *svc, char *const *run) {
+int loop(const char* svc, char* const* run) {
     int pstdout[2];
     int pstderr[2];
 
@@ -189,7 +189,7 @@ int loop(const char *svc, char *const *run) {
 
     LOG(debug, "started %s (pid %d)", run[0], (int)child);
     std::string torun = run[0];
-    for (char *const *arg = (run + 1); *arg != nullptr; ++arg) {
+    for (char* const* arg = (run + 1); *arg != nullptr; ++arg) {
         torun += " ";
         torun += *arg;
     }
@@ -221,11 +221,11 @@ int loop(const char *svc, char *const *run) {
     InputBuf outReader(pstdout[0]);
     InputBuf errReader(pstderr[0]);
 
-    bool outeof = false;
-    bool erreof = false;
-    constexpr int stdout_idx = 0, stderr_idx = 1;
+    bool                  outeof = false;
+    bool                  erreof = false;
+    constexpr int         stdout_idx = 0, stderr_idx = 1;
     std::array<pollfd, 2> fds{};
-    int wstat = 0;
+    int                   wstat = 0;
 
     while (child || !outeof || !erreof) {
         // Entries with negative fds are entirely ignored by the kernel.
@@ -237,7 +237,7 @@ int loop(const char *svc, char *const *run) {
         fds[stderr_idx].revents = 0;
 
         constexpr int poll_timeout_ms = 100;
-        int n = poll(fds.data(), fds.size(), poll_timeout_ms);
+        int           n = poll(fds.data(), fds.size(), poll_timeout_ms);
         if (n > 0) {
             constexpr short ev_mask = POLLIN | POLLERR | POLLHUP;
             if ((fds[stdout_idx].revents & ev_mask) != 0) {
@@ -312,7 +312,7 @@ int loop(const char *svc, char *const *run) {
     return WEXITSTATUS(wstat);
 }
 
-int usage(char *prog, int es) {
+int usage(char* prog, int es) {
     fprintf(stderr,
             "Usage: %s\n"
             "       [-s service] [-r restartinterval] [-p pidfile]"
@@ -322,13 +322,13 @@ int usage(char *prog, int es) {
     return es;
 }
 
-int main(int argc, char *argv[]) {
-    bool doStop = false;
-    bool checkWouldRun = false;
-    int restart = 0;
-    const char *service = "runserver";
-    const char *pidfile = "vespa-runserver.pid"; // XXX bad default?
-    const char *killcmd = nullptr;
+int main(int argc, char* argv[]) {
+    bool        doStop = false;
+    bool        checkWouldRun = false;
+    int         restart = 0;
+    const char* service = "runserver";
+    const char* pidfile = "vespa-runserver.pid"; // XXX bad default?
+    const char* killcmd = nullptr;
 
     signal(SIGQUIT, SIG_IGN);
 
@@ -358,7 +358,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    const char *envROOT = getenv("ROOT");
+    const char* envROOT = getenv("ROOT");
     if (envROOT == nullptr || envROOT[0] == '\0') {
         envROOT = vespa::Defaults::vespaHome();
         setenv("ROOT", envROOT, 1);
@@ -493,7 +493,7 @@ int main(int argc, char *argv[]) {
                     sleep(1);
                 }
             } while (!gotstopsig && restart > 0);
-        } catch (MsgException &ex) {
+        } catch (MsgException& ex) {
             LOG(error, "exception: '%s'", ex.what());
             return 1;
         }

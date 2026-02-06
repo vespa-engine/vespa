@@ -9,9 +9,9 @@ namespace slobrok {
 
 class ConfigShim {
 private:
-    uint32_t _port;
-    bool _enableStateServer;
-    std::string _configId;
+    uint32_t            _port;
+    bool                _enableStateServer;
+    std::string         _configId;
     ConfiguratorFactory _factory;
 
 public:
@@ -24,10 +24,10 @@ public:
         _enableStateServer = v;
         return *this;
     }
-    bool enableStateServer() const { return _enableStateServer; }
-    uint32_t portNumber() const { return _port; }
-    std::string configId() const { return _configId; }
-    const char* id() const { return _configId.c_str(); }
+    bool                       enableStateServer() const { return _enableStateServer; }
+    uint32_t                   portNumber() const { return _port; }
+    std::string                configId() const { return _configId; }
+    const char*                id() const { return _configId.c_str(); }
     const ConfiguratorFactory& factory() const { return _factory; }
 };
 

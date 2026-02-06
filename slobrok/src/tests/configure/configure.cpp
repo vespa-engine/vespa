@@ -39,12 +39,12 @@ struct SpecList {
     MirrorAPI::SpecList _specList;
     SpecList() : _specList() {}
     SpecList(MirrorAPI::SpecList input) : _specList(input) {}
-    SpecList &add(const char *name, const char *spec) {
+    SpecList& add(const char* name, const char* spec) {
         _specList.push_back(make_pair(std::string(name), std::string(spec)));
         return *this;
     }
     void sort() { std::sort(_specList.begin(), _specList.end()); }
-    bool operator==(SpecList &rhs) { // NB: MUTATE!
+    bool operator==(SpecList& rhs) { // NB: MUTATE!
         sort();
         rhs.sort();
         return _specList == rhs._specList;
@@ -64,7 +64,7 @@ struct SpecList {
     }
 };
 
-bool compare(MirrorAPI &api, const char *pattern, SpecList expect) {
+bool compare(MirrorAPI& api, const char* pattern, SpecList expect) {
     for (int i = 0; i < 600; ++i) {
         SpecList actual(api.lookup(pattern));
         if (actual == expect) {
@@ -82,7 +82,7 @@ TEST(ConfigureTest, configure_test) {
     fnet::frt::StandaloneFRT orb1;
     fnet::frt::StandaloneFRT orb2;
 
-    config::ConfigSet set;
+    config::ConfigSet                    set;
     cloud::config::SlobroksConfigBuilder srv1Builder;
     srv1Builder.slobrok.resize(2);
     srv1Builder.slobrok[0].connectionspec = createSpec(18524);
@@ -112,7 +112,7 @@ TEST(ConfigureTest, configure_test) {
     set.addBuilder("client2", &cli2Builder);
     set.addBuilder("client3", &cli3Builder);
 
-    auto cfgCtx = std::make_shared<config::ConfigContext>(set);
+    auto       cfgCtx = std::make_shared<config::ConfigContext>(set);
     ConfigShim srvConfig1(18524, "server1", cfgCtx);
     ConfigShim srvConfig2(18525, "server2", cfgCtx);
 
@@ -159,8 +159,8 @@ TEST(ConfigureTest, configure_test) {
 
     fnet::frt::StandaloneFRT orb3;
     fnet::frt::StandaloneFRT orb4;
-    RegisterAPI reg3(orb3.supervisor(), cliConfig1);
-    RegisterAPI reg4(orb4.supervisor(), cliConfig2);
+    RegisterAPI              reg3(orb3.supervisor(), cliConfig1);
+    RegisterAPI              reg4(orb4.supervisor(), cliConfig2);
     orb3.supervisor().Listen(18528);
     orb4.supervisor().Listen(18529);
     std::string myspec3 = createSpec(orb3.supervisor().GetListenPort());

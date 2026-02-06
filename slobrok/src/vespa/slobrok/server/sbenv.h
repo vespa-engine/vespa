@@ -37,25 +37,25 @@ private:
     std::unique_ptr<FNET_Transport> _transport;
     std::unique_ptr<FRT_Supervisor> _supervisor;
 
-    ConfigShim _configShim;
+    ConfigShim                    _configShim;
     std::unique_ptr<Configurator> _configurator;
-    bool _shuttingDown;
+    bool                          _shuttingDown;
 
     SBEnv(const SBEnv&);            // Not used
     SBEnv& operator=(const SBEnv&); // Not used
 
     void setup(const std::vector<std::string>& cfg) override;
 
-    std::vector<std::string> _partnerList;
-    std::string _me;
-    LocalRpcMonitorMap _localRpcMonitorMap;
-    ServiceMapHistory _globalVisibleHistory;
-    RPCHooks _rpcHooks;
-    std::unique_ptr<RemoteCheck> _remotechecktask;
-    vespalib::SimpleHealthProducer _health;
-    MetricsProducer _metrics;
+    std::vector<std::string>                _partnerList;
+    std::string                             _me;
+    LocalRpcMonitorMap                      _localRpcMonitorMap;
+    ServiceMapHistory                       _globalVisibleHistory;
+    RPCHooks                                _rpcHooks;
+    std::unique_ptr<RemoteCheck>            _remotechecktask;
+    vespalib::SimpleHealthProducer          _health;
+    MetricsProducer                         _metrics;
     vespalib::SimpleComponentConfigProducer _components;
-    UnionServiceMap _consensusMap;
+    UnionServiceMap                         _consensusMap;
 
     ExchangeManager _exchanger;
 

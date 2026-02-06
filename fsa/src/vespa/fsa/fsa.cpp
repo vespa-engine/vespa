@@ -31,8 +31,8 @@ const symbol_t FSA::FINAL_SYMBOL;
 
 // {{{ FSA::iterator::operator++()
 
-FSA::iterator &FSA::iterator::operator++() {
-    state_t next;
+FSA::iterator& FSA::iterator::operator++() {
+    state_t      next;
     unsigned int depth;
 
     if (_item._symbol == 0xff || _item._fsa == nullptr)
@@ -76,14 +76,14 @@ uint32_t FSA::libVER() { return VER; }
 // }}}
 // {{{ MetaData::MetaData()
 
-FSA::FSA(const char *file, FileAccessMethod fam)
+FSA::FSA(const char* file, FileAccessMethod fam)
     : _mmap_addr(nullptr), _mmap_length(0), _version(0), _serial(0), _state(nullptr), _symbol(nullptr), _size(0),
       _data(nullptr), _data_size(0), _data_type(DATA_VARIABLE), _fixed_data_size(0), _has_perfect_hash(false),
       _perf_hash(nullptr), _start(0), _ok(false) {
     _ok = read(file, fam);
 }
 
-FSA::FSA(const std::string &file, FileAccessMethod fam)
+FSA::FSA(const std::string& file, FileAccessMethod fam)
     : _mmap_addr(nullptr), _mmap_length(0), _version(0), _serial(0), _state(nullptr), _symbol(nullptr), _size(0),
       _data(nullptr), _data_size(0), _data_type(DATA_VARIABLE), _fixed_data_size(0), _has_perfect_hash(false),
       _perf_hash(nullptr), _start(0), _ok(false) {
@@ -143,9 +143,9 @@ void FSA::reset() {
 // }}}
 // {{{ FSA::read()
 
-bool FSA::read(const char *file, FileAccessMethod fam) {
-    Header header;
-    size_t r;
+bool FSA::read(const char* file, FileAccessMethod fam) {
+    Header   header;
+    size_t   r;
     uint32_t checksum = 0;
 
     reset();
@@ -198,7 +198,7 @@ bool FSA::read(const char *file, FileAccessMethod fam) {
     }
 
     if (_mmap_addr == nullptr) {
-        _symbol = (symbol_t *)malloc(_size * sizeof(symbol_t));
+        _symbol = (symbol_t*)malloc(_size * sizeof(symbol_t));
         r = ::read(fd, _symbol, _size * sizeof(symbol_t));
         if (r != _size * sizeof(symbol_t)) {
             ::close(fd);
@@ -206,7 +206,7 @@ bool FSA::read(const char *file, FileAccessMethod fam) {
             return false;
         }
     } else {
-        _symbol = (symbol_t *)((uint8_t *)_mmap_addr + sizeof(header));
+        _symbol = (symbol_t*)((uint8_t*)_mmap_addr + sizeof(header));
     }
     checksum += Checksum::compute(_symbol, _size * sizeof(symbol_t));
 
@@ -219,12 +219,12 @@ bool FSA::read(const char *file, FileAccessMethod fam) {
             return false;
         }
     } else {
-        _state = Unaligned<state_t>::ptr((uint8_t *)_mmap_addr + sizeof(header) + _size * sizeof(symbol_t));
+        _state = Unaligned<state_t>::ptr((uint8_t*)_mmap_addr + sizeof(header) + _size * sizeof(symbol_t));
     }
     checksum += Checksum::compute(_state, _size * sizeof(state_t));
 
     if (_mmap_addr == nullptr) {
-        _data = (data_t *)malloc(_data_size);
+        _data = (data_t*)malloc(_data_size);
         r = ::read(fd, _data, _data_size);
         if (r != _data_size) {
             ::close(fd);
@@ -232,7 +232,7 @@ bool FSA::read(const char *file, FileAccessMethod fam) {
             return false;
         }
     } else {
-        _data = (data_t *)((uint8_t *)_mmap_addr + sizeof(header) + _size * sizeof(symbol_t) + _size * sizeof(state_t));
+        _data = (data_t*)((uint8_t*)_mmap_addr + sizeof(header) + _size * sizeof(symbol_t) + _size * sizeof(state_t));
     }
     checksum += Checksum::compute(_data, _data_size);
 
@@ -246,7 +246,7 @@ bool FSA::read(const char *file, FileAccessMethod fam) {
                 return false;
             }
         } else {
-            _perf_hash = Unaligned<hash_t>::ptr((uint8_t *)_mmap_addr + sizeof(header) + _size * sizeof(symbol_t) +
+            _perf_hash = Unaligned<hash_t>::ptr((uint8_t*)_mmap_addr + sizeof(header) + _size * sizeof(symbol_t) +
                                                 _size * sizeof(state_t) + _data_size);
         }
         checksum += Checksum::compute(_perf_hash, _size * sizeof(hash_t));
@@ -266,11 +266,11 @@ bool FSA::read(const char *file, FileAccessMethod fam) {
 // {{{ FSA::revLookup()
 
 std::string FSA::revLookup(hash_t hash) const {
-    state_t state = start();
-    state_t next, last_next, current_next;
-    hash_t current = 0, d, last_d;
+    state_t     state = start();
+    state_t     next, last_next, current_next;
+    hash_t      current = 0, d, last_d;
     std::string current_string;
-    symbol_t symbol, last_symbol, current_symbol;
+    symbol_t    symbol, last_symbol, current_symbol;
 
     if (!hasPerfectHash())
         return std::string();
@@ -326,13 +326,13 @@ std::string FSA::revLookup(hash_t hash) const {
 
 // {{{ FSA::printDot()
 
-void FSA::printDot(std::ostream &out) const {
-    state_t start, state, next;
-    symbol_t symbol;
-    std::list<state_t> state_stack;
-    std::list<symbol_t> symbol_stack;
+void FSA::printDot(std::ostream& out) const {
+    state_t                 start, state, next;
+    symbol_t                symbol;
+    std::list<state_t>      state_stack;
+    std::list<symbol_t>     symbol_stack;
     std::map<state_t, bool> visited;
-    bool v;
+    bool                    v;
 
     symbol = 0;
     start = state = this->start();

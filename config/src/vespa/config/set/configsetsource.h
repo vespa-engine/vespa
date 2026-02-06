@@ -16,11 +16,11 @@ class IConfigHolder;
  */
 class ConfigSetSource : public Source {
 public:
-    typedef std::map<ConfigKey, ConfigInstance *> BuilderMap;
-    typedef std::shared_ptr<BuilderMap>           BuilderMapSP;
-    ConfigSetSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey &key, BuilderMapSP builderMap);
-    ConfigSetSource(const ConfigSetSource &) = delete;
-    ConfigSetSource &operator=(const ConfigSetSource &) = delete;
+    typedef std::map<ConfigKey, ConfigInstance*> BuilderMap;
+    typedef std::shared_ptr<BuilderMap>          BuilderMapSP;
+    ConfigSetSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey& key, BuilderMapSP builderMap);
+    ConfigSetSource(const ConfigSetSource&) = delete;
+    ConfigSetSource& operator=(const ConfigSetSource&) = delete;
     ~ConfigSetSource();
 
     void getConfig() override;
@@ -34,7 +34,7 @@ private:
     BuilderMapSP                   _builderMap;
     ConfigState                    _lastState;
 
-    bool validRequest(const ConfigKey &key);
+    bool validRequest(const ConfigKey& key);
 };
 
 } // namespace config

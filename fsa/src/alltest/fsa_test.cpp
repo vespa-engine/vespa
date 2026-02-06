@@ -10,9 +10,9 @@
 
 using namespace fsa;
 
-int main(int, char **) {
-    FSA *f = new FSA("__testfsa__.__fsa__", FILE_ACCESS_MMAP);
-    FSA::State *fs = new FSA::State(*f);
+int main(int, char**) {
+    FSA*        f = new FSA("__testfsa__.__fsa__", FILE_ACCESS_MMAP);
+    FSA::State* fs = new FSA::State(*f);
 
     std::string s("cucu");
     fs->start(s);
@@ -26,19 +26,19 @@ int main(int, char **) {
         printf("start/delta test failed.\n");
     }
 
-    const unsigned char *pb = fs->lookup("cucumber");
+    const unsigned char* pb = fs->lookup("cucumber");
     if (pb != nullptr) {
         printf("lookup test: \"cucumber\" -> \"%s\"\n", pb);
     } else {
         printf("lookup test: \"cucumber\" not found.\n");
     }
 
-    FSA::HashedState *fs1 = new FSA::HashedState(*f);
+    FSA::HashedState* fs1 = new FSA::HashedState(*f);
 
     fs1->delta("pe");
 
-    FSA::HashedState *fs2 = new FSA::HashedState(*fs1);
-    FSA::HashedState *fs3 = new FSA::HashedState(*fs1);
+    FSA::HashedState* fs2 = new FSA::HashedState(*fs1);
+    FSA::HashedState* fs3 = new FSA::HashedState(*fs1);
 
     fs1->delta("a");
     fs2->delta("ach");
@@ -59,7 +59,7 @@ int main(int, char **) {
 
     printf("revLookup test:\n");
     unsigned int i = 0;
-    std::string res;
+    std::string  res;
     while (i < 100) {
         res = fs2->revLookup(i);
         if (res.size() == 0)
@@ -82,8 +82,8 @@ int main(int, char **) {
     delete fs3;
 
     printf("counter/memory state test\n");
-    FSA::CounterState *cs = new FSA::CounterState(*f);
-    FSA::MemoryState *ms = new FSA::MemoryState(*f);
+    FSA::CounterState* cs = new FSA::CounterState(*f);
+    FSA::MemoryState*  ms = new FSA::MemoryState(*f);
 
     cs->start("cucu");
     ms->start("cucu");

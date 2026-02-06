@@ -5,21 +5,21 @@
 class MatchTester : public slobrok::api::IMirrorAPI {
     SpecList lookup(std::string_view) const override { return SpecList(); }
     uint32_t updates() const override { return 0; }
-    bool ready() const override { return true; }
+    bool     ready() const override { return true; }
 
     const std::string name;
 
-    void testMatch(const char *n, const char *p, bool expected) {
+    void testMatch(const char* n, const char* p, bool expected) {
         SCOPED_TRACE(n);
         SCOPED_TRACE(p);
         EXPECT_EQ(expected, match(n, p));
     }
 
 public:
-    MatchTester(const std::string &n) : name(n) {}
+    MatchTester(const std::string& n) : name(n) {}
 
-    void mustMatch(const std::string &pattern) { testMatch(name.c_str(), pattern.c_str(), true); }
-    void mustNotMatch(const std::string &pattern) { testMatch(name.c_str(), pattern.c_str(), false); }
+    void mustMatch(const std::string& pattern) { testMatch(name.c_str(), pattern.c_str(), true); }
+    void mustNotMatch(const std::string& pattern) { testMatch(name.c_str(), pattern.c_str(), false); }
 };
 
 TEST(MatchTest, require_that_pattern_matches_same_string) {

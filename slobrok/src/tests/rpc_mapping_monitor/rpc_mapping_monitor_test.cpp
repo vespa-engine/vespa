@@ -17,9 +17,9 @@ using vespalib::make_string_short::fmt;
 struct Server : FRT_Invokable {
     fnet::frt::StandaloneFRT frt;
     std::vector<std::string> names;
-    size_t inject_fail_cnt;
-    FNET_Connection *last_conn;
-    void set_last_conn(FNET_Connection *conn) {
+    size_t                   inject_fail_cnt;
+    FNET_Connection*         last_conn;
+    void                     set_last_conn(FNET_Connection* conn) {
         if (last_conn) {
             last_conn->internal_subref();
         }
@@ -37,22 +37,22 @@ struct Server : FRT_Invokable {
         REQUIRE(frt.supervisor().Listen(0));
     }
     ~Server() override;
-    std::string spec() const { return fmt("tcp/%d", frt.supervisor().GetListenPort()); }
-    FNET_Transport &transport() { return *frt.supervisor().GetTransport(); }
-    void rpc_listNamesServed(FRT_RPCRequest *req) {
+    std::string     spec() const { return fmt("tcp/%d", frt.supervisor().GetListenPort()); }
+    FNET_Transport& transport() { return *frt.supervisor().GetTransport(); }
+    void            rpc_listNamesServed(FRT_RPCRequest* req) {
         set_last_conn(req->GetConnection());
         if (inject_fail_cnt > 0) {
             req->SetError(FRTE_RPC_METHOD_FAILED, "fail injected by unit test");
             --inject_fail_cnt;
         } else {
-            FRT_Values &dst = *req->GetReturn();
-            FRT_StringValue *names_out = dst.AddStringArray(names.size());
+            FRT_Values&      dst = *req->GetReturn();
+            FRT_StringValue* names_out = dst.AddStringArray(names.size());
             for (size_t i = 0; i < names.size(); ++i) {
                 dst.SetString(&names_out[i], names[i].c_str());
             }
         }
     }
-    void rpc_notifyUnregistered(FRT_RPCRequest *) {}
+    void rpc_notifyUnregistered(FRT_RPCRequest*) {}
 };
 
 Server::~Server() { set_last_conn(nullptr); }
@@ -62,11 +62,11 @@ enum class State { ANY, UP, DOWN };
 // Run-Length-Encoded historic state samples for a single service mapping
 struct States {
     struct Entry {
-        State state;
+        State  state;
         size_t cnt;
     };
     std::vector<Entry> hist;
-    State state() const { return hist.back().state; }
+    State              state() const { return hist.back().state; }
     States() : hist({{State::ANY, 0}}) {}
     void sample(State state) {
         if (state == hist.back().state) {
@@ -77,7 +77,7 @@ struct States {
     }
     size_t samples(State state = State::ANY) const {
         size_t n = 0;
-        for (const auto &entry : hist) {
+        for (const auto& entry : hist) {
             if ((entry.state == state) || (state == State::ANY)) {
                 n += entry.cnt;
             }
@@ -89,20 +89,20 @@ struct States {
 // history of which call-backs we have gotten so far
 struct History : MappingMonitorOwner {
     std::map<ServiceMapping, States> map;
-    void up(const ServiceMapping &mapping) override { map[mapping].sample(State::UP); }
-    void down(const ServiceMapping &mapping) override { map[mapping].sample(State::DOWN); }
+    void                             up(const ServiceMapping& mapping) override { map[mapping].sample(State::UP); }
+    void                             down(const ServiceMapping& mapping) override { map[mapping].sample(State::DOWN); }
 };
 
 struct RpcMappingMonitorTest : public ::testing::Test {
-    fnet::TransportDebugger debugger;
-    fnet::frt::StandaloneFRT my_frt;
-    Server a;
-    Server b;
-    History hist;
+    fnet::TransportDebugger            debugger;
+    fnet::frt::StandaloneFRT           my_frt;
+    Server                             a;
+    Server                             b;
+    History                            hist;
     std::unique_ptr<RpcMappingMonitor> monitor;
-    ServiceMapping foo_a;
-    ServiceMapping bar_a;
-    ServiceMapping baz_b;
+    ServiceMapping                     foo_a;
+    ServiceMapping                     bar_a;
+    ServiceMapping                     baz_b;
     RpcMappingMonitorTest()
         : debugger(), my_frt(fnet::TransportConfig().time_tools(debugger.time_tools())), a(debugger.time_tools()),
           b(debugger.time_tools()), hist(), monitor(), foo_a("foo", a.spec()), bar_a("bar", a.spec()),

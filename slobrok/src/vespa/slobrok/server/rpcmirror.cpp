@@ -9,26 +9,26 @@ LOG_SETUP(".slobrok.server.rpcmirror");
 
 namespace slobrok {
 
-IncrementalFetch::IncrementalFetch(FRT_Supervisor *orb, FRT_RPCRequest *req, ServiceMapHistory &smh,
+IncrementalFetch::IncrementalFetch(FRT_Supervisor* orb, FRT_RPCRequest* req, ServiceMapHistory& smh,
                                    vespalib::GenCnt gen)
     : FNET_Task(orb->GetScheduler()), _req(req), _smh(smh), _gen(gen) {}
 
 IncrementalFetch::~IncrementalFetch() {}
 
 void IncrementalFetch::completeReq(MapDiff diff) {
-    FRT_Values &dst = *_req->GetReturn();
+    FRT_Values& dst = *_req->GetReturn();
 
     dst.AddInt32(diff.fromGen.getAsInt());
 
-    size_t sz = diff.removed.size();
-    FRT_StringValue *rem = dst.AddStringArray(sz);
+    size_t           sz = diff.removed.size();
+    FRT_StringValue* rem = dst.AddStringArray(sz);
     for (uint32_t i = 0; i < sz; ++i) {
         dst.SetString(&rem[i], diff.removed[i].c_str());
     }
 
     sz = diff.updated.size();
-    FRT_StringValue *names = dst.AddStringArray(sz);
-    FRT_StringValue *specs = dst.AddStringArray(sz);
+    FRT_StringValue* names = dst.AddStringArray(sz);
+    FRT_StringValue* specs = dst.AddStringArray(sz);
     for (uint32_t i = 0; i < sz; ++i) {
         dst.SetString(&names[i], diff.updated[i].name.c_str());
         dst.SetString(&specs[i], diff.updated[i].spec.c_str());

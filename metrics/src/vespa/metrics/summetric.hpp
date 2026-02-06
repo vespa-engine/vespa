@@ -47,7 +47,7 @@ SumMetric<AddendMetric>::SumMetric(const SumMetric<AddendMetric>& other, std::ve
     _metricsToSum.reserve(other._metricsToSum.size());
     for (const AddendMetric* m : _metricsToSum) {
         std::vector<String> addendPath(m->getPathVector());
-        MetricSet* newAddendParent = owner;
+        MetricSet*          newAddendParent = owner;
         for (uint32_t i = parentPath.size(), n = addendPath.size() - 1; i < n; ++i) {
             Metric* child = newAddendParent->getMetric(addendPath[i]);
             if (child == 0) {
@@ -169,7 +169,7 @@ template <typename AddendMetric> void SumMetric<AddendMetric>::addMetricToSum(co
     }
     std::vector<String> sumParentPath(_owner->getPathVector());
     std::vector<String> addedPath(metric.getPathVector());
-    bool error = false;
+    bool                error = false;
     if (addedPath.size() <= sumParentPath.size()) {
         error = true;
     } else
@@ -203,7 +203,7 @@ template <typename AddendMetric> void SumMetric<AddendMetric>::removeMetricFromS
 template <typename AddendMetric>
 std::pair<std::vector<Metric::UP>, Metric::UP> SumMetric<AddendMetric>::generateSum() const {
     std::pair<std::vector<Metric::UP>, Metric::UP> retVal;
-    Metric* m = clone(retVal.first, INACTIVE, 0, true);
+    Metric*                                        m = clone(retVal.first, INACTIVE, 0, true);
     m->setRegistered(_owner);
     retVal.second.reset(m);
     return retVal;

@@ -40,18 +40,18 @@ struct MetricValueClass {
     using string_view = std::string_view;
     virtual ~MetricValueClass() = default;
 
-    virtual double getDoubleValue(string_view id) const = 0;
+    virtual double   getDoubleValue(string_view id) const = 0;
     virtual uint64_t getLongValue(string_view id) const = 0;
-    virtual void output(const std::string& id, std::ostream&) const = 0;
-    virtual void output(const std::string& id, vespalib::JsonStream&) const = 0;
-    std::string toString(const std::string& id);
+    virtual void     output(const std::string& id, std::ostream&) const = 0;
+    virtual void     output(const std::string& id, vespalib::JsonStream&) const = 0;
+    std::string      toString(const std::string& id);
 };
 
 template <typename ValueClass> class MetricValueSet {
     using AtomicValues = typename ValueClass::AtomicImpl;
     std::array<AtomicValues, 3> _values;
-    std::atomic<uint32_t> _activeValueIndex;
-    std::atomic<uint32_t> _flags;
+    std::atomic<uint32_t>       _activeValueIndex;
+    std::atomic<uint32_t>       _flags;
 
     enum Flag { RESET = 1 };
     bool isReset() const noexcept { return hasFlag(RESET); }

@@ -64,7 +64,7 @@ public:
     struct Timer {
         virtual ~Timer() = default;
         virtual time_point getTime() const;
-        time_point getTimeInMilliSecs() const { return getTime(); }
+        time_point         getTimeInMilliSecs() const { return getTime(); }
     };
 
     /**
@@ -87,32 +87,32 @@ public:
     };
 
 private:
-    MetricSnapshot _activeMetrics;
-    std::unique_ptr<config::ConfigSubscriber> _configSubscriber;
+    MetricSnapshot                                              _activeMetrics;
+    std::unique_ptr<config::ConfigSubscriber>                   _configSubscriber;
     std::unique_ptr<config::ConfigHandle<MetricsmanagerConfig>> _configHandle;
-    std::unique_ptr<MetricsmanagerConfig> _config;
-    std::map<Metric::String, ConsumerSpec> _consumerConfig;
-    std::list<UpdateHook*> _periodicUpdateHooks;
-    std::list<UpdateHook*> _snapshotUpdateHooks;
-    mutable std::mutex _waiter;
-    mutable std::condition_variable _cond;
-    std::vector<std::shared_ptr<MetricSnapshotSet>> _snapshots;
-    std::shared_ptr<MetricSnapshot> _totalMetrics;
-    std::unique_ptr<Timer> _timer;
-    std::atomic<time_point> _lastProcessedTime;
+    std::unique_ptr<MetricsmanagerConfig>                       _config;
+    std::map<Metric::String, ConsumerSpec>                      _consumerConfig;
+    std::list<UpdateHook*>                                      _periodicUpdateHooks;
+    std::list<UpdateHook*>                                      _snapshotUpdateHooks;
+    mutable std::mutex                                          _waiter;
+    mutable std::condition_variable                             _cond;
+    std::vector<std::shared_ptr<MetricSnapshotSet>>             _snapshots;
+    std::shared_ptr<MetricSnapshot>                             _totalMetrics;
+    std::unique_ptr<Timer>                                      _timer;
+    std::atomic<time_point>                                     _lastProcessedTime;
     // Should be added to config, but wont now due to problems with
     // upgrading
     bool _snapshotUnsetMetrics;
     bool _consumerConfigChanged;
 
-    MetricSet _metricManagerMetrics;
+    MetricSet         _metricManagerMetrics;
     LongAverageMetric _periodicHookLatency;
     LongAverageMetric _snapshotHookLatency;
     LongAverageMetric _resetLatency;
     LongAverageMetric _snapshotLatency;
     LongAverageMetric _sleepTimes;
     std::atomic<bool> _stop_requested;
-    std::thread _thread;
+    std::thread       _thread;
 
     void request_stop() { _stop_requested.store(true, std::memory_order_relaxed); }
     bool stop_requested() const { return _stop_requested.load(std::memory_order_relaxed); }
@@ -231,8 +231,8 @@ public:
     const MetricSnapshot& getMetricSnapshot(const MetricLockGuard& guard, vespalib::duration period) const {
         return getMetricSnapshot(guard, period, false);
     }
-    const MetricSnapshot& getMetricSnapshot(const MetricLockGuard&, vespalib::duration period,
-                                            bool getInProgressSet) const;
+    const MetricSnapshot&    getMetricSnapshot(const MetricLockGuard&, vespalib::duration period,
+                                               bool getInProgressSet) const;
     const MetricSnapshotSet& getMetricSnapshotSet(const MetricLockGuard&, vespalib::duration period) const;
 
     std::vector<time_point::duration> getSnapshotPeriods(const MetricLockGuard& l) const;
@@ -267,8 +267,8 @@ private:
     friend struct MetricManagerTest;
     friend struct SnapshotTest;
 
-    void configure(const MetricLockGuard& guard, std::unique_ptr<MetricsmanagerConfig> conf);
-    void run();
+    void       configure(const MetricLockGuard& guard, std::unique_ptr<MetricsmanagerConfig> conf);
+    void       run();
     time_point tick(const MetricLockGuard& guard, time_point currentTime);
     /**
      * Utility function for updating periodic metrics.
@@ -280,13 +280,13 @@ private:
      * @return Time of next hook to be called in the future.
      */
     time_point updatePeriodicMetrics(const MetricLockGuard& guard, time_point updateTime, bool outOfSchedule);
-    void updateSnapshotMetrics(const MetricLockGuard& guard);
+    void       updateSnapshotMetrics(const MetricLockGuard& guard);
 
     void handleMetricsAltered(const MetricLockGuard& guard);
 
     using SnapSpec = std::pair<time_point::duration, std::string>;
     static std::vector<SnapSpec> createSnapshotPeriods(const MetricsmanagerConfig& config);
-    void assertMetricLockLocked(const MetricLockGuard& g) const;
+    void                         assertMetricLockLocked(const MetricLockGuard& g) const;
 };
 
 } // namespace metrics

@@ -11,21 +11,21 @@ struct MapSource;
 
 class MapSubscription {
 private:
-    MapSource &_source;
-    MapListener &_listener;
+    MapSource&   _source;
+    MapListener& _listener;
     struct Tag {};
 
 public:
-    MapSubscription(MapSource &source, MapListener &listener, Tag);
+    MapSubscription(MapSource& source, MapListener& listener, Tag);
 
-    MapSubscription(const MapSubscription &) = delete;
-    MapSubscription(MapSubscription &&) = delete;
-    MapSubscription &operator=(const MapSubscription &) = delete;
-    MapSubscription &operator=(MapSubscription &&) = delete;
+    MapSubscription(const MapSubscription&) = delete;
+    MapSubscription(MapSubscription&&) = delete;
+    MapSubscription& operator=(const MapSubscription&) = delete;
+    MapSubscription& operator=(MapSubscription&&) = delete;
 
     ~MapSubscription();
 
-    static std::unique_ptr<MapSubscription> subscribe(MapSource &source, MapListener &listener);
+    static std::unique_ptr<MapSubscription> subscribe(MapSource& source, MapListener& listener);
 };
 
 /**
@@ -36,8 +36,8 @@ struct MapSource {
 
 private:
     friend class MapSubscription;
-    virtual void registerListener(MapListener &listener) = 0;
-    virtual void unregisterListener(MapListener &listener) = 0;
+    virtual void registerListener(MapListener& listener) = 0;
+    virtual void unregisterListener(MapListener& listener) = 0;
 };
 
 } // namespace slobrok

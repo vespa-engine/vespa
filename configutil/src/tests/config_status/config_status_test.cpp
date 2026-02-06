@@ -15,9 +15,9 @@ auto create_server() { return Portal::create(std::make_shared<NullCryptoEngine>(
 
 class HTTPStatus : public vespalib::Portal::GetHandler {
 private:
-    Portal::SP _server;
-    std::string _reply;
-    bool _fail;
+    Portal::SP        _server;
+    std::string       _reply;
+    bool              _fail;
     Portal::Token::UP _root;
 
     void get(Portal::GetRequest request) override {
@@ -42,14 +42,14 @@ HTTPStatus::~HTTPStatus() { _root.reset(); }
 
 class Status {
 public:
-    ConfigStatus::Flags flags;
+    ConfigStatus::Flags           flags;
     std::unique_ptr<ConfigStatus> status;
 
     Status(int http_port, const ConfigStatus::Flags& cfg_flags, const std::vector<std::string>& model_hosts)
         : flags(cfg_flags) {
         flags.verbose = true;
-        ConfigSet set;
-        auto ctx = std::make_shared<ConfigContext>(set);
+        ConfigSet                         set;
+        auto                              ctx = std::make_shared<ConfigContext>(set);
         cloud::config::ModelConfigBuilder builder;
 
         cloud::config::ModelConfigBuilder::Hosts::Services::Ports port;
@@ -73,7 +73,7 @@ public:
         }
 
         set.addBuilder("admin/model", &builder);
-        config::ConfigUri uri("admin/model", ctx);
+        config::ConfigUri             uri("admin/model", ctx);
         std::unique_ptr<ConfigStatus> s(new ConfigStatus(flags, uri));
         status = std::move(s);
     }
@@ -87,33 +87,33 @@ std::string ok_json_at_gen_1() { return "{\"config\": { \"all\": { \"generation\
 
 TEST(ConfigStatusTest, all_ok) {
     HTTPStatus f1(ok_json_at_gen_1());
-    Status f2(f1.getListenPort());
+    Status     f2(f1.getListenPort());
     ASSERT_EQ(0, f2.status->action());
 }
 
 TEST(ConfigStatusTest, generation_too_old) {
     HTTPStatus f1(std::string("{\"config\": { \"all\": { \"generation\": 0 } }}"));
-    Status f2(f1.getListenPort());
+    Status     f2(f1.getListenPort());
     ASSERT_EQ(1, f2.status->action());
 }
 
 TEST(ConfigStatusTest, bad_json) {
     HTTPStatus f1(std::string("{"));
-    Status f2(f1.getListenPort());
+    Status     f2(f1.getListenPort());
     ASSERT_EQ(1, f2.status->action());
 }
 
 TEST(ConfigStatusTest, http_failure) {
     HTTPStatus f1(true);
-    Status f2(f1.getListenPort());
+    Status     f2(f1.getListenPort());
     ASSERT_EQ(1, f2.status->action());
 }
 
 TEST(ConfigStatusTest, queried_host_set_can_be_constrained) {
-    HTTPStatus f1(ok_json_at_gen_1());
-    HostFilter filter({"localhost"});
+    HTTPStatus               f1(ok_json_at_gen_1());
+    HostFilter               filter({"localhost"});
     std::vector<std::string> hosts({"localhost", "no-such-host.foo.yahoo.com"});
-    Status status(f1.getListenPort(), ConfigStatus::Flags(filter), hosts);
+    Status                   status(f1.getListenPort(), ConfigStatus::Flags(filter), hosts);
     // Non-existing host should never be contacted.
     ASSERT_EQ(0, status.status->action());
 }

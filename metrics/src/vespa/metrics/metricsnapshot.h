@@ -54,12 +54,12 @@ public:
 
     const Metric::String& getName() const { return _name; }
     system_time::duration getPeriod() const { return _period; }
-    system_time getFromTime() const { return _fromTime; }
-    system_time getToTime() const { return _toTime; }
-    const MetricSet& getMetrics() const { return *_snapshot; }
-    MetricSet& getMetrics() { return *_snapshot; }
-    void reset(system_time currentTime);
-    void reset();
+    system_time           getFromTime() const { return _fromTime; }
+    system_time           getToTime() const { return _toTime; }
+    const MetricSet&      getMetrics() const { return *_snapshot; }
+    MetricSet&            getMetrics() { return *_snapshot; }
+    void                  reset(system_time currentTime);
+    void                  reset();
     /**
      * Recreate snapshot by cloning given metric set and then add the data
      * from the old one. New metrics have been added.
@@ -76,7 +76,7 @@ class MetricSnapshotSet {
                                                // building instance.
     std::unique_ptr<MetricSnapshot> _current;  // The last full period
     std::unique_ptr<MetricSnapshot> _building; // The building period
-    bool _current_is_assigned;
+    bool                            _current_is_assigned;
 
 public:
     MetricSnapshotSet(const Metric::String& name, system_time::duration period, uint32_t count, const MetricSet& source,
@@ -85,21 +85,21 @@ public:
 
     const Metric::String& getName() const { return _current->getName(); }
     system_time::duration getPeriod() const { return _current->getPeriod(); }
-    system_time getFromTime() const { return _current->getFromTime(); }
-    system_time getToTime() const { return _current->getToTime(); }
-    system_time getNextWorkTime() const { return getToTime() + getPeriod(); }
-    uint32_t getCount() const { return _count; }
-    uint32_t getBuilderCount() const { return _builderCount; }
-    MetricSnapshot& getSnapshot() { return getSnapshot(false); }
-    MetricSnapshot& getSnapshot(bool temporary) { return *((temporary && _count > 1) ? _building : _current); }
+    system_time           getFromTime() const { return _current->getFromTime(); }
+    system_time           getToTime() const { return _current->getToTime(); }
+    system_time           getNextWorkTime() const { return getToTime() + getPeriod(); }
+    uint32_t              getCount() const { return _count; }
+    uint32_t              getBuilderCount() const { return _builderCount; }
+    MetricSnapshot&       getSnapshot() { return getSnapshot(false); }
+    MetricSnapshot&       getSnapshot(bool temporary) { return *((temporary && _count > 1) ? _building : _current); }
 
     const MetricSnapshot& getSnapshot(bool temporary) const {
         return *((temporary && _count > 1) ? _building : _current);
     }
     MetricSnapshot& getNextTarget();
-    bool timeForAnotherSnapshot(system_time currentTime);
-    bool haveCompletedNewPeriod(system_time newFromTime);
-    void reset(system_time currentTime);
+    bool            timeForAnotherSnapshot(system_time currentTime);
+    bool            haveCompletedNewPeriod(system_time newFromTime);
+    void            reset(system_time currentTime);
     /**
      * Recreate snapshot by cloning given metric set and then add the data
      * from the old one. New metrics have been added.
@@ -109,7 +109,7 @@ public:
     void setFromTime(system_time fromTime);
 
     [[nodiscard]] bool current_is_assigned() const noexcept { return _current_is_assigned; }
-    void tag_current_as_assigned() noexcept { _current_is_assigned = true; }
+    void               tag_current_as_assigned() noexcept { _current_is_assigned = true; }
 };
 
 } // namespace metrics

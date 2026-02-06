@@ -37,19 +37,19 @@ protected:
 
 private:
     /** Private unimplemented copy constructor */
-    ConceptNetManager(const ConceptNetManager &);
+    ConceptNetManager(const ConceptNetManager&);
     /** Private unimplemented assignment operator */
-    ConceptNetManager &operator=(const ConceptNetManager &);
+    ConceptNetManager& operator=(const ConceptNetManager&);
 
     /** %ConceptNet library type */
-    using Library = std::map<std::string, ConceptNet::Handle *>;
+    using Library = std::map<std::string, ConceptNet::Handle*>;
     /** %ConceptNet library iterator type */
-    using LibraryIterator = std::map<std::string, ConceptNet::Handle *>::iterator;
+    using LibraryIterator = std::map<std::string, ConceptNet::Handle*>::iterator;
     /** %ConceptNet library const iterator type */
-    using LibraryConstIterator = std::map<std::string, ConceptNet::Handle *>::const_iterator;
+    using LibraryConstIterator = std::map<std::string, ConceptNet::Handle*>::const_iterator;
 
-    Library _library;                /**< Library of concept networks.                 */
-    mutable std::shared_mutex _lock; /**< Read-write lock for library synchronization. */
+    Library                   _library; /**< Library of concept networks.                 */
+    mutable std::shared_mutex _lock;    /**< Read-write lock for library synchronization. */
 
 public:
     /** Destructor */
@@ -64,7 +64,7 @@ public:
      *                 string which means use the fsa file name but
      *                 replace .fsa extension with .dat).
      */
-    bool load(const std::string &id, const std::string &fsafile, const std::string &datafile = std::string(""));
+    bool load(const std::string& id, const std::string& fsafile, const std::string& datafile = std::string(""));
 
     /**
      * @brief Get a handle to a concept net.
@@ -73,7 +73,7 @@ public:
      * @return Newly allocated handle, must be deleted by the
      *         caller. (NULL if no concept net with the given id was found.)
      */
-    ConceptNet::Handle *get(const std::string &id) const;
+    ConceptNet::Handle* get(const std::string& id) const;
 
     /**
      * @brief Drop a concept net from the library.
@@ -84,7 +84,7 @@ public:
      *
      * @param id Concept net id.
      */
-    void drop(const std::string &id);
+    void drop(const std::string& id);
 
     /**
      * @brief Drop all concept nets from the library.

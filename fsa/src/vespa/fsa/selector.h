@@ -36,7 +36,7 @@ public:
      *
      * @param s Selector to copy.
      */
-    Selector(const Selector &s) : _selector(s._selector) {}
+    Selector(const Selector& s) : _selector(s._selector) {}
 
     /**
      * @brief Constructor.

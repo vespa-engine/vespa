@@ -32,7 +32,7 @@ LogMessageTest::~LogMessageTest() = default;
 
 TEST_F(LogMessageTest, require_that_plain_entry_is_ok) {
     std::string log_line = "10.5\tlocalhost\t10/20\ttest\ttestrunner\twarning\thello world";
-    LogMessage message;
+    LogMessage  message;
     message.parse_log_line(log_line);
     EXPECT_EQ(INT64_C(10500000000), message.time_nanos());
     EXPECT_EQ("localhost", message.hostname());
@@ -46,7 +46,7 @@ TEST_F(LogMessageTest, require_that_plain_entry_is_ok) {
 
 TEST_F(LogMessageTest, require_that_missing_thread_id_is_ok) {
     std::string log_line = "10.5\tlocalhost\t10\ttest\ttestrunner\twarning\thello world";
-    LogMessage message;
+    LogMessage  message;
     message.parse_log_line(log_line);
     EXPECT_EQ(10, message.process_id());
     EXPECT_EQ(0, message.thread_id());
@@ -103,14 +103,14 @@ TEST_F(LogMessageTest, require_that_empty_level_fails) {
 
 TEST_F(LogMessageTest, require_that_empty_payload_is_ok) {
     std::string log_line = "10\tlocalhost\t10\ttest\ttestrunner\twarning\t";
-    LogMessage message;
+    LogMessage  message;
     message.parse_log_line(log_line);
     EXPECT_EQ(std::string(""), message.payload());
 }
 
 TEST_F(LogMessageTest, require_that_nonempty_payload_is_ok) {
     std::string log_line = "10\tlocalhost\t10\ttest\ttestrunner\twarning\thi";
-    LogMessage message;
+    LogMessage  message;
     message.parse_log_line(log_line);
     EXPECT_EQ(std::string("hi"), message.payload());
 }

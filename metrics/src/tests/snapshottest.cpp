@@ -10,22 +10,22 @@ namespace metrics {
 namespace {
 
 struct SubSubMetricSet : public MetricSet {
-    int incVal;
-    LongCountMetric count1;
-    LongCountMetric count2;
-    SumMetric<LongCountMetric> countSum;
-    DoubleValueMetric value1;
-    DoubleValueMetric value2;
-    SumMetric<DoubleValueMetric> valueSum;
-    DoubleAverageMetric average1;
-    DoubleAverageMetric average2;
+    int                            incVal;
+    LongCountMetric                count1;
+    LongCountMetric                count2;
+    SumMetric<LongCountMetric>     countSum;
+    DoubleValueMetric              value1;
+    DoubleValueMetric              value2;
+    SumMetric<DoubleValueMetric>   valueSum;
+    DoubleAverageMetric            average1;
+    DoubleAverageMetric            average2;
     SumMetric<DoubleAverageMetric> averageSum;
 
     explicit SubSubMetricSet(const std::string& name, MetricSet* owner = nullptr);
     ~SubSubMetricSet() override;
     MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, metrics::MetricSet* owner,
                      bool includeUnused) const override;
-    void incValues();
+    void       incValues();
 };
 
 SubSubMetricSet::SubSubMetricSet(const std::string& name, MetricSet* owner)
@@ -60,8 +60,8 @@ void SubSubMetricSet::incValues() {
 }
 
 struct SubMetricSet : public MetricSet {
-    SubSubMetricSet set1;
-    SubSubMetricSet set2;
+    SubSubMetricSet            set1;
+    SubSubMetricSet            set2;
     SumMetric<SubSubMetricSet> setSum;
 
     explicit SubMetricSet(const std::string& name, MetricSet* owner = nullptr);
@@ -94,8 +94,8 @@ void SubMetricSet::incValues() {
 }
 
 struct TestMetricSet : public MetricSet {
-    SubMetricSet set1;
-    SubMetricSet set2;
+    SubMetricSet            set1;
+    SubMetricSet            set2;
     SumMetric<SubMetricSet> setSum;
 
     TestMetricSet(const std::string& name);
@@ -143,7 +143,7 @@ struct SnapshotTest : public ::testing::Test {
 TEST_F(SnapshotTest, test_snapshot_two_days) {
     TestMetricSet set("test");
 
-    FakeTimer* timer;
+    FakeTimer*    timer;
     MetricManager mm(std::unique_ptr<MetricManager::Timer>(timer = new FakeTimer));
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
@@ -183,7 +183,7 @@ TEST_F(SnapshotTest, test_snapshot_two_days) {
     */
 
     // active snapshot
-    MetricLockGuard lockGuard(mm.getMetricLock());
+    MetricLockGuard       lockGuard(mm.getMetricLock());
     const MetricSnapshot* snap = &mm.getActiveMetrics(lockGuard);
     ASSERT_VALUE(0, *snap, "test.set1.set1.count1");
     ASSERT_VALUE(0, *snap, "test.set1.set1.countSum");

@@ -13,9 +13,9 @@ using namespace std::chrono_literals;
 
 namespace slobrok {
 
-ReconfigurableStateServer::ReconfigurableStateServer(const config::ConfigUri& configUri,
-                                                     vespalib::HealthProducer& health,
-                                                     vespalib::MetricsProducer& metrics,
+ReconfigurableStateServer::ReconfigurableStateServer(const config::ConfigUri&           configUri,
+                                                     vespalib::HealthProducer&          health,
+                                                     vespalib::MetricsProducer&         metrics,
                                                      vespalib::ComponentConfigProducer& components)
     : _health(health), _metrics(metrics), _components(components),
       _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())), _server() {

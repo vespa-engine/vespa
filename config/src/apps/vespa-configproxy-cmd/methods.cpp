@@ -17,7 +17,7 @@ const Method methods[] = {
     {"updatesources", "updateSources", 1},
     {nullptr, nullptr, 0}};
 
-const Method find(const std::string &name) {
+const Method find(const std::string& name) {
     for (size_t i = 0; methods[i].shortName != nullptr; ++i) {
         if (name == methods[i].shortName) {
             return methods[i];

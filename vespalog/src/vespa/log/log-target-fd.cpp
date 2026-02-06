@@ -12,7 +12,7 @@ LOG_SETUP(".log");
 
 namespace ns_log {
 
-LogTargetFd::LogTargetFd(int fd_spec, const char *target) : LogTarget(target), _fd(-1), _istty(false) {
+LogTargetFd::LogTargetFd(int fd_spec, const char* target) : LogTarget(target), _fd(-1), _istty(false) {
     _fd = dup(fd_spec);
     if (_fd == -1) {
         throwInvalid("Bad target for LogTargetFd: '%s'", target);
@@ -27,6 +27,6 @@ LogTargetFd::~LogTargetFd() { close(_fd); }
 
 // When writing to file descriptors, there is really not much to do.
 // No log rotation is supported (at least not directly).
-int LogTargetFd::write(const char *buf, int bufLen) { return ::write(_fd, buf, bufLen); }
+int LogTargetFd::write(const char* buf, int bufLen) { return ::write(_fd, buf, bufLen); }
 
 } // end namespace ns_log

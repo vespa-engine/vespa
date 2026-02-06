@@ -15,21 +15,21 @@ public:
     using UP = std::unique_ptr<Cmd>;
     enum CmdType { LIST, RESTART, START, STOP };
 
-    Cmd(FRT_RPCRequest *req, CmdType cmdType, const char *service = "")
+    Cmd(FRT_RPCRequest* req, CmdType cmdType, const char* service = "")
         : _req(req), _cmdType(cmdType), _serviceName(service) {}
 
     CmdType     type() const { return _cmdType; }
-    const char *serviceName() const { return _serviceName; }
+    const char* serviceName() const { return _serviceName; }
 
-    void retError(const char *errorString) const;
-    void retValue(const char *valueString) const;
+    void retError(const char* errorString) const;
+    void retValue(const char* valueString) const;
 
     ~Cmd();
 
 private:
-    FRT_RPCRequest *_req;
+    FRT_RPCRequest* _req;
     CmdType         _cmdType;
-    const char     *_serviceName;
+    const char*     _serviceName;
 };
 
 class CommandQueue {

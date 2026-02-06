@@ -88,15 +88,15 @@ public:
 
     /** Get memory usage of a string that is not included when doing sizeof */
     uint32_t getStringMemoryUsage(const std::string& s, uint32_t& uniqueCount);
-    void addSnapShotUsage(const std::string& name, uint32_t usage);
+    void     addSnapShotUsage(const std::string& name, uint32_t usage);
 
     uint32_t getTotalMemoryUsage() const;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void     print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     static std::string bval(uint32_t bytes);
 
 private:
-    std::unique_ptr<SeenStrings> _seenStrings;
+    std::unique_ptr<SeenStrings>   _seenStrings;
     std::unique_ptr<SnapShotUsage> _snapShotUsage;
 };
 

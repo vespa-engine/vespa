@@ -55,7 +55,7 @@ private:
      */
     struct Transition {
         symbol_t _symbol; /**< Input symbol. */
-        State* _state;    /**< New state.    */
+        State*   _state;  /**< New state.    */
     };
     // }}}
 
@@ -82,7 +82,7 @@ private:
     private:
         unsigned int _alloc; /**< Allocated size (number of transitions). */
         unsigned int _size;  /**< Used size.                              */
-        Transition* _trans;  /**< Transition array.                       */
+        Transition*  _trans; /**< Transition array.                       */
 
     public:
         /**
@@ -354,7 +354,7 @@ private:
 
     private:
         TransitionList _tlist; /**< Transition list. */
-        const Blob* _blob;     /**< Meta info blob.  */
+        const Blob*    _blob;  /**< Meta info blob.  */
 
     public:
         /**
@@ -550,19 +550,19 @@ private:
     class PackedAutomaton {
 
     private:
-        bool _packable;        /**< Packable flag.                    */
-        PackMap _pack_map;     /**< Map state pointers to indices.    */
-        PackMap _blob_map;     /**< Map blob pointers to indices.     */
-        State** _packed_ptr;   /**< Array for state pointers.         */
-        state_t* _packed_idx;  /**< Array for state indices.          */
-        symbol_t* _symbol;     /**< Array for transition symbols.     */
-        bool* _used;           /**< Array for cell used flags.        */
-        hash_t* _perf_hash;    /**< Array for perfect hash deltas.    */
-        hash_t* _totals;       /**< Array for perfect hash totals.    */
-        uint32_t _packed_size; /**< Size of packed arrays (in cells). */
-        uint32_t _last_packed; /**< Index of last packed state.       */
+        bool      _packable;    /**< Packable flag.                    */
+        PackMap   _pack_map;    /**< Map state pointers to indices.    */
+        PackMap   _blob_map;    /**< Map blob pointers to indices.     */
+        State**   _packed_ptr;  /**< Array for state pointers.         */
+        state_t*  _packed_idx;  /**< Array for state indices.          */
+        symbol_t* _symbol;      /**< Array for transition symbols.     */
+        bool*     _used;        /**< Array for cell used flags.        */
+        hash_t*   _perf_hash;   /**< Array for perfect hash deltas.    */
+        hash_t*   _totals;      /**< Array for perfect hash totals.    */
+        uint32_t  _packed_size; /**< Size of packed arrays (in cells). */
+        uint32_t  _last_packed; /**< Index of last packed state.       */
 
-        data_t* _blob;             /**< Data storage.                     */
+        data_t*  _blob;            /**< Data storage.                     */
         uint32_t _blob_size;       /**< Data storage size.                */
         uint32_t _blob_used;       /**< Used data storage size.           */
         uint32_t _blob_type;       /**< Type of data items (fixed/var.)   */
@@ -765,12 +765,12 @@ private:
 
     // }}}
 
-    Register _register;          /**< Register of states.           */
-    BlobRegister _blob_register; /**< Register of data items.       */
-    State* _q0;                  /**< Start state.                  */
-    std::string _previous_input; /**< Previous input string.        */
-    bool _finalized;             /**< Finalized flag.               */
-    PackedAutomaton _packed;     /**< Packed automaton.             */
+    Register        _register;       /**< Register of states.           */
+    BlobRegister    _blob_register;  /**< Register of data items.       */
+    State*          _q0;             /**< Start state.                  */
+    std::string     _previous_input; /**< Previous input string.        */
+    bool            _finalized;      /**< Finalized flag.               */
+    PackedAutomaton _packed;         /**< Packed automaton.             */
 
     /**
      * @brief Get common path length.

@@ -64,7 +64,7 @@ public:
      *
      * @return Difference between timestamps in seconds.
      */
-    double operator-(const TimeStamp &other) const {
+    double operator-(const TimeStamp& other) const {
         return double(_ts.tv_sec) - double(other._ts.tv_sec) +
                (double(_ts.tv_usec) - double(other._ts.tv_usec)) / 1000000.0;
     }

@@ -18,8 +18,8 @@ struct Flags {
     std::vector<std::string> args;
     std::string              targethost;
     int                      portnumber;
-    Flags(const Flags &);
-    Flags &operator=(const Flags &);
+    Flags(const Flags&);
+    Flags& operator=(const Flags&);
     Flags();
     ~Flags();
 };
@@ -27,19 +27,19 @@ struct Flags {
 class ProxyCmd {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Target                               *_target;
-    FRT_RPCRequest                           *_req;
+    FRT_Target*                               _target;
+    FRT_RPCRequest*                           _req;
     Flags                                     _flags;
 
     void        initRPC();
     void        invokeRPC();
     void        finiRPC();
-    void        printArray(FRT_Values *rvals);
+    void        printArray(FRT_Values* rvals);
     std::string makeSpec();
     void        autoPrint();
 
 public:
-    ProxyCmd(const Flags &flags);
+    ProxyCmd(const Flags& flags);
     virtual ~ProxyCmd();
     int action();
 };

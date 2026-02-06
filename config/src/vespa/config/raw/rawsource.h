@@ -12,9 +12,9 @@ class IConfigHolder;
  */
 class RawSource : public Source {
 public:
-    RawSource(std::shared_ptr<IConfigHolder> holder, const std::string &payload);
-    RawSource(const RawSource &) = delete;
-    RawSource &operator=(const RawSource &) = delete;
+    RawSource(std::shared_ptr<IConfigHolder> holder, const std::string& payload);
+    RawSource(const RawSource&) = delete;
+    RawSource& operator=(const RawSource&) = delete;
     ~RawSource() override;
     void getConfig() override;
     void reload(int64_t generation) override;

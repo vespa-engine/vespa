@@ -28,7 +28,7 @@ public:
      * @param orb the Supervisor to use
      * @param config used to obtain the slobrok connect spec list
      **/
-    RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory &config);
+    RegisterAPI(FRT_Supervisor& orb, const ConfiguratorFactory& config);
 
     /**
      * @brief Clean up (deregisters all service names).
@@ -57,20 +57,20 @@ public:
 private:
     class RPCHooks : public FRT_Invokable {
     private:
-        RegisterAPI &_owner;
-        void rpc_listNamesServed(FRT_RPCRequest *req);
-        void rpc_notifyUnregistered(FRT_RPCRequest *req);
+        RegisterAPI& _owner;
+        void         rpc_listNamesServed(FRT_RPCRequest* req);
+        void         rpc_notifyUnregistered(FRT_RPCRequest* req);
 
     public:
-        RPCHooks(RegisterAPI &owner);
+        RPCHooks(RegisterAPI& owner);
         ~RPCHooks();
     };
     friend class RPCHooks;
 
-    RegisterAPI(const RegisterAPI &);
-    RegisterAPI &operator=(const RegisterAPI &);
+    RegisterAPI(const RegisterAPI&);
+    RegisterAPI& operator=(const RegisterAPI&);
 
-    bool match(const char *name, const char *pattern);
+    bool match(const char* name, const char* pattern);
 
     /** from FNET_Task, poll slobrok **/
     void PerformTask() override;
@@ -79,24 +79,24 @@ private:
     void handlePending();   // implementation detail of PerformTask
 
     /** from FRT_IRequestWait **/
-    void RequestDone(FRT_RPCRequest *req) override;
+    void RequestDone(FRT_RPCRequest* req) override;
 
-    FRT_Supervisor &_orb;
-    RPCHooks _hooks;
-    std::mutex _lock;
-    std::atomic<bool> _reqDone;
-    bool _logOnSuccess;
-    std::atomic<bool> _busy;
-    SlobrokList _slobrokSpecs;
-    Configurator::UP _configurator;
-    std::string _currSlobrok;
-    uint32_t _idx;
-    BackOff _backOff;
+    FRT_Supervisor&          _orb;
+    RPCHooks                 _hooks;
+    std::mutex               _lock;
+    std::atomic<bool>        _reqDone;
+    bool                     _logOnSuccess;
+    std::atomic<bool>        _busy;
+    SlobrokList              _slobrokSpecs;
+    Configurator::UP         _configurator;
+    std::string              _currSlobrok;
+    uint32_t                 _idx;
+    BackOff                  _backOff;
     std::vector<std::string> _names;   // registered service names
     std::vector<std::string> _pending; // pending service name registrations
     std::vector<std::string> _unreg;   // pending service name unregistrations
-    FRT_Target *_target;
-    FRT_RPCRequest *_req;
+    FRT_Target*              _target;
+    FRT_RPCRequest*          _req;
 };
 
 } // namespace slobrok::api

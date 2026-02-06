@@ -9,11 +9,11 @@
 
 using namespace fsa;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
-    NGram query;
+    NGram             query;
     WordCharTokenizer tokenizer(WordCharTokenizer::PUNCTUATION_WHITESPACEONLY);
-    std::string qstr;
+    std::string       qstr;
 
     while (!std::cin.eof()) {
         getline(std::cin, qstr);

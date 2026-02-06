@@ -16,9 +16,9 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    FSA f(argv[1]);
+    FSA              f(argv[1]);
     FSA::HashedState fs(f);
-    std::string input;
+    std::string      input;
 
     while (!std::cin.eof()) {
         getline(std::cin, input);

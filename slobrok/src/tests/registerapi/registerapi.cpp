@@ -18,7 +18,7 @@ using slobrok::SlobrokServer;
 using slobrok::api::MirrorAPI;
 using slobrok::api::RegisterAPI;
 
-std::string createSpec(FRT_Supervisor &orb) {
+std::string createSpec(FRT_Supervisor& orb) {
     if (orb.GetListenPort() == 0) {
         return std::string();
     }
@@ -34,19 +34,19 @@ struct SpecList {
     MirrorAPI::SpecList _specList;
     SpecList() : _specList() {}
     SpecList(MirrorAPI::SpecList input) : _specList(input) {}
-    SpecList &add(const char *name, const char *spec) {
+    SpecList& add(const char* name, const char* spec) {
         _specList.push_back(make_pair(std::string(name), std::string(spec)));
         return *this;
     }
     void sort() { std::sort(_specList.begin(), _specList.end()); }
-    bool operator==(SpecList &rhs) { // NB: MUTATE!
+    bool operator==(SpecList& rhs) { // NB: MUTATE!
         sort();
         rhs.sort();
         return _specList == rhs._specList;
     }
 };
 
-bool compare(MirrorAPI &api, const char *pattern, SpecList expect) {
+bool compare(MirrorAPI& api, const char* pattern, SpecList expect) {
     for (int i = 0; i < 250; ++i) {
         SpecList actual(api.lookup(pattern));
         if (actual == expect) {
@@ -62,16 +62,16 @@ TEST(RegisterAPITest, registerapi_test) {
     SlobrokServer mock(18548);
     std::this_thread::sleep_for(300ms);
 
-    cloud::config::SlobroksConfigBuilder slobrokSpecs;
+    cloud::config::SlobroksConfigBuilder   slobrokSpecs;
     cloud::config::SlobroksConfig::Slobrok sb;
     sb.connectionspec = "tcp/localhost:18548";
     slobrokSpecs.slobrok.push_back(sb);
     slobrok::ConfiguratorFactory config(config::ConfigUri::createFromInstance(slobrokSpecs));
 
     fnet::frt::StandaloneFRT server;
-    FRT_Supervisor &orb = server.supervisor();
-    RegisterAPI reg(orb, config);
-    MirrorAPI mirror(orb, config);
+    FRT_Supervisor&          orb = server.supervisor();
+    RegisterAPI              reg(orb, config);
+    MirrorAPI                mirror(orb, config);
     orb.Listen(18549);
     std::string myspec = createSpec(orb);
 

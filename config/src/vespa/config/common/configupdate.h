@@ -12,13 +12,13 @@ namespace config {
 class ConfigUpdate {
 public:
     ConfigUpdate(ConfigValue value, bool changed, int64_t generation);
-    ConfigUpdate(const ConfigUpdate &) = delete;
-    ConfigUpdate &operator=(const ConfigUpdate &) = delete;
+    ConfigUpdate(const ConfigUpdate&) = delete;
+    ConfigUpdate& operator=(const ConfigUpdate&) = delete;
     ~ConfigUpdate();
-    const ConfigValue &getValue() const noexcept { return _value; }
+    const ConfigValue& getValue() const noexcept { return _value; }
     bool               hasChanged() const noexcept { return _hasChanged; }
     int64_t            getGeneration() const noexcept { return _generation; }
-    void               merge(const ConfigUpdate &b) noexcept { _hasChanged = _hasChanged || b.hasChanged(); }
+    void               merge(const ConfigUpdate& b) noexcept { _hasChanged = _hasChanged || b.hasChanged(); }
 
 private:
     ConfigValue _value;

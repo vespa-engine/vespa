@@ -48,9 +48,9 @@ double Vectorizer::TfIdf::weight(unsigned int tfnorm, unsigned int idfnorm, doub
 
 // {{{ Vectorizer::vectorize
 
-void Vectorizer::vectorize(const NGram &text, TermVector &vector, unsigned int limit, bool keephits, double tfexp,
+void Vectorizer::vectorize(const NGram& text, TermVector& vector, unsigned int limit, bool keephits, double tfexp,
                            double idfexp) const {
-    RawVector raw_vect(keephits);
+    RawVector           raw_vect(keephits);
     RawVector::iterator rvi;
 
     _detector.detect(text, raw_vect);
@@ -71,7 +71,7 @@ void Vectorizer::vectorize(const NGram &text, TermVector &vector, unsigned int l
     }
 }
 
-void Vectorizer::vectorize(const NGram &text, TermVector &vector, unsigned int limit, double tfexp,
+void Vectorizer::vectorize(const NGram& text, TermVector& vector, unsigned int limit, double tfexp,
                            double idfexp) const {
     vectorize(text, vector, limit, false, tfexp, idfexp);
 }

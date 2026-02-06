@@ -40,7 +40,7 @@ public:
      * @param dest Destination to hold the decoded string.
      * @return Size of destination string.
      */
-    static int decode(const std::string &src, std::string &dest);
+    static int decode(const std::string& src, std::string& dest);
 
     /**
      * @brief Decode a %Base64 encoded string.
@@ -49,7 +49,7 @@ public:
      * @param dest Destination to hold %Base64 encoded string.
      * @return Size of destination string.
      */
-    static int encode(const std::string &src, std::string &dest);
+    static int encode(const std::string& src, std::string& dest);
 };
 
 } // namespace fsa

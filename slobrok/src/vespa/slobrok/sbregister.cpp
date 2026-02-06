@@ -15,7 +15,7 @@ using vespalib::NetworkSetupFailureException;
 
 namespace {
 
-std::string createSpec(FRT_Supervisor &orb) {
+std::string createSpec(FRT_Supervisor& orb) {
     std::string spec;
     if (orb.GetListenPort() != 0) {
         vespalib::asciistream str;
@@ -28,7 +28,7 @@ std::string createSpec(FRT_Supervisor &orb) {
     return spec;
 }
 
-void discard(std::vector<std::string> &vec, std::string_view val) {
+void discard(std::vector<std::string>& vec, std::string_view val) {
     uint32_t i = 0;
     uint32_t size = vec.size();
     while (i < size) {
@@ -51,7 +51,7 @@ std::unique_ptr<FRT_RequireCapabilities> make_slobrok_capability_filter() {
 
 namespace slobrok::api {
 
-RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory &config)
+RegisterAPI::RegisterAPI(FRT_Supervisor& orb, const ConfiguratorFactory& config)
     : FNET_Task(orb.GetScheduler()), _orb(orb), _hooks(*this), _lock(), _reqDone(false), _logOnSuccess(true),
       _busy(false), _slobrokSpecs(), _configurator(config.create(_slobrokSpecs)), _currSlobrok(""), _idx(0), _backOff(),
       _names(), _pending(), _unreg(), _target(nullptr), _req(nullptr) {
@@ -160,8 +160,8 @@ void RegisterAPI::handleReconnect() {
             // possibly with a warning.
             double delay = _backOff.get();
             Schedule(delay);
-            const char *const msgfmt = "[RPC @ %s] no location brokers available, retrying: %s (in %.1f seconds)";
-            std::string cps = _slobrokSpecs.logString();
+            const char* const msgfmt = "[RPC @ %s] no location brokers available, retrying: %s (in %.1f seconds)";
+            std::string       cps = _slobrokSpecs.logString();
             if (_backOff.shouldWarn()) {
                 LOG(warning, msgfmt, createSpec(_orb).c_str(), cps.c_str(), delay);
             } else {
@@ -174,8 +174,8 @@ void RegisterAPI::handleReconnect() {
 
 // perform any unregister or register that is pending
 void RegisterAPI::handlePending() {
-    bool unreg = false;
-    bool reg = false;
+    bool        unreg = false;
+    bool        reg = false;
     std::string name;
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -232,7 +232,7 @@ void RegisterAPI::PerformTask() {
     handlePending();
 }
 
-void RegisterAPI::RequestDone(FRT_RPCRequest *req) {
+void RegisterAPI::RequestDone(FRT_RPCRequest* req) {
     LOG_ASSERT(req == _req && !_reqDone.load(std::memory_order_relaxed));
     (void)req;
     _reqDone.store(true, std::memory_order_relaxed);
@@ -241,7 +241,7 @@ void RegisterAPI::RequestDone(FRT_RPCRequest *req) {
 
 //-----------------------------------------------------------------------------
 
-RegisterAPI::RPCHooks::RPCHooks(RegisterAPI &owner) : _owner(owner) {
+RegisterAPI::RPCHooks::RPCHooks(RegisterAPI& owner) : _owner(owner) {
     FRT_ReflectionBuilder rb(&_owner._orb);
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
@@ -258,17 +258,17 @@ RegisterAPI::RPCHooks::RPCHooks(RegisterAPI &owner) : _owner(owner) {
 
 RegisterAPI::RPCHooks::~RPCHooks() {}
 
-void RegisterAPI::RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req) {
-    FRT_Values &dst = *req->GetReturn();
+void RegisterAPI::RPCHooks::rpc_listNamesServed(FRT_RPCRequest* req) {
+    FRT_Values&                 dst = *req->GetReturn();
     std::lock_guard<std::mutex> guard(_owner._lock);
-    FRT_StringValue *names = dst.AddStringArray(_owner._names.size());
+    FRT_StringValue*            names = dst.AddStringArray(_owner._names.size());
     for (uint32_t i = 0; i < _owner._names.size(); ++i) {
         dst.SetString(&names[i], _owner._names[i].c_str());
     }
 }
 
-void RegisterAPI::RPCHooks::rpc_notifyUnregistered(FRT_RPCRequest *req) {
-    FRT_Values &args = *req->GetParams();
+void RegisterAPI::RPCHooks::rpc_notifyUnregistered(FRT_RPCRequest* req) {
+    FRT_Values& args = *req->GetParams();
     LOG(warning, "unregistered name %s", args[0]._string._str);
 }
 

@@ -12,13 +12,13 @@ namespace {
 
 std::locale clocale("C");
 
-[[noreturn]] void bad_tab(const char *tab_name, std::string_view log_line) {
+[[noreturn]] void bad_tab(const char* tab_name, std::string_view log_line) {
     std::ostringstream os;
     os << "Bad " << tab_name << " tab: " << log_line;
     throw BadLogLineException(os.str());
 }
 
-std::string_view::size_type find_tab(std::string_view log_line, const char *tab_name,
+std::string_view::size_type find_tab(std::string_view log_line, const char* tab_name,
                                      std::string_view::size_type field_pos, bool allowEmpty) {
     auto tab_pos = log_line.find('\t', field_pos);
     if (tab_pos == std::string_view::npos || (tab_pos == field_pos && !allowEmpty)) {
@@ -27,7 +27,7 @@ std::string_view::size_type find_tab(std::string_view log_line, const char *tab_
     return tab_pos;
 }
 
-int64_t parse_time_subfield(std::string time_subfield, const std::string &time_field) {
+int64_t parse_time_subfield(std::string time_subfield, const std::string& time_field) {
     std::istringstream subfield_stream(time_subfield);
     subfield_stream.imbue(clocale);
     int64_t result = 0;
@@ -41,7 +41,7 @@ int64_t parse_time_subfield(std::string time_subfield, const std::string &time_f
 }
 
 int64_t parse_time_field(std::string time_field) {
-    auto dotPos = time_field.find('.');
+    auto    dotPos = time_field.find('.');
     int64_t log_time = parse_time_subfield(time_field.substr(0, dotPos), time_field) * 1000000000;
     if (dotPos != std::string::npos) {
         log_time += parse_time_subfield((time_field.substr(dotPos + 1) + "000000000").substr(0, 9), time_field);
@@ -82,14 +82,14 @@ LogMessage::LogMessage()
     : _time_nanos(0), _hostname(), _process_id(0), _thread_id(0), _service(), _component(),
       _level(Logger::LogLevel::NUM_LOGLEVELS), _payload() {}
 
-LogMessage::LogMessage(int64_t time_nanos_in, const std::string &hostname_in, int32_t process_id_in,
-                       int32_t thread_id_in, const std::string &service_in, const std::string &component_in,
-                       Logger::LogLevel level_in, const std::string &payload_in)
+LogMessage::LogMessage(int64_t time_nanos_in, const std::string& hostname_in, int32_t process_id_in,
+                       int32_t thread_id_in, const std::string& service_in, const std::string& component_in,
+                       Logger::LogLevel level_in, const std::string& payload_in)
     : _time_nanos(time_nanos_in), _hostname(hostname_in), _process_id(process_id_in), _thread_id(thread_id_in),
       _service(service_in), _component(component_in), _level(level_in), _payload(payload_in) {}
 
-LogMessage::LogMessage(LogMessage &&) noexcept = default;
-LogMessage &LogMessage::operator=(LogMessage &&) noexcept = default;
+LogMessage::LogMessage(LogMessage&&) noexcept = default;
+LogMessage& LogMessage::operator=(LogMessage&&) noexcept = default;
 LogMessage::~LogMessage() = default;
 
 /*

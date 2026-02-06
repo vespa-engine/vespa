@@ -13,7 +13,7 @@ using vespalib::Memory;
 
 namespace config {
 
-std::string calculateContentXxhash64(const StringVector &fileContents) {
+std::string calculateContentXxhash64(const StringVector& fileContents) {
     std::string           normalizedLines;
     XXH64_hash_t          xxhash64;
     vespalib::asciistream s;
@@ -30,14 +30,14 @@ std::string calculateContentXxhash64(const StringVector &fileContents) {
             normalizedLines += line;
         }
     }
-    xxhash64 = XXH64((const unsigned char *)normalizedLines.c_str(), normalizedLines.size(), 0);
+    xxhash64 = XXH64((const unsigned char*)normalizedLines.c_str(), normalizedLines.size(), 0);
 
     ss << std::hex << xxhash64;
     ss << std::endl;
     return ss.str();
 }
 
-StringVector getlines(vespalib::asciistream &is, char delim) {
+StringVector getlines(vespalib::asciistream& is, char delim) {
     StringVector lines;
     while (!is.eof()) {
         lines.push_back(is.getline(delim));
@@ -47,7 +47,7 @@ StringVector getlines(vespalib::asciistream &is, char delim) {
 
 bool isGenerationNewer(int64_t newGen, int64_t oldGen) { return (newGen > oldGen) || (newGen == 0); }
 
-void throwInvalid(const char *format, ...) {
+void throwInvalid(const char* format, ...) {
     char    buf[4000];
     va_list args;
 
@@ -60,15 +60,15 @@ void throwInvalid(const char *format, ...) {
 
 using namespace vespalib::slime;
 
-void copySlimeArray(const Inspector &src, Cursor &dest);
+void copySlimeArray(const Inspector& src, Cursor& dest);
 
 class CopyObjectTraverser : public ObjectTraverser {
 private:
-    Cursor &_dest;
+    Cursor& _dest;
 
 public:
-    CopyObjectTraverser(Cursor &dest) : _dest(dest) {}
-    void field(const Memory &symbol, const Inspector &inspector) override {
+    CopyObjectTraverser(Cursor& dest) : _dest(dest) {}
+    void field(const Memory& symbol, const Inspector& inspector) override {
         switch (inspector.type().getId()) {
         case NIX::ID:
             _dest.addNix();
@@ -100,11 +100,11 @@ public:
 
 class CopyArrayTraverser : public ArrayTraverser {
 private:
-    Cursor &_dest;
+    Cursor& _dest;
 
 public:
-    CopyArrayTraverser(Cursor &dest) : _dest(dest) {}
-    void entry(size_t idx, const Inspector &inspector) override {
+    CopyArrayTraverser(Cursor& dest) : _dest(dest) {}
+    void entry(size_t idx, const Inspector& inspector) override {
         (void)idx;
         switch (inspector.type().getId()) {
         case NIX::ID:
@@ -135,7 +135,7 @@ public:
     }
 };
 
-void copySlimeArray(const Inspector &src, Cursor &dest) {
+void copySlimeArray(const Inspector& src, Cursor& dest) {
     if (src.type().getId() != ARRAY::ID) {
         throw vespalib::IllegalArgumentException("Source inspector is not of type array");
     }
@@ -143,7 +143,7 @@ void copySlimeArray(const Inspector &src, Cursor &dest) {
     src.traverse(traverser);
 }
 
-void copySlimeObject(const Inspector &src, Cursor &dest) {
+void copySlimeObject(const Inspector& src, Cursor& dest) {
     if (src.type().getId() != OBJECT::ID) {
         throw vespalib::IllegalArgumentException("Source inspector is not of type object");
     }

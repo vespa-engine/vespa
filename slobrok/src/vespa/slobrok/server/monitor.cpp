@@ -9,7 +9,7 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-Monitor::Monitor(IMonitoredServer &server, FRT_Supervisor &supervisor)
+Monitor::Monitor(IMonitoredServer& server, FRT_Supervisor& supervisor)
     : FNET_Task(supervisor.GetScheduler()), _monitoredServer(server), _channel(nullptr), _enabled(false) {}
 
 Monitor::~Monitor() {
@@ -17,12 +17,12 @@ Monitor::~Monitor() {
     disconnect();
 }
 
-void Monitor::enable(FRT_Target *monitorTarget) {
+void Monitor::enable(FRT_Target* monitorTarget) {
     assert(monitorTarget != nullptr);
     Unschedule();
     disconnect();
     _enabled = true;
-    FNET_Connection *conn = monitorTarget->GetConnection();
+    FNET_Connection* conn = monitorTarget->GetConnection();
     if (conn != nullptr) {
         _channel = conn->OpenChannel(this, FNET_Context());
     }
@@ -46,7 +46,7 @@ void Monitor::disable() {
 
 void Monitor::disconnect() {
     if (_channel != nullptr) {
-        _channel->SetContext(FNET_Context((FNET_Channel *)nullptr));
+        _channel->SetContext(FNET_Context((FNET_Channel*)nullptr));
         if (_channel->GetConnection()->GetState() <= FNET_Connection::FNET_CONNECTED) {
             _channel->CloseAndFree();
         }
@@ -54,7 +54,7 @@ void Monitor::disconnect() {
     }
 }
 
-FNET_IPacketHandler::HP_RetCode Monitor::HandlePacket(FNET_Packet *packet, FNET_Context context) {
+FNET_IPacketHandler::HP_RetCode Monitor::HandlePacket(FNET_Packet* packet, FNET_Context context) {
     if (context._value.CHANNEL == nullptr) {
         packet->Free();
         return FNET_FREE_CHANNEL;

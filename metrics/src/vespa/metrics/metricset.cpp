@@ -60,8 +60,8 @@ const Metric* MetricSet::getMetric(string_view name) const {
     if (pos == std::string::npos) {
         return getMetricInternal(name);
     } else {
-        string_view child(name.substr(0, pos));
-        string_view rest(name.substr(pos + 1));
+        string_view   child(name.substr(0, pos));
+        string_view   rest(name.substr(pos + 1));
         const Metric* m(getMetricInternal(child));
         if (m == nullptr)
             return nullptr;
@@ -166,12 +166,12 @@ using TmpString = std::string_view;
 class StringMetric {
 public:
     StringMetric(const TmpString& s, Metric* m) : first(s), second(m) {}
-    bool operator==(const StringMetric& b) const noexcept { return first == b.first; }
-    bool operator==(const TmpString& b) const noexcept { return first == b; }
-    bool operator<(const StringMetric& b) const noexcept { return first < b.first; }
-    bool operator<(const TmpString& b) const noexcept { return first < b; }
+    bool      operator==(const StringMetric& b) const noexcept { return first == b.first; }
+    bool      operator==(const TmpString& b) const noexcept { return first == b; }
+    bool      operator<(const StringMetric& b) const noexcept { return first < b.first; }
+    bool      operator<(const TmpString& b) const noexcept { return first < b; }
     TmpString first;
-    Metric* second;
+    Metric*   second;
 };
 bool operator<(const TmpString& a, const StringMetric& b) noexcept { return a < b.first; }
 
@@ -187,8 +187,8 @@ void createMetricMap(SortedVector& metricMap, const std::vector<Metric*>& ordere
 } // namespace
 
 void MetricSet::addTo(Metric& other, std::vector<Metric::UP>* ownerList) const {
-    bool mustAdd = (ownerList == nullptr);
-    MetricSet& o(static_cast<MetricSet&>(other));
+    bool         mustAdd = (ownerList == nullptr);
+    MetricSet&   o(static_cast<MetricSet&>(other));
     SortedVector map1, map2;
     createMetricMap(map1, _metricOrder);
     createMetricMap(map2, o._metricOrder);

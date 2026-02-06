@@ -3,7 +3,7 @@
 #include <vespa/log/log.h>
 namespace ns_log {
 
-enum Logger::LogLevel Logger::parseLevel(const char *lname) {
+enum Logger::LogLevel Logger::parseLevel(const char* lname) {
     if (strcmp(lname, "fatal") == 0)
         return fatal;
     if (strcmp(lname, "error") == 0)
@@ -24,7 +24,7 @@ enum Logger::LogLevel Logger::parseLevel(const char *lname) {
     return NUM_LOGLEVELS;
 }
 
-const char *Logger::logLevelNames[] = {
+const char* Logger::logLevelNames[] = {
     "fatal", "error", "warning", "config", "info", "event", "debug", "spam",
     "null" // converting NUM_LOGLEVELS gives null pointer
 };

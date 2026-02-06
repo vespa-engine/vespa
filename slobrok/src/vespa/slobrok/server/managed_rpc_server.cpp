@@ -13,7 +13,7 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-ManagedRpcServer::ManagedRpcServer(const std::string &name, const std::string &spec, IRpcServerManager &manager)
+ManagedRpcServer::ManagedRpcServer(const std::string& name, const std::string& spec, IRpcServerManager& manager)
     : NamedService(name, spec), FNET_Task(manager.getSupervisor()->GetScheduler()), _mmanager(manager),
       _monitor(*this, *manager.getSupervisor()), _monitoredServer(nullptr), _checkServerReq(nullptr) {
     double seconds = randomIn(2.5, 2.9);
@@ -61,7 +61,7 @@ void ManagedRpcServer::notifyDisconnected() {
     _mmanager.notifyFailedRpcSrv(this, "disconnected");
 }
 
-bool ManagedRpcServer::validateRpcServer(uint32_t numstrings, FRT_StringValue *strings) {
+bool ManagedRpcServer::validateRpcServer(uint32_t numstrings, FRT_StringValue* strings) {
     for (uint32_t i = 0; i < numstrings; ++i) {
         if (strcmp(strings[i]._str, _name.c_str()) == 0) {
             return true;
@@ -71,9 +71,9 @@ bool ManagedRpcServer::validateRpcServer(uint32_t numstrings, FRT_StringValue *s
     return false;
 }
 
-void ManagedRpcServer::RequestDone(FRT_RPCRequest *req) {
+void ManagedRpcServer::RequestDone(FRT_RPCRequest* req) {
     LOG_ASSERT(req == _checkServerReq);
-    FRT_Values &answer = *(req->GetReturn());
+    FRT_Values& answer = *(req->GetReturn());
 
     if (req->GetErrorCode() == FRTE_RPC_ABORT) {
         LOG(debug, "rpcserver[%s].check aborted", getName().c_str());

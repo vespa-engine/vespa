@@ -13,11 +13,11 @@
 
 // Log using std::format with compile-time checking of format string.
 // This is fully aware of std::string, std::string_view etc., so no more need for c_str().
-#define LOGF(level, ...)                                                                                               \
-    do {                                                                                                               \
-        if (LOG_WOULD_LOG(level)) [[unlikely]] {                                                                       \
-            ns_log::do_fmt_log(ns_log_logger, ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__);                 \
-        }                                                                                                              \
+#define LOGF(level, ...)                                                                               \
+    do {                                                                                               \
+        if (LOG_WOULD_LOG(level)) [[unlikely]] {                                                       \
+            ns_log::do_fmt_log(ns_log_logger, ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__); \
+        }                                                                                              \
     } while (false)
 
 namespace ns_log {

@@ -12,14 +12,14 @@
 
 namespace ns_log {
 
-static const char *defcomponent = "logger";
-static const char *defservice = "-";
+static const char* defcomponent = "logger";
+static const char* defservice = "-";
 
 LLParser::LLParser()
     : _defHostname(vespa::Defaults::vespaHostname()), _defService(defservice), _defComponent(defcomponent),
       _defLevel(Logger::info), _target(Logger::getCurrentTarget()), _rejectFilter(RejectFilter::createDefaultFilter()) {
     assert(_target != nullptr);
-    const char *envServ = getenv("VESPA_SERVICE_NAME");
+    const char* envServ = getenv("VESPA_SERVICE_NAME");
     if (envServ != nullptr) {
         _defService = envServ;
     }
@@ -30,13 +30,13 @@ LLParser::~LLParser() = default;
 
 const char LLParser::_hexdigit[17] = "0123456789abcdef";
 
-void LLParser::sendMessage(const char *totalMessage) { _target->write(totalMessage, strlen(totalMessage)); }
+void LLParser::sendMessage(const char* totalMessage) { _target->write(totalMessage, strlen(totalMessage)); }
 
 static inline bool validLevel(Logger::LogLevel level) { return (level >= 0 && level < Logger::NUM_LOGLEVELS); }
 
-static bool isValidPid(const char *field) {
-    char *eol;
-    long pidnum = strtol(field, &eol, 10);
+static bool isValidPid(const char* field) {
+    char* eol;
+    long  pidnum = strtol(field, &eol, 10);
     if (pidnum > 0 && pidnum < 18 * 1000 * 1000) {
         char endbyte = *eol;
         if (endbyte == '\0' || endbyte == '\t' || endbyte == '/') {
@@ -68,15 +68,15 @@ static bool isValidPid(const char *field) {
     return false;
 }
 
-void LLParser::doInput(char *line) {
+void LLParser::doInput(char* line) {
     double logTime = 0.0;
-    bool timefield = false;
-    int pidfield = 0;
-    char *eod = nullptr;
+    bool   timefield = false;
+    int    pidfield = 0;
+    char*  eod = nullptr;
 
-    char *first = line;
-    char *tab = strchr(first, '\t'); // time?
-    char empty[1] = "";
+    char* first = line;
+    char* tab = strchr(first, '\t'); // time?
+    char  empty[1] = "";
 
     if (tab) {
         *tab = '\0';
@@ -86,7 +86,7 @@ void LLParser::doInput(char *line) {
         } else if (isValidPid(first)) {
             pidfield = 1;
         }
-        char *second = tab + 1;
+        char* second = tab + 1;
         tab = strchr(second, '\t'); // host?
         if (tab) {
             *tab = '\0';
@@ -95,7 +95,7 @@ void LLParser::doInput(char *line) {
                     pidfield = 2;
                 }
             }
-            char *third = tab + 1;
+            char* third = tab + 1;
             tab = strchr(third, '\t'); // pid?
             if (tab) {
                 *tab = '\0';
@@ -104,19 +104,19 @@ void LLParser::doInput(char *line) {
                         pidfield = 3;
                     }
                 }
-                char *fourth = tab + 1;
+                char* fourth = tab + 1;
                 tab = strchr(fourth, '\t'); // service ?
                 if (tab) {
                     *tab = '\0';
-                    char *fifth = tab + 1;
+                    char* fifth = tab + 1;
                     tab = strchr(fifth, '\t'); // component ?
                     if (tab) {
                         *tab = '\0';
-                        char *sixth = tab + 1;
+                        char* sixth = tab + 1;
                         tab = strchr(sixth, '\t'); // level?
                         if (tab && timefield) {
                             *tab = '\0';
-                            char *seventh = tab + 1; // message
+                            char*            seventh = tab + 1; // message
                             Logger::LogLevel l = Logger::parseLevel(sixth);
                             if (validLevel(l)) {
                                 makeMessage(first, second, third, fourth, fifth, l, seventh);
@@ -272,8 +272,8 @@ void LLParser::doInput(char *line) {
 static char escaped[16000];
 static char totalMessage[17000];
 
-void LLParser::makeMessage(const char *tmf, const char *hsf, const char *pdf, const char *svf, const char *cmf,
-                           Logger::LogLevel level, char *src) {
+void LLParser::makeMessage(const char* tmf, const char* hsf, const char* pdf, const char* svf, const char* cmf,
+                           Logger::LogLevel level, char* src) {
     char tmbuffer[24];
     if (tmf[0] == '\0') {
         struct timeval tv;
@@ -294,7 +294,7 @@ void LLParser::makeMessage(const char *tmf, const char *hsf, const char *pdf, co
     if (cmf[0] == '\0')
         cmf = _defComponent.c_str();
 
-    char *dst = escaped;
+    char*         dst = escaped;
     unsigned char c;
 
     int len = strlen(src);

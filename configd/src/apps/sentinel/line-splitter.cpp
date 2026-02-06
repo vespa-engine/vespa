@@ -17,13 +17,13 @@ namespace config {
 namespace sentinel {
 
 LineSplitter::LineSplitter(int fd)
-    : _fd(fd), _size(8_Ki), _buffer(static_cast<char *>(malloc(_size))), _readPos(0), _writePos(0), _eof(false) {}
+    : _fd(fd), _size(8_Ki), _buffer(static_cast<char*>(malloc(_size))), _readPos(0), _writePos(0), _eof(false) {}
 
 LineSplitter::~LineSplitter() { free(_buffer); }
 
 bool LineSplitter::resize() {
     _size = _size * 2;
-    _buffer = static_cast<char *>(realloc(_buffer, _size));
+    _buffer = static_cast<char*>(realloc(_buffer, _size));
     return (_buffer != nullptr);
 }
 
@@ -62,13 +62,13 @@ bool LineSplitter::fill() {
     return readLen > 0;
 }
 
-char *LineSplitter::getLine() {
+char* LineSplitter::getLine() {
     do {
         int bufLen = _writePos - _readPos;
 
         if (bufLen > 0) {
-            char *start = &_buffer[_readPos];
-            char *end = static_cast<char *>(memchr(start, '\n', bufLen));
+            char* start = &_buffer[_readPos];
+            char* end = static_cast<char*>(memchr(start, '\n', bufLen));
             if (_eof && !end) {
                 if (_writePos < _size) {
                     end = &_buffer[_writePos]; // pretend last byte sent was followed by \n

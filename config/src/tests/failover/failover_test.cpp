@@ -24,8 +24,8 @@ using vespalib::test::Nexus;
 
 namespace {
 
-int get_port(const std::string &spec) {
-    const char *port = (spec.data() + spec.size());
+int get_port(const std::string& spec) {
+    const char* port = (spec.data() + spec.size());
     while ((port > spec.data()) && (port[-1] >= '0') && (port[-1] <= '9')) {
         --port;
     }
@@ -41,20 +41,20 @@ struct RPCServer : public FRT_Invokable {
 
     RPCServer() : barrier(2), gen(1) {}
 
-    void init(FRT_Supervisor *s) {
+    void init(FRT_Supervisor* s) {
         FRT_ReflectionBuilder rb(s);
         rb.DefineMethod("config.v3.getConfig", requestTypes.c_str(), responseTypes.c_str(),
                         FRT_METHOD(RPCServer::getConfig), this);
     }
 
-    void getConfig(FRT_RPCRequest *req) {
+    void getConfig(FRT_RPCRequest* req) {
         Slime   slime;
-        Cursor &root(slime.setObject());
+        Cursor& root(slime.setObject());
         root.setLong(RESPONSE_VERSION, 3);
         root.setString(RESPONSE_DEF_NAME, Memory(MyConfig::CONFIG_DEF_NAME));
         root.setString(RESPONSE_DEF_NAMESPACE, Memory(MyConfig::CONFIG_DEF_NAMESPACE));
         root.setString(RESPONSE_DEF_MD5, Memory(MyConfig::CONFIG_DEF_MD5));
-        Cursor &info = root.setObject("compressionInfo");
+        Cursor& info = root.setObject("compressionInfo");
         info.setString("compressionType", "UNCOMPRESSED");
         info.setString("uncompressedSize", "0");
         root.setString(RESPONSE_CONFIGID, "myId");
@@ -65,7 +65,7 @@ struct RPCServer : public FRT_Invokable {
         Slime payload;
         payload.setObject().setString("myField", "myval");
 
-        FRT_Values  &ret = *req->GetReturn();
+        FRT_Values&  ret = *req->GetReturn();
         SimpleBuffer buf;
         JsonFormat::encode(slime, buf, false);
         ret.AddString(buf.get().make_string().c_str());
@@ -86,7 +86,7 @@ struct ServerFixture {
     RPCServer                                 server;
     std::barrier<>                            b;
     const std::string                         listenSpec;
-    ServerFixture(const std::string &ls) : frt(), server(), b(2), listenSpec(ls) {}
+    ServerFixture(const std::string& ls) : frt(), server(), b(2), listenSpec(ls) {}
 
     void wait() { b.arrive_and_wait(); }
 
@@ -114,7 +114,7 @@ struct NetworkFixture {
     std::vector<ServerFixture::UP> serverList;
     ServerSpec                     spec;
     bool                           running;
-    NetworkFixture(const std::vector<std::string> &serverSpecs) : spec(serverSpecs), running(true) {
+    NetworkFixture(const std::vector<std::string>& serverSpecs) : spec(serverSpecs), running(true) {
         for (size_t i = 0; i < serverSpecs.size(); i++) {
             serverList.push_back(std::make_unique<ServerFixture>(serverSpecs[i]));
         }
@@ -159,9 +159,9 @@ TimingValues testTimingValues(500ms,   // successTimeout
 
 struct ConfigCheckFixture {
     std::shared_ptr<IConfigContext> ctx;
-    NetworkFixture                 &nf;
+    NetworkFixture&                 nf;
 
-    ConfigCheckFixture(NetworkFixture &f2) : ctx(std::make_shared<ConfigContext>(testTimingValues, f2.spec)), nf(f2) {}
+    ConfigCheckFixture(NetworkFixture& f2) : ctx(std::make_shared<ConfigContext>(testTimingValues, f2.spec)), nf(f2) {}
     void checkSubscribe() {
         ConfigSubscriber           s(ctx);
         ConfigHandle<MyConfig>::UP handle = s.subscribe<MyConfig>("myId");
@@ -197,7 +197,7 @@ TEST(FailoverTest, require_that_any_node_can_be_down_when_subscribing) {
     constexpr size_t    num_threads = 4;
     ThreeServersFixture f1;
     NetworkFixture      f2(f1.specs);
-    auto                task = [&f2](Nexus &ctx) {
+    auto                task = [&f2](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             ConfigCheckFixture ccf(f2);

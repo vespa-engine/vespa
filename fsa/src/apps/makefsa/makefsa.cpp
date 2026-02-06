@@ -16,7 +16,7 @@ using namespace fsa;
 
 enum FSA_Input_Format { INPUT_UNDEF, INPUT_TEXT, INPUT_TEXT_EMPTY, INPUT_TEXT_NUM, INPUT_BINARY, INPUT_BINARY_RAW };
 
-void usage(const char *name, const char *errormsg = nullptr) {
+void usage(const char* name, const char* errormsg = nullptr) {
     if (errormsg != nullptr) {
         fprintf(stderr, "%s: %s\n", name, errormsg);
     }
@@ -50,21 +50,21 @@ void version() {
     std::cout << std::endl;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     FSA_Input_Format format = INPUT_UNDEF;
-    unsigned int num_size = 4;
-    unsigned int info_size_binary = 0;
-    bool build_phash = false;
-    const char *input_file;
-    const char *output_file;
-    uint32_t serial = 0;
-    bool ignore_info = false;
-    bool verbose = false;
-    unsigned int lines = 0, count = 0;
+    unsigned int     num_size = 4;
+    unsigned int     info_size_binary = 0;
+    bool             build_phash = false;
+    const char*      input_file;
+    const char*      output_file;
+    uint32_t         serial = 0;
+    bool             ignore_info = false;
+    bool             verbose = false;
+    unsigned int     lines = 0, count = 0;
 
-    int opt;
-    extern char *optarg;
-    extern int optind;
+    int          opt;
+    extern char* optarg;
+    extern int   optind;
 
     while ((opt = getopt(argc, argv, "ebBhns:z:tpS:ivV")) != -1) {
         switch (opt) {
@@ -135,15 +135,15 @@ int main(int argc, char **argv) {
 
     std::string input, last_input, meta, temp;
     union {
-        uint8_t u1;
+        uint8_t  u1;
         uint16_t u2;
         uint32_t u4;
     } num_meta;
     std::ifstream infile;
-    std::istream *in;
-    auto binary_info = std::make_unique<char[]>(info_size_binary);
-    size_t split;
-    bool empty_meta_str = false;
+    std::istream* in;
+    auto          binary_info = std::make_unique<char[]>(info_size_binary);
+    size_t        split;
+    bool          empty_meta_str = false;
 
     if (verbose)
         version();
@@ -204,16 +204,16 @@ int main(int argc, char **argv) {
             switch (num_size) {
             case 1:
                 num_meta.u1 = strtoul(temp.c_str(), nullptr, 0);
-                meta.assign((const char *)&num_meta, 1);
+                meta.assign((const char*)&num_meta, 1);
                 break;
             case 2:
                 num_meta.u2 = strtoul(temp.c_str(), nullptr, 0);
-                meta.assign((const char *)&num_meta, 2);
+                meta.assign((const char*)&num_meta, 2);
                 break;
             case 4:
             default:
                 num_meta.u4 = strtoul(temp.c_str(), nullptr, 0);
-                meta.assign((const char *)&num_meta, 4);
+                meta.assign((const char*)&num_meta, 4);
                 break;
             }
             break;

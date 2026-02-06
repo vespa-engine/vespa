@@ -30,27 +30,27 @@ private:
             ScheduleNow();
         }
         void PerformTask() override;
-        DelayedTasks(FNET_Scheduler *scheduler) : FNET_Task(scheduler), _deleteList() {}
+        DelayedTasks(FNET_Scheduler* scheduler) : FNET_Task(scheduler), _deleteList() {}
         ~DelayedTasks() { Kill(); }
     };
 
-    FRT_Supervisor &_orb;
-    DelayedTasks _delayedTasks;
-    Map _map;
-    MappingMonitorOwner &_owner;
+    FRT_Supervisor&      _orb;
+    DelayedTasks         _delayedTasks;
+    Map                  _map;
+    MappingMonitorOwner& _owner;
 
-    bool active(const ServiceMapping &mapping, ManagedRpcServer *rpcsrv) const;
+    bool active(const ServiceMapping& mapping, ManagedRpcServer* rpcsrv) const;
 
 public:
-    RpcMappingMonitor(FRT_Supervisor &orb, MappingMonitorOwner &owner);
+    RpcMappingMonitor(FRT_Supervisor& orb, MappingMonitorOwner& owner);
     ~RpcMappingMonitor();
 
-    void start(const ServiceMapping &mapping, bool hurry) override;
-    void stop(const ServiceMapping &mapping) override;
+    void start(const ServiceMapping& mapping, bool hurry) override;
+    void stop(const ServiceMapping& mapping) override;
 
-    void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;
-    void notifyOkRpcSrv(ManagedRpcServer *rpcsrv) override;
-    FRT_Supervisor *getSupervisor() override { return &_orb; }
+    void            notifyFailedRpcSrv(ManagedRpcServer* rpcsrv, std::string errmsg) override;
+    void            notifyOkRpcSrv(ManagedRpcServer* rpcsrv) override;
+    FRT_Supervisor* getSupervisor() override { return &_orb; }
 };
 
 } // namespace slobrok

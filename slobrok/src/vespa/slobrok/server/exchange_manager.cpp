@@ -17,12 +17,12 @@ vespalib::steady_time now() { return vespalib::steady_clock::now(); }
 
 //-----------------------------------------------------------------------------
 
-ExchangeManager::ExchangeManager(SBEnv &env) : _partners(), _env(env), _lastFullConsensusTime(now()) {}
+ExchangeManager::ExchangeManager(SBEnv& env) : _partners(), _env(env), _lastFullConsensusTime(now()) {}
 
 ExchangeManager::~ExchangeManager() = default;
 
-OkState ExchangeManager::addPartner(const std::string &spec) {
-    if (RemoteSlobrok *oldremote = lookupPartner(spec)) {
+OkState ExchangeManager::addPartner(const std::string& spec) {
+    if (RemoteSlobrok* oldremote = lookupPartner(spec)) {
         // already a partner, should be OK
         if (spec != oldremote->getSpec()) {
             return OkState(FRTE_RPC_METHOD_FAILED, "name already partner with different spec");
@@ -35,12 +35,12 @@ OkState ExchangeManager::addPartner(const std::string &spec) {
     }
     auto [it, wasNew] = _partners.emplace(spec, std::make_unique<RemoteSlobrok>(spec, spec, *this));
     LOG_ASSERT(wasNew);
-    RemoteSlobrok &partner = *it->second;
+    RemoteSlobrok& partner = *it->second;
     partner.tryConnect();
     return OkState();
 }
 
-void ExchangeManager::removePartner(const std::string &name) {
+void ExchangeManager::removePartner(const std::string& name) {
     // assuming checks already done
     auto oldremote = std::move(_partners[name]);
     LOG_ASSERT(oldremote);
@@ -50,35 +50,35 @@ void ExchangeManager::removePartner(const std::string &name) {
 
 std::vector<std::string> ExchangeManager::getPartnerList() {
     std::vector<std::string> partnerList;
-    for (const auto &entry : _partners) {
+    for (const auto& entry : _partners) {
         partnerList.push_back(entry.second->getSpec());
     }
     return partnerList;
 }
 
-void ExchangeManager::forwardRemove(const std::string &name, const std::string &spec) {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, ServiceMapping{name, spec}, *this);
-    for (const auto &entry : _partners) {
+void ExchangeManager::forwardRemove(const std::string& name, const std::string& spec) {
+    WorkPackage* package = new WorkPackage(WorkPackage::OP_REMOVE, ServiceMapping{name, spec}, *this);
+    for (const auto& entry : _partners) {
         package->addItem(entry.second.get());
     }
     package->expedite();
 }
 
-RemoteSlobrok *ExchangeManager::lookupPartner(const std::string &name) const {
+RemoteSlobrok* ExchangeManager::lookupPartner(const std::string& name) const {
     auto found = _partners.find(name);
     return (found == _partners.end()) ? nullptr : found->second.get();
 }
 
-std::string ExchangeManager::diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs) {
+std::string ExchangeManager::diffLists(const ServiceMappingList& lhs, const ServiceMappingList& rhs) {
     using namespace vespalib;
     std::string result;
-    auto visitor = overload{[&result](visit_ranges_first, const auto &m) {
+    auto        visitor = overload{[&result](visit_ranges_first, const auto& m) {
                                 result.append("\nmissing: ").append(m.name).append("->").append(m.spec);
                             },
-                            [&result](visit_ranges_second, const auto &m) {
+                            [&result](visit_ranges_second, const auto& m) {
                                 result.append("\nextra: ").append(m.name).append("->").append(m.spec);
                             },
-                            [](visit_ranges_both, const auto &, const auto &) {}};
+                            [](visit_ranges_both, const auto&, const auto&) {}};
     visit_ranges(visitor, lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
     return result;
 }
@@ -86,7 +86,7 @@ std::string ExchangeManager::diffLists(const ServiceMappingList &lhs, const Serv
 void ExchangeManager::healthCheck() {
     bool someBad = false;
     auto newWorldList = env().consensusMap().currentConsensus();
-    for (const auto &[name, partner] : _partners) {
+    for (const auto& [name, partner] : _partners) {
         partner->maybeStartFetch();
         auto remoteList = partner->remoteMap().allMappings();
         // 0 is expected (when remote is down)
@@ -110,13 +110,13 @@ void ExchangeManager::healthCheck() {
 
 //-----------------------------------------------------------------------------
 
-ExchangeManager::WorkPackage::WorkItem::WorkItem(WorkPackage &pkg, RemoteSlobrok *rem, FRT_RPCRequest *req)
+ExchangeManager::WorkPackage::WorkItem::WorkItem(WorkPackage& pkg, RemoteSlobrok* rem, FRT_RPCRequest* req)
     : _pkg(pkg), _pendingReq(req), _remslob(rem) {}
 
-void ExchangeManager::WorkPackage::WorkItem::RequestDone(FRT_RPCRequest *req) {
+void ExchangeManager::WorkPackage::WorkItem::RequestDone(FRT_RPCRequest* req) {
     bool denied = false;
     LOG_ASSERT(req == _pendingReq);
-    FRT_Values &answer = *(req->GetReturn());
+    FRT_Values& answer = *(req->GetReturn());
 
     if (!req->IsError() && strcmp(answer.GetTypeString(), "is") == 0) {
         if (answer[0]._intval32 != 0) {
@@ -144,7 +144,7 @@ ExchangeManager::WorkPackage::WorkItem::~WorkItem() {
     }
 }
 
-ExchangeManager::WorkPackage::WorkPackage(op_type op, const ServiceMapping &mapping, ExchangeManager &exchanger)
+ExchangeManager::WorkPackage::WorkPackage(op_type op, const ServiceMapping& mapping, ExchangeManager& exchanger)
     : _work(), _doneCnt(0), _numDenied(0), _exchanger(exchanger), _mapping(mapping), _optype(op) {}
 
 ExchangeManager::WorkPackage::~WorkPackage() = default;
@@ -164,14 +164,14 @@ void ExchangeManager::WorkPackage::doneItem(bool denied) {
     }
 }
 
-void ExchangeManager::WorkPackage::addItem(RemoteSlobrok *partner) {
+void ExchangeManager::WorkPackage::addItem(RemoteSlobrok* partner) {
     if (!partner->isConnected()) {
         return;
     }
-    const char *name_p = _mapping.name.c_str();
-    const char *spec_p = _mapping.spec.c_str();
+    const char* name_p = _mapping.name.c_str();
+    const char* spec_p = _mapping.spec.c_str();
 
-    FRT_RPCRequest *r = _exchanger._env.getSupervisor()->AllocRPCRequest();
+    FRT_RPCRequest* r = _exchanger._env.getSupervisor()->AllocRPCRequest();
     LOG_ASSERT(_optype == OP_REMOVE);
     r->SetMethodName("slobrok.internal.doRemove");
     r->GetParams()->AddString(_exchanger._env.mySpec().c_str());

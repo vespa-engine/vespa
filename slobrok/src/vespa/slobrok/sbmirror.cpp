@@ -11,7 +11,7 @@ LOG_SETUP(".slobrok.mirror");
 
 namespace slobrok::api {
 
-MirrorAPI::MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory &config)
+MirrorAPI::MirrorAPI(FRT_Supervisor& orb, const ConfiguratorFactory& config)
     : FNET_Task(orb.GetScheduler()), _orb(orb), _lock(), _reqPending(false), _scheduled(false), _reqDone(false),
       _logOnSuccess(true), _specs(), _specsGen(), _updates(), _slobrokSpecs(),
       _configurator(config.create(_slobrokSpecs)), _currSlobrok(""), _rpc_ms(100), _backOff(), _target(nullptr),
@@ -39,7 +39,7 @@ MirrorAPI::~MirrorAPI() {
 MirrorAPI::SpecList MirrorAPI::lookup(std::string_view pattern) const {
     SpecList ret;
     ret.reserve(1);
-    bool exact = pattern.find('*') == std::string::npos;
+    bool            exact = pattern.find('*') == std::string::npos;
     std::lock_guard guard(_lock);
     if (exact) {
         auto found = _specs.find(pattern);
@@ -47,7 +47,7 @@ MirrorAPI::SpecList MirrorAPI::lookup(std::string_view pattern) const {
             ret.emplace_back(found->first, found->second);
         }
     } else {
-        for (const auto &spec : _specs) {
+        for (const auto& spec : _specs) {
             if (match(spec.first.c_str(), pattern.data())) {
                 ret.emplace_back(spec.first, spec.second);
             }
@@ -63,7 +63,7 @@ MirrorAPI::SpecList MirrorAPI::lookup(std::string_view pattern) const {
  * Note that this isn't quite globbing, as there is no backtracking.
  * Corresponds to code in: jrt/src/com/yahoo/jrt/slobrok/api/Mirror.java
  */
-bool IMirrorAPI::match(const char *name, const char *pattern) {
+bool IMirrorAPI::match(const char* name, const char* pattern) {
     while (*pattern != '\0') {
         if (*name == *pattern) {
             ++name;
@@ -108,16 +108,16 @@ bool MirrorAPI::handleIncrementalFetch() {
         LOG(warning, "unknown return types '%s' from RPC request", _req->GetReturnSpec());
         return true;
     }
-    FRT_Values &answer = *(_req->GetReturn());
+    FRT_Values& answer = *(_req->GetReturn());
 
-    uint32_t diff_from = answer[0]._intval32;
-    uint32_t numRemove = answer[1]._string_array._len;
-    FRT_StringValue *r = answer[1]._string_array._pt;
-    uint32_t numNames = answer[2]._string_array._len;
-    FRT_StringValue *n = answer[2]._string_array._pt;
-    uint32_t numSpecs = answer[3]._string_array._len;
-    FRT_StringValue *s = answer[3]._string_array._pt;
-    uint32_t diff_to = answer[4]._intval32;
+    uint32_t         diff_from = answer[0]._intval32;
+    uint32_t         numRemove = answer[1]._string_array._len;
+    FRT_StringValue* r = answer[1]._string_array._pt;
+    uint32_t         numNames = answer[2]._string_array._len;
+    FRT_StringValue* n = answer[2]._string_array._pt;
+    uint32_t         numSpecs = answer[3]._string_array._len;
+    FRT_StringValue* s = answer[3]._string_array._pt;
+    uint32_t         diff_to = answer[4]._intval32;
 
     if (diff_from != 0 && diff_from != _specsGen.getAsInt()) {
         LOG(warning, "bad old specs gen %u from RPC incremental request for [0/%u]", diff_from, _specsGen.getAsInt());
@@ -151,7 +151,7 @@ bool MirrorAPI::handleIncrementalFetch() {
     } else if (_specsGen == diff_from) {
         // incremental update
         SpecMap specs;
-        for (const auto &spec : _specs) {
+        for (const auto& spec : _specs) {
             bool keep = true;
             for (uint32_t idx = 0; idx < numRemove; idx++) {
                 if (spec.first == r[idx]._str)
@@ -222,8 +222,8 @@ void MirrorAPI::handleReconnect() {
             }
             double delay = _backOff.get();
             reSched(delay);
-            std::string cps = _slobrokSpecs.logString();
-            const char *const msgfmt = "no location brokers available, retrying: %s (in %.1f seconds)";
+            std::string       cps = _slobrokSpecs.logString();
+            const char* const msgfmt = "no location brokers available, retrying: %s (in %.1f seconds)";
             if (_backOff.shouldWarn()) {
                 LOG(warning, msgfmt, cps.c_str(), delay);
             } else {
@@ -276,7 +276,7 @@ void MirrorAPI::PerformTask() {
     }
 }
 
-void MirrorAPI::RequestDone(FRT_RPCRequest *req) {
+void MirrorAPI::RequestDone(FRT_RPCRequest* req) {
     LOG_ASSERT(req == _req && !_reqDone.load(std::memory_order_relaxed));
     (void)req;
     _reqDone.store(true, std::memory_order_relaxed);

@@ -41,9 +41,9 @@ public:
         using Hits = std::vector<Hit>;
 
     private:
-        std::string _term; /**< Term/phrase. */
-        double _weight;    /**< Term weight. */
-        Hits _hits;        /**< The token positions at which the term was found */
+        std::string _term;   /**< Term/phrase. */
+        double      _weight; /**< Term weight. */
+        Hits        _hits;   /**< The token positions at which the term was found */
     public:
         /**
          * @brief Default constructor, creates empty item with zero weight.
@@ -486,7 +486,7 @@ private:
          */
         void add(const NGram& text, unsigned int from, int length, const FSA::State& state) override {
             ItemMap::iterator pos;
-            std::string str = text.join(" ", from, length);
+            std::string       str = text.join(" ", from, length);
             pos = _item_map.find(str);
             if (pos == _item_map.end()) {
                 pos = _item_map
@@ -525,9 +525,9 @@ private:
 
     // }}}
 
-    const FSA& _dictionary; /**< The dictionary. */
-    Detector _detector;     /**< The detector.   */
-    unsigned int _idf_docs; /**< Total number of documents (for Idf calculations) */
+    const FSA&   _dictionary; /**< The dictionary. */
+    Detector     _detector;   /**< The detector.   */
+    unsigned int _idf_docs;   /**< Total number of documents (for Idf calculations) */
 
     /**
      * @brief Retrieve total number of documents from the automaton.

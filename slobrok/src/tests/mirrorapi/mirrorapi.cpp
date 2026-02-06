@@ -21,13 +21,13 @@ using slobrok::api::MirrorAPI;
 class Server : public FRT_Invokable {
 private:
     fnet::frt::StandaloneFRT _server;
-    std::string _name;
-    std::string _slobrokSpec;
+    std::string              _name;
+    std::string              _slobrokSpec;
 
 public:
     Server(std::string name, int port, std::string slobrokSpec);
     ~Server() override;
-    void rpc_listNamesServed(FRT_RPCRequest *req);
+    void rpc_listNamesServed(FRT_RPCRequest* req);
     void reg();
 };
 
@@ -48,20 +48,20 @@ void Server::reg() {
     char spec[64];
     snprintf(spec, sizeof(spec), "tcp/localhost:%d", _server.supervisor().GetListenPort());
 
-    FRT_RPCRequest *req = _server.supervisor().AllocRPCRequest();
+    FRT_RPCRequest* req = _server.supervisor().AllocRPCRequest();
     req->SetMethodName("slobrok.registerRpcServer");
     req->GetParams()->AddString(_name.c_str());
     req->GetParams()->AddString(spec);
 
-    FRT_Target *sb = _server.supervisor().GetTarget(_slobrokSpec.c_str());
+    FRT_Target* sb = _server.supervisor().GetTarget(_slobrokSpec.c_str());
     sb->InvokeSync(req, 5.0);
     sb->internal_subref();
     req->internal_subref();
 }
 
-void Server::rpc_listNamesServed(FRT_RPCRequest *req) {
-    FRT_Values &dst = *req->GetReturn();
-    FRT_StringValue *names = dst.AddStringArray(1);
+void Server::rpc_listNamesServed(FRT_RPCRequest* req) {
+    FRT_Values&      dst = *req->GetReturn();
+    FRT_StringValue* names = dst.AddStringArray(1);
     dst.SetString(&names[0], _name.c_str());
 }
 
@@ -73,19 +73,19 @@ struct SpecList {
     MirrorAPI::SpecList _specList;
     SpecList() : _specList() {}
     SpecList(MirrorAPI::SpecList input) : _specList(input) {}
-    SpecList &add(const char *name, const char *spec) {
+    SpecList& add(const char* name, const char* spec) {
         _specList.push_back(make_pair(std::string(name), std::string(spec)));
         return *this;
     }
     void sort() { std::sort(_specList.begin(), _specList.end()); }
-    bool operator==(SpecList &rhs) { // NB: MUTATE!
+    bool operator==(SpecList& rhs) { // NB: MUTATE!
         sort();
         rhs.sort();
         return _specList == rhs._specList;
     }
 };
 
-bool compare(MirrorAPI &api, const char *pattern, SpecList expect) {
+bool compare(MirrorAPI& api, const char* pattern, SpecList expect) {
     for (int i = 0; i < 250; ++i) {
         SpecList actual(api.lookup(pattern));
         if (actual == expect) {
@@ -108,13 +108,13 @@ TEST(MirrorAPITest, mirrorapi_test) {
     Server e("E/y", 18506, "tcp/localhost:18501");
     Server f("F/y/w", 18507, "tcp/localhost:18501");
 
-    cloud::config::SlobroksConfigBuilder specBuilder;
+    cloud::config::SlobroksConfigBuilder   specBuilder;
     cloud::config::SlobroksConfig::Slobrok slobrok;
     slobrok.connectionspec = "tcp/localhost:18501";
     specBuilder.slobrok.push_back(slobrok);
     FNET_Transport transport;
     FRT_Supervisor supervisor(&transport);
-    MirrorAPI mirror(supervisor, slobrok::ConfiguratorFactory(config::ConfigUri::createFromInstance(specBuilder)));
+    MirrorAPI      mirror(supervisor, slobrok::ConfiguratorFactory(config::ConfigUri::createFromInstance(specBuilder)));
     EXPECT_TRUE(!mirror.ready());
     transport.Start();
     std::this_thread::sleep_for(1s);

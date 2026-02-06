@@ -7,7 +7,7 @@ namespace slobrok::api {
 
 namespace {
 constexpr size_t num_warn_intervals = 5;
-const double warn_intervals[num_warn_intervals] = {1.0, 10.0, 60.0, 600.0, 3600.0};
+const double     warn_intervals[num_warn_intervals] = {1.0, 10.0, 60.0, 600.0, 3600.0};
 } // namespace
 
 BackOff::BackOff() { reset(); }

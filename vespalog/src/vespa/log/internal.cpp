@@ -7,8 +7,8 @@
 
 namespace ns_log {
 
-void throwInvalid(const char *format, ...) {
-    char buf[4000];
+void throwInvalid(const char* format, ...) {
+    char    buf[4000];
     va_list args;
 
     va_start(args, format);

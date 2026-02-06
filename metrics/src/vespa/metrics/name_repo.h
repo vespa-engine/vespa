@@ -17,10 +17,10 @@ using TagKeyId = vespalib::metrics::Handle<TagKeyIdTag>;
 using TagValueId = vespalib::metrics::Handle<TagValueIdTag>;
 
 struct NameRepo {
-    static MetricNameId metricId(std::string_view name);
+    static MetricNameId  metricId(std::string_view name);
     static DescriptionId descriptionId(std::string_view name);
-    static TagKeyId tagKeyId(std::string_view name);
-    static TagValueId tagValueId(std::string_view value);
+    static TagKeyId      tagKeyId(std::string_view name);
+    static TagValueId    tagValueId(std::string_view value);
 
     static const std::string& metricName(MetricNameId id);
     static const std::string& description(DescriptionId id);

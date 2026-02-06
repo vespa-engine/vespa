@@ -21,22 +21,22 @@ std::optional<ModelConfig> ModelOwner::getModelConfig() {
     }
 }
 
-ModelOwner::ModelOwner(const std::string &configId) : _configId(configId) {}
+ModelOwner::ModelOwner(const std::string& configId) : _configId(configId) {}
 
 ModelOwner::~ModelOwner() = default;
 
 void ModelOwner::start(std::chrono::milliseconds timeout, bool firstTime) {
     try {
         _modelHandle = _subscriber.subscribe<ModelConfig>(_configId, timeout);
-    } catch (ConfigTimeoutException &ex) {
+    } catch (ConfigTimeoutException& ex) {
         if (firstTime) {
             LOG(warning, "Timeout getting model config: %s [skipping connectivity checks]", ex.message());
         }
-    } catch (InvalidConfigException &ex) {
+    } catch (InvalidConfigException& ex) {
         if (firstTime) {
             LOG(warning, "Invalid model config: %s [skipping connectivity checks]", ex.message());
         }
-    } catch (ConfigRuntimeException &ex) {
+    } catch (ConfigRuntimeException& ex) {
         if (firstTime) {
             LOG(warning, "Runtime exception getting model config: %s [skipping connectivity checks]", ex.message());
         }

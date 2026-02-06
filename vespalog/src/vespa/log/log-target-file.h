@@ -13,13 +13,13 @@ private:
     enum FailState { FS_OK, FS_CHECKING, FS_ROTATING, FS_FAILED } _failstate;
 
     LogTargetFile();
-    LogTargetFile(const LogTargetFile &);
-    LogTargetFile &operator=(const LogTargetFile &);
+    LogTargetFile(const LogTargetFile&);
+    LogTargetFile& operator=(const LogTargetFile&);
 
 public:
-    explicit LogTargetFile(const char *target);
+    explicit LogTargetFile(const char* target);
     ~LogTargetFile();
-    int write(const char *buf, int len) override;
+    int write(const char* buf, int len) override;
 };
 
 } // namespace ns_log

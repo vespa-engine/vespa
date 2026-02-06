@@ -16,20 +16,20 @@ const bool WordCharTokenizer::_punctuation_table[] = {
 
 WordCharTokenizer::~WordCharTokenizer() = default;
 
-bool WordCharTokenizer::init(const std::string &text) {
+bool WordCharTokenizer::init(const std::string& text) {
     _tokens.clear();
     _current = 0;
 
-    char *dup;
+    char* dup;
     if (_lowercase)
         dup = Unicode::strlowdupUTF8(text.c_str());
     else
         dup = Unicode::strdupUTF8(text.c_str());
 
-    char *tmp = dup;
-    char *tok, *end;
+    char*  tmp = dup;
+    char * tok, *end;
     ucs4_t ch = 0;
-    bool need_punct = false, added_punct = false;
+    bool   need_punct = false, added_punct = false;
 
     while (*tmp) {
         tok = nullptr;
@@ -53,7 +53,7 @@ bool WordCharTokenizer::init(const std::string &text) {
             *end = 0;
         }
         if (*tok) {
-            _tokens.push_back(std::string((char *)tok));
+            _tokens.push_back(std::string((char*)tok));
             added_punct = false;
             need_punct = true;
             if (_punctuation != PUNCTUATION_DISCARD && _punctuation != PUNCTUATION_WHITESPACEONLY) {

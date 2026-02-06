@@ -7,12 +7,12 @@
 
 namespace ns_log {
 
-InputBuf::InputBuf(int fd) : _inputfd(fd), _size(1000), _buf((char *)malloc(_size)), _bp(_buf), _left(_size) {}
+InputBuf::InputBuf(int fd) : _inputfd(fd), _size(1000), _buf((char*)malloc(_size)), _bp(_buf), _left(_size) {}
 
 InputBuf::~InputBuf() { free(_buf); }
 
 bool InputBuf::hasInput() {
-    char *p = _buf;
+    char* p = _buf;
     while (p < _bp) {
         if (*p == '\n')
             return true;
@@ -21,8 +21,8 @@ bool InputBuf::hasInput() {
     return false;
 }
 
-void InputBuf::doInput(LLParser &via) {
-    char *p = _buf;
+void InputBuf::doInput(LLParser& via) {
+    char* p = _buf;
     while (p < _bp) {
         if (*p == '\n') {
             *p = '\0';
@@ -42,8 +42,8 @@ void InputBuf::doInput(LLParser &via) {
 
 void InputBuf::extend() {
     _size *= 2;
-    int pos = _bp - _buf;
-    char *nbuf = (char *)realloc(_buf, _size);
+    int   pos = _bp - _buf;
+    char* nbuf = (char*)realloc(_buf, _size);
     if (nbuf == nullptr) {
         free(_buf);
         throw MsgException("realloc failed");
@@ -71,7 +71,7 @@ bool InputBuf::blockRead() {
     return true;
 }
 
-void InputBuf::doAllInput(LLParser &outputvia) {
+void InputBuf::doAllInput(LLParser& outputvia) {
     while (blockRead()) {
         while (hasInput()) {
             doInput(outputvia);

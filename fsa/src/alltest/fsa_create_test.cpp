@@ -7,9 +7,9 @@
 
 using namespace fsa;
 
-int main(int, char **) {
+int main(int, char**) {
 
-    Automaton *aut = new Automaton;
+    Automaton* aut = new Automaton;
 
     Blob fruit("Fruit"), veggie("Vegetable"), city("City");
 
@@ -66,7 +66,7 @@ int main(int, char **) {
 
     double d3 = t.elapsed();
 
-    FSA *fsa = aut->getFSA();
+    FSA* fsa = aut->getFSA();
 
     double d4 = t.elapsed();
 
@@ -75,8 +75,8 @@ int main(int, char **) {
               << ".\n";
 
     if (fsa != nullptr) {
-        FSA::State fs(*fsa);
-        const unsigned char *pb = fs.lookup("cucumber");
+        FSA::State           fs(*fsa);
+        const unsigned char* pb = fs.lookup("cucumber");
         std::cout << "Lookup(\"cucumber\") -> ";
         if (pb != nullptr) {
             std::cout << "\"" << pb << "\"";

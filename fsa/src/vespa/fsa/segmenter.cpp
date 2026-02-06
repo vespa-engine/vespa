@@ -42,13 +42,13 @@ void Segmenter::Segments::initSingles() {
 // {{{ Segmenter::Segments::buildSegmentation
 
 void Segmenter::Segments::buildSegmentation(Segmenter::SegmentationMethod method) {
-    int i, j;
-    int n_txt = (int)_text.size(), n_sgm = _segments.size();
-    int id, bestid;
-    int pos, next = n_txt;
-    unsigned int maxsc, conn;
-    int bestval, temp = 0, bias;
-    std::vector<int> nextid(n_sgm, -1);
+    int                       i, j;
+    int                       n_txt = (int)_text.size(), n_sgm = _segments.size();
+    int                       id, bestid;
+    int                       pos, next = n_txt;
+    unsigned int              maxsc, conn;
+    int                       bestval, temp = 0, bias;
+    std::vector<int>          nextid(n_sgm, -1);
     std::vector<unsigned int> maxScore(n_sgm, 0);
 
     if (_segmentation[method] == nullptr) {
@@ -161,7 +161,7 @@ void Segmenter::Segments::buildSegmentation(Segmenter::SegmentationMethod method
 // {{{ Segmenter::Segments::buildSegmentationRecursive
 
 void Segmenter::Segments::buildSegmentationRecursive(Segmenter::SegmentationMethod method,
-                                                     Segmenter::Segmentation &segmentation, unsigned int beg,
+                                                     Segmenter::Segmentation& segmentation, unsigned int beg,
                                                      unsigned int end) {
     int bestid, bestval1, bestval2, temp;
     int i;
@@ -251,23 +251,23 @@ void Segmenter::Segments::buildSegmentationRecursive(Segmenter::SegmentationMeth
 
 // {{{ Segmenter::segment
 
-void Segmenter::segment(Segmenter::Segments &segments) const {
+void Segmenter::segment(Segmenter::Segments& segments) const {
     segments.clear();
     _detector.detect(segments.getText(), segments);
 }
 
-void Segmenter::segment(const NGram &text, Segmenter::Segments &segments) const {
+void Segmenter::segment(const NGram& text, Segmenter::Segments& segments) const {
     segments.setText(text);
     _detector.detect(segments.getText(), segments);
 }
 
-void Segmenter::segment(const std::string &text, Segmenter::Segments &segments) const {
+void Segmenter::segment(const std::string& text, Segmenter::Segments& segments) const {
 
     segments.setText(text);
     _detector.detect(segments.getText(), segments);
 }
 
-void Segmenter::segment(const char *text, Segmenter::Segments &segments) const {
+void Segmenter::segment(const char* text, Segmenter::Segments& segments) const {
     segments.setText(text);
     _detector.detect(segments.getText(), segments);
 }

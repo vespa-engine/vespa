@@ -13,14 +13,14 @@ namespace slobrok {
  **/
 struct MapDiff {
     /** construct incremental diff */
-    MapDiff(const vespalib::GenCnt &from, std::vector<std::string> remove, ServiceMappingList update,
-            const vespalib::GenCnt &to)
+    MapDiff(const vespalib::GenCnt& from, std::vector<std::string> remove, ServiceMappingList update,
+            const vespalib::GenCnt& to)
         : fromGen(from), removed(std::move(remove)), updated(std::move(update)), toGen(to) {}
 
     /** construct full map dump */
-    MapDiff(ServiceMappingList mappings, const vespalib::GenCnt &to) : MapDiff(0, {}, std::move(mappings), to) {}
+    MapDiff(ServiceMappingList mappings, const vespalib::GenCnt& to) : MapDiff(0, {}, std::move(mappings), to) {}
 
-    MapDiff(MapDiff &&) noexcept;
+    MapDiff(MapDiff&&) noexcept;
     ~MapDiff();
 
     // is this a diff from the empty map:

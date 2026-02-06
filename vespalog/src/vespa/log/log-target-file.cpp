@@ -16,9 +16,9 @@ namespace ns_log {
 #define O_LARGEFILE 0
 #endif
 
-LogTargetFile::LogTargetFile(const char *target) : LogTarget(target), _failstate(FS_OK) {
+LogTargetFile::LogTargetFile(const char* target) : LogTarget(target), _failstate(FS_OK) {
     memset(_fname, 0, sizeof(_fname));
-    const char *fname = target + strlen("file:");
+    const char* fname = target + strlen("file:");
     assert(strlen(fname) < sizeof(_fname));
     // NOTE: This function cannot LOG()
     if (strncmp(target, "file:", strlen("file:")) != 0) {
@@ -35,7 +35,7 @@ LogTargetFile::LogTargetFile(const char *target) : LogTarget(target), _failstate
 LogTargetFile::~LogTargetFile() {}
 
 // Here we must support log rotation. We do this by reopening the filename.
-int LogTargetFile::write(const char *buf, int bufLen) {
+int LogTargetFile::write(const char* buf, int bufLen) {
     int fd = open(_fname, O_WRONLY | O_CREAT | O_APPEND | O_NOCTTY | O_LARGEFILE, 0666);
     if (fd < 0) {
         if (_failstate == FS_OK) {

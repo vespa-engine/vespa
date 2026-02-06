@@ -17,10 +17,10 @@
 
 using namespace fsa;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     FSA dict(argc >= 2 ? argv[1] : "__testfsa__.__fsa__");
 
-    Vectorizer v(dict);
+    Vectorizer             v(dict);
     Vectorizer::TermVector tv;
 
     std::string text = "belfast northern ireland protestant extremists crashed a forklift "
@@ -68,8 +68,8 @@ int main(int argc, char **argv) {
 
     NGram tokenized_text(text);
 
-    TimeStamp t;
-    double t0, t1;
+    TimeStamp    t;
+    double       t0, t1;
     unsigned int count = 1000;
 
     std::cout << "Number of iterations: " << count << std::endl;

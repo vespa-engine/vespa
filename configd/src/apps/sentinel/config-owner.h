@@ -21,18 +21,18 @@ private:
     int64_t                         _currGeneration = -1;
     std::unique_ptr<SentinelConfig> _currConfig;
 
-    ConfigOwner(const ConfigOwner &) = delete;
-    ConfigOwner &operator=(const ConfigOwner &) = delete;
+    ConfigOwner(const ConfigOwner&) = delete;
+    ConfigOwner& operator=(const ConfigOwner&) = delete;
 
     void doConfigure();
 
 public:
     ConfigOwner();
     virtual ~ConfigOwner();
-    void                  subscribe(const std::string &configId, std::chrono::milliseconds timeout);
+    void                  subscribe(const std::string& configId, std::chrono::milliseconds timeout);
     bool                  checkForConfigUpdate();
     bool                  hasConfig() const { return _currConfig.get() != nullptr; }
-    const SentinelConfig &getConfig() const { return *_currConfig; }
+    const SentinelConfig& getConfig() const { return *_currConfig; }
     int64_t               getGeneration() const { return _currGeneration; }
 };
 

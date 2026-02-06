@@ -70,18 +70,18 @@ private:
         uint32_t _cats;   /**< If non-zero: offset of category info in info structure.    */
     };
 
-    void *_mmap_addr;    /**< mmap address, NULL is file has not been mmapped.   */
+    void*  _mmap_addr;   /**< mmap address, NULL is file has not been mmapped.   */
     size_t _mmap_length; /**< mmap length.                                       */
 
-    FSA _unit_fsa;           /**< %FSA containing the units (with hash).    */
-    uint32_t _index_size;    /**< Size of the index structure.              */
-    UnitData *_index;        /**< Pointer to the index structure in memory. */
-    uint32_t _info_size;     /**< Size of the info structure.               */
-    uint32_t *_info;         /**< Pointer to the info structure in memory.  */
-    uint32_t _catindex_size; /**< Size of the catergory index.              */
-    uint32_t *_catindex;     /**< Pointer to the category index in memory.  */
-    uint32_t _strings_size;  /**< Size of the string storage.               */
-    char *_strings;          /**< Pointer to the string storage in memory.  */
+    FSA       _unit_fsa;      /**< %FSA containing the units (with hash).    */
+    uint32_t  _index_size;    /**< Size of the index structure.              */
+    UnitData* _index;         /**< Pointer to the index structure in memory. */
+    uint32_t  _info_size;     /**< Size of the info structure.               */
+    uint32_t* _info;          /**< Pointer to the info structure in memory.  */
+    uint32_t  _catindex_size; /**< Size of the catergory index.              */
+    uint32_t* _catindex;      /**< Pointer to the category index in memory.  */
+    uint32_t  _strings_size;  /**< Size of the string storage.               */
+    char*     _strings;       /**< Pointer to the string storage in memory.  */
 
     bool _ok; /**< Flag indicating successful initialization. */
 
@@ -100,7 +100,7 @@ private:
      *            global default access mode will be used.
      * @return True on success.
      */
-    bool read(const char *datafile, fsa::FileAccessMethod fam = FILE_ACCESS_UNDEF);
+    bool read(const char* datafile, fsa::FileAccessMethod fam = FILE_ACCESS_UNDEF);
 
     /**
      * @brief Unimplemented private default constructor.
@@ -109,11 +109,11 @@ private:
     /**
      * @brief Unimplemented private copy constructor.
      */
-    ConceptNet(const ConceptNet &);
+    ConceptNet(const ConceptNet&);
     /**
      * @brief Unimplemented private assignement operator.
      */
-    const ConceptNet &operator=(const ConceptNet &);
+    const ConceptNet& operator=(const ConceptNet&);
 
 public:
     /**
@@ -125,8 +125,8 @@ public:
      * @param fam File access mode (read or mmap). If not set, the
      *            global default access mode will be used.
      */
-    ConceptNet(const char *fsafile, const char *datafile = nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF);
-    ConceptNet(const std::string &fsafile, const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF);
+    ConceptNet(const char* fsafile, const char* datafile = nullptr, FileAccessMethod fam = FILE_ACCESS_UNDEF);
+    ConceptNet(const std::string& fsafile, const std::string& datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF);
 
     /**
      * @brief Destructor.
@@ -148,7 +148,7 @@ public:
      *
      * @return The concept net %FSA.
      */
-    const FSA &getFSA() const {
+    const FSA& getFSA() const {
         assert(_ok);
         return _unit_fsa;
     }
@@ -161,7 +161,7 @@ public:
      * @param unit Unit string.
      * @return Index of the unit, or -1 if not found.
      */
-    int lookup(const char *unit) const;
+    int lookup(const char* unit) const;
 
     /**
      * @brief Look up a unit index.
@@ -171,7 +171,7 @@ public:
      * @param idx Unit index.
      * @return Pointer to the unit string, or nullptr if index is out of range.
      */
-    const char *lookup(int idx) const;
+    const char* lookup(int idx) const;
 
     /**
      * @brief Get the unit frequency of the unit.
@@ -187,7 +187,7 @@ public:
      * @param unit Unit string.
      * @return Unit frequency, or -1 if the unit is not found.
      */
-    int frq(const char *unit) const;
+    int frq(const char* unit) const;
 
     /**
      * @brief Get the frequency of the unit as a complete query.
@@ -203,7 +203,7 @@ public:
      * @param unit Unit string.
      * @return Unit-C frequency, or -1 if the unit is not found.
      */
-    int cFrq(const char *unit) const;
+    int cFrq(const char* unit) const;
 
     /**
      * @brief Get the frequency of the unit as part of a query.
@@ -219,7 +219,7 @@ public:
      * @param unit Unit string.
      * @return Unit-Q frequency, or -1 if the unit is not found.
      */
-    int qFrq(const char *unit) const;
+    int qFrq(const char* unit) const;
 
     /**
      * @brief Get the frequency of queries containing all terms of the unit.
@@ -235,7 +235,7 @@ public:
      * @param unit Unit string.
      * @return Unit-Q frequency, or -1 if the unit is not found.
      */
-    int sFrq(const char *unit) const;
+    int sFrq(const char* unit) const;
 
     /**
      * @brief Get the unit score (100.0*cFrq/qFrq).
@@ -251,7 +251,7 @@ public:
      * @param unit Unit string.
      * @return Unit score, or -1. if the unit is not found.
      */
-    double score(const char *unit) const;
+    double score(const char* unit) const;
 
     /**
      * @brief Get the unit strength (100.0*qFrq/sFrq).
@@ -267,7 +267,7 @@ public:
      * @param unit Unit string.
      * @return Unit strength, or -1. if the unit is not found.
      */
-    double strength(const char *unit) const;
+    double strength(const char* unit) const;
 
     /**
      * @brief Get the number of extensions for the unit.
@@ -355,7 +355,7 @@ public:
      * @param catIdx Category index.
      * @return Catergory name, or nullptr if catIdx is out of range.
      */
-    const char *catName(int catIdx) const;
+    const char* catName(int catIdx) const;
 };
 
 // }}}

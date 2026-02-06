@@ -13,9 +13,9 @@ private:
 
 public:
     BackOff();
-    void reset();
+    void   reset();
     double get();
-    bool shouldWarn();
+    bool   shouldWarn();
 };
 
 } // namespace slobrok::api

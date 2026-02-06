@@ -244,7 +244,7 @@ static unsigned short _intCompLowerCase[3072] = {
     0x0000u, 0x0000u, 0x0000u, 0x0000u,
 };
 
-const unsigned short *Unicode::_compLowerCase[256] = {
+const unsigned short* Unicode::_compLowerCase[256] = {
     _intCompLowerCase + 0x0000, /* Page 0x00 */
     _intCompLowerCase + 0x0100, /* Page 0x01 */
     _intCompLowerCase + 0x0200, /* Page 0x02 */

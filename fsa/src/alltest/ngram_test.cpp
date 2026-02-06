@@ -9,7 +9,7 @@
 
 using namespace fsa;
 
-int main(int, char **) {
+int main(int, char**) {
     Permuter p;
 
     NGram q1("a b c d e f"), q2(q1, p, 10), q3(q2, p, 13);

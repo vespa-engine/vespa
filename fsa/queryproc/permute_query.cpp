@@ -24,19 +24,19 @@ unsigned int gram_count(unsigned int mg, unsigned int q) {
     return ct;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     const unsigned int MAXQUERY = 10;
     const unsigned int MAXGRAM = 6;
 
-    Permuter p;
-    NGram query, gram;
-    Selector s;
-    std::string qstr;
+    Permuter     p;
+    NGram        query, gram;
+    Selector     s;
+    std::string  qstr;
     unsigned int qlen, glen;
-    bool verbose = true;
+    bool         verbose = true;
     unsigned int i;
-    double total, ctotal;
-    int stats[MAXQUERY + 1];
+    double       total, ctotal;
+    int          stats[MAXQUERY + 1];
 
     for (i = 0; i <= MAXQUERY; i++)
         stats[i] = 0;

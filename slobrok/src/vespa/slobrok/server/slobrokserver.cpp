@@ -6,7 +6,7 @@ namespace slobrok {
 
 VESPA_THREAD_STACK_TAG(slobrok_server_thread);
 
-SlobrokServer::SlobrokServer(ConfigShim &shim) : _env(shim), _thread() {
+SlobrokServer::SlobrokServer(ConfigShim& shim) : _env(shim), _thread() {
     _thread = vespalib::thread::start(*this, slobrok_server_thread);
 }
 

@@ -19,7 +19,7 @@ namespace slobrok {
 namespace {
 
 class MetricsReport : public FNET_Task {
-    RPCHooks &_owner;
+    RPCHooks& _owner;
 
     void PerformTask() override {
         _owner.reportMetrics();
@@ -27,14 +27,14 @@ class MetricsReport : public FNET_Task {
     }
 
 public:
-    MetricsReport(FRT_Supervisor *orb, RPCHooks &owner) : FNET_Task(orb->GetScheduler()), _owner(owner) {
+    MetricsReport(FRT_Supervisor* orb, RPCHooks& owner) : FNET_Task(orb->GetScheduler()), _owner(owner) {
         Schedule(0.0);
     }
 
     ~MetricsReport() override { Kill(); }
 };
 
-bool match(const char *name, const char *pattern) {
+bool match(const char* name, const char* pattern) {
     LOG_ASSERT(name != nullptr);
     LOG_ASSERT(pattern != nullptr);
     while (*pattern != '\0') {
@@ -61,7 +61,7 @@ std::unique_ptr<FRT_RequireCapabilities> make_slobrok_capability_filter() {
 
 //-----------------------------------------------------------------------------
 
-RPCHooks::RPCHooks(SBEnv &env)
+RPCHooks::RPCHooks(SBEnv& env)
     : _env(env), _globalHistory(env.globalHistory()), _localHistory(env.localHistory()), _cnts(Metrics::zero()),
       _m_reporter() {}
 
@@ -69,7 +69,7 @@ RPCHooks::~RPCHooks() = default;
 
 void RPCHooks::reportMetrics() {}
 
-void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
+void RPCHooks::initRPC(FRT_Supervisor* supervisor) {
     _m_reporter = std::make_unique<MetricsReport>(supervisor, *this);
 
     FRT_ReflectionBuilder rb(supervisor);
@@ -214,18 +214,18 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     //-------------------------------------------------------------------------
 }
 
-void RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req) {
-    FRT_Values &dst = *req->GetReturn();
-    FRT_StringValue *names = dst.AddStringArray(1);
+void RPCHooks::rpc_listNamesServed(FRT_RPCRequest* req) {
+    FRT_Values&      dst = *req->GetReturn();
+    FRT_StringValue* names = dst.AddStringArray(1);
     dst.SetString(names, _env.mySpec().c_str());
     _cnts.otherReqs++;
     return;
 }
 
-void RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req) {
-    FRT_Values &args = *req->GetParams();
-    const char *dName = args[0]._string._str;
-    const char *dSpec = args[1]._string._str;
+void RPCHooks::rpc_registerRpcServer(FRT_RPCRequest* req) {
+    FRT_Values& args = *req->GetParams();
+    const char* dName = args[0]._string._str;
+    const char* dSpec = args[1]._string._str;
     LOG(debug, "RPC: invoked registerRpcServer(%s,%s)", dName, dSpec);
     _cnts.registerReqs++;
     ServiceMapping mapping{dName, dSpec};
@@ -240,10 +240,10 @@ void RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_unregisterRpcServer(FRT_RPCRequest *req) {
-    FRT_Values &args = *req->GetParams();
-    const char *dName = args[0]._string._str;
-    const char *dSpec = args[1]._string._str;
+void RPCHooks::rpc_unregisterRpcServer(FRT_RPCRequest* req) {
+    FRT_Values&    args = *req->GetParams();
+    const char*    dName = args[0]._string._str;
+    const char*    dSpec = args[1]._string._str;
     ServiceMapping mapping{dName, dSpec};
     _env.localMonitorMap().removeLocal(mapping);
     _env.exchangeManager().forwardRemove(dName, dSpec);
@@ -252,10 +252,10 @@ void RPCHooks::rpc_unregisterRpcServer(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_addPeer(FRT_RPCRequest *req) {
-    FRT_Values &args = *req->GetParams();
-    const char *remslobrok = args[0]._string._str;
-    const char *remsbspec = args[1]._string._str;
+void RPCHooks::rpc_addPeer(FRT_RPCRequest* req) {
+    FRT_Values& args = *req->GetParams();
+    const char* remslobrok = args[0]._string._str;
+    const char* remsbspec = args[1]._string._str;
 
     OkState ok = _env.addPeer(remslobrok, remsbspec);
     if (ok.failed()) {
@@ -266,10 +266,10 @@ void RPCHooks::rpc_addPeer(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_removePeer(FRT_RPCRequest *req) {
-    FRT_Values &args = *req->GetParams();
-    const char *remslobrok = args[0]._string._str;
-    const char *remsbspec = args[1]._string._str;
+void RPCHooks::rpc_removePeer(FRT_RPCRequest* req) {
+    FRT_Values& args = *req->GetParams();
+    const char* remslobrok = args[0]._string._str;
+    const char* remsbspec = args[1]._string._str;
 
     OkState ok = _env.removePeer(remslobrok, remsbspec);
     if (ok.failed()) {
@@ -280,12 +280,12 @@ void RPCHooks::rpc_removePeer(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_wantAdd(FRT_RPCRequest *req) {
-    FRT_Values &args = *req->GetParams();
-    const char *remsb = args[0]._string._str;
-    const char *dName = args[1]._string._str;
-    const char *dSpec = args[2]._string._str;
-    FRT_Values &retval = *req->GetReturn();
+void RPCHooks::rpc_wantAdd(FRT_RPCRequest* req) {
+    FRT_Values&    args = *req->GetParams();
+    const char*    remsb = args[0]._string._str;
+    const char*    dName = args[1]._string._str;
+    const char*    dSpec = args[2]._string._str;
+    FRT_Values&    retval = *req->GetReturn();
     ServiceMapping mapping{dName, dSpec};
     bool conflict = (_env.consensusMap().wouldConflict(mapping) || _env.localMonitorMap().wouldConflict(mapping));
     if (conflict) {
@@ -301,12 +301,12 @@ void RPCHooks::rpc_wantAdd(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_doRemove(FRT_RPCRequest *req) {
-    FRT_Values &args = *req->GetParams();
-    const char *rname = args[0]._string._str;
-    const char *dname = args[1]._string._str;
-    const char *dspec = args[2]._string._str;
-    FRT_Values &retval = *req->GetReturn();
+void RPCHooks::rpc_doRemove(FRT_RPCRequest* req) {
+    FRT_Values&    args = *req->GetParams();
+    const char*    rname = args[0]._string._str;
+    const char*    dname = args[1]._string._str;
+    const char*    dspec = args[2]._string._str;
+    FRT_Values&    retval = *req->GetReturn();
     ServiceMapping mapping{dname, dspec};
     _env.localMonitorMap().removeLocal(mapping);
     retval.AddInt32(0);
@@ -316,14 +316,14 @@ void RPCHooks::rpc_doRemove(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_doAdd(FRT_RPCRequest *req) {
-    FRT_Values &args = *req->GetParams();
-    const char *remsb = args[0]._string._str;
-    const char *dName = args[1]._string._str;
-    const char *dSpec = args[2]._string._str;
-    FRT_Values &retval = *req->GetReturn();
+void RPCHooks::rpc_doAdd(FRT_RPCRequest* req) {
+    FRT_Values&    args = *req->GetParams();
+    const char*    remsb = args[0]._string._str;
+    const char*    dName = args[1]._string._str;
+    const char*    dSpec = args[2]._string._str;
+    FRT_Values&    retval = *req->GetReturn();
     ServiceMapping mapping{dName, dSpec};
-    bool ok = true;
+    bool           ok = true;
     if (_env.consensusMap().wouldConflict(mapping)) {
         retval.AddInt32(13);
         retval.AddString("conflict detected");
@@ -338,27 +338,27 @@ void RPCHooks::rpc_doAdd(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req) {
+void RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest* req) {
     _cnts.otherReqs++;
-    FRT_Values &args = *req->GetParams();
-    const char *rpcserverPattern = args[0]._string._str;
+    FRT_Values& args = *req->GetParams();
+    const char* rpcserverPattern = args[0]._string._str;
     LOG(debug, "RPC: lookupRpcServers(%s)", rpcserverPattern);
     // fetch data:
-    const auto &visible = _env.globalHistory();
-    auto diff = visible.makeDiffFrom(0);
+    const auto&                 visible = _env.globalHistory();
+    auto                        diff = visible.makeDiffFrom(0);
     std::vector<ServiceMapping> matches;
-    for (const auto &entry : diff.updated) {
+    for (const auto& entry : diff.updated) {
         if (match(entry.name.c_str(), rpcserverPattern)) {
             matches.push_back(entry);
         }
     }
     // fill return values:
-    FRT_Values &dst = *req->GetReturn();
-    size_t sz = matches.size();
-    FRT_StringValue *names = dst.AddStringArray(sz);
-    FRT_StringValue *specs = dst.AddStringArray(sz);
-    size_t j = 0;
-    for (const auto &entry : matches) {
+    FRT_Values&      dst = *req->GetReturn();
+    size_t           sz = matches.size();
+    FRT_StringValue* names = dst.AddStringArray(sz);
+    FRT_StringValue* specs = dst.AddStringArray(sz);
+    size_t           j = 0;
+    for (const auto& entry : matches) {
         dst.SetString(&names[j], entry.name.c_str());
         dst.SetString(&specs[j], entry.spec.c_str());
         ++j;
@@ -373,17 +373,17 @@ void RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_listManagedRpcServers(FRT_RPCRequest *req) {
+void RPCHooks::rpc_listManagedRpcServers(FRT_RPCRequest* req) {
     _cnts.adminReqs++;
     // TODO: use local history here
-    const auto &visible = _env.globalHistory();
-    auto diff = visible.makeDiffFrom(0);
-    size_t sz = diff.updated.size();
-    FRT_Values &dst = *req->GetReturn();
-    FRT_StringValue *names = dst.AddStringArray(sz);
-    FRT_StringValue *specs = dst.AddStringArray(sz);
-    size_t j = 0;
-    for (const auto &entry : diff.updated) {
+    const auto&      visible = _env.globalHistory();
+    auto             diff = visible.makeDiffFrom(0);
+    size_t           sz = diff.updated.size();
+    FRT_Values&      dst = *req->GetReturn();
+    FRT_StringValue* names = dst.AddStringArray(sz);
+    FRT_StringValue* specs = dst.AddStringArray(sz);
+    size_t           j = 0;
+    for (const auto& entry : diff.updated) {
         dst.SetString(&names[j], entry.name.c_str());
         dst.SetString(&specs[j], entry.spec.c_str());
         ++j;
@@ -392,17 +392,17 @@ void RPCHooks::rpc_listManagedRpcServers(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_lookupManaged(FRT_RPCRequest *req) {
+void RPCHooks::rpc_lookupManaged(FRT_RPCRequest* req) {
     _cnts.adminReqs++;
-    FRT_Values &args = *req->GetParams();
-    const char *name = args[0]._string._str;
+    FRT_Values& args = *req->GetParams();
+    const char* name = args[0]._string._str;
     LOG(debug, "RPC: lookupManaged(%s)", name);
     // TODO: use local history here
-    const auto &visible = _env.globalHistory();
-    auto diff = visible.makeDiffFrom(0);
-    for (const auto &entry : diff.updated) {
+    const auto& visible = _env.globalHistory();
+    auto        diff = visible.makeDiffFrom(0);
+    for (const auto& entry : diff.updated) {
         if (entry.name == name) {
-            FRT_Values &dst = *req->GetReturn();
+            FRT_Values& dst = *req->GetReturn();
             dst.AddString(entry.name.c_str());
             dst.AddString(entry.spec.c_str());
             return;
@@ -412,17 +412,17 @@ void RPCHooks::rpc_lookupManaged(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest *req) {
+void RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest* req) {
     _cnts.adminReqs++;
-    const auto &visible = _env.globalHistory();
-    auto diff = visible.makeDiffFrom(0);
-    size_t sz = diff.updated.size();
-    FRT_Values &dst = *req->GetReturn();
-    FRT_StringValue *names = dst.AddStringArray(sz);
-    FRT_StringValue *specs = dst.AddStringArray(sz);
-    FRT_StringValue *owner = dst.AddStringArray(sz);
-    size_t j = 0;
-    for (const auto &entry : diff.updated) {
+    const auto&      visible = _env.globalHistory();
+    auto             diff = visible.makeDiffFrom(0);
+    size_t           sz = diff.updated.size();
+    FRT_Values&      dst = *req->GetReturn();
+    FRT_StringValue* names = dst.AddStringArray(sz);
+    FRT_StringValue* specs = dst.AddStringArray(sz);
+    FRT_StringValue* owner = dst.AddStringArray(sz);
+    size_t           j = 0;
+    for (const auto& entry : diff.updated) {
         dst.SetString(&names[j], entry.name.c_str());
         dst.SetString(&specs[j], entry.spec.c_str());
         dst.SetString(&owner[j], _env.mySpec().c_str());
@@ -432,36 +432,36 @@ void RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest *req) {
     return;
 }
 
-void RPCHooks::rpc_incrementalFetch(FRT_RPCRequest *req) {
+void RPCHooks::rpc_incrementalFetch(FRT_RPCRequest* req) {
     _cnts.mirrorReqs++;
-    FRT_Values &args = *req->GetParams();
+    FRT_Values&      args = *req->GetParams();
     vespalib::GenCnt gencnt(args[0]._intval32);
-    uint32_t msTimeout = args[1]._intval32;
+    uint32_t         msTimeout = args[1]._intval32;
     req->getStash().create<IncrementalFetch>(_env.getSupervisor(), req, _globalHistory, gencnt).invoke(msTimeout);
 }
 
-void RPCHooks::rpc_fetchLocalView(FRT_RPCRequest *req) {
+void RPCHooks::rpc_fetchLocalView(FRT_RPCRequest* req) {
     _cnts.mirrorReqs++;
-    FRT_Values &args = *req->GetParams();
+    FRT_Values&      args = *req->GetParams();
     vespalib::GenCnt gencnt(args[0]._intval32);
-    uint32_t msTimeout = args[1]._intval32;
+    uint32_t         msTimeout = args[1]._intval32;
     req->getStash().create<IncrementalFetch>(_env.getSupervisor(), req, _localHistory, gencnt).invoke(msTimeout);
 }
 
 // System API methods
-void RPCHooks::rpc_stop(FRT_RPCRequest *req) {
+void RPCHooks::rpc_stop(FRT_RPCRequest* req) {
     _cnts.adminReqs++;
     (void)req;
     LOG(debug, "RPC stop command received, initiating shutdown");
     _env.shutdown();
 }
 
-void RPCHooks::rpc_version(FRT_RPCRequest *req) {
+void RPCHooks::rpc_version(FRT_RPCRequest* req) {
     _cnts.adminReqs++;
     std::string ver;
 
-    char *s = vespalib::VersionTag;
-    bool needdate = true;
+    char* s = vespalib::VersionTag;
+    bool  needdate = true;
     if (strncmp(vespalib::VersionTag, "V_", 2) == 0) {
         s += 2;
         do {
@@ -473,7 +473,7 @@ void RPCHooks::rpc_version(FRT_RPCRequest *req) {
                 break;
             }
             if (strncmp(s, "_RC", 3) == 0) {
-                char *e = strchr(s, '-');
+                char* e = strchr(s, '-');
                 if (e == nullptr) {
                     ver.append(s);
                 } else {
@@ -489,7 +489,7 @@ void RPCHooks::rpc_version(FRT_RPCRequest *req) {
             }
         } while (*s && *s != '-');
     } else {
-        char *e = strchr(s, '-');
+        char* e = strchr(s, '-');
         if (e == nullptr) {
             ver.append(s);
         } else {
@@ -499,7 +499,7 @@ void RPCHooks::rpc_version(FRT_RPCRequest *req) {
     if (needdate) {
         ver.append("-");
         s = vespalib::VersionTagDate;
-        char *e = strchr(s, '-');
+        char* e = strchr(s, '-');
         if (e == nullptr) {
             ver.append(s);
         } else {

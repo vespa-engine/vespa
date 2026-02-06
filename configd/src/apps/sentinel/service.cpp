@@ -33,8 +33,8 @@ std::string getVespaTempDir() {
 
 } // namespace
 
-Service::Service(const SentinelConfig::Service &service, const SentinelConfig::Application &application,
-                 std::list<OutputConnection *> &ocs, StartMetrics &metrics)
+Service::Service(const SentinelConfig::Service& service, const SentinelConfig::Application& application,
+                 std::list<OutputConnection*>& ocs, StartMetrics& metrics)
     : _pid(-1), _rawState(READY), _state(_rawState), _exitStatus(0), _config(new SentinelConfig::Service(service)),
       _isAutomatic(true), _restartPenalty(0), _last_start(vespalib::steady_time::min()), _application(application),
       _outputConnections(ocs), _metrics(metrics) {
@@ -45,22 +45,22 @@ Service::Service(const SentinelConfig::Service &service, const SentinelConfig::A
     start();
 }
 
-void applyLogctl(const cloud::config::SentinelConfig::Service &config) {
-    for (const auto &logctl : config.logctl) {
+void applyLogctl(const cloud::config::SentinelConfig::Service& config) {
+    for (const auto& logctl : config.logctl) {
         const auto cspec = config.name + ":" + logctl.componentSpec;
         const auto lspec = logctl.levelsModSpec;
         justRunLogctl(cspec.c_str(), lspec.c_str());
     }
 }
 
-void unApplyLogctl(const cloud::config::SentinelConfig::Service &config) {
-    for (const auto &logctl : config.logctl) {
+void unApplyLogctl(const cloud::config::SentinelConfig::Service& config) {
+    for (const auto& logctl : config.logctl) {
         const auto cspec = config.name + ":" + logctl.componentSpec;
         justRunLogctl(cspec.c_str(), "all=on,debug=off,spam=off");
     }
 }
 
-void Service::reconfigure(const SentinelConfig::Service &config) {
+void Service::reconfigure(const SentinelConfig::Service& config) {
     if (config.command != _config->command) {
         LOG(debug,
             "%s: reconfigured command '%s' -> '%s' - this will "
@@ -144,7 +144,7 @@ int Service::terminate(bool catchable, bool dumpState) {
     return 0; // Not running, so all is ok.
 }
 
-void Service::runCommand(const std::string &command) {
+void Service::runCommand(const std::string& command) {
     int ret = system(command.c_str());
     if (ret == -1) {
         LOG(error, "%s: unable to run shutdown command (%s): %s", name().c_str(), command.c_str(), strerror(errno));
@@ -221,12 +221,12 @@ void Service::start() {
     _metrics.sentinel_running.sample(_metrics.currentlyRunningServices);
 
     using ns_log::LLParser;
-    LLParser *p = new LLParser();
+    LLParser* p = new LLParser();
     p->setService(_config->name.c_str());
     p->setComponent("stdout");
     p->setPid(_pid);
     fcntl(stdoutpipes[0], F_SETFL, fcntl(stdoutpipes[0], F_GETFL) | O_NONBLOCK);
-    OutputConnection *c = new OutputConnection(stdoutpipes[0], p);
+    OutputConnection* c = new OutputConnection(stdoutpipes[0], p);
     _outputConnections.push_back(c);
 
     p = new LLParser();
@@ -307,7 +307,7 @@ void Service::runChild() {
         fcntl(n, F_SETFD, FD_CLOEXEC);
     }
 
-    for (const auto &envvar : _config->environ) {
+    for (const auto& envvar : _config->environ) {
         setenv(envvar.varname.c_str(), envvar.varvalue.c_str(), 1);
     }
     applyLogctl(*_config);
@@ -347,7 +347,7 @@ void Service::runChild() {
     std::_Exit(EXIT_FAILURE);
 }
 
-const std::string &Service::name() const { return _config->name; }
+const std::string& Service::name() const { return _config->name; }
 
 bool Service::isRunning() const {
     switch (_state) {
@@ -408,7 +408,7 @@ void Service::setState(ServiceState state) {
     }
 }
 
-const char *Service::stateName(ServiceState state) const {
+const char* Service::stateName(ServiceState state) const {
     switch (state) {
     case READY:
         return "READY";

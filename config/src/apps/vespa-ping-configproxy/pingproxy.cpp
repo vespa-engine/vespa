@@ -14,17 +14,17 @@ LOG_SETUP("vespa-ping-configproxy");
 class PingProxy {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Target                               *_target;
+    FRT_Target*                               _target;
 
 public:
-    PingProxy(const PingProxy &) = delete;
-    PingProxy &operator=(const PingProxy &) = delete;
+    PingProxy(const PingProxy&) = delete;
+    PingProxy& operator=(const PingProxy&) = delete;
     PingProxy() : _server(), _target(nullptr) {}
     ~PingProxy();
-    int  usage(const char *self);
-    void initRPC(const char *spec);
+    int  usage(const char* self);
+    void initRPC(const char* spec);
     void finiRPC();
-    int  main(int argc, char **argv);
+    int  main(int argc, char** argv);
 };
 
 PingProxy::~PingProxy() {
@@ -32,14 +32,14 @@ PingProxy::~PingProxy() {
     LOG_ASSERT(_target == nullptr);
 }
 
-int PingProxy::usage(const char *self) {
+int PingProxy::usage(const char* self) {
     fprintf(stderr, "usage: %s\n", self);
     fprintf(stderr, "-s [server]        (server hostname, default localhost)\n");
     fprintf(stderr, "-p [port]          (server port number, default 19090)\n");
     return 1;
 }
 
-void PingProxy::initRPC(const char *spec) {
+void PingProxy::initRPC(const char* spec) {
     _server = std::make_unique<fnet::frt::StandaloneFRT>();
     _target = _server->supervisor().GetTarget(spec);
 }
@@ -52,12 +52,12 @@ void PingProxy::finiRPC() {
     _server.reset();
 }
 
-int PingProxy::main(int argc, char **argv) {
+int PingProxy::main(int argc, char** argv) {
     int  retval = 0;
     bool debugging = false;
     int  c = -1;
 
-    const char *serverHost = "localhost";
+    const char* serverHost = "localhost";
     int         clientTimeout = 5;
     int         serverPort = 19090;
 
@@ -96,19 +96,19 @@ int PingProxy::main(int argc, char **argv) {
     tmp << ":";
     tmp << serverPort;
     std::string sspec = tmp.str();
-    const char *spec = sspec.c_str();
+    const char* spec = sspec.c_str();
     if (debugging) {
         printf("connecting to '%s'\n", spec);
         LOG(info, "connecting to '%s'\n", spec);
     }
     try {
         initRPC(spec);
-    } catch (std::exception &ex) {
+    } catch (std::exception& ex) {
         LOG(error, "Got exception while initializing RPC: '%s'", ex.what());
         return 1;
     }
 
-    FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
+    FRT_RPCRequest* req = _server->supervisor().AllocRPCRequest();
 
     req->SetMethodName("ping");
 
@@ -118,8 +118,8 @@ int PingProxy::main(int argc, char **argv) {
         retval = 1;
         fprintf(stderr, "error %d: %s\n", req->GetErrorCode(), req->GetErrorMessage());
     } else {
-        FRT_Values &answer = *(req->GetReturn());
-        const char *atypes = answer.GetTypeString();
+        FRT_Values& answer = *(req->GetReturn());
+        const char* atypes = answer.GetTypeString();
         if (strcmp(atypes, "i") == 0) {
             if (debugging) {
                 printf("ping %d\n", answer[0]._intval32);
@@ -134,7 +134,7 @@ int PingProxy::main(int argc, char **argv) {
     return retval;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     PingProxy app;
     return app.main(argc, argv);

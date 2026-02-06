@@ -23,23 +23,23 @@ public:
     ~ServiceMapMirror();
 
     /** update according to diff */
-    void apply(const MapDiff &diff);
+    void apply(const MapDiff& diff);
 
     /** remove all mappings */
     void clear();
 
-    const Generation &currentGeneration() const { return _currGen; }
+    const Generation& currentGeneration() const { return _currGen; }
 
     ServiceMappingList allMappings() const;
 
 private:
-    void registerListener(MapListener &listener) override;
-    void unregisterListener(MapListener &listener) override;
+    void registerListener(MapListener& listener) override;
+    void unregisterListener(MapListener& listener) override;
 
     using Map = std::map<std::string, std::string>;
-    Map _map;
-    Generation _currGen;
-    std::set<MapListener *> _listeners;
+    Map                    _map;
+    Generation             _currGen;
+    std::set<MapListener*> _listeners;
 };
 
 //-----------------------------------------------------------------------------

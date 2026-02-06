@@ -11,7 +11,7 @@ namespace slobrok::api {
 
 SlobrokList::SlobrokList() : _lock(), _slobrokSpecs(), _nextSpec(0), _currSpec(1), _retryCount(0) {}
 
-bool SlobrokList::contains(const std::string &spec) {
+bool SlobrokList::contains(const std::string& spec) {
     LockGuard guard(_lock);
     if (_currSpec < _slobrokSpecs.size()) {
         if (spec == _slobrokSpecs[_currSpec])
@@ -27,7 +27,7 @@ bool SlobrokList::contains(const std::string &spec) {
 }
 
 std::string SlobrokList::nextSlobrokSpec() {
-    LockGuard guard(_lock);
+    LockGuard   guard(_lock);
     std::string v;
     _currSpec = _nextSpec;
     if (_nextSpec < _slobrokSpecs.size()) {
@@ -55,10 +55,10 @@ std::string SlobrokList::logString() {
     return v;
 }
 
-void SlobrokList::setup(const std::vector<std::string> &specList) {
+void SlobrokList::setup(const std::vector<std::string>& specList) {
     if (specList.size() == 0)
         return;
-    size_t cfgSz = specList.size();
+    size_t    cfgSz = specList.size();
     LockGuard guard(_lock);
     _slobrokSpecs.clear();
     _nextSpec = 0;

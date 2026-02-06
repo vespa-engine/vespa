@@ -55,12 +55,12 @@ private:
         uint32_t _user[50];     /**< User defined fields.                 */
     };
 
-    void *_mmap_addr;    /**< mmap address, NULL is file has not been mmapped.   */
+    void*  _mmap_addr;   /**< mmap address, NULL is file has not been mmapped.   */
     size_t _mmap_length; /**< mmap length.                                       */
 
-    bool _ok; /**< Flag indicating successful initialization. */
+    bool   _ok; /**< Flag indicating successful initialization. */
     Header _header;
-    void *_data;
+    void*  _data;
 
     /**
      * @brief Reset the object.
@@ -77,7 +77,7 @@ private:
      *            global default access mode will be used.
      * @return True on success.
      */
-    bool read(const char *datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF);
+    bool read(const char* datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF);
 
     /**
      * @brief Unimplemented private default constructor.
@@ -86,11 +86,11 @@ private:
     /**
      * @brief Unimplemented private copy constructor.
      */
-    MetaData(const MetaData &);
+    MetaData(const MetaData&);
     /**
      * @brief Unimplemented private assignment operator.
      */
-    const MetaData &operator=(const MetaData &);
+    const MetaData& operator=(const MetaData&);
 
 public:
     /**
@@ -100,8 +100,8 @@ public:
      * @param fam File access mode (read or mmap). If not set, the
      *            global default access mode will be used.
      */
-    MetaData(const char *datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF);
-    MetaData(const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF);
+    MetaData(const char* datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF);
+    MetaData(const std::string& datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF);
 
     /**
      * @brief Destructor.
@@ -130,29 +130,29 @@ public:
 
     uint32_t getUIntEntry(uint32_t idx) const {
         if (_ok) {
-            return ((const uint32_t *)_data)[idx];
+            return ((const uint32_t*)_data)[idx];
         } else
             return 0;
     }
 
-    const void *getDirectRecordEntry(uint32_t idx, uint32_t size) const {
+    const void* getDirectRecordEntry(uint32_t idx, uint32_t size) const {
         if (_ok)
-            return (const void *)((const uint8_t *)_data + idx * size);
+            return (const void*)((const uint8_t*)_data + idx * size);
         else
             return nullptr;
     }
 
-    const void *getIndirectRecordEntry(uint32_t idx) const {
+    const void* getIndirectRecordEntry(uint32_t idx) const {
         if (_ok) {
-            uint32_t offset = ((const uint32_t *)_data)[idx];
-            return (const void *)((const uint8_t *)_data + offset);
+            uint32_t offset = ((const uint32_t*)_data)[idx];
+            return (const void*)((const uint8_t*)_data + offset);
         } else
             return nullptr;
     }
 
-    const char *getCharPtrEntry(uint32_t offset) const {
+    const char* getCharPtrEntry(uint32_t offset) const {
         if (_ok)
-            return ((const char *)_data) + offset;
+            return ((const char*)_data) + offset;
         else
             return nullptr;
     }

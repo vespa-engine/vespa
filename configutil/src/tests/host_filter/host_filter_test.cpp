@@ -10,7 +10,7 @@ TEST(HostFilterTest, empty_hostfilter_includes_any_and_all_hosts) {
 
 TEST(HostFilterTest, explicit_host_set_limits_to_provided_hosts_only) {
     HostFilter::HostSet hosts({"bar.yahoo.com", "zoidberg.yahoo.com"});
-    HostFilter filter(std::move(hosts));
+    HostFilter          filter(std::move(hosts));
     EXPECT_TRUE(filter.includes("bar.yahoo.com"));
     EXPECT_TRUE(filter.includes("zoidberg.yahoo.com"));
     EXPECT_FALSE(filter.includes("foo.yahoo.com"));

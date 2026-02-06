@@ -26,8 +26,8 @@ struct TestTimer : public ns_log::Timer {
 
 std::string readFile(const std::string& file) {
     std::ostringstream ost;
-    std::ifstream is(file.c_str());
-    std::string line;
+    std::ifstream      is(file.c_str());
+    std::string        line;
     while (std::getline(is, line)) {
         std::string::size_type pos = line.find('\t');
         if (pos == std::string::npos)

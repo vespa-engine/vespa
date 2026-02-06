@@ -23,7 +23,7 @@ private:
     std::unique_ptr<ModelConfig>          _modelConfig;
 
 public:
-    ModelOwner(const std::string &configId);
+    ModelOwner(const std::string& configId);
     ~ModelOwner();
     void                       start(std::chrono::milliseconds timeout, bool firstTime);
     void                       checkForUpdates();

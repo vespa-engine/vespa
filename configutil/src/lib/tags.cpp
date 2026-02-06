@@ -6,7 +6,7 @@
 
 namespace configdefinitions {
 
-std::string upcase(const std::string &orig) {
+std::string upcase(const std::string& orig) {
     std::string upper(orig);
     for (size_t i = 0; i < orig.size(); ++i) {
         int l = (unsigned char)orig[i];
@@ -15,7 +15,7 @@ std::string upcase(const std::string &orig) {
     return upper;
 }
 
-bool tagsContain(const std::string &tags, const std::string &tag) {
+bool tagsContain(const std::string& tags, const std::string& tag) {
     std::string allupper = upcase(tags);
     std::string tagupper = upcase(tag);
 

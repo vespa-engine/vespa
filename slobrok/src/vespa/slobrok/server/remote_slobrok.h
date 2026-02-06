@@ -25,53 +25,53 @@ class RemoteSlobrok : public IRpcServerManager, public FRT_IRequestWait {
 private:
     class Reconnecter : public FNET_Task {
     private:
-        int _waittime;
-        RemoteSlobrok &_owner;
-        Reconnecter(const Reconnecter &);            // not used
-        Reconnecter &operator=(const Reconnecter &); // not used
+        int            _waittime;
+        RemoteSlobrok& _owner;
+        Reconnecter(const Reconnecter&);            // not used
+        Reconnecter& operator=(const Reconnecter&); // not used
     public:
-        explicit Reconnecter(FNET_Scheduler *sched, RemoteSlobrok &owner);
+        explicit Reconnecter(FNET_Scheduler* sched, RemoteSlobrok& owner);
         ~Reconnecter() override;
         void scheduleTryConnect();
         void disable();
         void PerformTask() override;
     };
 
-    ExchangeManager &_exchanger;
-    FRT_Target *_remote;
+    ExchangeManager& _exchanger;
+    FRT_Target*      _remote;
     ServiceMapMirror _serviceMapMirror;
     ManagedRpcServer _rpcserver;
-    Reconnecter _reconnecter;
-    int _failCnt;
+    Reconnecter      _reconnecter;
+    int              _failCnt;
 
     std::unique_ptr<MapSubscription> _consensusSubscription;
 
-    FRT_RPCRequest *_remAddPeerReq;
-    FRT_RPCRequest *_remFetchReq;
+    FRT_RPCRequest* _remAddPeerReq;
+    FRT_RPCRequest* _remFetchReq;
 
     void handleFetchResult();
 
 public:
-    RemoteSlobrok(const RemoteSlobrok &) = delete;
-    RemoteSlobrok &operator=(const RemoteSlobrok &) = delete;
-    RemoteSlobrok(const std::string &name, const std::string &spec, ExchangeManager &manager);
+    RemoteSlobrok(const RemoteSlobrok&) = delete;
+    RemoteSlobrok& operator=(const RemoteSlobrok&) = delete;
+    RemoteSlobrok(const std::string& name, const std::string& spec, ExchangeManager& manager);
     ~RemoteSlobrok() override;
 
-    void fail();
-    bool isConnected() const { return (_remote != nullptr); }
-    void tryConnect();
-    void maybeStartFetch();
-    void invokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *rwaiter);
-    const std::string &getName() const { return _rpcserver.getName(); }
-    const std::string &getSpec() const { return _rpcserver.getSpec(); }
-    ServiceMapMirror &remoteMap() { return _serviceMapMirror; }
-    void shutdown();
+    void               fail();
+    bool               isConnected() const { return (_remote != nullptr); }
+    void               tryConnect();
+    void               maybeStartFetch();
+    void               invokeAsync(FRT_RPCRequest* req, double timeout, FRT_IRequestWait* rwaiter);
+    const std::string& getName() const { return _rpcserver.getName(); }
+    const std::string& getSpec() const { return _rpcserver.getSpec(); }
+    ServiceMapMirror&  remoteMap() { return _serviceMapMirror; }
+    void               shutdown();
 
     // interfaces implemented:
-    void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;
-    void notifyOkRpcSrv(ManagedRpcServer *rpcsrv) override;
-    void RequestDone(FRT_RPCRequest *req) override;
-    FRT_Supervisor *getSupervisor() override;
+    void            notifyFailedRpcSrv(ManagedRpcServer* rpcsrv, std::string errmsg) override;
+    void            notifyOkRpcSrv(ManagedRpcServer* rpcsrv) override;
+    void            RequestDone(FRT_RPCRequest* req) override;
+    FRT_Supervisor* getSupervisor() override;
 };
 
 //-----------------------------------------------------------------------------

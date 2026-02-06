@@ -13,10 +13,10 @@ LOG_SETUP_INDIRECT(".log.control", "$Id$");
 
 namespace ns_log {
 
-bool Component::matches(const char *pattern) {
+bool Component::matches(const char* pattern) {
     // Return true if pattern matches the name of this component,
     // false otherwise.
-    int pLen = strlen(pattern);
+    int  pLen = strlen(pattern);
     bool matched;
 
     if (strcmp(pattern, "default") == 0) {
@@ -38,19 +38,19 @@ bool Component::matches(const char *pattern) {
     return matched;
 }
 
-void Component::modifyLevels(const char *levels) {
+void Component::modifyLevels(const char* levels) {
     // levels is a comma-separated list of level={on|off} pairs.
 
     // the levels string can always be converted to a
     // AND bitmask -- for all levels to be removed
     // and an OR bitmask -- for all levels to be added
     std::string levels_copy(levels);
-    char *s = &levels_copy[0];
+    char*       s = &levels_copy[0];
 
     LOG(spam, "Will modify levels for '%.*s' according to \"%s\"", (int)strcspn(_name, " :\n"), _name, levels);
 
     while (s && *s) {
-        char *eq = strchr(s, '=');
+        char* eq = strchr(s, '=');
         if (!eq) {
             throwInvalid("Missing \"=\" in levels string at \"%s\"", s);
         }
@@ -63,7 +63,7 @@ void Component::modifyLevels(const char *levels) {
         }
 
         *eq = '=';
-        char *mod = eq + 1;
+        char*        mod = eq + 1;
         unsigned int newValue;
 
         if (strcmp(mod, "on") == 0 || strncmp(mod, "on,", 3) == 0) {
@@ -97,10 +97,10 @@ void Component::display() {
     printf("%-30.*s %.*s\n", nlen, _name, (int)(sizeof(unsigned int) * Logger::NUM_LOGLEVELS), _charLevels);
 }
 
-Component::Component(char *s)
+Component::Component(char* s)
     : _name(s), _charLevels(ControlFile::alignLevels(strchr(s, ':') + 2)),
-      _intLevels(reinterpret_cast<unsigned int *>(_charLevels)) {
-    if (_charLevels == reinterpret_cast<char *>(4)) {
+      _intLevels(reinterpret_cast<unsigned int*>(_charLevels)) {
+    if (_charLevels == reinterpret_cast<char*>(4)) {
         throwInvalid("Invalid component instantiated");
     }
 }

@@ -14,7 +14,7 @@ namespace config {
  * references to concrete paths.
  **/
 struct FileAcquirer {
-    virtual std::string wait_for(const std::string &file_ref, double timeout_s) = 0;
+    virtual std::string wait_for(const std::string& file_ref, double timeout_s) = 0;
     virtual ~FileAcquirer() = default;
 };
 
@@ -28,8 +28,8 @@ private:
     std::string                     _spec;
 
 public:
-    RpcFileAcquirer(FNET_Transport &transport, const std::string &spec);
-    std::string wait_for(const std::string &file_ref, double timeout_s) override;
+    RpcFileAcquirer(FNET_Transport& transport, const std::string& spec);
+    std::string wait_for(const std::string& file_ref, double timeout_s) override;
     ~RpcFileAcquirer() override;
 };
 

@@ -56,19 +56,19 @@ public:
          * @param length Length of the detected phrase.
          * @param state Final state after the detection of the phrase.
          */
-        virtual void add(const NGram &text, unsigned int from, int length, const FSA::State &state) = 0;
+        virtual void add(const NGram& text, unsigned int from, int length, const FSA::State& state) = 0;
     };
 
     // }}}
 
 private:
     /** Dictionary. */
-    const FSA &_dictionary;
+    const FSA& _dictionary;
 
     /** Unimplemented private default constructor. */
     Detector();
     /** Unimplemented private copy constructor. */
-    Detector(const Detector &);
+    Detector(const Detector&);
 
 public:
     /**
@@ -78,7 +78,7 @@ public:
      *
      * @param dict Dictionary handle.
      */
-    Detector(const FSA &dict) : _dictionary(dict) {}
+    Detector(const FSA& dict) : _dictionary(dict) {}
 
     /**
      * @brief Constructor.
@@ -87,7 +87,7 @@ public:
      *
      * @param dict Dictionary handle.
      */
-    Detector(const FSA *dict) : _dictionary(*dict) {}
+    Detector(const FSA* dict) : _dictionary(*dict) {}
 
     /**
      * @brief Destructor.
@@ -102,7 +102,7 @@ public:
      * @param from Index of first term in text where detection should start.
      * @param length Number of term to consider (-1 means to end of text).
      */
-    void detect(const NGram &text, Hits &hits, unsigned int from = 0, int length = -1) const;
+    void detect(const NGram& text, Hits& hits, unsigned int from = 0, int length = -1) const;
 
     /**
      * @brief Detect terms and phrases in a text.
@@ -114,7 +114,7 @@ public:
      * @param from Index of first term in text where detection should start.
      * @param length Number of term to consider (-1 means to end of text).
      */
-    void detectWithHash(const NGram &text, Hits &hits, unsigned int from = 0, int length = -1) const;
+    void detectWithHash(const NGram& text, Hits& hits, unsigned int from = 0, int length = -1) const;
 };
 
 // }}}

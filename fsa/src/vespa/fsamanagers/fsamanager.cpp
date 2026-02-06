@@ -23,7 +23,7 @@ FSAManager::~FSAManager() {
 // }}}
 // {{{ FSAManager::load()
 
-bool FSAManager::load(const std::string &id, const std::string &url) {
+bool FSAManager::load(const std::string& id, const std::string& url) {
     std::string file = url;
 
     if (!url.compare(0, 7, "http://")) {
@@ -41,7 +41,7 @@ bool FSAManager::load(const std::string &id, const std::string &url) {
             return false;
     }
 
-    FSA::Handle *newdict = new FSA::Handle(file);
+    FSA::Handle* newdict = new FSA::Handle(file);
     if (!newdict->isOk()) {
         delete newdict;
         return false;
@@ -63,7 +63,7 @@ bool FSAManager::load(const std::string &id, const std::string &url) {
 // }}}
 // {{{ FSAManager::getUrl()
 
-bool FSAManager::getUrl(const std::string &url, const std::string &file) {
+bool FSAManager::getUrl(const std::string& url, const std::string& file) {
     (void)url;
     (void)file;
     return false;
@@ -72,8 +72,8 @@ bool FSAManager::getUrl(const std::string &url, const std::string &file) {
 // }}}
 // {{{ FSAManager::get()
 
-FSA::Handle *FSAManager::get(const std::string &id) const {
-    FSA::Handle *newhandle = nullptr;
+FSA::Handle* FSAManager::get(const std::string& id) const {
+    FSA::Handle*     newhandle = nullptr;
     std::shared_lock guard(_lock);
     {
         LibraryConstIterator it = _library.find(id);
@@ -87,7 +87,7 @@ FSA::Handle *FSAManager::get(const std::string &id) const {
 // }}}
 // {{{ FSAManager::drop()
 
-void FSAManager::drop(const std::string &id) {
+void FSAManager::drop(const std::string& id) {
     std::lock_guard guard(_lock);
     {
         LibraryIterator it = _library.find(id);
@@ -113,7 +113,7 @@ void FSAManager::clear() {
 // }}}
 // {{{ FSAManager::setCacheDir()
 
-void FSAManager::setCacheDir(const std::string &dir) {
+void FSAManager::setCacheDir(const std::string& dir) {
     std::lock_guard guard(_cacheLock);
     _cacheDir = dir;
 }

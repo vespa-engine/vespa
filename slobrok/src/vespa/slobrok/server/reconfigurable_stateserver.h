@@ -19,10 +19,10 @@ public:
     ~ReconfigurableStateServer();
 
 private:
-    void configure(std::unique_ptr<vespa::config::core::StateserverConfig> config) override;
-    vespalib::HealthProducer& _health;
+    void                       configure(std::unique_ptr<vespa::config::core::StateserverConfig> config) override;
+    vespalib::HealthProducer&  _health;
     vespalib::MetricsProducer& _metrics;
-    vespalib::ComponentConfigProducer& _components;
+    vespalib::ComponentConfigProducer&     _components;
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
     std::unique_ptr<vespalib::StateServer> _server;
 };

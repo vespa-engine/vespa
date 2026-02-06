@@ -24,13 +24,13 @@ enum FSA_Input_Format {
     OUTPUT_DOT
 };
 
-void error(const char *name, const char *errormsg = nullptr) {
+void error(const char* name, const char* errormsg = nullptr) {
     if (errormsg != nullptr) {
         fprintf(stderr, "%s: %s\n", name, errormsg);
     }
 }
 
-void usage(const char *name, const char *errormsg = nullptr) {
+void usage(const char* name, const char* errormsg = nullptr) {
     error(name, errormsg);
     fprintf(stderr, "usage:\n");
     fprintf(stderr, "    %s [OPTIONS] fsafile\n", name);
@@ -59,7 +59,7 @@ void version() {
 
 namespace {
 
-template <typename T> T read_unaligned(const void *data) {
+template <typename T> T read_unaligned(const void* data) {
     T value;
     memcpy(&value, data, sizeof(T));
     return value;
@@ -67,11 +67,11 @@ template <typename T> T read_unaligned(const void *data) {
 
 } // namespace
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     FSA_Input_Format format = OUTPUT_UNDEF;
-    const char *input_file;
+    const char*      input_file;
 
-    int opt;
+    int        opt;
     extern int optind;
 
     while ((opt = getopt(argc, argv, "ebBhntpdV")) != -1) {
@@ -127,8 +127,8 @@ int main(int argc, char **argv) {
     }
 
     std::string meta, temp;
-    uint32_t num_meta;
-    uint32_t lines = 0;
+    uint32_t    num_meta;
+    uint32_t    lines = 0;
 
     if (format != OUTPUT_DOT) {
 
@@ -136,16 +136,16 @@ int main(int argc, char **argv) {
 
             switch (format) {
             case OUTPUT_BINARY:
-                temp.assign((const char *)(it->data()), it->dataSize());
+                temp.assign((const char*)(it->data()), it->dataSize());
                 Base64::encode(temp, meta);
                 std::cout << it->str() << '\0' << meta << '\0';
                 break;
             case OUTPUT_BINARY_RAW:
-                meta.assign((const char *)(it->data()), it->dataSize());
+                meta.assign((const char*)(it->data()), it->dataSize());
                 std::cout << it->str() << '\0' << meta << '\0';
                 break;
             case OUTPUT_TEXT:
-                meta.assign((const char *)(it->data()), it->dataSize());
+                meta.assign((const char*)(it->data()), it->dataSize());
                 if (meta.size() > 0 && meta[meta.size() - 1] == 0) {
                     meta.resize(meta.size() - 1);
                 }
@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
             case OUTPUT_TEXT_NUM:
                 switch (it->dataSize()) {
                 case 1:
-                    num_meta = *((const uint8_t *)it->data());
+                    num_meta = *((const uint8_t*)it->data());
                     break;
                 case 2:
                 case 3:

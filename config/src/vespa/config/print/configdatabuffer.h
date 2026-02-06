@@ -15,15 +15,15 @@ namespace config {
  */
 class ConfigDataBuffer {
 public:
-    ConfigDataBuffer(const ConfigDataBuffer &) = delete;
-    ConfigDataBuffer &operator=(const ConfigDataBuffer &) = delete;
-    ConfigDataBuffer(ConfigDataBuffer &&) noexcept = default;
-    ConfigDataBuffer &operator=(ConfigDataBuffer &&) noexcept = default;
+    ConfigDataBuffer(const ConfigDataBuffer&) = delete;
+    ConfigDataBuffer& operator=(const ConfigDataBuffer&) = delete;
+    ConfigDataBuffer(ConfigDataBuffer&&) noexcept = default;
+    ConfigDataBuffer& operator=(ConfigDataBuffer&&) noexcept = default;
     ConfigDataBuffer();
     ~ConfigDataBuffer();
-    vespalib::Slime       &slimeObject() { return *_slime; }
-    const vespalib::Slime &slimeObject() const { return *_slime; }
-    const std::string     &getEncodedString() const { return _encoded; }
+    vespalib::Slime&       slimeObject() { return *_slime; }
+    const vespalib::Slime& slimeObject() const { return *_slime; }
+    const std::string&     getEncodedString() const { return _encoded; }
     void                   setEncodedString(std::string_view encoded) { _encoded = encoded; }
 
 private:

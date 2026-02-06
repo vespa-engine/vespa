@@ -45,15 +45,15 @@ using ConnectivityMap = std::map<std::string, OutwardCheck>;
 using HostAndPort = Connectivity::HostAndPort;
 using SpecMap = Connectivity::SpecMap;
 
-std::string spec(const SpecMap::value_type &host_and_port) {
+std::string spec(const SpecMap::value_type& host_and_port) {
     return fmt("tcp/%s:%d", host_and_port.first.c_str(), host_and_port.second);
 }
 
-void classifyConnFails(ConnectivityMap &connectivityMap, const SpecMap &specMap, RpcServer &rpcServer) {
+void classifyConnFails(ConnectivityMap& connectivityMap, const SpecMap& specMap, RpcServer& rpcServer) {
     std::vector<HostAndPort> failedConnSpecs;
     std::vector<HostAndPort> goodNeighborSpecs;
     std::string              myHostname = vespa::Defaults::vespaHostname();
-    for (auto &[hostname, check] : connectivityMap) {
+    for (auto& [hostname, check] : connectivityMap) {
         if (hostname == myHostname) {
             if (check.result() == CcResult::CONN_FAIL) {
                 check.classifyResult(CcResult::UNREACHABLE_UP);
@@ -72,20 +72,20 @@ void classifyConnFails(ConnectivityMap &connectivityMap, const SpecMap &specMap,
     if ((failedConnSpecs.size() == 0) || (goodNeighborSpecs.size() == 0)) {
         return;
     }
-    for (const auto &toClassify : failedConnSpecs) {
-        const auto &[nameToCheck, portToCheck] = toClassify;
+    for (const auto& toClassify : failedConnSpecs) {
+        const auto& [nameToCheck, portToCheck] = toClassify;
         auto cmIter = connectivityMap.find(nameToCheck);
         LOG_ASSERT(cmIter != connectivityMap.end());
         OutwardCheckContext cornerContext(goodNeighborSpecs.size(), nameToCheck, portToCheck, rpcServer.orb());
         ConnectivityMap     cornerProbes;
         int                 ping_timeout = 1000 + 50 * goodNeighborSpecs.size();
-        for (const auto &hp : goodNeighborSpecs) {
+        for (const auto& hp : goodNeighborSpecs) {
             cornerProbes.try_emplace(hp.first, spec(hp), cornerContext, ping_timeout);
         }
         cornerContext.latch.await();
         size_t numReportsUp = 0;
         size_t numReportsDown = 0;
-        for (const auto &[hostname, probe] : cornerProbes) {
+        for (const auto& [hostname, probe] : cornerProbes) {
             if (probe.result() == CcResult::INDIRECT_PING_FAIL)
                 ++numReportsDown;
             if (probe.result() == CcResult::ALL_OK)
@@ -110,13 +110,13 @@ void classifyConnFails(ConnectivityMap &connectivityMap, const SpecMap &specMap,
 
 } // namespace
 
-SpecMap Connectivity::specsFrom(const ModelConfig &model) {
+SpecMap Connectivity::specsFrom(const ModelConfig& model) {
     SpecMap checkSpecs;
-    for (const auto &h : model.hosts) {
+    for (const auto& h : model.hosts) {
         bool foundSentinelPort = false;
-        for (const auto &s : h.services) {
+        for (const auto& s : h.services) {
             if (s.name == "config-sentinel") {
-                for (const auto &p : s.ports) {
+                for (const auto& p : s.ports) {
                     if (p.tags.find("rpc") != p.tags.npos) {
                         checkSpecs[h.name] = p.number;
                         foundSentinelPort = true;
@@ -132,14 +132,14 @@ SpecMap Connectivity::specsFrom(const ModelConfig &model) {
     return checkSpecs;
 }
 
-void Connectivity::configure(const SentinelConfig::Connectivity &config, const ModelConfig &model) {
+void Connectivity::configure(const SentinelConfig::Connectivity& config, const ModelConfig& model) {
     _config = config;
     LOG(config, "connectivity.maxBadCount = %d", _config.maxBadCount);
     LOG(config, "connectivity.minOkPercent = %d", _config.minOkPercent);
     _checkSpecs = specsFrom(model);
 }
 
-bool Connectivity::checkConnectivity(RpcServer &rpcServer) {
+bool Connectivity::checkConnectivity(RpcServer& rpcServer) {
     size_t clusterSize = _checkSpecs.size();
     if (clusterSize == 0) {
         LOG(warning, "could not get model config, skipping connectivity checks");
@@ -149,13 +149,13 @@ bool Connectivity::checkConnectivity(RpcServer &rpcServer) {
     OutwardCheckContext checkContext(clusterSize, myHostname, rpcServer.getPort(), rpcServer.orb());
     ConnectivityMap     connectivityMap;
     int                 ping_timeout = 1000 + 50 * _checkSpecs.size();
-    for (const auto &host_and_port : _checkSpecs) {
+    for (const auto& host_and_port : _checkSpecs) {
         connectivityMap.try_emplace(host_and_port.first, spec(host_and_port), checkContext, ping_timeout);
     }
     checkContext.latch.await();
     classifyConnFails(connectivityMap, _checkSpecs, rpcServer);
     Accumulator accumulated;
-    for (const auto &[hostname, check] : connectivityMap) {
+    for (const auto& [hostname, check] : connectivityMap) {
         std::string detail = toString(check.result());
         std::string prev = _detailsPerHost[hostname];
         if (prev != detail) {
@@ -186,7 +186,7 @@ void Connectivity::Accumulator::handleResult(CcResult value) {
     }
 }
 
-bool Connectivity::Accumulator::enoughOk(const SentinelConfig::Connectivity &config) const {
+bool Connectivity::Accumulator::enoughOk(const SentinelConfig::Connectivity& config) const {
     bool enough = true;
     if (_numBad > size_t(config.maxBadCount)) {
         LOG(warning, "%zu of %zu nodes up but with network connectivity problems (max is %d)", _numBad, _numHandled,

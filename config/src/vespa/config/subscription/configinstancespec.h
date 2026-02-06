@@ -13,11 +13,11 @@ namespace config {
  */
 class ConfigInstanceSpec : public SourceSpec {
 public:
-    ConfigInstanceSpec(const ConfigInstance &instance);
-    ConfigInstanceSpec(const ConfigInstanceSpec &) = delete;
-    ConfigInstanceSpec &operator=(const ConfigInstanceSpec &) = delete;
+    ConfigInstanceSpec(const ConfigInstance& instance);
+    ConfigInstanceSpec(const ConfigInstanceSpec&) = delete;
+    ConfigInstanceSpec& operator=(const ConfigInstanceSpec&) = delete;
     ~ConfigInstanceSpec() override;
-    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues &timingValues) const override;
+    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues& timingValues) const override;
 
 private:
     const ConfigKey       _key;

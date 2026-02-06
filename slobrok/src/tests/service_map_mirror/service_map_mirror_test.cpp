@@ -12,29 +12,29 @@ using vespalib::make_string_short::fmt;
 
 using Map = std::map<std::string, std::string>;
 
-Map dump(const ServiceMapMirror &mirror) {
+Map dump(const ServiceMapMirror& mirror) {
     Map result;
-    for (const auto &entry : mirror.allMappings()) {
+    for (const auto& entry : mirror.allMappings()) {
         result[entry.name] = entry.spec;
     }
     return result;
 }
 
-void addTo(ServiceMapMirror &target, const ServiceMapping &mapping) {
-    auto cur = target.currentGeneration();
+void addTo(ServiceMapMirror& target, const ServiceMapping& mapping) {
+    auto                     cur = target.currentGeneration();
     std::vector<std::string> removes = {};
-    ServiceMappingList updates = {mapping};
-    auto nxt = cur;
+    ServiceMappingList       updates = {mapping};
+    auto                     nxt = cur;
     nxt.add();
     MapDiff diff{cur, removes, updates, nxt};
     target.apply(diff);
 }
 
-void removeFrom(ServiceMapMirror &target, const ServiceMapping &mapping) {
-    auto cur = target.currentGeneration();
+void removeFrom(ServiceMapMirror& target, const ServiceMapping& mapping) {
+    auto                     cur = target.currentGeneration();
     std::vector<std::string> removes = {mapping.name};
-    ServiceMappingList updates = {};
-    auto nxt = cur;
+    ServiceMappingList       updates = {};
+    auto                     nxt = cur;
     nxt.add();
     MapDiff diff{cur, removes, updates, nxt};
     target.apply(diff);
@@ -42,23 +42,23 @@ void removeFrom(ServiceMapMirror &target, const ServiceMapping &mapping) {
 
 TEST(ServiceMapMirrorTest, empty_inspection) {
     ServiceMapMirror mirror;
-    auto bar = dump(mirror);
+    auto             bar = dump(mirror);
     EXPECT_TRUE(bar.empty());
 
     MockMapListener observer;
-    auto subscription = MapSubscription::subscribe(mirror, observer);
+    auto            subscription = MapSubscription::subscribe(mirror, observer);
     subscription.reset();
     EXPECT_EQ(observer.last_event, MockEvent::NONE);
 }
 
 TEST(ServiceMapMirrorTest, full_inspection) {
     ServiceMapMirror mirror;
-    MockMapListener observer;
-    auto subscription = MapSubscription::subscribe(mirror, observer);
+    MockMapListener  observer;
+    auto             subscription = MapSubscription::subscribe(mirror, observer);
     for (int i = 0; i < 1984; ++i) {
         EXPECT_EQ(mirror.currentGeneration(), GenCnt(i));
-        auto name = fmt("key/%d/name", i);
-        auto spec = fmt("tcp/host%d.domain.tld:19099", 10000 + i);
+        auto           name = fmt("key/%d/name", i);
+        auto           spec = fmt("tcp/host%d.domain.tld:19099", 10000 + i);
         ServiceMapping toAdd{name, spec};
         addTo(mirror, toAdd);
         EXPECT_EQ(observer.last_event, MockEvent::ADD);
@@ -92,10 +92,10 @@ TEST(ServiceMapMirrorTest, full_inspection) {
     EXPECT_EQ(map["key/1969/name"], "tcp/woodstock:19069");
     EXPECT_EQ(map.size(), 1983ul);
 
-    auto cur = mirror.currentGeneration();
+    auto                     cur = mirror.currentGeneration();
     std::vector<std::string> removes = {"key/123/name", "key/1983/name", "key/234/name",
                                         "key/345/name", "key/123/name",  "key/456/name"};
-    ServiceMappingList updates = {
+    ServiceMappingList       updates = {
         ServiceMapping{"key/567/name", "bar/1/foo"}, ServiceMapping{"key/678/name", "bar/2/foo"},
         ServiceMapping{"key/234/name", "bar/3/foo"}, ServiceMapping{"key/345/name", "bar/4/foo"},
         ServiceMapping{"key/789/name", "bar/5/foo"}, ServiceMapping{"key/666/name", "bar/6/foo"},

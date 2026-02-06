@@ -29,8 +29,8 @@ public:
      */
     explicit ConfigSubscriptionSet(std::shared_ptr<IConfigContext> context);
 
-    ConfigSubscriptionSet(const ConfigSubscriptionSet &) = delete;
-    ConfigSubscriptionSet &operator=(const ConfigSubscriptionSet &) = delete;
+    ConfigSubscriptionSet(const ConfigSubscriptionSet&) = delete;
+    ConfigSubscriptionSet& operator=(const ConfigSubscriptionSet&) = delete;
     ~ConfigSubscriptionSet();
 
     /**
@@ -52,7 +52,7 @@ public:
     bool isClosed() const noexcept { return (_state.load(std::memory_order_relaxed) == CLOSED); }
 
     // Helpers for doing the subscription
-    std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey &key, vespalib::duration timeout);
+    std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey& key, vespalib::duration timeout);
 
     // Tries to acquire a new snapshot of config within the timeout
     bool acquireSnapshot(vespalib::duration timeout, bool requireDifference);
@@ -64,7 +64,7 @@ private:
 
     const vespalib::duration        _maxNapTime;
     std::shared_ptr<IConfigContext> _context;           // Context to keep alive managers.
-    IConfigManager                 &_mgr;               // The config manager that we use.
+    IConfigManager&                 _mgr;               // The config manager that we use.
     std::atomic<int64_t>            _currentGeneration; // Holds the current config generation.
     SubscriptionList                _subscriptionList;  // List of current subscriptions.
     std::atomic<SubscriberState>    _state;             // Current state of this subscriber.

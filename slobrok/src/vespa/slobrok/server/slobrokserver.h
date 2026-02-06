@@ -10,11 +10,11 @@ namespace slobrok {
 
 class SlobrokServer : public vespalib::Runnable {
 private:
-    SBEnv _env;
+    SBEnv       _env;
     std::thread _thread;
 
 public:
-    SlobrokServer(ConfigShim &shim);
+    SlobrokServer(ConfigShim& shim);
     SlobrokServer(uint32_t port);
     ~SlobrokServer();
 

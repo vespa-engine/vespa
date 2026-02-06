@@ -22,27 +22,27 @@ typedef std::shared_ptr<const protocol::Payload> PayloadPtr;
 class ConfigValue {
 public:
     explicit ConfigValue(StringVector lines);
-    ConfigValue(StringVector lines, const std::string &xxhash);
-    ConfigValue(PayloadPtr data, const std::string &xxhash);
+    ConfigValue(StringVector lines, const std::string& xxhash);
+    ConfigValue(PayloadPtr data, const std::string& xxhash);
     ConfigValue();
-    ConfigValue(ConfigValue &&) noexcept = default;
-    ConfigValue &operator=(ConfigValue &&) noexcept = default;
-    ConfigValue(const ConfigValue &);
-    ConfigValue &operator=(const ConfigValue &);
+    ConfigValue(ConfigValue&&) noexcept = default;
+    ConfigValue& operator=(ConfigValue&&) noexcept = default;
+    ConfigValue(const ConfigValue&);
+    ConfigValue& operator=(const ConfigValue&);
     ~ConfigValue();
 
-    int operator==(const ConfigValue &rhs) const;
-    int operator!=(const ConfigValue &rhs) const;
+    int operator==(const ConfigValue& rhs) const;
+    int operator!=(const ConfigValue& rhs) const;
 
     size_t              numLines() const { return _lines.size(); }
-    const std::string  &getLine(int i) const { return _lines.at(i); }
-    const StringVector &getLines() const { return _lines; }
+    const std::string&  getLine(int i) const { return _lines.at(i); }
+    const StringVector& getLines() const { return _lines; }
     StringVector        getLegacyFormat() const;
     std::string         asJson() const;
-    const std::string  &getXxhash64() const { return _xxhash64; }
+    const std::string&  getXxhash64() const { return _xxhash64; }
 
-    void serializeV1(::vespalib::slime::Cursor &cursor) const;
-    void serializeV2(::vespalib::slime::Cursor &cursor) const;
+    void serializeV1(::vespalib::slime::Cursor& cursor) const;
+    void serializeV2(::vespalib::slime::Cursor& cursor) const;
 
     template <typename ConfigType> std::unique_ptr<ConfigType> newInstance() const;
 

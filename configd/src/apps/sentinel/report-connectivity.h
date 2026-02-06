@@ -19,13 +19,13 @@ namespace config::sentinel {
 
 class ReportConnectivity : public StatusCallback {
 public:
-    ReportConnectivity(FRT_RPCRequest *req, int timeout_ms, FRT_Supervisor &orb, ModelOwner &modelOwner);
+    ReportConnectivity(FRT_RPCRequest* req, int timeout_ms, FRT_Supervisor& orb, ModelOwner& modelOwner);
     virtual ~ReportConnectivity();
     void returnStatus(bool ok) override;
 
 private:
     void                                    finish() const;
-    FRT_RPCRequest                         *_parentRequest;
+    FRT_RPCRequest*                         _parentRequest;
     std::vector<std::unique_ptr<PeerCheck>> _checks;
     std::atomic<size_t>                     _remaining;
 };

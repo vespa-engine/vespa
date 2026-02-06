@@ -19,12 +19,12 @@ class ExchangeManager;
  **/
 class RemoteCheck : public FNET_Task {
 private:
-    ExchangeManager &_exchanger;
+    ExchangeManager& _exchanger;
 
-    RemoteCheck(const RemoteCheck &);            // Not used
-    RemoteCheck &operator=(const RemoteCheck &); // Not used
+    RemoteCheck(const RemoteCheck&);            // Not used
+    RemoteCheck& operator=(const RemoteCheck&); // Not used
 public:
-    explicit RemoteCheck(FNET_Scheduler *sched, ExchangeManager &exchanger);
+    explicit RemoteCheck(FNET_Scheduler* sched, ExchangeManager& exchanger);
     ~RemoteCheck();
 
 private:

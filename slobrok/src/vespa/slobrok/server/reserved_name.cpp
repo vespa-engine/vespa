@@ -5,7 +5,7 @@ using std::chrono::duration_cast;
 
 namespace slobrok {
 
-ReservedName::ReservedName(const std::string &name, const std::string &spec, bool local)
+ReservedName::ReservedName(const std::string& name, const std::string& spec, bool local)
     : NamedService(name, spec), _reservedTime(steady_clock::now()), isLocal(local) {}
 
 bool ReservedName::stillReserved() const { return (milliseconds() < 15000); }

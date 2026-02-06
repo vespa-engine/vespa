@@ -8,7 +8,7 @@
 
 LOG_SETUP("logtest", "$Id: logtest.cpp 119439 2011-04-19 09:32:27Z arnej $");
 
-int main(int, char **argv) {
+int main(int, char** argv) {
     EV_STARTING("logtest");
     LOG(info, "Starting up, called as %s", argv[0]);
     EV_STARTED("logtest");

@@ -31,12 +31,12 @@ private:
     using PermMapIterator = std::map<std::string, unsigned int>::iterator;
     using PermMapConstIterator = std::map<std::string, unsigned int>::const_iterator;
 
-    PermTab _permtab;
-    PermMap _permmap;
+    PermTab      _permtab;
+    PermMap      _permmap;
     unsigned int _size;
-    std::string _seed;
+    std::string  _seed;
 
-    void initRec(const std::string &input, std::string tail);
+    void initRec(const std::string& input, std::string tail);
 
 public:
     /**
@@ -50,7 +50,7 @@ public:
     ~Permuter();
 
     std::string getPerm(unsigned int id) const { return _permtab[id]; }
-    int getPermId(const std::string &perm) const;
+    int         getPermId(const std::string& perm) const;
 
     static unsigned int firstComb(unsigned int n, unsigned int m);
     static unsigned int nextComb(unsigned int c, unsigned int m);

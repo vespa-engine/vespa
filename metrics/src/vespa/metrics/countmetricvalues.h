@@ -34,11 +34,11 @@ template <typename T> struct CountMetricValues : public MetricValueClass {
     CountMetricValues() : _value(0) {}
 
     std::string toString() const;
-    double getDoubleValue(string_view) const override;
-    uint64_t getLongValue(string_view) const override;
-    void output(const std::string&, std::ostream& out) const override;
-    void output(const std::string&, vespalib::JsonStream& stream) const override;
-    bool inUse() const { return (_value != 0); }
+    double      getDoubleValue(string_view) const override;
+    uint64_t    getLongValue(string_view) const override;
+    void        output(const std::string&, std::ostream& out) const override;
+    void        output(const std::string&, vespalib::JsonStream& stream) const override;
+    bool        inUse() const { return (_value != 0); }
 };
 
 } // namespace metrics

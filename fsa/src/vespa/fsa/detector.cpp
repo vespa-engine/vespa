@@ -20,10 +20,10 @@ namespace fsa {
 
 // {{{ Detector::detect
 
-void Detector::detect(const NGram &text, Detector::Hits &hits, unsigned int from, int length) const {
-    std::list<FSA::WordCounterState> detectors;
+void Detector::detect(const NGram& text, Detector::Hits& hits, unsigned int from, int length) const {
+    std::list<FSA::WordCounterState>           detectors;
     std::list<FSA::WordCounterState>::iterator det_it;
-    unsigned int i, to;
+    unsigned int                               i, to;
 
     to = text.length();
     if (length != -1 && from + length < to)
@@ -55,10 +55,10 @@ void Detector::detect(const NGram &text, Detector::Hits &hits, unsigned int from
 // }}}
 // {{{ Detector::detectWithHash
 
-void Detector::detectWithHash(const NGram &text, Detector::Hits &hits, unsigned int from, int length) const {
-    std::list<FSA::HashedWordCounterState> detectors;
+void Detector::detectWithHash(const NGram& text, Detector::Hits& hits, unsigned int from, int length) const {
+    std::list<FSA::HashedWordCounterState>           detectors;
     std::list<FSA::HashedWordCounterState>::iterator det_it;
-    unsigned int i, to;
+    unsigned int                                     i, to;
 
     to = text.length();
     if (length != -1 && from + length < to)

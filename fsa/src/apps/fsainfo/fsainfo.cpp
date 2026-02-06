@@ -11,7 +11,7 @@
 
 using namespace fsa;
 
-void usage(const char *name, const char *errormsg = nullptr) {
+void usage(const char* name, const char* errormsg = nullptr) {
     if (errormsg != nullptr) {
         fprintf(stderr, "%s: %s\n", name, errormsg);
     }
@@ -33,10 +33,10 @@ void version() {
     std::cout << std::endl;
 }
 
-int main(int argc, char **argv) {
-    const char *fsa_file;
+int main(int argc, char** argv) {
+    const char* fsa_file;
 
-    int opt;
+    int        opt;
     extern int optind;
 
     while ((opt = getopt(argc, argv, "hV")) != -1) {

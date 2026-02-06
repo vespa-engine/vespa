@@ -20,21 +20,21 @@ using vespalib::slime::ArrayTraverser;
 using vespalib::slime::ObjectTraverser;
 
 namespace config {
-void doEncode(ConfigDataBuffer &buffer, Output &output);
+void doEncode(ConfigDataBuffer& buffer, Output& output);
 }
 
 namespace {
 
 struct ConfigEncoder : public ArrayTraverser, public ObjectTraverser {
-    OutputWriter            &out;
+    OutputWriter&            out;
     int                      level;
     bool                     head;
     std::vector<std::string> prefixList;
 
-    explicit ConfigEncoder(OutputWriter &out_in) : out(out_in), level(0), head(true) {}
+    explicit ConfigEncoder(OutputWriter& out_in) : out(out_in), level(0), head(true) {}
 
     void printPrefix() {
-        for (const auto &i : prefixList) {
+        for (const auto& i : prefixList) {
             out.printf("%s", i.c_str());
         }
     }
@@ -48,12 +48,12 @@ struct ConfigEncoder : public ArrayTraverser, public ObjectTraverser {
     }
     void encodeLONG(int64_t value) { out.printf("%" PRId64, value); }
     void encodeDOUBLE(double value) { out.printf("%g", value); }
-    void encodeSTRINGNOQUOTE(const Memory &memory) {
-        const char *hex = "0123456789ABCDEF";
-        char       *p = out.reserve(memory.size * 6);
+    void encodeSTRINGNOQUOTE(const Memory& memory) {
+        const char* hex = "0123456789ABCDEF";
+        char*       p = out.reserve(memory.size * 6);
         size_t      len = 0;
-        const char *pos = memory.data;
-        const char *end = memory.data + memory.size;
+        const char* pos = memory.data;
+        const char* end = memory.data + memory.size;
         for (; pos < end; ++pos) {
             uint8_t c = *pos;
             switch (c) {
@@ -109,18 +109,18 @@ struct ConfigEncoder : public ArrayTraverser, public ObjectTraverser {
         }
         out.commit(len);
     }
-    void encodeSTRING(const Memory &memory) {
+    void encodeSTRING(const Memory& memory) {
         out.write('\"');
         encodeSTRINGNOQUOTE(memory);
         out.write('\"');
     }
-    void encodeARRAY(const Inspector &inspector) {
-        ArrayTraverser &array_traverser = *this;
+    void encodeARRAY(const Inspector& inspector) {
+        ArrayTraverser& array_traverser = *this;
         inspector.traverse(array_traverser);
     }
-    void encodeMAP(const Inspector &inspector) {
+    void encodeMAP(const Inspector& inspector) {
         for (size_t i = 0; i < inspector.children(); i++) {
-            const Inspector      &child(inspector[i]);
+            const Inspector&      child(inspector[i]);
             vespalib::asciistream ss;
             ss << "{\"" << child["key"].asString().make_string() << "\"}";
             prefixList.emplace_back(ss.view());
@@ -128,7 +128,7 @@ struct ConfigEncoder : public ArrayTraverser, public ObjectTraverser {
             prefixList.pop_back();
         }
     }
-    void encodeMAPEntry(const Inspector &inspector) {
+    void encodeMAPEntry(const Inspector& inspector) {
         if (inspector["type"].valid()) {
             std::string type(inspector["type"].asString().make_string());
             if (type.compare("struct") == 0) {
@@ -146,11 +146,11 @@ struct ConfigEncoder : public ArrayTraverser, public ObjectTraverser {
             }
         }
     }
-    void encodeOBJECT(const Inspector &inspector) {
-        ObjectTraverser &object_traverser = *this;
+    void encodeOBJECT(const Inspector& inspector) {
+        ObjectTraverser& object_traverser = *this;
         inspector.traverse(object_traverser);
     }
-    void encodeValue(const Inspector &inspector) {
+    void encodeValue(const Inspector& inspector) {
         switch (inspector.type().getId()) {
         case vespalib::slime::BOOL::ID:
             return encodeBOOL(inspector.asBool());
@@ -169,16 +169,16 @@ struct ConfigEncoder : public ArrayTraverser, public ObjectTraverser {
         }
         LOG_ABORT("should not be reached"); // should not be reached
     }
-    void entry(size_t idx, const Inspector &inspector) override;
-    void field(const Memory &symbol_name, const Inspector &inspector) override;
+    void entry(size_t idx, const Inspector& inspector) override;
+    void field(const Memory& symbol_name, const Inspector& inspector) override;
 
-    static void encode(Inspector &root, OutputWriter &out) {
+    static void encode(Inspector& root, OutputWriter& out) {
         ConfigEncoder encoder(out);
         encoder.encodeValue(root);
     }
 };
 
-void ConfigEncoder::entry(size_t index, const Inspector &inspector) {
+void ConfigEncoder::entry(size_t index, const Inspector& inspector) {
     if (inspector["type"].valid()) {
         std::string type(inspector["type"].asString().make_string());
         if (type.compare("array") == 0) {
@@ -209,7 +209,7 @@ void ConfigEncoder::entry(size_t index, const Inspector &inspector) {
     }
 }
 
-void ConfigEncoder::field(const Memory &symbol_name, const Inspector &inspector) {
+void ConfigEncoder::field(const Memory& symbol_name, const Inspector& inspector) {
     if (inspector["type"].valid()) {
         std::string type(inspector["type"].asString().make_string());
         if (type.compare("array") == 0) {
@@ -248,18 +248,18 @@ void ConfigEncoder::field(const Memory &symbol_name, const Inspector &inspector)
 
 namespace config {
 
-void doEncode(ConfigDataBuffer &buffer, Output &output) {
+void doEncode(ConfigDataBuffer& buffer, Output& output) {
     OutputWriter out(output, 8000);
     ConfigEncoder::encode(buffer.slimeObject().get()["configPayload"], out);
 }
 
-void FileConfigFormatter::encode(ConfigDataBuffer &buffer) const {
+void FileConfigFormatter::encode(ConfigDataBuffer& buffer) const {
     SimpleBuffer buf;
     doEncode(buffer, buf);
     buffer.setEncodedString(buf.get().make_stringview());
 }
 
-size_t FileConfigFormatter::decode(ConfigDataBuffer &buffer) const {
+size_t FileConfigFormatter::decode(ConfigDataBuffer& buffer) const {
     (void)buffer;
     throw vespalib::IllegalArgumentException("Reading cfg format is not supported");
     return 0;
