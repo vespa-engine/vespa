@@ -34,8 +34,9 @@ double Vectorizer::TfIdf::weight(unsigned int tfnorm, unsigned int idfnorm, doub
         idf_n = 1.0;
     } else {
         idf_n = 1.0 - (double)_idf / idfnorm;
-        if (idf_n < 0.0)
+        if (idf_n < 0.0) {
             idf_n = 0.0;
+        }
         if (idfexp != 1.0 && idf_n != 0.0) {
             idf_n = std::exp(idfexp * std::log(idf_n));
         }
@@ -57,8 +58,9 @@ void Vectorizer::vectorize(const NGram& text, TermVector& vector, unsigned int l
     vector.clear();
     unsigned int tfmax = 1;
     for (rvi = raw_vect.begin(); rvi != raw_vect.end(); ++rvi) {
-        if (rvi->second.first.tf() > tfmax)
+        if (rvi->second.first.tf() > tfmax) {
             tfmax = rvi->second.first.tf();
+        }
     }
     vector.reserve(raw_vect.size());
     for (rvi = raw_vect.begin(); rvi != raw_vect.end(); ++rvi) {

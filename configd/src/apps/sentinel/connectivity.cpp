@@ -86,10 +86,12 @@ void classifyConnFails(ConnectivityMap& connectivityMap, const SpecMap& specMap,
         size_t numReportsUp = 0;
         size_t numReportsDown = 0;
         for (const auto& [hostname, probe] : cornerProbes) {
-            if (probe.result() == CcResult::INDIRECT_PING_FAIL)
+            if (probe.result() == CcResult::INDIRECT_PING_FAIL) {
                 ++numReportsDown;
-            if (probe.result() == CcResult::ALL_OK)
+            }
+            if (probe.result() == CcResult::ALL_OK) {
                 ++numReportsUp;
+            }
         }
         if (numReportsUp > 0) {
             LOG(debug, "Unreachable: %s is up according to %zd hosts (down according to me + %zd others)",

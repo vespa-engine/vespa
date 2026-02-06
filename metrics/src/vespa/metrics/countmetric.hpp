@@ -110,8 +110,9 @@ void CountMetric<T, SumOnAdd>::print(std::ostream& out, bool verbose, const std:
                                      uint64_t secondsPassed) const {
     (void)indent;
     Values values(_values.getValues());
-    if (values._value == 0 && !verbose)
+    if (values._value == 0 && !verbose) {
         return;
+    }
     out << this->getName() << (SumOnAdd ? " count=" : " value=") << values._value;
     if (SumOnAdd) {
         if (secondsPassed != 0) {

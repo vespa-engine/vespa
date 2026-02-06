@@ -33,10 +33,12 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::inc(AvgVal incVal) {
         AvgVal val = values._last + incVal;
         ++values._count;
         values._total += val;
-        if (val < values._min)
+        if (val < values._min) {
             values._min = val;
-        if (val > values._max)
+        }
+        if (val > values._max) {
             values._max = val;
+        }
         values._last = val;
     } while (!_values.setValues(values));
 }
@@ -52,10 +54,12 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::dec(AvgVal decVal) {
         AvgVal val = values._last - decVal;
         ++values._count;
         values._total += val;
-        if (val < values._min)
+        if (val < values._min) {
             values._min = val;
-        if (val > values._max)
+        }
+        if (val > values._max) {
             values._max = val;
+        }
         values._last = val;
     } while (!_values.setValues(values));
 }
@@ -63,8 +67,9 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::dec(AvgVal decVal) {
 template <typename AvgVal, typename TotVal, bool SumOnAdd>
 void ValueMetric<AvgVal, TotVal, SumOnAdd>::addToSnapshot(Metric& other, std::vector<Metric::UP>&) const {
     auto& o = reinterpret_cast<ValueMetric<AvgVal, TotVal, SumOnAdd>&>(other);
-    if (_values.getValues()._count == 0)
+    if (_values.getValues()._count == 0) {
         return; // Don't add if not set
+    }
     o.add(_values.getValues(), false);
 }
 
@@ -99,10 +104,12 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::add(const Values& values2, bool sumO
             values._total += values2._total;
             values._last = values2._last;
         }
-        if (values._min > values2._min)
+        if (values._min > values2._min) {
             values._min = values2._min;
-        if (values._max < values2._max)
+        }
+        if (values._max < values2._max) {
             values._max = values2._max;
+        }
     } while (!_values.setValues(values));
     if (overflow) {
         _values.reset();
@@ -137,10 +144,12 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::addValueWithCount(AvgVal avg, TotVal
         values = _values.getValues();
         values._count += count;
         values._total += tot;
-        if (min < values._min)
+        if (min < values._min) {
             values._min = min;
-        if (max > values._max)
+        }
+        if (max > values._max) {
             values._max = max;
+        }
         values._last = avg;
     } while (!_values.setValues(values));
 }
@@ -155,8 +164,9 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::operator+=(const ValueMetric<AvgVal, TotV
 template <typename AvgVal, typename TotVal, bool SumOnAdd>
 double ValueMetric<AvgVal, TotVal, SumOnAdd>::getAverage() const {
     Values values(_values.getValues());
-    if (values._count == 0)
+    if (values._count == 0) {
         return 0;
+    }
     return static_cast<double>(values._total) / values._count;
 }
 
@@ -166,8 +176,9 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::print(std::ostream& out, bool verbos
     (void)indent;
     (void)secondsPassed;
     Values values(_values.getValues());
-    if (!inUse(values) && !verbose)
+    if (!inUse(values) && !verbose) {
         return;
+    }
     out << this->getName()
         << " average=" << (values._count == 0 ? 0 : static_cast<double>(values._total) / values._count)
         << " last=" << values._last;
@@ -182,36 +193,48 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::print(std::ostream& out, bool verbos
 template <typename AvgVal, typename TotVal, bool SumOnAdd>
 int64_t ValueMetric<AvgVal, TotVal, SumOnAdd>::getLongValue(string_view id) const {
     Values values(_values.getValues());
-    if (id == "last" || (SumOnAdd && id == "value"))
+    if (id == "last" || (SumOnAdd && id == "value")) {
         return static_cast<int64_t>(values._last);
-    if (id == "average" || (!SumOnAdd && id == "value"))
+    }
+    if (id == "average" || (!SumOnAdd && id == "value")) {
         return static_cast<int64_t>(getAverage());
-    if (id == "count")
+    }
+    if (id == "count") {
         return static_cast<int64_t>(values._count);
-    if (id == "total")
+    }
+    if (id == "total") {
         return static_cast<int64_t>(values._total);
-    if (id == "min")
+    }
+    if (id == "min") {
         return static_cast<int64_t>(values._count > 0 ? values._min : 0);
-    if (id == "max")
+    }
+    if (id == "max") {
         return static_cast<int64_t>(values._count > 0 ? values._max : 0);
+    }
     throw vespalib::IllegalArgumentException("No value " + std::string(id) + " in average metric.", VESPA_STRLOC);
 }
 
 template <typename AvgVal, typename TotVal, bool SumOnAdd>
 double ValueMetric<AvgVal, TotVal, SumOnAdd>::getDoubleValue(string_view id) const {
     Values values(_values.getValues());
-    if (id == "last" || (SumOnAdd && id == "value"))
+    if (id == "last" || (SumOnAdd && id == "value")) {
         return static_cast<double>(values._last);
-    if (id == "average" || (!SumOnAdd && id == "value"))
+    }
+    if (id == "average" || (!SumOnAdd && id == "value")) {
         return getAverage();
-    if (id == "count")
+    }
+    if (id == "count") {
         return static_cast<double>(values._count);
-    if (id == "total")
+    }
+    if (id == "total") {
         return static_cast<double>(values._total);
-    if (id == "min")
+    }
+    if (id == "min") {
         return static_cast<double>(values._count > 0 ? values._min : 0);
-    if (id == "max")
+    }
+    if (id == "max") {
         return static_cast<double>(values._count > 0 ? values._max : 0);
+    }
     throw vespalib::IllegalArgumentException("No value " + std::string(id) + " in average metric.", VESPA_STRLOC);
 }
 

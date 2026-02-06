@@ -59,15 +59,17 @@ MetricSnapshotSet::MetricSnapshotSet(const Metric::String& name, system_time::du
       _building(count == 1 ? nullptr : new MetricSnapshot(name, period, source, snapshotUnsetMetrics)),
       _current_is_assigned(false) {
     _current->reset();
-    if (_building)
+    if (_building) {
         _building->reset();
+    }
 }
 
 MetricSnapshotSet::~MetricSnapshotSet() = default;
 
 MetricSnapshot& MetricSnapshotSet::getNextTarget() {
-    if (_count == 1)
+    if (_count == 1) {
         return *_current;
+    }
     return *_building;
 }
 
@@ -78,8 +80,9 @@ bool MetricSnapshotSet::haveCompletedNewPeriod(system_time newFromTime) {
     }
     _building->setToTime(newFromTime);
     // If not time to roll yet, just return
-    if (++_builderCount < _count)
+    if (++_builderCount < _count) {
         return false;
+    }
     // Building buffer done. Use that as current and reset current.
     std::swap(_current, _building);
     _building->reset(newFromTime);
@@ -105,29 +108,33 @@ bool MetricSnapshotSet::timeForAnotherSnapshot(system_time currentTime) {
 }
 
 void MetricSnapshotSet::reset(system_time currentTime) {
-    if (_count != 1)
+    if (_count != 1) {
         _building->reset(currentTime);
+    }
     _current->reset(currentTime);
     _builderCount = 0;
 }
 
 void MetricSnapshotSet::recreateSnapshot(const MetricSet& metrics, bool copyUnset) {
-    if (_count != 1)
+    if (_count != 1) {
         _building->recreateSnapshot(metrics, copyUnset);
+    }
     _current->recreateSnapshot(metrics, copyUnset);
 }
 
 void MetricSnapshotSet::addMemoryUsage(MemoryConsumption& mc) const {
     ++mc._snapshotSetCount;
     mc._snapshotSetMeta += sizeof(MetricSnapshotSet);
-    if (_count != 1)
+    if (_count != 1) {
         _building->addMemoryUsage(mc);
+    }
     _current->addMemoryUsage(mc);
 }
 
 void MetricSnapshotSet::setFromTime(system_time fromTime) {
-    if (_count != 1)
+    if (_count != 1) {
         _building->setFromTime(fromTime);
+    }
     _current->setFromTime(fromTime);
 }
 

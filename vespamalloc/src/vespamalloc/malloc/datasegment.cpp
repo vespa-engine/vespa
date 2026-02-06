@@ -209,8 +209,9 @@ size_t DataSegment::infoThread(FILE* os, int level, uint32_t thread, SizeClassT 
             i++;
         }
     }
-    if (checkedCount == 0)
+    if (checkedCount == 0) {
         return 0;
+    }
 
     fprintf(os,
             "\nCallTree SC %d(Checked=%ld, GlobalAlloc=%ld(%ld%%),"

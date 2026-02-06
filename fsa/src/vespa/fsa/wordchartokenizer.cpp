@@ -21,10 +21,11 @@ bool WordCharTokenizer::init(const std::string& text) {
     _current = 0;
 
     char* dup;
-    if (_lowercase)
+    if (_lowercase) {
         dup = Unicode::strlowdupUTF8(text.c_str());
-    else
+    } else {
         dup = Unicode::strdupUTF8(text.c_str());
+    }
 
     char*  tmp = dup;
     char * tok, *end;

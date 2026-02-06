@@ -55,8 +55,9 @@ void IncrementalFetch::invoke(uint32_t msTimeout) {
     _req->Detach();
     LOG(debug, "IncrementalFetch %p invoked from %s (gen %d, timeout %d ms)", this, _req->GetConnection()->GetSpec(),
         _gen.getAsInt(), msTimeout);
-    if (msTimeout > 10000)
+    if (msTimeout > 10000) {
         msTimeout = 10000;
+    }
     Schedule(msTimeout * 0.001);
     _smh.asyncGenerationDiff(this, _gen);
 }

@@ -43,16 +43,21 @@ void ValueMetricValues<AvgVal, TotVal>::relaxedLoadFrom(const AtomicImpl& source
 template <typename AvgVal, typename TotVal>
 template <typename T>
 T ValueMetricValues<AvgVal, TotVal>::getValue(string_view id) const {
-    if (id == "last")
+    if (id == "last") {
         return static_cast<T>(_last);
-    if (id == "count")
+    }
+    if (id == "count") {
         return static_cast<T>(_count);
-    if (id == "total")
+    }
+    if (id == "total") {
         return static_cast<T>(_total);
-    if (id == "min")
+    }
+    if (id == "min") {
         return static_cast<T>(_count > 0 ? _min : 0);
-    if (id == "max")
+    }
+    if (id == "max") {
         return static_cast<T>(_count > 0 ? _max : 0);
+    }
     throw IllegalArgumentException("No value " + std::string(id) + " in value metric.", VESPA_STRLOC);
 }
 

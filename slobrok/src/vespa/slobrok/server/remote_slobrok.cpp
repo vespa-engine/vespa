@@ -44,10 +44,12 @@ RemoteSlobrok::~RemoteSlobrok() {
 }
 
 void RemoteSlobrok::maybeStartFetch() {
-    if (_remFetchReq != nullptr)
+    if (_remFetchReq != nullptr) {
         return;
-    if (_remote == nullptr)
+    }
+    if (_remote == nullptr) {
         return;
+    }
     _remFetchReq = getSupervisor()->AllocRPCRequest();
     _remFetchReq->SetMethodName("slobrok.internal.fetchLocalView");
     _remFetchReq->GetParams()->AddInt32(_serviceMapMirror.currentGeneration().getAsInt());
@@ -195,8 +197,9 @@ RemoteSlobrok::Reconnecter::Reconnecter(FNET_Scheduler* sched, RemoteSlobrok& ow
 RemoteSlobrok::Reconnecter::~Reconnecter() { Kill(); }
 
 void RemoteSlobrok::Reconnecter::scheduleTryConnect() {
-    if (_waittime < 60)
+    if (_waittime < 60) {
         ++_waittime;
+    }
     Schedule(_waittime + (random() & 255) / 100.0);
 }
 

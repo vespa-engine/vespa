@@ -116,12 +116,14 @@ unsigned int ControlFile::pageAlign(unsigned int len) {
 }
 
 char* ControlFile::nextNewline(char* addr) {
-    if (addr < _mapBase)
+    if (addr < _mapBase) {
         return nullptr;
+    }
     char* end = _mapBase + _fileSize;
     while (addr < end) {
-        if (*addr == '\n')
+        if (*addr == '\n') {
             return addr;
+        }
         ++addr;
     }
     return nullptr;

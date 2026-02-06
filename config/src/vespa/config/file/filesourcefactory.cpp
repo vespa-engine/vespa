@@ -38,8 +38,9 @@ std::unique_ptr<Source> DirSourceFactory::createSource(std::shared_ptr<IConfigHo
         LOG(warning, "Filename '%s' was expected in the spec, but does not exist.", fileId.c_str());
     }
     std::string fName = _dirName;
-    if (!fName.empty())
+    if (!fName.empty()) {
         fName += "/";
+    }
     fName += fileId;
     return std::make_unique<FileSource>(std::move(holder), fName);
 }

@@ -45,8 +45,9 @@ static bool isValidPid(const char* field) {
         return false;
     }
     // too big to be a valid pid, maybe a timestamp?
-    if (pidnum >= 18 * 1000 * 1000)
+    if (pidnum >= 18 * 1000 * 1000) {
         return false;
+    }
 
     // stupid java logging...
     if (field[0] == '-' && field[1] == '\0') {
@@ -282,17 +283,21 @@ void LLParser::makeMessage(const char* tmf, const char* hsf, const char* pdf, co
         tmf = tmbuffer;
     }
 
-    if (hsf[0] == '\0')
+    if (hsf[0] == '\0') {
         hsf = _defHostname.c_str();
+    }
 
-    if (pdf[0] == '\0')
+    if (pdf[0] == '\0') {
         pdf = _defPid;
+    }
 
-    if (svf[0] == '\0')
+    if (svf[0] == '\0') {
         svf = _defService.c_str();
+    }
 
-    if (cmf[0] == '\0')
+    if (cmf[0] == '\0') {
         cmf = _defComponent.c_str();
+    }
 
     char*         dst = escaped;
     unsigned char c;
@@ -329,8 +334,9 @@ void LLParser::makeMessage(const char* tmf, const char* hsf, const char* pdf, co
     snprintf(totalMessage, sizeof totalMessage, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", tmf, hsf, pdf, svf, cmf,
              Logger::logLevelNames[level], escaped);
 
-    if (_rejectFilter.shouldReject(level, escaped))
+    if (_rejectFilter.shouldReject(level, escaped)) {
         return;
+    }
     sendMessage(totalMessage);
 }
 

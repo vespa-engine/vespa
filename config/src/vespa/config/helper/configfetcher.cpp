@@ -39,8 +39,9 @@ int64_t ConfigFetcher::getGeneration() const { return _poller->getGeneration(); 
 void ConfigFetcher::close() {
     if (!_closed) {
         _poller->close();
-        if (_started)
+        if (_started) {
             _thread.join();
+        }
         _closed = true;
     }
 }

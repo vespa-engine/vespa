@@ -24,8 +24,9 @@ asciistream::asciistream(asciistream&& rhs) noexcept
 
 asciistream& asciistream::operator=(asciistream&& rhs) noexcept {
     if (this != &rhs) {
-        if (_buffer)
+        if (_buffer) {
             free(_buffer);
+        }
 
         _rPos = rhs._rPos;
         _wPos = rhs._wPos;

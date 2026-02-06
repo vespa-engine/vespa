@@ -122,39 +122,44 @@ public:
      * @return Header field value.
      */
     uint32_t user(unsigned int idx) const {
-        if (_ok && idx < 50)
+        if (_ok && idx < 50) {
             return _header._user[idx];
-        else
+        } else {
             return 0;
+        }
     }
 
     uint32_t getUIntEntry(uint32_t idx) const {
         if (_ok) {
             return ((const uint32_t*)_data)[idx];
-        } else
+        } else {
             return 0;
+        }
     }
 
     const void* getDirectRecordEntry(uint32_t idx, uint32_t size) const {
-        if (_ok)
+        if (_ok) {
             return (const void*)((const uint8_t*)_data + idx * size);
-        else
+        } else {
             return nullptr;
+        }
     }
 
     const void* getIndirectRecordEntry(uint32_t idx) const {
         if (_ok) {
             uint32_t offset = ((const uint32_t*)_data)[idx];
             return (const void*)((const uint8_t*)_data + offset);
-        } else
+        } else {
             return nullptr;
+        }
     }
 
     const char* getCharPtrEntry(uint32_t offset) const {
-        if (_ok)
+        if (_ok) {
             return ((const char*)_data) + offset;
-        else
+        } else {
             return nullptr;
+        }
     }
 };
 

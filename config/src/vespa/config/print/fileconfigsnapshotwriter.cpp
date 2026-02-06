@@ -11,8 +11,9 @@ FileConfigSnapshotWriter::FileConfigSnapshotWriter(const std::string& fileName) 
 
 bool FileConfigSnapshotWriter::write(const ConfigSnapshot& snapshot) {
     std::ofstream file(_fileName.c_str());
-    if (!file.is_open())
+    if (!file.is_open()) {
         throw ConfigWriteException("error: could not open output file '%s'\n", _fileName.c_str());
+    }
 
     ConfigDataBuffer buffer;
     snapshot.serialize(buffer);

@@ -60,8 +60,9 @@ private:
 public:
     PidFile(const char* pidfile) : _pidfile(pidfile), _fd(-1) {}
     ~PidFile() {
-        if (_fd >= 0)
+        if (_fd >= 0) {
             close(_fd);
+        }
     }
     int  readPid();
     void writePid();
@@ -72,16 +73,19 @@ public:
 };
 
 void PidFile::cleanUp() {
-    if (!anotherRunning())
+    if (!anotherRunning()) {
         remove(_pidfile.c_str());
-    if (_fd >= 0)
+    }
+    if (_fd >= 0) {
         close(_fd);
+    }
     _fd = -1;
 }
 
 bool PidFile::writeOpen() {
-    if (_fd >= 0)
+    if (_fd >= 0) {
         close(_fd);
+    }
     int flags = O_CREAT | O_WRONLY | O_NONBLOCK;
     _fd = open(_pidfile.c_str(), flags, 0644);
     if (_fd < 0) {
@@ -99,8 +103,9 @@ bool PidFile::writeOpen() {
 }
 
 void PidFile::writePid() {
-    if (_fd < 0)
+    if (_fd < 0) {
         abort();
+    }
     int didtruncate = ftruncate(_fd, (off_t)0);
     if (didtruncate != 0) {
         fprintf(stderr, "could not truncate pid file %s: %s\n", _pidfile.c_str(), strerror(errno));
@@ -119,8 +124,9 @@ void PidFile::writePid() {
 
 int PidFile::readPid() {
     FILE* pf = fopen(_pidfile.c_str(), "r");
-    if (pf == nullptr)
+    if (pf == nullptr) {
         return 0;
+    }
     char buf[100];
     strcpy(buf, "0");
     char* fgetsres = fgets(buf, 100, pf);
@@ -307,8 +313,9 @@ int loop(const char* svc, char* const* run) {
             unhandledsig = 0;
         }
     }
-    if (WIFSIGNALED(wstat))
+    if (WIFSIGNALED(wstat)) {
         return WTERMSIG(wstat);
+    }
     return WEXITSTATUS(wstat);
 }
 
@@ -485,8 +492,9 @@ int main(int argc, char* argv[]) {
                 stat = loop(service, argv + optind);
                 if (restart > 0 && !gotstopsig) {
                     int wt = restart + laststart - steady_time();
-                    if (wt < 0)
+                    if (wt < 0) {
                         wt = 0;
+                    }
                     LOG(info, "will restart in %d seconds", wt);
                 }
                 while (!gotstopsig && steady_time() - laststart < restart) {

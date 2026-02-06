@@ -78,8 +78,9 @@ public:
 
     /** Destructor */
     ~Blob() {
-        if (_data != nullptr)
+        if (_data != nullptr) {
             free(_data);
+        }
     }
 
     /**
@@ -103,8 +104,9 @@ public:
      * @param s Input string
      */
     void assign(const std::string& s) {
-        if (_data != nullptr)
+        if (_data != nullptr) {
             free(_data);
+        }
         _size = s.size();
         _data = malloc(s.size());
         s.copy((char*)_data, _size);

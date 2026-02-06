@@ -40,8 +40,9 @@ Lock::Lock(const char* filename, int mode) : _fd(open(filename, mode, 0666)), _i
 
 void Lock::lock(bool exclusive) {
     // Early escape to avoid double locking which would of course block forever
-    if (_isLocked)
+    if (_isLocked) {
         return;
+    }
 
     if (flock(_fd, exclusive ? LOCK_EX : LOCK_SH) == -1) {
         int err = errno;

@@ -35,11 +35,13 @@ FSA::iterator& FSA::iterator::operator++() {
     state_t      next;
     unsigned int depth;
 
-    if (_item._symbol == 0xff || _item._fsa == nullptr)
+    if (_item._symbol == 0xff || _item._fsa == nullptr) {
         return *this;
+    }
 
-    if (_item._symbol == 0 && _item._state == 0)
+    if (_item._symbol == 0 && _item._state == 0) {
         _item._state = _item._fsa->start();
+    }
 
     while (1) {
         _item._symbol++;
@@ -50,8 +52,9 @@ FSA::iterator& FSA::iterator::operator++() {
                 _item._stack.push_back(_item._state);
                 _item._state = next;
                 _item._symbol = 0;
-                if (_item._fsa->isFinal(next))
+                if (_item._fsa->isFinal(next)) {
                     break;
+                }
             }
         } else { // bactrack
             if ((depth = _item._string.size()) > 0) {
@@ -97,14 +100,18 @@ FSA::~FSA() {
     if (_mmap_addr != nullptr && _mmap_addr != MAP_FAILED) {
         munmap(_mmap_addr, _mmap_length);
     } else {
-        if (_state != nullptr)
+        if (_state != nullptr) {
             free(_state);
-        if (_symbol != nullptr)
+        }
+        if (_symbol != nullptr) {
             free(_symbol);
-        if (_data != nullptr)
+        }
+        if (_data != nullptr) {
             free(_data);
-        if (_perf_hash != nullptr)
+        }
+        if (_perf_hash != nullptr) {
             free(_perf_hash);
+        }
     }
 }
 
@@ -117,14 +124,18 @@ void FSA::reset() {
     if (_mmap_addr != nullptr && _mmap_addr != MAP_FAILED) {
         munmap(_mmap_addr, _mmap_length);
     } else {
-        if (_state != nullptr)
+        if (_state != nullptr) {
             free(_state);
-        if (_symbol != nullptr)
+        }
+        if (_symbol != nullptr) {
             free(_symbol);
-        if (_data != nullptr)
+        }
+        if (_data != nullptr) {
             free(_data);
-        if (_perf_hash != nullptr)
+        }
+        if (_perf_hash != nullptr) {
             free(_perf_hash);
+        }
     }
     _mmap_addr = nullptr;
     _mmap_length = 0;
@@ -150,15 +161,18 @@ bool FSA::read(const char* file, FileAccessMethod fam) {
 
     reset();
 
-    if (fam == FILE_ACCESS_UNDEF)
+    if (fam == FILE_ACCESS_UNDEF) {
         fam = _default_file_access_method;
+    }
 
-    if (file == nullptr)
+    if (file == nullptr) {
         return false;
+    }
 
     int fd = ::open(file, O_RDONLY);
-    if (fd < 0)
+    if (fd < 0) {
         return false;
+    }
 
     r = ::read(fd, &header, sizeof(header));
     if (r < sizeof(header) || header._magic != MAGIC || header._version < 1000) {
@@ -190,8 +204,9 @@ bool FSA::read(const char* file, FileAccessMethod fam) {
                 if (getrlimit(RLIMIT_MEMLOCK, &rl) >= 0) {
                     rl.rlim_cur += _mmap_length + getpagesize();
                     rl.rlim_max += _mmap_length + getpagesize();
-                    if (setrlimit(RLIMIT_MEMLOCK, &rl) >= 0)
+                    if (setrlimit(RLIMIT_MEMLOCK, &rl) >= 0) {
                         mlock(_mmap_addr, _mmap_length);
+                    }
                 }
             }
         }
@@ -272,8 +287,9 @@ std::string FSA::revLookup(hash_t hash) const {
     std::string current_string;
     symbol_t    symbol, last_symbol, current_symbol;
 
-    if (!hasPerfectHash())
+    if (!hasPerfectHash()) {
         return std::string();
+    }
     last_symbol = current_symbol = 0;
 
     while (current < hash) {
@@ -289,12 +305,14 @@ std::string FSA::revLookup(hash_t hash) const {
                 current_next = next;
                 last_d = d;
                 d = hashDelta(state, symbol);
-                if (current + d >= hash)
+                if (current + d >= hash) {
                     break;
+                }
             }
         }
-        if (current_symbol == 0)
+        if (current_symbol == 0) {
             return std::string();
+        }
         if (current + d <= hash) {
             current_string += (char)current_symbol;
             state = current_next;
@@ -315,8 +333,9 @@ std::string FSA::revLookup(hash_t hash) const {
                 break;
             }
         }
-        if (symbol == 255)
+        if (symbol == 255) {
             return std::string();
+        }
     }
 
     return current_string;
@@ -347,13 +366,15 @@ void FSA::printDot(std::ostream& out) const {
             next = delta(state, symbol);
             if (next) {
                 v = visited[next];
-                if (!v && isFinal(next))
+                if (!v && isFinal(next)) {
                     out << "  n" << next << " [shape=doublecircle]\n";
+                }
                 out << "  ";
-                if (state == start)
+                if (state == start) {
                     out << "start";
-                else
+                } else {
                     out << "n" << state;
+                }
                 out << " -> n" << next << " [label=\"" << char(symbol) << "\"]\n";
                 if (!v) {
                     visited[next] = true;

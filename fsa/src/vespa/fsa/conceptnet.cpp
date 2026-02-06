@@ -35,16 +35,18 @@ ConceptNet::ConceptNet(const char* fsafile, const char* datafile, FileAccessMeth
     : _mmap_addr(nullptr), _mmap_length(0), _unit_fsa(fsafile, fam), _index_size(0), _index(nullptr), _info_size(0),
       _info(nullptr), _catindex_size(0), _catindex(nullptr), _strings_size(0), _strings(nullptr), _ok(false) {
     _ok = _unit_fsa.isOk();
-    if (_ok && datafile != nullptr)
+    if (_ok && datafile != nullptr) {
         _ok = read(datafile, fam);
+    }
 }
 
 ConceptNet::ConceptNet(const std::string& fsafile, const std::string& datafile, FileAccessMethod fam)
     : _mmap_addr(nullptr), _mmap_length(0), _unit_fsa(fsafile, fam), _index_size(0), _index(nullptr), _info_size(0),
       _info(nullptr), _catindex_size(0), _catindex(nullptr), _strings_size(0), _strings(nullptr), _ok(false) {
     _ok = _unit_fsa.isOk();
-    if (_ok)
+    if (_ok) {
         _ok = read(datafile.c_str(), fam);
+    }
 }
 
 // }}}
@@ -90,15 +92,18 @@ bool ConceptNet::read(const char* datafile, FileAccessMethod fam) {
     reset(); // WATCHOUT: if reset() ever changes to unref _unit_fsa, we can't use it since the FSA is read in the
              // constructor before we get here
 
-    if (fam == FILE_ACCESS_UNDEF)
+    if (fam == FILE_ACCESS_UNDEF) {
         fam = _default_file_access_method;
+    }
 
-    if (datafile == nullptr)
+    if (datafile == nullptr) {
         return false;
+    }
 
     int fd = ::open(datafile, O_RDONLY);
-    if (fd < 0)
+    if (fd < 0) {
         return false;
+    }
 
     r = ::read(fd, &header, sizeof(header));
     if (r != sizeof(header) || header._magic != ConceptNet::MAGIC) {
@@ -127,8 +132,9 @@ bool ConceptNet::read(const char* datafile, FileAccessMethod fam) {
                 if (getrlimit(RLIMIT_MEMLOCK, &rl) >= 0) {
                     rl.rlim_cur += _mmap_length + getpagesize();
                     rl.rlim_max += _mmap_length + getpagesize();
-                    if (setrlimit(RLIMIT_MEMLOCK, &rl) >= 0)
+                    if (setrlimit(RLIMIT_MEMLOCK, &rl) >= 0) {
                         mlock(_mmap_addr, _mmap_length);
+                    }
                 }
             }
         }

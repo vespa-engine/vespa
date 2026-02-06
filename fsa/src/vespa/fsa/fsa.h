@@ -162,8 +162,9 @@ public:
          * @param s State to use as initial state.
          */
         iterator(const FSA* fsa, state_t s) : _item(fsa, s) {
-            if (!fsa->isFinal(s))
+            if (!fsa->isFinal(s)) {
                 operator++();
+            }
         }
 
     public:
@@ -191,8 +192,9 @@ public:
          * @param s State to create the iterator from.
          */
         iterator(const State& s) : _item(s._fsa, s._state) {
-            if (!s.isFinal())
+            if (!s.isFinal()) {
                 operator++();
+            }
         }
 
         /**
@@ -204,10 +206,11 @@ public:
          * @param atEnd True for end(), false for begin(). (Default is false.)
          */
         iterator(const FSA* fsa, bool atEnd = false) : _item(fsa) {
-            if (atEnd)
+            if (atEnd) {
                 _item._symbol = 0xff;
-            else
+            } else {
                 operator++();
+            }
         }
 
         /**
@@ -505,8 +508,9 @@ public:
          * @return        True if the resulting state is valid.
          */
         virtual bool deltaWord(const std::string& in) {
-            if (_state != _fsa->start())
+            if (_state != _fsa->start()) {
                 delta(' ');
+            }
             return delta(in);
         }
 
@@ -563,8 +567,9 @@ public:
         virtual uint32_t nData() const {
             const data_t* da = _fsa->data(_state);
             int           si = _fsa->dataSize(_state);
-            if (si <= 0)
+            if (si <= 0) {
                 return 0;
+            }
             switch (si) {
             case 1:
                 return (uint32_t)((const uint8_t*)da)[0];
@@ -852,8 +857,9 @@ public:
          */
         bool delta(symbol_t in) override {
             bool ok = State::delta(in);
-            if (ok)
+            if (ok) {
                 ++_counter; // only count valid transitions
+            }
             return ok;
         }
 
@@ -978,11 +984,13 @@ public:
             if (in.length() == 0) {
                 return _state != 0;
             }
-            if (_state != _fsa->start())
+            if (_state != _fsa->start()) {
                 delta(' ');
+            }
             bool ok = delta(in);
-            if (ok)
+            if (ok) {
                 ++_counter; // only count valid word transitions
+            }
             return ok;
         }
 
@@ -1117,8 +1125,9 @@ public:
          */
         bool delta(symbol_t in) override {
             bool ok = State::delta(in);
-            if (ok)
+            if (ok) {
                 _memory += (char)in;
+            }
             return ok;
         }
 
@@ -1256,8 +1265,9 @@ public:
         bool delta(symbol_t in) override {
             _hash += _fsa->hashDelta(_state, in);
             bool ok = State::delta(in);
-            if (ok)
+            if (ok) {
                 _memory += (char)in; // only remeber valid transitions
+            }
             return ok;
         }
 
@@ -1392,8 +1402,9 @@ public:
         bool delta(symbol_t in) override {
             _hash += _fsa->hashDelta(_state, in);
             bool ok = State::delta(in);
-            if (ok)
+            if (ok) {
                 ++_counter; // only count valid transitions
+            }
             return ok;
         }
 
@@ -1558,11 +1569,13 @@ public:
             if (in.length() == 0) {
                 return _state != 0;
             }
-            if (_state != _fsa->start())
+            if (_state != _fsa->start()) {
                 delta(' ');
+            }
             bool ok = delta(in);
-            if (ok)
+            if (ok) {
                 ++_counter; // only count valid word transitions
+            }
             return ok;
         }
 
@@ -1787,10 +1800,11 @@ public:
         // if(!fs)
         //  return 0;
         state_t nfs = fs + in;
-        if (_symbol[nfs] == in)
+        if (_symbol[nfs] == in) {
             return _state[nfs];
-        else
+        } else {
             return 0;
+        }
     }
 
     /**
@@ -1804,10 +1818,11 @@ public:
      * @return Hash delta for the transition.
      */
     hash_t hashDelta(state_t fs, symbol_t in) const {
-        if (_has_perfect_hash && fs != 0 && _symbol[fs + in] == in)
+        if (_has_perfect_hash && fs != 0 && _symbol[fs + in] == in) {
             return _perf_hash[fs + in];
-        else
+        } else {
             return 0;
+        }
     }
 
     /**
@@ -1817,8 +1832,9 @@ public:
      * @return True if the state is final.
      */
     bool isFinal(state_t fs) const {
-        if (fs == 0)
+        if (fs == 0) {
             return false;
+        }
         return _symbol[fs + FINAL_SYMBOL] == FINAL_SYMBOL;
     }
 
@@ -1841,13 +1857,15 @@ public:
      * @return Size of data item, or -1 if the state is not final.
      */
     int dataSize(state_t fs) const {
-        if (fs == 0)
+        if (fs == 0) {
             return -1;
+        }
         if (_symbol[fs + FINAL_SYMBOL] == FINAL_SYMBOL) {
-            if (_data_type == DATA_FIXED)
+            if (_data_type == DATA_FIXED) {
                 return _fixed_data_size;
-            else
+            } else {
                 return (int)Unaligned<uint32_t>::at(_data + _state[fs + FINAL_SYMBOL]).read();
+            }
         }
         return -1;
     }
@@ -1859,13 +1877,15 @@ public:
      * @return Pointer to data item, or nullptr if the state is not final.
      */
     const data_t* data(unsigned int fs) const {
-        if (fs == 0)
+        if (fs == 0) {
             return nullptr;
+        }
         if (_symbol[fs + FINAL_SYMBOL] == FINAL_SYMBOL) {
-            if (_data_type == DATA_FIXED)
+            if (_data_type == DATA_FIXED) {
                 return _data + _state[fs + FINAL_SYMBOL];
-            else
+            } else {
                 return _data + _state[fs + FINAL_SYMBOL] + sizeof(uint32_t);
+            }
         }
         return nullptr;
     }

@@ -38,8 +38,9 @@ bool MetaDataManager::load(const std::string& id, const std::string& datafile) {
         if (it != _library.end()) {
             delete it->second;
             it->second = newmd;
-        } else
+        } else {
             _library.insert(Library::value_type(id, newmd));
+        }
     }
 
     return true;
@@ -80,8 +81,9 @@ void MetaDataManager::drop(const std::string& id) {
 void MetaDataManager::clear() {
     std::lock_guard guard(_lock);
     {
-        for (LibraryIterator it = _library.begin(); it != _library.end(); ++it)
+        for (LibraryIterator it = _library.begin(); it != _library.end(); ++it) {
             delete it->second;
+        }
         _library.clear();
     }
 }

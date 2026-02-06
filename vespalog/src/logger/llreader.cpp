@@ -14,8 +14,9 @@ InputBuf::~InputBuf() { free(_buf); }
 bool InputBuf::hasInput() {
     char* p = _buf;
     while (p < _bp) {
-        if (*p == '\n')
+        if (*p == '\n') {
             return true;
+        }
         p++;
     }
     return false;
@@ -78,8 +79,9 @@ void InputBuf::doAllInput(LLParser& outputvia) {
         }
     }
     if (_bp != _buf) {
-        if (_left < 1)
+        if (_left < 1) {
             extend();
+        }
         *_bp++ = '\n';
         doInput(outputvia);
     }

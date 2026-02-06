@@ -55,8 +55,9 @@ struct Response {
         for (uint32_t i = 0; i < payload.size(); i++) {
             ret.SetString(&payload_arr[i], payload[i].c_str());
         }
-        if (!ns.empty())
+        if (!ns.empty()) {
             ret.AddString(ns.c_str());
+        }
         req->SetError(FRTE_NO_ERROR);
     }
     Response(std::string_view name, std::string_view md5, std::string_view id, std::string_view hash,
@@ -114,8 +115,9 @@ struct ConnectionMock : public Connection {
         if (ans != nullptr) {
             ans->encodeResponse(req);
             waiter->RequestDone(req);
-        } else
+        } else {
             waiter->RequestDone(req);
+        }
     }
     const std::string& getAddress() const override { return address; }
 };
@@ -213,8 +215,9 @@ TEST(FrtTest, require_that_request_is_config_task_is_scheduled) {
     vespalib::Timer timer;
     while (timer.elapsed() < 10s) {
         f1.conn.scheduler.CheckTasks();
-        if (f2.result.notified)
+        if (f2.result.notified) {
             break;
+        }
         std::this_thread::sleep_for(500ms);
     }
     ASSERT_TRUE(f2.result.notified);

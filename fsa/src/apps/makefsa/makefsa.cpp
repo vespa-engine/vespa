@@ -117,8 +117,9 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (format == INPUT_UNDEF) // use default format (warning?)
+    if (format == INPUT_UNDEF) { // use default format (warning?)
         format = INPUT_TEXT_EMPTY;
+    }
 
     if (optind + 2 == argc) {
         input_file = argv[optind];
@@ -145,14 +146,17 @@ int main(int argc, char** argv) {
     size_t        split;
     bool          empty_meta_str = false;
 
-    if (verbose)
+    if (verbose) {
         version();
+    }
 
-    if (verbose)
+    if (verbose) {
         std::cerr << "Initializing automaton ...";
+    }
     automaton.init();
-    if (verbose)
+    if (verbose) {
         std::cerr << " done." << std::endl;
+    }
 
     if (input_file != nullptr) {
         infile.open(input_file);
@@ -164,8 +168,9 @@ int main(int argc, char** argv) {
     } else {
         in = &std::cin;
     }
-    if (verbose)
+    if (verbose) {
         std::cerr << "Inserting lines ...";
+    }
     while (!in->eof()) {
         switch (format) {
         case INPUT_BINARY:
@@ -178,8 +183,9 @@ int main(int argc, char** argv) {
             if (info_size_binary) {
                 in->read(binary_info.get(), info_size_binary);
                 meta.assign(binary_info.get(), info_size_binary);
-            } else
+            } else {
                 getline(*in, meta, '\0');
+            }
             break;
         case INPUT_TEXT:
             getline(*in, temp, '\n');
@@ -242,43 +248,51 @@ int main(int argc, char** argv) {
                 }
                 if (verbose) {
                     ++count;
-                    if (count % 1000 == 0)
+                    if (count % 1000 == 0) {
                         std::cerr << "\rInserting lines ... (inserted " << count << " lines)";
+                    }
                 }
             }
             last_input = input;
         }
         empty_meta_str = false;
     }
-    if (verbose)
+    if (verbose) {
         std::cerr << "\rInserting lines ... (inserted " << count << "/" << (lines - 1) << " lines) ... done.\n";
+    }
     if (input_file != nullptr) {
         infile.close();
     }
 
-    if (verbose)
+    if (verbose) {
         std::cerr << "Finalizing ...";
+    }
     automaton.finalize();
-    if (verbose)
+    if (verbose) {
         std::cerr << " done." << std::endl;
-
-    if (build_phash) {
-        if (verbose)
-            std::cerr << "Adding perfect hash ...";
-        automaton.addPerfectHash();
-        if (verbose)
-            std::cerr << " done." << std::endl;
     }
 
-    if (verbose)
+    if (build_phash) {
+        if (verbose) {
+            std::cerr << "Adding perfect hash ...";
+        }
+        automaton.addPerfectHash();
+        if (verbose) {
+            std::cerr << " done." << std::endl;
+        }
+    }
+
+    if (verbose) {
         std::cerr << "Writing fsa file ...";
+    }
     if (!automaton.write(output_file, serial)) {
         std::cerr << "Failed to write fsa file '" << std::string(output_file) << "'. Please check write permissions"
                   << std::endl;
         return 1;
     }
-    if (verbose)
+    if (verbose) {
         std::cerr << " done." << std::endl;
+    }
 
     return 0;
 }

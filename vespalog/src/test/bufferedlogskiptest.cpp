@@ -27,11 +27,13 @@ std::string readFile(const std::string& file) {
     std::string        line;
     while (std::getline(is, line)) {
         std::string::size_type pos = line.find('\t');
-        if (pos == std::string::npos)
+        if (pos == std::string::npos) {
             continue;
+        }
         std::string::size_type pos2 = line.find('\t', pos + 1);
-        if (pos2 == std::string::npos)
+        if (pos2 == std::string::npos) {
             continue;
+        }
         std::string result = line.substr(0, pos) + "\tlocalhost" + line.substr(pos2);
         // Ignore debug entries. (Log adds some itself with timestamp we
         // can't control)

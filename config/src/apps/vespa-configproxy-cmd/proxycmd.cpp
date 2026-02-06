@@ -23,8 +23,9 @@ void ProxyCmd::initRPC() {
 }
 
 void ProxyCmd::invokeRPC() {
-    if (_req == nullptr)
+    if (_req == nullptr) {
         return;
+    }
     _target->InvokeSync(_req, 65.0);
 }
 
@@ -80,8 +81,9 @@ int ProxyCmd::action() {
         params.AddString(_flags.args[i].c_str(), _flags.args[i].size());
     }
     invokeRPC();
-    if (_req->IsError())
+    if (_req->IsError()) {
         ++errors;
+    }
     autoPrint();
     finiRPC();
     return errors;

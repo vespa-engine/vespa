@@ -51,8 +51,9 @@ void MetaData::reset() {
     if (_mmap_addr != nullptr && _mmap_addr != MAP_FAILED) {
         munmap(_mmap_addr, _mmap_length);
     } else {
-        if (_data != nullptr)
+        if (_data != nullptr) {
             free(_data);
+        }
     }
     _mmap_addr = nullptr;
     _mmap_length = 0;
@@ -68,15 +69,18 @@ bool MetaData::read(const char* datafile, FileAccessMethod fam) {
 
     reset();
 
-    if (fam == FILE_ACCESS_UNDEF)
+    if (fam == FILE_ACCESS_UNDEF) {
         fam = _default_file_access_method;
+    }
 
-    if (datafile == nullptr)
+    if (datafile == nullptr) {
         return false;
+    }
 
     int fd = ::open(datafile, O_RDONLY);
-    if (fd < 0)
+    if (fd < 0) {
         return false;
+    }
 
     r = ::read(fd, &_header, sizeof(_header));
     if (r != sizeof(_header) || _header._magic != MetaData::MAGIC) {
@@ -99,8 +103,9 @@ bool MetaData::read(const char* datafile, FileAccessMethod fam) {
                 if (getrlimit(RLIMIT_MEMLOCK, &rl) >= 0) {
                     rl.rlim_cur += _mmap_length + getpagesize();
                     rl.rlim_max += _mmap_length + getpagesize();
-                    if (setrlimit(RLIMIT_MEMLOCK, &rl) >= 0)
+                    if (setrlimit(RLIMIT_MEMLOCK, &rl) >= 0) {
                         mlock(_mmap_addr, _mmap_length);
+                    }
                 }
             }
         }

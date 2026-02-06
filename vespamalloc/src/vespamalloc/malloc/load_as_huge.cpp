@@ -69,10 +69,12 @@ bool remap_segments(size_t base_vaddr, const Elf64_Phdr* segments, size_t count)
         }
         vespamalloc::independent_non_inlined_memcpy(dest, reinterpret_cast<void*>(vaddr), sz);
         int prot = PROT_READ;
-        if (segments[i].p_flags & PF_X)
+        if (segments[i].p_flags & PF_X) {
             prot |= PROT_EXEC;
-        if (segments[i].p_flags & PF_W)
+        }
+        if (segments[i].p_flags & PF_W) {
             prot |= PROT_WRITE;
+        }
         int mprotect_retval = mprotect(dest, sz, prot);
         if (mprotect_retval != 0) {
             fprintf(stderr, "mprotect(%p, %ld, %x) FAILED = %d, errno= %d = %s\n", dest, sz, prot, mprotect_retval,

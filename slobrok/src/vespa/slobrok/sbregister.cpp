@@ -227,8 +227,9 @@ void RegisterAPI::PerformTask() {
     }
     handleReconnect();
     // still no connection?
-    if (_target == nullptr)
+    if (_target == nullptr) {
         return;
+    }
     handlePending();
 }
 

@@ -41,8 +41,9 @@ public:
 
     void addToSnapshot(MetricSnapshot& other, bool reset_, system_time currentTime) {
         _snapshot->addToSnapshot(other.getMetrics(), other._metrics);
-        if (reset_)
+        if (reset_) {
             reset(currentTime);
+        }
         other._toTime = currentTime;
     }
     void addToSnapshot(MetricSnapshot& other, system_time currentTime) const {

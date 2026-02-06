@@ -62,25 +62,29 @@ Permuter::~Permuter() {}
 int Permuter::getPermId(const std::string& perm) const {
     std::string t(perm);
 
-    if (t.length() > MAX_UNIT_LENGTH)
+    if (t.length() > MAX_UNIT_LENGTH) {
         return -1;
+    }
 
-    if (t.length() < MAX_UNIT_LENGTH)
+    if (t.length() < MAX_UNIT_LENGTH) {
         t += _seed.substr(t.length(), MAX_UNIT_LENGTH - t.length());
+    }
 
     const PermMapConstIterator pi = _permmap.find(t);
-    if (pi == _permmap.end())
+    if (pi == _permmap.end()) {
         return -1;
-    else
+    } else {
         return pi->second;
+    }
 }
 
 // }}}
 // {{{ Permuter::firstComb()
 
 unsigned int Permuter::firstComb(unsigned int n, unsigned int m) {
-    if (n == 0 || n > 31 || m == 0 || m > 31 || n > m)
+    if (n == 0 || n > 31 || m == 0 || m > 31 || n > m) {
         return 0;
+    }
 
     return (1 << n) - 1;
 }
@@ -91,8 +95,9 @@ unsigned int Permuter::firstComb(unsigned int n, unsigned int m) {
 unsigned int Permuter::nextComb(unsigned int c, unsigned int m)
 
 {
-    if (c == 0 || m == 0 || m > 31)
+    if (c == 0 || m == 0 || m > 31) {
         return 0;
+    }
 
     unsigned int x = c;
     unsigned int limit = 1 << m;
@@ -100,13 +105,15 @@ unsigned int Permuter::nextComb(unsigned int c, unsigned int m)
 
     if (x & 1) {
         mask = 2;
-        while (x & mask)
+        while (x & mask) {
             mask <<= 1;
+        }
         x ^= (mask + (mask >> 1));
     } else {
         mask = 2;
-        while (!(x & mask))
+        while (!(x & mask)) {
             mask <<= 1;
+        }
         mask1 = mask2 = 0;
         while (x & mask) {
             mask1 <<= 1;

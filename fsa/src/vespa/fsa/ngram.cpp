@@ -111,8 +111,9 @@ void NGram::append(const NGram& g, unsigned int from, int length) {
         return;
     }
 
-    if (length < 0 || from + length > g._tokens.size())
+    if (length < 0 || from + length > g._tokens.size()) {
         length = g._tokens.size() - from;
+    }
 
     if (length > 0) {
         for (unsigned int i = from; i < from + length; i++) {
@@ -128,8 +129,9 @@ void NGram::append(const NGram& g, const Selector& select) {
     }
 
     for (unsigned int i = 0; i < g._tokens.size() && i < select.size(); i++) {
-        if (select[i])
+        if (select[i]) {
             _tokens.push_back(g._tokens[i]);
+        }
     }
 }
 
@@ -189,12 +191,14 @@ unsigned int NGram::uniq() {
 
 std::string NGram::join(const std::string& separator, unsigned int from, int length) const {
     unsigned int to = _tokens.size();
-    if (length != -1 && from + length < to)
+    if (length != -1 && from + length < to) {
         to = from + length;
+    }
 
     std::string dest;
-    if (to > from)
+    if (to > from) {
         dest = _tokens[from];
+    }
     for (unsigned i = from + 1; i < to; i++) {
         dest += separator;
         dest += _tokens[i];
@@ -207,8 +211,9 @@ std::string NGram::join(const std::string& separator, unsigned int from, int len
 // {{{ NGram::getPermIdTo()
 
 int NGram::getPermIdTo(const NGram& g, const Permuter& p) const {
-    if (_tokens.size() != g._tokens.size())
+    if (_tokens.size() != g._tokens.size()) {
         return -1;
+    }
 
     std::string perm(_tokens.size(), '\0');
     for (unsigned int i = 0; i < _tokens.size(); i++) {
@@ -227,8 +232,9 @@ int NGram::getPermIdTo(const NGram& g, const Permuter& p) const {
 
 std::ostream& operator<<(std::ostream& out, const NGram& g) {
     for (unsigned int i = 0; i < g._tokens.size(); i++) {
-        if (i > 0)
+        if (i > 0) {
             out << " ";
+        }
         out << g._tokens[i];
     }
     return out;

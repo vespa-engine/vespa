@@ -28,17 +28,20 @@ bool FSAManager::load(const std::string& id, const std::string& url) {
 
     if (!url.compare(0, 7, "http://")) {
         unsigned int pos = url.find_last_of('/');
-        if (pos == url.size() - 1)
+        if (pos == url.size() - 1) {
             return false;
+        }
         {
             std::lock_guard guard(_cacheLock);
             file = _cacheDir;
         }
-        if (file.size() > 0 && file[file.size() - 1] != '/')
+        if (file.size() > 0 && file[file.size() - 1] != '/') {
             file += '/';
+        }
         file += url.substr(pos + 1);
-        if (!getUrl(url, file))
+        if (!getUrl(url, file)) {
             return false;
+        }
     }
 
     FSA::Handle* newdict = new FSA::Handle(file);
@@ -53,8 +56,9 @@ bool FSAManager::load(const std::string& id, const std::string& url) {
         if (it != _library.end()) {
             delete it->second;
             it->second = newdict;
-        } else
+        } else {
             _library.insert(Library::value_type(id, newdict));
+        }
     }
 
     return true;
@@ -104,8 +108,9 @@ void FSAManager::drop(const std::string& id) {
 void FSAManager::clear() {
     std::lock_guard guard(_lock);
     {
-        for (LibraryIterator it = _library.begin(); it != _library.end(); ++it)
+        for (LibraryIterator it = _library.begin(); it != _library.end(); ++it) {
             delete it->second;
+        }
         _library.clear();
     }
 }

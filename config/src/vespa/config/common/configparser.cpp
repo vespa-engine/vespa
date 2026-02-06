@@ -73,8 +73,9 @@ std::string ConfigParser::deQuote(const std::string& source) {
             if (!isQuoted) {
                 throwInvalid("Quote character inside unquoted string in '%s'", src);
             }
-            if (*s)
+            if (*s) {
                 throwInvalid("string must terminate after quotes: '%s'", src);
+            }
             break;
         } else {
             *d++ = c;
@@ -105,15 +106,17 @@ bool getValueForKey(std::string_view key, std::string_view line, std::string& re
     if (line[pos] == '[') {
         retval = line.substr(pos);
         // We don't need array declarations
-        if (retval[retval.size() - 1] == ']')
+        if (retval[retval.size() - 1] == ']') {
             return false;
+        }
         return true;
     }
     if (line[pos] == '{') {
         retval = line.substr(pos);
         // Skip empty maps
-        if (retval[retval.size() - 1] == '}')
+        if (retval[retval.size() - 1] == '}') {
             return false;
+        }
         return true;
     }
 
@@ -304,8 +307,9 @@ template <> int32_t ConfigParser::convert<int32_t>(const StringVector& config) {
     errno = 0;
     int32_t ret = strtol(startp, &endp, 0);
     int     err = errno;
-    if (err == ERANGE || err == EINVAL || (*endp != '\0'))
+    if (err == ERANGE || err == EINVAL || (*endp != '\0')) {
         throw InvalidConfigException("Value " + value + " is not a legal int32_t.", VESPA_STRLOC);
+    }
     return ret;
 }
 
@@ -323,8 +327,9 @@ template <> int64_t ConfigParser::convert<int64_t>(const StringVector& config) {
     errno = 0;
     int64_t ret = strtoll(startp, &endp, 0);
     int     err = errno;
-    if (err == ERANGE || err == EINVAL || (*endp != '\0'))
+    if (err == ERANGE || err == EINVAL || (*endp != '\0')) {
         throw InvalidConfigException("Value " + value + " is not a legal int64_t.", VESPA_STRLOC);
+    }
     return ret;
 }
 

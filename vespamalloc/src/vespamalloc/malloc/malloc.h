@@ -217,8 +217,9 @@ void MemoryManager<MemBlockPtrT, ThreadListT>::freeSC(void* ptr, SizeClassT sc) 
 
 template <typename MemBlockPtrT, typename ThreadListT>
 void* MemoryManager<MemBlockPtrT, ThreadListT>::realloc(void* oldPtr, size_t sz) {
-    if (oldPtr == nullptr)
+    if (oldPtr == nullptr) {
         return malloc(sz);
+    }
     if (!_segment.containsPtr(oldPtr)) {
         void*        ptr = malloc(sz);
         const size_t oldBlockSize = _mmapPool.get_size(MemBlockPtrT(oldPtr).rawPtr());

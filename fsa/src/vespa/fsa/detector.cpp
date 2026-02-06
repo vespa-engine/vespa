@@ -26,8 +26,9 @@ void Detector::detect(const NGram& text, Detector::Hits& hits, unsigned int from
     unsigned int                               i, to;
 
     to = text.length();
-    if (length != -1 && from + length < to)
+    if (length != -1 && from + length < to) {
         to = from + length;
+    }
 
     i = from;
     while (i < to) {
@@ -40,9 +41,9 @@ void Detector::detect(const NGram& text, Detector::Hits& hits, unsigned int from
                 hits.add(text, i - det_it->getCounter() + 1, det_it->getCounter(), *det_it);
             }
 
-            if (det_it->isValid())
+            if (det_it->isValid()) {
                 ++det_it;
-            else {
+            } else {
                 det_it = detectors.erase(det_it);
             }
         }
@@ -61,8 +62,9 @@ void Detector::detectWithHash(const NGram& text, Detector::Hits& hits, unsigned 
     unsigned int                                     i, to;
 
     to = text.length();
-    if (length != -1 && from + length < to)
+    if (length != -1 && from + length < to) {
         to = from + length;
+    }
 
     i = from;
     while (i < to) {
@@ -75,9 +77,9 @@ void Detector::detectWithHash(const NGram& text, Detector::Hits& hits, unsigned 
                 hits.add(text, i - det_it->getCounter() + 1, det_it->getCounter(), *det_it);
             }
 
-            if (det_it->isValid())
+            if (det_it->isValid()) {
                 ++det_it;
-            else {
+            } else {
                 det_it = detectors.erase(det_it);
             }
         }

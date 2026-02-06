@@ -13,10 +13,12 @@ FRTConfigResponse::FRTConfigResponse(FRT_RPCRequest* request)
 FRTConfigResponse::~FRTConfigResponse() { _request->internal_subref(); }
 
 bool FRTConfigResponse::validateResponse() {
-    if (_request->IsError())
+    if (_request->IsError()) {
         _responseState = ERROR;
-    if (_request->GetReturn()->GetNumValues() == 0)
+    }
+    if (_request->GetReturn()->GetNumValues() == 0) {
         _responseState = EMPTY;
+    }
     if (_request->CheckReturnTypes(getResponseTypes().c_str())) {
         _returnValues = _request->GetReturn();
         _responseState = OK;

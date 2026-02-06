@@ -42,8 +42,9 @@ void thread_run() {
 
     testbigblocks(1, 0x800003);
     testbigblocks(64000, 0x200003);
-    for (size_t i = 0; i < 100; i++)
+    for (size_t i = 0; i < 100; i++) {
         a = new char[400];
+    }
     testdd();
     b = new char[200];
     (void)b;

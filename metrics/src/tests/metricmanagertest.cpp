@@ -335,8 +335,9 @@ struct BriefValuePrinter : public MetricVisitor {
     BriefValuePrinter() : count(0), ost() {}
 
     bool visitMetric(const Metric& metric, bool) override {
-        if (++count > 1)
+        if (++count > 1) {
             ost << ",";
+        }
         // ost << metric.getPath() << ":";
         ost << metric.getDoubleValue("value");
         return true;
@@ -346,8 +347,9 @@ struct BriefValuePrinter : public MetricVisitor {
 bool waitForTimeProcessed(const MetricManager& mm, time_point::duration processtime, uint32_t timeout = 120) {
     uint32_t lastchance = time(nullptr) + timeout;
     while (time(nullptr) < lastchance) {
-        if (mm.getLastProcessedTime() >= time_point(processtime))
+        if (mm.getLastProcessedTime() >= time_point(processtime)) {
             return true;
+        }
         mm.timeChangedNotification();
         std::this_thread::sleep_for(10ms);
     }
@@ -376,8 +378,9 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
         const MetricSnapshotSet& set(mm.getMetricSnapshotSet(metricLock, period));
         ost << set.getName() << "\n";
         for (uint32_t count = 0, j = 0; j < 2; ++j) {
-            if (set.getCount() == 1 && j == 1)
+            if (set.getCount() == 1 && j == 1) {
                 continue;
+            }
             const MetricSnapshot& snap(set.getSnapshot(j == 1));
             BriefValuePrinter     briefValuePrinter;
             mm.visit(metricLock, snap, briefValuePrinter, consumer);

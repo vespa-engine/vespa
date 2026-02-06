@@ -12,8 +12,9 @@ FileConfigSnapshotReader::FileConfigSnapshotReader(const std::string& fileName) 
 
 ConfigSnapshot FileConfigSnapshotReader::read() {
     std::ifstream file(_fileName.c_str());
-    if (!file.is_open())
+    if (!file.is_open()) {
         throw ConfigReadException("error: unable to read file '%s'", _fileName.c_str());
+    }
 
     std::stringstream buf;
     buf << file.rdbuf();

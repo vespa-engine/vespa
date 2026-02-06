@@ -6,3 +6,4 @@ PointerAlignment: Left
 ReferenceAlignment: Pointer
 AlignConsecutiveDeclarations: Consecutive
 AlignEscapedNewlines: LeftWithLastLine
+InsertBraces: true

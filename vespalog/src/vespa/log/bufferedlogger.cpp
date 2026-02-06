@@ -105,10 +105,12 @@ struct Cache {
             const auto& eb = deref(map.find(b));
             system_time ta = ea.getAgeFactor();
             system_time tb = eb.getAgeFactor();
-            if (ta < tb)
+            if (ta < tb) {
                 return true;
-            if (tb < ta)
+            }
+            if (tb < ta) {
                 return false;
+            }
             return a < b;
         }
     };
@@ -273,8 +275,9 @@ void BufferedLogger::doLog(Logger& l, Logger::LogLevel level, const char* file, 
     vsnprintf(&buffer[0], buffer.capacity(), fmt, args);
     std::string message(&buffer[0]);
     // Empty token means to use message itself as token
-    if (token.empty())
+    if (token.empty()) {
         token = message;
+    }
 
     _backing->logImpl(l, level, file, line, token, message);
 }

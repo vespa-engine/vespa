@@ -29,14 +29,16 @@ void ConfigPoller::run() {
 void ConfigPoller::poll() {
     LOG(debug, "Checking for new config");
     if (_subscriber->nextGeneration()) {
-        if (_subscriber->isClosed())
+        if (_subscriber->isClosed()) {
             return;
+        }
         LOG(debug, "Got new config, reconfiguring");
         _generation = _subscriber->getGeneration();
         for (size_t i = 0; i < _handleList.size(); i++) {
             ICallback* callback(_callbackList[i]);
-            if (_handleList[i]->isChanged())
+            if (_handleList[i]->isChanged()) {
                 callback->configure(_handleList[i]->getConfig());
+            }
         }
     } else {
         LOG(debug, "No new config available");

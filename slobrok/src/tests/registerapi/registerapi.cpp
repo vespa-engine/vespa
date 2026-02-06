@@ -82,8 +82,9 @@ TEST(RegisterAPITest, registerapi_test) {
     EXPECT_TRUE(compare(mirror, "*/*/*", SpecList().add("A/x/w", myspec.c_str())));
 
     for (int i = 0; i < 30; i++) {
-        if (reg.busy())
+        if (reg.busy()) {
             std::this_thread::sleep_for(100ms);
+        }
     }
     EXPECT_TRUE(!reg.busy());
 

@@ -63,8 +63,9 @@ private:
 public:
     SubReferer(T*& t) : _t(t) {}
     ~SubReferer() {
-        if (_t != nullptr)
+        if (_t != nullptr) {
             _t->internal_subref();
+        }
     }
 };
 

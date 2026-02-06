@@ -71,8 +71,9 @@ void UnionServiceMap::remove(const ServiceMapping& mapping) {
     bool      found = false;
     for (CountedSpec& old : values) {
         if (old.spec == mapping.spec) {
-            if (--old.count > 0u)
+            if (--old.count > 0u) {
                 return;
+            }
             found = true;
         }
     }

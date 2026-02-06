@@ -73,16 +73,18 @@ int main(int argc, char** argv) {
             }
             for (gq_it = gq.begin(); gq_it != gq.end(); ++gq_it) {
                 grams_it = grams.find(gq_it->first);
-                if (grams_it != grams.end())
+                if (grams_it != grams.end()) {
                     grams[gq_it->first] = grams_it->second + gq_it->second;
-                else
+                } else {
                     grams[gq_it->first] = gq_it->second;
+                }
             }
         }
     }
 
-    for (grams_it = grams.begin(); grams_it != grams.end(); ++grams_it)
+    for (grams_it = grams.begin(); grams_it != grams.end(); ++grams_it) {
         std::cout << grams_it->first << '\t' << grams_it->second << std::endl;
+    }
 
     return 0;
 }

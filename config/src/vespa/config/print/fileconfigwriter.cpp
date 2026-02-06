@@ -14,8 +14,9 @@ bool FileConfigWriter::write(const ConfigInstance& config) { return write(config
 
 bool FileConfigWriter::write(const ConfigInstance& config, const ConfigFormatter& formatter) {
     std::ofstream file(_fileName.c_str());
-    if (!file.is_open())
+    if (!file.is_open()) {
         throw ConfigWriteException("error: could not open output file: '%s'\n", _fileName.c_str());
+    }
     OstreamConfigWriter osw(file);
     return osw.write(config, formatter);
 }

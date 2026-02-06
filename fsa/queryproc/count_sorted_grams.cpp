@@ -59,10 +59,11 @@ int main(int argc, char** argv) {
                     if (state.isFinal()) {
                         gram_str = gram.join(" ");
                         grams_it = grams.find(gram_str);
-                        if (grams_it != grams.end())
+                        if (grams_it != grams.end()) {
                             grams[gram_str] = grams_it->second + freq;
-                        else
+                        } else {
                             grams[gram_str] = freq;
+                        }
                     }
                     c = Permuter::nextComb(c, qlen);
                 }
@@ -70,8 +71,9 @@ int main(int argc, char** argv) {
         }
     }
 
-    for (grams_it = grams.begin(); grams_it != grams.end(); ++grams_it)
+    for (grams_it = grams.begin(); grams_it != grams.end(); ++grams_it) {
         std::cout << grams_it->first << '\t' << grams_it->second << std::endl;
+    }
 
     return 0;
 }

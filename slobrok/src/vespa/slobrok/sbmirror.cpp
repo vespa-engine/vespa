@@ -154,15 +154,18 @@ bool MirrorAPI::handleIncrementalFetch() {
         for (const auto& spec : _specs) {
             bool keep = true;
             for (uint32_t idx = 0; idx < numRemove; idx++) {
-                if (spec.first == r[idx]._str)
+                if (spec.first == r[idx]._str) {
                     keep = false;
+                }
             }
             for (uint32_t idx = 0; idx < numNames; idx++) {
-                if (spec.first == n[idx]._str)
+                if (spec.first == n[idx]._str) {
                     keep = false;
+                }
             }
-            if (keep)
+            if (keep) {
                 specs[spec.first] = spec.second;
+            }
         }
         for (uint32_t idx = 0; idx < numNames; idx++) {
             specs[n[idx]._str] = s[idx]._str;

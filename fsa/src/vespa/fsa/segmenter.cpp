@@ -83,8 +83,9 @@ void Segmenter::Segments::buildSegmentation(Segmenter::SegmentationMethod method
                     maxsc = maxScore[id] + 1;
                 }
             }
-            if (maxsc > 0)
+            if (maxsc > 0) {
                 maxsc--;
+            }
             for (j = 0; j < i; j++) {
                 id = _map.get(j, i);
                 if (id >= 0) {

@@ -229,8 +229,9 @@ void Manager::handleCmd(const Cmd& cmd) {
                               service->pid(), service->exitStatus(), config.id.c_str());
             pos += sz;
             left -= sz;
-            if (left <= 0)
+            if (left <= 0) {
                 break;
+            }
         }
         retbuf[65535] = 0;
         cmd.retValue(retbuf);

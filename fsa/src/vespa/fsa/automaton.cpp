@@ -25,21 +25,28 @@ const Blob Automaton::EMPTY_BLOB("");
 // {{{ Automaton::TransitionList::operator<()
 
 bool Automaton::TransitionList::operator<(const Automaton::TransitionList& tl) const {
-    if (this == &tl)
+    if (this == &tl) {
         return false;
-    if (_size < tl._size)
+    }
+    if (_size < tl._size) {
         return true;
-    if (_size > tl._size)
+    }
+    if (_size > tl._size) {
         return false;
+    }
     for (unsigned int i = 0; i < _size; i++) {
-        if (_trans[i]._symbol < tl._trans[i]._symbol)
+        if (_trans[i]._symbol < tl._trans[i]._symbol) {
             return true;
-        if (_trans[i]._symbol > tl._trans[i]._symbol)
+        }
+        if (_trans[i]._symbol > tl._trans[i]._symbol) {
             return false;
-        if (_trans[i]._state < tl._trans[i]._state)
+        }
+        if (_trans[i]._state < tl._trans[i]._state) {
             return true;
-        if (_trans[i]._state > tl._trans[i]._state)
+        }
+        if (_trans[i]._state > tl._trans[i]._state) {
             return false;
+        }
     }
     return false;
 }
@@ -48,21 +55,28 @@ bool Automaton::TransitionList::operator<(const Automaton::TransitionList& tl) c
 // {{{ Automaton::TransitionList::operator>()
 
 bool Automaton::TransitionList::operator>(const Automaton::TransitionList& tl) const {
-    if (this == &tl)
+    if (this == &tl) {
         return false;
-    if (_size > tl._size)
+    }
+    if (_size > tl._size) {
         return true;
-    if (_size < tl._size)
+    }
+    if (_size < tl._size) {
         return false;
+    }
     for (unsigned int i = 0; i < _size; i++) {
-        if (_trans[i]._symbol > tl._trans[i]._symbol)
+        if (_trans[i]._symbol > tl._trans[i]._symbol) {
             return true;
-        if (_trans[i]._symbol < tl._trans[i]._symbol)
+        }
+        if (_trans[i]._symbol < tl._trans[i]._symbol) {
             return false;
-        if (_trans[i]._state > tl._trans[i]._state)
+        }
+        if (_trans[i]._state > tl._trans[i]._state) {
             return true;
-        if (_trans[i]._state < tl._trans[i]._state)
+        }
+        if (_trans[i]._state < tl._trans[i]._state) {
             return false;
+        }
     }
     return false;
 }
@@ -71,15 +85,19 @@ bool Automaton::TransitionList::operator>(const Automaton::TransitionList& tl) c
 // {{{ Automaton::TransitionList::operator==()
 
 bool Automaton::TransitionList::operator==(const Automaton::TransitionList& tl) const {
-    if (this == &tl)
+    if (this == &tl) {
         return true;
-    if (_size != tl._size)
+    }
+    if (_size != tl._size) {
         return false;
+    }
     for (unsigned int i = 0; i < _size; i++) {
-        if (_trans[i]._symbol != tl._trans[i]._symbol)
+        if (_trans[i]._symbol != tl._trans[i]._symbol) {
             return false;
-        if (_trans[i]._state != tl._trans[i]._state)
+        }
+        if (_trans[i]._state != tl._trans[i]._state) {
             return false;
+        }
     }
     return true;
 }
@@ -214,8 +232,9 @@ uint32_t Automaton::PackedAutomaton::getEmptyCell() {
     unsigned int cell = _last_packed > _BACKCHECK ? _last_packed - _BACKCHECK : 1;
     while (_used[cell]) {
         cell++;
-        if (cell + 256 >= _packed_size)
+        if (cell + 256 >= _packed_size) {
             expandCells();
+        }
     }
 
     _used[cell] = true;
@@ -232,19 +251,23 @@ uint32_t Automaton::PackedAutomaton::getCell(Automaton::SymList t) {
     bool            found = false;
     while (!found) {
         if (!_used[cell]) {
-            if (cell + 256 >= _packed_size)
+            if (cell + 256 >= _packed_size) {
                 expandCells();
-            for (tit = t.begin(); tit != t.end(); ++tit) {
-                if (_symbol[cell + *tit] != FSA::EMPTY_SYMBOL)
-                    break;
             }
-            if (tit == t.end())
+            for (tit = t.begin(); tit != t.end(); ++tit) {
+                if (_symbol[cell + *tit] != FSA::EMPTY_SYMBOL) {
+                    break;
+                }
+            }
+            if (tit == t.end()) {
                 found = true;
+            }
         }
         if (!found) {
             cell++;
-            if (cell >= _packed_size)
+            if (cell >= _packed_size) {
                 expandCells();
+            }
         }
     }
     _used[cell] = true;
@@ -287,10 +310,12 @@ bool Automaton::PackedAutomaton::packState(const Automaton::State* s, bool start
         }
 
         _pack_map[s] = cell;
-        if (cell > _last_packed)
+        if (cell > _last_packed) {
             _last_packed = cell;
-        if (start)
+        }
+        if (start) {
             _start_state = (state_t)cell;
+        }
 
         return true;
     }
@@ -314,8 +339,9 @@ uint32_t Automaton::PackedAutomaton::packBlob(const Blob* b) {
             b = &nullBlob;
         }
         uint32_t size = b->size();
-        if (_blob_used + size + sizeof(uint32_t) > _blob_size)
+        if (_blob_used + size + sizeof(uint32_t) > _blob_size) {
             expandBlob(size + sizeof(uint32_t));
+        }
         memcpy(_blob + _blob_used, &size, sizeof(uint32_t));
         memcpy(_blob + _blob_used + sizeof(uint32_t), b->data(), size);
         _blob_used += size + sizeof(uint32_t);
@@ -330,8 +356,9 @@ uint32_t Automaton::PackedAutomaton::packBlob(const Blob* b) {
 void Automaton::PackedAutomaton::finalize() {
     if (_packable) {
         for (uint32_t i = 0; i < _last_packed + 256; i++) {
-            if (i >= _packed_size) // this shouldn't happen anymore, but check anyway
+            if (i >= _packed_size) { // this shouldn't happen anymore, but check anyway
                 expandCells();
+            }
             if (_symbol[i] != FSA::EMPTY_SYMBOL && _symbol[i] != FSA::FINAL_SYMBOL) {
                 _packed_idx[i] = _pack_map[_packed_ptr[i]];
             }
@@ -469,8 +496,9 @@ void checkWrite(int fd, const void* buf, size_t len, bool& success) {
 // {{{ Automaton::PackedAutomaton::write()
 
 bool Automaton::PackedAutomaton::write(const char* filename, uint32_t serial) {
-    if (_packable || _packed_size == 0) // must be non-empty and finalized
+    if (_packable || _packed_size == 0) { // must be non-empty and finalized
         return false;
+    }
 
     FSA::Header header;
 
@@ -487,8 +515,9 @@ bool Automaton::PackedAutomaton::write(const char* filename, uint32_t serial) {
     memset(&(header._reserved), 0, sizeof(header._reserved));
 
     int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    if (fd < 0)
+    if (fd < 0) {
         return false;
+    }
 
     header._checksum += Checksum::compute(_symbol, header._size * sizeof(symbol_t));
     header._checksum += Checksum::compute(_packed_idx, header._size * sizeof(state_t));
@@ -574,8 +603,9 @@ bool Automaton::PackedAutomaton::read(const char* filename) {
 // {{{ Automaton::PackedAutomaton::getFSA()
 
 bool Automaton::PackedAutomaton::getFSA(FSA::Descriptor& d) {
-    if (_packable || _packed_size == 0) // must be non-empty and finalized
+    if (_packable || _packed_size == 0) { // must be non-empty and finalized
         return false;
+    }
 
     uint32_t size = _last_packed + 256;
 
@@ -641,16 +671,18 @@ Automaton::~Automaton() { cleanUp(); }
 // {{{ Automaton::getCPLength()
 
 unsigned int Automaton::getCPLength(const char* input) {
-    if (_q0 == nullptr)
+    if (_q0 == nullptr) {
         return 0;
+    }
 
     unsigned int l = 0;
     State*       state = _q0;
     State*       next;
     while (input[l] != 0) {
         next = state->child(input[l]);
-        if (next == nullptr)
+        if (next == nullptr) {
             return l;
+        }
         state = next;
         l++;
     }
@@ -661,16 +693,18 @@ unsigned int Automaton::getCPLength(const char* input) {
 // {{{ Automaton::getCPLastState()
 
 Automaton::State* Automaton::getCPLastState(const char* input) {
-    if (_q0 == nullptr)
+    if (_q0 == nullptr) {
         return nullptr;
+    }
 
     unsigned int l = 0;
     State*       state = _q0;
     State*       next;
     while (input[l] != 0) {
         next = state->child(input[l]);
-        if (next == nullptr)
+        if (next == nullptr) {
             return state;
+        }
         state = next;
         l++;
     }
@@ -690,10 +724,11 @@ void Automaton::addSuffix(State* state, const char* suffix, const Blob* b) {
         suffix++;
     }
     BlobRegisterIterator bi;
-    if (b != nullptr)
+    if (b != nullptr) {
         bi = _blob_register.find(*b);
-    else
+    } else {
         bi = _blob_register.find(EMPTY_BLOB);
+    }
     if (bi != _blob_register.end()) {
         child = bi->second;
         current->addChild(FSA::FINAL_SYMBOL, child);
@@ -758,8 +793,9 @@ FSA* Automaton::getFSA() {
 
     FSA::Descriptor d;
 
-    if (!_packed.getFSA(d))
+    if (!_packed.getFSA(d)) {
         return nullptr;
+    }
 
     FSA* fsa = new FSA(d);
 
@@ -781,8 +817,9 @@ void Automaton::insertSortedString(const std::string& input, const std::string& 
 void Automaton::insertSortedString(const char* input, const Blob& b) { insertSortedString(input, &b); }
 
 void Automaton::insertSortedString(const char* input, const Blob* b) {
-    if (_q0 == nullptr || _finalized)
+    if (_q0 == nullptr || _finalized) {
         return;
+    }
 
     State*      lastState = getCPLastState(input);
     const char* currentSuffix = input + getCPLength(input);

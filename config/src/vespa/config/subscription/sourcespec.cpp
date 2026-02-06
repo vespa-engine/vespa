@@ -33,8 +33,9 @@ FileSpec::FileSpec(std::string_view fileName) : _fileName(fileName) { verifyName
 void FileSpec::verifyName(const std::string& fileName) {
     if (fileName.length() > 4) {
         std::string ending(fileName.substr(fileName.length() - 4, 4));
-        if (ending.compare(".cfg") != 0)
+        if (ending.compare(".cfg") != 0) {
             throw InvalidConfigSourceException("File name '" + fileName + "' is invalid, must end with .cfg");
+        }
     } else {
         throw InvalidConfigSourceException("File name '" + fileName + "' is invalid");
     }

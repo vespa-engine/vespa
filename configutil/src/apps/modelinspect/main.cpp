@@ -66,8 +66,9 @@ int Application::parseOpts(int argc, char** argv) {
 std::string Application::getSources() {
     std::string specs;
     for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
-        if (!specs.empty())
+        if (!specs.empty()) {
             specs += ",";
+        }
         specs += v;
     }
     return specs;

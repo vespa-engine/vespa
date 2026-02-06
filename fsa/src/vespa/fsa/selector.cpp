@@ -24,8 +24,9 @@ void Selector::set(unsigned int c) {
         if (idx >= _selector.size()) {
             _selector.resize(idx + 1, false);
         }
-        if (c & 1)
+        if (c & 1) {
             _selector[idx] = true;
+        }
         c >>= 1;
         idx++;
     }
