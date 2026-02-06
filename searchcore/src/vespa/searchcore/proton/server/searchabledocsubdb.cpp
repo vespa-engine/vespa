@@ -9,7 +9,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
-#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
@@ -18,6 +17,7 @@
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/eval/eval/fast_value.h>
@@ -29,6 +29,8 @@ using search::index::Schema;
 using search::SerialNum;
 using vespalib::eval::FastValueBuilderFactory;
 using namespace searchcorespi;
+using searchcorespi::common::ResourceUsage;
+using searchcorespi::common::TransientResourceUsage;
 
 namespace proton {
 
@@ -374,11 +376,7 @@ ResourceUsage
 SearchableDocSubDB::get_resource_usage() const
 {
     auto result = FastAccessDocSubDB::get_resource_usage();
-    // Transient disk usage is measured as the total disk usage of all current fusion indexes.
-    // Transient memory usage is measured as the total memory usage of all memory indexes.
-    auto stats = get_index_stats(false);
-    result.merge(ResourceUsage{TransientResourceUsage{stats.fusion_size_on_disk(),
-                                                      stats.memoryUsage().allocatedBytes()}});
+    result.merge(_indexMgr->get_resource_usage());
     return result;
 }
 

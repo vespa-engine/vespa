@@ -14,9 +14,9 @@
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
-#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/reprocess_documents_task.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 
@@ -30,6 +30,7 @@ using search::attribute::ImportedAttributeVector;
 using search::index::Schema;
 using proton::initializer::InitializerTask;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::ResourceUsage;
 
 namespace proton {
 

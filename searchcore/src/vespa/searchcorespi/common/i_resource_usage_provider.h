@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace proton {
+namespace searchcorespi::common {
 
 class ResourceUsage;
 

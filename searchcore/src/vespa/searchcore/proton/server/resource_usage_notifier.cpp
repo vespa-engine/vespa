@@ -5,6 +5,8 @@
 #include "i_resource_usage_listener.h"
 #include <vespa/vespalib/util/hw_info.h>
 
+using searchcorespi::common::ResourceUsage;
+
 namespace proton {
 
 ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)

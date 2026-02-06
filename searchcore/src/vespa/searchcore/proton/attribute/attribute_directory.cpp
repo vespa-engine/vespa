@@ -2,7 +2,9 @@
 
 #include "attribute_directory.h"
 #include "attributedisklayout.h"
+#include <vespa/searchcorespi/common/transient_resource_usage.h>
 #include <vespa/searchlib/util/directory_traverse.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -12,8 +14,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_directory");
 
+using search::DiskSpaceCalculator;
 using search::IndexMetaInfo;
 using search::SerialNum;
+using searchcorespi::common::TransientResourceUsage;
 
 namespace {
 
@@ -310,6 +314,14 @@ AttributeDirectory::get_transient_resource_usage() const
         total_size_on_disk += dirt.GetTreeSize();
     }
     return {total_size_on_disk, 0};
+}
+
+uint64_t
+AttributeDirectory::get_size_on_disk_overhead()
+{
+    DiskSpaceCalculator calc;
+    constexpr uint32_t placeholder_meta_info_txt_size = 1000;
+    return DiskSpaceCalculator::directory_placeholder_size() + calc(placeholder_meta_info_txt_size);
 }
 
 } // namespace proton

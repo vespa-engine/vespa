@@ -3,27 +3,28 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
-namespace proton {
+namespace searchcorespi::common {
 
 /**
  * Class containing transient disk and memory usage (in bytes).
  */
 class TransientResourceUsage {
 private:
-    size_t _disk;
-    size_t _memory;
+    uint64_t _disk;
+    size_t   _memory;
 
 public:
     TransientResourceUsage() noexcept
         : _disk(0),
           _memory(0)
     {}
-    TransientResourceUsage(size_t disk_in, size_t memory_in) noexcept
+    TransientResourceUsage(uint64_t disk_in, size_t memory_in) noexcept
         : _disk(disk_in),
           _memory(memory_in)
     {}
-    size_t disk() const noexcept { return _disk; }
+    uint64_t disk() const noexcept { return _disk; }
     size_t memory() const noexcept { return _memory; }
     void merge(const TransientResourceUsage& rhs) noexcept{
         _disk += rhs.disk();

@@ -120,6 +120,8 @@ public:
         return _maintainer.get_index_stats(clear_disk_io_stats);
     }
 
+    searchcorespi::common::ResourceUsage get_resource_usage() const override;
+
     searchcorespi::IFlushTarget::List getFlushTargets() override {
         return _maintainer.getFlushTargets();
     }

@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/hw_info.h>
 
 namespace search::common { class FileHeaderContext; }
+namespace searchcorespi::common { class ResourceUsage; }
 
 namespace proton {
 
@@ -14,7 +15,6 @@ class AttributeDirectory;
 class AttributeDiskLayout;
 class DocumentMetaStore;
 class ITlsSyncer;
-class ResourceUsage;
 
 /**
  * Implementation of IFlushTarget interface for document meta store.
@@ -55,7 +55,7 @@ public:
 
     void setCleanUpAfterFlush(bool cleanUp) { _cleanUpAfterFlush = cleanUp; }
 
-    ResourceUsage get_resource_usage() const;
+    searchcorespi::common::ResourceUsage get_resource_usage() const;
 
     MemoryGain getApproxMemoryGain() const override;
     DiskGain getApproxDiskGain() const override;

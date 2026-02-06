@@ -5,7 +5,7 @@
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
-#include <vespa/searchcore/proton/common/resource_usage.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
@@ -24,6 +24,7 @@ using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
 using searchcorespi::IFlushTarget;
 using searchcorespi::FlushStats;
+using searchcorespi::common::ResourceUsage;
 
 namespace proton {
 
@@ -182,7 +183,8 @@ DocumentMetaStoreFlushTarget::~DocumentMetaStoreFlushTarget() = default;
 ResourceUsage
 DocumentMetaStoreFlushTarget::get_resource_usage() const
 {
-    return ResourceUsage{_dmsDir->get_transient_resource_usage()};
+    uint64_t size_on_disk = _dms->size_on_disk() + AttributeDirectory::get_size_on_disk_overhead();
+    return ResourceUsage{_dmsDir->get_transient_resource_usage(), size_on_disk};
 }
 
 IFlushTarget::SerialNum

@@ -6,12 +6,18 @@
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 
+namespace searchcorespi::common {
+
+class IResourceUsageProvider;
+class ResourceUsage;
+
+}
+
 namespace vespalib { class IDestructorCallback; }
 
 namespace proton {
 
 class IReservedDiskSpaceProvider;
-class IResourceUsageProvider;
 
 /*
  * Class to sample disk and memory usage used for filtering write operations.
@@ -24,13 +30,13 @@ class DiskMemUsageSampler {
     vespalib::duration                _sampleInterval;
     vespalib::steady_time             _lastSampleTime;
     std::mutex                        _lock;
-    std::vector<std::shared_ptr<const IResourceUsageProvider>> _resource_usage_providers;
+    std::vector<std::shared_ptr<const searchcorespi::common::IResourceUsageProvider>> _resource_usage_providers;
     std::unique_ptr<vespalib::IDestructorCallback> _periodicHandle;
 
     void sampleAndReportUsage();
     uint64_t sampleDiskUsage();
     vespalib::ProcessMemoryStats sampleMemoryUsage();
-    ResourceUsage sample_resource_usage();
+    searchcorespi::common::ResourceUsage sample_resource_usage();
     [[nodiscard]] bool timeToSampleAgain() const noexcept;
 public:
     struct Config {
@@ -63,8 +69,8 @@ public:
 
     void setConfig(const Config &config, IScheduledExecutor & executor);
 
-    void add_resource_usage_provider(std::shared_ptr<const IResourceUsageProvider> provider);
-    void remove_resource_usage_provider(std::shared_ptr<const IResourceUsageProvider> provider);
+    void add_resource_usage_provider(std::shared_ptr<const searchcorespi::common::IResourceUsageProvider> provider);
+    void remove_resource_usage_provider(std::shared_ptr<const searchcorespi::common::IResourceUsageProvider> provider);
 };
 
 } // namespace proton
