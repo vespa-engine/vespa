@@ -18,16 +18,16 @@ namespace vespamalloc {
  **/
 struct TaggedPtrT {
     TaggedPtrT() noexcept : _ptr(nullptr), _tag(0) {}
-    TaggedPtrT(void *h, size_t t) noexcept : _ptr(h), _tag(t) {}
+    TaggedPtrT(void* h, size_t t) noexcept : _ptr(h), _tag(t) {}
 
-    void  *_ptr;
+    void*  _ptr;
     size_t _tag;
 };
 
 #if defined(__x86_64__)
 struct AtomicTaggedPtr {
     AtomicTaggedPtr() noexcept : _ptr(nullptr), _tag(0) {}
-    AtomicTaggedPtr(void *h, size_t t) noexcept : _ptr(h), _tag(t) {}
+    AtomicTaggedPtr(void* h, size_t t) noexcept : _ptr(h), _tag(t) {}
 
     AtomicTaggedPtr load(std::memory_order = std::memory_order_seq_cst) {
         // Note that this is NOT an atomic load. The current use as the initial load
@@ -40,7 +40,7 @@ struct AtomicTaggedPtr {
         // that is the preferred implementation..
         *this = ptr;
     }
-    bool compare_exchange_weak(AtomicTaggedPtr &oldPtr, AtomicTaggedPtr newPtr, std::memory_order, std::memory_order) {
+    bool compare_exchange_weak(AtomicTaggedPtr& oldPtr, AtomicTaggedPtr newPtr, std::memory_order, std::memory_order) {
         char result;
         __asm__ volatile("lock ;"
                          "cmpxchg16b %6;"
@@ -51,7 +51,7 @@ struct AtomicTaggedPtr {
         return result;
     }
 
-    void  *_ptr;
+    void*  _ptr;
     size_t _tag;
 } __attribute__((aligned(16)));
 
@@ -68,16 +68,16 @@ public:
     using AtomicHeadPtr = AtomicTaggedPtr;
 
     AFListBase() noexcept : _next(nullptr) {}
-    void        setNext(AFListBase *csl) noexcept { _next = csl; }
-    static void linkInList(AtomicHeadPtr &head, AFListBase *list) noexcept;
-    static void linkIn(AtomicHeadPtr &head, AFListBase *csl, AFListBase *tail) noexcept;
+    void        setNext(AFListBase* csl) noexcept { _next = csl; }
+    static void linkInList(AtomicHeadPtr& head, AFListBase* list) noexcept;
+    static void linkIn(AtomicHeadPtr& head, AFListBase* csl, AFListBase* tail) noexcept;
 
 protected:
-    AFListBase        *getNext() noexcept { return _next; }
-    static AFListBase *linkOut(AtomicHeadPtr &head) noexcept;
+    AFListBase*        getNext() noexcept { return _next; }
+    static AFListBase* linkOut(AtomicHeadPtr& head) noexcept;
 
 private:
-    AFListBase *_next;
+    AFListBase* _next;
 };
 
 template <typename MemBlockPtrT> class AFList : public AFListBase {
@@ -86,12 +86,12 @@ public:
     enum { NumBlocks = 126 };
     AFList() noexcept : _count(0) {}
     [[nodiscard]] CountT count() const noexcept { return _count; }
-    void                 add(MemBlockPtrT &ptr) noexcept {
+    void                 add(MemBlockPtrT& ptr) noexcept {
         ptr.free();
-        PARANOID_CHECK2(if (full()) { *(int *)0 = 0; });
+        PARANOID_CHECK2(if (full()) { *(int*)0 = 0; });
         _memBlockList[_count++] = ptr;
     }
-    void sub(MemBlockPtrT &mem) noexcept {
+    void sub(MemBlockPtrT& mem) noexcept {
         if (empty()) {
             return;
         }
@@ -99,19 +99,20 @@ public:
     }
     [[nodiscard]] bool empty() const noexcept { return (_count == 0); }
     [[nodiscard]] bool full() const noexcept { return (_count == NumBlocks); }
-    size_t             fill(void *mem, SizeClassT sc, size_t blocksPerChunk = NumBlocks) noexcept;
-    AFList            *getNext() noexcept { return static_cast<AFList *>(AFListBase::getNext()); }
-    static AFList     *linkOut(AtomicHeadPtr &head) noexcept { return static_cast<AFList *>(AFListBase::linkOut(head)); }
+    size_t             fill(void* mem, SizeClassT sc, size_t blocksPerChunk = NumBlocks) noexcept;
+    AFList*            getNext() noexcept { return static_cast<AFList*>(AFListBase::getNext()); }
+    static AFList*     linkOut(AtomicHeadPtr& head) noexcept { return static_cast<AFList*>(AFListBase::linkOut(head)); }
 
 private:
     CountT       _count;
     MemBlockPtrT _memBlockList[NumBlocks];
 };
 
-template <typename MemBlockPtrT> size_t AFList<MemBlockPtrT>::fill(void *mem, SizeClassT sc, size_t blocksPerChunk) noexcept {
+template <typename MemBlockPtrT>
+size_t AFList<MemBlockPtrT>::fill(void* mem, SizeClassT sc, size_t blocksPerChunk) noexcept {
     size_t sz = MemBlockPtrT::classSize(sc);
     int    retval(std::max(0, int(blocksPerChunk - _count)));
-    char  *first = (char *)mem;
+    char*  first = (char*)mem;
     for (int i = 0; i < retval; i++) {
         _memBlockList[_count] = MemBlockPtrT(first + i * sz, MemBlockPtrT::unAdjustSize(sz));
         _memBlockList[_count].free();

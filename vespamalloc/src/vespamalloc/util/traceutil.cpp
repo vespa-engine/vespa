@@ -9,7 +9,9 @@ Aggregator::Aggregator() = default;
 Aggregator::~Aggregator() = default;
 
 struct CmpGraph {
-    bool operator()(const std::pair<size_t, string>& a, const std::pair<size_t, string>& b) const { return a.first < b.first; }
+    bool operator()(const std::pair<size_t, string>& a, const std::pair<size_t, string>& b) const {
+        return a.first < b.first;
+    }
 };
 
 asciistream& operator<<(asciistream& os, const Aggregator& v) {

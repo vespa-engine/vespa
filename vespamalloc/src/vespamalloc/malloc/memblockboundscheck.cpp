@@ -6,17 +6,17 @@
 
 namespace vespamalloc {
 
-FILE   *MemBlockBoundsCheckBaseTBase::_logFile = stderr;
+FILE*   MemBlockBoundsCheckBaseTBase::_logFile = stderr;
 size_t  MemBlockBoundsCheckBaseTBase::_bigBlockLimit = 0x80000000;
 uint8_t MemBlockBoundsCheckBaseTBase::_fillValue = MemBlockBoundsCheckBaseTBase::NO_FILL;
 
 void MemBlockBoundsCheckBaseTBase::verifyFill() const {
-    const uint8_t *c(static_cast<const uint8_t *>(ptr())), *e(c + size());
+    const uint8_t *c(static_cast<const uint8_t*>(ptr())), *e(c + size());
     for (; (c < e) && (*c == _fillValue); c++) {
     }
     if (c != e) {
-        fprintf(_logFile, "Incorrect fillvalue (%2x) instead of (%2x) at position %ld(%p) of %ld(%p - %p)\n", *c, _fillValue,
-                c - static_cast<const uint8_t *>(ptr()), c, size(), ptr(), e);
+        fprintf(_logFile, "Incorrect fillvalue (%2x) instead of (%2x) at position %ld(%p) of %ld(%p - %p)\n", *c,
+                _fillValue, c - static_cast<const uint8_t*>(ptr()), c, size(), ptr(), e);
         abort();
     }
 }
@@ -30,7 +30,7 @@ void MemBlockBoundsCheckBaseTBase::logBigBlock(size_t exact, size_t adjusted, si
         st[3].info(_logFile);
         fprintf(_logFile, "\n");
         for (size_t i = 1; (i < count) && (i < NELEMS(st)); i++) {
-            const Stack &s = st[i];
+            const Stack& s = st[i];
             if (s.valid()) {
                 s.info(_logFile);
                 fprintf(_logFile, " from ");

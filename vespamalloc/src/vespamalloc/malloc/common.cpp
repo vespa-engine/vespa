@@ -33,13 +33,13 @@ void Mutex::init() {
     }
 }
 
-Guard::Guard(Mutex &m) : _mutex(&m) {
+Guard::Guard(Mutex& m) : _mutex(&m) {
     MallocRecurseOnSuspend(false);
     _mutex->lock();
     MallocRecurseOnSuspend(true);
 }
 
-FILE  *_G_logFile = stderr;
+FILE*  _G_logFile = stderr;
 size_t _G_bigBlockLimit = 0x80000000;
 
 void logStackTrace() {
@@ -48,7 +48,7 @@ void logStackTrace() {
     st[4].info(_G_logFile);
     fprintf(_G_logFile, "\n");
     for (size_t i = 1; (i < count) && (i < NELEMS(st)); i++) {
-        const auto &s = st[i];
+        const auto& s = st[i];
         if (s.valid()) {
             s.info(_G_logFile);
             fprintf(_G_logFile, " from ");
@@ -57,7 +57,7 @@ void logStackTrace() {
     fprintf(_G_logFile, "\n");
 }
 
-void logBigBlock(const void *ptr, size_t exact, size_t adjusted, size_t gross) {
+void logBigBlock(const void* ptr, size_t exact, size_t adjusted, size_t gross) {
     size_t sz(exact);
     if (std::max(std::max(sz, adjusted), gross) > _G_bigBlockLimit) {
         fprintf(_G_logFile, "validating %p(%ld, %ld, %ld) ", ptr, sz, adjusted, gross);

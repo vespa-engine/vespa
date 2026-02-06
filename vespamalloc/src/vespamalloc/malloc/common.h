@@ -91,19 +91,19 @@ public:
 private:
     static std::atomic<uint32_t> _threadCount;
     static bool                  _stopRecursion;
-    Mutex(const Mutex &org);
-    Mutex          &operator=(const Mutex &org);
+    Mutex(const Mutex& org);
+    Mutex&          operator=(const Mutex& org);
     pthread_mutex_t _mutex;
     bool            _use;
 };
 
 class Guard {
 public:
-    Guard(Mutex &m);
+    Guard(Mutex& m);
     ~Guard() { _mutex->unlock(); }
 
 private:
-    Mutex *_mutex;
+    Mutex* _mutex;
 };
 
 class IAllocator {
@@ -112,12 +112,12 @@ public:
     virtual bool   initThisThread() = 0;
     virtual bool   quitThisThread() = 0;
     virtual void   enableThreadSupport() = 0;
-    virtual void   setReturnAddressStop(const void *returnAddressStop) = 0;
+    virtual void   setReturnAddressStop(const void* returnAddressStop) = 0;
     virtual size_t getMaxNumThreads() const = 0;
 };
 
 void info();
-void logBigBlock(const void *ptr, size_t exact, size_t adjusted, size_t gross) __attribute__((noinline));
+void logBigBlock(const void* ptr, size_t exact, size_t adjusted, size_t gross) __attribute__((noinline));
 void logStackTrace() __attribute__((noinline));
 
 #define ASSERT_STACKTRACE(a)                 \
@@ -128,7 +128,7 @@ void logStackTrace() __attribute__((noinline));
         }                                    \
     }
 
-extern FILE  *_G_logFile;
+extern FILE*  _G_logFile;
 extern size_t _G_bigBlockLimit;
 
 } // namespace vespamalloc

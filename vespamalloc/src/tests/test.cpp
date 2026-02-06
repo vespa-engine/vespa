@@ -10,7 +10,7 @@ void info();
 
 void testbigblocks(size_t count, size_t sz) {
     for (size_t i = 0; i < count; i++) {
-        char *a = new char[sz];
+        char* a = new char[sz];
         delete[] a;
         a = new char[sz - 1];
         delete[] a;
@@ -18,13 +18,13 @@ void testbigblocks(size_t count, size_t sz) {
 }
 
 void testdd() {
-    char *a = (char *)malloc(0x1003);
+    char* a = (char*)malloc(0x1003);
     free(a);
 }
 
 void thread_run();
 
-int main(int, char *[]) {
+int main(int, char*[]) {
     vespalib::ThreadPool threadPool;
     printf("Main stack(%p)\n", &threadPool);
 
@@ -36,9 +36,9 @@ int main(int, char *[]) {
 }
 
 void thread_run() {
-    char *a = new char[100];
+    char* a = new char[100];
     delete[] a;
-    char *b;
+    char* b;
 
     testbigblocks(1, 0x800003);
     testbigblocks(64000, 0x200003);

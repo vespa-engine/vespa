@@ -4,11 +4,11 @@
 #include <unistd.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-void *just_return(void *arg) { return arg; }
+void* just_return(void* arg) { return arg; }
 
-void *just_exit(void *arg) { pthread_exit(arg); }
+void* just_exit(void* arg) { pthread_exit(arg); }
 
-void *just_cancel(void *arg) {
+void* just_cancel(void* arg) {
     sleep(60);
     return arg;
 }
@@ -35,8 +35,8 @@ struct wait_info {
     std::atomic<uint64_t> _count;
 };
 
-void *just_wait(void *arg) {
-    wait_info *info = (wait_info *)arg;
+void* just_wait(void* arg) {
+    wait_info* info = (wait_info*)arg;
     pthread_mutex_lock(&info->_mutex);
     info->_count.fetch_add(1);
     pthread_cond_wait(&info->_cond, &info->_mutex);
@@ -47,7 +47,7 @@ void *just_wait(void *arg) {
 }
 
 int    my_argc = 0;
-char **my_argv = nullptr;
+char** my_argv = nullptr;
 
 TEST(ThreadTest, main) {
     size_t threadCount(102400);
@@ -55,11 +55,11 @@ TEST(ThreadTest, main) {
         threadCount = strtoul(my_argv[2], nullptr, 0);
     }
 
-    const char *testType = my_argv[1];
+    const char* testType = my_argv[1];
 
     for (size_t i(0); i < threadCount; i++) {
         pthread_t th;
-        void     *retval;
+        void*     retval;
         if (strcmp(testType, "exit") == 0) {
             EXPECT_EQ(pthread_create(&th, nullptr, just_exit, nullptr), 0);
         } else if (strcmp(testType, "cancel") == 0) {
@@ -96,14 +96,14 @@ TEST(ThreadTest, main) {
     pthread_cond_signal(&info._cond);
     pthread_mutex_unlock(&info._mutex);
     for (size_t j = 0; j < NUM_THREADS; j++) {
-        void *retval;
+        void* retval;
         EXPECT_EQ(pthread_join(tl[j], &retval), 0);
     }
     EXPECT_EQ(pthread_attr_destroy(&attr), 0);
     EXPECT_EQ(info._count, 0ul);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     my_argc = argc;
     my_argv = argv;

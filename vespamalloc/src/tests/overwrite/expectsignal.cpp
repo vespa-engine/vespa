@@ -4,7 +4,7 @@
 
 using namespace vespalib;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
     if (argc != 3) {
         fprintf(stderr, "[ERROR] expected argc to be %d (it was %d)\n", 3, argc);

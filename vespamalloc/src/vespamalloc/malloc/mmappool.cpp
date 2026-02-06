@@ -8,8 +8,8 @@
 namespace vespamalloc {
 
 MMapPool::MMapPool()
-    : _page_size(getpagesize()), _huge_flags((getenv("VESPA_USE_HUGEPAGES") != nullptr) ? MAP_HUGETLB : 0), _peakBytes(0ul), _currentBytes(0ul),
-      _count(0), _mutex(), _mappings() {}
+    : _page_size(getpagesize()), _huge_flags((getenv("VESPA_USE_HUGEPAGES") != nullptr) ? MAP_HUGETLB : 0),
+      _peakBytes(0ul), _currentBytes(0ul), _count(0), _mutex(), _mappings() {}
 
 MMapPool::~MMapPool() { ASSERT_STACKTRACE(_mappings.empty()); }
 
@@ -46,7 +46,8 @@ void* MMapPool::mmap(size_t sz) {
             }
             buf = ::mmap(nullptr, sz, prot, flags, -1, 0);
             if (buf == MAP_FAILED) {
-                fprintf(_G_logFile, "Will exit due to: Failed mmaping anonymous of size %ld errno(%d) from : ", sz, errno);
+                fprintf(_G_logFile, "Will exit due to: Failed mmaping anonymous of size %ld errno(%d) from : ", sz,
+                        errno);
                 logStackTrace();
                 std::quick_exit(66);
             }
@@ -104,8 +105,8 @@ size_t MMapPool::get_size(void* ptr) const {
 }
 
 void MMapPool::info(FILE* os, size_t) const {
-    fprintf(os, "MMapPool has %zu mappings, accumulated count is %lu,  with a total of %zu mapped bytes\n", getNumMappings(),
-            _count.load(std::memory_order_relaxed), getMmappedBytes());
+    fprintf(os, "MMapPool has %zu mappings, accumulated count is %lu,  with a total of %zu mapped bytes\n",
+            getNumMappings(), _count.load(std::memory_order_relaxed), getMmappedBytes());
     std::lock_guard guard(_mutex);
     size_t          i(0);
     for (const auto& e : _mappings) {

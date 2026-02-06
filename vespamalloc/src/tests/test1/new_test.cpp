@@ -10,18 +10,18 @@
 
 LOG_SETUP("new_test");
 
-void *wrap_memalign_real(size_t alignment, size_t size) { return memalign(alignment, size); }
+void* wrap_memalign_real(size_t alignment, size_t size) { return memalign(alignment, size); }
 
-void *(*wrap_memalign)(size_t alignment, size_t size) = wrap_memalign_real;
+void* (*wrap_memalign)(size_t alignment, size_t size) = wrap_memalign_real;
 
-void *wrap_aligned_alloc_real(size_t alignment, size_t size) { return aligned_alloc(alignment, size); }
+void* wrap_aligned_alloc_real(size_t alignment, size_t size) { return aligned_alloc(alignment, size); }
 
-void *(*wrap_aligned_alloc)(size_t alignment, size_t size) = wrap_aligned_alloc_real;
+void* (*wrap_aligned_alloc)(size_t alignment, size_t size) = wrap_aligned_alloc_real;
 
-void cmp(const void *a, const void *b) { EXPECT_EQ(a, b); }
-void cmp(const void *base, size_t offset, const void *p) { cmp((static_cast<const char *>(base) + offset), p); }
+void cmp(const void* a, const void* b) { EXPECT_EQ(a, b); }
+void cmp(const void* base, size_t offset, const void* p) { cmp((static_cast<const char*>(base) + offset), p); }
 
-template <typename S> void verify_aligned(S *p) {
+template <typename S> void verify_aligned(S* p) {
     EXPECT_TRUE((uintptr_t(p) % alignof(S)) == 0);
     memset(p, 0, sizeof(S));
 }
@@ -104,24 +104,24 @@ TEST(NewTest, verify_new_with_alignment_64_with_single_element) {
 
 #if __GLIBC_PREREQ(2, 26)
 
-void *(*call_reallocarray)(void *, size_t, size_t) = reallocarray;
+void* (*call_reallocarray)(void*, size_t, size_t) = reallocarray;
 
 TEST(NewTest, verify_reallocarray) {
-    void *arr = calloc(5, 5);
+    void* arr = calloc(5, 5);
     // Used to ensure that 'arr' can not resized in place.
     std::vector<std::unique_ptr<char[]>> dummies;
     for (size_t i(0); i < 1000; i++) {
         dummies.push_back(std::make_unique<char[]>(5 * 5));
     }
     errno = 0;
-    void *arr2 = call_reallocarray(arr, 800, 5);
+    void* arr2 = call_reallocarray(arr, 800, 5);
     int   myErrno = errno;
     EXPECT_NE(arr, arr2);
     EXPECT_NE(nullptr, arr2);
     EXPECT_NE(ENOMEM, myErrno);
 
     errno = 0;
-    void *arr3 = call_reallocarray(arr2, 1ul << 33, 1ul << 33);
+    void* arr3 = call_reallocarray(arr2, 1ul << 33, 1ul << 33);
     myErrno = errno;
     EXPECT_EQ(nullptr, arr3);
     EXPECT_EQ(ENOMEM, myErrno);
@@ -136,11 +136,12 @@ void verify_vespamalloc_usable_size() {
         size_t requested;
         size_t usable;
     };
-    AllocInfo allocInfo[] = {{0x7, 0x20},         {0x27, 0x40},         {0x47, 0x80},         {0x87, 0x100},       {0x107, 0x200},
-                             {0x207, 0x400},      {0x407, 0x800},       {0x807, 0x1000},      {0x1007, 0x2000},    {0x2007, 0x4000},
-                             {0x4007, 0x8000},    {0x8007, 0x10000},    {0x10007, 0x20000},   {0x20007, 0x40000},  {0x40007, 0x80000},
-                             {0x80007, 0x100000}, {0x100007, 0x200000}, {0x200007, 0x400000}, {0x400007, 0x600000}};
-    for (const AllocInfo &info : allocInfo) {
+    AllocInfo allocInfo[] = {{0x7, 0x20},          {0x27, 0x40},         {0x47, 0x80},        {0x87, 0x100},
+                             {0x107, 0x200},       {0x207, 0x400},       {0x407, 0x800},      {0x807, 0x1000},
+                             {0x1007, 0x2000},     {0x2007, 0x4000},     {0x4007, 0x8000},    {0x8007, 0x10000},
+                             {0x10007, 0x20000},   {0x20007, 0x40000},   {0x40007, 0x80000},  {0x80007, 0x100000},
+                             {0x100007, 0x200000}, {0x200007, 0x400000}, {0x400007, 0x600000}};
+    for (const AllocInfo& info : allocInfo) {
         std::unique_ptr<char[]> buf = std::make_unique<char[]>(info.requested);
         size_t                  usable_size = malloc_usable_size(buf.get());
         EXPECT_EQ(info.usable, usable_size);
@@ -161,7 +162,7 @@ MallocLibrary detectLibrary() {
 
 MallocLibrary _env = detectLibrary();
 
-size_t count_mismatches(const char *v, char c, size_t count) {
+size_t count_mismatches(const char* v, char c, size_t count) {
     size_t errors = 0;
     for (size_t i(0); i < count; i++) {
         if (v[i] != c)
@@ -209,19 +210,19 @@ TEST(NewTest, verify_mmap_limit) {
     EXPECT_LT(size_t(labs(small.get() - large_2.get())), 1_Ti);
 }
 
-void verifyReallocLarge(char *initial, bool expect_vespamalloc_optimization) {
+void verifyReallocLarge(char* initial, bool expect_vespamalloc_optimization) {
     const size_t INITIAL_SIZE = 0x400001;
     const size_t SECOND_SIZE = 0x500001;
     const size_t THIRD_SIZE = 0x600001;
-    char        *v = static_cast<char *>(realloc(initial, INITIAL_SIZE));
+    char*        v = static_cast<char*>(realloc(initial, INITIAL_SIZE));
     memset(v, 0x5b, INITIAL_SIZE);
-    char *nv = static_cast<char *>(realloc(v, SECOND_SIZE));
+    char* nv = static_cast<char*>(realloc(v, SECOND_SIZE));
     if (expect_vespamalloc_optimization) {
         ASSERT_TRUE(v == nv);
     }
     EXPECT_EQ(0u, count_mismatches(nv, 0x5b, INITIAL_SIZE));
     memset(nv, 0xbe, SECOND_SIZE);
-    v = static_cast<char *>(realloc(nv, THIRD_SIZE));
+    v = static_cast<char*>(realloc(nv, THIRD_SIZE));
     if (expect_vespamalloc_optimization) {
         ASSERT_TRUE(v != nv);
     }
@@ -230,13 +231,13 @@ void verifyReallocLarge(char *initial, bool expect_vespamalloc_optimization) {
 }
 TEST(NewTest, test_realloc_large_buffers) {
     verifyReallocLarge(nullptr, _env != MallocLibrary::UNKNOWN);
-    verifyReallocLarge(static_cast<char *>(malloc(2000)), _env != MallocLibrary::UNKNOWN);
+    verifyReallocLarge(static_cast<char*>(malloc(2000)), _env != MallocLibrary::UNKNOWN);
     if (_env == MallocLibrary::UNKNOWN)
         return;
 
     EXPECT_EQ(1, mallopt(M_MMAP_THRESHOLD, 1_Mi));
     verifyReallocLarge(nullptr, false);
-    verifyReallocLarge(static_cast<char *>(malloc(2000)), false);
+    verifyReallocLarge(static_cast<char*>(malloc(2000)), false);
     EXPECT_EQ(1, mallopt(M_MMAP_THRESHOLD, 1_Gi));
 }
 
@@ -251,19 +252,19 @@ TEST(NewTest, realloc_from_large_to_small_constrains_copied_memory_extent) {
     constexpr size_t old_sz = 8_Mi;
     constexpr size_t new_sz = 1_Ki;
     ASSERT_EQ(1, mallopt(M_MMAP_THRESHOLD, 1_Mi));
-    char *buf = static_cast<char *>(malloc(old_sz));
+    char* buf = static_cast<char*>(malloc(old_sz));
     assert(buf);
     memset(buf, 0x5b, old_sz);
     // This will SIGSEGV (with a very high likelihood) if we don't constrain the copied
     // memory size since it will attempt to write outside a valid mapped region.
-    char *realloc_buf = static_cast<char *>(realloc(buf, new_sz));
+    char* realloc_buf = static_cast<char*>(realloc(buf, new_sz));
     EXPECT_NE(realloc_buf, buf); // Should not have reused buffer
 
     EXPECT_EQ(0u, count_mismatches(realloc_buf, 0x5b, new_sz));
     free(realloc_buf);
 }
 
-void verify_alignment(void *ptr, size_t align, size_t min_sz) {
+void verify_alignment(void* ptr, size_t align, size_t min_sz) {
     EXPECT_NE(ptr, nullptr);
     EXPECT_EQ(0u, size_t(ptr) & (align - 1));
     assert(0ul == (size_t(ptr) & (align - 1)));

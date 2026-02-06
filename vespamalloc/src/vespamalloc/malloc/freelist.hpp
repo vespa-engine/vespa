@@ -6,7 +6,7 @@
 
 namespace vespamalloc::segment {
 
-template <int MaxCount> FreeListT<MaxCount>::FreeListT(BlockT *blockList) : _blockList(blockList), _count(0) {
+template <int MaxCount> FreeListT<MaxCount>::FreeListT(BlockT* blockList) : _blockList(blockList), _count(0) {
     for (size_t i = 0; i < NELEMS(_freeStartIndex); i++) {
         _freeStartIndex[i] = -1;
     }
@@ -60,13 +60,13 @@ template <int MaxCount> void FreeListT<MaxCount>::add(Index startIndex) {
     }
 }
 
-template <int MaxCount> void *FreeListT<MaxCount>::sub(Index numBlocks) {
-    void  *block(nullptr);
+template <int MaxCount> void* FreeListT<MaxCount>::sub(Index numBlocks) {
+    void*  block(nullptr);
     size_t bestFitIndex(_count);
     int    bestLeft(INT_MAX);
     for (size_t i = 0; i < _count; i++) {
         size_t  index(_freeStartIndex[i]);
-        BlockT &b = _blockList[index];
+        BlockT& b = _blockList[index];
         int     left = b.freeChainLength() - numBlocks;
         if ((left >= 0) && (left < bestLeft)) {
             bestLeft = left;
@@ -83,7 +83,7 @@ template <int MaxCount> uint32_t FreeListT<MaxCount>::lastBlock(Index nextBlock)
     Index lastIndex(0);
     if (_count > 0) {
         Index   index(_freeStartIndex[_count - 1]);
-        BlockT &b = _blockList[index];
+        BlockT& b = _blockList[index];
         if (index + b.freeChainLength() == nextBlock) {
             lastIndex = index;
         }
@@ -91,11 +91,12 @@ template <int MaxCount> uint32_t FreeListT<MaxCount>::lastBlock(Index nextBlock)
     return lastIndex;
 }
 
-template <int MaxCount> void FreeListT<MaxCount>::info(FILE *os) {
+template <int MaxCount> void FreeListT<MaxCount>::info(FILE* os) {
     for (Index i = 0; i < _count; i++) {
         Index         index(_freeStartIndex[i]);
-        const BlockT &b = _blockList[index];
-        fprintf(os, "Free #%3d block #%5d chainlength %5d size %10lu\n", i, index, b.freeChainLength(), b.freeChainLength() * BlockSize);
+        const BlockT& b = _blockList[index];
+        fprintf(os, "Free #%3d block #%5d chainlength %5d size %10lu\n", i, index, b.freeChainLength(),
+                b.freeChainLength() * BlockSize);
     }
 }
 
@@ -103,17 +104,17 @@ template <int MaxCount> uint32_t FreeListT<MaxCount>::numFreeBlocks() const {
     Index freeBlockCount(0);
     for (Index i = 0; i < _count; i++) {
         Index         index(_freeStartIndex[i]);
-        const BlockT &b = _blockList[index];
+        const BlockT& b = _blockList[index];
         freeBlockCount += b.freeChainLength();
     }
     return freeBlockCount;
 }
 
-template <int MaxCount> void *FreeListT<MaxCount>::linkOut(Index findex, Index left) {
+template <int MaxCount> void* FreeListT<MaxCount>::linkOut(Index findex, Index left) {
     size_t  index(_freeStartIndex[findex]);
-    BlockT &b = _blockList[index];
+    BlockT& b = _blockList[index];
     Index   startIndex = index + left;
-    void   *block = fromBlockId(startIndex);
+    void*   block = fromBlockId(startIndex);
     if (left > 0) {
         b.freeChainLength(left);
     } else {

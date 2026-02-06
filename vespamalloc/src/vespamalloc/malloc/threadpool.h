@@ -20,15 +20,15 @@ public:
     using DataSegment = segment::DataSegment;
     ThreadPoolT();
     ~ThreadPoolT();
-    void setPool(AllocPool &allocPool, MMapPool &mmapPool) {
+    void setPool(AllocPool& allocPool, MMapPool& mmapPool) {
         _allocPool = &allocPool;
         _mmapPool = &mmapPool;
     }
     int  mallopt(int param, int value);
-    void malloc(size_t sz, MemBlockPtrT &mem);
+    void malloc(size_t sz, MemBlockPtrT& mem);
     void free(MemBlockPtrT mem, SizeClassT sc);
 
-    void info(FILE *os, size_t level, const DataSegment &ds) const __attribute__((noinline));
+    void info(FILE* os, size_t level, const DataSegment& ds) const __attribute__((noinline));
     /**
      * Indicates if it represents an active thread.
      * @return true if this represents an active thread.
@@ -48,13 +48,13 @@ public:
 
 private:
     bool hasActuallyBeenUsed() const;
-    ThreadPoolT(const ThreadPoolT &rhs);
-    ThreadPoolT &operator=(const ThreadPoolT &rhs);
+    ThreadPoolT(const ThreadPoolT& rhs);
+    ThreadPoolT& operator=(const ThreadPoolT& rhs);
     void         setThreadId(uint32_t th) { _threadId = th; }
     class AllocFree {
     public:
         AllocFree() : _allocFrom(nullptr), _freeTo(nullptr) {}
-        void init(AllocPool &allocPool, SizeClassT sc) {
+        void init(AllocPool& allocPool, SizeClassT sc) {
             if (_allocFrom == nullptr) {
                 _allocFrom = allocPool.getFree(sc, 1);
                 ASSERT_STACKTRACE(_allocFrom != nullptr);
@@ -63,14 +63,14 @@ private:
             }
         }
         void        swap() { std::swap(_allocFrom, _freeTo); }
-        ChunkSList *_allocFrom;
-        ChunkSList *_freeTo;
+        ChunkSList* _allocFrom;
+        ChunkSList* _freeTo;
     };
-    void                  mallocHelper(size_t exactSize, SizeClassT sc, AllocFree &af, MemBlockPtrT &mem) __attribute__((noinline));
+    void mallocHelper(size_t exactSize, SizeClassT sc, AllocFree& af, MemBlockPtrT& mem) __attribute__((noinline));
     static constexpr bool alwaysReuse(SizeClassT sc) { return sc > ALWAYS_REUSE_SC_LIMIT; }
 
-    AllocPool           *_allocPool;
-    MMapPool            *_mmapPool;
+    AllocPool*           _allocPool;
+    MMapPool*            _mmapPool;
     size_t               _mmapLimit;
     AllocFree            _memList[NUM_SIZE_CLASSES];
     ThreadStatT          _stat[NUM_SIZE_CLASSES];

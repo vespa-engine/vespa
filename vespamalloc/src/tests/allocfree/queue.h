@@ -17,23 +17,24 @@ private:
     uint32_t                _maxSize;
     bool                    _closed;
     T                       _nil;
-    Queue(const Queue &);
-    Queue &operator=(const Queue &);
+    Queue(const Queue&);
+    Queue& operator=(const Queue&);
 
 public:
-    Queue(const T &nil, uint32_t maxSize);
+    Queue(const T& nil, uint32_t maxSize);
     ~Queue();
-    void enqueue(const T &entry);
+    void enqueue(const T& entry);
     void close();
     T    dequeue();
 };
 
 template <typename T>
-Queue<T>::Queue(const T &nil, uint32_t maxSize) : _q(), _lock(), _cond(), _waitRead(0), _waitWrite(0), _maxSize(maxSize), _closed(false), _nil(nil) {}
+Queue<T>::Queue(const T& nil, uint32_t maxSize)
+    : _q(), _lock(), _cond(), _waitRead(0), _waitWrite(0), _maxSize(maxSize), _closed(false), _nil(nil) {}
 
 template <typename T> Queue<T>::~Queue() = default;
 
-template <typename T> void Queue<T>::enqueue(const T &entry) {
+template <typename T> void Queue<T>::enqueue(const T& entry) {
     std::unique_lock guard(_lock);
     while (_q.size() >= _maxSize) {
         CounterGuard cntGuard(_waitWrite);

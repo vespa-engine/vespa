@@ -40,6 +40,7 @@ private:
 };
 
 template <typename MemBlockPtrT, typename ThreadStatT>
-thread_local ThreadPoolT<MemBlockPtrT, ThreadStatT>* ThreadListT<MemBlockPtrT, ThreadStatT>::_myPool TLS_LINKAGE = nullptr;
+thread_local ThreadPoolT<MemBlockPtrT, ThreadStatT>* ThreadListT<MemBlockPtrT, ThreadStatT>::_myPool TLS_LINKAGE =
+    nullptr;
 
 } // namespace vespamalloc

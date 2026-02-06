@@ -15,8 +15,8 @@ namespace vespalibtest {
 
 template <typename T> class DumpGraph {
 public:
-    DumpGraph(const char *s = "") : _string(s) {}
-    void handle(const T &node) {
+    DumpGraph(const char* s = "") : _string(s) {}
+    void handle(const T& node) {
         asciistream os;
         os << ' ' << node;
         _string += os.c_str();
@@ -24,7 +24,7 @@ public:
             printf("%s\n", _string.c_str());
         }
     }
-    const std::string &str() const { return _string; }
+    const std::string& str() const { return _string; }
 
 private:
     std::string _string;
@@ -49,10 +49,10 @@ void testint() {
 void teststackentry() {
     CallGraphStackEntryT                                callGraph;
     vespalibtest::DumpGraph<CallGraphStackEntryT::Node> dump("callstack: ");
-    StackElem                                           s1[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)3)};
-    StackElem                                           s2[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)4)};
-    StackElem                                           s3[1] = {StackElem((void *)1)};
-    StackElem                                           s4[3] = {StackElem((void *)1), StackElem((void *)3), StackElem((void *)4)};
+    StackElem s1[3] = {StackElem((void*)1), StackElem((void*)2), StackElem((void*)3)};
+    StackElem s2[3] = {StackElem((void*)1), StackElem((void*)2), StackElem((void*)4)};
+    StackElem s3[1] = {StackElem((void*)1)};
+    StackElem s4[3] = {StackElem((void*)1), StackElem((void*)3), StackElem((void*)4)};
     callGraph.addStack(s1, 3);
     callGraph.addStack(s2, 3);
     callGraph.addStack(s3, 1);
@@ -63,10 +63,10 @@ void teststackentry() {
 
 void testaggregator() {
     CallGraphStackEntryT callGraph;
-    StackElem            s1[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)3)};
-    StackElem            s2[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)4)};
-    StackElem            s3[1] = {StackElem((void *)1)};
-    StackElem            s4[3] = {StackElem((void *)1), StackElem((void *)3), StackElem((void *)4)};
+    StackElem            s1[3] = {StackElem((void*)1), StackElem((void*)2), StackElem((void*)3)};
+    StackElem            s2[3] = {StackElem((void*)1), StackElem((void*)2), StackElem((void*)4)};
+    StackElem            s3[1] = {StackElem((void*)1)};
+    StackElem            s4[3] = {StackElem((void*)1), StackElem((void*)3), StackElem((void*)4)};
     callGraph.addStack(s1, 3);
     callGraph.addStack(s2, 3);
     callGraph.addStack(s3, 1);
@@ -78,7 +78,7 @@ void testaggregator() {
     ost << agg;
     printf("%s\n", ost.c_str());
 }
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
     testint();

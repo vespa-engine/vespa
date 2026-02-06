@@ -32,7 +32,7 @@ public:
     void incExchangeAlloc() { _exchangeAlloc++; }
     void incExactAlloc() { _exactAlloc++; }
 
-    bool        isUsed() const { return (_alloc || _free || _exchangeAlloc || _exchangeFree || _exactAlloc || _return); }
+    bool isUsed() const { return (_alloc || _free || _exchangeAlloc || _exchangeFree || _exactAlloc || _return); }
     static bool isDummy() { return false; }
     size_t      alloc() const { return _alloc; }
     size_t      free() const { return _free; }

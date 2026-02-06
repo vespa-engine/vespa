@@ -9,10 +9,10 @@ namespace vespamalloc {
 
 namespace {
 
-std::string demangle(const char *native) {
+std::string demangle(const char* native) {
     int    status = 0;
     size_t size = 0;
-    char  *unmangled = abi::__cxa_demangle(native, nullptr, &size, &status);
+    char*  unmangled = abi::__cxa_demangle(native, nullptr, &size, &status);
     if (unmangled == nullptr) {
         return ""; // Demangling failed for some reason. TODO return `native` instead?
     }
@@ -21,7 +21,7 @@ std::string demangle(const char *native) {
     return result;
 }
 
-std::string dlAddr(const void *func) {
+std::string dlAddr(const void* func) {
     static std::string _unknown = "UNKNOWN";
     Dl_info            info;
     int                ret = dladdr(func, &info);
@@ -34,7 +34,7 @@ std::string dlAddr(const void *func) {
 } // namespace
 
 namespace {
-void verifyAndCopy(const void *addr, char *v, size_t sz) {
+void verifyAndCopy(const void* addr, char* v, size_t sz) {
     size_t      pos(0);
     std::string sym = dlAddr(addr);
     for (; (pos < sym.size()) && (pos < sz - 1); pos++) {
@@ -46,13 +46,13 @@ void verifyAndCopy(const void *addr, char *v, size_t sz) {
 
 } // namespace
 
-void StackReturnEntry::info(FILE *os) const {
+void StackReturnEntry::info(FILE* os) const {
     char tmp[0x400];
     verifyAndCopy(_return, tmp, sizeof(tmp));
     fprintf(os, "%s(%p)", tmp, _return);
 }
 
-asciistream &operator<<(asciistream &os, const StackReturnEntry &v) {
+asciistream& operator<<(asciistream& os, const StackReturnEntry& v) {
     char tmp[0x100];
     char t[0x200];
     verifyAndCopy(v._return, tmp, sizeof(tmp));
@@ -60,11 +60,11 @@ asciistream &operator<<(asciistream &os, const StackReturnEntry &v) {
     return os << t;
 }
 
-const void *StackEntry::_stopAddr = nullptr;
+const void* StackEntry::_stopAddr = nullptr;
 
-size_t StackEntry::fillStack(StackEntry *stack, size_t nelems) {
+size_t StackEntry::fillStack(StackEntry* stack, size_t nelems) {
     // GNU extension: Variable-length automatic array
-    void *retAddr[nelems];
+    void* retAddr[nelems];
     int   sz = backtrace(retAddr, nelems);
     if ((sz > 0) && (size_t(sz) <= nelems)) {
         for (int i(1); i < sz; i++) {

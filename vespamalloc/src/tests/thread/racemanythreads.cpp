@@ -4,22 +4,22 @@
 #include <unistd.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-void *hammer(void *arg) {
+void* hammer(void* arg) {
     usleep(4000000);
-    long      seconds = *static_cast<const long *>(arg);
+    long      seconds = *static_cast<const long*>(arg);
     long      stopTime(time(nullptr) + seconds);
     pthread_t id = pthread_self();
     while (time(nullptr) < stopTime) {
-        std::vector<pthread_t *> allocations;
+        std::vector<pthread_t*> allocations;
         for (size_t i(0); i < 2000; i++) {
-            pthread_t *t = new pthread_t[20];
+            pthread_t* t = new pthread_t[20];
             allocations.push_back(t);
             for (size_t j(0); j < 20; j++) {
                 t[j] = id;
             }
         }
 
-        for (auto &allocation : allocations) {
+        for (auto& allocation : allocations) {
             for (size_t j(0); j < 20; j++) {
                 assert(allocation[j] == id);
             }
@@ -30,7 +30,7 @@ void *hammer(void *arg) {
 }
 
 int    my_argc = 0;
-char **my_argv = nullptr;
+char** my_argv = nullptr;
 
 TEST(RaceManyThreadsTest, main) {
     size_t threadCount(1024);
@@ -50,12 +50,12 @@ TEST(RaceManyThreadsTest, main) {
         EXPECT_EQ(pthread_create(&threads[i], &attr, hammer, &seconds), 0);
     }
     for (size_t i(0); i < threadCount; i++) {
-        void *retval;
+        void* retval;
         EXPECT_EQ(pthread_join(threads[i], &retval), 0);
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     my_argc = argc;
     my_argv = argv;

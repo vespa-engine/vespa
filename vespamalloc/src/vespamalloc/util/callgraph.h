@@ -10,27 +10,31 @@ namespace vespamalloc {
 template <typename T, typename AddSub> class CallGraphNode {
 public:
     CallGraphNode() : _callers(nullptr), _next(nullptr), _content(), _count(0) {}
-    const CallGraphNode            *next() const { return _next; }
-    const CallGraphNode            *callers() const { return _callers; }
-    const T                        &content() const { return _content; }
-    CallGraphNode                  *next() { return _next; }
-    CallGraphNode                  *callers() { return _callers; }
-    T                              &content() { return _content; }
+    const CallGraphNode*            next() const { return _next; }
+    const CallGraphNode*            callers() const { return _callers; }
+    const T&                        content() const { return _content; }
+    CallGraphNode*                  next() { return _next; }
+    CallGraphNode*                  callers() { return _callers; }
+    T&                              content() { return _content; }
     size_t                          count() const { return _count; }
-    void                            content(const T &v) { _content = v; }
-    template <typename Store> bool  addStack(const T *stack, size_t nelem, Store &store);
+    void                            content(const T& v) { _content = v; }
+    template <typename Store> bool  addStack(const T* stack, size_t nelem, Store& store);
     template <typename Object> void traverseDepth(size_t depth, size_t width, Object func);
-    template <typename Object> void traverseWidth(size_t depth, size_t width, Object &func);
-    friend asciistream             &operator<<(asciistream &os, const CallGraphNode &v) { return os << v._content << '(' << v._count << ')'; }
+    template <typename Object> void traverseWidth(size_t depth, size_t width, Object& func);
+    friend asciistream&             operator<<(asciistream& os, const CallGraphNode& v) {
+        return os << v._content << '(' << v._count << ')';
+    }
 
 private:
-    CallGraphNode *_callers;
-    CallGraphNode *_next;
+    CallGraphNode* _callers;
+    CallGraphNode* _next;
     T              _content;
     AddSub         _count;
 };
 
-template <typename T, typename AddSub> template <typename Store> bool CallGraphNode<T, AddSub>::addStack(const T *stack, size_t nelem, Store &store) {
+template <typename T, typename AddSub>
+template <typename Store>
+bool CallGraphNode<T, AddSub>::addStack(const T* stack, size_t nelem, Store& store) {
     bool retval(false);
     if (nelem == 0) {
         retval = true;
@@ -78,7 +82,7 @@ void CallGraphNode<T, AddSub>::traverseDepth(size_t depth, size_t width, Object 
 
 template <typename T, typename AddSub>
 template <typename Object>
-void CallGraphNode<T, AddSub>::traverseWidth(size_t depth, size_t width, Object &func) {
+void CallGraphNode<T, AddSub>::traverseWidth(size_t depth, size_t width, Object& func) {
     Object newFunc(func);
     newFunc.handle(*this);
     if (_next) {
@@ -92,7 +96,7 @@ void CallGraphNode<T, AddSub>::traverseWidth(size_t depth, size_t width, Object 
 template <typename T, size_t MaxElem, typename AddSub> class ArrayStore {
 public:
     ArrayStore() : _used(0) {}
-    T     *alloc() { return (_used < MaxElem) ? &_array[_used++] : nullptr; }
+    T*     alloc() { return (_used < MaxElem) ? &_array[_used++] : nullptr; }
     AddSub size() const { return _used; }
 
 private:
@@ -106,7 +110,7 @@ public:
 
     CallGraph() : _root(nullptr), _nodeStore(std::make_unique<NodeStore>()) {}
     CallGraph(Content root) : _root(nullptr), _nodeStore(std::make_unique<NodeStore>()) { checkOrSetRoot(root); }
-    bool addStack(const Content *stack, size_t nelem) {
+    bool addStack(const Content* stack, size_t nelem) {
         checkOrSetRoot(stack[0]);
         return _root->addStack(stack, nelem, *_nodeStore);
     }
@@ -124,9 +128,9 @@ public:
     bool   empty() const { return size() == 0; }
 
 private:
-    CallGraph(const CallGraph &);
-    CallGraph &operator=(const CallGraph &);
-    bool       checkOrSetRoot(const Content &root) {
+    CallGraph(const CallGraph&);
+    CallGraph& operator=(const CallGraph&);
+    bool       checkOrSetRoot(const Content& root) {
         if (_root == nullptr) {
             _root = _nodeStore->alloc();
             _root->content(root);
@@ -134,7 +138,7 @@ private:
         return (_root != nullptr);
     }
     typedef ArrayStore<Node, MaxElems, AddSub> NodeStore;
-    Node                                      *_root;
+    Node*                                      _root;
     std::unique_ptr<NodeStore>                 _nodeStore;
 };
 
