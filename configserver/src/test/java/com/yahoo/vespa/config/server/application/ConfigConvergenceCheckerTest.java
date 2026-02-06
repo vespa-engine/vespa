@@ -151,7 +151,7 @@ public class ConfigConvergenceCheckerTest {
     }
 
     private void assertService(URI uri, ServiceListResponse.Service service1, long expectedGeneration) {
-        assertEquals(expectedGeneration, service1.currentGeneration.longValue());
+        assertEquals(expectedGeneration, service1.serviceConfigState.currentGeneration());
         assertEquals(uri.getHost(), service1.serviceInfo.getHostName());
         assertEquals(uri.getPort(), ConfigConvergenceChecker.getStatePort(service1.serviceInfo).get().intValue());
         assertEquals("container", service1.serviceInfo.getServiceType());

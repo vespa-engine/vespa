@@ -7,6 +7,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.PortInfo;
+import com.yahoo.config.model.api.ServiceConfigState;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -697,7 +698,7 @@ public class ApplicationHandlerTest {
 
         {
             HttpServiceListResponse response =
-                    new HttpServiceListResponse(new ServiceListResponse(Map.of(createServiceInfo(hostname, port, Optional.empty()), 3L),
+                    new HttpServiceListResponse(new ServiceListResponse(Map.of(createServiceInfo(hostname, port, Optional.empty()), new ServiceConfigState(3L, Optional.empty())),
                                                                         3L,
                                                                         3L),
                                                 requestUrl);
@@ -726,9 +727,9 @@ public class ApplicationHandlerTest {
             String hostAndPort2 = hostname2 + ":" + port2;
             URI serviceUrl2 = URI.create("https://configserver/serviceconvergence/" + hostAndPort2);
 
-            Map<ServiceInfo, Long> serviceInfos = new HashMap<>();
-            serviceInfos.put(createServiceInfo(hostname, port, Optional.empty()), 4L);
-            serviceInfos.put(createServiceInfo(hostname2, port2, Optional.of("foo")), 3L);
+            Map<ServiceInfo, ServiceConfigState> serviceInfos = new HashMap<>();
+            serviceInfos.put(createServiceInfo(hostname, port, Optional.empty()), new ServiceConfigState(4L, Optional.empty()));
+            serviceInfos.put(createServiceInfo(hostname2, port2, Optional.of("foo")), new ServiceConfigState(3L, Optional.empty()));
 
             HttpServiceListResponse response =
                     new HttpServiceListResponse(new ServiceListResponse(serviceInfos,

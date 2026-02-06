@@ -492,7 +492,7 @@ public class ApplicationHandler extends HttpHandler {
                 serviceObject.setLong("port", statePort);
                 serviceObject.setString("type", serviceInfo.getServiceType());
                 serviceObject.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
-                serviceObject.setLong("currentGeneration", service.currentGeneration);
+                serviceObject.setLong("currentGeneration", service.serviceConfigState.currentGeneration());
             });
             object.setString("url", uri.toString());
             object.setLong("currentGeneration", response.currentGeneration);

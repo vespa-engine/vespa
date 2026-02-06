@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
+import com.yahoo.config.model.api.ServiceConfigState;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.Application;
@@ -84,7 +85,8 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
         AtomicLong oldest = new AtomicLong();
         return () -> {
             if (oldest.get() == 0)
-                oldest.set(convergence.getServiceConfigGenerations(application, timeout).values().stream()
+                oldest.set(convergence.getServiceConfigStatesUnlessDeferringChangesUntilRestart(application, timeout).values().stream().map(
+                                ServiceConfigState::currentGeneration)
                                       .min(naturalOrder())
                                       .orElse(-1L));
 
