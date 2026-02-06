@@ -281,7 +281,7 @@ void Service::youExited(int status) {
     if (!expectedDeath) {
         // make sure the service does not restart in a tight loop:
         vespalib::steady_time now = vespalib::steady_clock::now();
-        vespalib::duration diff = now - _last_start;
+        vespalib::duration    diff = now - _last_start;
         if (diff < MAX_RESTART_PENALTY) {
             incrementRestartPenalty();
         }

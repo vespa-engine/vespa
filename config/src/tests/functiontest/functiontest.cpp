@@ -86,10 +86,10 @@ std::string readFile(const std::string& fileName) {
 } // namespace
 
 struct LazyTestFixture {
-    const DirSpec _spec;
-    ConfigSubscriber _subscriber;
+    const DirSpec                        _spec;
+    ConfigSubscriber                     _subscriber;
     ConfigHandle<FunctionTestConfig>::UP _handle;
-    std::unique_ptr<FunctionTestConfig> _config;
+    std::unique_ptr<FunctionTestConfig>  _config;
 
     LazyTestFixture(const std::string& dirName);
     ~LazyTestFixture();
@@ -123,9 +123,9 @@ struct ErrorFixture {
 };
 
 void attemptLacking(const std::string& param, bool isArray) {
-    std::ifstream in(TEST_PATH("defaultvalues/function-test.cfg"), std::ios_base::in);
+    std::ifstream      in(TEST_PATH("defaultvalues/function-test.cfg"), std::ios_base::in);
     std::ostringstream config;
-    std::string s;
+    std::string        s;
     while (std::getline(in, s)) {
         if (s.size() > param.size() && s.substr(0, param.size()) == param &&
             (s[param.size()] == ' ' || s[param.size()] == '[')) {
@@ -137,8 +137,8 @@ void attemptLacking(const std::string& param, bool isArray) {
     // std::cerr << "Config lacking " << param << "\n"
     //           << config.str() << "\n";
     try {
-        RawSpec spec(config.str());
-        ConfigSubscriber subscriber(spec);
+        RawSpec                              spec(config.str());
+        ConfigSubscriber                     subscriber(spec);
         ConfigHandle<FunctionTestConfig>::UP handle = subscriber.subscribe<FunctionTestConfig>("foo");
         ASSERT_TRUE(subscriber.nextConfigNow());
         std::unique_ptr<FunctionTestConfig> cfg = handle->getConfig();
@@ -161,7 +161,7 @@ TEST(FunctionTest, testVariableAccess) {
 
 TEST(FunctionTest, test_variable_access_from_slime) {
     vespalib::Slime slime;
-    std::string json(readFile(TEST_PATH("slime-payload.json")));
+    std::string     json(readFile(TEST_PATH("slime-payload.json")));
     vespalib::slime::JsonFormat::decode(json, slime);
     FunctionTestConfig config(config::ConfigPayload(slime.get()));
     checkVariableAccess(config);
@@ -274,19 +274,19 @@ TEST(FunctionTest, testRandomOrder) {
 
 TEST(FunctionTest, testErrorRangeInt32) {
     LazyTestFixture f1("errorval_int");
-    ErrorFixture f2(f1);
+    ErrorFixture    f2(f1);
     f2.run();
 }
 
 TEST(FunctionTest, testErrorRangeInt64) {
     LazyTestFixture f1("errorval_long");
-    ErrorFixture f2(f1);
+    ErrorFixture    f2(f1);
     f2.run();
 }
 
 TEST(FunctionTest, testErrorRangeDouble) {
     LazyTestFixture f1("errorval_double");
-    ErrorFixture f2(f1);
+    ErrorFixture    f2(f1);
     f2.run();
 }
 

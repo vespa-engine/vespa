@@ -67,11 +67,11 @@ ConfigSnapshot ConfigSnapshot::subset(const ConfigKeySet &keySet) const {
 }
 
 int64_t ConfigSnapshot::getGeneration() const { return _generation; }
-size_t ConfigSnapshot::size() const { return _valueMap.size(); }
-bool ConfigSnapshot::empty() const { return _valueMap.empty(); }
+size_t  ConfigSnapshot::size() const { return _valueMap.size(); }
+bool    ConfigSnapshot::empty() const { return _valueMap.empty(); }
 
 void ConfigSnapshot::serialize(ConfigDataBuffer &buffer) const {
-    Slime &slime(buffer.slimeObject());
+    Slime  &slime(buffer.slimeObject());
     Cursor &root(slime.setObject());
     root.setDouble("version", SNAPSHOT_FORMAT_VERSION);
 
@@ -133,8 +133,8 @@ void ConfigSnapshot::serializeValueV2(Cursor &cursor, const Value &value) const 
 
 void ConfigSnapshot::deserialize(const ConfigDataBuffer &buffer) {
     const Slime &slime(buffer.slimeObject());
-    Inspector &inspector(slime.get());
-    int64_t version = static_cast<int64_t>(inspector["version"].asDouble());
+    Inspector   &inspector(slime.get());
+    int64_t      version = static_cast<int64_t>(inspector["version"].asDouble());
     switch (version) {
     case 1:
         deserializeV1(inspector);
@@ -154,8 +154,8 @@ void ConfigSnapshot::deserializeV1(Inspector &root) {
     Inspector &snapshots(root["snapshots"]);
     for (size_t i = 0; i < snapshots.children(); i++) {
         Inspector &snapshot(snapshots[i]);
-        ConfigKey key(deserializeKeyV1(snapshot["configKey"]));
-        Value value(deserializeValueV1(snapshot["configPayload"]));
+        ConfigKey  key(deserializeKeyV1(snapshot["configKey"]));
+        Value      value(deserializeValueV1(snapshot["configPayload"]));
         _valueMap[key] = value;
     }
 }
@@ -165,15 +165,15 @@ void ConfigSnapshot::deserializeV2(Inspector &root) {
     Inspector &snapshots(root["snapshots"]);
     for (size_t i = 0; i < snapshots.children(); i++) {
         Inspector &snapshot(snapshots[i]);
-        ConfigKey key(deserializeKeyV1(snapshot["configKey"]));
-        Value value(deserializeValueV2(snapshot["configPayload"]));
+        ConfigKey  key(deserializeKeyV1(snapshot["configKey"]));
+        Value      value(deserializeValueV2(snapshot["configPayload"]));
         _valueMap[key] = value;
     }
 }
 
 ConfigKey ConfigSnapshot::deserializeKeyV1(Inspector &inspector) const {
     StringVector schema;
-    Inspector &s(inspector["defSchema"]);
+    Inspector   &s(inspector["defSchema"]);
     for (size_t i = 0; i < s.children(); i++) {
         schema.push_back(s[i].asString().make_string());
     }
@@ -184,8 +184,8 @@ ConfigKey ConfigSnapshot::deserializeKeyV1(Inspector &inspector) const {
 
 std::pair<int64_t, ConfigValue> ConfigSnapshot::deserializeValueV1(Inspector &inspector) const {
     StringVector payload;
-    int64_t lastChanged = static_cast<int64_t>(inspector["lastChanged"].asDouble());
-    Inspector &s(inspector["lines"]);
+    int64_t      lastChanged = static_cast<int64_t>(inspector["lastChanged"].asDouble());
+    Inspector   &s(inspector["lines"]);
     for (size_t i = 0; i < s.children(); i++) {
         payload.push_back(s[i].asString().make_string());
     }
@@ -210,9 +210,9 @@ FixedPayload::~FixedPayload() = default;
 } // namespace
 
 std::pair<int64_t, ConfigValue> ConfigSnapshot::deserializeValueV2(Inspector &inspector) const {
-    int64_t lastChanged = static_cast<int64_t>(inspector["lastChanged"].asDouble());
+    int64_t     lastChanged = static_cast<int64_t>(inspector["lastChanged"].asDouble());
     std::string xxhash64(inspector["xxhash64"].asString().make_string());
-    auto payload = std::make_unique<FixedPayload>();
+    auto        payload = std::make_unique<FixedPayload>();
     copySlimeObject(inspector["payload"], payload->getData().setObject());
     return Value(lastChanged, ConfigValue(std::move(payload), xxhash64));
 }

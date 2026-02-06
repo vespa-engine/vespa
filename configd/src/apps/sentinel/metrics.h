@@ -12,15 +12,15 @@ using vespalib::metrics::MetricsManager;
 
 struct StartMetrics {
     std::shared_ptr<MetricsManager> metrics;
-    vespalib::metrics::Producer producer;
-    unsigned long currentlyRunningServices;
-    unsigned long totalRestartsCounter;
-    vespalib::steady_time startedTime;
-    Counter sentinel_restarts;
-    Gauge sentinel_totalRestarts;
-    Gauge sentinel_running;
-    Gauge sentinel_uptime;
-    vespalib::steady_time lastRestartTime;
+    vespalib::metrics::Producer     producer;
+    unsigned long                   currentlyRunningServices;
+    unsigned long                   totalRestartsCounter;
+    vespalib::steady_time           startedTime;
+    Counter                         sentinel_restarts;
+    Gauge                           sentinel_totalRestarts;
+    Gauge                           sentinel_running;
+    Gauge                           sentinel_uptime;
+    vespalib::steady_time           lastRestartTime;
 
     StartMetrics();
     ~StartMetrics();

@@ -18,7 +18,7 @@ public:
         _config = std::move(config);
     }
     std::unique_ptr<ConfigType> _config;
-    bool _configured;
+    bool                        _configured;
 };
 
 struct ConfigIdGenerator {
@@ -28,7 +28,7 @@ struct ConfigIdGenerator {
 };
 
 TEST(LegacySubscriberTest, requireThatFileLegacyWorks) {
-    LegacySubscriber s;
+    LegacySubscriber     s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
@@ -37,7 +37,7 @@ TEST(LegacySubscriberTest, requireThatFileLegacyWorks) {
 }
 
 TEST(LegacySubscriberTest, requireThatDirLegacyWorks) {
-    LegacySubscriber s;
+    LegacySubscriber     s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("dir", "testdir"), &cb);
     ASSERT_TRUE(cb._configured);
@@ -63,7 +63,7 @@ TEST(LegacySubscriberTest, requireThatDirMultiFileLegacyWorks) {
 }
 
 TEST(LegacySubscriberTest, requireThatFileLegacyWorksMultipleTimes) {
-    LegacySubscriber s;
+    LegacySubscriber     s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
@@ -78,7 +78,7 @@ TEST(LegacySubscriberTest, requireThatFileLegacyWorksMultipleTimes) {
 }
 
 TEST(LegacySubscriberTest, requireThatRawLegacyWorks) {
-    LegacySubscriber s;
+    LegacySubscriber     s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>("raw:myField \"bar\"\n", &cb);
     ASSERT_TRUE(cb._configured);

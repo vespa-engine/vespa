@@ -22,8 +22,8 @@ struct MyType {
 
 TEST(VectorInserterTest, require_that_vector_of_ints_can_be_inserted) {
     std::vector<int32_t> vector;
-    Slime slime;
-    Cursor& root = slime.setArray();
+    Slime                slime;
+    Cursor&              root = slime.setArray();
     root.addLong(3);
     root.addLong(2);
     root.addLong(6);
@@ -37,9 +37,9 @@ TEST(VectorInserterTest, require_that_vector_of_ints_can_be_inserted) {
 
 TEST(VectorInserterTest, require_that_vector_of_struct_can_be_inserted) {
     std::vector<MyType> typeVector;
-    Slime slime;
-    Cursor& root = slime.setArray();
-    Cursor& one = root.addObject();
+    Slime               slime;
+    Cursor&             root = slime.setArray();
+    Cursor&             one = root.addObject();
     one.setLong("foo", 3);
     one.setLong("bar", 4);
     Cursor& two = root.addObject();
@@ -56,8 +56,8 @@ TEST(VectorInserterTest, require_that_vector_of_struct_can_be_inserted) {
 
 TEST(VectorInserterTest, require_that_vector_of_long_can_be_inserted) {
     std::vector<int64_t> vector;
-    Slime slime;
-    Cursor& root = slime.setArray();
+    Slime                slime;
+    Cursor&              root = slime.setArray();
     root.addLong(3);
     root.addLong(2);
     root.addLong(6);
@@ -71,8 +71,8 @@ TEST(VectorInserterTest, require_that_vector_of_long_can_be_inserted) {
 
 TEST(VectorInserterTest, require_that_vector_of_double_can_be_inserted) {
     std::vector<double> vector;
-    Slime slime;
-    Cursor& root = slime.setArray();
+    Slime               slime;
+    Cursor&             root = slime.setArray();
     root.addDouble(3.1);
     root.addDouble(2.4);
     root.addDouble(6.6);
@@ -86,8 +86,8 @@ TEST(VectorInserterTest, require_that_vector_of_double_can_be_inserted) {
 
 TEST(VectorInserterTest, require_that_vector_of_bool_can_be_inserted) {
     std::vector<bool> vector;
-    Slime slime;
-    Cursor& root = slime.setArray();
+    Slime             slime;
+    Cursor&           root = slime.setArray();
     root.addBool(true);
     root.addBool(false);
     root.addBool(true);
@@ -100,7 +100,7 @@ TEST(VectorInserterTest, require_that_vector_of_bool_can_be_inserted) {
 }
 
 template <typename V> void verify_vector_strings_can_be_inserted(V vector) {
-    Slime slime;
+    Slime   slime;
     Cursor& root = slime.setArray();
     root.addString("foo");
     root.addString("bar");

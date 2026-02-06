@@ -20,7 +20,7 @@ public:
     std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues &timingValues) const override;
 
 private:
-    const ConfigKey _key;
+    const ConfigKey       _key;
     vespalib::asciistream _buffer;
 };
 

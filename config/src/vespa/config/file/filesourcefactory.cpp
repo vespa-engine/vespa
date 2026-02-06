@@ -20,7 +20,7 @@ DirSourceFactory::DirSourceFactory(const DirSpec& dirSpec) : _dirName(dirSpec.ge
 }
 
 std::unique_ptr<Source> DirSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder,
-                                                       const ConfigKey& key) const {
+                                                       const ConfigKey&               key) const {
     std::string fileId(key.getDefName());
     if (!key.getConfigId().empty()) {
         fileId += "." + key.getConfigId();
@@ -47,7 +47,7 @@ std::unique_ptr<Source> DirSourceFactory::createSource(std::shared_ptr<IConfigHo
 FileSourceFactory::FileSourceFactory(const FileSpec& fileSpec) : _fileName(fileSpec.getFileName()) {}
 
 std::unique_ptr<Source> FileSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder,
-                                                        const ConfigKey& key) const {
+                                                        const ConfigKey&               key) const {
     (void)key;
     return std::make_unique<FileSource>(std::move(holder), _fileName);
 }

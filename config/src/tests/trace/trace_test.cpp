@@ -23,7 +23,7 @@ TEST(TraceTest, that_trace_can_be_serialized_and_deserialized) {
     trace.trace(3, "bar");
     trace.trace(5, "baz");
 
-    Slime slime;
+    Slime   slime;
     Cursor& cursor(slime.setObject());
     trace.serialize(cursor);
 

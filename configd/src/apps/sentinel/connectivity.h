@@ -24,8 +24,8 @@ public:
 
     Connectivity();
     ~Connectivity();
-    void configure(const SentinelConfig::Connectivity &config, const ModelConfig &model);
-    bool checkConnectivity(RpcServer &rpcServer);
+    void           configure(const SentinelConfig::Connectivity &config, const ModelConfig &model);
+    bool           checkConnectivity(RpcServer &rpcServer);
     static SpecMap specsFrom(const ModelConfig &model);
 
 private:
@@ -39,8 +39,8 @@ private:
         void handleResult(CcResult value);
         bool enoughOk(const SentinelConfig::Connectivity &config) const;
     };
-    SentinelConfig::Connectivity _config;
-    SpecMap _checkSpecs;
+    SentinelConfig::Connectivity       _config;
+    SpecMap                            _checkSpecs;
     std::map<std::string, std::string> _detailsPerHost;
 };
 

@@ -6,12 +6,12 @@
 struct Method {
     const char *shortName;
     const char *rpcMethod;
-    const int args;
+    const int   args;
 };
 
 namespace methods {
 
 const Method find(const std::string &name);
-void dump();
+void         dump();
 
 }; // namespace methods

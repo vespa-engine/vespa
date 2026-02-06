@@ -16,7 +16,7 @@ public:
     PeerCheck(StatusCallback &callback, const std::string &host, int portnum, FRT_Supervisor &orb, int timeout_ms);
     ~PeerCheck();
 
-    bool okStatus() const { return _statusOk; }
+    bool               okStatus() const { return _statusOk; }
     const std::string &getHostname() const { return _hostname; }
 
     PeerCheck(const PeerCheck &) = delete;
@@ -29,11 +29,11 @@ public:
 
 private:
     StatusCallback &_callback;
-    std::string _hostname;
-    int _portnum;
-    FRT_Target *_target;
+    std::string     _hostname;
+    int             _portnum;
+    FRT_Target     *_target;
     FRT_RPCRequest *_req;
-    bool _statusOk;
+    bool            _statusOk;
 };
 
 } // namespace config::sentinel

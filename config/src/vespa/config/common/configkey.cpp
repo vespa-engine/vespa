@@ -27,10 +27,10 @@ bool ConfigKey::operator>(const ConfigKey &rhs) const { return _key > rhs._key; 
 
 bool ConfigKey::operator==(const ConfigKey &rhs) const { return _key.compare(rhs._key) == 0; }
 
-const std::string &ConfigKey::getDefName() const { return _defName; }
-const std::string &ConfigKey::getConfigId() const { return _configId; }
-const std::string &ConfigKey::getDefNamespace() const { return _defNamespace; }
-const std::string &ConfigKey::getDefMd5() const { return _defMd5; }
+const std::string  &ConfigKey::getDefName() const { return _defName; }
+const std::string  &ConfigKey::getConfigId() const { return _configId; }
+const std::string  &ConfigKey::getDefNamespace() const { return _defNamespace; }
+const std::string  &ConfigKey::getDefMd5() const { return _defMd5; }
 const StringVector &ConfigKey::getDefSchema() const { return _defSchema; }
 
 const std::string ConfigKey::toString() const {

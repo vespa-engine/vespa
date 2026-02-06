@@ -14,14 +14,14 @@ namespace config::sentinel {
 class RpcServer {
 private:
     fnet::frt::StandaloneFRT _server;
-    RPCHooks _rpcHooks;
-    int _port;
+    RPCHooks                 _rpcHooks;
+    int                      _port;
 
 public:
     RpcServer(int port, CommandQueue &cmdQ, ModelOwner &modelOwner);
     ~RpcServer();
 
-    int getPort() const { return _port; }
+    int             getPort() const { return _port; }
     FRT_Supervisor &orb() { return _server.supervisor(); }
 };
 

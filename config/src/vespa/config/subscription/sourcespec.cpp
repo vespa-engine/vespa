@@ -66,9 +66,9 @@ ServerSpec::ServerSpec()
 
 void ServerSpec::initialize(std::string_view hostSpec) {
     typedef vespalib::StringTokenizer tokenizer;
-    tokenizer tok(hostSpec, ",");
+    tokenizer                         tok(hostSpec, ",");
     for (tokenizer::Iterator it = tok.begin(); it != tok.end(); it++) {
-        std::string srcHost(*it);
+        std::string           srcHost(*it);
         vespalib::asciistream spec;
         if (srcHost.find("tcp/") == std::string::npos) {
             spec << "tcp/";
@@ -116,7 +116,7 @@ std::unique_ptr<SourceFactory> ConfigSet::createSourceFactory(const TimingValues
 
 void ConfigSet::addBuilder(const std::string& configId, ConfigInstance* builder) {
     assert(builder != nullptr);
-    BuilderMap& builderMap(*_builderMap);
+    BuilderMap&     builderMap(*_builderMap);
     const ConfigKey key(configId, builder->defName(), builder->defNamespace(), builder->defMd5());
     builderMap[key] = builder;
 }

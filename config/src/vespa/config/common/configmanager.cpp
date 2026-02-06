@@ -21,7 +21,7 @@ ConfigSubscription::SP ConfigManager::subscribe(const ConfigKey& key, vespalib::
 
     SubscriptionId id(_idGenerator.fetch_add(1));
 
-    auto holder = std::make_shared<ConfigHolder>();
+    auto                    holder = std::make_shared<ConfigHolder>();
     std::unique_ptr<Source> source = _sourceFactory->createSource(holder, key);
     source->reload(_generation);
 
@@ -47,7 +47,7 @@ ConfigSubscription::SP ConfigManager::subscribe(const ConfigKey& key, vespalib::
 }
 
 void ConfigManager::unsubscribe(const ConfigSubscription& subscription) {
-    std::lock_guard guard(_lock);
+    std::lock_guard      guard(_lock);
     const SubscriptionId id(subscription.getSubscriptionId());
     if (_subscriptionMap.find(id) != _subscriptionMap.end())
         _subscriptionMap.erase(id);

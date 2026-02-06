@@ -44,8 +44,8 @@ private:
 
     SimpleConfigRetriever::UP _retriever;
     SimpleConfigurable* const _configurable;
-    std::thread _thread;
-    std::atomic<bool> _started;
+    std::thread               _thread;
+    std::atomic<bool>         _started;
 };
 
 } // namespace config

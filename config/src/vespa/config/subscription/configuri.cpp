@@ -17,7 +17,7 @@ ConfigUri::~ConfigUri() = default;
 
 ConfigUri ConfigUri::createWithNewId(const std::string& configId) const { return ConfigUri(configId, _context); }
 
-const std::string& ConfigUri::getConfigId() const { return _configId; }
+const std::string&                     ConfigUri::getConfigId() const { return _configId; }
 const std::shared_ptr<IConfigContext>& ConfigUri::getContext() const { return _context; }
 
 ConfigUri ConfigUri::createFromInstance(const ConfigInstance& instance) {

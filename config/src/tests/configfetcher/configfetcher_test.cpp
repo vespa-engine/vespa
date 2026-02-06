@@ -21,15 +21,15 @@ public:
         }
     }
     std::unique_ptr<MyConfig> _config;
-    std::atomic<bool> _configured;
-    std::string _badConfig;
+    std::atomic<bool>         _configured;
+    std::string               _badConfig;
 };
 
 MyCallback::MyCallback(const std::string& badConfig) : _config(), _configured(false), _badConfig(badConfig) {}
 MyCallback::~MyCallback() = default;
 
 TEST(ConfigFetcherTest, requireThatConfigIsAvailableOnConstruction) {
-    RawSpec spec("myField \"foo\"\n");
+    RawSpec    spec("myField \"foo\"\n");
     MyCallback cb;
 
     {
@@ -121,8 +121,8 @@ TEST(ConfigFetcherTest, verify_that_exceptions_in_callback_is_thrown_on_initial_
 namespace {
 
 struct ConfigFixture {
-    MyConfigBuilder builder;
-    ConfigSet set;
+    MyConfigBuilder                builder;
+    ConfigSet                      set;
     std::shared_ptr<ConfigContext> context;
     ConfigFixture() : builder(), set(), context() {
         set.addBuilder("cfgid", &builder);

@@ -21,7 +21,7 @@ std::unique_ptr<ConfigType> AsciiConfigReader<ConfigType>::read(const ConfigForm
 
 template <typename ConfigType> std::unique_ptr<ConfigType> AsciiConfigReader<ConfigType>::read() {
     StringVector lines;
-    std::string line;
+    std::string  line;
     while (getline(_is, line)) {
         lines.push_back(line);
     }

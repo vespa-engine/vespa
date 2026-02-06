@@ -24,10 +24,10 @@ public:
     bool operator>(const ConfigKey &rhs) const;
     bool operator==(const ConfigKey &rhs) const;
 
-    const std::string &getDefName() const;
-    const std::string &getConfigId() const;
-    const std::string &getDefNamespace() const;
-    const std::string &getDefMd5() const;
+    const std::string  &getDefName() const;
+    const std::string  &getConfigId() const;
+    const std::string  &getDefNamespace() const;
+    const std::string  &getDefMd5() const;
     const StringVector &getDefSchema() const;
 
     template <typename ConfigType> static const ConfigKey create(std::string_view configId) {
@@ -38,12 +38,12 @@ public:
     const std::string toString() const;
 
 private:
-    std::string _configId;
-    std::string _defName;
-    std::string _defNamespace;
-    std::string _defMd5;
+    std::string  _configId;
+    std::string  _defName;
+    std::string  _defNamespace;
+    std::string  _defMd5;
     StringVector _defSchema;
-    std::string _key;
+    std::string  _key;
 };
 
 } // namespace config

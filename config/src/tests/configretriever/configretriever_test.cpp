@@ -26,17 +26,17 @@ using namespace vespalib;
 
 struct ComponentFixture {
     typedef std::shared_ptr<ComponentFixture> SP;
-    FooConfigBuilder fooBuilder;
-    BarConfigBuilder barBuilder;
+    FooConfigBuilder                          fooBuilder;
+    BarConfigBuilder                          barBuilder;
 };
 
 struct ConfigTestFixture {
-    const std::string configId;
-    BootstrapConfigBuilder bootstrapBuilder;
+    const std::string                      configId;
+    BootstrapConfigBuilder                 bootstrapBuilder;
     map<std::string, ComponentFixture::SP> componentConfig;
-    ConfigSet set;
-    std::shared_ptr<IConfigContext> context;
-    int idcounter;
+    ConfigSet                              set;
+    std::shared_ptr<IConfigContext>        context;
+    int                                    idcounter;
 
     explicit ConfigTestFixture(const std::string& id)
         : configId(id), bootstrapBuilder(), componentConfig(), set(), context(std::make_shared<ConfigContext>(set)),
@@ -88,8 +88,8 @@ struct ConfigTestFixture {
 ConfigTestFixture::~ConfigTestFixture() = default;
 
 struct SimpleSetup {
-    ConfigKeySet bootstrapKeys;
-    ConfigKeySet componentKeys;
+    ConfigKeySet                     bootstrapKeys;
+    ConfigKeySet                     componentKeys;
     std::unique_ptr<ConfigRetriever> retriever;
     SimpleSetup(ConfigTestFixture& f1) : bootstrapKeys(), componentKeys(), retriever() {
         f1.addComponent("c1", "foo1", "bar1");
@@ -111,7 +111,7 @@ struct MySource : public Source {
 MySource::~MySource() = default;
 
 struct SubscriptionFixture {
-    std::shared_ptr<IConfigHolder> holder;
+    std::shared_ptr<IConfigHolder>      holder;
     std::shared_ptr<ConfigSubscription> sub;
     SubscriptionFixture(const ConfigKey& key, const ConfigValue value)
         : holder(std::make_shared<ConfigHolder>()),
@@ -157,7 +157,7 @@ TEST(ConfigRetrieverTest, require_that_basic_retriever_usage_works) {
     keys.add<BootstrapConfig>(f1.configId);
 
     ConfigRetriever ret(keys, f1.context);
-    ConfigSnapshot configs = ret.getBootstrapConfigs();
+    ConfigSnapshot  configs = ret.getBootstrapConfigs();
     ASSERT_EQ(1u, configs.size());
 
     std::unique_ptr<BootstrapConfig> bootstrapConfig = configs.getConfig<BootstrapConfig>(f1.configId);
@@ -203,19 +203,19 @@ TEST(ConfigRetrieverTest, require_that_basic_retriever_usage_works) {
 }
 
 TEST(ConfigRetrieverTest, require_that_SimpleConfigRetriever_usage_works) {
-    ConfigSet set;
+    ConfigSet        set;
     FooConfigBuilder fooBuilder;
     BarConfigBuilder barBuilder;
     fooBuilder.fooValue = "barz";
     barBuilder.barValue = "fooz";
     set.addBuilder("id", &fooBuilder);
     set.addBuilder("id", &barBuilder);
-    auto ctx = std::make_shared<ConfigContext>(set);
+    auto         ctx = std::make_shared<ConfigContext>(set);
     ConfigKeySet sub;
     sub.add<FooConfig>("id");
     sub.add<BarConfig>("id");
     SimpleConfigRetriever retr(sub, ctx);
-    ConfigSnapshot snap = retr.getConfigs();
+    ConfigSnapshot        snap = retr.getConfigs();
     ASSERT_FALSE(snap.empty());
     ASSERT_EQ(2u, snap.size());
     std::unique_ptr<FooConfig> foo = snap.getConfig<FooConfig>("id");
@@ -252,7 +252,7 @@ public:
         return configured;
     }
 
-    ConfigSnapshot snap;
+    ConfigSnapshot    snap;
     std::atomic<bool> configured;
     std::atomic<bool> throwException;
 };
@@ -263,14 +263,14 @@ ConfigurableFixture::~ConfigurableFixture() {}
 
 TEST(ConfigRetrieverTest, require_that_SimpleConfigurer_usage_works) {
     ConfigurableFixture f1;
-    ConfigSet set;
-    FooConfigBuilder fooBuilder;
-    BarConfigBuilder barBuilder;
+    ConfigSet           set;
+    FooConfigBuilder    fooBuilder;
+    BarConfigBuilder    barBuilder;
     fooBuilder.fooValue = "barz";
     barBuilder.barValue = "fooz";
     set.addBuilder("id", &fooBuilder);
     set.addBuilder("id", &barBuilder);
-    auto ctx = std::make_shared<ConfigContext>(set);
+    auto         ctx = std::make_shared<ConfigContext>(set);
     ConfigKeySet sub;
     sub.add<FooConfig>("id");
     sub.add<BarConfig>("id");
@@ -278,7 +278,7 @@ TEST(ConfigRetrieverTest, require_that_SimpleConfigurer_usage_works) {
     configurer.start();
     ASSERT_FALSE(f1.snap.empty());
     ASSERT_EQ(2u, f1.snap.size());
-    ConfigSnapshot snap = f1.snap;
+    ConfigSnapshot             snap = f1.snap;
     std::unique_ptr<FooConfig> foo = snap.getConfig<FooConfig>("id");
     std::unique_ptr<BarConfig> bar = snap.getConfig<BarConfig>("id");
     ASSERT_EQ("barz", foo->fooValue);
@@ -311,8 +311,8 @@ TEST(ConfigRetrieverTest, require_that_variadic_templates_can_be_used_to_create_
 
 TEST(ConfigRetrieverTest, require_that_getBootstrapConfigs_returns_empty_snapshot_when_closed) {
     ConfigTestFixture f1("myid");
-    SimpleSetup f2(f1);
-    ConfigSnapshot configs = f2.retriever->getBootstrapConfigs();
+    SimpleSetup       f2(f1);
+    ConfigSnapshot    configs = f2.retriever->getBootstrapConfigs();
     ASSERT_TRUE(!configs.empty());
     ASSERT_FALSE(f2.retriever->isClosed());
     f2.retriever->close();
@@ -322,11 +322,11 @@ TEST(ConfigRetrieverTest, require_that_getBootstrapConfigs_returns_empty_snapsho
 }
 
 TEST(ConfigRetrieverTest, require_that_getConfigs_throws_exception_when_closed) {
-    ConfigTestFixture f1("myid");
-    SimpleSetup f2(f1);
-    ConfigSnapshot configs = f2.retriever->getBootstrapConfigs();
+    ConfigTestFixture                f1("myid");
+    SimpleSetup                      f2(f1);
+    ConfigSnapshot                   configs = f2.retriever->getBootstrapConfigs();
     std::unique_ptr<BootstrapConfig> bootstrapConfig = configs.getConfig<BootstrapConfig>(f1.configId);
-    ConfigKeySet componentKeys;
+    ConfigKeySet                     componentKeys;
     for (size_t i = 0; i < bootstrapConfig->component.size(); i++) {
         const std::string& configId(bootstrapConfig->component[i].configid);
         componentKeys.add<FooConfig>(configId);
@@ -341,7 +341,7 @@ TEST(ConfigRetrieverTest, require_that_getConfigs_throws_exception_when_closed) 
 
 TEST(ConfigRetrieverTest, require_that_snapshots_throws_exception_if_invalid_key) {
     ConfigTestFixture f1("myid");
-    SimpleSetup f2(f1);
+    SimpleSetup       f2(f1);
     f1.addComponent("c3", "foo3", "bar3");
     ConfigSnapshot snap1 = f2.retriever->getBootstrapConfigs();
     ASSERT_FALSE(snap1.hasConfig<BarConfig>("doesnotexist"));
@@ -354,10 +354,10 @@ TEST(ConfigRetrieverTest, require_that_snapshots_throws_exception_if_invalid_key
 
 TEST(ConfigRetrieverTest, require_that_snapshots_can_be_ignored) {
     ConfigTestFixture f1("myid");
-    SimpleSetup f2(f1);
+    SimpleSetup       f2(f1);
     f1.addComponent("c3", "foo3", "bar3");
     ConfigSnapshot snap1 = f2.retriever->getBootstrapConfigs();
-    int64_t lastGen = snap1.getGeneration();
+    int64_t        lastGen = snap1.getGeneration();
     f1.reload();
     ASSERT_EQ(lastGen, snap1.getGeneration());
     ConfigSnapshot snap2 = f2.retriever->getBootstrapConfigs();
@@ -371,8 +371,8 @@ TEST(ConfigRetrieverTest, require_that_snapshots_can_be_ignored) {
 }
 
 TEST(ConfigRetrieverTest, require_that_snapshots_can_produce_subsets) {
-    SubscriptionFixture f1(ConfigKey::create<FooConfig>("id"), createKeyValueV2("fooValue", "bar"));
-    SubscriptionFixture f2(ConfigKey::create<BarConfig>("id"), createKeyValueV2("barValue", "foo"));
+    SubscriptionFixture              f1(ConfigKey::create<FooConfig>("id"), createKeyValueV2("fooValue", "bar"));
+    SubscriptionFixture              f2(ConfigKey::create<BarConfig>("id"), createKeyValueV2("barValue", "foo"));
     ConfigSnapshot::SubscriptionList f3;
     f3.push_back(f1.sub);
     f3.push_back(f2.sub);
@@ -416,8 +416,8 @@ TEST(ConfigRetrieverTest, require_that_snapshots_can_produce_subsets) {
 }
 
 TEST(ConfigRetrieverTest, require_that_snapshots_can_be_serialized) {
-    SubscriptionFixture f1(ConfigKey::create<FooConfig>("id"), createKeyValueV2("fooValue", "bar"));
-    SubscriptionFixture f2(ConfigKey::create<BarConfig>("id"), createKeyValueV2("barValue", "foo"));
+    SubscriptionFixture              f1(ConfigKey::create<FooConfig>("id"), createKeyValueV2("fooValue", "bar"));
+    SubscriptionFixture              f2(ConfigKey::create<BarConfig>("id"), createKeyValueV2("barValue", "foo"));
     ConfigSnapshot::SubscriptionList f3;
     f3.push_back(f1.sub);
     f3.push_back(f2.sub);
@@ -425,10 +425,10 @@ TEST(ConfigRetrieverTest, require_that_snapshots_can_be_serialized) {
 
     typedef std::shared_ptr<ConfigSnapshotWriter> WSP;
     typedef std::shared_ptr<ConfigSnapshotReader> RSP;
-    typedef std::pair<WSP, RSP> SerializePair;
-    typedef std::vector<SerializePair> Vec;
-    Vec vec;
-    vespalib::asciistream ss;
+    typedef std::pair<WSP, RSP>                   SerializePair;
+    typedef std::vector<SerializePair>            Vec;
+    Vec                                           vec;
+    vespalib::asciistream                         ss;
     vec.push_back(SerializePair(WSP(new FileConfigSnapshotWriter("testsnapshot.txt")),
                                 RSP(new FileConfigSnapshotReader("testsnapshot.txt"))));
     vec.push_back(SerializePair(WSP(new AsciiConfigSnapshotWriter(ss)), RSP(new AsciiConfigSnapshotReader(ss))));

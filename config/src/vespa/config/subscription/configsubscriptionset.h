@@ -62,14 +62,14 @@ private:
     enum SubscriberState { OPEN, FROZEN, CONFIGURED, CLOSED };
     using SubscriptionList = std::vector<std::shared_ptr<ConfigSubscription>>;
 
-    const vespalib::duration _maxNapTime;
-    std::shared_ptr<IConfigContext> _context; // Context to keep alive managers.
-    IConfigManager &_mgr;                     // The config manager that we use.
-    std::atomic<int64_t> _currentGeneration;  // Holds the current config generation.
-    SubscriptionList _subscriptionList;       // List of current subscriptions.
-    std::atomic<SubscriberState> _state;      // Current state of this subscriber.
-    std::mutex _lock;
-    std::condition_variable _cond;
+    const vespalib::duration        _maxNapTime;
+    std::shared_ptr<IConfigContext> _context;           // Context to keep alive managers.
+    IConfigManager                 &_mgr;               // The config manager that we use.
+    std::atomic<int64_t>            _currentGeneration; // Holds the current config generation.
+    SubscriptionList                _subscriptionList;  // List of current subscriptions.
+    std::atomic<SubscriberState>    _state;             // Current state of this subscriber.
+    std::mutex                      _lock;
+    std::condition_variable         _cond;
 };
 
 } // namespace config

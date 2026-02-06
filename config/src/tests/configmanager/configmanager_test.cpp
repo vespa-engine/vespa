@@ -20,11 +20,11 @@ ConfigValue createValue(const std::string& myField, const std::string& md5) {
 }
 
 struct TestContext {
-    int numGetConfig;
-    int numUpdate;
-    int numClose;
+    int     numGetConfig;
+    int     numUpdate;
+    int     numClose;
     int64_t generation;
-    bool respond;
+    bool    respond;
     TestContext() : numGetConfig(0), numUpdate(0), numClose(0), generation(-1), respond(true) {}
 };
 
@@ -41,9 +41,9 @@ public:
         _data->numUpdate++;
         _data->generation = generation;
     }
-    void close() override { _data->numClose++; }
+    void                           close() override { _data->numClose++; }
     std::shared_ptr<IConfigHolder> _holder;
-    TestContext* _data;
+    TestContext*                   _data;
 };
 
 class MySourceFactory : public SourceFactory {
@@ -60,7 +60,7 @@ class MySpec : public SourceSpec {
 public:
     MySpec(TestContext* data) : _key("foo"), _data(data) {}
     ~MySpec() override;
-    SourceSpecKey createKey() const { return SourceSpecKey(_key); }
+    SourceSpecKey                  createKey() const { return SourceSpecKey(_key); }
     std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues& timingValues) const override {
         (void)timingValues;
         return std::make_unique<MySourceFactory>(_data);
@@ -69,7 +69,7 @@ public:
 
 private:
     const std::string _key;
-    TestContext* _data;
+    TestContext*      _data;
 };
 
 MySpec::~MySpec() = default;
@@ -87,8 +87,8 @@ static TimingValues testTimingValues(2000ms, // successTimeout
 
 class ManagerTester {
 public:
-    ConfigKey key;
-    ConfigManager _mgr;
+    ConfigKey              key;
+    ConfigManager          _mgr;
     ConfigSubscription::SP sub;
 
     ManagerTester(const ConfigKey& k, const MySpec& s);
@@ -104,7 +104,7 @@ ManagerTester::~ManagerTester() {}
 } // namespace
 
 TEST(ConfigManagerTest, requireThatSubscriptionTimesout) {
-    const ConfigKey key(ConfigKey::create<MyConfig>("myid"));
+    const ConfigKey   key(ConfigKey::create<MyConfig>("myid"));
     const ConfigValue testValue(createValue("l33t", "a"));
 
     { // No valid response
@@ -112,7 +112,7 @@ TEST(ConfigManagerTest, requireThatSubscriptionTimesout) {
         data.respond = false;
 
         ManagerTester tester(ConfigKey::create<MyConfig>("myid"), MySpec(&data));
-        bool thrown = false;
+        bool          thrown = false;
         try {
             tester.subscribe();
         } catch (const ConfigRuntimeException& e) {
@@ -123,8 +123,8 @@ TEST(ConfigManagerTest, requireThatSubscriptionTimesout) {
     }
 }
 TEST(ConfigManagerTest, requireThatSourceIsAskedForRequest) {
-    TestContext data;
-    const ConfigKey key(ConfigKey::create<MyConfig>("myid"));
+    TestContext       data;
+    const ConfigKey   key(ConfigKey::create<MyConfig>("myid"));
     const ConfigValue testValue(createValue("l33t", "a"));
     try {
         ManagerTester tester(key, MySpec(&data));
@@ -137,8 +137,8 @@ TEST(ConfigManagerTest, requireThatSourceIsAskedForRequest) {
 }
 
 TEST(ConfigManagerTest, require_that_new_sources_are_given_the_correct_generation) {
-    TestContext data;
-    const ConfigKey key(ConfigKey::create<MyConfig>("myid"));
+    TestContext       data;
+    const ConfigKey   key(ConfigKey::create<MyConfig>("myid"));
     const ConfigValue testValue(createValue("l33t", "a"));
     try {
         ManagerTester tester(key, MySpec(&data));

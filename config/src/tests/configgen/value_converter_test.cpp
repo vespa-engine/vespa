@@ -20,7 +20,7 @@ struct MyType {
 };
 
 TEST(ValueConverterTest, that_int32_ts_are_converted) {
-    Slime slime;
+    Slime   slime;
     Cursor& root = slime.setArray();
     root.addLong(3);
     root.addLong(-2);
@@ -36,7 +36,7 @@ TEST(ValueConverterTest, that_int32_ts_are_converted) {
 }
 
 TEST(ValueConverterTest, that_int64_ts_are_converted) {
-    Slime slime;
+    Slime   slime;
     Cursor& root = slime.setArray();
     root.addLong(3);
     root.addLong(-2);
@@ -46,7 +46,7 @@ TEST(ValueConverterTest, that_int64_ts_are_converted) {
     root.addLong(std::numeric_limits<int64_t>::min());
     root.addDouble(3.14);
     std::string ref = "{\"val\":9223372036854775807}";
-    Slime slime2;
+    Slime       slime2;
     JsonFormat::decode(ref, slime2);
     EXPECT_EQ(std::numeric_limits<int64_t>::max(), slime2.get()["val"].asLong());
     ValueConverter<int64_t> conv;
@@ -60,7 +60,7 @@ TEST(ValueConverterTest, that_int64_ts_are_converted) {
 }
 
 TEST(ValueConverterTest, that_values_can_be_parsed_as_strings) {
-    Slime slime;
+    Slime   slime;
     Cursor& root = slime.setObject();
     root.setString("intval", "1234");
     root.setString("longval", "42949672969");
@@ -68,8 +68,8 @@ TEST(ValueConverterTest, that_values_can_be_parsed_as_strings) {
     root.setString("doubleval", "3.14");
     ValueConverter<int32_t> intConv;
     ValueConverter<int64_t> longConv;
-    ValueConverter<bool> boolConv;
-    ValueConverter<double> doubleConv;
+    ValueConverter<bool>    boolConv;
+    ValueConverter<double>  doubleConv;
     EXPECT_EQ(1234, intConv(root["intval"]));
     EXPECT_EQ(42949672969, longConv(root["longval"]));
     EXPECT_EQ(true, boolConv(root["boolval"]));
@@ -77,7 +77,7 @@ TEST(ValueConverterTest, that_values_can_be_parsed_as_strings) {
 }
 
 TEST(ValueConverterTest, that_incompatible_types_throws_exceptions) {
-    Slime slime;
+    Slime   slime;
     Cursor& root = slime.setObject();
     root.setBool("intval", true);
     root.setBool("longval", true);
@@ -85,8 +85,8 @@ TEST(ValueConverterTest, that_incompatible_types_throws_exceptions) {
     root.setLong("boolval", 3);
     ValueConverter<int32_t> intConv;
     ValueConverter<int64_t> longConv;
-    ValueConverter<bool> boolConv;
-    ValueConverter<double> doubleConv;
+    ValueConverter<bool>    boolConv;
+    ValueConverter<double>  doubleConv;
     VESPA_EXPECT_EXCEPTION(intConv(root["intval"]), InvalidConfigException, "");
     VESPA_EXPECT_EXCEPTION(longConv(root["longval"]), InvalidConfigException, "");
     VESPA_EXPECT_EXCEPTION(doubleConv(root["doubleval"]), InvalidConfigException, "");
@@ -94,8 +94,8 @@ TEST(ValueConverterTest, that_incompatible_types_throws_exceptions) {
 }
 
 TEST(ValueConverterTest, that_non_valid_fields_throws_exception) {
-    Slime slime;
-    Cursor& root = slime.setObject();
+    Slime                   slime;
+    Cursor&                 root = slime.setObject();
     ValueConverter<int64_t> conv;
     VESPA_EXPECT_EXCEPTION(conv("longval", root["longval"]), InvalidConfigException,
                            "Value for 'longval' required but not found");

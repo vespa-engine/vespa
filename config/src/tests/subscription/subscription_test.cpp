@@ -35,8 +35,8 @@ struct MySource : public Source {
 
 struct SubscriptionFixture {
     std::shared_ptr<IConfigHolder> holder;
-    ConfigSubscription sub;
-    SourceFixture src;
+    ConfigSubscription             sub;
+    SourceFixture                  src;
     SubscriptionFixture(const ConfigKey& key)
         : holder(new ConfigHolder()), sub(0, key, holder, std::make_unique<MySource>(&src)) {}
     ~SubscriptionFixture();
@@ -48,7 +48,7 @@ vespalib::steady_time deadline(vespalib::duration timeout) { return vespalib::st
 } // namespace
 
 TEST(SubscriptionTest, requireThatKeyIsReturned) {
-    ConfigKey f1("foo", "bar", "bim", "boo");
+    ConfigKey           f1("foo", "bar", "bim", "boo");
     SubscriptionFixture f2(f1);
     ASSERT_TRUE(f1 == f2.sub.getKey());
 }
@@ -71,9 +71,9 @@ TEST(SubscriptionTest, requireThatNextUpdateBlocks) {
 }
 
 TEST(SubscriptionTest, requireThatNextUpdateReturnsWhenNotified) {
-    constexpr size_t num_threads = 2;
+    constexpr size_t    num_threads = 2;
     SubscriptionFixture f1(ConfigKey::create<MyConfig>("myid"));
-    auto task = [&f1](Nexus& ctx) {
+    auto                task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             vespalib::Timer timer;
@@ -89,9 +89,9 @@ TEST(SubscriptionTest, requireThatNextUpdateReturnsWhenNotified) {
 }
 
 TEST(SubscriptionTest, requireThatNextUpdateReturnsInterrupted) {
-    constexpr size_t num_threads = 2;
+    constexpr size_t    num_threads = 2;
     SubscriptionFixture f1(ConfigKey::create<MyConfig>("myid"));
-    auto task = [&f1](Nexus& ctx) {
+    auto                task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             vespalib::Timer timer;

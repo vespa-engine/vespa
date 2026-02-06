@@ -10,10 +10,10 @@ using namespace config;
 
 TEST(RawSubscriptionTest, require_that_raw_spec_can_create_source_factory) {
     RawSpec spec("myField \"foo\"\n");
-    auto raw = spec.createSourceFactory(TimingValues());
+    auto    raw = spec.createSourceFactory(TimingValues());
     ASSERT_TRUE(raw);
     std::shared_ptr<IConfigHolder> holder(new ConfigHolder());
-    std::unique_ptr<Source> src = raw->createSource(holder, ConfigKey("myid", "my", "bar", "foo"));
+    std::unique_ptr<Source>        src = raw->createSource(holder, ConfigKey("myid", "my", "bar", "foo"));
     ASSERT_TRUE(src);
 
     src->getConfig();
@@ -26,8 +26,8 @@ TEST(RawSubscriptionTest, require_that_raw_spec_can_create_source_factory) {
 }
 
 TEST(RawSubscriptionTest, requireThatRawSubscriptionReturnsCorrectConfig) {
-    RawSpec spec("myField \"foo\"\n");
-    ConfigSubscriber s(spec);
+    RawSpec                                 spec("myField \"foo\"\n");
+    ConfigSubscriber                        s(spec);
     std::unique_ptr<ConfigHandle<MyConfig>> handle = s.subscribe<MyConfig>("myid");
     s.nextConfigNow();
     std::unique_ptr<MyConfig> cfg = handle->getConfig();

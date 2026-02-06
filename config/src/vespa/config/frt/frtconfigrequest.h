@@ -20,19 +20,19 @@ public:
     FRTConfigRequest(Connection* connection, const ConfigKey& key);
     ~FRTConfigRequest();
 
-    bool abort() override;
-    void setError(int errorCode) override;
+    bool             abort() override;
+    void             setError(int errorCode) override;
     const ConfigKey& getKey() const override;
 
-    FRT_RPCRequest* getRequest() { return _request; }
+    FRT_RPCRequest*                         getRequest() { return _request; }
     virtual std::unique_ptr<ConfigResponse> createResponse(FRT_RPCRequest* request) const = 0;
 
 protected:
     FRT_RPCRequest* _request;
-    FRT_Values& _parameters;
+    FRT_Values&     _parameters;
 
 private:
-    Connection* _connection;
+    Connection*     _connection;
     const ConfigKey _key;
 };
 

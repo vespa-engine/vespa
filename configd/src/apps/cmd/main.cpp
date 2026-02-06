@@ -17,8 +17,8 @@ namespace {
 struct Method {
     const char *name;
     const char *rpcMethod;
-    bool noArgNeeded;
-    bool needsTimeoutArg;
+    bool        noArgNeeded;
+    bool        needsTimeoutArg;
 };
 const Method methods[] = {{"list", "sentinel.ls", true, false},
                           {"restart", "sentinel.service.restart", false, false},
@@ -31,12 +31,12 @@ const Method methods[] = {{"list", "sentinel.ls", true, false},
 class Cmd {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Target *_target;
+    FRT_Target                               *_target;
 
 public:
     Cmd() : _server(), _target(nullptr) {}
     ~Cmd();
-    int run(const Method &cmd, const char *arg);
+    int  run(const Method &cmd, const char *arg);
     void initRPC(const char *spec);
     void finiRPC();
 };
@@ -101,12 +101,12 @@ int Cmd::run(const Method &cmd, const char *arg) {
         const char *atypes = answer.GetTypeString();
         fprintf(stderr, "vespa-sentinel-cmd '%s' OK.\n", cmd.name);
         if (atypes && (strcmp(atypes, "SS") == 0)) {
-            uint32_t numHosts = answer[0]._string_array._len;
-            uint32_t numStats = answer[1]._string_array._len;
+            uint32_t         numHosts = answer[0]._string_array._len;
+            uint32_t         numStats = answer[1]._string_array._len;
             FRT_StringValue *hosts = answer[0]._string_array._pt;
             FRT_StringValue *stats = answer[1]._string_array._pt;
-            uint32_t ml = 0;
-            uint32_t j;
+            uint32_t         ml = 0;
+            uint32_t         j;
             for (j = 0; j < numHosts; ++j) {
                 uint32_t hl = strlen(hosts[j]._str);
                 if (hl > ml)
@@ -156,7 +156,7 @@ void hookSignals() {
 }
 
 int main(int argc, char **argv) {
-    int retval = 1;
+    int           retval = 1;
     const Method *cmd = nullptr;
     if (argc > 1) {
         cmd = parseCmd(argv[1]);

@@ -21,12 +21,12 @@ ConfigSetSource::~ConfigSetSource() = default;
 
 void ConfigSetSource::getConfig() {
     BuilderMap::const_iterator it(_builderMap->find(_key));
-    ConfigInstance* instance = it->second;
-    vespalib::asciistream ss;
-    AsciiConfigWriter writer(ss);
+    ConfigInstance*            instance = it->second;
+    vespalib::asciistream      ss;
+    AsciiConfigWriter          writer(ss);
     writer.write(*instance);
     StringVector lines(getlines(ss));
-    std::string currentXxhash64(calculateContentXxhash64(lines));
+    std::string  currentXxhash64(calculateContentXxhash64(lines));
 
     if (isGenerationNewer(_generation, _lastState.generation) && currentXxhash64.compare(_lastState.xxhash64) != 0) {
         LOG(debug, "New generation, updating");
@@ -53,7 +53,7 @@ bool ConfigSetSource::validRequest(const ConfigKey& key) {
     if (_builderMap->find(key) == _builderMap->end())
         return false;
     BuilderMap::const_iterator it(_builderMap->find(key));
-    ConfigInstance* instance = it->second;
+    ConfigInstance*            instance = it->second;
     return (key.getDefName().compare(instance->defName()) == 0 &&
             key.getDefNamespace().compare(instance->defNamespace()) == 0);
 }

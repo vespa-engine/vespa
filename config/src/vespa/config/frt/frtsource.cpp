@@ -68,14 +68,14 @@ void FRTSource::getConfig() {
 
 void FRTSource::erase(FRT_RPCRequest* request) {
     std::lock_guard guard(_lock);
-    auto num_erased = _inflight.erase(request);
+    auto            num_erased = _inflight.erase(request);
     assert(1u == num_erased);
     _cond.notify_all();
 }
 
 std::shared_ptr<FRTConfigRequest> FRTSource::find(FRT_RPCRequest* request) {
     std::lock_guard guard(_lock);
-    auto found = _inflight.find(request);
+    auto            found = _inflight.find(request);
     assert(found != _inflight.end());
     return found->second;
 }
@@ -86,7 +86,7 @@ public:
     ~CleanupGuard() { _frtSource->erase(_request); }
 
 private:
-    FRTSource* _frtSource;
+    FRTSource*      _frtSource;
     FRT_RPCRequest* _request;
 };
 

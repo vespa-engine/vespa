@@ -15,8 +15,8 @@ public:
         : xxhash64(xxhash), generation(gen), applyOnRestart(_applyOnRestart) {}
 
     std::string xxhash64;
-    int64_t generation;
-    bool applyOnRestart;
+    int64_t     generation;
+    bool        applyOnRestart;
 
     bool isNewerGenerationThan(const ConfigState& other) const {
         return isGenerationNewer(generation, other.generation);

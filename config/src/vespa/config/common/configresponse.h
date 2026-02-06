@@ -18,11 +18,11 @@ class ConfigResponse {
 public:
     virtual ~ConfigResponse() = default;
 
-    virtual const ConfigKey& getKey() const = 0;
+    virtual const ConfigKey&   getKey() const = 0;
     virtual const ConfigValue& getValue() const = 0;
 
     virtual const ConfigState& getConfigState() const = 0;
-    virtual const Trace& getTrace() const = 0;
+    virtual const Trace&       getTrace() const = 0;
 
     virtual bool hasValidResponse() const = 0;
 

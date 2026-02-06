@@ -24,17 +24,17 @@ public:
     ~ConfigManager() override;
 
     ConfigSubscription::SP subscribe(const ConfigKey& key, vespalib::duration timeout) override;
-    void unsubscribe(const ConfigSubscription& subscription) override;
-    void reload(int64_t generation) override;
+    void                   unsubscribe(const ConfigSubscription& subscription) override;
+    void                   reload(int64_t generation) override;
 
 private:
-    std::atomic<SubscriptionId> _idGenerator;
+    std::atomic<SubscriptionId>    _idGenerator;
     std::unique_ptr<SourceFactory> _sourceFactory;
-    int64_t _generation;
+    int64_t                        _generation;
 
     using SubscriptionMap = std::map<SubscriptionId, ConfigSubscription::SP>;
     SubscriptionMap _subscriptionMap;
-    std::mutex _lock;
+    std::mutex      _lock;
 };
 
 } // namespace config

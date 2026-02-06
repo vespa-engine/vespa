@@ -22,8 +22,8 @@ public:
 
 private:
     std::shared_ptr<IConfigHolder> _holder;
-    StringVector readConfig();
-    const std::string _payload;
+    StringVector                   readConfig();
+    const std::string              _payload;
 };
 
 } // namespace config

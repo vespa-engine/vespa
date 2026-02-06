@@ -7,7 +7,7 @@ GenericConfigSubscriber::GenericConfigSubscriber(std::shared_ptr<IConfigContext>
 
 bool GenericConfigSubscriber::nextGeneration(vespalib::duration timeout) { return _set.acquireSnapshot(timeout, true); }
 
-std::shared_ptr<ConfigSubscription> GenericConfigSubscriber::subscribe(const ConfigKey& key,
+std::shared_ptr<ConfigSubscription> GenericConfigSubscriber::subscribe(const ConfigKey&   key,
                                                                        vespalib::duration timeout) {
     return _set.subscribe(key, timeout);
 }

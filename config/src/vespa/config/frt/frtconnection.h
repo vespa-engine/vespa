@@ -21,28 +21,28 @@ public:
     FRTConnection& operator=(const FRTConnection&) = delete;
     ~FRTConnection() override;
 
-    FRT_RPCRequest* allocRPCRequest() override;
-    void invoke(FRT_RPCRequest* req, duration timeout, FRT_IRequestWait* waiter) override;
-    const std::string& getAddress() const override { return _address; }
+    FRT_RPCRequest*       allocRPCRequest() override;
+    void                  invoke(FRT_RPCRequest* req, duration timeout, FRT_IRequestWait* waiter) override;
+    const std::string&    getAddress() const override { return _address; }
     vespalib::steady_time getSuspendedUntil() const { return _suspendedUntil; }
-    void setError(int errorCode) override;
-    void setSuccess();
+    void                  setError(int errorCode) override;
+    void                  setSuccess();
 
 private:
     FRT_Target* getTarget();
 
     void calculateSuspension(ErrorType type);
 
-    const std::string _address;
-    const duration _transientDelay;
-    const duration _fatalDelay;
-    FRT_Supervisor& _supervisor;
-    std::mutex _lock;
-    FRT_Target* _target;
+    const std::string     _address;
+    const duration        _transientDelay;
+    const duration        _fatalDelay;
+    FRT_Supervisor&       _supervisor;
+    std::mutex            _lock;
+    FRT_Target*           _target;
     vespalib::steady_time _suspendedUntil;
     vespalib::steady_time _suspendWarned;
-    uint32_t _transientFailures;
-    uint32_t _fatalFailures;
+    uint32_t              _transientFailures;
+    uint32_t              _fatalFailures;
 };
 
 } // namespace config

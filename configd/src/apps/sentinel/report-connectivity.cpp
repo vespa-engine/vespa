@@ -39,7 +39,7 @@ void ReportConnectivity::returnStatus(bool) {
 }
 
 void ReportConnectivity::finish() const {
-    FRT_Values *dst = _parentRequest->GetReturn();
+    FRT_Values      *dst = _parentRequest->GetReturn();
     FRT_StringValue *pt_hn = dst->AddStringArray(_checks.size());
     FRT_StringValue *pt_ss = dst->AddStringArray(_checks.size());
     for (const auto &peer : _checks) {

@@ -18,7 +18,7 @@ FileSource::~FileSource() = default;
 
 void FileSource::getConfig() {
     StringVector lines(readConfigFile(_fileName));
-    int64_t last = getLast(_fileName);
+    int64_t      last = getLast(_fileName);
 
     if (last > _lastLoaded) {
         _holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(lines), true, _generation));

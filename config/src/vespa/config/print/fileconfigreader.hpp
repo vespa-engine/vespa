@@ -16,7 +16,7 @@ FileConfigReader<ConfigType>::FileConfigReader(const std::string& fileName) : _f
 template <typename ConfigType>
 std::unique_ptr<ConfigType> FileConfigReader<ConfigType>::read(const ConfigFormatter& formatter) {
     ConfigDataBuffer buffer;
-    std::ifstream file(_fileName.c_str());
+    std::ifstream    file(_fileName.c_str());
     if (!file.is_open())
         throw ConfigReadException("error: unable to read file '%s'", _fileName.c_str());
 
@@ -28,7 +28,7 @@ std::unique_ptr<ConfigType> FileConfigReader<ConfigType>::read(const ConfigForma
 }
 
 template <typename ConfigType> std::unique_ptr<ConfigType> FileConfigReader<ConfigType>::read() {
-    StringVector lines;
+    StringVector  lines;
     std::ifstream f(_fileName.c_str());
     if (f.fail())
         throw vespalib::IllegalArgumentException(std::string("Unable to open file ") + _fileName);

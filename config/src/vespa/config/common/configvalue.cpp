@@ -30,7 +30,7 @@ StringVector ConfigValue::getLegacyFormat() const {
     StringVector lines;
     if (_payload) {
         const vespalib::slime::Inspector &payload(_payload->getSlimePayload());
-        PayloadConverter converter(payload);
+        PayloadConverter                  converter(payload);
         lines = converter.convert();
     } else {
         lines = _lines;

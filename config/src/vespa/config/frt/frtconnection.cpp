@@ -76,14 +76,14 @@ void FRTConnection::setSuccess() {
 
 namespace {
 
-constexpr uint32_t MAX_DELAY_MULTIPLIER = 6u;
+constexpr uint32_t           MAX_DELAY_MULTIPLIER = 6u;
 constexpr vespalib::duration WARN_INTERVAL = 10s;
 
 } // namespace
 
 void FRTConnection::calculateSuspension(ErrorType type) {
-    duration delay = duration::zero();
-    steady_time now = steady_clock::now();
+    duration        delay = duration::zero();
+    steady_time     now = steady_clock::now();
     std::lock_guard guard(_lock);
     switch (type) {
     case TRANSIENT:

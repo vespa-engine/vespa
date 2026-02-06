@@ -13,11 +13,11 @@ public:
     ConfigContext(const SourceSpec& spec = ServerSpec());
     ConfigContext(const TimingValues& timingValues, const SourceSpec& spec = ServerSpec());
     IConfigManager& getManagerInstance() override;
-    void reload() override;
+    void            reload() override;
 
 private:
-    TimingValues _timingValues;
-    int64_t _generation;
+    TimingValues                    _timingValues;
+    int64_t                         _generation;
     std::unique_ptr<IConfigManager> _manager;
 };
 

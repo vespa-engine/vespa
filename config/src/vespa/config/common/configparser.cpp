@@ -17,11 +17,11 @@ void ConfigParser::throwNoDefaultValue(std::string_view key) {
 }
 
 std::string ConfigParser::deQuote(const std::string &source) {
-    const char *src = source.c_str();
-    const char *s = src;
+    const char       *src = source.c_str();
+    const char       *s = src;
     std::vector<char> dst(1 + source.length());
-    char *d = &dst[0];
-    bool isQuoted;
+    char             *d = &dst[0];
+    bool              isQuoted;
 
     if (*s == '"') {
         isQuoted = true;
@@ -230,7 +230,7 @@ std::string ConfigParser::stripWhitespace(std::string_view source) {
         return std::string(source);
     }
     size_t start = 0;
-    bool found = false;
+    bool   found = false;
     while (!found && start < source.size()) {
         switch (source[start]) {
         case ' ':
@@ -300,10 +300,10 @@ template <> int32_t ConfigParser::convert<int32_t>(const StringVector &config) {
     std::string value(deQuote(stripWhitespace(config[0])));
 
     const char *startp = value.c_str();
-    char *endp;
+    char       *endp;
     errno = 0;
     int32_t ret = strtol(startp, &endp, 0);
-    int err = errno;
+    int     err = errno;
     if (err == ERANGE || err == EINVAL || (*endp != '\0'))
         throw InvalidConfigException("Value " + value + " is not a legal int32_t.", VESPA_STRLOC);
     return ret;
@@ -319,10 +319,10 @@ template <> int64_t ConfigParser::convert<int64_t>(const StringVector &config) {
     std::string value(deQuote(stripWhitespace(config[0])));
 
     const char *startp = value.c_str();
-    char *endp;
+    char       *endp;
     errno = 0;
     int64_t ret = strtoll(startp, &endp, 0);
-    int err = errno;
+    int     err = errno;
     if (err == ERANGE || err == EINVAL || (*endp != '\0'))
         throw InvalidConfigException("Value " + value + " is not a legal int64_t.", VESPA_STRLOC);
     return ret;
@@ -338,10 +338,10 @@ template <> double ConfigParser::convert<double>(const StringVector &config) {
     std::string value(deQuote(stripWhitespace(config[0])));
 
     const char *startp = value.c_str();
-    char *endp;
+    char       *endp;
     errno = 0;
     double ret = vespalib::locale::c::strtod(startp, &endp);
-    int err = errno;
+    int    err = errno;
     if (err == ERANGE || (*endp != '\0')) {
         throw InvalidConfigException("Value " + value + " is not a legal double", VESPA_STRLOC);
     }

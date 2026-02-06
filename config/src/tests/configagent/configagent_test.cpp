@@ -16,10 +16,10 @@ public:
     MyConfigRequest(const ConfigKey& key) : _key(key) {}
 
     const ConfigKey& getKey() const override { return _key; }
-    bool abort() override { return false; }
-    void setError(int errorCode) override { (void)errorCode; }
-    bool verifyState(const ConfigState&) const override { return false; }
-    const ConfigKey _key;
+    bool             abort() override { return false; }
+    void             setError(int errorCode) override { (void)errorCode; }
+    bool             verifyState(const ConfigState&) const override { return false; }
+    const ConfigKey  _key;
 };
 
 class MyConfigResponse : public ConfigResponse {
@@ -29,29 +29,29 @@ public:
         : _key(key), _value(std::move(value)), _fillCalled(false), _valid(valid), _state(xxhash64, timestamp, false),
           _errorMessage(errorMsg), _errorCode(errorC0de), _isError(iserror) {}
 
-    const ConfigKey& getKey() const override { return _key; }
+    const ConfigKey&   getKey() const override { return _key; }
     const ConfigValue& getValue() const override { return _value; }
     const ConfigState& getConfigState() const override { return _state; }
-    bool hasValidResponse() const override { return _valid; }
-    bool validateResponse() override { return _valid; }
-    void fill() override { _fillCalled = true; }
-    std::string errorMessage() const override { return _errorMessage; }
-    int errorCode() const override { return _errorCode; }
-    bool isError() const override { return _isError; }
-    const Trace& getTrace() const override { return _trace; }
+    bool               hasValidResponse() const override { return _valid; }
+    bool               validateResponse() override { return _valid; }
+    void               fill() override { _fillCalled = true; }
+    std::string        errorMessage() const override { return _errorMessage; }
+    int                errorCode() const override { return _errorCode; }
+    bool               isError() const override { return _isError; }
+    const Trace&       getTrace() const override { return _trace; }
 
-    const ConfigKey _key;
+    const ConfigKey   _key;
     const ConfigValue _value;
-    bool _fillCalled;
-    bool _valid;
+    bool              _fillCalled;
+    bool              _valid;
     const ConfigState _state;
-    std::string _errorMessage;
-    int _errorCode;
-    bool _isError;
-    Trace _trace;
+    std::string       _errorMessage;
+    int               _errorCode;
+    bool              _isError;
+    Trace             _trace;
 
     static std::unique_ptr<ConfigResponse> createOKResponse(const ConfigKey& key, const ConfigValue& value,
-                                                            uint64_t timestamp = 10,
+                                                            uint64_t           timestamp = 10,
                                                             const std::string& xxhash64 = "a") {
         return std::make_unique<MyConfigResponse>(key, value, true, timestamp, xxhash64, "", 0, false);
     }
@@ -118,9 +118,9 @@ TEST(ConfigAgentTest, require_that_agent_returns_correct_values) {
 }
 
 TEST(ConfigAgentTest, require_that_successful_request_is_delivered_to_holder) {
-    const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
+    const ConfigKey   testKey(ConfigKey::create<MyConfig>("mykey"));
     const ConfigValue testValue(createValue("l33t", "a"));
-    auto latch = std::make_shared<MyHolder>();
+    auto              latch = std::make_shared<MyHolder>();
 
     FRTConfigAgent handler(latch, testTimingValues);
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createOKResponse(testKey, testValue));
@@ -133,10 +133,10 @@ TEST(ConfigAgentTest, require_that_successful_request_is_delivered_to_holder) {
 }
 
 TEST(ConfigAgentTest, require_that_request_with_change_is_delivered_to_holder_even_if_it_was_not_the_last) {
-    const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
+    const ConfigKey   testKey(ConfigKey::create<MyConfig>("mykey"));
     const ConfigValue testValue1(createValue("l33t", "a"));
     const ConfigValue testValue2(createValue("l34t", "b"));
-    auto latch = std::make_shared<MyHolder>();
+    auto              latch = std::make_shared<MyHolder>();
 
     FRTConfigAgent handler(latch, testTimingValues);
     handler.handleResponse(MyConfigRequest(testKey),
@@ -161,10 +161,10 @@ TEST(ConfigAgentTest, require_that_request_with_change_is_delivered_to_holder_ev
 }
 
 TEST(ConfigAgentTest, require_that_successful_request_sets_correct_wait_time) {
-    const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
+    const ConfigKey   testKey(ConfigKey::create<MyConfig>("mykey"));
     const ConfigValue testValue(createValue("l33t", "a"));
-    auto latch = std::make_shared<MyHolder>();
-    FRTConfigAgent handler(latch, testTimingValues);
+    auto              latch = std::make_shared<MyHolder>();
+    FRTConfigAgent    handler(latch, testTimingValues);
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createOKResponse(testKey, testValue));
     ASSERT_EQ(250ms, handler.getWaitTime());
@@ -174,10 +174,10 @@ TEST(ConfigAgentTest, require_that_successful_request_sets_correct_wait_time) {
 }
 
 TEST(ConfigAgentTest, require_that_bad_config_response_returns_false) {
-    const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
+    const ConfigKey   testKey(ConfigKey::create<MyConfig>("mykey"));
     const ConfigValue testValue(createValue("myval", "a"));
-    auto latch = std::make_shared<MyHolder>();
-    FRTConfigAgent handler(latch, testTimingValues);
+    auto              latch = std::make_shared<MyHolder>();
+    FRTConfigAgent    handler(latch, testTimingValues);
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createConfigErrorResponse(testKey, testValue));
     ASSERT_EQ(250ms, handler.getWaitTime());
@@ -213,10 +213,10 @@ TEST(ConfigAgentTest, require_that_bad_config_response_returns_false) {
 }
 
 TEST(ConfigAgentTest, require_that_bad_response_returns_false) {
-    const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
+    const ConfigKey   testKey(ConfigKey::create<MyConfig>("mykey"));
     const ConfigValue testValue(StringVector(), "a");
 
-    auto latch = std::make_shared<MyHolder>();
+    auto           latch = std::make_shared<MyHolder>();
     FRTConfigAgent handler(latch, testTimingValues);
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createServerErrorResponse(testKey, testValue));

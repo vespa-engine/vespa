@@ -32,9 +32,9 @@ class Manager {
 private:
     typedef std::map<std::string, Service::UP> ServiceMap;
 
-    Env &_env;
-    ServiceMap _services;
-    ServiceMap _orphans;
+    Env                          &_env;
+    ServiceMap                    _services;
+    ServiceMap                    _orphans;
     std::list<OutputConnection *> _outputConnections;
 
     Manager(const Manager &) = delete;
@@ -42,11 +42,11 @@ private:
 
     Service *serviceByPid(pid_t pid);
     Service *serviceByName(const std::string &name);
-    void handleCommands();
-    void handleCmd(const Cmd &cmd);
-    void handleOutputs();
-    void handleChildDeaths();
-    void handleRestarts();
+    void     handleCommands();
+    void     handleCmd(const Cmd &cmd);
+    void     handleOutputs();
+    void     handleChildDeaths();
+    void     handleRestarts();
 
     void terminateServices(bool catchable, bool printDebug = false);
     void doConfigure();

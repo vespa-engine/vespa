@@ -80,9 +80,9 @@ public:
     bool empty() const { return _empty; }
 
 private:
-    std::string _configId;
+    std::string                     _configId;
     std::shared_ptr<IConfigContext> _context;
-    bool _empty;
+    bool                            _empty;
 };
 
 } // namespace config

@@ -37,7 +37,7 @@ const std::string responseTypes = "sx";
 
 struct RPCServer : public FRT_Invokable {
     std::barrier<> barrier;
-    int64_t gen;
+    int64_t        gen;
 
     RPCServer() : barrier(2), gen(1) {}
 
@@ -48,7 +48,7 @@ struct RPCServer : public FRT_Invokable {
     }
 
     void getConfig(FRT_RPCRequest *req) {
-        Slime slime;
+        Slime   slime;
         Cursor &root(slime.setObject());
         root.setLong(RESPONSE_VERSION, 3);
         root.setString(RESPONSE_DEF_NAME, Memory(MyConfig::CONFIG_DEF_NAME));
@@ -65,7 +65,7 @@ struct RPCServer : public FRT_Invokable {
         Slime payload;
         payload.setObject().setString("myField", "myval");
 
-        FRT_Values &ret = *req->GetReturn();
+        FRT_Values  &ret = *req->GetReturn();
         SimpleBuffer buf;
         JsonFormat::encode(slime, buf, false);
         ret.AddString(buf.get().make_string().c_str());
@@ -83,9 +83,9 @@ struct RPCServer : public FRT_Invokable {
 struct ServerFixture {
     using UP = std::unique_ptr<ServerFixture>;
     std::unique_ptr<fnet::frt::StandaloneFRT> frt;
-    RPCServer server;
-    std::barrier<> b;
-    const std::string listenSpec;
+    RPCServer                                 server;
+    std::barrier<>                            b;
+    const std::string                         listenSpec;
     ServerFixture(const std::string &ls) : frt(), server(), b(2), listenSpec(ls) {}
 
     void wait() { b.arrive_and_wait(); }
@@ -112,8 +112,8 @@ struct ServerFixture {
 
 struct NetworkFixture {
     std::vector<ServerFixture::UP> serverList;
-    ServerSpec spec;
-    bool running;
+    ServerSpec                     spec;
+    bool                           running;
     NetworkFixture(const std::vector<std::string> &serverSpecs) : spec(serverSpecs), running(true) {
         for (size_t i = 0; i < serverSpecs.size(); i++) {
             serverList.push_back(std::make_unique<ServerFixture>(serverSpecs[i]));
@@ -159,11 +159,11 @@ TimingValues testTimingValues(500ms,   // successTimeout
 
 struct ConfigCheckFixture {
     std::shared_ptr<IConfigContext> ctx;
-    NetworkFixture &nf;
+    NetworkFixture                 &nf;
 
     ConfigCheckFixture(NetworkFixture &f2) : ctx(std::make_shared<ConfigContext>(testTimingValues, f2.spec)), nf(f2) {}
     void checkSubscribe() {
-        ConfigSubscriber s(ctx);
+        ConfigSubscriber           s(ctx);
         ConfigHandle<MyConfig>::UP handle = s.subscribe<MyConfig>("myId");
         ASSERT_TRUE(s.nextConfig());
     }
@@ -194,10 +194,10 @@ struct ThreeServersFixture {
 } // namespace
 
 TEST(FailoverTest, require_that_any_node_can_be_down_when_subscribing) {
-    constexpr size_t num_threads = 4;
+    constexpr size_t    num_threads = 4;
     ThreeServersFixture f1;
-    NetworkFixture f2(f1.specs);
-    auto task = [&f2](Nexus &ctx) {
+    NetworkFixture      f2(f1.specs);
+    auto                task = [&f2](Nexus &ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             ConfigCheckFixture ccf(f2);

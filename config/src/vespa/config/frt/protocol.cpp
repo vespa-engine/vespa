@@ -61,7 +61,7 @@ const Memory RESPONSE_COMPRESSION_INFO_UNCOMPRESSED_SIZE = "uncompressedSize";
 
 DecompressedData decompress_lz4(const char *input, uint32_t inputLen, int uncompressedLength) {
     Alloc memory(Alloc::alloc(uncompressedLength));
-    int sz = LZ4_decompress_safe(input, static_cast<char *>(memory.get()), inputLen, uncompressedLength);
+    int   sz = LZ4_decompress_safe(input, static_cast<char *>(memory.get()), inputLen, uncompressedLength);
     if (sz >= 0 && sz != uncompressedLength) {
         if (LOG_WOULD_LOG(debug)) {
             LOG(debug, "Returned compressed size (%d) is not the same as uncompressed size(%d)", sz,
@@ -106,7 +106,7 @@ int verifyProtocolVersion(int protocolVersion) {
 }
 
 int readProtocolVersion() {
-    int protocolVersion = DEFAULT_PROTOCOL_VERSION;
+    int   protocolVersion = DEFAULT_PROTOCOL_VERSION;
     char *versionStringPtr = getenv("VESPA_CONFIG_PROTOCOL_VERSION");
     if (versionStringPtr != nullptr) {
         std::stringstream versionString(versionStringPtr);
@@ -116,7 +116,7 @@ int readProtocolVersion() {
 }
 
 int readTraceLevel() {
-    int traceLevel = DEFAULT_TRACE_LEVEL;
+    int   traceLevel = DEFAULT_TRACE_LEVEL;
     char *traceLevelStringPtr = getenv("VESPA_CONFIG_PROTOCOL_TRACELEVEL");
     if (traceLevelStringPtr != nullptr) {
         std::stringstream traceLevelString(traceLevelStringPtr);
@@ -127,7 +127,7 @@ int readTraceLevel() {
 
 CompressionType readProtocolCompressionType() {
     CompressionType type = CompressionType::LZ4;
-    char *compressionTypeStringPtr = getenv("VESPA_CONFIG_PROTOCOL_COMPRESSION");
+    char           *compressionTypeStringPtr = getenv("VESPA_CONFIG_PROTOCOL_COMPRESSION");
     if (compressionTypeStringPtr != nullptr) {
         type = stringToCompressionType(std::string(compressionTypeStringPtr));
     }

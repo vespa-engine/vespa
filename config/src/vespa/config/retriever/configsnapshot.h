@@ -61,7 +61,7 @@ public:
     template <typename ConfigType> bool isChanged(const std::string& configId, int64_t currentGeneration) const;
 
     ConfigSnapshot& operator=(const ConfigSnapshot& rhs);
-    void swap(ConfigSnapshot& rhs);
+    void            swap(ConfigSnapshot& rhs);
 
     /**
      * Query snapshot to check if a config of type ConfigType and id configId
@@ -84,8 +84,8 @@ public:
     ConfigSnapshot subset(const ConfigKeySet& keySet) const;
 
     int64_t getGeneration() const;
-    size_t size() const;
-    bool empty() const;
+    size_t  size() const;
+    bool    empty() const;
 
     void serialize(ConfigDataBuffer& buffer) const;
     void deserialize(const ConfigDataBuffer& buffer);
@@ -100,20 +100,20 @@ private:
     void serializeKeyV1(vespalib::slime::Cursor& root, const ConfigKey& key) const;
     void serializeValueV1(vespalib::slime::Cursor& root, const Value& value) const;
 
-    void deserializeV1(vespalib::slime::Inspector& root);
+    void      deserializeV1(vespalib::slime::Inspector& root);
     ConfigKey deserializeKeyV1(vespalib::slime::Inspector& inspector) const;
-    Value deserializeValueV1(vespalib::slime::Inspector& inspector) const;
+    Value     deserializeValueV1(vespalib::slime::Inspector& inspector) const;
 
     void serializeV2(vespalib::slime::Cursor& root) const;
     void serializeValueV2(vespalib::slime::Cursor& root, const Value& value) const;
 
-    void deserializeV2(vespalib::slime::Inspector& root);
+    void  deserializeV2(vespalib::slime::Inspector& root);
     Value deserializeValueV2(vespalib::slime::Inspector& inspector) const;
 
     ValueMap::const_iterator find(const ConfigKey& key) const;
 
     ValueMap _valueMap;
-    int64_t _generation;
+    int64_t  _generation;
 };
 
 } // namespace config

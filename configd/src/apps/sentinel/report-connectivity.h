@@ -24,10 +24,10 @@ public:
     void returnStatus(bool ok) override;
 
 private:
-    void finish() const;
-    FRT_RPCRequest *_parentRequest;
+    void                                    finish() const;
+    FRT_RPCRequest                         *_parentRequest;
     std::vector<std::unique_ptr<PeerCheck>> _checks;
-    std::atomic<size_t> _remaining;
+    std::atomic<size_t>                     _remaining;
 };
 
 } // namespace config::sentinel

@@ -26,9 +26,9 @@ public:
                                                           vespalib::duration serverTimeout) const;
 
 private:
-    const int _traceLevel;
-    const VespaVersion _vespaVersion;
-    std::string _hostName;
+    const int             _traceLevel;
+    const VespaVersion    _vespaVersion;
+    std::string           _hostName;
     const CompressionType _compressionType;
 };
 

@@ -70,7 +70,7 @@ void PayloadConverter::entry(size_t idx, const Inspector& inspector) {
 
 void PayloadConverter::printPrefix() {
     for (size_t i = 0; i < _nodeStack.size(); i++) {
-        bool first = (i == 0);
+        bool  first = (i == 0);
         Node& node(_nodeStack[i]);
         if (node.arrayIndex >= 0) {
             encodeString("[");

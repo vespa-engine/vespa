@@ -90,17 +90,17 @@ public:
     static const vespalib::duration DEFAULT_NEXTGENERATION_TIMEOUT;
 
 private:
-    FixedConfigSubscriber _bootstrapSubscriber;
-    std::unique_ptr<GenericConfigSubscriber> _configSubscriber;
-    std::mutex _lock;
+    FixedConfigSubscriber                            _bootstrapSubscriber;
+    std::unique_ptr<GenericConfigSubscriber>         _configSubscriber;
+    std::mutex                                       _lock;
     std::vector<std::shared_ptr<ConfigSubscription>> _subscriptionList;
-    ConfigKeySet _lastKeySet;
-    std::shared_ptr<IConfigContext> _context;
-    std::unique_ptr<SourceSpec> _spec;
-    int64_t _generation;
-    vespalib::duration _subscribeTimeout;
-    bool _bootstrapRequired;
-    std::atomic<bool> _closed;
+    ConfigKeySet                                     _lastKeySet;
+    std::shared_ptr<IConfigContext>                  _context;
+    std::unique_ptr<SourceSpec>                      _spec;
+    int64_t                                          _generation;
+    vespalib::duration                               _subscribeTimeout;
+    bool                                             _bootstrapRequired;
+    std::atomic<bool>                                _closed;
 };
 
 } // namespace config

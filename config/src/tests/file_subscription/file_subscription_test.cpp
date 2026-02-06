@@ -31,8 +31,8 @@ void writeFile(const std::string& fileName, const std::string& myFieldVal) {
 
 TEST(FileSubscriptionTest, requireThatFileSpecGivesCorrectKey) {
     std::string str("/home/my/config.cfg");
-    FileSpec spec(str);
-    bool thrown = false;
+    FileSpec    spec(str);
+    bool        thrown = false;
     try {
         FileSpec s1("fb");
         FileSpec s2("fb.cfh");
@@ -61,7 +61,7 @@ TEST(FileSubscriptionTest, requireThatFileSpecGivesCorrectSource) {
 
     auto factory = spec.createSourceFactory(TimingValues());
     ASSERT_TRUE(factory);
-    auto holder = std::make_shared<ConfigHolder>();
+    auto                    holder = std::make_shared<ConfigHolder>();
     std::unique_ptr<Source> src = factory->createSource(holder, ConfigKey("my", "my", "bar", "foo"));
     ASSERT_TRUE(src);
 
@@ -76,7 +76,7 @@ TEST(FileSubscriptionTest, requireThatFileSpecGivesCorrectSource) {
 
 TEST(FileSubscriptionTest, requireThatFileSubscriptionReturnsCorrectConfig) {
     writeFile("my.cfg", "foobar");
-    ConfigSubscriber s(FileSpec("my.cfg"));
+    ConfigSubscriber                        s(FileSpec("my.cfg"));
     std::unique_ptr<ConfigHandle<MyConfig>> handle = s.subscribe<MyConfig>("my");
     s.nextConfigNow();
     std::unique_ptr<MyConfig> cfg = handle->getConfig();
@@ -89,8 +89,8 @@ TEST(FileSubscriptionTest, requireThatFileSubscriptionReturnsCorrectConfig) {
 TEST(FileSubscriptionTest, requireThatReconfigIsCalledWhenConfigChanges) {
     writeFile("my.cfg", "foo");
     {
-        auto context = std::make_shared<ConfigContext>(FileSpec("my.cfg"));
-        ConfigSubscriber s(context);
+        auto                                    context = std::make_shared<ConfigContext>(FileSpec("my.cfg"));
+        ConfigSubscriber                        s(context);
         std::unique_ptr<ConfigHandle<MyConfig>> handle = s.subscribe<MyConfig>("");
         s.nextConfigNow();
         std::unique_ptr<MyConfig> cfg = handle->getConfig();
@@ -100,7 +100,7 @@ TEST(FileSubscriptionTest, requireThatReconfigIsCalledWhenConfigChanges) {
         ASSERT_FALSE(s.nextConfig(3000ms));
         writeFile("my.cfg", "bar");
         context->reload();
-        bool correctValue = false;
+        bool            correctValue = false;
         vespalib::Timer timer;
         while (!correctValue && timer.elapsed() < 20s) {
             LOG(info, "Testing value...");
@@ -120,18 +120,18 @@ TEST(FileSubscriptionTest, requireThatMultipleSubscribersCanSubscribeToSameFile)
     writeFile("my.cfg", "foobar");
     FileSpec spec("my.cfg");
     {
-        ConfigSubscriber s1(spec);
+        ConfigSubscriber                        s1(spec);
         std::unique_ptr<ConfigHandle<MyConfig>> h1 = s1.subscribe<MyConfig>("");
         ASSERT_TRUE(s1.nextConfigNow());
-        ConfigSubscriber s2(spec);
+        ConfigSubscriber                        s2(spec);
         std::unique_ptr<ConfigHandle<MyConfig>> h2 = s2.subscribe<MyConfig>("");
         ASSERT_TRUE(s2.nextConfigNow());
     }
 }
 
 TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectory) {
-    DirSpec spec(TEST_PATH("cfgdir"));
-    ConfigSubscriber s(spec);
+    DirSpec                     spec(TEST_PATH("cfgdir"));
+    ConfigSubscriber            s(spec);
     ConfigHandle<FooConfig>::UP fooHandle = s.subscribe<FooConfig>("");
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
     ASSERT_TRUE(s.nextConfigNow());
@@ -146,15 +146,15 @@ TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectory) {
 }
 
 TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectoryWithEmptyCfgFile) {
-    DirSpec spec(TEST_PATH("cfgemptyfile"));
-    ConfigSubscriber s(spec);
+    DirSpec                            spec(TEST_PATH("cfgemptyfile"));
+    ConfigSubscriber                   s(spec);
     ConfigHandle<FoodefaultConfig>::UP fooHandle = s.subscribe<FoodefaultConfig>("");
-    ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
+    ConfigHandle<BarConfig>::UP        barHandle = s.subscribe<BarConfig>("");
     ASSERT_TRUE(s.nextConfigNow());
     ASSERT_TRUE(fooHandle->isChanged());
     ASSERT_TRUE(barHandle->isChanged());
     std::unique_ptr<FoodefaultConfig> fooCfg = fooHandle->getConfig();
-    std::unique_ptr<BarConfig> barCfg = barHandle->getConfig();
+    std::unique_ptr<BarConfig>        barCfg = barHandle->getConfig();
     ASSERT_TRUE(fooCfg);
     ASSERT_TRUE(barCfg);
     ASSERT_EQ("per", fooCfg->fooValue);
@@ -162,15 +162,15 @@ TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectoryWithEmptyCfgFile) {
 }
 
 TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectoryWithNonExistingCfgFile) {
-    DirSpec spec(TEST_PATH("cfgnonexistingfile"));
-    ConfigSubscriber s(spec);
+    DirSpec                            spec(TEST_PATH("cfgnonexistingfile"));
+    ConfigSubscriber                   s(spec);
     ConfigHandle<FoodefaultConfig>::UP fooHandle = s.subscribe<FoodefaultConfig>("");
-    ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
+    ConfigHandle<BarConfig>::UP        barHandle = s.subscribe<BarConfig>("");
     ASSERT_TRUE(s.nextConfigNow());
     ASSERT_TRUE(fooHandle->isChanged());
     ASSERT_TRUE(barHandle->isChanged());
     std::unique_ptr<FoodefaultConfig> fooCfg = fooHandle->getConfig();
-    std::unique_ptr<BarConfig> barCfg = barHandle->getConfig();
+    std::unique_ptr<BarConfig>        barCfg = barHandle->getConfig();
     ASSERT_TRUE(fooCfg);
     ASSERT_TRUE(barCfg);
     ASSERT_EQ("per", fooCfg->fooValue);
@@ -178,12 +178,12 @@ TEST(FileSubscriptionTest, requireThatCanSubscribeToDirectoryWithNonExistingCfgF
 }
 
 TEST(FileSubscriptionTest, requireThatDirSpecDoesNotMixNames) {
-    DirSpec f(TEST_PATH("cfgdir2"));
-    ConfigSubscriber s(f);
-    ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
+    DirSpec                        f(TEST_PATH("cfgdir2"));
+    ConfigSubscriber               s(f);
+    ConfigHandle<BarConfig>::UP    barHandle = s.subscribe<BarConfig>("");
     ConfigHandle<FoobarConfig>::UP foobarHandle = s.subscribe<FoobarConfig>("");
     s.nextConfigNow();
-    std::unique_ptr<BarConfig> bar = barHandle->getConfig();
+    std::unique_ptr<BarConfig>    bar = barHandle->getConfig();
     std::unique_ptr<FoobarConfig> foobar = foobarHandle->getConfig();
     ASSERT_TRUE(bar);
     ASSERT_TRUE(foobar);
@@ -192,8 +192,8 @@ TEST(FileSubscriptionTest, requireThatDirSpecDoesNotMixNames) {
 }
 
 TEST(FileSubscriptionTest, require_that_can_subscribe_multiple_config_ids_of_same_config) {
-    DirSpec f1(TEST_PATH("cfgdir3"));
-    ConfigSubscriber s(f1);
+    DirSpec                     f1(TEST_PATH("cfgdir3"));
+    ConfigSubscriber            s(f1);
     ConfigHandle<BarConfig>::UP fooHandle = s.subscribe<BarConfig>("foo");
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("bar");
     s.nextConfigNow();

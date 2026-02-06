@@ -17,8 +17,8 @@ public:
     PayloadConverter(const vespalib::slime::Inspector& inspector);
     ~PayloadConverter();
     const StringVector& convert();
-    void field(const vespalib::Memory& symbol, const vespalib::slime::Inspector& inspector) override;
-    void entry(size_t idx, const vespalib::slime::Inspector& inspector) override;
+    void                field(const vespalib::Memory& symbol, const vespalib::slime::Inspector& inspector) override;
+    void                entry(size_t idx, const vespalib::slime::Inspector& inspector) override;
 
 private:
     void printPrefix();
@@ -34,16 +34,16 @@ private:
     void encodeBool(bool value);
     struct Node {
         std::string name;
-        int arrayIndex;
+        int         arrayIndex;
         Node(const std::string& nm, int idx) : name(nm), arrayIndex(idx) {}
         Node(int idx) : name(""), arrayIndex(idx) {}
         Node(const std::string& nm) : name(nm), arrayIndex(-1) {}
     };
     using NodeStack = std::vector<Node>;
     const vespalib::slime::Inspector& _inspector;
-    StringVector _lines;
-    NodeStack _nodeStack;
-    vespalib::asciistream _buf;
+    StringVector                      _lines;
+    NodeStack                         _nodeStack;
+    vespalib::asciistream             _buf;
 };
 
 } // namespace config

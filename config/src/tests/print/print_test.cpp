@@ -14,7 +14,7 @@
 using namespace config;
 
 template <typename T> struct RawFixture {
-    RawSpec spec;
+    RawSpec            spec;
     std::unique_ptr<T> cfg;
     RawFixture() : spec("myField \"foo\"\n"), cfg(ConfigGetter<T>::getConfig("test", spec)) {}
     ~RawFixture();
@@ -24,66 +24,66 @@ template <typename T> RawFixture<T>::~RawFixture() = default;
 
 TEST(PrintTest, requireThatConfigIsWrittenToFile) {
     RawFixture<MyConfig> f;
-    FileConfigWriter writer("test_1.json");
+    FileConfigWriter     writer("test_1.json");
     ASSERT_TRUE(writer.write(*f.cfg, JsonConfigFormatter()));
     struct stat st;
-    int ret = stat("test_1.json", &st);
+    int         ret = stat("test_1.json", &st);
     ASSERT_EQ(0, ret);
     ASSERT_TRUE(st.st_size > 0);
 }
 
 TEST(PrintTest, requireThatCanPrintAsJson) {
     RawFixture<MyConfig> f;
-    FileConfigWriter writer("test_2.json");
+    FileConfigWriter     writer("test_2.json");
     ASSERT_TRUE(writer.write(*f.cfg, JsonConfigFormatter()));
     FileConfigReader<MyConfig> reader("test_2.json");
-    std::unique_ptr<MyConfig> cfg2 = reader.read(JsonConfigFormatter());
+    std::unique_ptr<MyConfig>  cfg2 = reader.read(JsonConfigFormatter());
     ASSERT_TRUE(*cfg2 == *f.cfg);
 }
 
 TEST(PrintTest, requireThatCanPrintToOstream) {
     RawFixture<MyConfig> f;
-    std::ostringstream ss;
-    OstreamConfigWriter writer(ss);
+    std::ostringstream   ss;
+    OstreamConfigWriter  writer(ss);
     ASSERT_TRUE(writer.write(*f.cfg));
     ASSERT_EQ("myField \"foo\"\n", ss.str());
 }
 
 TEST(PrintTest, requireThatCanReadFromIstream) {
     RawFixture<MyConfig> f;
-    std::stringstream ss;
+    std::stringstream    ss;
     ss << "myField \"foo\"\n";
     IstreamConfigReader<MyConfig> reader(ss);
-    std::unique_ptr<MyConfig> cfg = reader.read();
+    std::unique_ptr<MyConfig>     cfg = reader.read();
     ASSERT_EQ(std::string("foo"), cfg->myField);
 }
 
 TEST(PrintTest, requireThatCanPrintToAscii) {
-    RawFixture<MyConfig> f;
+    RawFixture<MyConfig>  f;
     vespalib::asciistream ss;
-    AsciiConfigWriter writer(ss);
+    AsciiConfigWriter     writer(ss);
     ASSERT_TRUE(writer.write(*f.cfg));
     ASSERT_EQ("myField \"foo\"\n", ss.view());
 }
 
 TEST(PrintTest, requireThatCanPrintAsConfigFormat) {
     RawFixture<MyConfig> f;
-    FileConfigWriter writer("test_3.cfg");
+    FileConfigWriter     writer("test_3.cfg");
     ASSERT_TRUE(writer.write(*f.cfg));
     FileConfigReader<MyConfig> reader("test_3.cfg");
-    std::unique_ptr<MyConfig> cfg2 = reader.read();
+    std::unique_ptr<MyConfig>  cfg2 = reader.read();
     ASSERT_TRUE(*cfg2 == *f.cfg);
 }
 
 TEST(PrintTest, require_that_invalid_file_throws_exception) {
-    RawFixture<MyConfig> f;
+    RawFixture<MyConfig>       f;
     FileConfigReader<MyConfig> reader("nonexistant.cfg");
     VESPA_EXPECT_EXCEPTION(reader.read(), vespalib::IllegalArgumentException, "Unable to open file");
 }
 
 TEST(PrintTest, requireThatCanLoadWrittenWithConfigFormat) {
     RawFixture<MyConfig> f;
-    FileConfigWriter writer("test_3.cfg");
+    FileConfigWriter     writer("test_3.cfg");
     ASSERT_TRUE(writer.write(*f.cfg));
     std::unique_ptr<MyConfig> cfg2 = ConfigGetter<MyConfig>::getConfig("test_3", FileSpec("test_3.cfg"));
     ASSERT_TRUE(*cfg2 == *f.cfg);
@@ -91,7 +91,7 @@ TEST(PrintTest, requireThatCanLoadWrittenWithConfigFormat) {
 
 TEST(PrintTest, requireThatAllFieldsArePrintedCorrectly) {
     std::unique_ptr<MotdConfig> cfg = ConfigGetter<MotdConfig>::getConfig("motd", FileSpec(TEST_PATH("motd.cfg")));
-    FileConfigWriter writer("motd2.cfg");
+    FileConfigWriter            writer("motd2.cfg");
     ASSERT_TRUE(writer.write(*cfg, FileConfigFormatter()));
     std::unique_ptr<MotdConfig> cfg2 = ConfigGetter<MotdConfig>::getConfig("motd2", FileSpec("motd2.cfg"));
     ASSERT_TRUE(*cfg2 == *cfg);

@@ -21,7 +21,7 @@ public:
 
 private:
     std::unique_ptr<ConfigFetcher> _fetcher;
-    std::string _configId;
+    std::string                    _configId;
 };
 
 } // namespace config

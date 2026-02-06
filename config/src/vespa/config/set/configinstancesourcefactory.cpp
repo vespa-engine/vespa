@@ -18,8 +18,8 @@ public:
 
 private:
     std::shared_ptr<config::IConfigHolder> _holder;
-    vespalib::asciistream _buffer;
-    int64_t _generation;
+    vespalib::asciistream                  _buffer;
+    int64_t                                _generation;
 };
 
 } // namespace
@@ -30,7 +30,7 @@ ConfigInstanceSourceFactory::ConfigInstanceSourceFactory(const ConfigKey& key, v
     : _key(key), _buffer(std::move(buffer)) {}
 
 std::unique_ptr<Source> ConfigInstanceSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder,
-                                                                  const ConfigKey& key) const {
+                                                                  const ConfigKey&               key) const {
     (void)key;
     // TODO: Check key against _key
     return std::make_unique<ConfigInstanceSource>(std::move(holder), _buffer);

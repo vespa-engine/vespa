@@ -6,8 +6,8 @@
 
 namespace config {
 
-bool isLegacyConfigId(std::string_view configId);
+bool                        isLegacyConfigId(std::string_view configId);
 std::unique_ptr<SourceSpec> legacyConfigId2Spec(std::string_view configId);
-const std::string legacyConfigId2ConfigId(std::string_view configId);
+const std::string           legacyConfigId2ConfigId(std::string_view configId);
 
 } // namespace config

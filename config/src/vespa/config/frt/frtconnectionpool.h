@@ -20,7 +20,7 @@ private:
      */
     class FRTConnectionKey {
     private:
-        int _idx;
+        int         _idx;
         std::string _hostname;
 
     public:
@@ -31,8 +31,8 @@ private:
     };
 
     std::unique_ptr<FRT_Supervisor> _supervisor;
-    int _selectIdx;
-    std::string _hostname;
+    int                             _selectIdx;
+    std::string                     _hostname;
     using ConnectionMap = std::map<FRTConnectionKey, FRTConnection::SP>;
     ConnectionMap _connections;
 
@@ -108,11 +108,11 @@ public:
     FRTConnectionPoolWithTransport& operator=(const FRTConnectionPoolWithTransport&) = delete;
     ~FRTConnectionPoolWithTransport() override;
     FNET_Scheduler* getScheduler() override { return _connectionPool->getScheduler(); }
-    void syncTransport() override { _connectionPool->syncTransport(); }
-    Connection* getCurrent() override { return _connectionPool->getCurrent(); }
+    void            syncTransport() override { _connectionPool->syncTransport(); }
+    Connection*     getCurrent() override { return _connectionPool->getCurrent(); }
 
 private:
-    std::unique_ptr<FNET_Transport> _transport;
+    std::unique_ptr<FNET_Transport>    _transport;
     std::unique_ptr<FRTConnectionPool> _connectionPool;
 };
 

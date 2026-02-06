@@ -9,7 +9,7 @@
 namespace config::sentinel {
 
 struct StateApi {
-    vespalib::SimpleHealthProducer myHealth;
+    vespalib::SimpleHealthProducer          myHealth;
     vespalib::SimpleComponentConfigProducer myComponents;
 };
 

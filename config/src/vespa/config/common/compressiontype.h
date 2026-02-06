@@ -6,7 +6,7 @@
 namespace config {
 
 enum class CompressionType { UNCOMPRESSED, LZ4 };
-std::string compressionTypeToString(const CompressionType& compressionType);
+std::string     compressionTypeToString(const CompressionType& compressionType);
 CompressionType stringToCompressionType(const std::string& type);
 
 } // namespace config

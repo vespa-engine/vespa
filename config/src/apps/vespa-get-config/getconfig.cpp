@@ -27,7 +27,7 @@ using namespace config;
 class GetConfig {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Target *_target;
+    FRT_Target                               *_target;
 
     GetConfig(const GetConfig &);
     GetConfig &operator=(const GetConfig &);
@@ -35,10 +35,10 @@ private:
 public:
     GetConfig() : _server(), _target(nullptr) {}
     ~GetConfig();
-    int usage(const char *self);
+    int  usage(const char *self);
     void initRPC(const char *spec);
     void finiRPC();
-    int main(int argc, char **argv);
+    int  main(int argc, char **argv);
 };
 
 GetConfig::~GetConfig() {
@@ -81,26 +81,26 @@ void GetConfig::finiRPC() {
 }
 
 int GetConfig::main(int argc, char **argv) {
-    int retval = 1;
+    int  retval = 1;
     bool debugging = false;
-    int c = -1;
+    int  c = -1;
 
     StringVector defSchema;
-    const char *schemaString = nullptr;
-    const char *defName = nullptr;
-    const char *defMD5 = "";
-    std::string defNamespace("config");
-    const char *serverHost = "localhost";
-    const char *configId = getenv("VESPA_CONFIG_ID");
-    bool printAsJson = false; // TODO: Change default value in Vespa 9
-    int traceLevel = config::protocol::readTraceLevel();
-    const char *vespaVersionString = nullptr;
-    int64_t generation = 0;
+    const char  *schemaString = nullptr;
+    const char  *defName = nullptr;
+    const char  *defMD5 = "";
+    std::string  defNamespace("config");
+    const char  *serverHost = "localhost";
+    const char  *configId = getenv("VESPA_CONFIG_ID");
+    bool         printAsJson = false; // TODO: Change default value in Vespa 9
+    int          traceLevel = config::protocol::readTraceLevel();
+    const char  *vespaVersionString = nullptr;
+    int64_t      generation = 0;
 
     if (configId == nullptr) {
         configId = "";
     }
-    const char *configXxhash64 = "";
+    const char        *configXxhash64 = "";
     vespalib::duration serverTimeout = 3s;
     vespalib::duration clientTimeout = 10s;
 
@@ -221,11 +221,11 @@ int GetConfig::main(int argc, char **argv) {
     tryVersions.push_back(VespaVersion::fromString(""));
 
     for (const VespaVersion &vespaVersion : tryVersions) {
-        FRTConfigRequestFactory requestFactory(traceLevel, vespaVersion,
-                                               config::protocol::readProtocolCompressionType());
-        FRTConnection connection(spec, _server->supervisor(), TimingValues());
-        ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
-        ConfigState state(configXxhash64, generation, false);
+        FRTConfigRequestFactory           requestFactory(traceLevel, vespaVersion,
+                                                         config::protocol::readProtocolCompressionType());
+        FRTConnection                     connection(spec, _server->supervisor(), TimingValues());
+        ConfigKey                         key(configId, defName, defNamespace, defMD5, defSchema);
+        ConfigState                       state(configXxhash64, generation, false);
         std::unique_ptr<FRTConfigRequest> request =
             requestFactory.createConfigRequest(key, &connection, state, serverTimeout);
 
@@ -242,7 +242,7 @@ int GetConfig::main(int argc, char **argv) {
             break;
         }
         response->fill();
-        ConfigKey rKey(response->getKey());
+        ConfigKey          rKey(response->getKey());
         const ConfigState &rState = response->getConfigState();
         const ConfigValue &rValue = response->getValue();
         if (debugging) {

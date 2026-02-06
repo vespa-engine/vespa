@@ -25,15 +25,15 @@ public:
     void subscribe(const std::string& configId, IFetcherCallback<ConfigType>* callback,
                    vespalib::duration subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
-    void start();
-    void close();
+    void    start();
+    void    close();
     int64_t getGeneration() const;
 
 private:
     std::unique_ptr<ConfigPoller> _poller;
-    std::thread _thread;
-    std::atomic<bool> _closed;
-    std::atomic<bool> _started;
+    std::thread                   _thread;
+    std::atomic<bool>             _closed;
+    std::atomic<bool>             _started;
 };
 
 } // namespace config

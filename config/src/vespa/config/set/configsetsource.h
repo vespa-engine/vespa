@@ -17,7 +17,7 @@ class IConfigHolder;
 class ConfigSetSource : public Source {
 public:
     typedef std::map<ConfigKey, ConfigInstance *> BuilderMap;
-    typedef std::shared_ptr<BuilderMap> BuilderMapSP;
+    typedef std::shared_ptr<BuilderMap>           BuilderMapSP;
     ConfigSetSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey &key, BuilderMapSP builderMap);
     ConfigSetSource(const ConfigSetSource &) = delete;
     ConfigSetSource &operator=(const ConfigSetSource &) = delete;
@@ -29,10 +29,10 @@ public:
 
 private:
     std::shared_ptr<IConfigHolder> _holder;
-    const ConfigKey _key;
-    int64_t _generation;
-    BuilderMapSP _builderMap;
-    ConfigState _lastState;
+    const ConfigKey                _key;
+    int64_t                        _generation;
+    BuilderMapSP                   _builderMap;
+    ConfigState                    _lastState;
 
     bool validRequest(const ConfigKey &key);
 };

@@ -76,8 +76,8 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    sentinel::Manager manager(environment);
-    std::vector<pollfd> fds;
+    sentinel::Manager     manager(environment);
+    std::vector<pollfd>   fds;
     vespalib::steady_time lastTime = vespalib::steady_clock::now();
     while (!stop()) {
         try {

@@ -8,7 +8,7 @@ ConfigSetSourceFactory::ConfigSetSourceFactory(BuilderMapSP builderMap) : _build
 ConfigSetSourceFactory::~ConfigSetSourceFactory() = default;
 
 std::unique_ptr<Source> ConfigSetSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder,
-                                                             const ConfigKey& key) const {
+                                                             const ConfigKey&               key) const {
     return std::make_unique<ConfigSetSource>(std::move(holder), key, _builderMap);
 }
 

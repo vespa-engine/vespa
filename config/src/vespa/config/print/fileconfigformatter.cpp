@@ -26,9 +26,9 @@ void doEncode(ConfigDataBuffer &buffer, Output &output);
 namespace {
 
 struct ConfigEncoder : public ArrayTraverser, public ObjectTraverser {
-    OutputWriter &out;
-    int level;
-    bool head;
+    OutputWriter            &out;
+    int                      level;
+    bool                     head;
     std::vector<std::string> prefixList;
 
     explicit ConfigEncoder(OutputWriter &out_in) : out(out_in), level(0), head(true) {}
@@ -50,8 +50,8 @@ struct ConfigEncoder : public ArrayTraverser, public ObjectTraverser {
     void encodeDOUBLE(double value) { out.printf("%g", value); }
     void encodeSTRINGNOQUOTE(const Memory &memory) {
         const char *hex = "0123456789ABCDEF";
-        char *p = out.reserve(memory.size * 6);
-        size_t len = 0;
+        char       *p = out.reserve(memory.size * 6);
+        size_t      len = 0;
         const char *pos = memory.data;
         const char *end = memory.data + memory.size;
         for (; pos < end; ++pos) {
@@ -120,7 +120,7 @@ struct ConfigEncoder : public ArrayTraverser, public ObjectTraverser {
     }
     void encodeMAP(const Inspector &inspector) {
         for (size_t i = 0; i < inspector.children(); i++) {
-            const Inspector &child(inspector[i]);
+            const Inspector      &child(inspector[i]);
             vespalib::asciistream ss;
             ss << "{\"" << child["key"].asString().make_string() << "\"}";
             prefixList.emplace_back(ss.view());

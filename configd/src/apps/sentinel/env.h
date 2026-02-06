@@ -22,8 +22,8 @@ public:
     Env();
     ~Env();
 
-    ConfigOwner &configOwner() { return _cfgOwner; }
-    ModelOwner &modelOwner() { return _modelOwner; }
+    ConfigOwner  &configOwner() { return _cfgOwner; }
+    ModelOwner   &modelOwner() { return _modelOwner; }
     CommandQueue &commandQueue() { return _rpcCommandQueue; }
     StartMetrics &metrics() { return _startMetrics; }
 
@@ -34,15 +34,15 @@ public:
     void notifyConfigUpdated();
 
 private:
-    void respondAsEmpty();
-    ConfigOwner _cfgOwner;
-    ModelOwner _modelOwner;
-    CommandQueue _rpcCommandQueue;
-    std::unique_ptr<RpcServer> _rpcServer;
-    StateApi _stateApi;
-    StartMetrics _startMetrics;
+    void                                   respondAsEmpty();
+    ConfigOwner                            _cfgOwner;
+    ModelOwner                             _modelOwner;
+    CommandQueue                           _rpcCommandQueue;
+    std::unique_ptr<RpcServer>             _rpcServer;
+    StateApi                               _stateApi;
+    StartMetrics                           _startMetrics;
     std::unique_ptr<vespalib::StateServer> _stateServer;
-    int _statePort;
+    int                                    _statePort;
 };
 
 } // namespace config::sentinel

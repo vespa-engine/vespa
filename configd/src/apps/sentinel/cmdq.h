@@ -18,7 +18,7 @@ public:
     Cmd(FRT_RPCRequest *req, CmdType cmdType, const char *service = "")
         : _req(req), _cmdType(cmdType), _serviceName(service) {}
 
-    CmdType type() const { return _cmdType; }
+    CmdType     type() const { return _cmdType; }
     const char *serviceName() const { return _serviceName; }
 
     void retError(const char *errorString) const;
@@ -28,13 +28,13 @@ public:
 
 private:
     FRT_RPCRequest *_req;
-    CmdType _cmdType;
-    const char *_serviceName;
+    CmdType         _cmdType;
+    const char     *_serviceName;
 };
 
 class CommandQueue {
 private:
-    std::mutex _lock;
+    std::mutex           _lock;
     std::vector<Cmd::UP> _queue;
 
 public:
@@ -48,7 +48,7 @@ public:
 
     std::vector<Cmd::UP> drain() {
         std::vector<Cmd::UP> r;
-        std::lock_guard guard(_lock);
+        std::lock_guard      guard(_lock);
         r.swap(_queue);
         return r;
     }

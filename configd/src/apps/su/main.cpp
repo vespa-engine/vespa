@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     uid_t u = p->pw_uid;
 
     gid_t grouplist[256];
-    int group_arr_sz = 256;
+    int   group_arr_sz = 256;
 #ifdef __APPLE__
     int mac_gid = g;
     int mac_groups[256];

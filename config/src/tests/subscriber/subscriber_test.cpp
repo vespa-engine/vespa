@@ -54,12 +54,12 @@ class MySource : public Source {
 
 class MyManager : public IConfigManager {
 public:
-    void unsubscribeAll() {}
+    void   unsubscribeAll() {}
     size_t numSubscribers() const { return 0; }
 
-    SubscriptionId idCounter;
+    SubscriptionId                              idCounter;
     std::vector<std::shared_ptr<IConfigHolder>> _holders;
-    int numCancel;
+    int                                         numCancel;
 
     MyManager() : idCounter(0), numCancel(0) {}
     ~MyManager() override;
@@ -116,8 +116,8 @@ public:
 };
 
 struct StandardFixture {
-    MyManager& f1;
-    ConfigSubscriber s;
+    MyManager&                  f1;
+    ConfigSubscriber            s;
     ConfigHandle<FooConfig>::UP h1;
     ConfigHandle<BarConfig>::UP h2;
 
@@ -136,7 +136,7 @@ struct StandardFixture {
 StandardFixture::~StandardFixture() = default;
 
 struct SimpleFixture {
-    ConfigSet set;
+    ConfigSet        set;
     FooConfigBuilder fooBuilder;
     BarConfigBuilder barBuilder;
     SimpleFixture() {
@@ -153,8 +153,8 @@ SimpleFixture::~SimpleFixture() = default;
 } // namespace
 
 TEST(SubscriberTest, requireThatSubscriberCanGetMultipleTypes) {
-    SimpleFixture f;
-    ConfigSubscriber s(f.set);
+    SimpleFixture               f;
+    ConfigSubscriber            s(f.set);
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid");
     ASSERT_TRUE(s.nextConfigNow());
@@ -165,10 +165,10 @@ TEST(SubscriberTest, requireThatSubscriberCanGetMultipleTypes) {
 }
 
 TEST(SubscriberTest, requireThatNextConfigMustBeCalled) {
-    SimpleFixture f;
-    ConfigSubscriber s(f.set);
+    SimpleFixture               f;
+    ConfigSubscriber            s(f.set);
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
-    bool thrown = false;
+    bool                        thrown = false;
     try {
         std::unique_ptr<FooConfig> foo = h1->getConfig();
     } catch (const ConfigRuntimeException& e) {
@@ -178,8 +178,8 @@ TEST(SubscriberTest, requireThatNextConfigMustBeCalled) {
 }
 
 TEST(SubscriberTest, requireThatSubscriptionsCannotBeAddedWhenFrozen) {
-    SimpleFixture f;
-    ConfigSubscriber s(f.set);
+    SimpleFixture               f;
+    ConfigSubscriber            s(f.set);
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
     ASSERT_TRUE(s.nextConfigNow());
     bool thrown = false;
@@ -192,9 +192,9 @@ TEST(SubscriberTest, requireThatSubscriptionsCannotBeAddedWhenFrozen) {
 }
 
 TEST(SubscriberTest, requireThatNextConfigReturnsFalseUntilSubscriptionHasSucceeded) {
-    MyManager f1;
-    APIFixture f2(f1);
-    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
+    MyManager                   f1;
+    APIFixture                  f2(f1);
+    ConfigSubscriber            s(std::make_shared<APIFixture>(f2));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid");
     ASSERT_FALSE(s.nextConfigNow());
@@ -206,8 +206,8 @@ TEST(SubscriberTest, requireThatNextConfigReturnsFalseUntilSubscriptionHasSuccee
 }
 
 TEST(SubscriberTest, requireThatNewGenerationIsFetchedOnReload) {
-    MyManager f1;
-    APIFixture f2(f1);
+    MyManager       f1;
+    APIFixture      f2(f1);
     StandardFixture f3(f1, f2);
     verifyConfig("foo", f3.h1->getConfig());
     verifyConfig("bar", f3.h2->getConfig());
@@ -227,8 +227,8 @@ TEST(SubscriberTest, requireThatNewGenerationIsFetchedOnReload) {
 }
 
 TEST(SubscriberTest, requireThatAllConfigsMustGetTimestampUpdate) {
-    MyManager f1;
-    APIFixture f2(f1);
+    MyManager       f1;
+    APIFixture      f2(f1);
     StandardFixture f3(f1, f2);
     f1.updateValue(0, createFooValue("foo2"), 2);
     ASSERT_FALSE(f3.s.nextConfig(100ms));
@@ -244,8 +244,8 @@ TEST(SubscriberTest, requireThatAllConfigsMustGetTimestampUpdate) {
 }
 
 TEST(SubscriberTest, requireThatNextConfigMaySucceedIfInTheMiddleOfConfigUpdate) {
-    MyManager f1;
-    APIFixture f2(f1);
+    MyManager       f1;
+    APIFixture      f2(f1);
     StandardFixture f3(f1, f2);
     f1.updateValue(0, createFooValue("foo2"), 2);
     ASSERT_FALSE(f3.s.nextConfig(1000ms));
@@ -259,8 +259,8 @@ TEST(SubscriberTest, requireThatNextConfigMaySucceedIfInTheMiddleOfConfigUpdate)
 }
 
 TEST(SubscriberTest, requireThatCorrectConfigIsReturnedAfterTimestampUpdate) {
-    MyManager f1;
-    APIFixture f2(f1);
+    MyManager       f1;
+    APIFixture      f2(f1);
     StandardFixture f3(f1, f2);
     f1.updateGeneration(0, 2);
     f1.updateGeneration(1, 2);
@@ -274,10 +274,10 @@ TEST(SubscriberTest, requireThatCorrectConfigIsReturnedAfterTimestampUpdate) {
 
 TEST(SubscriberTest, requireThatConfigIsReturnedWhenUpdatedDuringNextConfig) {
     constexpr size_t num_threads = 2;
-    MyManager f1;
-    APIFixture f2(f1);
-    StandardFixture f3(f1, f2);
-    auto task = [&f1, &f3](Nexus& ctx) {
+    MyManager        f1;
+    APIFixture       f2(f1);
+    StandardFixture  f3(f1, f2);
+    auto             task = [&f1, &f3](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             vespalib::Timer timer;
@@ -297,8 +297,8 @@ TEST(SubscriberTest, requireThatConfigIsReturnedWhenUpdatedDuringNextConfig) {
 }
 
 TEST(SubscriberTest, requireThatConfigIsReturnedWhenUpdatedBeforeNextConfig) {
-    MyManager f1;
-    APIFixture f2(f1);
+    MyManager       f1;
+    APIFixture      f2(f1);
     StandardFixture f3(f1, f2);
     vespalib::Timer timer;
     ASSERT_FALSE(f3.s.nextConfig(1000ms));
@@ -313,8 +313,8 @@ TEST(SubscriberTest, requireThatConfigIsReturnedWhenUpdatedBeforeNextConfig) {
 }
 
 TEST(SubscriberTest, requireThatSubscriptionsAreUnsubscribedOnClose) {
-    MyManager f1;
-    APIFixture f2(f1);
+    MyManager       f1;
+    APIFixture      f2(f1);
     StandardFixture f3(f1, f2);
     ASSERT_FALSE(f3.s.isClosed());
     f3.s.close();
@@ -323,8 +323,8 @@ TEST(SubscriberTest, requireThatSubscriptionsAreUnsubscribedOnClose) {
 }
 
 TEST(SubscriberTest, requireThatNothingCanBeCalledAfterClose) {
-    MyManager f1;
-    APIFixture f2(f1);
+    MyManager       f1;
+    APIFixture      f2(f1);
     StandardFixture f3(f1, f2);
     ASSERT_FALSE(f3.s.isClosed());
     f3.s.close();
@@ -341,10 +341,10 @@ TEST(SubscriberTest, requireThatNothingCanBeCalledAfterClose) {
 
 TEST(SubscriberTest, requireThatNextConfigIsInterruptedOnClose) {
     constexpr size_t num_threads = 2;
-    MyManager f1;
-    APIFixture f2(f1);
-    StandardFixture f3(f1, f2);
-    auto task = [&f3](Nexus& ctx) {
+    MyManager        f1;
+    APIFixture       f2(f1);
+    StandardFixture  f3(f1, f2);
+    auto             task = [&f3](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             vespalib::Timer timer;
@@ -360,9 +360,9 @@ TEST(SubscriberTest, requireThatNextConfigIsInterruptedOnClose) {
 }
 
 TEST(SubscriberTest, requireThatHandlesAreMarkedAsChanged) {
-    MyManager f1;
-    APIFixture f2(f1);
-    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
+    MyManager                   f1;
+    APIFixture                  f2(f1);
+    ConfigSubscriber            s(std::make_shared<APIFixture>(f2));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid2");
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid2");
     EXPECT_FALSE(s.nextConfigNow());
@@ -384,9 +384,9 @@ TEST(SubscriberTest, requireThatHandlesAreMarkedAsChanged) {
 }
 
 TEST(SubscriberTest, requireThatNextGenerationMarksChanged) {
-    MyManager f1;
-    APIFixture f2(f1);
-    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
+    MyManager                   f1;
+    APIFixture                  f2(f1);
+    ConfigSubscriber            s(std::make_shared<APIFixture>(f2));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid2");
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid2");
     f1.updateValue(0, createFooValue("foo"), 1);
@@ -409,9 +409,9 @@ TEST(SubscriberTest, requireThatNextGenerationMarksChanged) {
 }
 
 TEST(SubscriberTest, requireThatgetGenerationIsSet) {
-    MyManager f1;
-    APIFixture f2(f1);
-    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
+    MyManager                   f1;
+    APIFixture                  f2(f1);
+    ConfigSubscriber            s(std::make_shared<APIFixture>(f2));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid2");
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid2");
     f1.updateValue(0, createFooValue("foo"), 1);
@@ -430,8 +430,8 @@ TEST(SubscriberTest, requireThatgetGenerationIsSet) {
 }
 
 TEST(SubscriberTest, requireThatConfigHandleStillHasConfigOnTimestampUpdate) {
-    MyManager f1;
-    APIFixture f2(f1);
+    MyManager       f1;
+    APIFixture      f2(f1);
     StandardFixture f3(f1, f2);
     f1.updateGeneration(0, 2);
     f1.updateGeneration(1, 2);
@@ -441,9 +441,9 @@ TEST(SubscriberTest, requireThatConfigHandleStillHasConfigOnTimestampUpdate) {
 }
 
 TEST(SubscriberTest, requireThatTimeStamp0Works) {
-    MyManager f1;
-    APIFixture f2(f1);
-    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
+    MyManager                   f1;
+    APIFixture                  f2(f1);
+    ConfigSubscriber            s(std::make_shared<APIFixture>(f2));
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid");
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
     ConfigHandle<BazConfig>::UP h3 = s.subscribe<BazConfig>("myid");
@@ -457,9 +457,9 @@ TEST(SubscriberTest, requireThatTimeStamp0Works) {
 }
 
 TEST(SubscriberTest, requireThatNextGenerationWorksWithManyConfigs) {
-    MyManager f1;
-    APIFixture f2(f1);
-    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
+    MyManager                   f1;
+    APIFixture                  f2(f1);
+    ConfigSubscriber            s(std::make_shared<APIFixture>(f2));
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid");
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
     ConfigHandle<BazConfig>::UP h3 = s.subscribe<BazConfig>("myid");
@@ -521,9 +521,9 @@ TEST(SubscriberTest, requireThatNextGenerationWorksWithManyConfigs) {
 }
 
 TEST(SubscriberTest, requireThatConfigSubscriberHandlesProxyCache) {
-    MyManager f1;
-    APIFixture f2(f1);
-    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
+    MyManager                   f1;
+    APIFixture                  f2(f1);
+    ConfigSubscriber            s(std::make_shared<APIFixture>(f2));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
     f1.updateValue(0, createFooValue("foo"), 1);
     f1.updateGeneration(0, 2);
@@ -541,12 +541,12 @@ TEST(SubscriberTest, requireThatConfigSubscriberHandlesProxyCache) {
 
 TEST(SubscriberTest, requireThatConfigSubscriberWaitsUntilNextConfigSucceeds) {
     constexpr size_t num_threads = 2;
-    MyManager f1;
-    APIFixture f2(f1);
-    auto task = [&f1, &f2](Nexus& ctx) {
+    MyManager        f1;
+    APIFixture       f2(f1);
+    auto             task = [&f1, &f2](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
-            ConfigSubscriber s(std::make_shared<APIFixture>(f2));
+            ConfigSubscriber            s(std::make_shared<APIFixture>(f2));
             ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
             f1.updateValue(0, createFooValue("foo"), 1);
             ASSERT_TRUE(s.nextConfigNow());

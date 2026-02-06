@@ -27,7 +27,7 @@ bool FRTConfigResponse::validateResponse() {
 bool FRTConfigResponse::hasValidResponse() const { return (_responseState == OK); }
 
 std::string FRTConfigResponse::errorMessage() const { return _request->GetErrorMessage(); }
-int FRTConfigResponse::errorCode() const { return _request->GetErrorCode(); }
-bool FRTConfigResponse::isError() const { return _request->IsError(); }
+int         FRTConfigResponse::errorCode() const { return _request->GetErrorCode(); }
+bool        FRTConfigResponse::isError() const { return _request->IsError(); }
 
 } // namespace config

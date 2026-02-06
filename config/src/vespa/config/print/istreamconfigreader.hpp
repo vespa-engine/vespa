@@ -9,7 +9,7 @@ template <typename ConfigType> IstreamConfigReader<ConfigType>::IstreamConfigRea
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType> IstreamConfigReader<ConfigType>::read(const ConfigFormatter& formatter) {
-    ConfigDataBuffer buffer;
+    ConfigDataBuffer  buffer;
     std::stringstream buf;
     buf << _is.rdbuf();
     buffer.setEncodedString(buf.view());
@@ -19,7 +19,7 @@ std::unique_ptr<ConfigType> IstreamConfigReader<ConfigType>::read(const ConfigFo
 
 template <typename ConfigType> std::unique_ptr<ConfigType> IstreamConfigReader<ConfigType>::read() {
     StringVector lines;
-    std::string line;
+    std::string  line;
     while (getline(_is, line)) {
         lines.push_back(line);
     }

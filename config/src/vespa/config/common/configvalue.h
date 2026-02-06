@@ -34,12 +34,12 @@ public:
     int operator==(const ConfigValue &rhs) const;
     int operator!=(const ConfigValue &rhs) const;
 
-    size_t numLines() const { return _lines.size(); }
-    const std::string &getLine(int i) const { return _lines.at(i); }
+    size_t              numLines() const { return _lines.size(); }
+    const std::string  &getLine(int i) const { return _lines.at(i); }
     const StringVector &getLines() const { return _lines; }
-    StringVector getLegacyFormat() const;
-    std::string asJson() const;
-    const std::string &getXxhash64() const { return _xxhash64; }
+    StringVector        getLegacyFormat() const;
+    std::string         asJson() const;
+    const std::string  &getXxhash64() const { return _xxhash64; }
 
     void serializeV1(::vespalib::slime::Cursor &cursor) const;
     void serializeV2(::vespalib::slime::Cursor &cursor) const;
@@ -47,9 +47,9 @@ public:
     template <typename ConfigType> std::unique_ptr<ConfigType> newInstance() const;
 
 private:
-    PayloadPtr _payload;
+    PayloadPtr   _payload;
     StringVector _lines;
-    std::string _xxhash64;
+    std::string  _xxhash64;
 };
 
 } // namespace config

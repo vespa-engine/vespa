@@ -15,8 +15,8 @@ struct Inspector;
 
 namespace config::protocol {
 
-int readProtocolVersion();
-int readTraceLevel();
+int             readProtocolVersion();
+int             readTraceLevel();
 CompressionType readProtocolCompressionType();
 
 struct Payload {
@@ -68,8 +68,8 @@ struct DecompressedData {
     DecompressedData(const vespalib::Memory &mem, uint32_t sz) : memory(), memRef(mem), size(sz) {}
 
     vespalib::alloc::Alloc memory;
-    vespalib::Memory memRef;
-    uint32_t size;
+    vespalib::Memory       memRef;
+    uint32_t               size;
 };
 
 DecompressedData decompress(const char *buf, uint32_t len, const CompressionType &compressionType,

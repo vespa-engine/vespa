@@ -25,8 +25,8 @@ void verifyConfig(const std::string& expected, std::unique_ptr<BarConfig> cfg) {
 } // namespace
 
 TEST(UnitTest, requireThatConfigCanBeReloaded) {
-    ConfigSet set;
-    auto ctx = std::make_shared<ConfigContext>(set);
+    ConfigSet       set;
+    auto            ctx = std::make_shared<ConfigContext>(set);
     MyConfigBuilder builder;
     builder.myField = "myfoo";
     set.addBuilder("myid", &builder);
@@ -48,8 +48,8 @@ TEST(UnitTest, requireThatConfigCanBeReloaded) {
 }
 
 TEST(UnitTest, requireThatCanSubscribeWithSameIdToDifferentDefs) {
-    ConfigSet set;
-    auto ctx = std::make_shared<ConfigContext>(set);
+    ConfigSet        set;
+    auto             ctx = std::make_shared<ConfigContext>(set);
     FooConfigBuilder fooBuilder;
     BarConfigBuilder barBuilder;
 
@@ -59,7 +59,7 @@ TEST(UnitTest, requireThatCanSubscribeWithSameIdToDifferentDefs) {
     set.addBuilder("fooid", &fooBuilder);
     set.addBuilder("fooid", &barBuilder);
 
-    ConfigSubscriber subscriber(ctx);
+    ConfigSubscriber            subscriber(ctx);
     ConfigHandle<FooConfig>::UP h1 = subscriber.subscribe<FooConfig>("fooid");
     ConfigHandle<BarConfig>::UP h2 = subscriber.subscribe<BarConfig>("fooid");
 

@@ -27,11 +27,11 @@ public:
      *         if the retriever was closed.
      */
     ConfigSnapshot getConfigs(vespalib::duration timeout = DEFAULT_GETCONFIGS_TIMEOUT);
-    void close();
-    bool isClosed() const;
+    void           close();
+    bool           isClosed() const;
 
 private:
-    ConfigSubscriptionSet _set;
+    ConfigSubscriptionSet                            _set;
     std::vector<std::shared_ptr<ConfigSubscription>> _subscriptionList;
 };
 

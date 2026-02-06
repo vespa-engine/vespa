@@ -24,7 +24,7 @@ public:
     std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey& key) const override;
 
 private:
-    const ConfigKey _key;
+    const ConfigKey       _key;
     vespalib::asciistream _buffer;
 };
 

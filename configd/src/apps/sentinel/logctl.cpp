@@ -16,7 +16,7 @@ namespace config::sentinel {
 
 void justRunLogctl(const char *cspec, const char *lspec) {
     const char *progName = "vespa-logctl";
-    pid_t pid = fork();
+    pid_t       pid = fork();
     if (pid == 0) {
         LOG(debug, "running '%s' '%s' '%s'", progName, cspec, lspec);
         int devnull = open("/dev/null", O_WRONLY);
@@ -32,7 +32,7 @@ void justRunLogctl(const char *cspec, const char *lspec) {
         bool again;
         do {
             again = false;
-            int wstatus = 0;
+            int   wstatus = 0;
             pid_t got = waitpid(pid, &wstatus, 0);
             if (got == pid) {
                 again = false;

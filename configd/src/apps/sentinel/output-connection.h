@@ -11,8 +11,8 @@ namespace config::sentinel {
 
 class OutputConnection {
 private:
-    int _fd;
-    LineSplitter _lines;
+    int               _fd;
+    LineSplitter      _lines;
     ns_log::LLParser *_parser;
 
     // Unused constructors/assignment operator:
@@ -25,7 +25,7 @@ public:
     ~OutputConnection();
     bool isFinished() const;
     void handleOutput();
-    int fd() const { return _fd; }
+    int  fd() const { return _fd; }
 };
 
 } // namespace config::sentinel

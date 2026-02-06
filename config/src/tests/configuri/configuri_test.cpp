@@ -31,8 +31,8 @@ TEST(ConfigUriTest, Require_that_URI_can_be_created_from_std_string) {
 TEST(ConfigUriTest, Require_that_URI_can_be_created_from_instance) {
     MyConfigBuilder b;
     b.myField = "rabarbra";
-    ConfigUri uri(ConfigUri::createFromInstance(b));
-    ConfigSubscriber subscriber(uri.getContext());
+    ConfigUri                  uri(ConfigUri::createFromInstance(b));
+    ConfigSubscriber           subscriber(uri.getContext());
     ConfigHandle<MyConfig>::UP handle = subscriber.subscribe<MyConfig>(uri.getConfigId());
     ASSERT_TRUE(subscriber.nextConfigNow());
     ASSERT_TRUE(handle->isChanged());

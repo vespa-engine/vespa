@@ -14,17 +14,17 @@ LOG_SETUP("vespa-ping-configproxy");
 class PingProxy {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Target *_target;
+    FRT_Target                               *_target;
 
 public:
     PingProxy(const PingProxy &) = delete;
     PingProxy &operator=(const PingProxy &) = delete;
     PingProxy() : _server(), _target(nullptr) {}
     ~PingProxy();
-    int usage(const char *self);
+    int  usage(const char *self);
     void initRPC(const char *spec);
     void finiRPC();
-    int main(int argc, char **argv);
+    int  main(int argc, char **argv);
 };
 
 PingProxy::~PingProxy() {
@@ -53,13 +53,13 @@ void PingProxy::finiRPC() {
 }
 
 int PingProxy::main(int argc, char **argv) {
-    int retval = 0;
+    int  retval = 0;
     bool debugging = false;
-    int c = -1;
+    int  c = -1;
 
     const char *serverHost = "localhost";
-    int clientTimeout = 5;
-    int serverPort = 19090;
+    int         clientTimeout = 5;
+    int         serverPort = 19090;
 
     while ((c = getopt(argc, argv, "w:s:p:dh")) != -1) {
         switch (c) {

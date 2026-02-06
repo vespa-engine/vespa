@@ -25,7 +25,7 @@ struct FileAcquirer {
 class RpcFileAcquirer : public FileAcquirer {
 private:
     std::unique_ptr<FRT_Supervisor> _orb;
-    std::string _spec;
+    std::string                     _spec;
 
 public:
     RpcFileAcquirer(FNET_Transport &transport, const std::string &spec);

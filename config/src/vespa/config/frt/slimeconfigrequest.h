@@ -24,7 +24,7 @@ public:
                        const Trace& trace, const VespaVersion& vespaVersion, int64_t protocolVersion,
                        const CompressionType& compressionType, const std::string& methodName);
     ~SlimeConfigRequest();
-    bool verifyState(const ConfigState& state) const override;
+    bool                            verifyState(const ConfigState& state) const override;
     std::unique_ptr<ConfigResponse> createResponse(FRT_RPCRequest* request) const override = 0;
 
 private:
@@ -33,7 +33,7 @@ private:
                               const VespaVersion& vespaVersion, int64_t protocolVersion,
                               const CompressionType& compressionType);
     static std::string createJsonFromSlime(const vespalib::Slime& data);
-    vespalib::Slime _data;
+    vespalib::Slime    _data;
 };
 
 } // namespace config

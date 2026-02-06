@@ -13,10 +13,10 @@ namespace config {
 class GenericConfigSubscriber {
 public:
     GenericConfigSubscriber(std::shared_ptr<IConfigContext> context);
-    bool nextGeneration(vespalib::duration timeout);
+    bool                                nextGeneration(vespalib::duration timeout);
     std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey& key, vespalib::duration timeout);
-    void close();
-    int64_t getGeneration() const;
+    void                                close();
+    int64_t                             getGeneration() const;
 
 private:
     ConfigSubscriptionSet _set;

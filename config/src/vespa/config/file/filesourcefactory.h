@@ -38,7 +38,7 @@ public:
     std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey& key) const override;
 
 private:
-    std::string _dirName;
+    std::string  _dirName;
     StringVector _fileNames;
 };
 

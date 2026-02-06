@@ -16,17 +16,17 @@ namespace config::sentinel {
  **/
 class ModelOwner {
 private:
-    std::string _configId;
-    config::ConfigSubscriber _subscriber;
+    std::string                           _configId;
+    config::ConfigSubscriber              _subscriber;
     config::ConfigHandle<ModelConfig>::UP _modelHandle;
-    std::mutex _lock;
-    std::unique_ptr<ModelConfig> _modelConfig;
+    std::mutex                            _lock;
+    std::unique_ptr<ModelConfig>          _modelConfig;
 
 public:
     ModelOwner(const std::string &configId);
     ~ModelOwner();
-    void start(std::chrono::milliseconds timeout, bool firstTime);
-    void checkForUpdates();
+    void                       start(std::chrono::milliseconds timeout, bool firstTime);
+    void                       checkForUpdates();
     std::optional<ModelConfig> getModelConfig();
 };
 

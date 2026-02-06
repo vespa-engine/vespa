@@ -52,7 +52,7 @@ std::string spec(const SpecMap::value_type &host_and_port) {
 void classifyConnFails(ConnectivityMap &connectivityMap, const SpecMap &specMap, RpcServer &rpcServer) {
     std::vector<HostAndPort> failedConnSpecs;
     std::vector<HostAndPort> goodNeighborSpecs;
-    std::string myHostname = vespa::Defaults::vespaHostname();
+    std::string              myHostname = vespa::Defaults::vespaHostname();
     for (auto &[hostname, check] : connectivityMap) {
         if (hostname == myHostname) {
             if (check.result() == CcResult::CONN_FAIL) {
@@ -77,8 +77,8 @@ void classifyConnFails(ConnectivityMap &connectivityMap, const SpecMap &specMap,
         auto cmIter = connectivityMap.find(nameToCheck);
         LOG_ASSERT(cmIter != connectivityMap.end());
         OutwardCheckContext cornerContext(goodNeighborSpecs.size(), nameToCheck, portToCheck, rpcServer.orb());
-        ConnectivityMap cornerProbes;
-        int ping_timeout = 1000 + 50 * goodNeighborSpecs.size();
+        ConnectivityMap     cornerProbes;
+        int                 ping_timeout = 1000 + 50 * goodNeighborSpecs.size();
         for (const auto &hp : goodNeighborSpecs) {
             cornerProbes.try_emplace(hp.first, spec(hp), cornerContext, ping_timeout);
         }
@@ -95,7 +95,7 @@ void classifyConnFails(ConnectivityMap &connectivityMap, const SpecMap &specMap,
             LOG(debug, "Unreachable: %s is up according to %zd hosts (down according to me + %zd others)",
                 nameToCheck.c_str(), numReportsUp, numReportsDown);
             OutwardCheckContext reverseContext(1, myHostname, rpcServer.getPort(), rpcServer.orb());
-            OutwardCheck check(spec(toClassify), reverseContext, 1000);
+            OutwardCheck        check(spec(toClassify), reverseContext, 1000);
             reverseContext.latch.await();
             auto secondResult = check.result();
             if (secondResult == CcResult::CONN_FAIL) {
@@ -145,10 +145,10 @@ bool Connectivity::checkConnectivity(RpcServer &rpcServer) {
         LOG(warning, "could not get model config, skipping connectivity checks");
         return true;
     }
-    std::string myHostname = vespa::Defaults::vespaHostname();
+    std::string         myHostname = vespa::Defaults::vespaHostname();
     OutwardCheckContext checkContext(clusterSize, myHostname, rpcServer.getPort(), rpcServer.orb());
-    ConnectivityMap connectivityMap;
-    int ping_timeout = 1000 + 50 * _checkSpecs.size();
+    ConnectivityMap     connectivityMap;
+    int                 ping_timeout = 1000 + 50 * _checkSpecs.size();
     for (const auto &host_and_port : _checkSpecs) {
         connectivityMap.try_emplace(host_and_port.first, spec(host_and_port), checkContext, ping_timeout);
     }

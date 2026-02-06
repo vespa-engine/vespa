@@ -11,9 +11,9 @@ using namespace config;
 
 struct ServerFixture : FRT_Invokable {
     fnet::frt::StandaloneFRT server;
-    FNET_Transport transport;
-    FRT_Supervisor &orb;
-    std::string spec;
+    FNET_Transport           transport;
+    FRT_Supervisor          &orb;
+    std::string              spec;
 
     void init_rpc() {
         FRT_ReflectionBuilder rb(&orb);
@@ -46,7 +46,7 @@ struct ServerFixture : FRT_Invokable {
 ServerFixture::~ServerFixture() { transport.ShutDown(true); }
 
 TEST(FileAcquirerTest, require_that_files_can_be_acquired_over_rpc) {
-    ServerFixture f1;
+    ServerFixture   f1;
     RpcFileAcquirer f2(f1.transport, f1.spec);
     EXPECT_EQ("my_path", f2.wait_for("my_ref", 60.0));
     EXPECT_EQ("", f2.wait_for("bogus_ref", 60.0));

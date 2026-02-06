@@ -33,15 +33,15 @@ using namespace config::protocol::v3;
 namespace {
 
 struct Response {
-    std::string defName;
-    std::string defMd5;
-    std::string configId;
-    std::string configXxhash64;
-    int changed;
-    long generation;
+    std::string  defName;
+    std::string  defMd5;
+    std::string  configId;
+    std::string  configXxhash64;
+    int          changed;
+    long         generation;
     StringVector payload;
-    std::string ns;
-    void encodeResponse(FRT_RPCRequest *req) const {
+    std::string  ns;
+    void         encodeResponse(FRT_RPCRequest *req) const {
         FRT_Values &ret = *req->GetReturn();
 
         ret.AddString(defName.c_str());
@@ -70,7 +70,7 @@ Response::~Response() = default;
 
 struct RPCFixture {
     std::vector<FRT_RPCRequest *> requests;
-    FRT_RPCRequest *createEmptyRequest() {
+    FRT_RPCRequest               *createEmptyRequest() {
         FRT_RPCRequest *req = new FRT_RPCRequest();
         req->SetError(FRTE_NO_ERROR);
         requests.push_back(req);
@@ -97,19 +97,19 @@ struct RPCFixture {
 };
 
 struct ConnectionMock : public Connection {
-    int errorCode;
-    duration timeout;
+    int                       errorCode;
+    duration                  timeout;
     std::unique_ptr<Response> ans;
-    fnet::frt::StandaloneFRT server;
-    FRT_Supervisor &supervisor;
-    FNET_Scheduler scheduler;
-    std::string address;
+    fnet::frt::StandaloneFRT  server;
+    FRT_Supervisor           &supervisor;
+    FNET_Scheduler            scheduler;
+    std::string               address;
     ConnectionMock() : ConnectionMock(std::unique_ptr<Response>()) {}
     ConnectionMock(std::unique_ptr<Response> answer);
     ~ConnectionMock() override;
     FRT_RPCRequest *allocRPCRequest() override { return supervisor.AllocRPCRequest(); }
-    void setError(int ec) override { errorCode = ec; }
-    void invoke(FRT_RPCRequest *req, duration t, FRT_IRequestWait *waiter) override {
+    void            setError(int ec) override { errorCode = ec; }
+    void            invoke(FRT_RPCRequest *req, duration t, FRT_IRequestWait *waiter) override {
         timeout = t;
         if (ans != nullptr) {
             ans->encodeResponse(req);
@@ -128,17 +128,17 @@ struct FactoryMock : public ConnectionFactory {
     ConnectionMock *current;
     FactoryMock(ConnectionMock *c) noexcept : current(c) {}
     ~FactoryMock() override;
-    Connection *getCurrent() override { return current; }
+    Connection     *getCurrent() override { return current; }
     FNET_Scheduler *getScheduler() override { return &current->scheduler; }
-    void syncTransport() override {}
+    void            syncTransport() override {}
 };
 
 FactoryMock::~FactoryMock() = default;
 
 struct AgentResultFixture {
-    bool notified;
-    duration waitTime;
-    duration timeout;
+    bool        notified;
+    duration    waitTime;
+    duration    timeout;
     ConfigState state;
     AgentResultFixture(duration w, duration t) : notified(false), waitTime(w), timeout(t), state() {}
 };
@@ -149,9 +149,9 @@ struct AgentFixture : public ConfigAgent {
     AgentFixture(AgentResultFixture *r) : result(r) {}
 
     const ConfigState &getConfigState() const override { return result->state; }
-    duration getWaitTime() const override { return result->waitTime; }
-    duration getTimeout() const override { return result->timeout; }
-    void handleResponse(const ConfigRequest &request, std::unique_ptr<ConfigResponse> response) override {
+    duration           getWaitTime() const override { return result->waitTime; }
+    duration           getTimeout() const override { return result->timeout; }
+    void               handleResponse(const ConfigRequest &request, std::unique_ptr<ConfigResponse> response) override {
         (void)request;
         (void)response;
         result->notified = true;
@@ -161,17 +161,17 @@ struct AgentFixture : public ConfigAgent {
 };
 
 struct SourceFixture {
-    RPCFixture rpc;
+    RPCFixture     rpc;
     ConnectionMock conn;
-    ConfigKey key;
+    ConfigKey      key;
     SourceFixture()
         : rpc(), conn(std::make_unique<Response>("foo", "baz", "4", "boo")), key("foo", "bar", "4", "boo") {}
 };
 
 struct FRTFixture {
-    AgentResultFixture result;
+    AgentResultFixture      result;
     FRTConfigRequestFactory requestFactory;
-    FRTSource src;
+    FRTSource               src;
 
     FRTFixture(SourceFixture &f1)
         : result(2s, 10s), requestFactory(3, VespaVersion::fromString("1.2.3"), CompressionType::UNCOMPRESSED),
@@ -181,7 +181,7 @@ struct FRTFixture {
 } // namespace
 
 TEST(FrtTest, require_that_empty_config_response_does_not_validate) {
-    RPCFixture f1;
+    RPCFixture          f1;
     FRTConfigResponseV3 fail1(f1.createEmptyRequest());
     ASSERT_FALSE(fail1.validateResponse());
     ASSERT_FALSE(fail1.hasValidResponse());
@@ -189,7 +189,7 @@ TEST(FrtTest, require_that_empty_config_response_does_not_validate) {
 }
 
 TEST(FrtTest, require_that_response_containing_errors_does_not_validate) {
-    RPCFixture f1;
+    RPCFixture          f1;
     FRTConfigResponseV3 fail1(f1.createErrorRequest());
     ASSERT_FALSE(fail1.validateResponse());
     ASSERT_FALSE(fail1.hasValidResponse());
@@ -198,7 +198,7 @@ TEST(FrtTest, require_that_response_containing_errors_does_not_validate) {
 }
 
 TEST(FrtTest, require_that_response_contains_all_values) {
-    RPCFixture f1;
+    RPCFixture          f1;
     FRTConfigResponseV3 ok(f1.createOKRequest(Response("foo", "baz", "bim", "boo", 12, 15)));
     ASSERT_FALSE(ok.validateResponse());
     ASSERT_FALSE(ok.hasValidResponse());
@@ -206,7 +206,7 @@ TEST(FrtTest, require_that_response_contains_all_values) {
 
 TEST(FrtTest, require_that_request_is_config_task_is_scheduled) {
     SourceFixture f1;
-    FRTFixture f2(f1);
+    FRTFixture    f2(f1);
     f2.src.getConfig();
     ASSERT_TRUE(f2.result.notified);
     f2.result.notified = false;
@@ -223,12 +223,12 @@ TEST(FrtTest, require_that_request_is_config_task_is_scheduled) {
 
 TEST(FrtTest, require_that_v3_request_is_correctly_initialized) {
     ConnectionMock conn;
-    ConfigKey key = ConfigKey::create<MyConfig>("foobi");
-    std::string xxhash64 = "myxxhash64";
-    int64_t currentGeneration = 3;
-    std::string hostName = "myhost";
-    duration timeout = 3s;
-    Trace traceIn(3);
+    ConfigKey      key = ConfigKey::create<MyConfig>("foobi");
+    std::string    xxhash64 = "myxxhash64";
+    int64_t        currentGeneration = 3;
+    std::string    hostName = "myhost";
+    duration       timeout = 3s;
+    Trace          traceIn(3);
     traceIn.trace(2, "Hei");
     FRTConfigRequestV3 v3req(&conn, key, xxhash64, currentGeneration, hostName, timeout, traceIn,
                              VespaVersion::fromString("1.2.3"), CompressionType::LZ4);
@@ -243,7 +243,7 @@ TEST(FrtTest, require_that_v3_request_is_correctly_initialized) {
     ASSERT_TRUE(req != nullptr);
     FRT_Values &params(*req->GetParams());
     std::string json(params[0]._string._str);
-    Slime slime;
+    Slime       slime;
     JsonFormat::decode(Memory(json), slime);
     Inspector &root(slime.get());
     EXPECT_EQ(3, root[REQUEST_VERSION].asLong());
@@ -273,15 +273,15 @@ TEST(FrtTest, require_that_v3_request_is_correctly_initialized) {
 }
 
 struct V3RequestFixture {
-    ConnectionMock conn;
-    Slime slime;
-    Cursor &root;
+    ConnectionMock  conn;
+    Slime           slime;
+    Cursor         &root;
     FRT_RPCRequest *req;
-    ConfigKey key;
-    std::string xxhash64;
-    int64_t generation;
-    std::string hostname;
-    Trace traceIn;
+    ConfigKey       key;
+    std::string     xxhash64;
+    int64_t         generation;
+    std::string     hostname;
+    Trace           traceIn;
 
     V3RequestFixture()
         : conn(), slime(), root(slime.setObject()), req(conn.allocRPCRequest()),
@@ -327,7 +327,7 @@ struct V3RequestFixture {
         ConfigState state(response.getConfigState());
         EXPECT_EQ(xxhash64, state.xxhash64);
         EXPECT_EQ(generation, state.generation);
-        ConfigValue value(response.getValue());
+        ConfigValue   value(response.getValue());
         BarConfig::UP config(value.newInstance<BarConfig>());
         EXPECT_EQ(expectedValue, config->barValue);
     }
@@ -335,7 +335,7 @@ struct V3RequestFixture {
 
 TEST(FrtTest, require_that_v3_uncompressed_reponse_is_correctly_initialized) {
     V3RequestFixture f1;
-    const char *payload = "{\"barValue\":\"foobiar\"}";
+    const char      *payload = "{\"barValue\":\"foobiar\"}";
     f1.encodePayload(payload, strlen(payload), strlen(payload), CompressionType::UNCOMPRESSED);
     std::unique_ptr<FRTConfigResponseV3> response(f1.createResponse());
     ASSERT_TRUE(response->validateResponse());
@@ -345,10 +345,10 @@ TEST(FrtTest, require_that_v3_uncompressed_reponse_is_correctly_initialized) {
 
 TEST(FrtTest, require_that_v3_compressed_reponse_is_correctly_initialized) {
     V3RequestFixture f1;
-    const char *payload = "{\"barValue\":\"foobiar\"}";
-    int maxSize = LZ4_compressBound(strlen(payload));
-    char *output = (char *)malloc(maxSize);
-    int sz = LZ4_compress_default(payload, output, strlen(payload), maxSize);
+    const char      *payload = "{\"barValue\":\"foobiar\"}";
+    int              maxSize = LZ4_compressBound(strlen(payload));
+    char            *output = (char *)malloc(maxSize);
+    int              sz = LZ4_compress_default(payload, output, strlen(payload), maxSize);
 
     f1.encodePayload(output, sz, strlen(payload), CompressionType::LZ4);
     std::unique_ptr<FRTConfigResponseV3> response(f1.createResponse());
@@ -360,7 +360,7 @@ TEST(FrtTest, require_that_v3_compressed_reponse_is_correctly_initialized) {
 
 TEST(FrtTest, require_that_empty_v3_reponse_is_correctly_initialized) {
     V3RequestFixture f1;
-    const char *payload = "";
+    const char      *payload = "";
     f1.encodePayload(payload, strlen(payload), strlen(payload), CompressionType::UNCOMPRESSED);
     std::unique_ptr<FRTConfigResponseV3> response(f1.createResponse());
     ASSERT_TRUE(response->validateResponse());

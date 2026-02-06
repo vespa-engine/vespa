@@ -11,7 +11,7 @@ public:
     bool isUp() const;
 
 private:
-    bool isConfigProxyRunning() const;
+    bool        isConfigProxyRunning() const;
     std::string _configProxyPidFile;
 };
 

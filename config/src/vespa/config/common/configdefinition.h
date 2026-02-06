@@ -16,8 +16,8 @@ class ConfigDefinition {
 public:
     ConfigDefinition();
     ConfigDefinition(StringVector schema);
-    void deserialize(const vespalib::slime::Inspector& inspector);
-    void serialize(vespalib::slime::Cursor& cursor) const;
+    void        deserialize(const vespalib::slime::Inspector& inspector);
+    void        serialize(vespalib::slime::Cursor& cursor) const;
     std::string asString() const;
 
 private:

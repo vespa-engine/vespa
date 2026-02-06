@@ -26,8 +26,8 @@ public:
 
 private:
     std::shared_ptr<ConnectionFactory> _connectionFactory;
-    FRTConfigRequestFactory _requestFactory;
-    const TimingValues _timingValues;
+    FRTConfigRequestFactory            _requestFactory;
+    const TimingValues                 _timingValues;
 };
 
 } // namespace config

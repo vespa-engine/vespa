@@ -113,7 +113,7 @@ TEST(MiscTest, require_that_config_key_initializes_schema) {
     StringVector schema;
     schema.push_back("foo");
     schema.push_back("bar");
-    ConfigKey key("id1", "def1", "namespace1", "xxhash1", schema);
+    ConfigKey           key("id1", "def1", "namespace1", "xxhash1", schema);
     const StringVector &vref(key.getDefSchema());
     for (size_t i = 0; i < schema.size(); i++) {
         ASSERT_EQ(schema[i], vref[i]);
@@ -187,7 +187,7 @@ TEST(MiscTest, require_that_source_spec_parses_compression_type) {
 
 TEST(MiscTest, require_that_vespa_version_is_set) {
     VespaVersion vespaVersion = VespaVersion::getCurrentVersion();
-    std::string str = vespaVersion.toString();
+    std::string  str = vespaVersion.toString();
 
     EXPECT_TRUE(str.length() > 0);
 }

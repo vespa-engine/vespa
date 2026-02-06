@@ -50,8 +50,8 @@ Connection* FRTConnectionPool::getCurrent() {
 }
 
 FRTConnection* FRTConnectionPool::getNextRoundRobin() {
-    auto ready = getReadySources();
-    auto suspended = getSuspendedSources();
+    auto           ready = getReadySources();
+    auto           suspended = getSuspendedSources();
     FRTConnection* nextFRTConnection = nullptr;
 
     if (!ready.empty()) {
@@ -90,8 +90,8 @@ int hashCode(const std::string& s) {
 } // namespace
 
 FRTConnection* FRTConnectionPool::getNextHashBased() {
-    auto ready = getReadySources();
-    auto suspended = getSuspendedSources();
+    auto           ready = getReadySources();
+    auto           suspended = getSuspendedSources();
     FRTConnection* nextFRTConnection = nullptr;
 
     if (!ready.empty()) {
@@ -108,7 +108,7 @@ FRTConnection* FRTConnectionPool::getNextHashBased() {
 
 std::vector<FRTConnection*> FRTConnectionPool::getReadySources() const {
     std::vector<FRTConnection*> readySources;
-    auto timestamp = vespalib::steady_clock::now();
+    auto                        timestamp = vespalib::steady_clock::now();
     for (const auto& entry : _connections) {
         FRTConnection* source = entry.second.get();
         if (source->getSuspendedUntil() < timestamp) {
@@ -120,7 +120,7 @@ std::vector<FRTConnection*> FRTConnectionPool::getReadySources() const {
 
 std::vector<FRTConnection*> FRTConnectionPool::getSuspendedSources() const {
     std::vector<FRTConnection*> suspendedSources;
-    auto timestamp = vespalib::steady_clock::now();
+    auto                        timestamp = vespalib::steady_clock::now();
     for (const auto& entry : _connections) {
         FRTConnection* source = entry.second.get();
         if (source->getSuspendedUntil() >= timestamp) {

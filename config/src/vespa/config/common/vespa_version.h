@@ -10,10 +10,10 @@ namespace config {
  **/
 struct VespaVersion {
 public:
-    static VespaVersion fromString(const std::string &versionString);
+    static VespaVersion        fromString(const std::string &versionString);
     static const VespaVersion &getCurrentVersion();
     VespaVersion(const VespaVersion &version);
-    VespaVersion &operator=(const VespaVersion &rhs);
+    VespaVersion      &operator=(const VespaVersion &rhs);
     const std::string &toString() const;
 
 private:

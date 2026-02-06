@@ -31,16 +31,16 @@ bool ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
         _state = FROZEN;
     }
 
-    steady_time now = steady_clock::now();
+    steady_time       now = steady_clock::now();
     const steady_time deadline = now + timeout;
-    int64_t lastGeneration = getGeneration();
-    bool inSync = false;
+    int64_t           lastGeneration = getGeneration();
+    bool              inSync = false;
 
     LOG(spam, "Going into nextConfig loop, time left is %f", vespalib::to_s(deadline - now));
     while (!isClosed() && (now <= deadline)) {
-        size_t numChanged = 0;
-        size_t numGenerationChanged = 0;
-        bool generationsInSync = true;
+        size_t  numChanged = 0;
+        size_t  numGenerationChanged = 0;
+        bool    generationsInSync = true;
         int64_t generation = -1;
 
         // Run nextUpdate on all subscribers to get them in sync.

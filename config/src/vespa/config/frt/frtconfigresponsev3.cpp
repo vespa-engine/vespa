@@ -39,10 +39,10 @@ FRTConfigResponseV3::FRTConfigResponseV3(FRT_RPCRequest *request) : SlimeConfigR
 const std::string &FRTConfigResponseV3::getResponseTypes() const { return RESPONSE_TYPES; }
 
 ConfigValue FRTConfigResponseV3::readConfigValue() const {
-    std::string xxhash64(_data->get()[RESPONSE_CONFIG_XXHASH64].asString().make_string());
+    std::string     xxhash64(_data->get()[RESPONSE_CONFIG_XXHASH64].asString().make_string());
     CompressionInfo info;
     info.deserialize(_data->get()[RESPONSE_COMPRESSION_INFO]);
-    auto slime = std::make_unique<Slime>();
+    auto             slime = std::make_unique<Slime>();
     DecompressedData data(decompress(((*_returnValues)[1]._data._buf), ((*_returnValues)[1]._data._len),
                                      info.compressionType, info.uncompressedSize));
     if (data.memRef.size > 0) {

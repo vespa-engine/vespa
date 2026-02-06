@@ -21,8 +21,8 @@ struct MyType {
 
 TEST(MapInserterTest, require_that_map_of_ints_can_be_inserted) {
     std::map<std::string, int32_t> map;
-    Slime slime;
-    Cursor& root = slime.setObject();
+    Slime                          slime;
+    Cursor&                        root = slime.setObject();
     root.setLong("foo", 3);
     root.setLong("bar", 2);
     root.setLong("baz", 6);
@@ -36,9 +36,9 @@ TEST(MapInserterTest, require_that_map_of_ints_can_be_inserted) {
 
 TEST(MapInserterTest, require_that_map_of_struct_can_be_inserted) {
     std::map<std::string, MyType> map;
-    Slime slime;
-    Cursor& root = slime.setObject();
-    Cursor& one = root.setObject("foo");
+    Slime                         slime;
+    Cursor&                       root = slime.setObject();
+    Cursor&                       one = root.setObject("foo");
     one.setLong("foo", 3);
     one.setLong("bar", 4);
     Cursor& two = root.setObject("bar");
@@ -55,8 +55,8 @@ TEST(MapInserterTest, require_that_map_of_struct_can_be_inserted) {
 
 TEST(MapInserterTest, require_that_map_of_long_can_be_inserted) {
     std::map<std::string, int64_t> map;
-    Slime slime;
-    Cursor& root = slime.setObject();
+    Slime                          slime;
+    Cursor&                        root = slime.setObject();
     root.setLong("foo", 3);
     root.setLong("bar", 2);
     root.setLong("baz", 6);
@@ -70,8 +70,8 @@ TEST(MapInserterTest, require_that_map_of_long_can_be_inserted) {
 
 TEST(MapInserterTest, require_that_map_of_double_can_be_inserted) {
     std::map<std::string, double> map;
-    Slime slime;
-    Cursor& root = slime.setObject();
+    Slime                         slime;
+    Cursor&                       root = slime.setObject();
     root.setDouble("foo", 3.1);
     root.setDouble("bar", 2.4);
     root.setDouble("baz", 6.6);
@@ -85,8 +85,8 @@ TEST(MapInserterTest, require_that_map_of_double_can_be_inserted) {
 
 TEST(MapInserterTest, require_that_map_of_bool_can_be_inserted) {
     std::map<std::string, bool> map;
-    Slime slime;
-    Cursor& root = slime.setObject();
+    Slime                       slime;
+    Cursor&                     root = slime.setObject();
     root.setBool("foo", true);
     root.setBool("bar", false);
     root.setBool("baz", true);
@@ -100,8 +100,8 @@ TEST(MapInserterTest, require_that_map_of_bool_can_be_inserted) {
 
 TEST(MapInserterTest, require_that_map_of_string_can_be_inserted) {
     std::map<std::string, std::string> map;
-    Slime slime;
-    Cursor& root = slime.setObject();
+    Slime                              slime;
+    Cursor&                            root = slime.setObject();
     root.setString("foo", "baz");
     root.setString("bar", "bar");
     root.setString("baz", "foo");

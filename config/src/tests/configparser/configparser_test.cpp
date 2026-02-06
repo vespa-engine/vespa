@@ -134,10 +134,10 @@ TEST(ConfigParserTest, handles_quotes_for_bool_values) {
     payload.push_back("bar \"123\"");
     payload.push_back("baz \"1234\"");
     payload.push_back("quux \"3.2\"");
-    bool b(ConfigParser::parse<bool>("foo", payload));
+    bool    b(ConfigParser::parse<bool>("foo", payload));
     int32_t i(ConfigParser::parse<int32_t>("bar", payload));
     int64_t l(ConfigParser::parse<int64_t>("baz", payload));
-    double d(ConfigParser::parse<double>("quux", payload));
+    double  d(ConfigParser::parse<double>("quux", payload));
     EXPECT_EQ(true, b);
     EXPECT_EQ(123, i);
     EXPECT_EQ(1234, l);

@@ -4,15 +4,15 @@
 #include <vespa/vespalib/io/fileutil.h>
 
 namespace {
-bool isFileLegacy(std::string_view configId) { return configId.compare(0, 5, "file:") == 0; }
-bool isDirLegacy(std::string_view configId) { return configId.compare(0, 4, "dir:") == 0; }
+bool             isFileLegacy(std::string_view configId) { return configId.compare(0, 5, "file:") == 0; }
+bool             isDirLegacy(std::string_view configId) { return configId.compare(0, 4, "dir:") == 0; }
 std::string_view dirNameFromId(std::string_view configId) { return configId.substr(4); }
 std::string_view createFileSpecFromId(std::string_view configId) { return configId.substr(5); }
 std::string_view createBaseId(std::string_view configId) {
     std::string::size_type end = configId.find_last_of('.');
     return configId.substr(5, end - 5);
 }
-bool isRawLegacy(std::string_view configId) { return configId.compare(0, 4, "raw:") == 0; }
+bool             isRawLegacy(std::string_view configId) { return configId.compare(0, 4, "raw:") == 0; }
 std::string_view createRawSpecFromId(std::string_view configId) { return configId.substr(4); }
 } // namespace
 

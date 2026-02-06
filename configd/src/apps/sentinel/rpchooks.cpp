@@ -108,8 +108,8 @@ void RPCHooks::rpc_startService(FRT_RPCRequest *req) {
 void RPCHooks::rpc_checkConnectivity(FRT_RPCRequest *req) {
     FRT_Values &args = *req->GetParams();
     const char *hostname = args[0]._string._str;
-    int portnum = args[1]._intval32;
-    int timeout = args[2]._intval32;
+    int         portnum = args[1]._intval32;
+    int         timeout = args[2]._intval32;
     LOG(debug, "got checkConnectivity %s [port %d] timeout %d", hostname, portnum, timeout);
     req->Detach();
     auto &completionHandler = req->getStash().create<CheckCompletionHandler>(req);
@@ -119,7 +119,7 @@ void RPCHooks::rpc_checkConnectivity(FRT_RPCRequest *req) {
 void RPCHooks::rpc_reportConnectivity(FRT_RPCRequest *req) {
     LOG(debug, "got reportConnectivity");
     FRT_Values &args = *req->GetParams();
-    int timeout = args[0]._intval32;
+    int         timeout = args[0]._intval32;
     req->Detach();
     req->getStash().create<ReportConnectivity>(req, timeout, _orb, _modelOwner);
 }

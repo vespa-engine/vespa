@@ -14,10 +14,10 @@ using vespalib::Memory;
 namespace config {
 
 std::string calculateContentXxhash64(const StringVector &fileContents) {
-    std::string normalizedLines;
-    XXH64_hash_t xxhash64;
+    std::string           normalizedLines;
+    XXH64_hash_t          xxhash64;
     vespalib::asciistream s;
-    std::stringstream ss;
+    std::stringstream     ss;
 
     // remove comments, trailing spaces and empty lines
     // TODO: Remove multiple spaces and space before comma, like in Java
@@ -48,7 +48,7 @@ StringVector getlines(vespalib::asciistream &is, char delim) {
 bool isGenerationNewer(int64_t newGen, int64_t oldGen) { return (newGen > oldGen) || (newGen == 0); }
 
 void throwInvalid(const char *format, ...) {
-    char buf[4000];
+    char    buf[4000];
     va_list args;
 
     va_start(args, format);

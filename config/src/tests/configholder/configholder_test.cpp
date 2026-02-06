@@ -32,7 +32,7 @@ TEST(ConfigHolderTest, Require_that_element_order_is_correct) {
 TEST(ConfigHolderTest, Require_that_waiting_is_done) {
     ConfigValue value;
 
-    ConfigHolder holder;
+    ConfigHolder    holder;
     vespalib::Timer timer;
     holder.wait_for(1000ms);
     EXPECT_GE(timer.elapsed(), ONE_SEC);
@@ -54,7 +54,7 @@ TEST(ConfigHolderTest, Require_that_polling_for_elements_work) {
 }
 
 TEST(ConfigHolderTest, Require_that_negative_time_does_not_mean_forever) {
-    ConfigHolder holder;
+    ConfigHolder    holder;
     vespalib::Timer timer;
     ASSERT_FALSE(holder.poll());
     ASSERT_FALSE(holder.wait_for(10ms));
@@ -66,8 +66,8 @@ TEST(ConfigHolderTest, Require_that_negative_time_does_not_mean_forever) {
 
 TEST(ConfigHolderTest, Require_that_wait_is_interrupted_on_close) {
     constexpr size_t num_threads = 2;
-    ConfigHolder f;
-    auto task = [&f](Nexus& ctx) {
+    ConfigHolder     f;
+    auto             task = [&f](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             vespalib::Timer timer;

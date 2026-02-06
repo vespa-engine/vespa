@@ -89,7 +89,7 @@ public:
     std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues& timingValues) const override;
 
 private:
-    void verifyName(const std::string& fileName);
+    void        verifyName(const std::string& fileName);
     std::string _fileName;
 };
 
@@ -182,12 +182,12 @@ public:
     CompressionType compressionType() const { return _compressionType; }
 
 private:
-    void initialize(std::string_view hostSpec);
-    HostSpecList _hostList;
-    const int _protocolVersion;
-    const int _traceLevel;
+    void                  initialize(std::string_view hostSpec);
+    HostSpecList          _hostList;
+    const int             _protocolVersion;
+    const int             _traceLevel;
     const CompressionType _compressionType;
-    const static int DEFAULT_PROXY_PORT = 19090;
+    const static int      DEFAULT_PROXY_PORT = 19090;
 };
 
 /**

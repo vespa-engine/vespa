@@ -28,7 +28,7 @@ void maybeStopNow() {
 }
 
 constexpr std::chrono::milliseconds CONFIG_TIMEOUT_MS = 3min;
-constexpr int maxConnectivityRetries = 100;
+constexpr int                       maxConnectivityRetries = 100;
 
 } // namespace
 

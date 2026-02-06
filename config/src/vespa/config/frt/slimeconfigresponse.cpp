@@ -25,7 +25,7 @@ void SlimeConfigResponse::fill() {
         return;
     }
     Memory json((*_returnValues)[0]._string._str);
-    auto data = std::make_unique<Slime>();
+    auto   data = std::make_unique<Slime>();
     JsonFormat::decode(json, *data);
     _data = std::move(data);
     _key = readKey();

@@ -13,12 +13,12 @@ class IConfigHolder;
 class FileSource : public Source {
 private:
     std::shared_ptr<IConfigHolder> _holder;
-    const std::string _fileName;
-    int64_t _lastLoaded;
-    int64_t _generation;
+    const std::string              _fileName;
+    int64_t                        _lastLoaded;
+    int64_t                        _generation;
 
     StringVector readConfigFile(const std::string &fileName);
-    int64_t getLast(const std::string &fileName);
+    int64_t      getLast(const std::string &fileName);
 
 public:
     FileSource(std::shared_ptr<IConfigHolder> holder, const std::string &fileName);

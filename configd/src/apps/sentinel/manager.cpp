@@ -74,8 +74,8 @@ void Manager::doConfigure() {
     ServiceMap services;
     for (unsigned int i = 0; i < config.service.size(); ++i) {
         const SentinelConfig::Service &serviceConfig = config.service[i];
-        const std::string name(serviceConfig.name);
-        auto found(_services.find(name));
+        const std::string              name(serviceConfig.name);
+        auto                           found(_services.find(name));
         if (found == _services.end()) {
             services[name] =
                 std::make_unique<Service>(serviceConfig, config.application, _outputConnections, _env.metrics());
@@ -131,7 +131,7 @@ void Manager::handleRestarts() {
 void Manager::handleChildDeaths() {
     // See if any of our child processes have exited, and take
     // the appropriate action.
-    int status;
+    int   status;
     pid_t pid;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
         // A child process has exited. find it.
@@ -162,7 +162,7 @@ void Manager::updateActiveFdset(std::vector<pollfd> &fds) {
 }
 
 void Manager::handleOutputs() {
-    std::list<OutputConnection *>::iterator dst;
+    std::list<OutputConnection *>::iterator       dst;
     std::list<OutputConnection *>::const_iterator src;
 
     src = _outputConnections.begin();
@@ -217,12 +217,12 @@ Service *Manager::serviceByName(const std::string &name) {
 void Manager::handleCmd(const Cmd &cmd) {
     switch (cmd.type()) {
     case Cmd::LIST: {
-        char retbuf[64_Ki];
+        char   retbuf[64_Ki];
         size_t left = 64_Ki;
         size_t pos = 0;
         retbuf[pos] = 0;
         for (const auto &entry : _services) {
-            const Service *service = entry.second.get();
+            const Service                 *service = entry.second.get();
             const SentinelConfig::Service &config = service->serviceConfig();
             int sz = snprintf(retbuf + pos, left, "%s state=%s mode=%s pid=%d exitstatus=%d id=\"%s\"\n",
                               service->name().c_str(), service->stateName(), service->isAutomatic() ? "AUTO" : "MANUAL",
