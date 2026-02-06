@@ -98,6 +98,9 @@ public class RelatedDocumentsByNearestNeighborSearcher extends Searcher {
         fetchQuery.getRanking().setProfile("unranked");
 
         Result result = execution.search(fetchQuery);
+        if (result.hits().getError() != null) {
+            return null;
+        }
         execution.fill(result, summary);
 
         if (result.hits().size() < 1) {
