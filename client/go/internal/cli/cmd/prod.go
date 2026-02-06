@@ -143,6 +143,9 @@ $ vespa prod deploy`,
 				// TODO: Add support for hosted
 				return fmt.Errorf("prod deploy does not support %s target", target.Type())
 			}
+			if _, ok := cli.config.get(instanceFlag); ok {
+				cli.printWarning("Instance is set in config but will be ignored for production deployments. Only deployment.xml is used to configure production instances")
+			}
 			pkg, err := cli.applicationPackageFrom(args, vespa.PackageOptions{Compiled: true})
 			if err != nil {
 				return err
