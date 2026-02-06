@@ -14,8 +14,7 @@ asciistream::~asciistream() {
     }
 }
 
-asciistream::asciistream(asciistream &&rhs) noexcept
-    : _rPos(rhs._rPos), _wPos(rhs._wPos), _buffer(rhs._buffer), _sz(rhs._sz) {
+asciistream::asciistream(asciistream &&rhs) noexcept : _rPos(rhs._rPos), _wPos(rhs._wPos), _buffer(rhs._buffer), _sz(rhs._sz) {
     rhs._rPos = 0;
     rhs._wPos = 0;
     rhs._sz = 0;
@@ -62,42 +61,42 @@ void asciistream::swap(asciistream &rhs) {
 
 asciistream &asciistream::operator<<(int32_t v) {
     char tmp[16];
-    int len = snprintf(tmp, sizeof(tmp), "%d", v);
+    int  len = snprintf(tmp, sizeof(tmp), "%d", v);
     write(tmp, len);
     return *this;
 }
 
 asciistream &asciistream::operator<<(uint32_t v) {
     char tmp[16];
-    int len = snprintf(tmp, sizeof(tmp), "%u", v);
+    int  len = snprintf(tmp, sizeof(tmp), "%u", v);
     write(tmp, len);
     return *this;
 }
 
 asciistream &asciistream::operator<<(int64_t v) {
     char tmp[32];
-    int len = snprintf(tmp, sizeof(tmp), "%ld", v);
+    int  len = snprintf(tmp, sizeof(tmp), "%ld", v);
     write(tmp, len);
     return *this;
 }
 
 asciistream &asciistream::operator<<(uint64_t v) {
     char tmp[32];
-    int len = snprintf(tmp, sizeof(tmp), "%lu", v);
+    int  len = snprintf(tmp, sizeof(tmp), "%lu", v);
     write(tmp, len);
     return *this;
 }
 
 asciistream &asciistream::operator<<(float v) {
     char tmp[64];
-    int len = snprintf(tmp, sizeof(tmp), "%g", v);
+    int  len = snprintf(tmp, sizeof(tmp), "%g", v);
     write(tmp, len);
     return *this;
 }
 
 asciistream &asciistream::operator<<(double v) {
     char tmp[64];
-    int len = snprintf(tmp, sizeof(tmp), "%g", v);
+    int  len = snprintf(tmp, sizeof(tmp), "%g", v);
     write(tmp, len);
     return *this;
 }

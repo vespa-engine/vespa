@@ -15,15 +15,14 @@
 
 namespace vespamalloc {
 
-Memory::Memory(size_t blockSize)
-    : _blockSize(std::max(blockSize, size_t(getpagesize()))), _start(nullptr), _end(nullptr) {}
+Memory::Memory(size_t blockSize) : _blockSize(std::max(blockSize, size_t(getpagesize()))), _start(nullptr), _end(nullptr) {}
 Memory::~Memory() = default;
 
 void *MmapMemory::reserve(size_t &len) {
     len = 0;
     const size_t wLen(0x1000);
-    void *wanted = get(wLen);
-    int test = munmap(wanted, wLen);
+    void        *wanted = get(wLen);
+    int          test = munmap(wanted, wLen);
     ASSERT_STACKTRACE(test == 0);
     (void)test;
     setStart(wanted);
@@ -33,8 +32,8 @@ void *MmapMemory::reserve(size_t &len) {
 
 size_t findInMemInfo(const char *wanted) {
     size_t value(0);
-    char memInfo[8192];
-    int fd(open("/proc/meminfo", O_RDONLY));
+    char   memInfo[8192];
+    int    fd(open("/proc/meminfo", O_RDONLY));
     ASSERT_STACKTRACE(fd >= 0);
     if (fd >= 0) {
         int sz(read(fd, memInfo, sizeof(memInfo)));
@@ -61,14 +60,13 @@ const char *getToken(const char *&s, const char *e) {
 
 bool verifyHugePagesMount(const char *mount) {
     const unsigned int HUGETLBFS_MAGIC(0x958458f6);
-    struct statfs64 st;
-    int ret(statfs64(mount, &st));
+    struct statfs64    st;
+    int                ret(statfs64(mount, &st));
     return (ret == 0) && (st.f_type == HUGETLBFS_MAGIC);
 }
 
 MmapMemory::MmapMemory(size_t blockSize)
-    : Memory(blockSize), _useMAdvLimit(getBlockAlignment() * 32), _hugePagesFd(-1), _hugePagesOffset(0),
-      _hugePageSize(0) {
+    : Memory(blockSize), _useMAdvLimit(getBlockAlignment() * 32), _hugePagesFd(-1), _hugePagesOffset(0), _hugePageSize(0) {
     setupFAdvise();
     setupHugePages();
 }
@@ -94,7 +92,7 @@ void MmapMemory::setupHugePages() {
                 int fd(open("/proc/mounts", O_RDONLY));
                 if (fd >= 0) {
                     char mounts[8192];
-                    int sz(read(fd, mounts, sizeof(mounts)));
+                    int  sz(read(fd, mounts, sizeof(mounts)));
                     ASSERT_STACKTRACE((sz < int(sizeof(mounts))) && (sz >= 0));
                     (void)sz;
                     const char *c = mounts;
@@ -105,7 +103,7 @@ void MmapMemory::setupHugePages() {
                         const char *dev = getToken(c, e);
                         (void)dev;
                         const char *mount = getToken(c, e);
-                        size_t mountLen(c - mount);
+                        size_t      mountLen(c - mount);
                         const char *fstype = getToken(c, e);
                         if (strstr(fstype, "hugetlbfs") == fstype) {
                             char mountCopy[512];
@@ -143,7 +141,7 @@ MmapMemory::~MmapMemory() {
 
 void *MmapMemory::get(size_t len) {
     void *memory(nullptr);
-    int prevErrno = errno;
+    int   prevErrno = errno;
     memory = getHugePages(len);
     if (memory == nullptr) {
         errno = prevErrno; // The temporary error should not impact if the end is good.
@@ -174,8 +172,7 @@ void *MmapMemory::getHugePages(size_t len) {
 void *MmapMemory::getNormalPages(size_t len) { return getBasePages(len, MAP_ANON | MAP_PRIVATE, -1, 0); }
 
 void *MmapMemory::getBasePages(size_t len, int mmapOpt, int fd, size_t offset) {
-    char *wanted =
-        reinterpret_cast<char *>(std::max(reinterpret_cast<size_t>(getEnd()), getMinPreferredStartAddress()));
+    char *wanted = reinterpret_cast<char *>(std::max(reinterpret_cast<size_t>(getEnd()), getMinPreferredStartAddress()));
     void *mem(nullptr);
     for (bool ok(false); !ok && (mem != MAP_FAILED); wanted += getBlockAlignment()) {
         if (mem != nullptr) {
@@ -210,8 +207,7 @@ bool MmapMemory::release(void *mem, size_t len) {
         ret = madvise(mem, len, MADV_DONTNEED);
         if (ret != 0) {
             char tmp[256];
-            fprintf(stderr, "madvise(%p, %0lx, MADV_DONTNEED) = %d errno=%s\n", mem, len, ret,
-                    strerror_r(errno, tmp, sizeof(tmp)));
+            fprintf(stderr, "madvise(%p, %0lx, MADV_DONTNEED) = %d errno=%s\n", mem, len, ret, strerror_r(errno, tmp, sizeof(tmp)));
         }
     }
     return true;
@@ -233,8 +229,7 @@ bool MmapMemory::reclaim(void *mem, size_t len) {
         ret = madvise(mem, len, MADV_NORMAL);
         if (ret != 0) {
             char tmp[256];
-            fprintf(stderr, "madvise(%p, %0lx, MADV_NORMAL) = %d errno=%s\n", mem, len, ret,
-                    strerror_r(errno, tmp, sizeof(tmp)));
+            fprintf(stderr, "madvise(%p, %0lx, MADV_NORMAL) = %d errno=%s\n", mem, len, ret, strerror_r(errno, tmp, sizeof(tmp)));
         }
     }
     return true;

@@ -21,8 +21,7 @@ void *mmap_huge(size_t sz) {
     void *mem = mmap(nullptr, sz, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
     assert(mem != MAP_FAILED);
     if (madvise(mem, sz, MADV_HUGEPAGE) != 0) {
-        fprintf(stderr, "load_as_huge.cpp:mmap_huge = > madvise(%p, %ld, MADV_HUGEPAGE) FAILED, errno= %d = %s\n", mem,
-                sz, errno, strerror(errno));
+        fprintf(stderr, "load_as_huge.cpp:mmap_huge = > madvise(%p, %ld, MADV_HUGEPAGE) FAILED, errno= %d = %s\n", mem, sz, errno, strerror(errno));
     }
     return mem;
 }
@@ -38,8 +37,8 @@ bool remap_segments(size_t base_vaddr, const Elf64_Phdr *segments, size_t count)
     assert(count > 0);
     const Elf64_Phdr &first = segments[0];
     const Elf64_Phdr &last = segments[count - 1];
-    size_t start_vaddr = base_vaddr + first.p_vaddr;
-    size_t end_vaddr = base_vaddr + last.p_vaddr + last.p_memsz;
+    size_t            start_vaddr = base_vaddr + first.p_vaddr;
+    size_t            end_vaddr = base_vaddr + last.p_vaddr + last.p_memsz;
     if (end_vaddr - start_vaddr < HUGEPAGE_SIZE) {
         return false;
     }
@@ -47,13 +46,13 @@ bool remap_segments(size_t base_vaddr, const Elf64_Phdr *segments, size_t count)
     size_t huge_start = round_huge_down(start_vaddr);
     size_t huge_end = round_huge_up(end_vaddr);
     size_t huge_size = huge_end - huge_start;
-    char *new_huge = static_cast<char *>(mmap_huge(huge_size));
-    char *new_huge_end = new_huge + huge_size;
-    char *last_end = new_huge;
+    char  *new_huge = static_cast<char *>(mmap_huge(huge_size));
+    char  *new_huge_end = new_huge + huge_size;
+    char  *last_end = new_huge;
     for (size_t i(0); i < count; i++) {
         size_t vaddr = base_vaddr + segments[i].p_vaddr;
         size_t huge_offset = vaddr - huge_start;
-        char *dest = new_huge + huge_offset;
+        char  *dest = new_huge + huge_offset;
         assert(dest >= last_end);
         if (dest > last_end) {
             int munmap_retval = munmap(last_end, dest - last_end);
@@ -63,9 +62,8 @@ bool remap_segments(size_t base_vaddr, const Elf64_Phdr *segments, size_t count)
         last_end = dest + sz;
 
         if (madvise(dest, sz, MADV_HUGEPAGE) != 0) {
-            fprintf(stderr,
-                    "load_as_huge.cpp:remap_segments => madvise(%p, %ld, MADV_HUGEPAGE) FAILED, errno= %d = %s\n", dest,
-                    sz, errno, strerror(errno));
+            fprintf(stderr, "load_as_huge.cpp:remap_segments => madvise(%p, %ld, MADV_HUGEPAGE) FAILED, errno= %d = %s\n", dest, sz, errno,
+                    strerror(errno));
         }
         vespamalloc::independent_non_inlined_memcpy(dest, reinterpret_cast<void *>(vaddr), sz);
         int prot = PROT_READ;
@@ -75,8 +73,7 @@ bool remap_segments(size_t base_vaddr, const Elf64_Phdr *segments, size_t count)
             prot |= PROT_WRITE;
         int mprotect_retval = mprotect(dest, sz, prot);
         if (mprotect_retval != 0) {
-            fprintf(stderr, "mprotect(%p, %ld, %x) FAILED = %d, errno= %d = %s\n", dest, sz, prot, mprotect_retval,
-                    errno, strerror(errno));
+            fprintf(stderr, "mprotect(%p, %ld, %x) FAILED = %d, errno= %d = %s\n", dest, sz, prot, mprotect_retval, errno, strerror(errno));
         }
         void *remapped = mremap(dest, sz, sz, MREMAP_FIXED | MREMAP_MAYMOVE, vaddr);
         assert(remapped != MAP_FAILED);
@@ -94,8 +91,7 @@ bool remap_segments(size_t base_vaddr, const Elf64_Phdr *segments, size_t count)
 int remapElfHeader(struct dl_phdr_info *info, size_t info_size, void *data) {
     (void)info_size;
     (void)data;
-    fprintf(stdout, "processing elf header '%s' with %d entries, start=%lx\n", info->dlpi_name, info->dlpi_phnum,
-            info->dlpi_addr);
+    fprintf(stdout, "processing elf header '%s' with %d entries, start=%lx\n", info->dlpi_name, info->dlpi_phnum, info->dlpi_addr);
     for (int i = 0; i < info->dlpi_phnum; i++) {
         const Elf64_Phdr &phdr = info->dlpi_phdr[i];
         // fprintf(stdout, "p_vaddr=%lx p_paddr=%lx, p_offset=%lx p_filesz=%lx, p_memsz=%lx, allign=%lu type=%d

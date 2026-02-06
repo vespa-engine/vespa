@@ -11,8 +11,7 @@ Producer::Producer(uint32_t cnt, Consumer &target) : _target(target), _cnt(cnt),
 
 Producer::~Producer() {}
 
-ProducerConsumer::ProducerConsumer(uint32_t cnt, bool inverse)
-    : _cnt(cnt), _inverse(inverse), _operationsConsumed(0), _operationsProduced(0) {}
+ProducerConsumer::ProducerConsumer(uint32_t cnt, bool inverse) : _cnt(cnt), _inverse(inverse), _operationsConsumed(0), _operationsProduced(0) {}
 
 ProducerConsumer::~ProducerConsumer() {}
 

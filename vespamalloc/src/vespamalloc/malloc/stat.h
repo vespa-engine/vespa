@@ -13,13 +13,13 @@ public:
     void incExactAlloc() {}
 
     static bool isDummy() { return true; }
-    size_t alloc() const { return 0; }
-    size_t free() const { return 0; }
-    size_t exchangeAlloc() const { return 0; }
-    size_t exchangeFree() const { return 0; }
-    size_t returnFree() const { return 0; }
-    size_t exactAlloc() const { return 0; }
-    bool isUsed() const { return false; }
+    size_t      alloc() const { return 0; }
+    size_t      free() const { return 0; }
+    size_t      exchangeAlloc() const { return 0; }
+    size_t      exchangeFree() const { return 0; }
+    size_t      returnFree() const { return 0; }
+    size_t      exactAlloc() const { return 0; }
+    bool        isUsed() const { return false; }
 };
 
 class Stat {
@@ -32,14 +32,14 @@ public:
     void incExchangeAlloc() { _exchangeAlloc++; }
     void incExactAlloc() { _exactAlloc++; }
 
-    bool isUsed() const { return (_alloc || _free || _exchangeAlloc || _exchangeFree || _exactAlloc || _return); }
+    bool        isUsed() const { return (_alloc || _free || _exchangeAlloc || _exchangeFree || _exactAlloc || _return); }
     static bool isDummy() { return false; }
-    size_t alloc() const { return _alloc; }
-    size_t free() const { return _free; }
-    size_t exchangeAlloc() const { return _exchangeAlloc; }
-    size_t exchangeFree() const { return _exchangeFree; }
-    size_t exactAlloc() const { return _exactAlloc; }
-    size_t returnFree() const { return _return; }
+    size_t      alloc() const { return _alloc; }
+    size_t      free() const { return _free; }
+    size_t      exchangeAlloc() const { return _exchangeAlloc; }
+    size_t      exchangeFree() const { return _exchangeFree; }
+    size_t      exactAlloc() const { return _exactAlloc; }
+    size_t      returnFree() const { return _return; }
 
 private:
     size_t _free;

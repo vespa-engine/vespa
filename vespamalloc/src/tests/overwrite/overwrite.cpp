@@ -88,7 +88,7 @@ void verifyWriteAfterFreeDetection() {
     }
 }
 
-int my_argc = 0;
+int    my_argc = 0;
 char **my_argv = nullptr;
 
 TEST(OverwriteTest, main) {

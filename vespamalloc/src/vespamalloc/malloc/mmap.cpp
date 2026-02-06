@@ -13,7 +13,7 @@ typedef int (*munmap_function)(void *addr, size_t length);
 
 void *local_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) __asm__("mmap");
 void *local_mmap64(void *addr, size_t length, int prot, int flags, int fd, off64_t offset) __asm__("mmap64");
-int munmap(void *addr, size_t length) __asm__("munmap");
+int   munmap(void *addr, size_t length) __asm__("munmap");
 
 // This is a dirty prototype of an internal, yet visible method in libc that avoids
 // allocations as they will cause a loop when used with vespamalloc.

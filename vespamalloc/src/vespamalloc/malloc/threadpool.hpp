@@ -18,16 +18,15 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::info(FILE *os, size_t level, const 
     if (level > 0) {
         for (size_t i = 0; i < NELEMS(_stat); i++) {
             const ThreadStatT &s = _stat[i];
-            const AllocFree &af = _memList[i];
+            const AllocFree   &af = _memList[i];
             if (s.isUsed()) {
-                size_t localAvailCount((af._freeTo ? af._freeTo->count() : 0) +
-                                       (af._allocFrom ? af._allocFrom->count() : 0));
+                size_t localAvailCount((af._freeTo ? af._freeTo->count() : 0) + (af._allocFrom ? af._allocFrom->count() : 0));
                 fprintf(os,
                         "SC %2ld(%10ld) Local(%3ld) Alloc(%10ld), "
                         "Free(%10ld) ExchangeAlloc(%8ld), ExChangeFree(%8ld) "
                         "Returned(%8ld) ExactAlloc(%8ld)\n",
-                        i, MemBlockPtrT::classSize(i), localAvailCount, s.alloc(), s.free(), s.exchangeAlloc(),
-                        s.exchangeFree(), s.returnFree(), s.exactAlloc());
+                        i, MemBlockPtrT::classSize(i), localAvailCount, s.alloc(), s.free(), s.exchangeAlloc(), s.exchangeFree(), s.returnFree(),
+                        s.exactAlloc());
             }
         }
     }
@@ -38,14 +37,13 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::info(FILE *os, size_t level, const 
             const ThreadStatT &s = _stat[i];
             if (s.isUsed()) {
                 fprintf(os, "Allocated Blocks SC %2ld(%10ld): ", i, MemBlockPtrT::classSize(i));
-                size_t allocCount = ds.infoThread(os, level, threadId(), i);
+                size_t           allocCount = ds.infoThread(os, level, threadId(), i);
                 const AllocFree &af = _memList[i];
-                size_t localAvailCount((af._freeTo ? af._freeTo->count() : 0) +
-                                       (af._allocFrom ? af._allocFrom->count() : 0));
+                size_t           localAvailCount((af._freeTo ? af._freeTo->count() : 0) + (af._allocFrom ? af._allocFrom->count() : 0));
                 sum += allocCount * MemBlockPtrT::classSize(i);
                 sumLocal += localAvailCount * MemBlockPtrT::classSize(i);
-                fprintf(os, " Total used(%ld + %ld = %ld(%ld)).\n", allocCount, localAvailCount,
-                        localAvailCount + allocCount, (localAvailCount + allocCount) * MemBlockPtrT::classSize(i));
+                fprintf(os, " Total used(%ld + %ld = %ld(%ld)).\n", allocCount, localAvailCount, localAvailCount + allocCount,
+                        (localAvailCount + allocCount) * MemBlockPtrT::classSize(i));
             }
         }
         fprintf(os, "Sum = (%ld + %ld) = %ld\n", sum, sumLocal, sum + sumLocal);
@@ -53,9 +51,8 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::info(FILE *os, size_t level, const 
 }
 
 template <typename MemBlockPtrT, typename ThreadStatT>
-void ThreadPoolT<MemBlockPtrT, ThreadStatT>::mallocHelper(
-    size_t exactSize, SizeClassT sc, typename ThreadPoolT<MemBlockPtrT, ThreadStatT>::AllocFree &af,
-    MemBlockPtrT &mem) {
+void ThreadPoolT<MemBlockPtrT, ThreadStatT>::mallocHelper(size_t exactSize, SizeClassT sc,
+                                                          typename ThreadPoolT<MemBlockPtrT, ThreadStatT>::AllocFree &af, MemBlockPtrT &mem) {
     if (!af._freeTo->empty()) {
         af.swap();
         af._allocFrom->sub(mem);
@@ -96,8 +93,7 @@ ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT()
 
 template <typename MemBlockPtrT, typename ThreadStatT> ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT() = default;
 
-template <typename MemBlockPtrT, typename ThreadStatT>
-int ThreadPoolT<MemBlockPtrT, ThreadStatT>::mallopt(int param, int value) {
+template <typename MemBlockPtrT, typename ThreadStatT> int ThreadPoolT<MemBlockPtrT, ThreadStatT>::mallopt(int param, int value) {
     if (param == M_MMAP_THRESHOLD) {
         _mmapLimit = sanitizeMMapThreshold(value);
         return 1;
@@ -105,8 +101,7 @@ int ThreadPoolT<MemBlockPtrT, ThreadStatT>::mallopt(int param, int value) {
     return 0;
 }
 
-template <typename MemBlockPtrT, typename ThreadStatT>
-void ThreadPoolT<MemBlockPtrT, ThreadStatT>::malloc(size_t sz, MemBlockPtrT &mem) {
+template <typename MemBlockPtrT, typename ThreadStatT> void ThreadPoolT<MemBlockPtrT, ThreadStatT>::malloc(size_t sz, MemBlockPtrT &mem) {
     SizeClassT sc = MemBlockPtrT::sizeClass(sz);
     AllocFree &af = _memList[sc];
     af._allocFrom->sub(mem);
@@ -122,10 +117,9 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::malloc(size_t sz, MemBlockPtrT &mem
     PARANOID_CHECK2(if (af._allocFrom->full()) { *(int *)1 = 1; });
 }
 
-template <typename MemBlockPtrT, typename ThreadStatT>
-void ThreadPoolT<MemBlockPtrT, ThreadStatT>::free(MemBlockPtrT mem, SizeClassT sc) {
+template <typename MemBlockPtrT, typename ThreadStatT> void ThreadPoolT<MemBlockPtrT, ThreadStatT>::free(MemBlockPtrT mem, SizeClassT sc) {
     PARANOID_CHECK2(if (!mem.validFree()) { *(int *)1 = 1; });
-    AllocFree &af = _memList[sc];
+    AllocFree   &af = _memList[sc];
     const size_t cs(MemBlockPtrT::classSize(sc));
     if ((af._allocFrom->count() + 1) * cs < _threadCacheLimit) {
         if (!af._allocFrom->full()) {
@@ -159,16 +153,13 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::free(MemBlockPtrT mem, SizeClassT s
     PARANOID_CHECK2(if (af._freeTo->full()) { *(int *)1 = 1; });
 }
 
-template <typename MemBlockPtrT, typename ThreadStatT> bool ThreadPoolT<MemBlockPtrT, ThreadStatT>::isActive() const {
-    return (_osThreadId != 0);
-}
+template <typename MemBlockPtrT, typename ThreadStatT> bool ThreadPoolT<MemBlockPtrT, ThreadStatT>::isActive() const { return (_osThreadId != 0); }
 
 template <typename MemBlockPtrT, typename ThreadStatT> bool ThreadPoolT<MemBlockPtrT, ThreadStatT>::isUsed() const {
     return isActive() && hasActuallyBeenUsed();
 }
 
-template <typename MemBlockPtrT, typename ThreadStatT>
-bool ThreadPoolT<MemBlockPtrT, ThreadStatT>::hasActuallyBeenUsed() const {
+template <typename MemBlockPtrT, typename ThreadStatT> bool ThreadPoolT<MemBlockPtrT, ThreadStatT>::hasActuallyBeenUsed() const {
     bool used(false);
     for (size_t i = 0; !used && (i < NELEMS(_memList)); i++) {
         used = (_memList[i]._allocFrom != nullptr && !_memList[i]._allocFrom->empty() && !_memList[i]._freeTo->full());
@@ -186,8 +177,7 @@ template <typename MemBlockPtrT, typename ThreadStatT> void ThreadPoolT<MemBlock
     // printf("OsThreadId = %lx, threadId = %x\n", _osThreadId, _threadId);
 }
 
-template <typename MemBlockPtrT, typename ThreadStatT>
-void ThreadPoolT<MemBlockPtrT, ThreadStatT>::setParams(size_t threadCacheLimit) {
+template <typename MemBlockPtrT, typename ThreadStatT> void ThreadPoolT<MemBlockPtrT, ThreadStatT>::setParams(size_t threadCacheLimit) {
     _threadCacheLimit = threadCacheLimit;
 }
 

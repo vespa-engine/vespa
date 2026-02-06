@@ -20,15 +20,14 @@ class ThreadArg {
 public:
     ThreadArg(VoidpFunctionVoidp func, void *arg) : _func(func), _arg(arg) {}
     VoidpFunctionVoidp _func;
-    void *_arg;
+    void              *_arg;
 };
 
-typedef int (*pthread_create_function)(pthread_t *thread, const pthread_attr_t *attr, VoidpFunctionVoidp start_routine,
-                                       void *arg);
+typedef int (*pthread_create_function)(pthread_t *thread, const pthread_attr_t *attr, VoidpFunctionVoidp start_routine, void *arg);
 
 int linuxthreads_pthread_getattr_np(pthread_t pid, pthread_attr_t *dst);
 
-static void *_G_mallocThreadProxyReturnAddress = nullptr;
+static void               *_G_mallocThreadProxyReturnAddress = nullptr;
 static std::atomic<size_t> _G_threadCount(1); // You always have the main thread.
 
 static void cleanupThread(void *arg) {
@@ -43,8 +42,7 @@ void *mallocThreadProxy(void *arg) {
     ThreadArg *ta = (ThreadArg *)arg;
 
     void *tempReturnAddress = __builtin_return_address(0);
-    ASSERT_STACKTRACE((_G_mallocThreadProxyReturnAddress == nullptr) ||
-                      (_G_mallocThreadProxyReturnAddress == tempReturnAddress));
+    ASSERT_STACKTRACE((_G_mallocThreadProxyReturnAddress == nullptr) || (_G_mallocThreadProxyReturnAddress == tempReturnAddress));
     _G_mallocThreadProxyReturnAddress = tempReturnAddress;
     vespamalloc::_G_myMemP->setReturnAddressStop(tempReturnAddress);
 
@@ -61,15 +59,12 @@ void *mallocThreadProxy(void *arg) {
     return result;
 }
 
-extern "C" VESPA_DLL_EXPORT int local_pthread_create(pthread_t *thread, const pthread_attr_t *attrOrg,
-                                                     void *(*start_routine)(void *),
+extern "C" VESPA_DLL_EXPORT int local_pthread_create(pthread_t *thread, const pthread_attr_t *attrOrg, void *(*start_routine)(void *),
                                                      void *arg) __asm__("pthread_create");
 
-VESPA_DLL_EXPORT int local_pthread_create(pthread_t *thread, const pthread_attr_t *attrOrg,
-                                          void *(*start_routine)(void *), void *arg) {
+VESPA_DLL_EXPORT int local_pthread_create(pthread_t *thread, const pthread_attr_t *attrOrg, void *(*start_routine)(void *), void *arg) {
     size_t numThreads = _G_threadCount;
-    while ((numThreads < vespamalloc::_G_myMemP->getMaxNumThreads()) &&
-           !_G_threadCount.compare_exchange_strong(numThreads, numThreads + 1)) {
+    while ((numThreads < vespamalloc::_G_myMemP->getMaxNumThreads()) && !_G_threadCount.compare_exchange_strong(numThreads, numThreads + 1)) {
     }
 
     if (numThreads >= vespamalloc::_G_myMemP->getMaxNumThreads()) {
@@ -95,8 +90,8 @@ VESPA_DLL_EXPORT int local_pthread_create(pthread_t *thread, const pthread_attr_
         }
     }
 
-    ThreadArg *args = new ThreadArg(start_routine, arg);
-    pthread_attr_t locAttr;
+    ThreadArg      *args = new ThreadArg(start_routine, arg);
+    pthread_attr_t  locAttr;
     pthread_attr_t *attr(const_cast<pthread_attr_t *>(attrOrg));
     if (attr == nullptr) {
         pthread_attr_init(&locAttr);

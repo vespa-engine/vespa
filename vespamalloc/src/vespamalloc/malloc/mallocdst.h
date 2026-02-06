@@ -6,10 +6,10 @@
 
 namespace vespamalloc {
 
-typedef ThreadListT<MemBlockBoundsCheck, Stat> ThreadList;
+typedef ThreadListT<MemBlockBoundsCheck, Stat>         ThreadList;
 typedef MemoryWatcher<MemBlockBoundsCheck, ThreadList> Allocator;
 
-static char _Gmem[sizeof(Allocator)];
+static char       _Gmem[sizeof(Allocator)];
 static Allocator *_GmemP = nullptr;
 
 template <size_t MaxSizeClassMultiAllocC, size_t StackTraceLen>

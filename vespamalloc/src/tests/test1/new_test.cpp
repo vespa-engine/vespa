@@ -28,9 +28,9 @@ template <typename S> void verify_aligned(S *p) {
 
 TEST(NewTest, verify_new_with_normal_alignment) {
     struct S {
-        int a;
+        int  a;
         long b;
-        int c;
+        int  c;
     };
     static_assert(sizeof(S) == 24);
     static_assert(alignof(S) == 8);
@@ -115,7 +115,7 @@ TEST(NewTest, verify_reallocarray) {
     }
     errno = 0;
     void *arr2 = call_reallocarray(arr, 800, 5);
-    int myErrno = errno;
+    int   myErrno = errno;
     EXPECT_NE(arr, arr2);
     EXPECT_NE(nullptr, arr2);
     EXPECT_NE(ENOMEM, myErrno);
@@ -136,14 +136,13 @@ void verify_vespamalloc_usable_size() {
         size_t requested;
         size_t usable;
     };
-    AllocInfo allocInfo[] = {{0x7, 0x20},          {0x27, 0x40},         {0x47, 0x80},        {0x87, 0x100},
-                             {0x107, 0x200},       {0x207, 0x400},       {0x407, 0x800},      {0x807, 0x1000},
-                             {0x1007, 0x2000},     {0x2007, 0x4000},     {0x4007, 0x8000},    {0x8007, 0x10000},
-                             {0x10007, 0x20000},   {0x20007, 0x40000},   {0x40007, 0x80000},  {0x80007, 0x100000},
-                             {0x100007, 0x200000}, {0x200007, 0x400000}, {0x400007, 0x600000}};
+    AllocInfo allocInfo[] = {{0x7, 0x20},         {0x27, 0x40},         {0x47, 0x80},         {0x87, 0x100},       {0x107, 0x200},
+                             {0x207, 0x400},      {0x407, 0x800},       {0x807, 0x1000},      {0x1007, 0x2000},    {0x2007, 0x4000},
+                             {0x4007, 0x8000},    {0x8007, 0x10000},    {0x10007, 0x20000},   {0x20007, 0x40000},  {0x40007, 0x80000},
+                             {0x80007, 0x100000}, {0x100007, 0x200000}, {0x200007, 0x400000}, {0x400007, 0x600000}};
     for (const AllocInfo &info : allocInfo) {
         std::unique_ptr<char[]> buf = std::make_unique<char[]>(info.requested);
-        size_t usable_size = malloc_usable_size(buf.get());
+        size_t                  usable_size = malloc_usable_size(buf.get());
         EXPECT_EQ(info.usable, usable_size);
     }
 }
@@ -174,9 +173,9 @@ size_t count_mismatches(const char *v, char c, size_t count) {
 } // namespace
 
 TEST(NewTest, verify_malloc_usable_size_is_sane) {
-    constexpr size_t SZ = 33;
+    constexpr size_t        SZ = 33;
     std::unique_ptr<char[]> buf = std::make_unique<char[]>(SZ);
-    size_t usable_size = malloc_usable_size(buf.get());
+    size_t                  usable_size = malloc_usable_size(buf.get());
     if (_env == MallocLibrary::VESPA_MALLOC_D) {
         // Debug variants will never have more memory available as there is pre/postamble for error detection.
         EXPECT_EQ(SZ, usable_size);
@@ -214,7 +213,7 @@ void verifyReallocLarge(char *initial, bool expect_vespamalloc_optimization) {
     const size_t INITIAL_SIZE = 0x400001;
     const size_t SECOND_SIZE = 0x500001;
     const size_t THIRD_SIZE = 0x600001;
-    char *v = static_cast<char *>(realloc(initial, INITIAL_SIZE));
+    char        *v = static_cast<char *>(realloc(initial, INITIAL_SIZE));
     memset(v, 0x5b, INITIAL_SIZE);
     char *nv = static_cast<char *>(realloc(v, SECOND_SIZE));
     if (expect_vespamalloc_optimization) {

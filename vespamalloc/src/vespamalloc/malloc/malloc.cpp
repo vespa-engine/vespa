@@ -7,10 +7,10 @@
 
 namespace vespamalloc {
 
-typedef ThreadListT<MemBlock, NoStat> ThreadList;
+typedef ThreadListT<MemBlock, NoStat>       ThreadList;
 typedef MemoryWatcher<MemBlock, ThreadList> Allocator;
 
-static char _Gmem[sizeof(Allocator)];
+static char       _Gmem[sizeof(Allocator)];
 static Allocator* _GmemP = nullptr;
 
 static Allocator* createAllocator() {

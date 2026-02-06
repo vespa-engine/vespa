@@ -8,7 +8,7 @@
 using namespace vespamalloc;
 
 // typedef StackEntry<StackFrameReturnEntry> StackElem;
-typedef CallGraph<int, 0x1000, Index> CallGraphIntT;
+typedef CallGraph<int, 0x1000, Index>       CallGraphIntT;
 typedef CallGraph<StackElem, 0x1000, Index> CallGraphStackEntryT;
 
 namespace vespalibtest {
@@ -32,12 +32,12 @@ private:
 
 } // namespace vespalibtest
 void testint() {
-    CallGraphIntT callGraph;
+    CallGraphIntT                                callGraph;
     vespalibtest::DumpGraph<CallGraphIntT::Node> dump("int: ");
-    int s1[3] = {1, 2, 3};
-    int s2[3] = {1, 2, 4};
-    int s3[1] = {1};
-    int s4[3] = {1, 3, 4};
+    int                                          s1[3] = {1, 2, 3};
+    int                                          s2[3] = {1, 2, 4};
+    int                                          s3[1] = {1};
+    int                                          s4[3] = {1, 3, 4};
     callGraph.addStack(s1, 3);
     callGraph.addStack(s2, 3);
     callGraph.addStack(s3, 1);
@@ -47,12 +47,12 @@ void testint() {
 }
 
 void teststackentry() {
-    CallGraphStackEntryT callGraph;
+    CallGraphStackEntryT                                callGraph;
     vespalibtest::DumpGraph<CallGraphStackEntryT::Node> dump("callstack: ");
-    StackElem s1[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)3)};
-    StackElem s2[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)4)};
-    StackElem s3[1] = {StackElem((void *)1)};
-    StackElem s4[3] = {StackElem((void *)1), StackElem((void *)3), StackElem((void *)4)};
+    StackElem                                           s1[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)3)};
+    StackElem                                           s2[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)4)};
+    StackElem                                           s3[1] = {StackElem((void *)1)};
+    StackElem                                           s4[3] = {StackElem((void *)1), StackElem((void *)3), StackElem((void *)4)};
     callGraph.addStack(s1, 3);
     callGraph.addStack(s2, 3);
     callGraph.addStack(s3, 1);
@@ -63,15 +63,15 @@ void teststackentry() {
 
 void testaggregator() {
     CallGraphStackEntryT callGraph;
-    StackElem s1[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)3)};
-    StackElem s2[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)4)};
-    StackElem s3[1] = {StackElem((void *)1)};
-    StackElem s4[3] = {StackElem((void *)1), StackElem((void *)3), StackElem((void *)4)};
+    StackElem            s1[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)3)};
+    StackElem            s2[3] = {StackElem((void *)1), StackElem((void *)2), StackElem((void *)4)};
+    StackElem            s3[1] = {StackElem((void *)1)};
+    StackElem            s4[3] = {StackElem((void *)1), StackElem((void *)3), StackElem((void *)4)};
     callGraph.addStack(s1, 3);
     callGraph.addStack(s2, 3);
     callGraph.addStack(s3, 1);
     callGraph.addStack(s4, 3);
-    Aggregator agg;
+    Aggregator                  agg;
     DumpGraph<CallGraphT::Node> dump(&agg, "{ ", " }");
     callGraph.traverseDepth(dump);
     asciistream ost;

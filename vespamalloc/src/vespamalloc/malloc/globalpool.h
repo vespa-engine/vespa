@@ -27,12 +27,10 @@ public:
     ChunkSList *returnMemory(SizeClassT sc, ChunkSList *csl) __attribute__((noinline));
 
     DataSegment &dataSegment() { return _dataSegment; }
-    void enableThreadSupport() __attribute__((noinline));
+    void         enableThreadSupport() __attribute__((noinline));
 
-    static void setParams(size_t threadCacheLimit);
-    static size_t computeExactSize(size_t sz) {
-        return (((sz + (ALWAYS_REUSE_LIMIT - 1)) / ALWAYS_REUSE_LIMIT) * ALWAYS_REUSE_LIMIT);
-    }
+    static void   setParams(size_t threadCacheLimit);
+    static size_t computeExactSize(size_t sz) { return (((sz + (ALWAYS_REUSE_LIMIT - 1)) / ALWAYS_REUSE_LIMIT) * ALWAYS_REUSE_LIMIT); }
 
     void info(FILE *os, size_t level = 0) __attribute__((noinline));
 
@@ -42,7 +40,7 @@ private:
     ChunkSList *malloc(const Guard &guard, SizeClassT sc) __attribute__((noinline));
     ChunkSList *getChunks(const Guard &guard, size_t numChunks) __attribute__((noinline));
     ChunkSList *allocChunkList(const Guard &guard) __attribute__((noinline));
-    void validate(const void *ptr) const noexcept;
+    void        validate(const void *ptr) const noexcept;
 
     class AllocFree {
     public:
@@ -52,8 +50,7 @@ private:
     };
     class Stat {
     public:
-        Stat()
-            : _getAlloc(0), _getFree(0), _exchangeAlloc(0), _exchangeFree(0), _exactAlloc(0), _return(0), _malloc(0) {}
+        Stat() : _getAlloc(0), _getFree(0), _exchangeAlloc(0), _exchangeFree(0), _exactAlloc(0), _return(0), _malloc(0) {}
         std::atomic<size_t> _getAlloc;
         std::atomic<size_t> _getFree;
         std::atomic<size_t> _exchangeAlloc;
@@ -61,21 +58,21 @@ private:
         std::atomic<size_t> _exactAlloc;
         std::atomic<size_t> _return;
         std::atomic<size_t> _malloc;
-        bool isUsed() const {
+        bool                isUsed() const {
             // Do not count _getFree.
             return (_getAlloc || _exchangeAlloc || _exchangeFree || _exactAlloc || _return || _malloc);
         }
     };
 
-    Mutex _mutex;
-    ChunkSList *_chunkPool;
-    AllocFree _scList[NUM_SIZE_CLASSES];
-    DataSegment &_dataSegment;
+    Mutex               _mutex;
+    ChunkSList         *_chunkPool;
+    AllocFree           _scList[NUM_SIZE_CLASSES];
+    DataSegment        &_dataSegment;
     std::atomic<size_t> _getChunks;
     std::atomic<size_t> _getChunksSum;
     std::atomic<size_t> _allocChunkList;
-    Stat _stat[NUM_SIZE_CLASSES];
-    static size_t _threadCacheLimit __attribute__((visibility("hidden")));
+    Stat                _stat[NUM_SIZE_CLASSES];
+    static size_t       _threadCacheLimit __attribute__((visibility("hidden")));
 };
 
 } // namespace vespamalloc

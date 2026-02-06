@@ -10,9 +10,9 @@ namespace vespamalloc {
 namespace {
 
 std::string demangle(const char *native) {
-    int status = 0;
+    int    status = 0;
     size_t size = 0;
-    char *unmangled = abi::__cxa_demangle(native, nullptr, &size, &status);
+    char  *unmangled = abi::__cxa_demangle(native, nullptr, &size, &status);
     if (unmangled == nullptr) {
         return ""; // Demangling failed for some reason. TODO return `native` instead?
     }
@@ -23,8 +23,8 @@ std::string demangle(const char *native) {
 
 std::string dlAddr(const void *func) {
     static std::string _unknown = "UNKNOWN";
-    Dl_info info;
-    int ret = dladdr(func, &info);
+    Dl_info            info;
+    int                ret = dladdr(func, &info);
     if (ret != 0) {
         return demangle(info.dli_sname);
     }
@@ -35,7 +35,7 @@ std::string dlAddr(const void *func) {
 
 namespace {
 void verifyAndCopy(const void *addr, char *v, size_t sz) {
-    size_t pos(0);
+    size_t      pos(0);
     std::string sym = dlAddr(addr);
     for (; (pos < sym.size()) && (pos < sz - 1); pos++) {
         char c(sym[pos]);
@@ -65,7 +65,7 @@ const void *StackEntry::_stopAddr = nullptr;
 size_t StackEntry::fillStack(StackEntry *stack, size_t nelems) {
     // GNU extension: Variable-length automatic array
     void *retAddr[nelems];
-    int sz = backtrace(retAddr, nelems);
+    int   sz = backtrace(retAddr, nelems);
     if ((sz > 0) && (size_t(sz) <= nelems)) {
         for (int i(1); i < sz; i++) {
             StackEntry entry(retAddr[i], nullptr);

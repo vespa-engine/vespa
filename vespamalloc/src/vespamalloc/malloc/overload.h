@@ -84,10 +84,8 @@ void operator delete[](void* ptr, std::size_t sz, const std::nothrow_t&) noexcep
  * alignment will always be satisfied. size will always be larger or equal to alignment.
  */
 void* operator new(std::size_t sz, std::align_val_t alignment) { return vespamalloc::_GmemP->malloc(sz, alignment); }
-void* operator new(std::size_t sz, std::align_val_t alignment, const std::nothrow_t&) noexcept {
-    return vespamalloc::_GmemP->malloc(sz, alignment);
-}
-void operator delete(void* ptr, std::align_val_t) noexcept {
+void* operator new(std::size_t sz, std::align_val_t alignment, const std::nothrow_t&) noexcept { return vespamalloc::_GmemP->malloc(sz, alignment); }
+void  operator delete(void* ptr, std::align_val_t) noexcept {
     if (ptr) {
         return vespamalloc::_GmemP->free(ptr);
     }
@@ -133,8 +131,7 @@ struct mallinfo2 mallinfo2() __THROW {
     info.smblks = 0;
     info.hblkhd = vespamalloc::_GmemP->mmapPool().getNumMappings();
     info.hblks = vespamalloc::_GmemP->mmapPool().getMmappedBytes();
-    size_t highwaterMark =
-        vespamalloc::_GmemP->dataSegment().dataSize() + vespamalloc::_GmemP->mmapPool().getMmappedBytesPeak();
+    size_t highwaterMark = vespamalloc::_GmemP->dataSegment().dataSize() + vespamalloc::_GmemP->mmapPool().getMmappedBytesPeak();
     info.usmblks = highwaterMark;
     info.fsmblks = 0;
     info.fordblks = vespamalloc::_GmemP->dataSegment().freeSize();
@@ -151,8 +148,7 @@ struct mallinfo mallinfo() __THROW {
     info.smblks = 0;
     info.hblkhd = vespamalloc::_GmemP->mmapPool().getNumMappings();
     info.hblks = (vespamalloc::_GmemP->mmapPool().getMmappedBytes() >> 20);
-    size_t highwaterMark =
-        vespamalloc::_GmemP->dataSegment().dataSize() + vespamalloc::_GmemP->mmapPool().getMmappedBytesPeak();
+    size_t highwaterMark = vespamalloc::_GmemP->dataSegment().dataSize() + vespamalloc::_GmemP->mmapPool().getMmappedBytesPeak();
     info.usmblks = (highwaterMark >> 20);
     info.fsmblks = 0;
     info.fordblks = (vespamalloc::_GmemP->dataSegment().freeSize() >> 20);
@@ -188,7 +184,7 @@ void* memalign(size_t align, size_t sz) __THROW __attribute__((visibility("defau
 void* memalign(size_t align_in, size_t sz) __THROW {
     size_t align = (align_in == 0) ? 1 : 1ul << vespamalloc::msbIdx(align_in * 2 - 1);
     size_t align_1(align - 1);
-    void* ptr = vespamalloc::_GmemP->malloc(vespamalloc::_GmemP->getMinSizeForAlignment(align, sz));
+    void*  ptr = vespamalloc::_GmemP->malloc(vespamalloc::_GmemP->getMinSizeForAlignment(align, sz));
     return (void*)((size_t(ptr) + align_1) & ~align_1);
 }
 
@@ -197,7 +193,7 @@ void* aligned_alloc(size_t align_in, size_t sz_in) __THROW {
     size_t align = (align_in == 0) ? 1 : 1ul << vespamalloc::msbIdx(align_in * 2 - 1);
     size_t align_1(align - 1);
     size_t sz = ((sz_in - 1) + align) & ~align_1;
-    void* ptr = vespamalloc::_GmemP->malloc(vespamalloc::_GmemP->getMinSizeForAlignment(align, sz));
+    void*  ptr = vespamalloc::_GmemP->malloc(vespamalloc::_GmemP->getMinSizeForAlignment(align, sz));
     return (void*)((size_t(ptr) + align_1) & ~align_1);
 }
 
@@ -232,17 +228,15 @@ size_t malloc_usable_size(void* ptr) __THROW { return (ptr) ? vespamalloc::_Gmem
 
 #define ALIAS(x) __attribute__((weak, alias(x), visibility("default")))
 
-void* __libc_malloc(size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(1))) ALIAS("malloc");
-void* __libc_realloc(void* ptr, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("realloc");
-void* __libc_reallocarray(void* ptr, size_t nemb, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(2, 3)))
-ALIAS("reallocarray");
-void* __libc_calloc(size_t n, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(1, 2))) ALIAS("calloc");
-void __libc_free(void* ptr) __THROW __attribute__((leaf)) ALIAS("free");
+void*  __libc_malloc(size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(1))) ALIAS("malloc");
+void*  __libc_realloc(void* ptr, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("realloc");
+void*  __libc_reallocarray(void* ptr, size_t nemb, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(2, 3))) ALIAS("reallocarray");
+void*  __libc_calloc(size_t n, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(1, 2))) ALIAS("calloc");
+void   __libc_free(void* ptr) __THROW __attribute__((leaf)) ALIAS("free");
 size_t __libc_malloc_usable_size(void* ptr) __THROW ALIAS("malloc_usable_size");
 
 #if __GLIBC_PREREQ(2, 34)
-void* __libc_memalign(size_t align, size_t s) __THROW __attribute__((leaf, malloc, alloc_align(1), alloc_size(2)))
-ALIAS("memalign");
+void* __libc_memalign(size_t align, size_t s) __THROW __attribute__((leaf, malloc, alloc_align(1), alloc_size(2))) ALIAS("memalign");
 #else
 void* __libc_memalign(size_t align, size_t s) __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("memalign");
 #endif

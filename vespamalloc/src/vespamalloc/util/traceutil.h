@@ -19,12 +19,12 @@ class Aggregator {
 public:
     Aggregator();
     ~Aggregator();
-    void push_back(size_t num, const string& s) { _map.emplace_back(num, s); }
+    void                push_back(size_t num, const string& s) { _map.emplace_back(num, s); }
     friend asciistream& operator<<(asciistream& os, const Aggregator& v);
 
 private:
     typedef std::vector<std::pair<size_t, string>> Map;
-    Map _map;
+    Map                                            _map;
 };
 
 template <typename N> class DumpGraph {
@@ -34,10 +34,10 @@ public:
     void handle(const N& node) __attribute__((noinline));
 
 private:
-    string _string;
-    string _endString;
-    size_t _sum;
-    size_t _min;
+    string      _string;
+    string      _endString;
+    size_t      _sum;
+    size_t      _min;
     Aggregator* _aggregator;
 };
 

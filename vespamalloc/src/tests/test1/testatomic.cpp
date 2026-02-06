@@ -23,9 +23,9 @@ TEST(AtomicTest, verify_lock_freeness_of_atomics) {
 
 TEST(AtomicTest, test_explicit_mmap_munmap) {
     vespamalloc::MMapPool mmapPool;
-    size_t page_size = getpagesize();
-    size_t mmap1_size = 3 * page_size;
-    size_t mmap2_size = 7 * page_size;
+    size_t                page_size = getpagesize();
+    size_t                mmap1_size = 3 * page_size;
+    size_t                mmap2_size = 7 * page_size;
     EXPECT_EQ(0u, mmapPool.getNumMappings());
     EXPECT_EQ(0u, mmapPool.getMmappedBytes());
 

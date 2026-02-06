@@ -32,7 +32,7 @@ public:
 
 private:
     uint32_t _size;
-    void *produce() override { return malloc(_size); }
+    void    *produce() override { return malloc(_size); }
 };
 
 MallocWorker::~MallocWorker() = default;
@@ -48,7 +48,7 @@ private:
     uint32_t _size;
 
     void *produce() override { return malloc(_size); }
-    void consume(void *p) override { free(p); }
+    void  consume(void *p) override { free(p); }
 };
 
 MallocFreeWorker::~MallocFreeWorker() = default;
@@ -57,9 +57,9 @@ MallocFreeWorker::~MallocFreeWorker() = default;
 
 int main(int argc, char **argv) {
     bool failed = false;
-    int duration = 10;
-    int numCrossThreadAlloc(2);
-    int numSameThreadAlloc(2);
+    int  duration = 10;
+    int  numCrossThreadAlloc(2);
+    int  numSameThreadAlloc(2);
     if (argc > 1) {
         duration = atoi(argv[1]);
     }
@@ -71,8 +71,8 @@ int main(int argc, char **argv) {
     }
     vespalib::ThreadPool pool;
 
-    std::map<int, std::shared_ptr<FreeWorker>> freeWorkers;
-    std::map<int, std::shared_ptr<MallocWorker>> mallocWorkers;
+    std::map<int, std::shared_ptr<FreeWorker>>       freeWorkers;
+    std::map<int, std::shared_ptr<MallocWorker>>     mallocWorkers;
     std::map<int, std::shared_ptr<MallocFreeWorker>> mallocFreeWorkers;
     for (int i(0); i < numCrossThreadAlloc; i++) {
         freeWorkers[i] = std::shared_ptr<FreeWorker>(new FreeWorker(1024, (i % 2) ? true : false));
@@ -83,17 +83,13 @@ int main(int argc, char **argv) {
     }
 
     std::atomic<bool> stop_flag(false);
-    for (std::map<int, std::shared_ptr<FreeWorker>>::iterator it(freeWorkers.begin()), mt(freeWorkers.end()); it != mt;
-         it++) {
+    for (std::map<int, std::shared_ptr<FreeWorker>>::iterator it(freeWorkers.begin()), mt(freeWorkers.end()); it != mt; it++) {
         it->second->start(pool, stop_flag);
     }
-    for (std::map<int, std::shared_ptr<MallocWorker>>::iterator it(mallocWorkers.begin()), mt(mallocWorkers.end());
-         it != mt; it++) {
+    for (std::map<int, std::shared_ptr<MallocWorker>>::iterator it(mallocWorkers.begin()), mt(mallocWorkers.end()); it != mt; it++) {
         it->second->start(pool, stop_flag);
     }
-    for (std::map<int, std::shared_ptr<MallocFreeWorker>>::iterator it(mallocFreeWorkers.begin()),
-         mt(mallocFreeWorkers.end());
-         it != mt; it++) {
+    for (std::map<int, std::shared_ptr<MallocFreeWorker>>::iterator it(mallocFreeWorkers.begin()), mt(mallocFreeWorkers.end()); it != mt; it++) {
         it->second->start(pool, stop_flag);
     }
 
@@ -106,29 +102,23 @@ int main(int argc, char **argv) {
     size_t numFreeOperations(0);
     size_t numMallocOperations(0);
     size_t numSameThreadMallocFreeOperations(0);
-    for (std::map<int, std::shared_ptr<FreeWorker>>::iterator it(freeWorkers.begin()), mt(freeWorkers.end()); it != mt;
-         it++) {
+    for (std::map<int, std::shared_ptr<FreeWorker>>::iterator it(freeWorkers.begin()), mt(freeWorkers.end()); it != mt; it++) {
         numFreeOperations += it->second->operations();
     }
-    for (std::map<int, std::shared_ptr<MallocWorker>>::iterator it(mallocWorkers.begin()), mt(mallocWorkers.end());
-         it != mt; it++) {
+    for (std::map<int, std::shared_ptr<MallocWorker>>::iterator it(mallocWorkers.begin()), mt(mallocWorkers.end()); it != mt; it++) {
         numMallocOperations += it->second->operations();
     }
-    for (std::map<int, std::shared_ptr<MallocFreeWorker>>::iterator it(mallocFreeWorkers.begin()),
-         mt(mallocFreeWorkers.end());
-         it != mt; it++) {
+    for (std::map<int, std::shared_ptr<MallocFreeWorker>>::iterator it(mallocFreeWorkers.begin()), mt(mallocFreeWorkers.end()); it != mt; it++) {
         numSameThreadMallocFreeOperations += it->second->operationsConsumed();
     }
     if (numFreeOperations != numMallocOperations) {
         failed = true;
-        fprintf(stderr, "error: numFreeOperations(%zu) != numMallocOperations(%zu)", numFreeOperations,
-                numMallocOperations);
+        fprintf(stderr, "error: numFreeOperations(%zu) != numMallocOperations(%zu)", numFreeOperations, numMallocOperations);
     }
     const size_t numCrossThreadMallocFreeOperations(numMallocOperations);
 
     fprintf(stderr, "Did %lu Cross thread malloc/free operations\n", numCrossThreadMallocFreeOperations);
     fprintf(stderr, "Did %lu Same thread malloc/free operations\n", numSameThreadMallocFreeOperations);
-    fprintf(stderr, "Did %lu Total operations\n",
-            numCrossThreadMallocFreeOperations + numSameThreadMallocFreeOperations);
+    fprintf(stderr, "Did %lu Total operations\n", numCrossThreadMallocFreeOperations + numSameThreadMallocFreeOperations);
     return failed ? 1 : 0;
 }

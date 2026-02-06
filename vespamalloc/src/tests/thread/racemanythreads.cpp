@@ -6,8 +6,8 @@
 
 void *hammer(void *arg) {
     usleep(4000000);
-    long seconds = *static_cast<const long *>(arg);
-    long stopTime(time(nullptr) + seconds);
+    long      seconds = *static_cast<const long *>(arg);
+    long      stopTime(time(nullptr) + seconds);
     pthread_t id = pthread_self();
     while (time(nullptr) < stopTime) {
         std::vector<pthread_t *> allocations;
@@ -29,12 +29,12 @@ void *hammer(void *arg) {
     return arg;
 }
 
-int my_argc = 0;
+int    my_argc = 0;
 char **my_argv = nullptr;
 
 TEST(RaceManyThreadsTest, main) {
     size_t threadCount(1024);
-    long seconds(10);
+    long   seconds(10);
     if (my_argc >= 2) {
         threadCount = strtoul(my_argv[1], nullptr, 0);
         if (my_argc >= 3) {

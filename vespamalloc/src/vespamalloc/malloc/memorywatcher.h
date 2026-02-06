@@ -19,33 +19,31 @@ public:
     virtual ~MemoryWatcher() __attribute__((noinline));
 
 private:
-    void installMonitor();
-    int getDumpSignal() const { return _params[Params::dumpsignal].valueAsLong(); }
-    static int getReconfigSignal() { return SIGHUP; }
-    bool activateLogFile(const char *logfile);
-    void activateOptions();
-    void getOptions() __attribute__((noinline));
-    void parseOptions(char *options) __attribute__((noinline));
-    virtual void signalHandler(int signum, siginfo_t *sig, void *arg);
+    void                        installMonitor();
+    int                         getDumpSignal() const { return _params[Params::dumpsignal].valueAsLong(); }
+    static int                  getReconfigSignal() { return SIGHUP; }
+    bool                        activateLogFile(const char *logfile);
+    void                        activateOptions();
+    void                        getOptions() __attribute__((noinline));
+    void                        parseOptions(char *options) __attribute__((noinline));
+    virtual void                signalHandler(int signum, siginfo_t *sig, void *arg);
     static MemoryWatcher<T, S> *_manager;
-    static void ssignalHandler(int signum, siginfo_t *info, void *arg);
+    static void                 ssignalHandler(int signum, siginfo_t *info, void *arg);
     static MemoryWatcher<T, S> *manager() { return _manager; }
-    bool signal(int signum) __attribute__((noinline));
+    bool                        signal(int signum) __attribute__((noinline));
     class NameValuePair {
     public:
         NameValuePair() : _valueName("") { _value[0] = '\0'; }
         NameValuePair(const char *vName, const char *v) : _valueName(vName) { value(v); }
         const char *valueName() const { return _valueName; }
         const char *value() const { return _value; }
-        void value(const char *v) __attribute__((noinline));
-        long valueAsLong() const __attribute__((noinline)) { return strtol(_value, nullptr, 0); }
-        void info(FILE *os) __attribute__((noinline)) {
-            fprintf(os, "%s = %s %ld", valueName(), value(), valueAsLong());
-        }
+        void        value(const char *v) __attribute__((noinline));
+        long        valueAsLong() const __attribute__((noinline)) { return strtol(_value, nullptr, 0); }
+        void        info(FILE *os) __attribute__((noinline)) { fprintf(os, "%s = %s %ld", valueName(), value(), valueAsLong()); }
 
     private:
         const char *_valueName;
-        char _value[256];
+        char        _value[256];
     };
     class Params {
     public:
@@ -66,9 +64,9 @@ private:
         };
         Params() __attribute__((noinline));
         ~Params() __attribute__((noinline));
-        NameValuePair &operator[](unsigned index) { return _params[index]; }
+        NameValuePair       &operator[](unsigned index) { return _params[index]; }
         const NameValuePair &operator[](unsigned index) const { return _params[index]; }
-        bool update(const char *vName, const char *v) {
+        bool                 update(const char *vName, const char *v) {
             int index(find(vName));
             if (index >= 0) {
                 _params[index].value(v);
@@ -98,12 +96,12 @@ private:
         }
 
     private:
-        int find(const char *vName) __attribute__((noinline));
+        int           find(const char *vName) __attribute__((noinline));
         NameValuePair _params[numberofentries];
     };
     FILE *_logFile;
 
-    Params _params;
+    Params           _params;
     struct sigaction _oldSig;
 };
 
@@ -140,8 +138,7 @@ template <typename T, typename S> void MemoryWatcher<T, S>::NameValuePair::value
 }
 
 template <typename T, typename S>
-MemoryWatcher<T, S>::MemoryWatcher(int infoAtEnd, size_t prAllocAtStart)
-    : MemoryManager<T, S>(prAllocAtStart), _logFile(stderr) {
+MemoryWatcher<T, S>::MemoryWatcher(int infoAtEnd, size_t prAllocAtStart) : MemoryManager<T, S>(prAllocAtStart), _logFile(stderr) {
     _manager = this;
     char tmp[16];
     sprintf(tmp, "%d", infoAtEnd);
@@ -176,9 +173,8 @@ template <typename T, typename S> bool MemoryWatcher<T, S>::activateLogFile(cons
 template <typename T, typename S> void MemoryWatcher<T, S>::activateOptions() {
     activateLogFile(_params[Params::logfile].value());
     _G_logFile = _logFile;
-    this->setupSegmentLog(
-        _params[Params::bigsegment_loglevel].valueAsLong(), _params[Params::bigsegment_limit].valueAsLong(),
-        _params[Params::bigsegment_increment].valueAsLong(), _params[Params::allocs2show].valueAsLong());
+    this->setupSegmentLog(_params[Params::bigsegment_loglevel].valueAsLong(), _params[Params::bigsegment_limit].valueAsLong(),
+                          _params[Params::bigsegment_increment].valueAsLong(), _params[Params::allocs2show].valueAsLong());
     this->setupLog(_params[Params::pralloc_loglimit].valueAsLong());
     this->setParams(_params[Params::threadcachelimit].valueAsLong());
     _G_bigBlockLimit = _params[Params::bigblocklimit].valueAsLong();
@@ -207,17 +203,17 @@ const char *vespaHomeConf(char pathName[]) {
 } // namespace
 
 template <typename T, typename S> void MemoryWatcher<T, S>::getOptions() {
-    char homeConf[PATH_MAX];
+    char        homeConf[PATH_MAX];
     const char *searchOrder[3] = {"vespamalloc.conf", vespaHomeConf(homeConf), "/etc/vespamalloc.conf"};
     struct stat st;
-    int retval(-1);
-    unsigned index(0);
+    int         retval(-1);
+    unsigned    index(0);
     for (unsigned i = 0; (retval == -1) && (i < NELEMS(searchOrder)); i++) {
         retval = stat(searchOrder[i], &st);
         index = i;
     }
     if (retval == 0) {
-        int fd = open(searchOrder[index], O_RDONLY);
+        int  fd = open(searchOrder[index], O_RDONLY);
         char buffer[4096];
         assert(st.st_size + 1 < int(sizeof(buffer)));
         retval = read(fd, buffer, st.st_size);
@@ -231,11 +227,11 @@ template <typename T, typename S> void MemoryWatcher<T, S>::getOptions() {
 }
 
 template <typename T, typename S> void MemoryWatcher<T, S>::parseOptions(char *options) {
-    bool isComment(false);
-    const char ignore('\0');
+    bool        isComment(false);
+    const char  ignore('\0');
     const char *valueName(nullptr);
     const char *value(nullptr);
-    bool isWhite(true);
+    bool        isWhite(true);
     for (char *p = options; *p; p++) {
         char c(*p);
         if (c == '\n') {
@@ -312,7 +308,7 @@ template <typename T, typename S> void MemoryWatcher<T, S>::ssignalHandler(int s
 }
 
 template <typename T, typename S> bool MemoryWatcher<T, S>::signal(int signum) {
-    bool retval(true);
+    bool             retval(true);
     struct sigaction sig;
     sig.sa_sigaction = ssignalHandler;
     sigemptyset(&sig.sa_mask);

@@ -19,8 +19,7 @@ int main(int argc, char **argv) {
         allocSize = atoi(argv[2]);
     }
 
-    LOG(info, "Will create and run %d threads each allocating a single block of memory of %d size\n", numThreads,
-        allocSize);
+    LOG(info, "Will create and run %d threads each allocating a single block of memory of %d size\n", numThreads, allocSize);
     for (int i(0); i < numThreads;) {
         for (int j(0); (i < numThreads) && j < 10000; i++, j++) {
             pthread_t thread;

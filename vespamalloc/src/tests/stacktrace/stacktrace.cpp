@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     (void)b;
     delete[] a;
     pthread_t tid;
-    int retval = pthread_create(&tid, nullptr, run, nullptr);
+    int       retval = pthread_create(&tid, nullptr, run, nullptr);
     if (retval != 0) {
         perror("pthread_create failed");
         abort();

@@ -24,15 +24,13 @@ public:
             static_cast<uint32_t *>(_ptr)[2] = th;
         }
     }
-    bool allocated() const { return (static_cast<uint32_t *>(_ptr)[3] == ALLOC_MAGIC); }
-    size_t size() const { return static_cast<const uint32_t *>(_ptr)[0]; }
-    size_t alignment() const { return static_cast<const uint32_t *>(_ptr)[1]; }
-    uint32_t threadId() const { return static_cast<uint32_t *>(_ptr)[2]; }
-    Stack *callStack() { return reinterpret_cast<Stack *>((char *)_ptr + size() + alignment()); }
-    const Stack *callStack() const {
-        return reinterpret_cast<const Stack *>((const char *)_ptr + size() + alignment());
-    }
-    void fillMemory(size_t sz) {
+    bool         allocated() const { return (static_cast<uint32_t *>(_ptr)[3] == ALLOC_MAGIC); }
+    size_t       size() const { return static_cast<const uint32_t *>(_ptr)[0]; }
+    size_t       alignment() const { return static_cast<const uint32_t *>(_ptr)[1]; }
+    uint32_t     threadId() const { return static_cast<uint32_t *>(_ptr)[2]; }
+    Stack       *callStack() { return reinterpret_cast<Stack *>((char *)_ptr + size() + alignment()); }
+    const Stack *callStack() const { return reinterpret_cast<const Stack *>((const char *)_ptr + size() + alignment()); }
+    void         fillMemory(size_t sz) {
         if (_fillValue != NO_FILL) {
             memset(ptr(), _fillValue, sz);
         }
@@ -60,10 +58,8 @@ protected:
         ASSERT_STACKTRACE(sz < 0x100000000ul);
         static_cast<uint32_t *>(_ptr)[0] = sz;
     }
-    void setAlignment(size_t alignment) { static_cast<uint32_t *>(_ptr)[1] = alignment; }
-    static constexpr size_t preambleOverhead(std::align_val_t alignment) {
-        return std::max(preambleOverhead(), size_t(alignment));
-    }
+    void                    setAlignment(size_t alignment) { static_cast<uint32_t *>(_ptr)[1] = alignment; }
+    static constexpr size_t preambleOverhead(std::align_val_t alignment) { return std::max(preambleOverhead(), size_t(alignment)); }
     static constexpr size_t preambleOverhead() { return 4 * sizeof(unsigned); }
 
     enum { ALLOC_MAGIC = 0xF1E2D3C4, FREE_MAGIC = 0x63242367, HEAD_MAGIC3 = 0x5BF29BC7, TAIL_MAGIC = 0x1A2B3C4D };
@@ -71,18 +67,16 @@ protected:
 
     void *_ptr;
 
-    static FILE *_logFile;
-    static size_t _bigBlockLimit;
+    static FILE   *_logFile;
+    static size_t  _bigBlockLimit;
     static uint8_t _fillValue;
 };
 
-template <size_t MaxSizeClassMultiAllocC, size_t StackTraceLen>
-class MemBlockBoundsCheckBaseT : public MemBlockBoundsCheckBaseTBase {
+template <size_t MaxSizeClassMultiAllocC, size_t StackTraceLen> class MemBlockBoundsCheckBaseT : public MemBlockBoundsCheckBaseTBase {
 public:
     enum { MaxSizeClassMultiAlloc = MaxSizeClassMultiAllocC, SizeClassSpan = (MaxSizeClassMultiAllocC - 5) };
     MemBlockBoundsCheckBaseT() : MemBlockBoundsCheckBaseTBase(nullptr) {}
-    MemBlockBoundsCheckBaseT(void *p)
-        : MemBlockBoundsCheckBaseTBase(p ? static_cast<char *>(p) - preambleOverhead() : nullptr) {}
+    MemBlockBoundsCheckBaseT(void *p) : MemBlockBoundsCheckBaseTBase(p ? static_cast<char *>(p) - preambleOverhead() : nullptr) {}
     MemBlockBoundsCheckBaseT(void *p, size_t sz) : MemBlockBoundsCheckBaseTBase(p) {
         setSize(sz);
         setAlignment(preambleOverhead());
@@ -91,8 +85,7 @@ public:
     bool validCommon() const {
         const unsigned *p(reinterpret_cast<const unsigned *>(_ptr));
         return p && ((p[3] == ALLOC_MAGIC) || (p[3] == FREE_MAGIC)) &&
-               *(reinterpret_cast<const unsigned *>((const char *)_ptr + size() + alignment() +
-                                                    StackTraceLen * sizeof(void *))) == TAIL_MAGIC;
+               *(reinterpret_cast<const unsigned *>((const char *)_ptr + size() + alignment() + StackTraceLen * sizeof(void *))) == TAIL_MAGIC;
     }
     template <typename T> static size_t usable_size(void *ptr, const T &segment) {
         MemBlockBoundsCheckBaseT mem(ptr);
@@ -130,8 +123,8 @@ public:
         fillMemory(size());
         setTailMagic();
     }
-    void setExact(size_t sz) { init(sz, preambleOverhead()); }
-    void setExact(size_t sz, std::align_val_t alignment) { init(sz, preambleOverhead(alignment)); }
+    void   setExact(size_t sz) { init(sz, preambleOverhead()); }
+    void   setExact(size_t sz, std::align_val_t alignment) { init(sz, preambleOverhead(alignment)); }
     size_t callStackLen() const {
         const Stack *stack = callStack();
         // Use int to avoid compiler warning about always true.
@@ -145,20 +138,15 @@ public:
     static constexpr size_t adjustSize(size_t sz) { return sz + overhead(); }
     static constexpr size_t adjustSize(size_t sz, std::align_val_t alignment) { return sz + overhead(alignment); }
     static constexpr size_t unAdjustSize(size_t sz) { return sz - overhead(); }
-    static void dumpInfo(size_t level) __attribute__((noinline));
+    static void             dumpInfo(size_t level) __attribute__((noinline));
     static constexpr size_t getMinSizeForAlignment(size_t align, size_t sz) { return sz + align; }
-    void info(FILE *os, unsigned level = 0) const __attribute__((noinline));
+    void                    info(FILE *os, unsigned level = 0) const __attribute__((noinline));
 
 protected:
     static constexpr size_t postambleOverhead() { return sizeof(unsigned) + StackTraceLen * sizeof(void *); }
     static constexpr size_t overhead() { return preambleOverhead() + postambleOverhead(); }
-    static constexpr size_t overhead(std::align_val_t alignment) {
-        return preambleOverhead(alignment) + postambleOverhead();
-    }
-    void setTailMagic() {
-        *(reinterpret_cast<unsigned *>((char *)_ptr + size() + alignment() + StackTraceLen * sizeof(void *))) =
-            TAIL_MAGIC;
-    }
+    static constexpr size_t overhead(std::align_val_t alignment) { return preambleOverhead(alignment) + postambleOverhead(); }
+    void setTailMagic() { *(reinterpret_cast<unsigned *>((char *)_ptr + size() + alignment() + StackTraceLen * sizeof(void *))) = TAIL_MAGIC; }
     void init(size_t sz, size_t alignment) {
         if (_ptr) {
             setSize(sz);

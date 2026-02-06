@@ -30,8 +30,8 @@ struct wait_info {
             abort();
         }
     }
-    pthread_cond_t _cond;
-    pthread_mutex_t _mutex;
+    pthread_cond_t        _cond;
+    pthread_mutex_t       _mutex;
     std::atomic<uint64_t> _count;
 };
 
@@ -46,7 +46,7 @@ void *just_wait(void *arg) {
     return arg;
 }
 
-int my_argc = 0;
+int    my_argc = 0;
 char **my_argv = nullptr;
 
 TEST(ThreadTest, main) {
@@ -59,7 +59,7 @@ TEST(ThreadTest, main) {
 
     for (size_t i(0); i < threadCount; i++) {
         pthread_t th;
-        void *retval;
+        void     *retval;
         if (strcmp(testType, "exit") == 0) {
             EXPECT_EQ(pthread_create(&th, nullptr, just_exit, nullptr), 0);
         } else if (strcmp(testType, "cancel") == 0) {
@@ -71,13 +71,13 @@ TEST(ThreadTest, main) {
         EXPECT_EQ(pthread_join(th, &retval), 0);
     }
 
-    wait_info info;
+    wait_info      info;
     pthread_attr_t attr;
     EXPECT_EQ(pthread_attr_init(&attr), 0);
     EXPECT_EQ(pthread_attr_setstacksize(&attr, 64 * 1024), 0);
     EXPECT_EQ(info._count, 0ul);
     const size_t NUM_THREADS(16382); // +1 for main thread, +1 for testsystem = 16384
-    pthread_t tl[NUM_THREADS];
+    pthread_t    tl[NUM_THREADS];
     for (size_t j = 0; j < NUM_THREADS; j++) {
         int e = pthread_create(&tl[j], &attr, just_wait, &info);
         if (e != 0) {

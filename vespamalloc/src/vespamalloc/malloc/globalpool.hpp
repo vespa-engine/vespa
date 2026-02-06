@@ -7,8 +7,7 @@
 
 namespace vespamalloc {
 
-template <typename MemBlockPtrT>
-size_t AllocPoolT<MemBlockPtrT>::_threadCacheLimit __attribute__((visibility("hidden"))) = 0x10000;
+template <typename MemBlockPtrT> size_t AllocPoolT<MemBlockPtrT>::_threadCacheLimit __attribute__((visibility("hidden"))) = 0x10000;
 
 template <typename MemBlockPtrT>
 AllocPoolT<MemBlockPtrT>::AllocPoolT(DataSegment &ds)
@@ -18,14 +17,11 @@ template <typename MemBlockPtrT> AllocPoolT<MemBlockPtrT>::~AllocPoolT() = defau
 
 template <typename MemBlockPtrT> void AllocPoolT<MemBlockPtrT>::enableThreadSupport() { _mutex.init(); }
 
-template <typename MemBlockPtrT> void AllocPoolT<MemBlockPtrT>::setParams(size_t threadCacheLimit) {
-    _threadCacheLimit = threadCacheLimit;
-}
+template <typename MemBlockPtrT> void AllocPoolT<MemBlockPtrT>::setParams(size_t threadCacheLimit) { _threadCacheLimit = threadCacheLimit; }
 
-template <typename MemBlockPtrT>
-typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getFree(SizeClassT sc) {
+template <typename MemBlockPtrT> typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getFree(SizeClassT sc) {
     typename ChunkSList::AtomicHeadPtr &empty = _scList[sc]._empty;
-    ChunkSList *csl(nullptr);
+    ChunkSList                         *csl(nullptr);
     while ((csl = ChunkSList::linkOut(empty)) == nullptr) {
         Guard sync(_mutex);
         if (empty.load(std::memory_order_relaxed)._ptr == nullptr) {
@@ -42,9 +38,8 @@ typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getFree
     return csl;
 }
 
-template <typename MemBlockPtrT>
-typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getAlloc(SizeClassT sc) {
-    ChunkSList *csl(nullptr);
+template <typename MemBlockPtrT> typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getAlloc(SizeClassT sc) {
+    ChunkSList                         *csl(nullptr);
     typename ChunkSList::AtomicHeadPtr &full = _scList[sc]._full;
     while ((csl = ChunkSList::linkOut(full)) == nullptr) {
         Guard sync(_mutex);
@@ -63,8 +58,7 @@ typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getAllo
 }
 
 template <typename MemBlockPtrT>
-typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getFree(SizeClassT sc,
-                                                                                 size_t UNUSED(minBlocks)) {
+typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getFree(SizeClassT sc, size_t UNUSED(minBlocks)) {
     ChunkSList *csl = getFree(sc);
     validate(csl);
     USE_STAT2(_stat[sc]._getFree.fetch_add(1, std::memory_order_relaxed));
@@ -72,8 +66,8 @@ typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getFree
 }
 
 template <typename MemBlockPtrT>
-typename AllocPoolT<MemBlockPtrT>::ChunkSList *
-AllocPoolT<MemBlockPtrT>::exchangeFree(SizeClassT sc, typename AllocPoolT<MemBlockPtrT>::ChunkSList *csl) {
+typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::exchangeFree(SizeClassT                                     sc,
+                                                                                      typename AllocPoolT<MemBlockPtrT>::ChunkSList *csl) {
     PARANOID_CHECK1(if (csl->empty() || (csl->count() > ChunkSList::NumBlocks)) { *(int *)0 = 0; });
     AllocFree &af = _scList[sc];
     validate(af._full.load(std::memory_order_relaxed)._ptr);
@@ -85,8 +79,8 @@ AllocPoolT<MemBlockPtrT>::exchangeFree(SizeClassT sc, typename AllocPoolT<MemBlo
 }
 
 template <typename MemBlockPtrT>
-typename AllocPoolT<MemBlockPtrT>::ChunkSList *
-AllocPoolT<MemBlockPtrT>::exchangeAlloc(SizeClassT sc, typename AllocPoolT<MemBlockPtrT>::ChunkSList *csl) {
+typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::exchangeAlloc(SizeClassT                                     sc,
+                                                                                       typename AllocPoolT<MemBlockPtrT>::ChunkSList *csl) {
     PARANOID_CHECK1(if (!csl->empty()) { *(int *)0 = 0; });
     AllocFree &af = _scList[sc];
     validate(af._empty.load(std::memory_order_relaxed)._ptr);
@@ -103,11 +97,10 @@ template <typename MemBlockPtrT> void AllocPoolT<MemBlockPtrT>::validate(const v
 }
 
 template <typename MemBlockPtrT>
-typename AllocPoolT<MemBlockPtrT>::ChunkSList *
-AllocPoolT<MemBlockPtrT>::exactAlloc(size_t exactSize, SizeClassT sc,
-                                     typename AllocPoolT<MemBlockPtrT>::ChunkSList *csl) {
-    size_t adjustedSize = computeExactSize(exactSize);
-    void *exactBlock = _dataSegment.getBlock(adjustedSize, sc);
+typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::exactAlloc(size_t exactSize, SizeClassT sc,
+                                                                                    typename AllocPoolT<MemBlockPtrT>::ChunkSList *csl) {
+    size_t       adjustedSize = computeExactSize(exactSize);
+    void        *exactBlock = _dataSegment.getBlock(adjustedSize, sc);
     MemBlockPtrT mem(exactBlock, MemBlockPtrT::unAdjustSize(adjustedSize));
     csl->add(mem);
     ChunkSList *ncsl = csl;
@@ -118,8 +111,8 @@ AllocPoolT<MemBlockPtrT>::exactAlloc(size_t exactSize, SizeClassT sc,
 }
 
 template <typename MemBlockPtrT>
-typename AllocPoolT<MemBlockPtrT>::ChunkSList *
-AllocPoolT<MemBlockPtrT>::returnMemory(SizeClassT sc, typename AllocPoolT<MemBlockPtrT>::ChunkSList *csl) {
+typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::returnMemory(SizeClassT                                     sc,
+                                                                                      typename AllocPoolT<MemBlockPtrT>::ChunkSList *csl) {
     ChunkSList *completelyEmpty(nullptr);
 #if 0
     completelyEmpty = exchangeFree(sc, csl);
@@ -136,27 +129,25 @@ AllocPoolT<MemBlockPtrT>::returnMemory(SizeClassT sc, typename AllocPoolT<MemBlo
     return completelyEmpty;
 }
 
-template <typename MemBlockPtrT>
-typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::malloc(const Guard &guard, SizeClassT sc) {
+template <typename MemBlockPtrT> typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::malloc(const Guard &guard, SizeClassT sc) {
     const size_t numShifts = (sc <= MemBlockPtrT::SizeClassSpan) ? (MemBlockPtrT::SizeClassSpan - sc) : 0;
-    size_t numBlocks = 1 << numShifts;
+    size_t       numBlocks = 1 << numShifts;
     const size_t cs(MemBlockPtrT::classSize(sc));
-    size_t blockSize = cs * numBlocks;
-    void *block = _dataSegment.getBlock(blockSize, sc);
-    ChunkSList *csl(nullptr);
+    size_t       blockSize = cs * numBlocks;
+    void        *block = _dataSegment.getBlock(blockSize, sc);
+    ChunkSList  *csl(nullptr);
     if (block != nullptr) {
         numBlocks = (blockSize + cs - 1) / cs;
-        const size_t blocksPerChunk(std::max(
-            1, std::min(int(ChunkSList::NumBlocks), int(_threadCacheLimit >> (MemBlockPtrT::MinClassSize + sc)))));
+        const size_t blocksPerChunk(std::max(1, std::min(int(ChunkSList::NumBlocks), int(_threadCacheLimit >> (MemBlockPtrT::MinClassSize + sc)))));
 
         const size_t numChunks = (numBlocks + (blocksPerChunk - 1)) / blocksPerChunk;
         csl = getChunks(guard, numChunks);
         if (csl != nullptr) {
-            char *first = (char *)block;
+            char        *first = (char *)block;
             const size_t itemSize = cs;
-            size_t numItems(0);
+            size_t       numItems(0);
             const size_t maxItems(blockSize / itemSize);
-            ChunkSList *curr = csl;
+            ChunkSList  *curr = csl;
             for (; curr->getNext() && (numItems < maxItems); curr = curr->getNext()) {
                 PARANOID_CHECK1(if (!curr->empty()) { *(int *)0 = 0; });
                 numItems += curr->fill(first + numItems * itemSize, sc, blocksPerChunk);
@@ -182,11 +173,10 @@ typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::malloc(
 }
 
 template <typename MemBlockPtrT>
-typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getChunks(const Guard &guard,
-                                                                                   size_t numChunks) {
+typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getChunks(const Guard &guard, size_t numChunks) {
     ChunkSList *csl(_chunkPool);
     ChunkSList *prev(csl);
-    bool enough(true);
+    bool        enough(true);
     for (size_t i = 0; enough && (i < numChunks); i++, csl = csl->getNext()) {
         if (csl == nullptr) {
             csl = allocChunkList(guard);
@@ -216,11 +206,10 @@ typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::getChun
     return csl;
 }
 
-template <typename MemBlockPtrT>
-typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::allocChunkList(const Guard &guard) {
+template <typename MemBlockPtrT> typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::allocChunkList(const Guard &guard) {
     (void)guard;
-    size_t blockSize(sizeof(ChunkSList) * 0x2000);
-    void *block = _dataSegment.getBlock(blockSize, segment::SYSTEM_BLOCK);
+    size_t      blockSize(sizeof(ChunkSList) * 0x2000);
+    void       *block = _dataSegment.getBlock(blockSize, segment::SYSTEM_BLOCK);
     ChunkSList *newList(nullptr);
     if (block != nullptr) {
         size_t chunksInBlock(blockSize / sizeof(ChunkSList));
@@ -236,8 +225,7 @@ typename AllocPoolT<MemBlockPtrT>::ChunkSList *AllocPoolT<MemBlockPtrT>::allocCh
 
 template <typename MemBlockPtrT> void AllocPoolT<MemBlockPtrT>::info(FILE *os, size_t level) {
     if (level > 0) {
-        fprintf(os, "GlobalPool getChunks(%ld, %ld) allocChunksList(%ld):\n", _getChunks.load(), _getChunksSum.load(),
-                _allocChunkList.load());
+        fprintf(os, "GlobalPool getChunks(%ld, %ld) allocChunksList(%ld):\n", _getChunks.load(), _getChunksSum.load(), _allocChunkList.load());
         for (size_t i = 0; i < NELEMS(_stat); i++) {
             const Stat &s = _stat[i];
             if (s.isUsed()) {
@@ -245,8 +233,8 @@ template <typename MemBlockPtrT> void AllocPoolT<MemBlockPtrT>::info(FILE *os, s
                         "SC %2ld(%10ld) GetAlloc(%6ld) GetFree(%6ld) "
                         "ExChangeAlloc(%6ld) ExChangeFree(%6ld) ExactAlloc(%6ld) "
                         "Returned(%6ld) Malloc(%6ld)\n",
-                        i, MemBlockPtrT::classSize(i), s._getAlloc.load(), s._getFree.load(), s._exchangeAlloc.load(),
-                        s._exchangeFree.load(), s._exactAlloc.load(), s._return.load(), s._malloc.load());
+                        i, MemBlockPtrT::classSize(i), s._getAlloc.load(), s._getFree.load(), s._exchangeAlloc.load(), s._exchangeFree.load(),
+                        s._exactAlloc.load(), s._return.load(), s._malloc.load());
             }
         }
     }
