@@ -191,13 +191,13 @@ public class PhraseItem extends CompositeIndexedItem {
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer); // takes care of index bytes
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context); // takes care of index bytes
     }
 
     @Override
-    public int encode(ByteBuffer buffer) {
-        encodeThis(buffer);
+    public int encode(ByteBuffer buffer, SerializationContext context) {
+        encodeThis(buffer, context);
         int itemCount = 1;
 
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
@@ -205,9 +205,9 @@ public class PhraseItem extends CompositeIndexedItem {
 
             if (subitem instanceof PhraseSegmentItem segment) {
                 // "What encode does, minus what encodeThis does"
-                itemCount += segment.encodeContent(buffer);
+                itemCount += segment.encodeContent(buffer, context);
             } else {
-                itemCount += subitem.encode(buffer);
+                itemCount += subitem.encode(buffer, context);
             }
         }
         return itemCount;
@@ -291,11 +291,11 @@ public class PhraseItem extends CompositeIndexedItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemPhrase.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         for (var child : items()) {
-            builder.addChildren(child.toProtobuf());
+            builder.addChildren(child.toProtobuf(context));
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemPhrase(builder.build())

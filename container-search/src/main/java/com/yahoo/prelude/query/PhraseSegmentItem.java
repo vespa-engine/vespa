@@ -171,24 +171,24 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer); // takes care of index bytes
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context); // takes care of index bytes
     }
 
     @Override
-    public int encode(ByteBuffer buffer) {
-        encodeThis(buffer);
-        return encodeContent(buffer, 1);
+    public int encode(ByteBuffer buffer, SerializationContext context) {
+        encodeThis(buffer, context);
+        return encodeContent(buffer, 1, context);
     }
 
-    public int encodeContent(ByteBuffer buffer) {
-        return encodeContent(buffer, 0);
+    public int encodeContent(ByteBuffer buffer, SerializationContext context) {
+        return encodeContent(buffer, 0, context);
     }
 
-    private int encodeContent(ByteBuffer buffer, int itemCount) {
+    private int encodeContent(ByteBuffer buffer, int itemCount, SerializationContext context) {
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
             Item subitem = i.next();
-            itemCount += subitem.encode(buffer);
+            itemCount += subitem.encode(buffer, context);
         }
         return itemCount;
     }
@@ -268,12 +268,12 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         // PhraseSegmentItem should be converted to a phrase
         var builder = SearchProtocol.ItemPhrase.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         for (var child : items()) {
-            builder.addChildren(child.toProtobuf());
+            builder.addChildren(child.toProtobuf(context));
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemPhrase(builder.build())

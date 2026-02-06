@@ -474,13 +474,13 @@ public class SelectParser implements Parser {
         if (annotations != null){
             annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
                 if (TARGET_HITS.equals(annotation_name)){
-                    item.setTargetNumHits((int)(annotation_value.asDouble()));
+                    item.setTargetHits((int)(annotation_value.asDouble()));
                 }
                 if (TARGET_NUM_HITS.equals(annotation_name)){
-                    item.setTargetNumHits((int)(annotation_value.asDouble()));
+                    item.setTargetHits((int)(annotation_value.asDouble()));
                 }
                 if (TOTAL_TARGET_HITS.equals(annotation_name)){
-                    item.setTotalTargetNumHits((int)(annotation_value.asDouble()));
+                    item.setTotalTargetHits((int)(annotation_value.asDouble()));
                 }
                 if (DISTANCE_THRESHOLD.equals(annotation_name)) {
                     double distanceThreshold = annotation_value.asDouble();

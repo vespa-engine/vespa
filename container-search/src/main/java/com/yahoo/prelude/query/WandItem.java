@@ -90,8 +90,8 @@ public class WandItem extends WeightedSetItem {
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         IntegerCompressor.putCompressedPositiveNumber(targetNumHits, buffer);
         buffer.putDouble(scoreThreshold);
         buffer.putDouble(thresholdBoostFactor);
@@ -131,7 +131,7 @@ public class WandItem extends WeightedSetItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         if (hasOnlyLongs()) {
             var builder = SearchProtocol.ItemLongWand.newBuilder();
             builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));

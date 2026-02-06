@@ -112,13 +112,13 @@ public class WordAlternativesItem extends TermItem {
     }
 
     @Override
-    public void encodeThis(ByteBuffer target) {
-        super.encodeThis(target);
+    public void encodeThis(ByteBuffer target, SerializationContext context) {
+        super.encodeThis(target, context);
         IntegerCompressor.putCompressedPositiveNumber(alternatives.size(), target);
         for (Alternative a : alternatives) {
             Item p = new PureWeightedString(a.word, (int) (getWeight() * a.exactness + 0.5));
             p.setFilter(isFilter());
-            p.encode(target);
+            p.encode(target, context);
         }
     }
 
@@ -160,7 +160,7 @@ public class WordAlternativesItem extends TermItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemWordAlternatives.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         for (Alternative alt : alternatives) {

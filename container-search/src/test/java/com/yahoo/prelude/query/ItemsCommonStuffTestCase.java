@@ -289,7 +289,7 @@ public class ItemsCommonStuffTestCase {
         n.setIndexName("nalle");
         boolean caught = false;
         try {
-            n.encode(ByteBuffer.allocate(100));
+            n.encode(ByteBuffer.allocate(100), new SerializationContext(1.0));
         } catch (RuntimeException e) {
             caught = true;
         }
@@ -346,7 +346,7 @@ public class ItemsCommonStuffTestCase {
         assertTrue(caught);
         assertEquals("blbl", p.getTermItem(3).stringValue());
         ByteBuffer b = ByteBuffer.allocate(5000);
-        int i = p.encode(b);
+        int i = p.encode(b, new SerializationContext(1.0));
         assertEquals(5, i);
         assertEquals("nalle bamse teddy blbl", p.getIndexedString());
 
@@ -370,7 +370,7 @@ public class ItemsCommonStuffTestCase {
     void testBaseClassPhraseSegments() {
         PhraseSegmentItem p = new PhraseSegmentItem("g", false, true);
         fill(p);
-        assertEquals(4, p.encode(ByteBuffer.allocate(5000)));
+        assertEquals(4, p.encode(ByteBuffer.allocate(5000), new SerializationContext(1.0)));
         p.setIndexName(null);
         assertEquals("", p.getIndexName());
         PhraseSegmentItem p2 = new PhraseSegmentItem("g", false, true);
@@ -380,11 +380,9 @@ public class ItemsCommonStuffTestCase {
     @Test
     void testTermTypeBasic() {
         assertNotEquals(TermType.AND, TermType.DEFAULT);
-        assertNotEquals(TermType.AND, Integer.valueOf(10));
-        assertEquals(TermType.AND, TermType.AND);
+        assertNotEquals(TermType.AND, 10);
         assertSame(AndItem.class, TermType.DEFAULT.createItemClass().getClass());
         assertSame(CompositeItem.class, TermType.DEFAULT.getItemClass());
-        assertNotNull(TermType.PHRASE.hashCode());
         assertEquals("term type 'not'", TermType.NOT.toString());
     }
 

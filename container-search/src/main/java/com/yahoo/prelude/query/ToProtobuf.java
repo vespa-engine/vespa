@@ -5,14 +5,17 @@ import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 
 class ToProtobuf {
 
-    /**
-     * Convert any Item to SearchProtocol.QueryTreeItem
-     */
+    /** Convert sany Item to SearchProtocol.QueryTreeItem. */
     static SearchProtocol.QueryTreeItem convertFromQuery(Item item) {
+        return convertFromQuery(item, new SerializationContext(1.0));
+    }
+
+    /** Converts any Item to SearchProtocol.QueryTreeItem. */
+    static SearchProtocol.QueryTreeItem convertFromQuery(Item item, SerializationContext context) {
         if (item == null) {
             throw new IllegalArgumentException("Cannot convert null item");
         }
-        return item.toProtobuf();
+        return item.toProtobuf(context);
     }
 
     static SearchProtocol.TermItemProperties buildTermProperties(Item item, String index) {

@@ -34,8 +34,8 @@ public class BoolItem extends TermItem {
     public String getName() { return "BOOL"; }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer); // takes care of index bytes
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context); // takes care of index bytes
         putString(stringValue(), buffer);
     }
 
@@ -105,7 +105,7 @@ public class BoolItem extends TermItem {
     public boolean isWords() { return false; }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         // BoolItem is serialized as a word term
         var builder = SearchProtocol.ItemWordTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));

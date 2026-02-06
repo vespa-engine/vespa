@@ -37,14 +37,14 @@ public class NumericInItem extends InItem {
     }
 
     @Override
-    public int encode(ByteBuffer buffer) {
-        encodeThis(buffer);
+    public int encode(ByteBuffer buffer, SerializationContext context) {
+        encodeThis(buffer, context);
         return 1;
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         IntegerCompressor.putCompressedPositiveNumber(tokens.size(), buffer);
         putString(getIndexName(), buffer);
         for (var token : tokens) {
@@ -109,7 +109,7 @@ public class NumericInItem extends InItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemNumericIn.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         for (Long token : tokens) {

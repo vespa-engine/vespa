@@ -110,17 +110,17 @@ public class ValidateNearestNeighborSearcher extends Searcher {
 
         /** Returns an error message if this is invalid, or null if it is valid */
         private String validate(NearestNeighborItem item) {
-            // Check for mutual exclusivity of targetHits and totalTargetHits
-            if (item.getTargetNumHits() > 0 && item.getTotalTargetNumHits() != null && item.getTotalTargetNumHits() > 0)
+            if (item.getTargetHits() != null && item.getTotalTargetHits() != null)
                 return item + " cannot have both targetHits and totalTargetHits set";
 
-            // Validate targetHits if totalTargetHits is not set
-            if ((item.getTotalTargetNumHits() == null || item.getTotalTargetNumHits() == 0) && item.getTargetNumHits() < 1)
-                return item + " has invalid targetHits " + item.getTargetNumHits() + ": Must be >= 1";
+            if (item.getTargetHits() == null && item.getTotalTargetHits() == null)
+                return item + " must have either targetHits or totalTargetHits set";
 
-            // Validate totalTargetHits if set
-            if (item.getTotalTargetNumHits() != null && item.getTotalTargetNumHits() < 1)
-                return item + " has invalid totalTargetHits " + item.getTotalTargetNumHits() + ": Must be >= 1";
+            if (item.getTargetHits() != null && item.getTargetHits() < 1)
+                return item + " has invalid targetHits " + item.getTargetHits() + ": Must be >= 1";
+
+            if (item.getTotalTargetHits() != null && item.getTotalTargetHits() < 1)
+                return item + " has invalid totalTargetHits " + item.getTotalTargetHits() + ": Must be >= 1";
 
             String queryFeatureName = "query(" + item.getQueryTensorName() + ")";
             Optional<Tensor> queryTensor = query.getRanking().getFeatures().getTensor(queryFeatureName);

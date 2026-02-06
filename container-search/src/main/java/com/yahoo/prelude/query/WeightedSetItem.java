@@ -133,11 +133,11 @@ public class WeightedSetItem extends SimpleTaggableItem {
     }
 
     @Override
-    public int encode(ByteBuffer buffer) {
-        encodeThis(buffer);
+    public int encode(ByteBuffer buffer, SerializationContext context) {
+        encodeThis(buffer, context);
         int itemCount = 1;
         for (Map.Entry<Object, Integer> entry : set.entrySet()) {
-            asItem(entry).encode(buffer);
+            asItem(entry).encode(buffer, context);
             itemCount++;
         }
         return itemCount;
@@ -152,8 +152,8 @@ public class WeightedSetItem extends SimpleTaggableItem {
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         IntegerCompressor.putCompressedPositiveNumber(set.size(), buffer);
         putString(indexName, buffer);
     }
@@ -205,7 +205,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         if (hasOnlyLongs()) {
             var builder = SearchProtocol.ItemWeightedSetOfLong.newBuilder();
             builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));

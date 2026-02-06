@@ -35,7 +35,7 @@ public class ExactStringItem extends WordItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemExactStringTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         builder.setWord(getWord());

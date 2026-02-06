@@ -737,12 +737,12 @@ public class VespaSerializer {
             int initLen = destination.length();
             destination.append(leafAnnotations(item));
             comma(destination, initLen);
-            int targetNumHits = item.getTargetNumHits();
-            annotationKey(destination, YqlParser.TARGET_HITS).append(targetNumHits);
-            Integer totalTargetNumHits = item.getTotalTargetNumHits();
-            if (totalTargetNumHits != null) {
+            int targetHits = item.getTargetHits();
+            annotationKey(destination, YqlParser.TARGET_HITS).append(targetHits);
+            Integer totalTargetHits = item.getTotalTargetHits();
+            if (totalTargetHits != null) {
                 comma(destination, initLen);
-                annotationKey(destination, YqlParser.TOTAL_TARGET_HITS).append(totalTargetNumHits);
+                annotationKey(destination, YqlParser.TOTAL_TARGET_HITS).append(totalTargetHits);
             }
             double distanceThreshold = item.getDistanceThreshold();
             if (distanceThreshold < Double.POSITIVE_INFINITY) {

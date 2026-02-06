@@ -30,8 +30,8 @@ public class FalseItem extends Item {
     }
 
     @Override
-    public int encode(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    public int encode(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         return 1;
     }
 
@@ -42,7 +42,7 @@ public class FalseItem extends Item {
     protected void appendBodyString(StringBuilder buffer) { }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemFalse(SearchProtocol.ItemFalse.newBuilder().build())
                 .build();

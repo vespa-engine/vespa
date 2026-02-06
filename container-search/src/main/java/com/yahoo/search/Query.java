@@ -5,6 +5,7 @@ import ai.vespa.cloud.ZoneInfo;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.schema.SchemaInfo;
@@ -689,8 +690,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * @param buffer the buffer to encode the query to
      * @return the number of encoded query tree items
      */
-    public int encode(ByteBuffer buffer) {
-        return model.getQueryTree().encode(buffer);
+    public int encode(ByteBuffer buffer, SerializationContext context) {
+        return model.getQueryTree().encode(buffer, context);
     }
 
     /** Calls getTrace().trace(message, traceLevel). */

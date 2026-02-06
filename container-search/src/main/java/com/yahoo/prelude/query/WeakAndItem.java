@@ -82,8 +82,8 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     public void setN(int N) { this.n = N; }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         IntegerCompressor.putCompressedPositiveNumber(getN(), buffer);
         putString(index, buffer);
     }
@@ -114,11 +114,11 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     }
 
     @Override
-    public int encode(ByteBuffer buffer) {
+    public int encode(ByteBuffer buffer, SerializationContext context) {
         if (needsFolding()) {
-            return foldSegments().encode(buffer);
+            return foldSegments().encode(buffer, context);
         } else {
-            return super.encode(buffer);
+            return super.encode(buffer, context);
         }
     }
 
@@ -142,12 +142,12 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemWeakAnd.newBuilder();
         builder.setIndex(index);
         builder.setTargetNumHits(getN());
         for (var child : items()) {
-            builder.addChildren(child.toProtobuf());
+            builder.addChildren(child.toProtobuf(context));
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemWeakAnd(builder.build())

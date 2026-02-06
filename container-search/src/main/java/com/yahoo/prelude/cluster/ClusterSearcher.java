@@ -182,7 +182,7 @@ public class ClusterSearcher extends Searcher {
                 } else {
                     if (result.hits().getErrorHit() == null) {
                         result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries, query timeout was " +
-                                query.getTimeout() + " ms"));
+                                                                          query.getTimeout() + " ms"));
                     }
                 }
             }
@@ -225,9 +225,9 @@ public class ClusterSearcher extends Searcher {
     }
 
     private Result perSchemaSearch(String schema, Query query) {
-        Set<String> restrict = query.getModel().getRestrict();
-        if (restrict.size() != 1) {
-            throw new IllegalStateException("perSchemaSearch must always be called with 1 schema, got: " + restrict.size());
+        if (query.getModel().getRestrict().size() != 1) {
+            throw new IllegalStateException("perSchemaSearch must always be called with 1 schema, got: " +
+                                            query.getModel().getRestrict());
         }
         int rerankCount = globalPhaseRanker != null ? globalPhaseRanker.getRerankCount(query, schema) : 0;
         boolean useGlobalPhase = rerankCount > 0;
