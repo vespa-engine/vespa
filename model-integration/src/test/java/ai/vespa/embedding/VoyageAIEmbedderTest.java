@@ -18,9 +18,11 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
+import static com.yahoo.text.Lowercase.toUpperCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -483,7 +485,7 @@ public class VoyageAIEmbedderTest {
                 .endpoint(mockServer.url("/v1/embeddings").toString())
                 .model("voyage-3")
                 .dimensions(dimensions)
-                .quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(quantization.toUpperCase()))
+                .quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(toUpperCase(quantization)))
                 .timeout(5000);
 
         return new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
@@ -505,14 +507,14 @@ public class VoyageAIEmbedderTest {
             embedding.append(valueGenerator.apply(i));
         }
         embedding.append("]");
-        return  """
+        return  Text.format("""
                 {
                   "object": "list",
                   "data": [{"object": "embedding", "embedding": %s, "index": 0}],
                   "model": "voyage-3",
                   "usage": {"total_tokens": 10}
                 }
-                """.formatted(embedding);
+                """, embedding);
     }
 
     private static String createSuccessResponse(int dimensions) { return createFloatSuccessResponse(dimensions); }

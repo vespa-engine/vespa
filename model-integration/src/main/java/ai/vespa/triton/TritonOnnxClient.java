@@ -11,6 +11,7 @@ import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.text.Text;
 import grpc.health.v1.HealthGrpc;
 import grpc.health.v1.HealthOuterClass.HealthCheckRequest;
 import grpc.health.v1.HealthOuterClass.HealthCheckResponse;
@@ -29,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -444,7 +446,7 @@ public class TritonOnnxClient implements AutoCloseable {
                     builder.cellByDirectIndex(i, longBuffer.get(i));
                 }
             }
-            default -> throw new TritonException("Unsupported type from ONNX output: %s".formatted(tritonType));
+            default -> throw new TritonException(Text.format("Unsupported type from ONNX output: %s", tritonType));
         }
         return builder.build();
     }

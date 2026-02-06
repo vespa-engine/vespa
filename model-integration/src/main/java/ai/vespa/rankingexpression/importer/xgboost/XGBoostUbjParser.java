@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.xgboost;
 
+import com.yahoo.text.Utf8;
 import com.devsmart.ubjson.UBArray;
 import com.devsmart.ubjson.UBObject;
 import com.devsmart.ubjson.UBReader;
@@ -369,7 +370,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
 
         try {
             List<String> featureNames = new ArrayList<>();
-            try (BufferedReader reader = new BufferedReader(new FileReader(featuresFilePath))) {
+            try (BufferedReader reader = new BufferedReader(Utf8.createReader(featuresFilePath))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     line = line.trim();

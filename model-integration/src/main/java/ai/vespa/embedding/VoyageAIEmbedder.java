@@ -19,6 +19,7 @@ import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.text.Text;
 import okhttp3.ConnectionPool;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -67,7 +69,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         this.httpClient = createHttpClient(config);
         this.resolvedEndpoint = resolveEndpoint(config);
 
-        log.fine(() -> "VoyageAI embedder initialized with model: %s, endpoint: %s".formatted(config.model(), resolvedEndpoint));
+        log.fine(() -> Text.format("VoyageAI embedder initialized with model: %s, endpoint: %s", config.model(), resolvedEndpoint));
     }
 
     private String resolveEndpoint(VoyageAiEmbedderConfig config) {
@@ -139,12 +141,10 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             case AUTO:
                 if (valueType == TensorType.Value.FLOAT) {
                     if (tensorDim != configuredDim)
-                        throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
-                                .formatted(tensorDim, configuredDim));
+                        throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDim));
                 } else if (valueType == TensorType.Value.INT8) {
                     if (tensorDim != configuredDim && tensorDim != configuredDim / 8)
-                        throw new IllegalArgumentException(("Tensor dimension %d does not match configured dimension. " +
-                                "Expected %d or %d.").formatted(tensorDim, configuredDim, configuredDim / 8));
+                        throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension. Expected %d or %d.", tensorDim, configuredDim, configuredDim / 8));
                 } else {
                     throw new IllegalArgumentException(
                             "Quantization 'auto' is incompatible with tensor type " + targetTensorType + ".");
@@ -155,24 +155,21 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                     throw new IllegalArgumentException(
                             "Quantization 'float' is incompatible with tensor type " + targetTensorType + ".");
                 if (tensorDim != configuredDim)
-                    throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
-                            .formatted(tensorDim, configuredDim));
+                    throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDim));
                 break;
             case INT8:
                 if (valueType != TensorType.Value.INT8)
                     throw new IllegalArgumentException(
                             "Quantization 'int8' is incompatible with tensor type " + targetTensorType + ".");
                 if (tensorDim != configuredDim)
-                    throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
-                            .formatted(tensorDim, configuredDim));
+                    throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDim));
                 break;
             case BINARY:
                 if (valueType != TensorType.Value.INT8)
                     throw new IllegalArgumentException(
                             "Quantization 'binary' is incompatible with tensor type " + targetTensorType + ".");
                 if (tensorDim != configuredDim / 8)
-                    throw new IllegalArgumentException("Tensor dimension %d does not match required dimension %d."
-                            .formatted(tensorDim, configuredDim / 8));
+                    throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match required dimension %d.", tensorDim, configuredDim / 8));
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported quantization: " + config.quantization());
@@ -401,8 +398,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
                     if (attempt < maxRetries) {
                         int retryNumber = attempt + 1;
-                        log.fine(() -> "VoyageAI API server error (%d). Retry %d of %d after %dms"
-                                .formatted(code, retryNumber + 1, maxRetries, RETRY_DELAY_MS));
+                        log.fine(() -> Text.format("VoyageAI API server error (%d). Retry %d of %d after %dms", code, retryNumber + 1, maxRetries, RETRY_DELAY_MS));
                         Thread.sleep(RETRY_DELAY_MS);
                     }
                 } catch (InterruptedException e) {
@@ -411,8 +407,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 }
             }
 
-            var errorMsg = "Max retries exceeded for VoyageAI API (%d). Last response: %d - %s"
-                    .formatted(maxRetries, lastStatusCode, lastResponseBody);
+            var errorMsg = Text.format("Max retries exceeded for VoyageAI API (%d). Last response: %d - %s", maxRetries, lastStatusCode, lastResponseBody);
             throw new IOException(errorMsg);
         }
     }
