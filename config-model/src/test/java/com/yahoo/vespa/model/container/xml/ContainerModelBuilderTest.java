@@ -377,9 +377,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         JdiscBindingsConfig.Handlers metricsV2Handler = config.handlers(MetricsV2Handler.class.getName());
         assertThat(metricsV2Handler.serverBindings(), contains("http://*/metrics/v2", "http://*/metrics/v2/*"));
-
-        JdiscBindingsConfig.Handlers mcpHandler = config.handlers("ai.vespa.mcp.McpRequestHandler");
-        assertThat(mcpHandler.serverBindings(), contains("http://*/mcp/*"));
     }
 
     @Test
@@ -440,14 +437,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         createClusterWithProcessingAndSearchChains();
         ComponentsConfig.Components config = getComponentInConfig(componentsConfig(), PROCESSING_HANDLER_CLASS);
         assertEquals(PROCESSING_HANDLER_CLASS, config.bundle());
-    }
-
-    @Test
-    void mcpSearchSpecProvider_is_added_when_search_is_enabled() {
-        createClusterWithProcessingAndSearchChains();
-        ComponentsConfig.Components config = getComponentInConfig(componentsConfig(), "com.yahoo.search.mcp.McpSearchSpecProvider");
-        assertNotNull(config);
-        assertEquals("container-search-and-docproc", config.bundle());
     }
 
     private void createClusterWithProcessingAndSearchChains() {

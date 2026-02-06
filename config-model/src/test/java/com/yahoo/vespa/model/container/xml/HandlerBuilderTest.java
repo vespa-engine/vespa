@@ -189,13 +189,12 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, deployState, null, clusterElem);
         JdiscBindingsConfig bindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
 
-        // Verify /search /feed /document /mcp and custom handler are bound correctly
+        // Verify /search /feed /document and custom handler are bound correctly
         Map<String, JdiscBindingsConfig.Handlers> handlers = bindingsConfig.handlers();
         Map<String, List<String>> expectedHandlerMappings = Map.of(
                 "com.yahoo.search.handler.SearchHandler", List.of("/search", "/search/*"),
                 "com.yahoo.document.restapi.resource.DocumentV1ApiHandler", List.of("/document/v1/*", "/document/v1/*/"),
                 "com.yahoo.vespa.http.server.FeedHandler", List.of("/reserved-for-internal-use/feedapi", "/reserved-for-internal-use/feedapi/"),
-                "ai.vespa.mcp.McpRequestHandler", List.of("/mcp/*"),
                 "FooHandler", List.of("/foo"));
         expectedHandlerMappings.forEach((handler, bindings) -> validateHandler(handlers.get(handler), bindingPrefix, bindings));
 
@@ -220,13 +219,12 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, deployState, null, clusterElem);
         JdiscBindingsConfig bindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
 
-        // Verify search feed document and mcp handler are bound correctly
+        // Verify search feed and document handler are bound correctly
         Map<String, JdiscBindingsConfig.Handlers> handlers = bindingsConfig.handlers();
         Map<String, List<String>> expectedHandlerMappings = Map.of(
                 "com.yahoo.search.handler.SearchHandler", List.of("/search-binding/"),
                 "com.yahoo.document.restapi.resource.DocumentV1ApiHandler", List.of("/docapi-binding/document/v1/*", "/docapi-binding/document/v1/*/"),
-                "com.yahoo.vespa.http.server.FeedHandler", List.of("/docapi-binding/reserved-for-internal-use/feedapi", "/docapi-binding/reserved-for-internal-use/feedapi/"),
-                "ai.vespa.mcp.McpRequestHandler", List.of("/mcp/*"));
+                "com.yahoo.vespa.http.server.FeedHandler", List.of("/docapi-binding/reserved-for-internal-use/feedapi", "/docapi-binding/reserved-for-internal-use/feedapi/"));
         expectedHandlerMappings.forEach((handler, bindings) -> validateHandler(handlers.get(handler), bindingPrefix, bindings));
 
         // All other handlers should be bound to default (http://*/...)

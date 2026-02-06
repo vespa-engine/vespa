@@ -224,7 +224,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addDefaultThreadpool(deployState, spec, cluster);
 
         cluster.addDefaultHandlersExceptStatus();
-        addMcpHandler(deployState, cluster, context);
         addStatusHandlers(cluster, context.getDeployState().isHosted());
         addUserHandlers(deployState, cluster, spec, context);
 
@@ -856,13 +855,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addSearchHandler(deployState, cluster, searchElement, context);
 
-        // Skip MCP spec provider when running locally through the 'application' test framework
-        if (!System.getProperty("vespa.local", "false").equals("true")) {
-            cluster.addComponent(new SimpleComponent(new ComponentModel(
-                    "com.yahoo.search.mcp.McpSearchSpecProvider", null,
-                    PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE, null)));
-        }
-
         validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
 
         addSignificance(deployState, searchElement, cluster);
@@ -1322,20 +1314,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Add as child to SearchHandler to get the correct chains config.
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
-    }
-
-    private void addMcpHandler(DeployState deployState, ApplicationContainerCluster cluster, ConfigModelContext context) {
-        // Skip MCP handler when running locally through the 'application' test framework,
-        // as the MCP SDK classes are not on the classpath in that environment.
-        if (System.getProperty("vespa.local", "false").equals("true")) return;
-
-        var bindings = McpHandler.defaultBindings();
-        if (isHostedTenantApplication(context)) {
-            bindings = McpHandler.bindingPattern(getDataplanePorts(deployState, cluster));
-        }
-        var handler = new McpHandler();
-        bindings.forEach(handler::addServerBindings);
-        cluster.addComponent(handler);
     }
 
     private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, ApplicationContainerCluster cluster, Element searchElement, Collection<BindingPattern> defaultBindings) {
