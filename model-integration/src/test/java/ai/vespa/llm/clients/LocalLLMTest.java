@@ -24,6 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.yahoo.text.Lowercase.toLowerCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -313,7 +314,7 @@ public class LocalLLMTest {
             if (expectException != null) {
                 var exception = assertThrows(LanguageModelException.class, () -> llm.complete(StringPrompt.from(promptStr), inferenceOptions));
                 assertEquals(expectException.code(), exception.code());
-                assertTrue(exception.getMessage().toLowerCase(Locale.ROOT).contains(expectException.getMessage().toLowerCase(Locale.ROOT)));
+                assertTrue(toLowerCase(exception.getMessage()).contains(toLowerCase(expectException.getMessage())));
                 return;
             }
 

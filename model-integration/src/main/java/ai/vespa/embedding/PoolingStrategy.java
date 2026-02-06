@@ -10,6 +10,8 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Text;
 import java.util.Locale;
 
+import static com.yahoo.text.Lowercase.toLowerCase;
+
 /**
  * @author bjorncs
  */
@@ -51,7 +53,7 @@ enum PoolingStrategy {
     abstract Tensor toSentenceEmbedding(TensorType type, Tensor tokenEmbeddings, Tensor attentionMask);
 
     static PoolingStrategy fromString(String strategy) {
-        return switch (strategy.toLowerCase(Locale.ROOT)) {
+        return switch (toLowerCase(strategy)) {
             case "mean" -> MEAN;
             case "none" -> NONE;
             case "cls" -> CLS;

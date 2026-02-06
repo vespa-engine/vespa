@@ -18,7 +18,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Parser for XGBoost models in Universal Binary JSON (UBJ) format.

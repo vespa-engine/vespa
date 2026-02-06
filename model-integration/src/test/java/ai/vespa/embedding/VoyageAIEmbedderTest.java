@@ -9,7 +9,6 @@ import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Text;
-import com.yahoo.text.Utf8;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -23,6 +22,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
+import static com.yahoo.text.Lowercase.toUpperCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -485,7 +485,7 @@ public class VoyageAIEmbedderTest {
                 .endpoint(mockServer.url("/v1/embeddings").toString())
                 .model("voyage-3")
                 .dimensions(dimensions)
-                .quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(quantization.toUpperCase(Locale.ROOT)))
+                .quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(toUpperCase(quantization)))
                 .timeout(5000);
 
         return new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
