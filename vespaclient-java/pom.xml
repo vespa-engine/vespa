@@ -29,7 +29,7 @@
         <dependency>
             <!-- Due to com.yahoo.search.query.profile.DumpTool and HttpRequest.createTestRequest ... -->
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-core</artifactId>
+            <artifactId>container-disc</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

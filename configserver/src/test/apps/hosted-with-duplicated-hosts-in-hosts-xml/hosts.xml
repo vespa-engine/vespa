@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- This hosts.xml file should be ignored when deploying to Vespa Cloud / hosted Vespa.
+     It contains duplicate hostnames which would cause an error if parsed. -->
+<hosts>
+  <host name="myhost.example.com">
+    <alias>node1</alias>
+  </host>
+  <host name="myhost.example.com">
+    <alias>node2</alias>
+  </host>
+</hosts>

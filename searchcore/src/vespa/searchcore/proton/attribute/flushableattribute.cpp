@@ -3,6 +3,7 @@
 #include "flushableattribute.h"
 #include "attributedisklayout.h"
 #include "attribute_directory.h"
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/util/filekit.h>
@@ -26,6 +27,7 @@ using namespace vespalib;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::ResourceUsage;
 
 namespace proton {
 
@@ -185,10 +187,12 @@ FlushableAttribute::FlushableAttribute(AttributeVectorSP attr,
 
 FlushableAttribute::~FlushableAttribute() = default;
 
-TransientResourceUsage
-FlushableAttribute::get_transient_resource_usage() const
+ResourceUsage
+FlushableAttribute::get_resource_usage() const
 {
-    return _attrDir->get_transient_resource_usage();
+    uint64_t size_on_disk = _attr->size_on_disk() + AttributeDirectory::get_size_on_disk_overhead() +
+                            _attr->get_memory_allocator_size_on_disk();
+    return ResourceUsage{_attrDir->get_transient_resource_usage(), size_on_disk};
 }
 
 IFlushTarget::SerialNum
@@ -207,7 +211,7 @@ FlushableAttribute::getApproxMemoryGain() const
 IFlushTarget::DiskGain
 FlushableAttribute::getApproxDiskGain() const
 {
-    return DiskGain(0, 0);
+    return DiskGain(_attr->size_on_disk(), _attr->getEstimatedSaveByteSize());
 }
 
 IFlushTarget::Time

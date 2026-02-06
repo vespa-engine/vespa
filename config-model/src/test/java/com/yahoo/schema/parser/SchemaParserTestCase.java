@@ -213,7 +213,7 @@ public class SchemaParserTestCase {
     }
 
     private void assertRankProfileWithOutOfRangeThrows(String rpContent) {
-        var input = "schema foo { rank-profile rp { %s } }".formatted(rpContent);
+        var input = String.format(java.util.Locale.ROOT, "schema foo { rank-profile rp { %s } }", rpContent);
         var e = assertThrows(IllegalArgumentException.class, () -> parseString(input));
         assertTrue(e.getMessage().contains("must be in range [0, 1]"));
     }

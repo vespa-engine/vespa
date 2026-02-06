@@ -14,6 +14,7 @@
 #include "indexwriteutilities.h"
 #include "index_disk_dir.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
@@ -39,6 +40,8 @@ using search::common::FileHeaderContext;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
 using search::SerialNum;
+using searchcorespi::common::ResourceUsage;
+using searchcorespi::common::TransientResourceUsage;
 using vespalib::makeLambdaTask;
 using vespalib::makeSharedLambdaCallback;
 using std::ostringstream;
@@ -1094,7 +1097,7 @@ IndexMaintainer::getFusionStats() const
         source_list = _source_list;
         stats.maxFlushed = _maxFlushed;
     }
-    stats.diskUsage = source_list->get_index_stats(false).sizeOnDisk();
+    stats.diskUsage = _disk_indexes->get_size_on_disk(false);
     {
         LockGuard guard(_fusion_lock);
         stats.numUnfused = _fusion_spec.flush_ids.size() + ((_fusion_spec.last_fusion_id != 0) ? 1 : 0);
@@ -1323,6 +1326,27 @@ IndexMaintainer::has_pending_urgent_flush() const
     uint32_t urgent_flush_id = get_urgent_flush_id();
     LockGuard lock(_fusion_lock);
     return urgent_flush_id > _fusion_spec.last_fusion_id;
+}
+
+search::IndexStats
+IndexMaintainer::get_index_stats(bool clear_disk_io_stats) const
+{
+    std::unique_lock lock(_new_search_lock);
+    auto stats = _source_list->get_index_stats(clear_disk_io_stats);
+    lock.unlock();
+    stats.fusion_size_on_disk(_disk_indexes->get_transient_size(*_layout));
+    return stats;
+}
+
+ResourceUsage
+IndexMaintainer::get_resource_usage() const
+{
+    // Transient disk usage is measured as the total disk usage of all current fusion indexes.
+    // Transient memory usage is measured as the total memory usage of all memory indexes.
+    auto stats = get_index_stats(false);
+    constexpr uint64_t zero_size_on_disk = 0;
+    return ResourceUsage{TransientResourceUsage{stats.fusion_size_on_disk(), stats.memoryUsage().allocatedBytes()},
+                         zero_size_on_disk};
 }
 
 }

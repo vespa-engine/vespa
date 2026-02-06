@@ -40,7 +40,7 @@ public class DataplaneProxyChangeValidator implements ChangeValidator {
                 var message = hasProxy
                         ? "Token endpoint was enabled for cluster '%s', services require restart"
                         : "Token endpoint was disabled for cluster '%s', services require restart";
-                var action = createRestartAction(currentCluster, message.formatted(clusterId), DEFER_UNTIL_RESTART);
+                var action = createRestartAction(currentCluster, String.format(java.util.Locale.ROOT, message, clusterId), DEFER_UNTIL_RESTART);
                 context.require(action);
             }
         }

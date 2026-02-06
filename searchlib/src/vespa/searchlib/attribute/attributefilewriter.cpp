@@ -158,12 +158,13 @@ AttributeFileWriter::close()
 {
     if (_file->IsOpened()) {
         bool synk_ok = _file->Sync();
+        auto file_size = _file->getSize();
         assert(synk_ok);
         bool close_ok = _file->Close();
         assert(close_ok);
         updateHeader(_file->GetFileName(), _fileBitSize);
         DiskSpaceCalculator disk_space_calculator;
-        _size_on_disk = disk_space_calculator(_fileBitSize / 8);
+        _size_on_disk = disk_space_calculator(file_size);
     }
 }
 

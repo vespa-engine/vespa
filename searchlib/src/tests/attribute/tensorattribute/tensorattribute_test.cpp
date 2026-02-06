@@ -317,6 +317,7 @@ public:
                                      const search::tensor::BoundDistanceFunction &df,
                                      uint32_t explore_k,
                                      double exploration_slack,
+                                     bool prefetch_tensors,
                                      const vespalib::Doom& doom,
                                      double distance_threshold) const override
     {
@@ -327,6 +328,7 @@ public:
         (void) df;
         (void) explore_k;
         (void) exploration_slack;
+        (void) prefetch_tensors;
         (void) doom;
         (void) distance_threshold;
         return {};
@@ -336,6 +338,7 @@ public:
                                                  const search::tensor::BoundDistanceFunction &df,
                                                  const GlobalFilter& filter, bool low_hit_ratio, double exploration, uint32_t explore_k,
                                                  double exploration_slack,
+                                                 bool prefetch_tensors,
                                                  const vespalib::Doom& doom,
                                                  double distance_threshold) const override
     {
@@ -347,6 +350,7 @@ public:
         (void) df;
         (void) explore_k;
         (void) exploration_slack;
+        (void) prefetch_tensors;
         (void) filter;
         (void) low_hit_ratio;
         (void) exploration;
@@ -1473,6 +1477,7 @@ public:
             .filter_first_upper_limit = 0.0,
             .filter_first_exploration = 0.3,
             .exploration_slack = 0.0,
+            .prefetch_tensors = false,
             .target_hits_max_adjustment_factor = target_hits_max_adjustment_factor
         };
         auto bp = std::make_unique<NearestNeighborBlueprint>(

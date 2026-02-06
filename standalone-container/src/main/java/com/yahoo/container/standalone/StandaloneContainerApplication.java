@@ -21,6 +21,7 @@ import com.yahoo.config.model.application.provider.StaticConfigDefinitionRepo;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -282,6 +283,7 @@ public class StandaloneContainerApplication implements Application {
                 .applicationPackage(applicationPackage)
                 .fileRegistry(fileRegistry)
                 .deployLogger(logger)
+                .properties(new TestProperties())
                 .configDefinitionRepo(configDefinitionRepo);
 
         return builder.build();

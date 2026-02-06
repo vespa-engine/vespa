@@ -20,6 +20,7 @@
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
@@ -43,6 +44,7 @@ using vespalib::GenericHeader;
 using search::common::FileHeaderContext;
 using proton::initializer::InitializerTask;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::ResourceUsage;
 using vespalib::datastore::CompactionStrategy;
 
 namespace proton {
@@ -613,10 +615,10 @@ addTags(vespalib::GenericHeader &header, const std::string &name) const
     header.putTag(Tag("subDB", _subDB));
 }
 
-TransientResourceUsage
-StoreOnlyDocSubDB::get_transient_resource_usage() const
+ResourceUsage
+StoreOnlyDocSubDB::get_resource_usage() const
 {
-    return _dmsFlushTarget->get_transient_resource_usage();
+    return _dmsFlushTarget->get_resource_usage();
 }
 
 } // namespace proton

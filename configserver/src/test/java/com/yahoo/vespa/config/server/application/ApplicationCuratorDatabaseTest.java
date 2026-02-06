@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -24,11 +25,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ApplicationCuratorDatabaseTest {
 
     private final MockCurator curator = new MockCurator();
+    private final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
 
     @Test
     public void testReindexingStatusSerialization() {
         ApplicationId id = ApplicationId.defaultId();
-        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator);
+        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator, configserverConfig);
 
         assertEquals(Optional.empty(), db.readReindexingStatus(id));
 
@@ -47,7 +49,7 @@ public class ApplicationCuratorDatabaseTest {
     @Test
     public void testPendingRestartsSerialization() {
         ApplicationId id = ApplicationId.defaultId();
-        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator);
+        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator, configserverConfig);
 
         assertEquals(Map.of(), db.readPendingRestarts(id).generationsForRestarts());
 
@@ -73,7 +75,7 @@ public class ApplicationCuratorDatabaseTest {
     @Test
     public void testReadingAndWritingApplicationData() {
         ApplicationId id = ApplicationId.defaultId();
-        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator);
+        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator, configserverConfig);
 
         assertEquals(Optional.empty(), db.applicationData(id));
 

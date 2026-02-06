@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query;
 
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
+import com.yahoo.search.query.QueryType;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -24,6 +25,8 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
 
     /** The substring which is the raw form of the source of this token, or null if none. */
     private Substring origin;
+
+    private QueryType type = null;
 
     private SegmentingRule segmentingRule = SegmentingRule.LANGUAGE_DEFAULT;
 
@@ -103,6 +106,14 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
 
     @Override
     public int getTermCount() { return 1; }
+
+    /** Returns the query parsing type that created this, or null if none. */
+    @Override
+    public QueryType getQueryType() { return type; }
+
+    /** Sets the query parsing type that created this. */
+    @Override
+    public void setQueryType(QueryType type) { this.type = type; }
 
     /** Returns whether accent removal is a meaningful and possible operation for this word. */
     public boolean isNormalizable() { return normalizable; }

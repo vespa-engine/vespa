@@ -4,6 +4,7 @@ package com.yahoo.config.model;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
@@ -24,7 +25,7 @@ public class ConfigModelContextTest {
         ApplicationPackage pkg = new MockApplicationPackage.Builder()
                 .withServices("<services version=\"1.0\"><admin version=\"2.0\" /></services>")
                 .build();
-        DeployState deployState = DeployState.createTestState(pkg);
+        DeployState deployState = TestDeployState.create(pkg);
         DeployLogger logger = deployState.getDeployLogger();
         ConfigModelContext ctx = ConfigModelContext.create(deployState, null, null, root, id);
         assertEquals(pkg, ctx.getApplicationPackage());

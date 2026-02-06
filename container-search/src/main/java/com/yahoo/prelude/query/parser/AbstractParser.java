@@ -368,11 +368,14 @@ public abstract class AbstractParser implements CustomParser {
             WordItem w = new WordItem(token.toString(), true, token.substring);
             w.setWords(false);
             w.setFromSpecialToken(true);
+            w.setQueryType(environment.getType());
             return w;
         }
 
         if (language == Language.UNKNOWN) {
-            return new WordItem(normalizedToken, true, token.substring);
+            var word = new WordItem(normalizedToken, true, token.substring);
+            word.setQueryType(environment.getType());
+            return word;
         }
 
         Segmenter segmenter = environment.getLinguistics().getSegmenter();
@@ -387,20 +390,25 @@ public abstract class AbstractParser implements CustomParser {
         }
 
         if (segments.size() == 1) {
-            return new WordItem(segments.get(0), "", true, token.substring);
+            var word = new WordItem(segments.get(0), "", true, token.substring);
+            word.setQueryType(environment.getType());
+            return word;
         }
 
         CompositeItem composite;
         if (indexFacts.getIndex(indexName).getPhraseSegmenting() || quoted) {
             composite = new PhraseSegmentItem(token.toString(), normalizedToken, true, false, token.substring);
+            ((PhraseSegmentItem)composite).setQueryType(environment.getType());
         }
         else {
             composite = new AndSegmentItem(token.toString(), true, false);
+            ((AndSegmentItem)composite).setQueryType(environment.getType());
         }
         int n = 0;
         WordItem previous = null;
         for (String segment : segments) {
             WordItem w = new WordItem(segment, "", true, token.substring);
+            w.setQueryType(environment.getType());
             w.setFromSegmented(true);
             w.setSegmentIndex(n++);
             w.setStemmed(false);

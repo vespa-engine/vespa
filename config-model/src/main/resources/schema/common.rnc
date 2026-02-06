@@ -158,8 +158,9 @@ VoyageAIEmbedder =
    attribute type { "voyage-ai-embedder" } &
    element model { xsd:string } &
    element api-key-secret-ref { xsd:string } &
+   element dimensions { "256" | "512" | "1024" | "1536" | "2048" } &
+   element quantization { "auto" | "float" | "int8" | "binary" }? &
    element endpoint { xsd:string }? &
-   element input-type-override { "auto" | "query" | "document" }? &
    element truncate { xsd:boolean }?
 
 OnnxModelExecutionParams =

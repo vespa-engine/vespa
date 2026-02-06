@@ -23,7 +23,7 @@ public class UrlTokenizerTestCase {
             if (c == '%') {
                 continue; // escape
             }
-            String img = String.format("a%ca", c);
+            String img = String.format(java.util.Locale.ROOT, "a%ca", c);
             if ((c >= '0' && c <= '9') ||
                 (c >= 'a' && c <= 'z') ||
                 (c >= 'A' && c <= 'Z') ||

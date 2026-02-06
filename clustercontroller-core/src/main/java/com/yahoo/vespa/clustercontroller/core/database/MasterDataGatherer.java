@@ -11,6 +11,7 @@ import org.apache.zookeeper.data.Stat;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -124,7 +125,7 @@ public final class MasterDataGatherer {
                     } else {
                         // May happen when pending data watch error callbacks are triggered concurrently with
                         // internal voting state having already been cleared due to connectivity issues.
-                        log.log(Level.INFO, String.format("Fleetcontroller %d: ignoring removal of vote from node %d " +
+                        log.log(Level.INFO, String.format(Locale.ROOT, "Fleetcontroller %d: ignoring removal of vote from node %d " +
                                 "since it was not present in existing vote mapping", nodeIndex, index));
                     }
                 } else {

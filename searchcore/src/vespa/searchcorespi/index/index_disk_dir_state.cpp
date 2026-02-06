@@ -5,11 +5,23 @@
 
 namespace searchcorespi::index {
 
-void
+bool
+IndexDiskDirState::activate(uint64_t size_on_disk) noexcept
+{
+    ++_active_count;
+    if (!_size_on_disk.has_value()) {
+        _size_on_disk.emplace(size_on_disk);
+        return true;
+    }
+    return false;
+}
+
+bool
 IndexDiskDirState::deactivate() noexcept
 {
     assert(_active_count > 0u);
     --_active_count;
+    return _active_count == 0u;
 }
 
 }

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -39,7 +39,7 @@ public class InfrastructureDeploymentValidatorTest {
                 .withTenantname(tenantName)
                 .withServices(services)
                 .build();
-        var deployState = new DeployState.Builder().applicationPackage(app).build();
+        var deployState = TestDeployState.create(app);
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
         var validator = new InfrastructureDeploymentValidator();

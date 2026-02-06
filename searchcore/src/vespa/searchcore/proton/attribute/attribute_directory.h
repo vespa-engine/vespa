@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/time.h>
@@ -11,6 +10,8 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+
+namespace searchcorespi::common { class TransientResourceUsage; }
 
 namespace proton {
 
@@ -91,7 +92,8 @@ public:
     vespalib::system_time getLastFlushTime() const;
     bool empty() const;
     std::string getAttributeFileName(SerialNum serialNum);
-    TransientResourceUsage get_transient_resource_usage() const;
+    searchcorespi::common::TransientResourceUsage get_transient_resource_usage() const;
+    static uint64_t get_size_on_disk_overhead();
 };
 
 } // namespace proton

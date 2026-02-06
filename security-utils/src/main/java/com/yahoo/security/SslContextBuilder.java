@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -57,7 +58,7 @@ public class SslContextBuilder {
     public SslContextBuilder withTrustStore(Path pemEncodedCaCertificates) {
         this.trustStoreSupplier = () -> {
             List<X509Certificate> caCertificates =
-                    X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(pemEncodedCaCertificates)));
+                    X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(pemEncodedCaCertificates), StandardCharsets.UTF_8));
             return createTrustStore(caCertificates);
         };
         return this;
@@ -102,8 +103,8 @@ public class SslContextBuilder {
     public SslContextBuilder withKeyStore(Path privateKeyPemFile, Path certificatesPemFile) {
         this.keyStoreSupplier =
                 () ->  {
-                    PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyPemFile)));
-                    List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(certificatesPemFile)));
+                    PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyPemFile), StandardCharsets.UTF_8));
+                    List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(certificatesPemFile), StandardCharsets.UTF_8));
                     return KeyStoreBuilder.withType(KeyStoreType.JKS)
                             .withKeyEntry("default", privateKey, certificates)
                             .build();

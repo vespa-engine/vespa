@@ -9,7 +9,6 @@ import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.impl.StandaloneContainerRunner;
-import com.yahoo.application.content.ContentCluster;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.InnerNode;
 import com.yahoo.config.InnerNodeVector;
@@ -19,6 +18,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.handler.RequestHandler;
@@ -69,7 +69,6 @@ public final class Application implements AutoCloseable {
     public static final String vespaLocalProperty = "vespa.local";
 
     private final JDisc container;
-    private final List<ContentCluster> contentClusters;
     private final Path path;
     private final boolean deletePathWhenClosing;
     private final CompiledQueryProfileRegistry compiledQueryProfileRegistry;
@@ -79,7 +78,6 @@ public final class Application implements AutoCloseable {
         System.setProperty(vespaLocalProperty, "true");
         this.path = path;
         this.deletePathWhenClosing = deletePathWhenClosing;
-        contentClusters = ContentCluster.fromPath(path);
         container = JDisc.fromPath(path, networking, createVespaModel().configModelRepo());
         compiledQueryProfileRegistry = readQueryProfilesFromApplicationPackage(path);
     }
@@ -148,6 +146,7 @@ public final class Application implements AutoCloseable {
                     .modelImporters(modelImporters)
                     .deployLogger((level, s) -> { })
                     .accessLoggingEnabledByDefault(false)
+                    .properties(new TestProperties())
                     .build();
             return new VespaModel(new NullConfigModelRegistry(), deployState);
         } catch (IOException | SAXException e) {

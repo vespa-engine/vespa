@@ -34,7 +34,7 @@ public enum Stemming {
      */
     public static Stemming get(String stemmingName) {
         try {
-            return Stemming.valueOf(stemmingName.toUpperCase());
+            return Stemming.valueOf(stemmingName.toUpperCase(java.util.Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("'" + stemmingName + "' is not a valid stemming setting");
         }

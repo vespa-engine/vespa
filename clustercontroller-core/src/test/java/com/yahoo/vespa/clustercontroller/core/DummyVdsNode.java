@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -431,7 +432,7 @@ public class DummyVdsNode {
                     activatedClusterStateVersion = activateVersion;
                     timer.notifyAll();
                 } else {
-                    log.log(Level.FINE, () -> String.format("Dummy node %s: got a mismatching activation (request version %d, " +
+                    log.log(Level.FINE, () -> String.format(Locale.ROOT, "Dummy node %s: got a mismatching activation (request version %d, " +
                             "actual %d), not marking version as active", this, activateVersion, actualVersion));
                 }
             }

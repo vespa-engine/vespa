@@ -12,6 +12,7 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
+#include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -22,6 +23,7 @@
 
 using search::BitVector;
 using search::BitVectorIterator;
+using search::DirectoryTraverse;
 using search::diskindex::DiskIndex;
 using search::diskindex::DiskTermBlueprint;
 using search::diskindex::FieldIndex;
@@ -485,6 +487,7 @@ DiskIndexTest::require_that_get_stats_works()
     auto stats = getIndex().get_stats(false);
     auto& schema = getIndex().getSchema();
     EXPECT_LT(0, stats.sizeOnDisk());
+    EXPECT_EQ(DirectoryTraverse::get_tree_size(getIndex().getIndexDir()), stats.sizeOnDisk());
     auto field_stats = stats.get_field_stats();
     EXPECT_EQ(schema.getNumIndexFields(), field_stats.size());
     for (auto& field : schema.getIndexFields()) {

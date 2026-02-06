@@ -154,7 +154,7 @@ MemoryFlush::getFlushTargets(const FlushContext::List& targetList,
         const IFlushHandler & handler(*ctx->getHandler());
         int64_t mgain(std::max(INT64_C(0), target.getApproxMemoryGain().gain()));
         const IFlushTarget::DiskGain dgain(target.getApproxDiskGain());
-        totalDisk += dgain;
+        totalDisk.add_as_positive_or_zero_gain(dgain);
         SerialNum localLastSerial = ctx->getLastSerial();
         int64_t serialDiff = getSerialDiff(localLastSerial, target);
         vespalib::system_time lastFlushTime = target.getLastFlushTime();

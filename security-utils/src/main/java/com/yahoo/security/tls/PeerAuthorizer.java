@@ -7,6 +7,7 @@ import com.yahoo.security.X509CertificateUtils;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -39,7 +40,7 @@ public class PeerAuthorizer {
         Set<CapabilitySet> grantedCapabilities = new HashSet<>();
         String cn = X509CertificateUtils.getSubjectCommonName(cert).orElse(null);
         List<String> sans = getSubjectAlternativeNames(cert);
-        log.fine(() -> String.format("Subject info from x509 certificate: CN=[%s], 'SAN=%s", cn, sans));
+        log.fine(() -> String.format(Locale.ROOT, "Subject info from x509 certificate: CN=[%s], 'SAN=%s", cn, sans));
         for (PeerPolicy peerPolicy : authorizedPeers.peerPolicies()) {
             if (matchesPolicy(peerPolicy, cn, sans)) {
                 matchedPolicies.add(peerPolicy.policyName());

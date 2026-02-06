@@ -137,6 +137,7 @@ void
 AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bool full) const
 {
     auto& attr = *_attr;
+    bool paged = attr.getConfig().paged();
     const Status &status = attr.getStatus();
     Cursor &object = inserter.insertObject();
     auto last_flush_duration = duration_cast<std::chrono::duration<double>>(attr.last_flush_duration()).count();
@@ -145,6 +146,9 @@ AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bo
         auto& slime_status = object.setObject("status");
         StateExplorerUtils::status_to_slime(status, slime_status);
         slime_status.setLong("disk_usage", attr.size_on_disk());
+        if (paged) {
+            slime_status.setLong("pagefile_size_on_disk", attr.get_memory_allocator_size_on_disk());
+        }
         slime_status.setDouble(LAST_FLUSH_DURATION, last_flush_duration);
         convertGenerationToSlime(attr, object.setObject("generation"));
         convertAddressSpaceUsageToSlime(attr.getAddressSpaceUsage(), object.setObject("addressSpaceUsage"));
@@ -177,6 +181,9 @@ AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bo
         convert_config_to_slime(attr.getConfig(), full, object);
         object.setLong("allocated_bytes", status.getAllocated());
         object.setLong("disk_usage", attr.size_on_disk());
+        if (paged) {
+            object.setLong("pagefile_size_on_disk", attr.get_memory_allocator_size_on_disk());
+        }
         object.setDouble(LAST_FLUSH_DURATION, last_flush_duration);
     }
 }

@@ -44,8 +44,8 @@ To the query-serving container, add an `http` element in _services.xml_ like:
             <filtering strict-mode="false">
                 <request-chain id="request-chain">
                     <filter id="com.yahoo.jdisc.http.filter.security.cors.CorsPreflightRequestFilter"
-                            bundle="jdisc-security-filters">
-                        <config name="jdisc.http.filter.security.cors.cors-filter">
+                            bundle="container-disc">
+                        <config name="jdisc.http.filter.security.cors.config.cors-filter">
                             <allowedUrls>
                                 <item>*</item>
                             </allowedUrls>
@@ -56,8 +56,8 @@ To the query-serving container, add an `http` element in _services.xml_ like:
 
                 <response-chain id="response-chain">
                     <filter id="com.yahoo.jdisc.http.filter.security.cors.CorsResponseFilter"
-                            bundle="jdisc-security-filters">
-                        <config name="jdisc.http.filter.security.cors.cors-filter">
+                            bundle="container-disc">
+                        <config name="jdisc.http.filter.security.cors.config.cors-filter">
                             <allowedUrls>
                                 <item>*</item>
                             </allowedUrls>

@@ -5,6 +5,7 @@ import com.yahoo.vespa.zookeeper.Configurator;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Locale;
 import java.util.logging.Logger;
 
 /**
@@ -26,12 +27,12 @@ public class VespaNettyServerCnxnFactory extends NettyServerCnxnFactory {
         super();
         this.isSecure = Configurator.VespaNettyServerCnxnFactory_isSecure;
         boolean portUnificationEnabled = Boolean.getBoolean(NettyServerCnxnFactory.PORT_UNIFICATION_KEY);
-        log.info(String.format("For %h: isSecure=%b, portUnification=%b", this, isSecure, portUnificationEnabled));
+        log.info(String.format(Locale.ROOT, "For %h: isSecure=%b, portUnification=%b", this, isSecure, portUnificationEnabled));
     }
 
     @Override
     public void configure(InetSocketAddress addr, int maxClientCnxns, int backlog, boolean secure) throws IOException {
-        log.info(String.format("For %h: configured() invoked with parameter 'secure'=%b, overridden to %b", this, secure, isSecure));
+        log.info(String.format(Locale.ROOT, "For %h: configured() invoked with parameter 'secure'=%b, overridden to %b", this, secure, isSecure));
         super.configure(addr, maxClientCnxns, backlog, isSecure);
     }
 }

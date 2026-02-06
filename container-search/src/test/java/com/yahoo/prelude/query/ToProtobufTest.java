@@ -481,6 +481,35 @@ public class ToProtobufTest {
     }
 
     @Test
+    void testConvertFromQueryWithPhraseSegmentItemInsidePhrase() {
+        PhraseItem phrase = new PhraseItem();
+        phrase.setIndexName("myindex");
+        phrase.addItem(new WordItem("one"));
+        PhraseSegmentItem phraseSegment = new PhraseSegmentItem("test", false, false);
+        phraseSegment.addItem(new WordItem("two"));
+        phraseSegment.addItem(new WordItem("three"));
+        phraseSegment.setIndexName("myindex");
+        phrase.addItem(phraseSegment);
+        phrase.addItem(new WordItem("four"));
+
+        // A PhraseSegmentItem inside a PhraseItem is unpacked during conversion, i.e.,
+        // its children become children of the PhraseItem
+        assertConvertsToJson(phrase, """
+            {
+              "itemPhrase": {
+                "properties": {"index": "myindex"},
+                "children": [
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "one"}},
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "two"}},
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "three"}},
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "four"}}
+                ]
+              }
+            }
+            """);
+    }
+
+    @Test
     void testConvertFromQueryWithAndSegmentItem() {
         AndSegmentItem andSegment = new AndSegmentItem("test", false, false);
         andSegment.addItem(new WordItem("foo"));

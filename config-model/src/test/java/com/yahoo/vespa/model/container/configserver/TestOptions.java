@@ -18,6 +18,7 @@ public class TestOptions implements ConfigOptions {
     private Optional<Boolean> useVespaVersionInRequest = Optional.empty();
     private Optional<Boolean> hostedVespa = Optional.empty();
     private static final String zooKeeperSnapshotMethod = "gz";
+    private Optional<Long> applicationLockTimeoutSeconds = Optional.empty();
 
     @Override
     public Optional<Integer> rpcPort() {
@@ -53,9 +54,10 @@ public class TestOptions implements ConfigOptions {
     }
 
     @Override
-    public Optional<Long> zookeeperBarrierTimeout() {
-        return Optional.empty();
-    }
+    public Optional<Long> zookeeperBarrierTimeout() { return Optional.empty(); }
+
+    @Override
+    public Optional<Long> applicationLockTimeoutSeconds() { return applicationLockTimeoutSeconds; }
 
     @Override
     public Optional<String> environment() { return environment; }
@@ -99,5 +101,11 @@ public class TestOptions implements ConfigOptions {
         this.hostedVespa = Optional.of(hostedVespa);
         return this;
     }
+
+    public TestOptions applicationLockTimeoutSeconds(long timeout) {
+        this.applicationLockTimeoutSeconds = Optional.of(timeout);
+        return this;
+    }
+
 
 }

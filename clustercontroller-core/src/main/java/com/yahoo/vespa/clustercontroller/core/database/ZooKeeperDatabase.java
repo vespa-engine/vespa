@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -205,7 +206,7 @@ public class ZooKeeperDatabase extends Database {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (KeeperException.BadVersionException e) {
-            throw new CasWriteFailed(String.format("version mismatch in cluster state version znode (expected %d): %s",
+            throw new CasWriteFailed(String.format(Locale.ROOT, "version mismatch in cluster state version znode (expected %d): %s",
                     lastKnownStateVersionZNodeVersion, e.getMessage()), e);
         } catch (Exception e) {
             maybeLogExceptionWarning(e, "Failed to store latest system state version used " + version);
@@ -350,14 +351,14 @@ public class ZooKeeperDatabase extends Database {
         try{
             context.log(log,
                         Level.FINE,
-                        () -> String.format("Storing published state bundle %s at '%s' with expected znode version %d",
+                        () -> String.format(Locale.ROOT, "Storing published state bundle %s at '%s' with expected znode version %d",
                                             stateBundle, paths.publishedStateBundle(), lastKnownStateBundleZNodeVersion));
             var stat = session.setData(paths.publishedStateBundle(), encodedBundle, lastKnownStateBundleZNodeVersion);
             lastKnownStateBundleZNodeVersion = stat.getVersion();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (KeeperException.BadVersionException e) {
-            throw new CasWriteFailed(String.format("version mismatch in cluster state bundle znode (expected %d): %s",
+            throw new CasWriteFailed(String.format(Locale.ROOT, "version mismatch in cluster state bundle znode (expected %d): %s",
                     lastKnownStateBundleZNodeVersion, e.getMessage()), e);
         } catch (Exception e) {
             maybeLogExceptionWarning(e, "Failed to store last published cluster state bundle in ZooKeeper");

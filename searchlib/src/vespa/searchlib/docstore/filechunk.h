@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/time.h>
+#include <optional>
 
 class FastOS_FileInterface;
 
@@ -84,6 +85,7 @@ public:
         NameId next() const { return NameId(_id + 1); }
         static NameId first() { return NameId(0u); }
         static NameId last() { return NameId(std::numeric_limits<uint64_t>::max()); }
+        static std::optional<NameId> from_filename(const std::string& filename);
     private:
         uint64_t _id;
     };
@@ -113,12 +115,13 @@ public:
     virtual ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const;
     virtual void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const;
     void remove(uint32_t lid, uint32_t size);
-    virtual size_t getDiskFootprint() const { return _diskFootprint.load(std::memory_order_relaxed); }
+    virtual size_t getDiskFootprint() const;
+    virtual uint64_t get_size_on_disk() const;
     virtual size_t getMemoryFootprint() const;
     virtual size_t getMemoryMetaFootprint() const;
     virtual vespalib::MemoryUsage getMemoryUsage() const;
 
-    virtual size_t getDiskHeaderFootprint() const { return _dataHeaderLen + _idxHeaderLen; }
+    size_t getDiskHeaderFootprint() const noexcept { return _dataHeaderLen + _idxHeaderLen; }
     size_t getDiskBloat() const {
         size_t addedBytes = getAddedBytes();
         return (addedBytes == 0)
@@ -217,12 +220,14 @@ private:
     std::atomic<size_t>    _erasedCount;
     std::atomic<size_t>    _erasedBytes;
     std::atomic<size_t>    _diskFootprint;
+    std::atomic<uint64_t>  _size_on_disk;
     size_t                 _sumNumBuckets;
     size_t                 _numChunksWithBuckets;
     size_t                 _numUniqueBuckets;
     File                   _file;
 protected:
     void setDiskFootprint(size_t sz) { _diskFootprint.store(sz, std::memory_order_relaxed); }
+    void set_size_on_disk(size_t sz) { _size_on_disk.store(sz, std::memory_order_relaxed); }
     static size_t adjustSize(size_t sz);
 
     class ChunkInfo

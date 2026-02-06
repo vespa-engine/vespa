@@ -189,7 +189,6 @@ public class ModelContextImpl implements ModelContext {
         private final int mbus_cpp_events_before_wakeup;
         private final int rpc_num_targets;
         private final int rpc_events_before_wakeup;
-        private final int heapPercentage;
         private final boolean sortBlueprintsByCost;
         private final int contentLayerMetadataFeatureLevel;
         private final String unknownConfigDefinition;
@@ -208,7 +207,6 @@ public class ModelContextImpl implements ModelContext {
         private final Sidecars sidecarsForTest;
         private final boolean useTriton;
         private final int searchCoreMaxOutstandingMoveOps;
-        private final boolean useNewPrepareForRestart;
         private final double docprocHandlerThreadpool;
         private final IntFlag heapSizePercentageFlag;
 
@@ -236,7 +234,6 @@ public class ModelContextImpl implements ModelContext {
             this.rpc_num_targets = Flags.RPC_NUM_TARGETS.bindTo(source).with(appId).with(version).value();
             this.rpc_events_before_wakeup = Flags.RPC_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
             this.queryDispatchWarmup = PermanentFlags.QUERY_DISPATCH_WARMUP.bindTo(source).with(appId).with(version).value();
-            this.heapPercentage = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(source).with(appId).with(version).value();
             this.heapSizePercentageFlag = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(source).with(appId).with(version);
             this.contentLayerMetadataFeatureLevel = Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL.bindTo(source).with(appId).with(version).value();
             this.unknownConfigDefinition = PermanentFlags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
@@ -256,12 +253,10 @@ public class ModelContextImpl implements ModelContext {
             this.sidecarsForTest = Flags.SIDECARS_FOR_TEST.bindTo(source).with(appId).with(version).value();
             this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
             this.searchCoreMaxOutstandingMoveOps = Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS.bindTo(source).with(appId).with(version).value();
-            this.useNewPrepareForRestart = Flags.USE_NEW_PREPARE_FOR_RESTART_METHOD.bindTo(source).with(appId).with(version).value();
             this.docprocHandlerThreadpool = Flags.DOCPROC_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
-        @Override public int heapSizePercentage() { return heapPercentage; }
         @Override public int heapSizePercentage(Optional<String> clusterId) {
             return clusterId.map(id -> heapSizePercentageFlag.with(ClusterSpec.Id.from(id)).value())
                             .orElseGet(heapSizePercentageFlag::value); }
@@ -305,7 +300,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxDocumentOperationRequestSizeMib() { return maxDocumentOperationRequestSizeMib; }
         @Override public Object sidecarsForTest() { return sidecarsForTest; }
         @Override public boolean useTriton() { return useTriton; }
-        @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
         @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
         @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
     }

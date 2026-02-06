@@ -202,4 +202,29 @@ public class EmbeddingScriptTester {
         }
     }
 
+    /** An embedder that tracks whether batch embed was called. Extends MockIndexedEmbedder. */
+    public static class MockBatchAwareEmbedder extends MockIndexedEmbedder {
+
+        public int batchCallCount = 0;
+        public int singleCallCount = 0;
+
+        public MockBatchAwareEmbedder(String expectedDestination) {
+            super(expectedDestination, 0);
+        }
+
+        @Override
+        public Tensor embed(String text, Context context, TensorType tensorType) {
+            singleCallCount++;
+            return super.embed(text, context, tensorType);
+        }
+
+        @Override
+        public List<Tensor> embed(List<String> texts, Context context, TensorType tensorType) {
+            batchCallCount++;
+            return texts.stream()
+                    .map(text -> super.embed(text, context, tensorType))
+                    .toList();
+        }
+    }
+
 }

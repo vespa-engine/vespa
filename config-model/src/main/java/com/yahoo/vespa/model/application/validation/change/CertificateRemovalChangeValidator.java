@@ -48,8 +48,7 @@ public class CertificateRemovalChangeValidator implements ChangeValidator {
                 .flatMap(Collection::stream)
                 .toList();
 
-        logger.log(Level.FINE, "Certificates for cluster %s: Current: [%s], Next: [%s]"
-                .formatted(clusterId,
+        logger.log(Level.FINE, String.format(java.util.Locale.ROOT, "Certificates for cluster %s: Current: [%s], Next: [%s]", clusterId,
                            currentCertificates.stream().map(cert -> cert.getSubjectX500Principal().getName()).collect(Collectors.joining(", ")),
                            nextCertificates.stream().map(cert -> cert.getSubjectX500Principal().getName()).collect(Collectors.joining(", "))));
 

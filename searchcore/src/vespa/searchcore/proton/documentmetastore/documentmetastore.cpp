@@ -19,6 +19,7 @@
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
@@ -37,6 +38,7 @@ using proton::bucketdb::BucketState;
 using proton::bucketdb::RemoveBatchEntry;
 using proton::documentmetastore::GidToLidMapKey;
 using search::AttributeVector;
+using search::DiskSpaceCalculator;
 using search::FileReader;
 using search::FileWithHeader;
 using search::GrowStrategy;
@@ -118,7 +120,9 @@ public:
                 ((_version == NO_DOCUMENT_SIZE_TRACKING_VERSION) ? 0 : 3));
     }
 
-    uint64_t size_on_disk() const noexcept { return _datFile.size_on_disk(); }
+    uint64_t size_on_disk() const noexcept {
+        return _datFile.size_on_disk() + DiskSpaceCalculator::directory_placeholder_size();
+    }
     std::chrono::steady_clock::duration flush_duration() const noexcept { return _datFile.flush_duration(); }
 };
 

@@ -36,12 +36,12 @@ public class ModelTest {
     @Test
     void valid_url(){
         var dummyUrl = "https://vespa.ai/some-model.onxx";
-        var xml = """
+        var xml = String.format(java.util.Locale.ROOT, """
                 <component id="bert-embedder" type="hugging-face-embedder">
                   <transformer-model url="%s" />
                   <tokenizer-model url="%s"/>
                 </component>
-                """.formatted(dummyUrl, dummyUrl);
+                """, dummyUrl, dummyUrl);
 
         var state = new DeployState.Builder().build();
         var element = XML.getDocument(xml).getDocumentElement();
@@ -56,12 +56,12 @@ public class ModelTest {
     @Test
     void authenticated_url(){
         var dummyUrl = "https://vespa.ai/some-model.onxx";
-        var xml = """
+        var xml = String.format(java.util.Locale.ROOT, """
                 <component id="bert-embedder" type="hugging-face-embedder">
                   <transformer-model url="%s" secret-ref="myTransformerSecret" />
                   <tokenizer-model url="%s" secret-ref="myTokenizerSecret"/>
                 </component>
-                """.formatted(dummyUrl, dummyUrl);
+                """, dummyUrl, dummyUrl);
 
         var state = new DeployState.Builder().build();
         var element = XML.getDocument(xml).getDocumentElement();

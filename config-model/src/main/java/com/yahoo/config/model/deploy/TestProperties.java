@@ -77,7 +77,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int searchCoreMaxOutstandingMoveOps = 100;
     private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
-    private boolean useNewPrepareForRestart = true;
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
 
@@ -121,7 +120,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int mbusCppRpcNumTargets() { return mbus_cpp_num_targets; }
     @Override public int mbusCppEventsBeforeWakeup() { return mbus_cpp_events_before_wakeup; }
     @Override public int rpcNumTargets() { return rpc_num_targets; }
-    @Override public int heapSizePercentage() { return heapSizePercentage(Optional.empty()); }
     @Override public int heapSizePercentage(Optional<String> clusterId) {
         return heapSizePercentage.getOrDefault(clusterId.orElse(""), defaultHeapSizePercentageOfAvailableMemory);
     }
@@ -133,7 +131,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
-    @Override public boolean useNewPrepareForRestart() { return useNewPrepareForRestart; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
     @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
@@ -336,11 +333,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMallocImpl(ClusterSpec.Type clusterType, String mallocImpl) {
         this.mallocImpl.put(clusterType, mallocImpl);
-        return this;
-    }
-
-    public TestProperties useNewPrepareForRestart(boolean value) {
-        this.useNewPrepareForRestart = value;
         return this;
     }
 

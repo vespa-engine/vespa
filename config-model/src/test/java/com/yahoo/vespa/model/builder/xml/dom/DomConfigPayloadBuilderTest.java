@@ -5,6 +5,7 @@ import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.slime.JsonFormat;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -14,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.FileReader;
 import java.io.Reader;
 import java.io.StringReader;
@@ -30,8 +31,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class DomConfigPayloadBuilderTest {
 
     @Test
-    void testFunctionTest_DefaultValues() throws FileNotFoundException {
-        Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/functiontest-defaultvalues.xml"));
+    void testFunctionTest_DefaultValues() throws IOException {
+        Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/functiontest-defaultvalues.xml", java.nio.charset.StandardCharsets.UTF_8));
         String expected = ""
                 + "{"
                 + "\"bool_val\":\"false\","
@@ -57,7 +58,7 @@ public class DomConfigPayloadBuilderTest {
     // Multi line strings are not tested in 'DefaultValues', so here it is.
     @Test
     void verifyThatWhitespaceIsPreservedForStrings() throws Exception {
-        Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/whitespace-test.xml"));
+        Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/whitespace-test.xml", java.nio.charset.StandardCharsets.UTF_8));
         assertPayload("{\"stringVal\":\" This is a string\\n  that contains different kinds of whitespace \"}", configRoot);
     }
 
@@ -231,14 +232,14 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    void require_that_exceptions_are_issued() throws FileNotFoundException {
+    void require_that_exceptions_are_issued() throws IOException {
         assertThrows(IllegalArgumentException.class, () -> {
             Element configRoot = getDocument(
                     "<config name=\"test.simpletypes\">" +
                             "<longval>invalid</longval>" +
                             "</config>");
             DefParser defParser = new DefParser("simpletypes",
-                    new FileReader("src/test/resources/configdefinitions/test.simpletypes.def"));
+                    new FileReader("src/test/resources/configdefinitions/test.simpletypes.def", java.nio.charset.StandardCharsets.UTF_8));
             ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(defParser.getTree());
             ConfigPayloadBuilder unused =  new DomConfigPayloadBuilder(def).build(configRoot);
         });
@@ -250,7 +251,7 @@ public class DomConfigPayloadBuilderTest {
         try {
             ByteArrayOutputStream a = new ByteArrayOutputStream();
             new JsonFormat(true).encode(a, payload.getSlime());
-            assertEquals(expected, a.toString());
+            assertEquals(expected, a.toString(java.nio.charset.StandardCharsets.UTF_8));
         } catch (Exception e) {
             fail("Exception thrown when encoding slime: " + e.getMessage());
         }

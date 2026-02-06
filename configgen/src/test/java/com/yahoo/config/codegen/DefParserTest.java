@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,7 +26,7 @@ public class DefParserTest {
     @Test
     void testTraverseTree() throws IOException {
         File defFile = new File(DEF_NAME);
-        CNode root = new DefParser("test", new FileReader(defFile)).getTree();
+        CNode root = new DefParser("test", new FileReader(defFile, StandardCharsets.UTF_8)).getTree();
         assertNotNull(root);
         CNode[] children = root.getChildren();
         assertEquals(38, children.length);
@@ -62,14 +63,14 @@ public class DefParserTest {
     @Test
     void testFileWithNamespaceInFilename() throws IOException {
         File defFile = new File(TEST_DIR + "baz.bar.foo.def");
-        CNode root = new DefParser("test", new FileReader(defFile)).getTree();
+        CNode root = new DefParser("test", new FileReader(defFile, StandardCharsets.UTF_8)).getTree();
         assertEquals("31a0f9bda0e5ff929762a29569575a7e", root.defMd5);
     }
 
     @Test
     void testMd5Sum() throws IOException {
         File defFile = new File(DEF_NAME);
-        CNode root = new DefParser("test", new FileReader(defFile)).getTree();
+        CNode root = new DefParser("test", new FileReader(defFile, StandardCharsets.UTF_8)).getTree();
         assertEquals("ee37973499305fde315da46256e64b2e", root.defMd5);
     }
 

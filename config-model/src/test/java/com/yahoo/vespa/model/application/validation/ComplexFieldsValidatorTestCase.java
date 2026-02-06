@@ -7,6 +7,7 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.api.ValidationParameters.CheckRouting;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
@@ -23,12 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * @author geirst
+ * @author Geir Storli
  */
 public class ComplexFieldsValidatorTestCase {
 
     @Test
-    void throws_exception_when_unsupported_complex_fields_have_struct_field_attributes() throws IOException, SAXException {
+    void throws_exception_when_unsupported_complex_fields_have_struct_field_attributes() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             createModelAndValidate(joinLines("search test {",
                     "  document test {",
@@ -208,7 +209,7 @@ public class ComplexFieldsValidatorTestCase {
                 .withServices(servicesXml)
                 .withSchemas(List.of(schema))
                 .build();
-        var builder = new DeployState.Builder().applicationPackage(app);
+        var builder = TestDeployState.createBuilder().applicationPackage(app);
         if (logger != null) {
             builder.deployLogger(logger);
         }

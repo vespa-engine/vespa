@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.objects.Deserializer;
 import com.yahoo.vespa.objects.ObjectVisitor;
 import com.yahoo.vespa.objects.Serializer;
@@ -114,7 +115,7 @@ public class FloatBucketResultNode extends BucketResultNode {
             return 1;
         }
         // should not be possible
-        throw new IllegalArgumentException(String.format("bad comparison [%f,%f> versus [%f,%f>",
+        throw new IllegalArgumentException(Text.format("bad comparison [%f,%f> versus [%f,%f>",
                                                          f1, t1, f2, t2));
     }
 

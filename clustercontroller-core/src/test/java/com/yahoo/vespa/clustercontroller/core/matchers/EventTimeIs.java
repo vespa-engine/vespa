@@ -5,6 +5,8 @@ import com.yahoo.vespa.clustercontroller.core.Event;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+import java.util.Locale;
+
 public class EventTimeIs extends BaseMatcher<Event> {
     private final long expected;
 
@@ -22,13 +24,13 @@ public class EventTimeIs extends BaseMatcher<Event> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format("Event with time %d", expected));
+        description.appendText(String.format(Locale.ROOT, "Event with time %d", expected));
     }
 
     @Override
     public void describeMismatch(Object item, Description description) {
         Event other = (Event)item;
-        description.appendText(String.format("event time is %d", other.getTimeMs()));
+        description.appendText(String.format(Locale.ROOT, "event time is %d", other.getTimeMs()));
     }
 
     public static EventTimeIs eventTimeIs(long time) {

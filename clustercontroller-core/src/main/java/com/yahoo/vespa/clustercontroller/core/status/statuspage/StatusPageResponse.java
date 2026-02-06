@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.status.statuspage;
 
+import java.nio.charset.StandardCharsets;
 import com.google.common.html.HtmlEscapers;
 
 import java.io.BufferedWriter;
@@ -42,7 +43,7 @@ public class StatusPageResponse {
     public ByteArrayOutputStream getOutputStream() { return output; }
 
     public BufferedWriter createBufferedWriter() {
-        return new BufferedWriter(new OutputStreamWriter(output));
+        return new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
     }
 
     public void writeContent(String content) {

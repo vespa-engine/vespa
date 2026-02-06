@@ -4,7 +4,7 @@
 #include "indexdisklayout.h"
 #include "index_disk_dir.h"
 #include "index_disk_dir_state.h"
-#include <vespa/searchlib/util/dirtraverse.h>
+#include <vespa/searchlib/util/directory_traverse.h>
 #include <cassert>
 #include <vector>
 
@@ -12,8 +12,25 @@ using std::string;
 
 namespace searchcorespi::index {
 
-DiskIndexes::DiskIndexes() = default;
+DiskIndexes::DiskIndexes()
+    : _active(),
+      _sum_size_on_disk(0),
+      _sum_stale_size_on_disk(0u),
+      _lock()
+{
+}
+
 DiskIndexes::~DiskIndexes() = default;
+
+void
+DiskIndexes::remove_from_sum(const IndexDiskDirState& state)
+{
+    auto size_on_disk = state.get_size_on_disk().value_or(0u);
+    _sum_size_on_disk -= size_on_disk;
+    if (state.is_stale()) {
+        _sum_stale_size_on_disk -= size_on_disk;
+    }
+}
 
 void
 DiskIndexes::setActive(const string &index, uint64_t size_on_disk)
@@ -22,9 +39,31 @@ DiskIndexes::setActive(const string &index, uint64_t size_on_disk)
     assert(index_disk_dir.valid());
     std::lock_guard lock(_lock);
     auto insres = _active.insert(std::make_pair(index_disk_dir, IndexDiskDirState()));
-    insres.first->second.activate();
-    if (!insres.first->second.get_size_on_disk().has_value()) {
-        insres.first->second.set_size_on_disk(size_on_disk);
+    auto& state = insres.first->second;
+    if (state.activate(size_on_disk)) {
+        _sum_size_on_disk += size_on_disk;
+        if (state.is_stale()) {
+            _sum_stale_size_on_disk += size_on_disk;
+        }
+        if (index_disk_dir.is_fusion_index()) {
+            /*
+             * Indexes before last active fusion index are on the way out and
+             * will be removed when all older index collections
+             * referencing them are destroyed. Disk space used by these
+             * indexes is considered stale (and transient).
+             */
+            for (auto& entry : _active) {
+                if (entry.first < index_disk_dir) {
+                    auto& stale_state = entry.second;
+                    if (!stale_state.is_stale()) {
+                        stale_state.set_stale();
+                        _sum_stale_size_on_disk += stale_state.get_size_on_disk().value_or(0u);
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -34,9 +73,9 @@ void DiskIndexes::notActive(const string & index) {
     std::lock_guard lock(_lock);
     auto it = _active.find(index_disk_dir);
     assert(it != _active.end());
-    assert(it->second.is_active());
-    it->second.deactivate();
-    if (!it->second.is_active()) {
+    auto& state = it->second;
+    if (state.deactivate()) {
+        remove_from_sum(state);
         _active.erase(it);
     }
 }
@@ -50,7 +89,6 @@ bool DiskIndexes::isActive(const string &index) const {
     auto it = _active.find(index_disk_dir);
     return (it != _active.end()) && it->second.is_active();
 }
-
 
 void
 DiskIndexes::add_not_active(IndexDiskDir index_disk_dir)
@@ -73,50 +111,29 @@ DiskIndexes::remove(IndexDiskDir index_disk_dir)
     if (it->second.is_active()) {
         return false;
     }
+     remove_from_sum(it->second);
     _active.erase(it);
     return true;
 }
 
 uint64_t
-DiskIndexes::get_transient_size(IndexDiskLayout& layout, IndexDiskDir index_disk_dir) const
+DiskIndexes::get_transient_size(const IndexDiskLayout& layout) const
 {
-    /*
-     * Only report transient size related to a valid fusion index. This ensures
-     * that transient size is reported once per index collection.
-     */
-    if (!index_disk_dir.valid() || !index_disk_dir.is_fusion_index_or_first_flush_index()) {
-        return 0u;
-    }
-    uint64_t transient_size = 0u;
+    std::unique_lock guard(_lock);
+    uint64_t transient_size = _sum_stale_size_on_disk;
     std::vector<IndexDiskDir> deferred;
-    {
-        std::lock_guard lock(_lock);
-        for (auto &entry : _active) {
-            if (entry.first < index_disk_dir) {
-                /*
-                 * Indexes before current fusion index are on the way out and
-                 * will be removed when all older index collections
-                 * referencing them are destroyed. Disk space used by these
-                 * indexes is considered transient.
-                 */
-                if (entry.second.get_size_on_disk().has_value()) {
-                    transient_size += entry.second.get_size_on_disk().value();
-                }
-            }
-            if (index_disk_dir < entry.first && entry.first.is_fusion_index()) {
-                /*
-                 * Fusion indexes after current fusion index can be partially
-                 * complete and might be removed if fusion is aborted. Disk
-                 * space used by these indexes is consider transient.
-                 */
-                if (entry.second.get_size_on_disk().has_value()) {
-                    transient_size += entry.second.get_size_on_disk().value();
-                } else {
-                    deferred.emplace_back(entry.first);
-                }
-            }
+    for (auto &entry : _active) {
+        auto &state = entry.second;
+        /*
+         * Indexes after last fusion index can be partially
+         * complete and might be removed if fusion is aborted. Disk
+         * space used by these indexes is considered transient.
+         */
+        if (!state.get_size_on_disk().has_value() && !state.is_stale()) {
+            deferred.emplace_back(entry.first);
         }
     }
+    guard.unlock();
     for (auto& entry : deferred) {
         auto index_dir = layout.getFusionDir(entry.get_id());
         try {
@@ -126,6 +143,17 @@ DiskIndexes::get_transient_size(IndexDiskLayout& layout, IndexDiskDir index_disk
         }
     }
     return transient_size;
+}
+
+uint64_t
+DiskIndexes::get_size_on_disk(bool include_stale) const
+{
+    std::lock_guard guard(_lock);
+    uint64_t size_on_disk = _sum_size_on_disk;
+    if (!include_stale) {
+        size_on_disk -= _sum_stale_size_on_disk;
+    }
+    return size_on_disk;
 }
 
 }

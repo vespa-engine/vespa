@@ -6,6 +6,7 @@ import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.protect.Process;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.curator.api.VespaCurator.SingletonWorker;
 
 import java.time.Clock;
@@ -314,7 +315,7 @@ class SingletonManager {
         private void cleanOrphans() {
             List<String> orphans = null;
             try {
-                // Only the ephemerals owned by this client session are listed here, and this client should only ever attempt this lock from this thread, i.e., 0 or 1 nodes. 
+                // Only the ephemerals owned by this client session are listed here, and this client should only ever attempt this lock from this thread, i.e., 0 or 1 nodes.
                 for (String orphan : orphans = curator.framework().getZookeeperClient().getZooKeeper().getEphemerals(path.getAbsolute()))
                     curator.delete(path.append(orphan));
             }
@@ -430,7 +431,7 @@ class SingletonManager {
                     long durationMillis = Duration.between(start, clock.instant()).toMillis();
                     metric.set(ACTIVATION_MILLIS, durationMillis, context);
                     logger.log(INFO, "Activation completed " + (failed ? "un" : "") +
-                                     "successfully in %.3f seconds".formatted(durationMillis * 1e-3));
+                                     Text.format("successfully in %.3f seconds", durationMillis * 1e-3));
                     if (failed) metric.add(ACTIVATION_FAILURES, 1, context);
                     else isActive = true;
                     ping();
@@ -453,7 +454,7 @@ class SingletonManager {
                     long durationMillis = Duration.between(start, clock.instant()).toMillis();
                     metric.set(DEACTIVATION_MILLIS, durationMillis, context);
                     logger.log(INFO, "Deactivation completed " + (failed ? "un" : "") +
-                                     "successfully in %.3f seconds".formatted(durationMillis * 1e-3));
+                                     Text.format("successfully in %.3f seconds", durationMillis * 1e-3));
                     if (failed) metric.add(DEACTIVATION_FAILURES, 1, context);
                     isActive = false;
                     ping();

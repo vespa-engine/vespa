@@ -337,6 +337,8 @@
       "public abstract boolean isFromQuery()",
       "public abstract boolean isStemmed()",
       "public abstract boolean isWords()",
+      "public abstract com.yahoo.search.query.QueryType getQueryType()",
+      "public abstract void setQueryType(com.yahoo.search.query.QueryType)",
       "public abstract com.yahoo.prelude.query.SegmentingRule getSegmentingRule()"
     ],
     "fields" : [ ]
@@ -1544,6 +1546,8 @@
       "public boolean isFromQuery()",
       "public boolean isStemmed()",
       "public void setStemmed(boolean)",
+      "public com.yahoo.search.query.QueryType getQueryType()",
+      "public void setQueryType(com.yahoo.search.query.QueryType)",
       "public void lock()",
       "public boolean isLocked()",
       "public int getNumWords()",
@@ -1807,6 +1811,8 @@
       "public void setOrigin(com.yahoo.prelude.query.Substring)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public int getTermCount()",
+      "public com.yahoo.search.query.QueryType getQueryType()",
+      "public void setQueryType(com.yahoo.search.query.QueryType)",
       "public boolean isNormalizable()",
       "public void setNormalizable(boolean)",
       "public boolean isLowercased()",
@@ -9545,6 +9551,18 @@
       "public static final com.yahoo.processing.request.CompoundName idDimensionKey",
       "public static final com.yahoo.processing.request.CompoundName dryRunKey"
     ]
+  },
+  "com.yahoo.search.searchers.RelatedDocumentsByNearestNeighborSearcher" : {
+    "superClass" : "com.yahoo.search.Searcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields" : [ ]
   },
   "com.yahoo.search.searchers.ValidateFuzzySearcher" : {
     "superClass" : "com.yahoo.search.Searcher",

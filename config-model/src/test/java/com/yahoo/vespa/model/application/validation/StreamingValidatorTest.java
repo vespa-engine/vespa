@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.schema.derived.TestableDeployLogger;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.utils.ApplicationPackageBuilder;
@@ -80,8 +80,8 @@ public class StreamingValidatorTest {
     }
 
     private static VespaModel createModel(DeployLogger logger, String sdContent) {
-        var builder = new DeployState.Builder();
-        builder.deployLogger(logger);
+        var builder = TestDeployState.createBuilder()
+                .deployLogger(logger);
         return new ApplicationPackageBuilder()
                 .addCluster(new ContentClusterBuilder().name("content").docTypes(List.of(DocType.streaming("test"))))
                 .addSchemas(new SchemaBuilder().name("test").content(sdContent).build())

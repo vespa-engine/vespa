@@ -176,7 +176,7 @@ public class StemmingSearcher extends Searcher {
         if (item.isFromQuery() && !item.isStemmed()) {
             Index index = context.indexFacts.getIndex(item.getIndexName());
             StemMode stemMode = index.getStemMode();
-            if (stemMode != StemMode.NONE) return stem(queryType, item, context, index);
+            if (stemMode != StemMode.NONE) return stem(item, context, index);
         }
         return (Item) item;
     }
@@ -197,8 +197,8 @@ public class StemmingSearcher extends Searcher {
     }
 
     // The rewriting logic is here
-    private Item stem(QueryType queryType, BlockItem current, StemContext context, Index index) {
-        var parameters = new LinguisticsParameters(linguisticsProfile(queryType, index),
+    private Item stem(BlockItem current, StemContext context, Index index) {
+        var parameters = new LinguisticsParameters(linguisticsProfile(index, current),
                                                    context.language, index.getStemMode(), index.getNormalize(),
                                                    index.isLowercase());
         Item blockAsItem = (Item)current;
@@ -445,11 +445,12 @@ public class StemmingSearcher extends Searcher {
         return Optional.empty();
     }
 
-    private String linguisticsProfile(QueryType queryType, Index index) {
-        String queryAssignedProfile = queryType.getProfile();
-        if (queryAssignedProfile != null) return queryAssignedProfile;
-        if (index == null) return null;
-        return index.getLinguisticsProfile();
+    private String linguisticsProfile(Index index, BlockItem current) {
+        if (current.getQueryType() != null && current.getQueryType().getProfile() != null)
+            return current.getQueryType().getProfile();
+        if (index != null)
+            return index.getLinguisticsProfile();
+        return null;
     }
 
     private static class Connectivity {

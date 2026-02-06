@@ -5,6 +5,7 @@ import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import com.yahoo.container.protect.ProcessTerminator;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -16,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -118,11 +120,11 @@ class TritonOnnxRuntimeTest {
         var opts = optsBuilder.build();
 
         var modelBaseName1 = "dummy_transformer";
-        var modelPath1 = "src/test/models/onnx/transformer/%s.onnx".formatted(modelBaseName1);
+        var modelPath1 = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName1);
         var modelName1 = TritonOnnxRuntime.generateModelName(modelPath1, opts);
 
         var modelBaseName2 = "dummy_transformer_mlm";
-        var modelPath2 = "src/test/models/onnx/transformer/%s.onnx".formatted(modelBaseName2);
+        var modelPath2 = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName2);
         var modelName2 = TritonOnnxRuntime.generateModelName(modelPath2, opts);
 
         var client = createClient();
@@ -176,7 +178,7 @@ class TritonOnnxRuntimeTest {
         var opts = optsBuilder.build();
 
         var modelBaseName = "dummy_transformer";
-        var modelPath = "src/test/models/onnx/transformer/%s.onnx".formatted(modelBaseName);
+        var modelPath = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
         var modelName = TritonOnnxRuntime.generateModelName(modelPath, opts);
 
         var client = createClient();
@@ -217,10 +219,10 @@ class TritonOnnxRuntimeTest {
     // expectedConfigPath == null means we expect an error during model loading
     private void assertLoadModel(String expectedConfigPath, OnnxEvaluatorOptions evalOpts) throws IOException {
         var modelBaseName = "dummy_transformer";
-        var testModelFilePath = String.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
+        var testModelFilePath = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
         var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, evalOpts);
-        var modelFilePath = String.format("%s/1/model.onnx", modelName);
-        var modelConfigPath = String.format("%s/config.pbtxt", modelName);
+        var modelFilePath = Text.format("%s/1/model.onnx", modelName);
+        var modelConfigPath = Text.format("%s/config.pbtxt", modelName);
         var runtime = createRuntime();
 
         try {

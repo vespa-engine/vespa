@@ -26,7 +26,7 @@ public class CellOrder<NAMETYPE extends Name> extends PrimitiveTensorFunction<NA
         MIN;
 
         @Override
-        public String toString() { return name().toLowerCase(); }
+        public String toString() { return name().toLowerCase(java.util.Locale.ROOT); }
     }
 
     private final TensorFunction<NAMETYPE> argument;

@@ -76,7 +76,7 @@ public class Client {
             return switch (v) {
                 case "read" -> READ;
                 case "write" -> WRITE;
-                default -> throw new IllegalArgumentException("Invalid permission '%s'. Valid values are 'read' and 'write'.".formatted(v));
+                default -> throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Invalid permission '%s'. Valid values are 'read' and 'write'.", v));
             };
         }
 

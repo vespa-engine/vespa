@@ -15,8 +15,18 @@ import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.cjk.CJKBigramFilter;
+import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
+import org.apache.lucene.analysis.shingle.ShingleFilter;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
+import org.apache.lucene.analysis.synonym.SynonymGraphFilter;
+import org.apache.lucene.analysis.synonym.SynonymMap;
+import org.apache.lucene.util.CharsRef;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.junit.Test;
 
@@ -79,6 +89,217 @@ public class LuceneTokenizerTest {
         assertEquals("CATS", tokens.get(2).getStem(1));
     }
 
+    @Test
+    public void testMultiWordSynonymExpansion() {
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, false, true);
+        var registry = new ComponentRegistry<Analyzer>();
+        registry.register(new ComponentId(Language.ENGLISH.languageCode()), new MultiWordSynonymAnalyzer());
+        LuceneLinguistics linguistics = new LuceneLinguistics(new LuceneAnalysisConfig.Builder().build(), registry);
+
+        // "nyc" expands to "new york city" where:
+        // - "new" is at same position as "nyc" (positionIncrement=0)
+        // - "york" and "city" are at subsequent positions (positionIncrement=1)
+        List<Token> tokens = iterableToList(linguistics.getTokenizer().tokenize("visit nyc today", parameters));
+
+        // Expected: 5 tokens - "visit", "nyc" (with "new" as stem), "york", "city", "today"
+        // Potential bug: offset-based check groups all same-offset tokens as stems,
+        // producing only 3 tokens with "york" and "city" incorrectly added as stems of "nyc"
+        assertEquals(5, tokens.size());
+        assertEquals("visit", tokens.get(0).getTokenString());
+        assertEquals("nyc", tokens.get(1).getTokenString());
+        assertEquals("new", tokens.get(1).getStem(1));  // "new" is a stem of "nyc"
+        assertEquals(2, tokens.get(1).getNumStems());   // only "nyc" and "new", not "york"/"city"
+        assertEquals("york", tokens.get(2).getTokenString());
+        assertEquals("city", tokens.get(3).getTokenString());
+        assertEquals("today", tokens.get(4).getTokenString());
+    }
+
+    @Test
+    public void testStopwordDoesNotMergeTokens() {
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, false, true);
+        var registry = new ComponentRegistry<Analyzer>();
+        registry.register(new ComponentId(Language.ENGLISH.languageCode()), new StopwordAnalyzer());
+        LuceneLinguistics linguistics = new LuceneLinguistics(new LuceneAnalysisConfig.Builder().build(), registry);
+
+        // Input: "hello the world" with "the" as stopword
+        // After stopword removal: "hello" (posInc=1), "world" (posInc=2 due to gap)
+        // Bug scenario: if using offset-based check, "world" might incorrectly merge with "hello"
+        List<Token> tokens = iterableToList(linguistics.getTokenizer().tokenize("hello the world", parameters));
+
+        assertEquals(2, tokens.size());
+        assertEquals("hello", tokens.get(0).getTokenString());
+        assertEquals(1, tokens.get(0).getNumStems());  // no stems merged
+        assertEquals("world", tokens.get(1).getTokenString());
+        assertEquals(1, tokens.get(1).getNumStems());  // "world" is separate, not a stem of "hello"
+    }
+
+    @Test
+    public void testSingleWordSynonymWithSelf() {
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, false, true);
+        var registry = new ComponentRegistry<Analyzer>();
+        registry.register(new ComponentId(Language.ENGLISH.languageCode()), new SingleWordSynonymAnalyzer());
+        LuceneLinguistics linguistics = new LuceneLinguistics(new LuceneAnalysisConfig.Builder().build(), registry);
+
+        // Synonym: car => car, automobile
+        // "car" expands to "car" and "automobile" at the same position (posInc=0)
+        List<Token> tokens = iterableToList(linguistics.getTokenizer().tokenize("buy car today", parameters));
+
+        assertEquals(3, tokens.size());
+        assertEquals("buy", tokens.get(0).getTokenString());
+        assertEquals(1, tokens.get(0).getNumStems());
+        assertEquals("car", tokens.get(1).getTokenString());
+        assertEquals(2, tokens.get(1).getNumStems());  // "car" and "automobile"
+        assertEquals("automobile", tokens.get(1).getStem(1));
+        assertEquals("today", tokens.get(2).getTokenString());
+        assertEquals(1, tokens.get(2).getNumStems());
+    }
+
+    @Test
+    public void testAsciiFoldingPreserveOriginal() {
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, false, true);
+        var registry = new ComponentRegistry<Analyzer>();
+        registry.register(new ComponentId(Language.ENGLISH.languageCode()), new AsciiFoldingPreserveAnalyzer());
+        LuceneLinguistics linguistics = new LuceneLinguistics(new LuceneAnalysisConfig.Builder().build(), registry);
+
+        // With preserveOriginal=true: "café" produces "cafe" (folded) and "café" (original) at same position
+        List<Token> tokens = iterableToList(linguistics.getTokenizer().tokenize("drink café now", parameters));
+
+        assertEquals(3, tokens.size());
+        assertEquals("drink", tokens.get(0).getTokenString());
+        assertEquals(1, tokens.get(0).getNumStems());
+        assertEquals("cafe", tokens.get(1).getTokenString());  // folded version is primary
+        assertEquals(2, tokens.get(1).getNumStems());  // "cafe" and "café"
+        assertEquals("café", tokens.get(1).getStem(1));  // original preserved as stem
+        assertEquals("now", tokens.get(2).getTokenString());
+        assertEquals(1, tokens.get(2).getNumStems());
+    }
+
+    @Test
+    public void testEmptyAndWhitespaceInput() {
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, false, true);
+        Linguistics linguistics = luceneLinguistics();
+
+        // Empty string
+        List<Token> emptyTokens = iterableToList(linguistics.getTokenizer().tokenize("", parameters));
+        assertEquals(0, emptyTokens.size());
+
+        // Whitespace only
+        List<Token> whitespaceTokens = iterableToList(linguistics.getTokenizer().tokenize("   ", parameters));
+        assertEquals(0, whitespaceTokens.size());
+
+        // Tabs and newlines
+        List<Token> mixedWhitespace = iterableToList(linguistics.getTokenizer().tokenize("\t\n  \r\n", parameters));
+        assertEquals(0, mixedWhitespace.size());
+    }
+
+    @Test
+    public void testCjkBigramSegmentation() {
+        var parameters = new LinguisticsParameters(null, Language.JAPANESE, StemMode.ALL, false, true);
+        var registry = new ComponentRegistry<Analyzer>();
+        registry.register(new ComponentId(Language.JAPANESE.languageCode()), new CjkBigramAnalyzer());
+        LuceneLinguistics linguistics = new LuceneLinguistics(new LuceneAnalysisConfig.Builder().build(), registry);
+
+        // "東京都" (Tokyo-to) with CJKBigramFilter produces overlapping bigrams:
+        // "東京" (position 1), "京都" (position 2)
+        // These should be separate tokens, not stems of each other
+        List<Token> tokens = iterableToList(linguistics.getTokenizer().tokenize("東京都", parameters));
+
+        assertEquals(2, tokens.size());
+        assertEquals("東京", tokens.get(0).getTokenString());
+        assertEquals(1, tokens.get(0).getNumStems());  // no extra stems
+        assertEquals("京都", tokens.get(1).getTokenString());
+        assertEquals(1, tokens.get(1).getNumStems());  // separate token, not a stem of previous
+    }
+
+    @Test
+    public void testShingleFilter() {
+        var parameters = new LinguisticsParameters(null, Language.ENGLISH, StemMode.ALL, false, true);
+        var registry = new ComponentRegistry<Analyzer>();
+        registry.register(new ComponentId(Language.ENGLISH.languageCode()), new ShingleAnalyzer());
+        LuceneLinguistics linguistics = new LuceneLinguistics(new LuceneAnalysisConfig.Builder().build(), registry);
+
+        // ShingleFilter with size 2, outputUnigrams=true produces:
+        // "a" (pos 1), "a b" (pos 1, same as "a"), "b" (pos 2), "b c" (pos 2), "c" (pos 3)
+        // Shingles at same position as their first unigram should be stems, not separate tokens
+        List<Token> tokens = iterableToList(linguistics.getTokenizer().tokenize("a b c", parameters));
+
+        // With default ShingleFilter (outputUnigrams=true, size 2):
+        // Position 1: "a" with stem "a b"
+        // Position 2: "b" with stem "b c"
+        // Position 3: "c"
+        assertEquals(3, tokens.size());
+        assertEquals("a", tokens.get(0).getTokenString());
+        assertEquals(2, tokens.get(0).getNumStems());  // "a" and "a b"
+        assertEquals("a b", tokens.get(0).getStem(1));
+        assertEquals("b", tokens.get(1).getTokenString());
+        assertEquals(2, tokens.get(1).getNumStems());  // "b" and "b c"
+        assertEquals("b c", tokens.get(1).getStem(1));
+        assertEquals("c", tokens.get(2).getTokenString());
+        assertEquals(1, tokens.get(2).getNumStems());  // just "c"
+    }
+
+    private static class ShingleAnalyzer extends Analyzer {
+
+        @Override
+        protected TokenStreamComponents createComponents(String fieldName) {
+            Tokenizer source = new WhitespaceTokenizer();
+            ShingleFilter filter = new ShingleFilter(source, 2, 2);
+            filter.setOutputUnigrams(true);
+            return new TokenStreamComponents(source, filter);
+        }
+    }
+
+    private static class CjkBigramAnalyzer extends Analyzer {
+
+        @Override
+        protected TokenStreamComponents createComponents(String fieldName) {
+            Tokenizer source = new StandardTokenizer();
+            TokenStream filter = new CJKBigramFilter(source);
+            return new TokenStreamComponents(source, filter);
+        }
+    }
+
+    private static class AsciiFoldingPreserveAnalyzer extends Analyzer {
+
+        @Override
+        protected TokenStreamComponents createComponents(String fieldName) {
+            Tokenizer source = new WhitespaceTokenizer();
+            TokenStream filter = new ASCIIFoldingFilter(source, true);  // preserveOriginal=true
+            return new TokenStreamComponents(source, filter);
+        }
+    }
+
+    private static class SingleWordSynonymAnalyzer extends Analyzer {
+
+        @Override
+        protected TokenStreamComponents createComponents(String fieldName) {
+            Tokenizer source = new WhitespaceTokenizer();
+            SynonymMap synonymMap;
+            try {
+                SynonymMap.Builder builder = new SynonymMap.Builder(true);
+                // car => car, automobile (unidirectional, keeping original)
+                builder.add(new CharsRef("car"), new CharsRef("car"), false);
+                builder.add(new CharsRef("car"), new CharsRef("automobile"), false);
+                synonymMap = builder.build();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            TokenStream filter = new SynonymGraphFilter(source, synonymMap, true);
+            return new TokenStreamComponents(source, filter);
+        }
+    }
+
+    private static class StopwordAnalyzer extends Analyzer {
+
+        @Override
+        protected TokenStreamComponents createComponents(String fieldName) {
+            Tokenizer source = new WhitespaceTokenizer();
+            CharArraySet stopwords = new CharArraySet(List.of("the"), true);
+            TokenStream filter = new StopFilter(source, stopwords);
+            return new TokenStreamComponents(source, filter);
+        }
+    }
+
     private static class MockAnalyzer extends Analyzer {
 
         @Override
@@ -87,6 +308,64 @@ public class LuceneTokenizerTest {
             Tokenizer source = new WhitespaceTokenizer();
             TokenStream filter = new DuplicateTokenFilter(source);
             return new TokenStreamComponents(source, filter);
+        }
+    }
+
+    private static class MultiWordSynonymAnalyzer extends Analyzer {
+
+        @Override
+        protected TokenStreamComponents createComponents(String fieldName) {
+            Tokenizer source = new WhitespaceTokenizer();
+            TokenStream filter = new MultiWordSynonymFilter(source);
+            return new TokenStreamComponents(source, filter);
+        }
+    }
+
+    /**
+     * A token filter simulating multi-word synonym: "nyc => new york city".
+     * All expanded tokens share the same offsets but have different position increments.
+     */
+    private static class MultiWordSynonymFilter extends TokenFilter {
+
+        private final CharTermAttribute term = addAttribute(CharTermAttribute.class);
+        private final PositionIncrementAttribute position = addAttribute(PositionIncrementAttribute.class);
+        private final OffsetAttribute offset = addAttribute(OffsetAttribute.class);
+
+        private final String[] expansion = {"new", "york", "city"};
+        private int expansionIndex = 0;
+        private boolean inExpansion = false;
+        private int savedStartOffset;
+        private int savedEndOffset;
+
+        protected MultiWordSynonymFilter(TokenStream input) {
+            super(input);
+        }
+
+        @Override
+        public boolean incrementToken() throws IOException {
+            if (inExpansion && expansionIndex < expansion.length) {
+                clearAttributes();
+                term.append(expansion[expansionIndex]);
+                offset.setOffset(savedStartOffset, savedEndOffset);
+                // First expansion token is at same position, rest advance
+                position.setPositionIncrement(expansionIndex == 0 ? 0 : 1);
+                expansionIndex++;
+                if (expansionIndex >= expansion.length) {
+                    inExpansion = false;
+                }
+                return true;
+            }
+
+            if (input.incrementToken()) {
+                if (term.toString().equalsIgnoreCase("nyc")) {
+                    savedStartOffset = offset.startOffset();
+                    savedEndOffset = offset.endOffset();
+                    inExpansion = true;
+                    expansionIndex = 0;
+                }
+                return true;
+            }
+            return false;
         }
     }
 

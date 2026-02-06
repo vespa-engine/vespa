@@ -2,7 +2,6 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import ai.vespa.metrics.StorageMetrics;
-import com.yahoo.lang.MutableBoolean;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Group;
@@ -22,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,8 +56,12 @@ public class NodeStateChangeChecker {
     private static final String DOCS_METRIC_NAME    = StorageMetrics.VDS_DATASTORED_BUCKET_SPACE_DOCS.baseName();
     private static final Map<String, String> DEFAULT_SPACE_METRIC_DIMENSIONS = Map.of("bucketSpace", "default");
 
+    public static final String STALE_ORCHESTRATOR_CONTEXT_MSG = "Another node in the group is in orchestrated Maintenance mode, " +
+            "but our decision context has changed since then. Must wait until node is back up and cluster is in sync to proceed.";
+
     private final int requiredRedundancy;
     private final HierarchicalGroupVisiting groupVisiting;
+    private final ContentCluster cluster;
     private final ClusterInfo clusterInfo;
     private final boolean inMoratorium;
     private final int maxNumberOfGroupsAllowedToBeDown;
@@ -65,6 +69,7 @@ public class NodeStateChangeChecker {
     public NodeStateChangeChecker(ContentCluster cluster, boolean inMoratorium) {
         this.requiredRedundancy = cluster.getDistribution().getRedundancy();
         this.groupVisiting = new HierarchicalGroupVisiting(cluster.getDistribution());
+        this.cluster = cluster;
         this.clusterInfo = cluster.clusterInfo();
         this.inMoratorium = inMoratorium;
         this.maxNumberOfGroupsAllowedToBeDown = cluster.maxNumberOfGroupsAllowedToBeDown();
@@ -130,7 +135,7 @@ public class NodeStateChangeChecker {
             return Optional.empty();
         }
         if (metrics.docs.isEmpty() || metrics.docs.get().getLast() == null) {
-            log.log(Level.WARNING, "Host info inconsistency: storage node %d reports entry count but not document count".formatted(nodeIndex));
+            log.log(Level.WARNING, String.format(Locale.ROOT, "Host info inconsistency: storage node %d reports entry count but not document count", nodeIndex));
             return Optional.of(disallow("The storage node host info reports stored entry count, but not document count"));
         }
         long lastEntries = metrics.entries.get().getLast();
@@ -138,20 +143,20 @@ public class NodeStateChangeChecker {
         if (lastEntries != 0) {
             long buckets    = metrics.buckets.map(Metrics.Value::getLast).orElse(-1L);
             long tombstones = lastEntries - lastDocs; // docs are a subset of entries, so |docs| <= |entries|
-            return Optional.of(disallow("The storage node stores %d documents and %d tombstones across %d buckets".formatted(lastDocs, tombstones, buckets)));
+            return Optional.of(disallow(String.format(Locale.ROOT, "The storage node stores %d documents and %d tombstones across %d buckets", lastDocs, tombstones, buckets)));
         }
         // At this point we believe we have zero entries. Cross-check with visible doc count; it should
         // always be present when an entry count of zero is present and transitively always be zero.
         if (lastDocs != 0) {
-            log.log(Level.WARNING, "Host info inconsistency: storage node %d reports 0 entries, but %d documents".formatted(nodeIndex, lastDocs));
-            return Optional.of(disallow("The storage node reports 0 entries, but %d documents".formatted(lastDocs)));
+            log.log(Level.WARNING, String.format(Locale.ROOT, "Host info inconsistency: storage node %d reports 0 entries, but %d documents", nodeIndex, lastDocs));
+            return Optional.of(disallow(String.format(Locale.ROOT, "The storage node reports 0 entries, but %d documents", lastDocs)));
         }
         return Optional.of(allow());
     }
 
     private static Result checkLegacyZeroBucketsStoredOnContentNode(long lastBuckets) {
         if (lastBuckets != 0) {
-            return disallow("The storage node manages %d buckets".formatted(lastBuckets));
+            return disallow(String.format(Locale.ROOT, "The storage node manages %d buckets", lastBuckets));
         }
         return allow();
     }
@@ -246,12 +251,10 @@ public class NodeStateChangeChecker {
             result = checkIfAnotherNodeInAnotherGroupHasWantedState(nodeInfo);
             if (result.notAllowed())
                 return Optional.of(result);
-            if (anotherNodeInGroupAlreadyAllowed(nodeInfo, description))
-                return Optional.of(allow());
+            return checkAnotherNodeInGroupAlreadyAllowed(nodeInfo, description);
         } else {
             return checkIfOtherNodesHaveWantedState(nodeInfo, description, clusterState);
         }
-        return Optional.empty();
     }
 
     private boolean isGroupedSetup() {
@@ -274,6 +277,7 @@ public class NodeStateChangeChecker {
      */
     private Result checkIfAnotherNodeInAnotherGroupHasWantedState(StorageNodeInfo nodeInfo) {
         SettableOptional<Result> anotherNodeHasWantedState = new SettableOptional<>();
+        // The visitor lambda is only invoked for leaf groups, so don't have to deal with nesting here
         groupVisiting.visit(group -> {
             if (! groupContainsNode(group, nodeInfo.getNode())) {
                 Result result = otherNodeInGroupHasWantedState(group);
@@ -306,8 +310,13 @@ public class NodeStateChangeChecker {
             return Optional.empty();
         }
 
-        Set<Integer> groupsWithSameStateAndDescription = groupsWithSameStateAndDescription(MAINTENANCE, description);
-        if (aGroupContainsNode(groupsWithSameStateAndDescription, node)) {
+        Map<Integer, List<NodeInfo>> groupsWithSameStateAndDescription = groupsToNodesWithSameStateAndDescription(MAINTENANCE, description);
+        if (aGroupContainsNode(groupsWithSameStateAndDescription.keySet(), node)) {
+            // Mapping must be present since we've passed the contains-check
+            List<NodeInfo> siblingNodesWithSameState = groupsWithSameStateAndDescription.get(nodeInfo.getGroup().getIndex());
+            if (!nodeStatesSetInCurrentOrchestrationDecisionGeneration(siblingNodesWithSameState)) {
+                return Optional.of(disallow(STALE_ORCHESTRATOR_CONTEXT_MSG));
+            }
             log.log(FINE, "Node is in group with same state and description, allow");
             return Optional.of(allow());
         }
@@ -334,7 +343,7 @@ public class NodeStateChangeChecker {
             return Optional.of(allow());
         }
 
-        return Optional.of(disallow(String.format("At most %d groups can have wanted state: %s",
+        return Optional.of(disallow(String.format(Locale.ROOT, "At most %d groups can have wanted state: %s",
                                                   maxNumberOfGroupsAllowedToBeDown,
                                                   sortSetIntoList(retiredAndNotUpGroups))));
     }
@@ -394,43 +403,48 @@ public class NodeStateChangeChecker {
             var storageNodeInfo = clusterInfo.getStorageNodeInfo(index);
             State storageNodeWantedState = storageNodeInfo.getUserWantedState().getState();
             if (storageNodeWantedState != UP) {
-                return disallow(message.formatted(storageNodeInfo.type(), index, storageNodeWantedState));
+                return disallow(String.format(Locale.ROOT, message, storageNodeInfo.type(), index, storageNodeWantedState));
             }
 
             var distributorNodeInfo = clusterInfo.getDistributorNodeInfo(index);
             State distributorWantedState = distributorNodeInfo.getUserWantedState().getState();
             if (distributorWantedState != UP) {
-                return disallow(message.formatted(distributorNodeInfo.type(), index, distributorWantedState));
+                return disallow(String.format(Locale.ROOT, message, distributorNodeInfo.type(), index, distributorWantedState));
             }
         }
 
         return allow();
     }
 
-    private boolean anotherNodeInGroupAlreadyAllowed(StorageNodeInfo nodeInfo, String newDescription) {
-        MutableBoolean alreadyAllowed = new MutableBoolean(false);
-
+    private Optional<Result> checkAnotherNodeInGroupAlreadyAllowed(StorageNodeInfo nodeInfo, String newDescription) {
+        SettableOptional<Result> alreadyAllowed = new SettableOptional<>();
         groupVisiting.visit(group -> {
             if (!groupContainsNode(group, nodeInfo.getNode()))
                 return true;
 
-            alreadyAllowed.set(anotherNodeInGroupAlreadyAllowed(group, nodeInfo.getNode(), newDescription));
-
+            List<NodeInfo> allowedNodes = nodesInGroupAlreadyAllowed(group, nodeInfo.getNode(), newDescription);
+            if (!allowedNodes.isEmpty()) {
+                if (nodeStatesSetInCurrentOrchestrationDecisionGeneration(allowedNodes)) {
+                    alreadyAllowed.set(allow());
+                } else {
+                    alreadyAllowed.set(disallow(STALE_ORCHESTRATOR_CONTEXT_MSG));
+                }
+            }
             // Have found the leaf group we were looking for, halt the visiting.
             return false;
         });
 
-        return alreadyAllowed.get();
+        return alreadyAllowed.asOptional();
     }
 
-    private boolean anotherNodeInGroupAlreadyAllowed(Group group, Node node, String newDescription) {
+    private List<NodeInfo> nodesInGroupAlreadyAllowed(Group group, Node node, String newDescription) {
         return group.getNodes().stream()
                 .filter(configuredNode -> configuredNode.index() != node.getIndex())
                 .map(configuredNode -> clusterInfo.getStorageNodeInfo(configuredNode.index()))
                 .filter(Objects::nonNull)  // needed for tests only
-                .map(NodeInfo::getUserWantedState)
-                .anyMatch(userWantedState -> userWantedState.getState() == State.MAINTENANCE &&
-                          Objects.equals(userWantedState.getDescription(), newDescription));
+                .filter(nodeInfo -> nodeInfo.getUserWantedState().getState() == State.MAINTENANCE &&
+                        Objects.equals(nodeInfo.getUserWantedState().getDescription(), newDescription))
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private static boolean groupContainsNode(Group group, Node node) {
@@ -464,12 +478,12 @@ public class NodeStateChangeChecker {
             State wantedState = nodeInfo.getUserWantedState().getState();
             if (wantedState != UP && wantedState != RETIRED)
                 return disallow("Another " + nodeInfo.type() + " wants state " +
-                                wantedState.toString().toUpperCase() + ": " + nodeInfo.getNodeIndex());
+                                wantedState.toString().toUpperCase(Locale.ROOT) + ": " + nodeInfo.getNodeIndex());
 
             State state = clusterState.getNodeState(nodeInfo.getNode()).getState();
             if (state != UP && state != RETIRED)
                 return disallow("Another " + nodeInfo.type() + " has state " +
-                                state.toString().toUpperCase() + ": " + nodeInfo.getNodeIndex());
+                                state.toString().toUpperCase(Locale.ROOT) + ": " + nodeInfo.getNodeIndex());
         }
 
         return allow();
@@ -576,19 +590,23 @@ public class NodeStateChangeChecker {
                 .orElseThrow();
     }
 
-    // groups with at least one node with the same state & description
-    private Set<Integer> groupsWithSameStateAndDescription(State state, String newDescription) {
+    private boolean nodeStatesSetInCurrentOrchestrationDecisionGeneration(Collection<NodeInfo> nodeInfos) {
+        return nodeInfos.stream().allMatch(nodeInfo -> {
+            // Only consider node a match if its wanted state decision was made in the
+            // same orchestration context that the current decision will be made in.
+            return nodeInfo.wantedStateOrchestrationGeneration() == cluster.orchestrationGeneration();
+        });
+    }
+
+    private Map<Integer, List<NodeInfo>> groupsToNodesWithSameStateAndDescription(State state, String newDescription) {
         return clusterInfo.getAllNodeInfos().stream()
-                          .filter(nodeInfo -> {
-                              var userWantedState = nodeInfo.getUserWantedState();
-                              return userWantedState.getState() == state &&
-                                      Objects.equals(userWantedState.getDescription(), newDescription);
-                          })
-                          .map(NodeInfo::getGroup)
-                          .filter(Objects::nonNull)
-                          .filter(Group::isLeafGroup)
-                          .map(Group::getIndex)
-                          .collect(Collectors.toSet());
+                .filter(nodeInfo -> {
+                    var userWantedState = nodeInfo.getUserWantedState();
+                    return userWantedState.getState() == state &&
+                            Objects.equals(userWantedState.getDescription(), newDescription);
+                })
+                .filter(nodeInfo -> nodeInfo.getGroup() != null && nodeInfo.getGroup().isLeafGroup())
+                .collect(Collectors.groupingBy(nodeInfo -> nodeInfo.getGroup().getIndex()));
     }
 
     // groups with at least one node in state (not retired AND not up)

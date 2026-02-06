@@ -3,6 +3,7 @@
 #include "attributefilesavetarget.h"
 #include "attributevector.h"
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/error.h>
@@ -132,7 +133,7 @@ uint64_t
 AttributeFileSaveTarget::size_on_disk() const noexcept
 {
     uint64_t result = _datWriter.size_on_disk() + _idxWriter.size_on_disk() + _weightWriter.size_on_disk() +
-                      _udatWriter.size_on_disk();
+                      _udatWriter.size_on_disk() + DiskSpaceCalculator::directory_placeholder_size();
     for (auto & writer : _writers) {
         result += writer.second->size_on_disk();
     }

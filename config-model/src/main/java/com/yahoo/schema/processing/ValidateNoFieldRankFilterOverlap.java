@@ -42,9 +42,8 @@ public class ValidateNoFieldRankFilterOverlap extends Processor {
                 boolean hasExplicitFilterThreshold = rp.explicitFieldRankFilterThresholds().containsKey(field.getName());
                 if (isFilter && hasExplicitFilterThreshold) {
                     throw newProcessException(schema.getName(), field.getName(),
-                            ("rank profile '%s' declares field as `rank %s { filter-threshold:... }`, but field " +
-                             "is also declared as `rank: filter`. These declarations are mutually exclusive.")
-                             .formatted(rp.name(), field.getName()));
+                            String.format(java.util.Locale.ROOT, ("rank profile '%s' declares field as `rank %s { filter-threshold:... }`, but field " +
+                             "is also declared as `rank: filter`. These declarations are mutually exclusive."), rp.name(), field.getName()));
                 }
             }
         }

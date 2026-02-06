@@ -65,9 +65,9 @@ MmapFileAllocator::alloc_area(size_t sz) const
     if (offset != FileAreaFreeList::bad_offset) {
         return offset;
     }
-    offset = _end_offset;
-    _end_offset += sz;
-    _file.resize(_end_offset);
+    offset = _end_offset.load(std::memory_order_relaxed);
+    _end_offset.store(offset + sz, std::memory_order_relaxed);
+    _file.resize(offset + sz);
     return offset;
 }
 
@@ -199,6 +199,13 @@ size_t
 MmapFileAllocator::resize_inplace(PtrAndSize, size_t) const
 {
     return 0;
+}
+
+uint64_t
+MmapFileAllocator::get_size_on_disk() const noexcept
+{
+    constexpr uint32_t directory_placeholder_size = 4_Ki;
+    return directory_placeholder_size + _end_offset.load(std::memory_order_relaxed);
 }
 
 }

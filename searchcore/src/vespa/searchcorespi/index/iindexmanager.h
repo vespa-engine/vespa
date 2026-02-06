@@ -7,6 +7,7 @@
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/serialnum.h>
 
+namespace searchcorespi::common { class ResourceUsage; }
 namespace vespalib { class IDestructorCallback; }
 namespace document { class Document; }
 
@@ -180,6 +181,7 @@ public:
      */
     virtual search::IndexStats get_index_stats(bool clear_disk_io_stats) const = 0;
 
+    virtual searchcorespi::common::ResourceUsage get_resource_usage() const = 0;
     /**
      * Returns the list of all flush targets contained in this index manager.
      *

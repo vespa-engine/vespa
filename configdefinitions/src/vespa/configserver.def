@@ -7,7 +7,7 @@ httpport int default=19071
 # 0 means use the number of CPU cores available
 numRpcThreads int default=0
 
-# ZooKeeper
+# ZooKeeper / Curator settings
 zookeeperserver[].hostname string
 zookeeperserver[].port int default=2181
 # ZK write timeout in seconds, must be long enough to write application packages to other nodes
@@ -16,6 +16,7 @@ zookeeperLocalhostAffinity bool default=true
 sessionLifetime long default=3600 # in seconds
 # How long to wait for all ZooKeeper servers to reach barrier after quorum has reached barrier. In seconds
 barrierWaitForAllTimeout long default=5
+applicationLockTimeoutSeconds long default=60
 
 # Directories
 configModelPluginDir[] string

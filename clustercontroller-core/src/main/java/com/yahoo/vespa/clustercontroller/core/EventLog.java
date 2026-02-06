@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -118,7 +119,7 @@ public class EventLog implements EventLogInterface {
               .append(RealTimer.printDate(currentTime - recentTimePeriod, tz)).append(".</p>\n");
         }
         sb.append("<table border=\"1\" cellspacing=\"0\">\n")
-          .append("<tr><td>Date (").append(tz.getDisplayName(false, TimeZone.SHORT))
+          .append("<tr><td>Date (").append(tz.getDisplayName(false, TimeZone.SHORT, Locale.ROOT))
                 .append(")</td><td>Type</td><td>Node</td><td>Bucket space</td><td>Event</td></tr>\n");
         int nr = 0;
         Iterator<Event> eventIterator = events.descendingIterator();

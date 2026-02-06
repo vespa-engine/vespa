@@ -3,6 +3,7 @@ package com.yahoo.security.token;
 
 import com.yahoo.security.HKDF;
 
+import java.util.Locale;
 import java.util.Objects;
 
 import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
@@ -68,7 +69,7 @@ public class Token {
     public String toString() {
         // Avoid leaking raw token secret as part of toString() output
         // Fingerprint first, since that's the most important bit.
-        return "Token(fingerprint: %s, domain: %s)".formatted(fingerprint, domain);
+        return String.format(Locale.ROOT, "Token(fingerprint: %s, domain: %s)", fingerprint, domain);
     }
 
     /**

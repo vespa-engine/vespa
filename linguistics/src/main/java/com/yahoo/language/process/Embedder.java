@@ -65,6 +65,19 @@ public interface Embedder {
      */
     Tensor embed(String text, Context context, TensorType tensorType);
 
+    /**
+     * Same as {@link #embed(String, Context, TensorType)}, but operates on a list of text strings.
+     * This will typically be the chunks of a multi-value document field.
+     * Embedders supporting contextualized chunk embeddings or batch processing may override this method.
+     *
+     * @see #embed(String, Context, TensorType)
+     */
+    default List<Tensor> embed(List<String> texts, Context context, TensorType tensorType) {
+        return texts.stream()
+                .map(text -> embed(text, context, tensorType))
+                .toList();
+    }
+
     class Context extends InvocationContext<Context> {
 
         public Context(String destination) {
@@ -103,11 +116,17 @@ public interface Embedder {
         void sampleEmbeddingLatency(double millis, Context ctx);
         /** Add a sample embedding length to this */
         void sampleSequenceLength(long length, Context ctx);
+        /** Add a sample request count to this */
+        void sampleRequestCount(Context ctx);
+        /** Add a sample request failure to this */
+        void sampleRequestFailure(Context ctx, int statusCode);
 
         static Runtime testInstance() {
             return new Runtime() {
                 @Override public void sampleEmbeddingLatency(double millis, Context ctx) { }
                 @Override public void sampleSequenceLength(long length, Context ctx) { }
+                @Override public void sampleRequestCount(Context ctx) { }
+                @Override public void sampleRequestFailure(Context ctx, int statusCode) { }
             };
         }
     }

@@ -7,9 +7,13 @@
 ./bundle-plugin-test/* @gjoranv
 ./bundle-plugin/* @gjoranv
 ./client/go/* @evgiz @arnej27959
-./cloud-tenant-base-dependencies-enforcer/* @bjorncs
-./cloud-tenant-base/* @bjorncs
-./cloud-tenant-cd/* @bjorncs
+./cloud/cloud-tenant-base/* @bjorncs
+./cloud/cloud-tenant-cd/* @bjorncs
+./cloud/hosted-api/* @hmusum
+./cloud/hosted-tenant-base/* @bjorncs
+./cloud/tenant-cd-api/* @hmusum
+./cloud/tenant-cd-commons/* @bjorncs
+./cloud/vespa-maven-plugin/* @hmusum
 ./clustercontroller-apps/* @vekterli @hakonhall
 ./clustercontroller-core/* @vekterli @hakonhall @hmusum
 ./clustercontroller-utils/* @vekterli @hakonhall
@@ -29,7 +33,6 @@
 ./configserver-flags/* @hakonhall
 ./configserver/* @hmusum
 ./configutil/* @hmusum
-./container-core/* @arnej27959 @bjorncs @gjoranv
 ./container-dependencies-enforcer/* @gjoranv
 ./container-dev/* @gjoranv
 ./container-disc/* @gjoranv
@@ -55,14 +58,11 @@
 ./flags/* @hakonhall
 ./fnet/* @havardpe
 ./fsa/* @hmusum
-./hosted-api/* @hmusum
-./hosted-tenant-base/* @bjorncs
 ./hosted-zone-api/* @bjorncs
 ./http-client/* @hmusum
 ./http-utils/* @bjorncs
 ./indexinglanguage/* @glebashnik
 ./jaxrs_utils/* @hakonhall
-./jdisc-security-filters/* @bjorncs
 ./jdisc_core/* @gjoranv @bjorncs
 ./jdisc_core_test/* @gjoranv @bjorncs
 ./jrt/* @havardpe @arnej27959
@@ -73,7 +73,6 @@
 ./logforwarder/* @arnej27959
 ./logserver/* @arnej27959
 ./lowercasing_test/* @bjorncs
-./mcp-server/* @bjorncs @glebashnik
 ./messagebus/* @hmusum
 ./messagebus_test/* @hmusum
 ./metrics-proxy/* @gjoranv
@@ -132,20 +131,16 @@
 ./storage/* @vekterli
 ./storageserver/* @vekterli
 ./streamingvisitors/* @vekterli
-./tenant-cd-api/* @hmusum
-./tenant-cd-commons/* @bjorncs
 ./testutil/* @gjoranv
 ./vbench/* @havardpe
 ./vdslib/* @vekterli
 ./vespa-3party-bundles/* @gjoranv
 ./vespa-3party-jars/* @bjorncs
 ./vespa-application-maven-plugin/* @gjoranv
-./vespa-athenz/* @bjorncs
 ./vespa-dependencies-enforcer/* @bjorncs
 ./vespa-documentgen-plugin/* @kkraune
 ./vespa-feed-client-cli/* @bjorncs
 ./vespa-feed-client/* @bjorncs
-./vespa-maven-plugin/* @hmusum
 ./vespabase/* @hmusum @arnej27959
 ./vespaclient-container-plugin/* @bjorncs @vekterli
 ./vespaclient-core/* @bjorncs

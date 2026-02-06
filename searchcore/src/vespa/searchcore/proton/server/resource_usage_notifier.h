@@ -7,8 +7,8 @@
 #include "disk_mem_usage_metrics.h"
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
-#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <atomic>
@@ -59,7 +59,8 @@ private:
     // Following member variables are protected by _lock
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
-    TransientResourceUsage       _transient_usage;
+    uint64_t                     _reserved_disk_space;
+    searchcorespi::common::ResourceUsage _resource_usage;
     AttributeUsageStats          _attribute_usage;
     Config                       _config;
     ResourceUsageState           _usage_state;
@@ -70,6 +71,7 @@ private:
     void recalcState(const Guard &guard, bool disk_mem_sample); // called with _lock held
     double getMemoryUsedRatio(const Guard &guard) const;
     double getDiskUsedRatio(const Guard &guard) const;
+    double get_relative_reserved_disk_space(const Guard& guard) const;
     double get_relative_transient_memory_usage(const Guard& guard) const;
     double get_relative_transient_disk_usage(const Guard& guard) const;
     void notify_resource_usage(const Guard &guard, ResourceUsageState state, bool disk_mem_sample);
@@ -77,11 +79,13 @@ private:
 public:
     ResourceUsageNotifier(ResourceUsageWriteFilter& filter);
     ~ResourceUsageNotifier() override;
-    void set_resource_usage(const TransientResourceUsage& transient_usage, vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes);
+
+    void set_resource_usage(const searchcorespi::common::ResourceUsage& resource_usage, vespalib::ProcessMemoryStats memoryStats,
+                            uint64_t diskUsedSizeBytes, uint64_t reserved_disk_space);
     [[nodiscard]] bool setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
-    TransientResourceUsage get_transient_resource_usage() const;
+    searchcorespi::common::ResourceUsage get_resource_usage() const;
     Config getConfig() const;
     const vespalib::HwInfo &getHwInfo() const noexcept { return _hwInfo; }
     ResourceUsageState usageState() const;

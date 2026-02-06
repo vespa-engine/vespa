@@ -34,6 +34,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Location;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
+import com.yahoo.prelude.query.BlockItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DocumentFrequency;
@@ -942,12 +943,14 @@ public class YqlParser implements Parser {
         Language language = decideParsingLanguage(ast, wordData);
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.WEAKAND.toString(), "The overall query type of the user input");
+        QueryType queryType = buildQueryType(ast);
         if (USER_INPUT_GRAMMAR_RAW.equals(grammar)) {
-            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language);
+            return assignQueryType(instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language),
+                                   queryType);
         } else if (USER_INPUT_GRAMMAR_SEGMENT.equals(grammar)) {
-            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
+            return assignQueryType(instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language),
+                                   queryType);
         } else {
-            QueryType queryType = buildQueryType(ast);
             Item item = parseUserInput(queryType, defaultIndex, wordData, language, allowEmpty);
             propagateUserInputAnnotationsRecursively(ast, item);
 
@@ -969,6 +972,12 @@ public class YqlParser implements Parser {
         }
     }
 
+    private Item assignQueryType(Item item, QueryType queryType) {
+        if (item instanceof BlockItem)
+            ((BlockItem)item).setQueryType(queryType);
+        return item;
+    }
+
     private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
         var queryType = QueryType.from(Query.Type.WEAKAND);
         if (userQuery != null) {
@@ -984,6 +993,8 @@ public class YqlParser implements Parser {
 
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        null, "The overall query type of the user input");
+        if (USER_INPUT_GRAMMAR_RAW.equals(grammar) || USER_INPUT_GRAMMAR_SEGMENT.equals(grammar))
+            grammar = "linguistics"; // raw and segment are not separate types since they don't cause parsing - use linguistics to annotate the term
         if (grammar != null)
             queryType = QueryType.from(grammar);
 

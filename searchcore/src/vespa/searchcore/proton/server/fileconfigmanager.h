@@ -5,6 +5,8 @@
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <atomic>
+#include <unordered_map>
 
 class FNET_Transport;
 
@@ -18,7 +20,10 @@ private:
     std::string        _docTypeName;
     search::IndexMetaInfo   _info;
     ProtonConfigSP          _protonConfig;
+    std::unordered_map<SerialNum, uint64_t> _config_sizes_on_disk;
+    std::atomic<uint64_t>                   _size_on_disk;
 
+    void calc_initial_sizes_on_disk();
 public:
     /**
      * Creates a new file config manager.
@@ -75,6 +80,7 @@ public:
     void deserializeConfig(SerialNum serialNum, vespalib::nbostream &stream) override;
 
     void setProtonConfig(const ProtonConfigSP &protonConfig) override;
+    uint64_t get_size_on_disk() const override;
 };
 
 } // namespace proton

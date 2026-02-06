@@ -15,7 +15,7 @@ class CompressorTest {
 
     @Test
     void compresses_and_decompresses_input_using_zstd() {
-        byte[] inputData = "The quick brown fox jumps over the lazy dog".getBytes();
+        byte[] inputData = "The quick brown fox jumps over the lazy dog".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         Compressor compressor = new Compressor(CompressionType.ZSTD);
         Compressor.Compression compression = compressor.compress(CompressionType.ZSTD, inputData, Optional.empty());
         assertEquals(inputData.length, compression.uncompressedSize());

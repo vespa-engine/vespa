@@ -78,7 +78,7 @@ class Model {
                     if (ds.isHosted() && modelId != null) {
                         return fromParams(ds, onnxModel.name(), modelId + "-vocab", null, null, null, requiredTags);
                     }
-                    throw new IllegalArgumentException("'%s' must be specified".formatted(paramName));
+                    throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "'%s' must be specified", paramName));
                 });
     }
 

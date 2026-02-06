@@ -163,7 +163,7 @@ public class AcceptHeaderMatcher {
                     if (isTokenChar(ch)) {
                         yield lexToken();
                     }
-                    throw new IllegalArgumentException("failed to lex next token at index %d".formatted(tokStart));
+                    throw new IllegalArgumentException(String.format(Locale.ROOT, "failed to lex next token at index %d", tokStart));
                 }
             };
         }
@@ -336,7 +336,7 @@ public class AcceptHeaderMatcher {
             String type = token();
             expectAndAdvance(TokenType.FWD_SLASH);
             String subtype = token();
-            return new MediaType(type, subtype, "%s/%s".formatted(type, subtype));
+            return new MediaType(type, subtype, String.format(Locale.ROOT, "%s/%s", type, subtype));
         }
 
         /**
@@ -421,7 +421,7 @@ public class AcceptHeaderMatcher {
 
         private Token expectAndAdvance(TokenType expectedType) {
             if (mismatches(expectedType)) {
-                throw new IllegalArgumentException("Expected token of type %s, got %s".formatted(expectedType, lexer.peek().type));
+                throw new IllegalArgumentException(String.format(Locale.ROOT, "Expected token of type %s, got %s", expectedType, lexer.peek().type));
             }
             return advance();
         }

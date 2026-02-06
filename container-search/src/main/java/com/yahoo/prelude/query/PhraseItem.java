@@ -295,7 +295,15 @@ public class PhraseItem extends CompositeIndexedItem {
         var builder = SearchProtocol.ItemPhrase.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         for (var child : items()) {
-            builder.addChildren(child.toProtobuf(context));
+            if (child instanceof PhraseSegmentItem segment) {
+                // Mimic behavior of old encode function: Unpack PhraseSegmentItem
+                for (var segmentChild : segment.items()) {
+                    builder.addChildren(segmentChild.toProtobuf());
+                }
+            } else {
+                // Regular case: Just encode child
+                builder.addChildren(child.toProtobuf());
+            }
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemPhrase(builder.build())

@@ -45,7 +45,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         // In hosted Vespa we do not use the clusterName when setting up application ContainerCluster logging
         this(logType,
                 compressionType,
-             String.format("logs/vespa/access/%s.%s",
+             String.format(java.util.Locale.ROOT, "logs/vespa/access/%s.%s",
                            capitalize(logTypeAndClusterName(logType, clusterName)),
                            "%Y%m%d%H%M%S"),
                 null,
@@ -92,7 +92,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     }
 
     private static String capitalize(String name) {
-        return name.substring(0, 1).toUpperCase() + name.substring(1);
+        return name.substring(0, 1).toUpperCase(java.util.Locale.ROOT) + name.substring(1);
     }
 
     private static String logTypeAndClusterName(AccessLogType logType, Optional<String> clusterName) {

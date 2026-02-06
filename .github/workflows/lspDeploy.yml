@@ -67,6 +67,10 @@ jobs:
           INTELLIJ_PLUGIN_PERM: ${{ secrets.INTELLIJ_PLUGIN_PERM }}
           PLUGIN_ID: 18074
 
+      - name: Publish to open-vsx
+        working-directory: ./integration/schema-language-server/clients/vscode
+        run: npx ovsx publish 'vespa-language-support-${{ steps.retrieve_version.outputs.VERSION }}.vsix' -p ${{ secrets.OPEN_VSX_PAT }}
+
       - name: Prepare Github Release
         working-directory: ./integration/schema-language-server
         run: |

@@ -48,6 +48,8 @@ namespace search {
     }
 }
 
+namespace searchcorespi::common { class IResourceUsageProvider; }
+
 namespace vespa::config::search::core::internal { class InternalProtonType; }
 namespace metrics {
     class UpdateHook;
@@ -62,7 +64,6 @@ class DocumentDBReconfig;
 class ExecutorThreadingServiceStats;
 class IDocumentDBOwner;
 class ISharedThreadingService;
-class ITransientResourceUsageProvider;
 class ReplayThrottlingPolicy;
 class StatusReport;
 struct MetricsWireService;
@@ -139,7 +140,7 @@ private:
     std::shared_ptr<DDBState>                        _state;
     ResourceUsageForwarder                           _resource_usage_forwarder;
     AttributeUsageFilter                             _writeFilter;
-    std::shared_ptr<ITransientResourceUsageProvider> _transient_usage_provider;
+    std::shared_ptr<searchcorespi::common::IResourceUsageProvider> _resource_usage_provider;
     std::unique_ptr<FeedHandler>                     _feedHandler;
     DocumentSubDBCollection                          _subDBs;
     MaintenanceController                            _maintenanceController;
@@ -425,7 +426,7 @@ public:
     void enterOnlineState();
     void waitForOnlineState();
     IResourceUsageListener *resource_usage_forwarder() noexcept { return &_resource_usage_forwarder; }
-    std::shared_ptr<const ITransientResourceUsageProvider> transient_usage_provider();
+    std::shared_ptr<const searchcorespi::common::IResourceUsageProvider> resource_usage_provider();
     ExecutorThreadingService & getWriteService() { return _writeService; }
 
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);

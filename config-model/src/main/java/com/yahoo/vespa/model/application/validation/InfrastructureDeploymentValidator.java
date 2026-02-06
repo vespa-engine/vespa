@@ -22,7 +22,7 @@ public class InfrastructureDeploymentValidator implements Validator {
         if (TenantName.from("hosted-vespa").equals(context.model().applicationPackage().getApplicationId().tenant())) return;
         ConfigModelContext.ApplicationType applicationType = context.model().getAdmin().getApplicationType();
         if (applicationType != ConfigModelContext.ApplicationType.DEFAULT) {
-            log.warning("Tenant %s is not allowed to use application type %s".formatted(context.model().applicationPackage().getApplicationId().toFullString(), applicationType));
+            log.warning(String.format(java.util.Locale.ROOT, "Tenant %s is not allowed to use application type %s", context.model().applicationPackage().getApplicationId().toFullString(), applicationType));
             context.illegal("Tenant is not allowed to override application type");
         }
     }

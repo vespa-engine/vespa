@@ -67,7 +67,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
     public void it_generates_correct_config() throws IOException {
         Path certFile = securityFolder.resolve("foo.pem");
         Element clusterElem = DomBuilderTest.parse(
-                """ 
+                String.format(java.util.Locale.ROOT, """
                         <container version='1.0'>
                           <clients>
                             <client id="foo" permissions="read,write">
@@ -75,8 +75,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
                             </client>
                           </clients>
                         </container>
-                        """
-                        .formatted(applicationFolder.toPath().relativize(certFile).toString()));
+                        """, applicationFolder.toPath().relativize(certFile).toString()));
         X509Certificate certificate = createCertificate(certFile);
 
         buildModel(clusterElem);
@@ -125,7 +124,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
     public void it_rejects_files_without_certificates() throws IOException {
         Path certFile = securityFolder.resolve("foo.pem");
         Element clusterElem = DomBuilderTest.parse(
-                """ 
+                String.format(java.util.Locale.ROOT, """
                         <container version='1.0'>
                           <clients>
                             <client id="foo" permissions="read,write">
@@ -133,8 +132,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
                             </client>
                           </clients>
                         </container>
-                        """
-                        .formatted(applicationFolder.toPath().relativize(certFile).toString()));
+                        """, applicationFolder.toPath().relativize(certFile).toString()));
         Files.writeString(certFile, "effectively empty");
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> buildModel(clusterElem));
@@ -144,7 +142,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
     @Test
     public void it_rejects_invalid_client_ids() throws IOException {
         Element clusterElem = DomBuilderTest.parse(
-                """ 
+                """
                         <container version='1.0'>
                           <clients>
                             <client id="_foo" permissions="read,write">

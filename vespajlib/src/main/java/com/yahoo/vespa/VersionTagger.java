@@ -1,18 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
+import com.yahoo.text.Utf8;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -46,7 +47,7 @@ public class VersionTagger {
     private Map<String, String> readVtagMap(String path) {
         Map<String, String> map = new HashMap<>();
         try {
-            BufferedReader in = new BufferedReader(new FileReader(path));
+            BufferedReader in = new BufferedReader(Utf8.createReader(path));
             String line;
             while ((line = in.readLine()) != null) {
                 if (line.isBlank()) continue;
@@ -79,7 +80,7 @@ public class VersionTagger {
         String vtagmapPath = args[0];
         String packageName = args[1];
         String dirName = args[2] + "/" + packageName.replaceAll("\\.", "/");
-        Format format = args.length >= 4 ? Format.valueOf(args[3].toUpperCase()) : Format.SIMPLE;
+        Format format = args.length >= 4 ? Format.valueOf(args[3].toUpperCase(Locale.ROOT)) : Format.SIMPLE;
         File outDir = new File(dirName);
         if (!outDir.isDirectory() && !outDir.mkdirs()) {
             throw new IOException("could not create directory " + outDir);
@@ -90,18 +91,18 @@ public class VersionTagger {
         Path outPath = Path.of(outFile);
         Path tmpPath = Path.of(outFile + ".tmp");
         var out = Files.newOutputStream(tmpPath);
-        OutputStreamWriter writer = new OutputStreamWriter(out);
+        OutputStreamWriter writer = new OutputStreamWriter(out, java.nio.charset.StandardCharsets.UTF_8);
         System.err.println("generating: " + outFile);
 
         Map<String, String> vtagMap = readVtagMap(vtagmapPath);
-        writer.write(String.format("package %s;\n\n", packageName));
+        writer.write(String.format(Locale.ROOT, "package %s;\n\n", packageName));
 
         if (format == Format.VTAG) {
             writer.write("import java.time.Instant;\n");
             writer.write("import com.yahoo.component.Version;\n");
         }
 
-        writer.write(String.format("\npublic class %s {\n", className));
+        writer.write(String.format(Locale.ROOT, "\npublic class %s {\n", className));
         if (!vtagMap.containsKey(V_TAG_PKG)) {
             throw new RuntimeException("V_TAG_PKG not present in map file");
         }
@@ -109,9 +110,9 @@ public class VersionTagger {
             case SIMPLE:
                 String version = vtagMap.get(V_TAG_PKG);
                 String elements[] = version.split("\\.");
-                writer.write(String.format("    public static final int major = %s;\n", elements[0]));
-                writer.write(String.format("    public static final int minor = %s;\n", elements[1]));
-                writer.write(String.format("    public static final int micro = %s;\n", elements[2]));
+                writer.write(String.format(Locale.ROOT, "    public static final int major = %s;\n", elements[0]));
+                writer.write(String.format(Locale.ROOT, "    public static final int minor = %s;\n", elements[1]));
+                writer.write(String.format(Locale.ROOT, "    public static final int micro = %s;\n", elements[2]));
                 break;
             case VTAG:
                 long commitDateSecs = 0;
@@ -119,7 +120,7 @@ public class VersionTagger {
                     var key = entry.getKey();
                     var value = entry.getValue();
                     try {
-                        writer.write(String.format("    public static final String %s = \"%s\";\n", key, value));
+                        writer.write(String.format(Locale.ROOT, "    public static final String %s = \"%s\";\n", key, value));
                         if ("V_TAG_COMMIT_DATE".equals(key)) {
                             commitDateSecs = Long.parseLong(value);
                         }

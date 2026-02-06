@@ -56,4 +56,11 @@ SerializedFastValueAttribute::get_vectors(uint32_t docid) const noexcept
     return _tensorBufferStore.get_vectors(ref);
 }
 
+void
+SerializedFastValueAttribute::prefetch_vector(uint32_t docid) const noexcept
+{
+    const auto ref = acquire_entry_ref(docid);
+    _tensorBufferStore.prefetch_vectors(ref);
+}
+
 }

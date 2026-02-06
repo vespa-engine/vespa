@@ -20,6 +20,7 @@ import ai.vespa.schemals.parser.ast.functionElm;
 import ai.vespa.schemals.parser.ast.consumedExpressionElm;
 import ai.vespa.schemals.parser.ast.consumedFeatureListElm;
 import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
+import ai.vespa.schemals.parser.rankingexpression.ast.feature;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorGenerateBody;
 import ai.vespa.schemals.tree.Node.LanguageType;
@@ -214,7 +215,13 @@ public class CSTUtils {
                        currentNode.getPreviousSibling().getSymbol().getType() == SymbolType.TENSOR) {
                 // Edge case for tensor type in rank expression
                 return Optional.of(currentNode.getPreviousSibling().getSymbol());
+            } else if (currentNode.isASTInstance(feature.class) &&
+                       currentNode.get(0) != null &&
+                       currentNode.get(0).hasSymbol() &&
+                       currentNode.get(0).getSymbol().getType() == SymbolType.FOREACH) {
+                return Optional.of(currentNode.get(0).getSymbol());
             }
+                    
 
             currentNode = currentNode.getParent();
         }

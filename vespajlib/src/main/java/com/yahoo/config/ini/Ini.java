@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -52,13 +53,13 @@ public record Ini(SortedMap<String, SortedMap<String, String>> entries) {
 
     /** Write the text representation of this to given output */
     public void write(OutputStream output) {
-        PrintStream printer = new PrintStream(output, true);
+        PrintStream printer = new PrintStream(output, true, StandardCharsets.UTF_8);
         entries.forEach((section, sectionEntries) -> {
             if (!section.isEmpty()) {
-                printer.printf("[%s]\n", section);
+                printer.printf(Locale.ROOT, "[%s]\n", section);
             }
             sectionEntries.forEach((key, value) -> {
-                printer.printf("%s = %s\n", key, quote(value));
+                printer.printf(Locale.ROOT, "%s = %s\n", key, quote(value));
             });
             if (!section.equals(entries.lastKey())) {
                 printer.println();

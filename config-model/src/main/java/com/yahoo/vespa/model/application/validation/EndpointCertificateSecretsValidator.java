@@ -10,8 +10,7 @@ public class EndpointCertificateSecretsValidator implements Validator {
     @Override
     public void validate(Context context) {
         if (context.deployState().endpointCertificateSecrets().isPresent() && context.deployState().endpointCertificateSecrets().get().isMissing()) {
-            throw new CertificateNotReadyException("TLS enabled, but could not yet retrieve certificate version %s for application %s"
-                    .formatted(context.deployState().endpointCertificateSecrets().get().version(), context.deployState().getProperties().applicationId().serializedForm()));
+            throw new CertificateNotReadyException(String.format(java.util.Locale.ROOT, "TLS enabled, but could not yet retrieve certificate version %s for application %s", context.deployState().endpointCertificateSecrets().get().version(), context.deployState().getProperties().applicationId().serializedForm()));
         }
     }
 }

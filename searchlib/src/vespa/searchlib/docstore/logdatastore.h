@@ -107,6 +107,7 @@ public:
     uint64_t tentativeLastSyncToken() const override;
     vespalib::system_time getLastFlushTime() const override;
     size_t getDiskFootprint() const override;
+    uint64_t get_size_on_disk() const override;
     size_t getDiskHeaderFootprint() const override;
     size_t getDiskBloat() const override;
     size_t getMaxSpreadAsBloat() const override;

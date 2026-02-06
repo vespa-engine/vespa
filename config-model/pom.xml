@@ -185,12 +185,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>jrt</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -277,12 +271,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>searchsummary</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc-security-filters</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>at.yawk.lz4</groupId>

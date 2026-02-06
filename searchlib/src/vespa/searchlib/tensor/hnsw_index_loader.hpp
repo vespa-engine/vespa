@@ -34,6 +34,8 @@ HnswIndexLoader<ReaderType, type>::HnswIndexLoader(HnswGraph<type>& graph, IdMap
       _id_mapping(id_mapping)
 {
     init();
+
+    graph.nodes.reserve(_num_nodes);
 }
 
 template <typename ReaderType, HnswIndexType type>
@@ -50,9 +52,9 @@ HnswIndexLoader<ReaderType, type>::load_next()
             _graph.make_node(_nodeid, docid, subspace, num_levels);
             for (uint32_t level = 0; level < num_levels; ++level) {
                 uint32_t num_links = next_int();
-                _link_array.clear();
-                while (num_links-- > 0) {
-                    _link_array.push_back(next_int());
+                _link_array.resize(num_links);
+                if (num_links != 0) {
+                    next_N_ints(_link_array.data(), num_links);
                 }
                 _graph.set_link_array(_nodeid, level, _link_array);
             }

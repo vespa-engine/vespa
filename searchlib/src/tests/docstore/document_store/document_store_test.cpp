@@ -26,6 +26,7 @@ struct NullDataStore : IDataStore {
     size_t memoryUsed() const override { return 0; }
     size_t memoryMeta() const override { return 0; }
     size_t getDiskFootprint() const override { return 0; }
+    uint64_t get_size_on_disk() const override { return 0; }
     size_t getDiskBloat() const override { return 0; }
     size_t getMaxSpreadAsBloat() const override { return 0; }
     uint64_t lastSyncToken() const override { return 0; }
@@ -34,7 +35,7 @@ struct NullDataStore : IDataStore {
     void accept(IDataStoreVisitor &, IDataStoreVisitorProgress &, bool) override { }
     double getVisitCost() const override { return 1.0; }
     DataStoreStorageStats getStorageStats() const override {
-        return DataStoreStorageStats(0, 0, 0.0, 0, 0, 0);
+        return DataStoreStorageStats(0, 0, 0, 0.0, 0, 0, 0);
     }
     vespalib::MemoryUsage getMemoryUsage() const override { return vespalib::MemoryUsage(); }
     std::vector<DataStoreFileChunkStats>

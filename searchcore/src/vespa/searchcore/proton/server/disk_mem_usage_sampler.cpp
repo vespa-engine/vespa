@@ -3,24 +3,30 @@
 #include "disk_mem_usage_sampler.h"
 #include "resource_usage_write_filter.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
+#include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
+#include <vespa/searchcorespi/common/i_resource_usage_provider.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <filesystem>
+
+using searchcorespi::common::IResourceUsageProvider;
+using searchcorespi::common::ResourceUsage;
 
 using vespalib::makeLambdaTask;
 
 namespace proton {
 
 DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, ResourceUsageWriteFilter& filter,
-                                         ResourceUsageNotifier& resource_usage_notifier)
+                                         ResourceUsageNotifier& resource_usage_notifier,
+                                         const IReservedDiskSpaceProvider& reserved_disk_space_provider)
     : _filter(filter),
       _notifier(resource_usage_notifier),
+      _reserved_disk_space_provider(reserved_disk_space_provider),
       _path(path_in),
       _sampleInterval(60s),
       _lastSampleTime(),
       _lock(),
-      _transient_usage_providers(),
+      _resource_usage_providers(),
       _periodicHandle()
 {
 }
@@ -58,7 +64,7 @@ DiskMemUsageSampler::setConfig(const Config &config, IScheduledExecutor & execut
 void
 DiskMemUsageSampler::sampleAndReportUsage()
 {
-    TransientResourceUsage transientUsage = sample_transient_resource_usage();
+    ResourceUsage resource_usage = sample_resource_usage();
     /* It is important that transient resource usage is sampled first. This prevents
      * a false positive where we report a too high disk or memory usage causing
      * either feed blocked, or an alert due to metric spike.
@@ -67,7 +73,8 @@ DiskMemUsageSampler::sampleAndReportUsage()
      */
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
     uint64_t diskUsage = sampleDiskUsage();
-    _notifier.set_resource_usage(transientUsage, memoryStats, diskUsage);
+    uint64_t reserved_disk_space = _reserved_disk_space_provider.get_reserved_disk_space();
+    _notifier.set_resource_usage(resource_usage, memoryStats, diskUsage, reserved_disk_space);
     _lastSampleTime = vespalib::steady_clock::now();
 }
 
@@ -145,33 +152,33 @@ DiskMemUsageSampler::sampleMemoryUsage()
     return vespalib::ProcessMemoryStats::create(0.01);
 }
 
-TransientResourceUsage
-DiskMemUsageSampler::sample_transient_resource_usage()
+ResourceUsage
+DiskMemUsageSampler::sample_resource_usage()
 {
-    TransientResourceUsage transient_usage;
+    ResourceUsage resource_usage;
     {
         std::lock_guard<std::mutex> guard(_lock);
-        for (auto provider : _transient_usage_providers) {
-            transient_usage.merge(provider->get_transient_resource_usage());
+        for (auto provider : _resource_usage_providers) {
+            resource_usage.merge(provider->get_resource_usage());
         }
     }
-    return transient_usage;
+    return resource_usage;
 }
 
 void
-DiskMemUsageSampler::add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider)
+DiskMemUsageSampler::add_resource_usage_provider(std::shared_ptr<const IResourceUsageProvider> provider)
 {
     std::lock_guard<std::mutex> guard(_lock);
-    _transient_usage_providers.push_back(provider);
+    _resource_usage_providers.push_back(provider);
 }
 
 void
-DiskMemUsageSampler::remove_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider)
+DiskMemUsageSampler::remove_resource_usage_provider(std::shared_ptr<const IResourceUsageProvider> provider)
 {
     std::lock_guard<std::mutex> guard(_lock);
-    for (auto itr = _transient_usage_providers.begin(); itr != _transient_usage_providers.end(); ++itr) {
+    for (auto itr = _resource_usage_providers.begin(); itr != _resource_usage_providers.end(); ++itr) {
         if (*itr == provider) {
-            _transient_usage_providers.erase(itr);
+            _resource_usage_providers.erase(itr);
             break;
         }
     }
