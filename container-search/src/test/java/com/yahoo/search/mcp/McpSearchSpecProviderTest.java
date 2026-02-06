@@ -1,4 +1,5 @@
-package ai.vespa.mcp;
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.search.mcp;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.search.Searcher;
@@ -10,20 +11,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for the McpTools class.
+ * Unit tests for the McpSearchSpecProvider class.
  *
  * @author Edvard Dingsør
  */
-public class McpToolsTest {
+public class McpSearchSpecProviderTest {
 
-    private McpTools mcpTools;
+    private McpSearchSpecProvider mcpSearchSpec;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
@@ -41,37 +41,33 @@ public class McpToolsTest {
         when(mockSearchChainRegistry.getChain("native")).thenReturn(mockSearchChain);
         when(mockSchemaInfo.schemas()).thenReturn(Map.of());
 
-        mcpTools = new McpTools(mockExecutionFactory, mockQueryProfileRegistry);
+        mcpSearchSpec = new McpSearchSpecProvider(mockExecutionFactory, mockQueryProfileRegistry);
     }
 
     @Test
-    public void testGetSchemasReturnsEmptyMapWhenNoSchemas() {
-        Map<String, Object> result = mcpTools.getSchemas();
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+    public void testToolSpecsAreRegistered() {
+        var toolSpecs = mcpSearchSpec.getToolSpecs();
+        assertNotNull(toolSpecs);
+        assertEquals(3, toolSpecs.size());
+
+        // Verify expected tools are registered
+        var toolNames = toolSpecs.stream().map(spec -> spec.tool().name()).toList();
+        assertTrue(toolNames.contains("getSchemas"));
+        assertTrue(toolNames.contains("executeQuery"));
+        assertTrue(toolNames.contains("readQueryExamples"));
     }
 
     @Test
-    public void testReadQueryExamplesReturnsString() {
-        String examples = mcpTools.readQueryExamples();
-        System.out.println(examples);
-        assertNotNull(examples);
-        assertFalse(examples.isEmpty());
+    public void testResourceSpecsAreRegistered() {
+        var resourceSpecs = mcpSearchSpec.getResourceSpecs();
+        assertNotNull(resourceSpecs);
+        assertEquals(1, resourceSpecs.size());
     }
 
     @Test
-    public void testGetDocumentationWithValidInput() {
-        // This tests the HTTP client functionality
-        Map<String, Object> result = mcpTools.getDocumentation("vespa search");
-        assertNotNull(result);
-    }
-
-    @Test
-    public void testGetSchemasWithSpecificSchemaNames() {
-        List<String> schemaNames = List.of("nonexistent_schema");
-        Map<String, Object> result = mcpTools.getSchemas(schemaNames);
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("Schema not found", result.get("nonexistent_schema"));
+    public void testPromptSpecsAreRegistered() {
+        var promptSpecs = mcpSearchSpec.getPromptSpecs();
+        assertNotNull(promptSpecs);
+        assertEquals(1, promptSpecs.size());
     }
 }
