@@ -3,6 +3,7 @@
 #include "indexmanager.h"
 #include "diskindexwrapper.h"
 #include "memoryindexwrapper.h"
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchcorespi/index/indexmaintainerconfig.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/diskindex/fusion.h>
@@ -20,6 +21,7 @@ using search::TuneFileSearch;
 using searchcorespi::index::IDiskIndex;
 using search::diskindex::IPostingListCache;
 using search::diskindex::SelectorArray;
+using searchcorespi::common::ResourceUsage;
 using searchcorespi::index::IndexMaintainerConfig;
 using searchcorespi::index::WarmupConfig;
 using searchcorespi::index::IndexMaintainerContext;
@@ -101,6 +103,12 @@ void
 IndexManager::compactLidSpace(uint32_t lidLimit, SerialNum serialNum)
 {
     _maintainer.compactLidSpace(lidLimit, serialNum);
+}
+
+ResourceUsage
+IndexManager::get_resource_usage() const
+{
+    return _maintainer.get_resource_usage();
 }
 
 } // namespace proton

@@ -58,7 +58,7 @@ public:
 
     void asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const override;
 
-    ResourceUsage get_resource_usage() const override;
+    searchcorespi::common::ResourceUsage get_resource_usage() const override;
 };
 
 } // namespace proton

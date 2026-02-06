@@ -4,25 +4,31 @@
 
 #include "transient_resource_usage.h"
 
-namespace proton {
+namespace searchcorespi::common {
 
 /**
  * Class containing resource usage (currently only transient resource usage).
  */
 class ResourceUsage {
     TransientResourceUsage _transient;
+    uint64_t               _disk;
 public:
     ResourceUsage() noexcept
-        : _transient()
+        : _transient(),
+          _disk(0)
     {}
-    explicit ResourceUsage(const TransientResourceUsage& transient_in) noexcept
-        : _transient(transient_in)
+    explicit ResourceUsage(const TransientResourceUsage& transient_in, uint64_t disk_in) noexcept
+        : _transient(transient_in),
+          _disk(disk_in)
     {}
 
-    size_t transient_disk() const noexcept { return _transient.disk(); }
+    const TransientResourceUsage& transient() const noexcept { return _transient; }
+    uint64_t transient_disk() const noexcept { return _transient.disk(); }
     size_t transient_memory() const noexcept { return _transient.memory(); }
+    uint64_t disk() const noexcept { return _disk; }
     void merge(const ResourceUsage& rhs) noexcept {
         _transient.merge(rhs._transient);
+        _disk += rhs.disk();
     }
 };
 

@@ -9,12 +9,12 @@
 namespace search { class AttributeVector; }
 
 namespace search::common { class FileHeaderContext; }
+namespace searchcorespi::common { class ResourceUsage; }
 namespace vespalib { class ISequencedTaskExecutor; }
 
 namespace proton {
 
 class AttributeDirectory;
-class ResourceUsage;
 
 /**
  * Implementation of IFlushTarget interface for attribute vectors.
@@ -63,7 +63,7 @@ public:
 
     void setCleanUpAfterFlush(bool cleanUp) { _cleanUpAfterFlush = cleanUp; }
 
-    ResourceUsage get_resource_usage() const;
+    searchcorespi::common::ResourceUsage get_resource_usage() const;
 
     // Implements IFlushTarget
     MemoryGain getApproxMemoryGain() const override;

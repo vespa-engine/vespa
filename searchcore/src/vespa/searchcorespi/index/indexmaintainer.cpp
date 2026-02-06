@@ -14,6 +14,7 @@
 #include "indexwriteutilities.h"
 #include "index_disk_dir.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
@@ -39,6 +40,8 @@ using search::common::FileHeaderContext;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
 using search::SerialNum;
+using searchcorespi::common::ResourceUsage;
+using searchcorespi::common::TransientResourceUsage;
 using vespalib::makeLambdaTask;
 using vespalib::makeSharedLambdaCallback;
 using std::ostringstream;
@@ -1333,6 +1336,17 @@ IndexMaintainer::get_index_stats(bool clear_disk_io_stats) const
     lock.unlock();
     stats.fusion_size_on_disk(_disk_indexes->get_transient_size(*_layout));
     return stats;
+}
+
+ResourceUsage
+IndexMaintainer::get_resource_usage() const
+{
+    // Transient disk usage is measured as the total disk usage of all current fusion indexes.
+    // Transient memory usage is measured as the total memory usage of all memory indexes.
+    auto stats = get_index_stats(false);
+    constexpr uint64_t zero_size_on_disk = 0;
+    return ResourceUsage{TransientResourceUsage{stats.fusion_size_on_disk(), stats.memoryUsage().allocatedBytes()},
+                         zero_size_on_disk};
 }
 
 }

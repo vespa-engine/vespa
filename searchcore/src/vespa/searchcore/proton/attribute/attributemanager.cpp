@@ -10,10 +10,10 @@
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
-#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -42,6 +42,7 @@ using search::attribute::IAttributeVector;
 using search::common::FileHeaderContext;
 using search::attribute::BasicType;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::ResourceUsage;
 
 namespace proton {
 

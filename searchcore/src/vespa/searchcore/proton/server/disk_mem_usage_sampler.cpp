@@ -4,10 +4,13 @@
 #include "resource_usage_write_filter.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 #include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
-#include <vespa/searchcore/proton/common/i_resource_usage_provider.h>
+#include <vespa/searchcorespi/common/i_resource_usage_provider.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
+
+using searchcorespi::common::IResourceUsageProvider;
+using searchcorespi::common::ResourceUsage;
 
 using vespalib::makeLambdaTask;
 
