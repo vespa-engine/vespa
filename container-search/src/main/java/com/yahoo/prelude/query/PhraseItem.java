@@ -298,11 +298,11 @@ public class PhraseItem extends CompositeIndexedItem {
             if (child instanceof PhraseSegmentItem segment) {
                 // Mimic behavior of old encode function: Unpack PhraseSegmentItem
                 for (var segmentChild : segment.items()) {
-                    builder.addChildren(segmentChild.toProtobuf());
+                    builder.addChildren(segmentChild.toProtobuf(context));
                 }
             } else {
                 // Regular case: Just encode child
-                builder.addChildren(child.toProtobuf());
+                builder.addChildren(child.toProtobuf(context));
             }
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
