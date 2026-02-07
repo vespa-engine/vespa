@@ -91,7 +91,7 @@ public class RelatedDocumentsByNearestNeighborSearcherTestCase {
         var nnItem = (NearestNeighborItem) positive;
         assertEquals("embedding", nnItem.getIndexName());
         // Default: hits=10, offset=0 -> targetHits=10, exploreAdditionalHits=100
-        assertEquals(10, nnItem.getTargetNumHits());
+        assertEquals(10, nnItem.getTargetHits());
         assertEquals(100, nnItem.getHnswExploreAdditionalHits());
         assertTrue(nnItem.getAllowApproximate());
     }
@@ -127,7 +127,7 @@ public class RelatedDocumentsByNearestNeighborSearcherTestCase {
         var root = capturedQuery[0].getModel().getQueryTree().getRoot();
         var nnItem = findNearestNeighborItem(root);
         assertNotNull(nnItem);
-        assertEquals(25, nnItem.getTargetNumHits());
+        assertEquals(25, nnItem.getTargetHits());
         assertEquals(50, nnItem.getHnswExploreAdditionalHits());
     }
 
