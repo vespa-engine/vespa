@@ -76,8 +76,8 @@ public class NearItem extends CompositeItem {
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         IntegerCompressor.putCompressedPositiveNumber(distance, buffer);
         if (numNegativeItems != 0 && !ProtobufSerialization.isProtobufAlsoSerialized()) {
             throw new IllegalArgumentException("cannot serialize negative items in old protocol");
@@ -120,13 +120,13 @@ public class NearItem extends CompositeItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemNear.newBuilder();
         builder.setDistance(distance);
         builder.setNumNegativeTerms(numNegativeItems);
         builder.setExclusionDistance(exclusionDistance);
         for (var child : items()) {
-            builder.addChildren(child.toProtobuf());
+            builder.addChildren(child.toProtobuf(context));
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemNear(builder.build())

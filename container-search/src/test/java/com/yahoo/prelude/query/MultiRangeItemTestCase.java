@@ -215,7 +215,7 @@ public class MultiRangeItemTestCase {
         ByteBuffer pointsBuffer = ByteBuffer.allocate(25);
         MultiRangeItem<Double> pointsItem = MultiRangeItem.overPoints(NumberType.DOUBLE, "i", EXCLUSIVE, INCLUSIVE)
                                                           .addRange(NEGATIVE_INFINITY, POSITIVE_INFINITY);
-        pointsItem.encode(pointsBuffer);
+        pointsItem.encode(pointsBuffer, new SerializationContext(1.0));
 
         ByteBuffer expected = ByteBuffer.allocate(25);
         expected.put((byte) 0b00000111); // ItemType.MULTI_TERM
@@ -241,7 +241,7 @@ public class MultiRangeItemTestCase {
                                                           .addPoint(      -0.0)
                                                           .addRange( 1.0,  2.0)
                                                           .addRange(-1.0, -0.5);
-        rangesItem.encode(rangesBuffer);
+        rangesItem.encode(rangesBuffer, new SerializationContext(1.0));
 
         ByteBuffer expected = ByteBuffer.allocate(59);
         expected.put((byte) 0b00000111); // ItemType.MULTI_TERM
@@ -273,7 +273,7 @@ public class MultiRangeItemTestCase {
                                                           .addPoint(                0)
                                                           .addRange( 1, (1 << 29) - 1)
                                                           .addRange(-1,            -0);
-        rangesItem.encode(rangesBuffer);
+        rangesItem.encode(rangesBuffer, new SerializationContext(1.0));
 
         ByteBuffer expected = ByteBuffer.allocate(24);
         expected.put((byte) 0b00000111);              // ItemType.MULTI_TERM

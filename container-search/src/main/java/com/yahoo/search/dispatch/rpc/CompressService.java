@@ -12,10 +12,10 @@ import com.yahoo.search.Query;
  * @author baldersheim
  */
 public class CompressService implements CompressPayload {
+
     /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
     public static final CompoundName dispatchCompression = CompoundName.from("dispatch.compression");
     private final Compressor compressor = new Compressor(CompressionType.LZ4, 5, 0.95, 256);
-
 
     @Override
     public Compressor.Compression compress(Query query, byte[] payload) {
@@ -28,5 +28,7 @@ public class CompressService implements CompressPayload {
         CompressionType compression = CompressionType.valueOf(response.compression());
         return compressor.decompress(response.compressedPayload(), compression, response.uncompressedSize());
     }
+
     Compressor compressor() { return compressor; }
+
 }

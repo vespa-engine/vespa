@@ -1,12 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import com.yahoo.search.query.QueryType;
 
 import java.util.Objects;
-
 
 /**
  * An immutable and'ing of a collection of sub-expressions. It does not

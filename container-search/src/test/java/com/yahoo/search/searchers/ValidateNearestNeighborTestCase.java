@@ -144,16 +144,16 @@ public class ValidateNearestNeighborTestCase {
                ",hnsw.exploreAdditionalHits=0" +
                ",distanceThreshold=Infinity" +
                ",approximate=true" +
-               ",targetHits=" + th +
+               (th != 0 ? ",targetHits=" + th : "") +
                "} " + errmsg;
     }
 
     @Test
-    void testMissingTargetNumHits() {
+    void testMissingTargetHits() {
         String q = "select * from sources * where nearestNeighbor(dvector,qvector)";
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg(desc("dvector", "qvector", 0, "has invalid targetHits 0: Must be >= 1"), r);
+        assertErrMsg(desc("dvector", "qvector", 0, "must have either targetHits or totalTargetHits set"), r);
     }
 
     @Test

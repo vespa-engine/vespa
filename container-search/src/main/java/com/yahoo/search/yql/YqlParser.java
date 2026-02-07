@@ -212,6 +212,7 @@ public class YqlParser implements Parser {
     public static final String SUFFIX = "suffix";
     public static final String TARGET_HITS = "targetHits";
     public static final String TARGET_NUM_HITS = "targetNumHits";
+    public static final String TOTAL_TARGET_HITS = "totalTargetHits";
     public static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
     public static final String UNIQUE_ID = "id";
     public static final String URI = "uri";
@@ -559,12 +560,10 @@ public class YqlParser implements Parser {
         String field = fetchFieldName(args.get(0));
         String property = fetchLiteral(args.get(1));
         NearestNeighborItem item = new NearestNeighborItem(indexFactsSession.getCanonicName(field), property);
-        Integer targetNumHits = buildTargetHits(ast);
-        if (targetNumHits != null) {
-            item.setTargetNumHits(targetNumHits);
-        }
-        Double distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD,
-                Double.class, null, "maximum distance allowed from query point");
+        item.setTargetHits(buildTargetHits(ast));
+        item.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
+
+        Double distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD, Double.class, null, "maximum distance allowed from query point");
         if (distanceThreshold != null) {
             item.setDistanceThreshold(distanceThreshold);
         }
@@ -2165,9 +2164,19 @@ public class YqlParser implements Parser {
         return value.longValue();
     }
 
+    private <T> Optional<T> annotation(OperatorNode<?> ast, String key, Class<T> expectedClass,
+                                       T defaultValue, String description) {
+        return Optional.ofNullable(getAnnotation(ast, key, expectedClass, defaultValue, description, true));
+    }
+
     private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass,
                                 T defaultValue, String description) {
         return getAnnotation(ast, key, expectedClass, defaultValue, description, true);
+    }
+
+    private <T> Optional<T> annotation(OperatorNode<?> ast, String key, Class<T> expectedClass, T defaultValue,
+                                       String description, boolean considerParents) {
+        return Optional.ofNullable(getAnnotation(ast, key, expectedClass, defaultValue, description, considerParents));
     }
 
     private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass, T defaultValue,
