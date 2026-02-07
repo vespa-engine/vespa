@@ -31,6 +31,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 
 import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +47,7 @@ public class EvaluateTensorConformance {
 
     void evaluateStdIn() {
         int count = 0;
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8))) {
             String test = br.readLine();
             while (test != null) {
                 boolean success = testCase(test, count);

@@ -4,6 +4,8 @@ package com.yahoo.searchlib.treenet;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.treenet.parser.ParseException;
 import com.yahoo.searchlib.treenet.parser.TreeNetParser;
+import com.yahoo.text.Text;
+import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -11,6 +13,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,8 +28,8 @@ public class TreeNetParserTestCase {
     @Test
     public void testRankingExpression() {
         for (int i = 1; i <= 8; ++i) {
-            String inputFile  = String.format("src/test/files/treenet%02d.model", i);
-            String outputFile = String.format("src/test/files/ranking%02d.expression", i);
+            String inputFile  = Text.format("src/test/files/treenet%02d.model", i);
+            String outputFile = Text.format("src/test/files/ranking%02d.expression", i);
             String input = readFile(inputFile);
             String expression = convertModel(inputFile, input);
             if (WRITE_FILES) {
@@ -60,7 +64,7 @@ public class TreeNetParserTestCase {
     private String readFile(String file) {
         try {
             StringBuilder ret = new StringBuilder();
-            BufferedReader in = new BufferedReader(new FileReader(file));
+            BufferedReader in = new BufferedReader(Utf8.createReader(file));
             while (true) {
                 String str = in.readLine();
                 if (str == null) {
@@ -76,7 +80,7 @@ public class TreeNetParserTestCase {
 
     private void writeFile(String file, String content) {
         try {
-            FileWriter out = new FileWriter(file);
+            FileWriter out = new FileWriter(file, StandardCharsets.UTF_8);
             out.write(content);
             out.close();
         } catch (IOException e) {

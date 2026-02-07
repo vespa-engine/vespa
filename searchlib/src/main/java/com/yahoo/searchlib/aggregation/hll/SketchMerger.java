@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation.hll;
 
+import com.yahoo.text.Text;
+
 /**
  * This class is responsible for merging any combinations of two {@link Sketch} instances.
  */
@@ -24,7 +26,7 @@ public class SketchMerger {
             return mergeSparseWithSparse(asSparse(left), asSparse(right));
         } else {
             throw new IllegalArgumentException(
-                    String.format("Invalid sketch types: left=%s, right=%s", right.getClass(), left.getClass()));
+                    Text.format("Invalid sketch types: left=%s, right=%s", right.getClass(), left.getClass()));
         }
     }
 
