@@ -5,6 +5,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.log.LogSetup;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.vespa.config.server.session.Session.Status.DEACTIVATE;
 import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 import static com.yahoo.vespa.config.server.session.Session.Status.UNKNOWN;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -34,7 +36,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Note: Some test depend on sessionLifetime being 60 (set in config server config in MaintainerTester)
+/**
+ * Note: Some tests depend on sessionLifetime being 60 (set in config server config in MaintainerTester)
+ *
+ * @author hmusum
+ */
 public class SessionsMaintainerTest {
 
     private static final File testApp = new File("src/test/apps/hosted");
@@ -179,6 +185,32 @@ public class SessionsMaintainerTest {
         maintainer.run();
         assertNumberOfLocalSessions(1); // same as before, will not show up in local sessions
         assertFalse(applicationPath.toFile().exists()); // App has been deleted
+    }
+
+    /**
+     * Verifies that a deactivated session (which will not be in remote session cache in
+     * SessionRepository will still be deleted when it has expired
+     */
+    @Test
+    public void testDeletingInactiveSessionsAfterStopAndStart() {
+        LogSetup.initVespaLogging("test");
+        tester = createTester();
+        tester.deployApp(testApp, prepareParams()); // session 2 (numbering starts at 2)
+
+        clock.advance(Duration.ofMinutes(10));
+        createDeployment().activate(); // session 3
+        assertNumberOfLocalSessions(2);
+        assertNumberOfRemoteSessions(2);
+
+        assertEquals(DEACTIVATE, sessionRepository.getRemoteSession(2).getStatus());
+        // Simulate restart of config server, deactivated session will not be
+        // added to remoteSessionCache
+        sessionRepository.remoteSessionCache().remove(2L);
+
+        clock.advance(Duration.ofMinutes(60));
+        maintainer.run();
+        assertNumberOfLocalSessions(1);
+        assertNumberOfRemoteSessions(1);
     }
 
     @Test
