@@ -737,8 +737,10 @@ public class VespaSerializer {
             int initLen = destination.length();
             destination.append(leafAnnotations(item));
             Integer targetHits = item.getTargetHits();
-            if (targetHits != null)
+            if (targetHits != null) {
+                comma(destination, initLen);
                 annotationKey(destination, YqlParser.TARGET_HITS).append(targetHits);
+            }
             Integer totalTargetHits = item.getTotalTargetHits();
             if (totalTargetHits != null) {
                 comma(destination, initLen);
