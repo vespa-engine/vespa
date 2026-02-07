@@ -170,7 +170,7 @@ public class SessionRepositoryTest {
     }
 
     // If reading a session throws an exception when bootstrapping SessionRepository it should fail,
-    // to make sure config server does not comes up and serves invalid/old config or, if this is hosted,
+    // to make sure config server does not come up and serves invalid/old config or, if this is hosted,
     // serves empty config (takes down services on all nodes belonging to an application)
     @Test
     public void testInvalidSessionWhenBootstrappingSessionRepo() throws Exception {
