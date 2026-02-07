@@ -101,9 +101,9 @@ public class ConfigserverCluster extends TreeConfigProducer
             builder.configModelPluginDir(pluginDir);
         }
         if (options.zookeeperBarrierTimeout().isPresent()) {
-            builder.zookeeper(new ConfigserverConfig.Zookeeper.Builder().barrierTimeout(options.zookeeperBarrierTimeout().get()));
+            builder.zookeeper(new ConfigserverConfig.Zookeeper.Builder().barrierTimeout(options.zookeeperBarrierTimeout().get().toSeconds()));
         }
-        options.applicationLockTimeoutSeconds().ifPresent(builder::applicationLockTimeoutSeconds);
+        options.applicationLockTimeoutSeconds().ifPresent(timeout -> builder.applicationLockTimeoutSeconds(timeout.toSeconds()));
         if (options.rpcPort().isPresent()) {
             builder.rpcport(options.rpcPort().get());
         }
