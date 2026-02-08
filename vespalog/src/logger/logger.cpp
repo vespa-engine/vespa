@@ -1,19 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 
-#include <vespa/log/llparser.h>
 #include "llreader.h"
+#include <vespa/log/llparser.h>
 
 using namespace ns_log;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
     InputBuf input(0);
     LLParser llparser;
 
@@ -29,8 +28,7 @@ int main(int argc, char *argv[])
         case 'l': {
             Logger::LogLevel level = Logger::parseLevel(optarg);
             if (level == Logger::NUM_LOGLEVELS) {
-                fprintf(stderr, "Unknown loglevel %s - using info\n",
-                        optarg);
+                fprintf(stderr, "Unknown loglevel %s - using info\n", optarg);
                 level = Logger::info;
             }
             llparser.setDefaultLevel(level);
@@ -40,8 +38,10 @@ int main(int argc, char *argv[])
             llparser.setPid(atoi(optarg));
             break;
         default:
-            fprintf(stderr, "Usage: foo | %s [-s service] [-c component]"
-                    "[-l level] [-p pid]\n", argv[0]);
+            fprintf(stderr,
+                    "Usage: foo | %s [-s service] [-c component]"
+                    "[-l level] [-p pid]\n",
+                    argv[0]);
             return (ch == 'h') ? EXIT_SUCCESS : EXIT_FAILURE;
         }
     }

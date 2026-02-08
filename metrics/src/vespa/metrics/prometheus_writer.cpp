@@ -1,15 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "prometheus_writer.h"
 #include "countmetric.h"
 #include "metricset.h"
 #include "metricsnapshot.h"
-#include "prometheus_writer.h"
 #include "valuemetric.h"
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/hash_set.hpp>
-#include <vespa/vespalib/util/small_vector.h>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
+#include <vespa/vespalib/util/small_vector.h>
 
 VESPALIB_HASH_SET_INSTANTIATE(std::string_view);
 
@@ -67,17 +67,10 @@ namespace {
     return std::ranges::lexicographical_compare(lhs, rhs);
 }
 
-}
+} // namespace
 
 PrometheusWriter::PrometheusWriter(asciistream& out)
-    : MetricVisitor(),
-      _arena(),
-      _timestamp_str(),
-      _samples(),
-      _unique_str_refs(),
-      _path(),
-      _out(out)
-{}
+    : MetricVisitor(), _arena(), _timestamp_str(), _samples(), _unique_str_refs(), _path(), _out(out) {}
 
 PrometheusWriter::~PrometheusWriter() = default;
 
@@ -116,7 +109,7 @@ std::string_view PrometheusWriter::stable_name_string_ref(std::string_view raw_n
 std::span<const std::string_view> PrometheusWriter::metric_to_path_ref(std::string_view leaf_metric_name) {
     vespalib::SmallVector<std::string_view, 16> path_refs;
     // _path strings are already in canonical (sanitized) form and arena-allocated
-    for (const auto& p :_path) {
+    for (const auto& p : _path) {
         path_refs.emplace_back(p);
     }
     path_refs.emplace_back(stable_name_string_ref(leaf_metric_name));
@@ -172,8 +165,8 @@ std::span<const std::string_view> PrometheusWriter::as_prometheus_labels(const M
 
 bool PrometheusWriter::visitSnapshot(const MetricSnapshot& ms) {
     // Pre-cache timestamp in string form to avoid same conversion for every time series
-    _timestamp_str = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
-            ms.getToTime().time_since_epoch()).count());
+    _timestamp_str = std::to_string(
+        std::chrono::duration_cast<std::chrono::milliseconds>(ms.getToTime().time_since_epoch()).count());
     return true;
 }
 
@@ -202,18 +195,18 @@ void PrometheusWriter::doneVisitingMetricSet(const MetricSet& set) {
 
 bool PrometheusWriter::visitCountMetric(const AbstractCountMetric& m, bool) {
     auto full_path = metric_to_path_ref(m.getName());
-    auto labels    = as_prometheus_labels(m);
+    auto labels = as_prometheus_labels(m);
     _samples.emplace_back(full_path, "count", labels, m.getLongValue("count"));
     return true;
 }
 
 bool PrometheusWriter::visitValueMetric(const AbstractValueMetric& m, bool) {
     auto full_path = metric_to_path_ref(m.getName());
-    auto labels    = as_prometheus_labels(m);
+    auto labels = as_prometheus_labels(m);
     _samples.emplace_back(full_path, "count", labels, m.getLongValue("count"));
-    _samples.emplace_back(full_path, "sum",   labels, m.getDoubleValue("total"));
-    _samples.emplace_back(full_path, "min",   labels, m.getDoubleValue("min"));
-    _samples.emplace_back(full_path, "max",   labels, m.getDoubleValue("max"));
+    _samples.emplace_back(full_path, "sum", labels, m.getDoubleValue("total"));
+    _samples.emplace_back(full_path, "min", labels, m.getDoubleValue("min"));
+    _samples.emplace_back(full_path, "max", labels, m.getDoubleValue("max"));
     return true;
 }
 
@@ -241,8 +234,8 @@ void PrometheusWriter::render_label_pairs(asciistream& out, std::span<const std:
 void PrometheusWriter::render_sample_value(asciistream& out, I64OrDouble value) {
     if (std::holds_alternative<double>(value)) {
         const double v = std::get<double>(value);
-        const bool inf = std::isinf(v);
-        const bool nan = std::isnan(v);
+        const bool   inf = std::isinf(v);
+        const bool   nan = std::isnan(v);
         // Prometheus allows "-Inf", "+Inf" and "NaN" as special values for negative infinity,
         // positive infinity and "not a number", respectively.
         if (!inf && !nan) [[likely]] {
@@ -263,14 +256,14 @@ void PrometheusWriter::doneVisiting() {
     // Sort and implicitly group all related metrics together, ordered by name -> aggregation -> dimensions
     std::sort(_samples.begin(), _samples.end());
     std::span<const std::string_view> last_metric;
-    std::string_view last_aggr;
+    std::string_view                  last_aggr;
     for (const auto& s : _samples) {
         if ((s.aggr != last_aggr) || !arrays_eq(s.metric_path, last_metric)) {
             _out << "# TYPE ";
             render_path_as_metric_name_prefix(_out, s.metric_path);
             _out << s.aggr << " untyped\n";
             last_metric = s.metric_path;
-            last_aggr   = s.aggr;
+            last_aggr = s.aggr;
         }
         render_path_as_metric_name_prefix(_out, s.metric_path);
         _out << s.aggr;
@@ -281,4 +274,4 @@ void PrometheusWriter::doneVisiting() {
     }
 }
 
-}
+} // namespace metrics

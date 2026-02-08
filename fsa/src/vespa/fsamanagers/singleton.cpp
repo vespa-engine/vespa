@@ -11,7 +11,6 @@
 
 #include "singleton.h"
 
-
 namespace fsa {
 
 // {{{ SingletonExitHandler::_instance
@@ -22,62 +21,50 @@ SingletonExitHandler* SingletonExitHandler::_instance = nullptr;
 
 // {{{ SingletonExitHandler::SingletonExitHandler()
 
-SingletonExitHandler::SingletonExitHandler()
-  : _functionList()
-{
+SingletonExitHandler::SingletonExitHandler() : _functionList() {
     /*
      * This won't work as part of plugins.  When library is unloaded, the
      * registration remains, and the program will crash when trying to
      * exit.
      */
-  atexit(&atExit);
+    atexit(&atExit);
 }
 
 // }}}
 // {{{ SingletonExitHandler::~SingletonExitHandler()
 
-SingletonExitHandler::~SingletonExitHandler()
-{
-}
+SingletonExitHandler::~SingletonExitHandler() {}
 
 // }}}
 // {{{ SingletonExitHandler::instance()
 
-SingletonExitHandler* SingletonExitHandler::instance()
-{
-  if (_instance == nullptr) {
-    _instance = new SingletonExitHandler();
-  }
-  return _instance;
+SingletonExitHandler* SingletonExitHandler::instance() {
+    if (_instance == nullptr) {
+        _instance = new SingletonExitHandler();
+    }
+    return _instance;
 }
 
 // }}}
 // {{{ SingletonExitHandler::registerSingletonDestroyer()
 
-void SingletonExitHandler::registerSingletonDestroyer(void (*p)())
-{
-  _functionList.push_front(p);
-}
+void SingletonExitHandler::registerSingletonDestroyer(void (*p)()) { _functionList.push_front(p); }
 
 // }}}
 // {{{ SingletonExitHandler::atExit()
 
-void SingletonExitHandler::atExit()
-{
-  SingletonExitHandler::instance()->destroy();
-  delete SingletonExitHandler::instance();
+void SingletonExitHandler::atExit() {
+    SingletonExitHandler::instance()->destroy();
+    delete SingletonExitHandler::instance();
 }
 
 // }}}
 // {{{ SingletonExitHandler::destroy()
 
-void SingletonExitHandler::destroy()
-{
-  for(FunctionListIterator iterator=_functionList.begin();
-      iterator!=_functionList.end(); ++iterator) {
-    (*iterator)();
-  }
-
+void SingletonExitHandler::destroy() {
+    for (FunctionListIterator iterator = _functionList.begin(); iterator != _functionList.end(); ++iterator) {
+        (*iterator)();
+    }
 }
 
 // }}}

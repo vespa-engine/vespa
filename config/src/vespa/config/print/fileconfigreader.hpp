@@ -1,29 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fileconfigreader.h"
-#include <vespa/config/common/exceptions.h>
-#include <vespa/config/common/misc.h>
-#include <vespa/config/common/configvalue.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <fstream>
 #include <sstream>
+#include <vespa/config/common/configvalue.h>
+#include <vespa/config/common/exceptions.h>
+#include <vespa/config/common/misc.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace config {
 
 template <typename ConfigType>
-FileConfigReader<ConfigType>::FileConfigReader(const std::string & fileName)
-    : _fileName(fileName)
-{
-}
+FileConfigReader<ConfigType>::FileConfigReader(const std::string& fileName) : _fileName(fileName) {}
 
 template <typename ConfigType>
-std::unique_ptr<ConfigType>
-FileConfigReader<ConfigType>::read(const ConfigFormatter & formatter)
-{
+std::unique_ptr<ConfigType> FileConfigReader<ConfigType>::read(const ConfigFormatter& formatter) {
     ConfigDataBuffer buffer;
-    std::ifstream file(_fileName.c_str());
-    if (!file.is_open())
+    std::ifstream    file(_fileName.c_str());
+    if (!file.is_open()) {
         throw ConfigReadException("error: unable to read file '%s'", _fileName.c_str());
+    }
 
     std::stringstream buf;
     buf << file.rdbuf();
@@ -32,14 +28,12 @@ FileConfigReader<ConfigType>::read(const ConfigFormatter & formatter)
     return std::make_unique<ConfigType>(buffer);
 }
 
-template <typename ConfigType>
-std::unique_ptr<ConfigType>
-FileConfigReader<ConfigType>::read()
-{
-    StringVector lines;
+template <typename ConfigType> std::unique_ptr<ConfigType> FileConfigReader<ConfigType>::read() {
+    StringVector  lines;
     std::ifstream f(_fileName.c_str());
-    if (f.fail())
+    if (f.fail()) {
         throw vespalib::IllegalArgumentException(std::string("Unable to open file ") + _fileName);
+    }
     std::string line;
     for (std::getline(f, line); f; std::getline(f, line)) {
         lines.push_back(line);

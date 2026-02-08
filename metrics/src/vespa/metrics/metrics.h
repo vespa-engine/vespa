@@ -5,10 +5,10 @@
  */
 #pragma once
 
-#include <vespa/metrics/metric.h>
 #include <vespa/metrics/countmetric.h>
-#include <vespa/metrics/valuemetric.h>
-#include <vespa/metrics/summetric.h>
+#include <vespa/metrics/metric.h>
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/metricsnapshot.h>
 #include <vespa/metrics/metrictimer.h>
+#include <vespa/metrics/summetric.h>
+#include <vespa/metrics/valuemetric.h>

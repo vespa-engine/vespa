@@ -1,29 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configsystem.h"
-#include <vespa/defaults.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
+#include <vespa/defaults.h>
 
 namespace config {
 
 namespace {
 
-std::string getConfigProxyFileName() {
-    return vespa::Defaults::underVespaHome("var/run/configproxy.pid");
-}
+std::string getConfigProxyFileName() { return vespa::Defaults::underVespaHome("var/run/configproxy.pid"); }
 
-}
+} // namespace
 
-ConfigSystem::ConfigSystem() :
-    _configProxyPidFile(getConfigProxyFileName())
-{
-}
+ConfigSystem::ConfigSystem() : _configProxyPidFile(getConfigProxyFileName()) {}
 
-bool ConfigSystem::isUp() const {
-    return isConfigProxyRunning();
-}
+bool ConfigSystem::isUp() const { return isConfigProxyRunning(); }
 
 bool ConfigSystem::isConfigProxyRunning() const {
     struct stat fs;
@@ -37,4 +30,4 @@ bool ConfigSystem::isConfigProxyRunning() const {
     return false;
 }
 
-}
+} // namespace config

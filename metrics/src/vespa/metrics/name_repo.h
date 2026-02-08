@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/metrics/handle.h>
 #include <string>
+#include <vespa/vespalib/metrics/handle.h>
 
 namespace metrics {
 
@@ -17,10 +17,10 @@ using TagKeyId = vespalib::metrics::Handle<TagKeyIdTag>;
 using TagValueId = vespalib::metrics::Handle<TagValueIdTag>;
 
 struct NameRepo {
-    static MetricNameId metricId(std::string_view name);
+    static MetricNameId  metricId(std::string_view name);
     static DescriptionId descriptionId(std::string_view name);
-    static TagKeyId tagKeyId(std::string_view name);
-    static TagValueId tagValueId(std::string_view value);
+    static TagKeyId      tagKeyId(std::string_view name);
+    static TagValueId    tagValueId(std::string_view value);
 
     static const std::string& metricName(MetricNameId id);
     static const std::string& description(DescriptionId id);
@@ -28,5 +28,4 @@ struct NameRepo {
     static const std::string& tagValue(TagValueId id);
 };
 
-} // metrics
-
+} // namespace metrics

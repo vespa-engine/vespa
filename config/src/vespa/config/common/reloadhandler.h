@@ -5,8 +5,7 @@
 
 namespace config {
 
-struct ReloadHandler
-{
+struct ReloadHandler {
     /**
      * Reload any configs with a given generation.
      */
@@ -14,5 +13,4 @@ struct ReloadHandler
     virtual ~ReloadHandler() = default;
 };
 
-}
-
+} // namespace config

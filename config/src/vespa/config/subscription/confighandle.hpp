@@ -8,25 +8,14 @@ namespace config {
 
 template <typename ConfigType>
 ConfigHandle<ConfigType>::ConfigHandle(std::shared_ptr<ConfigSubscription> subscription)
-    : _subscription(std::move(subscription))
-{
-}
+    : _subscription(std::move(subscription)) {}
 
-template <typename ConfigType>
-ConfigHandle<ConfigType>::~ConfigHandle() = default;
+template <typename ConfigType> ConfigHandle<ConfigType>::~ConfigHandle() = default;
 
-template <typename ConfigType>
-std::unique_ptr<ConfigType>
-ConfigHandle<ConfigType>::getConfig() const
-{
+template <typename ConfigType> std::unique_ptr<ConfigType> ConfigHandle<ConfigType>::getConfig() const {
     return _subscription->getConfig().template newInstance<ConfigType>();
 }
 
-template <typename ConfigType>
-bool
-ConfigHandle<ConfigType>::isChanged() const
-{
-    return _subscription->isChanged();
-}
+template <typename ConfigType> bool ConfigHandle<ConfigType>::isChanged() const { return _subscription->isChanged(); }
 
 } // namespace config

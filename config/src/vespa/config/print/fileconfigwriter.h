@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "configwriter.h"
 #include "configformatter.h"
+#include "configwriter.h"
 #include <string>
 
 namespace config {
@@ -12,13 +12,13 @@ namespace config {
  */
 class FileConfigWriter : public ConfigWriter {
 public:
-    FileConfigWriter(const std::string & fileName);
+    FileConfigWriter(const std::string& fileName);
     // Implements ConfigWriter
-    bool write(const ConfigInstance & config) override;
-    bool write(const ConfigInstance & config, const ConfigFormatter & formatter) override;
+    bool write(const ConfigInstance& config) override;
+    bool write(const ConfigInstance& config, const ConfigFormatter& formatter) override;
+
 private:
     const std::string _fileName;
 };
 
 } // namespace config
-

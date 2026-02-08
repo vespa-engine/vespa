@@ -11,11 +11,11 @@ namespace config {
  */
 class FileConfigSnapshotWriter : public ConfigSnapshotWriter {
 public:
-    FileConfigSnapshotWriter(const std::string & fileName);
-    bool write(const ConfigSnapshot & snapshot) override;
+    FileConfigSnapshotWriter(const std::string& fileName);
+    bool write(const ConfigSnapshot& snapshot) override;
+
 private:
     const std::string _fileName;
 };
 
 } // namespace config
-

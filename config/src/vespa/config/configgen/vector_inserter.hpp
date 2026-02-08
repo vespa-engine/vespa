@@ -6,18 +6,13 @@
 
 namespace config::internal {
 
-template<typename V, typename Converter>
-VectorInserter<V, Converter>::VectorInserter(V & vector)
-    : _vector(vector)
-{}
+template <typename V, typename Converter> VectorInserter<V, Converter>::VectorInserter(V& vector) : _vector(vector) {}
 
-template<typename V, typename Converter>
-void
-VectorInserter<V, Converter>::entry(size_t idx, const ::vespalib::slime::Inspector & inspector)
-{
-    (void) idx;
+template <typename V, typename Converter>
+void VectorInserter<V, Converter>::entry(size_t idx, const ::vespalib::slime::Inspector& inspector) {
+    (void)idx;
     Converter converter;
     _vector.push_back(converter(inspector));
 }
 
-}
+} // namespace config::internal

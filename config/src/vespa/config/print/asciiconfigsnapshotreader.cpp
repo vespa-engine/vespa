@@ -5,14 +5,9 @@
 
 namespace config {
 
-AsciiConfigSnapshotReader::AsciiConfigSnapshotReader(const vespalib::asciistream & is)
-    : _is(is)
-{
-}
+AsciiConfigSnapshotReader::AsciiConfigSnapshotReader(const vespalib::asciistream& is) : _is(is) {}
 
-ConfigSnapshot
-AsciiConfigSnapshotReader::read()
-{
+ConfigSnapshot AsciiConfigSnapshotReader::read() {
     ConfigDataBuffer buffer;
     buffer.setEncodedString(_is.view());
     JsonConfigFormatter formatter(true);

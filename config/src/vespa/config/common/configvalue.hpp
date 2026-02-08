@@ -6,16 +6,13 @@
 
 namespace config {
 
-template <typename ConfigType>
-std::unique_ptr<ConfigType>
-ConfigValue::newInstance() const
-{
+template <typename ConfigType> std::unique_ptr<ConfigType> ConfigValue::newInstance() const {
     if (_payload) {
-        const vespalib::slime::Inspector & payload(_payload->getSlimePayload());
+        const vespalib::slime::Inspector& payload(_payload->getSlimePayload());
         return std::make_unique<ConfigType>(::config::ConfigPayload(payload));
     } else {
         return std::make_unique<ConfigType>(*this);
     }
 }
 
-}
+} // namespace config

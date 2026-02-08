@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "valuemetric.hpp"
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/log/log.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 LOG_SETUP(".metrics.metric.value");
 
@@ -10,21 +10,17 @@ namespace metrics {
 
 namespace {
 
-std::atomic<bool> hasWarned {false};
+std::atomic<bool> hasWarned{false};
 
 }
 
-void
-AbstractValueMetric::logWarning(const char* msg, const char * op) const
-{
+void AbstractValueMetric::logWarning(const char* msg, const char* op) const {
     vespalib::asciistream ost;
     ost << msg << " in value metric " << getPath() << " op " << op << ". Resetting it.";
     LOG(warning, "%s", ost.c_str());
 }
 
-void
-AbstractValueMetric::logNonFiniteValueWarning() const
-{
+void AbstractValueMetric::logNonFiniteValueWarning() const {
     if (hasWarned.exchange(true, std::memory_order_relaxed) == false) {
         LOG(warning,
             "Metric '%s' attempted updated with a value that is NaN or "
@@ -45,4 +41,4 @@ template class ValueMetric<double, double, false>;
 template class ValueMetric<int64_t, int64_t, true>;
 template class ValueMetric<int64_t, int64_t, false>;
 
-} // metrics
+} // namespace metrics

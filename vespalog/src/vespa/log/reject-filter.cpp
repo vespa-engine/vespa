@@ -1,27 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <sys/types.h>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
+#include <sys/types.h>
 
 #include "reject-filter.h"
 
 namespace ns_log {
 
-void
-RejectFilter::addRejectRule(Logger::LogLevel level, const std::string & message)
-{
+void RejectFilter::addRejectRule(Logger::LogLevel level, const std::string& message) {
     _rejectRules.push_back(RejectRule(level, message, false));
 }
 
-void
-RejectFilter::addExactRejectRule(Logger::LogLevel level, const std::string & message)
-{
+void RejectFilter::addExactRejectRule(Logger::LogLevel level, const std::string& message) {
     _rejectRules.push_back(RejectRule(level, message, true));
 }
 
-bool
-RejectFilter::shouldReject(Logger::LogLevel level, const char * message)
-{
+bool RejectFilter::shouldReject(Logger::LogLevel level, const char* message) {
     if (message == nullptr) {
         return false;
     }
@@ -31,13 +25,10 @@ RejectFilter::shouldReject(Logger::LogLevel level, const char * message)
         }
     }
 
-        
     return false;
 }
 
-bool
-RejectFilter::RejectRule::shouldReject(Logger::LogLevel level, const char * message)
-{
+bool RejectFilter::RejectRule::shouldReject(Logger::LogLevel level, const char* message) {
     if (_level == level) {
         if (_exact) {
             if (strlen(message) == _message.length() && _message.compare(message) == 0) {
@@ -52,11 +43,10 @@ RejectFilter::RejectRule::shouldReject(Logger::LogLevel level, const char * mess
     return false;
 }
 
-RejectFilter
-RejectFilter::createDefaultFilter()
-{
+RejectFilter RejectFilter::createDefaultFilter() {
     RejectFilter filter;
-    filter.addRejectRule(Logger::warning, "Using FILTER_NONE:  This must be paranoid approved, and since you are using FILTER_NONE you must live with this error.");
+    filter.addRejectRule(Logger::warning, "Using FILTER_NONE:  This must be paranoid approved, and since you are using "
+                                          "FILTER_NONE you must live with this error.");
     filter.addExactRejectRule(Logger::warning, "");
     filter.addRejectRule(Logger::warning, "yjava_preload.so: [preload.c:670] Accept failed: -1 (4)");
     return filter;

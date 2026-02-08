@@ -10,9 +10,9 @@
 
 #pragma once
 
-#include <vespa/fsa/metadata.h>
 #include <memory>
 #include <string>
+#include <vespa/fsa/metadata.h>
 
 namespace fsa {
 
@@ -29,87 +29,76 @@ namespace fsa {
 class MetaData::Handle {
 
 private:
+    /**
+     * @brief Unimplemented private default constructor.
+     */
+    Handle();
+    /**
+     * @brief Unimplemented private assignment operator.
+     */
+    Handle& operator=(const Handle&);
 
-  /**
-   * @brief Unimplemented private default constructor.
-   */
-  Handle();
-  /**
-   * @brief Unimplemented private assignment operator.
-   */
-  Handle& operator=(const Handle&);
-
-  std::shared_ptr<MetaData> _metaData; /**< The MetaData object itself. */
+    std::shared_ptr<MetaData> _metaData; /**< The MetaData object itself. */
 
 public:
+    /**
+     * @brief Copy constructor.
+     *
+     * Duplicate a handle (and add new reference to the MetaData object.
+     *
+     * @param h Reference to existing Metadata::Handle.
+     */
+    Handle(const Handle& h) : _metaData(h._metaData) {}
 
-  /**
-   * @brief Copy constructor.
-   *
-   * Duplicate a handle (and add new reference to the MetaData object.
-   *
-   * @param h Reference to existing Metadata::Handle.
-   */
-  Handle(const Handle& h) : _metaData(h._metaData)
-  {
-  }
+    /**
+     * @brief Constructor.
+     *
+     * Create a new MetaData object (loaded from file) and add reference.
+     *
+     * @param datafile Name of the file containing the metadata.
+     * @param fam File access mode (read or mmap). If not set, the
+     *            global preferred access mode will be used.
+     */
+    Handle(const char* datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+        : _metaData(std::make_shared<MetaData>(datafile, fam)) {}
 
-  /**
-   * @brief Constructor.
-   *
-   * Create a new MetaData object (loaded from file) and add reference.
-   *
-   * @param datafile Name of the file containing the metadata.
-   * @param fam File access mode (read or mmap). If not set, the
-   *            global preferred access mode will be used.
-   */
-  Handle(const char *datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
-    : _metaData(std::make_shared<MetaData>(datafile, fam))
-  {
-  }
+    /**
+     * @brief Constructor.
+     *
+     * Create a new MetaData object (loaded from file) and add reference.
+     *
+     * @param datafile Name of the file containing the metadata.
+     * @param fam File access mode (read or mmap). If not set, the
+     *            global preferred access mode will be used.
+     */
+    Handle(const std::string& datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
+        : _metaData(std::make_shared<MetaData>(datafile, fam)) {}
 
-  /**
-   * @brief Constructor.
-   *
-   * Create a new MetaData object (loaded from file) and add reference.
-   *
-   * @param datafile Name of the file containing the metadata.
-   * @param fam File access mode (read or mmap). If not set, the
-   *            global preferred access mode will be used.
-   */
-  Handle(const std::string &datafile, FileAccessMethod fam = FILE_ACCESS_UNDEF)
-    : _metaData(std::make_shared<MetaData>(datafile, fam))
-  {
-  }
+    /**
+     * @brief Destructor.
+     */
+    ~Handle() = default;
 
-  /**
-   * @brief Destructor.
-   */
-  ~Handle() = default;
+    /**
+     * @brief Dereference operator, provides access to Metadata
+     *        methods.
+     *
+     * @return Reference to the Metadata object.
+     */
+    const MetaData& operator*() const { return *_metaData; }
 
-  /**
-   * @brief Dereference operator, provides access to Metadata
-   *        methods.
-   *
-   * @return Reference to the Metadata object.
-   */
-  const MetaData& operator*() const { return *_metaData; }
+    /**
+     * @brief Dereference operator, provides access to Metadata
+     *        methods.
+     *
+     * @return Pointer the Metadata object.
+     */
+    const MetaData* operator->() const { return _metaData.get(); }
 
-  /**
-   * @brief Dereference operator, provides access to Metadata
-   *        methods.
-   *
-   * @return Pointer the Metadata object.
-   */
-  const MetaData* operator->() const { return _metaData.get(); }
-
-  /**
-   * @brief Proxy methods
-   */
-  uint32_t user(unsigned int idx) const
-  {
-    return _metaData->user(idx);
-  }
+    /**
+     * @brief Proxy methods
+     */
+    uint32_t user(unsigned int idx) const { return _metaData->user(idx); }
 };
 
 // }}}

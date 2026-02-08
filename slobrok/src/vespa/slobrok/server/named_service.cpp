@@ -9,17 +9,9 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-NamedService::NamedService(const std::string & name, const std::string & spec)
-    : _name(name),
-      _spec(spec)
-{
-}
+NamedService::NamedService(const std::string& name, const std::string& spec) : _name(name), _spec(spec) {}
 
-
-NamedService::~NamedService()
-{
-    LOG(spam, "(role[%s].~NamedService)", _name.c_str());
-}
+NamedService::~NamedService() { LOG(spam, "(role[%s].~NamedService)", _name.c_str()); }
 
 //-----------------------------------------------------------------------------
 

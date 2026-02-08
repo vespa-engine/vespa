@@ -1,15 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/objects/floatingpointtype.h>
-#include <vespa/metrics/countmetric.h>
 #include <gtest/gtest.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/vespalib/objects/floatingpointtype.h>
 
 using vespalib::Double;
 
 namespace metrics {
 
-TEST(CountMetricTest, testLongCountMetric)
-{
+TEST(CountMetricTest, testLongCountMetric) {
     LongCountMetric m("test", {{"tag"}}, "description");
     m.set(100);
     EXPECT_EQ(uint64_t(100), m.getValue());
@@ -39,4 +38,4 @@ TEST(CountMetricTest, testLongCountMetric)
     EXPECT_EQ(int64_t(84), o.getLongValue("value"));
 }
 
-}
+} // namespace metrics

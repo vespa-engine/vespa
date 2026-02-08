@@ -11,7 +11,7 @@ namespace config {
  */
 class AsciiConfigSnapshotReader : public ConfigSnapshotReader {
 public:
-    AsciiConfigSnapshotReader(const vespalib::asciistream & is);
+    AsciiConfigSnapshotReader(const vespalib::asciistream& is);
 
     /**
      * Read a config snapshot.
@@ -19,9 +19,9 @@ public:
      * @return Snapshot containing the configs.
      */
     ConfigSnapshot read() override;
+
 private:
-    const vespalib::asciistream & _is;
+    const vespalib::asciistream& _is;
 };
 
 } // namespace config
-

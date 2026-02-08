@@ -5,46 +5,23 @@
 
 namespace config {
 
-
 ConfigSubscriber::ConfigSubscriber(std::shared_ptr<IConfigContext> context)
     : _set(std::move(context))
 
-{ }
+{}
 
-ConfigSubscriber::ConfigSubscriber(const SourceSpec & spec)
-    : _set(std::make_shared<ConfigContext>(spec))
-{ }
+ConfigSubscriber::ConfigSubscriber(const SourceSpec& spec) : _set(std::make_shared<ConfigContext>(spec)) {}
 
 ConfigSubscriber::~ConfigSubscriber() = default;
 
-bool
-ConfigSubscriber::nextConfig(vespalib::duration timeout)
-{
-    return _set.acquireSnapshot(timeout, false);
-}
+bool ConfigSubscriber::nextConfig(vespalib::duration timeout) { return _set.acquireSnapshot(timeout, false); }
 
-bool
-ConfigSubscriber::nextGeneration(vespalib::duration timeout)
-{
-    return _set.acquireSnapshot(timeout, true);
-}
+bool ConfigSubscriber::nextGeneration(vespalib::duration timeout) { return _set.acquireSnapshot(timeout, true); }
 
-void
-ConfigSubscriber::close()
-{
-    _set.close();
-}
+void ConfigSubscriber::close() { _set.close(); }
 
-bool
-ConfigSubscriber::isClosed() const
-{
-    return _set.isClosed();
-}
+bool ConfigSubscriber::isClosed() const { return _set.isClosed(); }
 
-int64_t
-ConfigSubscriber::getGeneration() const
-{
-    return _set.getGeneration();
-}
+int64_t ConfigSubscriber::getGeneration() const { return _set.getGeneration(); }
 
-}
+} // namespace config

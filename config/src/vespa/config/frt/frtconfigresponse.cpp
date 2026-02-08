@@ -5,26 +5,20 @@
 
 namespace config {
 
-FRTConfigResponse::FRTConfigResponse(FRT_RPCRequest * request)
-    : _request(request),
-      _responseState(EMPTY),
-      _returnValues(_request->GetReturn())
-{
+FRTConfigResponse::FRTConfigResponse(FRT_RPCRequest* request)
+    : _request(request), _responseState(EMPTY), _returnValues(_request->GetReturn()) {
     _request->internal_addref();
 }
 
-FRTConfigResponse::~FRTConfigResponse()
-{
-    _request->internal_subref();
-}
+FRTConfigResponse::~FRTConfigResponse() { _request->internal_subref(); }
 
-bool
-FRTConfigResponse::validateResponse()
-{
-    if (_request->IsError())
+bool FRTConfigResponse::validateResponse() {
+    if (_request->IsError()) {
         _responseState = ERROR;
-    if (_request->GetReturn()->GetNumValues() == 0)
+    }
+    if (_request->GetReturn()->GetNumValues() == 0) {
         _responseState = EMPTY;
+    }
     if (_request->CheckReturnTypes(getResponseTypes().c_str())) {
         _returnValues = _request->GetReturn();
         _responseState = OK;
@@ -32,14 +26,10 @@ FRTConfigResponse::validateResponse()
     return (_responseState == OK);
 }
 
-bool
-FRTConfigResponse::hasValidResponse() const
-{
-    return (_responseState == OK);
-}
+bool FRTConfigResponse::hasValidResponse() const { return (_responseState == OK); }
 
 std::string FRTConfigResponse::errorMessage() const { return _request->GetErrorMessage(); }
-int FRTConfigResponse::errorCode() const { return _request->GetErrorCode(); }
-bool FRTConfigResponse::isError() const { return _request->IsError(); }
+int         FRTConfigResponse::errorCode() const { return _request->GetErrorCode(); }
+bool        FRTConfigResponse::isError() const { return _request->IsError(); }
 
 } // namespace config

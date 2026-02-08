@@ -8,4 +8,3 @@ namespace config {
 typedef uint64_t SubscriptionId;
 
 } // namespace config
-

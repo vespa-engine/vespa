@@ -8,12 +8,8 @@ namespace {
 const double randmax = RAND_MAX;
 
 // standard uniform distribution
-double uniformRandom() {
-    return random() / randmax;
-}
+double uniformRandom() { return random() / randmax; }
 
-double randomIn(double min, double max) {
-    return min + (uniformRandom() * (max - min));
-}
+double randomIn(double min, double max) { return min + (uniformRandom() * (max - min)); }
 
-} // namespace <unnamed>
+} // namespace

@@ -10,19 +10,15 @@ MemoryUsageMetrics::MemoryUsageMetrics(metrics::MetricSet* parent)
       _allocated_bytes("allocated_bytes", {}, "The number of allocated bytes", this),
       _used_bytes("used_bytes", {}, "The number of used bytes (<= allocated_bytes)", this),
       _dead_bytes("dead_bytes", {}, "The number of dead bytes (<= used_bytes)", this),
-      _on_hold_bytes("onhold_bytes", {}, "The number of bytes on hold", this)
-{
-}
+      _on_hold_bytes("onhold_bytes", {}, "The number of bytes on hold", this) {}
 
 MemoryUsageMetrics::~MemoryUsageMetrics() = default;
 
-void
-MemoryUsageMetrics::update(const vespalib::MemoryUsage& usage)
-{
+void MemoryUsageMetrics::update(const vespalib::MemoryUsage& usage) {
     _allocated_bytes.set(usage.allocatedBytes());
     _used_bytes.set(usage.usedBytes());
     _dead_bytes.set(usage.deadBytes());
     _on_hold_bytes.set(usage.allocatedBytesOnHold());
 }
 
-}
+} // namespace metrics

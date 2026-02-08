@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include "service_mapping.h"
 #include "map_diff.h"
 #include "map_source.h"
-#include <vespa/vespalib/util/gencnt.h>
+#include "service_mapping.h"
 #include <map>
 #include <set>
+#include <vespa/vespalib/util/gencnt.h>
 
 namespace slobrok {
 
@@ -15,8 +15,7 @@ namespace slobrok {
  * @class ServiceMapMirror
  * @brief Holds a name->spec map which can be incrementally updated
  **/
-class ServiceMapMirror : public MapSource
-{
+class ServiceMapMirror : public MapSource {
 public:
     using Generation = vespalib::GenCnt;
 
@@ -24,26 +23,25 @@ public:
     ~ServiceMapMirror();
 
     /** update according to diff */
-    void apply(const MapDiff &diff);
+    void apply(const MapDiff& diff);
 
     /** remove all mappings */
     void clear();
 
-    const Generation &currentGeneration() const { return _currGen; }
+    const Generation& currentGeneration() const { return _currGen; }
 
     ServiceMappingList allMappings() const;
 
 private:
-    void registerListener(MapListener &listener) override;
-    void unregisterListener(MapListener &listener) override;
+    void registerListener(MapListener& listener) override;
+    void unregisterListener(MapListener& listener) override;
 
     using Map = std::map<std::string, std::string>;
-    Map _map;
-    Generation _currGen;
-    std::set<MapListener *> _listeners;
+    Map                    _map;
+    Generation             _currGen;
+    std::set<MapListener*> _listeners;
 };
 
 //-----------------------------------------------------------------------------
 
 } // namespace slobrok
-

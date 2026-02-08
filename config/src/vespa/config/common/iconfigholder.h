@@ -6,19 +6,15 @@
 
 namespace config {
 
-class IConfigHolder
-{
+class IConfigHolder {
 public:
     virtual ~IConfigHolder() = default;
     virtual std::unique_ptr<ConfigUpdate> provide() = 0;
-    virtual void handle(std::unique_ptr<ConfigUpdate> obj) = 0;
-    virtual void close() = 0;
-    virtual bool poll() = 0;
-    bool wait_for(vespalib::duration timeout) {
-        return wait_until(vespalib::steady_clock::now() + timeout);
-    }
+    virtual void                          handle(std::unique_ptr<ConfigUpdate> obj) = 0;
+    virtual void                          close() = 0;
+    virtual bool                          poll() = 0;
+    bool         wait_for(vespalib::duration timeout) { return wait_until(vespalib::steady_clock::now() + timeout); }
     virtual bool wait_until(vespalib::steady_time deadline) = 0;
 };
 
 } // namespace config
-

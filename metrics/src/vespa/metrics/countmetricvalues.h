@@ -13,37 +13,32 @@
 
 #pragma once
 
-#include <vespa/metrics/metricvalueset.h>
 #include <atomic>
+#include <vespa/metrics/metricvalueset.h>
 
 namespace metrics {
 
-template <typename T>
-struct CountMetricValues : public MetricValueClass {
+template <typename T> struct CountMetricValues : public MetricValueClass {
     T _value;
 
     struct AtomicImpl {
         AtomicImpl() noexcept : _value(0) {}
-        AtomicImpl(const AtomicImpl & rhs) noexcept : _value(rhs._value.load(std::memory_order_relaxed)) {}
+        AtomicImpl(const AtomicImpl& rhs) noexcept : _value(rhs._value.load(std::memory_order_relaxed)) {}
         std::atomic<T> _value;
     };
 
-    void relaxedStoreInto(AtomicImpl& target) const noexcept {
-        target._value.store(_value, std::memory_order_relaxed);
-    }
+    void relaxedStoreInto(AtomicImpl& target) const noexcept { target._value.store(_value, std::memory_order_relaxed); }
 
-    void relaxedLoadFrom(const AtomicImpl& source) noexcept {
-        _value = source._value.load(std::memory_order_relaxed);
-    }
+    void relaxedLoadFrom(const AtomicImpl& source) noexcept { _value = source._value.load(std::memory_order_relaxed); }
 
     CountMetricValues() : _value(0) {}
 
     std::string toString() const;
-    double getDoubleValue(string_view) const override;
-    uint64_t getLongValue(string_view) const override;
-    void output(const std::string&, std::ostream& out) const override;
-    void output(const std::string&, vespalib::JsonStream& stream) const override;
-    bool inUse() const { return (_value != 0); }
+    double      getDoubleValue(string_view) const override;
+    uint64_t    getLongValue(string_view) const override;
+    void        output(const std::string&, std::ostream& out) const override;
+    void        output(const std::string&, vespalib::JsonStream& stream) const override;
+    bool        inUse() const { return (_value != 0); }
 };
 
-} // metrics
+} // namespace metrics
