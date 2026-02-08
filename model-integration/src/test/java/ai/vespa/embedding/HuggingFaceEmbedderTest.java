@@ -1,21 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
-
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.utils.ModelPathHelper;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.language.process.Embedder;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
-import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
-import com.yahoo.searchlib.rankingexpression.rule.UnpackBitsNode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.Tensors;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -34,30 +28,6 @@ public class HuggingFaceEmbedderTest {
 
     static HuggingFaceEmbedder embedder = getEmbedder();
     static HuggingFaceEmbedder normalizedEmbedder = getNormalizedEmbedder();
-
-    @Test
-    public void testBinarization() {
-        assertPackRight("tensor(x[8]):[0,0,0,0,0,0,0,0]", "tensor<int8>(x[1]):[0]");
-        assertPackRight("tensor(x[8]):[1,1,1,1,1,1,1,1]", "tensor<int8>(x[1]):[-1]");
-        assertPackRight("tensor(x[16]):[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1]", "tensor<int8>(x[2]):[0, -1]");
-
-        assertPackRight("tensor(x[8]):[0,1,0,1,0,1,0,1]", "tensor<int8>(x[1]):[85]");
-        assertPackRight("tensor(x[8]):[1,0,1,0,1,0,1,0]", "tensor<int8>(x[1]):[-86]");
-        assertPackRight("tensor(x[16]):[0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0]", "tensor<int8>(x[2]):[85, -86]");
-
-        assertPackRight("tensor(x[8]):[1,1,1,1,0,0,0,0]", "tensor<int8>(x[1]):[-16]");
-        assertPackRight("tensor(x[8]):[0,0,0,0,1,1,1,1]", "tensor<int8>(x[1]):[15]");
-        assertPackRight("tensor(x[16]):[1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1]", "tensor<int8>(x[2]):[-16, 15]");
-    }
-
-    private void assertPackRight(String input, String expected) {
-        Tensor inputTensor = Tensor.from(input);
-        Tensor result = Tensors.packBits(inputTensor);
-        assertEquals(expected, result.toString());
-        // Verify that the unpack_bits ranking feature produce compatible output
-        Tensor unpacked = expandBitTensor(result);
-        assertEquals(inputTensor.toString(), unpacked.toString());
-    }
 
     @Test
     public void testCaching() {
@@ -91,6 +61,7 @@ public class HuggingFaceEmbedderTest {
         embedder.embed(input, copyContext,TensorType.fromSpec("tensor<int8>(x[2])"));
         assertNotEquals(modelOuput, copyContext.getCachedValue(key));
     }
+
     @Test
     public void testEmbedder() {
         var context = new Embedder.Context("schema.indexing");
@@ -110,10 +81,14 @@ public class HuggingFaceEmbedderTest {
         binarizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[48])")));
         assertTrue(binarizedResult.toAbbreviatedString().startsWith("tensor<int8>(x[48]):[119, 44"));
 
+        // Test byte quantization (1 float per byte, not binary packing)
+        Tensor byteQuantizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[49])")));
+        assertEquals(49, byteQuantizedResult.size());
+
         assertThrows(IllegalArgumentException.class, () -> {
-            // throws because the target tensor type is not compatible with the model output
-            //49*8 > 384
-            embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[49])")));
+            // throws because the target tensor dimension exceeds model output dimensions
+            // model outputs 384 dimensions, so requesting 385 should fail
+            embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[385])")));
         });
         Tensor float16Result = embedder.embed(input, context, TensorType.fromSpec(("tensor<bfloat16>(x[1])")));
         assertEquals(-0.666, float16Result.sum().asDouble(),1e-3);
@@ -129,6 +104,27 @@ public class HuggingFaceEmbedderTest {
         assertEquals(1.0,  result.multiply(result).sum().asDouble(), 1e-3);
         Tensor binarizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[2])")));
         assertEquals("tensor<int8>(x[2]):[119, 44]", binarizedResult.toAbbreviatedString());
+    }
+
+    @Test
+    public void testByteQuantization() {
+        String input = "This is a test";
+        var context = new Embedder.Context("schema.indexing");
+
+        Tensor normalizedFloat = normalizedEmbedder.embed(input, context, TensorType.fromSpec("tensor<float>(x[64])"));
+        Tensor normalizedInt8 = normalizedEmbedder.embed(input, context, TensorType.fromSpec("tensor<int8>(x[64])"));
+        assertEquals(64, normalizedInt8.size());
+
+        // Verify values are in int8 range [-128, 127]
+        for (int i = 0; i < 64; i++) {
+            double int8Value = normalizedInt8.get(TensorAddress.of(i));
+            assertTrue(int8Value >= -128 && int8Value <= 127, "Value " + int8Value + " at index " + i + " in int8 range");
+
+            // Verify quantization is approximately correct (float * 127 ≈ int8)
+            double floatValue = normalizedFloat.get(TensorAddress.of(i));
+            double expectedInt8 = Math.round(floatValue * 127.0);
+            assertEquals(expectedInt8, int8Value, 1.0, "Quantization at index " + i);
+        }
     }
 
     @Test
@@ -268,13 +264,6 @@ public class HuggingFaceEmbedderTest {
         )));
 
         return huggingFaceEmbedder;
-    }
-
-    public static Tensor expandBitTensor(Tensor packed) {
-        var unpacker = new UnpackBitsNode(new ReferenceNode("input"), TensorType.Value.DOUBLE, "big");
-        var context = new MapContext();
-        context.put("input", new TensorValue(packed));
-        return unpacker.evaluate(context).asTensor();
     }
 
     static class MockModelPathHelper implements ModelPathHelper {

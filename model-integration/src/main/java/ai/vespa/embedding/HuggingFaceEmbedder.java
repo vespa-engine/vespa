@@ -6,7 +6,6 @@ import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.utils.ModelPathHelper;
 import ai.vespa.modelintegration.utils.OnnxExternalDataResolver;
-import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
@@ -26,7 +25,10 @@ import java.util.logging.Logger;
 
 import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGEST_FIRST;
 
-@Beta
+/**
+ * A general embedder for HuggingFace models.
+ * This will also quantize to the target embedding type.
+ */
 public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     private static final Logger log = Logger.getLogger(HuggingFaceEmbedder.class.getName());
@@ -157,25 +159,27 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             throw new IllegalArgumentException("Error in embedding to type '" + targetType + "': dimension should be indexed.");
         }
         var embeddingResult = lookupOrEvaluate(context, prependInstruction(text, context));
-        IndexedTensor tokenEmbeddings = embeddingResult.output;
-        if (targetType.valueType() == TensorType.Value.INT8) {
-            return binaryQuantization(embeddingResult, targetType);
+        if (targetType.valueType() == TensorType.Value.INT8 && sizeIndicatesBitPacking(targetType, embeddingResult)) {
+            return binaryQuantize(embeddingResult, targetType);
+        } else if (targetType.valueType() == TensorType.Value.INT8) {
+            return byteQuantize(embeddingResult, targetType);
         } else {
-            Tensor result = analysis.poolingStrategy.toSentenceEmbedding(targetType, tokenEmbeddings, embeddingResult.attentionMask);
-            return normalize ? EmbeddingNormalizer.normalize(result, targetType) : result;
+            return poolAndNormalize(embeddingResult, targetType, targetType.dimensions().get(0).size().get());
         }
+    }
+
+    private boolean sizeIndicatesBitPacking(TensorType targetType, HuggingFaceEmbedder.HFEmbeddingResult embeddingResult) {
+        return targetType.dimensions().get(0).size().get()
+               <= embeddingResult.output().shape()[embeddingResult.output().shape().length - 1] / 8;
     }
 
     String prependInstruction(String text, Context context) {
-        if (prependQuery != null && !prependQuery.isEmpty() && context.getDestination().startsWith("query")) {
+        if (prependQuery != null && !prependQuery.isEmpty() && context.getDestination().startsWith("query"))
             return prependQuery + " " + text;
-        }
-        if (prependDocument != null && !prependDocument.isEmpty()){
+        if (prependDocument != null && !prependDocument.isEmpty())
             return prependDocument + " " + text;
-        }
         return text;
     }
-
 
     private HuggingFaceEmbedder.HFEmbeddingResult lookupOrEvaluate(Context context, String text) {
         var key = new HFEmbedderCacheKey(context.getEmbedderId(), text);
@@ -213,24 +217,37 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return new HFEmbeddingResult(tokenEmbeddings, attentionMask, context.getEmbedderId());
     }
 
-    private Tensor binaryQuantization(HuggingFaceEmbedder.HFEmbeddingResult embeddingResult, TensorType targetType) {
-        long outputDimensions = embeddingResult.output().shape()[2];
-        long targetDimensions = targetType.dimensions().get(0).size().get();
-        //🪆 flexibility - packing only the first 8*targetDimension float values from the model output
-        long targetUnpackagedDimensions = 8 * targetDimensions;
-        if (targetUnpackagedDimensions > outputDimensions) {
-            throw new IllegalArgumentException("Cannot pack " + outputDimensions + " into " + targetDimensions + " int8's");
-        }
-        // pool and normalize using float version before binary quantization
-        TensorType poolingType = new TensorType.Builder(TensorType.Value.FLOAT).
-                                         indexed(targetType.indexedSubtype().dimensions().get(0).name(), targetUnpackagedDimensions)
-                                         .build();
-        Tensor result = analysis.poolingStrategy().toSentenceEmbedding(poolingType, embeddingResult.output(), embeddingResult.attentionMask());
-        result = normalize ? EmbeddingNormalizer.normalize(result, poolingType) : result;
-        Tensor packedResult = Tensors.packBits(result);
+    private Tensor binaryQuantize(HuggingFaceEmbedder.HFEmbeddingResult embeddingResult, TensorType targetType) {
+        long targetUnpackagedDimensions = 8 * targetType.dimensions().get(0).size().get();
+        Tensor packedResult = Tensors.packBits(poolAndNormalize(embeddingResult, targetType, targetUnpackagedDimensions));
         if ( ! packedResult.type().equals(targetType))
             throw new IllegalStateException("Expected pack_bits to produce " + targetType + ", but got " + packedResult.type());
         return packedResult;
+    }
+
+    private Tensor byteQuantize(HuggingFaceEmbedder.HFEmbeddingResult embeddingResult, TensorType targetType) {
+        long targetDimensions = targetType.dimensions().get(0).size().get();
+        var result = (IndexedTensor)poolAndNormalize(embeddingResult, targetType, targetDimensions);
+        IndexedTensor.Builder builder = IndexedTensor.Builder.of(targetType);
+        for (int i = 0; i < targetDimensions; i++) {
+            double value = result.get(i);
+            int quantized = (int) Math.round(value * 127.0);      // scale to byte
+            quantized = Math.max(-128, Math.min(127, quantized)); // clamp
+            builder.cell((byte) quantized, i);
+        }
+        return builder.build();
+    }
+
+    private Tensor poolAndNormalize(HuggingFaceEmbedder.HFEmbeddingResult embeddingResult, TensorType targetType, long targetDimensions) {
+        long outputDimensions = embeddingResult.output().shape()[embeddingResult.output().shape().length - 1];
+        if (targetDimensions > outputDimensions)
+            throw new IllegalArgumentException("Cannot quantize " + outputDimensions + " dimensions into " + targetType);
+
+        TensorType poolingType = new TensorType.Builder(TensorType.Value.FLOAT).
+                                         indexed(targetType.indexedSubtype().dimensions().get(0).name(), targetDimensions)
+                                         .build();
+        Tensor result = analysis.poolingStrategy().toSentenceEmbedding(poolingType, embeddingResult.output(), embeddingResult.attentionMask());
+        return normalize ? result.l2Normalize(result.type().dimensions().getFirst().name()) : result;
     }
 
     private IndexedTensor createTensorRepresentation(List<Long> input, String dimension) {
