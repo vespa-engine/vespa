@@ -68,7 +68,6 @@ public class MetricsV2Handler extends HttpHandlerBase {
             List<MetricsPacket> metrics = processAndBuild(valuesFetcher.fetchMetricsAsBuilders(consumer),
                                                           new ServiceIdDimensionProcessor(),
                                                           new ClusterIdDimensionProcessor(),
-                                                          new HostnameDimensionProcessor(nodeInfoConfig.hostname()),
                                                           new PublicDimensionsProcessor());
 
             Node localNode = new Node(nodeInfoConfig.role(), nodeInfoConfig.hostname(), 0, "");
