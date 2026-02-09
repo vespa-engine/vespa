@@ -1621,4 +1621,28 @@ public class YqlParserTestCase {
         return actual.toString();
     }
 
+    @Test
+    void testExplicitEnglishOnContainsSetsLanguage() {
+        QueryTree tree = parse("select * from sources * where foo contains ({language: 'en'}\"hello\")");
+        Item root = tree.getRoot();
+        assertEquals(Language.ENGLISH, root.getLanguage(),
+                "Explicit {language: 'en'} on contains should set ENGLISH, not UNKNOWN");
+    }
+
+    @Test
+    void testExplicitFrenchOnContainsSetsLanguage() {
+        QueryTree tree = parse("select * from sources * where foo contains ({language: 'fr'}\"hello\")");
+        Item root = tree.getRoot();
+        assertEquals(Language.FRENCH, root.getLanguage(),
+                "Explicit {language: 'fr'} on contains should set FRENCH");
+    }
+
+    @Test
+    void testNoLanguageOnContainsStaysUnknown() {
+        QueryTree tree = parse("select * from sources * where foo contains \"hello\"");
+        Item root = tree.getRoot();
+        assertEquals(Language.UNKNOWN, root.getLanguage(),
+                "No language annotation on contains should leave UNKNOWN");
+    }
+
 }

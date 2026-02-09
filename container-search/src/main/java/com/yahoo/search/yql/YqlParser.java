@@ -940,6 +940,7 @@ public class YqlParser implements Parser {
                                             String.class,
                                             currentField != null ? null : "default", // if there's a current field, we're in sameElement
                                             "default index for user input terms");
+        boolean explicitLanguage = hasExplicitLanguageAnnotation(ast);
         Language language = decideParsingLanguage(ast, wordData);
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.WEAKAND.toString(), "The overall query type of the user input");
@@ -951,7 +952,7 @@ public class YqlParser implements Parser {
             return assignQueryType(instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language),
                                    queryType);
         } else {
-            Item item = parseUserInput(queryType, defaultIndex, wordData, language, allowEmpty);
+            Item item = parseUserInput(queryType, defaultIndex, wordData, language, explicitLanguage, allowEmpty);
             propagateUserInputAnnotationsRecursively(ast, item);
 
             // Set grammar-specific annotations
@@ -1015,6 +1016,12 @@ public class YqlParser implements Parser {
                         .setYqlDefault(queryType.isYqlDefault());
     }
 
+    /** Returns whether the language annotation is explicitly set on the given AST node. */
+    private boolean hasExplicitLanguageAnnotation(OperatorNode<ExpressionOperator> ast) {
+        return getAnnotation(ast, USER_INPUT_LANGUAGE, String.class, null,
+                             "language setting for segmenting query section") != null;
+    }
+
     private Language decideParsingLanguage(OperatorNode<ExpressionOperator> ast, String wordData) {
         String languageTag = getAnnotation(ast, USER_INPUT_LANGUAGE, String.class, null,
                                            "language setting for segmenting query section");
@@ -1048,7 +1055,7 @@ public class YqlParser implements Parser {
     }
 
     private Item parseUserInput(QueryType queryType, String defaultIndex, String wordData,
-                                Language language, boolean allowNullItem) {
+                                Language language, boolean explicitLanguage, boolean allowNullItem) {
         Parser parser = ParserFactory.newInstance(queryType, environment);
         // perhaps not use already resolved doctypes, but respect source and restrict
         Item item = parser.parse(new Parsable().setQuery(wordData)
@@ -1059,14 +1066,23 @@ public class YqlParser implements Parser {
         if ( ! allowNullItem && (item == null || item instanceof NullItem))
             throw new IllegalArgumentException("Parsing '" + wordData + "' only resulted in NullItem.");
 
-        // mark the language used, unless it's the default
-        if (language != Language.ENGLISH)
-            item.setLanguage(language);
+        // Mark the language used if it was explicitly set or is not the default
+        if (explicitLanguage || language != Language.ENGLISH)
+            // mark all the child items: it will be easier to figure out which item have which language
+            setLanguageRecursively(item, language);
 
         // userInput should determine the overall language if not set explicitly
         if (userQuery != null && userQuery.getModel().getLanguage() == null)
             userQuery.getModel().setLanguage(language);
         return item;
+    }
+
+    private void setLanguageRecursively(Item item, Language language) {
+        item.setLanguage(language);
+        if (item instanceof CompositeItem composite) {
+            for (int i = 0; i < composite.getItemCount(); i++)
+                setLanguageRecursively(composite.getItem(i), language);
+        }
     }
 
     private OperatorNode<?> parseYqlProgram() {
@@ -1730,7 +1746,8 @@ public class YqlParser implements Parser {
         if (wordItem instanceof WordItem) {
             prepareWord(field, ast, (WordItem) wordItem);
         }
-        if (language != Language.ENGLISH) // mark the language used, unless it's the default
+        // Mark the language used if it was explicitly set or is not the default
+        if (hasExplicitLanguageAnnotation(ast) || language != Language.ENGLISH)
             ((Item)wordItem).setLanguage(language);
         return (Item)leafStyleSettings(ast, wordItem);
     }

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
+import com.yahoo.language.Language;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -33,6 +34,8 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class VespaSerializerTestCase {
 
@@ -517,5 +520,39 @@ public class VespaSerializerTestCase {
         parseAndConfirm("field in (2, 3)");
         parseAndConfirm("field in (9000000000L, 12000000000L)");
         parseAndConfirm("string in (\"a\", \"b\")");
+    }
+
+    @Test
+    void testSerializeFrenchLanguageAnnotation() {
+        WordItem word = new WordItem("hello", "foo");
+        word.setLanguage(Language.FRENCH);
+        String serialized = VespaSerializer.serialize(word);
+        assertTrue(serialized.contains("language: \"fr\""),
+                "Serialized output should contain language annotation: " + serialized);
+    }
+
+    @Test
+    void testSerializeEnglishLanguageAnnotation() {
+        WordItem word = new WordItem("hello", "foo");
+        word.setLanguage(Language.ENGLISH);
+        String serialized = VespaSerializer.serialize(word);
+        assertTrue(serialized.contains("language: \"en\""),
+                "Serialized output should contain language annotation: " + serialized);
+    }
+
+    @Test
+    void testSerializeUnknownLanguageNoAnnotation() {
+        WordItem word = new WordItem("hello", "foo");
+        // Language is UNKNOWN by default
+        assertEquals(Language.UNKNOWN, word.getLanguage());
+        String serialized = VespaSerializer.serialize(word);
+        assertFalse(serialized.contains("language:"),
+                "Serialized output should NOT contain language annotation: " + serialized);
+    }
+
+    @Test
+    void testRoundTripLanguageAnnotation() {
+        // Parse YQL with language annotation, serialize, and check it round-trips
+        parseAndConfirm("foo contains ({language: \"fr\"}\"hello\")");
     }
 }

@@ -119,9 +119,9 @@ public class Model implements Cloneable {
      *
      * @return the language determined, never null
      */
-    // TODO: We can support multiple languages per query by changing searchers which call this
-    //       to look up the query to use at each point from item.getLanguage
-    //       with this as fallback for query branches where no parent item specifies language
+    // Per-clause language is supported: searchers (StemmingSearcher, NormalizingSearcher,
+    // CJKSearcher, SignificanceSearcher) check item.getLanguage() at each node,
+    // using this as fallback for query branches where no item specifies a language.
     public Language getParsingLanguage(String languageDetectionText) {
         Language language = getLanguage();
         if (language != null) return language;

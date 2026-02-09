@@ -4,11 +4,13 @@ package com.yahoo.prelude.querytransform.test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.GramSplitter;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexFactsFactory;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.query.parser.TestLinguistics;
 import com.yahoo.prelude.querytransform.CJKSearcher;
 import com.yahoo.search.Query;
@@ -26,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Steinar Knutsen
@@ -72,6 +75,117 @@ public class CJKSearcherTestCase {
         Query query = new Query(QueryTestCase.httpEncode("search?yql=select * from music-only where default contains equiv('a', 'b c') or default contains '东'"));
         new Execution(new Chain<>(new MinimalQueryInserter(), new CJKSearcher()), Execution.Context.createContextStub()).search(query);
         assertEquals("OR (EQUIV default:a default:'b c') default:东", query.getModel().getQueryTree().toString());
+    }
+
+    /** Constructs a PhraseSegmentItem simulating CJK segmentation of "efg" into "e" + "fg" */
+    private PhraseSegmentItem createSegmentedItem(Language language) {
+        PhraseSegmentItem segment = new PhraseSegmentItem("efg", "efg", true, false);
+        segment.addItem(new WordItem("e", "default"));
+        segment.addItem(new WordItem("fg", "default"));
+        segment.setLanguage(language);
+        return segment;
+    }
+
+    @Test
+    void testCjkTransformAppliesOnlyToCjkBranch() {
+        // CJK branch: segmented phrase, marked Chinese
+        PhraseSegmentItem cjkBranch = createSegmentedItem(Language.CHINESE_SIMPLIFIED);
+
+        // English branch: simple word
+        WordItem englishBranch = new WordItem("hello", "default");
+        englishBranch.setLanguage(Language.ENGLISH);
+
+        OrItem root = new OrItem();
+        root.addItem(cjkBranch);
+        root.addItem(englishBranch);
+
+        // Query language is English — CJKSearcher should segment the CJK branch
+        Query query = new Query("?language=en");
+        query.getModel().getQueryTree().setRoot(root);
+
+        new Execution(new Chain<Searcher>(new CJKSearcher()),
+                      Execution.Context.createContextStub(indexFacts, TestLinguistics.INSTANCE)).search(query);
+
+        String result = query.getModel().getQueryTree().getRoot().toString();
+        assertTrue(result.contains("SAND"), "CJK branch should be transformed to SAND: " + result);
+        assertTrue(result.contains("hello"), "English branch should be untouched: " + result);
+    }
+
+    @Test
+    void testNonCjkBranchNotTransformedWhenQueryLanguageIsCjk() {
+        // CJK branch: segmented phrase, marked Chinese
+        PhraseSegmentItem cjkBranch = createSegmentedItem(Language.CHINESE_SIMPLIFIED);
+
+        // English branch: same segmented structure, but marked English
+        PhraseSegmentItem englishBranch = createSegmentedItem(Language.ENGLISH);
+        String enBefore = englishBranch.toString();
+
+        OrItem root = new OrItem();
+        root.addItem(cjkBranch);
+        root.addItem(englishBranch);
+
+        // Query language is CJK — CJKSearcher should transform the CJK branch and leave the English branch untouched
+        Query query = new Query("?language=zh-hans");
+        query.getModel().getQueryTree().setRoot(root);
+
+        new Execution(new Chain<Searcher>(new CJKSearcher()),
+                      Execution.Context.createContextStub(indexFacts, TestLinguistics.INSTANCE)).search(query);
+
+        Item resultRoot = query.getModel().getQueryTree().getRoot();
+        assertTrue(resultRoot instanceof OrItem, "Root should be OR: " + resultRoot);
+        OrItem or = (OrItem) resultRoot;
+        assertEquals(2, or.getItemCount());
+
+        // CJK branch: should be transformed
+        assertTrue(or.getItem(0).toString().contains("SAND"),
+                "CJK branch should be transformed: " + or.getItem(0));
+
+        // English branch: should NOT be transformed
+        assertEquals(enBefore, or.getItem(1).toString(),
+                "English branch should NOT be transformed");
+    }
+
+    @Test
+    void testTraceFiresWhenCjkItemInsideCompositeIsTransformed() {
+        PhraseSegmentItem cjkBranch = createSegmentedItem(Language.CHINESE_SIMPLIFIED);
+        WordItem englishBranch = new WordItem("hello", "default");
+        englishBranch.setLanguage(Language.ENGLISH);
+
+        OrItem root = new OrItem();
+        root.addItem(cjkBranch);
+        root.addItem(englishBranch);
+
+        Query query = new Query("?language=en&tracelevel=2");
+        query.getModel().getQueryTree().setRoot(root);
+
+        new Execution(new Chain<Searcher>(new CJKSearcher()),
+                      Execution.Context.createContextStub(indexFacts, TestLinguistics.INSTANCE)).search(query);
+
+        String trace = query.getContext(false).getTrace().toString();
+        assertTrue(trace.contains("Rewriting for CJK behavior for implicit phrases"),
+                "Trace should contain CJK rewriting message: " + trace);
+    }
+
+    @Test
+    void testNoTraceWhenNoCjkTransformationNeeded() {
+        WordItem branch1 = new WordItem("hello", "default");
+        branch1.setLanguage(Language.ENGLISH);
+        WordItem branch2 = new WordItem("world", "default");
+        branch2.setLanguage(Language.FRENCH);
+
+        OrItem root = new OrItem();
+        root.addItem(branch1);
+        root.addItem(branch2);
+
+        Query query = new Query("?language=en&tracelevel=2");
+        query.getModel().getQueryTree().setRoot(root);
+
+        new Execution(new Chain<Searcher>(new CJKSearcher()),
+                      Execution.Context.createContextStub(indexFacts, TestLinguistics.INSTANCE)).search(query);
+
+        String trace = query.getContext(false).getTrace().toString();
+        assertFalse(trace.contains("Rewriting for CJK behavior for implicit phrases"),
+                "Trace should NOT contain CJK rewriting message when no CJK items: " + trace);
     }
 
     private void assertTransformed(String queryString, String expected, Query.Type mode, Language actualLanguage,

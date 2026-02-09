@@ -48,6 +48,8 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.yahoo.language.Language;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -1054,5 +1056,26 @@ public class SelectTestCase {
         var item = new StringInItem(field);
         for (var value : values) item.addToken(value);
         return item;
+    }
+
+    @Test
+    void testExplicitEnglishLanguageSetsEnglish() {
+        Item root = parseWhere("{ \"contains\": { \"children\": [\"baz\", \"hello\"], \"attributes\": { \"language\": \"en\" } } }").getRoot();
+        assertEquals(Language.ENGLISH, root.getLanguage(),
+                "Explicit language: 'en' should set ENGLISH, not UNKNOWN");
+    }
+
+    @Test
+    void testExplicitFrenchLanguageSetsFrench() {
+        Item root = parseWhere("{ \"contains\": { \"children\": [\"baz\", \"hello\"], \"attributes\": { \"language\": \"fr\" } } }").getRoot();
+        assertEquals(Language.FRENCH, root.getLanguage(),
+                "Explicit language: 'fr' should set FRENCH");
+    }
+
+    @Test
+    void testNoLanguageAnnotationStaysUnknown() {
+        Item root = parseWhere("{ \"contains\": [\"baz\", \"hello\"] }").getRoot();
+        assertEquals(Language.UNKNOWN, root.getLanguage(),
+                "No language annotation should leave UNKNOWN");
     }
 }

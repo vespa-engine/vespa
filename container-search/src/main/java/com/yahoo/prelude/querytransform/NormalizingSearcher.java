@@ -65,11 +65,12 @@ public class NormalizingSearcher extends Searcher {
         Item root = query.getModel().getQueryTree().getRoot();
         Language language = query.getModel().getParsingLanguage();
         if (root instanceof BlockItem) {
+            Language rootLanguage = root.getLanguage() != Language.UNKNOWN ? root.getLanguage() : language;
             List<Item> rootItems = new ArrayList<>(1);
             rootItems.add(root);
             ListIterator<Item> i = rootItems.listIterator();
             i.next();
-            normalizeBlocks(language, indexFacts, (BlockItem) root, i);
+            normalizeBlocks(rootLanguage, indexFacts, (BlockItem) root, i);
             if ( ! rootItems.isEmpty()) // give up normalizing if the root was removed
                 query.getModel().getQueryTree().setRoot(rootItems.get(0));
         } else if (root instanceof CompositeItem) {
@@ -78,6 +79,9 @@ public class NormalizingSearcher extends Searcher {
     }
     
     private Item normalizeComposite(Language language, IndexFacts.Session indexFacts, CompositeItem item) {
+        if (item.getLanguage() != Language.UNKNOWN)
+            language = item.getLanguage();
+
         if (item instanceof PhraseItem phrase)  {
             return normalizePhrase(language, indexFacts, phrase);
         }
@@ -86,7 +90,9 @@ public class NormalizingSearcher extends Searcher {
                 Item current = i.next();
 
                 if (current instanceof BlockItem block) {
-                    normalizeBlocks(language, indexFacts, block, i);
+                    Language blockLanguage = ((Item) block).getLanguage() != Language.UNKNOWN
+                            ? ((Item) block).getLanguage() : language;
+                    normalizeBlocks(blockLanguage, indexFacts, block, i);
                 } else if (current instanceof CompositeItem composite) {
                     Item currentProcessed = normalizeComposite(language, indexFacts, composite);
                     i.set(currentProcessed);
