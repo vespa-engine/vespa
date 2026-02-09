@@ -151,18 +151,9 @@ public:
     virtual uint32_t getApproxSize() const { return 1; }
 
     /**
-     * Returns whether a Message may have metadata it wishes to propagate to destinations.
-     *
-     * Note that if a Message subclass contains metadata, it has the responsibility to
-     * ensure swapState(Routable) correctly handles this metadata.
-     */
-    [[nodiscard]] virtual bool hasMetadata() const noexcept { return false; }
-
-    /**
-     * At the time of serializing a Message to the underlying transport carrier the
-     * network subsystem will call hasMetadata(). Iff it returns true, this method will
-     * then be subsequently invoked to inject any metadata key/value pairs the Message
-     * wants to propagate to the receiver.
+     * At the time of serializing a Message to the underlying transport carrier, the
+     * network subsystem will always call this method to inject any metadata key/value
+     * pairs the Message wants to propagate to the receiver.
      *
      * The newly materialized Message instance on the receiver side will have
      * extractMetadata(MetadataExtractor) invoked on it with an extractor that can read

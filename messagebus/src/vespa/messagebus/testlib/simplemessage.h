@@ -37,7 +37,7 @@ public:
     const std::optional<std::string>& foo_meta() const noexcept { return _foo_meta; }
     const std::optional<std::string>& bar_meta() const noexcept { return _bar_meta; }
 
-    bool hasMetadata() const noexcept override;
+    bool hasMetadata() const noexcept;
     void injectMetadata(MetadataInjector&) const override;
     void extractMetadata(const MetadataExtractor&) override;
 };

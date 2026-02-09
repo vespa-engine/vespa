@@ -61,8 +61,10 @@ TEST_F(SimpleRoundtripTest, simple_roundtrip_test) {
     ASSERT_TRUE(msg);
     EXPECT_TRUE(msg->getProtocol() == SimpleProtocol::NAME);
     EXPECT_TRUE(msg->getType() == SimpleProtocol::MESSAGE);
-    EXPECT_FALSE(msg->hasMetadata());
-    EXPECT_TRUE(dynamic_cast<SimpleMessage&>(*msg).getValue() == "test message");
+    auto* as_simple_msg = dynamic_cast<SimpleMessage*>(msg.get());
+    ASSERT_TRUE(as_simple_msg);
+    EXPECT_FALSE(as_simple_msg->hasMetadata());
+    EXPECT_EQ(as_simple_msg->getValue(), "test message");
 
     // forward message on proxy
     dynamic_cast<SimpleMessage&>(*msg).setValue("test message pxy");
@@ -73,8 +75,10 @@ TEST_F(SimpleRoundtripTest, simple_roundtrip_test) {
     ASSERT_TRUE(msg);
     EXPECT_TRUE(msg->getProtocol() == SimpleProtocol::NAME);
     EXPECT_TRUE(msg->getType() == SimpleProtocol::MESSAGE);
-    EXPECT_FALSE(msg->hasMetadata());
-    EXPECT_TRUE(dynamic_cast<SimpleMessage&>(*msg).getValue() == "test message pxy");
+    as_simple_msg = dynamic_cast<SimpleMessage*>(msg.get());
+    ASSERT_TRUE(as_simple_msg);
+    EXPECT_FALSE(as_simple_msg->hasMetadata());
+    EXPECT_EQ(as_simple_msg->getValue(), "test message pxy");
 
     // send reply on server
     auto sr = std::make_unique<SimpleReply>("test reply");

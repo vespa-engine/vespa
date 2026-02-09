@@ -49,7 +49,7 @@ public:
         virtual std::string_view getRoute() const = 0;
         virtual std::string_view getSession() const = 0;
         virtual BlobRef getPayload() const = 0;
-        virtual std::unique_ptr<MetadataExtractor> get_metadata_extractor_once() noexcept = 0;
+        virtual std::unique_ptr<MetadataExtractor> steal_metadata_extractor() noexcept = 0;
     };
 protected:
     RPCNetwork *_net;

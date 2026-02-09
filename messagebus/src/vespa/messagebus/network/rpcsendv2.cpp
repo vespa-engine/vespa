@@ -109,15 +109,43 @@ private:
 OutputBuf::~OutputBuf() = default;
 
 class SlimeMetadataInjector final : public MetadataInjector {
-    Cursor& _kv_cursor;
+    struct LazySlimeState {
+        Slime slime;
+        Cursor& kv_cursor;
+
+        LazySlimeState();
+        ~LazySlimeState();
+    };
+    std::optional<LazySlimeState> _lazy_slime;
 public:
-    explicit SlimeMetadataInjector(Cursor& kv_cursor) noexcept : _kv_cursor(kv_cursor) {}
-    ~SlimeMetadataInjector() override = default;
+    SlimeMetadataInjector();
+    ~SlimeMetadataInjector() override;
 
     void inject_key_value(std::string_view key, std::string_view value) override {
-        _kv_cursor.setString(key, value);
+        if (!_lazy_slime) {
+            _lazy_slime.emplace();
+        }
+        _lazy_slime->kv_cursor.setString(key, value);
+    }
+
+    [[nodiscard]] bool has_metadata() const noexcept {
+        return static_cast<bool>(_lazy_slime);
+    }
+
+    // Precondition: has_metadata() == true
+    void encode_into(OutputBuf& out_buf) const {
+        BinaryFormat::encode(_lazy_slime->slime, out_buf);
     }
 };
+
+SlimeMetadataInjector::SlimeMetadataInjector()  = default;
+SlimeMetadataInjector::~SlimeMetadataInjector() = default;
+
+SlimeMetadataInjector::LazySlimeState::LazySlimeState()
+    : slime(),
+      kv_cursor(slime.setObject().setObject(KVS_F))
+{}
+SlimeMetadataInjector::LazySlimeState::~LazySlimeState() = default;
 
 void encode_message_header_metadata(FRT_Values& args, const Message& msg) {
     // The KV header is never compressed. This is intentional and is done to prevent
@@ -125,17 +153,16 @@ void encode_message_header_metadata(FRT_Values& args, const Message& msg) {
     // value of secret tokens from observing the change in ciphertext sizes on the
     // wire across many messages.
     args.AddInt8(CompressionConfig::NONE);
-    if (!msg.hasMetadata()) {
+
+    SlimeMetadataInjector injector;
+    msg.injectMetadata(injector);
+
+    if (!injector.has_metadata()) {
         args.AddInt32(0);
         args.AddData("", 0);
     } else {
-        Slime slime;
-        Cursor& root = slime.setObject();
-        Cursor& kvs = root.setObject(KVS_F);
-        SlimeMetadataInjector injector(kvs);
-        msg.injectMetadata(injector);
         OutputBuf hdr_buf(128); // TODO empirically choose this based on likely header KV sizes
-        BinaryFormat::encode(slime, hdr_buf);
+        injector.encode_into(hdr_buf);
         args.AddInt32(hdr_buf.getBuf().getDataLen());
         args.AddData(hdr_buf.getBuf().getData(), hdr_buf.getBuf().getDataLen());
     }
@@ -181,17 +208,20 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
 namespace {
 
 class SlimeMetadataExtractor final : public MetadataExtractor {
-    Slime _slime;
-    const Inspector& _kvs_inspector;
+    Slime            _slime;
+    const Inspector* _kvs_inspector;
 public:
-    SlimeMetadataExtractor(Slime slime, const Inspector& kvs_inspector) noexcept
-        : _slime(std::move(slime)),
-          _kvs_inspector(kvs_inspector)
-    {}
+    SlimeMetadataExtractor(const Memory& memory)
+        : _slime(),
+          _kvs_inspector(nullptr)
+    {
+        BinaryFormat::decode(memory, _slime);
+        _kvs_inspector = &_slime.get()[KVS_F];
+    }
     ~SlimeMetadataExtractor() override = default;
 
     std::optional<std::string> extract_value(std::string_view key) const override {
-        const Inspector& v = _kvs_inspector[key];
+        const Inspector& v = (*_kvs_inspector)[key];
         return v.valid() ? std::optional(v.asString().make_string()) : std::nullopt;
     }
 };
@@ -215,13 +245,7 @@ public:
         if ((hdr_blob_size > 0) && (hdr_blob.getDataLen() == hdr_blob_size) &&
             CompressionConfig::toType(encoding) == CompressionConfig::NONE)
         {
-            Slime slime;
-            BinaryFormat::decode(Memory(hdr_blob.getData(), hdr_blob.getDataLen()), slime);
-            Inspector& slime_kvs = slime.get()[KVS_F];
-            if (slime_kvs.valid() && slime_kvs.fields() > 0) {
-                // Assumption: inspector remains valid after Slime instance has been moved
-                _meta_extractor = std::make_unique<SlimeMetadataExtractor>(std::move(slime), slime_kvs);
-            }
+            _meta_extractor = std::make_unique<SlimeMetadataExtractor>(Memory(hdr_blob.getData(), hdr_blob.getDataLen()));
         }
     }
 
@@ -256,7 +280,7 @@ public:
         Memory m = _slime.get()[BLOB_F].asData();
         return BlobRef(m.data, m.size);
     }
-    std::unique_ptr<MetadataExtractor> get_metadata_extractor_once() noexcept override {
+    std::unique_ptr<MetadataExtractor> steal_metadata_extractor() noexcept override {
         return std::move(_meta_extractor);
     }
 private:
