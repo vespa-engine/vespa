@@ -36,7 +36,7 @@ import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
  * Maintainer that triggers restart of nodes with pending restarts.
  * The maintainer also updates pending restart nodes in ZooKeeper.
  * The node restart is usually needed for services with config changes that are applied on restart.
- * This is an experimental replacement for {@link PendingRestartsMaintainer}, enabled by 
+ * This is an experimental replacement for {@link PendingRestartsMaintainer}, enabled by
  * {@link Flags#WAIT_FOR_APPLY_ON_RESTART} feature flag.
  *
  * @author glebashnik
@@ -76,8 +76,8 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                                     applicationRepository.modifyPendingRestarts(
                                             id,
                                             restarts -> triggerPendingRestarts(
-                                                    restartingHosts ->
-                                                            getConfigServiceStatesByHostname(application, restartingHosts),
+                                                    restartingHosts -> getConfigServiceStatesByHostname(
+                                                            application, restartingHosts),
                                                     this::restart,
                                                     id,
                                                     restarts,
@@ -85,8 +85,9 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                                 } catch (RuntimeException e) {
                                     log.log(
                                             Level.INFO,
-                                            "Failed to update pending restarts for " + id + ": "
-                                                    + Exceptions.toMessageString(e));
+                                            Text.format(
+                                                    "Failed to update pending restarts for %d: %s",
+                                                    id.toFullString(), Exceptions.toMessageString(e)));
                                     failures.incrementAndGet();
                                 }
                             });
@@ -96,7 +97,8 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
         return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
 
-    private Map<String, List<ServiceConfigState>> getConfigServiceStatesByHostname(Application application, Set<String> hostnames) {
+    private Map<String, List<ServiceConfigState>> getConfigServiceStatesByHostname(
+            Application application, Set<String> hostnames) {
         Map<ServiceInfo, ServiceConfigState> stateByService = applicationRepository
                 .configStateChecker()
                 .getServiceConfigStates(application, Duration.ofSeconds(10), hostnames);
@@ -152,12 +154,12 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                     var pendingRestartGeneration = pendingRestartGenerationByHostname.get(hostname);
 
                     if (states.stream()
-                            .anyMatch(state ->
-                                    state.applyOnRestart().isEmpty() && state.currentGeneration() < pendingRestartGeneration)) {
+                            .anyMatch(state -> state.applyOnRestart().isEmpty()
+                                    && state.currentGeneration() < pendingRestartGeneration)) {
                         log.fine(() -> Text.format(
                                 "Node %s of %s has service states without applyOnRestart that haven't reached node"
                                         + " generation %d, preventing restart.",
-                                hostname, id.toFullString()));
+                                hostname, id.toFullString(), pendingRestartGeneration));
                         return false;
                     }
 

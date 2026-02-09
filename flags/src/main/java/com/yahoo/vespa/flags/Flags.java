@@ -415,9 +415,10 @@ public class Flags {
     public static final UnboundBooleanFlag WAIT_FOR_APPLY_ON_RESTART = defineFeatureFlag(
             "wait-for-apply-on-restart", false,
             List.of("glebashnik"), "2026-02-01", "2026-08-01",
-            "Determines whether triggering of a pending restart by PendingRestartsMaintainer " +
-                    "has to wait for applyOnRestart flag observed in config state.",
-            "Takes effect at next run of PendingRestartsMaintainer.",
+            "Determines whether triggering of a pending restart waits for `applyOnRestart` to be set to `true` " +
+                    "in the observed config state. In addition, changes service convergence condition bounded to a " +
+                    "current node instead of across multiple nodes, see `RestartOnDeployMaintainer`.",
+            "Takes effect at next run of RestartOnDeployMaintainer.",
             INSTANCE_ID
     );
 

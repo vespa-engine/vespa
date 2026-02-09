@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.model.api.ServiceConfigState;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import com.yahoo.vespa.config.server.application.PendingRestarts;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +14,6 @@ import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.maintenance.RestartOnDeployMaintainer.triggerPendingRestarts;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
