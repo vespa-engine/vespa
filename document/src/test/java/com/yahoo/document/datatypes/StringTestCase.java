@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
+import java.nio.charset.StandardCharsets;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
@@ -43,7 +44,7 @@ public class StringTestCase extends AbstractTypesTest {
         data.put((byte)0);
         data.put((byte)(foo.length() + 1));
 
-        data.put(foo.getBytes());
+        data.put(foo.getBytes(StandardCharsets.UTF_8));
         data.put((byte)0);
 
         int positionAfterPut = data.position();
@@ -103,7 +104,7 @@ public class StringTestCase extends AbstractTypesTest {
         data.put((byte)0);
         data.putInt(length | 0x80000000);
 
-        data.put(blah.getBytes());
+        data.put(blah.getBytes(StandardCharsets.UTF_8));
         data.put((byte)0);
 
         positionAfterPut = data.position();

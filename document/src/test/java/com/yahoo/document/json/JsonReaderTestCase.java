@@ -48,6 +48,7 @@ import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.TensorRemoveUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.text.Text;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.MixedTensor;
@@ -571,7 +572,7 @@ public class JsonReaderTestCase {
                 new Tuple2<>(UPDATE_MULTIPLY,
                         ArithmeticValueUpdate.Operator.MUL) };
         for (Tuple2<String, Operator> operator : operations) {
-            DocumentUpdate doc = parseUpdate("""
+            DocumentUpdate doc = parseUpdate(Text.format("""
                                              {
                                                "update": "id:unittest:testset::whee",
                                                "fields": {
@@ -583,7 +584,7 @@ public class JsonReaderTestCase {
                                                  }
                                                }
                                              }
-                                             """.formatted(operator.first));
+                                             """, operator.first));
 
             Map<String, Tuple2<Number, Operator>> matches = new HashMap<>();
             FieldUpdate x = doc.getFieldUpdate("actualset");
@@ -906,14 +907,14 @@ public class JsonReaderTestCase {
     }
 
     private String fieldStringFromBase64RawContent(String base64data) throws IOException {
-        Document doc = docFromJson("""
+        Document doc = docFromJson(Text.format("""
                                    {
                                      "put": "id:unittest:testraw::whee",
                                      "fields": {
                                        "actualraw": "%s"
                                      }
                                    }
-                                   """.formatted(base64data));
+                                   """, base64data));
         FieldValue f = doc.getFieldValue(doc.getField("actualraw"));
         assertSame(Raw.class, f.getClass());
         Raw s = (Raw) f;
@@ -2777,15 +2778,15 @@ public class JsonReaderTestCase {
         return createPutWithTensor(inputTensor, "sparse_tensor");
     }
     private DocumentPut createPutWithTensor(String inputTensor, String tensorFieldName) {
-        JsonReader streaming = createReader("""
+        JsonReader streaming = createReader(Text.format("""
                                          {
                                            "fields": {
                                              "%s": %s
                                            }
                                          }
-                                         """.formatted(tensorFieldName, inputTensor));
+                                         """, tensorFieldName, inputTensor));
         DocumentPut lazyParsed = (DocumentPut) streaming.readSingleDocumentStreaming(DocumentOperationType.PUT, TENSOR_DOC_ID).operation();
-        JsonReader reader = createReader("""
+        JsonReader reader = createReader(Text.format("""
                                          [
                                            {
                                              "put": "%s",
@@ -2793,7 +2794,7 @@ public class JsonReaderTestCase {
                                                "%s": %s
                                              }
                                            }
-                                         ]""".formatted(TENSOR_DOC_ID, tensorFieldName, inputTensor));
+                                         ]""", TENSOR_DOC_ID, tensorFieldName, inputTensor));
         DocumentPut bufferParsed = (DocumentPut) reader.next();
         assertEquals(lazyParsed, bufferParsed);
         return bufferParsed;
@@ -2883,16 +2884,16 @@ public class JsonReaderTestCase {
     }
 
     private DocumentUpdate createTensorUpdate(String operation, String tensorJson, String tensorFieldName) {
-        JsonReader streaming = createReader("""
+        JsonReader streaming = createReader(Text.format("""
                                             {
                                               "fields": {
                                                 "%s": {
                                                    "%s": %s
                                                 }
                                               }
-                                            }""".formatted(tensorFieldName, operation, tensorJson));
+                                            }""", tensorFieldName, operation, tensorJson));
         DocumentUpdate lazyParsed = (DocumentUpdate) streaming.readSingleDocumentStreaming(DocumentOperationType.UPDATE, TENSOR_DOC_ID).operation();
-        JsonReader reader = createReader("""
+        JsonReader reader = createReader(Text.format("""
                                          [
                                            {
                                              "update": "%s",
@@ -2902,7 +2903,7 @@ public class JsonReaderTestCase {
                                                }
                                              }
                                            }
-                                         ]""".formatted(TENSOR_DOC_ID, tensorFieldName, operation, tensorJson));
+                                         ]""", TENSOR_DOC_ID, tensorFieldName, operation, tensorJson));
         DocumentUpdate bufferParsed = (DocumentUpdate) reader.next();
         assertEquals(lazyParsed, bufferParsed);
         return bufferParsed;
