@@ -204,10 +204,10 @@ public class ApplicationHandlerTest {
     @Test
     public void testDeleteNonExistent() throws Exception {
         deleteAndAssertResponse(myTenantApplicationId,
-                Zone.defaultZone(),
-                Response.Status.NOT_FOUND,
-                HttpErrorResponse.ErrorCode.NOT_FOUND,
-                "Unable to delete mytenant.default.default: Not found");
+                                Zone.defaultZone(),
+                                Response.Status.NOT_FOUND,
+                                HttpErrorResponse.ErrorCode.NOT_FOUND,
+                                "Unable to delete mytenant.default.default: Not found");
     }
 
     @Test
@@ -242,13 +242,13 @@ public class ApplicationHandlerTest {
     public void testGetTokenFingerprints() throws IOException {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         activeTokenFingerprints.putAll(Map.of("host", List.of(new Token("t1", List.of("fingers", "toes")),
-                        new Token("t2", List.of())),
-                "toast", List.of()));
+                                                              new Token("t2", List.of())),
+                                              "toast", List.of()));
         HttpResponse response = createApplicationHandler().handleGET(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/active-token-fingerprints", GET));
         assertEquals(200, response.getStatus());
         assertEquals("""
                      {"hosts":[{"host":"host","tokens":[{"id":"t1","fingerprints":["fingers","toes"]},{"id":"t2","fingerprints":[]}]},{"host":"toast","tokens":[]}]}""",
-                getRenderedString(response));
+                     getRenderedString(response));
     }
 
     @Test
@@ -259,117 +259,117 @@ public class ApplicationHandlerTest {
         applicationRepository.deploy(testAppMultipleClusters, prepareParams(applicationId));
         ApplicationReindexing expected = ApplicationReindexing.empty();
         assertEquals(expected,
-                database.readReindexingStatus(applicationId).orElseThrow());
+                     database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         reindex(applicationId, "", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
         expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing for an unknown reason")
-                .withReady("foo", "bar", clock.instant(), 1, "reindexing for an unknown reason")
-                .withReady("foo", "baz", clock.instant(), 1, "reindexing for an unknown reason")
-                .withReady("foo", "bax", clock.instant(), 1, "reindexing for an unknown reason");
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing for an unknown reason")
+                           .withReady("foo", "baz", clock.instant(), 1, "reindexing for an unknown reason")
+                           .withReady("foo", "bax", clock.instant(), 1, "reindexing for an unknown reason");
         assertEquals(expected,
-                database.readReindexingStatus(applicationId).orElseThrow());
+                     database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         reindex(applicationId, "?indexedOnly=true&cause=test%20reindexing", "{\"message\":\"Reindexing document types [bar] in 'foo' of application default.default\"}");
         expected = expected.withReady("foo", "bar", clock.instant(), 1, "test reindexing");
         assertEquals(expected,
-                database.readReindexingStatus(applicationId).orElseThrow());
+                     database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
-                .withReady("foo", "bar", clock.instant(), 1, "reindexing")
-                .withReady("foo", "baz", clock.instant(), 1, "reindexing")
-                .withReady("foo", "bax", clock.instant(), 1, "reindexing");
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "baz", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bax", clock.instant(), 1, "reindexing");
         reindex(applicationId, "?clusterId=&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
         assertEquals(expected,
-                database.readReindexingStatus(applicationId).orElseThrow());
+                     database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
-                .withReady("foo", "bar", clock.instant(), 1, "reindexing");
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing");
         reindex(applicationId, "?documentType=bar&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
         assertEquals(expected,
-                database.readReindexingStatus(applicationId).orElseThrow());
+                     database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         reindex(applicationId, "?clusterId=foo,boo&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
         expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
-                .withReady("foo", "bar", clock.instant(), 1, "reindexing")
-                .withReady("foo", "baz", clock.instant(), 1, "reindexing")
-                .withReady("foo", "bax", clock.instant(), 1, "reindexing");
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "baz", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bax", clock.instant(), 1, "reindexing");
         assertEquals(expected,
-                database.readReindexingStatus(applicationId).orElseThrow());
+                     database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         reindex(applicationId, "?clusterId=foo&documentType=bar,baz&speed=0.1&cause=reindexing", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default\"}");
         expected = expected.withReady("foo", "bar", clock.instant(), 0.1, "reindexing")
-                .withReady("foo", "baz", clock.instant(), 0.1, "reindexing");
+                           .withReady("foo", "baz", clock.instant(), 0.1, "reindexing");
         assertEquals(expected,
-                database.readReindexingStatus(applicationId).orElseThrow());
+                     database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         var activeSession = applicationRepository.getActiveSession(applicationId);
         reindex(applicationId, PUT, "?documentType=bar&speed=0", "{\"message\":\"Set reindexing speed to '0' for document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
         expected = expected.withSpeed("boo", "bar", 0)
-                .withSpeed("foo", "bar", 0);
+                           .withSpeed("foo", "bar", 0);
         // Assert that a new session is activated at when reindexing speed is set to 0 (or any other changes to reindexing)
         assertNotEquals(activeSession, applicationRepository.getActiveSession(applicationId));
 
         reindexing(applicationId, DELETE, "{\"message\":\"Reindexing disabled\"}");
         expected = expected.enabled(false);
         assertEquals(expected,
-                database.readReindexingStatus(applicationId).orElseThrow());
+                     database.readReindexingStatus(applicationId).orElseThrow());
 
         reindexing(applicationId, POST, "{\"message\":\"Reindexing enabled\"}");
         expected = expected.enabled(true);
         assertEquals(expected,
-                database.readReindexingStatus(applicationId).orElseThrow());
+                     database.readReindexingStatus(applicationId).orElseThrow());
 
         applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.withPending("boo", "bar", 123L));
 
         long now = clock.instant().toEpochMilli();
         reindexing(applicationId, GET, "{" +
-                "  \"enabled\": true," +
-                "  \"clusters\": {" +
-                "    \"boo\": {" +
-                "      \"pending\": {" +
-                "        \"bar\": 123" +
-                "      }," +
-                "      \"ready\": {" +
-                "        \"bar\": {" +
-                "          \"readyMillis\": " + (now - 2000) + ", " +
-                "          \"speed\": 0.0," +
-                "          \"cause\": \"reindexing\"," +
-                "          \"state\": \"pending\"" +
-                "        }" +
-                "      }" +
-                "    }," +
-                "    \"foo\": {" +
-                "      \"pending\": {}," +
-                "      \"ready\": {" +
-                "        \"bar\": {" +
-                "          \"readyMillis\": " + (now - 1000) + ", " +
-                "          \"speed\": 0.0," +
-                "          \"cause\": \"reindexing\"," +
-                "          \"state\": \"pending\"" +
-                "        }," +
-                "        \"bax\": {" +
-                "          \"readyMillis\": " + (now - 2000) + ", " +
-                "          \"speed\": 1.0," +
-                "          \"cause\": \"reindexing\"," +
-                "          \"state\": \"pending\"" +
-                "        }," +
-                "        \"baz\": {" +
-                "          \"readyMillis\": " + (now - 1000) + ", " +
-                "          \"speed\": 0.1," +
-                "          \"cause\": \"reindexing\"," +
-                "          \"state\": \"pending\"" +
-                "        }" +
-                "      }" +
-                "    }" +
-                "  }" +
-                "}");
+                                       "  \"enabled\": true," +
+                                       "  \"clusters\": {" +
+                                       "    \"boo\": {" +
+                                       "      \"pending\": {" +
+                                       "        \"bar\": 123" +
+                                       "      }," +
+                                       "      \"ready\": {" +
+                                       "        \"bar\": {" +
+                                       "          \"readyMillis\": " + (now - 2000) + ", " +
+                                       "          \"speed\": 0.0," +
+                                       "          \"cause\": \"reindexing\"," +
+                                       "          \"state\": \"pending\"" +
+                                       "        }" +
+                                       "      }" +
+                                       "    }," +
+                                       "    \"foo\": {" +
+                                       "      \"pending\": {}," +
+                                       "      \"ready\": {" +
+                                       "        \"bar\": {" +
+                                       "          \"readyMillis\": " + (now - 1000) + ", " +
+                                       "          \"speed\": 0.0," +
+                                       "          \"cause\": \"reindexing\"," +
+                                       "          \"state\": \"pending\"" +
+                                       "        }," +
+                                       "        \"bax\": {" +
+                                       "          \"readyMillis\": " + (now - 2000) + ", " +
+                                       "          \"speed\": 1.0," +
+                                       "          \"cause\": \"reindexing\"," +
+                                       "          \"state\": \"pending\"" +
+                                       "        }," +
+                                       "        \"baz\": {" +
+                                       "          \"readyMillis\": " + (now - 1000) + ", " +
+                                       "          \"speed\": 0.1," +
+                                       "          \"cause\": \"reindexing\"," +
+                                       "          \"state\": \"pending\"" +
+                                       "        }" +
+                                       "      }" +
+                                       "    }" +
+                                       "  }" +
+                                       "}");
     }
 
     @Test
@@ -398,15 +398,15 @@ public class ApplicationHandlerTest {
                 .build();
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
         doAnswer(invoc -> new StaticResponse(200,
-                "text/html",
-                "<html>" +
-                        "host=" + invoc.getArgument(1, String.class) + "," +
-                        "service=" + invoc.getArgument(2, String.class) + "," +
-                        "path=" + invoc.getArgument(3, HttpURL.Path.class) + "," +
-                        "query=" + invoc.getArgument(4, HttpURL.Query.class) +
-                        (invoc.getArgument(5, HttpURL.class) == null ? "" : ("," +
-                                "forwardedUrl=" + invoc.getArgument(5, HttpURL.class))) +
-                        "</html>"))
+                                             "text/html",
+                                             "<html>" +
+                                             "host=" + invoc.getArgument(1, String.class) + "," +
+                                             "service=" + invoc.getArgument(2, String.class) + "," +
+                                             "path=" + invoc.getArgument(3, HttpURL.Path.class) + "," +
+                                             "query=" + invoc.getArgument(4, HttpURL.Query.class) +
+                                             (invoc.getArgument(5, HttpURL.class) == null ? "" : ("," +
+                                             "forwardedUrl=" + invoc.getArgument(5, HttpURL.class))) +
+                                             "</html>"))
                 .when(mockHttpProxy).get(any(), any(), any(), any(), any(), any());
 
         HttpResponse response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/container-clustercontroller/" + host + "/status/some/path/clusterName1?foo=bar", GET));
@@ -431,14 +431,14 @@ public class ApplicationHandlerTest {
         HttpResponse response = fileDistributionStatus(applicationId, zone);
         assertEquals(200, response.getStatus());
         assertEquals("{\"hosts\":[{\"hostname\":\"mytesthost\",\"status\":\"UNKNOWN\",\"message\":\"error: Connection error(104)\",\"fileReferences\":[]}],\"status\":\"UNKNOWN\"}",
-                getRenderedString(response));
+                     getRenderedString(response));
 
         // 404 for unknown application
         ApplicationId unknown = new ApplicationId.Builder().applicationName("unknown").tenant("default").build();
         HttpResponse responseForUnknown = fileDistributionStatus(unknown, zone);
         assertEquals(404, responseForUnknown.getStatus());
         assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"Unknown application id 'default.unknown'\"}",
-                getRenderedString(responseForUnknown));
+                     getRenderedString(responseForUnknown));
     }
 
     @Test
@@ -540,17 +540,17 @@ public class ApplicationHandlerTest {
     @Test
     public void testVerifyEndpoints() {
         expectedEndpoints = List.of(new Endpoint(ApplicationId.defaultId(),
-                ClusterSpec.Id.from("bluster"),
-                HttpURL.from(URI.create("https://bluster.tld:1234")),
-                Optional.of(uncheck(() -> InetAddress.getByName("4.3.2.1"))),
-                Optional.of(DomainName.of("fluster.tld")),
-                false,
-                CloudAccount.empty));
+                                                 ClusterSpec.Id.from("bluster"),
+                                                 HttpURL.from(URI.create("https://bluster.tld:1234")),
+                                                 Optional.of(uncheck(() -> InetAddress.getByName("4.3.2.1"))),
+                                                 Optional.of(DomainName.of("fluster.tld")),
+                                                 false,
+                                                 CloudAccount.empty));
         availability = new Availability(EndpointsChecker.Status.available, "Endpoints are ready");
         ApplicationHandler handler = createApplicationHandler();
         HttpRequest request = createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/verify-endpoints",
-                POST,
-                new ByteArrayInputStream("""
+                                                POST,
+                                                new ByteArrayInputStream("""
                                                                          {
                                                                            "endpoints": [
                                                                              {
@@ -565,7 +565,7 @@ public class ApplicationHandlerTest {
         HttpResponse response = handler.handle(request);
         assertEquals(200, response.getStatus());
         assertEquals("{\"status\":\"available\",\"message\":\"Endpoints are ready\"}",
-                new ByteArrayOutputStream() {{ uncheck(() -> response.render(this)); }}.toString(UTF_8));
+                     new ByteArrayOutputStream() {{ uncheck(() -> response.render(this)); }}.toString(UTF_8));
     }
 
     @Test
@@ -577,73 +577,73 @@ public class ApplicationHandlerTest {
     public void testReindexingSerialization() throws IOException {
         Instant now = Instant.ofEpochMilli(123456);
         ApplicationReindexing applicationReindexing = ApplicationReindexing.empty()
-                .withPending("foo", "bar", 123L).withReady("moo", "baz", now, 1, "reindexing");
+                                                                           .withPending("foo", "bar", 123L).withReady("moo", "baz", now, 1, "reindexing");
         ClusterReindexing clusterReindexing = new ClusterReindexing(Map.of("bax", new Status(now, null, null, null, null),
-                "baz", new Status(now.plusSeconds(1),
-                        now.plusSeconds(2),
-                        ClusterReindexing.State.FAILED,
-                        "message",
-                        0.1)));
+                                                                           "baz", new Status(now.plusSeconds(1),
+                                                                                             now.plusSeconds(2),
+                                                                                             ClusterReindexing.State.FAILED,
+                                                                                             "message",
+                                                                                             0.1)));
         Map<String, Set<String>> documentTypes = new TreeMap<>(Map.of("boo", new TreeSet<>(Set.of("bar", "baz", "bax")),
-                "foo", new TreeSet<>(Set.of("bar", "hax")),
-                "moo", new TreeSet<>(Set.of("baz", "bax"))));
+                                                                      "foo", new TreeSet<>(Set.of("bar", "hax")),
+                                                                      "moo", new TreeSet<>(Set.of("baz", "bax"))));
 
         assertJsonEquals(getRenderedString(new ReindexingResponse(documentTypes,
-                        applicationReindexing,
-                        Map.of("boo", clusterReindexing,
-                                "moo", clusterReindexing))),
-                """
-                {
-                  "enabled": true,
-                  "clusters": {
-                    "boo": {
-                      "pending": {},
-                      "ready": {
-                        "bar": {},
-                        "bax": {
-                          "startedMillis": 123456
-                        },
-                        "baz": {
-                          "startedMillis": 124456,
-                          "endedMillis": 125456,
-                          "message": "message",
-                          "progress": 0.1,
-                          "state": "failed"
-                        }
-                      }
-                    },
-                    "foo": {
-                      "pending": {
-                        "bar": 123
-                      },
-                      "ready": {
-                        "bar": {
-                          "state": "pending"
-                        },
-                        "hax": {}
-                      }
-                    },
-                    "moo": {
-                      "pending": {},
-                      "ready": {
-                        "bax": {
-                          "startedMillis": 123456
-                        },
-                        "baz": {
-                          "readyMillis": 123456,
-                          "speed": 1.0,
-                          "cause": "reindexing",
-                          "startedMillis": 124456,
-                          "endedMillis": 125456,
-                          "message": "message",
-                          "progress": 0.1,
-                          "state": "failed"
-                        }
-                      }
-                    }
-                  }
-                }
-                """);
+                                                                  applicationReindexing,
+                                                                  Map.of("boo", clusterReindexing,
+                                                                         "moo", clusterReindexing))),
+                         """
+                         {
+                           "enabled": true,
+                           "clusters": {
+                             "boo": {
+                               "pending": {},
+                               "ready": {
+                                 "bar": {},
+                                 "bax": {
+                                   "startedMillis": 123456
+                                 },
+                                 "baz": {
+                                   "startedMillis": 124456,
+                                   "endedMillis": 125456,
+                                   "message": "message",
+                                   "progress": 0.1,
+                                   "state": "failed"
+                                 }
+                               }
+                             },
+                             "foo": {
+                               "pending": {
+                                 "bar": 123
+                               },
+                               "ready": {
+                                 "bar": {
+                                   "state": "pending"
+                                 },
+                                 "hax": {}
+                               }
+                             },
+                             "moo": {
+                               "pending": {},
+                               "ready": {
+                                 "bax": {
+                                   "startedMillis": 123456
+                                 },
+                                 "baz": {
+                                   "readyMillis": 123456,
+                                   "speed": 1.0,
+                                   "cause": "reindexing",
+                                   "startedMillis": 124456,
+                                   "endedMillis": 125456,
+                                   "message": "message",
+                                   "progress": 0.1,
+                                   "state": "failed"
+                                 }
+                               }
+                             }
+                           }
+                         }
+                         """);
     }
 
     @Test
@@ -653,36 +653,36 @@ public class ApplicationHandlerTest {
 
         { // Known service
             HttpResponse response = createResponse(new ServiceResponse(ServiceResponse.Status.ok,
-                            3,
-                            3,
-                            true),
-                    hostAndPort,
-                    uri);
+                                                                       3,
+                                                                       3,
+                                                                       true),
+                                                   hostAndPort,
+                                                   uri);
             assertResponse("{\n" +
-                            "  \"url\": \"" + uri.toString() + "\",\n" +
-                            "  \"host\": \"" + hostAndPort + "\",\n" +
-                            "  \"wantedGeneration\": 3,\n" +
-                            "  \"converged\": true,\n" +
-                            "  \"currentGeneration\": 3\n" +
-                            "}",
-                    200,
-                    response);
+                           "  \"url\": \"" + uri.toString() + "\",\n" +
+                           "  \"host\": \"" + hostAndPort + "\",\n" +
+                           "  \"wantedGeneration\": 3,\n" +
+                           "  \"converged\": true,\n" +
+                           "  \"currentGeneration\": 3\n" +
+                           "}",
+                           200,
+                           response);
         }
 
         { // Missing service
             HttpResponse response = createResponse(new ServiceResponse(ServiceResponse.Status.hostNotFound,
-                            3L),
-                    hostAndPort,
-                    uri);
+                                                                       3L),
+                                                   hostAndPort,
+                                                   uri);
 
             assertResponse("{\n" +
-                            "  \"url\": \"" + uri.toString() + "\",\n" +
-                            "  \"host\": \"" + hostAndPort + "\",\n" +
-                            "  \"wantedGeneration\": 3,\n" +
-                            "  \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
-                            "}",
-                    410,
-                    response);
+                           "  \"url\": \"" + uri.toString() + "\",\n" +
+                           "  \"host\": \"" + hostAndPort + "\",\n" +
+                           "  \"wantedGeneration\": 3,\n" +
+                           "  \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
+                           "}",
+                           410,
+                           response);
         }
     }
 
@@ -698,26 +698,26 @@ public class ApplicationHandlerTest {
         {
             HttpServiceListResponse response =
                     new HttpServiceListResponse(new ServiceListResponse(Map.of(createServiceInfo(hostname, port, Optional.empty()), 3L),
-                            3L,
-                            3L),
-                            requestUrl);
+                                                                        3L,
+                                                                        3L),
+                                                requestUrl);
             assertResponse("{\n" +
-                            "  \"services\": [\n" +
-                            "    {\n" +
-                            "      \"host\": \"" + hostname + "\",\n" +
-                            "      \"port\": " + port + ",\n" +
-                            "      \"type\": \"container\",\n" +
-                            "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
-                            "      \"currentGeneration\":" + 3 + "\n" +
-                            "    }\n" +
-                            "  ],\n" +
-                            "  \"url\": \"" + requestUrl.toString() + "\",\n" +
-                            "  \"currentGeneration\": 3,\n" +
-                            "  \"wantedGeneration\": 3,\n" +
-                            "  \"converged\": true\n" +
-                            "}",
-                    200,
-                    response);
+                           "  \"services\": [\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname + "\",\n" +
+                           "      \"port\": " + port + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
+                           "      \"currentGeneration\":" + 3 + "\n" +
+                           "    }\n" +
+                           "  ],\n" +
+                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
+                           "  \"currentGeneration\": 3,\n" +
+                           "  \"wantedGeneration\": 3,\n" +
+                           "  \"converged\": true\n" +
+                           "}",
+                           200,
+                           response);
         }
 
         { // Two hosts on different generations
@@ -732,34 +732,34 @@ public class ApplicationHandlerTest {
 
             HttpServiceListResponse response =
                     new HttpServiceListResponse(new ServiceListResponse(serviceInfos,
-                            4L,
-                            3L),
-                            requestUrl);
+                                                                        4L,
+                                                                        3L),
+                                                requestUrl);
             assertResponse("{\n" +
-                            "  \"services\": [\n" +
-                            "    {\n" +
-                            "      \"host\": \"" + hostname + "\",\n" +
-                            "      \"port\": " + port + ",\n" +
-                            "      \"type\": \"container\",\n" +
-                            "      \"url\": \"" + serviceUrl + "\",\n" +
-                            "      \"currentGeneration\":" + 4 + "\n" +
-                            "    },\n" +
-                            "    {\n" +
-                            "      \"clusterName\": \"foo\",\n" +
-                            "      \"host\": \"" + hostname2 + "\",\n" +
-                            "      \"port\": " + port2 + ",\n" +
-                            "      \"type\": \"container\",\n" +
-                            "      \"url\": \"" + serviceUrl2 + "\",\n" +
-                            "      \"currentGeneration\":" + 3 + "\n" +
-                            "    }\n" +
-                            "  ],\n" +
-                            "  \"url\": \"" + requestUrl + "\",\n" +
-                            "  \"currentGeneration\": 3,\n" +
-                            "  \"wantedGeneration\": 4,\n" +
-                            "  \"converged\": false\n" +
-                            "}",
-                    200,
-                    response);
+                           "  \"services\": [\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname + "\",\n" +
+                           "      \"port\": " + port + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl + "\",\n" +
+                           "      \"currentGeneration\":" + 4 + "\n" +
+                           "    },\n" +
+                           "    {\n" +
+                           "      \"clusterName\": \"foo\",\n" +
+                           "      \"host\": \"" + hostname2 + "\",\n" +
+                           "      \"port\": " + port2 + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl2 + "\",\n" +
+                           "      \"currentGeneration\":" + 3 + "\n" +
+                           "    }\n" +
+                           "  ],\n" +
+                           "  \"url\": \"" + requestUrl + "\",\n" +
+                           "  \"currentGeneration\": 3,\n" +
+                           "  \"wantedGeneration\": 4,\n" +
+                           "  \"converged\": false\n" +
+                           "}",
+                           200,
+                           response);
         }
     }
 
@@ -769,25 +769,25 @@ public class ApplicationHandlerTest {
         URI uri = URI.create("https://" + hostAndPort + "/serviceconvergence/container");
 
         HttpResponse response = createResponse(new ServiceResponse(ServiceResponse.Status.notFound,
-                        3L,
-                        "some error message"),
-                hostAndPort,
-                uri);
+                                                                   3L,
+                                                                   "some error message"),
+                                               hostAndPort,
+                                               uri);
 
         assertResponse("{\n" +
-                        "  \"url\": \"" + uri + "\",\n" +
-                        "  \"host\": \"" + hostAndPort + "\",\n" +
-                        "  \"wantedGeneration\": 3,\n" +
-                        "  \"error\": \"some error message\"" +
-                        "}",
-                404,
-                response);
+                       "  \"url\": \"" + uri + "\",\n" +
+                       "  \"host\": \"" + hostAndPort + "\",\n" +
+                       "  \"wantedGeneration\": 3,\n" +
+                       "  \"error\": \"some error message\"" +
+                       "}",
+                       404,
+                       response);
     }
 
     private void assertNotAllowed(Method method) throws IOException {
         String url = "http://myhost:14000/application/v2/tenant/" + mytenantName + "/application/default";
         deleteAndAssertResponse(url, Response.Status.METHOD_NOT_ALLOWED, HttpErrorResponse.ErrorCode.METHOD_NOT_ALLOWED, "{\"error-code\":\"METHOD_NOT_ALLOWED\",\"message\":\"Method '" + method + "' is not supported\"}",
-                method);
+                                method);
     }
 
     private void deleteAndAssertOKResponseMocked(ApplicationId applicationId, boolean fullAppIdInUrl) throws IOException {
@@ -843,25 +843,25 @@ public class ApplicationHandlerTest {
         assertEquals(200, response.getStatus());
         String renderedString = SessionHandlerTest.getRenderedString(response);
         assertEquals("{\"generation\":" + expectedGeneration +
-                ",\"applicationPackageFileReference\":\"./\"" +
-                ",\"modelVersions\":[\"" + expectedVersion.toFullString() + "\"]}", renderedString);
+                     ",\"applicationPackageFileReference\":\"./\"" +
+                     ",\"modelVersions\":[\"" + expectedVersion.toFullString() + "\"]}", renderedString);
     }
 
     private void assertApplicationExists(ApplicationId applicationId, Zone zone) throws IOException {
         String tenantName = applicationId.tenant().value();
         String expected = "[\"http://myhost:14000/application/v2/tenant/" +
-                tenantName + "/application/" + applicationId.application().value() +
-                "/environment/" + zone.environment().value() +
-                "/region/" + zone.region().value() +
-                "/instance/" + applicationId.instance().value() + "\"]";
+                          tenantName + "/application/" + applicationId.application().value() +
+                          "/environment/" + zone.environment().value() +
+                          "/region/" + zone.region().value() +
+                          "/instance/" + applicationId.instance().value() + "\"]";
         ListApplicationsHandler listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testContext(),
-                tenantRepository,
-                Zone.defaultZone());
+                                                                                      tenantRepository,
+                                                                                      Zone.defaultZone());
         ListApplicationsHandlerTest.assertResponse(listApplicationsHandler,
-                "http://myhost:14000/application/v2/tenant/" + tenantName + "/application/",
-                Response.Status.OK,
-                expected,
-                GET);
+                                                   "http://myhost:14000/application/v2/tenant/" + tenantName + "/application/",
+                                                   Response.Status.OK,
+                                                   expected,
+                                                   GET);
     }
 
     private void reindexing(ApplicationId application, Method method, String expectedBody, int statusCode) throws IOException {
@@ -919,7 +919,7 @@ public class ApplicationHandlerTest {
 
     private static void assertResponse(String expectedJson, int status, HttpResponse response) {
         assertResponse((responseBody) -> assertJsonEquals(new String(responseBody
-                .getBytes()), expectedJson), status, response);
+                                                                             .getBytes()), expectedJson), status, response);
     }
 
     private static void assertResponse(Consumer<String> assertFunc, int status, HttpResponse response) {
@@ -935,12 +935,12 @@ public class ApplicationHandlerTest {
 
     private ServiceInfo createServiceInfo(String hostname, int port, Optional<String> clusterName) {
         return new ServiceInfo("container",
-                "container",
-                List.of(new PortInfo(port, List.of("state"))),
-                clusterName.map(name -> Map.of("clustername", name))
-                        .orElseGet(Map::of),
-                "configId",
-                hostname);
+                               "container",
+                               List.of(new PortInfo(port, List.of("state"))),
+                               clusterName.map(name -> Map.of("clustername", name))
+                                          .orElseGet(Map::of),
+                               "configId",
+                               hostname);
     }
 
 }
