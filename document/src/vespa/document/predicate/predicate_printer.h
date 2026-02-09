@@ -3,6 +3,7 @@
 #pragma once
 
 #include "predicate_slime_visitor.h"
+#include <memory>
 #include <string>
 
 namespace vespalib {
@@ -33,4 +34,3 @@ public:
 };
 
 }  // namespace document
-

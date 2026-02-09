@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/bucket/bucketspace.h>
 #include <memory>
 #include <string>
