@@ -136,7 +136,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
         // Two conditions that prevent a node from restarting:
         // 1. Any service on this node with empty applyOnRestart that hasn't reached node generation,
         // which means that it hasn't received and applied a new config yet.
-        // 2. Any service with applyOnRestart set to false,
+        // 2. Any service on this node with applyOnRestart set to false,
         // which means that it hasn't received a config that requires a restart yet.
         Set<String> nodesToRestart = hostnames.stream()
                 .filter(hostname -> {
