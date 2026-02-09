@@ -29,6 +29,7 @@ namespace searchcorespi {
     class IFlushTarget;
     namespace index { struct IThreadingService; }
 }
+namespace searchcorespi::common { class ResourceUsage; }
 
 namespace proton {
 
@@ -152,6 +153,7 @@ public:
     void close();
     void tearDownReferences(IDocumentDBReferenceResolver &resolver);
     void validateDocStore(FeedHandler & feedHandler, SerialNum serialNum);
+    searchcorespi::common::ResourceUsage get_resource_usage() const;
 };
 
 } // namespace proton

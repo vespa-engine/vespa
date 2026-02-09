@@ -169,7 +169,9 @@ void
 DiskMemUsageSampler::add_resource_usage_provider(std::shared_ptr<const IResourceUsageProvider> provider)
 {
     std::lock_guard<std::mutex> guard(_lock);
-    _resource_usage_providers.push_back(provider);
+    if (provider) {
+        _resource_usage_providers.push_back(provider);
+    }
 }
 
 void
