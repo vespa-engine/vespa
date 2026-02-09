@@ -140,7 +140,7 @@ private:
     std::shared_ptr<DDBState>                        _state;
     ResourceUsageForwarder                           _resource_usage_forwarder;
     AttributeUsageFilter                             _writeFilter;
-    std::shared_ptr<searchcorespi::common::IResourceUsageProvider> _resource_usage_provider;
+    std::weak_ptr<searchcorespi::common::IResourceUsageProvider> _current_resource_usage_provider;
     std::unique_ptr<FeedHandler>                     _feedHandler;
     DocumentSubDBCollection                          _subDBs;
     MaintenanceController                            _maintenanceController;
@@ -427,6 +427,7 @@ public:
     void waitForOnlineState();
     IResourceUsageListener *resource_usage_forwarder() noexcept { return &_resource_usage_forwarder; }
     std::shared_ptr<const searchcorespi::common::IResourceUsageProvider> resource_usage_provider();
+    searchcorespi::common::ResourceUsage get_resource_usage() const;
     ExecutorThreadingService & getWriteService() { return _writeService; }
 
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);

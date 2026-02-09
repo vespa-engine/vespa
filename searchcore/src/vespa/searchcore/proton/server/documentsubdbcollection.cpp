@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -18,6 +19,7 @@ using search::GrowStrategy;
 using search::SerialNum;
 using search::index::Schema;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::ResourceUsage;
 using vespalib::makeLambdaTask;
 
 namespace proton {
@@ -351,6 +353,16 @@ void DocumentSubDBCollection::validateDocStore(FeedHandler & feedHandler, Serial
     for (auto subDb : _subDBs) {
         subDb->validateDocStore(feedHandler, serialNum);
     }
+}
+
+ResourceUsage
+DocumentSubDBCollection::get_resource_usage() const
+{
+    ResourceUsage resource_usage;
+    for (auto subDb : _subDBs) {
+        resource_usage.merge(subDb->get_resource_usage());;
+    }
+    return resource_usage;
 }
 
 } // namespace proton

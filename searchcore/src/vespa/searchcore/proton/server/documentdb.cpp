@@ -97,18 +97,17 @@ public:
 
 class DocumentDBResourceUsageProvider : public IResourceUsageProvider {
 private:
-    const DocumentDB& _doc_db;
+    std::shared_ptr<const DocumentDB> _doc_db;
+    vespalib::RetainGuard             _retain_guard;
 
 public:
-    explicit DocumentDBResourceUsageProvider(const DocumentDB& doc_db) noexcept
-        : _doc_db(doc_db)
+    explicit DocumentDBResourceUsageProvider(DocumentDB& doc_db) noexcept
+        : _doc_db(doc_db.shared_from_this()),
+          _retain_guard(doc_db.retain())
     {}
 
     ResourceUsage get_resource_usage() const override {
-        if (!_doc_db.get_state().get_load_done())  {
-            return ResourceUsage{};
-        }
-        return _doc_db.getReadySubDB()->get_resource_usage();
+        return _doc_db->get_resource_usage();
     }
 };
 
@@ -210,7 +209,7 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _state(std::make_shared<DDBState>()),
       _resource_usage_forwarder(_writeService.master()),
       _writeFilter(),
-      _resource_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
+      _current_resource_usage_provider(),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, *this, tlsWriterFactory)),
       _subDBs(*this, *this, *_feedHandler, _docTypeName,
               _writeService, shared_service.shared(), fileHeaderContext, std::move(attribute_interlock),
@@ -585,7 +584,7 @@ DocumentDB::close()
     // is going away while system is still up and running then caller must
     // ensure that routing has been torn down and pending messages have been
     // drained.  This goes for all facets: feeding, tls replay,
-    // matching, summary fetch, flushing and reconfig.
+    // matching, summary fetch, flushing, resource usage sampling and reconfig.
     _feedView.clear();
     _subDBs.clearViews();
     _state->enterDeadState();
@@ -1123,7 +1122,26 @@ DocumentDB::getDistributionKey() const
 std::shared_ptr<const IResourceUsageProvider>
 DocumentDB::resource_usage_provider()
 {
-    return _resource_usage_provider;
+    lock_guard guard(_configMutex);
+    if (_state->getClosed()) {
+        return {}; // Not safe to access anymore
+    }
+    auto current_provider = _current_resource_usage_provider.lock();
+    if (current_provider) {
+        return current_provider;
+    }
+    auto result = std::make_shared<DocumentDBResourceUsageProvider>(*this);
+    _current_resource_usage_provider = result;
+    return result;
+}
+
+searchcorespi::common::ResourceUsage
+DocumentDB::get_resource_usage() const
+{
+    if (!_state->get_load_done())  {
+        return ResourceUsage{};
+    }
+    return _subDBs.get_resource_usage();
 }
 
 void
