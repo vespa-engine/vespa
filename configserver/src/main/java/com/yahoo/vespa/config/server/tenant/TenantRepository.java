@@ -487,7 +487,6 @@ public class TenantRepository {
             if (tenant == null)
                 throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");
 
-            log.log(Level.INFO, "Closing tenant '" + name + "'");
             notifyRemovedTenant(name);
             tenant.close();
             if (softDeleteTenantFlag.with(name).value()) {
@@ -499,9 +498,9 @@ public class TenantRepository {
                 //     `sessions` and `applications`, possibly failing this deletion.
                 //  3. Once the last config server (cfg3) reaches this point, the delete should succeed.
                 if (curator.tryDelete(tenant.getPath())) {
-                    log.log(Level.INFO, "Deleted tenant '" + name + "'");
+                    log.log(Level.INFO, "Deleted tenant " + name);
                 } else {
-                    log.log(Level.INFO, "Deleted tenant '" + name + "' (" + tenant.getPath() + " to be removed by other cfgs)");
+                    log.log(Level.INFO, "Deleted tenant " + name + " (" + tenant.getPath() + " to be removed by other cfgs)");
                 }
             } else {
                 curator.delete(tenant.getPath());

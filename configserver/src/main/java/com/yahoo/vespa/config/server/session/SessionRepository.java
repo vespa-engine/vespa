@@ -607,7 +607,7 @@ public class SessionRepository {
 
     public void deleteExpiredRemoteAndLocalSessions(Predicate<Session> sessionIsActiveForApplication, int maxSessionsToDelete) {
         // All known sessions, both local (file) and remote (zookeeper)
-        List<Long> sessions = getLocalSessionsIdsFromFileSystem();
+        List<Long> sessions = new ArrayList<>(getLocalSessionsIdsFromFileSystem());
         sessions.addAll(getRemoteSessionsFromZooKeeper());
         if (sessions.isEmpty()) return;
 
