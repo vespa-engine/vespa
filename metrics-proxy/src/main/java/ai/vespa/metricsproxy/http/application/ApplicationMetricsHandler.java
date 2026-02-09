@@ -10,7 +10,6 @@ import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
-import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.handler.metrics.ErrorResponse;
 import com.yahoo.container.handler.metrics.HttpHandlerBase;
@@ -18,14 +17,15 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
+import java.util.stream.Stream;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.getConsumerOrDefault;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericApplicationModel;
-import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toMetricsPackets;
 import static ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil.toPrometheusModel;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;
@@ -85,17 +85,12 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
 
     private HttpResponse applicationPrometheusResponse(String requestedConsumer) {
         ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
-        var metricsByNode = metricsRetriever.getMetrics(consumer);
 
-
-        List<GenericJsonModel> genericNodes = toGenericApplicationModel(metricsByNode).nodes;
-        List<MetricsPacket> metricsForAllNodes = genericNodes.stream()
-                .flatMap(element -> toMetricsPackets(element)
-                        .stream()
-                        .map(builder -> builder.putDimension(DimensionId.toDimensionId("hostname"), element.hostname))
-                        .map(MetricsPacket.Builder::build))
-                .toList();
-        return new PrometheusResponse(200, toPrometheusModel(metricsForAllNodes, applicationDimensions, nodeDimensions));
+        Stream<MetricsPacket> metricsStream = metricsRetriever.getMetrics(consumer)
+                .values()
+                .stream()
+                .flatMap(Collection::stream);
+        return new PrometheusResponse(200, toPrometheusModel(metricsStream, applicationDimensions, nodeDimensions));
     }
 
 }

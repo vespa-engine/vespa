@@ -149,15 +149,6 @@ public class ApplicationMetricsHandlerTest {
     }
 
     @Test
-    public void prometheus_response_contains_hostname() {
-        String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
-        long hostnameCount = Arrays.stream(response.split("\n"))
-                .filter(line -> line.contains("hostname="))
-                .count();
-        assertEquals(3, hostnameCount);
-    }
-
-    @Test
     public void prometheus_response_obeys_format() {
         String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
         Arrays.stream(response.split("\n"))
