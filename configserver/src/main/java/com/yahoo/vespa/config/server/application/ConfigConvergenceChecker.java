@@ -96,10 +96,10 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                                                HostsToCheck hostsToCheck) {
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
-                .forEach(host -> host.getServices().stream()
-                        .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
-                        .filter(service -> shouldCheckService(hostsToCheck, application, service))
-                        .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
+                   .forEach(host -> host.getServices().stream()
+                                        .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
+                                        .filter(service -> shouldCheckService(hostsToCheck, application, service))
+                                        .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
         log.log(FINE, () -> "Services to check for config convergence: " + servicesToCheck);
         return getServiceGenerations(servicesToCheck, timeoutPerService);
@@ -156,9 +156,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     // Don't check service in a cluster which uses restartOnDeploy (new config will not be used until service is restarted)
     private boolean serviceIsInClusterWhichShouldBeChecked(Application application, ServiceInfo serviceInfo) {
         Set<ApplicationClusterInfo> excludeFromChecking = application.getModel().applicationClusterInfo()
-                .stream()
-                .filter(ApplicationClusterInfo::getDeferChangesUntilRestart)
-                .collect(Collectors.toSet());
+                                                                     .stream()
+                                                                     .filter(ApplicationClusterInfo::getDeferChangesUntilRestart)
+                                                                     .collect(Collectors.toSet());
         log.log(FINE, "Exclude services from these clusters when checking config convergence: " +
                 excludeFromChecking.stream().map(ApplicationClusterInfo::name).collect(Collectors.joining(", ")));
 
@@ -243,9 +243,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     public static Optional<Integer> getStatePort(ServiceInfo service) {
         return service.getPorts().stream()
-                .filter(port -> port.getTags().contains("state"))
-                .map(PortInfo::getPort)
-                .findFirst();
+                      .filter(port -> port.getTags().contains("state"))
+                      .map(PortInfo::getPort)
+                      .findFirst();
     }
 
     @Override
@@ -369,9 +369,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         }
         public ServiceListResponse(Map<ServiceInfo, Long> services, long wantedGeneration, long currentGeneration) {
             this(services.entrySet().stream().map(entry -> new Service(entry.getKey(), entry.getValue())).toList(),
-                    wantedGeneration,
-                    currentGeneration,
-                    currentGeneration >= wantedGeneration);
+                 wantedGeneration,
+                 currentGeneration,
+                 currentGeneration >= wantedGeneration);
         }
 
         public ServiceListResponse unconverged() {
