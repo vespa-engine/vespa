@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
-import com.yahoo.config.model.api.ServiceConfigState;
 import com.yahoo.json.Jackson;
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -61,7 +60,6 @@ import static java.util.logging.Level.FINE;
  * @author Ulf Lilleengen
  * @author hmusum
  * @author bjorncs
- * @author glebashnik
  */
 public class ConfigConvergenceChecker extends AbstractComponent {
 
@@ -77,54 +75,34 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             "distributor"
     );
 
+
     private final ExecutorService responseHandlerExecutor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("config-convergence-checker-response-handler-"));
 
     @Inject
     public ConfigConvergenceChecker() {}
 
-    /**
-     * Fetches config state for all services in the given application.
-     */
-    public Map<ServiceInfo, ServiceConfigState> getServiceConfigStatesUnlessDeferringChangesUntilRestart(
-            Application application, Duration timeoutPerService) {
-        return getServiceConfigStatesUnlessDeferringChangesUntilRestart(
-                application, timeoutPerService, new HostsToCheck(Set.of()));
+    /** Fetches the active config generation for all services in the given application. */
+    public Map<ServiceInfo, Long> getServiceConfigGenerations(Application application, Duration timeoutPerService) {
+        return getServiceConfigGenerations(application, timeoutPerService, new HostsToCheck(Set.of()));
     }
 
     /**
-     * Fetches config state for all services in the given application with {@code hostsToCheck} hostnames or all if empty.
-     * Will not check services which defer config changes until restart if checkAll is false.
+     * Fetches the active config generation for all services in the given application. Will not check services
+     * which defer config changes until restart if checkAll is false. hostsToCheck are names to check, or empty to check all.
      */
-    private Map<ServiceInfo, ServiceConfigState> getServiceConfigStatesUnlessDeferringChangesUntilRestart(
-            Application application, Duration timeoutPerService, HostsToCheck hostsToCheck) {
+    private Map<ServiceInfo, Long> getServiceConfigGenerations(Application application,
+                                                               Duration timeoutPerService,
+                                                               HostsToCheck hostsToCheck) {
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
-                   .forEach(host -> host.getServices().stream()
-                                        .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
-                                        .filter(service -> shouldCheckService(hostsToCheck, application, service))
-                                        .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
+                .forEach(host -> host.getServices().stream()
+                        .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
+                        .filter(service -> shouldCheckService(hostsToCheck, application, service))
+                        .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
-        log.log(FINE, () -> "Services to check for config state: " + servicesToCheck);
-        return getServiceConfigStates(servicesToCheck, timeoutPerService);
-    }
-
-    /**
-     * Fetches config state for all services in the given application with hostnames specified in {@code hostsToCheck} or all if empty.
-     */
-    public Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(
-            Application application, Duration timeoutPerService, Set<String> hostnames) {
-        HostsToCheck hostsToCheck = new HostsToCheck(hostnames);
-        
-        List<ServiceInfo> servicesToCheck = application.getModel().getHosts().stream()
-                .flatMap(host -> host.getServices().stream()
-                        .filter(service -> hostsToCheck.check(service.getHostName())
-                                && serviceTypesToCheck.contains(service.getServiceType())
-                                && getStatePort(service).isPresent()))
-                .toList();
-        
-        log.log(FINE, () -> "Services to check for config state: " + servicesToCheck);
-        return getServiceConfigStates(servicesToCheck, timeoutPerService);
+        log.log(FINE, () -> "Services to check for config convergence: " + servicesToCheck);
+        return getServiceGenerations(servicesToCheck, timeoutPerService);
     }
 
     /** Checks all services in given application. Returns the minimum current generation of all services */
@@ -142,8 +120,8 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     private ServiceListResponse checkConvergence(Application application, Duration timeoutPerService, HostsToCheck hostsToCheck) {
-        Map<ServiceInfo, ServiceConfigState> currentGenerations = getServiceConfigStatesUnlessDeferringChangesUntilRestart(application, timeoutPerService, hostsToCheck);
-        long currentGeneration = currentGenerations.values().stream().map(ServiceConfigState::currentGeneration).mapToLong(Long::longValue).min().orElse(-1);
+        Map<ServiceInfo, Long> currentGenerations = getServiceConfigGenerations(application, timeoutPerService, hostsToCheck);
+        long currentGeneration = currentGenerations.values().stream().mapToLong(Long::longValue).min().orElse(-1);
         return new ServiceListResponse(currentGenerations, application.getApplicationGeneration(), currentGeneration);
     }
 
@@ -154,10 +132,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             client.start();
             if ( ! hostInApplication(application, hostAndPortToCheck))
                 return new ServiceResponse(ServiceResponse.Status.hostNotFound, wantedGeneration);
-            ServiceConfigState serviceConfigState = getServiceConfigState(
-                            client, URI.create("http://" + hostAndPortToCheck), timeout)
-                    .get();
-            long currentGeneration = serviceConfigState.currentGeneration();
+            long currentGeneration = getServiceGeneration(client, URI.create("http://" + hostAndPortToCheck), timeout).get();
             boolean converged = currentGeneration >= wantedGeneration;
             return new ServiceResponse(ServiceResponse.Status.ok, wantedGeneration, currentGeneration, converged);
         } catch (InterruptedException | ExecutionException | CancellationException e) { // e.g. if we cannot connect to the service to find generation
@@ -181,27 +156,26 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     // Don't check service in a cluster which uses restartOnDeploy (new config will not be used until service is restarted)
     private boolean serviceIsInClusterWhichShouldBeChecked(Application application, ServiceInfo serviceInfo) {
         Set<ApplicationClusterInfo> excludeFromChecking = application.getModel().applicationClusterInfo()
-                                                                     .stream()
-                                                                     .filter(ApplicationClusterInfo::getDeferChangesUntilRestart)
-                                                                     .collect(Collectors.toSet());
+                .stream()
+                .filter(ApplicationClusterInfo::getDeferChangesUntilRestart)
+                .collect(Collectors.toSet());
         log.log(FINE, "Exclude services from these clusters when checking config convergence: " +
                 excludeFromChecking.stream().map(ApplicationClusterInfo::name).collect(Collectors.joining(", ")));
 
-        return excludeFromChecking.stream().noneMatch(info -> info.name()
-                .equals(serviceInfo.getProperty("clustername").orElse("")));
+        return excludeFromChecking.stream().noneMatch(info -> info.name().equals(serviceInfo.getProperty("clustername").orElse("")));
     }
 
     /** Gets service generation for a list of services (in parallel). */
-    private Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(List<ServiceInfo> services, Duration timeout) {
+    private Map<ServiceInfo, Long> getServiceGenerations(List<ServiceInfo> services, Duration timeout) {
         try (CloseableHttpAsyncClient client = createHttpClient()) {
             client.start();
             List<CompletableFuture<Void>> inprogressRequests = new ArrayList<>();
-            ConcurrentMap<ServiceInfo, ServiceConfigState> temporaryResult = new ConcurrentHashMap<>();
+            ConcurrentMap<ServiceInfo, Long> temporaryResult = new ConcurrentHashMap<>();
             for (ServiceInfo service : services) {
                 int statePort = getStatePort(service).orElse(0);
                 if (statePort <= 0) continue;
                 URI uri = URI.create("http://" + service.getHostName() + ":" + statePort);
-                CompletableFuture<Void> inprogressRequest = getServiceConfigState(client, uri, timeout)
+                CompletableFuture<Void> inprogressRequest = getServiceGeneration(client, uri, timeout)
                         .handle((result, error) -> {
                             if (result != null) {
                                 temporaryResult.put(service, result);
@@ -209,10 +183,8 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                 log.log(
                                         FINE,
                                         error,
-                                        () -> String.format(
-                                                "Failed to retrieve service config generation for '%s': %s",
-                                                service, error.getMessage()));
-                                temporaryResult.put(service, new ServiceConfigState(-1L, Optional.empty()));
+                                        () -> String.format("Failed to retrieve service config generation for '%s': %s", service, error.getMessage()));
+                                temporaryResult.put(service, -1L);
                             }
                             return null;
                         });
@@ -227,7 +199,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     /** Get service generation of service at given URL */
-    private CompletableFuture<ServiceConfigState> getServiceConfigState(CloseableHttpAsyncClient client, URI serviceUrl, Duration timeout) {
+    private CompletableFuture<Long> getServiceGeneration(CloseableHttpAsyncClient client, URI serviceUrl, Duration timeout) {
         SimpleHttpRequest request = SimpleRequestBuilder.get(createApiUri(serviceUrl)).build();
         request.setConfig(createRequestConfig(timeout));
 
@@ -243,12 +215,12 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         return responsePromise.thenApplyAsync(this::handleResponse, responseHandlerExecutor);
     }
 
-    private ServiceConfigState handleResponse(SimpleHttpResponse response) throws UncheckedIOException {
+    private long handleResponse(SimpleHttpResponse response) throws UncheckedIOException {
         try {
             int statusCode = response.getCode();
             if (statusCode != HttpStatus.SC_OK) throw new IOException("Expected status code 200, got " + statusCode);
             if (response.getBody() == null) throw new IOException("Response has no content");
-            return serviceConfigStateFromJson(Jackson.mapper().readTree(response.getBodyText()));
+            return generationFromContainerState(Jackson.mapper().readTree(response.getBodyText()));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -271,9 +243,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     public static Optional<Integer> getStatePort(ServiceInfo service) {
         return service.getPorts().stream()
-                      .filter(port -> port.getTags().contains("state"))
-                      .map(PortInfo::getPort)
-                      .findFirst();
+                .filter(port -> port.getTags().contains("state"))
+                .map(PortInfo::getPort)
+                .findFirst();
     }
 
     @Override
@@ -286,21 +258,17 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         }
     }
 
-    private static ServiceConfigState serviceConfigStateFromJson(JsonNode state) {
-        JsonNode configNode = state.get("config");
-        long generation = configNode.get("generation").asLong(-1);
-        Optional<Boolean> applyOnRestart = configNode.has("applyOnRestart") ?
-                Optional.of(configNode.get("applyOnRestart").asBoolean()) : Optional.empty();
-        return new ServiceConfigState(generation, applyOnRestart);
+    private static long generationFromContainerState(JsonNode state) {
+        return state.get("config").get("generation").asLong(-1);
     }
 
-    private static Map<ServiceInfo, ServiceConfigState> createMapOrderedByServiceList(
-            List<ServiceInfo> services, ConcurrentMap<ServiceInfo, ServiceConfigState> result) {
-        Map<ServiceInfo, ServiceConfigState> orderedResult = new LinkedHashMap<>();
+    private static Map<ServiceInfo, Long> createMapOrderedByServiceList(
+            List<ServiceInfo> services, ConcurrentMap<ServiceInfo, Long> result) {
+        Map<ServiceInfo, Long> orderedResult = new LinkedHashMap<>();
         for (ServiceInfo service : services) {
-            ServiceConfigState state = result.get(service);
-            if (state != null) {
-                orderedResult.put(service, state);
+            Long generation = result.get(service);
+            if (generation != null) {
+                orderedResult.put(service, generation);
             }
         }
         return orderedResult;
@@ -399,11 +367,11 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             this.currentGeneration = currentGeneration;
             this.converged = converged;
         }
-        public ServiceListResponse(Map<ServiceInfo, ServiceConfigState> services, long wantedGeneration, long currentGeneration) {
+        public ServiceListResponse(Map<ServiceInfo, Long> services, long wantedGeneration, long currentGeneration) {
             this(services.entrySet().stream().map(entry -> new Service(entry.getKey(), entry.getValue())).toList(),
-                 wantedGeneration,
-                 currentGeneration,
-                 currentGeneration >= wantedGeneration);
+                    wantedGeneration,
+                    currentGeneration,
+                    currentGeneration >= wantedGeneration);
         }
 
         public ServiceListResponse unconverged() {
@@ -413,12 +381,13 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         public List<Service> services() { return services; }
 
         public static class Service {
-            public final ServiceInfo serviceInfo;
-            public final ServiceConfigState serviceConfigState;
 
-            public Service(ServiceInfo serviceInfo, ServiceConfigState serviceConfigState) {
+            public final ServiceInfo serviceInfo;
+            public final Long currentGeneration;
+
+            public Service(ServiceInfo serviceInfo, Long currentGeneration) {
                 this.serviceInfo = serviceInfo;
-                this.serviceConfigState = serviceConfigState;
+                this.currentGeneration = currentGeneration;
             }
 
         }

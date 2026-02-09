@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
-import com.yahoo.config.model.api.ServiceConfigState;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.Application;
@@ -62,21 +61,21 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
             ApplicationCuratorDatabase database = tenant.getApplicationRepo().database();
             for (ApplicationId id : database.activeApplications())
                 applicationRepository.getActiveApplicationVersions(id)
-                                     .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
-                                     .ifPresent(application -> {
-                                         try {
-                                             attempts.incrementAndGet();
-                                             applicationRepository.modifyReindexing(id, reindexing -> {
-                                                 reindexing = withNewReady(reindexing, lazyGeneration(application), clock.instant());
-                                                 reindexing = withOnlyCurrentData(reindexing, application);
-                                                 return reindexing;
-                                             });
-                                         }
-                                         catch (RuntimeException e) {
-                                             log.log(Level.INFO, "Failed to update reindexing status for " + id + ": " + Exceptions.toMessageString(e));
-                                             failures.incrementAndGet();
-                                         }
-                                     });
+                        .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
+                        .ifPresent(application -> {
+                            try {
+                                attempts.incrementAndGet();
+                                applicationRepository.modifyReindexing(id, reindexing -> {
+                                    reindexing = withNewReady(reindexing, lazyGeneration(application), clock.instant());
+                                    reindexing = withOnlyCurrentData(reindexing, application);
+                                    return reindexing;
+                                });
+                            }
+                            catch (RuntimeException e) {
+                                log.log(Level.INFO, "Failed to update reindexing status for " + id + ": " + Exceptions.toMessageString(e));
+                                failures.incrementAndGet();
+                            }
+                        });
         }
         return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
@@ -85,10 +84,9 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
         AtomicLong oldest = new AtomicLong();
         return () -> {
             if (oldest.get() == 0)
-                oldest.set(convergence.getServiceConfigStatesUnlessDeferringChangesUntilRestart(application, timeout).values().stream().map(
-                                ServiceConfigState::currentGeneration)
-                                      .min(naturalOrder())
-                                      .orElse(-1L));
+                oldest.set(convergence.getServiceConfigGenerations(application, timeout).values().stream()
+                        .min(naturalOrder())
+                        .orElse(-1L));
 
             return oldest.get();
         };
@@ -100,7 +98,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
             for (var pending : cluster.getValue().pending().entrySet())
                 if (pending.getValue() <= oldestGeneration.get()) {
                     reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now, SPEED, CAUSE)
-                                           .withoutPending(cluster.getKey(), pending.getKey());
+                            .withoutPending(cluster.getKey(), pending.getKey());
                 }
 
         return reindexing;

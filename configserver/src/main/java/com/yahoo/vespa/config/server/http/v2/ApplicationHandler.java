@@ -144,17 +144,17 @@ public class ApplicationHandler extends HttpHandler {
     private HttpResponse listServiceConverge(ApplicationId applicationId, HttpRequest request) {
         ServiceListResponse response =
                 applicationRepository.servicesToCheckForConfigConvergence(applicationId,
-                                                                          getTimeoutFromRequest(request),
-                                                                          getVespaVersionFromRequest(request));
+                        getTimeoutFromRequest(request),
+                        getVespaVersionFromRequest(request));
         return new HttpServiceListResponse(response, request.getUri());
     }
 
     private HttpResponse checkServiceConverge(ApplicationId applicationId, String hostAndPort, HttpRequest request) {
         ServiceResponse response =
                 applicationRepository.checkServiceForConfigConvergence(applicationId,
-                                                                       hostAndPort,
-                                                                       getTimeoutFromRequest(request),
-                                                                       getVespaVersionFromRequest(request));
+                        hostAndPort,
+                        getTimeoutFromRequest(request),
+                        getVespaVersionFromRequest(request));
         return HttpServiceResponse.createResponse(response, hostAndPort, request.getUri());
     }
 
@@ -171,24 +171,24 @@ public class ApplicationHandler extends HttpHandler {
         Query query = Query.empty().add(request.getJDiscRequest().parameters());
         String forwardedUrl = query.lastEntries().get("forwarded-url");
         return applicationRepository.proxyServiceHostnameRequest(applicationId, hostname, service,
-                                                                 HttpURL.Path.parse("/state/v1").append(rest),
-                                                                 query.remove("forwarded-url"),
-                                                                 forwardedUrl == null ? null : HttpURL.from(URI.create(forwardedUrl)));
+                HttpURL.Path.parse("/state/v1").append(rest),
+                query.remove("forwarded-url"),
+                forwardedUrl == null ? null : HttpURL.from(URI.create(forwardedUrl)));
     }
 
     private HttpResponse content(ApplicationId applicationId, HttpURL.Path contentPath, HttpRequest request) {
         long sessionId = applicationRepository.getSessionIdForApplication(applicationId);
         ApplicationFile applicationFile =
                 applicationRepository.getApplicationFileFromSession(applicationId.tenant(),
-                                                                    sessionId,
-                                                                    contentPath,
-                                                                    ContentRequest.getApplicationFileMode(request.getMethod()));
+                        sessionId,
+                        contentPath,
+                        ContentRequest.getApplicationFileMode(request.getMethod()));
         ApplicationContentRequest contentRequest = new ApplicationContentRequest(request,
-                                                                                 sessionId,
-                                                                                 applicationId,
-                                                                                 zone,
-                                                                                 contentPath,
-                                                                                 applicationFile);
+                sessionId,
+                applicationId,
+                zone,
+                contentPath,
+                applicationFile);
         return new ContentHandler().get(contentRequest);
     }
 
@@ -262,8 +262,8 @@ public class ApplicationHandler extends HttpHandler {
 
     private Model getActiveModelOrThrow(ApplicationId id) {
         return applicationRepository.getActiveApplicationVersions(id)
-                                    .orElseThrow(() -> new NotFoundException("Application '" + id + "' not found"))
-                                    .getForVersionOrLatest(Optional.empty(), applicationRepository.clock().instant())
+                .orElseThrow(() -> new NotFoundException("Application '" + id + "' not found"))
+                .getForVersionOrLatest(Optional.empty(), applicationRepository.clock().instant())
                 .getModel();
     }
 
@@ -273,9 +273,9 @@ public class ApplicationHandler extends HttpHandler {
         Instant now = applicationRepository.clock().instant();
 
         return modifyReindexing(applicationId, request,
-                                (original, cluster, type) -> original.withReady(cluster, type, now, speed, cause),
-                                new StringJoiner(", ", "Reindexing document types ", " of application " + applicationId)
-                                        .setEmptyValue("Not reindexing any document types of application " + applicationId));
+                (original, cluster, type) -> original.withReady(cluster, type, now, speed, cause),
+                new StringJoiner(", ", "Reindexing document types ", " of application " + applicationId)
+                        .setEmptyValue("Not reindexing any document types of application " + applicationId));
     }
 
     private HttpResponse updateReindexing(ApplicationId applicationId, HttpRequest request) {
@@ -284,9 +284,9 @@ public class ApplicationHandler extends HttpHandler {
             throw new IllegalArgumentException("request must specify 'speed' parameter");
 
         var response = modifyReindexing(applicationId, request,
-                                (original, cluster, type) -> original.withSpeed(cluster, type, Double.parseDouble(speedValue)),
-                                new StringJoiner(", ", "Set reindexing speed to '" + speedValue + "' for document types ", " of application " + applicationId)
-                                        .setEmptyValue("Changed reindexing of no document types of application " + applicationId));
+                (original, cluster, type) -> original.withSpeed(cluster, type, Double.parseDouble(speedValue)),
+                new StringJoiner(", ", "Set reindexing speed to '" + speedValue + "' for document types ", " of application " + applicationId)
+                        .setEmptyValue("Changed reindexing of no document types of application " + applicationId));
         var deployment = applicationRepository.deployFromLocalActive(applicationId);
         if (deployment.isPresent()) {
             log.log(Level.INFO, "Modified reindexing status for " + applicationId + ", deploying to make changes effective");
@@ -316,12 +316,12 @@ public class ApplicationHandler extends HttpHandler {
             for (String cluster : clusters.isEmpty() ? documentTypes.keySet() : clusters) {
                 if ( ! documentTypes.containsKey(cluster))
                     throw new IllegalArgumentException("No content cluster '" + cluster + "' in application — only: " +
-                                                       String.join(", ", documentTypes.keySet()));
+                            String.join(", ", documentTypes.keySet()));
 
                 for (String type : types.isEmpty() ? documentTypes.get(cluster) : types) {
                     if ( ! documentTypes.get(cluster).contains(type))
                         throw new IllegalArgumentException("No document type '" + type + "' in cluster '" + cluster + "' — only: " +
-                                                           String.join(", ", documentTypes.get(cluster)));
+                                String.join(", ", documentTypes.get(cluster)));
 
                     if ( ! indexedOnly || indexedDocumentTypes.get(cluster).contains(type)) {
                         reindexing = modification.apply(reindexing, cluster, type);
@@ -333,10 +333,10 @@ public class ApplicationHandler extends HttpHandler {
         });
 
         return new MessageResponse(reindexed.entrySet().stream()
-                                            .filter(cluster -> ! cluster.getValue().isEmpty())
-                                            .map(cluster -> "[" + String.join(", ", cluster.getValue()) + "] in '" + cluster.getKey() + "'")
-                                            .reduce(messageBuilder, StringJoiner::add, StringJoiner::merge)
-                                            .toString());
+                .filter(cluster -> ! cluster.getValue().isEmpty())
+                .map(cluster -> "[" + String.join(", ", cluster.getValue()) + "] in '" + cluster.getKey() + "'")
+                .reduce(messageBuilder, StringJoiner::add, StringJoiner::merge)
+                .toString());
     }
 
     public HttpResponse disableReindexing(ApplicationId applicationId) {
@@ -357,7 +357,7 @@ public class ApplicationHandler extends HttpHandler {
             return new ReindexingResponse(documentTypes, reindexing, clusters);
         } catch (UncheckedIOException e) {
             throw new ReindexingStatusException("Reindexing status for '" + applicationId +
-                                                "' is currently unavailable");
+                    "' is currently unavailable");
         }
     }
 
@@ -374,16 +374,16 @@ public class ApplicationHandler extends HttpHandler {
         byte[] data = uncheck(() -> request.getData().readAllBytes());
         List<Endpoint> endpoints = new ArrayList<>();
         SlimeUtils.jsonToSlime(data).get()
-                  .field("endpoints")
-                  .traverse((ArrayTraverser) (__, endpointObject) -> {
-                      endpoints.add(new Endpoint(applicationId,
-                                                 ClusterSpec.Id.from(endpointObject.field("clusterName").asString()),
-                                                 HttpURL.from(URI.create(endpointObject.field("url").asString())),
-                                                 SlimeUtils.optionalString(endpointObject.field("ipAddress")).map(uncheck(InetAddress::getByName)),
-                                                 SlimeUtils.optionalString(endpointObject.field("canonicalName")).map(DomainName::of),
-                                                 endpointObject.field("public").asBool(),
-                                                 CloudAccount.from(endpointObject.field("account").asString())));
-                  });
+                .field("endpoints")
+                .traverse((ArrayTraverser) (__, endpointObject) -> {
+                    endpoints.add(new Endpoint(applicationId,
+                            ClusterSpec.Id.from(endpointObject.field("clusterName").asString()),
+                            HttpURL.from(URI.create(endpointObject.field("url").asString())),
+                            SlimeUtils.optionalString(endpointObject.field("ipAddress")).map(uncheck(InetAddress::getByName)),
+                            SlimeUtils.optionalString(endpointObject.field("canonicalName")).map(DomainName::of),
+                            endpointObject.field("public").asBool(),
+                            CloudAccount.from(endpointObject.field("account").asString())));
+                });
         if (endpoints.isEmpty()) throw new IllegalArgumentException("No endpoints in request " + request);
 
         Availability availability = applicationRepository.verifyEndpoints(endpoints);
@@ -492,7 +492,7 @@ public class ApplicationHandler extends HttpHandler {
                 serviceObject.setLong("port", statePort);
                 serviceObject.setString("type", serviceInfo.getServiceType());
                 serviceObject.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
-                serviceObject.setLong("currentGeneration", service.serviceConfigState.currentGeneration());
+                serviceObject.setLong("currentGeneration", service.currentGeneration);
             });
             object.setString("url", uri.toString());
             object.setLong("currentGeneration", response.currentGeneration);

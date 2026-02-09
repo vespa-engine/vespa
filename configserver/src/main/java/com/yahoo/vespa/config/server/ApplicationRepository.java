@@ -53,6 +53,7 @@ import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.application.ConfigStateChecker;
 import com.yahoo.vespa.config.server.application.DefaultClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
@@ -151,6 +152,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Optional<Provisioner> hostProvisioner;
     private final Optional<InfraDeployer> infraDeployer;
     private final ConfigConvergenceChecker convergeChecker;
+    private final ConfigStateChecker configStateChecker;
     private final HttpProxy httpProxy;
     private final EndpointsChecker endpointsChecker;
     private final Clock clock;
@@ -169,6 +171,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  HostProvisionerProvider hostProvisionerProvider,
                                  InfraDeployerProvider infraDeployerProvider,
                                  ConfigConvergenceChecker configConvergenceChecker,
+                                 ConfigStateChecker configStateChecker,
                                  HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
                                  TesterClient testerClient,
@@ -178,7 +181,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
              infraDeployerProvider.getInfraDeployer(),
-             configConvergenceChecker,
+             configConvergenceChecker, 
+             configStateChecker,
              httpProxy,
              EndpointsChecker.of(healthCheckers.getHealthChecker()),
              configserverConfig,
@@ -196,6 +200,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   Optional<Provisioner> hostProvisioner,
                                   Optional<InfraDeployer> infraDeployer,
                                   ConfigConvergenceChecker configConvergenceChecker,
+                                  ConfigStateChecker configStateChecker,
                                   HttpProxy httpProxy,
                                   EndpointsChecker endpointsChecker,
                                   ConfigserverConfig configserverConfig,
@@ -211,6 +216,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
         this.infraDeployer = Objects.requireNonNull(infraDeployer);
         this.convergeChecker = Objects.requireNonNull(configConvergenceChecker);
+        this.configStateChecker = Objects.requireNonNull(configStateChecker);
         this.httpProxy = Objects.requireNonNull(httpProxy);
         this.endpointsChecker = Objects.requireNonNull(endpointsChecker);
         this.configserverConfig = Objects.requireNonNull(configserverConfig);
@@ -237,6 +243,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private SecretStoreValidator secretStoreValidator = new SecretStoreValidator();
         private FlagSource flagSource = new InMemoryFlagSource();
         private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
+        private ConfigStateChecker configStateChecker = new ConfigStateChecker();
         private Map<String, List<Token>> activeTokens = Map.of();
 
         public Builder withTenantRepository(TenantRepository tenantRepository) {
@@ -288,6 +295,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             this.configConvergenceChecker = configConvergenceChecker;
             return this;
         }
+        
+        public Builder withConfigStateChecker(ConfigStateChecker configStateChecker) {
+            this.configStateChecker = configStateChecker;
+            return this;
+        }
 
         public Builder withEndpointsChecker(EndpointsChecker endpointsChecker) {
             this.endpointsChecker = endpointsChecker;
@@ -304,6 +316,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              tenantRepository.hostProvisionerProvider().getHostProvisioner(),
                                              InfraDeployerProvider.empty().getInfraDeployer(),
                                              configConvergenceChecker,
+                                             configStateChecker,
                                              httpProxy,
                                              endpointsChecker,
                                              configserverConfig,
@@ -787,6 +800,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public ConfigConvergenceChecker configConvergenceChecker() { return convergeChecker; }
+    
+    public ConfigStateChecker configStateChecker() { return configStateChecker; }
 
     public Availability verifyEndpoints(List<Endpoint> endpoints) {
         return endpointsChecker.endpointsAvailable(endpoints);

@@ -59,10 +59,10 @@ public class ConfigConvergenceCheckerTest {
         service2 = testServer(wireMock2);
         Model mockModel = MockModel.createContainer(service.getHost(), service.getPort());
         application = new Application(mockModel,
-                                      new ServerCache(),
-                                      3,
-                                      new Version(0, 0, 0),
-                                      MetricUpdater.createTestUpdater(), appId);
+                new ServerCache(),
+                3,
+                new Version(0, 0, 0),
+                MetricUpdater.createTestUpdater(), appId);
         checker = new ConfigConvergenceChecker();
     }
 
@@ -105,8 +105,8 @@ public class ConfigConvergenceCheckerTest {
                     MockModel.createContainerHost(service2.getHost(), service2.getPort()))
             );
             Application application = new Application(model, new ServerCache(), 4,
-                                                      new Version(0, 0, 0),
-                                                      MetricUpdater.createTestUpdater(), appId);
+                    new Version(0, 0, 0),
+                    MetricUpdater.createTestUpdater(), appId);
 
             wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":4}}")));
             wireMock2.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
@@ -129,8 +129,8 @@ public class ConfigConvergenceCheckerTest {
     @Test
     public void service_convergence_timeout() {
         wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(aResponse()
-                                                                                .withFixedDelay((int) clientTimeout.plus(Duration.ofSeconds(1)).toMillis())
-                                                                                .withBody("response too slow")));
+                .withFixedDelay((int) clientTimeout.plus(Duration.ofSeconds(1)).toMillis())
+                .withBody("response too slow")));
         ServiceResponse response = checker.getServiceConfigGeneration(application, hostAndPort(service), Duration.ofMillis(1));
 
         assertEquals(3, response.wantedGeneration.longValue());
@@ -151,7 +151,7 @@ public class ConfigConvergenceCheckerTest {
     }
 
     private void assertService(URI uri, ServiceListResponse.Service service1, long expectedGeneration) {
-        assertEquals(expectedGeneration, service1.serviceConfigState.currentGeneration());
+        assertEquals(expectedGeneration, service1.currentGeneration.longValue());
         assertEquals(uri.getHost(), service1.serviceInfo.getHostName());
         assertEquals(uri.getPort(), ConfigConvergenceChecker.getStatePort(service1.serviceInfo).get().intValue());
         assertEquals("container", service1.serviceInfo.getServiceType());

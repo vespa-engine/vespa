@@ -79,5 +79,4 @@ public class PendingRestarts {
         generationsForRestarts.forEach((g, hostnames) -> { if (generation >= g) ready.addAll(hostnames); });
         return ready;
     }
-
 }

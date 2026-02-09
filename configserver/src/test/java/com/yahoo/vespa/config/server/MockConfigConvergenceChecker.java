@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.yahoo.config.model.api.ServiceConfigState;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
@@ -10,7 +9,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 public class MockConfigConvergenceChecker extends ConfigConvergenceChecker {
@@ -30,7 +28,7 @@ public class MockConfigConvergenceChecker extends ConfigConvergenceChecker {
     }
 
     @Override
-    public Map<ServiceInfo, ServiceConfigState> getServiceConfigStatesUnlessDeferringChangesUntilRestart(Application application, Duration timeoutPerService) {
+    public Map<ServiceInfo, Long> getServiceConfigGenerations(Application application, Duration timeoutPerService) {
         return Map.of();
     }
 
@@ -50,9 +48,9 @@ public class MockConfigConvergenceChecker extends ConfigConvergenceChecker {
         if (servicesThatFailFirstIteration.isEmpty() || iteration > 1)
             return new ServiceListResponse(Map.of(), wantedGeneration, wantedGeneration);
 
-        Map<ServiceInfo, ServiceConfigState> services = new HashMap<>();
+        Map<ServiceInfo, Long> services = new HashMap<>();
         for (var service : servicesThatFailFirstIteration) {
-            services.put(service, new ServiceConfigState(wantedGeneration - 1, Optional.empty()));
+            services.put(service, wantedGeneration - 1);
         }
         return new ServiceListResponse(services, wantedGeneration, wantedGeneration - 1);
     }

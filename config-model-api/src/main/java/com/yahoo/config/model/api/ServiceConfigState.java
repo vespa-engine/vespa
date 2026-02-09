@@ -4,12 +4,11 @@ package com.yahoo.config.model.api;
 import java.util.Optional;
 
 /**
- * Represents service response from /state/v1/config collected by configserver from services, e.g. jdisc in container node.
+ * Represents service response from /state/v1/config collected by configserver from services.
  *
- * @param currentGeneration is a config generation currently used by a service, e.g. jdisc in container node
- * @param applyOnRestart indicates that a service received a new config (newer than {@code currentGeneration})
- *                       but is waiting to use it until the next restart. It is {@code Optional} 
- *                       for backwards compatibility, when this field is missing from /state/v1/config response.
+ * @param currentGeneration is a config generation currently used by the service.
+ * @param applyOnRestart indicates that a service received a new config and is waiting to apply it on restart. 
+ *                       Empty if a service does not support apply on restart.
  * @author glebashnik
  */
 public record ServiceConfigState(long currentGeneration, Optional<Boolean> applyOnRestart) {}
