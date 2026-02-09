@@ -2496,12 +2496,17 @@ public class ParseTestCase {
 
     @Test
     void testSimpleWandAdvanced() {
-        tester.assertParsed("WEAKAND(100) foo bar baz", "foo wand bar wand baz", Query.Type.ADVANCED);
+        tester.assertParsed("WEAKAND foo bar baz", "foo wand bar wand baz", Query.Type.ADVANCED);
     }
 
     @Test
     void testSimpleWandAdvancedWithNonDefaultN() {
         tester.assertParsed("WEAKAND(32) foo bar baz", "foo weakand(32) bar weakand(32) baz", Query.Type.ADVANCED);
+    }
+
+    @Test
+    void testSimpleWandAdvancedWithDefaultN() {
+        tester.assertParsed("WEAKAND foo bar baz", "foo weakand bar weakand baz", Query.Type.ADVANCED);
     }
 
     @Test
@@ -2576,22 +2581,22 @@ public class ParseTestCase {
 
     @Test
     void testNoGrammar1() {
-        tester.assertParsed("WEAKAND(100) foobar", "foobar", Query.Type.TOKENIZE);
+        tester.assertParsed("WEAKAND foobar", "foobar", Query.Type.TOKENIZE);
     }
 
     @Test
     void testNoGrammar2() {
-        tester.assertParsed("WEAKAND(100) foobar", "-foobar", Query.Type.TOKENIZE);
+        tester.assertParsed("WEAKAND foobar", "-foobar", Query.Type.TOKENIZE);
     }
 
     @Test
     void testNoGrammar3() {
-        tester.assertParsed("WEAKAND(100) foo bar", "foo -bar", Query.Type.TOKENIZE);
+        tester.assertParsed("WEAKAND foo bar", "foo -bar", Query.Type.TOKENIZE);
     }
 
     @Test
     void testNoGrammar4() {
-        tester.assertParsed("WEAKAND(100) foo bar baz one two 37", "foo -(bar baz \"one two\" 37)", Query.Type.TOKENIZE);
+        tester.assertParsed("WEAKAND foo bar baz one two 37", "foo -(bar baz \"one two\" 37)", Query.Type.TOKENIZE);
     }
 
     @Test
@@ -2633,12 +2638,12 @@ public class ParseTestCase {
     @Test
     void testLongQuery() {
         var tester = new ParsingTester("index");
-        tester.assertParsed("WEAKAND(100) index:search index:terms", "{search terms}", Query.Type.WEAKAND);
+        tester.assertParsed("WEAKAND index:search index:terms", "{search terms}", Query.Type.WEAKAND);
     }
 
     @Test
     void testParenthesisAndNegative() {
-        tester.assertParsed("WEAKAND(100) (+(OR (AND requirements txt) from line 11) -r)", "(from -r requirements.txt (line 11)) ", Query.Type.WEAKAND);
+        tester.assertParsed("WEAKAND (+(OR (AND requirements txt) from line 11) -r)", "(from -r requirements.txt (line 11)) ", Query.Type.WEAKAND);
     }
 
 }

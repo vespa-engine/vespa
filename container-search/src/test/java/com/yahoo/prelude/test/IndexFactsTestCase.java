@@ -48,9 +48,9 @@ public class IndexFactsTestCase {
         // First check default behavior
         IndexFacts indexFacts = createIndexFacts();
         Query q = newQuery("?query=a:b", indexFacts);
-        assertEquals("WEAKAND(100) a:b", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND a:b", q.getModel().getQueryTree().getRoot().toString());
         q = newQuery("?query=notarealindex:b", indexFacts);
-        assertEquals("WEAKAND(100) (AND notarealindex b)",  q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND (AND notarealindex b)",  q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
@@ -66,17 +66,17 @@ public class IndexFactsTestCase {
         sd.addCommand("b", "any");
         assertNull(sd.getDefaultPosition());
         sd.addCommand("c", "default-position");
-        assertEquals(sd.getDefaultPosition(), "c");
+        assertEquals("c", sd.getDefaultPosition());
 
         SearchDefinition sd2 = new SearchDefinition("sd2");
         sd2.addIndex(new Index("b").addCommand("any"));
         assertNull(sd2.getDefaultPosition());
         sd2.addIndex(a);
-        assertEquals(sd2.getDefaultPosition(), "a");
+        assertEquals("a", sd2.getDefaultPosition());
 
         IndexFacts indexFacts = createIndexFacts(List.of(sd, sd2));
-        assertEquals(indexFacts.getDefaultPosition(null), "a");
-        assertEquals(indexFacts.getDefaultPosition("sd"), "c");
+        assertEquals("a", indexFacts.getDefaultPosition(null));
+        assertEquals("c", indexFacts.getDefaultPosition("sd"));
     }
 
     @Test
@@ -302,8 +302,8 @@ public class IndexFactsTestCase {
         IndexFacts.Session session2 = indexFacts.newSession(query2.getModel().getSources(), query2.getModel().getRestrict());
         assertTrue(session1.getIndex("url").isUriIndex());
         assertTrue(session2.getIndex("url").isUriIndex());
-        assertEquals("WEAKAND(100) (AND url:https url:foo url:bar)", query1.getModel().getQueryTree().toString());
-        assertEquals("WEAKAND(100) (AND url:https url:foo url:bar)", query2.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND (AND url:https url:foo url:bar)", query1.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND (AND url:https url:foo url:bar)", query2.getModel().getQueryTree().toString());
     }
 
     @Test

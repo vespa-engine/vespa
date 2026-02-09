@@ -65,12 +65,12 @@ public class CollapsePhraseSearcherTestCase {
 
     @Test
     void testNegative1() {
-        assertEquals("WEAKAND(100) \"abc def\"", transformQuery("?query=" + enc("\"abc def\"")));
+        assertEquals("WEAKAND \"abc def\"", transformQuery("?query=" + enc("\"abc def\"")));
     }
 
     @Test
     void testNegative2() {
-        assertEquals("WEAKAND(100) a \"abc def\" b", transformQuery("?query=" + enc("a \"abc def\" b")));
+        assertEquals("WEAKAND a \"abc def\" b", transformQuery("?query=" + enc("a \"abc def\" b")));
     }
 
     private String enc(String s) {

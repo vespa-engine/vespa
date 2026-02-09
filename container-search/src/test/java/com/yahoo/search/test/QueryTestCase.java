@@ -478,7 +478,7 @@ public class QueryTestCase {
     @Test
     void testUtf8Decoding() {
         Query q = new Query("/?query=beyonc%C3%A9");
-        assertEquals("WEAKAND(100) beyonc\u00e9", q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND beyonc\u00e9", q.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -497,7 +497,7 @@ public class QueryTestCase {
     @Test
     void testDefaultIndex() {
         Query q = new Query("?query=hi%20hello%20keyword:kanoo%20default:munkz%20%22phrases+too%22&default-index=def");
-        assertEquals("WEAKAND(100) def:hi def:hello keyword:kanoo default:munkz def:\"phrases too\"",
+        assertEquals("WEAKAND def:hi def:hello keyword:kanoo default:munkz def:\"phrases too\"",
                      q.getModel().getQueryTree().toString());
     }
 
@@ -536,7 +536,7 @@ public class QueryTestCase {
     @Test
     void testSimpleQueryParsing() {
         Query q = new Query("/search?query=foobar&offset=10&hits=20");
-        assertEquals("WEAKAND(100) foobar", q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND foobar", q.getModel().getQueryTree().toString());
         assertEquals(10, q.getOffset());
         assertEquals(20, q.getHits());
     }
@@ -1076,29 +1076,29 @@ public class QueryTestCase {
     void testImplicitSegmentAnd() {
         Query query = new Query(httpEncode("?query=it's fine"));
         useParserSettings(query);
-        assertEquals("WEAKAND(100) (SAND it s) fine", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND (SAND it s) fine", query.getModel().getQueryTree().toString());
         query = new Query(httpEncode("?query=it's fine"));
         disableParserSettings(query);
-        assertEquals("WEAKAND(100) it s fine", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND it s fine", query.getModel().getQueryTree().toString());
     }
 
     @Test
     void testIdeographicPunctuation() {
         Query query = new Query("?query=音、声");
         useParserSettings(query);
-        assertEquals("WEAKAND(100) (AND 音 声)", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND (AND 音 声)", query.getModel().getQueryTree().toString());
 
         query = new Query("?query=ど。の");
         useParserSettings(query);
-        assertEquals("WEAKAND(100) (AND ど の)", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND (AND ど の)", query.getModel().getQueryTree().toString());
 
         query = new Query("?query=音、声");
         disableParserSettings(query);
-        assertEquals("WEAKAND(100) 音 声", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND 音 声", query.getModel().getQueryTree().toString());
 
         query = new Query("?query=ど。の");
         disableParserSettings(query);
-        assertEquals("WEAKAND(100) ど の", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND ど の", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -1111,7 +1111,7 @@ public class QueryTestCase {
         test.addIndex(myField);
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
-        assertEquals("WEAKAND(100) myfield:'it s' myfield:\"a b\" myfield:c", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND myfield:'it s' myfield:\"a b\" myfield:c", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -1126,7 +1126,7 @@ public class QueryTestCase {
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
         useParserSettings(query);
-        assertEquals("WEAKAND(100) (SAND myfield:it myfield:s) (AND myfield:a myfield:b) myfield:c", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND (SAND myfield:it myfield:s) (AND myfield:a myfield:b) myfield:c", query.getModel().getQueryTree().toString());
         // 'it' and 's' should have connectivity 1
         WeakAndItem root = (WeakAndItem) query.getModel().getQueryTree().getRoot();
         AndSegmentItem sand = (AndSegmentItem) root.getItem(0);
@@ -1138,11 +1138,11 @@ public class QueryTestCase {
         assertEquals(1.0, it.getConnectivity(), 0.00000001);
         query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c"));
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
-        assertEquals("WEAKAND(100) myfield:it myfield:s (AND myfield:a myfield:b) myfield:c", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND myfield:it myfield:s (AND myfield:a myfield:b) myfield:c", query.getModel().getQueryTree().toString());
         query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c"));
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
         disableParserSettings(query);
-        assertEquals("WEAKAND(100) myfield:it myfield:s myfield:a myfield:b myfield:c", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND myfield:it myfield:s myfield:a myfield:b myfield:c", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -1156,7 +1156,7 @@ public class QueryTestCase {
         {
             Query query = new Query(httpEncode("?query=myfield:b.c.d"));
             query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
-            assertEquals("WEAKAND(100) (AND myfield:b myfield:c myfield:d)", query.getModel().getQueryTree().toString());
+            assertEquals("WEAKAND (AND myfield:b myfield:c myfield:d)", query.getModel().getQueryTree().toString());
             WeakAndItem root = (WeakAndItem) query.getModel().getQueryTree().getRoot();
             AndItem and = (AndItem) root.getItem(0);
             WordItem b = (WordItem) and.getItem(0);
@@ -1171,7 +1171,7 @@ public class QueryTestCase {
         {
             Query query = new Query(httpEncode("?query=myfield:a myfield:b.c.d myfield:e"));
             query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
-            assertEquals("WEAKAND(100) myfield:a (AND myfield:b myfield:c myfield:d) myfield:e", query.getModel().getQueryTree().toString());
+            assertEquals("WEAKAND myfield:a (AND myfield:b myfield:c myfield:d) myfield:e", query.getModel().getQueryTree().toString());
             WeakAndItem root = (WeakAndItem) query.getModel().getQueryTree().getRoot();
             WordItem a = (WordItem) root.getItem(0);
             AndItem and = (AndItem) root.getItem(1);
@@ -1201,7 +1201,7 @@ public class QueryTestCase {
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
 
-        assertEquals("WEAKAND(100) myfield:\"'it s' fine\"", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND myfield:\"'it s' fine\"", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -1291,7 +1291,7 @@ public class QueryTestCase {
                                                                                                                             .createCjkGrams(true)
                                                                                                                             .snowballStemmingForEnglish(true).build())));
         query.getModel().setExecution(execution);
-        assertEquals("WEAKAND(100) 中村靖 日驟 逝", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND 中村靖 日驟 逝", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -1484,14 +1484,14 @@ public class QueryTestCase {
         assertParsed("+(AND a b) -c",          "a b -c", type("all"));
         assertParsed("+(OR a b) -c",           "a b -c", type("any"));
         assertParsed("\"a b c\"",              "a b -c", type("phrase"));
-        assertParsed("WEAKAND(100) a b c",     "a b -c", type("tokenize"));
+        assertParsed("WEAKAND a b c",     "a b -c", type("tokenize"));
         assertParsed("AND a b c",              "a b -c", type("tokenize").setComposite(QueryType.Composite.and));
         assertParsed("+(AND a b) -c",          "a b -c", type("web"));
-        assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("web").setComposite(QueryType.Composite.weakAnd));
-        assertParsed("WEAKAND(100) a b c",     "a b -c", type("linguistics"));
+        assertParsed("+(WEAKAND a b) -c", "a b -c", type("web").setComposite(QueryType.Composite.weakAnd));
+        assertParsed("WEAKAND a b c",     "a b -c", type("linguistics"));
         assertParsed("OR a b c",               "a b -c", type("linguistics").setComposite(QueryType.Composite.or));
         assertParsed("OR a b c",               "a b -c", type("weakAnd").setComposite(QueryType.Composite.or).setTokenization(QueryType.Tokenization.linguistics).setSyntax(QueryType.Syntax.none));
-        assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("tokenize").setSyntax(QueryType.Syntax.web));
+        assertParsed("+(WEAKAND a b) -c", "a b -c", type("tokenize").setSyntax(QueryType.Syntax.web));
         assertParsed("AND a b c",              "a b -c", type("web").setSyntax(QueryType.Syntax.none));
 
         assertFails("Failed parsing query: query type linguistics " +
@@ -1499,7 +1499,7 @@ public class QueryTestCase {
                     "Linguistics tokenization can only be combined with syntax none",
                     type("linguistics").setSyntax(QueryType.Syntax.web));
 
-        assertEquals("WEAKAND(100) a b c",
+        assertEquals("WEAKAND a b c",
                      new Query(httpEncode("?query=a b -c&model.type=linguistics")).getModel().getQueryTree().toString());
         assertEquals("OR a b c",
                      new Query(httpEncode("?query=a b -c&model.type.composite=or&model.type.tokenization=linguistics&model.type.syntax=none")).getModel().getQueryTree().toString());

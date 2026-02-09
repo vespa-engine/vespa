@@ -55,7 +55,7 @@ public class ValidateSameElementTestCase {
         addChildrenWithWeakAnd(root);
         var result = search(root);
         assertNotNull(result.hits().getError());
-        assertEquals("SameElementItem cannot contain '(WEAKAND(100) a b)'", result.hits().getError().getDetailedMessage());
+        assertEquals("SameElementItem cannot contain '(WEAKAND a b)'", result.hits().getError().getDetailedMessage());
     }
 
     @Test
@@ -67,7 +67,7 @@ public class ValidateSameElementTestCase {
         addChildrenWithWeakAnd(child1);
         var result = search(root);
         assertNotNull(result.hits().getError());
-        assertEquals("SameElementItem cannot contain '(WEAKAND(100) a b)'", result.hits().getError().getDetailedMessage());
+        assertEquals("SameElementItem cannot contain '(WEAKAND a b)'", result.hits().getError().getDetailedMessage());
     }
 
     @Test

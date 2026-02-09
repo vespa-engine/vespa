@@ -6,6 +6,7 @@ import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.properties.DefaultProperties;
 
 import java.util.ListIterator;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -115,7 +116,8 @@ public class QueryCanonicalizer {
 
     private static boolean equalWeakAndSettings(WeakAndItem a, WeakAndItem b) {
         if ( ! a.getIndexName().equals(b.getIndexName())) return false;
-        if (a.getN() != b.getN()) return false;
+        if ( ! Objects.equals(a.getTargetHits(), b.getTargetHits())) return false;
+        if ( ! Objects.equals(a.getTotalTargetHits(), b.getTotalTargetHits())) return false;
         return true;
     }
 

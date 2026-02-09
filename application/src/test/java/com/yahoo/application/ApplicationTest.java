@@ -61,7 +61,7 @@ public class ApplicationTest {
                 Application.fromApplicationPackage(new File("src/test/app-packages/withcontent"), Networking.disable)) {
             Result result = application.getJDisc("default").search().process(new ComponentSpecification("default"),
                     new Query("?query=substring:foobar&timeout=20000"));
-            assertEquals("WEAKAND(100) (AND substring:fo substring:oo substring:ob substring:ba substring:ar)",
+            assertEquals("WEAKAND (AND substring:fo substring:oo substring:ob substring:ba substring:ar)",
                     result.hits().get("hasQuery").getQuery().getModel().getQueryTree().toString());
         }
     }
@@ -73,7 +73,7 @@ public class ApplicationTest {
             Query query = new Query(HttpRequest.createTestRequest("?query=substring:foobar&timeout=20000", com.yahoo.jdisc.http.HttpRequest.Method.GET), application.getCompiledQueryProfileRegistry().findQueryProfile("default"));
             Result result = application.getJDisc("default").search().process(new ComponentSpecification("default"), query);
 
-            assertEquals("WEAKAND(100) (AND substring:fo substring:oo substring:ob substring:ba substring:ar)",
+            assertEquals("WEAKAND (AND substring:fo substring:oo substring:ob substring:ba substring:ar)",
                     result.hits().get("hasQuery").getQuery().getModel().getQueryTree().toString());
             assertEquals("2", application.getCompiledQueryProfileRegistry().findQueryProfile("default").get("hits"));
             assertEquals("select * from sources * where weakAnd(substring contains \"foobar\") limit 2 timeout 20000000", result.getQuery().yqlRepresentation(true));

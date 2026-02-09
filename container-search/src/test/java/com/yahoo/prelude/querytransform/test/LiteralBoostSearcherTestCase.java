@@ -27,25 +27,25 @@ public class LiteralBoostSearcherTestCase {
 
     @Test
     void testSimpleQueryWithBoost() {
-        assertEquals("RANK (WEAKAND(100) abc) default_literal:abc",
+        assertEquals("RANK (WEAKAND abc) default_literal:abc",
                 transformQuery("?query=abc&source=cluster1&restrict=type1"));
     }
 
     @Test
     void testSimpleQueryNoBoost() {
-        assertEquals("WEAKAND(100) abc",
+        assertEquals("WEAKAND abc",
                 transformQuery("?query=abc&source=cluster1&restrict=type2"));
     }
 
     @Test
     void testQueryWithExplicitIndex() {
-        assertEquals("RANK (WEAKAND(100) absolute:abc) absolute_literal:abc",
+        assertEquals("RANK (WEAKAND absolute:abc) absolute_literal:abc",
                 transformQuery("?query=absolute:abc&source=cluster1&restrict=type1"));
     }
 
     @Test
     void testQueryWithExplicitIndexNoBoost() {
-        assertEquals("WEAKAND(100) absolute:abc",
+        assertEquals("WEAKAND absolute:abc",
                 transformQuery("?query=absolute:abc&source=cluster1&restrict=type2"));
     }
 
@@ -66,7 +66,7 @@ public class LiteralBoostSearcherTestCase {
 
     @Test
     void testTermindexQuery() {
-        assertEquals("RANK (+(WEAKAND(100) a b d) -c) default_literal:a " +
+        assertEquals("RANK (+(WEAKAND a b d) -c) default_literal:a " +
                 "default_literal:b default_literal:d",
                 transformQuery("?query=a b -c d&source=cluster1&restrict=type1"));
     }

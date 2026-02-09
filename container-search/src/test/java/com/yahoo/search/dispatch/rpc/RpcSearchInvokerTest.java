@@ -10,6 +10,9 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.prelude.query.NearestNeighborItem;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.InterleavedSearchInvoker;
@@ -109,18 +112,30 @@ public class RpcSearchInvokerTest {
         group.aggregateNodeValues();
 
         Query query = new Query();
+        var root = new OrItem();
+
+        var weakAnd = new WeakAndItem();
+        weakAnd.setTotalTargetHits(100);
+        weakAnd.addItem(new WordItem("foo", "myindex"));
+        weakAnd.addItem(new WordItem("bar", "myindex"));
+        root.addItem(weakAnd);
+
         var nn = new NearestNeighborItem("myField", "myQueryTensor");
         nn.setTotalTargetHits(100);
-        query.getModel().getQueryTree().addItem(nn);
+        root.addItem(nn);
+
+        query.getModel().getQueryTree().setRoot(root);
 
         try (InterleavedSearchInvoker invoker = createInterleavedSearchInvoker(group, nodeInvokers)) {
             invoker.search(query, 1.0);
         }
         var requests = nodeHolders.stream().map(this::decompress).toList();
         for (int i = 0; i < expected.size(); i++) {
-            assertEquals(expected.get(i),
-                         requests.get(i).getQueryTree().getRoot().getItemNearestNeighbor().getTargetNumHits(),
-                         "Node " + i);
+            var or = requests.get(i).getQueryTree().getRoot().getItemOr();
+            assertEquals(expected.get(i), or.getChildren(0).getItemWeakAnd().getTargetNumHits(),
+                         "WeakAnd in node " + i);
+            assertEquals(expected.get(i), or.getChildren(1).getItemNearestNeighbor().getTargetNumHits(),
+                         "NearestNeighbor in node " + i);
         }
     }
 

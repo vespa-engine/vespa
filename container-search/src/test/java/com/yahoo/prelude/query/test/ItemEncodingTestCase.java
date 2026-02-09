@@ -300,7 +300,7 @@ public class ItemEncodingTestCase {
         bc.addItem(c);
         bc.shouldFoldIntoWand(true);
         WeakAndItem wand = new WeakAndItem();
-        wand.setN(321);
+        wand.setTargetHits(321);
         wand.addItem(a);
         wand.addItem(bc);
         wand.addItem(d);

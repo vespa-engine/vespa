@@ -45,6 +45,7 @@ import static com.yahoo.search.yql.YqlParser.STEM;
 import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
 import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
+import static com.yahoo.search.yql.YqlParser.TOTAL_TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
 import static com.yahoo.search.yql.YqlParser.URI;
@@ -1024,18 +1025,24 @@ public class VespaSerializer {
         }
 
         private boolean needsAnnotationBlock(WeakAndItem item) {
-            return item.nIsExplicit();
+            return item.getTargetHits() != null || item.getTotalTargetHits() != null;
         }
 
         @Override
         boolean serialize(StringBuilder destination, WeakAndItem item, Boolean includeField) {
             if (needsAnnotationBlock(item)) {
                 destination.append("({");
-            }
-            if (item.nIsExplicit()) {
-                destination.append(TARGET_HITS).append(": ").append(item.getN());
-            }
-            if (needsAnnotationBlock(item)) {
+                boolean needsComma = false;
+                if (item.getTargetHits() != null) {
+                    destination.append(TARGET_HITS).append(": ").append(item.getTargetHits());
+                    needsComma = true;
+                }
+                if (item.getTotalTargetHits() != null) {
+                    if (needsComma) {
+                        destination.append(", ");
+                    }
+                    destination.append(TOTAL_TARGET_HITS).append(": ").append(item.getTotalTargetHits());
+                }
                 destination.append("}");
             }
             destination.append(WEAK_AND).append('(');

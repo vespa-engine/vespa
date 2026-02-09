@@ -537,7 +537,7 @@ public class YqlParserTestCase {
         // Default for comparison
         Item root = parse("select foo from bar where userInput(\"yoni jo dima\")").getRoot();
         assertInstanceOf(WeakAndItem.class, root);
-        assertEquals("WEAKAND(100) default:yoni default:jo default:dima", root.toString());
+        assertEquals("WEAKAND default:yoni default:jo default:dima", root.toString());
         for (Item child : ((WeakAndItem)root).items()) {
             assertInstanceOf(WordItem.class, child);
             WordItem childWord = (WordItem)child;
@@ -548,7 +548,7 @@ public class YqlParserTestCase {
 
         root = parse("select foo from bar where {grammar:\"linguistics\"}userInput(\"yoni jo dima\")").getRoot();
         assertInstanceOf(WeakAndItem.class, root);
-        assertEquals("WEAKAND(100) default:yoni default:jo default:dima", root.toString());
+        assertEquals("WEAKAND default:yoni default:jo default:dima", root.toString());
         for (Item child : ((WeakAndItem)root).items()) {
             assertInstanceOf(WordItem.class, child);
             WordItem childWord = (WordItem)child;
@@ -683,7 +683,7 @@ public class YqlParserTestCase {
         QueryTree parsed = parse("select * from sources * where " +
                                  "weakAnd(field1 contains ({weight: 120}'term1'), " +
                                  "        field1 contains ({weight: 70}'term2'))");
-        assertEquals("WEAKAND(100) field1:term1!120 field1:term2!70", parsed.toString());
+        assertEquals("WEAKAND field1:term1!120 field1:term2!70", parsed.toString());
     }
 
     @Test
@@ -906,14 +906,16 @@ public class YqlParserTestCase {
     @Test
     void testWeakAnd() {
         assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")",
-                "WEAKAND(100) a:A b:B");
+                "WEAKAND a:A b:B");
         assertParse("select foo from bar where {targetHits: 37}weakAnd(a contains \"A\", " +
-                "b contains \"B\")",
-                "WEAKAND(37) a:A b:B");
+                    "b contains \"B\")",
+                    "WEAKAND(37) a:A b:B");
+        assertParse("select foo from bar where {totalTargetHits: 37}weakAnd(a contains \"A\", " +
+                    "b contains \"B\")",
+                    "WEAKAND {totalTargetHits=37} a:A b:B");
 
-        QueryTree tree = parse("select foo from bar where weakAnd(a " +
-                "contains \"A\", b contains \"B\")");
-        assertEquals("WEAKAND(100) a:A b:B", tree.toString());
+        QueryTree tree = parse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")");
+        assertEquals("WEAKAND a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
     }
 

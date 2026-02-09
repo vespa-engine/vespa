@@ -518,8 +518,11 @@ public class SelectParser implements Parser {
 
         if (annotations != null) {
             annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
-                if (TARGET_HITS.equals(annotation_name) || TARGET_NUM_HITS.equals(annotation_name)){
-                    weakAnd.setN((int)(annotation_value.asDouble()));
+                if (TARGET_HITS.equals(annotation_name) || TARGET_NUM_HITS.equals(annotation_name)) {
+                    weakAnd.setTargetHits((int)(annotation_value.asDouble()));
+                }
+                if (TOTAL_TARGET_HITS.equals(annotation_name)) {
+                    weakAnd.setTotalTargetHits((int)(annotation_value.asDouble()));
                 }
             });
         }
