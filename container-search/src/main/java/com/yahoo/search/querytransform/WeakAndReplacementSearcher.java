@@ -61,7 +61,8 @@ public class WeakAndReplacementSearcher extends Searcher {
             return item;
         }
         if (compositeItem instanceof OrItem) {
-            WeakAndItem newItem = new WeakAndItem(Integer.valueOf(hits));
+            WeakAndItem newItem = new WeakAndItem();
+            newItem.setTargetHits(hits);
             newItem.setWeight(compositeItem.getWeight());
             compositeItem.items().forEach(newItem::addItem);
             compositeItem = newItem;
