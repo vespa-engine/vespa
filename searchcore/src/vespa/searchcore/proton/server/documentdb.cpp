@@ -1126,6 +1126,10 @@ DocumentDB::resource_usage_provider()
     if (_state->getClosed()) {
         return {}; // Not safe to access anymore
     }
+    /*
+     * If we have a current provider then return it. This is currently mandated by the identity check in
+     * DiskMemUsageSampler::remove_resource_usage_provider().
+     */
     auto current_provider = _current_resource_usage_provider.lock();
     if (current_provider) {
         return current_provider;

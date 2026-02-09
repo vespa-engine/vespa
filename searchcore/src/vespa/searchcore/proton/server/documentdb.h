@@ -140,6 +140,7 @@ private:
     std::shared_ptr<DDBState>                        _state;
     ResourceUsageForwarder                           _resource_usage_forwarder;
     AttributeUsageFilter                             _writeFilter;
+    // Track any current resource usage provider for this document db, but don't own it.
     std::weak_ptr<searchcorespi::common::IResourceUsageProvider> _current_resource_usage_provider;
     std::unique_ptr<FeedHandler>                     _feedHandler;
     DocumentSubDBCollection                          _subDBs;
