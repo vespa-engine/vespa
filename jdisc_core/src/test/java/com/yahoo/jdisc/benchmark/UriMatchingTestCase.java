@@ -3,6 +3,7 @@ package com.yahoo.jdisc.benchmark;
 
 import com.yahoo.jdisc.application.UriPattern;
 import org.junit.jupiter.api.Test;
+import java.util.Locale;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class UriMatchingTestCase {
     }
 
     private static void runBenchmark(String pattern, List<String> inputs) {
-        System.out.format("%-30s %10d\n", pattern, benchmarkMatch(pattern, inputs));
+        System.out.format(Locale.ROOT, "%-30s %10d\n", pattern, benchmarkMatch(pattern, inputs));
     }
 
     private static long benchmarkMatch(String pattern, List<String> inputs) {

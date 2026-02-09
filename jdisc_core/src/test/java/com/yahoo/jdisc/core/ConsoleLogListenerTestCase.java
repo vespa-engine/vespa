@@ -10,6 +10,7 @@ import org.osgi.service.log.LogListener;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,7 +51,7 @@ public class ConsoleLogListenerTestCase {
     @Test
     void requireThatLogEntryWithLevelAboveThresholdIsNotOutput() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        LogListener listener = new ConsoleLogListener(new PrintStream(out), null, "5");
+        LogListener listener = new ConsoleLogListener(new PrintStream(out, true, StandardCharsets.UTF_8), null, "5");
         for (LogLevel l : LogLevel.values()) {
             listener.logged(new MyEntry(0, l, "message"));
         }
@@ -61,7 +62,7 @@ public class ConsoleLogListenerTestCase {
                 "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tinfo\tmessage\n" +
                 "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tdebug\tmessage\n" +
                 "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tunknown\tmessage\n",
-                out.toString());
+                out.toString(StandardCharsets.UTF_8));
     }
 
     private static class MyEntry implements LogEntry {
