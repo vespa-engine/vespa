@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network.rpc;
 
-
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.network.Identity;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,28 +51,28 @@ public class SlobrokTestCase {
             actual = net.getMirror().lookup(pattern);
             actual.sort(cmp);
             if (actual.equals(expect)) {
-                System.out.printf("lookup successful for pattern: %s\n", pattern);
+                System.out.println(Text.format("lookup successful for pattern: %s", pattern));
                 return;
             }
             try { Thread.sleep(10); } catch (InterruptedException e) {
                 //
             }
         }
-        System.out.printf("lookup failed for pattern: %s\n", pattern);
-        System.out.printf("actual values:\n");
+        System.out.println(Text.format("lookup failed for pattern: %s", pattern));
+        System.out.println("actual values:");
         if (actual == null || actual.isEmpty()) {
-            System.out.printf("  { EMPTY }\n");
+            System.out.println("  { EMPTY }");
         } else {
             for (Mirror.Entry entry : actual) {
-                System.out.printf("  { %s, %s }\n", entry.getName(), entry.getSpecString());
+                System.out.println(Text.format("  { %s, %s }", entry.getName(), entry.getSpecString()));
             }
         }
-        System.out.printf("expected values:\n");
+        System.out.println("expected values:");
         if (expect.isEmpty()) {
-            System.out.printf("  { EMPTY }\n");
+            System.out.println("  { EMPTY }");
         } else {
             for (Mirror.Entry entry : expect) {
-                System.out.printf("  { %s, %s }\n", entry.getName(),  entry.getSpecString());
+                System.out.println(Text.format("  { %s, %s }", entry.getName(), entry.getSpecString()));
             }
         }
         assertTrue(false);

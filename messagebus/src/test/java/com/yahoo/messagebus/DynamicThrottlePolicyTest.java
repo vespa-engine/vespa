@@ -4,6 +4,7 @@ package com.yahoo.messagebus;
 import com.yahoo.concurrent.ManualTimer;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleReply;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -208,15 +210,15 @@ public class DynamicThrottlePolicyTest {
     }
 
     static void assertInRange(double lower, double actual, double upper) {
-        System.err.printf("%10.4f  <= %10.4f  <= %10.4f\n", lower, actual, upper);
+        System.err.println(Text.format("%10.4f  <= %10.4f  <= %10.4f", lower, actual, upper));
         assertTrue(lower <= actual, actual + " should be not be smaller than " + lower);
         assertTrue(upper >= actual, actual + " should be not be greater than " + upper);
     }
 
     private Summary run(long operations, int workPerSuccess, int numberOfWorkers, int maximumTasksPerWorker,
                         int workerParallelism, ManualTimer timer, DynamicThrottlePolicy... policies) {
-        System.err.printf("\n### Running %d operations of %d ticks each against %d workers with parallelism %d and queue size %d\n",
-                          operations, workPerSuccess, numberOfWorkers, workerParallelism, maximumTasksPerWorker);
+        System.err.println(Text.format("\n### Running %d operations of %d ticks each against %d workers with parallelism %d and queue size %d",
+                          operations, workPerSuccess, numberOfWorkers, workerParallelism, maximumTasksPerWorker));
 
         List<Integer> order = IntStream.range(0, policies.length).boxed().collect(Collectors.toCollection(ArrayList::new));
         MockServer resource = new MockServer(workPerSuccess, numberOfWorkers, maximumTasksPerWorker, workerParallelism);

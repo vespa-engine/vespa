@@ -7,6 +7,7 @@ import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.test.TestFileUtil;
 import com.yahoo.messagebus.Routable;
+import com.yahoo.text.Text;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -130,9 +131,9 @@ public abstract class MessagesTestBase {
         assertTrue(data.length > 0);
         try {
             if (fileContentIsUnchanged(path, data)) {
-                System.out.println(String.format("Serialization for '%s' is unchanged; not overwriting it", path));
+                System.out.println(Text.format("Serialization for '%s' is unchanged; not overwriting it", path));
             } else {
-                System.out.println(String.format("Serializing to '%s'..", path));
+                System.out.println(Text.format("Serializing to '%s'..", path));
                 // This only happens when protocol encoding has changed and takes place
                 // during local development, not regular test runs.
                 TestFileUtil.writeToFile(path, data);
