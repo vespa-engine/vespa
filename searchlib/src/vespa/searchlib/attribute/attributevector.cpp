@@ -22,6 +22,7 @@
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/mmap_file_allocator.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <thread>
@@ -39,6 +40,8 @@ using search::attribute::SearchContextParams;
 using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::queryeval::SearchIterator;
+using vespalib::alloc::MmapFileAllocator;
+using vespalib::alloc::MmapFileAllocatorFactory;
 using namespace vespalib::make_string_short;
 namespace fs = std::filesystem;
 
@@ -71,7 +74,7 @@ std::unique_ptr<vespalib::alloc::MemoryAllocator>
 make_memory_allocator(const std::string& name, const search::attribute::Config& config)
 {
     if (allow_paged(config)) {
-        return vespalib::alloc::MmapFileAllocatorFactory::instance().make_memory_allocator(name);
+        return MmapFileAllocatorFactory::instance().make_memory_allocator(name);
     }
     return {};
 }
@@ -742,6 +745,18 @@ AttributeVector::set_size_on_disk(const IAttributeSaveTarget& target)
     if (save_target_size_on_disk != 0) {
         set_size_on_disk(save_target_size_on_disk);
     }
+}
+
+uint64_t
+AttributeVector::get_memory_allocator_size_on_disk() const noexcept
+{
+    if (_memory_allocator) {
+        auto* mmap_file_allocator = dynamic_cast<const MmapFileAllocator*>(_memory_allocator.get());
+        if (mmap_file_allocator != nullptr) {
+            return mmap_file_allocator->get_size_on_disk();
+        }
+    }
+    return 0;
 }
 
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);

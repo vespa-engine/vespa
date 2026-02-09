@@ -164,7 +164,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private final boolean rpcServerEnabled;
     private final boolean httpServerEnabled;
     protected DeployLogger deployLogger;
-    
+
     public static final List<ConfigModelId> configModelIds = List.of(ConfigModelId.fromName(CONTAINER_TAG));
 
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
@@ -249,14 +249,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addParameterStoreValidationHandler(cluster, deployState);
     }
     
-    private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
-        var sidecars = new ArrayList<SidecarSpec>(); 
-        
+    private boolean shouldUseTriton(ApplicationContainerCluster cluster, DeployState deployState) {
         var isPublicCloud = deployState.zone().system().isPublicCloudLike();
         var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
-        var useTritonFlagValue = deployState.featureFlags().useTriton();
+        var useTritonFeatureFlagValue = deployState.featureFlags().useTriton();
+        return useTritonFeatureFlagValue && isPublicCloud && hasOnnxModels;
+    }
 
-        if (useTritonFlagValue && isPublicCloud && hasOnnxModels) {
+    private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
+        var sidecars = new ArrayList<SidecarSpec>();
+        
+        if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
 
             // Hardcoded values for changes to be reviewed and tested
@@ -273,7 +276,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             sidecars.add(spec);
         }
-        
+
         return sidecars;
     }
 
@@ -408,7 +411,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
                             AthenzDomain.from(HOSTED_VESPA_TENANT_PARENT_DOMAIN + context.properties().applicationId().tenant().value()),
-                            AthenzService.from("%s-%s".formatted(context.properties().applicationId().application().value(), appContext)));
+                            AthenzService.from(String.format(java.util.Locale.ROOT, "%s-%s", context.properties().applicationId().application().value(), appContext)));
     }
 
     private void addDeploymentSpecConfig(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {
@@ -558,7 +561,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 new ChainedComponentModel(
                         new BundleInstantiationSpecification(
                                 new ComponentSpecification("com.yahoo.jdisc.http.filter.security.misc.NoopFilter"),
-                                null, new ComponentSpecification("jdisc-security-filters")),
+                                null, new ComponentSpecification("container-disc")),
                         Dependencies.emptyDependencies())));
         cluster.getHttp().getFilterChains().add(insecureChain);
         var insecureChainComponentSpec = new ComponentSpecification(insecureChain.getComponentId().toString());
@@ -607,7 +610,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private Optional<Client> getClient(Element clientElement, DeployState state) {
         String clientId = XML.attribute("id", clientElement).orElseThrow();
         if (clientId.startsWith("_"))
-            throw new IllegalArgumentException("Invalid client id '%s', id cannot start with '_'".formatted(clientId));
+            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Invalid client id '%s', id cannot start with '_'", clientId));
         var permissions = XML.attribute("permissions", clientElement)
                 .map(Client.Permission::fromCommaSeparatedString).orElse(Set.of());
 
@@ -615,8 +618,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .flatMap(certElem -> {
                     var file = app.getFile(Path.fromString(certElem.getAttribute("file")));
                     if (!file.exists()) {
-                        throw new IllegalArgumentException("Certificate file '%s' for client '%s' does not exist"
-                                                                   .formatted(file.getPath().getRelative(), clientId));
+                        throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Certificate file '%s' for client '%s' does not exist", file.getPath().getRelative(), clientId));
                     }
                     return getCertificates(file).stream();
                 })
@@ -633,7 +635,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     var token = knownTokens.get(tokenId);
                     if (token == null)
                         deployLogger.logApplicationPackage(
-                                WARNING, "Token '%s' for client '%s' does not exist".formatted(tokenId, clientId));
+                                WARNING, String.format(java.util.Locale.ROOT, "Token '%s' for client '%s' does not exist", tokenId, clientId));
                     return token;
                 })
                 .filter(token -> {
@@ -641,15 +643,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     boolean empty = token.versions().isEmpty();
                     if (empty)
                         deployLogger.logApplicationPackage(
-                                WARNING, "Token '%s' for client '%s' has no active versions"
-                                        .formatted(token.tokenId(), clientId));
+                                WARNING, String.format(java.util.Locale.ROOT, "Token '%s' for client '%s' has no active versions", token.tokenId(), clientId));
                     return !empty;
                 })
                 .toList();
 
         // Don't include 'client' that refers to token without versions
         if (referencedTokens.isEmpty()) {
-            deployLogger.log(Level.INFO, "Skipping client '%s' as it does not refer to any activate tokens".formatted(clientId));
+            deployLogger.log(Level.INFO, String.format(java.util.Locale.ROOT, "Skipping client '%s' as it does not refer to any activate tokens", clientId));
             return Optional.empty();
         }
 
@@ -666,10 +667,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             try {
                 x509Certificates = X509CertificateUtils.certificateListFromPem(certPem);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("File %s contains an invalid certificate".formatted(file.getPath().getRelative()), e);
+                throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "File %s contains an invalid certificate", file.getPath().getRelative()), e);
             }
             if (x509Certificates.isEmpty()) {
-                throw new IllegalArgumentException("File %s does not contain any certificates.".formatted(file.getPath().getRelative()));
+                throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "File %s does not contain any certificates.", file.getPath().getRelative()));
             }
             return x509Certificates;
         } catch (IOException e) {
@@ -774,7 +775,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Set up handler that tells what fingerprints are known to the container
         class CloudTokenDataPlaneHandler extends Handler implements CloudTokenDataPlaneFilterConfig.Producer {
             CloudTokenDataPlaneHandler() {
-                super(new ComponentModel("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneHandler", null, "jdisc-security-filters", null));
+                super(new ComponentModel("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneHandler", null, "cloud-tenant", null));
                 addServerBindings(SystemBindingPattern.fromHttpPortAndPath(Defaults.getDefaults().vespaWebServicePort(), "/data-plane-tokens/v1"));
             }
             @Override public void getConfig(Builder builder) { tokenFilter.getConfig(builder); }
@@ -976,7 +977,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE);
         cluster.addPlatformBundle(ContainerModelEvaluation.ONNXRUNTIME_BUNDLE_FILE);
         /* The ONNX runtime is always available for injection to any component */
-        if (deployState.featureFlags().useTriton()) {
+        if (shouldUseTriton(cluster, deployState)) {
             cluster.addSimpleComponent(
                     ContainerModelEvaluation.TRITON_ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
         } else {
@@ -1153,7 +1154,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
         return map;
     }
-    
+
     private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element containerElement,
                                                    Element nodesElement, ConfigModelContext context) {
         if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
@@ -1165,7 +1166,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         else // the non-hosted option
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
     }
-    
+
     private static boolean applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
         try {
             if (memoryPercentage == null || memoryPercentage.isEmpty()) return false;
@@ -1199,7 +1200,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             zoneEndpoint(context, clusterId),
                                             deployState.getDeployLogger(),
                                             false,
-                                            context.clusterInfo().build(), 
+                                            context.clusterInfo().build(),
                                             sidecars);
             return createNodesFromHosts(hosts, cluster, context.getDeployState());
         }
@@ -1253,7 +1254,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .vespaVersion(context.getDeployState().getWantedNodeVespaVersion())
                 .dockerImageRepository(context.getDeployState().getWantedDockerImageRepo())
                 .build();
-        Map<HostResource, ClusterMembership> hosts = 
+        Map<HostResource, ClusterMembership> hosts =
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec, Capacity.fromRequiredNodeType(type), deployLogger);
         return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
@@ -1473,7 +1474,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         String idAttr = element.getAttribute("id");
 
         if (idAttr.equals(xmlRendererId) || idAttr.equals(jsonRendererId)) {
-            throw new IllegalArgumentException(String.format("Renderer id %s is reserved for internal use", idAttr));
+            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Renderer id %s is reserved for internal use", idAttr));
         }
     }
 

@@ -10,6 +10,7 @@ import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.ONearItem;
 import com.yahoo.prelude.query.PureWeightedInteger;
 import com.yahoo.prelude.query.PureWeightedString;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
@@ -54,7 +55,7 @@ public class ItemEncodingTestCase {
 
         word.setWeight(150);
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = word.encode(buffer);
+        int count = word.encode(buffer, new SerializationContext(1.0));
 
         buffer.flip();
 
@@ -76,7 +77,7 @@ public class ItemEncodingTestCase {
     void testStartHostMarkerEncoding() {
         WordItem word = MarkerWordItem.createStartOfHost();
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = word.encode(buffer);
+        int count = word.encode(buffer, new SerializationContext(1.0));
 
         buffer.flip();
 
@@ -103,7 +104,7 @@ public class ItemEncodingTestCase {
         WordItem word = MarkerWordItem.createEndOfHost();
 
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = word.encode(buffer);
+        int count = word.encode(buffer, new SerializationContext(1.0));
 
         buffer.flip();
 
@@ -129,7 +130,7 @@ public class ItemEncodingTestCase {
 
         word.setFilter(true);
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = word.encode(buffer);
+        int count = word.encode(buffer, new SerializationContext(1.0));
 
         buffer.flip();
 
@@ -154,7 +155,7 @@ public class ItemEncodingTestCase {
         word.setPositionData(false);
 
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = word.encode(buffer);
+        int count = word.encode(buffer, new SerializationContext(1.0));
 
         buffer.flip();
 
@@ -181,7 +182,7 @@ public class ItemEncodingTestCase {
         and.addItem(b);
 
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = and.encode(buffer);
+        int count = and.encode(buffer, new SerializationContext(1.0));
 
         buffer.flip();
 
@@ -204,7 +205,7 @@ public class ItemEncodingTestCase {
         near.addItem(b);
 
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = near.encode(buffer);
+        int count = near.encode(buffer, new SerializationContext(1.0));
 
         buffer.flip();
 
@@ -228,7 +229,7 @@ public class ItemEncodingTestCase {
         onear.addItem(b);
 
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = onear.encode(buffer);
+        int count = onear.encode(buffer, new SerializationContext(1.0));
 
         buffer.flip();
 
@@ -251,7 +252,7 @@ public class ItemEncodingTestCase {
         equiv.addItem(b);
 
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = equiv.encode(buffer);
+        int count = equiv.encode(buffer, new SerializationContext(1.0));
 
         buffer.flip();
 
@@ -273,7 +274,7 @@ public class ItemEncodingTestCase {
         wand.addItem(b);
 
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = wand.encode(buffer);
+        int count = wand.encode(buffer, new SerializationContext(1.0));
 
         buffer.flip();
 
@@ -304,7 +305,7 @@ public class ItemEncodingTestCase {
         wand.addItem(bc);
         wand.addItem(d);
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = wand.encode(buffer);
+        int count = wand.encode(buffer, new SerializationContext(1.0));
         assertEquals(5, count, "Serialization count");
         buffer.flip();
         assertType(buffer, 16, 0);
@@ -318,7 +319,7 @@ public class ItemEncodingTestCase {
         assertEquals(0, buffer.remaining());
         bc.shouldFoldIntoWand(false);
         buffer = ByteBuffer.allocate(128);
-        count = wand.encode(buffer);
+        count = wand.encode(buffer, new SerializationContext(1.0));
         assertEquals(6, count, "Serialization count");
     }
 
@@ -326,7 +327,7 @@ public class ItemEncodingTestCase {
     void testPureWeightedStringEncoding() {
         PureWeightedString a = new PureWeightedString("a");
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = a.encode(buffer);
+        int count = a.encode(buffer, new SerializationContext(1.0));
         buffer.flip();
         assertEquals(3, buffer.remaining(), "Serialization size");
         assertEquals(1, count, "Serialization count");
@@ -338,7 +339,7 @@ public class ItemEncodingTestCase {
     void testPureWeightedStringEncodingWithNonDefaultWeight() {
         PureWeightedString a = new PureWeightedString("a", 7);
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = a.encode(buffer);
+        int count = a.encode(buffer, new SerializationContext(1.0));
         buffer.flip();
         assertEquals(4, buffer.remaining(), "Serialization size");
         assertEquals(1, count, "Serialization count");
@@ -349,9 +350,9 @@ public class ItemEncodingTestCase {
 
     @Test
     void testPureWeightedIntegerEncoding() {
-        PureWeightedInteger a = new PureWeightedInteger(23432568763534865l);
+        PureWeightedInteger a = new PureWeightedInteger(23432568763534865L);
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = a.encode(buffer);
+        int count = a.encode(buffer, new SerializationContext(1.0));
         buffer.flip();
         assertEquals(9, buffer.remaining(), "Serialization size");
         assertEquals(1, count, "Serialization count");
@@ -361,9 +362,9 @@ public class ItemEncodingTestCase {
 
     @Test
     void testPureWeightedLongEncodingWithNonDefaultWeight() {
-        PureWeightedInteger a = new PureWeightedInteger(23432568763534865l, 7);
+        PureWeightedInteger a = new PureWeightedInteger(23432568763534865L, 7);
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = a.encode(buffer);
+        int count = a.encode(buffer, new SerializationContext(1.0));
         buffer.flip();
         assertEquals(10, buffer.remaining(), "Serialization size");
         assertEquals(1, count, "Serialization count");
@@ -378,7 +379,7 @@ public class ItemEncodingTestCase {
         var a = new StringInItem("default");
         a.addToken("foo");
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = a.encode(buffer);
+        int count = a.encode(buffer, new SerializationContext(1.0));
         buffer.flip();
         // 2 bytes type, 1 byte item count, 1 byte string len, 7 bytes string content
         // 1 byte string len, 3 bytes string content
@@ -395,7 +396,7 @@ public class ItemEncodingTestCase {
         a.addToken(42);
         a.addToken(97000000000L);
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = a.encode(buffer);
+        int count = a.encode(buffer, new SerializationContext(1.0));
         buffer.flip();
         // 2 bytes type, 1 byte item count, 1 byte string len, 7 bytes string content
         // 16 bytes (2 64-bit integer value)

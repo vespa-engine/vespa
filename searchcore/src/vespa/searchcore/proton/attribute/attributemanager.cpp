@@ -13,6 +13,7 @@
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -41,6 +42,7 @@ using search::attribute::IAttributeVector;
 using search::common::FileHeaderContext;
 using search::attribute::BasicType;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::ResourceUsage;
 
 namespace proton {
 
@@ -658,15 +660,12 @@ AttributeManager::readable_attribute_vector(std::string_view name) const
     return _importedAttributes->get(name);
 }
 
-TransientResourceUsage
-AttributeManager::get_transient_resource_usage() const
+ResourceUsage
+AttributeManager::get_resource_usage() const
 {
-    // Transient disk usage is measured as the total disk usage of all attribute snapshots
-    // that are NOT the valid best one.
-    // Transient memory usage is zero.
-    TransientResourceUsage result;
+    ResourceUsage result;
     for (const auto& elem : _flushables) {
-        auto usage = elem.second.getFlusher()->get_transient_resource_usage();
+        auto usage = elem.second.getFlusher()->get_resource_usage();
         result.merge(usage);
     }
     return result;

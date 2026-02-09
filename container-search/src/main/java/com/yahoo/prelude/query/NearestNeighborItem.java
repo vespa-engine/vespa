@@ -20,7 +20,8 @@ import java.util.Objects;
  */
 public class NearestNeighborItem extends SimpleTaggableItem {
 
-    private int targetNumHits = 0;
+    private Integer targetHits = null;
+    private Integer totalTargetHits = null;
     private int hnswExploreAdditionalHits = 0;
     private double distanceThreshold = Double.POSITIVE_INFINITY;
     private boolean approximate = true;
@@ -38,8 +39,19 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         this.queryTensorName = queryTensorName;
     }
 
-    /** Returns the K number of hits to produce */
-    public int getTargetNumHits() { return targetNumHits; }
+    /**
+     * Returns the K number of hits to produce per node, or 0 if not set.
+     *
+     * @deprecated use getTargetHits()
+     */
+    @Deprecated
+    public int getTargetNumHits() { return targetHits != null ? targetHits : 0; }
+
+    /** Returns the K number of hits to produce per node, or 0 if not set. */
+    public Integer getTargetHits() { return targetHits; }
+
+    /** Returns the total number of hits to produce across all nodes, or null if not set */
+    public Integer getTotalTargetHits() { return totalTargetHits; }
 
     /** Returns the name of the index (field) to be searched */
     public String getIndexName() { return field; }
@@ -74,8 +86,19 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     /** Returns the target hits max adjustment factor for HNSW */
     public Double getHnswTargetHitsMaxAdjustmentFactor() { return hnswTargetHitsMaxAdjustmentFactor; }
 
-    /** Set the K number of hits to produce */
-    public void setTargetNumHits(int target) { this.targetNumHits = target; }
+    /**
+     * Set the K number of hits to produce per node
+     *
+     * @deprecated use setTargetHits
+     */
+    @Deprecated
+    public void setTargetNumHits(int target) { this.targetHits = target; }
+
+    /** Set the K number of hits to produce per node. */
+    public void setTargetHits(Integer target) { this.targetHits = target; }
+
+    /** Set the total number of hits to produce across all nodes */
+    public void setTotalTargetHits(Integer total) { this.totalTargetHits = total; }
 
     /** Set the distance threshold for nearest-neighbor hits */
     public void setDistanceThreshold(double threshold) { this.distanceThreshold = threshold; }
@@ -117,12 +140,12 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     public int getTermCount() { return 1; }
 
     @Override
-    public int encode(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    public int encode(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         putString(field, buffer);
         putString(queryTensorName, buffer);
         int approxNum = (approximate ? 1 : 0);
-        IntegerCompressor.putCompressedPositiveNumber(targetNumHits, buffer);
+        IntegerCompressor.putCompressedPositiveNumber(resolveTargetHits(context), buffer);
         IntegerCompressor.putCompressedPositiveNumber(approxNum, buffer);
         IntegerCompressor.putCompressedPositiveNumber(hnswExploreAdditionalHits, buffer);
         buffer.putDouble(distanceThreshold);
@@ -136,7 +159,10 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         buffer.append(",hnsw.exploreAdditionalHits=").append(hnswExploreAdditionalHits);
         buffer.append(",distanceThreshold=").append(distanceThreshold);
         buffer.append(",approximate=").append(approximate);
-        buffer.append(",targetHits=").append(targetNumHits);
+        if (targetHits != null)
+            buffer.append(",targetHits=").append(targetHits);
+        if (totalTargetHits != null)
+            buffer.append(",totalTargetHits=").append(totalTargetHits);
         if (hnswApproximateThreshold != null)
             buffer.append(",hnsw.approximateThreshold=").append(hnswApproximateThreshold);
         if (hnswExplorationSlack != null)
@@ -160,7 +186,10 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         discloser.addProperty("hnsw.exploreAdditionalHits", hnswExploreAdditionalHits);
         discloser.addProperty("distanceThreshold", distanceThreshold);
         discloser.addProperty("approximate", approximate);
-        discloser.addProperty("targetHits", targetNumHits);
+        if (targetHits != null)
+            discloser.addProperty("targetHits", targetHits);
+        if (totalTargetHits != null)
+            discloser.addProperty("totalTargetHits", totalTargetHits);
         if (hnswApproximateThreshold != null)
             discloser.addProperty("hnsw.approximateThreshold", hnswApproximateThreshold);
         if (hnswExplorationSlack != null)
@@ -179,7 +208,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     public boolean equals(Object o) {
         if ( ! super.equals(o)) return false;
         NearestNeighborItem other = (NearestNeighborItem)o;
-        if (this.targetNumHits != other.targetNumHits) return false;
+        if ( ! Objects.equals(this.targetHits, other.targetHits)) return false;
+        if ( ! Objects.equals(this.totalTargetHits, other.totalTargetHits)) return false;
         if (this.hnswExploreAdditionalHits != other.hnswExploreAdditionalHits) return false;
         if (this.distanceThreshold != other.distanceThreshold) return false;
         if (this.approximate != other.approximate) return false;
@@ -196,7 +226,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), targetNumHits, hnswExploreAdditionalHits,
+        return Objects.hash(super.hashCode(), targetHits, totalTargetHits, hnswExploreAdditionalHits,
                             distanceThreshold, approximate, field, queryTensorName,
                             hnswApproximateThreshold, hnswExplorationSlack,
                             hnswFilterFirstExploration, hnswFilterFirstThreshold,
@@ -204,11 +234,11 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemNearestNeighbor.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         builder.setQueryTensorName(queryTensorName);
-        builder.setTargetNumHits(targetNumHits);
+        builder.setTargetNumHits(resolveTargetHits(context));
         builder.setAllowApproximate(approximate);
         builder.setExploreAdditionalHits(hnswExploreAdditionalHits);
         builder.setDistanceThreshold(distanceThreshold);
@@ -234,5 +264,12 @@ public class NearestNeighborItem extends SimpleTaggableItem {
                 .setItemNearestNeighbor(builder.build())
                 .build();
     }
+
+    private int resolveTargetHits(SerializationContext context) {
+        if (targetHits != null) return targetHits;
+        if (totalTargetHits == null)
+            throw new IllegalStateException("targetHits or totalTargetHits must be set before this is serialized");
+        return (int)Math.ceil(totalTargetHits * context.contentShare());
+   }
 
 }

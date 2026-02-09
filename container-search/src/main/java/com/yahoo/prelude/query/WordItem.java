@@ -61,10 +61,12 @@ public class WordItem extends TermItem {
         setWord(word);
     }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.WORD;
     }
 
+    @Override
     public String getName() {
         return "WORD";
     }
@@ -76,8 +78,8 @@ public class WordItem extends TermItem {
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer); // takes care of index bytes
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context); // takes care of index bytes
         putString(getEncodedWord(), buffer);
     }
 
@@ -185,7 +187,7 @@ public class WordItem extends TermItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemWordTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         builder.setWord(getEncodedWord());

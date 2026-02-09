@@ -19,6 +19,7 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.EventStream;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
 
 import java.io.ByteArrayOutputStream;
@@ -283,7 +284,7 @@ public class LLMSearcher extends Searcher {
             return "Time to first token: " + timeToFirstToken + " ms, " +
                    "Generation time: " + generationTime + " ms, " +
                    "Generated tokens: " + tokens + " " +
-                   String.format("(%.2f tokens/sec)", tokens / (generationTime / 1000.0));
+                   Text.format("(%.2f tokens/sec)", tokens / (generationTime / 1000.0));
         }
 
     }

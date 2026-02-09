@@ -40,7 +40,7 @@ public class ToProtobufTest {
     }
 
     private static void assertConvertsToJson(Item item, String expectedJson) {
-        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(item);
+        SearchProtocol.QueryTreeItem result = ToProtobuf.convertFromQuery(item, new SerializationContext(1.0));
         assertNotNull(result);
         assertJsonEquals(toJson(result), expectedJson);
     }
@@ -57,7 +57,7 @@ public class ToProtobufTest {
 
     @Test
     void testConvertFromQueryWithNullItem() {
-        assertThrows(IllegalArgumentException.class, () -> ToProtobuf.convertFromQuery(null));
+        assertThrows(IllegalArgumentException.class, () -> ToProtobuf.convertFromQuery(null, new SerializationContext(1.0)));
     }
 
     @Test
@@ -481,6 +481,35 @@ public class ToProtobufTest {
     }
 
     @Test
+    void testConvertFromQueryWithPhraseSegmentItemInsidePhrase() {
+        PhraseItem phrase = new PhraseItem();
+        phrase.setIndexName("myindex");
+        phrase.addItem(new WordItem("one"));
+        PhraseSegmentItem phraseSegment = new PhraseSegmentItem("test", false, false);
+        phraseSegment.addItem(new WordItem("two"));
+        phraseSegment.addItem(new WordItem("three"));
+        phraseSegment.setIndexName("myindex");
+        phrase.addItem(phraseSegment);
+        phrase.addItem(new WordItem("four"));
+
+        // A PhraseSegmentItem inside a PhraseItem is unpacked during conversion, i.e.,
+        // its children become children of the PhraseItem
+        assertConvertsToJson(phrase, """
+            {
+              "itemPhrase": {
+                "properties": {"index": "myindex"},
+                "children": [
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "one"}},
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "two"}},
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "three"}},
+                  {"itemWordTerm": {"properties": {"index": "myindex"}, "word": "four"}}
+                ]
+              }
+            }
+            """);
+    }
+
+    @Test
     void testConvertFromQueryWithAndSegmentItem() {
         AndSegmentItem andSegment = new AndSegmentItem("test", false, false);
         andSegment.addItem(new WordItem("foo"));
@@ -795,24 +824,28 @@ public class ToProtobufTest {
 
     @Test
     void testConvertFromQueryWithNearestNeighborItem() {
-        assertConvertsToJson(new NearestNeighborItem("myvector", "query_vector"), """
-            {
-              "itemNearestNeighbor": {
+        var nn = new NearestNeighborItem("myvector", "query_vector");
+        nn.setTargetHits(100);
+        var expected = """
+        {
+            "itemNearestNeighbor": {
                 "properties": {
-                  "index": "myvector"
+                    "index": "myvector"
                 },
                 "queryTensorName": "query_vector",
+                "targetNumHits": 100,
                 "allowApproximate": true,
                 "distanceThreshold": "Infinity"
-              }
             }
-            """);
+        }
+        """;
+        assertConvertsToJson(nn, expected);
     }
 
     @Test
     void testConvertFromQueryWithNearestNeighborItemWithOptionalAttributes() {
         NearestNeighborItem nearestNeighbor = new NearestNeighborItem("myvector", "query_vector");
-        nearestNeighbor.setTargetNumHits(100);
+        nearestNeighbor.setTargetHits(100);
         nearestNeighbor.setAllowApproximate(false);
         nearestNeighbor.setHnswExploreAdditionalHits(50);
         nearestNeighbor.setDistanceThreshold(0.5);
@@ -839,7 +872,7 @@ public class ToProtobufTest {
     @Test
     void testConvertFromQueryWithNearestNeighborItemWithHnswTuningParameters() {
         NearestNeighborItem nearestNeighbor = new NearestNeighborItem("myvector", "query_vector");
-        nearestNeighbor.setTargetNumHits(50);
+        nearestNeighbor.setTargetHits(50);
         nearestNeighbor.setHnswApproximateThreshold(0.05);
         nearestNeighbor.setHnswExplorationSlack(0.1);
         nearestNeighbor.setHnswFilterFirstExploration(0.3);

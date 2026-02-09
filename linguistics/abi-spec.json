@@ -443,6 +443,8 @@
     "methods" : [
       "public abstract void sampleEmbeddingLatency(double, com.yahoo.language.process.Embedder$Context)",
       "public abstract void sampleSequenceLength(long, com.yahoo.language.process.Embedder$Context)",
+      "public abstract void sampleRequestCount(com.yahoo.language.process.Embedder$Context)",
+      "public abstract void sampleRequestFailure(com.yahoo.language.process.Embedder$Context, int)",
       "public static com.yahoo.language.process.Embedder$Runtime testInstance()"
     ],
     "fields" : [ ]
@@ -460,7 +462,8 @@
       "public java.util.Map asMap(java.lang.String)",
       "public abstract java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
       "public java.lang.String decode(java.util.List, com.yahoo.language.process.Embedder$Context)",
-      "public abstract com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
+      "public abstract com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
+      "public java.util.List embed(java.util.List, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
     ],
     "fields" : [
       "public static final java.lang.String defaultEmbedderId",

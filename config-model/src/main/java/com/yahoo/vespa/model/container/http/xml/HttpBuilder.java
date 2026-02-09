@@ -127,7 +127,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Ht
         if (explicitDomain != null) {
             if (tenantDomain != null && !explicitDomain.equals(tenantDomain)) {
                 throw new IllegalArgumentException(
-                        String.format("Domain in access-control ('%s') does not match tenant domain ('%s')", explicitDomain.value(), tenantDomain.value()));
+                        String.format(java.util.Locale.ROOT, "Domain in access-control ('%s') does not match tenant domain ('%s')", explicitDomain.value(), tenantDomain.value()));
             }
             deployState.getDeployLogger()
                     .logApplicationPackage(Level.WARNING,

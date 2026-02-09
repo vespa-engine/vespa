@@ -4,6 +4,7 @@ package com.yahoo.search.dispatch;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.test.ManualClock;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -141,10 +142,10 @@ public class LoadBalancerSimulationTest {
             // Coefficient of variation
             double coefficientOfVariation = mean > 0 ? stdDev / mean : 0.0;
 
-            System.out.println("  Mean: " + String.format("%.2f", mean));
-            System.out.println("  Standard Deviation: " + String.format("%.2f", stdDev));
+            System.out.println("  Mean: " + Text.format("%.2f", mean));
+            System.out.println("  Standard Deviation: " + Text.format("%.2f", stdDev));
             System.out.println("  Max-Min Difference: " + maxMinDiff);
-            System.out.println("  Coefficient of Variation: " + String.format("%.4f", coefficientOfVariation));
+            System.out.println("  Coefficient of Variation: " + Text.format("%.4f", coefficientOfVariation));
         }
     }
 

@@ -62,12 +62,25 @@ public class ModelIdResolver {
 
         register(m, "e5-large-v2", "https://data.vespa-cloud.com/onnx_models/e5-large-v2/model.onnx", Set.of(ONNX_MODEL));
         register(m, "e5-large-v2-vocab", "https://data.vespa-cloud.com/onnx_models/e5-large-v2/tokenizer.json", Set.of(HF_TOKENIZER));
+        
         register(m, "nomic-ai-modernbert", "https://data.vespa-cloud.com/onnx_models/nomic-ai-modernbert-embed-base/model.onnx", Set.of(ONNX_MODEL));
         register(m, "nomic-ai-modernbert-vocab", "https://data.vespa-cloud.com/onnx_models/nomic-ai-modernbert-embed-base/tokenizer.json", Set.of(HF_TOKENIZER));
+        
         register(m, "lightonai-modernbert-large", "https://data.vespa-cloud.com/onnx_models/lightonai-modernbert-large/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "lightonai-modernbert-large-int8", "https://data.vespa-cloud.com/onnx_models/lightonai-modernbert-large-int8/model.onnx", Set.of(ONNX_MODEL));                    
         register(m, "lightonai-modernbert-large-vocab", "https://data.vespa-cloud.com/onnx_models/lightonai-modernbert-large/tokenizer.json", Set.of(HF_TOKENIZER));
+        
         register(m, "alibaba-gte-modernbert", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-base/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "alibaba-gte-modernbert-int8", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-int8/model.onnx", Set.of(ONNX_MODEL));                            
         register(m, "alibaba-gte-modernbert-vocab", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-base/tokenizer.json", Set.of(HF_TOKENIZER));
+                                                                                                                                                                                      
+        register(m, "snowflake-arctic-embed-m-v2.0", "https://data.vespa-cloud.com/onnx_models/snowflake-arctic-embed-m-v2.0/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "snowflake-arctic-embed-m-v2.0-int8", "https://data.vespa-cloud.com/onnx_models/snowflake-arctic-embed-m-v2.0-int8/model.onnx", Set.of(ONNX_MODEL));  
+        register(m, "snowflake-arctic-embed-m-v2.0-vocab", "https://data.vespa-cloud.com/onnx_models/snowflake-arctic-embed-m-v2.0/tokenizer.json", Set.of(HF_TOKENIZER));            
+        
+        register(m, "voyage-4-nano", "https://data.vespa-cloud.com/onnx_models/voyage-4-nano/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "voyage-4-nano-int8", "https://data.vespa-cloud.com/onnx_models/voyage-4-nano-int8/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "voyage-4-nano-vocab", "https://data.vespa-cloud.com/onnx_models/voyage-4-nano/tokenizer.json", Set.of(HF_TOKENIZER));  
 
         register(m, "llama-160m-chat-v1-q6", "https://data.vespa-cloud.com/gguf_models/Llama-160M-Chat-v1.Q6_K.gguf", Set.of(GGUF_MODEL));
         register(m, "llama-3.2-1b-q4", "https://data.vespa-cloud.com/gguf_models/llama-3.2-1b-instruct-q4_k_m.gguf", Set.of(GGUF_MODEL));
@@ -77,7 +90,7 @@ public class ModelIdResolver {
         register(m, "mistral-7b",      "https://data.vespa-cloud.com/gguf_models/mistral-7b-instruct-v0.1.Q6_K.gguf", Set.of(GGUF_MODEL));
         register(m, "mistral-7b-q8",   "https://data.vespa-cloud.com/gguf_models/mistral-7b-instruct-v0.1.Q8_0.gguf", Set.of(GGUF_MODEL));
         register(m, "phi-3.5-mini-q4", "https://data.vespa-cloud.com/gguf_models/Phi-3.5-mini-instruct-Q4_K_M.gguf", Set.of(GGUF_MODEL));
-        
+
         register(m, "significance-en-wikipedia-v1", "https://data.vespa-cloud.com/significance_models/significance-en-wikipedia-v1.json.zst", Set.of(SIGNIFICANCE_MODEL));
         return Map.copyOf(m);
     }
@@ -145,8 +158,7 @@ public class ModelIdResolver {
         var providedModel = providedModels.get(modelId);
         if ( ! providedModel.tags().containsAll(requiredTags)) {
             throw new IllegalArgumentException(
-                    "Model '%s' on '%s' has tags %s but are missing required tags %s"
-                            .formatted(modelId, valueName, providedModel.tags(), requiredTags));
+                    String.format(java.util.Locale.ROOT, "Model '%s' on '%s' has tags %s but are missing required tags %s", modelId, valueName, providedModel.tags(), requiredTags));
         }
         return providedModel.uri().toString();
     }

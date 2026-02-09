@@ -85,9 +85,7 @@ public abstract class VespaBackend {
     protected abstract void doPartialFill(Result result, String summaryClass);
 
     private boolean hasLocation(Item tree) {
-        if (tree instanceof GeoLocationItem) {
-            return true;
-        }
+        if (tree instanceof GeoLocationItem) return true;
         if (tree instanceof CompositeItem composite) {
             for (Item child : composite.items()) {
                 if (hasLocation(child)) return true;
@@ -118,7 +116,6 @@ public abstract class VespaBackend {
         if (query.getRanking().getListFeatures()) return true;
 
         // (Don't just add other checks here as there is a return false above)
-
         return false;
     }
 
@@ -128,28 +125,24 @@ public abstract class VespaBackend {
         if (query.getModel().getRestrict().size() == 1) {
             String docTypeName = (String)query.getModel().getRestrict().toArray()[0];
             DocumentDatabase db = documentDbs.get(docTypeName);
-            if (db != null) {
-                return db;
-            }
+            if (db != null) return db;
         }
         return defaultDocumentDb;
     }
 
-    private void resolveDocumentDatabase(Query query) {
-        DocumentDatabase docDb = getDocumentDatabase(query);
-        if (docDb != null) {
-            query.getModel().setDocumentDb(docDb.schema().name());
-        }
+    private DocumentDatabase resolveDocumentDatabase(Query query) {
+        DocumentDatabase documentDb = getDocumentDatabase(query);
+        if (documentDb != null)
+            query.getModel().setDocumentDb(documentDb.schema().name());
+        return documentDb;
     }
 
     protected void transformQuery(Query query) { }
 
     public Result search(String schema, Query query) {
-        // query root should not be null here
         Item root = query.getModel().getQueryTree().getRoot();
-        if (root == null || root instanceof NullItem) {
+        if (root == null || root instanceof NullItem)
             return new Result(query, ErrorMessage.createNullQuery(query.getUri().toString()));
-        }
 
         if ( ! getDocumentDatabase(query).schema().rankProfiles().containsKey(query.getRanking().getProfile()))
             return new Result(query, ErrorMessage.createInvalidQueryParameter(getDocumentDatabase(query).schema() +
@@ -206,7 +199,7 @@ public abstract class VespaBackend {
         return parts;
     }
 
-    //TODO Add schema here too.
+    // TODO: Add schema here too.
     public void fill(Result result, String summaryClass) {
         if (result.isFilled(summaryClass)) return; // TODO: Checked in the superclass - remove
 

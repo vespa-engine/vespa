@@ -82,7 +82,7 @@ public class MatrixDotProductBenchmark {
 
     public static void main(String[] args) {
         double time = new MatrixDotProductBenchmark().benchmark(10000, matrix(10, 55, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped);
-        System.out.printf("Matrixes, 10*55 size matrixes. Time per sum(join): %1$8.3f ms\n", time);
+        System.out.printf(java.util.Locale.ROOT, "Matrixes, 10*55 size matrixes. Time per sum(join): %1$8.3f ms\n", time);
     }
 
 }

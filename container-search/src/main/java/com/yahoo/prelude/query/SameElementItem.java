@@ -22,8 +22,8 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         putString(fieldName, buffer);
     }
 
@@ -76,13 +76,13 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemSameElement.newBuilder();
         var props = SearchProtocol.TermItemProperties.newBuilder();
         props.setIndex(fieldName);
         builder.setProperties(props.build());
         for (var child : items()) {
-            builder.addChildren(child.toProtobuf());
+            builder.addChildren(child.toProtobuf(context));
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemSameElement(builder.build())

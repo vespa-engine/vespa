@@ -12,6 +12,7 @@ import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -53,7 +54,7 @@ public class MetricUpdater {
     private Duration stateVersionConvergenceGracePeriod = Duration.ofSeconds(30);
 
     public MetricUpdater(MetricReporter metricReporter, Timer timer, int controllerIndex, String clusterName) {
-        this.metricReporter = new ComponentMetricReporter(metricReporter, "%s.".formatted(CLUSTER_CONTROLLER));
+        this.metricReporter = new ComponentMetricReporter(metricReporter, String.format(Locale.ROOT, "%s.", CLUSTER_CONTROLLER));
         this.metricReporter.addDimension(CONTROLLER_INDEX, String.valueOf(controllerIndex));
         this.metricReporter.addDimension(CLUSTER, clusterName);
         this.metricReporter.addDimension(CLUSTER_ID, clusterName);
@@ -88,7 +89,7 @@ public class MetricUpdater {
         int effectiveStateVersion = (state.getVersion() > 0) ? state.getVersion() : -1;
         boolean convergenceDeadlinePassed = lastStateBroadcastTimePoint.plus(stateVersionConvergenceGracePeriod).isBefore(now);
         for (NodeType type : NodeType.getTypes()) {
-            dimensions.put(NODE_TYPE, type.toString().toLowerCase());
+            dimensions.put(NODE_TYPE, type.toString().toLowerCase(Locale.ROOT));
             MetricReporter.Context context = createContext(dimensions);
             Map<State, Integer> nodeCounts = new HashMap<>();
             for (State s : State.values()) {
@@ -108,7 +109,7 @@ public class MetricUpdater {
                 }
             }
             for (State s : State.values()) {
-                String name = s.toString().toLowerCase() + ".count";
+                String name = s.toString().toLowerCase(Locale.ROOT) + ".count";
                 metricReporter.set(name, nodeCounts.get(s), context);
             }
 
@@ -155,10 +156,10 @@ public class MetricUpdater {
 
     private void resetNodeStateAndResourceUsageMetricsToZero() {
         for (NodeType type : NodeType.getTypes()) {
-            Map<String, String> dimensions = Map.of(NODE_TYPE, type.toString().toLowerCase());
+            Map<String, String> dimensions = Map.of(NODE_TYPE, type.toString().toLowerCase(Locale.ROOT));
             MetricReporter.Context context = createContext(dimensions);
             for (State s : State.values()) {
-                String name = s.toString().toLowerCase() + ".count";
+                String name = s.toString().toLowerCase(Locale.ROOT) + ".count";
                 metricReporter.set(name, 0, context);
             }
             metricReporter.set(NODES_NOT_CONVERGED, 0, context);

@@ -43,7 +43,7 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
             // TODO (Vespa 9 or before): Change back to an exception when no applications are using it wrong.
             context.deployState().getDeployLogger().logApplicationPackage(
                     Level.WARNING,
-                    String.format("For cluster '%s', schema '%s': The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: %s. " +
+                    String.format(java.util.Locale.ROOT, "For cluster '%s', schema '%s': The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: %s. " +
                                   "Remove setting or change to 'indexing: attribute' if needed for matching.",
                                   clusterName, schema.getName(), unsupportedFields));
         }

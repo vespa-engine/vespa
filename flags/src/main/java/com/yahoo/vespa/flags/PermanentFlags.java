@@ -20,6 +20,7 @@ import static com.yahoo.vespa.flags.Dimension.APPLICATION;
 import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CERTIFICATE_PROVIDER;
 import static com.yahoo.vespa.flags.Dimension.CLAVE;
+import static com.yahoo.vespa.flags.Dimension.CLOUD;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
@@ -29,6 +30,7 @@ import static com.yahoo.vespa.flags.Dimension.FLAVOR;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
+import static com.yahoo.vespa.flags.Dimension.SYSTEM;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.Dimension.ZONE_ID;
@@ -89,6 +91,14 @@ public class PermanentFlags {
             "keep-provisioned-expired-hosts-max", 0,
             "The maximum number of provisioned expired hosts to keep for investigation of provisioning issues.",
             "Takes effect on next run of ProvisionedExpirer");
+
+    public static final UnboundIntFlag OS_MAJOR_VERSION = defineIntFlag(
+            "os-major-version", 0,
+            "The OS major version to use for provisioned hosts. " +
+            "Value 0 means use lowest major version available. " +
+            "Common values: 8 (AlmaLinux 8), 9 (AlmaLinux 9).",
+            "Takes effect when a host is provisioned",
+            CLAVE, NODE_TYPE, CLOUD_ACCOUNT, HOSTNAME);
 
     public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
             "shared-host", SharedHost.createDisabled(), SharedHost.class,
@@ -179,6 +189,22 @@ public class PermanentFlags {
             "Takes effect on next host admin tick.",
             __ -> true,
             TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE);
+
+
+    public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
+            "defer-os-upgrade", false,
+            "Whether OS upgrade should be deferred",
+            "Takes effect immediately",
+            CLOUD_ACCOUNT
+    );
+
+
+    public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
+            "otelcol-logs", List.of(), String.class,
+            "Determines log files handled by the OpenTelemetry collector",
+            "Takes effect at next tick",
+            TENANT_ID, APPLICATION, INSTANCE_ID
+    );
 
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");
@@ -644,6 +670,13 @@ public class PermanentFlags {
             "Takes effect immediately",
             TENANT_ID, APPLICATION
     );
+
+    public static final UnboundIntFlag BACKUP_INTERVAL = defineIntFlag(
+            "backup-interval", 0,
+            "The interval in hours between automatic backup snapshots. " +
+                    "Value 0 disables automatic backups.",
+            "Takes effect on next maintainer run",
+            CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
 
     private PermanentFlags() {}
 

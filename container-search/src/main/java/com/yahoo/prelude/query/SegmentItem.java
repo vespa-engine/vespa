@@ -1,11 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
+import com.yahoo.search.query.QueryType;
 
 import java.util.Objects;
-
 
 /**
  * An immutable and'ing of a collection of sub-expressions. It does not
@@ -21,7 +20,8 @@ public abstract class SegmentItem extends CompositeItem implements BlockItem {
     private final String value;
     private final boolean isFromQuery;
     private boolean isFromUser;
-    private boolean stemmed;
+    private boolean   stemmed;
+    private QueryType type = null;
     private SegmentingRule segmentingRule = SegmentingRule.LANGUAGE_DEFAULT;
     private final Substring origin;
 
@@ -81,6 +81,14 @@ public abstract class SegmentItem extends CompositeItem implements BlockItem {
     public void setStemmed(boolean stemmed) {
         this.stemmed = stemmed;
     }
+
+    /** Returns the query parsing type that created this, or null if none. */
+    @Override
+    public QueryType getQueryType() { return type; }
+
+    /** Sets the query parsing type that created this. */
+    @Override
+    public void setQueryType(QueryType type) { this.type = type; }
 
     public void lock() {
         locked = true;

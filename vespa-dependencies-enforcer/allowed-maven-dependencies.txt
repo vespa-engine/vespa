@@ -6,7 +6,6 @@ aopalliance:aopalliance:${aopalliance.vespa.version}
 at.yawk.lz4:lz4-java:${at.yawk.lz4.vespa.version}
 backport-util-concurrent:backport-util-concurrent:3.1
 classworlds:classworlds:1.1-alpha-2
-com.auth0:java-jwt:${java-jwt.vespa.version}
 com.dev-smart:ubjson:${dev-smart-ubjson.vespa.version}
 com.ethlo.time:itu:1.10.3
 com.fasterxml.jackson.core:jackson-annotations:${jackson2.vespa.version}
@@ -47,7 +46,6 @@ com.squareup.okhttp3:okhttp:4.12.0
 com.squareup.okio:okio-jvm:3.6.0
 com.squareup.okio:okio:3.6.0
 com.sun.activation:javax.activation:${sun.javax.activation.vespa.version}
-com.sun.istack:istack-commons-runtime:4.1.2
 com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}
 com.sun.xml.bind:jaxb-impl:${jaxb-impl.vespa.version}
 com.thaiopensource:jing:20091111
@@ -72,12 +70,6 @@ com.vladsch.flexmark:flexmark-util-sequence:0.64.8
 com.vladsch.flexmark:flexmark-util-visitor:0.64.8
 com.vladsch.flexmark:flexmark-util:0.64.8
 com.vladsch.flexmark:flexmark:0.64.8
-com.yahoo.athenz:athenz-auth-core:${athenz.vespa.version}
-com.yahoo.athenz:athenz-client-common:${athenz.vespa.version}
-com.yahoo.athenz:athenz-zms-core:${athenz.vespa.version}
-com.yahoo.athenz:athenz-zpe-java-client:${athenz.vespa.version}
-com.yahoo.athenz:athenz-zts-core:${athenz.vespa.version}
-com.yahoo.rdl:rdl-java:1.5.4
 commons-cli:commons-cli:${commons-cli.vespa.version}
 commons-codec:commons-codec:${commons-codec.vespa.version}
 commons-io:commons-io:${commons-io.vespa.version}
@@ -94,13 +86,10 @@ io.grpc:grpc-protobuf-lite:${grpc.vespa.version}
 io.grpc:grpc-protobuf:${grpc.vespa.version}
 io.grpc:grpc-stub:${grpc.vespa.version}
 io.grpc:grpc-util:${grpc.vespa.version}
-io.jsonwebtoken:jjwt-api:${java-jjwt.vespa.version}
-io.jsonwebtoken:jjwt-impl:${java-jjwt.vespa.version}
-io.jsonwebtoken:jjwt-jackson:${java-jjwt.vespa.version}
 io.micrometer:micrometer-commons:${micrometer.vespa.version}
 io.micrometer:micrometer-core:${micrometer.vespa.version}
 io.micrometer:micrometer-observation:${micrometer.vespa.version}
-io.modelcontextprotocol.sdk:mcp:0.11.2
+io.modelcontextprotocol.sdk:mcp:${mcp-sdk.vespa.version}
 io.netty:netty-buffer:${netty.vespa.version}
 io.netty:netty-codec:${netty.vespa.version}
 io.netty:netty-common:${netty.vespa.version}
@@ -194,7 +183,6 @@ org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
 org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
 org.codehaus.plexus:plexus-io:${plexus-io.vespa.version}
 org.codehaus.plexus:plexus-utils:${plexus-utils.vespa.version}
-org.eclipse.angus:angus-activation:${eclipse-angus.vespa.version}
 org.eclipse.collections:eclipse-collections-api:${eclipse-collections.vespa.version}
 org.eclipse.collections:eclipse-collections:${eclipse-collections.vespa.version}
 org.eclipse.jetty.http2:jetty-http2-client-transport:${jetty.client.vespa.version}
@@ -226,9 +214,6 @@ org.eclipse.sisu:org.eclipse.sisu.plexus:${eclipse-sisu.vespa.version}
 org.eclipse.xtend:org.eclipse.xtend.lib.macro:2.28.0
 org.eclipse.xtend:org.eclipse.xtend.lib:2.28.0
 org.eclipse.xtext:org.eclipse.xtext.xbase.lib:2.28.0
-org.glassfish.jaxb:jaxb-core:${jaxb.runtime.vespa.version}
-org.glassfish.jaxb:jaxb-runtime:${jaxb.runtime.vespa.version}
-org.glassfish.jaxb:txw2:${jaxb.runtime.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
 org.hamcrest:hamcrest:${hamcrest.vespa.version}
 org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}

@@ -22,6 +22,7 @@ import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
 import static com.yahoo.search.yql.YqlParser.LABEL;
+import static com.yahoo.search.yql.YqlParser.USER_INPUT_LANGUAGE;
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.NEAR;
 import static com.yahoo.search.yql.YqlParser.NEAREST_NEIGHBOR;
@@ -79,6 +80,7 @@ import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.HasIndexItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
+import com.yahoo.language.Language;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.prelude.query.MarkerWordItem;
@@ -736,9 +738,16 @@ public class VespaSerializer {
             destination.append("{");
             int initLen = destination.length();
             destination.append(leafAnnotations(item));
-            comma(destination, initLen);
-            int targetNumHits = item.getTargetNumHits();
-            annotationKey(destination, YqlParser.TARGET_HITS).append(targetNumHits);
+            Integer targetHits = item.getTargetHits();
+            if (targetHits != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.TARGET_HITS).append(targetHits);
+            }
+            Integer totalTargetHits = item.getTotalTargetHits();
+            if (totalTargetHits != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.TOTAL_TARGET_HITS).append(totalTargetHits);
+            }
             double distanceThreshold = item.getDistanceThreshold();
             if (distanceThreshold < Double.POSITIVE_INFINITY) {
                 comma(destination, initLen);
@@ -1516,6 +1525,11 @@ public class VespaSerializer {
             if (weight != 100) {
                 comma(annotation, initLen);
                 annotation.append(WEIGHT).append(": ").append(weight);
+            }
+            Language language = leaf.getLanguage();
+            if (language != Language.UNKNOWN) {
+                comma(annotation, initLen);
+                annotation.append(USER_INPUT_LANGUAGE).append(": \"").append(language.languageCode()).append("\"");
             }
         }
         if (item instanceof IntItem) {

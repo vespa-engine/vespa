@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -71,7 +72,7 @@ public class AllowedDependencies extends AbstractEnforcerRule implements Enforce
 
     public void execute() throws EnforcerRuleException {
         var dependencies = getDependenciesOfAllProjects();
-        getLog().info("Found %d unique dependencies ".formatted(dependencies.size()));
+        getLog().info(String.format(Locale.ROOT, "Found %d unique dependencies ", dependencies.size()));
         var specFile = Paths.get(project.getBasedir() + File.separator + this.specFile).normalize();
         var spec = loadDependencySpec(specFile);
         var resolved = resolve(spec, dependencies);
@@ -81,7 +82,7 @@ public class AllowedDependencies extends AbstractEnforcerRule implements Enforce
                     .map(p -> p.isEmpty() || Boolean.parseBoolean(p))
                     .orElse(true);
             writeDependencySpec(specFile, resolved, guessProperty);
-            getLog().info("Updated spec file '%s'".formatted(specFile.toString()));
+            getLog().info(String.format(Locale.ROOT, "Updated spec file '%s'", specFile.toString()));
         } else {
             warnOnDuplicateVersions(resolved);
             validateDependencies(resolved, session.getRequest().getPom().toPath(), project.getArtifactId());
@@ -236,17 +237,17 @@ public class AllowedDependencies extends AbstractEnforcerRule implements Enforce
         Set<Dependency> allDeps = new HashSet<>(resolved.matchedDeps());
         allDeps.addAll(resolved.unmatchedDeps());
         for (Dependency d : allDeps) {
-            String id = "%s:%s".formatted(d.groupId(), d.artifactId());
+            String id = String.format(Locale.ROOT, "%s:%s", d.groupId(), d.artifactId());
             versionsForDependency.computeIfAbsent(id, __ -> new TreeSet<>()).add(d.version());
         }
         versionsForDependency.forEach((dependency, versions) -> {
             if (versions.size() > 1) {
-                getLog().warn("'%s' has multiple versions %s".formatted(dependency, versions));
+                getLog().warn(String.format(Locale.ROOT, "'%s' has multiple versions %s", dependency, versions));
             }
         });
     }
 
-    private static String projectIdOf(MavenProject project) { return "%s:%s".formatted(project.getGroupId(), project.getArtifactId()); }
+    private static String projectIdOf(MavenProject project) { return String.format(Locale.ROOT, "%s:%s", project.getGroupId(), project.getArtifactId()); }
 
     private record Rule(String groupId, String artifactId, String version, Optional<String> classifier){
         static final Pattern PROPERTY_PATTERN = Pattern.compile("\\$\\{(.+?)}");
@@ -290,7 +291,7 @@ public class AllowedDependencies extends AbstractEnforcerRule implements Enforce
                 // Guess property name if properties are provided
                 var matchingProps = props.entrySet().stream()
                         .filter(e -> e.getValue().equals(version))
-                        .map(v -> "${%s}".formatted(v.getKey()))
+                        .map(v -> String.format(Locale.ROOT, "${%s}", v.getKey()))
                         .collect(Collectors.joining("|"));
                 if (!matchingProps.isEmpty()) versionStr = matchingProps;
             }

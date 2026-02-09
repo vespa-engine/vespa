@@ -2,6 +2,9 @@
 package com.yahoo.prelude.query;
 
 import com.yahoo.api.annotations.Beta;
+import com.yahoo.search.Query;
+
+import java.util.function.Function;
 
 /**
  * Query tree helper methods and factories.
@@ -20,7 +23,7 @@ public final class ToolBox {
          *
          * @param item each item in the query tree
          * @return whether to visit the sub-items of the argument item
-         *         (and then invoke the {@link #onExit(item)} method)
+         *         (and then invoke the {@link #onExit(Item)} method)
          */
         public abstract boolean visit(Item item);
 
@@ -31,6 +34,10 @@ public final class ToolBox {
          */
         public void onExit(Item item) {}
 
+    }
+
+    public static void visit(Query query, QueryVisitor visitor) {
+        visit(visitor, query.getModel().getQueryTree().getRoot());
     }
 
     public static void visit(QueryVisitor visitor, Item item) {

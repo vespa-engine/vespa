@@ -24,8 +24,7 @@ class CloudTokenDataPlaneFilter extends Filter implements CloudTokenDataPlaneFil
         super(model());
         this.clients = List.copyOf(cluster.getClients());
         // Token domain must be identical to the domain used for generating the tokens
-        this.tokenContext = "Vespa Cloud tenant data plane:%s"
-                .formatted(state.getProperties().applicationId().tenant().value());
+        this.tokenContext = String.format(java.util.Locale.ROOT, "Vespa Cloud tenant data plane:%s", state.getProperties().applicationId().tenant().value());
     }
 
     private static ChainedComponentModel model() {
@@ -33,7 +32,7 @@ class CloudTokenDataPlaneFilter extends Filter implements CloudTokenDataPlaneFil
                 new BundleInstantiationSpecification(
                         new ComponentSpecification("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneFilter"),
                         null,
-                        new ComponentSpecification("jdisc-security-filters")),
+                        new ComponentSpecification("cloud-tenant")),
                 Dependencies.emptyDependencies());
     }
 

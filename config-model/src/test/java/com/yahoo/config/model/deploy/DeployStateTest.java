@@ -43,14 +43,16 @@ public class DeployStateTest {
 
     @Test
     void testPreviousModelIsProvided() throws IOException, SAXException {
-        VespaModel prevModel = new VespaModel(MockApplicationPackage.createEmpty());
-        DeployState.Builder builder = new DeployState.Builder();
+        DeployState.Builder builder = TestDeployState.createBuilder()
+                .applicationPackage(MockApplicationPackage.createEmpty());
+        VespaModel prevModel = new VespaModel(builder.build());
+
         assertEquals(prevModel, builder.previousModel(prevModel).build().getPreviousModel().get());
     }
 
     @Test
     void testProperties() {
-        DeployState.Builder builder = new DeployState.Builder();
+        DeployState.Builder builder = TestDeployState.createBuilder();
         DeployState state = builder.build();
         assertEquals(ApplicationId.defaultId(), state.getProperties().applicationId());
         ApplicationId customId = new ApplicationId.Builder()

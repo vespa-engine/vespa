@@ -66,6 +66,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
                    .filter_first_upper_limit = hnsw_params.filter_first_upper_limit,
                    .filter_first_exploration = hnsw_params.filter_first_exploration,
                    .exploration_slack = hnsw_params.exploration_slack,
+                   .prefetch_tensors = hnsw_params.prefetch_tensors,
                    .target_hits_max_adjustment_factor = hnsw_params.target_hits_max_adjustment_factor},
       _distance_heap(target_hits),
       _found_hits(),
@@ -154,14 +155,14 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
         }
         bool low_hit_ratio = (static_cast<double>(use_filter->count()) / _attr_tensor.get_num_docs()) < _hnsw_params.filter_first_upper_limit;
         _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *use_filter, low_hit_ratio, _hnsw_params.filter_first_exploration,
-                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _doom, _hnsw_params.distance_threshold);
+                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else if (_global_filter->is_active()) {
         _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *_global_filter, _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit, _hnsw_params.filter_first_exploration,
-                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _doom, _hnsw_params.distance_threshold);
+                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {
-        _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _doom, _hnsw_params.distance_threshold);
+        _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K;
     }
 }

@@ -34,6 +34,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Location;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
+import com.yahoo.prelude.query.BlockItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DocumentFrequency;
@@ -211,6 +212,7 @@ public class YqlParser implements Parser {
     public static final String SUFFIX = "suffix";
     public static final String TARGET_HITS = "targetHits";
     public static final String TARGET_NUM_HITS = "targetNumHits";
+    public static final String TOTAL_TARGET_HITS = "totalTargetHits";
     public static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
     public static final String UNIQUE_ID = "id";
     public static final String URI = "uri";
@@ -558,12 +560,10 @@ public class YqlParser implements Parser {
         String field = fetchFieldName(args.get(0));
         String property = fetchLiteral(args.get(1));
         NearestNeighborItem item = new NearestNeighborItem(indexFactsSession.getCanonicName(field), property);
-        Integer targetNumHits = buildTargetHits(ast);
-        if (targetNumHits != null) {
-            item.setTargetNumHits(targetNumHits);
-        }
-        Double distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD,
-                Double.class, null, "maximum distance allowed from query point");
+        item.setTargetHits(buildTargetHits(ast));
+        item.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
+
+        Double distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD, Double.class, null, "maximum distance allowed from query point");
         if (distanceThreshold != null) {
             item.setDistanceThreshold(distanceThreshold);
         }
@@ -940,16 +940,19 @@ public class YqlParser implements Parser {
                                             String.class,
                                             currentField != null ? null : "default", // if there's a current field, we're in sameElement
                                             "default index for user input terms");
+        boolean explicitLanguage = hasExplicitLanguageAnnotation(ast);
         Language language = decideParsingLanguage(ast, wordData);
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.WEAKAND.toString(), "The overall query type of the user input");
+        QueryType queryType = buildQueryType(ast);
         if (USER_INPUT_GRAMMAR_RAW.equals(grammar)) {
-            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language);
+            return assignQueryType(instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language),
+                                   queryType);
         } else if (USER_INPUT_GRAMMAR_SEGMENT.equals(grammar)) {
-            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
+            return assignQueryType(instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language),
+                                   queryType);
         } else {
-            QueryType queryType = buildQueryType(ast);
-            Item item = parseUserInput(queryType, defaultIndex, wordData, language, allowEmpty);
+            Item item = parseUserInput(queryType, defaultIndex, wordData, language, explicitLanguage, allowEmpty);
             propagateUserInputAnnotationsRecursively(ast, item);
 
             // Set grammar-specific annotations
@@ -970,6 +973,12 @@ public class YqlParser implements Parser {
         }
     }
 
+    private Item assignQueryType(Item item, QueryType queryType) {
+        if (item instanceof BlockItem)
+            ((BlockItem)item).setQueryType(queryType);
+        return item;
+    }
+
     private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
         var queryType = QueryType.from(Query.Type.WEAKAND);
         if (userQuery != null) {
@@ -985,6 +994,8 @@ public class YqlParser implements Parser {
 
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        null, "The overall query type of the user input");
+        if (USER_INPUT_GRAMMAR_RAW.equals(grammar) || USER_INPUT_GRAMMAR_SEGMENT.equals(grammar))
+            grammar = "linguistics"; // raw and segment are not separate types since they don't cause parsing - use linguistics to annotate the term
         if (grammar != null)
             queryType = QueryType.from(grammar);
 
@@ -1003,6 +1014,12 @@ public class YqlParser implements Parser {
                         .setSyntax(syntax)
                         .setProfile(profile)
                         .setYqlDefault(queryType.isYqlDefault());
+    }
+
+    /** Returns whether the language annotation is explicitly set on the given AST node. */
+    private boolean hasExplicitLanguageAnnotation(OperatorNode<ExpressionOperator> ast) {
+        return getAnnotation(ast, USER_INPUT_LANGUAGE, String.class, null,
+                             "language setting for segmenting query section") != null;
     }
 
     private Language decideParsingLanguage(OperatorNode<ExpressionOperator> ast, String wordData) {
@@ -1038,7 +1055,7 @@ public class YqlParser implements Parser {
     }
 
     private Item parseUserInput(QueryType queryType, String defaultIndex, String wordData,
-                                Language language, boolean allowNullItem) {
+                                Language language, boolean explicitLanguage, boolean allowNullItem) {
         Parser parser = ParserFactory.newInstance(queryType, environment);
         // perhaps not use already resolved doctypes, but respect source and restrict
         Item item = parser.parse(new Parsable().setQuery(wordData)
@@ -1049,14 +1066,23 @@ public class YqlParser implements Parser {
         if ( ! allowNullItem && (item == null || item instanceof NullItem))
             throw new IllegalArgumentException("Parsing '" + wordData + "' only resulted in NullItem.");
 
-        // mark the language used, unless it's the default
-        if (language != Language.ENGLISH)
-            item.setLanguage(language);
+        // Mark the language used if it was explicitly set or is not the default
+        if (explicitLanguage || language != Language.ENGLISH)
+            // mark all the child items: it will be easier to figure out which item have which language
+            setLanguageRecursively(item, language);
 
         // userInput should determine the overall language if not set explicitly
         if (userQuery != null && userQuery.getModel().getLanguage() == null)
             userQuery.getModel().setLanguage(language);
         return item;
+    }
+
+    private void setLanguageRecursively(Item item, Language language) {
+        item.setLanguage(language);
+        if (item instanceof CompositeItem composite) {
+            for (int i = 0; i < composite.getItemCount(); i++)
+                setLanguageRecursively(composite.getItem(i), language);
+        }
     }
 
     private OperatorNode<?> parseYqlProgram() {
@@ -1720,7 +1746,8 @@ public class YqlParser implements Parser {
         if (wordItem instanceof WordItem) {
             prepareWord(field, ast, (WordItem) wordItem);
         }
-        if (language != Language.ENGLISH) // mark the language used, unless it's the default
+        // Mark the language used if it was explicitly set or is not the default
+        if (hasExplicitLanguageAnnotation(ast) || language != Language.ENGLISH)
             ((Item)wordItem).setLanguage(language);
         return (Item)leafStyleSettings(ast, wordItem);
     }
@@ -2154,9 +2181,19 @@ public class YqlParser implements Parser {
         return value.longValue();
     }
 
+    private <T> Optional<T> annotation(OperatorNode<?> ast, String key, Class<T> expectedClass,
+                                       T defaultValue, String description) {
+        return Optional.ofNullable(getAnnotation(ast, key, expectedClass, defaultValue, description, true));
+    }
+
     private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass,
                                 T defaultValue, String description) {
         return getAnnotation(ast, key, expectedClass, defaultValue, description, true);
+    }
+
+    private <T> Optional<T> annotation(OperatorNode<?> ast, String key, Class<T> expectedClass, T defaultValue,
+                                       String description, boolean considerParents) {
+        return Optional.ofNullable(getAnnotation(ast, key, expectedClass, defaultValue, description, considerParents));
     }
 
     private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass, T defaultValue,

@@ -563,6 +563,7 @@ TOKEN :
 | < FILTER_FIRST_THRESHOLD: "filter-first-threshold" >
 | < FILTER_FIRST_EXPLORATION: "filter-first-exploration" >
 | < EXPLORATION_SLACK: "exploration-slack" >
+| < PREFETCH_TENSORS: "prefetch-tensors" >
 | < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
@@ -2251,6 +2252,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | filterFirstThreshold(profile)
        | filterFirstExploration(profile)
        | explorationSlack(profile)
+       | prefetchTensors(profile)
        | targetHitsMaxAdjustmentFactor(profile)
        | rankProperties(profile)
        | secondPhase(profile)
@@ -2906,6 +2908,19 @@ void explorationSlack(ParsedRankProfile profile) :
 ;
 
 /**
+ * This rule consumes a prefetch-tensors statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void prefetchTensors(ParsedRankProfile profile) :
+{
+    boolean value;
+}
+
+    (<PREFETCH_TENSORS> <COLON> value = bool()) { profile.setPrefetchTensors(value); }
+;
+
+/**
  * This rule consumes a target-hits-max-adjustment-factor statement for a rank profile.
  *
  * @param profile the rank profile to modify
@@ -3385,6 +3400,7 @@ String identifierWithDashStr :
     | <EXACT_TERMINATOR>
     | <EXECUTION_MODE>
     | <EXPLORATION_SLACK>
+    | <PREFETCH_TENSORS>
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>

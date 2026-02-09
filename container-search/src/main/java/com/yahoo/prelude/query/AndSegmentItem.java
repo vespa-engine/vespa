@@ -60,11 +60,11 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         // AndSegmentItem should be folded/converted before serialization
         var builder = SearchProtocol.ItemAnd.newBuilder();
         for (var child : items()) {
-            builder.addChildren(child.toProtobuf());
+            builder.addChildren(child.toProtobuf(context));
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemAnd(builder.build())

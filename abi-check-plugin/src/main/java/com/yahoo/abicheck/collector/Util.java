@@ -5,6 +5,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class Util {
 
@@ -63,7 +64,7 @@ public class Util {
       access &= ~flag.bit;
     }
     if (access != 0) {
-      throw new IllegalArgumentException(String.format("Unexpected access bits: 0x%x", access));
+      throw new IllegalArgumentException(String.format(Locale.ROOT, "Unexpected access bits: 0x%x", access));
     }
     return result;
   }

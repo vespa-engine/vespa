@@ -36,8 +36,7 @@ public class TenantSecretValidator implements Validator {
                         // Vault exists, check that the secret exists in the vault
                         var vaultSecrets = existingVaults.get(secretConfig.vault());
                         if (! hasSecret(secretConfig.name(), vaultSecrets)) {
-                            context.illegal("Secret '%s' is not defined in vault '%s'".formatted(
-                                    secretConfig.name(), secretConfig.vault()));
+                            context.illegal(String.format(java.util.Locale.ROOT, "Secret '%s' is not defined in vault '%s'", secretConfig.name(), secretConfig.vault()));
                         }
                     }
                 }

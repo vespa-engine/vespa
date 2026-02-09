@@ -10,6 +10,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,10 +62,10 @@ public class DefaultTlsContext implements TlsContext {
                 .toArray(String[]::new);
         if (allowedCiphers.length == 0) {
             throw new IllegalStateException(
-                    String.format("None of the accepted ciphers are supported (supported=%s, accepted=%s)",
+                    String.format(Locale.ROOT, "None of the accepted ciphers are supported (supported=%s, accepted=%s)",
                                   supportedCiphers, acceptedCiphers));
         }
-        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", List.of(allowedCiphers)));
+        log.log(Level.FINE, () -> String.format(Locale.ROOT, "Allowed cipher suites that are supported: %s", List.of(allowedCiphers)));
         return allowedCiphers;
     }
 
@@ -75,10 +76,10 @@ public class DefaultTlsContext implements TlsContext {
                 .toArray(String[]::new);
         if (allowedProtocols.length == 0) {
             throw new IllegalStateException(
-                    String.format("None of the accepted protocols are supported (supported=%s, accepted=%s)",
+                    String.format(Locale.ROOT, "None of the accepted protocols are supported (supported=%s, accepted=%s)",
                             supportedProtocols, acceptedProtocols));
         }
-        log.log(Level.FINE, () -> String.format("Allowed protocols that are supported: %s", Arrays.toString(allowedProtocols)));
+        log.log(Level.FINE, () -> String.format(Locale.ROOT, "Allowed protocols that are supported: %s", Arrays.toString(allowedProtocols)));
         return allowedProtocols;
     }
 

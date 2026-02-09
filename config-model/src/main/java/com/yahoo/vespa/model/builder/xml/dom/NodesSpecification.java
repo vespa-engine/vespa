@@ -130,9 +130,17 @@ public class NodesSpecification {
         int defaultMinGroups =                           nodes.from().orElse(1) / groupSize.to().orElse(nodes.from().orElse(1));
         int defaultMaxGroups = groupSize.isEmpty() ? 1 : nodes.to().orElse(1) / groupSize.from().orElse(1);
 
+        // Allow use of groups and group-size if count is not specified
+        if (groupsAndGroupSizeButNoNodeCount(groups, groupSize, nodes))
+            nodes = IntRange.of(groupSize.from().orElse(1) * groups.from().orElse(1), groupSize.to().orElse(1) * groups.to().orElse(1));
+
         var min = new ClusterResources(nodes.from().orElse(1), groups.from().orElse(defaultMinGroups), nodeResources(nodesElement).getFirst());
         var max = new ClusterResources(nodes.to().orElse(1), groups.to().orElse(defaultMaxGroups), nodeResources(nodesElement).getSecond());
         return new ResourceConstraints(min, max, groupSize);
+    }
+
+    private static boolean groupsAndGroupSizeButNoNodeCount(IntRange groups, IntRange groupSize, IntRange nodes) {
+        return !groups.isEmpty() && !groupSize.isEmpty() && nodes.isEmpty();
     }
 
     private static IntRange rangeFrom(ModelElement element, String name) {
@@ -317,7 +325,7 @@ public class NodesSpecification {
 
     private static double parseGbAmount(String byteAmount, String unit) {
         byteAmount = byteAmount.strip();
-        byteAmount = byteAmount.toUpperCase();
+        byteAmount = byteAmount.toUpperCase(java.util.Locale.ROOT);
         if (byteAmount.endsWith(unit))
             byteAmount = byteAmount.substring(0, byteAmount.length() - unit.length());
 

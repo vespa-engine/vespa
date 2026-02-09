@@ -4,6 +4,7 @@
 #include "data_store_file_chunk_stats.h"
 #include "summaryexceptions.h"
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/fileheader.h>
@@ -97,8 +98,9 @@ WriteableFileChunk(vespalib::Executor &executor,
       _pendingIdx(0),
       _pendingDat(0),
       _idxFileSize(0),
-      _currentDiskFootprint(0),
-      _pendingDiskFootprint(0),
+      _currentDiskDatFootprint(0),
+      _currentDiskIdxFootprint(0),
+      _pendingDiskDatFootprint(0),
       _nextChunkId(1),
       _active(std::make_unique<Chunk>(0, Chunk::Config(config.getMaxChunkBytes()))),
       _alignment(1),
@@ -130,7 +132,7 @@ WriteableFileChunk(vespalib::Executor &executor,
                            _dataFile.GetFileName(), getLastErrorString().c_str());
             }
         }
-        auto idxFile = openIdx();
+        auto idxFile = openIdx(true);
         readIdxHeader(*idxFile);
         if (_idxHeaderLen == 0) {
             _idxHeaderLen = writeIdxHeader(fileHeaderContext, _docIdLimit, *idxFile);
@@ -152,12 +154,16 @@ WriteableFileChunk(vespalib::Executor &executor,
 }
 
 std::unique_ptr<FastOS_FileInterface>
-WriteableFileChunk::openIdx() {
+WriteableFileChunk::openIdx(bool create) {
     auto file = std::make_unique<FastOS_File>(_idxFileName.c_str());
     if (_dataFile.useSyncWrites()) {
         file->EnableSyncWrites();
     }
-    if ( ! file->OpenReadWrite() ) {
+    auto open_flags = FASTOS_FILE_OPEN_READ | FASTOS_FILE_OPEN_WRITE;
+    if (!create) {
+        open_flags |= FASTOS_FILE_OPEN_EXISTING;
+    }
+    if ( ! file->Open(open_flags, nullptr) ) {
         throw SummaryException("Failed opening idx file", *file, VESPA_STRLOC);
     }
     return file;
@@ -312,8 +318,8 @@ WriteableFileChunk::internalFlush(uint32_t chunkId, uint64_t serialNum, CpuUsage
     {
         std::lock_guard innerGuard(_lock);
         // Adjust footprint to account for padded compressed data size
-        assert(_pendingDiskFootprint >= old_size);
-        _pendingDiskFootprint = _pendingDiskFootprint + tmp->getBuf().getDataLen() - old_size;
+        assert(_pendingDiskDatFootprint >= old_size);
+        _pendingDiskDatFootprint = _pendingDiskDatFootprint + tmp->getBuf().getDataLen() - old_size;
     }
     enque(std::move(tmp), cpu_category);
 }
@@ -497,11 +503,11 @@ WriteableFileChunk::writeData(const ProcessedChunkQ & chunks, size_t sz)
     }
     std::lock_guard inner_guard(_lock);
     /*
-     * Migrate accounting of sz bytes in dat file from _pendingDiskFootPrint (accumulated by append, adjusted by
-     * internalFLush) to _currentDiskFootprint
+     * Migrate accounting of sz bytes in dat file from _pendingDiskDatFootPrint (accumulated by append, adjusted by
+     * internalFLush) to _currentDiskDatFootprint
      */
-    assert(_pendingDiskFootprint >= sz);
-    _pendingDiskFootprint -= sz;
+    assert(_pendingDiskDatFootprint >= sz);
+    _pendingDiskDatFootprint -= sz;
     updateCurrentDiskFootprint(inner_guard);
 }
 
@@ -594,6 +600,7 @@ WriteableFileChunk::freeze(CpuUsage::Category cpu_category)
         {
             std::unique_lock guard(_lock);
             setDiskFootprint(getDiskFootprint(guard));
+            set_size_on_disk(get_size_on_disk(guard));
             _frozen.store(true, std::memory_order_release);
         }
         bool sync_and_close_ok = _dataFile.Sync() && _dataFile.Close();
@@ -608,9 +615,21 @@ WriteableFileChunk::getDiskFootprint() const
     if (frozen()) {
         return FileChunk::getDiskFootprint();
     } else {
-        // Double checked locking.
+        // Double-checked locking.
         std::unique_lock guard(_lock);
         return getDiskFootprint(guard);
+    }
+}
+
+uint64_t
+WriteableFileChunk::get_size_on_disk() const
+{
+    if (frozen()) {
+        return FileChunk::get_size_on_disk();
+    } else {
+        // Double-checked locking.
+        std::unique_lock guard(_lock);
+        return get_size_on_disk(guard);
     }
 }
 
@@ -620,7 +639,17 @@ WriteableFileChunk::getDiskFootprint(const unique_lock & guard) const
     assert(guard.mutex() == &_lock && guard.owns_lock());
     return frozen()
         ? FileChunk::getDiskFootprint()
-        : _currentDiskFootprint + _pendingDiskFootprint;
+        : _currentDiskDatFootprint + _pendingDiskDatFootprint + _currentDiskIdxFootprint;
+}
+
+uint64_t
+WriteableFileChunk::get_size_on_disk(const unique_lock & guard) const
+{
+    assert(guard.mutex() == &_lock && guard.owns_lock());
+    DiskSpaceCalculator calc;
+    return frozen()
+        ? FileChunk::get_size_on_disk()
+        : calc(_currentDiskDatFootprint + _pendingDiskDatFootprint) + calc(_currentDiskIdxFootprint);
 }
 
 size_t
@@ -752,7 +781,7 @@ WriteableFileChunk::append(uint64_t serialNum, uint32_t lid, vespalib::ConstBuff
         size_t delta_size = _active->size() - oldSz;
         std::lock_guard guard(_lock);
         // Use uncompressed data size as tentative disk footprint, adjusted later by internalFlush
-        _pendingDiskFootprint += delta_size;
+        _pendingDiskDatFootprint += delta_size;
     }
     return {getFileId().getId(), _active->getId(), lm.size()};
 }
@@ -877,7 +906,8 @@ WriteableFileChunk::needFlushPendingChunks(const unique_lock & guard, uint64_t s
 
 void
 WriteableFileChunk::updateCurrentDiskFootprint(const std::lock_guard<std::mutex>&) {
-    _currentDiskFootprint = _idxFileSize + _dataFile.getSize();
+    _currentDiskIdxFootprint = _idxFileSize;
+    _currentDiskDatFootprint = _dataFile.getSize();
 }
 
 /*
@@ -927,7 +957,7 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const unique_lock &flushGu
         }
     }
     vespalib::system_time timeStamp(vespalib::system_clock::now());
-    auto idxFile = openIdx();
+    auto idxFile = openIdx(false);
     idxFile->SetPosition(idxFile->getSize());
     ssize_t wlen = idxFile->Write2(os.data(), os.size());
 
@@ -955,7 +985,7 @@ WriteableFileChunk::getStats() const
 {
     DataStoreFileChunkStats stats = FileChunk::getStats();
     uint64_t serialNum = getSerialNum();
-    return {stats.diskUsage(), stats.diskBloat(), stats.maxBucketSpread(),
+    return {stats.diskUsage(), stats.size_on_disk(), stats.diskBloat(), stats.maxBucketSpread(),
             serialNum, stats.lastFlushedSerialNum(), stats.docIdLimit(), stats.nameId()};
 }
 

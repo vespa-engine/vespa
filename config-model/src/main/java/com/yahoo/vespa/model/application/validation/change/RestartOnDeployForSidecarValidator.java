@@ -55,7 +55,7 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
             var changedSidecars = nextSidecars.stream().filter(nextSidecar -> previousSidecars.stream().anyMatch(
                     sidecar -> sidecar.matchesByIdOrName(nextSidecar) && !sidecar.equals(nextSidecar))).toList();
 
-            var messageBuilder = new StringBuilder("Need to restart services in %s due to".formatted(clusterId));
+            var messageBuilder = new StringBuilder(String.format(java.util.Locale.ROOT, "Need to restart services in %s due to", clusterId));
 
             if (!removedSidecars.isEmpty()) {
                 messageBuilder.append(" removed sidecars: ").append(joinSidecarNames(removedSidecars));
@@ -78,7 +78,7 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
                             changedSidecar)).findFirst().orElseThrow(); // Should never throw.
 
                     var sidecarDiff = diffSidecarSpecs(matchingPreviousSidecar, changedSidecar);
-                    return "'%s' (%s)".formatted(changedSidecar.name(), sidecarDiff);
+                    return String.format(java.util.Locale.ROOT, "'%s' (%s)", changedSidecar.name(), sidecarDiff);
                 }).collect(Collectors.joining(", "));
 
                 messageBuilder.append(" changed sidecars: ").append(changedSidecarsMessage);
@@ -95,7 +95,7 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
     }
 
     private String joinSidecarNames(List<SidecarSpec> sidecars) {
-        return sidecars.stream().map(sidecar -> "'%s'".formatted(sidecar.name())).collect(Collectors.joining(", "));
+        return sidecars.stream().map(sidecar -> String.format(java.util.Locale.ROOT, "'%s'", sidecar.name())).collect(Collectors.joining(", "));
     }
 
     private String diffSidecarSpecs(SidecarSpec from, SidecarSpec to) {
@@ -104,43 +104,43 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
         var toResources = to.resources();
 
         if (from.id() != to.id()) {
-            changes.add("id: %s -> %s".formatted(from.id(), to.id()));
+            changes.add(String.format(java.util.Locale.ROOT, "id: %s -> %s", from.id(), to.id()));
         }
 
         if (!from.name().equals(to.name())) {
-            changes.add("name: %s -> %s".formatted(from.name(), to.name()));
+            changes.add(String.format(java.util.Locale.ROOT, "name: %s -> %s", from.name(), to.name()));
         }
 
         if (!from.image().equals(to.image())) {
-            changes.add("image: %s -> %s".formatted(from.image(), to.image()));
+            changes.add(String.format(java.util.Locale.ROOT, "image: %s -> %s", from.image(), to.image()));
         }
 
         if (fromResources.maxCpu() != toResources.maxCpu()) {
-            changes.add("maxCpu: %s -> %s".formatted(fromResources.maxCpu(), toResources.maxCpu()));
+            changes.add(String.format(java.util.Locale.ROOT, "maxCpu: %s -> %s", fromResources.maxCpu(), toResources.maxCpu()));
         }
 
         if (fromResources.minCpu() != toResources.minCpu()) {
-            changes.add("minCpu: %s -> %s".formatted(fromResources.minCpu(), toResources.minCpu()));
+            changes.add(String.format(java.util.Locale.ROOT, "minCpu: %s -> %s", fromResources.minCpu(), toResources.minCpu()));
         }
 
         if (fromResources.memoryGiB() != toResources.memoryGiB()) {
-            changes.add("memoryGiB: %s -> %s".formatted(fromResources.memoryGiB(), toResources.memoryGiB()));
+            changes.add(String.format(java.util.Locale.ROOT, "memoryGiB: %s -> %s", fromResources.memoryGiB(), toResources.memoryGiB()));
         }
 
         if (fromResources.hasGpu() != toResources.hasGpu()) {
-            changes.add("hasGpu: %s -> %s".formatted(fromResources.hasGpu(), toResources.hasGpu()));
+            changes.add(String.format(java.util.Locale.ROOT, "hasGpu: %s -> %s", fromResources.hasGpu(), toResources.hasGpu()));
         }
 
         if (!from.volumeMounts().equals(to.volumeMounts())) {
-            changes.add("volumeMounts: %s -> %s".formatted(from.volumeMounts(), to.volumeMounts()));
+            changes.add(String.format(java.util.Locale.ROOT, "volumeMounts: %s -> %s", from.volumeMounts(), to.volumeMounts()));
         }
 
         if (!from.envs().equals(to.envs())) {
-            changes.add("envs: %s -> %s".formatted(from.envs(), to.envs()));
+            changes.add(String.format(java.util.Locale.ROOT, "envs: %s -> %s", from.envs(), to.envs()));
         }
 
         if (!from.command().equals(to.command())) {
-            changes.add("command: %s -> %s".formatted(from.command(), to.command()));
+            changes.add(String.format(java.util.Locale.ROOT, "command: %s -> %s", from.command(), to.command()));
         }
 
         // Skipping livenessProbe diff since it doesn't affect sidecar functionality from sidecar client perspective.

@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -97,7 +98,7 @@ public class ClusterStateHistoryEntry {
     // String representation only used for test expectation failures and debugging output.
     // Actual status page history entry rendering emits formatted date/time.
     public String toString() {
-        return String.format("state '%s' at time %d", getStateString(BASELINE), time);
+        return String.format(Locale.ROOT, "state '%s' at time %d", getStateString(BASELINE), time);
     }
 
 }

@@ -125,7 +125,7 @@ public class StemmingSearcher extends Searcher {
         context.indexFacts = indexFacts;
         context.reverseConnectivity = createReverseConnectivities(q.getModel().getQueryTree().getRoot());
         if (q.getTrace().getLevel() >= 3)
-            q.trace("Stemming with language " + language + " using " + linguistics, 3);
+            q.trace("Stemming with default language " + language + " using " + linguistics, 3);
         return scan(q.getModel().getQueryTree().getRoot(), context, q.getModel().getQueryType());
     }
 
@@ -151,7 +151,18 @@ public class StemmingSearcher extends Searcher {
 
     private Item scan(Item item, StemContext context, QueryType queryType) {
         if (item == null) return null;
-        boolean old = context.insidePhrase;
+
+        // Save context state that may be modified during traversal
+        boolean oldInsidePhrase = context.insidePhrase;
+        Language oldLanguage = context.language;
+        boolean oldIsCJK = context.isCJK;
+
+        // Use item's language if explicitly set, supporting per-clause language in queries
+        if (item.getLanguage() != Language.UNKNOWN) {
+            context.language = item.getLanguage();
+            context.isCJK = context.language.isCjk();
+        }
+
         if (item instanceof PhraseItem || item instanceof PhraseSegmentItem) {
             context.insidePhrase = true;
         }
@@ -166,7 +177,11 @@ public class StemmingSearcher extends Searcher {
                     i.set(transformed);
             }
         }
-        context.insidePhrase = old;
+
+        // Restore context state
+        context.insidePhrase = oldInsidePhrase;
+        context.language = oldLanguage;
+        context.isCJK = oldIsCJK;
         return item;
     }
 
@@ -176,7 +191,7 @@ public class StemmingSearcher extends Searcher {
         if (item.isFromQuery() && !item.isStemmed()) {
             Index index = context.indexFacts.getIndex(item.getIndexName());
             StemMode stemMode = index.getStemMode();
-            if (stemMode != StemMode.NONE) return stem(queryType, item, context, index);
+            if (stemMode != StemMode.NONE) return stem(item, context, index);
         }
         return (Item) item;
     }
@@ -197,8 +212,8 @@ public class StemmingSearcher extends Searcher {
     }
 
     // The rewriting logic is here
-    private Item stem(QueryType queryType, BlockItem current, StemContext context, Index index) {
-        var parameters = new LinguisticsParameters(linguisticsProfile(queryType, index),
+    private Item stem(BlockItem current, StemContext context, Index index) {
+        var parameters = new LinguisticsParameters(linguisticsProfile(index, current),
                                                    context.language, index.getStemMode(), index.getNormalize(),
                                                    index.isLowercase());
         Item blockAsItem = (Item)current;
@@ -445,11 +460,12 @@ public class StemmingSearcher extends Searcher {
         return Optional.empty();
     }
 
-    private String linguisticsProfile(QueryType queryType, Index index) {
-        String queryAssignedProfile = queryType.getProfile();
-        if (queryAssignedProfile != null) return queryAssignedProfile;
-        if (index == null) return null;
-        return index.getLinguisticsProfile();
+    private String linguisticsProfile(Index index, BlockItem current) {
+        if (current.getQueryType() != null && current.getQueryType().getProfile() != null)
+            return current.getQueryType().getProfile();
+        if (index != null)
+            return index.getLinguisticsProfile();
+        return null;
     }
 
     private static class Connectivity {

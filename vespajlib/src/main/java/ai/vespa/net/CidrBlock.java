@@ -38,7 +38,7 @@ public class CidrBlock {
         this.prefixLength = prefixLength;
         this.addressLength = 8 * address.length;
         if (prefixLength > addressLength) throw new IllegalArgumentException(
-                String.format("Prefix size (%s) cannot be longer than address length (%s)", prefixLength, addressLength));
+                String.format(java.util.Locale.ROOT, "Prefix size (%s) cannot be longer than address length (%s)", prefixLength, addressLength));
 
         this.addressInteger = inetAddressToBigInteger(address);
     }

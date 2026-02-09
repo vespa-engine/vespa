@@ -13,6 +13,7 @@ import com.yahoo.language.significance.SignificanceModelRegistry;
 import com.yahoo.language.significance.impl.DefaultSignificanceModelRegistry;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.DocumentFrequency;
+import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -349,6 +350,11 @@ public class SignificanceSearcherTest {
         return makeDocumentFrequency(model.documentFrequency(word));
     }
 
+    private Optional<DocumentFrequency> getModelDocumentFrequencyWithNorwegian(String word) {
+        SignificanceModel model = significanceModelRegistry.getModel(Language.NORWEGIAN_BOKMAL).get();
+        return makeDocumentFrequency(model.documentFrequency(word));
+    }
+
     private static WordItem getFirstWord(Result result) {
         var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
         return (WordItem) resultRoot.getItem(0);
@@ -535,5 +541,111 @@ public class SignificanceSearcherTest {
 
         var resultSignificance = firstWord.getSignificance();
         assertEquals(querySignificance.get(), resultSignificance);
+    }
+
+    @Test
+    public void testPerClauseLanguageUsesDifferentModels() {
+        // S1: Two branches with different per-item languages should use different models
+        var enWord = new WordItem("hello", true);
+        enWord.setLanguage(Language.ENGLISH);
+        var nbWord = new WordItem("hello", true);
+        nbWord.setLanguage(Language.NORWEGIAN_BOKMAL);
+
+        var root = new OrItem();
+        root.addItem(enWord);
+        root.addItem(nbWord);
+
+        var query = new Query();
+        query.getRanking().setProfile("significance-ranking");
+        query.getModel().getQueryTree().setRoot(root);
+
+        createExecution(searcher).search(query);
+
+        var resultRoot = (OrItem) query.getModel().getQueryTree().getRoot();
+        var enResult = (WordItem) resultRoot.getItem(0);
+        var nbResult = (WordItem) resultRoot.getItem(1);
+
+        // English "hello": freq=3, corpus=16
+        assertEquals(getModelDocumentFrequencyWithEnglish("hello"), enResult.getDocumentFrequency());
+        // Norwegian "hello": freq=10, corpus=20
+        assertEquals(getModelDocumentFrequencyWithNorwegian("hello"), nbResult.getDocumentFrequency());
+    }
+
+    @Test
+    public void testPerClauseLanguageWithDefaultFallback() {
+        // S2: One branch with explicit language, one without — default model used for the latter
+        var nbWord = new WordItem("hello", true);
+        nbWord.setLanguage(Language.NORWEGIAN_BOKMAL);
+        var defaultWord = new WordItem("hello", true);
+        // No language set — stays UNKNOWN, should use default (English) model
+
+        var root = new OrItem();
+        root.addItem(nbWord);
+        root.addItem(defaultWord);
+
+        var query = new Query();
+        query.getModel().setLanguage(Language.ENGLISH); // default model is English
+        query.getRanking().setProfile("significance-ranking");
+        query.getModel().getQueryTree().setRoot(root);
+
+        createExecution(searcher).search(query);
+
+        var resultRoot = (OrItem) query.getModel().getQueryTree().getRoot();
+        var nbResult = (WordItem) resultRoot.getItem(0);
+        var defaultResult = (WordItem) resultRoot.getItem(1);
+
+        assertEquals(getModelDocumentFrequencyWithNorwegian("hello"), nbResult.getDocumentFrequency());
+        assertEquals(getModelDocumentFrequencyWithEnglish("hello"), defaultResult.getDocumentFrequency());
+    }
+
+    @Test
+    public void testPerClauseLanguageFallsBackToDefaultWhenModelMissing() {
+        // S3: Per-item language with no model should fall back to default model, not fail
+        var italianWord = new WordItem("hello", true);
+        italianWord.setLanguage(Language.ITALIAN);
+
+        var root = new AndItem();
+        root.addItem(italianWord);
+
+        var query = new Query();
+        query.getRanking().setProfile("significance-ranking");
+        query.getModel().getQueryTree().setRoot(root);
+
+        var result = createExecution(searcher).search(query);
+
+        // Should not fail — falls back to default (English) model
+        var resultRoot = (AndItem) result.getQuery().getModel().getQueryTree().getRoot();
+        var resultWord = (WordItem) resultRoot.getItem(0);
+        assertEquals(getModelDocumentFrequencyWithEnglish("hello"), resultWord.getDocumentFrequency());
+    }
+
+    @Test
+    public void testLanguageInheritedFromCompositeParent() {
+        // S4: Language set on a composite item should propagate to child words
+        var hello = new WordItem("hello", true);
+        var test = new WordItem("test", true);
+        // Words have no explicit language (UNKNOWN)
+
+        var norwegianBranch = new AndItem();
+        norwegianBranch.setLanguage(Language.NORWEGIAN_BOKMAL);
+        norwegianBranch.addItem(hello);
+        norwegianBranch.addItem(test);
+
+        var root = new OrItem();
+        root.addItem(norwegianBranch);
+
+        var query = new Query();
+        query.getRanking().setProfile("significance-ranking");
+        query.getModel().getQueryTree().setRoot(root);
+
+        createExecution(searcher).search(query);
+
+        var resultBranch = (AndItem) ((OrItem) query.getModel().getQueryTree().getRoot()).getItem(0);
+        var helloResult = (WordItem) resultBranch.getItem(0);
+        var testResult = (WordItem) resultBranch.getItem(1);
+
+        // Both should use Norwegian model since parent AndItem is marked Norwegian
+        assertEquals(getModelDocumentFrequencyWithNorwegian("hello"), helloResult.getDocumentFrequency());
+        assertEquals(getModelDocumentFrequencyWithNorwegian("test"), testResult.getDocumentFrequency());
     }
 }

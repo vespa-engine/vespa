@@ -209,16 +209,14 @@ public class OnnxModelInfo {
         int skippedInput = 0;
         for (Onnx.ValueInfoProto valueInfo : model.getGraph().getInputList()) {
             if (initializerNames.contains(valueInfo.getName())) {
-                log.fine(() -> "For '%s': skipping name '%s' as it's an initializer"
-                        .formatted(path.getName(), valueInfo.getName()));
+                log.fine(() -> String.format(java.util.Locale.ROOT, "For '%s': skipping name '%s' as it's an initializer", path.getName(), valueInfo.getName()));
                 ++skippedInput;
                 continue;
             }
             onnxTypeToJson(g, valueInfo);
         }
         if (skippedInput > 0)
-            log.info("For '%s': skipped %d inputs that were also listed in initializers"
-                             .formatted(path.getName(), skippedInput));
+            log.info(String.format(java.util.Locale.ROOT, "For '%s': skipped %d inputs that were also listed in initializers", path.getName(), skippedInput));
         g.writeEndArray();
 
         g.writeArrayFieldStart("outputs");
@@ -237,7 +235,7 @@ public class OnnxModelInfo {
 
         g.writeEndObject();
         g.close();
-        return out.toString();
+        return out.toString(java.nio.charset.StandardCharsets.UTF_8);
     }
 
     static public OnnxModelInfo jsonToModelInfo(String json, ApplicationPackage app) throws IOException {

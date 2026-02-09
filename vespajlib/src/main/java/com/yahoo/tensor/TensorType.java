@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
@@ -74,7 +75,7 @@ public class TensorType {
         }
 
         @Override
-        public String toString() { return name().toLowerCase(); }
+        public String toString() { return name().toLowerCase(Locale.ROOT); }
 
         public static Value fromId(String valueTypeString) {
             for (Value value : values()) {

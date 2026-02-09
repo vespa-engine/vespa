@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Tony Vaagenes
@@ -87,7 +88,7 @@ public class ApplicationMojo extends AbstractMojo {
                 throw new IllegalArgumentException("compile version (" + compileVersion + ") cannot be higher than parent version (" + parentVersion + ")");
         }
 
-        String metaData = String.format("""
+        String metaData = String.format(Locale.ROOT, """
                                         {
                                           "compileVersion": "%s",
                                           "buildTime": %d,

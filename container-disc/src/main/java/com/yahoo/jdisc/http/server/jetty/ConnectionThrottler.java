@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.text.Text;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.SelectorManager;
 import org.eclipse.jetty.server.AbstractConnector;
@@ -88,13 +89,13 @@ class ConnectionThrottler extends ContainerLifeCycle implements SelectorManager.
             if (isThrottling) return;
             List<String> reasons = getThrottlingReasons();
             if (reasons.isEmpty()) return;
-            log.warning(String.format("Throttling new connection. Reasons: %s", reasons));
+            log.warning(Text.format("Throttling new connection. Reasons: %s", reasons));
             isThrottling = true;
             if (connector.isAccepting()) {
                 connector.setAccepting(false);
             }
             if (idleTimeout != null) {
-                log.warning(String.format("Applying idle timeout to existing connections: timeout=%sms", idleTimeout));
+                log.warning(Text.format("Applying idle timeout to existing connections: timeout=%sms", idleTimeout));
                 connector.getConnectedEndPoints()
                         .forEach(endPoint -> endPoint.setIdleTimeout(idleTimeout.toMillis()));
             }
@@ -107,13 +108,13 @@ class ConnectionThrottler extends ContainerLifeCycle implements SelectorManager.
             if (!isThrottling) return;
             List<String> reasons = getThrottlingReasons();
             if (!reasons.isEmpty()) {
-                log.warning(String.format("Throttling continued. Reasons: %s", reasons));
+                log.warning(Text.format("Throttling continued. Reasons: %s", reasons));
                 scheduler.schedule(this::unthrottleIfBelowThresholds, 1, TimeUnit.SECONDS);
                 return;
             }
             if (idleTimeout != null) {
                 long originalTimeout = connector.getIdleTimeout();
-                log.info(String.format("Reverting idle timeout for existing connections: timeout=%sms", originalTimeout));
+                log.info(Text.format("Reverting idle timeout for existing connections: timeout=%sms", originalTimeout));
                 connector.getConnectedEndPoints()
                         .forEach(endPoint -> endPoint.setIdleTimeout(originalTimeout));
             }
@@ -162,7 +163,7 @@ class ConnectionThrottler extends ContainerLifeCycle implements SelectorManager.
         public Optional<String> isThresholdExceeded() {
             double heapUtilization = (runtime.maxMemory() - runtime.freeMemory()) / (double) runtime.maxMemory();
             if (heapUtilization > maxHeapUtilization) {
-                return Optional.of(String.format("Max heap utilization exceeded: %f%%>%f%%", heapUtilization*100, maxHeapUtilization*100));
+                return Optional.of(Text.format("Max heap utilization exceeded: %f%%>%f%%", heapUtilization*100, maxHeapUtilization*100));
             }
             return Optional.empty();
         }
@@ -186,7 +187,7 @@ class ConnectionThrottler extends ContainerLifeCycle implements SelectorManager.
             synchronized (monitor) {
                 int acceptRate = rateStatistic.getRate();
                 if (acceptRate > maxAcceptRate) {
-                    return Optional.of(String.format("Max accept rate exceeded: %d>%d", acceptRate, maxAcceptRate));
+                    return Optional.of(Text.format("Max accept rate exceeded: %d>%d", acceptRate, maxAcceptRate));
                 }
                 return Optional.empty();
             }
@@ -225,7 +226,7 @@ class ConnectionThrottler extends ContainerLifeCycle implements SelectorManager.
             synchronized (monitor) {
                 int totalConnections = connectionOpened + connectionsAccepting.size();
                 if (totalConnections > maxConnections) {
-                    return Optional.of(String.format("Max connection exceeded: %d>%d", totalConnections, maxConnections));
+                    return Optional.of(Text.format("Max connection exceeded: %d>%d", totalConnections, maxConnections));
                 }
                 return Optional.empty();
             }

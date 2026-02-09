@@ -35,7 +35,7 @@ public class AccessControlFilterExcludeValidator implements Validator {
 
     private void verifyNoExclusions(String clusterId, AccessControl accessControl, Context context) {
         if (!accessControl.excludedBindings().isEmpty()) {
-            String message = "Application cluster %s excludes paths from access control, this is not allowed and should be removed.".formatted(clusterId);
+            String message = String.format(java.util.Locale.ROOT, "Application cluster %s excludes paths from access control, this is not allowed and should be removed.", clusterId);
             if (Set.of(DEFAULT, YAHOO).contains(context.deployState().zone().cloud().name())) {
                 context.deployState().getDeployLogger().log(Level.WARNING, message);
             } else {

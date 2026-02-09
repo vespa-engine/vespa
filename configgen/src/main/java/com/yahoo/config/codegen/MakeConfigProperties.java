@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -78,7 +79,7 @@ public class MakeConfigProperties {
     }
 
     private static String checkLanguage(String lang) throws PropertyException {
-        String inputLang = lang != null ? lang.toLowerCase() : "java";
+        String inputLang = lang != null ? lang.toLowerCase(Locale.ROOT) : "java";
         if (! legalLanguages.contains(inputLang)) {
             throw new PropertyException
                     ("Unsupported code language: '" + inputLang + "'. Supported languages are: " + legalLanguages);

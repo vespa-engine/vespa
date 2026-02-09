@@ -55,7 +55,7 @@ public class ContainerRestartValidator implements ChangeValidator {
     }
 
     private static String createMessage(Container container) {
-        return String.format("Container '%s' is configured to always restart on deploy.", container.getConfigId());
+        return String.format(java.util.Locale.ROOT, "Container '%s' is configured to always restart on deploy.", container.getConfigId());
     }
 
     private static boolean shouldContainerRestartOnDeploy(Container container, VespaModel nextModel) {

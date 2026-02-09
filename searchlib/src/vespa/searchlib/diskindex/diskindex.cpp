@@ -10,7 +10,7 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
-#include <vespa/searchlib/util/dirtraverse.h>
+#include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/stllike/cache.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>

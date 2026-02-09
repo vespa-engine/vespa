@@ -4,6 +4,7 @@
 #include "data_store_file_chunk_stats.h"
 #include "summaryexceptions.h"
 #include "randreaders.h"
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/data/fileheader.h>
@@ -13,9 +14,11 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/fastos/file.h>
+#include <charconv>
 #include <exception>
 #include <filesystem>
 #include <future>
+#include <system_error>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.filechunk");
@@ -51,6 +54,20 @@ FileChunk::NameId::createName(const std::string &baseName) const {
     return os.str();
 }
 
+std::optional<FileChunk::NameId>
+FileChunk::NameId::from_filename(const std::string& filename)
+{
+    auto dot_pos = filename.find('.');
+    if (dot_pos != std::string::npos) {
+        uint64_t val = 0;
+        auto result = std::from_chars(filename.data(), filename.data() + dot_pos, val, 10);
+        if (result.ec == std::errc{} && result.ptr == filename.data() + dot_pos) {
+            return NameId(val);
+        }
+    }
+    return std::nullopt;
+}
+
 std::string
 FileChunk::createIdxFileName(const std::string & name) {
     return name + ".idx";
@@ -69,6 +86,7 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const std::string & baseName,
       _erasedCount(0),
       _erasedBytes(0),
       _diskFootprint(0),
+      _size_on_disk(0),
       _sumNumBuckets(0),
       _numChunksWithBuckets(0),
       _numUniqueBuckets(0),
@@ -91,13 +109,16 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const std::string & baseName,
         if (!dataFile.Sync()) {
             throw SummaryException("Failed syncing dat file", dataFile, VESPA_STRLOC);
         }
+        DiskSpaceCalculator calc;
         _diskFootprint.fetch_add(dataFile.getSize(), std::memory_order_relaxed);
+        _size_on_disk.fetch_add(calc(dataFile.getSize()), std::memory_order_relaxed);
         FastOS_File idxFile(_idxFileName.c_str());
         if (idxFile.OpenReadOnly()) {
             if (!idxFile.Sync()) {
                 throw SummaryException("Failed syncing idx file", idxFile, VESPA_STRLOC);
             }
             _diskFootprint.fetch_add(idxFile.getSize(), std::memory_order_relaxed);
+            _size_on_disk.fetch_add(calc(idxFile.getSize()), std::memory_order_relaxed);
             _modificationTime = FileKit::getModificationTime(_idxFileName);
         } else {
             throw SummaryException("Failed opening idx file", idxFile, VESPA_STRLOC);
@@ -514,6 +535,18 @@ FileChunk::getNumChunks() const
 }
 
 size_t
+FileChunk::getDiskFootprint() const
+{
+    return _diskFootprint.load(std::memory_order_relaxed);
+}
+
+uint64_t
+FileChunk::get_size_on_disk() const
+{
+    return _size_on_disk.load(std::memory_order_relaxed);
+}
+
+size_t
 FileChunk::getMemoryFootprint() const
 {
     // The memory footprint does not vary before or after flush
@@ -580,12 +613,13 @@ DataStoreFileChunkStats
 FileChunk::getStats() const
 {
     uint64_t diskFootprint = getDiskFootprint();
+    uint64_t size_on_disk = get_size_on_disk();
     uint64_t diskBloat = getDiskBloat();
     double bucketSpread = getBucketSpread();
     uint64_t serialNum = getLastPersistedSerialNum();
     uint32_t docIdLimit = getDocIdLimit();
     uint64_t nameId = getNameId().getId();
-    return {diskFootprint, diskBloat, bucketSpread, serialNum, serialNum, docIdLimit, nameId};
+    return {diskFootprint, size_on_disk, diskBloat, bucketSpread, serialNum, serialNum, docIdLimit, nameId};
 }
 
 } // namespace search

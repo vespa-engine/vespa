@@ -17,6 +17,7 @@
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
@@ -937,9 +938,9 @@ TEST_F(AttributeManagerTest, transient_resource_usage_is_zero_in_steady_state)
     Fixture f;
     f.addAttribute("a1");
     f.addAttribute("a2");
-    auto usage = f._m.get_transient_resource_usage();
-    EXPECT_EQ(0u, usage.disk());
-    EXPECT_EQ(0u, usage.memory());
+    auto usage = f._m.get_resource_usage();
+    EXPECT_EQ(0u, usage.transient_disk());
+    EXPECT_EQ(0u, usage.transient_memory());
 }
 
 TEST_F(AttributeManagerTest, late_create_serial_number_is_set_on_new_attributes)

@@ -14,6 +14,7 @@ import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import org.apache.zookeeper.KeeperException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -257,7 +258,7 @@ public class DatabaseHandler {
                 didWork |= performZooKeeperWrites();
             }
         } catch (CasWriteFailed e) {
-            fleetControllerContext.log(logger, Level.WARNING, String.format("CaS write to ZooKeeper failed, another controller " +
+            fleetControllerContext.log(logger, Level.WARNING, String.format(Locale.ROOT, "CaS write to ZooKeeper failed, another controller " +
                                                                             "has likely taken over ownership: %s", e.getMessage()));
             // Clear DB and master election state. This shall trigger a full re-fetch of all
             // version and election-related metadata.

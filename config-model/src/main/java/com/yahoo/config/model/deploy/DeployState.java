@@ -92,18 +92,6 @@ public class DeployState implements ConfigDefinitionStore {
     private final ExecutorService executor;
     private final OnnxModelCost onnxModelCost;
 
-    public static DeployState createTestState() {
-        return new Builder().build();
-    }
-
-    public static DeployState createTestState(DeployLogger testLogger) {
-        return new Builder().deployLogger(testLogger).build();
-    }
-
-    public static DeployState createTestState(ApplicationPackage applicationPackage) {
-        return new Builder().applicationPackage(applicationPackage).build();
-    }
-
     private DeployState(Application application,
                         RankProfileRegistry rankProfileRegistry,
                         FileRegistry fileRegistry,
@@ -136,7 +124,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.vespaVersion = vespaVersion;
         this.previousModel = previousModel;
         this.accessLoggingEnabledByDefault = accessLoggingEnabledByDefault;
-        this.provisioner = hostProvisioner.orElse(getDefaultModelHostProvisioner(applicationPackage));
+        this.provisioner = hostProvisioner.orElseGet(() -> getDefaultModelHostProvisioner(applicationPackage));
         this.provisioned = provisioned;
         this.schemas = List.copyOf(application.schemas().values());
         this.documentModel = application.documentModel();
@@ -324,7 +312,7 @@ public class DeployState implements ConfigDefinitionStore {
         private DeployLogger logger = new BaseDeployLogger();
         private Optional<HostProvisioner> hostProvisioner = Optional.empty();
         private Provisioned provisioned = new Provisioned();
-        private ModelContext.Properties properties = new TestProperties();
+        private ModelContext.Properties properties = null;
         private Version version = new Version(1, 0, 0);
         private Optional<ConfigDefinitionRepo> configDefinitionRepo = Optional.empty();
         private Optional<Model> previousModel = Optional.empty();

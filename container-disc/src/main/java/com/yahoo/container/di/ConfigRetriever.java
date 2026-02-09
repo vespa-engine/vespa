@@ -168,6 +168,13 @@ public final class ConfigRetriever {
         return componentSubscriber.generation();
     }
 
+    /**
+     * @see Subscriber#applyOnRestart() 
+     */
+    public boolean applyOnRestart() {
+        return bootstrapSubscriber.applyOnRestart() || componentSubscriber.applyOnRestart();
+    }
+
     public static class ConfigSnapshot {
         private final Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs;
 

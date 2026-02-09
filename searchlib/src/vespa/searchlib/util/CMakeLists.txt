@@ -6,7 +6,7 @@ vespa_add_library(searchlib_util OBJECT
     comprfile.cpp
     data_buffer_writer.cpp
     disk_io_stats.cpp
-    dirtraverse.cpp
+    directory_traverse.cpp
     drainingbufferwriter.cpp
     field_index_io_stats.cpp
     field_index_stats.cpp

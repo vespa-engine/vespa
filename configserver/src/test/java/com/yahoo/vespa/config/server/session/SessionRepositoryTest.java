@@ -12,6 +12,7 @@ import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -169,7 +170,7 @@ public class SessionRepositoryTest {
     }
 
     // If reading a session throws an exception when bootstrapping SessionRepository it should fail,
-    // to make sure config server does not comes up and serves invalid/old config or, if this is hosted,
+    // to make sure config server does not come up and serves invalid/old config or, if this is hosted,
     // serves empty config (takes down services on all nodes belonging to an application)
     @Test
     public void testInvalidSessionWhenBootstrappingSessionRepo() throws Exception {
@@ -365,7 +366,7 @@ public class SessionRepositoryTest {
         Model loadModel() {
             try {
                 ApplicationPackage application = new MockApplicationPackage.Builder().withEmptyHosts().withEmptyServices().withValidationOverrides(validationOverrides).build();
-                DeployState deployState = new DeployState.Builder().applicationPackage(application).now(clock.instant()).build();
+                DeployState deployState = new DeployState.Builder().properties(new TestProperties()).applicationPackage(application).now(clock.instant()).build();
                 return new VespaModel(deployState);
             } catch (Exception e) {
                 throw new RuntimeException(e);

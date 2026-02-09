@@ -12,6 +12,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
@@ -44,7 +45,7 @@ import java.util.Map;
  *
  * For use in testing only.
  *
- * @author lesters
+ * @author Lester Solbakken
  */
 public class ModelsEvaluatorTester {
 
@@ -107,7 +108,9 @@ public class ModelsEvaluatorTester {
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(app)
                 .fileRegistry(registry)
-                .modelImporters(importers).build();
+                .modelImporters(importers)
+                .properties(new TestProperties())
+                .build();
 
         VespaModel vespaModel = new VespaModel(deployState);
         return vespaModel.rankProfileList();

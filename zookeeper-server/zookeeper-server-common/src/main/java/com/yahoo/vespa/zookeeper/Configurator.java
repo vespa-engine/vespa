@@ -11,6 +11,7 @@ import com.yahoo.vespa.zookeeper.tls.VespaZookeeperTlsContextUtils;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -82,7 +83,7 @@ public class Configurator {
                                           VespaTlsConfig vespaTlsConfig) throws IOException {
         String dynamicConfigPath = config.dynamicReconfiguration() ? parseConfigFile(configFilePath).get("dynamicConfigFile") : null;
         Map<String, String> dynamicConfig = dynamicConfigPath != null ? parseConfigFile(Paths.get(dynamicConfigPath)) : Map.of();
-        try (FileWriter writer = new FileWriter(configFilePath.toFile())) {
+        try (FileWriter writer = new FileWriter(configFilePath.toFile(), StandardCharsets.UTF_8)) {
             writer.write(transformConfigToString(config, vespaTlsConfig, dynamicConfig));
         }
     }
@@ -153,7 +154,7 @@ public class Configurator {
     }
 
     private void writeMyIdFile(ZookeeperServerConfig config) throws IOException {
-        try (FileWriter writer = new FileWriter(getDefaults().underVespaHome(config.myidFile()))) {
+        try (FileWriter writer = new FileWriter(getDefaults().underVespaHome(config.myidFile()), StandardCharsets.UTF_8)) {
             writer.write(config.myid() + "\n");
         }
     }

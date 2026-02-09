@@ -22,6 +22,8 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
     private final String endpoint;
     private final String model;
     private final Boolean truncate;
+    private final Integer dimensions;
+    private final String quantization;
 
     @SuppressWarnings("unused")
     public VoyageAIEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
@@ -29,18 +31,22 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
 
         this.apiKeySecretRef = getChildValue(xml, "api-key-secret-ref").get();
         this.model = getChildValue(xml, "model").get();
+        this.dimensions = getChildValue(xml, "dimensions")
+                .map(Integer::parseInt)
+                .orElseThrow(() -> new IllegalArgumentException("Missing required element 'dimensions'"));
 
         this.endpoint = getChildValue(xml, "endpoint").orElse(null);
         this.truncate = getChildValue(xml, "truncate").map(Boolean::parseBoolean).orElse(null);
+        this.quantization = getChildValue(xml, "quantization").orElse("auto");
 
         validate();
     }
 
     public void validate() {
-        if (model != null && !model.startsWith("voyage")) {
+        if (model != null && !model.startsWith("voyage-")) {
             throw new IllegalArgumentException(
                     "Invalid VoyageAI model name: " + model + ". " +
-                    "Model name should start with 'voyage' (e.g., voyage-3, voyage-code-3).");
+                    "Model name should start with 'voyage-' (e.g., voyage-3, voyage-code-3).");
         }
     }
 
@@ -48,6 +54,8 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
     public void getConfig(VoyageAiEmbedderConfig.Builder builder) {
         builder.apiKeySecretRef(apiKeySecretRef);
         builder.model(model);
+        builder.dimensions(dimensions);
+        builder.quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(quantization.toUpperCase(java.util.Locale.ROOT)));
 
         if (endpoint != null) {
             builder.endpoint(endpoint);

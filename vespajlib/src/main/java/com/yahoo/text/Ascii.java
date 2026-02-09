@@ -7,6 +7,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Locale;
 import java.util.TreeSet;
 
 /**
@@ -81,7 +82,7 @@ public class Ascii {
             default:
                 ByteBuffer buf = charset.encode(CharBuffer.wrap(Character.toChars(c)));
                 while (buf.hasRemaining()) {
-                    out.append(ESCAPE_CHAR).append(String.format("x%02X", buf.get()));
+                    out.append(ESCAPE_CHAR).append(String.format(Locale.ROOT, "x%02X", buf.get()));
                 }
                 break;
             }

@@ -100,10 +100,18 @@ public:
     virtual size_t memoryMeta() const = 0;
 
     /**
-     * Calculates how much disk is used
-     * @return disk space used.
+     * Calculate sum of file sizes.
+     *
+     * @return estimated disk space used.
      */
     virtual size_t getDiskFootprint() const = 0;
+
+    /*
+     * Calculate sum of file sizes each aligned up to assumed file system block size and a placeholder directory size.
+     *
+     * @return estimated disk space used.
+     */
+    virtual uint64_t get_size_on_disk() const = 0;
 
     /**
      * Calculates how much disk is used by file headers.

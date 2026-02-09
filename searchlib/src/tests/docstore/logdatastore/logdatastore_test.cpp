@@ -8,9 +8,12 @@
 #include <vespa/searchlib/docstore/chunkformats.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/storebybucket.h>
+#include <vespa/searchlib/docstore/summaryexceptions.h>
 #include <vespa/searchlib/docstore/visitcache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
@@ -21,7 +24,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/memory.h>
 #include <cassert>
-#include <charconv>
 #include <filesystem>
 #include <iomanip>
 #include <random>
@@ -32,6 +34,7 @@ using namespace search::docstore;
 using namespace search;
 using namespace vespalib::alloc;
 using vespalib::CacheStats;
+using search::SummaryException;
 using search::index::DummyFileHeaderContext;
 using search::test::DirectoryHandler;
 
@@ -51,6 +54,9 @@ using search::index::DummyFileHeaderContext;
 using vespalib::compression::CompressionConfig;
 
 namespace {
+
+constexpr uint32_t old_testdata_dat_header_len = FileSettings::DIRECTIO_ALIGNMENT;
+constexpr uint32_t old_testdata_idx_header_len = 480u;
 
 void
 showStats(const DataStoreStorageStats &stats)
@@ -112,6 +118,16 @@ calcDiskUsage(const std::vector<DataStoreFileChunkStats> &chunkStats)
 }
 
 uint64_t
+calc_size_on_disk(const std::vector<DataStoreFileChunkStats> &chunkStats)
+{
+    uint64_t size_on_disk = DiskSpaceCalculator::directory_placeholder_size();
+    for (const auto& chunk : chunkStats) {
+        size_on_disk += chunk.size_on_disk();
+    }
+    return size_on_disk;
+}
+
+uint64_t
 calcDiskBloat(const std::vector<DataStoreFileChunkStats> &chunkStats)
 {
     uint64_t diskBloat = 0u;
@@ -135,6 +151,7 @@ checkStats(IDataStore &store,
     EXPECT_EQ(storageStats.lastSerialNum(), calcLastSerialNum(chunkStats));
     EXPECT_EQ(storageStats.lastFlushedSerialNum(), calcLastFlushedSerialNum(chunkStats));
     EXPECT_EQ(storageStats.diskUsage(), calcDiskUsage(chunkStats));
+    EXPECT_EQ(storageStats.size_on_disk(), calc_size_on_disk(chunkStats));
     EXPECT_EQ(storageStats.diskBloat(), calcDiskBloat(chunkStats));
 }
 
@@ -151,8 +168,8 @@ protected:
 };
 
 LogDataStoreTest::LogDataStoreTest()
-: ::testing::Test(),
-TestData<LogDataStoreTest>()
+    : ::testing::Test(),
+      TestData<LogDataStoreTest>()
 {
 }
 
@@ -366,8 +383,15 @@ TEST_F(LogDataStoreTest, testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved)
                            GrowStrategy(), TuneFileSummary(),
                            fileHeaderContext, tlSyncer, nullptr);
     EXPECT_EQ(354ul, datastore.lastSyncToken());
-    EXPECT_EQ(4096u + 480u, datastore.getDiskHeaderFootprint());
-    EXPECT_EQ(datastore.getDiskHeaderFootprint() + 94016u, datastore.getDiskFootprint());
+    constexpr uint32_t dat_data_len = 90112u;
+    constexpr uint32_t idx_data_len = 3904u;
+    EXPECT_EQ(old_testdata_dat_header_len + old_testdata_idx_header_len, datastore.getDiskHeaderFootprint());
+    EXPECT_EQ(old_testdata_dat_header_len + dat_data_len + old_testdata_idx_header_len + idx_data_len,
+              datastore.getDiskFootprint());
+    DiskSpaceCalculator calc;
+    EXPECT_EQ(DiskSpaceCalculator::directory_placeholder_size() +
+              calc(old_testdata_dat_header_len + dat_data_len) + calc(old_testdata_idx_header_len + idx_data_len),
+              datastore.get_size_on_disk());
     if (!HasFailure()) {
         std::filesystem::remove_all(dangling_test);
     }
@@ -420,7 +444,7 @@ TEST_F(LogDataStoreTest, testThatIncompleteCompactedFilesAreRemoved)
                            GrowStrategy(), TuneFileSummary(),
                            fileHeaderContext, tlSyncer, nullptr);
     EXPECT_EQ(354ul, datastore.lastSyncToken());
-    EXPECT_EQ(3*(4096u + 480u), datastore.getDiskHeaderFootprint());
+    EXPECT_EQ(3 * (old_testdata_dat_header_len + old_testdata_idx_header_len), datastore.getDiskHeaderFootprint());
     LogDataStore::NameIdSet files = datastore.getAllActiveFiles();
     EXPECT_EQ(3u, files.size());
     EXPECT_TRUE(files.find(FileChunk::NameId(1422358701368384000)) != files.end());
@@ -659,8 +683,8 @@ TEST_F(LogDataStoreTest, Control_static_memory_usage)
     constexpr size_t mutex_size = sizeof(std::mutex) * 2 * (113 + 1); // sizeof(std::mutex) is platform dependent
     constexpr size_t string_size = sizeof(std::string);
     constexpr size_t lru_segment_overhead = 352;
-    EXPECT_EQ(74476 + mutex_size + 3 * string_size + lru_segment_overhead, usage.allocatedBytes());
-    EXPECT_EQ(752u + mutex_size + 3 * string_size + lru_segment_overhead, usage.usedBytes());
+    EXPECT_EQ(74484 + mutex_size + 3 * string_size + lru_segment_overhead, usage.allocatedBytes());
+    EXPECT_EQ(760u + mutex_size + 3 * string_size + lru_segment_overhead, usage.usedBytes());
 }
 
 TEST_F(LogDataStoreTest, test_the_update_cache_strategy)
@@ -773,6 +797,8 @@ TEST_F(LogDataStoreTest, test_that_the_integrated_visit_cache_works)
 
 TEST_F(LogDataStoreTest, testWriteRead)
 {
+    uint32_t dat_header_len = FileSettings::DIRECTIO_ALIGNMENT;
+    uint32_t idx_header_len = 0u;
     auto empty = build_testdata() + "/empty";
     const char * bufA = "aaaaaaaaaaaaaaaaaaaaa";
     const char * bufB = "bbbbbbbbbbbbbbbb";
@@ -787,8 +813,10 @@ TEST_F(LogDataStoreTest, testWriteRead)
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         ASSERT_TRUE(datastore.lastSyncToken() == 0);
         size_t headerFootprint = datastore.getDiskHeaderFootprint();
-        EXPECT_LT(0u, headerFootprint);
+        ASSERT_LT(dat_header_len, headerFootprint);
+        idx_header_len = headerFootprint - dat_header_len;
         EXPECT_EQ(datastore.getDiskFootprint(), headerFootprint);
+        EXPECT_GE(datastore.get_size_on_disk(), headerFootprint + DiskSpaceCalculator::directory_placeholder_size());
         EXPECT_EQ(datastore.getDiskBloat(), 0ul);
         EXPECT_EQ(datastore.getMaxSpreadAsBloat(), 0ul);
         datastore.write(1, 0, a[0].c_str(), a[0].size());
@@ -809,8 +837,13 @@ TEST_F(LogDataStoreTest, testWriteRead)
         for(size_t i=0; i < 100; i++) {
             fetchAndTest(datastore, i, a[i%2].c_str(), a[i%2].size());
         }
-        EXPECT_EQ(datastore.getDiskFootprint(),
-                     2711ul + headerFootprint);
+        constexpr uint32_t dat_pending_data_len = 2711u;
+        constexpr uint32_t idx_pending_data_len = 0u; // not yet accounted for
+        EXPECT_EQ(dat_pending_data_len + idx_pending_data_len + headerFootprint, datastore.getDiskFootprint());
+        DiskSpaceCalculator calc;
+        EXPECT_EQ(DiskSpaceCalculator::directory_placeholder_size() +
+                  calc(dat_header_len + dat_pending_data_len) + calc(idx_header_len + idx_pending_data_len),
+                  datastore.get_size_on_disk());
         EXPECT_EQ(datastore.getDiskBloat(), 0ul);
         EXPECT_EQ(datastore.getMaxSpreadAsBloat(), 0ul);
         datastore.flush(datastore.initFlush(lastSyncToken));
@@ -824,7 +857,14 @@ TEST_F(LogDataStoreTest, testWriteRead)
                                fileHeaderContext, tlSyncer, nullptr);
         size_t headerFootprint = datastore.getDiskHeaderFootprint();
         EXPECT_LT(0u, headerFootprint);
-        EXPECT_EQ(4944ul + headerFootprint, datastore.getDiskFootprint());
+        constexpr uint32_t dat_data_len = 4096u;
+        constexpr uint32_t idx_data_len = 848u;
+        EXPECT_EQ(dat_header_len + idx_header_len, datastore.getDiskHeaderFootprint());
+        EXPECT_EQ(dat_header_len + dat_data_len + idx_header_len + idx_data_len, datastore.getDiskFootprint());
+        DiskSpaceCalculator calc;
+        EXPECT_EQ(DiskSpaceCalculator::directory_placeholder_size() +
+                  calc(dat_header_len + dat_data_len) + calc(idx_header_len + idx_data_len),
+                  datastore.get_size_on_disk());
         EXPECT_EQ(0ul, datastore.getDiskBloat());
         EXPECT_EQ(0ul, datastore.getMaxSpreadAsBloat());
 
@@ -838,8 +878,15 @@ TEST_F(LogDataStoreTest, testWriteRead)
         for(size_t i=0; i < 100; i++) {
             fetchAndTest(datastore, i, a[(i+1)%2].c_str(), a[(i+1)%2].size());
         }
-
-        EXPECT_EQ(7594ul + headerFootprint, datastore.getDiskFootprint());
+        constexpr uint32_t dat_pending_data_len = 2650u;
+        constexpr uint32_t idx_pending_data_len = 0u; // last writes not yet accounted for
+        EXPECT_EQ(dat_header_len + dat_data_len + dat_pending_data_len +
+                  idx_header_len + idx_data_len + idx_pending_data_len,
+                  datastore.getDiskFootprint());
+        EXPECT_EQ(DiskSpaceCalculator::directory_placeholder_size() +
+                  calc(dat_header_len + dat_data_len + dat_pending_data_len) +
+                  calc(idx_header_len + idx_data_len + idx_pending_data_len),
+                  datastore.get_size_on_disk());
         EXPECT_EQ(0ul, datastore.getDiskBloat());
         EXPECT_EQ(0ul, datastore.getMaxSpreadAsBloat());
     }
@@ -1131,8 +1178,8 @@ TEST_F(LogDataStoreTest, require_that_there_is_control_of_static_memory_usage)
     Fixture f(tmp7);
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
     EXPECT_EQ(464u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(std::string), sizeof(LogDataStore));
-    EXPECT_EQ(73916u + 3 * sizeof(std::string), usage.allocatedBytes());
-    EXPECT_EQ(192u + 3 * sizeof(std::string), usage.usedBytes());
+    EXPECT_EQ(73924u + 3 * sizeof(std::string), usage.allocatedBytes());
+    EXPECT_EQ(200u + 3 * sizeof(std::string), usage.usedBytes());
 }
 
 TEST_F(LogDataStoreTest, require_that_lid_space_can_be_shrunk_only_after_read_guards_are_deleted)
@@ -1205,12 +1252,10 @@ void rename_files_to_future_name_ids(const std::string& dir, vespalib::system_cl
         }
     }
     for (auto &file: files) {
-        auto dot_pos = file.find('.');
-        assert(dot_pos != std::string::npos);
-        uint64_t val = 0;
-        auto result = std::from_chars(file.data(), file.data() + dot_pos, val, 10);
-        if (result.ec == std::errc{} && result.ptr == file.data() + dot_pos) {
-            FileChunk::NameId id((vespalib::system_clock::duration(val) + time_step).count());
+        auto old_id = FileChunk::NameId::from_filename(file);
+        if (old_id.has_value()) {
+            FileChunk::NameId id((vespalib::system_clock::duration(old_id.value().getId()) + time_step).count());
+            auto dot_pos = file.find('.');
             std::string new_name = id.createName(dir) + file.substr(dot_pos);
             std::cout << "Renaming " << dir << "/" << file << " to " << new_name << std::endl;
             std::filesystem::rename(dir + "/" + file, new_name);
@@ -1252,6 +1297,44 @@ TEST_F(LogDataStoreTest, require_that_clock_stepping_backwards_is_handled)
         exp_limits.push_back(201);
         f.assertDocIdLimitInFileChunks(exp_limits, "write 3");
     }
+}
+
+namespace {
+
+void remove_active_idx_file(const std::string& dir)
+{
+    std::optional<FileChunk::NameId> active;
+    std::filesystem::directory_iterator dir_scan{std::filesystem::path(dir)};
+    for (auto &entry: dir_scan) {
+        auto file = entry.path().filename().string();
+        if (file.ends_with(".idx")) {
+            auto candidate = FileChunk::NameId::from_filename(file);
+            if (candidate.has_value() && (!active.has_value() || active.value().getId() < candidate.value().getId())) {
+                active.emplace(candidate.value());
+            }
+        }
+    }
+    ASSERT_TRUE(active.has_value());
+    std::filesystem::remove(active.value().createName(dir) + ".idx");
+}
+
+void write_with_missing_idx_file(const std::string& dir)
+{
+    Fixture f(dir, false);
+    f.write(1);
+    f.flush();
+    remove_active_idx_file(dir);
+    f.write(2);
+    f.flush();
+}
+
+}
+
+TEST_F(LogDataStoreTest, fail_if_active_idx_files_disappears)
+{
+    auto dir = build_testdata() + "/tmp10";
+    VESPA_EXPECT_EXCEPTION(write_with_missing_idx_file(dir), SummaryException, "Failed opening idx file");
+    std::filesystem::remove_all(dir);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

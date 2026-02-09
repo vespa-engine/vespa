@@ -30,6 +30,7 @@
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/test/doc_builder.h>
@@ -833,9 +834,9 @@ TEST(DocumentSubDBsTest, require_that_flush_targets_can_be_retrieved_from_search
 TEST(DocumentSubDBsTest, transient_resource_usage_is_zero_in_steady_state)
 {
     SearchableFixture f;
-    auto usage = f._subDb.get_transient_resource_usage();
-    EXPECT_EQ(0u, usage.disk());
-    EXPECT_EQ(0u, usage.memory());
+    auto usage = f._subDb.get_resource_usage();
+    EXPECT_EQ(0u, usage.transient_disk());
+    EXPECT_EQ(0u, usage.transient_memory());
 }
 
 TEST(DocumentSubDBsTest, require_that_only_fast_access_attributes_are_instantiated_in_fast_access_document_subdb)

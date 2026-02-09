@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -127,7 +128,7 @@ public class SetNodeStateTest extends StateRestApiTest {
     private String musicClusterExpectedUserStateString(String groupName,
                                                        String generatedState, String unitState,
                                                        String userState, String userReason) {
-        return """
+        return String.format(Locale.ROOT, """
                {
                  "attributes" : {
                    "hierarchical-group" : "%s"
@@ -146,7 +147,7 @@ public class SetNodeStateTest extends StateRestApiTest {
                      "reason" : "%s"
                    }
                  }
-               }""".formatted(groupName, generatedState, unitState, userState, userReason);
+               }""", groupName, generatedState, unitState, userState, userReason);
     }
 
     @Test

@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.interfaces.XECPublicKey;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -139,7 +140,7 @@ public class SharedKeyResealingSession {
 
     public static ResealingResponse reseal(ResealingRequest request, PrivateKeyProvider privateKeyProvider) {
         var privKey = privateKeyProvider.privateKeyForId(request.sealedKey.keyId()).orElseThrow(
-                () -> new IllegalArgumentException("Could not find a private key for key ID '%s'".formatted(request.sealedKey.keyId())));
+                () -> new IllegalArgumentException(String.format(Locale.ROOT, "Could not find a private key for key ID '%s'", request.sealedKey.keyId())));
 
         var secretShared = SharedKeyGenerator.fromSealedKey(request.sealedKey, privKey);
         var resealed = SharedKeyGenerator.reseal(secretShared, request.ephemeralPubKey, KeyId.ofString("resealed-token")); // TODO key id

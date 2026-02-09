@@ -132,7 +132,7 @@ public class VespaModelFactory implements ModelFactory {
                 VespaModel currentModel = (VespaModel) currentActiveModel.get();
                 var currentMeta = currentModel.applicationPackage().getMetaData();
                 var nextMeta = nextModel.applicationPackage().getMetaData();
-                log.log(Level.INFO, String.format("Model [%s/%s] -> [%s/%s] triggers reindexing: %s",
+                log.log(Level.INFO, String.format(java.util.Locale.ROOT, "Model [%s/%s] -> [%s/%s] triggers reindexing: %s",
                                                   currentModel.version().toString(), currentMeta.toString(),
                                                   nextModel.version().toString(), nextMeta.toString(),
                                                   action));
@@ -149,7 +149,7 @@ public class VespaModelFactory implements ModelFactory {
         logReindexingReasons(changeActions, model, deployState.getPreviousModel());
         return new ModelCreateResult(model, changeActions);
     }
-    
+
     private void validateXml(ModelContext modelContext, boolean ignoreValidationErrors) {
         if (modelContext.appDir().isPresent()) {
             ApplicationPackageXmlFilesValidator validator =

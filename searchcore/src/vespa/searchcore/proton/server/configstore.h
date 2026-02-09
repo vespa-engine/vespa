@@ -43,6 +43,7 @@ struct ConfigStore : FeedConfigStore {
     virtual bool hasValidSerial(SerialNum serialNum) const = 0;
     virtual SerialNum getPrevValidSerial(SerialNum serialNum) const = 0;
     virtual void setProtonConfig(const ProtonConfigSP &protonConfig) = 0;
+    virtual uint64_t get_size_on_disk() const = 0;
 };
 
 }  // namespace proton

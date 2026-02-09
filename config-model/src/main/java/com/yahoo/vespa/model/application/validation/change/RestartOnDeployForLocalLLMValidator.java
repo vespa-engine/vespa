@@ -33,7 +33,7 @@ public class RestartOnDeployForLocalLLMValidator implements ChangeValidator {
 
         // Only restart services if we use a local LLM in both the next and previous generation
         for (var clusterId : intersect(previousClustersWithLocalLLM, nextClustersWithLocalLLM)) {
-            String message = "Need to restart services in %s due to use of local LLM".formatted(clusterId);
+            String message = String.format(java.util.Locale.ROOT, "Need to restart services in %s due to use of local LLM", clusterId);
             context.require(new VespaRestartAction(
                     clusterId,
                     message,

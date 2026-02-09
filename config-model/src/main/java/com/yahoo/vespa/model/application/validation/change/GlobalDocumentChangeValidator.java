@@ -35,7 +35,7 @@ public class GlobalDocumentChangeValidator implements ChangeValidator {
                 boolean nextIsGlobal = nextCluster.isGloballyDistributed(nextDocumentType);
                 boolean hosted = context.deployState().isHosted();
                 if (currentIsGlobal != nextIsGlobal) {
-                    String reason = "Document type %s in cluster %s changed global from %s to %s".formatted(documentTypeName, clusterName, currentIsGlobal, nextIsGlobal);
+                    String reason = String.format(java.util.Locale.ROOT, "Document type %s in cluster %s changed global from %s to %s", documentTypeName, clusterName, currentIsGlobal, nextIsGlobal);
                     if ( ! context.deployState().validationOverrides().allows(ValidationId.globalDocumentChange, context.deployState().now())) {
                         if (! hosted)
                             reason = reason + "To handle this change, first stop services on all content nodes. Then, deploy with validation override. Finally, start services on all content nodes";

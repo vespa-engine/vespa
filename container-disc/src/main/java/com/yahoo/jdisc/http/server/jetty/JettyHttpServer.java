@@ -12,6 +12,9 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.service.ServerProvider;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.metrics.simple.MetricSettings;
+import com.yahoo.text.Text;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -34,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,12 +59,18 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
 
     @Inject // ServerProvider implementors must use com.google.inject.Inject
     public JettyHttpServer(Metric metric,
+                           MetricReceiver metricReceiver,
                            ServerConfig serverConfig,
                            ComponentRegistry<ConnectorFactory> connectorFactories,
                            RequestLog requestLog,
                            ConnectionLog connectionLog) {
         if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
+
+        var histogramSettings = new MetricSettings.Builder().histogram(true).build();
+        metricReceiver.declareGauge(MetricDefinitions.TOTAL_SUCCESSFUL_LATENCY, Optional.empty(), histogramSettings);
+        metricReceiver.declareGauge(MetricDefinitions.TOTAL_FAILED_LATENCY, Optional.empty(), histogramSettings);
+        metricReceiver.declareGauge(MetricDefinitions.TIME_TO_FIRST_BYTE, Optional.empty(), histogramSettings);
 
         this.config = serverConfig;
         server = new Server();
@@ -152,7 +162,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         pool.setMaxThreads(maxThreads);
         int minThreads = config.minWorkerThreads() >= 0 ? config.minWorkerThreads() : 16 + cpus;
         pool.setMinThreads(minThreads);
-        log.info(String.format("Threadpool size: min=%d, max=%d", minThreads, maxThreads));
+        log.info(Text.format("Threadpool size: min=%d, max=%d", minThreads, maxThreads));
     }
 
     private static JMXServiceURL createJmxLoopbackOnlyServiceUrl(int port) {
@@ -191,7 +201,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
                 var sslContextFactory = sslConnectionFactory.getSslContextFactory();
                 String protocols = Arrays.toString(sslContextFactory.getSelectedProtocols());
                 String cipherSuites = Arrays.toString(sslContextFactory.getSelectedCipherSuites());
-                log.info(String.format("TLS for port '%d': %s with %s", localPort, protocols, cipherSuites));
+                log.info(Text.format("TLS for port '%d': %s with %s", localPort, protocols, cipherSuites));
             }
         }
     }
@@ -199,11 +209,11 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
     @Override
     public void close() {
         try {
-            log.log(Level.INFO, String.format("Shutting down Jetty server (graceful=%b, timeout=%.1fs)",
+            log.log(Level.INFO, Text.format("Shutting down Jetty server (graceful=%b, timeout=%.1fs)",
                     isGracefulShutdownEnabled(), server.getStopTimeout()/1000d));
             long start = System.currentTimeMillis();
             server.stop();
-            log.log(Level.INFO, String.format("Jetty server shutdown completed in %.3f seconds",
+            log.log(Level.INFO, Text.format("Jetty server shutdown completed in %.3f seconds",
                     (System.currentTimeMillis()-start)/1000D));
         } catch (final Exception e) {
             log.log(Level.SEVERE, "Jetty server shutdown threw an unexpected exception.", e);

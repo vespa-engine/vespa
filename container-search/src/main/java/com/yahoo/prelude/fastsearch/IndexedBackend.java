@@ -32,7 +32,6 @@ import java.util.Optional;
 // catch and unwrap into a results with an error in high level methods.  -Jon
 public class IndexedBackend extends VespaBackend {
 
-    /** Used to dispatch directly to search nodes over RPC, replacing the old fnet communication path */
     private final Dispatcher dispatcher;
 
     /**
@@ -44,14 +43,14 @@ public class IndexedBackend extends VespaBackend {
      *                   backend.
      * @param clusterParams the cluster number, and other cluster backend parameters
      */
-    public IndexedBackend(ClusterParams clusterParams, Dispatcher dispatcher)
-    {
+    public IndexedBackend(ClusterParams clusterParams, Dispatcher dispatcher) {
         super(clusterParams);
         this.dispatcher = dispatcher;
     }
 
     @Override
     protected void transformQuery(Query query) {
+        super.transformQuery(query);
         QueryRewrite.rewriteSddocname(query);
     }
 
@@ -68,7 +67,7 @@ public class IndexedBackend extends VespaBackend {
         if (dispatcher.allGroupsHaveSize1())
             forceSinglePassGrouping(query);
         try (SearchInvoker invoker = getSearchInvoker(query)) {
-            Result result = invoker.search(query);
+            Result result = invoker.search(query, 1.0);
             injectSource(result.hits());
 
             if (query.properties().getBoolean(Ranking.RANKFEATURES, false)) {
@@ -98,7 +97,7 @@ public class IndexedBackend extends VespaBackend {
      *
      * @param result result containing a partition of the unfilled hits
      * @param summaryClass the summary class we want to fill with
-     **/
+     */
     @Override
     protected void doPartialFill(Result result, String summaryClass) {
         if (result.isFilled(summaryClass)) return;

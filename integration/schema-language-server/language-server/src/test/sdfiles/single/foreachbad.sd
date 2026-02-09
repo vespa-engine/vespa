@@ -1,0 +1,10 @@
+schema foreachbad {
+    document foreachbad {
+    }
+
+    rank-profile profile {
+        first-phase {
+            expression: foreach(fields, fieldIt, term(fieldIt).significance, ">0", min)
+        }
+    }
+}

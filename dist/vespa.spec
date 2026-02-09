@@ -47,8 +47,12 @@
 %global _use_vespa_protobuf 1
 %global _use_vespa_openblas 1
 %if 0%{?fedora}
+%if %{fedora} > 43
+%global _vespa_java_version 25
+%else
 %if %{fedora} > 39
 %global _vespa_java_version 21
+%endif
 %endif
 %endif
 %if 0%{?el10} || 0%{?el9}
@@ -665,16 +669,13 @@ fi
 %{_prefix}/lib/jars/jackson-*.jar
 %{_prefix}/lib/jars/javax.*.jar
 %{_prefix}/lib/jars/jdisc_core-jar-with-dependencies.jar
-%{_prefix}/lib/jars/jdisc-security-filters-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jna-*.jar
 %{_prefix}/lib/jars/linguistics-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/lucene-linguistics-jar-with-dependencies.jar
-%{_prefix}/lib/jars/mcp-server-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-evaluation-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-integration-jar-with-dependencies.jar
 %{_prefix}/lib/jars/security-utils.jar
 %{_prefix}/lib/jars/standalone-container-jar-with-dependencies.jar
-%{_prefix}/lib/jars/vespa-athenz-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespaclient-container-plugin-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespajlib.jar
 %{_prefix}/lib/jars/zkfacade-jar-with-dependencies.jar

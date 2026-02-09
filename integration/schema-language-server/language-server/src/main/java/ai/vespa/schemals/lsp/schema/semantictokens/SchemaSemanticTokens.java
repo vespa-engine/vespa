@@ -235,7 +235,7 @@ public class SchemaSemanticTokens {
                 ret.add(tokenMarker);
             }
 
-        } else if (symbol.getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
+        } else if (symbol.getStatus() == SymbolStatus.BUILTIN_REFERENCE || symbol.getType() == SymbolType.FOREACH) {
             SymbolType type = symbol.getType();
             Integer tokenType = identifierTypeMap.get(type);
 

@@ -16,6 +16,7 @@
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/reprocess_documents_task.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 
@@ -29,6 +30,7 @@ using search::attribute::ImportedAttributeVector;
 using search::index::Schema;
 using proton::initializer::InitializerTask;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::ResourceUsage;
 
 namespace proton {
 
@@ -344,11 +346,11 @@ FastAccessDocSubDB::getNewestFlushedSerial()
     return highest;
 }
 
-TransientResourceUsage
-FastAccessDocSubDB::get_transient_resource_usage() const
+ResourceUsage
+FastAccessDocSubDB::get_resource_usage() const
 {
-    auto result = StoreOnlyDocSubDB::get_transient_resource_usage();
-    result.merge(getAttributeManager()->get_transient_resource_usage());
+    auto result = StoreOnlyDocSubDB::get_resource_usage();
+    result.merge(getAttributeManager()->get_resource_usage());
     return result;
 }
 

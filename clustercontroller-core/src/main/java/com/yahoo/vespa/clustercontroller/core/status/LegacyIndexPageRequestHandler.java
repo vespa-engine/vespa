@@ -5,6 +5,7 @@ import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateHistoryEntry;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
@@ -93,6 +94,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         }
         // State of master election
         masterElectionHandler.writeHtmlState(content);
+        writeOrchestrationGeneration(content);
         // Overview of current config
         writeHtmlState(content, options);
         // Event log
@@ -115,7 +117,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             TimeZone tz = TimeZone.getTimeZone("UTC");
             sb.append("<h3 id=\"clusterstatehistory\">Cluster state history</h3>\n");
             sb.append("<table border=\"1\" cellspacing=\"0\"><tr>\n")
-              .append("  <th>Creation date (").append(tz.getDisplayName(false, TimeZone.SHORT)).append(")</th>\n")
+              .append("  <th>Creation date (").append(tz.getDisplayName(false, TimeZone.SHORT, Locale.ROOT)).append(")</th>\n")
               .append("  <th>Bucket space</th>\n")
               .append("  <th>Cluster state</th>\n")
               .append("</tr>\n");
@@ -125,6 +127,12 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             }
             sb.append("</table>\n");
         }
+    }
+
+    private void writeOrchestrationGeneration(StringBuilder sb) {
+        sb.append("<p>Internal orchestration generation: ")
+          .append(cluster.orchestrationGeneration())
+          .append("</p>\n");
     }
 
     private static void writeClusterStates(StringBuilder sb, ClusterStateBundle clusterStates) {
@@ -223,7 +231,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
     private static void renderClusterFeedBlockIfPresent(ClusterStateBundle state, VdsClusterHtmlRenderer.Table table) {
         if (state.clusterFeedIsBlocked()) { // Implies FeedBlock != null
             table.appendRaw("<h3 style=\"color: red\">Cluster feeding is blocked!</h3>\n");
-            table.appendRaw(String.format("<p>Summary: <strong>%s</strong></p>\n",
+            table.appendRaw(Text.format("<p>Summary: <strong>%s</strong></p>\n",
                                           escaped(state.getFeedBlockOrNull().getDescription())));
         }
     }
@@ -246,7 +254,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         if (!hasMaintenance && outOfSync.get() == 0.0) {
             table.appendRaw("<p>Cluster is currently in sync.</p>\n");
         } else {
-            table.appendRaw("<p>Cluster is currently <strong>%.2f%% out of sync</strong>.</p>\n".formatted(outOfSync.get() * 100.0));
+            table.appendRaw(Text.format("<p>Cluster is currently <strong>%.2f%% out of sync</strong>.</p>\n", outOfSync.get() * 100.0));
             if (hasMaintenance) {
                 // It is intentional that a cluster with no pending buckets but with nodes in maintenance mode rather
                 // emits "0% out of sync" with a caveat rather than "in sync", as we don't know the latter for sure.
@@ -323,7 +331,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
           .append(options.clusterFeedBlockEnabled()).append("</td></tr>");
         sb.append("<tr><td><nobr>Feed block limits</nobr></td><td align=\"right\">")
           .append(options.clusterFeedBlockLimit().entrySet().stream()
-                                       .map(kv -> String.format("%s: %.2f%%", escaped(kv.getKey()), kv.getValue() * 100.0))
+                                       .map(kv -> Text.format("%s: %.2f%%", escaped(kv.getKey()), kv.getValue() * 100.0))
                                        .sorted()
                                        .collect(Collectors.joining("<br/>"))).append("</td></tr>");
         sb.append("<tr><td><nobr>Feed block noise level (low watermark limit will be feed block limit minus this value)</nobr></td><td align=\"right\">")

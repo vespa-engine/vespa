@@ -18,6 +18,7 @@ import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import java.util.Locale;
 import com.yahoo.tensor.TensorType;
 import java.util.Iterator;
 import java.util.function.Function;
@@ -544,7 +545,7 @@ public class JsonFormat {
     }
 
     public static double decodeNumberString(String input) {
-        String s = input.toLowerCase();
+        String s = input.toLowerCase(Locale.ROOT);
         if (s.equals("infinity") || s.equals("+infinity") || s.equals("inf") || s.equals("+inf")) {
             return Double.POSITIVE_INFINITY;
         }

@@ -34,7 +34,7 @@ public class ProtobufSerializationTest {
                 .setRequest("?query=test&ranking.features.query(tensor_1)=[1.200]")
                 .build();
 
-        SearchProtocol.SearchRequest request1 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 0.5, new QrSearchersConfig.Builder().build());
+        SearchProtocol.SearchRequest request1 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
         assertEquals(9, request1.getHits());
         assertEquals(0, request1.getRankPropertiesCount());
         assertEquals(0, request1.getTensorRankPropertiesCount());
@@ -47,7 +47,7 @@ public class ProtobufSerializationTest {
         assertFalse(request1.hasProfiling());
 
         query.prepare(); // calling prepare() moves "overrides" to "features" - content stays the same
-        SearchProtocol.SearchRequest request2 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 0.5, new QrSearchersConfig.Builder().build());
+        SearchProtocol.SearchRequest request2 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
         assertEquals(9, request2.getHits());
         assertEquals(0, request2.getRankPropertiesCount());
         assertEquals(2, request2.getTensorRankPropertiesCount());
@@ -144,7 +144,7 @@ public class ProtobufSerializationTest {
                 "trace.profiling.matching.depth=3&" +
                 "trace.profiling.firstPhaseRanking.depth=5&" +
                 "trace.profiling.secondPhaseRanking.depth=-7");
-        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 0.5, new QrSearchersConfig.Builder().build());
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
         assertEquals(3, req.getProfiling().getMatch().getDepth());
         assertEquals(5, req.getProfiling().getFirstPhase().getDepth());
         assertEquals(-7, req.getProfiling().getSecondPhase().getDepth());
@@ -154,7 +154,7 @@ public class ProtobufSerializationTest {
     void only_set_profiling_parameters_are_serialized_in_search_request() {
         var q = new Query("?query=test&trace.level=1&" +
                 "trace.profiling.matching.depth=3");
-        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 0.5, new QrSearchersConfig.Builder().build());
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
         assertEquals(3, req.getProfiling().getMatch().getDepth());
         assertFalse(req.getProfiling().hasFirstPhase());
         assertFalse(req.getProfiling().hasSecondPhase());

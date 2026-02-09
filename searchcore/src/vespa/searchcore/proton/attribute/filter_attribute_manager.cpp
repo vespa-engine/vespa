@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filter_attribute_manager.h"
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -9,6 +10,7 @@
 
 using search::AttributeGuard;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::ResourceUsage;
 
 namespace proton {
 
@@ -249,6 +251,12 @@ FilterAttributeManager::readable_attribute_vector(std::string_view name) const
     if (acceptAttribute(name)) {
         return _mgr->readable_attribute_vector(name);
     }
+    return {};
+}
+
+ResourceUsage
+FilterAttributeManager::get_resource_usage() const
+{
     return {};
 }
 

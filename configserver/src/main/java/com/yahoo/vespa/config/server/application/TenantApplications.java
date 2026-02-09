@@ -84,7 +84,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
                               ConfigserverConfig configserverConfig, HostRegistry hostRegistry,
                               TenantFileSystemDirs tenantFileSystemDirs, Clock clock, FlagSource flagSource) {
         this.curator = curator;
-        this.database = new ApplicationCuratorDatabase(tenant, curator);
+        this.database = new ApplicationCuratorDatabase(tenant, curator, configserverConfig);
         this.tenant = tenant;
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
         this.directoryCache = database.createApplicationsPathCache(zkCacheExecutor);

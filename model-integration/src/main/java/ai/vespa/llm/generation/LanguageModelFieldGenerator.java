@@ -18,6 +18,7 @@ import com.yahoo.language.process.FieldGenerator;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -52,7 +53,7 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
             Path path = config.promptTemplateFile().get();
 
             try {
-                String promptTemplate = new String(Files.readAllBytes(path));
+                String promptTemplate = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
 
                 if (promptTemplate.isEmpty()) {
                     throw new IllegalArgumentException("Prompt template file is empty: " + path);

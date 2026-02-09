@@ -202,7 +202,7 @@ public class TensorDataSourceTestCase {
             } else {
                 // All other patterns support all cell types
                 for (TensorType.Value cellType : cellTypes) {
-                    String cellTypeSuffix = "_" + cellType.toString().toLowerCase();
+                    String cellTypeSuffix = "_" + cellType.toString().toLowerCase(java.util.Locale.ROOT);
                     TensorType type = new TensorType(cellType, pattern.dimensions);
                     Tensor sampleTensor = createSampleTensor(type, pattern.dimensions);
 

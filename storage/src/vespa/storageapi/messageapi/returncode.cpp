@@ -62,6 +62,7 @@ ReturnCode::isBusy() const
         case mbus::ErrorCode::SESSION_BUSY:
         case mbus::ErrorCode::TIMEOUT:
         case Protocol::ERROR_BUSY:
+        case Protocol::ERROR_OVERLOAD:
             return true;
         default:
             return false;
@@ -112,13 +113,16 @@ ReturnCode::isCriticalForMaintenance() const
 bool
 ReturnCode::isCriticalForVisitor() const
 {
+    if (_result == static_cast<uint32_t>(Protocol::ERROR_OVERLOAD)) {
+        return false;
+    }
     return isCriticalForMaintenance();
 }
 
 bool
 ReturnCode::isCriticalForVisitorDispatcher() const
 {
-    return isCriticalForMaintenance();
+    return isCriticalForVisitor();
 }
 
 bool

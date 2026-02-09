@@ -120,6 +120,7 @@ import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
 import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
+import static com.yahoo.search.yql.YqlParser.TOTAL_TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
 import static com.yahoo.search.yql.YqlParser.USE_POSITION_DATA;
@@ -482,10 +483,13 @@ public class SelectParser implements Parser {
         if (annotations != null){
             annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
                 if (TARGET_HITS.equals(annotation_name)){
-                    item.setTargetNumHits((int)(annotation_value.asDouble()));
+                    item.setTargetHits((int)(annotation_value.asDouble()));
                 }
                 if (TARGET_NUM_HITS.equals(annotation_name)){
-                    item.setTargetNumHits((int)(annotation_value.asDouble()));
+                    item.setTargetHits((int)(annotation_value.asDouble()));
+                }
+                if (TOTAL_TARGET_HITS.equals(annotation_name)){
+                    item.setTotalTargetHits((int)(annotation_value.asDouble()));
                 }
                 if (DISTANCE_THRESHOLD.equals(annotation_name)) {
                     double distanceThreshold = annotation_value.asDouble();
@@ -1010,10 +1014,16 @@ public class SelectParser implements Parser {
         }
 
         prepareWord(field, node, wordItem);
-        if (language != Language.ENGLISH)
+        // Mark the language used if it was explicitly set or is not the default
+        if (hasExplicitLanguageAnnotation(node) || language != Language.ENGLISH)
             wordItem.setLanguage(language);
 
         return leafStyleSettings(getAnnotations(node), wordItem);
+    }
+
+    /** Returns whether the language annotation is explicitly set on the given node. */
+    private boolean hasExplicitLanguageAnnotation(Inspector value) {
+        return getAnnotation(USER_INPUT_LANGUAGE, getAnnotationMap(value), String.class, null) != null;
     }
 
     private Language decideParsingLanguage(Inspector value, String wordData) {

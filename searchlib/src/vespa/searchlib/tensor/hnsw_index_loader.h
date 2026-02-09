@@ -39,6 +39,10 @@ private:
         return _reader->readHostOrder();
     }
 
+    void next_N_ints(uint32_t* buf, size_t n) {
+        _reader->readNHostOrder(buf, n);
+    }
+
 public:
     HnswIndexLoader(HnswGraph<type>& graph, IdMapping& id_mapping, std::unique_ptr<ReaderType> reader);
     virtual ~HnswIndexLoader();

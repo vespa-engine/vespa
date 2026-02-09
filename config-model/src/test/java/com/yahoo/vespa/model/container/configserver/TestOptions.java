@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.configserver;
 
 import com.yahoo.vespa.model.container.configserver.option.ConfigOptions;
 
+import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -18,6 +19,7 @@ public class TestOptions implements ConfigOptions {
     private Optional<Boolean> useVespaVersionInRequest = Optional.empty();
     private Optional<Boolean> hostedVespa = Optional.empty();
     private static final String zooKeeperSnapshotMethod = "gz";
+    private Optional<Duration> applicationLockTimeoutSeconds = Optional.empty();
 
     @Override
     public Optional<Integer> rpcPort() {
@@ -53,9 +55,10 @@ public class TestOptions implements ConfigOptions {
     }
 
     @Override
-    public Optional<Long> zookeeperBarrierTimeout() {
-        return Optional.empty();
-    }
+    public Optional<Duration> zookeeperBarrierTimeout() { return Optional.empty(); }
+
+    @Override
+    public Optional<Duration> applicationLockTimeoutSeconds() { return applicationLockTimeoutSeconds; }
 
     @Override
     public Optional<String> environment() { return environment; }
@@ -99,5 +102,11 @@ public class TestOptions implements ConfigOptions {
         this.hostedVespa = Optional.of(hostedVespa);
         return this;
     }
+
+    public TestOptions applicationLockTimeoutSeconds(long timeout) {
+        this.applicationLockTimeoutSeconds = Optional.of(Duration.ofSeconds(timeout));
+        return this;
+    }
+
 
 }

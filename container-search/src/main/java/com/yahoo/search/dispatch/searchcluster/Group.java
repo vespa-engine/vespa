@@ -45,6 +45,9 @@ public class Group {
      */
     public int id() { return id; }
 
+    /** Returns the number of nodes in this. */
+    public int size() { return nodes.size(); }
+
     /** Returns the nodes in this group as an immutable list */
     public List<Node> nodes() { return nodes; }
 
@@ -68,6 +71,7 @@ public class Group {
         return workingNodes().size();
     }
 
+    /** Called every time, and only when, we have received a ping response from every node in the group. */
     public void aggregateNodeValues() {
         List<Node> workingNodes = workingNodes();
         long activeDocs = calculateActiveDocs(workingNodes);
@@ -97,10 +101,16 @@ public class Group {
                            .sum();
     }
 
-    /** Returns the active documents on this group. If unknown, 0 is returned. */
+    /**
+     * Returns the active documents in this group.
+     * If we have not yet received this information from <i>all</i> nodes in the group, 0 is returned.
+     */
     public long activeDocuments() { return activeDocuments; }
 
-    /** Returns the target active documents on this group. If unknown, 0 is returned. */
+    /**
+     * Returns the target active documents in this group.
+     * If we have not yet received this information from <i>all</i> nodes in the group, 0 is returned.
+     */
     long targetActiveDocuments() { return targetActiveDocuments; }
 
     /** Returns whether the nodes in the group have about the same number of documents */

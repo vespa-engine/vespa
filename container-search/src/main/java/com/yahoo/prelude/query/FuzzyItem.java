@@ -140,16 +140,16 @@ public class FuzzyItem extends TermItem {
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
         // Prefix matching is communicated via term header flags
-        super.encodeThis(buffer);
+        super.encodeThis(buffer, context);
         putString(getIndexedString(), buffer);
         IntegerCompressor.putCompressedPositiveNumber(this.maxEditDistance, buffer);
         IntegerCompressor.putCompressedPositiveNumber(this.prefixLength, buffer);
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemFuzzy.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         builder.setWord(term);

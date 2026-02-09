@@ -5,6 +5,8 @@ import com.yahoo.vespa.clustercontroller.core.ClusterEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+import java.util.Locale;
+
 public class ClusterEventWithDescription extends BaseMatcher<ClusterEvent> {
     private final String expected;
 
@@ -22,7 +24,7 @@ public class ClusterEventWithDescription extends BaseMatcher<ClusterEvent> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format("ClusterEvent with description '%s'", expected));
+        description.appendText(String.format(Locale.ROOT, "ClusterEvent with description '%s'", expected));
     }
 
     @Override
@@ -31,7 +33,7 @@ public class ClusterEventWithDescription extends BaseMatcher<ClusterEvent> {
             return;
         }
         ClusterEvent other = (ClusterEvent)item;
-        description.appendText(String.format("got description '%s'", other.getDescription()));
+        description.appendText(String.format(Locale.ROOT, "got description '%s'", other.getDescription()));
     }
 
     public static ClusterEventWithDescription clusterEventWithDescription(String description) {

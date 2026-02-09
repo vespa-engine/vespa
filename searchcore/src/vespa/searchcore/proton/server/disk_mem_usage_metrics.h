@@ -16,6 +16,8 @@ class DiskMemUsageMetrics
     double _total_disk_utilization;
     double _transient_disk_usage;
     double _non_transient_disk_usage;
+    double _reserved_disk_space;
+    double _non_transient_disk_usage_and_reserved_disk_space;
     double _total_memory_usage;
     double _total_memory_utilization;
     double _transient_memory_usage;
@@ -29,6 +31,10 @@ public:
     double total_disk_utilization() const noexcept { return _total_disk_utilization; }
     double transient_disk_usage() const noexcept { return _transient_disk_usage; }
     double non_transient_disk_usage() const noexcept { return _non_transient_disk_usage; }
+    double reserved_disk_space() const noexcept { return _reserved_disk_space; }
+    double non_transient_disk_usage_and_reserved_disk_space() const noexcept {
+        return _non_transient_disk_usage_and_reserved_disk_space;
+    }
     double total_memory_usage() const noexcept { return _total_memory_usage; }
     double total_memory_utilization() const noexcept { return _total_memory_utilization; }
     double transient_memory_usage() const noexcept { return _transient_memory_usage; }

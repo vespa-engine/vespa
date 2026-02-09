@@ -1,6 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.BufferOverflowException;
@@ -558,4 +562,65 @@ public final class Utf8 {
         }
     }
 
+    /**
+     * Create a FileReader for reading text files using UTF-8 encoding.
+     *
+     * @param file the file to be opened for reading
+     * @return a FileReader configured to use UTF-8 charset
+     * @throws FileNotFoundException if the file does not exist, is a directory
+     *         rather than a regular file, or cannot be opened for reading
+     */
+    public static FileReader createReader(File file) throws FileNotFoundException {
+        try {
+            return new FileReader(file, UTF_8);
+        } catch (FileNotFoundException ex) {
+            throw ex;
+        } catch (IOException ex) {
+            throw new FileNotFoundException(ex.getMessage());
+        }
+    }
+
+    /**
+     * Create a FileReader for reading text files using UTF-8 encoding.
+     *
+     * @param file the name of the file to be opened for reading
+     * @return a FileReader configured to use UTF-8 charset
+     * @throws FileNotFoundException if the named file does not exist, is a directory
+     *         rather than a regular file, or cannot be opened for reading
+     */
+    public static FileReader createReader(String file) throws FileNotFoundException {
+        try {
+            return new FileReader(file, UTF_8);
+        } catch (FileNotFoundException ex) {
+            throw ex;
+        } catch (IOException ex) {
+            throw new FileNotFoundException(ex.getMessage());
+        }
+    }
+
+    /**
+     * Create a FileWriter for writing text files using UTF-8 encoding.
+     *
+     * @param file the file to be opened for writing
+     * @return a FileWriter configured to use UTF-8 charset
+     * @throws IOException if the file exists but is a directory rather than
+     *         a regular file, does not exist but cannot be created, or cannot
+     *         be opened for any other reason
+     */
+    public static FileWriter createWriter(File file) throws IOException {
+        return new FileWriter(file, UTF_8);
+    }
+
+    /**
+     * Create a FileWriter for writing text files using UTF-8 encoding.
+     *
+     * @param file the name of the file to be opened for writing
+     * @return a FileWriter configured to use UTF-8 charset
+     * @throws IOException if the named file exists but is a directory rather than
+     *         a regular file, does not exist but cannot be created, or cannot
+     *         be opened for any other reason
+     */
+    public static FileWriter createWriter(String file) throws IOException {
+        return new FileWriter(file, UTF_8);
+    }
 }

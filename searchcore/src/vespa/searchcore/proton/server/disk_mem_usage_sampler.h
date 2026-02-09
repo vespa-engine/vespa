@@ -6,29 +6,37 @@
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 
+namespace searchcorespi::common {
+
+class IResourceUsageProvider;
+class ResourceUsage;
+
+}
+
 namespace vespalib { class IDestructorCallback; }
 
 namespace proton {
 
-class ITransientResourceUsageProvider;
+class IReservedDiskSpaceProvider;
 
 /*
  * Class to sample disk and memory usage used for filtering write operations.
  */
 class DiskMemUsageSampler {
-    ResourceUsageWriteFilter& _filter;
-    ResourceUsageNotifier&    _notifier;
-    std::filesystem::path     _path;
-    vespalib::duration        _sampleInterval;
-    vespalib::steady_time     _lastSampleTime;
-    std::mutex                _lock;
-    std::vector<std::shared_ptr<const ITransientResourceUsageProvider>> _transient_usage_providers;
+    ResourceUsageWriteFilter&         _filter;
+    ResourceUsageNotifier&            _notifier;
+    const IReservedDiskSpaceProvider& _reserved_disk_space_provider;
+    std::filesystem::path             _path;
+    vespalib::duration                _sampleInterval;
+    vespalib::steady_time             _lastSampleTime;
+    std::mutex                        _lock;
+    std::vector<std::shared_ptr<const searchcorespi::common::IResourceUsageProvider>> _resource_usage_providers;
     std::unique_ptr<vespalib::IDestructorCallback> _periodicHandle;
 
     void sampleAndReportUsage();
     uint64_t sampleDiskUsage();
     vespalib::ProcessMemoryStats sampleMemoryUsage();
-    TransientResourceUsage sample_transient_resource_usage();
+    searchcorespi::common::ResourceUsage sample_resource_usage();
     [[nodiscard]] bool timeToSampleAgain() const noexcept;
 public:
     struct Config {
@@ -54,14 +62,15 @@ public:
     };
 
     DiskMemUsageSampler(const std::string &path_in, ResourceUsageWriteFilter& filter,
-                        ResourceUsageNotifier& resource_usage_notifier);
+                        ResourceUsageNotifier& resource_usage_notifier,
+                        const IReservedDiskSpaceProvider& reserved_disk_space_provider);
     ~DiskMemUsageSampler();
     void close();
 
     void setConfig(const Config &config, IScheduledExecutor & executor);
 
-    void add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
-    void remove_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
+    void add_resource_usage_provider(std::shared_ptr<const searchcorespi::common::IResourceUsageProvider> provider);
+    void remove_resource_usage_provider(std::shared_ptr<const searchcorespi::common::IResourceUsageProvider> provider);
 };
 
 } // namespace proton

@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Set;
@@ -44,7 +45,7 @@ public class JavaClassBuilder implements ClassBuilder {
     public void createConfigClasses() {
         try {
             File outFile = new File(getDestPath(destDir, javaPackage), className + ".java");
-            try (PrintStream out = new PrintStream(new FileOutputStream(outFile))) {
+            try (PrintStream out = new PrintStream(new FileOutputStream(outFile), false, StandardCharsets.UTF_8)) {
                 out.print(getConfigClass(className));
             }
         } catch (FileNotFoundException e) {

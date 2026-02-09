@@ -33,12 +33,12 @@ public interface Transaction extends AutoCloseable {
 
     /**
      * Returns the operations of this.
-     * Ownership of the returned list is transferred to the caller. The ist may be ready only.
+     * Ownership of the returned list is transferred to the caller. The list may be read-only.
      */
     List<Operation> operations();
 
     /**
-     * Checks whether or not the transaction is able to commit in its current state and do any transient preparatory
+     * Checks whether the transaction is able to commit in its current state and do any transient preparatory
      * work to commit.
      *
      * @throws IllegalStateException if the transaction cannot be committed

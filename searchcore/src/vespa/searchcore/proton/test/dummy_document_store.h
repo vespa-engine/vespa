@@ -32,6 +32,7 @@ struct DummyDocumentStore : public search::IDocumentStore
     size_t memoryUsed() const override { return 0; }
     size_t memoryMeta() const override { return 0; }
     size_t getDiskFootprint() const override { return 0; }
+    uint64_t get_size_on_disk() const override { return 0; }
     size_t getDiskBloat() const override { return 0; }
     size_t getMaxSpreadAsBloat() const override { return getDiskBloat(); }
     vespalib::CacheStats getCacheStats() const override { return vespalib::CacheStats(); }
@@ -45,7 +46,7 @@ struct DummyDocumentStore : public search::IDocumentStore
 
     double getVisitCost() const override { return 1.0; }
     search::DataStoreStorageStats getStorageStats() const override {
-        return search::DataStoreStorageStats(0, 0, 0.0, 0, 0, 0);
+        return search::DataStoreStorageStats(0, 0, 0, 0.0, 0, 0, 0);
     }
     vespalib::MemoryUsage getMemoryUsage() const override { return vespalib::MemoryUsage(); }
     std::vector<search::DataStoreFileChunkStats> getFileChunkStats() const override {

@@ -217,17 +217,26 @@ public class StemmingSearcherTestCase {
         var indexModel = new IndexModel(schema);
         var mockLinguistics = new MockLinguistics();
 
+        // Assign profile=p1 by schema
         var yql = "select * from sources * where userInput(@query)";
         var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("hello"));
         search(mockLinguistics, indexModel, query);
         assertEquals("p1", mockLinguistics.lastLinguisticsProfile);
 
+        // Assign profile=p2 by model.type
         yql = "select * from sources * where userInput(@query)";
         query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("hello") +
-                          "&model.type.profile=p2");
+                          "&model.type.profile=p2&model.type.isYqlDefault");
         search(mockLinguistics, indexModel, query);
         assertEquals("p2", mockLinguistics.lastLinguisticsProfile,
                      "Query setting overrides profile from schema");
+
+        // Assign profile=p3 by grammar.type
+        yql = "select * from sources * where {grammar.profile:'p3'}userInput(@query)";
+        query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("hello"));
+        search(mockLinguistics, indexModel, query);
+        assertEquals("p3", mockLinguistics.lastLinguisticsProfile,
+                     "YQL grammar setting overrides profile from schema");
     }
 
     private Result search(Linguistics linguistics, IndexModel indexModel, Query query) {
@@ -263,6 +272,157 @@ public class StemmingSearcherTestCase {
         Query query = new Query(QueryTestCase.httpEncode(queryString));
         executeStemming(query);
         assertEquals(expectedQueryTree, query.getModel().getQueryTree().getRoot().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageFrenchFirstEnglishSecond() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'en', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // French stems "machine" to "machin", English keeps "machine"
+        assertEquals("OR default:machin default:machine", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageThreeLanguages() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where " +
+                  "({language: 'de', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'en', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machines"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        var tree = query.getModel().getQueryTree().toString();
+        // Each branch should be stemmed independently; at minimum FR and EN should differ
+        // German: "machines" -> "machin", French: "machines" -> "machin", English: "machines" -> "machine"
+        assertTrue(tree.startsWith("OR "), "Expected OR with three branches: " + tree);
+        assertTrue(tree.contains("default:machine"), "Expected English stem 'machine' in: " + tree);
+    }
+
+    @Test
+    void testPerClauseLanguageEnglishFirstFrenchSecond() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where " +
+                  "({language: 'en', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // English keeps "machine", French stems to "machin"
+        assertEquals("OR default:machine default:machin", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageSingleFrench() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where ({language: 'fr', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        assertEquals("default:machin", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageNoAnnotation() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where ({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // No language annotation: defaults to English, "machine" stays "machine"
+        assertEquals("default:machine", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageQueryLevelGerman() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where ({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("machine") +
+                              "&language=de");
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // Query-level language=de: stems in German
+        assertEquals("default:machin", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageOneBranchExplicitOneDefault() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // French branch stems to "machin", default branch uses query-level language (French, set by first userInput)
+        // Both branches get French stemming since the model language becomes French from first userInput
+        assertEquals("OR default:machin default:machin", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageSameLanguageBothBranches() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        assertEquals("OR default:machin default:machin", query.getModel().getQueryTree().toString());
     }
 
     private static class MockLinguistics extends SimpleLinguistics {

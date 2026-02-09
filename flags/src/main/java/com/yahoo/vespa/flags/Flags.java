@@ -53,21 +53,29 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2026-02-10",
+            List.of("hakonhall"), "2025-03-19", "2026-04-10",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
+    public static final UnboundLongFlag DELETE_IDLE_TENANT_SECONDS = defineLongFlag(
+            "delete-idle-tenant-seconds", -1,
+            List.of("hakonhall"), "2026-02-03", "2026-04-03",
+            "If >=0, then (A) the last deploy time is not updated on config server bootstrap, " +
+            "and (B) an idle tenant will be deleted after this many seconds (default 604800 = 1 week).",
+            "(A) takes effect on cfg bootstrap, (B) on next tick of TenantsMaintainer",
+            TENANT_ID);
+
     public static final UnboundBooleanFlag SOFT_DELETE_TENANT = defineFeatureFlag(
             "soft-delete-tenant", false,
-            List.of("hakonhall"), "2026-01-20", "2026-03-20",
+            List.of("hakonhall"), "2026-01-20", "2026-04-20",
             "When deleting /config/v2/tenants/TENANT recursively - whether to give up (true) or retry (false) on NotEmptyException",
             "Takes effect immediately",
             TENANT_ID);
 
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
             "locked-gcp-provision", true,
-            List.of("hakonhall"), "2025-08-05", "2026-02-15",
+            List.of("hakonhall"), "2025-08-05", "2026-04-15",
             "Whether to provision GCP hosts under the application- and unallocated- locks, even though it takes ~1m.",
             "Takes effect on next host being provisioned");
 
@@ -144,20 +152,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    // Do not use. Removing
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2026-02-01",
+            List.of("olaa"), "2022-09-23", "2026-03-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             TENANT_ID, APPLICATION, INSTANCE_ID);
-
-    public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
-            "otelcol-logs", List.of(), String.class,
-            List.of("olaa"), "2024-01-15", "2026-02-01",
-            "Determines log files handled by the OpenTelemetry collector",
-            "Takes effect at next tick",
-            TENANT_ID, APPLICATION, INSTANCE_ID
-    );
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
@@ -168,46 +169,46 @@ public class Flags {
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
             "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2026-02-01",
+            List.of("hmusum"), "2023-12-15", "2026-06-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
             "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2026-02-01",
+            List.of("hmusum"), "2023-05-16", "2026-06-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2026-03-01",
+            List.of("hmusum"), "2023-07-19", "2026-06-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2026-03-01",
+            List.of("hmusum"), "2023-07-19", "2026-06-01",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2026-02-01",
+            List.of("andreer"), "2023-08-21", "2026-03-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2026-02-01",
+            List.of("andreer"), "2023-08-28", "2026-03-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2026-02-01",
+            List.of("andreer"), "2023-08-28", "2026-03-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
@@ -229,28 +230,28 @@ public class Flags {
 
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
-            List.of("johsol"), "2025-10-17", "2026-02-01",
+            List.of("johsol"), "2025-10-17", "2026-03-01",
             "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
             "Takes effect at redeployment",
             APPLICATION);
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("andreer", "olaa"), "2023-10-06", "2026-02-01",
+            List.of("andreer", "olaa"), "2023-10-06", "2026-05-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2026-02-01",
+            List.of("olaa"), "2024-04-03", "2026-05-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
-            List.of("arnej"), "2023-07-26", "2026-02-01",
+            List.of("arnej"), "2023-07-26", "2027-01-01",
             "If true, force legacy mode for weakAnd query parsing",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -270,15 +271,15 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
-            "monitoring-jwt", false,
-            List.of("olaa"), "2024-07-05", "2026-02-01",
+            "monitoring-jwt", true,
+            List.of("olaa"), "2024-07-05", "2026-05-01",
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
-            List.of("olaa"), "2024-10-22", "2026-02-01",
+            List.of("olaa"), "2024-10-22", "2026-05-01",
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
 
@@ -291,14 +292,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
             "enforce-email-domain-sso", false,
-            List.of("eirik"), "2024-11-07", "2026-02-01",
+            List.of("eirik"), "2024-11-07", "2026-05-01",
             "Enforce SSO login for an email domain",
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
     public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
             "restrict-users-to-domain", List.of(), String.class,
-            List.of("eirik"), "2024-11-07", "2026-02-01",
+            List.of("eirik"), "2024-11-07", "2026-05-01",
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
@@ -321,7 +322,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB = defineIntFlag(
             "max-document-operation-request-size-mib", 2048,
-            List.of("glebashnik"), "2025-09-04", "2026-02-01",
+            List.of("glebashnik"), "2025-09-04", "2026-06-01",
             "Sets the maximum size in MiB of a document operation request (POST or PUT). " +
             "This is the size of a serialized request, which can be several times larger than " +
             "the content of the document, especially for tensors in JSON." +
@@ -331,17 +332,9 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
-            "defer-os-upgrade", false,
-            List.of("olaa"), "2025-04-09", "2026-02-01",
-            "Whether OS upgrade should be deferred",
-            "Takes effect immediately",
-            CLOUD_ACCOUNT
-    );
-
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2026-02-01",
+            List.of("glebashnik"), "2025-04-25", "2026-03-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             __ -> true,
@@ -350,18 +343,10 @@ public class Flags {
 
     public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
             "create-tenant-roles", true,
-            List.of("andreer"), "2025-04-28", "2026-02-01",
+            List.of("andreer"), "2025-04-28", "2026-03-01",
             "Whether to create tenant specific roles",
             "Takes effect immediately",
             TENANT_ID
-    );
-
-    public static final UnboundBooleanFlag CONSOLE_DATA_PLANE_ACCESS = defineFeatureFlag(
-            "console-data-plane-access", false,
-            List.of("laura"), "2025-08-15", "2026-02-01",
-            "Temporary flag to enable console data plane access for testing purposes. Can be removed when full feature goes live",
-            "Takes effect immediately",
-            TENANT_ID, CONSOLE_USER_EMAIL
     );
 
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
@@ -373,7 +358,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
             "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2026-02-01",
+            List.of("andreer"), "2025-05-05", "2026-03-01",
             "Whether to delete tenant specific roles",
             "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
             TENANT_ID
@@ -381,7 +366,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
             "use-new-prepare-for-restart-method", true,
-            List.of("hmusum"), "2025-06-17", "2026-02-01",
+            List.of("hmusum"), "2025-06-17", "2026-03-01",
             "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
             "Takes effect at next tick",
             HOSTNAME
@@ -389,14 +374,14 @@ public class Flags {
 
     public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
             "search-core-max-outstanding-move-ops", 100,
-            List.of("hmusum"), "2025-07-09", "2026-02-01",
+            List.of("hmusum"), "2025-07-09", "2026-06-01",
             "The max outstanding move operations a maintenance job can have before being blocked.",
             "Takes effect at next deployment of the application",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_VESPA_NODE_CTL = defineFeatureFlag(
             "use-vespa-node-ctl", true,
-            List.of("hmusum"), "2025-08-12", "2026-02-01",
+            List.of("hmusum"), "2025-08-12", "2026-06-01",
             "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
             "or do this directly from host-admin.",
             "Takes effect at next tick",
@@ -410,14 +395,6 @@ public class Flags {
                     "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
             "Takes effect at next reboot of the node",
             TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
-    );
-
-    public static final UnboundBooleanFlag ADJUST_JVM_HEAP_FOR_CC_BASED_ON_CONTENT_NODE_COUNT = defineFeatureFlag(
-            "adjust-jvm-heap-for-cc-based-on-content-node-count", true,
-            List.of("hmusum"), "2025-11-04", "2026-02-04",
-            "Whether to increase max JVM heap size based on total number of content nodes in application",
-            "Takes effect at next restart after next deployment",
-            APPLICATION, INSTANCE_ID
     );
 
     public static final UnboundDoubleFlag HOST_MEMORY_SERVICES_MIXING_FACTOR = defineDoubleFlag(

@@ -6,6 +6,7 @@ import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.http.MetricsJsonResponse;
 import ai.vespa.metricsproxy.http.ValuesFetcher;
 import ai.vespa.metricsproxy.http.application.ClusterIdDimensionProcessor;
+import ai.vespa.metricsproxy.http.application.HostnameDimensionProcessor;
 import ai.vespa.metricsproxy.http.application.Node;
 import ai.vespa.metricsproxy.http.application.PublicDimensionsProcessor;
 import ai.vespa.metricsproxy.http.application.ServiceIdDimensionProcessor;
@@ -36,7 +37,7 @@ import static com.yahoo.jdisc.Response.Status.OK;
  *
  * @author gjoranv
  */
-public class MetricsV2Handler  extends HttpHandlerBase {
+public class MetricsV2Handler extends HttpHandlerBase {
 
     public static final String V2_PATH = "/metrics/v2";
     public static final String VALUES_PATH = V2_PATH + "/values";
@@ -67,6 +68,7 @@ public class MetricsV2Handler  extends HttpHandlerBase {
             List<MetricsPacket> metrics = processAndBuild(valuesFetcher.fetchMetricsAsBuilders(consumer),
                                                           new ServiceIdDimensionProcessor(),
                                                           new ClusterIdDimensionProcessor(),
+                                                          new HostnameDimensionProcessor(nodeInfoConfig.hostname()),
                                                           new PublicDimensionsProcessor());
 
             Node localNode = new Node(nodeInfoConfig.role(), nodeInfoConfig.hostname(), 0, "");

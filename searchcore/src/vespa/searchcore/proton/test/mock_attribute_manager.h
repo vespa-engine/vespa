@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
 
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
@@ -19,13 +20,8 @@ private:
     vespalib::Executor* _shared;
 
 public:
-    MockAttributeManager()
-        : _mock(),
-          _writables(),
-          _importedAttributes(),
-          _writer(),
-          _shared()
-    {}
+    MockAttributeManager();
+    ~MockAttributeManager() override;
 
     search::AttributeVector::SP addAttribute(std::string_view name, const search::AttributeVector::SP &attr) {
         _mock.addAttribute(name, attr);
@@ -103,7 +99,7 @@ public:
     std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view name) const override {
         return _mock.readable_attribute_vector(name);
     }
-    TransientResourceUsage get_transient_resource_usage() const override { return {}; }
+    searchcorespi::common::ResourceUsage get_resource_usage() const override;
 };
 
 }

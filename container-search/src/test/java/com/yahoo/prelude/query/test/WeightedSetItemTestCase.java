@@ -1,12 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.test;
 
-import com.yahoo.prelude.query.CompositeIndexedItem;
 import com.yahoo.prelude.query.FakeWSItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PureWeightedString;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.prelude.query.WeightedSetItem;
-import com.yahoo.prelude.query.WordItem;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -75,19 +74,20 @@ public class WeightedSetItemTestCase {
         ref2.add("bar", 20);
         ref2.add("foo", 10);
 
+        var context = new SerializationContext(1.0);
         ByteBuffer actual = ByteBuffer.allocate(128);
         ByteBuffer expect1 = ByteBuffer.allocate(128);
         ByteBuffer expect2 = ByteBuffer.allocate(128);
         expect1.put((byte) 15).put((byte) 2);
         Item.putString("index", expect1);
-        new PureWeightedString("foo", 10).encode(expect1);
-        new PureWeightedString("bar", 20).encode(expect1);
+        new PureWeightedString("foo", 10).encode(expect1, context);
+        new PureWeightedString("bar", 20).encode(expect1, context);
         expect2.put((byte) 15).put((byte) 2);
         Item.putString("index", expect2);
-        new PureWeightedString("bar", 20).encode(expect2);
-        new PureWeightedString("foo", 10).encode(expect2);
+        new PureWeightedString("bar", 20).encode(expect2, context);
+        new PureWeightedString("foo", 10).encode(expect2, context);
 
-        assertEquals(3, item.encode(actual));
+        assertEquals(3, item.encode(actual, context));
 
         actual.flip();
         expect1.flip();

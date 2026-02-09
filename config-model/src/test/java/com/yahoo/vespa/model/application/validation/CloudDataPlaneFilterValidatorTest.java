@@ -50,7 +50,7 @@ public class CloudDataPlaneFilterValidatorTest {
     void validator_accepts_distinct_client_certificates() throws IOException, SAXException {
         String certFile1 = "security/foo.pem";
         String certFile2 = "security/bar.pem";
-        String servicesXml = """
+        String servicesXml = String.format(java.util.Locale.ROOT, """
                         <services version='1.0'>
                           <container version='1.0'>
                             <clients>
@@ -63,7 +63,7 @@ public class CloudDataPlaneFilterValidatorTest {
                             </clients>
                           </container>
                         </services>
-                """.formatted(certFile1, certFile2);
+                """, certFile1, certFile2);
 
         DeployState deployState = createDeployState(servicesXml,
                                                     Map.of(
@@ -79,7 +79,7 @@ public class CloudDataPlaneFilterValidatorTest {
         String certFile1 = "security/a.pem";
         String certFile2 = "security/b.pem";
         X509Certificate certificate = createCertificate("a");
-        String servicesXml = """
+        String servicesXml = String.format(java.util.Locale.ROOT, """
                 <services version='1.0'>
                   <container version='1.0'>
                     <clients>
@@ -92,7 +92,7 @@ public class CloudDataPlaneFilterValidatorTest {
                     </clients>
                   </container>
                 </services>
-                """.formatted(certFile1, certFile2);
+                """, certFile1, certFile2);
 
         DeployState deployState = createDeployState(servicesXml,
                                                     Map.of(
@@ -101,14 +101,14 @@ public class CloudDataPlaneFilterValidatorTest {
 
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationTester.expect(new CloudDataPlaneFilterValidator(), model, deployState,
-                                "Duplicate certificate(s) detected in files: [%s, %s]. Certificate subject of duplicates: [%s]".formatted(certFile1, certFile2, certificate.getSubjectX500Principal().getName()));
+                                String.format(java.util.Locale.ROOT, "Duplicate certificate(s) detected in files: [%s, %s]. Certificate subject of duplicates: [%s]", certFile1, certFile2, certificate.getSubjectX500Principal().getName()));
     }
 
     @Test
     void validator_rejects_duplicate_client_certificates_same_file() throws IOException, SAXException {
         String certFile1 = "security/a.pem";
         X509Certificate certificate = createCertificate("a");
-        String servicesXml = """
+        String servicesXml = String.format(java.util.Locale.ROOT, """
                 <services version='1.0'>
                   <container version='1.0'>
                     <clients>
@@ -118,14 +118,14 @@ public class CloudDataPlaneFilterValidatorTest {
                     </clients>
                   </container>
                 </services>
-                """.formatted(certFile1);
+                """, certFile1);
 
         DeployState deployState = createDeployState(servicesXml,
                                                     Map.of(certFile1, List.of(certificate, certificate)));
 
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationTester.expect(new CloudDataPlaneFilterValidator(), model, deployState,
-                                "Duplicate certificate(s) detected in files: [%s]. Certificate subject of duplicates: [%s]".formatted(certFile1, certificate.getSubjectX500Principal().getName()));
+                                String.format(java.util.Locale.ROOT, "Duplicate certificate(s) detected in files: [%s]. Certificate subject of duplicates: [%s]", certFile1, certificate.getSubjectX500Principal().getName()));
     }
 
 

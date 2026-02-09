@@ -67,7 +67,7 @@ public class BlockFeedGlobalEndpointsFilter extends Filter implements RuleBasedF
                 new BundleInstantiationSpecification(
                         new ComponentSpecification("com.yahoo.jdisc.http.filter.security.rule.RuleBasedRequestFilter"),
                         null,
-                        new ComponentSpecification("jdisc-security-filters")),
+                        new ComponentSpecification("container-disc")),
                 Dependencies.emptyDependencies());
     }
 }

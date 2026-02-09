@@ -25,6 +25,7 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,12 +45,12 @@ public class AutoReloadingX509KeyManagerTest {
     void crypto_material_is_reloaded_when_scheduler_task_is_executed() throws IOException {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
         Path privateKeyFile = File.createTempFile("junit", null, tempDirectory).toPath();
-        Files.write(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()).getBytes());
+        Files.write(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
 
         Path certificateFile = File.createTempFile("junit", null, tempDirectory).toPath();
         BigInteger serialNumberInitialCertificate = BigInteger.ONE;
         X509Certificate initialCertificate = generateCertificate(keyPair, serialNumberInitialCertificate);
-        Files.write(certificateFile, X509CertificateUtils.toPem(initialCertificate).getBytes());
+        Files.write(certificateFile, X509CertificateUtils.toPem(initialCertificate).getBytes(UTF_8));
 
         ScheduledExecutorService scheduler = Mockito.mock(ScheduledExecutorService.class);
         ArgumentCaptor<Runnable> updaterTaskCaptor = ArgumentCaptor.forClass(Runnable.class);
@@ -64,7 +65,7 @@ public class AutoReloadingX509KeyManagerTest {
 
         BigInteger serialNumberUpdatedCertificate = BigInteger.TEN;
         X509Certificate updatedCertificate = generateCertificate(keyPair, serialNumberUpdatedCertificate);
-        Files.write(certificateFile, X509CertificateUtils.toPem(updatedCertificate).getBytes());
+        Files.write(certificateFile, X509CertificateUtils.toPem(updatedCertificate).getBytes(UTF_8));
 
         updaterTaskCaptor.getValue().run(); // run update task in ReloadingX509KeyManager
 

@@ -39,7 +39,7 @@ public class StartupCommandChangeValidator implements ChangeValidator {
 
         if (Objects.equals(currentCommand, nextCommand)) return Optional.empty();
 
-        String message = String.format("Startup command for '%s' has changed.\nNew command: %s\nCurrent command: %s",
+        String message = String.format(java.util.Locale.ROOT, "Startup command for '%s' has changed.\nNew command: %s\nCurrent command: %s",
                                        currentService.getServiceName(), nextCommand, currentCommand);
         return Optional.of(new VespaRestartAction(ClusterSpec.Id.from(currentService.getConfigId()),
                                                   message,

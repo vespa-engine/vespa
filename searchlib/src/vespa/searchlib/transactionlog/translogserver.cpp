@@ -5,6 +5,7 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
@@ -223,6 +224,21 @@ TransLogServer::getDomainStats() const
         retval[elem.first] = elem.second->getDomainInfo();
     }
     return retval;
+}
+
+uint64_t
+TransLogServer::get_size_on_disk() const
+{
+    DiskSpaceCalculator calc;
+    constexpr uint32_t placeholder_domains_size = 1000;
+    auto placeholder_name_dir_size = DiskSpaceCalculator::directory_placeholder_size(); // the "tls/tls" dir
+    uint64_t size_on_disk = DiskSpaceCalculator::directory_placeholder_size() + placeholder_name_dir_size +
+                            calc(placeholder_domains_size);
+    ReadGuard domainGuard(_domainMutex);
+    for (const auto &elem : _domains) {
+        size_on_disk += elem.second->get_size_on_disk();
+    }
+    return size_on_disk;
 }
 
 std::vector<std::string>

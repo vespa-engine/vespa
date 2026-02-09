@@ -830,7 +830,7 @@ public class YqlParserTestCase {
     @Test
     void testNearestNeighbor() {
         assertParse("select foo from bar where nearestNeighbor(semantic_embedding, my_vector);",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=0}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true}");
         assertParse("select foo from bar where {targetHits: 37} nearestNeighbor(semantic_embedding, my_vector)",
                 "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=37}");
         assertParse("select foo from bar where {approximate: false, hnsw.exploreAdditionalHits: 8, targetHits: 3} nearestNeighbor(semantic_embedding, my_vector)",
@@ -1619,6 +1619,30 @@ public class YqlParserTestCase {
         for (VespaGroupingStep step : steps)
             actual.add(step.continuations().toString() + step.getOperation());
         return actual.toString();
+    }
+
+    @Test
+    void testExplicitEnglishOnContainsSetsLanguage() {
+        QueryTree tree = parse("select * from sources * where foo contains ({language: 'en'}\"hello\")");
+        Item root = tree.getRoot();
+        assertEquals(Language.ENGLISH, root.getLanguage(),
+                "Explicit {language: 'en'} on contains should set ENGLISH, not UNKNOWN");
+    }
+
+    @Test
+    void testExplicitFrenchOnContainsSetsLanguage() {
+        QueryTree tree = parse("select * from sources * where foo contains ({language: 'fr'}\"hello\")");
+        Item root = tree.getRoot();
+        assertEquals(Language.FRENCH, root.getLanguage(),
+                "Explicit {language: 'fr'} on contains should set FRENCH");
+    }
+
+    @Test
+    void testNoLanguageOnContainsStaysUnknown() {
+        QueryTree tree = parse("select * from sources * where foo contains \"hello\"");
+        Item root = tree.getRoot();
+        assertEquals(Language.UNKNOWN, root.getLanguage(),
+                "No language annotation on contains should leave UNKNOWN");
     }
 
 }

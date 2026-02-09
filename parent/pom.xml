@@ -131,6 +131,9 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven-failsafe-plugin.vespa.version}</version>
+                    <configuration>
+                        <argLine>-Djava.io.tmpdir=${project.build.directory}</argLine>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -235,7 +238,6 @@
                         <systemPropertyVariables>
                             <config_model.ip_check>false</config_model.ip_check>
                             <jdisc.logger.level>INFO</jdisc.logger.level>
-                            <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
                         <trimStackTrace>false</trimStackTrace>
                         <argLine>-Djava.io.tmpdir=${project.build.directory} ${ffm.args}</argLine>
@@ -585,11 +587,6 @@
                 <version>${huggingface.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.auth0</groupId>
-                <artifactId>java-jwt</artifactId>
-                <version>${java-jwt.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.dev-smart</groupId>
                 <artifactId>ubjson</artifactId>
                 <version>${dev-smart-ubjson.vespa.version}</version>
@@ -746,56 +743,6 @@
                 <version>${kherud.llama.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.yahoo.athenz</groupId>
-                <artifactId>athenz-cert-refresher</artifactId>
-                <version>${athenz.vespa.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcpkix-jdk15on</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.kohsuke</groupId>
-                        <artifactId>libpam4j</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>com.yahoo.athenz</groupId>
-                <artifactId>athenz-zms-java-client</artifactId>
-                <version>${athenz.vespa.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcpkix-jdk15on</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.kohsuke</groupId>
-                        <artifactId>libpam4j</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>com.yahoo.athenz</groupId>
-                <artifactId>athenz-zpe-java-client</artifactId>
-                <version>${athenz.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.yahoo.athenz</groupId>
-                <artifactId>athenz-zts-java-client</artifactId>
-                <version>${athenz.vespa.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcpkix-jdk15on</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.kohsuke</groupId>
-                        <artifactId>libpam4j</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.vespa.version}</version>
@@ -804,21 +751,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-api</artifactId>
-                <version>${java-jjwt.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-impl</artifactId>
-                <version>${java-jjwt.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-jackson</artifactId>
-                <version>${java-jjwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.micrometer</groupId>
