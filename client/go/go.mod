@@ -7,7 +7,6 @@ toolchain go1.24.2
 require (
 	github.com/briandowns/spinner v1.23.2
 	github.com/fatih/color v1.18.0
-	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/go-json-experiment/json v0.0.0-20250725192818-e39067aee2d2
 	github.com/klauspost/compress v1.18.0
 	github.com/mattn/go-colorable v0.1.14
@@ -34,7 +33,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/term v0.35.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
