@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import java.nio.charset.StandardCharsets;
 import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.Raw;
 
@@ -74,7 +75,7 @@ public class DocumentTestCaseBase {
         doc.setFieldValue(byteField.getName(), (byte)30);
         doc.setFieldValue(intField.getName(), 50);
 
-        ByteBuffer buf = ByteBuffer.allocate(7).put("hei der".getBytes());
+        ByteBuffer buf = ByteBuffer.allocate(7).put("hei der".getBytes(StandardCharsets.UTF_8));
         buf.flip();
 
         doc.setFieldValue(rawField, new Raw(buf));

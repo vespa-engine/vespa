@@ -8,6 +8,7 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.serialization.FieldReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlStream;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.objects.Ids;
 
 import java.util.Objects;
@@ -67,7 +68,7 @@ public class ReferenceFieldValue extends FieldValue {
     private static void requireIdOfMatchingType(ReferenceDataType referenceType, DocumentId id) {
         String expectedTypeName = referenceType.getTargetType().getName();
         if (!id.getDocType().equals(expectedTypeName)) {
-            throw new IllegalArgumentException(String.format(
+            throw new IllegalArgumentException(Text.format(
                     "Can't assign document ID '%s' (of type '%s') to reference of document type '%s'",
                     id, id.getDocType(), expectedTypeName));
         }
@@ -105,7 +106,7 @@ public class ReferenceFieldValue extends FieldValue {
         } else if (o instanceof DocumentId) {
             setDocumentId((DocumentId) o);
         } else {
-            throw new IllegalArgumentException(String.format(
+            throw new IllegalArgumentException(Text.format(
                     "Can't assign value of type '%s' to field of type '%s'. Expected value of type '%s'",
                     o.getClass().getName(), getClass().getName(), DocumentId.class.getName()));
         }
@@ -113,7 +114,7 @@ public class ReferenceFieldValue extends FieldValue {
 
     private void assignFromFieldValue(ReferenceFieldValue rhs) {
         if (!getDataType().equals(rhs.getDataType())) {
-            throw new IllegalArgumentException(String.format(
+            throw new IllegalArgumentException(Text.format(
                     "Can't assign reference of type %s to reference of type %s",
                     rhs.getDataType().getName(), getDataType().getName()));
         }

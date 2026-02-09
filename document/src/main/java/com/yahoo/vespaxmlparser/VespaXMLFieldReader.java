@@ -21,6 +21,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -412,7 +413,7 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
             if (isBase64EncodedElement(reader)) {
                 value.assign(Base64.getMimeDecoder().decode(reader.getElementText()));
             } else {
-                value.assign(reader.getElementText().getBytes());
+                value.assign(reader.getElementText().getBytes(StandardCharsets.UTF_8));
             }
         } catch (XMLStreamException e) {
             throw newException(field, e);

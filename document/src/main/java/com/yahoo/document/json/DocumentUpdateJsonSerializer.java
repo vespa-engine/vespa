@@ -47,6 +47,7 @@ import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.TensorRemoveUpdate;
 import com.yahoo.document.update.ValueUpdate;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.objects.FieldBase;
 import com.yahoo.vespa.objects.Serializer;
 
@@ -55,6 +56,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -139,7 +141,7 @@ public class DocumentUpdateJsonSerializer {
 
             for (FieldPathUpdate update : fieldPathUpdates) {
                 if (writeArithmeticFieldPathUpdate(update, generator)) continue;
-                generator.writeFieldName(update.getUpdateType().name().toLowerCase());
+                generator.writeFieldName(update.getUpdateType().name().toLowerCase(Locale.ROOT));
 
                 if (update instanceof AssignFieldPathUpdate assignUp) {
                     if (assignUp.getExpression() != null) {
@@ -321,7 +323,7 @@ public class DocumentUpdateJsonSerializer {
 
         @Override
         public void write(FieldBase field, FieldValue value) {
-            throw new JsonSerializationException(String.format("Serialization of field values of type %s is not supported", value.getClass().getName()));
+            throw new JsonSerializationException(Text.format("Serialization of field values of type %s is not supported", value.getClass().getName()));
         }
 
         @Override

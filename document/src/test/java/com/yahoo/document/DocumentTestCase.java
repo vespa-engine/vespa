@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
@@ -666,7 +667,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         assertEquals(new StringFieldValue("http://this.is.a.test/"), doc.getFieldValue("urifield"));
         //NOTE: The value really is unsigned 254, which becomes signed -2:
         assertEquals(new ByteFieldValue(-2), doc.getFieldValue("bytefield"));
-        ByteBuffer raw = ByteBuffer.wrap("RAW DATA".getBytes());
+        ByteBuffer raw = ByteBuffer.wrap("RAW DATA".getBytes(StandardCharsets.UTF_8));
         assertEquals(new Raw(raw), doc.getFieldValue("rawfield"));
 
         Document docindoc = (Document)doc.getFieldValue("docfield");
@@ -713,7 +714,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         doc.setFieldValue("boolfield", new BoolFieldValue(true));
         doc.setFieldValue("bytefield", new ByteFieldValue((byte)254));
-        doc.setFieldValue("rawfield", new Raw(ByteBuffer.wrap("RAW DATA".getBytes())));
+        doc.setFieldValue("rawfield", new Raw(ByteBuffer.wrap("RAW DATA".getBytes(StandardCharsets.UTF_8))));
         doc.setFieldValue("intfield", new IntegerFieldValue(5));
         doc.setFieldValue("floatfield", new FloatFieldValue(-9.23f));
         doc.setFieldValue("stringfield", new StringFieldValue("This is a string."));
@@ -784,7 +785,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             assertTrue(true);
         }
 
-        buf = BufferSerializer.wrap("Hello world".getBytes());
+        buf = BufferSerializer.wrap("Hello world".getBytes(StandardCharsets.UTF_8));
         try {
             new Document(DocumentDeserializerFactory.createHead(docMan, buf.getBuf()));
             fail();

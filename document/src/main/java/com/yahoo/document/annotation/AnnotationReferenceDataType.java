@@ -4,6 +4,8 @@ package com.yahoo.document.annotation;
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 
+import java.util.Locale;
+
 /**
  * A data type describing a field value having a reference to an annotation of a given type.
  *
@@ -45,7 +47,7 @@ public class AnnotationReferenceDataType extends DataType {
 
     private int createId() {
         //TODO: This should be Java's hashCode(), since all other data types use it, and using something else here will probably lead to collisions
-        return getName().toLowerCase().hashCode();
+        return getName().toLowerCase(Locale.ROOT).hashCode();
     }
 
     @Override
