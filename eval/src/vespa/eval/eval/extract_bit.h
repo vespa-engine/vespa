@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace vespalib::eval {
 
 inline double extract_bit(double a, double b) {

@@ -4,6 +4,8 @@
 
 #include "context.h"
 
+class FNET_Packet;
+
 /**
  * Interface describing objects that are able to create packets. An
  * object implementing this interface is needed in order to use the

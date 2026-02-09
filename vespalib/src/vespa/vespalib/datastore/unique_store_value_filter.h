@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cmath>
+
 namespace vespalib::datastore {
 
 /*
