@@ -14,6 +14,7 @@ import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.MetadataExtractor;
+import com.yahoo.messagebus.MetadataInjector;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.TraceNode;
@@ -83,21 +84,46 @@ public class RPCSendV2 extends RPCSend {
     private static final String BLOB_F = "msg";
     private static final String MSG_F = "msg";
 
+    private static class LazySlimeInjector implements MetadataInjector {
+
+        private Slime slime;
+        private Cursor kvs; // Set iff slime is non-null
+
+        @Override
+        public void injectKeyValue(String key, String value) {
+            if (slime == null) {
+                slime = new Slime();
+                var root = slime.setObject();
+                kvs = root.setObject(KVS_F);
+            }
+            kvs.setString(key, value);
+        }
+
+        boolean hasMetadata() {
+            return slime != null;
+        }
+
+        byte[] encode() {
+            return BinaryFormat.encode(slime);
+        }
+
+    }
+
     private void encodeHeaderMetadataIfPresent(Values v, Message msg) {
         // The KV header is never compressed. This is intentional and is done to prevent
         // compression oracle attacks (a-la CRIME/BREACH) that can be used to deduce the
         // value of secret tokens from observing the change in ciphertext sizes on the
         // wire across many messages.
         v.add(new Int8Value(CompressionType.NONE.getCode()));
-        if (!msg.hasMetadata()) {
+
+        var injector = new LazySlimeInjector();
+        msg.injectMetadata(injector);
+
+        if (!injector.hasMetadata()) {
             v.add(new Int32Value(0));
             v.add(new DataValue(new byte[0]));
         } else {
-            Slime slime = new Slime();
-            Cursor root = slime.setObject();
-            Cursor kvs = root.setObject(KVS_F);
-            msg.injectMetadata(kvs::setString);
-            byte[] hdrBlob = BinaryFormat.encode(slime);
+            byte[] hdrBlob = injector.encode();
             v.add(new Int32Value(hdrBlob.length));
             v.add(new DataValue(hdrBlob));
         }
@@ -176,26 +202,27 @@ public class RPCSendV2 extends RPCSend {
         return reply;
     }
 
-    private static MetadataExtractor metadataExtractorFromHeaderOrNull(Values args) {
+    private static MetadataExtractor metadataExtractorFromHeader(Values args) {
         int hdrLen = args.get(1).asInt32();
         if (hdrLen > 0 && (CompressionType.valueOf(args.get(0).asInt8()) == CompressionType.NONE)) {
             byte[] hdrBlob = args.get(2).asData();
             Slime hdrSlime = BinaryFormat.decode(hdrBlob);
             Inspector root = hdrSlime.get();
             Inspector kvs = root.field(KVS_F);
-            if (kvs.valid() && kvs.fields() > 0) {
+            if (kvs.fields() > 0) {
                 return key -> {
                     Inspector maybeVal = kvs.field(key);
                     return (maybeVal.valid()) ? Optional.of(maybeVal.asString()) : Optional.empty();
                 };
             }
         }
-        return null;
+        // No-op extractor that returns empty optional for all keys
+        return key -> Optional.empty();
     }
 
     protected Params toParams(Values args) {
         Params p = new Params();
-        p.metadataExtractor = metadataExtractorFromHeaderOrNull(args);
+        p.metadataExtractor = metadataExtractorFromHeader(args);
         CompressionType compression = CompressionType.valueOf(args.get(3).asInt8());
         byte[] slimeBytes = compressor.decompress(args.get(5).asData(), compression, args.get(4).asInt32());
         Slime slime = BinaryFormat.decode(slimeBytes);

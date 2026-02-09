@@ -205,10 +205,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
             msg.getTrace().trace(TraceLevel.SEND_RECEIVE,
                     "Message (type " + msg.getType() + ") received at " + serverIdent + " for session '" + p.session + "'.");
         }
-        if (p.metadataExtractor != null) {
-            // TODO wrap in a try-catch just in case?
-            msg.extractMetadata(p.metadataExtractor);
-        }
+        msg.extractMetadata(p.metadataExtractor); // TODO wrap in a try-catch just in case?
         net.getOwner().deliverMessage(msg, p.session);
     }
 

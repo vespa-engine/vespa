@@ -58,21 +58,9 @@ public abstract class Message extends Routable {
     }
 
     /**
-     * <p>Returns whether a Message may have metadata it wishes to propagate to destinations.</p>
-     *
-     * <p>Note that if a Message subclass contains metadata, it has the responsibility to
-     * ensure {@link #swapState(Routable)} correctly handles this metadata.</p>
-     *
-     * <p>Should not throw exceptions.</p>
-     */
-    @Beta
-    public boolean hasMetadata() { return false; }
-
-    /**
-     * <p>At the time of serializing a Message to the underlying transport carrier the
-     * network subsystem will call {@link #hasMetadata()}. Iff it returns <code>true</code>,
-     * this method will then be subsequently invoked to inject any metadata key/value
-     * pairs the Message wants to propagate to the receiver. The newly materialized Message
+     * <p>At the time of serializing a Message to the underlying transport carrier, the
+     * network subsystem will call this method to inject any metadata key/value pairs
+     * the Message wants to propagate to the receiver. The newly materialized Message
      * instance on the receiver side will have {@link #extractMetadata(MetadataExtractor)}
      * invoked on it with an extractor that can read the values set by the sender.</p>
      *

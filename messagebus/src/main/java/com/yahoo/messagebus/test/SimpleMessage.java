@@ -35,7 +35,6 @@ public class SimpleMessage extends Message {
         return value.length();
     }
 
-    @Override
     public boolean hasMetadata() {
         return fooMeta != null || barMeta != null;
     }

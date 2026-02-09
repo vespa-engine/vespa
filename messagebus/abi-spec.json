@@ -285,7 +285,6 @@
       "public void swapState(com.yahoo.messagebus.Routable)",
       "public com.yahoo.messagebus.routing.Route getRoute()",
       "public com.yahoo.messagebus.Message setRoute(com.yahoo.messagebus.routing.Route)",
-      "public boolean hasMetadata()",
       "public void injectMetadata(com.yahoo.messagebus.MetadataInjector)",
       "public void extractMetadata(com.yahoo.messagebus.MetadataExtractor)",
       "public long getTimeReceived()",
