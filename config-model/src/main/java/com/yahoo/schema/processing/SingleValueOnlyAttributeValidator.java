@@ -58,6 +58,9 @@ public class SingleValueOnlyAttributeValidator extends Processor {
     }
 
     private boolean isEnvironmentVariableEnabled(ModelContext.Properties properties, String varName) {
+        if (properties == null) {
+            return false;
+        }
         for (String envVar : properties.environmentVariables()) {
             if (envVar.startsWith(varName + "=")) {
                 String value = envVar.substring(varName.length() + 1);
