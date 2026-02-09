@@ -33,6 +33,7 @@ import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_V1_PATH;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_VALUES_PATH;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.PROMETHEUS_VALUES_PATH;
+import static ai.vespa.metricsproxy.http.application.HostnameDimensionProcessor.HOSTNAME_DIMENSION_NAME;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -176,13 +177,14 @@ public class ApplicationMetricsHandlerTest {
 
         GenericService searchnode = jsonModel.nodes.get(0).services.get(0);
         Map<String, String> dimensions = searchnode.metrics.get(0).dimensions;
-        assertEquals(7, dimensions.size());
+        assertEquals(8, dimensions.size());
         assertEquals("music.default", dimensions.get(PublicDimensions.APPLICATION_ID));
         assertEquals("container/default", dimensions.get(PublicDimensions.CLUSTER_ID));
         assertEquals("us-west", dimensions.get(PublicDimensions.ZONE));
         assertEquals("search/", dimensions.get(PublicDimensions.API));
         assertEquals("music", dimensions.get(PublicDimensions.DOCUMENT_TYPE));
         assertEquals("default0", dimensions.get(PublicDimensions.SERVICE_ID));
+        assertEquals(HOST, dimensions.get(HOSTNAME_DIMENSION_NAME));
         assertFalse(dimensions.containsKey("clusterid"));
     }
 

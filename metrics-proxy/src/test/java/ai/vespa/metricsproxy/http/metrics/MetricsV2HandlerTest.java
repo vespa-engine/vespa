@@ -50,24 +50,6 @@ public class MetricsV2HandlerTest extends MetricsHandlerTestBase<GenericApplicat
         return genericApplicationModel.nodes.get(0);
     }
 
-    @Test
-    public void hostname_is_added() {
-        GenericJsonModel jsonModel = getGenericJsonModel(getResponseAsJsonModel(DEFAULT_CONSUMER));
-        GenericService dummyService = jsonModel.services.get(0);
-        String hostname = dummyService.metrics.get(0).dimensions.get("hostname");
-        assertEquals("my-hostname", hostname);
-    }
-
-    private GenericApplicationModel getResponseAsJsonModel(String consumer) {
-        String response = testDriver.sendRequest(VALUES_URI + "?consumer=" + consumer).readAll();
-        try {
-            return objectMapper().readValue(response, GenericApplicationModel.class);
-        } catch (IOException e) {
-            fail("Failed to create json model: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
-
     private static NodeInfoConfig nodeInfoConfig() {
         return new NodeInfoConfig.Builder()
                 .role("my-role")
