@@ -7,6 +7,7 @@ import com.yahoo.log.impl.LogUtils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Locale;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
@@ -94,7 +95,7 @@ class VespaFormatter extends SimpleFormatter {
     public String format(LogRecord r) {
         StringBuilder sbuf = new StringBuilder(300); // initial guess
 
-        String levelName = LogLevel.getVespaLogLevel(r.getLevel()).toString().toLowerCase();
+        String levelName = LogLevel.getVespaLogLevel(r.getLevel()).toString().toLowerCase(Locale.ROOT);
 
         String component = r.getLoggerName();
 
@@ -104,7 +105,7 @@ class VespaFormatter extends SimpleFormatter {
 
         sbuf.append(hostname).append("\t")
             .append(processID).append("/")
-            .append(r.getThreadID()).append("\t")
+            .append(r.getLongThreadID()).append("\t")
             .append(serviceName).append("\t");
 
         if (component == null && componentPrefix == null) {

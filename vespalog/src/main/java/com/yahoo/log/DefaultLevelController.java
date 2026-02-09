@@ -2,6 +2,7 @@
 package com.yahoo.log;
 
 import com.yahoo.log.impl.LogUtils;
+import java.util.Locale;
 import java.util.logging.Level;
 
 /**
@@ -42,11 +43,11 @@ class DefaultLevelController implements LevelController {
     }
 
     private boolean hasWord(String levelName, String inputLevels) {
-        return inputLevels.contains(levelName.toLowerCase());
+        return inputLevels.contains(levelName.toLowerCase(Locale.ROOT));
     }
 
     private boolean hasNegWord(String levelName, String inputLevels) {
-        int pos = inputLevels.indexOf(levelName.toLowerCase());
+        int pos = inputLevels.indexOf(levelName.toLowerCase(Locale.ROOT));
         if (pos > 0) {
             String c = inputLevels.substring(pos - 1, pos);
             return (c != null && c.equals("-"));
