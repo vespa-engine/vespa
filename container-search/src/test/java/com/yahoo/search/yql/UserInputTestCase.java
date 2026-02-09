@@ -29,7 +29,7 @@ import static com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER;
 
 /**
  * Tests where you really test YqlParser but need the full Query infrastructure.
- *x
+ *
  * @author steinar
  */
 public class UserInputTestCase {
@@ -180,11 +180,12 @@ public class UserInputTestCase {
     private void assertTargetHitsIsPropagatedInUserInput(String grammar) {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                             "select * from sources * where {grammar: \"" + grammar + "\", targetHits: 17, defaultIndex: \"f\"}userInput(\"a test\")");
+                             "select * from sources * where {grammar: \"" + grammar + "\", targetHits: 17, totalTargetHits: 19, defaultIndex: \"f\"}userInput(\"a test\")");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where ({targetHits: 17}weakAnd(f contains \"a\", f contains \"test\"))", query.yqlRepresentation());
+        assertEquals("select * from sources * where ({targetHits: 17, totalTargetHits: 19}weakAnd(f contains \"a\", f contains \"test\"))", query.yqlRepresentation());
         WeakAndItem weakAnd = (WeakAndItem)query.getModel().getQueryTree().getRoot();
-        assertEquals(17, weakAnd.getN());
+        assertEquals(17, weakAnd.getTargetHits());
+        assertEquals(19, weakAnd.getTotalTargetHits());
     }
 
     @Test
@@ -294,7 +295,7 @@ public class UserInputTestCase {
                 "select * from ecitem where rank(({defaultIndex:\"myfield\"}(userInput(@myinput))))");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from ecitem where rank(weakAnd(myfield = (-5)))", query.yqlRepresentation());
-        assertEquals("RANK (WEAKAND(100) myfield:-5)", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("RANK (WEAKAND myfield:-5)", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test

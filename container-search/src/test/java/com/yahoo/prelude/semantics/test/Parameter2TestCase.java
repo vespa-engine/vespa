@@ -20,7 +20,7 @@ public class Parameter2TestCase extends RuleBaseAbstractTestCase {
     /** Tests parameter production */
     @Test
     void testParameterProduction() {
-        assertRankParameterSemantics("WEAKAND(100) a", "a&ranking=usrank", "date", 0);
+        assertRankParameterSemantics("WEAKAND a", "a&ranking=usrank", "date", 0);
     }
 
     private void assertRankParameterSemantics(String producedQuery,String inputQuery,

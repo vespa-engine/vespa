@@ -957,9 +957,13 @@ public class YqlParser implements Parser {
 
             // Set grammar-specific annotations
             if (queryType.getComposite() == QueryType.Composite.weakAnd && item instanceof WeakAndItem weakAndItem) {
-                Integer targetNumHits = getAnnotation(ast, TARGET_HITS, Integer.class, null, "'targetHits' (N) for weak and");
-                if (targetNumHits != null) {
-                    weakAndItem.setN(targetNumHits);
+                Integer targetHits = getAnnotation(ast, TARGET_HITS, Integer.class, null, "'targetHits' for weak and");
+                if (targetHits != null) {
+                    weakAndItem.setTargetHits(targetHits);
+                }
+                Integer totalTargetHits = getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "'totalTargetHits' for weak and");
+                if (totalTargetHits != null) {
+                    weakAndItem.setTotalTargetHits(totalTargetHits);
                 }
             }
             if ((queryType.getComposite() == QueryType.Composite.near || queryType.getComposite() == QueryType.Composite.oNear)
@@ -1410,9 +1414,13 @@ public class YqlParser implements Parser {
 
     private CompositeItem buildWeakAnd(OperatorNode<ExpressionOperator> spec) {
         WeakAndItem weakAnd = new WeakAndItem();
-        Integer targetNumHits = buildTargetHits(spec);
-        if (targetNumHits != null) {
-            weakAnd.setN(targetNumHits);
+        Integer targetHits = buildTargetHits(spec);
+        if (targetHits != null) {
+            weakAnd.setTargetHits(targetHits);
+        }
+        Integer totalTargetHits = getAnnotation(spec, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes");
+        if (totalTargetHits != null) {
+            weakAnd.setTotalTargetHits(totalTargetHits);
         }
         return convertVarArgs(spec, 1, weakAnd, null);
     }

@@ -16,7 +16,7 @@ import com.yahoo.yolean.chain.Provides;
 
 /**
  * Recursively replaces all instances of OrItems with WeakAndItems if the query property weakand.replace is true.
- * Otherwise a noop searcher.
+ * Otherwise, a noop searcher.
  *
  * @author karowan
  */
@@ -61,7 +61,8 @@ public class WeakAndReplacementSearcher extends Searcher {
             return item;
         }
         if (compositeItem instanceof OrItem) {
-            WeakAndItem newItem = new WeakAndItem(hits);
+            WeakAndItem newItem = new WeakAndItem();
+            newItem.setTargetHits(hits);
             newItem.setWeight(compositeItem.getWeight());
             compositeItem.items().forEach(newItem::addItem);
             compositeItem = newItem;

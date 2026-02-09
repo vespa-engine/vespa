@@ -33,15 +33,15 @@ public class ExactMatchAndDefaultIndexTestCase {
 
         Query q = new Query("?query=" + enc("a/b foo.com") + "&default-index=testexact");
         q.getModel().setExecution(new Execution(Execution.Context.createContextStub(facts)));
-        assertEquals("WEAKAND(100) testexact:a/b testexact:foo.com", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND testexact:a/b testexact:foo.com", q.getModel().getQueryTree().getRoot().toString());
         q = new Query("?query=" + enc("a/b foo.com"));
-        assertEquals("WEAKAND(100) (AND a b) (AND foo com)", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND (AND a b) (AND foo com)", q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
     void testDefaultIndexSpecialChars() {
         Query q = new Query("?query=" + enc("dog & cat") + "&default-index=textsearch");
-        assertEquals("WEAKAND(100) textsearch:dog textsearch:cat", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND textsearch:dog textsearch:cat", q.getModel().getQueryTree().getRoot().toString());
     }
 
     private String enc(String s) {

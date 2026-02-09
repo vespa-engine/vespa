@@ -34,7 +34,7 @@ public class QueryCanonicalizerTestCase {
     void testSingleLevelSingleItemNonReducibleWeakAndItem() {
         CompositeItem root = new WeakAndItem();
         root.addItem(new WordItem("word"));
-        assertCanonicalized("WEAKAND(100) word", null, root);
+        assertCanonicalized("WEAKAND word", null, root);
     }
 
     @Test
@@ -140,14 +140,14 @@ public class QueryCanonicalizerTestCase {
 
         l4.addItem(new WordItem("l4"));
 
-        assertCanonicalized("WEAKAND(100) l4 l3 l2 l1", null, root);
+        assertCanonicalized("WEAKAND l4 l3 l2 l1", null, root);
     }
 
     @Test
     void testWeakAndCollapsingRequireSameNAndIndex() {
-        CompositeItem root = new WeakAndItem(10);
-        CompositeItem l1 = new WeakAndItem(100);
-        CompositeItem l2 = new WeakAndItem(100);
+        CompositeItem root = new WeakAndItem(Integer.valueOf(10));
+        CompositeItem l1 = new WeakAndItem(Integer.valueOf(100));
+        CompositeItem l2 = new WeakAndItem(Integer.valueOf(100));
         l2.setIndexName("other");
 
         root.addItem(l1);

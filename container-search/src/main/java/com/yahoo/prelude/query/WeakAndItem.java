@@ -10,7 +10,7 @@ import java.util.Objects;
 
 /**
  * Weak And of a collection of sub-expressions:
- * this behaves like an OR unless many hits are returned and then
+ * this behaves like an OR unless many hits are returned, and then
  * it starts acting more like an AND.
  * Alternately it can be viewed as an n-of-m operator where n
  * is 1 at first and then increases gradually to m as more hits
@@ -20,32 +20,50 @@ import java.util.Objects;
  */
 public final class WeakAndItem extends NonReducibleCompositeItem {
 
-    /** The default N used if none is specified: 100 */
-    public static final int defaultN = 100;  // TODO Vespa 9: Make private
+    /** The default targetHits used if none is specified: 100 */
+    private static final int defaultTargetHits = 100;
 
-    private int n;
+    /** The default N used if none is specified: 100 */
+    @Deprecated
+    public static final int defaultN = defaultTargetHits;  // TODO Vespa 9: Remove
+
+    private Integer targetHits;
+    private Integer totalTargetHits = null;
     private String index;
 
-    /** Creates a WAND item with default N */
     public WeakAndItem() {
-        this(-1);
+        this("", null);
     }
 
-    public WeakAndItem(int N) {
-        this("", N);
+    public WeakAndItem(String index) {
+        this(index, null);
+    }
+
+    // For binary compatibility on Vespa 8. TODO: Remove on Vespa 9.
+    @Deprecated
+    public WeakAndItem(int targetHits) {
+        this("", Integer.valueOf(targetHits));
+    }
+
+    public WeakAndItem(Integer targetHits) {
+        this("", targetHits);
+    }
+
+    // For binary compatibility on Vespa 8. TODO: Remove on Vespa 9.
+    @Deprecated
+    public WeakAndItem(String index, int targetHits) {
+        this(index, Integer.valueOf(targetHits));
     }
 
     /**
-     * Make a WeakAnd item with no children. You can mention a common index, or you can mention it on each child.
+     * Make a WeakAnd item with no children.
      *
-     * @param index the index to search
-     * @param n the target for minimum number of hits to produce;
-     *        a backend will not suppress any hits in the operator
-     *        until N hits have been produced.
+     * @param index the default field to search. This can be overridden in each child.
+     * @param targetHits the target minimum number of hits to produce per content node
      */
-    public WeakAndItem(String index, int n) {
-        this.n = n;
+    public WeakAndItem(String index, Integer targetHits) {
         this.index = (index == null) ? "" : index;
+        this.targetHits = targetHits;
     }
 
     @Override
@@ -72,24 +90,66 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     @Override
     protected void appendHeadingString(StringBuilder buffer) {
         buffer.append(getName());
-        buffer.append("(");
-        buffer.append(getN());
-        buffer.append(") ");
+        if (targetHits != null) {
+            buffer.append("(");
+            buffer.append(targetHits);
+            buffer.append(")");
+        }
+        if (totalTargetHits != null) {
+            buffer.append(" {");
+            buffer.append("totalTargetHits=").append(totalTargetHits);
+            buffer.append("}");
+        }
+        buffer.append(" ");
     }
 
-    public int getN() { return nIsExplicit() ? n : defaultN; }
-    public boolean nIsExplicit() { return n > 0; }
-    public void setN(int N) { this.n = N; }
+    /** Returns the number of hits to produce per node, or null if not set. */
+    public Integer getTargetHits() { return targetHits; }
+
+    /** Returns the total number of hits to produce across all nodes, or null if not set. */
+    public Integer getTotalTargetHits() { return totalTargetHits; }
+
+    /** Set the number of hits to produce per node. */
+    public void setTargetHits(Integer target) { this.targetHits = target; }
+
+    /** Set the total number of hits to produce across all nodes. */
+    public void setTotalTargetHits(Integer total) { this.totalTargetHits = total; }
+
+    /**
+     * Returns the target number of hits to produce per node, or the default if not set
+     *
+     * @deprecated use getTargetHits()
+     */
+    @Deprecated
+    public int getN() { return targetHits != null && targetHits > 0 ? targetHits : defaultTargetHits; }
+
+    /**
+     * Returns whether targetHits was explicitly set.
+     *
+     * @deprecated check getTargetHits() != null instead
+     */
+    @Deprecated
+    public boolean nIsExplicit() { return targetHits != null && targetHits > 0; }
+
+    /**
+     * Set the target for minimum number of hits
+     *
+     * @deprecated use setTargetHits(Integer)
+     */
+    @Deprecated
+    public void setN(int N) { this.targetHits = N; }
 
     @Override
     protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
         super.encodeThis(buffer, context);
-        IntegerCompressor.putCompressedPositiveNumber(getN(), buffer);
+        IntegerCompressor.putCompressedPositiveNumber(resolveTargetHits(context), buffer);
         putString(index, buffer);
     }
 
     private WeakAndItem foldSegments() {
-        var result = new WeakAndItem(this.index, this.n);
+        var result = new WeakAndItem(this.index);
+        result.setTargetHits(this.targetHits);
+        result.setTotalTargetHits(this.totalTargetHits);
         for (var child : items()) {
             if (child instanceof SegmentItem segment && segment.shouldFoldIntoWand()) {
                 for (var subItem : segment.items()) {
@@ -125,18 +185,22 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     @Override
     public void disclose(Discloser discloser) {
         super.disclose(discloser);
-        discloser.addProperty("N", getN());
+        if (targetHits != null)
+            discloser.addProperty("targetHits", targetHits);
+        if (totalTargetHits != null)
+            discloser.addProperty("totalTargetHits", totalTargetHits);
     }
 
     @Override
-    public int hashCode() { return Objects.hash(super.hashCode(), n, index); }
+    public int hashCode() { return Objects.hash(super.hashCode(), targetHits, totalTargetHits, index); }
 
     /** Returns whether this item is of the same class and contains the same state as the given item. */
     @Override
     public boolean equals(Object object) {
         if (!super.equals(object)) return false;
         WeakAndItem other = (WeakAndItem) object; // Ensured by superclass
-        if (this.n != other.n) return false;
+        if ( ! Objects.equals(this.targetHits, other.targetHits)) return false;
+        if ( ! Objects.equals(this.totalTargetHits, other.totalTargetHits)) return false;
         if ( ! Objects.equals(this.index, other.index)) return false;
         return true;
     }
@@ -145,13 +209,20 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemWeakAnd.newBuilder();
         builder.setIndex(index);
-        builder.setTargetNumHits(getN());
+        builder.setTargetNumHits(resolveTargetHits(context));
         for (var child : items()) {
             builder.addChildren(child.toProtobuf(context));
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemWeakAnd(builder.build())
                 .build();
+    }
+
+    private int resolveTargetHits(SerializationContext context) {
+        if (targetHits != null) return targetHits;
+        if (totalTargetHits != null)
+            return (int)Math.ceil(totalTargetHits * context.contentShare());
+        return defaultTargetHits;
     }
 
 }

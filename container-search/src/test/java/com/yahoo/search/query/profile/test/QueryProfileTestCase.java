@@ -383,7 +383,7 @@ public class QueryProfileTestCase {
         registry.register(profile);
         var query = new Query("?query=ref:", registry.compile().findQueryProfile("test"));
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(facts)));
-        assertEquals("WEAKAND(100) ref", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND ref", query.getModel().getQueryTree().getRoot().toString());
     }
 
     /** Dots are followed when setting overridability, also with variants */

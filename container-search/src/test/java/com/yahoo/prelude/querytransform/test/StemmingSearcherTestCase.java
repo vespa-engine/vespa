@@ -51,13 +51,13 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testStemOnlySomeTerms() {
-        assertStemmed("WEAKAND(100) hole in cvs and subversion nostem:Found",
+        assertStemmed("WEAKAND hole in cvs and subversion nostem:Found",
                       "/search?query=Holes in CVS and Subversion nostem:Found");
     }
 
     @Test
     void testStemmingCanPreserveCase() {
-        assertStemmed("WEAKAND(100) cased:Holes cased:hole cased:CVS",
+        assertStemmed("WEAKAND cased:Holes cased:hole cased:CVS",
                       "/search?query=cased:Holes cased:holes cased:CVS");
     }
 
@@ -102,7 +102,7 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testDontStemPrefixes() {
-        assertStemmed("WEAKAND(100) ist*", "/search?query=ist*&language=de");
+        assertStemmed("WEAKAND ist*", "/search?query=ist*&language=de");
     }
 
     @Test
@@ -114,8 +114,8 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testNounStemming() {
-        assertStemmed("WEAKAND(100) noun:tower noun:tower noun:tow", "/search?query=noun:towers noun:tower noun:tow");
-        assertStemmed("WEAKAND(100) notnoun:tower notnoun:tower notnoun:tow", "/search?query=notnoun:towers notnoun:tower notnoun:tow");
+        assertStemmed("WEAKAND noun:tower noun:tower noun:tow", "/search?query=noun:towers noun:tower noun:tow");
+        assertStemmed("WEAKAND notnoun:tower notnoun:tower notnoun:tow", "/search?query=notnoun:towers notnoun:tower notnoun:tow");
     }
 
     @SuppressWarnings("deprecation")
@@ -130,7 +130,7 @@ public class StemmingSearcherTestCase {
         Query q = new Query(QueryTestCase.httpEncode("?query=cars"));
         new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
                 Execution.Context.createContextStub(indexFacts, linguistics)).search(q);
-        assertEquals("WEAKAND(100) cars", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND cars", q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
@@ -155,7 +155,7 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testMultipleStemming() {
-        assertStemmed("WEAKAND(100) WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] " +
+        assertStemmed("WEAKAND WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] " +
                       "foobar:\"" + (
                               "WORD_ALTERNATIVES foobar:[ noun(0.7) nouns(1.0) ] " +
                               "WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]\" " ) +
@@ -168,9 +168,9 @@ public class StemmingSearcherTestCase {
     void testEmojiStemming() {
         String emoji1 = "\uD83C\uDF49"; // 🍉
         String emoji2 = "\uD83D\uDE00"; // 😀
-        assertStemmed("WEAKAND(100) " + emoji1, "/search?query=" + emoji1);
-        assertStemmed("WEAKAND(100) (AND " + emoji1 + " " + emoji2 + ")", "/search?query=" + emoji1 + emoji2);
-        assertStemmed("WEAKAND(100) (AND " + emoji1 + " foo " + emoji2 + ")", "/search?query=" + emoji1 + "foo" + emoji2);
+        assertStemmed("WEAKAND " + emoji1, "/search?query=" + emoji1);
+        assertStemmed("WEAKAND (AND " + emoji1 + " " + emoji2 + ")", "/search?query=" + emoji1 + emoji2);
+        assertStemmed("WEAKAND (AND " + emoji1 + " foo " + emoji2 + ")", "/search?query=" + emoji1 + "foo" + emoji2);
     }
 
     @Test

@@ -53,63 +53,63 @@ public class ConfigurationTestCase {
 
     @Test
     void testParent() {
-        assertSemantics("WEAKAND(100) vehiclebrand:audi", "audi cars", "parent");
-        assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", "parent");
-        assertSemantics("WEAKAND(100) vehiclebrand:bmw expensivetv", "bmw motorcycle", "parent.sr");
-        assertSemantics("WEAKAND(100) vw car",        "vw cars", "parent");
-        assertSemantics("WEAKAND(100) skoda car",     "skoda cars", "parent.sr");
+        assertSemantics("WEAKAND vehiclebrand:audi", "audi cars", "parent");
+        assertSemantics("WEAKAND vehiclebrand:alfa", "alfa bus", "parent");
+        assertSemantics("WEAKAND vehiclebrand:bmw expensivetv", "bmw motorcycle", "parent.sr");
+        assertSemantics("WEAKAND vw car",        "vw cars", "parent");
+        assertSemantics("WEAKAND skoda car",     "skoda cars", "parent.sr");
     }
 
     @Test
     void testChild1() {
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "audi cars", "child1.sr");
-        assertSemantics("WEAKAND(100) vehiclebrand:alfa",  "alfa bus", "child1");
-        assertSemantics("WEAKAND(100) vehiclebrand:bmw expensivetv", "bmw motorcycle", "child1");
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars", "child1");
-        assertSemantics("WEAKAND(100) skoda car",      "skoda cars", "child1");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "audi cars", "child1.sr");
+        assertSemantics("WEAKAND vehiclebrand:alfa",  "alfa bus", "child1");
+        assertSemantics("WEAKAND vehiclebrand:bmw expensivetv", "bmw motorcycle", "child1");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "vw cars", "child1");
+        assertSemantics("WEAKAND skoda car",      "skoda cars", "child1");
     }
 
     @Test
     void testChild2() {
-        assertSemantics("WEAKAND(100) vehiclebrand:audi", "audi cars", "child2");
-        assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", "child2.sr");
-        assertSemantics("WEAKAND(100) vehiclebrand:bmw expensivetv", "bmw motorcycle", "child2.sr");
-        assertSemantics("WEAKAND(100) vw car", "vw cars", "child2");
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "skoda cars", "child2");
+        assertSemantics("WEAKAND vehiclebrand:audi", "audi cars", "child2");
+        assertSemantics("WEAKAND vehiclebrand:alfa", "alfa bus", "child2.sr");
+        assertSemantics("WEAKAND vehiclebrand:bmw expensivetv", "bmw motorcycle", "child2.sr");
+        assertSemantics("WEAKAND vw car", "vw cars", "child2");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "skoda cars", "child2");
     }
 
     @Test
     void testGrandchild() {
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "audi cars", "grandchild.sr");
-        assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", "grandchild");
-        assertSemantics("WEAKAND(100) vehiclebrand:bmw expensivetv", "bmw motorcycle", "grandchild");
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars", "grandchild");
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "skoda cars", "grandchild");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "audi cars", "grandchild.sr");
+        assertSemantics("WEAKAND vehiclebrand:alfa", "alfa bus", "grandchild");
+        assertSemantics("WEAKAND vehiclebrand:bmw expensivetv", "bmw motorcycle", "grandchild");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "vw cars", "grandchild");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "skoda cars", "grandchild");
     }
 
     @Test
     void testSearcher() {
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars",   "grandchild");
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars",   "grandchild.sd");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "vw cars",   "grandchild");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "vw cars",   "grandchild.sd");
         try {
-            assertSemantics("WEAKAND(100) vw cars",    "vw cars",   "doesntexist");
+            assertSemantics("WEAKAND vw cars",    "vw cars",   "doesntexist");
             fail("No exception on missing rule base");
         }
         catch (RuleBaseException e) {
             // Success
         }
-        assertSemantics("WEAKAND(100) vw cars",       "vw cars",   "grandchild.sd&rules.off");
-        assertSemanticsRulesOff("WEAKAND(100) vw cars",       "vw cars");
+        assertSemantics("WEAKAND vw cars",       "vw cars",   "grandchild.sd&rules.off");
+        assertSemanticsRulesOff("WEAKAND vw cars",       "vw cars");
 
-        assertSemantics("WEAKAND(100) vw car",        "vw cars",   "child2");
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "skoda cars", "child2");
+        assertSemantics("WEAKAND vw car",        "vw cars",   "child2");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "skoda cars", "child2");
 
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "audi cars", "child1");
-        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars",   "child1");
-        assertSemantics("WEAKAND(100) skoda car",     "skoda cars", "child1");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "audi cars", "child1");
+        assertSemantics("WEAKAND vehiclebrand:skoda", "vw cars",   "child1");
+        assertSemantics("WEAKAND skoda car",     "skoda cars", "child1");
 
-        assertSemantics("WEAKAND(100) vw car",        "vw cars",   "parent");
-        assertSemantics("WEAKAND(100) skoda car",     "skoda cars", "parent");
+        assertSemantics("WEAKAND vw car",        "vw cars",   "parent");
+        assertSemantics("WEAKAND skoda car",     "skoda cars", "parent");
     }
 
     private void doSearch(Searcher searcher, Query query, int offset, int hits) {
