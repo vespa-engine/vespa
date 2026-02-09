@@ -153,6 +153,7 @@ public class ConfigStateChecker extends AbstractComponent {
         return responsePromise.thenApplyAsync(ConfigStateChecker::handleResponse, responseHandlerExecutor);
     }
 
+    @Override
     public void deconstruct() {
         responseHandlerExecutor.shutdown();
         try {
@@ -223,7 +224,7 @@ public class ConfigStateChecker extends AbstractComponent {
                         .setDefaultConnectionConfig(ConnectionConfig.custom()
                                 .setTimeToLive(TimeValue.ofMilliseconds(1))
                                 .setConnectTimeout(
-                                        Timeout.ofSeconds(10)) // Times out at 1s over wireguard with 500+ services.
+                                        Timeout.ofSeconds(10)) // Times out at 10s over wireguard with 500+ services.
                                 .build())
                         .setTlsStrategy(tlsStrategy)
                         .build())

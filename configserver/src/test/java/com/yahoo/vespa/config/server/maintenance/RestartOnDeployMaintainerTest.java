@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author glebashnik
  */
 class RestartOnDeployMaintainerTest {
-    private static final Logger log = Logger.getLogger(PendingRestartsMaintainerTest.class.getName());
+    private static final Logger log = Logger.getLogger(RestartOnDeployMaintainerTest.class.getName());
 
     @Test
     void test_triggerPendingRestarts() {
