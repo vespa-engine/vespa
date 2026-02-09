@@ -29,6 +29,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     get_weight_from_node.cpp
     global_filter.cpp
     hitcollector.cpp
+    indexing_search.cpp
     intermediate_blueprints.cpp
     isourceselector.cpp
     iterator_pack.cpp
