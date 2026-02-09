@@ -6,6 +6,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.io.Writer;
 
 /**
@@ -22,7 +23,7 @@ public class PrometheusResponse extends HttpResponse {
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        Writer writer = new OutputStreamWriter(outputStream);
+        Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
         model.serialize(writer);
         writer.flush();
     }
