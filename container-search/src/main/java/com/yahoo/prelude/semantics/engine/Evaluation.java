@@ -1,7 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.engine;
 
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.AndSegmentItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
+import com.yahoo.prelude.query.SegmentItem;
+import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.TermType;
+import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;

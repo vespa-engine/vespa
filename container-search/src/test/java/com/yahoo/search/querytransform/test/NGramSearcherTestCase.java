@@ -33,7 +33,11 @@ import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.search.searchchain.Execution.Context.createContextStub;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth

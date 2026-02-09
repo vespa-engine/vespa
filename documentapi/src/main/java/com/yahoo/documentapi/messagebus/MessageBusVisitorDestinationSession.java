@@ -5,9 +5,13 @@ import com.yahoo.documentapi.AckToken;
 import com.yahoo.documentapi.VisitorDestinationParameters;
 import com.yahoo.documentapi.VisitorDestinationSession;
 import com.yahoo.documentapi.VisitorResponse;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import java.util.logging.Level;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBus;
+import com.yahoo.messagebus.MessageHandler;
+import com.yahoo.messagebus.Reply;
 
 import java.util.logging.Logger;
 

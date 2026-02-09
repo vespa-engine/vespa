@@ -2,14 +2,16 @@
 package com.yahoo.search.query.rewrite.test;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 
-import com.yahoo.search.*;
-import com.yahoo.search.searchchain.*;
-import com.yahoo.search.intent.model.*;
+import com.yahoo.search.Searcher;
+import com.yahoo.search.intent.model.IntentModel;
+import com.yahoo.search.query.rewrite.RewriterConstants;
 import com.yahoo.search.query.rewrite.RewritesConfig;
-import com.yahoo.search.query.rewrite.*;
-import com.yahoo.search.query.rewrite.rewriters.*;
+import com.yahoo.search.query.rewrite.rewriters.MisspellRewriter;
+import com.yahoo.search.query.rewrite.rewriters.NameRewriter;
+import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

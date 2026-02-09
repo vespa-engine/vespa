@@ -19,7 +19,7 @@ import com.yahoo.osgi.annotation.Version;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.login.LoginException;
-import java.awt.*;
+import java.awt.Image;
 import java.awt.image.ImagingOpException;
 import java.awt.image.Kernel;
 import java.util.List;

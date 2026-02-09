@@ -7,7 +7,11 @@ import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParser;
 import com.yahoo.searchlib.rankingexpression.parser.TokenMgrException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

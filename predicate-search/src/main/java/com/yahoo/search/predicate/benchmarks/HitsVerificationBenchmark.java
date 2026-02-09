@@ -33,7 +33,8 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import static com.yahoo.search.predicate.benchmarks.HitsVerificationBenchmark.BenchmarkArguments.*;
+import static com.yahoo.search.predicate.benchmarks.HitsVerificationBenchmark.BenchmarkArguments.Algorithm;
+import static com.yahoo.search.predicate.benchmarks.HitsVerificationBenchmark.BenchmarkArguments.Format;
 import static java.util.stream.Collectors.joining;
 
 /**

@@ -4,7 +4,10 @@ package com.yahoo.schema.derived;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.NumericDataType;
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.PredicateFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.StringFieldValue;
 
 /**
  * A type of an index structure

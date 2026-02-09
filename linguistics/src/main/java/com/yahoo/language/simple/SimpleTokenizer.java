@@ -3,7 +3,15 @@ package com.yahoo.language.simple;
 
 import com.yahoo.language.Language;
 import com.yahoo.language.LinguisticsCase;
-import com.yahoo.language.process.*;
+import com.yahoo.language.process.LinguisticsParameters;
+import com.yahoo.language.process.Normalizer;
+import com.yahoo.language.process.SpecialTokenRegistry;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.language.process.Token;
+import com.yahoo.language.process.TokenScript;
+import com.yahoo.language.process.TokenType;
+import com.yahoo.language.process.Tokenizer;
+import com.yahoo.language.process.Transformer;
 import com.yahoo.language.simple.kstem.KStemmer;
 
 import java.util.ArrayList;

@@ -2,7 +2,13 @@
 package com.yahoo.vespa.indexinglanguage.parser;
 
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.vespa.indexinglanguage.expressions.*;
+import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.CatExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

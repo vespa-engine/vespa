@@ -10,7 +10,8 @@ import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequestHandler;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.logging.Logger;

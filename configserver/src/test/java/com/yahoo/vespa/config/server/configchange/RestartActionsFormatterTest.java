@@ -5,7 +5,13 @@ import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static com.yahoo.vespa.config.server.configchange.Utils.*;
+import static com.yahoo.vespa.config.server.configchange.Utils.CHANGE_MSG;
+import static com.yahoo.vespa.config.server.configchange.Utils.CHANGE_MSG_2;
+import static com.yahoo.vespa.config.server.configchange.Utils.CLUSTER;
+import static com.yahoo.vespa.config.server.configchange.Utils.CLUSTER_2;
+import static com.yahoo.vespa.config.server.configchange.Utils.CLUSTER_TYPE;
+import static com.yahoo.vespa.config.server.configchange.Utils.SERVICE_NAME;
+import static com.yahoo.vespa.config.server.configchange.Utils.SERVICE_TYPE;
 
 /**
  * @author geirst

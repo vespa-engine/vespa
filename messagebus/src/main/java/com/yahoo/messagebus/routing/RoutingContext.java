@@ -2,10 +2,17 @@
 package com.yahoo.messagebus.routing;
 
 import com.yahoo.jrt.slobrok.api.IMirror;
+import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBus;
+import com.yahoo.messagebus.Reply;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * <p>This context object is what is seen by {@link RoutingPolicy} when doing

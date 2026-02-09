@@ -9,9 +9,11 @@ import com.yahoo.logserver.LogDispatcher;
 import com.yahoo.log.LogMessage;
 import com.yahoo.logserver.handlers.LogHandler;
 
-import org.junit.*;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for thge LogMessage class.

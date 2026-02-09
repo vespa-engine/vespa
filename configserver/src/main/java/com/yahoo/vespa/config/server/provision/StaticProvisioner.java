@@ -2,7 +2,11 @@
 package com.yahoo.vespa.config.server.provision;
 
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.List;
 

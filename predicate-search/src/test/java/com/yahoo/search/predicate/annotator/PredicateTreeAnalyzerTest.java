@@ -13,7 +13,9 @@ import static com.yahoo.document.predicate.Predicates.and;
 import static com.yahoo.document.predicate.Predicates.feature;
 import static com.yahoo.document.predicate.Predicates.not;
 import static com.yahoo.document.predicate.Predicates.or;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PredicateTreeAnalyzerTest {
 
