@@ -39,6 +39,25 @@ public:
 
 //-----------------------------------------------------------------------------
 
+/**
+ * Blueprint for indexing a multi value attribute (array).
+ * It matches every document and returns exactly the one index.
+ **/
+class IndexingBlueprint : public SimpleLeafBlueprint
+{
+private:
+    uint32_t _element_id;
+protected:
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const override;
+public:
+    IndexingBlueprint(uint32_t element_id);
+    ~IndexingBlueprint() override;
+    FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
+    SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
+};
+
+//-----------------------------------------------------------------------------
+
 class SimpleBlueprint : public SimpleLeafBlueprint
 {
 private:
