@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import static java.lang.Math.*;
 
@@ -93,7 +94,7 @@ public final class FieldMatchMetrics implements Cloneable {
      */
     public float get(String name) {
         try {
-            Method getter = getClass().getMethod("get" + name.substring(0, 1).toUpperCase() + name.substring(1));
+            Method getter = getClass().getMethod("get" + name.substring(0, 1).toUpperCase(Locale.ROOT) + name.substring(1));
             return ((Number)getter.invoke(this)).floatValue();
         }
         catch (NoSuchMethodException e) {
@@ -521,7 +522,7 @@ public final class FieldMatchMetrics implements Cloneable {
                 if ( m.getParameterTypes().length != 0 ) continue;
 
                 Object value = m.invoke(this, new Object[0]);
-                b.append(m.getName().substring(3, 4).toLowerCase() + m.getName().substring(4) + ": " + value + "\n");
+                b.append(m.getName().substring(3, 4).toLowerCase(Locale.ROOT) + m.getName().substring(4) + ": " + value + "\n");
             }
             return b.toString();
         }

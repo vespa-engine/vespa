@@ -6,6 +6,7 @@ import com.yahoo.vespa.objects.Deserializer;
 import com.yahoo.vespa.objects.ObjectVisitor;
 import com.yahoo.vespa.objects.Serializer;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /**
@@ -81,7 +82,7 @@ public class RawResultNode extends SingleResultNode {
 
     @Override
     public String getString() {
-        return new String(value.getData());
+        return new String(value.getData(), StandardCharsets.UTF_8);
     }
 
     @Override
