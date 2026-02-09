@@ -4,7 +4,10 @@ package com.yahoo.prelude.querytransform.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.yahoo.component.chain.Chain;
+import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Transformer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.SearchDefinition;
@@ -13,10 +16,14 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.Searcher;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.querytransform.NormalizingSearcher;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.test.QueryTestCase;
+import com.yahoo.search.yql.MinimalQueryInserter;
 
 import org.junit.jupiter.api.Test;
 
@@ -154,6 +161,118 @@ public class NormalizingSearcherTestCase {
         type.addIndex(attributeIndex);
 
         return type;
+    }
+
+    // --- Per-clause language tests ---
+
+    private Result searchWithNormalizing(Linguistics linguistics, IndexModel indexModel, Query query) {
+        return new Execution(new Chain<>(new MinimalQueryInserter(linguistics), new NormalizingSearcher(linguistics)),
+                             Execution.Context.createContextStub(new IndexFacts(indexModel), linguistics)).search(query);
+    }
+
+    private static IndexModel createNormalizingIndexModel() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setNormalize(true);
+        schema.addIndex(index);
+        return new IndexModel(schema);
+    }
+
+    @Test
+    void testPerClauseLanguagePassedToAccentDrop() {
+        var recording = new LanguageRecordingLinguistics();
+        var indexModel = createNormalizingIndexModel();
+        var yql = "select * from sources * where " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'en', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("b\u00e9yonc\u00e8"));
+        var result = searchWithNormalizing(recording, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // The word should have been normalized on both branches
+        assertEquals(Language.FRENCH, recording.recordedLanguages.get("b\u00e9yonc\u00e8-1"),
+                "First branch should normalize with FRENCH");
+        assertEquals(Language.ENGLISH, recording.recordedLanguages.get("b\u00e9yonc\u00e8-2"),
+                "Second branch should normalize with ENGLISH");
+    }
+
+    @Test
+    void testAccentNormalizationViaYqlPipeline() {
+        var indexModel = createNormalizingIndexModel();
+        var yql = "select * from sources * where ({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("b\u00e9yonc\u00e8"));
+        var result = searchWithNormalizing(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // Accent should be dropped: béyoncè -> beyonce
+        assertEquals("default:beyonce", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testOneBranchExplicitOneBranchDefault() {
+        var recording = new LanguageRecordingLinguistics();
+        var indexModel = createNormalizingIndexModel();
+        var yql = "select * from sources * where " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("caf\u00e9"));
+        var result = searchWithNormalizing(recording, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // First branch: explicit French, second branch: default (French from model, set by first userInput)
+        assertEquals(Language.FRENCH, recording.recordedLanguages.get("caf\u00e9-1"),
+                "First branch should normalize with FRENCH");
+        assertEquals(Language.FRENCH, recording.recordedLanguages.get("caf\u00e9-2"),
+                "Second branch should normalize with model language (FRENCH from first userInput)");
+    }
+
+    @Test
+    void testAccentNormalizedOnBothBranchesOfTwoLanguageQuery() {
+        var indexModel = createNormalizingIndexModel();
+        var yql = "select * from sources * where " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'en', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("caf\u00e9"));
+        var result = searchWithNormalizing(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // Both branches should have accents dropped
+        assertEquals("OR default:cafe default:cafe", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testNoAnnotationUsesDefaultLanguage() {
+        var recording = new LanguageRecordingLinguistics();
+        var indexModel = createNormalizingIndexModel();
+        var yql = "select * from sources * where ({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("b\u00e9yonc\u00e8"));
+        var result = searchWithNormalizing(recording, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // No language annotation: should use default (ENGLISH)
+        assertEquals(Language.ENGLISH, recording.recordedLanguages.get("b\u00e9yonc\u00e8-1"),
+                "Should normalize with default language ENGLISH");
+    }
+
+    private static class LanguageRecordingLinguistics extends SimpleLinguistics {
+
+        final Map<String, Language> recordedLanguages = new LinkedHashMap<>();
+        private int callCount = 0;
+
+        @Override
+        public Transformer getTransformer() {
+            var delegate = super.getTransformer();
+            return (input, language) -> {
+                callCount++;
+                recordedLanguages.put(input + "-" + callCount, language);
+                return delegate.accentDrop(input, language);
+            };
+        }
     }
 
 }

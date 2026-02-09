@@ -3,12 +3,14 @@ package com.yahoo.search.yql;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.yahoo.language.Language;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
 import org.apache.http.client.utils.URIBuilder;
@@ -519,12 +521,110 @@ public class UserInputTestCase {
         assertEquals("select * from sources * where (text_field contains \"foo\" AND text_field contains \"bar\")", query.yqlRepresentation());
     }
 
+    @Test
+    void testYqlRepresentationShowsLanguagePerClause() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("query", "hello");
+        builder.setParameter("yql",
+                "select * from sources * where " +
+                "({language: 'fr'}userInput(@query)) or ({language: 'en'}userInput(@query))");
+        Query query = searchAndAssertNoErrors(builder);
+        String yql = query.yqlRepresentation();
+        assertTrue(yql.contains("language: \"fr\""),
+                "yqlRepresentation should contain French language annotation: " + yql);
+        assertTrue(yql.contains("language: \"en\""),
+                "yqlRepresentation should contain English language annotation: " + yql);
+    }
+
+    @Test
+    void testParsingLanguageReflectsExplicitEnglishAnnotation() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("query", "hello");
+        builder.setParameter("yql",
+                "select * from sources * where ({language: 'en'}userInput(@query))");
+        Query query = searchAndAssertNoErrors(builder);
+        // Explicit English annotation: getParsingLanguage should return ENGLISH
+        assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage());
+    }
+
     private IndexFacts createIndexFacts(boolean phraseSegmenting) {
         SearchDefinition sd = new SearchDefinition("sources");
         Index test = new Index("text_field");
         test.setPhraseSegmenting(phraseSegmenting);
         sd.addIndex(test);
         return new IndexFacts(new IndexModel(sd));
+    }
+
+    @Test
+    void testMultiWordFrenchUserInputSetsLanguageOnAllChildren() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("query", "machine learning");
+        builder.setParameter("yql",
+                "select * from sources * where ({language: 'fr', grammar: 'all'}userInput(@query))");
+        Query query = searchAndAssertNoErrors(builder);
+        Item root = query.getModel().getQueryTree().getRoot();
+        // With grammar:all and multi-word, root should be an AND with children
+        assertInstanceOf(CompositeItem.class, root, "Expected composite for multi-word input");
+        CompositeItem composite = (CompositeItem) root;
+        assertTrue(composite.getItemCount() >= 2, "Expected at least 2 children for 'machine learning'");
+        for (int i = 0; i < composite.getItemCount(); i++) {
+            assertEquals(Language.FRENCH, composite.getItem(i).getLanguage(),
+                    "Child " + i + " should have FRENCH language");
+        }
+        // The composite itself should also have FRENCH
+        assertEquals(Language.FRENCH, root.getLanguage(),
+                "Root composite should have FRENCH language");
+    }
+
+    @Test
+    void testQueryLevelLanguageUsedWhenNoPerItemAnnotation() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("query", "hello");
+        builder.setParameter("language", "ja");
+        builder.setParameter("yql",
+                "select * from sources * where userInput(@query)");
+        Query query = searchAndAssertNoErrors(builder);
+        // Query-level language is Japanese
+        assertEquals(Language.JAPANESE, query.getModel().getLanguage());
+    }
+
+    @Test
+    void testMultipleUserInputFirstSetsModelLanguage() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("query", "hello");
+        builder.setParameter("yql",
+                "select * from sources * where " +
+                "({language: 'fr'}userInput(@query)) or ({language: 'en'}userInput(@query))");
+        Query query = searchAndAssertNoErrors(builder);
+        // The first userInput has {language: 'fr'}, which should set the model's parsing language
+        assertEquals(Language.FRENCH, query.getModel().getParsingLanguage());
+        // Check the item tree has both languages
+        Item root = query.getModel().getQueryTree().getRoot();
+        assertInstanceOf(OrItem.class, root);
+        OrItem or = (OrItem) root;
+        assertEquals(2, or.getItemCount());
+        assertEquals(Language.FRENCH, or.getItem(0).getLanguage());
+        assertEquals(Language.ENGLISH, or.getItem(1).getLanguage());
+    }
+
+    @Test
+    void testExplicitEnglishLanguageSetsEnglishOnItems() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("query", "hello");
+        builder.setParameter("yql",
+                "select * from sources * where ({language: 'en'}userInput(@query))");
+        Query query = searchAndAssertNoErrors(builder);
+        Item root = query.getModel().getQueryTree().getRoot();
+        // With explicit {language: 'en'}, items should have Language.ENGLISH, not UNKNOWN
+        if (root instanceof CompositeItem composite) {
+            for (int i = 0; i < composite.getItemCount(); i++) {
+                assertEquals(Language.ENGLISH, composite.getItem(i).getLanguage(),
+                        "Child item should have ENGLISH language");
+            }
+        } else {
+            assertEquals(Language.ENGLISH, root.getLanguage(),
+                    "Root item should have ENGLISH language");
+        }
     }
 
 }

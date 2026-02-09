@@ -1010,10 +1010,16 @@ public class SelectParser implements Parser {
         }
 
         prepareWord(field, node, wordItem);
-        if (language != Language.ENGLISH)
+        // Mark the language used if it was explicitly set or is not the default
+        if (hasExplicitLanguageAnnotation(node) || language != Language.ENGLISH)
             wordItem.setLanguage(language);
 
         return leafStyleSettings(getAnnotations(node), wordItem);
+    }
+
+    /** Returns whether the language annotation is explicitly set on the given node. */
+    private boolean hasExplicitLanguageAnnotation(Inspector value) {
+        return getAnnotation(USER_INPUT_LANGUAGE, getAnnotationMap(value), String.class, null) != null;
     }
 
     private Language decideParsingLanguage(Inspector value, String wordData) {
