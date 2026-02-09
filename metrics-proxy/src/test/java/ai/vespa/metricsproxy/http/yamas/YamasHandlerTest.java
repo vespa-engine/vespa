@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -40,7 +41,7 @@ public class YamasHandlerTest extends HttpHandlerTestBase {
 
     @Test
     public void response_contains_consumer_list() {
-        var slime = SlimeUtils.jsonToSlime(consumerResponse.getBytes());
+        var slime = SlimeUtils.jsonToSlime(consumerResponse.getBytes(StandardCharsets.UTF_8));
         var consumers = new ArrayList<>();
         slime.get().field("consumers").traverse((ArrayTraverser) (idx, object) ->
             consumers.add(object.asString())

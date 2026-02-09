@@ -5,6 +5,7 @@ import com.yahoo.log.LogLevel;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -144,10 +145,10 @@ public abstract class Event implements Serializable {
         String tmp = this.getClass().getName();
         int last = tmp.lastIndexOf(".");
         if (last == -1) {
-            return tmp.toLowerCase();
+            return tmp.toLowerCase(Locale.ROOT);
         }
 
-        return tmp.substring(last+1).toLowerCase();
+        return tmp.substring(last+1).toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -318,8 +319,8 @@ public abstract class Event implements Serializable {
                                             + 1)
             .append(packageName)
             .append(".")
-            .append(eventName.substring(0,1).toUpperCase())
-            .append(eventName.substring(1).toLowerCase())
+            .append(eventName.substring(0,1).toUpperCase(Locale.ROOT))
+            .append(eventName.substring(1).toLowerCase(Locale.ROOT))
             .toString();
 
         Event event;

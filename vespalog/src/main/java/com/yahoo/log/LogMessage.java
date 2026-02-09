@@ -5,6 +5,7 @@ import com.yahoo.log.event.Event;
 import com.yahoo.log.event.MalformedEventException;
 
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.logging.Level;
@@ -111,10 +112,10 @@ public class LogMessage
                 return Instant.ofEpochSecond(Long.parseLong(timeStr));
             }
             long seconds = Long.parseLong(timeStr.substring(0, decimalSeparator));
-            long nanoseconds = Long.parseLong(String.format("%1$-9s", timeStr.substring(decimalSeparator + 1)).replace(' ', '0')); // right pad with zeros
+            long nanoseconds = Long.parseLong(String.format(Locale.ROOT, "%1$-9s", timeStr.substring(decimalSeparator + 1)).replace(' ', '0')); // right pad with zeros
             return Instant.ofEpochSecond(seconds, nanoseconds);
         } catch (NumberFormatException e) {
-            throw new InvalidLogFormatException(String.format("Failed to parse timestamp: %s. Timestamp string: '%s'", e.getMessage(), timeStr), e);
+            throw new InvalidLogFormatException(String.format(Locale.ROOT, "Failed to parse timestamp: %s. Timestamp string: '%s'", e.getMessage(), timeStr), e);
         }
     }
 
@@ -181,7 +182,7 @@ public class LogMessage
             .append(threadProcess).append("\t")
             .append(service).append("\t")
             .append(component).append("\t")
-            .append(level.toString().toLowerCase()).append("\t")
+            .append(level.toString().toLowerCase(Locale.ROOT)).append("\t")
             .append(payload).append("\n")
             .toString();
     }

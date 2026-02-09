@@ -2,6 +2,7 @@
 package com.yahoo.log;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -118,7 +119,7 @@ public class LogLevel extends Level {
         nameToLevel.put("spam", SPAM);
 
         uppercasedNameToLevel = new LinkedHashMap<>(16);
-        nameToLevel.forEach((name, level) -> uppercasedNameToLevel.put(name.toUpperCase(), level));
+        nameToLevel.forEach((name, level) -> uppercasedNameToLevel.put(name.toUpperCase(Locale.ROOT), level));
     }
 
     private LogLevel(String name, int value) {

@@ -3,6 +3,7 @@ package com.yahoo.log;
 
 import com.yahoo.log.impl.LogUtils;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,7 +91,7 @@ class VespaFormat {
 
 
     public static String formatTime(Instant instant) {
-        return String.format("%d.%06d", instant.getEpochSecond(), instant.getNano() / 1000);
+        return String.format(Locale.ROOT, "%d.%06d", instant.getEpochSecond(), instant.getNano() / 1000);
     }
 
     static String formatThreadProcess(long processId, long threadId) {

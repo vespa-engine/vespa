@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -22,7 +23,7 @@ public class LogMessageTestCase {
 
     @Test
     public void testLogParsing () throws IOException, InvalidLogFormatException {
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(LogMessageTestCase.class.getResourceAsStream("/logEntries.txt")))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(LogMessageTestCase.class.getResourceAsStream("/logEntries.txt"), StandardCharsets.UTF_8))) {
             for (String line = br.readLine(); line != null; line = br.readLine()) {
                 LogMessage.parseNativeFormat(line);
             }
@@ -38,7 +39,7 @@ public class LogMessageTestCase {
         try (BufferedReader br =
                      new BufferedReader(
                              new InputStreamReader(
-                                     LogMessageTestCase.class.getResourceAsStream("/event.txt")))) {
+                                     LogMessageTestCase.class.getResourceAsStream("/event.txt"), StandardCharsets.UTF_8))) {
             for (String line = br.readLine(); line != null; line = br.readLine()) {
                 LogMessage m = LogMessage.parseNativeFormat(line);
                 Event event = m.getEvent();
