@@ -5,6 +5,7 @@ import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.application.BindingSet;
 import com.yahoo.jdisc.application.UriPattern;
 import org.junit.jupiter.api.Test;
+import java.util.Locale;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -33,14 +34,14 @@ public class BindingMatchingTestCase {
 
     @Test
     void runThroughtputMeasurements() throws Exception {
-        System.err.format("%15s%15s%15s%15s%15s%15s%15s%15s\n",
+        System.err.format(Locale.ROOT, "%15s%15s%15s%15s%15s%15s%15s%15s\n",
                 "No. of Bindings", "1 thread", "2 thread", "4 thread", "8 thread", "16 thread", "32 thread", "64 thread");
         for (int numBindings : List.of(1, 10, 25, 50, 100, 250)) {
             BindingRepository<Object> repo = new BindingRepository<>();
             for (int binding = 0; binding < numBindings; ++binding) {
                 repo.bind("http://*/v" + binding + "/*/data/", new Object());
             }
-            System.err.format("%15s", numBindings + " binding(s)");
+            System.err.format(Locale.ROOT, "%15s", numBindings + " binding(s)");
 
             List<URI> candidates = newCandidates(repo);
             measureThroughput(repo.activate(), candidates, MAX_THREADS); // warmup
@@ -50,9 +51,9 @@ public class BindingMatchingTestCase {
                  numThreads <= MAX_THREADS;
                  numThreads *= 2)
             {
-                System.err.format("%15s", measureThroughput(bindings, candidates, numThreads));
+                System.err.format(Locale.ROOT, "%15s", measureThroughput(bindings, candidates, numThreads));
             }
-            System.err.format("\n");
+            System.err.format(Locale.ROOT, "\n");
         }
     }
 

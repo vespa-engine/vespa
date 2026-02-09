@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
@@ -31,7 +32,7 @@ public class ConsoleLogFormatterTestCase {
         for (int i = 0; i < 10000; ++i) {
             LogEntry entry = new MyEntry(i, LogLevel.AUDIT, null);
             Instant instant = Instant.ofEpochMilli(i);
-            assertEquals(String.format("%d.%06d\t-\t-\t-\t-\tunknown\t", instant.getEpochSecond(), instant.getNano() / 1000),
+            assertEquals(Text.format("%d.%06d\t-\t-\t-\t-\tunknown\t", instant.getEpochSecond(), instant.getNano() / 1000),
                     SIMPLE_FORMATTER.formatEntry(entry));
         }
     }

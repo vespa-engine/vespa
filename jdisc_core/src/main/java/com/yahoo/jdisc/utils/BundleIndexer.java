@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.utils;
 
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.text.Text;
 import org.apache.felix.bundlerepository.DataModelHelper;
 import org.apache.felix.bundlerepository.Resource;
 import org.apache.felix.bundlerepository.impl.DataModelHelperImpl;
@@ -51,7 +52,7 @@ class BundleIndexer {
     private Path createIndex(List<String> additionalDirectories, Path indexPath) throws IOException {
         var resources = scanBundles(additionalDirectories);
         writeIndex(resources, indexPath);
-        log.log(Level.FINE, () -> "Created index with %d bundles".formatted(resources.size()));
+        log.log(Level.FINE, () -> Text.format("Created index with %d bundles", resources.size()));
         return indexPath;
     }
 
@@ -69,7 +70,7 @@ class BundleIndexer {
             }
         }
         log.log(Level.FINE, () ->
-                "Bundle scan complete: found %d bundles across %d directories".formatted(resources.size(), directories.size()));
+                Text.format("Bundle scan complete: found %d bundles across %d directories", resources.size(), directories.size()));
         return resources;
     }
 
@@ -87,10 +88,10 @@ class BundleIndexer {
                 return Optional.empty();
             }
             log.log(Level.FINE, () ->
-                    "Read bundle %s v%s from %s".formatted(resource.getSymbolicName(), resource.getVersion(), jarPath));
+                    Text.format("Read bundle %s v%s from %s", resource.getSymbolicName(), resource.getVersion(), jarPath));
             return Optional.of(resource);
         } catch (Exception e) {
-            log.log(Level.FINE, () -> "Failed to read bundle from %s: %s".formatted(jarPath, e.getMessage()));
+            log.log(Level.FINE, () -> Text.format("Failed to read bundle from %s: %s", jarPath, e.getMessage()));
             return Optional.empty();
         }
     }

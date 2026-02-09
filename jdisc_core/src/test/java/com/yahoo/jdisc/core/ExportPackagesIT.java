@@ -6,9 +6,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -218,7 +221,7 @@ public class ExportPackagesIT {
 
     private static Properties getPropertiesFromFile(File file) throws IOException {
         Properties properties = new Properties();
-        try (FileReader reader = new FileReader(file)) {
+        try (InputStreamReader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
             properties.load(reader);
         }
         return properties;

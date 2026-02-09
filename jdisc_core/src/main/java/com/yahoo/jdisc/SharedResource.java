@@ -8,6 +8,8 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 
+import java.util.Locale;
+
 /**
  * <p>This interface defines a reference counted resource. This is the parent interface of {@link RequestHandler},
  * {@link ClientProvider} and {@link ServerProvider}, and is used by jDISC to appropriately signal resources as they
@@ -33,7 +35,7 @@ public interface SharedResource {
     private static Debug valueOfDebug() {
         String val = System.getProperty(SYSTEM_PROPERTY_NAME_DEBUG);
         if (val != null) {
-            val = val.toUpperCase();
+            val = val.toUpperCase(Locale.ROOT);
             if (Boolean.valueOf(val)) return Debug.SIMPLE;
             try {
                 return Debug.valueOf(val);
