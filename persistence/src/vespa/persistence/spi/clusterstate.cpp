@@ -47,10 +47,6 @@ ClusterState::shouldBeReady(const Bucket& b) const {
         return Trinary::Undefined;
     }
 
-    if (_distribution->getReadyCopies() >= _distribution->getRedundancy()) {
-        return Trinary::True; // all copies should be ready
-    }
-
     std::vector<uint16_t> idealNodes;
     _distribution->getIdealNodes(lib::NodeType::STORAGE, *_state,
                                  b.getBucketId(), idealNodes,
