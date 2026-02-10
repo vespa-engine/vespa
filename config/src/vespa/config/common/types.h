@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/allocator.h>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -19,4 +20,4 @@ using DoubleMap = std::map<std::string, double>;
 using LongMap = std::map<std::string, int64_t>;
 using IntMap = std::map<std::string, int32_t>;
 
-}
+} // namespace config

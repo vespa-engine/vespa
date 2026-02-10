@@ -2,23 +2,16 @@
 
 namespace config {
 
-
-template <typename... ConfigTypes>
-ConfigKeySet &
-ConfigKeySet::add(const std::string & configId)
-{
+template <typename... ConfigTypes> ConfigKeySet& ConfigKeySet::add(const std::string& configId) {
     addImpl<ConfigTypes...>(configId);
     return *this;
 }
 
-template <typename ConfigType, typename... ConfigTypes>
-void
-ConfigKeySet::addImpl(const std::string & configId)
-{
+template <typename ConfigType, typename... ConfigTypes> void ConfigKeySet::addImpl(const std::string& configId) {
     insert(ConfigKey::create<ConfigType>(configId));
-    if constexpr(sizeof...(ConfigTypes) > 0) {
+    if constexpr (sizeof...(ConfigTypes) > 0) {
         addImpl<ConfigTypes...>(configId);
     }
 }
 
-}
+} // namespace config

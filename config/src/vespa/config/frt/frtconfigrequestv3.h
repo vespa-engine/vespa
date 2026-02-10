@@ -15,17 +15,10 @@ struct VespaVersion;
 
 class FRTConfigRequestV3 : public SlimeConfigRequest {
 public:
-    FRTConfigRequestV3(Connection * connection,
-                       const ConfigKey & key,
-                       const std::string & configXxhash64,
-                       int64_t currentGeneration,
-                       const std::string & hostName,
-                       duration serverTimeout,
-                       const Trace & trace,
-                       const VespaVersion & vespaVersion,
-                       const CompressionType & compressionType);
-    std::unique_ptr<ConfigResponse> createResponse(FRT_RPCRequest * request) const override;
+    FRTConfigRequestV3(Connection* connection, const ConfigKey& key, const std::string& configXxhash64,
+                       int64_t currentGeneration, const std::string& hostName, duration serverTimeout,
+                       const Trace& trace, const VespaVersion& vespaVersion, const CompressionType& compressionType);
+    std::unique_ptr<ConfigResponse> createResponse(FRT_RPCRequest* request) const override;
 };
 
-}
-
+} // namespace config

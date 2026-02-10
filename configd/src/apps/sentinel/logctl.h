@@ -3,6 +3,6 @@
 
 namespace config::sentinel {
 
-void justRunLogctl(const char *cspec, const char *lspec);
+void justRunLogctl(const char* cspec, const char* lspec);
 
 }

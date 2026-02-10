@@ -2,8 +2,8 @@
 #pragma once
 
 #include "slimeconfigresponse.h"
-#include <vespa/config/common/configvalue.h>
 
+#include <vespa/config/common/configvalue.h>
 
 class FRT_RPCRequest;
 class FRT_Values;
@@ -16,14 +16,14 @@ namespace config {
 class FRTConfigResponseV3 : public SlimeConfigResponse {
 private:
     FRTConfigResponseV3& operator=(const FRTConfigResponseV3&);
+
 public:
-    FRTConfigResponseV3(FRT_RPCRequest * request);
+    FRTConfigResponseV3(FRT_RPCRequest* request);
 
 private:
     static const std::string RESPONSE_TYPES;
-    const std::string & getResponseTypes() const override;
-    ConfigValue readConfigValue() const override;
+    const std::string&       getResponseTypes() const override;
+    ConfigValue              readConfigValue() const override;
 };
 
 } // namespace config
-

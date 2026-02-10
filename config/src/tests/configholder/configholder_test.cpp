@@ -2,6 +2,7 @@
 #include <vespa/config/common/configholder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
+
 #include <thread>
 
 using namespace config;
@@ -12,10 +13,9 @@ namespace {
 constexpr vespalib::duration ONE_SEC = 1s;
 constexpr vespalib::duration ONE_MINUTE = 60s;
 
-}
+} // namespace
 
-TEST(ConfigHolderTest, Require_that_element_order_is_correct)
-{
+TEST(ConfigHolderTest, Require_that_element_order_is_correct) {
     ConfigValue value(StringVector(), "foo");
     ConfigValue value2(StringVector(), "bar");
 
@@ -30,11 +30,10 @@ TEST(ConfigHolderTest, Require_that_element_order_is_correct)
     ASSERT_TRUE(value2 == update->getValue());
 }
 
-TEST(ConfigHolderTest, Require_that_waiting_is_done)
-{
+TEST(ConfigHolderTest, Require_that_waiting_is_done) {
     ConfigValue value;
 
-    ConfigHolder holder;
+    ConfigHolder    holder;
     vespalib::Timer timer;
     holder.wait_for(1000ms);
     EXPECT_GE(timer.elapsed(), ONE_SEC);
@@ -44,8 +43,7 @@ TEST(ConfigHolderTest, Require_that_waiting_is_done)
     ASSERT_TRUE(holder.wait_for(100ms));
 }
 
-TEST(ConfigHolderTest, Require_that_polling_for_elements_work)
-{
+TEST(ConfigHolderTest, Require_that_polling_for_elements_work) {
     ConfigValue value;
 
     ConfigHolder holder;
@@ -56,9 +54,8 @@ TEST(ConfigHolderTest, Require_that_polling_for_elements_work)
     ASSERT_FALSE(holder.poll());
 }
 
-TEST(ConfigHolderTest, Require_that_negative_time_does_not_mean_forever)
-{
-    ConfigHolder holder;
+TEST(ConfigHolderTest, Require_that_negative_time_does_not_mean_forever) {
+    ConfigHolder    holder;
     vespalib::Timer timer;
     ASSERT_FALSE(holder.poll());
     ASSERT_FALSE(holder.wait_for(10ms));
@@ -70,8 +67,8 @@ TEST(ConfigHolderTest, Require_that_negative_time_does_not_mean_forever)
 
 TEST(ConfigHolderTest, Require_that_wait_is_interrupted_on_close) {
     constexpr size_t num_threads = 2;
-    ConfigHolder f;
-    auto task = [&f](Nexus& ctx) {
+    ConfigHolder     f;
+    auto             task = [&f](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             vespalib::Timer timer;

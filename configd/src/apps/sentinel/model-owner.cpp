@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "model-owner.h"
+
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
+
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -21,18 +23,14 @@ std::optional<ModelConfig> ModelOwner::getModelConfig() {
     }
 }
 
-
-ModelOwner::ModelOwner(const std::string &configId)
-  : _configId(configId)
-{}
+ModelOwner::ModelOwner(const std::string& configId) : _configId(configId) {}
 
 ModelOwner::~ModelOwner() = default;
 
-void
-ModelOwner::start(std::chrono::milliseconds timeout, bool firstTime) {
+void ModelOwner::start(std::chrono::milliseconds timeout, bool firstTime) {
     try {
-        _modelHandle =_subscriber.subscribe<ModelConfig>(_configId, timeout);
-    } catch (ConfigTimeoutException & ex) {
+        _modelHandle = _subscriber.subscribe<ModelConfig>(_configId, timeout);
+    } catch (ConfigTimeoutException& ex) {
         if (firstTime) {
             LOG(warning, "Timeout getting model config: %s [skipping connectivity checks]", ex.message());
         }
@@ -47,9 +45,8 @@ ModelOwner::start(std::chrono::milliseconds timeout, bool firstTime) {
     }
 }
 
-void
-ModelOwner::checkForUpdates() {
-    if (! _modelHandle) {
+void ModelOwner::checkForUpdates() {
+    if (!_modelHandle) {
         start(250ms, false);
     }
     if (_modelHandle && _subscriber.nextGenerationNow()) {
@@ -62,4 +59,4 @@ ModelOwner::checkForUpdates() {
     }
 }
 
-}
+} // namespace config::sentinel

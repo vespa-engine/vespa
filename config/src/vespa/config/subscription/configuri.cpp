@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "configuri.h"
+
 #include "configinstancespec.h"
+
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/helper/legacy.h>
 
@@ -9,46 +11,30 @@ namespace config {
 ConfigUri::ConfigUri(std::string_view configId)
     : _configId(legacyConfigId2ConfigId(configId)),
       _context(std::make_shared<ConfigContext>(*legacyConfigId2Spec(configId))),
-      _empty(configId.empty())
-{
-}
+      _empty(configId.empty()) {}
 
-ConfigUri::ConfigUri(const std::string &configId, std::shared_ptr<IConfigContext> context)
-    : _configId(configId),
-      _context(std::move(context)),
-      _empty(false)
-{
-}
+ConfigUri::ConfigUri(const std::string& configId, std::shared_ptr<IConfigContext> context)
+    : _configId(configId), _context(std::move(context)), _empty(false) {}
 
 ConfigUri::~ConfigUri() = default;
 
-ConfigUri
-ConfigUri::createWithNewId(const std::string & configId) const
-{
-    return ConfigUri(configId, _context);
-}
+ConfigUri ConfigUri::createWithNewId(const std::string& configId) const { return ConfigUri(configId, _context); }
 
-const std::string & ConfigUri::getConfigId() const { return _configId; }
-const std::shared_ptr<IConfigContext> & ConfigUri::getContext() const { return _context; }
+const std::string&                     ConfigUri::getConfigId() const { return _configId; }
+const std::shared_ptr<IConfigContext>& ConfigUri::getContext() const { return _context; }
 
-ConfigUri
-ConfigUri::createFromInstance(const ConfigInstance & instance)
-{
+ConfigUri ConfigUri::createFromInstance(const ConfigInstance& instance) {
     return ConfigUri("", std::make_shared<ConfigContext>(ConfigInstanceSpec(instance)));
 }
 
-ConfigUri
-ConfigUri::createEmpty()
-{
+ConfigUri ConfigUri::createEmpty() {
     ConfigUri uri("", std::make_shared<ConfigContext>(RawSpec("")));
     uri._empty = true;
     return uri;
 }
 
-ConfigUri ConfigUri::createFromSpec(const std::string& configId, const SourceSpec& spec)
-{
+ConfigUri ConfigUri::createFromSpec(const std::string& configId, const SourceSpec& spec) {
     return ConfigUri(configId, std::make_shared<ConfigContext>(spec));
 }
-
 
 } // namespace config

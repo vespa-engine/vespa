@@ -21,13 +21,11 @@ public:
     ConfigRequest(const ConfigRequest&) = delete;
     ConfigRequest& operator=(const ConfigRequest&) = delete;
     virtual ~ConfigRequest() = default;
-    virtual const ConfigKey & getKey() const = 0;
+    virtual const ConfigKey& getKey() const = 0;
     /** Abort a request. */
     virtual bool abort() = 0;
     virtual void setError(int errorCode) = 0;
-    virtual bool verifyState(const ConfigState & state) const = 0;
-
+    virtual bool verifyState(const ConfigState& state) const = 0;
 };
 
-}
-
+} // namespace config

@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/configgen/configinstance.h>
 #include "configformatter.h"
+
+#include <vespa/config/configgen/configinstance.h>
 
 namespace config {
 
@@ -17,7 +18,7 @@ public:
      *
      * @param config The config instance to write.
      */
-    virtual bool write(const ConfigInstance & config) = 0;
+    virtual bool write(const ConfigInstance& config) = 0;
 
     /**
      * Write this config instance to a place decided by the implementer of this
@@ -26,9 +27,8 @@ public:
      * @param config The config instance to write.
      * @param formatter The config formatter to use for formatting config.
      */
-    virtual bool write(const ConfigInstance & config, const ConfigFormatter & formatter) = 0;
+    virtual bool write(const ConfigInstance& config, const ConfigFormatter& formatter) = 0;
     virtual ~ConfigWriter() = default;
 };
 
 } // namespace config
-

@@ -16,14 +16,13 @@ public:
     typedef std::unique_ptr<ConfigInstance> UP;
     typedef std::shared_ptr<ConfigInstance> SP;
     // Static for this instance's type
-    virtual const std::string & defName() const = 0;
-    virtual const std::string & defMd5() const = 0;
-    virtual const std::string & defNamespace() const = 0;
+    virtual const std::string& defName() const = 0;
+    virtual const std::string& defMd5() const = 0;
+    virtual const std::string& defNamespace() const = 0;
 
-    virtual void serialize(ConfigDataBuffer & buffer) const = 0;
+    virtual void serialize(ConfigDataBuffer& buffer) const = 0;
 
     virtual ~ConfigInstance() = default;
 };
 
 } // namespace config
-

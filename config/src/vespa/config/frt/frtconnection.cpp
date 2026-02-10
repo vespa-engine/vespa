@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "frtconnection.h"
+
 #include <vespa/config/common/errorcode.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/fnet/frt/rpcrequest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtconnection");
@@ -12,7 +13,7 @@ using namespace vespalib;
 
 namespace config {
 
-FRTConnection::FRTConnection(const std::string& address, FRT_Supervisor& supervisor, const TimingValues & timingValues)
+FRTConnection::FRTConnection(const std::string& address, FRT_Supervisor& supervisor, const TimingValues& timingValues)
     : _address(address),
       _transientDelay(timingValues.transientDelay),
       _fatalDelay(timingValues.fatalDelay),
@@ -22,12 +23,9 @@ FRTConnection::FRTConnection(const std::string& address, FRT_Supervisor& supervi
       _suspendedUntil(),
       _suspendWarned(),
       _transientFailures(0),
-      _fatalFailures(0)
-{
-}
+      _fatalFailures(0) {}
 
-FRTConnection::~FRTConnection()
-{
+FRTConnection::~FRTConnection() {
     if (_target != nullptr) {
         LOG(debug, "Shutting down %s", _address.c_str());
         _target->internal_subref();
@@ -35,13 +33,11 @@ FRTConnection::~FRTConnection()
     }
 }
 
-FRT_Target *
-FRTConnection::getTarget()
-{
+FRT_Target* FRTConnection::getTarget() {
     std::lock_guard guard(_lock);
     if (_target == nullptr) {
         _target = _supervisor.GetTarget(_address.c_str());
-    } else if ( ! _target->IsValid()) {
+    } else if (!_target->IsValid()) {
         _target->internal_subref();
         _target = _supervisor.GetTarget(_address.c_str());
     }
@@ -49,21 +45,18 @@ FRTConnection::getTarget()
     return _target;
 }
 
-void
-FRTConnection::invoke(FRT_RPCRequest * req, duration timeout, FRT_IRequestWait * waiter)
-{
-    FRT_Target * target = getTarget();
+void FRTConnection::invoke(FRT_RPCRequest* req, duration timeout, FRT_IRequestWait* waiter) {
+    FRT_Target* target = getTarget();
     target->InvokeAsync(req, vespalib::to_s(timeout), waiter);
     target->internal_subref();
 }
 
-void
-FRTConnection::setError(int errorCode)
-{
-    switch(errorCode) {
+void FRTConnection::setError(int errorCode) {
+    switch (errorCode) {
     case FRTE_RPC_CONNECTION:
     case FRTE_RPC_TIMEOUT:
-        calculateSuspension(TRANSIENT); break;
+        calculateSuspension(TRANSIENT);
+        break;
     case ErrorCode::UNKNOWN_CONFIG:
     case ErrorCode::UNKNOWN_DEFINITION:
     case ErrorCode::UNKNOWN_VERSION:
@@ -77,12 +70,12 @@ FRTConnection::setError(int errorCode)
     case ErrorCode::ILLEGAL_TIMEOUT:
     case ErrorCode::OUTDATED_CONFIG:
     case ErrorCode::INTERNAL_ERROR:
-        calculateSuspension(FATAL); break;
+        calculateSuspension(FATAL);
+        break;
     }
 }
 
-void FRTConnection::setSuccess()
-{
+void FRTConnection::setSuccess() {
     std::lock_guard guard(_lock);
     _transientFailures = 0;
     _fatalFailures = 0;
@@ -91,17 +84,16 @@ void FRTConnection::setSuccess()
 
 namespace {
 
-constexpr uint32_t MAX_DELAY_MULTIPLIER = 6u;
+constexpr uint32_t           MAX_DELAY_MULTIPLIER = 6u;
 constexpr vespalib::duration WARN_INTERVAL = 10s;
 
-}
+} // namespace
 
-void FRTConnection::calculateSuspension(ErrorType type)
-{
-    duration delay = duration::zero();
-    steady_time now = steady_clock::now();
+void FRTConnection::calculateSuspension(ErrorType type) {
+    duration        delay = duration::zero();
+    steady_time     now = steady_clock::now();
     std::lock_guard guard(_lock);
-    switch(type) {
+    switch (type) {
     case TRANSIENT:
         delay = std::min(MAX_DELAY_MULTIPLIER, ++_transientFailures) * _transientDelay;
         LOG(debug, "Connection to %s failed or timed out", _address.c_str());
@@ -112,14 +104,12 @@ void FRTConnection::calculateSuspension(ErrorType type)
     }
     _suspendedUntil = now + delay;
     if (_suspendWarned < (now - WARN_INTERVAL)) {
-        LOG(debug, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(to_utc(_suspendedUntil)).c_str());
+        LOG(debug, "FRT Connection %s suspended until %s", _address.c_str(),
+            vespalib::to_string(to_utc(_suspendedUntil)).c_str());
         _suspendWarned = now;
     }
 }
 
-FRT_RPCRequest *
-FRTConnection::allocRPCRequest() {
-    return _supervisor.AllocRPCRequest();
-}
+FRT_RPCRequest* FRTConnection::allocRPCRequest() { return _supervisor.AllocRPCRequest(); }
 
-}
+} // namespace config

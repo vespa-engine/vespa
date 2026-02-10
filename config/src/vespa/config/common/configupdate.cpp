@@ -4,11 +4,7 @@
 namespace config {
 
 ConfigUpdate::ConfigUpdate(ConfigValue value, bool changed, int64_t generation)
-    : _value(std::move(value)),
-      _hasChanged(changed),
-      _generation(generation)
-{
-}
+    : _value(std::move(value)), _hasChanged(changed), _generation(generation) {}
 ConfigUpdate::~ConfigUpdate() = default;
 
 } // namespace config

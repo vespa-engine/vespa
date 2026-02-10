@@ -9,14 +9,12 @@ namespace config {
 
 class Connection;
 
-class ConnectionFactory
-{
+class ConnectionFactory {
 public:
-    virtual Connection * getCurrent() = 0;
-    virtual void syncTransport() = 0;
-    virtual FNET_Scheduler * getScheduler() = 0;
+    virtual Connection*     getCurrent() = 0;
+    virtual void            syncTransport() = 0;
+    virtual FNET_Scheduler* getScheduler() = 0;
     virtual ~ConnectionFactory() = default;
 };
 
-}
-
+} // namespace config
