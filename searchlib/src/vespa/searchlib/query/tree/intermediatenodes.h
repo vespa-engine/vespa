@@ -119,16 +119,18 @@ private:
 
 class SameElement : public QueryNodeMixin<SameElement, Intermediate>, public Term {
 public:
-    SameElement(std::string view, int32_t id, Weight weight)
-        : Term(std::move(view), id, weight), _expensive(false) {}
+    SameElement(std::string view, int32_t id, Weight weight, std::vector<uint32_t> element_filter = std::vector<uint32_t>())
+        : Term(std::move(view), id, weight), _expensive(false), _element_filter(std::move(element_filter)) {}
     virtual ~SameElement() = 0;
     SameElement &set_expensive(bool value) {
         _expensive = value;
         return *this;
     }
     bool is_expensive() const { return _expensive; }
+    std::vector<uint32_t> get_element_filter() const { return _element_filter; }
 private:
     bool _expensive;
+    std::vector<uint32_t> _element_filter;
 };
 
 }

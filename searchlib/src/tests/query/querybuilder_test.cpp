@@ -435,7 +435,7 @@ struct MyPhrase : Phrase {
 };
 
 struct MySameElement : SameElement {
-    MySameElement(const string & f, int32_t i, Weight w) : SameElement(f, i, w) {}
+    MySameElement(const string & f, int32_t i, Weight w, std::vector<uint32_t> element_filter) : SameElement(f, i, w, std::move(element_filter)) {}
     ~MySameElement() override;
 };
 
