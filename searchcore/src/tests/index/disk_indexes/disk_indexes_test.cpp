@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchcorespi/index/disk_indexes.h>
 #include <vespa/searchcorespi/index/index_disk_dir.h>
 #include <vespa/searchcorespi/index/indexdisklayout.h>
@@ -33,7 +34,7 @@ protected:
         return IndexDiskLayout::get_index_disk_dir(dir);
     }
 
-    uint64_t transient_size() const { return get_transient_size(_layout); }
+    uint64_t transient_size() const { return get_resource_usage(_layout).transient().disk(); }
 };
 
 DiskIndexesTest::DiskIndexesTest()

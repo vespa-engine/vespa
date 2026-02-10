@@ -7,6 +7,8 @@
 #include <mutex>
 #include <string>
 
+namespace searchcorespi::common { class ResourceUsage; }
+
 namespace searchcorespi::index {
 
 class IndexDiskDir;
@@ -43,7 +45,7 @@ public:
     bool isActive(const std::string & index) const;
     void add_not_active(IndexDiskDir index_disk_dir);
     bool remove(IndexDiskDir index_disk_dir);
-    uint64_t get_transient_size(const IndexDiskLayout& layout) const;
+    common::ResourceUsage get_resource_usage(const IndexDiskLayout& layout) const;
     uint64_t get_size_on_disk(bool include_stale) const;
 };
 
