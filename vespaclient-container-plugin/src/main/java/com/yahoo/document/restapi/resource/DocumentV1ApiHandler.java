@@ -5,6 +5,7 @@ import ai.vespa.utils.BytesQuantity;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.StreamReadConstraints;
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
@@ -128,6 +129,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static class MediaType {
         static final String JSON       = "application/json";
         static final String JSON_LINES = "application/jsonl";
+        static final String CBOR       = "application/cbor";
     }
 
     private static final Duration defaultTimeout = Duration.ofSeconds(180); // Match document API default timeout.
@@ -154,6 +156,14 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final JsonFactory jsonFactory = new JsonFactoryBuilder()
             .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
             .build();
+
+    private static final CBORFactory cborFactory = createCborFactory();
+
+    private static CBORFactory createCborFactory() {
+        CBORFactory factory = new CBORFactory();
+        factory.setStreamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build());
+        return factory;
+    }
 
     // Not all response renderings will ever output any documents; these can just use a default
     // pre-allocated tensor option instead of trying to fish it out of the request.
@@ -438,7 +448,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                 parameters.setFieldSet(DocIdOnly.NAME);
                 String type = path.documentType().orElseThrow(() -> new IllegalStateException("Document type must be specified for mass updates"));
                 IdIdString dummyId = new IdIdString("dummy", type, "", "");
-                ParsedDocumentOperation update = parser.parseUpdate(in, dummyId.toString());
+                ParsedDocumentOperation update = parser.parseUpdate(in, dummyId.toString(), parserFactoryForRequest(request));
                 update.operation().setCondition(new TestAndSetCondition(requireProperty(request, SELECTION)));
                 return () -> {
                     visitAndUpdate(request, parameters, update.fullyApplied(), handler, (DocumentUpdate)update.operation(), cluster.name());
@@ -500,7 +510,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             } else {
                 enqueueAndDispatch(
                         request, handler, bytesRead, () -> {
-                            ParsedDocumentOperation parsed = parser.parsePut(in, path.id().toString());
+                            ParsedDocumentOperation parsed = parser.parsePut(in, path.id().toString(), parserFactoryForRequest(request));
                             DocumentPut put = (DocumentPut) parsed.operation();
                             getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
                             getProperty(request, CREATE, booleanParser).ifPresent(put::setCreateIfNonExistent);
@@ -531,7 +541,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                 documentOperationRequestTooLarge(request, bytesRead, handler);
             } else {
                 enqueueAndDispatch(request, handler, bytesRead, () -> {
-                    ParsedDocumentOperation parsed = parser.parseUpdate(in, path.id().toString());
+                    ParsedDocumentOperation parsed = parser.parseUpdate(in, path.id().toString(), parserFactoryForRequest(request));
                     DocumentUpdate update = (DocumentUpdate)parsed.operation();
                     getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(update::setCondition);
                     getProperty(request, CREATE, booleanParser).ifPresent(update::setCreateIfNonExistent);
@@ -929,17 +939,17 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             this.manager = new DocumentTypeManager(config);
         }
 
-        ParsedDocumentOperation parsePut(InputStream inputStream, String docId) {
-            return parse(inputStream, docId, DocumentOperationType.PUT);
+        ParsedDocumentOperation parsePut(InputStream inputStream, String docId, JsonFactory factory) {
+            return parse(inputStream, docId, DocumentOperationType.PUT, factory);
         }
 
-        ParsedDocumentOperation parseUpdate(InputStream inputStream, String docId)  {
-            return parse(inputStream, docId, DocumentOperationType.UPDATE);
+        ParsedDocumentOperation parseUpdate(InputStream inputStream, String docId, JsonFactory factory)  {
+            return parse(inputStream, docId, DocumentOperationType.UPDATE, factory);
         }
 
-        private ParsedDocumentOperation parse(InputStream inputStream, String docId, DocumentOperationType operation) {
+        private ParsedDocumentOperation parse(InputStream inputStream, String docId, DocumentOperationType operation, JsonFactory factory) {
             try {
-                return new JsonReader(manager, inputStream, jsonFactory).readSingleDocumentStreaming(operation, docId);
+                return new JsonReader(manager, inputStream, factory).readSingleDocumentStreaming(operation, docId);
             } catch (IllegalArgumentException e) {
                 incrementMetricParseError();
                 throw e;
@@ -958,7 +968,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                com.yahoo.documentapi.Response response,
                                SuccessCallback callback) {
         var tensorOptions = createTensorOptionsFromRequest(request); // request may be null; implies short form
-        try (JsonResponse jsonResponse = JsonResponse.createWithPathAndId(path, handler, tensorOptions)) {
+        var factory = requestAcceptsCborResponse(request) ? cborFactory : jsonFactory;
+        try (JsonResponse jsonResponse = JsonResponse.createWithPathAndId(path, handler, tensorOptions, factory)) {
             jsonResponse.writeTrace(response.getTrace());
             if (response.isSuccess()) {
                 callback.onSuccess((response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null, jsonResponse);
@@ -1277,6 +1288,33 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private void visitWithRemote(HttpRequest request, VisitorParameters parameters, ResponseHandler handler) {
         visit(request, parameters, false, true, handler, new VisitCallback() { });
+    }
+
+    private static JsonFactory parserFactoryForRequest(HttpRequest request) {
+        List<String> contentTypeHeaders = request.headers().get(com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE);
+        if (contentTypeHeaders != null && !contentTypeHeaders.isEmpty()) {
+            String contentType = contentTypeHeaders.get(0);
+            int semi = contentType.indexOf(';');
+            if (semi != -1) contentType = contentType.substring(0, semi);
+            if (MediaType.CBOR.equalsIgnoreCase(contentType.trim())) return cborFactory;
+        }
+        return jsonFactory;
+    }
+
+    private static boolean requestAcceptsCborResponse(HttpRequest request) {
+        if (request == null) return false;
+        List<String> acceptHeaders = request.headers().get("Accept");
+        if (acceptHeaders != null) {
+            String combinedAcceptHeader = String.join(",", acceptHeaders);
+            try {
+                var acceptMatcher = new AcceptHeaderMatcher(combinedAcceptHeader);
+                var bestTypes = acceptMatcher.preferredExactMediaTypes(MediaType.CBOR, MediaType.JSON);
+                return !bestTypes.isEmpty() && MediaType.CBOR.equals(bestTypes.get(0));
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private static boolean requestAcceptsJsonLinesResponse(HttpRequest request) {

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.StreamReadConstraints;
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
@@ -65,15 +66,19 @@ class JsonResponse implements StreamableJsonResponse {
     private final AtomicLong documentsWritten = new AtomicLong();
     private final AtomicLong documentsFlushed = new AtomicLong();
     private final AtomicLong documentsAcked = new AtomicLong();
+    private final JsonFactory factory;
     private final JsonFormat.EncodeOptions tensorOptions;
+    private final String contentType;
     private boolean documentsDone = false;
     private boolean first = true;
     private ContentChannel channel;
 
-    private JsonResponse(ResponseHandler handler, JsonFormat.EncodeOptions tensorOptions) throws IOException {
+    private JsonResponse(ResponseHandler handler, JsonFormat.EncodeOptions tensorOptions, JsonFactory factory) throws IOException {
         this.handler = handler;
         this.tensorOptions = tensorOptions;
-        json = jsonFactory.createGenerator(out);
+        this.factory = factory;
+        this.contentType = (factory instanceof CBORFactory) ? "application/cbor" : "application/json; charset=UTF-8";
+        json = factory.createGenerator(out);
         json.writeStartObject();
     }
 
@@ -81,7 +86,11 @@ class JsonResponse implements StreamableJsonResponse {
      * Creates a new JsonResponse with path and id fields written.
      */
     static JsonResponse createWithPathAndId(DocumentPath path, ResponseHandler handler, JsonFormat.EncodeOptions tensorOptions) throws IOException {
-        JsonResponse response = new JsonResponse(handler, tensorOptions);
+        return createWithPathAndId(path, handler, tensorOptions, jsonFactory);
+    }
+
+    static JsonResponse createWithPathAndId(DocumentPath path, ResponseHandler handler, JsonFormat.EncodeOptions tensorOptions, JsonFactory factory) throws IOException {
+        JsonResponse response = new JsonResponse(handler, tensorOptions, factory);
         response.writePathId(path.rawPath());
         response.writeDocId(path.id());
         return response;
@@ -91,7 +100,7 @@ class JsonResponse implements StreamableJsonResponse {
      * Creates a new JsonResponse with path field written.
      */
     static JsonResponse createWithPath(HttpRequest request, ResponseHandler handler, JsonFormat.EncodeOptions tensorOptions) throws IOException {
-        JsonResponse response = new JsonResponse(handler, tensorOptions);
+        JsonResponse response = new JsonResponse(handler, tensorOptions, jsonFactory);
         response.writePathId(request.getUri().getRawPath());
         return response;
     }
@@ -115,7 +124,7 @@ class JsonResponse implements StreamableJsonResponse {
     @Override
     public synchronized void commit(int status, boolean fullyApplied) throws IOException {
         Response response = new Response(status);
-        response.headers().add("Content-Type", List.of("application/json; charset=UTF-8"));
+        response.headers().add("Content-Type", List.of(contentType));
         if (!fullyApplied) {
             response.headers().add(Headers.IGNORED_FIELDS, "true");
         }
@@ -219,10 +228,8 @@ class JsonResponse implements StreamableJsonResponse {
     @Override
     public void writeDocumentValue(Document document, CompletionHandler completionHandler) throws IOException {
         writeDocument(myOut -> {
-            try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
-                // TODO shouldn't this just take tensorOptions directly?
-                //  This does not actually allow for hex format rendering...!
-                new JsonWriter(myJson, tensorShortForm(), tensorDirectValues()).write(document);
+            try (JsonGenerator myJson = factory.createGenerator(myOut)) {
+                new JsonWriter(myJson, tensorOptions()).write(document);
             }
         }, completionHandler);
     }
@@ -230,7 +237,7 @@ class JsonResponse implements StreamableJsonResponse {
     @Override
     public void writeDocumentRemoval(DocumentId id, CompletionHandler completionHandler) throws IOException {
         writeDocument(myOut -> {
-            try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
+            try (JsonGenerator myJson = factory.createGenerator(myOut)) {
                 myJson.writeStartObject();
                 myJson.writeFieldName(JsonNames.REMOVE);
                 myJson.writeString(id.toString());

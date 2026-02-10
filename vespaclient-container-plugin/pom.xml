@@ -56,6 +56,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+        <groupId>com.fasterxml.jackson.dataformat</groupId>
+        <artifactId>jackson-dataformat-cbor</artifactId>
+        <scope>provided</scope>
+    </dependency>
+    <dependency>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>testutil</artifactId>
         <version>${project.version}</version>
