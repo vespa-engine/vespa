@@ -138,7 +138,7 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
             throw new IllegalArgumentException("Invalid colbert embedder tensor target destination. " +
                                                "Wanted a mixed 2-d mapped-indexed tensor, got " + tensorType);
         }
-        if (context.getDestination().startsWith("query")) {
+        if (context.getDestinationType() == Context.DestinationType.QUERY) {
             return embedQuery(text, context, tensorType);
         } else {
             return embedDocument(text, context, tensorType);

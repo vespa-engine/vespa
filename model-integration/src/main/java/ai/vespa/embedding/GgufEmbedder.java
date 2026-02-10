@@ -113,7 +113,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
      * Tokens are assumed to be independent and that the token sequence can be safely truncated at any position.
      */
     private String prependAndTruncatePrompt(String text, Context context) {
-        if (!prependQuery.isBlank() && context.getDestination().startsWith("query")) {
+        if (!prependQuery.isBlank() && context.getDestinationType() == Context.DestinationType.QUERY) {
             text = prependQuery + " " + text;
         } else if (!prependDocument.isBlank()) {
             text = prependDocument + " " + text;

@@ -594,6 +594,24 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.language.process.InvocationContext$DestinationType" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.language.process.InvocationContext$DestinationType[] values()",
+      "public static com.yahoo.language.process.InvocationContext$DestinationType valueOf(java.lang.String)",
+      "public static com.yahoo.language.process.InvocationContext$DestinationType fromString(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.language.process.InvocationContext$DestinationType QUERY",
+      "public static final enum com.yahoo.language.process.InvocationContext$DestinationType DOCUMENT"
+    ]
+  },
   "com.yahoo.language.process.InvocationContext" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -607,6 +625,7 @@
       "public com.yahoo.language.Language getLanguage()",
       "public com.yahoo.language.process.InvocationContext setLanguage(com.yahoo.language.Language)",
       "public java.lang.String getDestination()",
+      "public com.yahoo.language.process.InvocationContext$DestinationType getDestinationType()",
       "public com.yahoo.language.process.InvocationContext setDestination(java.lang.String)",
       "public java.util.Optional getDeadline()",
       "public com.yahoo.language.process.InvocationContext setDeadline(com.yahoo.language.process.InvocationContext$Deadline)",
