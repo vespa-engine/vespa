@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.yahoo.container.Container;
 import com.yahoo.container.core.config.testutil.HandlersConfigurerTestWrapper;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Random;
@@ -583,6 +585,139 @@ public class JSONSearchHandlerTestCase {
             assertEquals(200, responseHandler.getStatus());
             assertFalse(response.isEmpty());
         }
+    }
+
+    // CBOR POST body tests
+
+    private static final String CBOR_CONTENT_TYPE = "application/cbor";
+    private static final ObjectMapper cborMapper = new ObjectMapper(new CBORFactory());
+
+    private static byte[] jsonToCbor(String json) throws IOException {
+        JsonNode tree = jsonMapper.readTree(json);
+        return cborMapper.writeValueAsBytes(tree);
+    }
+
+    private RequestHandlerTestDriver.MockResponseHandler sendCborRequest(String uri, byte[] cbor) {
+        return driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST,
+                                  ByteBuffer.wrap(cbor), CBOR_CONTENT_TYPE);
+    }
+
+    @Test
+    void testCborQuery() throws IOException {
+        ObjectNode json = jsonMapper.createObjectNode();
+        json.put("query", "abc");
+        RequestHandlerTestDriver.MockResponseHandler response =
+                sendCborRequest(uri, cborMapper.writeValueAsBytes(json));
+        assertOkResult(response, jsonResult);
+    }
+
+    @Test
+    void testCborQueryWithYQL() throws IOException {
+        ObjectNode root = jsonMapper.createObjectNode();
+        root.put("yql", "select * from sources * where default contains 'bad';");
+
+        String result = sendCborRequest(uri + "searchChain=echoingQuery",
+                                        cborMapper.writeValueAsBytes(root)).readAll();
+        assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0}," +
+                     "\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":" +
+                     "\"select * from sources * where default contains \\\"bad\\\"\"}}]}}",
+                     result);
+    }
+
+    @Test
+    void testCborInputParameters() throws IOException {
+        String json = """
+                       {
+                         "input": {
+                             "query(q_category)": { "Tablet Keyboard Cases": 42.5 },
+                             "query(q_vector)": [ 1, 2.5, 3 ]
+                         }
+                       }
+                       """;
+        Map<String, String> map = Json2SingleLevelMap.ofCbor(new ByteArrayInputStream(jsonToCbor(json))).parse();
+        assertEquals("{\"Tablet Keyboard Cases\":42.5}", map.get("input.query(q_category)"));
+        assertEquals("[1,2.5,3]", map.get("input.query(q_vector)"));
+    }
+
+    @Test
+    void testCborSelectParameters() throws IOException {
+        ObjectNode json = jsonMapper.createObjectNode();
+        ObjectNode select = jsonMapper.createObjectNode();
+        ObjectNode where = jsonMapper.createObjectNode();
+        where.put("where", "where");
+        ObjectNode grouping = jsonMapper.createObjectNode();
+        grouping.put("grouping", "grouping");
+        select.set("where", where);
+        select.set("grouping", grouping);
+        json.set("select", select);
+
+        Map<String, String> map = Json2SingleLevelMap.ofCbor(new ByteArrayInputStream(cborMapper.writeValueAsBytes(json))).parse();
+
+        JsonNode processedWhere = jsonMapper.readTree(map.get("select.where"));
+        JsonTestHelper.assertJsonEquals(where.toString(), processedWhere.toString());
+
+        JsonNode processedGrouping = jsonMapper.readTree(map.get("select.grouping"));
+        JsonTestHelper.assertJsonEquals(grouping.toString(), processedGrouping.toString());
+    }
+
+    @Test
+    void testCborWithWhereAndGroupingUnderSelect() throws IOException {
+        String json = """
+                {
+                  "select": {
+                    "where": {
+                      "contains": [
+                        "field",
+                        "term"
+                      ]
+                    },
+                    "grouping":[
+                      {
+                        "all": {
+                          "output": "count()"
+                        }
+                      }
+                    ]
+                  }
+                }
+                """;
+        String result = sendCborRequest(uri + "searchChain=echoingQuery", jsonToCbor(json)).readAll();
+
+        String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0}," +
+                          "\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":" +
+                          "\"select * from sources * where field contains \\\"term\\\" | all(output(count()))\"}}]}}";
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void testCborRequestMapping() throws IOException {
+        ObjectNode json = jsonMapper.createObjectNode();
+        json.put("yql", "select * from sources * where sddocname contains \"blog_post\"");
+        json.put("hits", 10);
+        json.put("offset", 5);
+
+        ObjectNode ranking = jsonMapper.createObjectNode();
+        ranking.put("profile", "1");
+        json.set("ranking", ranking);
+
+        ObjectNode presentation = jsonMapper.createObjectNode();
+        presentation.put("format", "json");
+        json.set("presentation", presentation);
+
+        Map<String, String> cborMap = Json2SingleLevelMap.ofCbor(new ByteArrayInputStream(cborMapper.writeValueAsBytes(json))).parse();
+        Map<String, String> jsonMap = new Json2SingleLevelMap(new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8))).parse();
+
+        assertEquals(jsonMap, cborMap);
+    }
+
+    @Test
+    void testBadCbor() throws IOException {
+        byte[] badCbor = { 0x01, 0x02, 0x03 };
+        RequestHandlerTestDriver.MockResponseHandler responseHandler =
+                sendCborRequest(uri, badCbor);
+        String response = responseHandler.readAll();
+        assertEquals(400, responseHandler.getStatus());
+        assertTrue(response.contains("errors"));
     }
 
     private static File newFolder(File root, String... subDirs) throws IOException {
