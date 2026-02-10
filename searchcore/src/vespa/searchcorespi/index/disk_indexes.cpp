@@ -123,7 +123,7 @@ ResourceUsage
 DiskIndexes::get_resource_usage(const IndexDiskLayout& layout) const
 {
     std::unique_lock guard(_lock);
-    uint64_t size_on_disk = _sum_size_on_disk - _sum_stale_size_on_disk;;
+    uint64_t size_on_disk = _sum_size_on_disk - _sum_stale_size_on_disk;
     uint64_t transient_size = _sum_stale_size_on_disk;
     std::vector<IndexDiskDir> deferred;
     for (auto &entry : _active) {
