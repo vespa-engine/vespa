@@ -30,13 +30,15 @@ namespace rpc {
 
 class CachingRpcTargetResolver;
 class MessageCodecProvider;
+class MetadataPropagator;
 class SharedRpcResources;
 
 class StorageApiRpcService : public FRT_Invokable, public FRT_IRequestWait {
 public:
     struct Params {
+        std::shared_ptr<MetadataPropagator>      metadata_propagator;
         vespalib::compression::CompressionConfig compression_config;
-        size_t num_rpc_targets_per_node;
+        size_t                                   num_rpc_targets_per_node;
 
         Params();
         ~Params();
