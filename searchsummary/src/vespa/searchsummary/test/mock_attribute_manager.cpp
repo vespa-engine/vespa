@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mock_attribute_manager.h"
+#include <vespa/searchlib/attribute/array_bool_attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
@@ -86,6 +87,26 @@ MockAttributeManager::build_raw_attribute(const std::string& name,
                                           const std::vector<std::vector<std::vector<char>>>& values)
 {
     build_attribute<SingleRawAttribute, std::vector<char>>(name, BasicType::Type::RAW, CollectionType::SINGLE, values, std::nullopt);
+}
+
+void
+MockAttributeManager::build_bool_attribute(const std::string& name,
+                                           const std::vector<std::vector<int8_t>>& values)
+{
+    Config cfg(BasicType::BOOL, CollectionType::ARRAY);
+    auto attr_base = AttributeFactory::createAttribute(name, cfg);
+    assert(attr_base);
+    auto& bool_attr = dynamic_cast<search::attribute::ArrayBoolAttribute&>(*attr_base);
+    attr_base->addReservedDoc();
+    for (const auto& doc_values : values) {
+        uint32_t docId = 0;
+        attr_base->addDoc(docId);
+        if (!doc_values.empty()) {
+            bool_attr.set_bools(docId, doc_values);
+        }
+        attr_base->commit();
+    }
+    _mgr.add(attr_base);
 }
 
 }

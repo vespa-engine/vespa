@@ -65,6 +65,7 @@ vespa_define_module(
     src/tests/aggregator
     src/tests/alignment
     src/tests/attribute
+    src/tests/attribute/array_bool_attribute
     src/tests/attribute/attribute_header
     src/tests/attribute/attribute_operation
     src/tests/attribute/attributefilewriter

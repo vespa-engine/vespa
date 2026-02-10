@@ -19,6 +19,7 @@
 #include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/searchlib/attribute/array_bool_attribute.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
@@ -37,6 +38,7 @@ using vespalib::make_string;
 using vespalib::getClassName;
 using search::tensor::PrepareResult;
 using search::tensor::TensorAttribute;
+using search::attribute::ArrayBoolAttribute;
 using search::attribute::ReferenceAttribute;
 using search::attribute::SingleRawAttribute;
 
@@ -277,6 +279,27 @@ AttributeUpdater::handleUpdate(SingleRawAttribute& vec, uint32_t lid, const Valu
     }
 }
 
+template <>
+void
+AttributeUpdater::handleUpdate(ArrayBoolAttribute &vec, uint32_t lid, const ValueUpdate &upd)
+{
+    LOG(spam, "handleUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
+    ValueUpdate::ValueUpdateType op = upd.getType();
+    if (op == ValueUpdate::Assign) {
+        const AssignValueUpdate &assign(static_cast<const AssignValueUpdate &>(upd));
+        if (assign.hasValue()) {
+            updateValue(vec, lid, assign.getValue());
+        } else {
+            vec.clearDoc(lid);
+        }
+    } else if (op == ValueUpdate::Clear) {
+        vec.clearDoc(lid);
+    } else {
+        LOG(warning, "Unsupported value update operation %s on array bool attribute %s",
+            upd.className(), vec.getName().c_str());
+    }
+}
+
 void
 AttributeUpdater::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate & fUpdate)
 {
@@ -297,7 +320,11 @@ AttributeUpdater::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldU
         }
 
         if (vec.isIntegerType()) {
-            handleUpdateT(static_cast<IntegerAttribute &>(vec), GetLong(), lid, vUp);
+            if (vec.getBasicType() == attribute::BasicType::BOOL && vec.hasMultiValue()) {
+                handleUpdate(static_cast<ArrayBoolAttribute &>(vec), lid, vUp);
+            } else {
+                handleUpdateT(static_cast<IntegerAttribute &>(vec), GetLong(), lid, vUp);
+            }
         } else if (vec.isFloatingPointType()) {
             handleUpdateT(static_cast<FloatingPointAttribute &>(vec), GetDouble(), lid, vUp);
         } else if (vec.isStringType()) {
@@ -322,7 +349,11 @@ AttributeUpdater::handleValue(AttributeVector & vec, uint32_t lid, const FieldVa
 {
     LOG(spam, "handleValue(%s, %u): %s", vec.getName().c_str(), lid, toString(val).c_str());
     if (vec.isIntegerType()) {
-        handleValueT(static_cast<IntegerAttribute &>(vec), GetLong(), lid, val);
+        if (vec.getBasicType() == attribute::BasicType::BOOL && vec.hasMultiValue()) {
+            updateValue(static_cast<ArrayBoolAttribute &>(vec), lid, val);
+        } else {
+            handleValueT(static_cast<IntegerAttribute &>(vec), GetLong(), lid, val);
+        }
     } else if (vec.isFloatingPointType()) {
         handleValueT(static_cast<FloatingPointAttribute &>(vec), GetDouble(), lid, val);
     } else if (vec.isStringType()) {
@@ -540,6 +571,23 @@ AttributeUpdater::updateValue(SingleRawAttribute& vec, uint32_t lid, const Field
     const auto& raw_fv = static_cast<const RawFieldValue &>(val);
     auto raw = raw_fv.getValueRef();
     vec.update(lid, {raw.data(), raw.size()});
+}
+
+void
+AttributeUpdater::updateValue(ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val)
+{
+    if (!val.isA(FieldValue::Type::ARRAY)) {
+        LOG(warning, "Unsupported value '%s' to assign on array bool attribute '%s'",
+            val.className(), vec.getName().c_str());
+        return;
+    }
+    const auto& array = static_cast<const ArrayFieldValue&>(val);
+    std::vector<int8_t> bools;
+    bools.reserve(array.size());
+    for (uint32_t i = 0; i < array.size(); ++i) {
+        bools.push_back(array[i].getAsLong() ? 1 : 0);
+    }
+    vec.set_bools(lid, bools);
 }
 
 namespace {
