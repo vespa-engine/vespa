@@ -148,7 +148,6 @@ public class YqlParser implements Parser {
     public static final String USER_INPUT_LANGUAGE = "language";
     private static final String USER_INPUT_GRAMMAR_RAW = "raw";
     private static final String USER_INPUT_GRAMMAR_SEGMENT = "segment";
-    private static final String TEXT = "text";
     private static final String USER_INPUT = "userInput";
     private static final String USER_QUERY = "userQuery";
     private static final String NON_EMPTY = "nonEmpty";
@@ -931,38 +930,29 @@ public class YqlParser implements Parser {
 
     private Item buildUserInput(OperatorNode<ExpressionOperator> ast, String currentField) {
         // TODO: Add support for default arguments if property results in nothing
-        String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
-                                            String.class,
-                                            currentField != null ? null : "default", // if there's a current field, we're in sameElement
-                                            "default index for user input terms");
-        return buildTextInput(ast, defaultIndex, Query.Type.WEAKAND, true);
-    }
-
-    private Item buildText(String field, OperatorNode<ExpressionOperator> ast) {
-        return buildTextInput(ast, field, Query.Type.LINGUISTICS, false);
-    }
-
-    private Item buildTextInput(OperatorNode<ExpressionOperator> ast, String field,
-                                Query.Type defaultGrammar, boolean useModelType) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         String wordData = getStringContents(args.get(0));
         Boolean allowEmpty = getAnnotation(ast, USER_INPUT_ALLOW_EMPTY, Boolean.class,
                                            Boolean.FALSE, "flag for allowing NullItem to be returned");
         if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
 
+        String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
+                                            String.class,
+                                            currentField != null ? null : "default", // if there's a current field, we're in sameElement
+                                            "default index for user input terms");
         boolean explicitLanguage = hasExplicitLanguageAnnotation(ast);
         Language language = decideParsingLanguage(ast, wordData);
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
-                                       defaultGrammar.toString(), "grammar for text processing");
-        QueryType queryType = buildQueryType(ast, defaultGrammar, useModelType);
+                                       Query.Type.WEAKAND.toString(), "The overall query type of the user input");
+        QueryType queryType = buildQueryType(ast);
         if (USER_INPUT_GRAMMAR_RAW.equals(grammar)) {
-            return assignQueryType(instantiateWordItem(field, wordData, ast, null, SegmentWhen.NEVER, true, language),
+            return assignQueryType(instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language),
                                    queryType);
         } else if (USER_INPUT_GRAMMAR_SEGMENT.equals(grammar)) {
-            return assignQueryType(instantiateWordItem(field, wordData, ast, null, SegmentWhen.ALWAYS, false, language),
+            return assignQueryType(instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language),
                                    queryType);
         } else {
-            Item item = parseUserInput(queryType, field, wordData, language, explicitLanguage, allowEmpty);
+            Item item = parseUserInput(queryType, defaultIndex, wordData, language, explicitLanguage, allowEmpty);
             propagateUserInputAnnotationsRecursively(ast, item);
 
             // Set grammar-specific annotations
@@ -993,10 +983,9 @@ public class YqlParser implements Parser {
         return item;
     }
 
-    private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast,
-                                     Query.Type defaultType, boolean useModelType) {
-        var queryType = QueryType.from(defaultType);
-        if (useModelType && userQuery != null) {
+    private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
+        var queryType = QueryType.from(Query.Type.WEAKAND);
+        if (userQuery != null) {
             queryType = QueryType.from(userQuery.properties().getString(modelType, userQuery.properties().getString(modelTypeAlias)));
             queryType = queryType.setComposite(userQuery.properties().getString(modelTypeComposite));
             queryType = queryType.setTokenization(userQuery.properties().getString(modelTypeTokenization));
@@ -1004,8 +993,8 @@ public class YqlParser implements Parser {
             queryType = queryType.setProfile(userQuery.properties().getString(modelTypeProfile));
             queryType = queryType.setYqlDefault(userQuery.properties().getBoolean(modelTypeIsYqlDefault));
         }
-        if (useModelType && ! queryType.isYqlDefault())
-            queryType = QueryType.from(defaultType);
+        if ( ! queryType.isYqlDefault())
+            queryType = QueryType.from(Query.Type.WEAKAND);
 
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        null, "The overall query type of the user input");
@@ -1590,9 +1579,8 @@ public class YqlParser implements Parser {
             case ALTERNATIVES -> instantiateWordAlternativesItem(field, ast);
             case URI -> instantiateUriItem(field, ast);
             case FUZZY -> instantiateFuzzyItem(field, ast);
-            case TEXT -> buildText(field, ast);
             default ->
-                    throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT, TEXT, URI, FUZZY);
+                    throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT, URI, FUZZY);
         };
     }
 
@@ -1832,7 +1820,7 @@ public class YqlParser implements Parser {
         // tokenization==linguistics --> all processing is done by one linguistics invocation,
         // so disable stemming, normalizing and lowercasing
         if (userQuery != null && userQuery.properties().getBoolean(modelTypeIsYqlDefault)) {
-            QueryType queryType = buildQueryType(ast, Query.Type.WEAKAND, true);
+            QueryType queryType = buildQueryType(ast);
             return queryType.getTokenization() == QueryType.Tokenization.linguistics;
         }
         return false;

@@ -508,7 +508,7 @@ public class YqlParserTestCase {
     }
 
     @Test
-    void testRawContainsLiteral() {
+    void testRaw() {
         // Default: Not raw, for comparison
         Item root = parse("select foo from bar where baz contains (\"yoni jo dima\")").getRoot();
         assertEquals("baz:'yoni jo dima'", root.toString());
@@ -519,6 +519,16 @@ public class YqlParserTestCase {
         assertEquals("baz:yoni jo dima", root.toString());
         assertInstanceOf(WordItem.class, root);
         assertFalse(root instanceof ExactStringItem);
+        assertEquals("yoni jo dima", ((WordItem) root).getWord());
+
+        root = parse("select foo from bar where {grammar:\"all\"}userInput(\"yoni jo dima\")").getRoot();
+        assertInstanceOf(AndItem.class, root);
+        AndItem andItem = (AndItem) root;
+        assertEquals(3, andItem.getItemCount());
+
+        root = parse("select foo from bar where {grammar:\"raw\"}userInput(\"yoni jo dima\")").getRoot();
+        assertInstanceOf(WordItem.class, root);
+        assertInstanceOf(ExactStringItem.class, root);
         assertEquals("yoni jo dima", ((WordItem) root).getWord());
     }
 
