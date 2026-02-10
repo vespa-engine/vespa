@@ -533,13 +533,21 @@ public class SearchHandler extends LoggingRequestHandler {
         }
     }
 
-    /** Add properties POSTed as a JSON payload, if any, to the request map */
+    /** Add properties POSTed as a JSON or CBOR payload, if any, to the request map */
     private Map<String, String> requestMapFromRequest(HttpRequest request) {
-        if (request.getMethod() != com.yahoo.jdisc.http.HttpRequest.Method.POST
-            ||  ! JSON_CONTENT_TYPE.equals(getMediaType(request)))
+        if (request.getMethod() != com.yahoo.jdisc.http.HttpRequest.Method.POST)
             return request.propertyMap();
 
-        Map<String, String> requestMap = new Json2SingleLevelMap(request.getData()).parse();
+        String mediaType = getMediaType(request);
+        Json2SingleLevelMap bodyParser;
+        if (JSON_CONTENT_TYPE.equals(mediaType))
+            bodyParser = new Json2SingleLevelMap(request.getData());
+        else if (CBOR_CONTENT_TYPE.equals(mediaType))
+            bodyParser = Json2SingleLevelMap.ofCbor(request.getData());
+        else
+            return request.propertyMap();
+
+        Map<String, String> requestMap = bodyParser.parse();
 
         // Add fields from JSON to the request map
         requestMap.putAll(request.propertyMap());
