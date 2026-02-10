@@ -106,7 +106,7 @@ public class TextInputTestCase {
         Item root = parse(yql).getRoot();
         assertInstanceOf(WeakAndItem.class, root);
         WeakAndItem weakAnd = (WeakAndItem) root;
-        assertEquals(50, weakAnd.getN());
+        assertEquals(50, weakAnd.getTargetHits());
         assertEquals(2, weakAnd.getItemCount());
     }
 
@@ -213,7 +213,7 @@ public class TextInputTestCase {
     void testTextDefaultsToLinguisticsMode() {
         Item root = parse("select foo from bar where title contains text(\"yoni jo dima\")").getRoot();
         assertInstanceOf(WeakAndItem.class, root);
-        assertEquals("WEAKAND(100) title:yoni title:jo title:dima", root.toString());
+        assertEquals("WEAKAND title:yoni title:jo title:dima", root.toString());
         for (Item child : ((WeakAndItem) root).items()) {
             assertInstanceOf(WordItem.class, child);
             WordItem childWord = (WordItem) child;
@@ -227,14 +227,14 @@ public class TextInputTestCase {
     void testTextIgnoresDefaultIndexAndUsesContainsField() {
         Item root = parse("select foo from bar where title contains ({defaultIndex:\"other\"}text(\"a b\"))").getRoot();
         assertInstanceOf(WeakAndItem.class, root);
-        assertEquals("WEAKAND(100) title:a title:b", root.toString());
+        assertEquals("WEAKAND title:a title:b", root.toString());
     }
 
     @Test
     void testTextWithPropertyReference() {
         Item root = parse("select foo from bar where title contains text(@q)", "q", "hello world").getRoot();
         assertInstanceOf(WeakAndItem.class, root);
-        assertEquals("WEAKAND(100) title:hello title:world", root.toString());
+        assertEquals("WEAKAND title:hello title:world", root.toString());
     }
 
     @Test
