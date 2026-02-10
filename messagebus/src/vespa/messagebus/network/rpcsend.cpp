@@ -178,17 +178,17 @@ RPCSend::doRequestDone(FRT_RPCRequest *req) {
         switch (req->GetErrorCode()) {
             case FRTE_RPC_TIMEOUT:
                 error = Error(ErrorCode::TIMEOUT,
-                              make_string("A timeout occured while waiting for '%s' (%g seconds expired); %s",
+                              make_string("A timeout occurred while waiting for '%s' (%g seconds expired); %s",
                                           serviceName.c_str(), vespalib::to_s(ctx->getTimeout()), req->GetErrorMessage()));
                 break;
             case FRTE_RPC_CONNECTION:
                 error = Error(ErrorCode::CONNECTION_ERROR,
-                              make_string("A connection error occured for '%s'; %s",
+                              make_string("A connection error occurred for '%s'; %s",
                                           serviceName.c_str(), req->GetErrorMessage()));
                 break;
             default:
                 error = Error(ErrorCode::NETWORK_ERROR,
-                              make_string("A network error occured for '%s'; %s",
+                              make_string("A network error occurred for '%s'; %s",
                                           serviceName.c_str(), req->GetErrorMessage()));
         }
     } else {
@@ -252,7 +252,7 @@ RPCSend::doHandleReply(Reply::UP reply) {
     if (reply->getType() != 0) {
         payload = protocol->encode(ctx->getVersion(), *reply);
         if (payload.size() == 0) {
-            reply->addError(Error(ErrorCode::ENCODE_ERROR, "An error occured while encoding the reply, see log."));
+            reply->addError(Error(ErrorCode::ENCODE_ERROR, "An error occurred while encoding the reply, see log."));
         }
     }
     FRT_Values &ret = *req.GetReturn();
@@ -289,7 +289,7 @@ RPCSend::doRequest(FRT_RPCRequest *req)
     }
     if (routable->isReply()) {
         replyError(req, params->getVersion(), params->getTraceLevel(),
-                   Error(ErrorCode::DECODE_ERROR, "Payload decoded to a reply when expecting a mesage."));
+                   Error(ErrorCode::DECODE_ERROR, "Payload decoded to a reply when expecting a message."));
         return;
     }
     Message::UP msg(static_cast<Message*>(routable.release()));
