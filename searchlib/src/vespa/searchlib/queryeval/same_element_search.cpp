@@ -27,8 +27,15 @@ SameElementSearch::check_docid_match(uint32_t docid)
 void
 SameElementSearch::fetch_matching_elements(uint32_t docid, std::vector<uint32_t> & elems)
 {
-    _children.front()->get_element_ids(docid, elems);
-    for (auto it(_children.begin() + 1); it != _children.end();  it++) {
+    auto begin_with = _children.begin();
+    if (!_element_filter.empty()) {
+        elems.insert(elems.end(), _element_filter.begin(), _element_filter.end());
+    } else {
+        _children.front()->get_element_ids(docid, elems);
+        ++begin_with;
+    }
+
+    for (auto it(begin_with); it != _children.end();  it++) {
         (*it)->and_element_ids_into(docid, elems);
     }
 }
@@ -52,12 +59,14 @@ SameElementSearch::filter_descendants_match_data(uint32_t docid, std::span<const
 SameElementSearch::SameElementSearch(TermFieldMatchData &tfmd,
                                      std::vector<TermFieldMatchData*> descendants_index_tfmd,
                                      std::vector<std::unique_ptr<SearchIterator>> children,
-                                     bool strict)
+                                     bool strict,
+                                     std::vector<uint32_t> element_filter)
     : _tfmd(tfmd),
       _descendants_index_tfmd(std::move(descendants_index_tfmd)),
       _children(std::move(children)),
       _matchingElements(),
-      _strict(strict)
+      _strict(strict),
+      _element_filter(std::move(element_filter))
 {
     _tfmd.reset(0);
     assert(!_children.empty());
