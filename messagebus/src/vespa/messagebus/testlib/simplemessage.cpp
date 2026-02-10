@@ -2,6 +2,8 @@
 
 #include "simplemessage.h"
 #include "simpleprotocol.h"
+#include <vespa/messagebus/metadata_extractor.h>
+#include <vespa/messagebus/metadata_injector.h>
 
 namespace mbus {
 
@@ -72,6 +74,28 @@ uint32_t
 SimpleMessage::getApproxSize() const
 {
     return _value.size();
+}
+
+bool SimpleMessage::hasMetadata() const noexcept {
+    return _foo_meta || _bar_meta;
+}
+
+void SimpleMessage::injectMetadata(MetadataInjector& injector) const {
+    if (_foo_meta) {
+        injector.inject_key_value("foo", *_foo_meta);
+    }
+    if (_bar_meta) {
+        injector.inject_key_value("bar", *_bar_meta);
+    }
+}
+
+void SimpleMessage::extractMetadata(const MetadataExtractor& extractor) {
+    if (auto v = extractor.extract_value("foo")) {
+        _foo_meta = v;
+    }
+    if (auto v = extractor.extract_value("bar")) {
+        _bar_meta = v;
+    }
 }
 
 } // namespace mbus

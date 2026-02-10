@@ -7,6 +7,7 @@
 #include <vespa/messagebus/tracelevel.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/metadata_extractor.h>
 #include <vespa/fnet/channel.h>
 #include <vespa/fnet/frt/reflection.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -53,7 +54,21 @@ private:
     mutable Blob _payload;
 };
 
-}
+// MetadataExtractor for use when there's no metadata header present, but we still
+// want to give the illusion that an empty one was provided.
+class AlwaysEmptyMetadataExtractor final : public MetadataExtractor {
+public:
+    ~AlwaysEmptyMetadataExtractor() override = default;
+    std::optional<std::string> extract_value(std::string_view) const override {
+        return std::nullopt;
+    }
+    [[nodiscard]] static const AlwaysEmptyMetadataExtractor& instance() noexcept {
+        static const AlwaysEmptyMetadataExtractor sentinel;
+        return sentinel;
+    }
+};
+
+} // namespace
 
 RPCSend::RPCSend()
     : _net(nullptr),
@@ -293,6 +308,11 @@ RPCSend::doRequest(FRT_RPCRequest *req)
         msg->getTrace().trace(TraceLevel::SEND_RECEIVE,
                               make_string("Message (type %d) received at %s for session '%s'.",
                                           msg->getType(), _serverIdent.c_str(), string(params->getSession()).c_str()));
+    }
+    if (auto meta_extractor = params->steal_metadata_extractor()) {
+        msg->extractMetadata(*meta_extractor);
+    } else {
+        msg->extractMetadata(AlwaysEmptyMetadataExtractor::instance());
     }
     _net->getOwner().deliverMessage(std::move(msg), params->getSession());
 }

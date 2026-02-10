@@ -29,7 +29,8 @@ TEST(SimpleProtocolTest, simpleprotocol_test) {
     {
         // test SimpleMessage
         EXPECT_EQ(104u, sizeof(Message));
-        EXPECT_EQ(120u + sizeof(std::string), sizeof(SimpleMessage));
+        constexpr size_t dummy_metadata_overhead = sizeof(std::optional<std::string>) * 2;
+        EXPECT_EQ(sizeof(Message) + 16u + dummy_metadata_overhead + sizeof(std::string), sizeof(SimpleMessage));
         auto msg = std::make_unique<SimpleMessage>("test");
         EXPECT_TRUE(!msg->isReply());
         EXPECT_TRUE(msg->getProtocol() == SimpleProtocol::NAME);
