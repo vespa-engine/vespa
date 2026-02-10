@@ -12,6 +12,7 @@ import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.idstring.IdString;
 import com.yahoo.messagebus.Routable;
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
 import com.yahoo.vdslib.SearchResult;
 
@@ -159,7 +160,7 @@ public class Messages80TestCase extends MessagesTestBase {
             for (var tas : tasConditions()) {
                 var msg = new PutDocumentMessage(new DocumentPut(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::")));
                 msg.setCondition(tas.condition);
-                var msgAndCondName = "PutDocumentMessage-%s".formatted(tas.name);
+                var msgAndCondName = Text.format("PutDocumentMessage-%s", tas.name);
                 serialize(msgAndCondName, msg);
                 forEachLanguage((lang) -> {
                     var decoded = (PutDocumentMessage)deserialize(msgAndCondName, DocumentProtocol.MESSAGE_PUTDOCUMENT, lang);

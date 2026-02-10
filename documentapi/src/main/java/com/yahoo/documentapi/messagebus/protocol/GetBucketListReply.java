@@ -2,6 +2,7 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.document.BucketId;
+import com.yahoo.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +60,7 @@ public class GetBucketListReply extends DocumentReply {
 
         @Override
         public String toString() {
-            return String.format("BucketInfo(%s: %s)", bucket, bucketInformation);
+            return Text.format("BucketInfo(%s: %s)", bucket, bucketInformation);
         }
     }
 

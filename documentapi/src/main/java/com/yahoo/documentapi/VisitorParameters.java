@@ -6,6 +6,7 @@ import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.routing.Route;
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
 
 import java.util.Map;
@@ -311,8 +312,8 @@ public final class VisitorParameters extends Parameters {
         sb.append("  Max buckets:        ").append(maxBucketsPerVisitor).append('\n');
         sb.append("  Priority:           ").append(getPriority().toString()).append('\n');
         if (slices > 1) {
-            sb.append("  Slice ID:           %d\n".formatted(sliceId));
-            sb.append("  Slice count:        %d\n".formatted(slices));
+            sb.append(Text.format("  Slice ID:           %d\n", sliceId));
+            sb.append(Text.format("  Slice count:        %d\n", slices));
         }
         sb.append(')');
 

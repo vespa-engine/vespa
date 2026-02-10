@@ -4,6 +4,7 @@ package com.yahoo.documentapi.messagebus.protocol;
 import com.yahoo.jrt.slobrok.api.IMirror;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.messagebus.routing.RoutingContext;
+import com.yahoo.text.Text;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.when;
 public class TargetCachingSlobrokHostFetcherTest {
 
     private static String idOfIndex(int index) {
-        return String.format("storage/cluster.foo/distributor/%d/default", index);
+        return Text.format("storage/cluster.foo/distributor/%d/default", index);
     }
 
     private static String idOfWildcardLookup() {
@@ -34,11 +35,11 @@ public class TargetCachingSlobrokHostFetcherTest {
     }
 
     private static String lookupSpecOfIndex(int index) {
-        return String.format("tcp/localhost:%d", index);
+        return Text.format("tcp/localhost:%d", index);
     }
 
     private static String resolvedSpecOfIndex(int index) {
-        return String.format("tcp/localhost:%d/default", index);
+        return Text.format("tcp/localhost:%d/default", index);
     }
 
     private static List<Mirror.Entry> dummyEntries(int... indices) {
