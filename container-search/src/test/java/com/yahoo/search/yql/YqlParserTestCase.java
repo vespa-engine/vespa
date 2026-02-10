@@ -450,6 +450,48 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testSameElementWithElementFilter() {
+        // Test with array of element filters
+        QueryTree queryTree = parse("select * from sources * where myfield contains ({elementFilter:[1,2,5]} sameElement(name contains 'John'))");
+        SameElementItem sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(1, 2, 5), sameElem.getElementFilter(), "Element filter should match");
+
+        // Test with single element filter
+        queryTree = parse("select * from sources * where myfield contains ({elementFilter:42} sameElement(name contains 'Jane'))");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(42), sameElem.getElementFilter(), "Single element filter should work");
+
+        // Test with zero value (should be valid)
+        queryTree = parse("select * from sources * where myfield contains ({elementFilter:0} sameElement(name contains 'Zero'))");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(0), sameElem.getElementFilter(), "Zero should be valid");
+
+        // Test deduplication and sorting
+        queryTree = parse("select * from sources * where myfield contains ({elementFilter:[5,2,5,1,2]} sameElement(name contains 'Dedup'))");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(1, 2, 5), sameElem.getElementFilter(), "Should be sorted and deduplicated");
+    }
+
+    @Test
+    void testSameElementWithInvalidElementFilter() {
+        // Test negative number
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:-1} sameElement(name contains 'John'))",
+                new IllegalArgumentException("elementFilter values must be non-negative, got: -1"));
+
+        // Test negative in array
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:[1,-2,3]} sameElement(name contains 'John'))",
+                new IllegalArgumentException("elementFilter values must be non-negative, got: -2"));
+
+        // Test floating point number
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:1.5} sameElement(name contains 'John'))",
+                new IllegalArgumentException("elementFilter must be an integer or list of integers, not a floating point number"));
+
+        // Test floating point in array
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:[1,2.5,3]} sameElement(name contains 'John'))",
+                new IllegalArgumentException("elementFilter values must be integers, not floating point numbers. Got: 2.5"));
+    }
+
+    @Test
     void testPhrase() {
         assertParse("select foo from bar where baz contains phrase(\"a\", \"b\")",
                 "baz:\"a b\"");
