@@ -7991,35 +7991,6 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.search.rendering.JsonGeneratorDataSink" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [
-      "com.yahoo.data.disclosure.DataSink"
-    ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(com.fasterxml.jackson.core.JsonGenerator)",
-      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
-      "public void fieldName(java.lang.String, byte[])",
-      "public void startObject()",
-      "public void endObject()",
-      "public void startArray()",
-      "public void endArray()",
-      "public void emptyValue()",
-      "public void booleanValue(boolean)",
-      "public void longValue(long)",
-      "public void intValue(int)",
-      "public void shortValue(short)",
-      "public void byteValue(byte)",
-      "public void doubleValue(double)",
-      "public void floatValue(float)",
-      "public void stringValue(java.lang.String, byte[])",
-      "public void dataValue(byte[])"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.search.rendering.JsonRenderer$FieldConsumer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [

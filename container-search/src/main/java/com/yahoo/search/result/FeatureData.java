@@ -12,7 +12,7 @@ import com.yahoo.data.JsonProducer;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.search.rendering.JsonGeneratorDataSink;
+import com.yahoo.data.disclosure.json.JsonGeneratorDataSink;
 import com.yahoo.search.rendering.NonFiniteToNullDataSink;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;

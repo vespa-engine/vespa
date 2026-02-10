@@ -3,6 +3,7 @@ package com.yahoo.search.rendering;
 
 import com.yahoo.data.disclosure.DataSink;
 import com.yahoo.data.disclosure.DataSource;
+import com.yahoo.data.disclosure.json.JsonGeneratorDataSink;
 import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;

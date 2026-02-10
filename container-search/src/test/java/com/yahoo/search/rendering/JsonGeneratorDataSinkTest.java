@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.simple.JsonRender;
 import com.yahoo.data.access.simple.Value;
+import com.yahoo.data.disclosure.json.JsonGeneratorDataSink;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.json.Jackson;

@@ -2,6 +2,7 @@
 package com.yahoo.document.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.yahoo.data.disclosure.json.JsonGeneratorDataSink;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.Field;
@@ -30,6 +31,7 @@ import com.yahoo.document.json.readers.TensorRemoveUpdateReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorDataSource;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.vespa.objects.FieldBase;
@@ -85,8 +87,7 @@ public class JsonSerializationHelper {
             fieldNameIfNotNull(generator, field);
             if (value.getTensor().isPresent()) {
                 Tensor tensor = value.getTensor().get();
-                byte[] encoded = JsonFormat.encode(tensor, tensorOptions);
-                generator.writeRawValue(new String(encoded, StandardCharsets.UTF_8));
+                new TensorDataSource(tensor, tensorOptions).emit(new JsonGeneratorDataSink(generator));
             }
             else {
                 generator.writeStartObject();

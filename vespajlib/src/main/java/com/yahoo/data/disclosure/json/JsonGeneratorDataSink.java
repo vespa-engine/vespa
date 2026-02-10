@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.rendering;
+package com.yahoo.data.disclosure.json;
 
 import com.fasterxml.jackson.core.Base64Variant;
 import com.fasterxml.jackson.core.Base64Variants;
@@ -224,7 +224,7 @@ public class JsonGeneratorDataSink implements DataSink {
     }
 
     /** Write a primitive Inspector value as a JSON field name */
-    void fieldNameFromPrimitive(Inspector value) {
+    public void fieldNameFromPrimitive(Inspector value) {
         try {
             switch (value.type()) {
                 case STRING -> gen.writeFieldName(value.asString());
