@@ -783,39 +783,31 @@ public class YqlParser implements Parser {
             List<Integer> filter = new ArrayList<>();
             if (elementFilterObj instanceof List<?> list) {
                 for (Object val : list) {
-                    if (val instanceof Integer intVal) {
-                        filter.add(intVal);
-                    } else if (val instanceof Long longVal) {
-                        if (longVal > Integer.MAX_VALUE) {
-                            throw new IllegalArgumentException(
-                                    "elementFilter values must fit in int32 range, got: " + longVal);
-                        }
-                        filter.add(longVal.intValue());
-                    } else if (val instanceof Double || val instanceof Float) {
-                        throw new IllegalArgumentException(
-                                "elementFilter values must be integers, not floating point numbers. Got: " + val);
-                    } else {
-                        throw new IllegalArgumentException(
-                                "elementFilter values must be integers, got: " + val.getClass().getSimpleName());
-                    }
+                    filter.add(convertToIntForElementFilter(val));
                 }
-            } else if (elementFilterObj instanceof Integer singleInt) {
-                filter.add(singleInt);
-            } else if (elementFilterObj instanceof Long singleLong) {
-                if (singleLong > Integer.MAX_VALUE) {
-                    throw new IllegalArgumentException(
-                            "elementFilter values must fit in int32 range, got: " + singleLong);
-                }
-                filter.add(singleLong.intValue());
-            } else if (elementFilterObj instanceof Double || elementFilterObj instanceof Float) {
-                throw new IllegalArgumentException(
-                        "elementFilter must be an integer or list of integers, not a floating point number");
             } else {
-                throw new IllegalArgumentException(
-                        "elementFilter must be an integer or list of integers, got: " +
-                        elementFilterObj.getClass().getSimpleName());
+                filter.add(convertToIntForElementFilter(elementFilterObj));
             }
             sameElement.setElementFilter(filter);
+        }
+    }
+
+    /** Element filter accepts Integer. Allows Long that is within Integer size. */
+    private int convertToIntForElementFilter(Object val) {
+        if (val instanceof Integer intVal) {
+            return intVal;
+        } else if (val instanceof Long longVal) {
+            if (longVal > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException(
+                        "elementFilter values must fit in int32 range, got: " + longVal);
+            }
+            return longVal.intValue();
+        } else if (val instanceof Double || val instanceof Float) {
+            throw new IllegalArgumentException(
+                    "elementFilter values must be integers, not floating point numbers. Got: " + val);
+        } else {
+            throw new IllegalArgumentException(
+                    "elementFilter values must be integers, got: " + val.getClass().getSimpleName());
         }
     }
 

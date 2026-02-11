@@ -484,7 +484,7 @@ public class YqlParserTestCase {
 
         // Test floating point number
         assertParseFail("select * from sources * where myfield contains ({elementFilter:1.5} sameElement(name contains 'John'))",
-                new IllegalArgumentException("elementFilter must be an integer or list of integers, not a floating point number"));
+                new IllegalArgumentException("elementFilter values must be integers, not floating point numbers. Got: 1.5"));
 
         // Test floating point in array
         assertParseFail("select * from sources * where myfield contains ({elementFilter:[1,2.5,3]} sameElement(name contains 'John'))",
