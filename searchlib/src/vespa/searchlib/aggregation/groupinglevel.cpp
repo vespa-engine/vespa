@@ -4,6 +4,10 @@
 #include "grouping.h"
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/expression/current_index_setup.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/issue.h>
+
+#include <format>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.groupinglevel");
@@ -110,11 +114,17 @@ template<typename Doc>
 void
 GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
 {
-    if (_filter.allow(doc, rank)) {
-        Group * next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
-        if ((next != nullptr) && doNext()) { // do next level ?
-            next->aggregate(*_grouping, _level + 1, doc, rank);
+    try {
+        if (_filter.allow(doc, rank)) {
+            Group * next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
+            if ((next != nullptr) && doNext()) { // do next level ?
+                next->aggregate(*_grouping, _level + 1, doc, rank);
+            }
         }
+    } catch (const vespalib::Exception& e) {
+        vespalib::Issue::report(
+            std::format("Grouping filter error: {}. Document excluded from grouping.", e.getMessage()));
+        // Document is skipped, processing continues with next document
     }
 }
 
@@ -134,11 +144,17 @@ template<typename Doc>
 void
 GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
 {
-    const ResultNodeVector & rv(static_cast<const ResultNodeVector &>(result));
-    for (size_t i(0), m(rv.size()); i < m; i++) {
-        const ResultNode & sr(rv.get(i));
-        _currentIndex.set(i);
-        SingleValueGrouper::groupDoc(g, sr, doc, rank);
+    try {
+        const ResultNodeVector & rv(static_cast<const ResultNodeVector &>(result));
+        for (size_t i(0), m(rv.size()); i < m; i++) {
+            const ResultNode & sr(rv.get(i));
+            _currentIndex.set(i);
+            SingleValueGrouper::groupDoc(g, sr, doc, rank);
+        }
+    } catch (const vespalib::Exception& e) {
+        vespalib::Issue::report(
+            std::format("Grouping filter error: {}. Document excluded from grouping.", e.getMessage()));
+        // Document is skipped, processing continues with next document
     }
 }
 
