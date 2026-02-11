@@ -1,9 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
-import com.yahoo.document.BucketId;
-import com.yahoo.document.BucketIdFactory;
-import com.yahoo.document.FixedBucketSpaces;
+import com.yahoo.document.*;
 import com.yahoo.document.select.BucketSelector;
 import java.util.Set;
 

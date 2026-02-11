@@ -3,11 +3,7 @@ package com.yahoo.processing.processors;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.jdisc.application.ContainerBuilder;
-import com.yahoo.jdisc.handler.AbstractRequestHandler;
-import com.yahoo.jdisc.handler.ContentChannel;
-import com.yahoo.jdisc.handler.FastContentWriter;
-import com.yahoo.jdisc.handler.ResponseDispatch;
-import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.handler.*;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.test.TestDriver;
 import com.yahoo.processing.Processor;
@@ -23,9 +19,7 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MockUserDatabaseClientTest {
 

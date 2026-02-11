@@ -4,10 +4,7 @@ package com.yahoo.schema.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.schema.RankProfileRegistry;
-import com.yahoo.document.ArrayDataType;
-import com.yahoo.document.DataType;
-import com.yahoo.document.StructDataType;
-import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.*;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;

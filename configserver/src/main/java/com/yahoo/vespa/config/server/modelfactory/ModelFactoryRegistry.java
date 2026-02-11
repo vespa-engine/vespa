@@ -7,12 +7,7 @@ import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A registry of model factories. Allows querying for a specific version of a {@link ModelFactory} or

@@ -2,22 +2,16 @@
 package com.yahoo.search.query.rewrite;
 
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.search.Query;
-import com.yahoo.search.Result;
-import com.yahoo.search.Searcher;
-import com.yahoo.config.FileReference;
+import com.yahoo.search.*;
+import com.yahoo.config.*;
 import com.yahoo.search.query.rewrite.RewritesConfig.FsaDict;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.fsa.FSA;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.component.ComponentId;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.ListIterator;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 

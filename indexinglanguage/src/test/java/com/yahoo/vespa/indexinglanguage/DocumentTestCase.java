@@ -1,23 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
-import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.Field;
-import com.yahoo.document.PositionDataType;
-import com.yahoo.document.datatypes.Array;
-import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.datatypes.IntegerFieldValue;
-import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.*;
+import com.yahoo.document.datatypes.*;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Simon Thoresen Hult

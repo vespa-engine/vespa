@@ -8,7 +8,7 @@ import java.io.IOException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import static com.yahoo.jdisc.http.HttpResponse.Status.BAD_REQUEST;
+import static com.yahoo.jdisc.http.HttpResponse.Status.*;
 
 /**
  * @author Ulf Lilleengen

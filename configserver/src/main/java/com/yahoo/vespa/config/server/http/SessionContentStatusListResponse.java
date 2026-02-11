@@ -7,7 +7,7 @@ import java.util.logging.Level;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * Status and md5sum for files within an application package.

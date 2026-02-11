@@ -4,11 +4,7 @@ package com.yahoo.searchlib.aggregation;
 import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.ResultNode;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.objects.Deserializer;
-import com.yahoo.vespa.objects.ObjectOperation;
-import com.yahoo.vespa.objects.ObjectPredicate;
-import com.yahoo.vespa.objects.ObjectVisitor;
-import com.yahoo.vespa.objects.Serializer;
+import com.yahoo.vespa.objects.*;
 
 import java.util.ArrayList;
 import java.util.List;

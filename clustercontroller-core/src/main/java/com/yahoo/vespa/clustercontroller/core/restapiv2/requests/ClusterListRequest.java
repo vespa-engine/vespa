@@ -3,11 +3,7 @@ package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskScheduler;
-import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
-import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
-import com.yahoo.vespa.clustercontroller.core.restapiv2.OtherMasterIndexException;
-import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
-import com.yahoo.vespa.clustercontroller.core.restapiv2.Response;
+import com.yahoo.vespa.clustercontroller.core.restapiv2.*;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
 

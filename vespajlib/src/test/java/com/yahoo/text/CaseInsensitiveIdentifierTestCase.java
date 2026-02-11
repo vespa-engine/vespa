@@ -3,7 +3,7 @@ package com.yahoo.text;
 
 
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * @author baldersheim

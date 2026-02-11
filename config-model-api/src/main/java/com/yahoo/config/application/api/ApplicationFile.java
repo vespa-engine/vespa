@@ -3,9 +3,7 @@ package com.yahoo.config.application.api;
 
 import com.yahoo.path.Path;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 

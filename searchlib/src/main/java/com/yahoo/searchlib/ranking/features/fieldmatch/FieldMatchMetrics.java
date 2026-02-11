@@ -7,9 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.max;
-import static java.lang.Math.pow;
+import static java.lang.Math.*;
 
 /**
  * The collection of metrics calculated by the string match metric calculator.

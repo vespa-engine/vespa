@@ -4,13 +4,7 @@ package com.yahoo.container.jdisc;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.ContainerBuilder;
-import com.yahoo.jdisc.handler.BufferedContentChannel;
-import com.yahoo.jdisc.handler.CompletionHandler;
-import com.yahoo.jdisc.handler.ContentChannel;
-import com.yahoo.jdisc.handler.OverloadException;
-import com.yahoo.jdisc.handler.ReadableContentChannel;
-import com.yahoo.jdisc.handler.RequestHandler;
-import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.handler.*;
 import com.yahoo.jdisc.test.TestDriver;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
@@ -29,12 +23,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult

@@ -3,17 +3,9 @@ package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
-import com.yahoo.document.datatypes.Array;
-import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.datatypes.MapFieldValue;
-import com.yahoo.document.datatypes.StructuredFieldValue;
-import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.datatypes.*;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Simon Thoresen Hult

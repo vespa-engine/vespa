@@ -1,10 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.Slime;
+import com.yahoo.slime.*;
 import com.yahoo.text.Utf8;
 import com.yahoo.yolean.trace.TraceNode;
 

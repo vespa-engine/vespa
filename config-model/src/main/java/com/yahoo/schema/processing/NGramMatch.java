@@ -9,11 +9,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
-import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.NGramExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**

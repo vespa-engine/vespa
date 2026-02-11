@@ -7,10 +7,7 @@ import com.yahoo.schema.DocumentReferences;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.SDDocumentType;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * <p>A class which can reorder a list of search definitions such that any supertype

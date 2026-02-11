@@ -22,11 +22,7 @@ import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
-import ai.vespa.schemals.testutils.TestLogger;
-import ai.vespa.schemals.testutils.TestSchemaDiagnosticsHandler;
-import ai.vespa.schemals.testutils.TestSchemaMessageHandler;
-import ai.vespa.schemals.testutils.TestSchemaProgressHandler;
-import ai.vespa.schemals.testutils.Utils;
+import ai.vespa.schemals.testutils.*;
 
 public class SchemaParserTest {
 

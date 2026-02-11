@@ -2,10 +2,7 @@
 package com.yahoo.config.model.provision;
 
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.config.provision.*;
 import com.yahoo.vespa.model.container.Container;
 
 import java.io.Reader;

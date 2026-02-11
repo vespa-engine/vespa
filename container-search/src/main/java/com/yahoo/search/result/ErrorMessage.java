@@ -3,22 +3,7 @@ package com.yahoo.search.result;
 
 import com.yahoo.container.protect.Error;
 
-import static com.yahoo.container.protect.Error.BACKEND_COMMUNICATION_ERROR;
-import static com.yahoo.container.protect.Error.BAD_REQUEST;
-import static com.yahoo.container.protect.Error.ERROR_IN_PLUGIN;
-import static com.yahoo.container.protect.Error.FORBIDDEN;
-import static com.yahoo.container.protect.Error.ILLEGAL_QUERY;
-import static com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
-import static com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER;
-import static com.yahoo.container.protect.Error.INVALID_QUERY_TRANSFORMATION;
-import static com.yahoo.container.protect.Error.NOT_FOUND;
-import static com.yahoo.container.protect.Error.NO_ANSWER_WHEN_PINGING_NODE;
-import static com.yahoo.container.protect.Error.NO_BACKENDS_IN_SERVICE;
-import static com.yahoo.container.protect.Error.REQUEST_TOO_LARGE;
-import static com.yahoo.container.protect.Error.RESULT_HAS_ERRORS;
-import static com.yahoo.container.protect.Error.SERVER_IS_MISCONFIGURED;
-import static com.yahoo.container.protect.Error.UNAUTHORIZED;
-import static com.yahoo.container.protect.Error.UNSPECIFIED;
+import static com.yahoo.container.protect.Error.*;
 
 
 /**

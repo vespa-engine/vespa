@@ -24,9 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static helpers.CompareConfigTestHelper.assertSerializedConfigEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult

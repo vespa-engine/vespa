@@ -8,18 +8,12 @@ import com.yahoo.document.StructDataType;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
-import com.yahoo.document.serialization.DocumentDeserializer;
-import com.yahoo.document.serialization.DocumentDeserializerFactory;
-import com.yahoo.document.serialization.DocumentSerializer;
-import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.document.serialization.*;
 import com.yahoo.io.GrowableByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

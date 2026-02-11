@@ -4,11 +4,7 @@ package com.yahoo.search.pagetemplates.model;
 import com.yahoo.component.provider.FreezableClass;
 import com.yahoo.protect.Validator;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A source mentioned in a page template.

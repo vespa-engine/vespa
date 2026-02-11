@@ -14,10 +14,7 @@ import java.io.File;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static com.yahoo.foo.FunctionTestConfig.Enum_val;
-import static com.yahoo.foo.FunctionTestConfig.Enumarr;
-import static com.yahoo.foo.FunctionTestConfig.Enumwithdef;
-import static com.yahoo.foo.FunctionTestConfig.Myarray;
+import static com.yahoo.foo.FunctionTestConfig.*;
 import static org.junit.Assert.assertTrue;
 
 /**

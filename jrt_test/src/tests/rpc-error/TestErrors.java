@@ -1,12 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-import com.yahoo.jrt.ErrorCode;
-import com.yahoo.jrt.Int32Value;
-import com.yahoo.jrt.Int8Value;
-import com.yahoo.jrt.Request;
-import com.yahoo.jrt.Spec;
-import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Target;
-import com.yahoo.jrt.Transport;
+import com.yahoo.jrt.*;
 
 
 public class TestErrors {

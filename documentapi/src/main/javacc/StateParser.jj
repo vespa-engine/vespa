@@ -20,9 +20,7 @@ PARSER_BEGIN(StateParser)
 
 package com.yahoo.documentapi.messagebus.systemstate.parser;
 
-import com.yahoo.documentapi.messagebus.systemstate.rule.Argument;
-import com.yahoo.documentapi.messagebus.systemstate.rule.Location;
-import com.yahoo.documentapi.messagebus.systemstate.rule.NodeState;
+import com.yahoo.documentapi.messagebus.systemstate.rule.*;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.List;

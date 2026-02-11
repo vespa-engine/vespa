@@ -3,10 +3,7 @@ package com.yahoo.config.application;
 
 import com.yahoo.config.model.application.provider.Bundle;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.List;
 
 /**

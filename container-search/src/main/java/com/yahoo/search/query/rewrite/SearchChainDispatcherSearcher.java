@@ -4,9 +4,7 @@ package com.yahoo.search.query.rewrite;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
-import com.yahoo.search.Query;
-import com.yahoo.search.Result;
-import com.yahoo.search.Searcher;
+import com.yahoo.search.*;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.component.ComponentId;
 

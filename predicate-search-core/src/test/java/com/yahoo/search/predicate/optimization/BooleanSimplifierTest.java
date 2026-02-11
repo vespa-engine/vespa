@@ -4,11 +4,7 @@ package com.yahoo.search.predicate.optimization;
 import com.yahoo.document.predicate.Predicate;
 import org.junit.jupiter.api.Test;
 
-import static com.yahoo.document.predicate.Predicates.and;
-import static com.yahoo.document.predicate.Predicates.feature;
-import static com.yahoo.document.predicate.Predicates.not;
-import static com.yahoo.document.predicate.Predicates.or;
-import static com.yahoo.document.predicate.Predicates.value;
+import static com.yahoo.document.predicate.Predicates.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**

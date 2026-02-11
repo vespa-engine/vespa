@@ -14,15 +14,9 @@ import com.yahoo.config.provision.ApplicationId;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
-import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
+import static com.yahoo.jdisc.http.HttpResponse.Status.*;
 
 
 /**

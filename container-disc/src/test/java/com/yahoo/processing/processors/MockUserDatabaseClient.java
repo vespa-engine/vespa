@@ -3,9 +3,7 @@ package com.yahoo.processing.processors;
 
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.jdisc.handler.ContentChannel;
-import com.yahoo.jdisc.handler.ReadableContentChannel;
-import com.yahoo.jdisc.handler.RequestDispatch;
+import com.yahoo.jdisc.handler.*;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;

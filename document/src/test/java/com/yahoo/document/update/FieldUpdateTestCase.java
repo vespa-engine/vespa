@@ -1,17 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.update;
 
-import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.Field;
-import com.yahoo.document.datatypes.Array;
-import com.yahoo.document.datatypes.IntegerFieldValue;
-import com.yahoo.document.datatypes.Raw;
-import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.*;
+import com.yahoo.document.datatypes.*;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;

@@ -4,10 +4,7 @@ package com.yahoo.vespa.config;
 import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.codegen.LeafCNode;
-import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.slime.Slime;
+import com.yahoo.slime.*;
 
 /**
  * Applies default values of a given config definition to a slime payload.

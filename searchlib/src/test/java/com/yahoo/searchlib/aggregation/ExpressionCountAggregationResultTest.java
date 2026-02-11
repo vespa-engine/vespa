@@ -1,9 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
-import com.yahoo.searchlib.aggregation.hll.NormalSketch;
-import com.yahoo.searchlib.aggregation.hll.SketchUtils;
-import com.yahoo.searchlib.aggregation.hll.SparseSketch;
+import com.yahoo.searchlib.aggregation.hll.*;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Test;
 

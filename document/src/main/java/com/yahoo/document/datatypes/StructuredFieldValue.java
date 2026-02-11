@@ -1,11 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
-import com.yahoo.document.DataType;
-import com.yahoo.document.Field;
-import com.yahoo.document.FieldPath;
-import com.yahoo.document.FieldPathEntry;
-import com.yahoo.document.StructuredDataType;
+import com.yahoo.document.*;
 import com.yahoo.vespa.objects.Ids;
 
 import java.util.ArrayList;

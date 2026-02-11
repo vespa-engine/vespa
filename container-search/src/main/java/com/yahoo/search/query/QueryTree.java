@@ -2,16 +2,7 @@
 package com.yahoo.search.query;
 
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
-import com.yahoo.prelude.query.AndItem;
-import com.yahoo.prelude.query.CompositeItem;
-import com.yahoo.prelude.query.IndexedItem;
-import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.NotItem;
-import com.yahoo.prelude.query.NullItem;
-import com.yahoo.prelude.query.PhraseItem;
-import com.yahoo.prelude.query.RankItem;
-import com.yahoo.prelude.query.RootItem;
-import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;

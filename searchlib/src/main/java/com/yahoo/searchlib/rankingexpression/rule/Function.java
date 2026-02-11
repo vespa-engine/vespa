@@ -5,27 +5,7 @@ import com.yahoo.tensor.functions.ScalarFunctions;
 
 import java.io.Serializable;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.acos;
-import static java.lang.Math.asin;
-import static java.lang.Math.atan;
-import static java.lang.Math.atan2;
-import static java.lang.Math.ceil;
-import static java.lang.Math.cos;
-import static java.lang.Math.cosh;
-import static java.lang.Math.exp;
-import static java.lang.Math.floor;
-import static java.lang.Math.log;
-import static java.lang.Math.log10;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.pow;
-import static java.lang.Math.round;
-import static java.lang.Math.sin;
-import static java.lang.Math.sinh;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.tan;
-import static java.lang.Math.tanh;
+import static java.lang.Math.*;
 
 /**
  * A scalar function

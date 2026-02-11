@@ -2,11 +2,7 @@
 package com.yahoo.prelude.querytransform;
 
 import com.yahoo.fsa.FSA;
-import com.yahoo.prelude.query.CompositeItem;
-import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.NotItem;
-import com.yahoo.prelude.query.PhraseItem;
-import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;

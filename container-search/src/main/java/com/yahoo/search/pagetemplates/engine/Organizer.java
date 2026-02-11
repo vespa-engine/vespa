@@ -3,21 +3,10 @@ package com.yahoo.search.pagetemplates.engine;
 
 import com.yahoo.search.Result;
 import com.yahoo.search.pagetemplates.PageTemplate;
-import com.yahoo.search.pagetemplates.model.Choice;
-import com.yahoo.search.pagetemplates.model.PageElement;
-import com.yahoo.search.pagetemplates.model.Placeholder;
-import com.yahoo.search.pagetemplates.model.Renderer;
-import com.yahoo.search.pagetemplates.model.Section;
-import com.yahoo.search.pagetemplates.model.Source;
+import com.yahoo.search.pagetemplates.model.*;
 import com.yahoo.search.pagetemplates.result.SectionHitGroup;
 import com.yahoo.search.query.Sorting;
-import com.yahoo.search.result.ChainableComparator;
-import com.yahoo.search.result.DefaultErrorHit;
-import com.yahoo.search.result.ErrorHit;
-import com.yahoo.search.result.FieldComparator;
-import com.yahoo.search.result.Hit;
-import com.yahoo.search.result.HitGroup;
-import com.yahoo.search.result.HitSortOrderer;
+import com.yahoo.search.result.*;
 
 import java.util.ArrayList;
 import java.util.List;

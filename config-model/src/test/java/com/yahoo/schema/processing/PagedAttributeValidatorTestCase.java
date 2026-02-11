@@ -11,9 +11,7 @@ import java.util.Optional;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.schema.ApplicationBuilder.createFromString;
 import static com.yahoo.schema.ApplicationBuilder.createFromStrings;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PagedAttributeValidatorTestCase {
 

@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.yahoo.container.core.ChainsConfig.Chains.Phases;
+import static com.yahoo.container.core.ChainsConfig.Chains.*;
 
 /**
  * @author Tony Vaagenes

@@ -9,9 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.yahoo.search.statistics.TimeTracker.Activity.FILL;
-import static com.yahoo.search.statistics.TimeTracker.Activity.PING;
-import static com.yahoo.search.statistics.TimeTracker.Activity.SEARCH;
+import static com.yahoo.search.statistics.TimeTracker.Activity.*;
 
 /**
  * A collection of TimeTracker instances.

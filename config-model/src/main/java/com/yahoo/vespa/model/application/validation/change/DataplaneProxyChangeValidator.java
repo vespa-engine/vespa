@@ -12,7 +12,7 @@ import com.yahoo.vespa.model.container.DataplaneProxy;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange.DEFER_UNTIL_RESTART;
+import static com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange.*;
 
 /**
  * Ensures that application container clusters are restarted when data plane proxy is added or removed.

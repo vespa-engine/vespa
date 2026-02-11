@@ -3,7 +3,7 @@ package com.yahoo.log;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author  Bjorn Borud

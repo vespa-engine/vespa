@@ -2,11 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
-import com.yahoo.vdslib.state.ClusterState;
-import com.yahoo.vdslib.state.Node;
-import com.yahoo.vdslib.state.NodeState;
-import com.yahoo.vdslib.state.NodeType;
-import com.yahoo.vdslib.state.State;
+import com.yahoo.vdslib.state.*;
 
 import java.util.HashMap;
 import java.util.HashSet;

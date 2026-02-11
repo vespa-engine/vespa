@@ -1,10 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.hostinfo;
 
-import com.yahoo.vespa.clustercontroller.core.ContentClusterErrorStats;
-import com.yahoo.vespa.clustercontroller.core.ContentClusterStats;
-import com.yahoo.vespa.clustercontroller.core.ContentNodeErrorStats;
-import com.yahoo.vespa.clustercontroller.core.ContentNodeStats;
+import com.yahoo.vespa.clustercontroller.core.*;
 
 import java.util.HashMap;
 import java.util.Map;

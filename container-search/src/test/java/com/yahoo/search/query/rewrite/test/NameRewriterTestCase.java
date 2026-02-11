@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.rewrite.test;
 
+import java.util.*;
 import java.io.File;
-import java.util.HashMap;
 
-import com.yahoo.search.query.rewrite.RewriterConstants;
+import com.yahoo.search.searchchain.*;
+import com.yahoo.search.query.rewrite.*;
+import com.yahoo.search.query.rewrite.rewriters.*;
 import com.yahoo.search.query.rewrite.RewritesConfig;
-import com.yahoo.search.query.rewrite.rewriters.NameRewriter;
-import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -13,11 +13,9 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.data.access.helpers.MatchFeatureData;
 import com.yahoo.data.access.helpers.MatchFeatureFilter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 record PreparedInput(String name, Tensor value) {
 

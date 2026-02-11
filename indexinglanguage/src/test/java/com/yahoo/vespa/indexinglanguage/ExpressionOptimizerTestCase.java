@@ -2,17 +2,7 @@
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.datatypes.IntegerFieldValue;
-import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.CatExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.HostNameExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.LowerCaseExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.NowExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.ParenthesisExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.RandomExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 

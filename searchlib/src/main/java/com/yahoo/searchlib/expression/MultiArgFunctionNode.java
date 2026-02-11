@@ -1,11 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
-import com.yahoo.vespa.objects.Deserializer;
-import com.yahoo.vespa.objects.ObjectOperation;
-import com.yahoo.vespa.objects.ObjectPredicate;
-import com.yahoo.vespa.objects.ObjectVisitor;
-import com.yahoo.vespa.objects.Serializer;
+import com.yahoo.vespa.objects.*;
 
 import java.util.ArrayList;
 import java.util.List;

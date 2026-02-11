@@ -9,11 +9,7 @@ import com.yahoo.search.pagetemplates.model.Choice;
 import com.yahoo.search.pagetemplates.model.MapChoice;
 import com.yahoo.search.pagetemplates.model.PageElement;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * A resolver which makes all choices by random.

@@ -1,11 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.test;
 
-import com.yahoo.messagebus.Message;
-import com.yahoo.messagebus.MessageHandler;
-import com.yahoo.messagebus.Reply;
-import com.yahoo.messagebus.ReplyHandler;
-import com.yahoo.messagebus.Routable;
+import com.yahoo.messagebus.*;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;

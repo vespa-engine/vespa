@@ -4,7 +4,7 @@ package com.yahoo.data.access.simple;
 
 import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 
 public class SimpleConformanceTestCase extends com.yahoo.data.access.InspectorConformanceTestBase {

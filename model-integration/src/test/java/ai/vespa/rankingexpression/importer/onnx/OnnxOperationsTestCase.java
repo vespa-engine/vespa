@@ -25,7 +25,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ai.vespa.rankingexpression.importer.onnx.GraphImporter.mapOperation;
+import static ai.vespa.rankingexpression.importer.onnx.GraphImporter.*;
 import static onnx.Onnx.AttributeProto.AttributeType.FLOAT;
 import static onnx.Onnx.AttributeProto.AttributeType.INT;
 import static onnx.Onnx.AttributeProto.AttributeType.INTS;

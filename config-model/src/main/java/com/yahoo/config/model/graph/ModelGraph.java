@@ -3,14 +3,7 @@ package com.yahoo.config.model.graph;
 
 import com.yahoo.component.ComponentId;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A model graph contains the dependency graph of config models.

@@ -5,12 +5,7 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detector;
-import com.yahoo.language.process.CharacterClasses;
-import com.yahoo.language.process.GramSplitter;
-import com.yahoo.language.process.Normalizer;
-import com.yahoo.language.process.Segmenter;
-import com.yahoo.language.process.Stemmer;
-import com.yahoo.language.process.Transformer;
+import com.yahoo.language.process.*;
 import com.yahoo.language.simple.SimpleLinguistics;
 
 /**

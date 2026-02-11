@@ -3,22 +3,8 @@ package com.yahoo.searchlib.rankingexpression.evaluation.gbdtoptimization;
 
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
-import com.yahoo.searchlib.rankingexpression.evaluation.DoubleCompatibleValue;
-import com.yahoo.searchlib.rankingexpression.evaluation.OptimizationReport;
-import com.yahoo.searchlib.rankingexpression.evaluation.Optimizer;
-import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
-import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
-import com.yahoo.searchlib.rankingexpression.rule.EmbracedNode;
-import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
-import com.yahoo.searchlib.rankingexpression.rule.IfNode;
-import com.yahoo.searchlib.rankingexpression.rule.NegativeNode;
-import com.yahoo.searchlib.rankingexpression.rule.NotNode;
-import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
-import com.yahoo.searchlib.rankingexpression.rule.Operator;
-import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
-import com.yahoo.searchlib.rankingexpression.rule.SetMembershipNode;
+import com.yahoo.searchlib.rankingexpression.evaluation.*;
+import com.yahoo.searchlib.rankingexpression.rule.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;

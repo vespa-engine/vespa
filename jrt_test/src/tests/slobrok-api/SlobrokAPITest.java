@@ -1,17 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 
-import com.yahoo.jrt.Acceptor;
-import com.yahoo.jrt.ListenFailedException;
-import com.yahoo.jrt.Spec;
-import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Transport;
-import com.yahoo.jrt.slobrok.api.Mirror;
-import com.yahoo.jrt.slobrok.api.Register;
-import com.yahoo.jrt.slobrok.api.SlobrokList;
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.yahoo.jrt.*;
+import com.yahoo.jrt.slobrok.api.*;
 import java.util.Comparator;
+import java.util.Arrays;
+import java.util.ArrayList;
 
 
 public class SlobrokAPITest {

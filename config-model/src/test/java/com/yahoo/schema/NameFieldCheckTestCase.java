@@ -5,8 +5,7 @@ import com.yahoo.schema.derived.TestableDeployLogger;
 import com.yahoo.schema.parser.ParseException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests that "name" is not allowed as name for a field.

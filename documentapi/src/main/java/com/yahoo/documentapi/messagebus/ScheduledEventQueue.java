@@ -4,10 +4,7 @@ package com.yahoo.documentapi.messagebus;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.concurrent.Timer;
 
-import java.util.Iterator;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
@@ -51,7 +48,7 @@ public class ScheduledEventQueue {
 
         @Override
         public int hashCode() {
-            return Objects.hash(sequenceId, timestamp, task);
+            return java.util.Objects.hash(sequenceId, timestamp, task);
         }
 
         @Override

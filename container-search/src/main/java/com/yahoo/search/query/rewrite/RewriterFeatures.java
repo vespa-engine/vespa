@@ -1,33 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.rewrite;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.logging.Logger;
 
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.parser.CustomParser;
-import com.yahoo.search.Query;
-import com.yahoo.search.query.Model;
-import com.yahoo.search.query.QueryTree;
-import com.yahoo.prelude.query.AndItem;
-import com.yahoo.prelude.query.CompositeItem;
-import com.yahoo.prelude.query.IntItem;
-import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.NullItem;
-import com.yahoo.prelude.query.OrItem;
-import com.yahoo.prelude.query.PhraseItem;
-import com.yahoo.prelude.query.QueryCanonicalizer;
-import com.yahoo.prelude.query.RankItem;
-import com.yahoo.prelude.query.WordItem;
+import com.yahoo.search.*;
+import com.yahoo.search.query.*;
+import com.yahoo.prelude.query.*;
 import com.yahoo.prelude.querytransform.PhraseMatcher;
 import com.yahoo.prelude.querytransform.PhraseMatcher.Phrase;
 import com.yahoo.search.query.parser.ParserEnvironment;

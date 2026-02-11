@@ -20,8 +20,7 @@ import com.yahoo.documentmodel.OwnedStructDataType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.schema.document.annotation.SDAnnotationType;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Class to produce unique names for DataType instances that have
