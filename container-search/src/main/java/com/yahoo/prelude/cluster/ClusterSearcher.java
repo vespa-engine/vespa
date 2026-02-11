@@ -109,7 +109,7 @@ public class ClusterSearcher extends Searcher {
 
     private static ClusterParams makeClusterParams(String searchclusterName, DocumentdbInfoConfig documentDbConfig, SchemaInfo schemaInfo, QrSearchersConfig qrSearchersConfig)
     {
-        return new ClusterParams(searchclusterName + ".num" + 0, UUID.randomUUID().toString(),
+        return new ClusterParams(searchclusterName, UUID.randomUUID().toString(),
                                  null, documentDbConfig, schemaInfo, qrSearchersConfig);
     }
 
