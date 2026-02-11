@@ -2,11 +2,13 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/gencnt.h>
-#include <vespa/vespalib/util/arrayqueue.hpp>
+#include "map_diff.h"
 #include "map_listener.h"
 #include "service_mapping.h"
-#include "map_diff.h"
+
+#include <vespa/vespalib/util/arrayqueue.hpp>
+#include <vespa/vespalib/util/gencnt.h>
+
 #include <map>
 #include <string>
 
@@ -16,14 +18,12 @@ namespace slobrok {
  * @class ServiceMapHistory
  * @brief API to generate incremental updates for a collection of name->spec mappings
  **/
-class ServiceMapHistory : public MapListener
-{
+class ServiceMapHistory : public MapListener {
 public:
     using Generation = vespalib::GenCnt;
 
     /** implement this interface to receive the result of an async generation diff */
-    class DiffCompletionHandler
-    {
+    class DiffCompletionHandler {
     public:
         /**
          * Handle the result of asyncGenerationDiff()
@@ -31,33 +31,34 @@ public:
          * @param updateDiff changes from the generation requested
          **/
         virtual void handle(MapDiff updateDiff) = 0;
+
     protected:
         virtual ~DiffCompletionHandler() = default;
     };
 
 private:
     struct UpdateLog {
-        static constexpr uint32_t keep_items = 1000;
-        Generation startGeneration;
-        Generation currentGeneration;
+        static constexpr uint32_t         keep_items = 1000;
+        Generation                        startGeneration;
+        Generation                        currentGeneration;
         vespalib::ArrayQueue<std::string> updates;
         UpdateLog();
         ~UpdateLog();
-        void add(const std::string &name);
-        bool isInRange(const Generation &gen) const;
-        std::vector<std::string> updatedSince(const Generation &gen) const;
+        void                     add(const std::string& name);
+        bool                     isInRange(const Generation& gen) const;
+        std::vector<std::string> updatedSince(const Generation& gen) const;
     };
     using Map = std::map<std::string, std::string>;
-    using Waiter = std::pair<DiffCompletionHandler *, Generation>;
+    using Waiter = std::pair<DiffCompletionHandler*, Generation>;
     using WaitList = std::vector<Waiter>;
 
-    Map        _map;
-    WaitList   _waitList;
-    UpdateLog  _log;
+    Map       _map;
+    WaitList  _waitList;
+    UpdateLog _log;
 
     void notify_updated();
 
-    const Generation &myGen() const { return _log.currentGeneration; }
+    const Generation& myGen() const { return _log.currentGeneration; }
 
 public:
     ServiceMapHistory();
@@ -66,26 +67,26 @@ public:
     /**
      * Get diff from generation fromGen (sync version).
      **/
-    MapDiff makeDiffFrom(const Generation &fromGen) const;
+    MapDiff makeDiffFrom(const Generation& fromGen) const;
 
     /**
      * Ask for notification when the history has changes newer than fromGen.
      * Note that if there are any changes in the history already, the callback
      * will happen immediately (inside asyncGenerationDiff).
      **/
-    void asyncGenerationDiff(DiffCompletionHandler *handler, const Generation &fromGen);
+    void asyncGenerationDiff(DiffCompletionHandler* handler, const Generation& fromGen);
 
     /**
      * Cancel pending notification.
      * @return true if handler was canceled without calling handle() at all.
      **/
-    bool cancel(DiffCompletionHandler *handler);
+    bool cancel(DiffCompletionHandler* handler);
 
     /** add name->spec mapping */
-    void add(const ServiceMapping &mapping) override;
+    void add(const ServiceMapping& mapping) override;
 
     /** remove mapping for name */
-    void remove(const ServiceMapping &mapping) override;
+    void remove(const ServiceMapping& mapping) override;
 
     /** For unit testing only: */
     Generation currentGen() const { return myGen(); }
@@ -94,4 +95,3 @@ public:
 //-----------------------------------------------------------------------------
 
 } // namespace slobrok
-

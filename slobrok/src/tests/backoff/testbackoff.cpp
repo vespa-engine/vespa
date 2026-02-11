@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/slobrok/backoff.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("backoff_test");
@@ -30,7 +30,8 @@ TEST(BackoffTest, backoff_test) {
     EXPECT_FALSE(two.shouldWarn());
     for (int i = 1; i < 50; i++) {
         double expect = 0.5 * i;
-        if (expect > 20.0) expect = 20.0;
+        if (expect > 20.0)
+            expect = 20.0;
         EXPECT_EQ(expect, two.get());
         if (i == 3 || i == 8 || i == 18) {
             EXPECT_TRUE(two.shouldWarn());
@@ -42,7 +43,8 @@ TEST(BackoffTest, backoff_test) {
     EXPECT_FALSE(two.shouldWarn());
     for (int i = 1; i < 50; i++) {
         double expect = 0.5 * i;
-        if (expect > 20.0) expect = 20.0;
+        if (expect > 20.0)
+            expect = 20.0;
         EXPECT_EQ(expect, two.get());
         if (i == 3 || i == 8 || i == 18) {
             EXPECT_TRUE(two.shouldWarn());

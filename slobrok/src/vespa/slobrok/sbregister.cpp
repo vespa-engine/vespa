@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sbregister.h"
+
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/host_name.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.register");
@@ -15,9 +16,7 @@ using vespalib::NetworkSetupFailureException;
 
 namespace {
 
-std::string
-createSpec(FRT_Supervisor &orb)
-{
+std::string createSpec(FRT_Supervisor& orb) {
     std::string spec;
     if (orb.GetListenPort() != 0) {
         vespalib::asciistream str;
@@ -30,10 +29,7 @@ createSpec(FRT_Supervisor &orb)
     return spec;
 }
 
-
-void
-discard(std::vector<std::string> &vec, std::string_view val)
-{
+void discard(std::vector<std::string>& vec, std::string_view val) {
     uint32_t i = 0;
     uint32_t size = vec.size();
     while (i < size) {
@@ -52,11 +48,11 @@ std::unique_ptr<FRT_RequireCapabilities> make_slobrok_capability_filter() {
     return FRT_RequireCapabilities::of(vespalib::net::tls::Capability::slobrok_api());
 }
 
-} // namespace <unnamed>
+} // namespace
 
 namespace slobrok::api {
 
-RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
+RegisterAPI::RegisterAPI(FRT_Supervisor& orb, const ConfiguratorFactory& config)
     : FNET_Task(orb.GetScheduler()),
       _orb(orb),
       _hooks(*this),
@@ -73,19 +69,16 @@ RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config
       _pending(),
       _unreg(),
       _target(nullptr),
-      _req(nullptr)
-{
+      _req(nullptr) {
     _configurator->poll();
-    if ( ! _slobrokSpecs.ok()) {
-        throw NetworkSetupFailureException("Failed configuring the RegisterAPI. No valid location broker specs from config",
-                                           VESPA_STRLOC);
+    if (!_slobrokSpecs.ok()) {
+        throw NetworkSetupFailureException(
+            "Failed configuring the RegisterAPI. No valid location broker specs from config", VESPA_STRLOC);
     }
     ScheduleNow();
 }
 
-
-RegisterAPI::~RegisterAPI()
-{
+RegisterAPI::~RegisterAPI() {
     Kill();
     _configurator.reset();
     if (_req != nullptr) {
@@ -97,10 +90,7 @@ RegisterAPI::~RegisterAPI()
     }
 }
 
-
-void
-RegisterAPI::registerName(std::string_view name)
-{
+void RegisterAPI::registerName(std::string_view name) {
     std::lock_guard<std::mutex> guard(_lock);
     for (uint32_t i = 0; i < _names.size(); ++i) {
         if (_names[i] == name) {
@@ -114,10 +104,7 @@ RegisterAPI::registerName(std::string_view name)
     ScheduleNow();
 }
 
-
-void
-RegisterAPI::unregisterName(std::string_view name)
-{
+void RegisterAPI::unregisterName(std::string_view name) {
     std::lock_guard<std::mutex> guard(_lock);
     _busy.store(true, std::memory_order_relaxed);
     discard(_names, name);
@@ -127,15 +114,12 @@ RegisterAPI::unregisterName(std::string_view name)
 }
 
 // handle any request that completed
-void
-RegisterAPI::handleReqDone()
-{
+void RegisterAPI::handleReqDone() {
     if (_reqDone.load(std::memory_order_relaxed)) {
         _reqDone.store(false, std::memory_order_relaxed);
         if (_req->IsError()) {
             if (_req->GetErrorCode() != FRTE_RPC_METHOD_FAILED) {
-                LOG(debug, "register failed: %s (code %d)",
-                    _req->GetErrorMessage(), _req->GetErrorCode());
+                LOG(debug, "register failed: %s (code %d)", _req->GetErrorMessage(), _req->GetErrorCode());
                 // unexpected error; close our connection to this
                 // slobrok server and try again with a fresh slate
                 if (_target != nullptr) {
@@ -144,11 +128,8 @@ RegisterAPI::handleReqDone()
                 _target = nullptr;
                 _busy.store(true, std::memory_order_relaxed);
             } else {
-                LOG(warning, "%s(%s -> %s) failed: %s",
-                    _req->GetMethodName(),
-                    (*_req->GetParams())[0]._string._str,
-                    (*_req->GetParams())[1]._string._str,
-                    _req->GetErrorMessage());
+                LOG(warning, "%s(%s -> %s) failed: %s", _req->GetMethodName(), (*_req->GetParams())[0]._string._str,
+                    (*_req->GetParams())[1]._string._str, _req->GetErrorMessage());
             }
         } else {
             if (_logOnSuccess && (_pending.size() == 0) && (_names.size() > 0)) {
@@ -165,11 +146,9 @@ RegisterAPI::handleReqDone()
 }
 
 // do we need to try to reconnect?
-void
-RegisterAPI::handleReconnect()
-{
+void RegisterAPI::handleReconnect() {
     if (_configurator->poll() && _target != nullptr) {
-        if (! _slobrokSpecs.contains(_currSlobrok)) {
+        if (!_slobrokSpecs.contains(_currSlobrok)) {
             std::string cps = _slobrokSpecs.logString();
             LOG(warning, "[RPC @ %s] location broker %s removed, will disconnect and use one of: %s",
                 createSpec(_orb).c_str(), _currSlobrok.c_str(), cps.c_str());
@@ -196,8 +175,8 @@ RegisterAPI::handleReconnect()
             // possibly with a warning.
             double delay = _backOff.get();
             Schedule(delay);
-            const char * const msgfmt = "[RPC @ %s] no location brokers available, retrying: %s (in %.1f seconds)";
-            std::string cps = _slobrokSpecs.logString();
+            const char* const msgfmt = "[RPC @ %s] no location brokers available, retrying: %s (in %.1f seconds)";
+            std::string       cps = _slobrokSpecs.logString();
             if (_backOff.shouldWarn()) {
                 LOG(warning, msgfmt, createSpec(_orb).c_str(), cps.c_str(), delay);
             } else {
@@ -209,11 +188,9 @@ RegisterAPI::handleReconnect()
 }
 
 // perform any unregister or register that is pending
-void
-RegisterAPI::handlePending()
-{
-    bool unreg = false;
-    bool reg   = false;
+void RegisterAPI::handlePending() {
+    bool        unreg = false;
+    bool        reg = false;
     std::string name;
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -257,9 +234,7 @@ RegisterAPI::handlePending()
     }
 }
 
-void
-RegisterAPI::PerformTask()
-{
+void RegisterAPI::PerformTask() {
     handleReqDone();
     if (_req != nullptr) {
         LOG(debug, "req in progress");
@@ -267,64 +242,50 @@ RegisterAPI::PerformTask()
     }
     handleReconnect();
     // still no connection?
-    if (_target == nullptr) return;
+    if (_target == nullptr)
+        return;
     handlePending();
 }
 
-
-void
-RegisterAPI::RequestDone(FRT_RPCRequest *req)
-{
+void RegisterAPI::RequestDone(FRT_RPCRequest* req) {
     LOG_ASSERT(req == _req && !_reqDone.load(std::memory_order_relaxed));
-    (void) req;
+    (void)req;
     _reqDone.store(true, std::memory_order_relaxed);
     ScheduleNow();
 }
 
 //-----------------------------------------------------------------------------
 
-RegisterAPI::RPCHooks::RPCHooks(RegisterAPI &owner)
-    : _owner(owner)
-{
+RegisterAPI::RPCHooks::RPCHooks(RegisterAPI& owner) : _owner(owner) {
     FRT_ReflectionBuilder rb(&_owner._orb);
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
-                    FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
+    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
     rb.MethodDesc("List rpcserver names");
     rb.ReturnDesc("names", "The rpcserver names this server wants to serve");
     rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "",
-                    FRT_METHOD(RPCHooks::rpc_notifyUnregistered), this);
+    rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "", FRT_METHOD(RPCHooks::rpc_notifyUnregistered),
+                    this);
     rb.MethodDesc("Notify a server about removed registration");
     rb.ParamDesc("name", "RpcServer name");
     rb.RequestAccessFilter(make_slobrok_capability_filter());
     //-------------------------------------------------------------------------
 }
 
+RegisterAPI::RPCHooks::~RPCHooks() {}
 
-RegisterAPI::RPCHooks::~RPCHooks()
-{
-}
-
-
-void
-RegisterAPI::RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
-{
-    FRT_Values &dst = *req->GetReturn();
+void RegisterAPI::RPCHooks::rpc_listNamesServed(FRT_RPCRequest* req) {
+    FRT_Values&                 dst = *req->GetReturn();
     std::lock_guard<std::mutex> guard(_owner._lock);
-    FRT_StringValue *names = dst.AddStringArray(_owner._names.size());
+    FRT_StringValue*            names = dst.AddStringArray(_owner._names.size());
     for (uint32_t i = 0; i < _owner._names.size(); ++i) {
         dst.SetString(&names[i], _owner._names[i].c_str());
     }
 }
 
-
-void
-RegisterAPI::RPCHooks::rpc_notifyUnregistered(FRT_RPCRequest *req)
-{
-    FRT_Values &args = *req->GetParams();
+void RegisterAPI::RPCHooks::rpc_notifyUnregistered(FRT_RPCRequest* req) {
+    FRT_Values& args = *req->GetParams();
     LOG(warning, "unregistered name %s", args[0]._string._str);
 }
 
-}
+} // namespace slobrok::api

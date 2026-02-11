@@ -5,8 +5,7 @@
 
 namespace slobrok::api {
 
-class BackOff
-{
+class BackOff {
 private:
     double _time;
     double _since_last_warn;
@@ -14,9 +13,9 @@ private:
 
 public:
     BackOff();
-    void reset();
+    void   reset();
     double get();
-    bool shouldWarn();
+    bool   shouldWarn();
 };
 
-}
+} // namespace slobrok::api
