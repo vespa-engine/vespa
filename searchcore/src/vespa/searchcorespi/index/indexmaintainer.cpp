@@ -1333,20 +1333,17 @@ IndexMaintainer::get_index_stats(bool clear_disk_io_stats) const
 {
     std::unique_lock lock(_new_search_lock);
     auto stats = _source_list->get_index_stats(clear_disk_io_stats);
-    lock.unlock();
-    stats.fusion_size_on_disk(_disk_indexes->get_transient_size(*_layout));
     return stats;
 }
 
 ResourceUsage
 IndexMaintainer::get_resource_usage() const
 {
-    // Transient disk usage is measured as the total disk usage of all current fusion indexes.
-    // Transient memory usage is measured as the total memory usage of all memory indexes.
+    auto disk_indexes_resource_usage = _disk_indexes->get_resource_usage(*_layout);
     auto stats = get_index_stats(false);
-    constexpr uint64_t zero_size_on_disk = 0;
-    return ResourceUsage{TransientResourceUsage{stats.fusion_size_on_disk(), stats.memoryUsage().allocatedBytes()},
-                         zero_size_on_disk};
+    return ResourceUsage{TransientResourceUsage{disk_indexes_resource_usage.transient().disk(),
+                                                stats.memoryUsage().allocatedBytes()},
+                         disk_indexes_resource_usage.disk()};
 }
 
 }
