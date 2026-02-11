@@ -23,6 +23,7 @@ import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FilterExpressionNode;
+import com.yahoo.searchlib.expression.IsTruePredicateNode;
 import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.OrPredicateNode;
 import com.yahoo.searchlib.expression.RangePredicateNode;
@@ -852,6 +853,12 @@ public class RequestBuilderTestCase {
     }
 
     @Test
+    void require_that_istrue_filter_layout_is_correct() {
+        assertLayout("all(group(a) filter(istrue(a)) each(output(count())))",
+                "[[{ Attribute, filter = [IsTrue [Attribute]], result = [Count] }]]");
+    }
+
+    @Test
     void require_that_filter_predicate_layout_is_correct() {
         // Not[Regex]
         assertLayout("all(group(a) filter(not regex(\".*suffix$\", a)) each(output(count())))",
@@ -1171,6 +1178,9 @@ public class RequestBuilderTestCase {
                 var expression = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return String.format(Locale.US, "Range [%f, %f, %s, %s, %s]",
                                      lower, upper, expression, lowerInclusive, upperInclusive);
+            } else if (filterExp instanceof IsTruePredicateNode itn) {
+                var expression = itn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
+                return String.format("IsTrue [%s]", expression);
             } else if (filterExp instanceof NotPredicateNode npn) {
                 var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return "Not [%s]".formatted(simpleName);
