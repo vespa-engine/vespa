@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <functional>
+#include <memory>
 #include <span>
 
 namespace vespalib::datastore {

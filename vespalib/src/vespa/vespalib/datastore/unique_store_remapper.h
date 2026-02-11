@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "atomic_entry_ref.h"
 #include "entryref.h"
 #include "entry_ref_filter.h"
 #include <vector>
+#include <span>
 #include <vespa/vespalib/stllike/allocator.h>
 
 namespace vespalib::datastore {

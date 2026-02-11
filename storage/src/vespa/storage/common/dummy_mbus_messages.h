@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/messagebus/message.h>
+#include <vespa/messagebus/reply.h>
 
 /**
  * Dummy-implementation of mbus::Message and mbus::Reply to be used when interacting with

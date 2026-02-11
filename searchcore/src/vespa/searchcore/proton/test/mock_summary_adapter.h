@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
+#include <vespa/document/fieldvalue/document.h>
 
 namespace proton::test {
 

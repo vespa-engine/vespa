@@ -2,6 +2,7 @@
 #pragma once
 
 #include "documentaccessornode.h"
+#include "integerresultnode.h"
 
 namespace search {
 namespace expression {
@@ -23,4 +24,3 @@ private:
 
 }
 }
-

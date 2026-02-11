@@ -2,10 +2,11 @@
 
 #pragma once
 
+#include <cstddef>
+
 namespace vespalib {
 
 template <typename T, size_t N>
 constexpr size_t arraysize(const T (&)[N]) { return N; }
 
 }  // namespace vespalib
-

@@ -5,6 +5,9 @@
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/searchlib/attribute/attribute.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
+#include <iostream>
+#include <thread>
 
 #define VALIDATOR_STR(str) #str
 #define VALIDATOR_ASSERT(rc) reportAssert(rc, __FILE__, __LINE__, VALIDATOR_STR(rc))

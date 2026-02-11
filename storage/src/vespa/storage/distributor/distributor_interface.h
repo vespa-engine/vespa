@@ -2,6 +2,7 @@
 #pragma once
 
 #include "distributormessagesender.h"
+#include <vespa/vdslib/distribution/distribution.h>
 
 namespace storage { class DistributorConfiguration; }
 

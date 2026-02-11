@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>

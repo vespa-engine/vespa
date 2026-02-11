@@ -3,6 +3,7 @@
 #pragma once
 
 #include "compression.h"
+#include <vespa/searchlib/index/docidandfeatures.h>
 #include <cassert>
 #include <limits>
 

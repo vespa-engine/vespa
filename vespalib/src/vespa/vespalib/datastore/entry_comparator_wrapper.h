@@ -3,6 +3,7 @@
 #pragma once
 
 #include "entry_comparator.h"
+#include "atomic_entry_ref.h"
 
 namespace vespalib::datastore {
 

@@ -3,6 +3,7 @@
 
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/common/storagelink.h>
+#include <vespa/storageapi/mbusprot/storagecommand.h>
 
 namespace storage {
 

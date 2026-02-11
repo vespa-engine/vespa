@@ -2,6 +2,8 @@
 #pragma once
 
 #include "documentaccessornode.h"
+#include "resultnode.h"
+#include "stringresultnode.h"
 
 namespace search {
 namespace expression {

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "noaggregated.h"
+#include <cstdint>
 
 namespace vespalib::btree {
 

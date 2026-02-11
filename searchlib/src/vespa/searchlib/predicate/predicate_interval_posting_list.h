@@ -4,6 +4,7 @@
 
 #include "predicate_posting_list.h"
 #include "predicate_interval_store.h"
+#include "predicate_interval.h"
 
 namespace search::predicate {
 
