@@ -14,10 +14,13 @@
 #include <vespa/storage/storageserver/message_dispatcher.h>
 #include <vespa/storage/storageserver/rpc/caching_rpc_target_resolver.h>
 #include <vespa/storage/storageserver/rpc/message_codec_provider.h>
+#include <vespa/storage/storageserver/rpc/metadata_propagator.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
 #include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/messageapi/metadata_extractor.h>
+#include <vespa/storageapi/messageapi/metadata_injector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -90,6 +93,36 @@ public:
 LockingMockOperationDispatcher::LockingMockOperationDispatcher()  = default;
 LockingMockOperationDispatcher::~LockingMockOperationDispatcher() = default;
 
+struct MockMetadataPropagator : MetadataPropagator {
+    ~MockMetadataPropagator() override = default;
+
+    MOCK_METHOD(void, on_send_command,    (const api::StorageCommand&, api::MetadataInjector&),  (const, override));
+    MOCK_METHOD(void, on_receive_command, (api::StorageCommand&, const api::MetadataExtractor&), (const, override));
+};
+
+ACTION_P2(InjectMetadata, key, value) {
+    // Assumes that injector is the 2nd parameter in the call
+    arg1.inject_key_value(key, value);
+}
+
+MATCHER_P2(ExtractorHasMetadata, key, value, "") {
+    auto maybe_value = arg.extract_value(key);
+    return ExplainMatchResult(Eq(maybe_value), value, result_listener);
+}
+
+struct MyTestParams {
+    std::shared_ptr<MockMetadataPropagator> node_0_propagator;
+    std::shared_ptr<MockMetadataPropagator> node_1_propagator;
+    ~MyTestParams();
+
+    static MyTestParams make_strict_mocks() {
+        // Strict mocks only allow exact matches of actual vs expected invocation counts.
+        return {std::make_shared<StrictMock<MockMetadataPropagator>>(),
+                std::make_shared<StrictMock<MockMetadataPropagator>>()};
+    }
+};
+MyTestParams::~MyTestParams() = default;
+
 api::StorageMessageAddress make_address(uint16_t node_index, bool is_distributor) {
     static std::string _coolcluster("coolcluster");
     return {&_coolcluster, (is_distributor ? lib::NodeType::DISTRIBUTOR : lib::NodeType::STORAGE), node_index};
@@ -108,7 +141,7 @@ protected:
     std::unique_ptr<MessageCodecProvider>             _codec_provider;
     std::unique_ptr<SharedRpcResources>               _shared_rpc_resources;
     api::StorageMessageAddress                        _node_address;
-    std::string                                  _slobrok_id;
+    std::string                                       _slobrok_id;
 public:
     RpcNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
         : _config(StorageConfigSet::make_node_config(!is_distributor)),
@@ -143,12 +176,16 @@ public:
 RpcNode::~RpcNode() = default;
 
 class StorageApiNode : public RpcNode {
-    std::unique_ptr<StorageApiRpcService> _service;
+    std::unique_ptr<StorageApiRpcService>   _service;
+    std::shared_ptr<MockMetadataPropagator> _metadata_propagator;
 public:
-    StorageApiNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
-        : RpcNode(node_index, is_distributor, slobrok)
+    StorageApiNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok,
+                   std::shared_ptr<MockMetadataPropagator> message_interceptor)
+        : RpcNode(node_index, is_distributor, slobrok),
+          _metadata_propagator(std::move(message_interceptor))
     {
         StorageApiRpcService::Params params;
+        params.metadata_propagator = _metadata_propagator;
         _service = std::make_unique<StorageApiRpcService>(_messages, *_shared_rpc_resources, *_codec_provider, params);
 
         _shared_rpc_resources->start_server_and_register_slobrok(_slobrok_id);
@@ -156,6 +193,11 @@ public:
         wait_until_visible_in_slobrok(_slobrok_id);
     }
     ~StorageApiNode();
+
+    [[nodiscard]] const MockMetadataPropagator& meta_propagator_mock() noexcept {
+        assert(_metadata_propagator);
+        return *_metadata_propagator;
+    }
 
     std::shared_ptr<api::PutCommand> create_dummy_put_command() const {
         auto doc_type = _doc_type_repo->getDocumentType("testdoctype1");
@@ -217,19 +259,20 @@ StorageApiNode::~StorageApiNode() {
 
 // TODO consider completely mocking Slobrok to avoid any race conditions during node registration
 struct StorageApiRpcServiceTest : Test {
-    mbus::Slobrok _slobrok;
+    mbus::Slobrok                   _slobrok;
     std::unique_ptr<StorageApiNode> _node_0;
     std::unique_ptr<StorageApiNode> _node_1;
 
-    StorageApiRpcServiceTest()
+    StorageApiRpcServiceTest(MyTestParams params)
         : _slobrok(),
-          _node_0(std::make_unique<StorageApiNode>(1, true, _slobrok)),
-          _node_1(std::make_unique<StorageApiNode>(4, false, _slobrok))
+          _node_0(std::make_unique<StorageApiNode>(1, true,  _slobrok, std::move(params.node_0_propagator))),
+          _node_1(std::make_unique<StorageApiNode>(4, false, _slobrok, std::move(params.node_1_propagator)))
     {
         // FIXME ugh, this isn't particularly pretty...
         _node_0->wait_until_visible_in_slobrok(to_slobrok_id(_node_1->node_address()));
         _node_1->wait_until_visible_in_slobrok(to_slobrok_id(_node_0->node_address()));
     }
+    StorageApiRpcServiceTest() : StorageApiRpcServiceTest(MyTestParams{}) {}
     ~StorageApiRpcServiceTest() override;
 
     static api::StorageMessageAddress non_existing_address() {
@@ -383,6 +426,38 @@ TEST_F(StorageApiRpcServiceTest, trace_events_are_emitted_for_send_and_receive) 
                                          "Request received at.+"
                                          "Sending response from.+"
                                          "Response received at"));
+}
+
+struct StorageApiRpcServiceMetadataTest : StorageApiRpcServiceTest {
+    StorageApiRpcServiceMetadataTest()
+        : StorageApiRpcServiceTest(MyTestParams::make_strict_mocks())
+    {}
+};
+
+TEST_F(StorageApiRpcServiceMetadataTest, propagators_are_always_invoked_when_set) {
+    EXPECT_CALL(_node_0->meta_propagator_mock(), on_send_command(_, _));
+    EXPECT_CALL(_node_1->meta_propagator_mock(), on_receive_command(_, _));
+
+    // Note: mock expectations must be set _prior_ to invocation
+    (void) send_and_receive_put_command_at_node_1();
+}
+
+TEST_F(StorageApiRpcServiceMetadataTest, can_propagate_single_metadata_entry) {
+    EXPECT_CALL(_node_0->meta_propagator_mock(), on_send_command(_, _)).WillOnce(InjectMetadata("foo", "marve"));
+    EXPECT_CALL(_node_1->meta_propagator_mock(), on_receive_command(_, ExtractorHasMetadata("foo", "marve")));
+
+    (void) send_and_receive_put_command_at_node_1();
+}
+
+TEST_F(StorageApiRpcServiceMetadataTest, can_propagate_multiple_metadata_entries) {
+    EXPECT_CALL(_node_0->meta_propagator_mock(), on_send_command(_, _))
+        .WillOnce(DoAll(InjectMetadata("foo", "marve"),
+                        InjectMetadata("bar", "fleksnes")));
+    EXPECT_CALL(_node_1->meta_propagator_mock(), on_receive_command(_,
+        AllOf(ExtractorHasMetadata("foo", "marve"),
+              ExtractorHasMetadata("bar", "fleksnes"))));
+
+    (void) send_and_receive_put_command_at_node_1();
 }
 
 }
