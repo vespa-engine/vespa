@@ -13,7 +13,8 @@ namespace storage::rpc {
 /**
  * Used to propagate StorageCommand-level metadata to and from RPC-level metadata.
  *
- * All methods must be fully thread safe.
+ * Methods may be called concurrently, so any internal propagator state access must
+ * be thread safe.
  */
 class MetadataPropagator {
 public:
