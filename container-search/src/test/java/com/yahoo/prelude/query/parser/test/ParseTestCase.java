@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query.parser.test;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -217,6 +218,54 @@ public class ParseTestCase {
                 Query.Type.PHRASE);
         assertTrue(root instanceof PhraseItem);
         assertFalse(((PhraseItem) root).isExplicit());
+    }
+
+    @Test
+    void testPhraseItemGetsDefaultIndex() {
+        // Create a custom QueryType with linguistics tokenization and phrase composite
+        // This will use LinguisticsParser.newComposite() to create a PhraseItem
+        var queryType = new com.yahoo.search.query.QueryType(
+            Query.Type.LINGUISTICS,
+            com.yahoo.search.query.QueryType.Composite.phrase,
+            com.yahoo.search.query.QueryType.Tokenization.linguistics,
+            com.yahoo.search.query.QueryType.Syntax.none
+        );
+
+        // Create parser environment with a specific default index
+        var indexFacts = ParsingTester.createIndexFacts();
+        indexFacts.freeze();
+        var environment = new com.yahoo.search.query.parser.ParserEnvironment()
+            .setIndexFacts(indexFacts)
+            .setLinguistics(new SimpleLinguistics())
+            .setSpecialTokens(ParsingTester.createSpecialTokens());
+        environment.setType(queryType);
+
+        // Create LinguisticsParser and parse directly, bypassing assignDefaultIndex
+        var parser = new com.yahoo.prelude.query.parser.LinguisticsParser(environment);
+        var parsable = new com.yahoo.search.query.parser.Parsable()
+            .setQuery("word1 word2 word3")
+            .setLanguage(Language.ENGLISH)
+            .setDefaultIndexName("mydefaultindex");
+
+        // Call parse to get the result - this goes through the full flow including assignDefaultIndex
+        var result = parser.parse(parsable);
+        Item root = result.getRoot();
+
+        // Verify the root is a PhraseItem (created by newComposite)
+        assertTrue(root instanceof PhraseItem, "Expected PhraseItem but got " + root.getClass().getName());
+        PhraseItem phrase = (PhraseItem) root;
+
+        // Verify the phrase has the default index name
+        // This validates that newComposite() passed defaultIndex to PhraseItem constructor
+        assertEquals("mydefaultindex", phrase.getIndexName(),
+                    "PhraseItem should have inherited the default index name");
+
+        // Verify child items also have the default index name
+        // Children get the index from LinguisticsParser.toItem() which sets it explicitly
+        assertEquals(3, phrase.getItemCount());
+        assertEquals("mydefaultindex", ((WordItem) phrase.getItem(0)).getIndexName());
+        assertEquals("mydefaultindex", ((WordItem) phrase.getItem(1)).getIndexName());
+        assertEquals("mydefaultindex", ((WordItem) phrase.getItem(2)).getIndexName());
     }
 
     @Test
