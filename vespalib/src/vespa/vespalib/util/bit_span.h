@@ -15,10 +15,10 @@ class BitSpan {
     uint32_t    _count;
 public:
     class Sentinel {
-        uint32_t _end;
+        const uint32_t _end;
     public:
         explicit Sentinel(uint32_t end) noexcept : _end(end) {}
-        uint32_t value() const noexcept { return _end; }
+        bool valid(uint32_t pos) const noexcept { return pos < _end; }
     };
     class Iterator {
         const char* _data;
@@ -27,7 +27,7 @@ public:
         Iterator(const char* data, uint32_t pos) noexcept : _data(data), _pos(pos) {}
         bool operator*() const noexcept { return (_data[_pos / 8] >> (_pos % 8)) & 1; }
         Iterator& operator++() noexcept { ++_pos; return *this; }
-        bool operator!=(Sentinel s) const noexcept { return _pos != s.value(); }
+        bool operator!=(Sentinel s) const noexcept { return s.valid(_pos); }
     };
 
     BitSpan() noexcept : _data(nullptr), _count(0) {}
