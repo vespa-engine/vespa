@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucketidlist.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -184,4 +186,3 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
 };
 
 }
-

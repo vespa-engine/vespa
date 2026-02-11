@@ -3,10 +3,13 @@
 #pragma once
 
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/server/bootstrapconfig.h>
+#include <vespa/searchcore/proton/server/documentdbconfig.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/bucket/bucketspace.h>
 #include <memory>
 #include <string>
+
 
 namespace proton {
 

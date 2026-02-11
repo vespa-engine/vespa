@@ -3,6 +3,7 @@
 #pragma once
 
 #include <limits>
+#include <cstdint>
 
 namespace search::attribute {
 

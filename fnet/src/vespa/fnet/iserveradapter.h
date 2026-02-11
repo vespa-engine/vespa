@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "channel.h"
+
 /**
  * This class must be extended by the server application. It is needed
  * to let the application define the target packet handler for

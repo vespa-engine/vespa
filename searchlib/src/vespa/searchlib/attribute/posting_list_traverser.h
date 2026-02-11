@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/vespalib/datastore/entryref.h>
+
 namespace search::attribute {
 
 /*
