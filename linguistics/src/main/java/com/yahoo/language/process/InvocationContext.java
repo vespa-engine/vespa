@@ -19,6 +19,17 @@ import java.util.function.Supplier;
  */
 public class InvocationContext<SUBCLASS extends InvocationContext<SUBCLASS>> {
 
+    public enum DestinationType {
+        /** The embedding is for a query feature with format "query(feature)". */
+        QUERY,
+        /** The embedding is for a document field with format "schema.field". */
+        DOCUMENT;
+
+        public static DestinationType fromDestination(String destination) {
+            return destination.startsWith("query(") ? QUERY : DOCUMENT;
+        }
+    }
+
     private Language language = Language.UNKNOWN;
     private String destination;
     private String componentId = "unknown";
@@ -56,21 +67,13 @@ public class InvocationContext<SUBCLASS extends InvocationContext<SUBCLASS>> {
         return (SUBCLASS)this;
     }
 
-    /**
-     * Returns the name of the recipient of this invocation.
-     * <p>
-     * This is either a query feature name
-     * ("query(feature)"), or a schema and field name concatenated by a dot ("schema.field").
-     * This cannot be null.
-     */
-    public String getDestination() {return destination;}
+    /** Returns the name of the recipient of this invocation. See {@link DestinationType} for format details. */
+    public String getDestination() { return destination; }
 
-    /**
-     * Sets the name of the recipient of this invocation.
-     * <p>
-     * This is either a query feature name
-     * ("query(feature)"), or a schema and field name concatenated by a dot ("schema.field").
-     */
+    /** Returns the type of destination */
+    public DestinationType getDestinationType() { return DestinationType.fromDestination(destination); }
+
+    /** Sets the name of the recipient of this invocation. See {@link DestinationType} for format details. */
     @SuppressWarnings("unchecked")
     public SUBCLASS setDestination(String destination) {
         this.destination = destination;

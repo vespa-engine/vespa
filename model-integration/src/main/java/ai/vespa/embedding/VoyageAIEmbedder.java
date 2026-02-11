@@ -176,14 +176,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         }
     }
 
-    private String detectInputType(Context context) {
-        String destination = context.getDestination();
-        if (destination != null && destination.startsWith("query(")) {
-            return "query";
-        }
-        return "document";
-    }
-
     private boolean isMultimodalModel() { return config.model().startsWith("voyage-multimodal-"); }
     private boolean isContextualModel() { return config.model().startsWith("voyage-context-"); }
 
@@ -208,7 +200,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private List<Tensor> invokeVoyageAI(List<String> texts, Context context, TensorType targetType) {
         long startTime = System.nanoTime();
         validateTensorType(targetType);
-        var inputType = detectInputType(context);
+        var inputType = context.getDestinationType() == Context.DestinationType.QUERY ? "query" : "document";
         var outputDataType = resolveOutputDataType(targetType);
         var timeoutMs = calculateTimeoutMs(context);
 
