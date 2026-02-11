@@ -124,7 +124,7 @@ public abstract class AbstractParser implements CustomParser {
     }
 
     // TODO: Deprecate the unwanted method signatures below
-    
+
     @Override
     public final QueryTree parse(Parsable query) {
         Item root = null;
@@ -182,9 +182,9 @@ public abstract class AbstractParser implements CustomParser {
 
     /**
      * Do a best-effort attempt at creating a single string for language detection from only the relevant
-     * subset of tokens. 
+     * subset of tokens.
      * The relevant tokens are text tokens which follows names of indexes which are tokenized.
-     * 
+     *
      * This method does not modify the position of the given token stream.
      */
     private String generateLanguageDetectionTextFrom(TokenPosition tokens, IndexFacts.Session indexFacts, String defaultIndex) {
@@ -354,7 +354,7 @@ public abstract class AbstractParser implements CustomParser {
     // -bratseth
     // TODO: Use segmenting for forced phrase searches?
     //
-    // Language detection currently depends on tokenization (see generateLanguageDetectionTextFrom), but 
+    // Language detection currently depends on tokenization (see generateLanguageDetectionTextFrom), but
     // - the API's was originally not constructed for that, so a careful and somewhat unsatisfactory dance
     //   must be carried out to make it work
     // - it should really depend on parsing
@@ -428,7 +428,7 @@ public abstract class AbstractParser implements CustomParser {
             case near    -> new NearItem();
             case oNear   -> new ONearItem();
             case or      -> new OrItem();
-            case phrase  -> new PhraseItem();
+            case phrase  -> new PhraseItem(defaultIndex);
             case weakAnd -> new WeakAndItem();
         };
     }
