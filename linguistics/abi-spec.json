@@ -605,7 +605,7 @@
     "methods" : [
       "public static com.yahoo.language.process.InvocationContext$DestinationType[] values()",
       "public static com.yahoo.language.process.InvocationContext$DestinationType valueOf(java.lang.String)",
-      "public static com.yahoo.language.process.InvocationContext$DestinationType fromString(java.lang.String)"
+      "public static com.yahoo.language.process.InvocationContext$DestinationType fromDestination(java.lang.String)"
     ],
     "fields" : [
       "public static final enum com.yahoo.language.process.InvocationContext$DestinationType QUERY",

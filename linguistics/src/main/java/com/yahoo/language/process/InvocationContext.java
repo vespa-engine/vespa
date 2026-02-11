@@ -25,7 +25,7 @@ public class InvocationContext<SUBCLASS extends InvocationContext<SUBCLASS>> {
         /** The embedding is for a document field with format "schema.field". */
         DOCUMENT;
 
-        public static DestinationType fromString(String destination) {
+        public static DestinationType fromDestination(String destination) {
             return destination.startsWith("query(") ? QUERY : DOCUMENT;
         }
     }
@@ -71,7 +71,7 @@ public class InvocationContext<SUBCLASS extends InvocationContext<SUBCLASS>> {
     public String getDestination() { return destination; }
 
     /** Returns the type of destination */
-    public DestinationType getDestinationType() { return DestinationType.fromString(destination); }
+    public DestinationType getDestinationType() { return DestinationType.fromDestination(destination); }
 
     /** Sets the name of the recipient of this invocation. See {@link DestinationType} for format details. */
     @SuppressWarnings("unchecked")
