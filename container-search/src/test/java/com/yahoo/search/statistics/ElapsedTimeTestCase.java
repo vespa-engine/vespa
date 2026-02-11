@@ -12,7 +12,9 @@ import com.yahoo.search.statistics.TimeTracker.Activity;
 import com.yahoo.search.statistics.TimeTracker.SearcherTimer;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Check sanity of TimeTracker and ElapsedTime.

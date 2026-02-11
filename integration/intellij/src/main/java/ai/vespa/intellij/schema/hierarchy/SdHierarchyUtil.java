@@ -6,7 +6,7 @@ import com.intellij.ide.hierarchy.HierarchyBrowserManager;
 import com.intellij.ide.util.treeView.AlphaComparator;
 import com.intellij.ide.util.treeView.NodeDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.*;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 
 import ai.vespa.intellij.schema.psi.SdFile;

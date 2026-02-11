@@ -12,7 +12,10 @@ import java.util.List;
 
 import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 import static com.yahoo.config.codegen.JavaClassBuilder.createUniqueSymbol;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author gjoranv

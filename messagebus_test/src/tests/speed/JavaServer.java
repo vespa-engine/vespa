@@ -1,12 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-import com.yahoo.messagebus.*;
-import com.yahoo.messagebus.test.*;
-import com.yahoo.config.*;
-import com.yahoo.messagebus.routing.*;
-import com.yahoo.messagebus.network.*;
-import com.yahoo.messagebus.network.rpc.*;
-import java.util.logging.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageHandler;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.RPCMessageBus;
+import com.yahoo.messagebus.network.Identity;
+import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
+import com.yahoo.messagebus.test.SimpleMessage;
+import com.yahoo.messagebus.test.SimpleProtocol;
+import com.yahoo.messagebus.test.SimpleReply;
+
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class JavaServer implements MessageHandler {
 

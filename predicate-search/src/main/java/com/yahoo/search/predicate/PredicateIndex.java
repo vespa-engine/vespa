@@ -3,7 +3,17 @@ package com.yahoo.search.predicate;
 
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.document.predicate.Predicate;
-import com.yahoo.search.predicate.index.*;
+import com.yahoo.search.predicate.index.BoundsPostingList;
+import com.yahoo.search.predicate.index.CachedPostingListCounter;
+import com.yahoo.search.predicate.index.Feature;
+import com.yahoo.search.predicate.index.IntervalPostingList;
+import com.yahoo.search.predicate.index.PostingList;
+import com.yahoo.search.predicate.index.PredicateIntervalStore;
+import com.yahoo.search.predicate.index.PredicateRangeTermExpander;
+import com.yahoo.search.predicate.index.PredicateSearch;
+import com.yahoo.search.predicate.index.SimpleIndex;
+import com.yahoo.search.predicate.index.ZeroConstraintPostingList;
+import com.yahoo.search.predicate.index.ZstarCompressedPostingList;
 import com.yahoo.search.predicate.index.conjunction.ConjunctionHit;
 import com.yahoo.search.predicate.index.conjunction.ConjunctionIndex;
 import com.yahoo.search.predicate.serialization.SerializationHelper;

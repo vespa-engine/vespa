@@ -3,7 +3,12 @@ package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.documentapi.*;
+import com.yahoo.documentapi.AckToken;
+import com.yahoo.documentapi.ProgressToken;
+import com.yahoo.documentapi.VisitorControlHandler;
+import com.yahoo.documentapi.VisitorParameters;
+import com.yahoo.documentapi.VisitorResponse;
+import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.QueryResultMessage;
 import com.yahoo.messagebus.Message;
@@ -25,7 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Ulf Carlin

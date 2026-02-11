@@ -13,7 +13,10 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.yahoo.search.searchers.CacheControlSearcher.CACHE_CONTROL_HEADER;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test cases for CacheControlSearcher.

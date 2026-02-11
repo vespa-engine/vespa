@@ -12,7 +12,7 @@ import com.intellij.usages.UsageGroup;
 import com.intellij.usages.UsageView;
 import ai.vespa.intellij.schema.psi.SdDeclaration;
 
-import javax.swing.*;
+import javax.swing.Icon;
 
 /**
  * A group of elements in the "Find Usages" window.

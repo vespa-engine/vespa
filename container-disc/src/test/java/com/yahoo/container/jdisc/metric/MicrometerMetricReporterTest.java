@@ -3,7 +3,8 @@ package com.yahoo.container.jdisc.metric;
 import com.yahoo.jdisc.test.MockMetric;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MicrometerMetricReporterTest {
 

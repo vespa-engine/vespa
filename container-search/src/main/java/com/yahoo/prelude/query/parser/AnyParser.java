@@ -17,7 +17,9 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 
 import java.util.Iterator;
 
-import static com.yahoo.prelude.query.parser.Token.Kind.*;
+import static com.yahoo.prelude.query.parser.Token.Kind.MINUS;
+import static com.yahoo.prelude.query.parser.Token.Kind.PLUS;
+import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
 
 /**
  * Parser for queries of type any.

@@ -3,7 +3,11 @@ package com.yahoo.vespa.clustercontroller.core.status;
 
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
-import com.yahoo.vespa.clustercontroller.core.*;
+import com.yahoo.vespa.clustercontroller.core.ContentCluster;
+import com.yahoo.vespa.clustercontroller.core.EventLog;
+import com.yahoo.vespa.clustercontroller.core.NodeInfo;
+import com.yahoo.vespa.clustercontroller.core.RealTimer;
+import com.yahoo.vespa.clustercontroller.core.Timer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 

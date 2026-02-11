@@ -6,7 +6,10 @@ import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * @author Simon Thoresen Hult

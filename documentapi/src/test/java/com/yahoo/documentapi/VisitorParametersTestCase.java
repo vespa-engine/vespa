@@ -4,7 +4,7 @@ package com.yahoo.documentapi;
 import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.nio.charset.StandardCharsets;
 

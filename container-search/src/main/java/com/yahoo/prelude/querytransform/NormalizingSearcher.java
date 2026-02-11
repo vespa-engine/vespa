@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.querytransform;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.After;
@@ -9,8 +11,17 @@ import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexFacts.Session;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.BlockItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
+import com.yahoo.prelude.query.SegmentItem;
+import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordAlternativesItem.Alternative;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.language.Language;

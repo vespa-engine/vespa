@@ -26,7 +26,9 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.V2_PATH;
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.VALUES_PATH;
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.consumerQuery;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author gjoranv

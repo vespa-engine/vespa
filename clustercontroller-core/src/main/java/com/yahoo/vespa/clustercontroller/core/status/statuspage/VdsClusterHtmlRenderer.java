@@ -7,7 +7,15 @@ import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.vespa.clustercontroller.core.*;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
+import com.yahoo.vespa.clustercontroller.core.ClusterStatsAggregator;
+import com.yahoo.vespa.clustercontroller.core.ContentNodeErrorStats;
+import com.yahoo.vespa.clustercontroller.core.ContentNodeStats;
+import com.yahoo.vespa.clustercontroller.core.EventLog;
+import com.yahoo.vespa.clustercontroller.core.NodeInfo;
+import com.yahoo.vespa.clustercontroller.core.NodeResourceExhaustion;
+import com.yahoo.vespa.clustercontroller.core.RealTimer;
+import com.yahoo.vespa.clustercontroller.core.Timer;
 
 import java.util.ArrayList;
 import java.util.Comparator;
