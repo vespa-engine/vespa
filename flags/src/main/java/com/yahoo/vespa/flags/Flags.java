@@ -407,6 +407,14 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE
     );
 
+    public static final UnboundBooleanFlag USE_EXPERIMENTAL_DELETE_SESSIONS_CODE = defineFeatureFlag(
+            "use-experimental-delete-sessions-code", false,
+            List.of("hmusum"), "2026-02-11", "2026-03-01",
+            "Whether to use new code for deleting unused sessions on config server",
+            "Takes effect at next run of config server maintainer SessionsMaintainer",
+            HOSTNAME
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
