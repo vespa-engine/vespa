@@ -574,33 +574,17 @@ public class YqlParser implements Parser {
             item.setHnswExploreAdditionalHits(hnswExploreAdditionalHits);
         }
         Boolean allowApproximate = getAnnotation(ast, APPROXIMATE,
-                                                 Boolean.class, Boolean.TRUE, "allow approximate nearest neighbor search");
-        item.setAllowApproximate(allowApproximate);
+                                                 Boolean.class, null, "allow approximate nearest neighbor search");
+        if (allowApproximate != null) {
+            item.setAllowApproximate(allowApproximate);
+        }
 
-        Double hnswApproximateThreshold = getAnnotation(ast, HNSW_APPROXIMATE_THRESHOLD, Double.class, null, "force brute-force NN when filter keeps less than threshold");
-        if (hnswApproximateThreshold != null) {
-            item.setHnswApproximateThreshold(hnswApproximateThreshold);
-        }
-        Double hnswExplorationSlack = getAnnotation(ast, HNSW_EXPLORATION_SLACK, Double.class, null, "slack for adaptive beam search");
-        if (hnswExplorationSlack != null) {
-            item.setHnswExplorationSlack(hnswExplorationSlack);
-        }
-        Double hnswFilterFirstExploration = getAnnotation(ast, HNSW_FILTER_FIRST_EXPLORATION, Double.class, null, "tune how aggressively the filter-first heuristic explores the graph");
-        if (hnswFilterFirstExploration != null) {
-            item.setHnswFilterFirstExploration(hnswFilterFirstExploration);
-        }
-        Double hnswFilterFirstThreshold = getAnnotation(ast, HNSW_FILTER_FIRST_THRESHOLD, Double.class, null, "enable filter-first heuristic when filter keeps less than threshold");
-        if (hnswFilterFirstThreshold != null) {
-            item.setHnswFilterFirstThreshold(hnswFilterFirstThreshold);
-        }
-        Double hnswPostFilterThreshold = getAnnotation(ast, HNSW_POST_FILTER_THRESHOLD, Double.class, null, "enable post-filter when filter keeps more than threshold");
-        if (hnswPostFilterThreshold != null) {
-            item.setHnswPostFilterThreshold(hnswPostFilterThreshold);
-        }
-        Double hnswTargetHitsMaxAdjustmentFactor = getAnnotation(ast, HNSW_TARGET_HITS_MAX_ADJUSTMENT_FACTOR, Double.class, null, "max expansion for post-filter strategy");
-        if (hnswTargetHitsMaxAdjustmentFactor != null) {
-            item.setHnswTargetHitsMaxAdjustmentFactor(hnswTargetHitsMaxAdjustmentFactor);
-        }
+        item.setHnswApproximateThreshold(getAnnotation(ast, HNSW_APPROXIMATE_THRESHOLD, Double.class, null, "force brute-force NN when filter keeps less than threshold"));
+        item.setHnswExplorationSlack(getAnnotation(ast, HNSW_EXPLORATION_SLACK, Double.class, null, "slack for adaptive beam search"));
+        item.setHnswFilterFirstExploration(getAnnotation(ast, HNSW_FILTER_FIRST_EXPLORATION, Double.class, null, "tune how aggressively the filter-first heuristic explores the graph"));
+        item.setHnswFilterFirstThreshold(getAnnotation(ast, HNSW_FILTER_FIRST_THRESHOLD, Double.class, null, "enable filter-first heuristic when filter keeps less than threshold"));
+        item.setHnswPostFilterThreshold(getAnnotation(ast, HNSW_POST_FILTER_THRESHOLD, Double.class, null, "enable post-filter when filter keeps more than threshold"));
+        item.setHnswTargetHitsMaxAdjustmentFactor(getAnnotation(ast, HNSW_TARGET_HITS_MAX_ADJUSTMENT_FACTOR, Double.class, null, "max expansion for post-filter strategy"));
 
         String label = getAnnotation(ast, LABEL, String.class, null, "item label");
         if (label != null) {
@@ -684,9 +668,8 @@ public class YqlParser implements Parser {
         if (scoreThreshold != null) {
             out.setScoreThreshold(scoreThreshold);
         }
-        Double thresholdBoostFactor = getAnnotation(ast,
-                THRESHOLD_BOOST_FACTOR, Double.class, null,
-                "boost factor used to boost threshold before comparing against upper bound score");
+        Double thresholdBoostFactor = getAnnotation(ast, THRESHOLD_BOOST_FACTOR, Double.class, null,
+                                                    "boost factor used to boost threshold before comparing against upper bound score");
         if (thresholdBoostFactor != null) {
             out.setThresholdBoostFactor(thresholdBoostFactor);
         }
@@ -967,14 +950,8 @@ public class YqlParser implements Parser {
 
             // Set grammar-specific annotations
             if (queryType.getComposite() == QueryType.Composite.weakAnd && item instanceof WeakAndItem weakAndItem) {
-                Integer targetHits = getAnnotation(ast, TARGET_HITS, Integer.class, null, "'targetHits' for weak and");
-                if (targetHits != null) {
-                    weakAndItem.setTargetHits(targetHits);
-                }
-                Integer totalTargetHits = getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "'totalTargetHits' for weak and");
-                if (totalTargetHits != null) {
-                    weakAndItem.setTotalTargetHits(totalTargetHits);
-                }
+                weakAndItem.setTargetHits(getAnnotation(ast, TARGET_HITS, Integer.class, null, "'targetHits' for weak and"));
+                weakAndItem.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "'totalTargetHits' for weak and"));
             }
             if ((queryType.getComposite() == QueryType.Composite.near || queryType.getComposite() == QueryType.Composite.oNear)
                 && item instanceof NearItem nearItem) {
@@ -1429,10 +1406,7 @@ public class YqlParser implements Parser {
         if (targetHits != null) {
             weakAnd.setTargetHits(targetHits);
         }
-        Integer totalTargetHits = getAnnotation(spec, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes");
-        if (totalTargetHits != null) {
-            weakAnd.setTotalTargetHits(totalTargetHits);
-        }
+        weakAnd.setTotalTargetHits(getAnnotation(spec, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
         return convertVarArgs(spec, 1, weakAnd, null);
     }
 
@@ -2209,11 +2183,6 @@ public class YqlParser implements Parser {
     private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass,
                                 T defaultValue, String description) {
         return getAnnotation(ast, key, expectedClass, defaultValue, description, true);
-    }
-
-    private <T> Optional<T> annotation(OperatorNode<?> ast, String key, Class<T> expectedClass, T defaultValue,
-                                       String description, boolean considerParents) {
-        return Optional.ofNullable(getAnnotation(ast, key, expectedClass, defaultValue, description, considerParents));
     }
 
     private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass, T defaultValue,
