@@ -156,7 +156,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
         Set<String> nodesToRestart = restarts.restartsReadyAt(readyGeneration);
 
         // For each node, check if all it's services with (non-empty) applyOnRestart
-        // either reached the ready generation or have restartOnDeploy set true.
+        // either reached the ready generation or have applyOnRestart set true.
         // If not, it means that the service hasn't received a new config that requires a restart yet.
         nodesToRestart = nodesToRestart.stream()
                 .filter(hostname -> {
