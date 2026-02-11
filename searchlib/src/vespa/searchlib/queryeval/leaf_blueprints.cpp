@@ -3,7 +3,6 @@
 #include "leaf_blueprints.h"
 #include "emptysearch.h"
 #include "full_search.h"
-#include "indexing_search.h"
 #include "simplesearch.h"
 #include "fake_search.h"
 
@@ -61,35 +60,6 @@ AlwaysTrueBlueprint::AlwaysTrueBlueprint()
 }
 
 AlwaysTrueBlueprint::~AlwaysTrueBlueprint() = default;
-
-//-----------------------------------------------------------------------------
-
-FlowStats
-IndexingBlueprint::calculate_flow_stats(uint32_t docid_limit) const
-{
-    return default_flow_stats(docid_limit, docid_limit, 0);
-}
-
-SearchIterator::UP
-IndexingBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &) const
-{
-    return std::make_unique<IndexingSearch>(_element_id);
-}
-
-SearchIterator::UP
-IndexingBlueprint::createFilterSearchImpl(FilterConstraint /* constraint */) const
-{
-    return std::make_unique<IndexingSearch>(_element_id);
-}
-
-IndexingBlueprint::IndexingBlueprint(uint32_t element_id)
-    : SimpleLeafBlueprint(),
-      _element_id(element_id)
-{
-    setEstimate(HitEstimate(search::endDocId, false));
-}
-
-IndexingBlueprint::~IndexingBlueprint() = default;
 
 //-----------------------------------------------------------------------------
 
