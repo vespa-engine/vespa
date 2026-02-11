@@ -85,7 +85,7 @@ public class ConfigServerBootstrapTest {
         assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(() -> bootstrap.vipStatus().isInRotation(), "failed waiting for server to be in rotation");
-        assertEquals(List.of("ApplicationPackageMaintainer", "FileDistributionMaintainer", "PendingRestartsMaintainer", "ReindexingMaintainer", "RestartOnDeployMaintainer","SessionsMaintainer", "TenantsMaintainer"),
+        assertEquals(List.of("ApplicationPackageMaintainer", "FileDistributionMaintainer", "PendingRestartsMaintainer", "ReindexingMaintainer", "RestartOnDeployMaintainer", "SessionsMaintainer", "TenantsMaintainer"),
                      bootstrap.configServerMaintenance().maintainers().stream()
                               .map(Maintainer::name)
                               .sorted().toList());

@@ -70,7 +70,7 @@ public class PendingRestartsMaintainer extends ConfigServerMaintainer {
                                     log.log(
                                             Level.INFO,
                                             Text.format(
-                                                    "Failed to update pending restarts for %d: %s",
+                                                    "Failed to update pending restarts for %s: %s",
                                                     id.toFullString(), Exceptions.toMessageString(e)));
                                     failures.incrementAndGet();
                                 }
