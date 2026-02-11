@@ -3,7 +3,7 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
+#include <filesystem>
 
 namespace search {
 
@@ -13,12 +13,12 @@ namespace search {
 class DirectoryTraverse
 {
 private:
-    std::string _base_dir;
+    std::filesystem::path _path;
 public:
     uint64_t GetTreeSize(); // Returns size of directory in bytes
-    explicit DirectoryTraverse(const std::string& base_dir);
+    explicit DirectoryTraverse(const std::filesystem::path& path);
     ~DirectoryTraverse();
-    static uint64_t get_tree_size(const std::string& base_dir);
+    static uint64_t get_tree_size(const std::filesystem::path& path);
 };
 
 } // namespace search

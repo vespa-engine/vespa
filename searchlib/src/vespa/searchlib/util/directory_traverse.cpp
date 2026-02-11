@@ -13,9 +13,8 @@ namespace fs = std::filesystem;
 namespace {
 
 uint64_t
-try_get_tree_size(const std::string& base_dir)
+try_get_tree_size(const fs::path& path)
 {
-    fs::path path(base_dir);
     std::error_code ec;
     fs::recursive_directory_iterator dir_itr(path, fs::directory_options::skip_permission_denied, ec);
     if (ec) {
@@ -31,6 +30,7 @@ try_get_tree_size(const std::string& base_dir)
             total_size += DiskSpaceCalculator::directory_placeholder_size();
         } else if (elem.is_regular_file()) {
             const auto size = elem.file_size(ec);
+            // Errors here typically happens when a file is removed while doing the directory scan. Ignore them.
             if (!ec) {
                 total_size += calc(size);
             }
@@ -41,8 +41,8 @@ try_get_tree_size(const std::string& base_dir)
 
 }
 
-DirectoryTraverse::DirectoryTraverse(const std::string& base_dir)
-    : _base_dir(base_dir)
+DirectoryTraverse::DirectoryTraverse(const fs::path& path)
+    : _path(path)
 {
 }
 
@@ -56,7 +56,7 @@ DirectoryTraverse::GetTreeSize()
     // happens.  Number of retries chosen randomly by counting fingers.
     for (int i = 0; i < 10; ++i) {
         try {
-            return try_get_tree_size(_base_dir);
+            return try_get_tree_size(_path);
         } catch (const fs::filesystem_error&) {
             // Go around for another spin that hopefully won't race.
         }
@@ -65,9 +65,9 @@ DirectoryTraverse::GetTreeSize()
 }
 
 uint64_t
-DirectoryTraverse::get_tree_size(const std::string& base_dir)
+DirectoryTraverse::get_tree_size(const fs::path& path)
 {
-    DirectoryTraverse traverse(base_dir);
+    DirectoryTraverse traverse(path);
     return traverse.GetTreeSize();
 }
 
