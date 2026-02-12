@@ -88,7 +88,7 @@ public class ApplicationMojo extends AbstractMojo {
                 throw new IllegalArgumentException("compile version (" + compileVersion + ") cannot be higher than parent version (" + parentVersion + ")");
         }
 
-        String metaData = String.format(Locale.ROOT, """
+        String metaData = Text.format("""
                                         {
                                           "compileVersion": "%s",
                                           "buildTime": %d,
