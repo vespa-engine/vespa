@@ -17,8 +17,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -88,23 +90,23 @@ class CliArguments {
             if (args.hasOption(SPEED_TEST_OPTION)) {
                 if (   args.hasOption(FILE_OPTION) && (args.hasOption(STDIN_OPTION) || args.hasOption(TEST_PAYLOAD_SIZE_OPTION))
                     || args.hasOption(STDIN_OPTION) && args.hasOption(TEST_PAYLOAD_SIZE_OPTION)) {
-                    throw new CliArgumentsException(String.format("At most one of '%s', '%s' and '%s' may be specified", FILE_OPTION, STDIN_OPTION, TEST_PAYLOAD_SIZE_OPTION));
+                    throw new CliArgumentsException(String.format(Locale.ROOT, "At most one of '%s', '%s' and '%s' may be specified", FILE_OPTION, STDIN_OPTION, TEST_PAYLOAD_SIZE_OPTION));
                 }
             }
             else {
                 if (args.hasOption(FILE_OPTION) == args.hasOption(STDIN_OPTION)) {
-                    throw new CliArgumentsException(String.format("Exactly one of '%s' and '%s' must be specified", FILE_OPTION, STDIN_OPTION));
+                    throw new CliArgumentsException(String.format(Locale.ROOT, "Exactly one of '%s' and '%s' must be specified", FILE_OPTION, STDIN_OPTION));
                 }
                 if (args.hasOption(TEST_PAYLOAD_SIZE_OPTION)) {
-                    throw new CliArgumentsException(String.format("Option '%s' can only be specified together with '%s'", TEST_PAYLOAD_SIZE_OPTION, SPEED_TEST_OPTION));
+                    throw new CliArgumentsException(String.format(Locale.ROOT, "Option '%s' can only be specified together with '%s'", TEST_PAYLOAD_SIZE_OPTION, SPEED_TEST_OPTION));
                 }
             }
             if (args.hasOption(CERTIFICATE_OPTION) != args.hasOption(PRIVATE_KEY_OPTION)) {
                 throw new CliArgumentsException(
-                        String.format("Both '%s' and '%s' must be specified together", CERTIFICATE_OPTION, PRIVATE_KEY_OPTION));
+                        String.format(Locale.ROOT, "Both '%s' and '%s' must be specified together", CERTIFICATE_OPTION, PRIVATE_KEY_OPTION));
             }
         } else if (args.hasOption(HELP_OPTION) && args.hasOption(VERSION_OPTION)) {
-            throw new CliArgumentsException(String.format("Cannot specify both '%s' and '%s'", HELP_OPTION, VERSION_OPTION));
+            throw new CliArgumentsException(String.format(Locale.ROOT, "Cannot specify both '%s' and '%s'", HELP_OPTION, VERSION_OPTION));
         }
     }
 
@@ -244,7 +246,7 @@ class CliArguments {
     private boolean has(String option) { return arguments.hasOption(option); }
 
     private static CliArgumentsException newInvalidValueException(String option, ParseException cause) {
-        return new CliArgumentsException(String.format("Invalid value for '%s': %s", option, cause.getMessage()), cause);
+        return new CliArgumentsException(String.format(Locale.ROOT, "Invalid value for '%s': %s", option, cause.getMessage()), cause);
     }
 
     private static Options createOptions() {
@@ -398,7 +400,7 @@ class CliArguments {
 
     void printHelp(OutputStream out) {
         HelpFormatter formatter = new HelpFormatter();
-        PrintWriter writer = new PrintWriter(out);
+        PrintWriter writer = new PrintWriter(out, true, StandardCharsets.UTF_8);
         formatter.printHelp(
                 writer,
                 formatter.getWidth(),

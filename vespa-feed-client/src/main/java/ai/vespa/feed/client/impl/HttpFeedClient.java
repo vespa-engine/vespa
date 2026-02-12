@@ -22,6 +22,7 @@ import java.net.URLEncoder;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
@@ -136,10 +137,10 @@ class HttpFeedClient implements FeedClient {
                                while (thrown instanceof CompletionException)
                                    thrown = thrown.getCause();
                                var finalThrown = thrown;
-                               log.log(Level.FINE, () -> String.format("Request %s failed: %s", request, finalThrown));
+                               log.log(Level.FINE, () -> String.format(Locale.ROOT, "Request %s failed: %s", request, finalThrown));
                                promise.completeExceptionally(thrown);
                            } else {
-                               log.log(Level.FINE, () -> String.format("Request %s completed successfully: %s", request, result));
+                               log.log(Level.FINE, () -> String.format(Locale.ROOT, "Request %s completed successfully: %s", request, result));
                                promise.complete(result);
                            }
                        });
