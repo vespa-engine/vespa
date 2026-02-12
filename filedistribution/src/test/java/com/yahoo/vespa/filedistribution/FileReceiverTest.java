@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
@@ -55,10 +56,10 @@ public class FileReceiverTest {
     @Test
     public void receiveCompressedParts() throws IOException{
         File dirWithFiles = temporaryFolder.newFolder("files");
-        FileWriter writerA = new FileWriter(new File(dirWithFiles, "a"));
+        FileWriter writerA = new FileWriter(new File(dirWithFiles, "a"), StandardCharsets.UTF_8);
         writerA.write("1");
         writerA.close();
-        FileWriter writerB = new FileWriter(new File(dirWithFiles, "b"));
+        FileWriter writerB = new FileWriter(new File(dirWithFiles, "b"), StandardCharsets.UTF_8);
         writerB.write("2");
         writerB.close();
 

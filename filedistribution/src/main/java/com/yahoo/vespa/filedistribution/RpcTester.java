@@ -13,15 +13,16 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
+import com.yahoo.text.Text;
 
-import java.time.Duration;
-import java.util.logging.Level;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class RpcTester {
@@ -42,7 +43,7 @@ public class RpcTester {
         //String fileReference = args[0];
         String fileReference = "59f93f445438c9db7ccbf1629f583c2aa004a68b";
         String filename = "com.yahoo.vespatest.ExtraHitSearcher-1.0.0-deploy.jar";
-        File file = new File(String.format("/tmp/%s/%s", fileReference, filename));
+        File file = new File(Text.format("/tmp/%s/%s", fileReference, filename));
         byte[] blob = null;
 
         try {
