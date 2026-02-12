@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
+import com.yahoo.text.Text;
 import java.time.Instant;
 import java.util.List;
 import java.util.OptionalLong;
@@ -56,7 +57,7 @@ public class DeploymentLog {
     public String toString() {
         return "status: " + status.name() + ", " + (active ? "active" : "not active") + ", log entries:\n" +
                 entries.stream()
-                       .map(entry -> String.format("%s %s %s", entry.at(), entry.level(), entry.message()))
+                       .map(entry -> Text.format("%s %s %s", entry.at(), entry.level(), entry.message()))
                        .collect(Collectors.joining("\n"));
     }
 
