@@ -112,6 +112,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double resourceLimitAddressSpace() { return resourceLimitAddressSpace; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
+    @Override public boolean useV8GeoPositions() { return true; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
     @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
