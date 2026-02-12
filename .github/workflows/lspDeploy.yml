@@ -51,6 +51,10 @@ jobs:
         run: npm ci
         working-directory: ./integration/schema-language-server/clients/vscode
       
+      - name: Build IntelliJ plugin
+        run: gradle buildPlugin
+        working-directory: ./integration/schema-language-server/clients/intellij
+      
       # Deployment steps below only run on workflow_dispatch
       - name: "Retrieve version"
         id: retrieve_version
@@ -71,7 +75,6 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           echo $VERSION > VERSION
-          gradle buildPlugin
           curl -i --header "Authorization: Bearer $INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=@./build/distributions/vespa-$VERSION.zip https://plugins.jetbrains.com/plugin/uploadPlugin
         working-directory: ./integration/schema-language-server/clients/intellij
         env:
