@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -20,7 +21,7 @@ public class ProgressPrinterTest {
     void testSimple() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ManualTimer timer = new ManualTimer();
-        ProgressPrinter printer = new ProgressPrinter(timer, new PrintStream(output));
+        ProgressPrinter printer = new ProgressPrinter(timer, new PrintStream(output, false, StandardCharsets.UTF_8));
         RouteMetricSet metrics = new RouteMetricSet("foobar", printer);
 
         {
@@ -67,7 +68,7 @@ public class ProgressPrinterTest {
             metrics.addReply(reply);
         }
 
-        String val = output.toString().replaceAll("latency\\(min, max, avg\\): .*", "latency(min, max, avg): 0, 0, 0");
+        String val = output.toString(StandardCharsets.UTF_8).replaceAll("latency\\(min, max, avg\\): .*", "latency(min, max, avg): 0, 0, 0");
 
         String correct =
                 "\rSuccessfully sent 2 messages so far" +

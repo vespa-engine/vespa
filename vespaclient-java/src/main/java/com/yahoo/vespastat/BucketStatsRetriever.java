@@ -17,6 +17,7 @@ import com.yahoo.documentapi.messagebus.protocol.GetBucketListReply;
 import com.yahoo.documentapi.messagebus.protocol.StatBucketMessage;
 import com.yahoo.documentapi.messagebus.protocol.StatBucketReply;
 import com.yahoo.messagebus.Reply;
+import com.yahoo.text.Text;
 
 import java.util.List;
 
@@ -64,7 +65,7 @@ public class BucketStatsRetriever {
                 return bucketIdFactory.getBucketId(new DocumentId(id));
             case BUCKET:
                 // The internal parser of BucketID is used since the Java Long.decode cannot handle unsigned longs.
-                return new BucketId(String.format("BucketId(%s)", id));
+                return new BucketId(Text.format("BucketId(%s)", id));
             case GID:
                 return convertGidToBucketId(id);
             case USER:
@@ -72,13 +73,13 @@ public class BucketStatsRetriever {
                 try {
                     BucketSet bucketList = selector.getBucketList(createDocumentSelection(type, id));
                     if (bucketList.size() != 1) {
-                        String message = String.format("Document selection must map to only one location. " +
+                        String message = Text.format("Document selection must map to only one location. " +
                                 "Specified selection matches %d locations.", bucketList.size());
                         throw new BucketStatsException(message);
                     }
                     return bucketList.iterator().next();
                 } catch (ParseException e) {
-                    throw new BucketStatsException(String.format("Invalid id: %s (%s).", id, e.getMessage()), e);
+                    throw new BucketStatsException(Text.format("Invalid id: %s (%s).", id, e.getMessage()), e);
                 }
             default:
                 throw new RuntimeException("Unreachable code");
@@ -109,7 +110,7 @@ public class BucketStatsRetriever {
             throw new BucketStatsException(makeErrorMessage(reply));
         }
         if (!type.isInstance(reply)) {
-            throw new BucketStatsException(String.format("Unexpected reply %s: '%s'", reply.getType(), reply.toString()));
+            throw new BucketStatsException(Text.format("Unexpected reply %s: '%s'", reply.getType(), reply.toString()));
         }
         return type.cast(reply);
     }
@@ -118,7 +119,7 @@ public class BucketStatsRetriever {
         StringBuilder b = new StringBuilder();
         b.append("Request failed: \n");
         for (int i = 0; i < reply.getNumErrors(); i++) {
-            b.append(String.format("\t %s\n", reply.getError(i)));
+            b.append(Text.format("\t %s\n", reply.getError(i)));
         }
         return b.toString();
     }
@@ -128,13 +129,13 @@ public class BucketStatsRetriever {
             case BUCKET:
                 return "true";
             case DOCUMENT:
-                return String.format("id=\"%s\"", id);
+                return Text.format("id=\"%s\"", id);
             case GID:
-                return String.format("id.gid=\"gid(%s)\"", id);
+                return Text.format("id.gid=\"gid(%s)\"", id);
             case USER:
-                return String.format("id.user=%s", id);
+                return Text.format("id.user=%s", id);
             case GROUP:
-                return String.format("id.group=\"%s\"", id);
+                return Text.format("id.group=\"%s\"", id);
             default:
                 throw new RuntimeException("Unreachable code");
         }

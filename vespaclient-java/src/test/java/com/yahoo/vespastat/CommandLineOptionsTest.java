@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -64,11 +65,11 @@ public class CommandLineOptionsTest {
     void testPrintHelp() {
         ByteArrayOutputStream outContent = new ByteArrayOutputStream();
         PrintStream oldOut = System.out;
-        System.setOut(new PrintStream(outContent));
+        System.setOut(new PrintStream(outContent, false, StandardCharsets.UTF_8));
         try {
             CommandLineOptions options = new CommandLineOptions();
             options.printHelp();
-            String output = outContent.toString();
+            String output = outContent.toString(StandardCharsets.UTF_8);
             assertTrue(output.contains("vespa-stat [options]"));
         } finally {
             System.setOut(oldOut);

@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.security.tool;
 
+import com.yahoo.text.Text;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,12 +34,12 @@ class CliOptions {
 
     static void printTopLevelHelp(PrintStream out, List<Tool> tools) {
         var formatter = new HelpFormatter();
-        var writer    = new PrintWriter(out);
+        var writer    = new PrintWriter(out, false, StandardCharsets.UTF_8);
         formatter.printHelp(
                 writer,
                 formatter.getWidth(),
                 "vespa-security <tool> [TOOL OPTIONS]",
-                "Where <tool> is one of: %s".formatted(tools.stream().map(Tool::name).collect(Collectors.joining(", "))),
+                Text.format("Where <tool> is one of: %s", tools.stream().map(Tool::name).collect(Collectors.joining(", "))),
                 withHelpOption(List.of()),
                 formatter.getLeftPadding(),
                 formatter.getDescPadding(),
@@ -49,11 +51,11 @@ class CliOptions {
                                       ToolDescription toolDesc,
                                       Options optionsWithHelp) {
         var formatter = new HelpFormatter();
-        var writer    = new PrintWriter(out);
+        var writer    = new PrintWriter(out, false, StandardCharsets.UTF_8);
         formatter.printHelp(
                 writer,
                 formatter.getWidth(),
-                "vespa-security %s %s".formatted(toolName, toolDesc.helpArgSuffix()),
+                Text.format("vespa-security %s %s", toolName, toolDesc.helpArgSuffix()),
                 toolDesc.helpHeader(),
                 optionsWithHelp,
                 formatter.getLeftPadding(),

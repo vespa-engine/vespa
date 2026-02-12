@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,13 +38,13 @@ public class BucketStatsPrinterTest {
     }
 
     private String getOutputString() {
-        String content = out.toString();
+        String content = out.toString(StandardCharsets.UTF_8);
         out.reset();
         return content;
     }
 
     private String retreiveAndPrintBucketStats(ClientParameters.SelectionType type, String id, boolean dumpData) throws BucketStatsException {
-        BucketStatsPrinter printer = new BucketStatsPrinter(retriever, new PrintStream(out));
+        BucketStatsPrinter printer = new BucketStatsPrinter(retriever, new PrintStream(out, false, StandardCharsets.UTF_8));
         printer.retrieveAndPrintBucketStats(type, id, dumpData, bucketSpace);
         return getOutputString();
     }

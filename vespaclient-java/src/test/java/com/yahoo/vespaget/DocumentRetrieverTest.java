@@ -13,6 +13,7 @@ import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.Reply;
+import com.yahoo.text.Text;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
 import org.junit.jupiter.api.AfterEach;
@@ -23,6 +24,7 @@ import org.mockito.ArgumentMatcher;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -62,8 +64,8 @@ public class DocumentRetrieverTest {
     public void setUpStreams() {
         oldOut = System.out;
         oldErr = System.err;
-        System.setOut(new PrintStream(outContent));
-        System.setErr(new PrintStream(errContent));
+        System.setOut(new PrintStream(outContent, false, StandardCharsets.UTF_8));
+        System.setErr(new PrintStream(errContent, false, StandardCharsets.UTF_8));
     }
 
     @BeforeEach
@@ -108,7 +110,7 @@ public class DocumentRetrieverTest {
     }
 
     private void assertContainsDocument(String documentId) {
-        assertTrue(outContent.toString().contains(String.format(
+        assertTrue(outContent.toString(StandardCharsets.UTF_8).contains(Text.format(
                 "{\"id\":\"%s\"", documentId)));
     }
 
@@ -266,7 +268,7 @@ public class DocumentRetrieverTest {
         DocumentRetriever documentRetriever = createDocumentRetriever(params);
         documentRetriever.retrieveDocuments();
 
-        assertTrue(errContent.toString().contains("Request failed"));
+        assertTrue(errContent.toString(StandardCharsets.UTF_8).contains("Request failed"));
     }
 
     @Test
@@ -282,7 +284,7 @@ public class DocumentRetrieverTest {
         DocumentRetriever documentRetriever = createDocumentRetriever(params);
         documentRetriever.retrieveDocuments();
 
-        assertTrue(outContent.toString().contains(String.format("Document size: %d bytes", document.getSerializedSize())));
+        assertTrue(outContent.toString(StandardCharsets.UTF_8).contains(Text.format("Document size: %d bytes", document.getSerializedSize())));
     }
 
     @Test
@@ -297,7 +299,7 @@ public class DocumentRetrieverTest {
         DocumentRetriever documentRetriever = createDocumentRetriever(params);
         documentRetriever.retrieveDocuments();
 
-        assertEquals(DOC_ID_1 + "\n", outContent.toString());
+        assertEquals(DOC_ID_1 + "\n", outContent.toString(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -313,7 +315,7 @@ public class DocumentRetrieverTest {
         documentRetriever.retrieveDocuments();
 
         verify(mockedSession, times(1)).syncSend(any());
-        assertEquals(outContent.toString(), "Document not found.\n");
+        assertEquals(outContent.toString(StandardCharsets.UTF_8), "Document not found.\n");
     }
 
     @Test
@@ -332,7 +334,7 @@ public class DocumentRetrieverTest {
         documentRetriever.retrieveDocuments();
 
         verify(mockedSession, times(1)).setTraceLevel(traceLevel);
-        assertTrue(outContent.toString().contains("<trace>"));
+        assertTrue(outContent.toString(StandardCharsets.UTF_8).contains("<trace>"));
     }
 
 }

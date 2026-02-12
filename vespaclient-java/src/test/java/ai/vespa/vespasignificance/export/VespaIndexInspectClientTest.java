@@ -7,6 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -28,7 +29,7 @@ class VespaIndexInspectClientTest {
         private boolean destroyed;
 
         FakeProcess(String stdout, int exitCode) {
-            this.out = new ByteArrayInputStream(stdout.getBytes());
+            this.out = new ByteArrayInputStream(stdout.getBytes(StandardCharsets.UTF_8));
             this.exitCode = exitCode;
         }
 
