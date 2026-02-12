@@ -72,13 +72,13 @@ public class ConfigGenerator {
     private static String getFieldDefinition(CNode node) {
         String fieldDef;
         if (node instanceof LeafCNode && node.isArray) {
-            fieldDef = String.format(Locale.ROOT, "LeafNodeVector<%s, %s> %s;", boxedDataType(node), nodeClass(node), node.getName());
+            fieldDef = Text.format("LeafNodeVector<%s, %s> %s;", boxedDataType(node), nodeClass(node), node.getName());
         } else if (node instanceof InnerCNode && node.isArray) {
-            fieldDef = String.format(Locale.ROOT, "InnerNodeVector<%s> %s;", nodeClass(node), node.getName());
+            fieldDef = Text.format("InnerNodeVector<%s> %s;", nodeClass(node), node.getName());
         } else if (node.isMap) {
-            fieldDef = String.format(Locale.ROOT, "Map<String, %s> %s;", nodeClass(node), node.getName());
+            fieldDef = Text.format("Map<String, %s> %s;", nodeClass(node), node.getName());
         } else {
-            fieldDef = String.format(Locale.ROOT, "%s %s;", nodeClass(node), node.getName());
+            fieldDef = Text.format("%s %s;", nodeClass(node), node.getName());
         }
         return node.getCommentBlock("//") + "private final " + fieldDef;
     }
@@ -95,7 +95,7 @@ public class ConfigGenerator {
 
     private static String getContainsFieldsFlaggedWithRestart(CNode node, boolean isOuter) {
         if (isOuter) {
-            return String.format(Locale.ROOT, "private static boolean containsFieldsFlaggedWithRestart() {\n" +//
+            return Text.format("private static boolean containsFieldsFlaggedWithRestart() {\n" +//
                     "  return %b;\n" +//
                     "}\n\n", node.needRestart());
         } else {
@@ -324,7 +324,7 @@ public class ConfigGenerator {
 
     private static String getStaticMethodsForInnerArray(InnerCNode inner) {
         final String nc = nodeClass(inner);
-        return String.format(Locale.ROOT, "private static InnerNodeVector<%s> createVector(List<Builder> builders) {\n" +//
+        return Text.format("private static InnerNodeVector<%s> createVector(List<Builder> builders) {\n" +//
                 "    List<%s> elems = new ArrayList<>();\n" +//
                 "    for (Builder b : builders) {\n" +//
                 "        elems.add(new %s(b));\n" +//
@@ -346,9 +346,9 @@ public class ConfigGenerator {
     }
 
     private static String getEnumCode(EnumLeaf en) {
-        String enumValues = stream(en.getLegalValues()).map(e -> String.format(Locale.ROOT, "  public final static Enum %s = Enum.%s;", e, e)).collect(Collectors.joining("\n"));
+        String enumValues = stream(en.getLegalValues()).map(e -> Text.format("  public final static Enum %s = Enum.%s;", e, e)).collect(Collectors.joining("\n"));
 
-        String code = String.format(Locale.ROOT, "%s\n" +//
+        String code = Text.format("%s\n" +//
                         "public final static class %s extends EnumNode<%s> {\n" +//
                         "\n" +//
                         "  public %s(){\n" +//
