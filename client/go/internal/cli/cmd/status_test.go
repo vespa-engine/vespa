@@ -253,3 +253,90 @@ func assertStatus(expectedTarget string, args []string, t *testing.T) {
 	assert.Nil(t, cli.Run(append(statusArgs, args...)...))
 	assert.Equal(t, expectedTarget+"\n", stdout.String())
 }
+
+func TestStatusSkipServiceStatus(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+
+	mockServiceStatus(client, "foo")
+	// Note: No status.html response queued - verifying we don't call Wait()
+
+	assert.Nil(t, cli.Run("status", "--skip-service-status"))
+	// Should show endpoint without status check
+	assert.Equal(t, "Container foo at http://127.0.0.1:8080\n", stdout.String())
+	// Verify only the serviceconverge request was made (control plane), not status.html (data plane)
+	assert.Contains(t, client.LastRequest.URL.Path, "/serviceconverge")
+}
+
+func TestStatusEndpointCommand(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+
+	mockServiceStatus(client, "foo", "bar")
+	// Note: No status.html responses queued - verifying we don't call Wait()
+
+	assert.Nil(t, cli.Run("status", "endpoint"))
+	// Should show endpoints without status checks
+	assert.Equal(t, "Container bar at http://127.0.0.1:8080\nContainer foo at http://127.0.0.1:8080\n", stdout.String())
+	// Verify only the serviceconverge request was made (control plane), not status.html (data plane)
+	assert.Contains(t, client.LastRequest.URL.Path, "/serviceconverge")
+}
+
+func TestStatusEndpointCommandWithCluster(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+
+	mockServiceStatus(client, "foo", "bar")
+
+	assert.Nil(t, cli.Run("status", "endpoint", "--cluster", "foo"))
+	// Should show only the specified cluster endpoint
+	assert.Equal(t, "Container foo at http://127.0.0.1:8080\n", stdout.String())
+	// Verify only the serviceconverge request was made (control plane), not status.html (data plane)
+	assert.Contains(t, client.LastRequest.URL.Path, "/serviceconverge")
+}
+
+func TestStatusEndpointCommandPlainFormat(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+
+	mockServiceStatus(client, "default")
+
+	assert.Nil(t, cli.Run("status", "endpoint", "--format", "plain"))
+	// Should show only the URL in plain format
+	assert.Equal(t, "http://127.0.0.1:8080\n", stdout.String())
+	// Verify only the serviceconverge request was made (control plane), not status.html (data plane)
+	assert.Contains(t, client.LastRequest.URL.Path, "/serviceconverge")
+}
+
+func TestStatusSkipServiceStatusNotAvailableOnSubcommands(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	// --skip-service-status should not be available on "status deploy"
+	err := cli.Run("status", "deploy", "--skip-service-status")
+	assert.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "unknown flag: --skip-service-status")
+
+	stderr.Reset()
+
+	// --skip-service-status should not be available on "status deployment"
+	err = cli.Run("status", "deployment", "--skip-service-status")
+	assert.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "unknown flag: --skip-service-status")
+
+	stderr.Reset()
+
+	// --skip-service-status should not be available on "status endpoint"
+	err = cli.Run("status", "endpoint", "--skip-service-status")
+	assert.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "unknown flag: --skip-service-status")
+}
