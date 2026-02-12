@@ -130,7 +130,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                 logProvidedArtifactsIncluded(artifactsToInclude, providedArtifactsFromManifest(wantedProvidedArtifact.get().getFile()));
             } else if (! suppressWarningMissingImportPackages && jdisc_core.isEmpty()) {
                 // TODO: Remove jdisc_core clause above and instead add suppressWarning to necessary vespa modules.
-                warnOrThrow(String.format(Locale.ROOT, "This project does not have '%s' as provided dependency, so the generated 'Import-Package' " +
+                warnOrThrow(Text.format("This project does not have '%s' as provided dependency, so the generated 'Import-Package' " +
                         "OSGi header may be missing important packages.", wantedProvidedDependency()));
             }
 
@@ -199,7 +199,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     private void logNonPublicApiUsage(List<String> nonPublicApiUsed) {
         if (suppressWarningPublicApi || effectiveBundleType() != BundleType.USER || nonPublicApiUsed.isEmpty()) return;
-        warnOrThrow(String.format(Locale.ROOT, "This project uses packages that are not part of Vespa's public api: %s", nonPublicApiUsed));
+        warnOrThrow(Text.format("This project uses packages that are not part of Vespa's public api: %s", nonPublicApiUsed));
     }
 
     private static String publicApi(PackageTally tally) {
@@ -299,7 +299,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         List<Artifact> unsupportedArtifacts = nonJarArtifacts.stream().filter(a -> ! a.getType().equals("pom"))
                 .toList();
 
-        unsupportedArtifacts.forEach(artifact -> warnOrThrow(String.format(Locale.ROOT, "Unsupported artifact '%s': Type '%s' is not supported. Please file a feature request.",
+        unsupportedArtifacts.forEach(artifact -> warnOrThrow(Text.format("Unsupported artifact '%s': Type '%s' is not supported. Please file a feature request.",
                                                                            artifact.getId(), artifact.getType())));
     }
 

@@ -34,7 +34,7 @@ public class ImportPackages {
                     Arrays.stream(version.get().split("\\.")).map(Integer::parseInt).limit(3).forEach(this.versionNumber::add);
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException(
-                            String.format(Locale.ROOT, "Invalid version number '%s' for package '%s'.", version.get(), packageName), e);
+                            Text.format("Invalid version number '%s' for package '%s'.", version.get(), packageName), e);
                 }
             }
         }
@@ -62,7 +62,7 @@ public class ImportPackages {
             } else {
                 int upperLimit = isGuavaPackage() ? INFINITE_VERSION // guava increases major version for each release
                         : versionNumber.get(0) + 1;
-                return Optional.of(String.format(Locale.ROOT, "[%s,%d)", version(), upperLimit));
+                return Optional.of(Text.format("[%s,%d)", version(), upperLimit));
             }
         }
 
