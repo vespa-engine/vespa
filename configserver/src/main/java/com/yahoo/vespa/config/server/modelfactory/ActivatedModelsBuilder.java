@@ -33,6 +33,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.text.Text;
 
 import java.util.Comparator;
 import java.util.List;
@@ -98,7 +99,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             ApplicationId applicationId,
                                             Optional<DockerImage> wantedDockerImageRepository,
                                             Version wantedNodeVespaVersion) {
-        log.log(Level.FINE, () -> String.format("Loading model version %s for session %s application %s",
+        log.log(Level.FINE, () -> Text.format("Loading model version %s for session %s application %s",
                                                 modelFactory.version(), applicationGeneration, applicationId));
         ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId, modelFactory.version(), applicationPackage);
         Provisioned provisioned = new Provisioned();

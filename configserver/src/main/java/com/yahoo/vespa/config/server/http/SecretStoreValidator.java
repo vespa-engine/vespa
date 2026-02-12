@@ -15,6 +15,7 @@ import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
+import com.yahoo.text.Text;
 
 import java.io.IOException;
 import java.net.URI;
@@ -64,7 +65,7 @@ public class SecretStoreValidator {
             return new ProxyResponse(httpClient.execute(postRequest));
         } catch (IOException e) {
             return HttpErrorResponse.internalServerError(
-                    String.format("Failed to post request to %s: %s", uri, Exceptions.toMessageString(e))
+                    Text.format("Failed to post request to %s: %s", uri, Exceptions.toMessageString(e))
             );
         }
     }

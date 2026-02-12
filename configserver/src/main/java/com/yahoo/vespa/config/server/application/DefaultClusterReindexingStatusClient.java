@@ -17,6 +17,7 @@ import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.Timeout;
+import com.yahoo.text.Text;
 
 import java.io.IOException;
 import java.net.URI;
@@ -75,7 +76,7 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
     @Override public void close() { uncheck(() -> httpClient.close()); }
 
     private CompletableFuture<Map<String, ClusterReindexing>> getReindexingStatus(ServiceInfo service) {
-        URI uri = URI.create(String.format("http://%s:%d/reindexing/v1/status", service.getHostName(), getStatePort(service)));
+        URI uri = URI.create(Text.format("http://%s:%d/reindexing/v1/status", service.getHostName(), getStatePort(service)));
         CompletableFuture<SimpleHttpResponse> responsePromise = new CompletableFuture<>();
         httpClient.execute(SimpleRequestBuilder.get(uri).build(), new FutureCallback<>() {
             @Override public void completed(SimpleHttpResponse result) { responsePromise.complete(result); }
@@ -86,7 +87,7 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
             if (response != null) {
                 return uncheck(() -> toClusterReindexing(response));
             } else {
-                throw throwUnchecked(new IOException(String.format("For '%s': %s", uri, error.getMessage()), error));
+                throw throwUnchecked(new IOException(Text.format("For '%s': %s", uri, error.getMessage()), error));
             }
         }, executor);
     }

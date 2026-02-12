@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.concurrent.Memoized;
+import com.yahoo.text.Text;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -181,9 +182,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         long configGeneration = session.getSessionId();
         applicationRepository.modifyPendingRestarts(applicationId, pendingRestarts -> pendingRestarts.withRestarts(configGeneration, nodesToRestart));
         String hostnames = nodesToRestart.stream().sorted().collect(joining(", "));
-        deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
+        deployLogger.log(Level.INFO, Text.format("Scheduled service restart of %d nodes: %s",
                                                    nodesToRestart.size(), hostnames));
-        log.info(String.format("%sWill schedule service restart of %d nodes after convergence on generation %d (unless restartOnDeploy enabled): %s",
+        log.info(Text.format("%sWill schedule service restart of %d nodes after convergence on generation %d (unless restartOnDeploy enabled): %s",
                                session.logPre(), nodesToRestart.size(), configGeneration, hostnames));
         configChangeActions = configChangeActions == null ? null : configChangeActions.withRestartActions(new RestartActions());
     }
@@ -200,7 +201,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             return reindexing;
         });
-        deployLogger.log(Level.INFO, String.format("Scheduled reindexing of %d document types across %d clusters: %s",
+        deployLogger.log(Level.INFO, Text.format("Scheduled reindexing of %d document types across %d clusters: %s",
                                                    entries.size(),
                                                    entries.stream().map(Reindexing::clusterId).distinct().count(),
                                                    entries.stream().collect(groupingBy(Reindexing::clusterId)).entrySet().stream()
@@ -224,8 +225,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                         "Cannot apply deferred reconfiguration: no model available for session " + session.getSessionId()));
         model.markClustersForDeferredReconfiguration(clustersWithDeferredReconfiguration);
         clustersWithDeferredReconfiguration.forEach(clusterName ->
-            deployLogger.log(Level.INFO, "Deferring reconfiguration of cluster '%s' until restart is completed"
-                    .formatted(clusterName)));
+            deployLogger.log(Level.INFO, Text.format("Deferring reconfiguration of cluster '%s' until restart is completed", clusterName)));
     }
 
     /**

@@ -22,6 +22,7 @@ import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
+import com.yahoo.text.Text;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -103,7 +104,7 @@ public class ConfigStateChecker extends AbstractComponent {
                                 log.log(
                                         FINE,
                                         error,
-                                        () -> String.format(
+                                        () -> Text.format(
                                                 "Failed to retrieve service config state for '%s': %s",
                                                 service, error.getMessage()));
                                 temporaryResult.put(service, new ServiceConfigState(-1L, Optional.empty()));

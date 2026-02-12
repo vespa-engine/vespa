@@ -9,6 +9,7 @@ import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.text.Text;
 
 import java.io.File;
 import java.io.FileReader;
@@ -115,7 +116,7 @@ public class VersionState {
 
     @Override
     public String toString() {
-        return String.format("Current version:%s, stored version:%s", currentVersion(), storedVersion());
+        return Text.format("Current version:%s, stored version:%s", currentVersion(), storedVersion());
     }
 
     private void verifyVersionIntervalForUpgrade(Version storedVersion) {

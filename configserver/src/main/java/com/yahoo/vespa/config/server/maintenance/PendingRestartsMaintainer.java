@@ -101,7 +101,7 @@ public class PendingRestartsMaintainer extends ConfigServerMaintainer {
         long lowestGeneration = convergence.currentGeneration;
         Set<String> nodesToRestart = restarts.restartsReadyAt(lowestGeneration);
         if (nodesToRestart.isEmpty()) {
-            log.info(String.format("Cannot yet restart nodes of %s, as some services are still on generation %d:\n\t%s",
+            log.info(Text.format("Cannot yet restart nodes of %s, as some services are still on generation %d:\n\t%s",
                     id.toFullString(),
                     lowestGeneration,
                     convergence.services().stream()
@@ -112,7 +112,7 @@ public class PendingRestartsMaintainer extends ConfigServerMaintainer {
         }
 
         restarter.accept(id, nodesToRestart);
-        log.info(String.format("Scheduled restart of %d nodes after observing generation %d: %s",
+        log.info(Text.format("Scheduled restart of %d nodes after observing generation %d: %s",
                 nodesToRestart.size(), lowestGeneration, nodesToRestart.stream().sorted().collect(Collectors.joining(", "))));
 
         return restarts.withoutPreviousGenerations(lowestGeneration);
