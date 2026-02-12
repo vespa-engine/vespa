@@ -5,6 +5,7 @@
 #include <vespa/searchlib/parsequery/parse.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace search::query {
 
@@ -55,6 +56,7 @@ public:
         uint32_t exploreAdditionalHits = 0;
         uint32_t fuzzy_max_edit_distance = 0;
         uint32_t fuzzy_prefix_lock_length = 0;
+        std::vector<uint32_t> _element_filter;
 
         void clear();
     };
@@ -90,6 +92,8 @@ public:
     // fuzzy match arguments (see also: has_prefix_match_semantics() for fuzzy prefix matching)
     [[nodiscard]] uint32_t fuzzy_max_edit_distance() const noexcept { return _d.fuzzy_max_edit_distance; }
     [[nodiscard]] uint32_t fuzzy_prefix_lock_length() const noexcept { return _d.fuzzy_prefix_lock_length; }
+    // elementFilter annotation for sameElement
+    [[nodiscard]] const std::vector<uint32_t>& get_element_filter() const noexcept { return _d._element_filter; }
 
     // Get the flags of the current item.
     [[nodiscard]] bool hasNoRankFlag() const noexcept { return _d.noRankFlag; }
