@@ -18,6 +18,7 @@ import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.text.Text;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 

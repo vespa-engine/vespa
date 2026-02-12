@@ -166,6 +166,7 @@ import com.yahoo.searchlib.expression.UcaFunctionNode;
 import com.yahoo.searchlib.expression.XorBitFunctionNode;
 import com.yahoo.searchlib.expression.XorFunctionNode;
 import com.yahoo.searchlib.expression.ZCurveFunctionNode;
+import com.yahoo.text.Text;
 
 /**
  * This is a helper class for {@link RequestBuilder} that offloads the code to convert {@link GroupingExpression} type
@@ -281,7 +282,7 @@ class ExpressionConverter {
             return new AndPredicateNode(args);
         } else {
             throw new IllegalInputException(
-                    "Can not convert '%s' to a filter expression.".formatted(expression.getClass().getSimpleName()));
+                    Text.format("Can not convert \'%s\' to a filter expression.", expression.getClass().getSimpleName()));
         }
     }
 

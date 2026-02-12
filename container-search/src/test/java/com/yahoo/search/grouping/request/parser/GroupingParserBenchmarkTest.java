@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -38,9 +39,9 @@ public class GroupingParserBenchmarkTest {
             }
         }
         long micros = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - now);
-        System.out.format("%d \u03bcs (avg %.2f)\n", micros, (double) micros / (NUM_RUNS * inputs.size()));
+        System.out.format(Locale.ROOT, "%d \u03bcs (avg %.2f)\n", micros, (double) micros / (NUM_RUNS * inputs.size()));
         for (Map.Entry<String, Long> entry : PREV_RESULTS.entrySet()) {
-            System.out.format("%-20s : %4.2f\n", entry.getKey(), (double) micros / entry.getValue());
+            System.out.format(Locale.ROOT, "%-20s : %4.2f\n", entry.getKey(), (double) micros / entry.getValue());
         }
         System.out.println("\nignore " + ignore);
     }

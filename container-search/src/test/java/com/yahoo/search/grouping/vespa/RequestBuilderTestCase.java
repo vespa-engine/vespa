@@ -1162,24 +1162,24 @@ public class RequestBuilderTestCase {
         private static String toSimpleName(FilterExpressionNode filterExp) {
             if (filterExp instanceof RegexPredicateNode rpn) {
                 var simpleName = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
-                return "Regex [%s]".formatted(simpleName);
+                return String.format(Locale.ROOT, "Regex [%s]", simpleName);
             } else if (filterExp instanceof RangePredicateNode rpn) {
                 var lower = rpn.getLower().doubleValue();
                 var upper = rpn.getUpper().doubleValue();
                 var lowerInclusive = rpn.getLowerInclusive() ? "true" : "false";
                 var upperInclusive = rpn.getUpperInclusive() ? "true" : "false";
                 var expression = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
-                return String.format(Locale.US, "Range [%f, %f, %s, %s, %s]",
+                return String.format(Locale.ROOT, "Range [%f, %f, %s, %s, %s]",
                                      lower, upper, expression, lowerInclusive, upperInclusive);
             } else if (filterExp instanceof NotPredicateNode npn) {
                 var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
-                return "Not [%s]".formatted(simpleName);
+                return String.format(Locale.ROOT, "Not [%s]", simpleName);
             } else if (filterExp instanceof OrPredicateNode opn) {
                 var simpleName = opn.getArgs().stream().map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
-                return "Or [%s]".formatted(simpleName);
+                return String.format(Locale.ROOT, "Or [%s]", simpleName);
             } else if (filterExp instanceof AndPredicateNode apn) {
                 var simpleName = apn.getArgs().stream().map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
-                return "And [%s]".formatted(simpleName);
+                return String.format(Locale.ROOT, "And [%s]", simpleName);
             }
             return filterExp.getClass().getSimpleName();
         }

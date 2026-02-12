@@ -20,6 +20,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.searchlib.aggregation.Grouping;
 
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -236,7 +237,7 @@ public abstract class VespaBackend {
         if ((query.getTrace().getLevel()<level) || !query.getTrace().getQuery()) return;
 
         StringBuilder s = new StringBuilder();
-        s.append(sourceName).append(" ").append(phase.name().toLowerCase()).append(" to dispatch: ")
+        s.append(sourceName).append(" ").append(phase.name().toLowerCase(Locale.ROOT)).append(" to dispatch: ")
                 .append("query=[")
                 .append(query.getModel().getQueryTree().getRoot().toString())
                 .append("]");

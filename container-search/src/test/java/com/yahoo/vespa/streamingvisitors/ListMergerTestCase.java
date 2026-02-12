@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -16,9 +17,9 @@ public class ListMergerTestCase {
     private void initializeLists(List<String> list1, List<String> list2, int entryCount, int padding) {
         for (int i = 0; i < entryCount; i++) {
             if ((i % 2) == 0) {
-                list1.add("String " + String.format("%0" + padding + "d", (i+1)));
+                list1.add("String " + Text.format("%0" + padding + "d", (i+1)));
             } else {
-                list2.add("String " + String.format("%0" + padding + "d", (i+1)));
+                list2.add("String " + Text.format("%0" + padding + "d", (i+1)));
             }
         }
     }
@@ -26,7 +27,7 @@ public class ListMergerTestCase {
     private void verifyList(List<String> list, int entryCount, int padding) {
         assertEquals(entryCount, list.size());
         for (int i = 0; i < entryCount; i++) {
-            assertEquals("String " + String.format("%0" + padding + "d", (i+1)), list.get(i));
+            assertEquals("String " + Text.format("%0" + padding + "d", (i+1)), list.get(i));
         }
     }
 

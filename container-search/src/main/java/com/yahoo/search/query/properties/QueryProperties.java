@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.properties;
+import java.util.Locale;
 
 import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.IllegalInputException;
@@ -64,7 +65,7 @@ public class QueryProperties extends Properties {
 
     private static void addDualCasedRM(Map<CompoundName, GetterSetter> map, String last, GetterSetter accessor) {
         map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, last), accessor);
-        map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, last.toLowerCase()), accessor);
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, last.toLowerCase(Locale.ROOT)), accessor);
     }
 
     private static final Map<CompoundName, GetterSetter> propertyAccessors = createPropertySetterMap();

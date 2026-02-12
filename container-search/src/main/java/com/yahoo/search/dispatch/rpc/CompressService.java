@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.rpc;
+import java.util.Locale;
 
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
@@ -19,7 +20,7 @@ public class CompressService implements CompressPayload {
 
     @Override
     public Compressor.Compression compress(Query query, byte[] payload) {
-        CompressionType compression = CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase());
+        CompressionType compression = CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase(Locale.ROOT));
         return compressor.compress(compression, payload);
     }
 

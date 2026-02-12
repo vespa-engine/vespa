@@ -228,19 +228,19 @@ public class StreamingVisitorTest {
         assertEquals(AllFields.NAME, params.getFieldSet());
 
         // Verify library parameters
-        //System.err.println("query="+new String(params.getLibraryParameters().get("query")));
+        //System.err.println("query="+new String(params.getLibraryParameters().get("query"), StandardCharsets.UTF_8));
         assertNotNull(params.getLibraryParameters().get("query")); // TODO: Check contents
-        //System.err.println("query="+new String(params.getLibraryParameters().get("querystackcount")));
+        //System.err.println("query="+new String(params.getLibraryParameters().get("querystackcount"), StandardCharsets.UTF_8));
         assertNotNull(params.getLibraryParameters().get("querystackcount")); // TODO: Check contents
-        assertEquals(searchCluster, new String(params.getLibraryParameters().get("searchcluster")));
-        assertEquals(schema, new String(params.getLibraryParameters().get("schema")));
-        assertEquals(Objects.requireNonNullElse(qa.summary, "default"), new String(params.getLibraryParameters().get("summaryclass")));
-        assertEquals(Integer.toString(qa.offset+qa.hits), new String(params.getLibraryParameters().get("summarycount")));
-        assertEquals(Objects.requireNonNullElse(qa.profile, "default"), new String(params.getLibraryParameters().get("rankprofile")));
-        //System.err.println("queryflags="+new String(params.getLibraryParameters().get("queryflags")));
+        assertEquals(searchCluster, new String(params.getLibraryParameters().get("searchcluster"), StandardCharsets.UTF_8));
+        assertEquals(schema, new String(params.getLibraryParameters().get("schema"), StandardCharsets.UTF_8));
+        assertEquals(Objects.requireNonNullElse(qa.summary, "default"), new String(params.getLibraryParameters().get("summaryclass"), StandardCharsets.UTF_8));
+        assertEquals(Integer.toString(qa.offset+qa.hits), new String(params.getLibraryParameters().get("summarycount"), StandardCharsets.UTF_8));
+        assertEquals(Objects.requireNonNullElse(qa.profile, "default"), new String(params.getLibraryParameters().get("rankprofile"), StandardCharsets.UTF_8));
+        //System.err.println("queryflags="+new String(params.getLibraryParameters().get("queryflags"), StandardCharsets.UTF_8));
         assertNotNull(params.getLibraryParameters().get("queryflags")); // TODO: Check contents
         if (qa.location != null) {
-            assertEquals(qa.location, new String(params.getLibraryParameters().get("location")));
+            assertEquals(qa.location, new String(params.getLibraryParameters().get("location"), StandardCharsets.UTF_8));
         } else {
             assertNull(params.getLibraryParameters().get("location"));
         }
@@ -251,13 +251,13 @@ public class StreamingVisitorTest {
             assertNull(params.getLibraryParameters().get("rankproperties"));
         }
         if (qa.defineGrouping) {
-            //System.err.println("aggregation="+new String(params.getLibraryParameters().get("aggregation")));
+            //System.err.println("aggregation="+new String(params.getLibraryParameters().get("aggregation"), StandardCharsets.UTF_8));
             assertNotNull(params.getLibraryParameters().get("aggregation")); // TODO: Check contents
         } else {
             assertNull(params.getLibraryParameters().get("aggregation"));
         }
         if (qa.sortSpec != null) {
-            assertEquals(qa.sortSpec, new String(params.getLibraryParameters().get("sort")));
+            assertEquals(qa.sortSpec, new String(params.getLibraryParameters().get("sort"), StandardCharsets.UTF_8));
         } else {
             assertNull(params.getLibraryParameters().get("sort"));
         }

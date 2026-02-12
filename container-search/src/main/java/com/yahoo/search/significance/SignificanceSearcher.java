@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.significance;
+import java.util.Locale;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.Before;
@@ -81,12 +82,13 @@ public class SignificanceSearcher extends Searcher {
             var result = new Result(query);
             result.hits().addError(
                     ErrorMessage.createIllegalQuery(
-                            ("Inconsistent 'significance' configuration for the rank profile '%s' in the schemas %s. " +
+                            String.format(Locale.ROOT,
+                                    "Inconsistent 'significance' configuration for the rank profile '%s' in the schemas %s. " +
                                     "Use 'restrict' to limit the query to a subset of schemas " +
                                     "(https://docs.vespa.ai/en/basics/schemas.html#multiple-schemas). " +
                                     "Specify same 'significance' configuration for all selected schemas " +
-                                    "(https://docs.vespa.ai/en/reference/schemas/schemas.html#significance).")
-                                    .formatted(rankProfileName, perSchemaSetup.keySet())));
+                                    "(https://docs.vespa.ai/en/reference/schemas/schemas.html#significance).",
+                                    rankProfileName, perSchemaSetup.keySet())));
             return result;
         }
 
@@ -101,8 +103,8 @@ public class SignificanceSearcher extends Searcher {
         try {
             var defaultModel = getSignificanceModelFromQueryLanguage(query);
             var defaultLanguage = query.getModel().getParsingLanguage();
-            log.log(Level.FINE, () -> "Got default model for language %s: %s"
-                    .formatted(defaultLanguage, defaultModel.getId()));
+            log.log(Level.FINE, () -> String.format(Locale.ROOT, "Got default model for language %s: %s",
+                    defaultLanguage, defaultModel.getId()));
 
             setIDF(query.getModel().getQueryTree().getRoot(), defaultLanguage, defaultModel);
 
@@ -173,7 +175,7 @@ public class SignificanceSearcher extends Searcher {
                 return;
 
             var word = wi.getWord();
-            var documentFrequency = model.documentFrequency(word.toLowerCase());
+            var documentFrequency = model.documentFrequency(word.toLowerCase(Locale.ROOT));
             long N                = documentFrequency.corpusSize();
             long nq_i             = documentFrequency.frequency();
             log.log(Level.FINE, () -> "Setting document frequency for " + word + " to {frequency: " + nq_i + ", count: " + N + "}");
@@ -184,7 +186,7 @@ public class SignificanceSearcher extends Searcher {
             long best_freq = Long.MAX_VALUE;
             long best_count = 0;
             for (var alternative : wai.getAlternatives()) {
-                var documentFrequency = model.documentFrequency(alternative.word.toLowerCase());
+                var documentFrequency = model.documentFrequency(alternative.word.toLowerCase(Locale.ROOT));
                 long N                = documentFrequency.corpusSize();
                 long nq_i             = documentFrequency.frequency();
                 if (nq_i < best_freq) {

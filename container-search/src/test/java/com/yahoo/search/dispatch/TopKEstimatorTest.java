@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch;
 
 import org.junit.jupiter.api.Test;
-
 import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -151,7 +150,7 @@ public class TopKEstimatorTest {
         double [] P = {1.0, 0.9999, 0.99999, 0.999999, 0.9999999, 0.99999999, 0.999999999, 0.9999999999};
         int n = numPartitions;
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Prob/Hits:"));
+        sb.append(String.format(Locale.ROOT, "Prob/Hits:"));
         for (double p : P) {
             sb.append(String.format(Locale.ENGLISH, " %1.10f", p));
         }

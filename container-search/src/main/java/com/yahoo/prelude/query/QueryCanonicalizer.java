@@ -4,6 +4,7 @@ package com.yahoo.prelude.query;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.properties.DefaultProperties;
+import com.yahoo.text.Text;
 
 import java.util.ListIterator;
 import java.util.Objects;
@@ -41,7 +42,7 @@ public class QueryCanonicalizer {
 
     /**
      * Canonicalizes this query
-     * 
+     *
      * @return null if the query is valid, an error message if it is invalid
      */
     private static String canonicalize(QueryTree query, Integer maxQueryItems) {
@@ -50,13 +51,13 @@ public class QueryCanonicalizer {
         if (query.isEmpty() && ! result.isError()) result = CanonicalizationResult.error("No query");
         int itemCount = query.treeSize();
         if (itemCount > maxQueryItems)
-            result = CanonicalizationResult.error(String.format("Query tree exceeds allowed item count. Configured limit: %d - Item count: %d", maxQueryItems, itemCount));
+            result = CanonicalizationResult.error(Text.format("Query tree exceeds allowed item count. Configured limit: %d - Item count: %d", maxQueryItems, itemCount));
         return result.error().orElse(null); // preserve old API, unfortunately
     }
 
     /**
      * Canonicalize this query
-     * 
+     *
      * @param item the item to canonicalize
      * @param parentIterator iterator for the parent of this item, never null
      * @return result of canonicalization
@@ -72,7 +73,7 @@ public class QueryCanonicalizer {
 
         return canonicalizeThis(item, parentIterator);
     }
-    
+
     private static CanonicalizationResult canonicalizeThis(Item item, ListIterator<Item> parentIterator) {
         if (item instanceof NullItem) parentIterator.remove();
         if ( ! (item instanceof CompositeItem composite)) return CanonicalizationResult.success();
@@ -102,7 +103,7 @@ public class QueryCanonicalizer {
                 collapseLevels(composite, i);
         }
     }
-    
+
     /** Collapse the next item of this iterator into the given parent, if appropriate */
     private static void collapseLevels(CompositeItem composite, ListIterator<Item> i) {
         if ( ! i.hasNext()) return;
@@ -126,9 +127,9 @@ public class QueryCanonicalizer {
             toIterator.add(i.next());
     }
 
-    /** 
+    /**
      * Handle FALSE items in the immediate children of this
-     * 
+     *
      * @return true if this composite was replaced by FALSE
      */
     private static boolean collapseFalse(CompositeItem composite, ListIterator<Item> parentIterator) {
@@ -157,7 +158,7 @@ public class QueryCanonicalizer {
             return false;
         }
     }
-    
+
     private static boolean containsFalse(CompositeItem composite) {
         for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); )
             if (i.next() instanceof FalseItem) return true;
@@ -169,7 +170,7 @@ public class QueryCanonicalizer {
             if (iterator.next() instanceof FalseItem)
                 iterator.remove();
     }
-    
+
     private static void removeDuplicates(EquivItem composite) {
         int origSize = composite.getItemCount();
         for (int i = origSize - 1; i >= 1; --i) {
@@ -208,12 +209,12 @@ public class QueryCanonicalizer {
         private CanonicalizationResult(Optional<String> error) {
             this.error = error;
         }
-        
+
         /** Returns the error of this query, or empty if it is a valid query */
         public Optional<String> error() {
             return error;
         }
-    
+
         public static CanonicalizationResult error(String error) {
             return new CanonicalizationResult(Optional.of(error));
         }
@@ -221,7 +222,7 @@ public class QueryCanonicalizer {
         public static CanonicalizationResult success() {
             return new CanonicalizationResult(Optional.empty());
         }
-        
+
         public boolean isError() { return error.isPresent(); }
 
     }
