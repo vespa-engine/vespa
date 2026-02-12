@@ -1,5 +1,6 @@
 package ai.vespa.utils;
 
+import com.yahoo.text.Text;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -63,7 +64,7 @@ public class BytesQuantity {
         var matcher = PATTERN.matcher(value);
         if (!matcher.matches())
             throw new IllegalArgumentException(
-                    String.format(Locale.ROOT, "Bytes quantity '%s' does not match pattern '%s'", value, PATTERN.pattern()));
+                    Text.format("Bytes quantity '%s' does not match pattern '%s'", value, PATTERN.pattern()));
         var digits = Long.parseLong(matcher.group("digits"));
         var unit = Unit.fromString(matcher.group("unit"));
         return BytesQuantity.of(digits, unit);

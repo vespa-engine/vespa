@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -95,14 +96,14 @@ public class VersionTagger {
         System.err.println("generating: " + outFile);
 
         Map<String, String> vtagMap = readVtagMap(vtagmapPath);
-        writer.write(String.format(Locale.ROOT, "package %s;\n\n", packageName));
+        writer.write(Text.format("package %s;\n\n", packageName));
 
         if (format == Format.VTAG) {
             writer.write("import java.time.Instant;\n");
             writer.write("import com.yahoo.component.Version;\n");
         }
 
-        writer.write(String.format(Locale.ROOT, "\npublic class %s {\n", className));
+        writer.write(Text.format("\npublic class %s {\n", className));
         if (!vtagMap.containsKey(V_TAG_PKG)) {
             throw new RuntimeException("V_TAG_PKG not present in map file");
         }
@@ -110,9 +111,9 @@ public class VersionTagger {
             case SIMPLE:
                 String version = vtagMap.get(V_TAG_PKG);
                 String elements[] = version.split("\\.");
-                writer.write(String.format(Locale.ROOT, "    public static final int major = %s;\n", elements[0]));
-                writer.write(String.format(Locale.ROOT, "    public static final int minor = %s;\n", elements[1]));
-                writer.write(String.format(Locale.ROOT, "    public static final int micro = %s;\n", elements[2]));
+                writer.write(Text.format("    public static final int major = %s;\n", elements[0]));
+                writer.write(Text.format("    public static final int minor = %s;\n", elements[1]));
+                writer.write(Text.format("    public static final int micro = %s;\n", elements[2]));
                 break;
             case VTAG:
                 long commitDateSecs = 0;
@@ -120,7 +121,7 @@ public class VersionTagger {
                     var key = entry.getKey();
                     var value = entry.getValue();
                     try {
-                        writer.write(String.format(Locale.ROOT, "    public static final String %s = \"%s\";\n", key, value));
+                        writer.write(Text.format("    public static final String %s = \"%s\";\n", key, value));
                         if ("V_TAG_COMMIT_DATE".equals(key)) {
                             commitDateSecs = Long.parseLong(value);
                         }

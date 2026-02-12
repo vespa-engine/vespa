@@ -46,10 +46,7 @@ public class ThreadFactoryFactory {
             @SuppressWarnings("removal")
             Factory(String name, boolean isDaemon) {
                 this.isDaemon = isDaemon;
-                SecurityManager s = System.getSecurityManager();
-                group = (s != null)
-                        ? s.getThreadGroup()
-                        : Thread.currentThread().getThreadGroup();
+                group = Thread.currentThread().getThreadGroup();
                 namePrefix = name;
             }
 
