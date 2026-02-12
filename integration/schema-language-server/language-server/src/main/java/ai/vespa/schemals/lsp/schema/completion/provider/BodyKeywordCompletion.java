@@ -3,6 +3,7 @@ package ai.vespa.schemals.lsp.schema.completion.provider;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -231,7 +232,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
         // compute docs
         for (var entry : this.entrySet()) {
             for (CompletionItem item : entry.getValue()) {
-                String markdownKey = item.getLabel().toUpperCase().replaceAll("-", "_");
+                String markdownKey = item.getLabel().toUpperCase(Locale.ROOT).replaceAll("-", "_");
                 Optional<Hover> hover = SchemaHover.getFileHoverInformation(schemaHoverPath, markdownKey, new Range());
                 if (hover.isPresent() && hover.get().getContents().isRight()) {
                     item.setDocumentation(hover.get().getContents().getRight());
