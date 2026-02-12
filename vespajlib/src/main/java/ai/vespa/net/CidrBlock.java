@@ -90,13 +90,9 @@ public class CidrBlock {
         return new CidrBlock(addressInteger, newPrefixLength, addressLength);
     }
 
-    public CidrBlock clearLeastSignificantBits(int bits) {
-        return new CidrBlock(firstAddressInteger(), prefixLength, addressLength);
-    }
-
     /** @return a copy of this CIDR block with the host identifier bits cleared */
     public CidrBlock clearHostIdentifier() {
-        return clearLeastSignificantBits(suffixLength());
+        return new CidrBlock(firstAddressInteger(), prefixLength, addressLength);
     }
 
     /** Return the byte at the given offset.  0 refers to the most significant byte of the address. */
