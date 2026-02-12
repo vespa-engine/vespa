@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.ImmutableSDField;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -44,7 +45,7 @@ public class HnswValidator implements Validator {
                                      .toList();
         if (fields.isEmpty()) return;
 
-        var message = String.format(java.util.Locale.ROOT, ("Cluster '%s' has searchable copies > 1 and fields with hnsw index:" +
+        var message = Text.format(("Cluster '%s' has searchable copies > 1 and fields with hnsw index:" +
                 " %s." +
                 " This will use a lot of resources, consider using searchable-copies=1%s"), cluster.getClusterName(),
                            String.join(", ", fields),
@@ -65,7 +66,7 @@ public class HnswValidator implements Validator {
                            .toList();
         if (fields.isEmpty()) return Optional.empty();
 
-        return Optional.of(String.format(java.util.Locale.ROOT, "fields %s in schema %s", String.join(", ", fields), schema.name()));
+        return Optional.of(Text.format("fields %s in schema %s", String.join(", ", fields), schema.name()));
     }
 
     private static Set<ContentCluster> clustersWithMoreThanOneSearchableCopy(Context context) {

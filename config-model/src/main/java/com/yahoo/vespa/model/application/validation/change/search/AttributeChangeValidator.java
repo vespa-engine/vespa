@@ -11,6 +11,7 @@ import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.Dictionary;
 import com.yahoo.schema.document.HnswIndexParams;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
@@ -144,7 +145,7 @@ public class AttributeChangeValidator {
         T currentValue = settingValueProvider.apply(current);
         T nextValue = settingValueProvider.apply(next);
         if ( ! Objects.equals(currentValue, nextValue)) {
-            String message = String.format(java.util.Locale.ROOT, "change property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
+            String message = Text.format("change property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
             if (hasHnswIndex(current) && hasHnswIndex(next))
                 context.invalid(ValidationId.hnswSettingsChange,
                                     message + ". This requires the hnsw index to be rebuilt during initialization, which may take a long time");
@@ -160,7 +161,7 @@ public class AttributeChangeValidator {
         T currentValue = settingValueProvider.apply(currentAttr.hnswIndexParams().get());
         T nextValue = settingValueProvider.apply(nextAttr.hnswIndexParams().get());
         if (!Objects.equals(currentValue, nextValue)) {
-            String message = String.format(java.util.Locale.ROOT, "change hnsw index property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
+            String message = Text.format("change hnsw index property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
             if (setting.equals("max-links-per-node"))
                 context.invalid(ValidationId.hnswSettingsChange,
                                     message + ". This requires the hnsw index to be rebuilt during initialization, which may take a long time");

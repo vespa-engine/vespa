@@ -7,6 +7,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.text.Text;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -127,7 +128,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Ht
         if (explicitDomain != null) {
             if (tenantDomain != null && !explicitDomain.equals(tenantDomain)) {
                 throw new IllegalArgumentException(
-                        String.format(java.util.Locale.ROOT, "Domain in access-control ('%s') does not match tenant domain ('%s')", explicitDomain.value(), tenantDomain.value()));
+                        Text.format("Domain in access-control ('%s') does not match tenant domain ('%s')", explicitDomain.value(), tenantDomain.value()));
             }
             deployState.getDeployLogger()
                     .logApplicationPackage(Level.WARNING,

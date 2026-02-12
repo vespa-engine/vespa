@@ -29,6 +29,7 @@ import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.document.restapi.DocumentOperationExecutorConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
@@ -240,7 +241,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             double availableMemoryGb = Math.max(0, totalMemoryMinusOverhead - onnxModelCostGb);
             int memoryPercentageOfAvailable = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryMinusOverhead);
             int memoryPercentageOfTotal = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryGb);
-            logger.log(FINE, () -> String.format(java.util.Locale.ROOT, ("%s: memoryPercentageOfAvailable=%d, memoryPercentageOfTotal=%d, " +
+            logger.log(FINE, () -> Text.format(("%s: memoryPercentageOfAvailable=%d, memoryPercentageOfTotal=%d, " +
                                     "availableMemoryGb=%f, totalMemoryGb=%f, heapSizePercentageOfAvailable=%d, onnxModelCostGb=%f"), id(), memoryPercentageOfAvailable, memoryPercentageOfTotal,
                                availableMemoryGb, totalMemoryGb, heapSizePercentageOfAvailable, onnxModelCostGb));
             return Optional.of(JvmMemoryPercentage.of(memoryPercentageOfAvailable, memoryPercentageOfTotal,

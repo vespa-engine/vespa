@@ -8,6 +8,7 @@ import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.path.Path;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.xml.ModelIdResolver;
 import org.w3c.dom.Element;
@@ -78,7 +79,7 @@ class Model {
                     if (ds.isHosted() && modelId != null) {
                         return fromParams(ds, onnxModel.name(), modelId + "-vocab", null, null, null, requiredTags);
                     }
-                    throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "'%s' must be specified", paramName));
+                    throw new IllegalArgumentException(Text.format("'%s' must be specified", paramName));
                 });
     }
 

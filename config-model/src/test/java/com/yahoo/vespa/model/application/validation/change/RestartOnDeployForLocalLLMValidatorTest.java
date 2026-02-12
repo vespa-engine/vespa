@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
@@ -47,7 +48,7 @@ public class RestartOnDeployForLocalLLMValidatorTest {
     }
 
     private static VespaModel createModel(String component) {
-        var xml = String.format(java.util.Locale.ROOT, """
+        var xml = Text.format("""
                 <services version='1.0'>
                   <container id='cluster1' version='1.0'>
                     <http>
@@ -66,7 +67,7 @@ public class RestartOnDeployForLocalLLMValidatorTest {
     }
 
     private static String withComponent(String componentClass) {
-        return String.format(java.util.Locale.ROOT, "<component id='llm' class='%s' />", componentClass);
+        return Text.format("<component id='llm' class='%s' />", componentClass);
     }
 
     private static DeployState.Builder deployStateBuilder() {

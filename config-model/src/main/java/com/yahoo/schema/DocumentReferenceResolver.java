@@ -5,6 +5,7 @@ import com.yahoo.document.Field;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
+import com.yahoo.text.Text;
 
 import java.util.Collection;
 import java.util.Map;
@@ -66,7 +67,7 @@ public class DocumentReferenceResolver {
         Schema schema = schemaMapping.get(targetDocumentName);
         if (schema == null) {
             throw new IllegalArgumentException(
-                    String.format(java.util.Locale.ROOT, "Invalid document reference '%s': " +
+                    Text.format("Invalid document reference '%s': " +
                                   "Could not find document type '%s'", field.getName(), targetDocumentName));
         }
         return new DocumentReference(field, schema);

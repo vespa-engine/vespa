@@ -5,6 +5,7 @@ import ai.vespa.utils.BytesQuantity;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.security.tls.TlsContext;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 
 import java.time.Duration;
@@ -49,14 +50,14 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                 .map(prefix -> {
                     var parts = prefix.split(":");
                     if (parts.length != 3) {
-                        throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Expected string of format 'prefix:sample-rate:max-entity-size', got '%s'", prefix));
+                        throw new IllegalArgumentException(Text.format("Expected string of format 'prefix:sample-rate:max-entity-size', got '%s'", prefix));
                     }
                     var pathPrefix = parts[0];
                     if (pathPrefix.isBlank())
                         throw new IllegalArgumentException("Path prefix must not be blank");
                     var sampleRate = Double.parseDouble(parts[1]);
                     if (sampleRate < 0 || sampleRate > 1)
-                        throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Sample rate must be in range [0, 1], got '%s'", sampleRate));
+                        throw new IllegalArgumentException(Text.format("Sample rate must be in range [0, 1], got '%s'", sampleRate));
                     var maxEntitySize = BytesQuantity.fromString(parts[2]);
                     return new EntityLoggingEntry(pathPrefix, sampleRate, maxEntitySize);
                 })

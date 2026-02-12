@@ -7,6 +7,7 @@ import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.ComplexAttributeFieldUtils;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.search.SearchCluster;
 
@@ -51,7 +52,7 @@ public class ComplexFieldsWithStructFieldAttributesValidator implements Validato
     }
 
     private static String getErrorMessage(String clusterName, Schema schema, String unsupportedFields) {
-        return String.format(java.util.Locale.ROOT, "For cluster '%s', search '%s': The following complex fields do not support using struct field attributes: %s. " +
+        return Text.format("For cluster '%s', search '%s': The following complex fields do not support using struct field attributes: %s. " +
                              "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types. " +
                              "The supported primitive types are: byte, int, long, float, double and string",
                              clusterName, schema.getName(), unsupportedFields);

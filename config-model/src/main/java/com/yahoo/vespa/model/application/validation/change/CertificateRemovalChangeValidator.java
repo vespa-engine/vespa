@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.http.Client;
 
@@ -48,7 +49,7 @@ public class CertificateRemovalChangeValidator implements ChangeValidator {
                 .flatMap(Collection::stream)
                 .toList();
 
-        logger.log(Level.FINE, String.format(java.util.Locale.ROOT, "Certificates for cluster %s: Current: [%s], Next: [%s]", clusterId,
+        logger.log(Level.FINE, Text.format("Certificates for cluster %s: Current: [%s], Next: [%s]", clusterId,
                            currentCertificates.stream().map(cert -> cert.getSubjectX500Principal().getName()).collect(Collectors.joining(", ")),
                            nextCertificates.stream().map(cert -> cert.getSubjectX500Principal().getName()).collect(Collectors.joining(", "))));
 
