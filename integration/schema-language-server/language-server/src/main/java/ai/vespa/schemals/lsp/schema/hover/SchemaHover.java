@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -149,7 +150,7 @@ public class SchemaHover {
         for (int i = 0; i < indexingTypes.length; ++i) {
             if (i == 0) hoverText += "\n\t";
             else hoverText += " | ";
-            hoverText += indexingTypes[i].toString().toLowerCase();
+            hoverText += indexingTypes[i].toString().toLowerCase(Locale.ROOT);
         }
 
         String fieldDefinitionDocumentContent = context.scheduler.getDocument(fieldDefinitionSymbol.get().getFileURI()).getCurrentContent();

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -79,7 +80,7 @@ public class SchemaDocumentScheduler {
 
     private Optional<DocumentType> getDocumentTypeFromURI(String fileURI) {
         int dotIndex = fileURI.lastIndexOf('.');
-        String fileExtension = fileURI.substring(dotIndex + 1).toLowerCase();
+        String fileExtension = fileURI.substring(dotIndex + 1).toLowerCase(Locale.ROOT);
 
         DocumentType documentType = fileExtensions.get(fileExtension);
         if (documentType == null) return Optional.empty();
