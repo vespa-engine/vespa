@@ -89,7 +89,7 @@ class ApacheHttpClientTest {
                                  Method.GET)
                            .at("root", "boot")
                            .at("toot")
-                           .read(String::new));
+                           .read(bytes -> new String(bytes, UTF_8)));
         server.verify(1, getRequestedFor(urlEqualTo("/root/boot/toot")));
         server.verify(1, anyRequestedFor(anyUrl()));
         server.resetRequests();
@@ -100,7 +100,7 @@ class ApacheHttpClientTest {
         ResponseException thrown = assertThrows(ResponseException.class,
                                                 () -> client.send(HostStrategy.repeating(URI.create("http://localhost:" + server.port()), 10),
                                                                   Method.GET)
-                                                            .read(String::new));
+                                                            .read(bytes -> new String(bytes, UTF_8)));
         assertEquals("GET http://localhost:" + server.port() + "/ failed with status 409 and body 'hi'", thrown.getMessage());
         server.verify(1, getRequestedFor(urlEqualTo("/")));
         server.verify(1, anyRequestedFor(anyUrl()));
