@@ -21,6 +21,7 @@
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/common/threaded_compactable_lid_space.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -35,6 +36,7 @@ LOG_SETUP(".proton.attribute.attributemanager");
 using search::AttributeContext;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::DiskSpaceCalculator;
 using search::common::ThreadedCompactableLidSpace;
 using search::TuneFileAttributes;
 using search::attribute::IAttributeContext;
@@ -43,6 +45,7 @@ using search::common::FileHeaderContext;
 using search::attribute::BasicType;
 using searchcorespi::IFlushTarget;
 using searchcorespi::common::ResourceUsage;
+using searchcorespi::common::TransientResourceUsage;
 
 namespace proton {
 
@@ -668,7 +671,19 @@ AttributeManager::get_resource_usage() const
         auto usage = elem.second.getFlusher()->get_resource_usage();
         result.merge(usage);
     }
+    result.merge(ResourceUsage{TransientResourceUsage{}, get_size_on_disk_overhead()});
     return result;
+}
+
+uint64_t
+AttributeManager::get_size_on_disk_overhead() noexcept
+{
+    /*
+     * The "attribute" directory under the searchable document subdb directory
+     * and the fast access document subdb directory, e.g. "0.ready/attribute"
+     * and "2.notready/attribute".
+     */
+    return DiskSpaceCalculator::directory_placeholder_size();
 }
 
 } // namespace proton

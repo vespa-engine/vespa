@@ -189,6 +189,7 @@ public:
     std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view) const override;
 
     searchcorespi::common::ResourceUsage get_resource_usage() const override;
+    static uint64_t get_size_on_disk_overhead() noexcept;
 };
 
 } // namespace proton
