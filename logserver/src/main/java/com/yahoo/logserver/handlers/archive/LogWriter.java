@@ -5,8 +5,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
-
 import java.util.logging.Level;
 
 /**
@@ -69,7 +69,7 @@ public final class LogWriter {
                 log.log(Level.FINE, () -> "nextWriter, new file: " + name);
                 currentFile = f;
                 bytesWritten = 0;
-                return new FileWriter(f, true);
+                return new FileWriter(f, StandardCharsets.UTF_8, true);
             }
 
             // just skip over directories for now
@@ -83,7 +83,7 @@ public final class LogWriter {
                 log.fine("nextWriter, resuming " + name + ", length was " + f.length());
                 currentFile = f;
                 bytesWritten = f.length();
-                return new FileWriter(f, true);
+                return new FileWriter(f, StandardCharsets.UTF_8, true);
             } else {
 
                 log.fine("nextWriter, not resuming " + name
