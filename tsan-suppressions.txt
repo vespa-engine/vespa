@@ -52,3 +52,6 @@ race:re2::DFA::DFA
 # (acquire-load in double-checked locking etc).
 race:ASN1_STRING_cmp
 race:ASN1_STRING_set
+
+# libgcc_s (unwinder / EH frame registration). Often triggers TSAN reports via lock-free FDE registry.
+module:libgcc_s.so.1
