@@ -13,6 +13,7 @@
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/identity.h>
+
 #include <algorithm>
 
 namespace search::expression {
@@ -51,47 +52,27 @@ public:
     virtual void max(const ResultNode & b) { (void) b; }
     virtual void add(const ResultNode & b) { (void) b; }
 
-    // Iterator support for range-based for loops
-    class iterator {
-        ResultNodeVector* _vec;
-        size_t _index;
+    // End of Iterator
+    class Sentinel {
+        const size_t _end;
     public:
-        iterator(ResultNodeVector* vec, size_t index) : _vec(vec), _index(index) {}
-
-        ResultNode& operator*() const { return _vec->get(_index); }
-        ResultNode* operator->() const { return &_vec->get(_index); }
-
-        iterator& operator++() { ++_index; return *this; }
-        iterator operator++(int) { auto tmp = *this; ++_index; return tmp; }
-
-        bool operator==(const iterator& other) const { return _vec == other._vec && _index == other._index; }
-        bool operator!=(const iterator& other) const { return !(*this == other); }
+        explicit Sentinel(size_t end) noexcept : _end(end) {}
+        [[nodiscard]] bool valid(size_t pos) const noexcept { return pos < _end; }
     };
 
     // Iterator support for range-based for loops
-    class const_iterator {
+    class Iterator {
         const ResultNodeVector* _vec;
         size_t _index;
     public:
-        const_iterator(const ResultNodeVector* vec, size_t index)
-            : _vec(vec), _index(index) {}
-
-        const ResultNode& operator*() const { return _vec->get(_index); }
-        const ResultNode* operator->() const { return &_vec->get(_index); }
-
-        const_iterator& operator++() { ++_index; return *this; }
-        const_iterator operator++(int) { auto tmp = *this; ++_index; return tmp; }
-
-        bool operator==(const const_iterator& other) const { return _vec == other._vec && _index == other._index; }
-        bool operator!=(const const_iterator& other) const { return !(*this == other); }
+        Iterator(const ResultNodeVector* vec, size_t index) noexcept : _vec(vec), _index(index) {}
+        const ResultNode& operator*() const noexcept { return _vec->get(_index); }
+        Iterator& operator++() noexcept { ++_index; return *this; }
+        bool operator!=(Sentinel sentinel) const noexcept { return sentinel.valid(_index); }
     };
 
-    iterator begin() { return {this, 0}; }
-    iterator end() { return {this, size()}; }
-    [[nodiscard]] const_iterator begin() const { return {this, 0}; }
-    [[nodiscard]] const_iterator end() const { return {this, size()}; }
-    [[nodiscard]] const_iterator cbegin() const { return {this, 0}; }
-    [[nodiscard]] const_iterator cend() const { return {this, size()}; }
+    [[nodiscard]] Iterator begin() const noexcept { return {this, 0}; }
+    [[nodiscard]] Sentinel end() const noexcept { return Sentinel(size()); }
 
 private:
     virtual size_t onSize() const = 0;
