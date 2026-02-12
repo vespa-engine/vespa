@@ -25,11 +25,22 @@ public class SecondPhase implements Cloneable {
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(Ranking.RANKSCOREDROPLIMIT, FieldType.doubleType));
+        argumentType.addField(new FieldDescription(Ranking.RERANKCOUNT, FieldType.integerType));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
 
+    private Integer rerankCount = null;
     private Double rankScoreDropLimit = null;
+
+    /**
+     * Sets the number of hits for which the second-phase function will be evaluated.
+     * When set, this overrides the setting in the rank profile.
+     */
+    public void setRerankCount(int rerankCount) { this.rerankCount = rerankCount; }
+
+    /** Returns the rerank-count that will be used, or null if not set */
+    public Integer getRerankCount() { return rerankCount; }
 
     /** Sets the second phase rank-score-drop-limit that will be used, or null if not set */
     public void setRankScoreDropLimit(double rankScoreDropLimit) { this.rankScoreDropLimit = rankScoreDropLimit; }
