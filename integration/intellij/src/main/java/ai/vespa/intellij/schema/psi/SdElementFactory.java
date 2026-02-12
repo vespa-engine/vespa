@@ -17,13 +17,13 @@ public class SdElementFactory {
     private static final String GENERAL_FILE_TEXT = "search {document %s {} rank-profile %s {}}";
     
     public static SdIdentifierVal createIdentifierVal(Project project, String name) {
-        String fileText = String.format(GENERAL_FILE_TEXT, name, name);
+        String fileText = Text.format(GENERAL_FILE_TEXT, name, name);
         final SdFile file = createFile(project, fileText);
         return PsiTreeUtil.findChildOfType(file, SdIdentifierVal.class);
     }
     
     public static SdIdentifierWithDashVal createIdentifierWithDashVal(Project project, String name) {
-        String fileText = String.format(GENERAL_FILE_TEXT, name, name);
+        String fileText = Text.format(GENERAL_FILE_TEXT, name, name);
         final SdFile file = createFile(project, fileText);
         return PsiTreeUtil.findChildOfType(file, SdIdentifierWithDashVal.class);
     }
