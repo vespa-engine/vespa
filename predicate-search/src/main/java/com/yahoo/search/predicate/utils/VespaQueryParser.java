@@ -2,6 +2,7 @@
 package com.yahoo.search.predicate.utils;
 
 import com.yahoo.search.predicate.PredicateQuery;
+import com.yahoo.text.Utf8;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -24,7 +25,7 @@ public class VespaQueryParser {
      * Parses a query formatted using the deprecated boolean query format (query properties).
      */
     public static List<PredicateQuery> parseQueries(String queryFile, int maxQueryCount) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(queryFile), 8 * 1024)) {
+        try (BufferedReader reader = new BufferedReader(Utf8.createReader(queryFile), 8 * 1024)) {
             List<PredicateQuery> queries = reader.lines()
                     .limit(maxQueryCount)
                     .map(VespaQueryParser::parseQueryFromQueryProperties)
