@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import com.yahoo.text.Text;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
@@ -61,7 +62,7 @@ public class FlagDefinition {
     private static void validate(List<String> owners, Instant createdAt, Instant expiresAt, List<Dimension> dimensions) {
         if (expiresAt.isBefore(createdAt)) {
             throw new IllegalArgumentException(
-                    String.format(
+                    Text.format(
                             "Flag cannot expire before its creation date (createdAt='%s', expiresAt='%s')",
                             createdAt, expiresAt));
         }

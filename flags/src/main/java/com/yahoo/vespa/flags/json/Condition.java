@@ -6,6 +6,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -19,7 +20,7 @@ public interface Condition extends Predicate<FetchVector> {
         BLACKLIST,
         RELATIONAL;
 
-        public String toWire() { return name().toLowerCase(); }
+        public String toWire() { return name().toLowerCase(Locale.ROOT); }
 
         public static Type fromWire(String typeString) {
             for (Type type : values()) {
