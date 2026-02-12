@@ -10,6 +10,7 @@ import org.apache.http.protocol.HttpContext;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -47,20 +48,20 @@ public class DelayedConnectionLevelRetryHandler implements HttpRequestRetryHandl
 
     @Override
     public boolean retryRequest(IOException exception, int executionCount, HttpContext ctx) {
-        log.fine(() -> String.format("retryRequest(exception='%s', executionCount='%d', ctx='%s'",
+        log.fine(() -> String.format(Locale.ROOT, "retryRequest(exception='%s', executionCount='%d', ctx='%s'",
                                      exception.getClass().getName(), executionCount, ctx));
         HttpClientContext clientCtx = HttpClientContext.adapt(ctx);
         if (!predicate.test(exception, clientCtx)) {
-            log.fine(() -> String.format("Not retrying for '%s'", ctx));
+            log.fine(() -> String.format(Locale.ROOT, "Not retrying for '%s'", ctx));
             return false;
         }
         if (executionCount > maxRetries) {
-            log.fine(() -> String.format("Max retries exceeded for '%s'", ctx));
+            log.fine(() -> String.format(Locale.ROOT, "Max retries exceeded for '%s'", ctx));
             retryFailedConsumer.onRetryFailed(exception, executionCount, clientCtx);
             return false;
         }
         Duration delay = delaySupplier.getDelay(executionCount);
-        log.fine(() -> String.format("Retrying after %s for '%s'", delay, ctx));
+        log.fine(() -> String.format(Locale.ROOT, "Retrying after %s for '%s'", delay, ctx));
         retryConsumer.onRetry(exception, delay, executionCount, clientCtx);
         sleeper.sleep(delay);
         return true;

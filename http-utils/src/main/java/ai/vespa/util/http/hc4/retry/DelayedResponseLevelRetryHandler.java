@@ -10,6 +10,7 @@ import org.apache.http.protocol.HttpContext;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -46,20 +47,20 @@ public class DelayedResponseLevelRetryHandler implements ServiceUnavailableRetry
 
     @Override
     public boolean retryRequest(HttpResponse response, int executionCount, HttpContext ctx) {
-        log.fine(() -> String.format("retryRequest(responseCode='%s', executionCount='%d', ctx='%s'",
+        log.fine(() -> String.format(Locale.ROOT, "retryRequest(responseCode='%s', executionCount='%d', ctx='%s'",
                                      response.getStatusLine().getStatusCode(), executionCount, ctx));
         HttpClientContext clientCtx = HttpClientContext.adapt(ctx);
         if (!predicate.test(response, clientCtx)) {
-            log.fine(() -> String.format("Not retrying for '%s'", ctx));
+            log.fine(() -> String.format(Locale.ROOT, "Not retrying for '%s'", ctx));
             return false;
         }
         if (executionCount > maxRetries) {
-            log.fine(() -> String.format("Max retries exceeded for '%s'", ctx));
+            log.fine(() -> String.format(Locale.ROOT, "Max retries exceeded for '%s'", ctx));
             retryFailedConsumer.onRetryFailed(response, executionCount, clientCtx);
             return false;
         }
         Duration delay = delaySupplier.getDelay(executionCount);
-        log.fine(() -> String.format("Retrying after %s for '%s'", delay, ctx));
+        log.fine(() -> String.format(Locale.ROOT, "Retrying after %s for '%s'", delay, ctx));
         retryInterval.set(delay.toMillis());
         retryConsumer.onRetry(response, delay, executionCount, clientCtx);
         return true;
