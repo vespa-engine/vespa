@@ -18,6 +18,7 @@ import com.yahoo.security.tls.Capability;
 import com.yahoo.security.tls.CapabilitySet;
 import com.yahoo.security.tls.ConnectionAuthContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
+import com.yahoo.text.Text;
 
 import javax.net.ssl.SSLSession;
 import java.io.InputStream;
@@ -124,7 +125,7 @@ class RestApiImpl implements RestApi {
                         @Override public URI uri() { return uri; }
                     });
         }
-        throw new IllegalStateException(String.format("No ACL mapping configured for '%s' to '%s'", method, route.name));
+        throw new IllegalStateException(Text.format("No ACL mapping configured for '%s' to '%s'", method, route.name));
     }
 
     private HttpResponse dispatchToRoute(Route route, RequestContextImpl context) {

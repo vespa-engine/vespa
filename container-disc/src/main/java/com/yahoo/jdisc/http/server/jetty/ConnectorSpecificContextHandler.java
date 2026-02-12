@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import com.yahoo.text.Text;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -19,10 +20,10 @@ class ConnectorSpecificContextHandler extends ContextHandler {
         this.connector = c;
         List<String> allowedServerNames = c.connectorConfig().serverName().allowed();
         if (allowedServerNames.isEmpty()) {
-            setVirtualHosts(List.of("@%s".formatted(c.getName())));
+            setVirtualHosts(List.of(Text.format("@%s", c.getName())));
         } else {
             var virtualHosts = allowedServerNames.stream()
-                    .map(name -> "%s@%s".formatted(name, c.getName()))
+                    .map(name -> Text.format("%s@%s", name, c.getName()))
                     .toList();
             setVirtualHosts(virtualHosts);
         }

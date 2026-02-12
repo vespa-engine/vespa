@@ -4,6 +4,7 @@ package com.yahoo.container.di.componentgraph.core;
 import com.google.inject.Key;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.lang.annotation.Annotation;
@@ -67,7 +68,7 @@ public final class GuiceNode extends Node {
 
     @Override
     public String label() {
-        return String.format("{{%s|Guice}|%s}", instanceType().getSimpleName(), Node.packageName(instanceType()));
+        return Text.format("{{%s|Guice}|%s}", instanceType().getSimpleName(), Node.packageName(instanceType()));
     }
 
     private static ComponentId componentId(Object instance) {

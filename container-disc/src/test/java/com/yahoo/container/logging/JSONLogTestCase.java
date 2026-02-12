@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
 
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
 
@@ -298,7 +299,7 @@ public class JSONLogTestCase {
     private String formatEntry(RequestLogEntry entry) {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             new JSONFormatter().write(entry, outputStream);
-            return outputStream.toString();
+            return outputStream.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
