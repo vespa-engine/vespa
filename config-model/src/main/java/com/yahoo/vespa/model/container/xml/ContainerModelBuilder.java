@@ -51,6 +51,7 @@ import com.yahoo.schema.derived.FileDistributedOnnxModels;
 import com.yahoo.schema.derived.RankProfileList;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.text.Text;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
@@ -248,7 +249,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addParameterStoreValidationHandler(cluster, deployState);
     }
-    
+
     private boolean shouldUseTriton(ApplicationContainerCluster cluster, DeployState deployState) {
         var isPublicCloud = deployState.zone().system().isPublicCloudLike();
         var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
@@ -258,7 +259,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
         var sidecars = new ArrayList<SidecarSpec>();
-        
+
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
 
@@ -411,7 +412,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
                             AthenzDomain.from(HOSTED_VESPA_TENANT_PARENT_DOMAIN + context.properties().applicationId().tenant().value()),
-                            AthenzService.from(String.format(java.util.Locale.ROOT, "%s-%s", context.properties().applicationId().application().value(), appContext)));
+                            AthenzService.from(Text.format("%s-%s", context.properties().applicationId().application().value(), appContext)));
     }
 
     private void addDeploymentSpecConfig(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {
@@ -610,7 +611,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private Optional<Client> getClient(Element clientElement, DeployState state) {
         String clientId = XML.attribute("id", clientElement).orElseThrow();
         if (clientId.startsWith("_"))
-            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Invalid client id '%s', id cannot start with '_'", clientId));
+            throw new IllegalArgumentException(Text.format("Invalid client id '%s', id cannot start with '_'", clientId));
         var permissions = XML.attribute("permissions", clientElement)
                 .map(Client.Permission::fromCommaSeparatedString).orElse(Set.of());
 
@@ -618,7 +619,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .flatMap(certElem -> {
                     var file = app.getFile(Path.fromString(certElem.getAttribute("file")));
                     if (!file.exists()) {
-                        throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Certificate file '%s' for client '%s' does not exist", file.getPath().getRelative(), clientId));
+                        throw new IllegalArgumentException(Text.format("Certificate file '%s' for client '%s' does not exist", file.getPath().getRelative(), clientId));
                     }
                     return getCertificates(file).stream();
                 })
@@ -635,7 +636,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     var token = knownTokens.get(tokenId);
                     if (token == null)
                         deployLogger.logApplicationPackage(
-                                WARNING, String.format(java.util.Locale.ROOT, "Token '%s' for client '%s' does not exist", tokenId, clientId));
+                                WARNING, Text.format("Token '%s' for client '%s' does not exist", tokenId, clientId));
                     return token;
                 })
                 .filter(token -> {
@@ -643,14 +644,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     boolean empty = token.versions().isEmpty();
                     if (empty)
                         deployLogger.logApplicationPackage(
-                                WARNING, String.format(java.util.Locale.ROOT, "Token '%s' for client '%s' has no active versions", token.tokenId(), clientId));
+                                WARNING, Text.format("Token '%s' for client '%s' has no active versions", token.tokenId(), clientId));
                     return !empty;
                 })
                 .toList();
 
         // Don't include 'client' that refers to token without versions
         if (referencedTokens.isEmpty()) {
-            deployLogger.log(Level.INFO, String.format(java.util.Locale.ROOT, "Skipping client '%s' as it does not refer to any activate tokens", clientId));
+            deployLogger.log(Level.INFO, Text.format("Skipping client '%s' as it does not refer to any activate tokens", clientId));
             return Optional.empty();
         }
 
@@ -667,10 +668,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             try {
                 x509Certificates = X509CertificateUtils.certificateListFromPem(certPem);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "File %s contains an invalid certificate", file.getPath().getRelative()), e);
+                throw new IllegalArgumentException(Text.format("File %s contains an invalid certificate", file.getPath().getRelative()), e);
             }
             if (x509Certificates.isEmpty()) {
-                throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "File %s does not contain any certificates.", file.getPath().getRelative()));
+                throw new IllegalArgumentException(Text.format("File %s does not contain any certificates.", file.getPath().getRelative()));
             }
             return x509Certificates;
         } catch (IOException e) {
@@ -956,8 +957,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
                     if (inferenceMemoryBytes > containerMemoryBytes) {
                         throw new IllegalArgumentException(
-                                String.format(
-                                        Locale.US,
+                                Text.format(
                                         "Inference memory cannot exceed available node memory (%.2f GiB), got: %s",
                                         nodeMemoryGiB, inferenceMemoryString
                                 ));
@@ -1474,7 +1474,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         String idAttr = element.getAttribute("id");
 
         if (idAttr.equals(xmlRendererId) || idAttr.equals(jsonRendererId)) {
-            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Renderer id %s is reserved for internal use", idAttr));
+            throw new IllegalArgumentException(Text.format("Renderer id %s is reserved for internal use", idAttr));
         }
     }
 

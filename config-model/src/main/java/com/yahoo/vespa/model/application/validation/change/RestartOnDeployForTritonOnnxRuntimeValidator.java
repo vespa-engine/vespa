@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeRestartAction;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
@@ -42,7 +43,7 @@ public class RestartOnDeployForTritonOnnxRuntimeValidator implements ChangeValid
                 var message = hasTritonRuntime
                         ? "Triton ONNX runtime was enabled for cluster '%s', services require restart"
                         : "Triton ONNX runtime was disabled for cluster '%s', services require restart";
-                var action = createRestartAction(currentCluster, String.format(java.util.Locale.ROOT, message, clusterId), DEFER_UNTIL_RESTART);
+                var action = createRestartAction(currentCluster, Text.format(message, clusterId), DEFER_UNTIL_RESTART);
                 context.require(action);
             }
         }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.component.ComponentId;
 import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.path.Path;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
@@ -110,7 +111,7 @@ public class VoyageAIEmbedderTest {
         };
 
         for (int i = 0; i < quantizations.length; i++) {
-            String xml = String.format(java.util.Locale.ROOT, """
+            String xml = Text.format("""
                     <?xml version="1.0" encoding="utf-8" ?>
                     <services version="1.0">
                         <container id="container" version="1.0">

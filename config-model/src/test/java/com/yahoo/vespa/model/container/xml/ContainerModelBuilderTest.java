@@ -40,6 +40,7 @@ import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainer;
@@ -324,7 +325,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                                <nodes count='2' />
                              </container>
                              """;
-        String deploymentXml = String.format(java.util.Locale.ROOT, """
+        String deploymentXml = Text.format("""
                                <deployment version='1.0'>
                                  <prod>
                                    <region>eu</region>
@@ -752,7 +753,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     void createModelWithTesterNodes(String testerNodesXml) {
-        String containerXml = String.format(java.util.Locale.ROOT, "<container id='default' version='1.0'>%s</container>", testerNodesXml);
+        String containerXml = Text.format("<container id='default' version='1.0'>%s</container>", testerNodesXml);
         VespaModelTester tester = new VespaModelTester();
         tester.setApplicationId("t", "a", "i-t");
         tester.addHosts(3);
@@ -814,7 +815,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         return DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <search>",
-                String.format(java.util.Locale.ROOT, "    <renderer id='%s'/>", rendererId),
+                Text.format("    <renderer id='%s'/>", rendererId),
                 "  </search>",
                 "</container>");
     }

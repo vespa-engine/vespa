@@ -4,6 +4,7 @@ package com.yahoo.schema.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
@@ -42,7 +43,7 @@ public class ValidateNoFieldRankFilterOverlap extends Processor {
                 boolean hasExplicitFilterThreshold = rp.explicitFieldRankFilterThresholds().containsKey(field.getName());
                 if (isFilter && hasExplicitFilterThreshold) {
                     throw newProcessException(schema.getName(), field.getName(),
-                            String.format(java.util.Locale.ROOT, ("rank profile '%s' declares field as `rank %s { filter-threshold:... }`, but field " +
+                            Text.format(("rank profile '%s' declares field as `rank %s { filter-threshold:... }`, but field " +
                              "is also declared as `rank: filter`. These declarations are mutually exclusive."), rp.name(), field.getName()));
                 }
             }

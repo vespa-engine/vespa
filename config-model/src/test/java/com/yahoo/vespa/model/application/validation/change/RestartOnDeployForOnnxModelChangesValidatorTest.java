@@ -12,6 +12,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
@@ -161,7 +162,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     }
 
     private static VespaModel hostedModel(DeployState.Builder builder, String executionMode, String modelId) {
-        var servicesXml  = String.format(java.util.Locale.ROOT, """
+        var servicesXml  = Text.format("""
                           <services version='1.0'>
                             <container id='cluster1' version='1.0'>
                               <component id="hf-embedder" type="hugging-face-embedder">
@@ -197,7 +198,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     }
 
     private static VespaModel nonHostedModel(DeployState.Builder builder, String executionMode, String modelId) {
-        var xml = String.format(java.util.Locale.ROOT, """
+        var xml = Text.format("""
                                        <services version='1.0'>
                                          <container id='cluster1' version='1.0'>
                                            <http>

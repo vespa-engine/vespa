@@ -46,6 +46,7 @@ import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.vespa.model.utils.ResourceUtils;
+import com.yahoo.text.Text;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
@@ -1047,7 +1048,7 @@ public class ContentClusterTest extends ContentBaseTest {
                                                        Optional<Flavor> flavor, StringBuffer deployWarningsBuffer) throws Exception {
         DeployLogger logger = (level, message) -> {
             if (level == Level.WARNING) { // only care about warnings
-                deployWarningsBuffer.append(String.format(java.util.Locale.ROOT, "%s\n", message));
+                deployWarningsBuffer.append(Text.format("%s\n", message));
             }
         };
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
@@ -1547,7 +1548,7 @@ public class ContentClusterTest extends ContentBaseTest {
         // sentinel value that must never be used by actual nodes.
         for (int distKey : List.of(-1, 65535, 65536, 100000)) {
             assertThrows(IllegalArgumentException.class, () ->
-                    parse(String.format(java.util.Locale.ROOT, """
+                    parse(Text.format("""
                             <content version="1.0" id="storage">
                               <documents/>
                               <redundancy>1</redundancy>
@@ -1574,7 +1575,7 @@ public class ContentClusterTest extends ContentBaseTest {
                "  <redundancy>1</redundancy>" +
                "  <documents/>" +
                "  <group>" +
-               String.format(java.util.Locale.ROOT, "    <node distribution-key=\"%d\" hostalias=\"mockhost\"/>", key) +
+               Text.format("    <node distribution-key=\"%d\" hostalias=\"mockhost\"/>", key) +
                "  </group>" +
                "</content>";
     }
@@ -1751,7 +1752,7 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     private String servicesWithGroups(int groupCount, double minGroupUpRatio) {
-        String services = String.format(java.util.Locale.ROOT, "<?xml version='1.0' encoding='UTF-8' ?>" +
+        String services = Text.format("<?xml version='1.0' encoding='UTF-8' ?>" +
                 "<services version='1.0'>" +
                 "  <container id='default' version='1.0' />" +
                 "  <content id='storage' version='1.0'>" +
@@ -1770,7 +1771,7 @@ public class ContentClusterTest extends ContentBaseTest {
         };
         services += distribution;
         for (int i = 0; i < groupCount; i++) {
-            services += String.format(java.util.Locale.ROOT, "    <group name='g-%d' distribution-key='%d'>" +
+            services += Text.format("    <group name='g-%d' distribution-key='%d'>" +
                                               "      <node hostalias='mockhost' distribution-key='%d'/>" +
                                               "    </group>",
                                       i, i, i);

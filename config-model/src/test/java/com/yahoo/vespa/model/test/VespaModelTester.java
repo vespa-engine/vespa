@@ -21,6 +21,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
@@ -86,7 +87,7 @@ public class VespaModelTester {
             // Let host names sort in the opposite order of the order the hosts are added
             // This allows us to test index vs. name order selection when subsets of hosts are selected from a cluster
             // (for e.g cluster controllers and slobrok nodes)
-            String hostname = String.format(java.util.Locale.ROOT, "%s-%03d",
+            String hostname = Text.format("%s-%03d",
                                             "node" + "-" + Math.round(resources.vcpu()) +
                                                      "-" + Math.round(resources.memoryGiB()) +
                                                      "-" + Math.round(resources.diskGb()),

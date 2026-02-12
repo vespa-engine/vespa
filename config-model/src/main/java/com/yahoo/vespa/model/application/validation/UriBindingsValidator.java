@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.BindingPattern;
@@ -84,7 +85,7 @@ class UriBindingsValidator implements Validator {
     }
 
     private static String createErrorMessage(BindingPattern binding, String message) {
-        return String.format(java.util.Locale.ROOT, "For binding '%s': %s", binding.originalPatternString(), message);
+        return Text.format("For binding '%s': %s", binding.originalPatternString(), message);
     }
 
 }

@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
@@ -114,7 +115,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
                                                                                    DeployLogger logger) {
 
         if (!hasConfigFieldsFlaggedWithRestart(configClass, service.getClass())) {
-            logger.logApplicationPackage(Level.FINE, String.format(java.util.Locale.ROOT, "%s is listed in the annotation for %s, " +
+            logger.logApplicationPackage(Level.FINE, Text.format("%s is listed in the annotation for %s, " +
                             "but does not have any restart flags in its config definition.",
                     configClass.getSimpleName(), service.getClass().getSimpleName()));
             return Optional.empty();

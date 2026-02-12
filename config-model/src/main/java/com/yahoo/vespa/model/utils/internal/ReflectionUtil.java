@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.utils.internal;
 import com.google.common.reflect.TypeToken;
 import com.yahoo.config.ChangesRequiringRestart;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.model.ConfigProducer;
 
@@ -72,7 +73,7 @@ public final class ReflectionUtil {
     public static ChangesRequiringRestart getChangesRequiringRestart(ConfigInstance from, ConfigInstance to) {
         Class<?> clazz = from.getClass();
         if (!clazz.equals(to.getClass())) {
-            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "%s != %s", clazz, to.getClass()));
+            throw new IllegalArgumentException(Text.format("%s != %s", clazz, to.getClass()));
         }
         try {
             Method m = clazz.getDeclaredMethod("getChangesRequiringRestart", clazz);

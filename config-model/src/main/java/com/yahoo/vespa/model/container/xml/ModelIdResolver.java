@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.text.Text;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
@@ -162,7 +163,7 @@ public class ModelIdResolver {
         var providedModel = providedModels.get(modelId);
         if ( ! providedModel.tags().containsAll(requiredTags)) {
             throw new IllegalArgumentException(
-                    String.format(java.util.Locale.ROOT, "Model '%s' on '%s' has tags %s but are missing required tags %s", modelId, valueName, providedModel.tags(), requiredTags));
+                    Text.format("Model '%s' on '%s' has tags %s but are missing required tags %s", modelId, valueName, providedModel.tags(), requiredTags));
         }
         return providedModel.uri().toString();
     }

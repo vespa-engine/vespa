@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.UrlReference;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.text.Text;
 import com.yahoo.text.XML;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ public class ModelTest {
     @Test
     void valid_url(){
         var dummyUrl = "https://vespa.ai/some-model.onxx";
-        var xml = String.format(java.util.Locale.ROOT, """
+        var xml = Text.format("""
                 <component id="bert-embedder" type="hugging-face-embedder">
                   <transformer-model url="%s" />
                   <tokenizer-model url="%s"/>
@@ -56,7 +57,7 @@ public class ModelTest {
     @Test
     void authenticated_url(){
         var dummyUrl = "https://vespa.ai/some-model.onxx";
-        var xml = String.format(java.util.Locale.ROOT, """
+        var xml = Text.format("""
                 <component id="bert-embedder" type="hugging-face-embedder">
                   <transformer-model url="%s" secret-ref="myTransformerSecret" />
                   <tokenizer-model url="%s" secret-ref="myTokenizerSecret"/>

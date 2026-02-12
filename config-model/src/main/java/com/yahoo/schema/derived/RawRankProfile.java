@@ -21,6 +21,7 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
@@ -531,10 +532,10 @@ public class RawRankProfile {
                 properties.add(new Pair<>("vespa.matching.filter_threshold", String.valueOf(filterThreshold.getAsDouble())));
             }
             for (var fieldAndThreshold : explicitFieldRankFilterThresholds.entrySet()) {
-                properties.add(new Pair<>(String.format(java.util.Locale.ROOT, "vespa.matching.filter_threshold.%s", fieldAndThreshold.getKey()), String.valueOf(fieldAndThreshold.getValue())));
+                properties.add(new Pair<>(Text.format("vespa.matching.filter_threshold.%s", fieldAndThreshold.getKey()), String.valueOf(fieldAndThreshold.getValue())));
             }
             for (var fieldAndElementGap : activeElementGapsPerField.entrySet()) {
-                properties.add(new Pair<>(String.format(java.util.Locale.ROOT, "vespa.matching.element_gap.%s", fieldAndElementGap.getKey()), fieldAndElementGap.getValue().toString()));
+                properties.add(new Pair<>(Text.format("vespa.matching.element_gap.%s", fieldAndElementGap.getKey()), fieldAndElementGap.getValue().toString()));
             }
             if (matchPhaseSettings != null) {
                 properties.add(new Pair<>("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute()));
