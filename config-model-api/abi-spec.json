@@ -1735,6 +1735,24 @@
       "public static final com.yahoo.config.model.api.Reindexing DISABLED_INSTANCE"
     ]
   },
+  "com.yahoo.config.model.api.ServiceConfigState" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(long, java.util.Optional)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public long currentGeneration()",
+      "public java.util.Optional applyOnRestart()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.config.model.api.ServiceInfo" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],

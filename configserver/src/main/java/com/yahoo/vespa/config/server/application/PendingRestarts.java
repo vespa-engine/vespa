@@ -50,19 +50,37 @@ public class PendingRestarts {
         return new PendingRestarts(newRestarts);
     }
 
+    /**
+     * Returns a new {@link PendingRestarts} without the given {@code hostnames} for generations up to and including {@code generation}.
+     */
+    public PendingRestarts withoutPreviousGeneration(long generation, Set<String> hostnames) {
+        Map<Long, Set<String>> newRestarts = new LinkedHashMap<>();
+        generationsForRestarts.forEach((restartGen, restartHosts) -> {
+            Set<String> remainingHosts = new LinkedHashSet<>(restartHosts);
+
+            if (restartGen <= generation) {
+                remainingHosts.removeAll(hostnames);
+            }
+
+            if (!remainingHosts.isEmpty()) {
+                newRestarts.put(restartGen, remainingHosts);
+            }
+        });
+        return new PendingRestarts(newRestarts);
+    }
+
     public Set<String> hostnames() {
         LinkedHashSet<String> all = new LinkedHashSet<>();
         generationsForRestarts.forEach((g, hostnames) -> all.addAll(hostnames));
         return all;
     }
-
+    
     // Restarts are ready to be done for all hostnames that report a config generation (through
-    // convergence checker) that is equal to or larger than the config generation that the restaart
+    // convergence checker) that is equal to or larger than the config generation that the restart
     // should happen on
     public Set<String> restartsReadyAt(long generation) {
         LinkedHashSet<String> ready = new LinkedHashSet<>();
         generationsForRestarts.forEach((g, hostnames) -> { if (generation >= g) ready.addAll(hostnames); });
         return ready;
     }
-
 }

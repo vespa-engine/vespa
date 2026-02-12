@@ -397,6 +397,16 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
     );
 
+    public static final UnboundBooleanFlag WAIT_FOR_APPLY_ON_RESTART = defineFeatureFlag(
+            "wait-for-apply-on-restart", false,
+            List.of("glebashnik"), "2026-02-01", "2026-08-01",
+            "Determines whether triggering of a pending restart waits for `applyOnRestart` to be set to `true` " +
+                    "in the observed config state. In addition, changes service convergence condition bounded to a " +
+                    "current node instead of across multiple nodes, see `RestartOnDeployMaintainer`.",
+            "Takes effect at next run of RestartOnDeployMaintainer.",
+            INSTANCE_ID
+    );
+
     public static final UnboundDoubleFlag HOST_MEMORY_SERVICES_MIXING_FACTOR = defineDoubleFlag(
             "host-memory-services-mixing-factor", 0.0,
             List.of("boeker"), "2026-01-16", "2026-04-16",
