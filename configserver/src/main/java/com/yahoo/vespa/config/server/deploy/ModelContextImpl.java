@@ -173,7 +173,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final double feedConcurrency;
         private final double feedNiceness;
-        private final List<String> allowedAthenzProxyIdentities;
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
@@ -218,7 +217,6 @@ public class ModelContextImpl implements ModelContext {
             this.feedConcurrency = PermanentFlags.FEED_CONCURRENCY.bindTo(source).with(appId).with(version).value();
             this.feedNiceness = PermanentFlags.FEED_NICENESS.bindTo(source).with(appId).with(version).value();
             this.mbus_network_threads = Flags.MBUS_NUM_NETWORK_THREADS.bindTo(source).with(appId).with(version).value();
-            this.allowedAthenzProxyIdentities = PermanentFlags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();
             this.maxActivationInhibitedOutOfSyncGroups = Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS.bindTo(source).with(appId).with(version).value();
             this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
             this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
@@ -267,7 +265,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public double feedConcurrency() { return feedConcurrency; }
         @Override public double feedNiceness() { return feedNiceness; }
         @Override public int mbusNetworkThreads() { return mbus_network_threads; }
-        @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
@@ -275,7 +272,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
-        @Override public boolean useV8GeoPositions() { return true; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
         @Override public int mbusJavaEventsBeforeWakeup() { return mbus_java_events_before_wakeup; }
