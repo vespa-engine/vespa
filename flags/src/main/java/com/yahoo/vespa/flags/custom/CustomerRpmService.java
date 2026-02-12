@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yahoo.text.Text;
 
 import java.util.List;
 import java.util.Objects;
@@ -150,8 +151,7 @@ public class CustomerRpmService {
 
     @Override
     public String toString() {
-        return "{ unit: %s, package: %s, memory: %s MiB, cpu: %s, repositories: %s, disabled: %s }"
-                .formatted(
+        return Text.format("{ unit: %s, package: %s, memory: %s MiB, cpu: %s, repositories: %s, disabled: %s }",
                         unitName(), packageName(), memoryLimitMib(),
                         cpuLimitCores().map(Object::toString).orElse("unlimited"),
                         String.join(", ", repositories()),
