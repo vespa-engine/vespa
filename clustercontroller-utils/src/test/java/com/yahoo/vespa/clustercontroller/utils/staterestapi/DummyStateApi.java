@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.staterestapi;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.MissingUnitException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OperationNotSupportedForUnitException;
@@ -201,7 +202,7 @@ public class DummyStateApi implements StateRestAPI {
         }
         n.state = newState.get("current").id();
         n.reason = newState.get("current").reason();
-        String reason = String.format("DummyStateAPI %s call", request.getResponseWait().getName());
+        String reason = Text.format("DummyStateAPI %s call", request.getResponseWait().getName());
         return new SetResponse(reason, true);
     }
 

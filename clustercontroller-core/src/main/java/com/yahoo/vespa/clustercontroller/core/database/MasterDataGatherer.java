@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.database;
 
+import com.yahoo.text.Text;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -125,7 +126,7 @@ public final class MasterDataGatherer {
                     } else {
                         // May happen when pending data watch error callbacks are triggered concurrently with
                         // internal voting state having already been cleared due to connectivity issues.
-                        log.log(Level.INFO, String.format(Locale.ROOT, "Fleetcontroller %d: ignoring removal of vote from node %d " +
+                        log.log(Level.INFO, Text.format("Fleetcontroller %d: ignoring removal of vote from node %d " +
                                 "since it was not present in existing vote mapping", nodeIndex, index));
                     }
                 } else {

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.matchers;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -29,12 +30,12 @@ public class HasMetricContext extends BaseMatcher<MetricReporter.Context> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format(Locale.ROOT, "Context with dimensions %s", dimensions));
+        description.appendText(Text.format("Context with dimensions %s", dimensions));
     }
 
     @Override
     public void describeMismatch(Object item, Description description) {
-        description.appendText(String.format(Locale.ROOT, "Context dimensions are %s", item.toString()));
+        description.appendText(Text.format("Context dimensions are %s", item.toString()));
     }
 
     public static class Dimension {

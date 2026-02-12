@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.ClusterState;
 
 import java.util.Locale;
@@ -98,7 +99,7 @@ public class ClusterStateHistoryEntry {
     // String representation only used for test expectation failures and debugging output.
     // Actual status page history entry rendering emits formatted date/time.
     public String toString() {
-        return String.format(Locale.ROOT, "state '%s' at time %d", getStateString(BASELINE), time);
+        return Text.format("state '%s' at time %d", getStateString(BASELINE), time);
     }
 
 }
