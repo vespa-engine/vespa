@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import com.yahoo.text.Text;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.Instant;
@@ -78,7 +79,7 @@ public class TimeWindow {
         return "time window for hour(s) " +
                hours.toString() +
                " on " + days.stream().map(DayOfWeek::name)
-                            .map(String::toLowerCase)
+                            .map(s -> s.toLowerCase(java.util.Locale.ROOT))
                             .toList() +
                " in time zone " + zone + " and " + dateRange.toString();
     }
@@ -119,7 +120,7 @@ public class TimeWindow {
         int start = hourFrom(startInclusive);
         int end = hourFrom(endInclusive);
         if (end < start) {
-            throw new IllegalArgumentException(String.format("Invalid hour range '%s-%s'", startInclusive,
+            throw new IllegalArgumentException(Text.format("Invalid hour range '%s-%s'", startInclusive,
                                                              endInclusive));
         }
         return IntStream.rangeClosed(start, end).boxed()
@@ -131,7 +132,7 @@ public class TimeWindow {
         DayOfWeek start = dayFrom(startInclusive);
         DayOfWeek end = dayFrom(endInclusive);
         if (end.getValue() < start.getValue()) {
-            throw new IllegalArgumentException(String.format("Invalid day range '%s-%s'", startInclusive,
+            throw new IllegalArgumentException(Text.format("Invalid day range '%s-%s'", startInclusive,
                                                              endInclusive));
         }
         return IntStream.rangeClosed(start.getValue(), end.getValue()).boxed()
@@ -142,7 +143,7 @@ public class TimeWindow {
     /** Parse day of week from string */
     private static DayOfWeek dayFrom(String day) {
         return Arrays.stream(DayOfWeek.values())
-                     .filter(dayOfWeek -> day.length() >= 3 && dayOfWeek.name().toLowerCase().startsWith(day))
+                     .filter(dayOfWeek -> day.length() >= 3 && dayOfWeek.name().toLowerCase(java.util.Locale.ROOT).startsWith(day))
                      .findFirst()
                      .orElseThrow(() -> new IllegalArgumentException("Invalid day '" + day + "'"));
     }
