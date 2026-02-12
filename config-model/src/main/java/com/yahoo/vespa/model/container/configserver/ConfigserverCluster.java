@@ -13,6 +13,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.configserver.option.ConfigOptions;
@@ -64,7 +65,7 @@ public class ConfigserverCluster extends TreeConfigProducer
         int[] zookeeperIds = getConfigServerZookeeperIds();
 
         if (configServers.length != zookeeperIds.length) {
-            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Number of provided config server hosts (%d) must be the " +
+            throw new IllegalArgumentException(Text.format("Number of provided config server hosts (%d) must be the " +
                     "same as number of provided config server zookeeper ids (%d)",
                     configServers.length, zookeeperIds.length));
         }
@@ -74,7 +75,7 @@ public class ConfigserverCluster extends TreeConfigProducer
         // however, we cannot change this id for an existing server
         for (int i = 0; i < configServers.length; i++) {
             if (zookeeperIds[i] < 0) {
-                throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Zookeeper ids cannot be negative, was %d for %s",
+                throw new IllegalArgumentException(Text.format("Zookeeper ids cannot be negative, was %d for %s",
                         zookeeperIds[i], configServers[i].hostName));
             }
             if (configServers[i].hostName.equals(myhostname)) {

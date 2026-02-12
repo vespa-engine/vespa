@@ -2,6 +2,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +47,6 @@ class CloudClientsValidatorTest {
     private static X509Certificate readTestCertificate(String filename) {
         return X509CertificateUtils.fromPem(new String(uncheck(
                 () -> CloudClientsValidatorTest.class.getResourceAsStream(
-                        String.format(java.util.Locale.ROOT, "/cloud-clients-validator/%s", filename)).readAllBytes()), java.nio.charset.StandardCharsets.UTF_8));
+                        Text.format("/cloud-clients-validator/%s", filename)).readAllBytes()), java.nio.charset.StandardCharsets.UTF_8));
     }
 }

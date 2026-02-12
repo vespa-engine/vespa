@@ -20,6 +20,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
@@ -67,7 +68,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
     public void it_generates_correct_config() throws IOException {
         Path certFile = securityFolder.resolve("foo.pem");
         Element clusterElem = DomBuilderTest.parse(
-                String.format(java.util.Locale.ROOT, """
+                Text.format("""
                         <container version='1.0'>
                           <clients>
                             <client id="foo" permissions="read,write">
@@ -124,7 +125,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
     public void it_rejects_files_without_certificates() throws IOException {
         Path certFile = securityFolder.resolve("foo.pem");
         Element clusterElem = DomBuilderTest.parse(
-                String.format(java.util.Locale.ROOT, """
+                Text.format("""
                         <container version='1.0'>
                           <clients>
                             <client id="foo" permissions="read,write">

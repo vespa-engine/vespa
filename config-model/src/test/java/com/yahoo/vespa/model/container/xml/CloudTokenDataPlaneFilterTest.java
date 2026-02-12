@@ -16,6 +16,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
@@ -79,7 +80,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     @Test
     void generates_correct_config_for_tokens() throws IOException {
         var certFile = securityFolder.resolve("foo.pem");
-        var clusterElem = DomBuilderTest.parse(String.format(java.util.Locale.ROOT, servicesXmlTemplate, applicationFolder.toPath().relativize(certFile).toString()));
+        var clusterElem = DomBuilderTest.parse(Text.format(servicesXmlTemplate, applicationFolder.toPath().relativize(certFile).toString()));
         createCertificate(certFile);
         buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem);
 
@@ -96,7 +97,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     @Test
     void configures_dataplane_proxy_when_token_defined() throws IOException {
         var certFile = securityFolder.resolve("foo.pem");
-        var clusterElem = DomBuilderTest.parse(String.format(java.util.Locale.ROOT, servicesXmlTemplate, applicationFolder.toPath().relativize(certFile).toString()));
+        var clusterElem = DomBuilderTest.parse(Text.format(servicesXmlTemplate, applicationFolder.toPath().relativize(certFile).toString()));
         createCertificate(certFile);
         buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem);
 
@@ -109,7 +110,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     @Test
     void configures_dataplane_proxy_when_token_defined_but_missing() throws IOException {
         var certFile = securityFolder.resolve("foo.pem");
-        var clusterElem = DomBuilderTest.parse(String.format(java.util.Locale.ROOT, servicesXmlTemplate, applicationFolder.toPath().relativize(certFile).toString()));
+        var clusterElem = DomBuilderTest.parse(Text.format(servicesXmlTemplate, applicationFolder.toPath().relativize(certFile).toString()));
         createCertificate(certFile);
         buildModel(Set.of(tokenEndpoint, mtlsEndpoint), List.of(), clusterElem);
 
@@ -123,7 +124,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     @Test
     void does_notconfigure_dataplane_proxy_when_token_endpoints_not_defined() throws IOException {
         var certFile = securityFolder.resolve("foo.pem");
-        var clusterElem = DomBuilderTest.parse(String.format(java.util.Locale.ROOT, servicesXmlTemplate, applicationFolder.toPath().relativize(certFile).toString()));
+        var clusterElem = DomBuilderTest.parse(Text.format(servicesXmlTemplate, applicationFolder.toPath().relativize(certFile).toString()));
         createCertificate(certFile);
         buildModel(Set.of(mtlsEndpoint), List.of(), clusterElem);
 
@@ -133,7 +134,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     @Test
     void configuresCorrectConnectors() throws IOException {
         var certFile = securityFolder.resolve("foo.pem");
-        var clusterElem = DomBuilderTest.parse(String.format(java.util.Locale.ROOT, servicesXmlTemplate, applicationFolder.toPath().relativize(certFile).toString()));
+        var clusterElem = DomBuilderTest.parse(Text.format(servicesXmlTemplate, applicationFolder.toPath().relativize(certFile).toString()));
         createCertificate(certFile);
         buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem);
 
@@ -148,7 +149,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     @Test
     void fails_on_unknown_permission() throws IOException {
         var certFile = securityFolder.resolve("foo.pem");
-        var servicesXml = String.format(java.util.Locale.ROOT, """
+        var servicesXml = Text.format("""
                 <container version='1.0'>
                   <clients>
                     <client id="foo" permissions="read,unknown-permission">
@@ -166,7 +167,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     @Test
     void fails_on_duplicate_clients() throws IOException {
         var certFile = securityFolder.resolve("foo.pem");
-        var servicesXml = String.format(java.util.Locale.ROOT, """
+        var servicesXml = Text.format("""
                     <container version="1.0">
                         <clients>
                             <client id="mtls" permissions="read,write">

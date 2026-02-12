@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.text.Text;
 
 import java.util.List;
 import java.util.Map;
@@ -27,11 +28,11 @@ public class ReservedDocumentTypeNameValidator {
     }
 
     private static String asQuotedListString(List<String> list) {
-        return list.stream().map(s -> String.format(java.util.Locale.ROOT, "'%s'", s)).collect(Collectors.joining(", "));
+        return list.stream().map(s -> Text.format("'%s'", s)).collect(Collectors.joining(", "));
     }
 
     private static String makeReservedNameMessage(List<String> conflictingNames) {
-        return String.format(java.util.Locale.ROOT, "The following document types conflict with reserved keyword names: %s. Reserved keywords are %s",
+        return Text.format("The following document types conflict with reserved keyword names: %s. Reserved keywords are %s",
                 asQuotedListString(conflictingNames), asQuotedListString(ORDERED_RESERVED_NAMES));
     }
 

@@ -19,6 +19,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,7 @@ public class CloudDataPlaneFilterValidatorTest {
     void validator_accepts_distinct_client_certificates() throws IOException, SAXException {
         String certFile1 = "security/foo.pem";
         String certFile2 = "security/bar.pem";
-        String servicesXml = String.format(java.util.Locale.ROOT, """
+        String servicesXml = Text.format("""
                         <services version='1.0'>
                           <container version='1.0'>
                             <clients>
@@ -79,7 +80,7 @@ public class CloudDataPlaneFilterValidatorTest {
         String certFile1 = "security/a.pem";
         String certFile2 = "security/b.pem";
         X509Certificate certificate = createCertificate("a");
-        String servicesXml = String.format(java.util.Locale.ROOT, """
+        String servicesXml = Text.format("""
                 <services version='1.0'>
                   <container version='1.0'>
                     <clients>
@@ -101,14 +102,14 @@ public class CloudDataPlaneFilterValidatorTest {
 
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationTester.expect(new CloudDataPlaneFilterValidator(), model, deployState,
-                                String.format(java.util.Locale.ROOT, "Duplicate certificate(s) detected in files: [%s, %s]. Certificate subject of duplicates: [%s]", certFile1, certFile2, certificate.getSubjectX500Principal().getName()));
+                                Text.format("Duplicate certificate(s) detected in files: [%s, %s]. Certificate subject of duplicates: [%s]", certFile1, certFile2, certificate.getSubjectX500Principal().getName()));
     }
 
     @Test
     void validator_rejects_duplicate_client_certificates_same_file() throws IOException, SAXException {
         String certFile1 = "security/a.pem";
         X509Certificate certificate = createCertificate("a");
-        String servicesXml = String.format(java.util.Locale.ROOT, """
+        String servicesXml = Text.format("""
                 <services version='1.0'>
                   <container version='1.0'>
                     <clients>
@@ -125,7 +126,7 @@ public class CloudDataPlaneFilterValidatorTest {
 
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationTester.expect(new CloudDataPlaneFilterValidator(), model, deployState,
-                                String.format(java.util.Locale.ROOT, "Duplicate certificate(s) detected in files: [%s]. Certificate subject of duplicates: [%s]", certFile1, certificate.getSubjectX500Principal().getName()));
+                                Text.format("Duplicate certificate(s) detected in files: [%s]. Certificate subject of duplicates: [%s]", certFile1, certificate.getSubjectX500Principal().getName()));
     }
 
 
