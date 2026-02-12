@@ -11,6 +11,10 @@ on:
           - patch
           - minor
           - major
+  pull_request:
+    paths:
+      - 'integration/schema-language-server/**'
+      - '.github/workflows/lspDeploy.yml'
 
 jobs:
   lspDeploy:
@@ -41,6 +45,7 @@ jobs:
       
       - name: "Retrieve version"
         id: retrieve_version
+        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server/utils
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,12 +56,14 @@ jobs:
         working-directory: ./integration/schema-language-server/clients/vscode
 
       - name: Publish VScode extension
+        if: github.event_name == 'workflow_dispatch'
         run: npm run publish
         working-directory: ./integration/schema-language-server/clients/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish IntelliJ plugin
+        if: github.event_name == 'workflow_dispatch'
         run: |
           echo $VERSION > VERSION
           gradle buildPlugin
@@ -68,10 +75,12 @@ jobs:
           PLUGIN_ID: 18074
 
       - name: Publish to open-vsx
+        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server/clients/vscode
         run: npx ovsx publish 'vespa-language-support-${{ steps.retrieve_version.outputs.VERSION }}.vsix' -p ${{ secrets.OPEN_VSX_PAT }}
 
       - name: Prepare Github Release
+        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server
         run: |
           mkdir -p ./clients/github-release/target
@@ -80,6 +89,7 @@ jobs:
           VERSION: ${{ steps.retrieve_version.outputs.VERSION }}
       
       - name: Create release
+        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
