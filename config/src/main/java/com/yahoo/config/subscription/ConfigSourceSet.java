@@ -37,7 +37,7 @@ public class ConfigSourceSet implements ConfigSource {
      */
     public ConfigSourceSet(List<String> addresses) {
         for (String a : addresses) {
-           sources.add(a.trim().toLowerCase());
+           sources.add(a.trim().toLowerCase(java.util.Locale.ROOT));
         }
     }
 

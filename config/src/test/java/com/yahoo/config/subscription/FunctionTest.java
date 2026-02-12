@@ -161,7 +161,7 @@ public class FunctionTest {
     }
 
     private void attemptLacking(String param, boolean isArray) throws IOException {
-        BufferedReader in = new BufferedReader(new FileReader(new File(PATH + "defaultvalues.txt")));
+        BufferedReader in = new BufferedReader(new FileReader(new File(PATH + "defaultvalues.txt"), java.nio.charset.StandardCharsets.UTF_8));
         StringBuilder config = new StringBuilder();
         String line;
         while ((line = in.readLine()) != null) {
