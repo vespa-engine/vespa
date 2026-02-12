@@ -68,10 +68,12 @@ AttributeCombinerTest::AttributeCombinerTest()
     attrs.build_string_attribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
     attrs.build_int_attribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
     attrs.build_float_attribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
+    attrs.build_bool_attribute("array.flag", {{ 1, 0}, {1, 1}, {0, 1}, {0, 1}, {}});
     attrs.build_string_attribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1", "k3.2"}, {"", "k4.2"}, {}});
     attrs.build_string_attribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
     attrs.build_int_attribute("smap.value.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
     attrs.build_float_attribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
+    attrs.build_bool_attribute("smap.value.flag", {{ 1, 0}, {1, 1}, {0, 1}, {0, 1}, {}});
     attrs.build_string_attribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1"}, {"", "k4.2"}, {}});
     attrs.build_string_attribute("map.value", {{"n1.1", "n1.2"}, {}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
 
@@ -120,20 +122,20 @@ AttributeCombinerTest::assertWritten(const std::string &exp_slime_as_json, uint3
 TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_array_of_struct)
 {
     set_field("array", false);
-    assertWritten("[ { fval: 110.0, name: 'n1.1', val: 10}, { name: 'n1.2', val: 11}]", 1);
-    assertWritten("[ { fval: 120.0, name: 'n2', val: 20}, { fval: 121.0, val: 21 }]", 2);
-    assertWritten("[ { fval: 130.0, name: 'n3.1', val: 30}, { fval: 131.0, name: 'n3.2'} ]", 3);
-    assertWritten("[ { }, { fval: 141.0, name: 'n4.2', val:  41} ]", 4);
+    assertWritten("[ { flag: true, fval: 110.0, name: 'n1.1', val: 10}, { flag: false, name: 'n1.2', val: 11}]", 1);
+    assertWritten("[ { flag: true, fval: 120.0, name: 'n2', val: 20}, { flag: true, fval: 121.0, val: 21 }]", 2);
+    assertWritten("[ { flag: false, fval: 130.0, name: 'n3.1', val: 30}, { flag: true, fval: 131.0, name: 'n3.2'} ]", 3);
+    assertWritten("[ { flag: false }, { flag: true, fval: 141.0, name: 'n4.2', val:  41} ]", 4);
     assertWritten("null", 5);
 }
 
 TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_map_of_struct)
 {
     set_field("smap", false);
-    assertWritten("[ { key: 'k1.1', value: { fval: 110.0, name: 'n1.1', val: 10} }, { key: 'k1.2', value: { name: 'n1.2', val: 11} }]", 1);
-    assertWritten("[ { key: 'k2', value: { fval: 120.0, name: 'n2', val: 20} }, { key: '', value: { fval: 121.0, val: 21 } }]", 2);
-    assertWritten("[ { key: 'k3.1', value: { fval: 130.0, name: 'n3.1', val: 30} }, { key: 'k3.2', value: { fval: 131.0, name: 'n3.2'} } ]", 3);
-    assertWritten("[ { key: '', value: { } }, { key: 'k4.2', value: { fval: 141.0, name: 'n4.2', val:  41} } ]", 4);
+    assertWritten("[ { key: 'k1.1', value: { flag: true, fval: 110.0, name: 'n1.1', val: 10} }, { key: 'k1.2', value: { flag: false, name: 'n1.2', val: 11} }]", 1);
+    assertWritten("[ { key: 'k2', value: { flag: true, fval: 120.0, name: 'n2', val: 20} }, { key: '', value: { flag: true, fval: 121.0, val: 21 } }]", 2);
+    assertWritten("[ { key: 'k3.1', value: { flag: false, fval: 130.0, name: 'n3.1', val: 30} }, { key: 'k3.2', value: { flag: true, fval: 131.0, name: 'n3.2'} } ]", 3);
+    assertWritten("[ { key: '', value: { flag: false } }, { key: 'k4.2', value: { flag: true, fval: 141.0, name: 'n4.2', val:  41} } ]", 4);
     assertWritten("null", 5);
 }
 
@@ -150,20 +152,20 @@ TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_corr
 TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_filtered_array_of_struct)
 {
     set_field("array", true);
-    assertWritten("[ { name: 'n1.2', val: 11}]", 1);
+    assertWritten("[ { flag: false, name: 'n1.2', val: 11}]", 1);
     assertWritten("null", 2);
-    assertWritten("[ { fval: 130.0, name: 'n3.1', val: 30} ]", 3);
-    assertWritten("[ { fval: 141.0, name: 'n4.2', val:  41} ]", 4);
+    assertWritten("[ { flag: false, fval: 130.0, name: 'n3.1', val: 30} ]", 3);
+    assertWritten("[ { flag: true, fval: 141.0, name: 'n4.2', val:  41} ]", 4);
     assertWritten("null", 5);
 }
 
 TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_filtered_map_of_struct)
 {
     set_field("smap", true);
-    assertWritten("[ { key: 'k1.2', value: { name: 'n1.2', val: 11} }]", 1);
+    assertWritten("[ { key: 'k1.2', value: { flag: false, name: 'n1.2', val: 11} }]", 1);
     assertWritten("null", 2);
-    assertWritten("[ { key: 'k3.1', value: { fval: 130.0, name: 'n3.1', val: 30} } ]", 3);
-    assertWritten("[ { key: 'k4.2', value: { fval: 141.0, name: 'n4.2', val:  41} } ]", 4);
+    assertWritten("[ { key: 'k3.1', value: { flag: false, fval: 130.0, name: 'n3.1', val: 30} } ]", 3);
+    assertWritten("[ { key: 'k4.2', value: { flag: true, fval: 141.0, name: 'n4.2', val:  41} } ]", 4);
     assertWritten("null", 5);
 }
 
@@ -190,6 +192,7 @@ TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_fi
     EXPECT_EQ("array", enclosing_field("array.name"));
     EXPECT_EQ("array", enclosing_field("array.val"));
     EXPECT_EQ("array", enclosing_field("array.fval"));
+    EXPECT_EQ("array", enclosing_field("array.flag"));
 }
 
 TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_filtered_map_of_struct)
@@ -205,6 +208,7 @@ TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_fi
     EXPECT_EQ("smap", enclosing_field("smap.value.name"));
     EXPECT_EQ("smap", enclosing_field("smap.value.val"));
     EXPECT_EQ("smap", enclosing_field("smap.value.fval"));
+    EXPECT_EQ("smap", enclosing_field("smap.value.flag"));
 }
 
 TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_filtered_map_of_string)

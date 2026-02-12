@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/common/attribute_updater.h>
+#include <vespa/searchlib/attribute/array_bool_attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/single_raw_attribute.h>
@@ -12,6 +13,7 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/boolfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
@@ -48,6 +50,7 @@ using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
+using search::attribute::ArrayBoolAttribute;
 using search::attribute::SingleRawAttribute;
 using search::attribute::test::AttributeBuilder;
 using search::tensor::ITensorAttribute;
@@ -85,6 +88,7 @@ makeDocumentTypeRepo()
 {
     new_config_builder::NewConfigBuilder builder;
     auto& doc = builder.document("testdoc", 222);
+    auto bool_array = doc.createArray(builder.boolTypeRef()).ref();
     auto int_array = doc.createArray(builder.intTypeRef()).ref();
     auto float_array = doc.createArray(builder.floatTypeRef()).ref();
     auto string_array = doc.createArray(builder.stringTypeRef()).ref();
@@ -97,6 +101,7 @@ makeDocumentTypeRepo()
             .addField("float", builder.floatTypeRef())
             .addField("string", builder.stringTypeRef())
             .addField("raw", builder.rawTypeRef())
+            .addField("abool", bool_array)
             .addField("aint", int_array)
             .addField("afloat", float_array)
             .addField("astring", string_array)
@@ -327,6 +332,42 @@ TEST(AttributeUpdaterTest, require_that_array_attributes_are_updated)
         EXPECT_TRUE(check(vec, 4, std::vector<WeightedString>{}));
         EXPECT_TRUE(check(vec, 5, std::vector<WeightedString>{WeightedString("first")}));
     }
+}
+
+TEST(AttributeUpdaterTest, require_that_array_bool_attribute_is_updated)
+{
+    Fixture f;
+    Config cfg(BasicType::BOOL, CollectionType::ARRAY);
+    auto attr = AttributeFactory::createAttribute("abool", cfg);
+    attr->addReservedDoc();
+    attr->addDocs(4);
+    auto& bool_attr = dynamic_cast<ArrayBoolAttribute&>(*attr);
+    bool_attr.set_bools(1, std::vector<int8_t>{1, 0, 1});
+    bool_attr.set_bools(2, std::vector<int8_t>{0, 1});
+    bool_attr.set_bools(3, std::vector<int8_t>{1});
+    attr->commit();
+
+    // Assign via handleUpdate
+    auto assign = std::make_unique<ArrayFieldValue>(f.docType->getField("abool").getDataType());
+    assign->add(BoolFieldValue(false));
+    assign->add(BoolFieldValue(true));
+    f.applyValueUpdate(*attr, 1, std::make_unique<AssignValueUpdate>(std::move(assign)));
+    EXPECT_EQ(2u, attr->getValueCount(1));
+    EXPECT_TRUE(check(attr, 1, std::vector<WeightedInt>{WeightedInt(0), WeightedInt(1)}));
+
+    // Clear via handleUpdate
+    f.applyValueUpdate(*attr, 2, std::make_unique<ClearValueUpdate>());
+    EXPECT_EQ(0u, attr->getValueCount(2));
+
+    // Put via handleValue
+    auto put_val = std::make_unique<ArrayFieldValue>(f.docType->getField("abool").getDataType());
+    put_val->add(BoolFieldValue(true));
+    put_val->add(BoolFieldValue(true));
+    put_val->add(BoolFieldValue(false));
+    f.applyValue(*attr, 3, std::move(put_val));
+    attr->commit();
+    EXPECT_EQ(3u, attr->getValueCount(3));
+    EXPECT_TRUE(check(attr, 3, std::vector<WeightedInt>{WeightedInt(1), WeightedInt(1), WeightedInt(0)}));
 }
 
 TEST(AttributeUpdaterTest, require_that_weighted_set_attributes_are_updated)

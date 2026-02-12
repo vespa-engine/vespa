@@ -36,6 +36,8 @@ public:
                              search::attribute::CollectionType col_type = search::attribute::CollectionType::ARRAY);
     void build_raw_attribute(const std::string& name,
                              const std::vector<std::vector<std::vector<char>>>& values);
+    void build_bool_attribute(const std::string& name,
+                              const std::vector<std::vector<int8_t>>& values);
 };
 
 }

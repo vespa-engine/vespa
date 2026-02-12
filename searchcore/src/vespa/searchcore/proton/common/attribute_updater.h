@@ -15,6 +15,7 @@ namespace tensor {
     class TensorAttribute;
 }
 namespace attribute {
+class ArrayBoolAttribute;
 class ReferenceAttribute;
 class SingleRawAttribute;
 }
@@ -60,6 +61,7 @@ private:
     static void updateValue(tensor::TensorAttribute & vec, uint32_t lid, const FieldValue & val);
     static void updateValue(attribute::ReferenceAttribute & vec, uint32_t lid, const FieldValue & val);
     static void updateValue(attribute::SingleRawAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void updateValue(attribute::ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val);
 };
 
 }
