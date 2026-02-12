@@ -49,21 +49,21 @@ public class AsciiTest {
                 expected = "\\t";
                 break;
             default:
-                expected = String.format(Locale.ROOT, "\\x%02X", i);
+                expected = Text.format("\\x%02X", i);
                 break;
             }
             assertEncodeUtf8(expected, new StringBuilder().appendCodePoint(i).toString());
         }
         for (int i = 0x80; i < 0xC0; ++i) {
-            String expected = String.format(Locale.ROOT, "\\xC2\\x%02X", i);
+            String expected = Text.format("\\xC2\\x%02X", i);
             assertEncodeUtf8(expected, new StringBuilder().appendCodePoint(i).toString());
         }
         for (int i = 0xC0; i < 0x0100; ++i) {
-            String expected = String.format(Locale.ROOT, "\\xC3\\x%02X", i - 0x40);
+            String expected = Text.format("\\xC3\\x%02X", i - 0x40);
             assertEncodeUtf8(expected, new StringBuilder().appendCodePoint(i).toString());
         }
         for (int i = 0x0100; i < 0x0140; ++i) {
-            String expected = String.format(Locale.ROOT, "\\xC4\\x%02X", i - 0x80);
+            String expected = Text.format("\\xC4\\x%02X", i - 0x80);
             assertEncodeUtf8(expected, new StringBuilder().appendCodePoint(i).toString());
         }
     }
@@ -90,15 +90,15 @@ public class AsciiTest {
     @Test
     public void requireThatUtf8SequencesAreUnescaped() {
         for (int i = 0x80; i < 0xC0; ++i) {
-            String str = String.format(Locale.ROOT, "\\xC2\\x%02X", i);
+            String str = Text.format("\\xC2\\x%02X", i);
             assertDecodeUtf8(new StringBuilder().appendCodePoint(i).toString(), str);
         }
         for (int i = 0xC0; i < 0x0100; ++i) {
-            String str = String.format(Locale.ROOT, "\\xC3\\x%02X", i - 0x40);
+            String str = Text.format("\\xC3\\x%02X", i - 0x40);
             assertDecodeUtf8(new StringBuilder().appendCodePoint(i).toString(), str);
         }
         for (int i = 0x0100; i < 0x0140; ++i) {
-            String str = String.format(Locale.ROOT, "\\xC4\\x%02X", i - 0x80);
+            String str = Text.format("\\xC4\\x%02X", i - 0x80);
             assertDecodeUtf8(new StringBuilder().appendCodePoint(i).toString(), str);
         }
     }

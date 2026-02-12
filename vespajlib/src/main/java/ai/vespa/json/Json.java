@@ -6,6 +6,7 @@ import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
+import com.yahoo.text.Text;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -54,13 +55,13 @@ public class Json implements Iterable<Json> {
     public Json f(String field) { return field(field); }
     public Json field(String field) {
         requireType(Type.OBJECT);
-        return new Json(inspector.field(field), path.isEmpty() ? field : String.format(Locale.ROOT, "%s.%s", path, field));
+        return new Json(inspector.field(field), path.isEmpty() ? field : Text.format("%s.%s", path, field));
     }
 
     public Json a(int index) { return entry(index); }
     public Json entry(int index) {
         requireType(ARRAY);
-        return new Json(inspector.entry(index), String.format(Locale.ROOT, "%s[%d]", path, index));
+        return new Json(inspector.entry(index), Text.format("%s[%d]", path, index));
     }
 
     public int length() { return inspector.children(); }
@@ -104,7 +105,7 @@ public class Json implements Iterable<Json> {
         try {
             return Instant.parse(asString());
         } catch (DateTimeParseException e) {
-            throw new InvalidJsonException(String.format(Locale.ROOT, "Expected JSON member '%s' to be a valid timestamp: %s", path, e.getMessage()));
+            throw new InvalidJsonException(Text.format("Expected JSON member '%s' to be a valid timestamp: %s", path, e.getMessage()));
         }
     }
     public Instant asInstant(Instant defaultValue) {
@@ -172,13 +173,13 @@ public class Json implements Iterable<Json> {
 
     private InvalidJsonException createInvalidTypeException(Type... expected) {
         var expectedTypesString = Arrays.stream(expected).map(this::toString).collect(joining("' or '", "'", "'"));
-        var pathString = path.isEmpty() ? "JSON" : String.format(Locale.ROOT, "JSON member '%s'", path);
+        var pathString = path.isEmpty() ? "JSON" : Text.format("JSON member '%s'", path);
         return new InvalidJsonException(
-                String.format(Locale.ROOT, "Expected %s to be a %s but got '%s'", pathString, expectedTypesString, toString(inspector.type())));
+                Text.format("Expected %s to be a %s but got '%s'", pathString, expectedTypesString, toString(inspector.type())));
     }
 
     private InvalidJsonException createMissingMemberException() {
-        return new InvalidJsonException(path.isEmpty() ? "Missing JSON" : String.format(Locale.ROOT, "Missing JSON member '%s'", path));
+        return new InvalidJsonException(path.isEmpty() ? "Missing JSON" : Text.format("Missing JSON member '%s'", path));
     }
 
     private String toString(Type type) {
