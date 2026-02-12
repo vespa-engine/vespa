@@ -130,7 +130,7 @@ class HandlerTester {
     private String getContents(HttpResponse response) {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             response.render(stream);
-            return stream.toString();
+            return stream.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new Error(e);
         }
