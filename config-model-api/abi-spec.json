@@ -1340,7 +1340,6 @@
       "public double resourceLimitMemory()",
       "public double resourceLimitAddressSpace()",
       "public boolean forwardIssuesAsErrors()",
-      "public boolean useV8GeoPositions()",
       "public java.util.List ignoredHttpUserAgents()",
       "public int contentLayerMetadataFeatureLevel()",
       "public java.lang.String unknownConfigDefinition()",
@@ -1359,7 +1358,6 @@
       "public int maxDocumentOperationRequestSizeMib()",
       "public java.lang.Object sidecarsForTest()",
       "public boolean useTriton()",
-      "public boolean useNewPrepareForRestart()",
       "public int searchCoreMaxOutstandingMoveOps()",
       "public double docprocHandlerThreadpool()"
     ],

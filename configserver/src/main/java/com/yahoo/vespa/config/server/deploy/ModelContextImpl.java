@@ -275,7 +275,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
-        @Override public boolean useV8GeoPositions() { return true; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
         @Override public int mbusJavaEventsBeforeWakeup() { return mbus_java_events_before_wakeup; }

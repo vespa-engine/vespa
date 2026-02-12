@@ -364,14 +364,6 @@ public class Flags {
             TENANT_ID
     );
 
-    public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
-            "use-new-prepare-for-restart-method", true,
-            List.of("hmusum"), "2025-06-17", "2026-03-01",
-            "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
-            "Takes effect at next tick",
-            HOSTNAME
-    );
-
     public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
             "search-core-max-outstanding-move-ops", 100,
             List.of("hmusum"), "2025-07-09", "2026-06-01",
