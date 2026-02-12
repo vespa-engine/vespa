@@ -111,27 +111,27 @@ public class AbiCheck extends AbstractMojo {
     }
     if (!SetMatcher.compare(expected.interfaces, actual.interfaces,
         item -> true,
-        item -> log.error(String.format(Locale.ROOT, "Class %s: Missing interface %s", className, item)),
-        item -> log.error(String.format(Locale.ROOT, "Class %s: Extra interface %s", className, item)))) {
+        item -> log.error(Text.format("Class %s: Missing interface %s", className, item)),
+        item -> log.error(Text.format("Class %s: Extra interface %s", className, item)))) {
       match = false;
     }
     if (!SetMatcher
         .compare(new HashSet<>(expected.attributes), new HashSet<>(actual.attributes),
             item -> true,
-            item -> log.error(String.format(Locale.ROOT, "Class %s: Missing attribute %s", className, item)),
-            item -> log.error(String.format(Locale.ROOT, "Class %s: Extra attribute %s", className, item)))) {
+            item -> log.error(Text.format("Class %s: Missing attribute %s", className, item)),
+            item -> log.error(Text.format("Class %s: Extra attribute %s", className, item)))) {
       match = false;
     }
     if (!SetMatcher.compare(expected.methods, actual.methods,
         item -> true,
-        item -> log.error(String.format(Locale.ROOT, "Class %s: Missing method %s", className, item)),
-        item -> log.error(String.format(Locale.ROOT, "Class %s: Extra method %s", className, item)))) {
+        item -> log.error(Text.format("Class %s: Missing method %s", className, item)),
+        item -> log.error(Text.format("Class %s: Extra method %s", className, item)))) {
       match = false;
     }
     if (!SetMatcher.compare(expected.fields, actual.fields,
         item -> true,
-        item -> log.error(String.format(Locale.ROOT, "Class %s: Missing field %s", className, item)),
-        item -> log.error(String.format(Locale.ROOT, "Class %s: Extra field %s", className, item)))) {
+        item -> log.error(Text.format("Class %s: Missing field %s", className, item)),
+        item -> log.error(Text.format("Class %s: Extra field %s", className, item)))) {
       match = false;
     }
     return match;
@@ -179,8 +179,8 @@ public class AbiCheck extends AbstractMojo {
       Map<String, JavaClassSignature> actual, Log log) {
     return SetMatcher.compare(expected.keySet(), actual.keySet(),
         item -> matchingClasses(item, expected.get(item), actual.get(item), log),
-        item -> log.error(String.format(Locale.ROOT, "Missing class: %s", item)),
-        item -> log.error(String.format(Locale.ROOT, "Extra class: %s", item)));
+        item -> log.error(Text.format("Missing class: %s", item)),
+        item -> log.error(Text.format("Extra class: %s", item)));
   }
 
   // CLOVER:OFF
