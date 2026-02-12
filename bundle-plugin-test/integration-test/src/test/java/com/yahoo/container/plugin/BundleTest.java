@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.VespaVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -114,7 +115,7 @@ public class BundleTest {
 
         var expected = List.of("ai.vespa.lib.public_api", "com.yahoo.lib.public_api", "com.yahoo.test");
         assertEquals(expected.size(), publicApi.size());
-        expected.forEach(pkg -> assertTrue(publicApi.contains(pkg), "Public api did not contain %s".formatted(pkg)));
+        expected.forEach(pkg -> assertTrue(publicApi.contains(pkg), Text.format("Public api did not contain %s", pkg)));
     }
 
     @Test
@@ -125,7 +126,7 @@ public class BundleTest {
 
         var expected = List.of("ai.vespa.internal", "ai.vespa.lib.non_public", "com.yahoo.lib.non_public", "com.yahoo.non_public");
         assertEquals(expected.size(), nonPublicApi.size());
-        expected.forEach(pkg -> assertTrue(nonPublicApi.contains(pkg), "Non-public api did not contain %s".formatted(pkg)));
+        expected.forEach(pkg -> assertTrue(nonPublicApi.contains(pkg), Text.format("Non-public api did not contain %s", pkg)));
    }
 
     @Test

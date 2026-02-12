@@ -29,12 +29,12 @@ public class ExportPackageAnnotation {
         requireNonNegative(micro, "micro");
         if (! QUALIFIER_PATTERN.matcher(qualifier).matches()) {
             throw new IllegalArgumentException(
-                    exportPackageError(String.format(Locale.ROOT, "qualifier must follow the format (alpha|digit|'_'|'-')* but was '%s'.", qualifier)));
+                    exportPackageError(Text.format("qualifier must follow the format (alpha|digit|'_'|'-')* but was '%s'.", qualifier)));
         }
     }
 
     public String osgiVersion() {
-        return String.format(Locale.ROOT, "%d.%d.%d", major, minor, micro) + (qualifier.isEmpty() ? "" : "." + qualifier);
+        return Text.format("%d.%d.%d", major, minor, micro) + (qualifier.isEmpty() ? "" : "." + qualifier);
     }
 
     private static String exportPackageError(String msg) {
@@ -43,7 +43,7 @@ public class ExportPackageAnnotation {
 
     private static void requireNonNegative(int i, String fieldName) {
         if (i < 0) {
-            throw new IllegalArgumentException(exportPackageError(String.format(Locale.ROOT, "%s must be non-negative but was %d.", fieldName, i)));
+            throw new IllegalArgumentException(exportPackageError(Text.format("%s must be non-negative but was %d.", fieldName, i)));
         }
     }
 

@@ -40,7 +40,7 @@ public class AnalyzeBundle {
         try {
             return parseExports(manifest);
         } catch (Exception e) {
-            throw new RuntimeException(String.format(Locale.ROOT, "Invalid manifest in bundle '%s'", jarFile.getPath()), e);
+            throw new RuntimeException(Text.format("Invalid manifest in bundle '%s'", jarFile.getPath()), e);
         }
     }
 
