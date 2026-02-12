@@ -2,6 +2,7 @@
 package com.yahoo.docproc.jdisc;
 
 import com.yahoo.collections.Pair;
+import java.util.Locale;
 import com.yahoo.docproc.CallStack;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
@@ -158,7 +159,7 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
                     for (Field f : doc.getDataType().fieldSet()) {
                         FieldValue val = doc.getFieldValue(f);
                         if (val instanceof StringFieldValue sf) {
-                            doc.setFieldValue(f, new StringFieldValue(sf.getString().toUpperCase()));
+                            doc.setFieldValue(f, new StringFieldValue(sf.getString().toUpperCase(Locale.ROOT)));
                         }
                     }
                 }
