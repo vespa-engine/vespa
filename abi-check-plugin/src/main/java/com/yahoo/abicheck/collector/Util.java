@@ -64,7 +64,7 @@ public class Util {
       access &= ~flag.bit;
     }
     if (access != 0) {
-      throw new IllegalArgumentException(String.format(Locale.ROOT, "Unexpected access bits: 0x%x", access));
+      throw new IllegalArgumentException(Text.format("Unexpected access bits: 0x%x", access));
     }
     return result;
   }
