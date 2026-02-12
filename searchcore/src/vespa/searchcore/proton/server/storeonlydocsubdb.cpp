@@ -24,6 +24,7 @@
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -33,6 +34,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlydocsubdb");
 
+using search::DiskSpaceCalculator;
 using search::GrowStrategy;
 using vespalib::makeLambdaTask;
 using search::index::Schema;
@@ -45,6 +47,7 @@ using search::common::FileHeaderContext;
 using proton::initializer::InitializerTask;
 using searchcorespi::IFlushTarget;
 using searchcorespi::common::ResourceUsage;
+using searchcorespi::common::TransientResourceUsage;
 using vespalib::datastore::CompactionStrategy;
 
 namespace proton {
@@ -618,7 +621,16 @@ addTags(vespalib::GenericHeader &header, const std::string &name) const
 ResourceUsage
 StoreOnlyDocSubDB::get_resource_usage() const
 {
-    return _dmsFlushTarget->get_resource_usage();
+    auto result = _dmsFlushTarget->get_resource_usage();
+    auto summary_size_on_disk = _rSummaryMgr->getBackingStore().get_size_on_disk();
+    /*
+     * Account for the document subdb directory, e.g. "0.ready", "1.removed" or
+     * "2.notready".
+     */
+    auto size_on_disk_overhead = DiskSpaceCalculator::directory_placeholder_size();
+    auto extra_size_on_disk = size_on_disk_overhead + summary_size_on_disk;
+    result.merge(ResourceUsage{TransientResourceUsage{}, extra_size_on_disk});
+    return result;
 }
 
 } // namespace proton
