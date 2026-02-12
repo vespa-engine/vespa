@@ -14,6 +14,7 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -432,7 +433,7 @@ public class DummyVdsNode {
                     activatedClusterStateVersion = activateVersion;
                     timer.notifyAll();
                 } else {
-                    log.log(Level.FINE, () -> String.format(Locale.ROOT, "Dummy node %s: got a mismatching activation (request version %d, " +
+                    log.log(Level.FINE, () -> Text.format("Dummy node %s: got a mismatching activation (request version %d, " +
                             "actual %d), not marking version as active", this, activateVersion, actualVersion));
                 }
             }

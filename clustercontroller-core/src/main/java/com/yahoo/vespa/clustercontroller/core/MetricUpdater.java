@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -54,7 +55,7 @@ public class MetricUpdater {
     private Duration stateVersionConvergenceGracePeriod = Duration.ofSeconds(30);
 
     public MetricUpdater(MetricReporter metricReporter, Timer timer, int controllerIndex, String clusterName) {
-        this.metricReporter = new ComponentMetricReporter(metricReporter, String.format(Locale.ROOT, "%s.", CLUSTER_CONTROLLER));
+        this.metricReporter = new ComponentMetricReporter(metricReporter, Text.format("%s.", CLUSTER_CONTROLLER));
         this.metricReporter.addDimension(CONTROLLER_INDEX, String.valueOf(controllerIndex));
         this.metricReporter.addDimension(CLUSTER, clusterName);
         this.metricReporter.addDimension(CLUSTER_ID, clusterName);

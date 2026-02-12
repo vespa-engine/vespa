@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.time.TimeBudget;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.MasterInterface;
@@ -133,7 +134,7 @@ public class SetNodeStateTest extends StateRestApiTest {
     private String musicClusterExpectedUserStateString(String groupName,
                                                        String generatedState, String unitState,
                                                        String userState, String userReason) {
-        return String.format(Locale.ROOT, """
+        return Text.format("""
                {
                  "attributes" : {
                    "hierarchical-group" : "%s"

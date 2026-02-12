@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -177,7 +178,7 @@ public class MasterElectionTest extends FleetControllerTest {
             lastState = currentState;
             if (currentState.getVersion() <= last.getVersion()) {
                 throw new IllegalStateException(
-                        String.format(Locale.ROOT, "Cluster state version strict increase invariant broken! " +
+                        Text.format("Cluster state version strict increase invariant broken! " +
                                       "Old state was '%s', new state is '%s'", last, currentState));
             }
         }
@@ -410,7 +411,7 @@ public class MasterElectionTest extends FleetControllerTest {
         // at ACKing a previous one.
         this.nodes.stream().filter(DummyVdsNode::isDistributor).forEach(node -> {
             node.setNodeState(new NodeState(NodeType.DISTRIBUTOR, State.UP),
-                    String.format(Locale.ROOT, "{\"cluster-state-version\":%d}", ackVersion));
+                    Text.format("{\"cluster-state-version\":%d}", ackVersion));
         });
         waitForStateInAllSpaces("version:\\d+ distributor:10 storage:10");
 
