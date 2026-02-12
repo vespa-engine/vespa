@@ -895,7 +895,7 @@ public class DeploymentSpecXmlReader {
     private static Duration toDuration(String durationSpec, String sourceDescription) {
         try {
             if (durationSpec == null || durationSpec.isBlank()) return Duration.ZERO;
-            durationSpec = durationSpec.trim().toLowerCase();
+            durationSpec = durationSpec.trim().toLowerCase(java.util.Locale.ROOT);
             var magnitude = toMagnitude(durationSpec);
             return switch (durationSpec.substring(durationSpec.length() - 1)) {
                 case "m" -> Duration.ofMinutes(magnitude);

@@ -3,6 +3,7 @@ package com.yahoo.config.model.api;
 
 import org.junit.Test;
 
+import com.yahoo.text.Text;
 import java.lang.reflect.Method;
 
 import static org.junit.Assert.assertNotNull;
@@ -17,7 +18,7 @@ public class ModelContextTest {
     public void verify_all_feature_flag_methods_have_annotation() {
         for (Method method : ModelContext.FeatureFlags.class.getDeclaredMethods()) {
             assertNotNull(
-                    String.format(
+                    Text.format(
                             "Method '%s' is not annotated with '%s'",
                             method.getName(), ModelContext.ModelFeatureFlag.class.getSimpleName()),
                     method.getDeclaredAnnotation(ModelContext.ModelFeatureFlag.class));
@@ -28,7 +29,7 @@ public class ModelContextTest {
     public void verify_all_feature_flag_methods_have_default_implementation() {
         for (Method method : ModelContext.FeatureFlags.class.getDeclaredMethods()) {
             assertTrue(
-                    String.format("Method '%s' has no default implementation", method.getName()),
+                    Text.format("Method '%s' has no default implementation", method.getName()),
                     method.isDefault());
         }
     }
