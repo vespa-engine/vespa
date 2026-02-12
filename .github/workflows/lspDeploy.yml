@@ -17,11 +17,11 @@ on:
       - '.github/workflows/lspDeploy.yml'
 
 jobs:
-  lspWorkflow:
-    name: Vespa Schema LSP Workflow
-    # Note: While this job declares 'contents: write', GitHub automatically restricts
-    # tokens from forked PRs to read-only. Combined with step-level conditionals,
-    # this ensures no write operations occur on pull_request events.
+  lspBuildAndDeploy:
+    name: Vespa Schema LSP Build and Deploy
+    # Note: While this job declares 'contents: write', step-level conditionals ensure
+    # write operations only execute on workflow_dispatch. For forked PRs, GitHub also
+    # automatically restricts tokens to read-only regardless of declared permissions.
     permissions:
       contents: write
     runs-on: ubuntu-latest
