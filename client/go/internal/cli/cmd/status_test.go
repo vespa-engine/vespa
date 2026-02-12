@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"io"
 	"testing"
 
@@ -339,4 +340,73 @@ func TestStatusSkipServiceStatusNotAvailableOnSubcommands(t *testing.T) {
 	err = cli.Run("status", "endpoint", "--skip-service-status")
 	assert.NotNil(t, err)
 	assert.Contains(t, stderr.String(), "unknown flag: --skip-service-status")
+}
+
+func TestStatusJSONFormat(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+
+	mockServiceStatus(client, "foo")
+	client.NextResponse(mock.HTTPResponse{URI: "/status.html", Status: 200})
+
+	assert.Nil(t, cli.Run("status", "--format", "json"))
+
+	// Parse and verify JSON output
+	var output map[string]interface{}
+	err := json.Unmarshal([]byte(stdout.String()), &output)
+	assert.Nil(t, err, "Should produce valid JSON")
+	assert.Equal(t, "container", output["type"])
+	assert.Equal(t, "foo", output["name"])
+	assert.Equal(t, "http://127.0.0.1:8080", output["url"])
+	assert.Equal(t, true, output["ready"])
+	_, hasError := output["error"]
+	assert.False(t, hasError, "Should not have error field when ready")
+}
+
+func TestStatusJSONFormatNotReady(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+
+	mockServiceStatus(client, "foo")
+	client.NextStatus(500)
+
+	assert.NotNil(t, cli.Run("status", "--format", "json"))
+
+	// Parse and verify JSON output
+	var output map[string]interface{}
+	err := json.Unmarshal([]byte(stdout.String()), &output)
+	assert.Nil(t, err, "Should produce valid JSON")
+	assert.Equal(t, "container", output["type"])
+	assert.Equal(t, "foo", output["name"])
+	assert.Equal(t, "http://127.0.0.1:8080", output["url"])
+	assert.Equal(t, false, output["ready"])
+	assert.NotEmpty(t, output["error"], "Should have error field when not ready")
+}
+
+func TestStatusJSONFormatSkipServiceStatus(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+
+	mockServiceStatus(client, "foo")
+	// Note: No status.html response queued - verifying we don't call Wait()
+
+	assert.Nil(t, cli.Run("status", "--format", "json", "--skip-service-status"))
+
+	// Parse and verify JSON output
+	var output map[string]interface{}
+	err := json.Unmarshal([]byte(stdout.String()), &output)
+	assert.Nil(t, err, "Should produce valid JSON")
+	assert.Equal(t, "container", output["type"])
+	assert.Equal(t, "foo", output["name"])
+	assert.Equal(t, "http://127.0.0.1:8080", output["url"])
+	_, hasReady := output["ready"]
+	assert.False(t, hasReady, "Should not have ready field when skipping service status")
+	_, hasError := output["error"]
+	assert.False(t, hasError, "Should not have error field when skipping service status")
 }

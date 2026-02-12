@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -80,7 +81,7 @@ $ vespa status --skip-service-status`,
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
-	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (cluster URL only)")
+	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable), 'plain' (cluster URL only), or 'json'")
 	if !forceSkip {
 		cmd.Flags().BoolVarP(&skipServiceStatus, "skip-service-status", "", false, "Skip checking service status (control plane only)")
 	}
@@ -89,7 +90,7 @@ $ vespa status --skip-service-status`,
 
 func verifyFormat(format string) error {
 	switch format {
-	case "human", "plain":
+	case "human", "plain", "json":
 		return nil
 	default:
 		return fmt.Errorf("invalid format: %s", format)
@@ -143,7 +144,7 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
-	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable text) or 'plain' (cluster URL only)")
+	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable text), 'plain' (cluster URL only), or 'json'")
 	return cmd
 }
 
@@ -248,6 +249,28 @@ func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CL
 		}
 	case "plain":
 		sb.WriteString(s.BaseURL)
+	case "json":
+		output := map[string]interface{}{
+			"type": s.Type(),
+			"url":  s.BaseURL,
+		}
+		if s.ServiceName() != "" {
+			output["name"] = s.ServiceName()
+		}
+		if !skipServiceStatus {
+			output["ready"] = err == nil
+			if err != nil {
+				output["error"] = err.Error()
+			}
+		}
+		if s.AuthMethod != "" {
+			output["authMethod"] = s.AuthMethod
+		}
+		jsonBytes, jsonErr := json.Marshal(output)
+		if jsonErr != nil {
+			panic("failed to marshal JSON: " + jsonErr.Error())
+		}
+		sb.Write(jsonBytes)
 	default:
 		panic("invalid format: " + format)
 	}

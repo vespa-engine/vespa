@@ -313,3 +313,29 @@ func assertService(t *testing.T, fail bool, target Target, serviceName string, t
 type mockAuthenticator struct{}
 
 func (a *mockAuthenticator) Authenticate(request *http.Request) error { return nil }
+
+func TestServiceDescription(t *testing.T) {
+	// Container with name
+	s := &Service{Name: "foo", deployAPI: false}
+	assert.Equal(t, "container", s.Type())
+	assert.Equal(t, "foo", s.ServiceName())
+	assert.Equal(t, "container foo", s.Description())
+
+	// Container without name
+	s = &Service{Name: "", deployAPI: false}
+	assert.Equal(t, "container", s.Type())
+	assert.Equal(t, "", s.ServiceName())
+	assert.Equal(t, "container", s.Description())
+
+	// Deploy API
+	s = &Service{Name: "", deployAPI: true}
+	assert.Equal(t, "deploy API", s.Type())
+	assert.Equal(t, "", s.ServiceName())
+	assert.Equal(t, "deploy API", s.Description())
+
+	// Deploy API with name (shouldn't happen in practice, but test the logic)
+	s = &Service{Name: "ignored", deployAPI: true}
+	assert.Equal(t, "deploy API", s.Type())
+	assert.Equal(t, "ignored", s.ServiceName())
+	assert.Equal(t, "deploy API ignored", s.Description())
+}
