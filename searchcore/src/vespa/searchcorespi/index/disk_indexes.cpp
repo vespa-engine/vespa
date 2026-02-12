@@ -6,9 +6,11 @@
 #include "index_disk_dir_state.h"
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/util/directory_traverse.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <cassert>
 #include <vector>
 
+using search::DiskSpaceCalculator;
 using searchcorespi::common::ResourceUsage;
 using searchcorespi::common::TransientResourceUsage;
 using std::string;
@@ -17,7 +19,7 @@ namespace searchcorespi::index {
 
 DiskIndexes::DiskIndexes()
     : _active(),
-      _sum_size_on_disk(0),
+      _sum_size_on_disk(get_size_on_disk_overhead()),
       _sum_stale_size_on_disk(0u),
       _lock()
 {
@@ -158,6 +160,12 @@ DiskIndexes::get_size_on_disk(bool include_stale) const
         size_on_disk -= _sum_stale_size_on_disk;
     }
     return size_on_disk;
+}
+
+uint64_t
+DiskIndexes::get_size_on_disk_overhead() noexcept {
+    // The "index" directory under the searchable document subdb directory, e.g. "0.ready/index"
+    return DiskSpaceCalculator::directory_placeholder_size();
 }
 
 }
