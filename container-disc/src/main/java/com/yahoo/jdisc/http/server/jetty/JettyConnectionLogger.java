@@ -8,6 +8,7 @@ import com.yahoo.io.HexDump;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.text.Text;
 import org.eclipse.jetty.alpn.server.ALPNServerConnection;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http2.server.internal.HTTP2ServerConnection;
@@ -211,10 +212,10 @@ class JettyConnectionLogger extends EventsHandler implements Connection.Listener
             String listenerType, String methodName, String methodArgumentsFormat, List<Object> methodArguments, ListenerHandler handler) {
         if (!enabled) return;
         try {
-            log.log(Level.FINE, () -> String.format(listenerType + "." + methodName + "(" + methodArgumentsFormat + ")", methodArguments.toArray()));
+            log.log(Level.FINE, () -> Text.format(listenerType + "." + methodName + "(" + methodArgumentsFormat + ")", methodArguments.toArray()));
             handler.run();
         } catch (Exception e) {
-            log.log(Level.WARNING, String.format("Exception in %s.%s listener: %s", listenerType, methodName, e.getMessage()), e);
+            log.log(Level.WARNING, Text.format("Exception in %s.%s listener: %s", listenerType, methodName, e.getMessage()), e);
         }
     }
 

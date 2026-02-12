@@ -5,6 +5,7 @@ import com.google.common.net.InetAddresses;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
+import com.yahoo.text.Text;
 
 import java.net.InetAddress;
 import java.util.Optional;
@@ -24,7 +25,7 @@ public class LocalhostFilter extends JsonSecurityRequestFilterBase {
         if (!remoteAddr.isLoopbackAddress() && !request.getRemoteAddr().equals(request.getLocalAddr())) {
             return Optional.of(new ErrorResponse(
                     Response.Status.UNAUTHORIZED,
-                    String.format("%s %s denied for %s: Unauthorized host", request.getMethod(),
+                    Text.format("%s %s denied for %s: Unauthorized host", request.getMethod(),
                                   request.getUri().getPath(), request.getRemoteAddr())));
         }
         return Optional.empty();

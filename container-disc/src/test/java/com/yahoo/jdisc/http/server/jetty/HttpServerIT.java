@@ -716,7 +716,7 @@ public class HttpServerIT {
         for (int i = 0; i < 1000; i++) {
             builder.append(i);
         }
-        byte[] content = builder.toString().getBytes();
+        byte[] content = builder.toString().getBytes(UTF_8);
         for (int i = 0; i < 100; i++) {
             driver.client().newPost("/status.html").setBinaryContent(content).execute()
                     .expectStatusCode(is(OK));
@@ -1122,7 +1122,7 @@ public class HttpServerIT {
         public ContentChannel handleRequest(Request request, ResponseHandler handler) {
             var ch = handler.handleResponse(new Response(OK));
             for (var value : request.headers().get(headerName)) {
-                ch.write(ByteBuffer.wrap((value + "\n").getBytes()), null);
+                ch.write(ByteBuffer.wrap((value + "\n").getBytes(java.nio.charset.StandardCharsets.UTF_8)), null);
             }
             ch.close(null);
             return null;

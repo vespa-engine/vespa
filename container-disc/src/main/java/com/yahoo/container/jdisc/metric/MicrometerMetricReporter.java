@@ -4,6 +4,7 @@ import ai.vespa.metrics.set.MicrometerMetrics;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.text.Text;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.FunctionCounter;
@@ -66,7 +67,7 @@ public class MicrometerMetricReporter extends AbstractComponent {
             try {
                 c.close();
             } catch (Exception e) {
-                log.warning(() -> "Failed to close instance of %s: %s".formatted(c.getClass().getName(), e));
+                log.warning(() -> Text.format("Failed to close instance of %s: %s", c.getClass().getName(), e));
             }
         }
     }
@@ -92,7 +93,7 @@ public class MicrometerMetricReporter extends AbstractComponent {
             for (var meter : getMeters()) {
                 var name = meter.getId().getName();
                 if (!ALLOWED_METERS.contains(name)) {
-                    log.fine(() -> "Ignoring meter with id '%s'".formatted(meter.getId()));
+                    log.fine(() -> Text.format("Ignoring meter with id '%s'", meter.getId()));
                     continue;
                 }
                 var dimensions = new HashMap<String, Object>();

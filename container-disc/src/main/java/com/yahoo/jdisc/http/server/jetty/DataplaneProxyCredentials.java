@@ -6,6 +6,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.X509CertificateWithKey;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.IOException;
@@ -73,7 +74,7 @@ public class DataplaneProxyCredentials extends AbstractComponent {
             return Optional.of(x509Certificate);
         } catch (IOException e) {
             // Some exception occurred, assume credentials corrupted and requires a new pair.
-            log.log(Level.WARNING, "Failed to load credentials: %s".formatted(e.getMessage()));
+            log.log(Level.WARNING, Text.format("Failed to load credentials: %s", e.getMessage()));
             log.log(Level.FINE, e.toString(), e);
             return Optional.empty();
         }

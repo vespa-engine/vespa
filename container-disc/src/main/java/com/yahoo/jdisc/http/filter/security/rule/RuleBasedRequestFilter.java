@@ -8,6 +8,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 import com.yahoo.restapi.Path;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig;
 import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig.Rule.Action;
 
@@ -19,6 +20,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.Locale;
 
 /**
  * Security request filter that filters requests based on host, method and uri path.
@@ -49,7 +51,7 @@ public class RuleBasedRequestFilter extends JsonSecurityRequestFilterBase {
         for (Rule rule : rules) {
             if (rule.matches(method, uri)) {
                 log.log(Level.FINE, () ->
-                        String.format("Request '%h' with method '%s' and uri '%s' matched rule '%s'", request, method, uri, rule.name));
+                        Text.format("Request '%h' with method '%s' and uri '%s' matched rule '%s'", request, method, uri, rule.name));
                 return responseFor(request, rule.name, rule.response);
             }
         }
@@ -76,12 +78,12 @@ public class RuleBasedRequestFilter extends JsonSecurityRequestFilterBase {
                 "statusCode", Integer.toString(statusCode)));
         if (response != null) {
             metric.add(ContainerMetrics.JDISC_HTTP_FILTER_RULE_BLOCKED_REQUESTS.baseName(), 1L, metricContext);
-            log.log(Level.FINE, () -> String.format(
+            log.log(Level.FINE, () -> Text.format(
                     "Blocking request '%h' with status code '%d' using rule '%s' (dryrun=%b)", request, statusCode, ruleName, dryrun));
             return dryrun ? Optional.empty() : Optional.of(response);
         } else {
             metric.add(ContainerMetrics.JDISC_HTTP_FILTER_RULE_ALLOWED_REQUESTS.baseName(), 1L, metricContext);
-            log.log(Level.FINE, () -> String.format("Allowing request '%h' using rule '%s' (dryrun=%b)", request, ruleName, dryrun));
+            log.log(Level.FINE, () -> Text.format("Allowing request '%h' using rule '%s' (dryrun=%b)", request, ruleName, dryrun));
             return Optional.empty();
         }
     }
@@ -104,7 +106,7 @@ public class RuleBasedRequestFilter extends JsonSecurityRequestFilterBase {
             this.name = config.name();
             this.hostnames = Set.copyOf(config.hostNames());
             this.methods = config.methods().stream()
-                    .map(m -> m.name().toUpperCase())
+                    .map(m -> m.name().toUpperCase(Locale.ROOT))
                     .collect(Collectors.toSet());
             this.pathGlobExpressions = Set.copyOf(config.pathExpressions());
             this.response = config.action() == Action.Enum.BLOCK ? createResponse(config) : null;
@@ -117,7 +119,7 @@ public class RuleBasedRequestFilter extends JsonSecurityRequestFilterBase {
         }
 
         boolean matches(String method, URI uri) {
-            boolean methodMatches = methods.isEmpty() || methods.contains(method.toUpperCase());
+            boolean methodMatches = methods.isEmpty() || methods.contains(method.toUpperCase(Locale.ROOT));
             String host = uri.getHost();
             boolean hostnameMatches = hostnames.isEmpty() || (host != null && hostnames.contains(host));
             // Path segments cannot be validated in this filter, as we don't know what API it protects.

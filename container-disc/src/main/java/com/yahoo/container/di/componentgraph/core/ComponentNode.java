@@ -7,6 +7,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.container.di.componentgraph.Provider;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.lang.annotation.Annotation;
@@ -296,7 +297,7 @@ public class ComponentNode extends Node {
         } else if (publicConstructors.length == 1) {
             return publicConstructors[0];
         } else {
-            log.warning(String.format("Multiple public constructors found in class %s, there should only be one. "
+            log.warning(Text.format("Multiple public constructors found in class %s, there should only be one. "
                     + "If more than one public constructor is needed, the primary one must be annotated with @Inject.", clazz.getName()));
             List<Pair<Constructor<?>, Integer>> withParameterCount = new ArrayList<>();
             for (Constructor<?> ctor : publicConstructors) {

@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -665,7 +666,7 @@ public class FilterIT {
             final HttpResponse response = HttpResponse.newInstance(responseStatus);
             final ContentChannel channel = responseHandler.handleResponse(response);
             final CompletionHandler completionHandler = null;
-            channel.write(ByteBuffer.wrap(responseMessage.getBytes()), completionHandler);
+            channel.write(ByteBuffer.wrap(responseMessage.getBytes(StandardCharsets.UTF_8)), completionHandler);
             channel.close(null);
         }
     }
