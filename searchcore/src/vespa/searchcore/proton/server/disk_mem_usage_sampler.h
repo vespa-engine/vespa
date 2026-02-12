@@ -5,6 +5,7 @@
 #include "resource_usage_notifier.h"
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
+#include <optional>
 
 namespace searchcorespi::common {
 
@@ -38,6 +39,7 @@ class DiskMemUsageSampler {
     vespalib::ProcessMemoryStats sampleMemoryUsage();
     searchcorespi::common::ResourceUsage sample_resource_usage();
     [[nodiscard]] bool timeToSampleAgain() const noexcept;
+    void restart(std::optional<vespalib::duration> sample_interval, IScheduledExecutor& executor);
 public:
     struct Config {
         ResourceUsageNotifier::Config filterConfig;
@@ -68,6 +70,7 @@ public:
     void close();
 
     void setConfig(const Config &config, IScheduledExecutor & executor);
+    void restart(IScheduledExecutor& executor) { restart(std::nullopt, executor); }
 
     void add_resource_usage_provider(std::shared_ptr<const searchcorespi::common::IResourceUsageProvider> provider);
     void remove_resource_usage_provider(std::shared_ptr<const searchcorespi::common::IResourceUsageProvider> provider);
