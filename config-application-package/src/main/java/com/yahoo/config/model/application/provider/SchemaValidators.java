@@ -3,6 +3,7 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
+import com.yahoo.text.Text;
 import org.osgi.framework.Bundle;
 import org.xml.sax.SAXException;
 import java.io.File;
@@ -16,6 +17,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static java.nio.file.Files.createTempDirectory;
@@ -123,7 +126,7 @@ public class SchemaValidators {
                     schemasFound = true;
                     copySchemas(schemaPath, tmpDir);
                 } else {
-                    log.log(Level.FINE, () -> String.format("Saving schemas for model bundle %s:%s", bundle.getSymbolicName(), bundle.getVersion()));
+                    log.log(Level.FINE, () -> Text.format("Saving schemas for model bundle %s:%s", bundle.getSymbolicName(), bundle.getVersion()));
                     for (Enumeration<URL> entries = bundle.findEntries("schema", "*.rnc", true); entries.hasMoreElements(); ) {
                         URL url = entries.nextElement();
                         writeContentsToFile(tmpDir, url.getFile(), url.openStream());
@@ -154,7 +157,7 @@ public class SchemaValidators {
     }
 
     private static void writeContentsToFile(File outDir, String outFile, InputStream inputStream) throws IOException {
-        String contents = IOUtils.readAll(new InputStreamReader(inputStream));
+        String contents = IOUtils.readAll(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
         // Validate and sanitize the output path
         File out = new File(outDir, outFile).getCanonicalFile();
