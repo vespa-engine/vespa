@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.search.logging;
+import java.nio.charset.StandardCharsets;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,7 +17,7 @@ public class LocalDiskLogger extends AbstractThreadedLogger {
     @Override
     public boolean transport(LoggerEntry entry) {
         String json = entry.serialize();
-        try (FileWriter fw = new FileWriter(logFilePath, true)) {
+        try (FileWriter fw = new FileWriter(logFilePath, StandardCharsets.UTF_8, true)) {
             fw.write(json);
             fw.write(System.getProperty("line.separator"));
             return true;

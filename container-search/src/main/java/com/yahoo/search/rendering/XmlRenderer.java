@@ -24,6 +24,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.result.StructuredData;
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8String;
 import com.yahoo.text.XML;
 import com.yahoo.text.XMLWriter;
@@ -141,10 +142,10 @@ public final class XmlRenderer extends AsynchronousSectionedRenderer<Result> {
             final long summaryFetchTime = result.getElapsedTime().weightedFillTime();
             final double querySeconds = ((double) queryTime) * milli;
             final double summarySeconds = ((double) summaryFetchTime) * milli;
-            writer.attribute(QUERY_TIME, String.format(threeDecimals, querySeconds));
-            writer.attribute(SUMMARY_FETCH_TIME, String.format(threeDecimals, summarySeconds));
+            writer.attribute(QUERY_TIME, Text.format(threeDecimals, querySeconds));
+            writer.attribute(SUMMARY_FETCH_TIME, Text.format(threeDecimals, summarySeconds));
         }
-        writer.attribute(SEARCH_TIME, String.format(threeDecimals, searchSeconds));
+        writer.attribute(SEARCH_TIME, Text.format(threeDecimals, searchSeconds));
     }
 
     protected static void renderCoverageAttributes(Coverage coverage, XMLWriter writer) throws IOException {

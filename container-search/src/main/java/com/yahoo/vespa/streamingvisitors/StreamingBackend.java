@@ -30,6 +30,7 @@ import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
@@ -140,7 +141,7 @@ public class StreamingBackend extends VespaBackend {
     @Override
     public Result doSearch2(String schema, Query query) {
         if (query.getTimeLeft() <= 0)
-            return new Result(query, ErrorMessage.createTimeout(String.format("No time left for searching (timeout=%d)", query.getTimeout())));
+            return new Result(query, ErrorMessage.createTimeout(Text.format("No time left for searching (timeout=%d)", query.getTimeout())));
 
         initializeMissingQueryFields(query);
         if (documentSelectionQueryParameterCount(query) != 1) {
@@ -179,7 +180,7 @@ public class StreamingBackend extends VespaBackend {
             double elapsedMillis = durationInMillisFromNanoTime(timeStartedNanos);
             if ((effectiveTraceLevel > 0) && timeoutBadEnoughToBeReported(query, elapsedMillis)) {
                 tracingOptions.getTraceExporter().maybeExport(() -> new TraceDescription(visitor.getTrace(),
-                                                                                         String.format("Trace of %s which timed out after %.3g seconds",
+                                                                                         Text.format("Trace of %s which timed out after %.3g seconds",
                                                                                                        query, elapsedMillis / 1000.0)));
             }
             return new Result(query, ErrorMessage.createTimeout(e.getMessage()));

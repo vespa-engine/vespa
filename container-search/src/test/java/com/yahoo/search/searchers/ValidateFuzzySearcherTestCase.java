@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,7 +43,7 @@ public class ValidateFuzzySearcherTestCase {
         indexes = new ArrayList<>();
         for (Attribute.Datatype.Enum attr: Attribute.Datatype.Enum.values()) {
             for (Attribute.Collectiontype.Enum ctype: Attribute.Collectiontype.Enum.values()) {
-                String attributeName = attr.name().toLowerCase() + "_" + ctype.name().toLowerCase();
+                String attributeName = attr.name().toLowerCase(Locale.ROOT) + "_" + ctype.name().toLowerCase(Locale.ROOT);
                 attributes.add(attributeName);
 
                 Index index = new Index(attributeName);
@@ -57,8 +58,8 @@ public class ValidateFuzzySearcherTestCase {
     }
 
     private String makeQuery(String attribute, String query, int maxEditDistance, int prefixLength, boolean prefixMatch) {
-        return "select * from sources * where %s contains ({maxEditDistance:%d,prefixLength:%d,prefix:%b}fuzzy(\"%s\"))"
-                .formatted(attribute, maxEditDistance, prefixLength, prefixMatch, query);
+        return String.format(Locale.ROOT, "select * from sources * where %s contains ({maxEditDistance:%d,prefixLength:%d,prefix:%b}fuzzy(\"%s\"))",
+                attribute, maxEditDistance, prefixLength, prefixMatch, query);
     }
 
     private String makeQuery(String attribute, String query) {
