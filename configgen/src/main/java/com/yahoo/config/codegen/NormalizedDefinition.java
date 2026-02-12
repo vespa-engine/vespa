@@ -147,7 +147,7 @@ public class NormalizedDefinition {
     private String toHexString(byte[] bytes) {
         StringBuilder sb =  new StringBuilder(bytes.length * 2);
         for (byte aByte : bytes) {
-            sb.append(Text.format("%02x", aByte));
+            sb.append(String.format(Locale.ROOT, "%02x", aByte));
         }
         return sb.toString();
     }

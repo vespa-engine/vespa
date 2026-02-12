@@ -108,17 +108,17 @@ public class BuilderGenerator {
 
     private static String getBuilderFieldDefinition(CNode node) {
         if (node.isArray) {
-            return Text.format("public List<%s> %s = new ArrayList<>();", builderType(node), node.getName());
+            return String.format(Locale.ROOT, "public List<%s> %s = new ArrayList<>();", builderType(node), node.getName());
         } else if (node.isMap) {
-            return Text.format("public Map<String, %s> %s = new LinkedHashMap<>();", builderType(node), node.getName());
+            return String.format(Locale.ROOT, "public Map<String, %s> %s = new LinkedHashMap<>();", builderType(node), node.getName());
         } else if (node instanceof InnerCNode) {
-            return Text.format("public %s %s = new %s();", builderType(node), node.getName(), builderType(node));
+            return String.format(Locale.ROOT, "public %s %s = new %s();", builderType(node), node.getName(), builderType(node));
         } else if (node instanceof LeafCNode) {
             String boxedBuilderType = boxedBuilderType((LeafCNode) node);
             if (boxedBuilderType.startsWith("Optional<"))
-                return Text.format("private %s %s = Optional.empty();", boxedBuilderType, node.getName());
+                return String.format(Locale.ROOT, "private %s %s = Optional.empty();", boxedBuilderType, node.getName());
             else
-                return Text.format("private %s %s = null;", boxedBuilderType, node.getName());
+                return String.format(Locale.ROOT, "private %s %s = null;", boxedBuilderType, node.getName());
         } else {
             throw new IllegalStateException("Cannot produce builder field definition for node"); // Should not happen
         }
@@ -290,14 +290,14 @@ public class BuilderGenerator {
                 if ("UrlReference".equals(bType))
                     type = bType;
                 //
-                privateSetter = Text.format("""
+                privateSetter = String.format(Locale.ROOT, """
 
                                                       private Builder %s(String %svalue) {
                                                         return %s(%s.valueOf(%svalue));
                                                       }""", name, INTERNAL_PREFIX, name, type, INTERNAL_PREFIX);
             } else if ("Optional<FileReference>".equals(bType)) {
                 //
-                privateSetter = Text.format("""
+                privateSetter = String.format(Locale.ROOT, """
 
                                                       private Builder %s(FileReference %svalue) {
                                                         return %s(Optional.of(%svalue));
@@ -307,7 +307,7 @@ public class BuilderGenerator {
             String getNullGuard = bType.equals(boxedBuilderType(n)) ? String.format(Locale.ROOT,
                     "\nif (%svalue == null) throw new IllegalArgumentException(\"Null value is not allowed.\");", INTERNAL_PREFIX) : "";
 
-            return Text.format("public Builder %s(%s %svalue) {%s\n" +
+            return String.format(Locale.ROOT, "public Builder %s(%s %svalue) {%s\n" +
                     "  %s = %svalue;\n" + //
                     "%s", name, bType, INTERNAL_PREFIX, getNullGuard, name, INTERNAL_PREFIX, signalInitialized) +
                     "  return this;" + "\n}\n" + privateSetter;

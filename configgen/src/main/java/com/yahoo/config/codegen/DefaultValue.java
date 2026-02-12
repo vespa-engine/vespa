@@ -49,7 +49,7 @@ public class DefaultValue {
             StringBuilder sb = new StringBuilder();
             for (char c : value.toCharArray()) {
                 if (c > '\u007f') {
-                    sb.append(Text.format("\\u%04X", (int) c));
+                    sb.append(String.format(Locale.ROOT, "\\u%04X", (int) c));
                 } else {
                     sb.append(c);
                 }
