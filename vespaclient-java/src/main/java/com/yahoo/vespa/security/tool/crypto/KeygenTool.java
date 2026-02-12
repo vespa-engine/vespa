@@ -2,6 +2,7 @@
 package com.yahoo.vespa.security.tool.crypto;
 
 import com.yahoo.security.KeyUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.security.tool.CliUtils;
 import com.yahoo.vespa.security.tool.Tool;
 import com.yahoo.vespa.security.tool.ToolDescription;
@@ -73,9 +74,9 @@ public class KeygenTool implements Tool {
     private static void handleExistingFileIfAny(Path filePath, boolean allowOverwrite) throws IOException {
         if (Files.exists(filePath)) {
             if (!allowOverwrite) {
-                throw new IllegalArgumentException(("Output file '%s' already exists. No keys written. " +
-                                                    "If you want to overwrite existing files, specify --%s.")
-                                                   .formatted(filePath.toAbsolutePath().toString(), OVERWRITE_EXISTING_OPTION));
+                throw new IllegalArgumentException(Text.format("Output file '%s' already exists. No keys written. " +
+                                                                "If you want to overwrite existing files, specify --%s.",
+                                                                filePath.toAbsolutePath().toString(), OVERWRITE_EXISTING_OPTION));
             } else {
                 // Explicitly delete the file since Files.createFile() will fail if it already exists.
                 Files.delete(filePath);

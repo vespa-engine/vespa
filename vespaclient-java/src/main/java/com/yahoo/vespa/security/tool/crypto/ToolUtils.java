@@ -4,6 +4,7 @@ package com.yahoo.vespa.security.tool.crypto;
 import com.yahoo.security.KeyId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SealedSharedKey;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.security.tool.CliUtils;
 import com.yahoo.vespa.security.tool.ToolInvocation;
 
@@ -49,21 +50,21 @@ public class ToolUtils {
     private static void verifyPrivateKeyFileNotWorldReadable(Path keyPath) throws IOException {
         var privKeyPerms = Files.getPosixFilePermissions(keyPath);
         if (privKeyPerms.contains(PosixFilePermission.OTHERS_READ)) {
-            throw new IllegalArgumentException("Private key file '%s' is insecurely world-readable; refusing to read it"
-                                               .formatted(keyPath.toAbsolutePath()));
+            throw new IllegalArgumentException(Text.format("Private key file '%s' is insecurely world-readable; refusing to read it",
+                                                            keyPath.toAbsolutePath()));
         }
     }
 
     private static XECPrivateKey attemptResolvePrivateKeyFromDir(Path privKeyDirPath, KeyId tokenKeyId) throws IOException {
         if (!Files.isDirectory(privKeyDirPath)) {
-            throw new IllegalArgumentException("'%s' is not a valid directory".formatted(privKeyDirPath.toAbsolutePath()));
+            throw new IllegalArgumentException(Text.format("'%s' is not a valid directory", privKeyDirPath.toAbsolutePath()));
         }
         verifyKeyIdIsPathSafe(tokenKeyId);
         var keyPath = privKeyDirPath.resolve(tokenKeyId.asString() + ".key");
         if (!Files.exists(keyPath)) {
             // We've verified the key ID contents, so we know it's safe to print here
-            throw new IllegalArgumentException("Could not find a private key file matching token key ID '%s'"
-                                               .formatted(tokenKeyId.asString()));
+            throw new IllegalArgumentException(Text.format("Could not find a private key file matching token key ID '%s'",
+                                                            tokenKeyId.asString()));
         }
         verifyPrivateKeyFileNotWorldReadable(keyPath);
         return KeyUtils.fromBase58EncodedX25519PrivateKey(Files.readString(keyPath).strip());
@@ -76,14 +77,14 @@ public class ToolUtils {
 
         if (arguments.hasOption(PRIVATE_KEY_FILE_OPTION)) {
             if (arguments.hasOption(PRIVATE_KEY_DIR_OPTION)) {
-                throw new IllegalArgumentException("--%s and --%s cannot be specified at the same time"
-                                                   .formatted(PRIVATE_KEY_FILE_OPTION, PRIVATE_KEY_DIR_OPTION));
+                throw new IllegalArgumentException(Text.format("--%s and --%s cannot be specified at the same time",
+                                                                PRIVATE_KEY_FILE_OPTION, PRIVATE_KEY_DIR_OPTION));
             }
             var privKeyFilePath = Paths.get(arguments.getOptionValue(PRIVATE_KEY_FILE_OPTION));
-            invocation.printIfDebug(() -> "Using private key file '%s'".formatted(privKeyFilePath));
+            invocation.printIfDebug(() -> Text.format("Using private key file '%s'", privKeyFilePath));
             if (!Files.exists(privKeyFilePath)) {
-                throw new IllegalArgumentException("Specified private key file '%s' does not exist"
-                                                   .formatted(privKeyFilePath.toAbsolutePath()));
+                throw new IllegalArgumentException(Text.format("Specified private key file '%s' does not exist",
+                                                                privKeyFilePath.toAbsolutePath()));
             }
             verifyPrivateKeyFileNotWorldReadable(privKeyFilePath);
             return KeyUtils.fromBase58EncodedX25519PrivateKey(Files.readString(privKeyFilePath).strip());
@@ -92,11 +93,11 @@ public class ToolUtils {
             var privKeyDirPath = Paths.get(arguments.hasOption(PRIVATE_KEY_DIR_OPTION)
                                            ? arguments.getOptionValue(PRIVATE_KEY_DIR_OPTION)
                                            : envVars.get(PRIVATE_KEY_DIR_ENV_VAR));
-            invocation.printIfDebug(() -> "Using private key lookup directory '%s'".formatted(privKeyDirPath));
+            invocation.printIfDebug(() -> Text.format("Using private key lookup directory '%s'", privKeyDirPath));
             return attemptResolvePrivateKeyFromDir(privKeyDirPath, tokenKeyId);
         } else if (arguments.hasOption(NO_INTERACTIVE_OPTION) || (console == null) || !mayReadKeyFromStdIn) {
-            throw new IllegalArgumentException("No private key specified. Must specify either --%s or --%s"
-                                               .formatted(PRIVATE_KEY_FILE_OPTION, PRIVATE_KEY_DIR_OPTION));
+            throw new IllegalArgumentException(Text.format("No private key specified. Must specify either --%s or --%s",
+                                                            PRIVATE_KEY_FILE_OPTION, PRIVATE_KEY_DIR_OPTION));
         } else {
             // We have a console attached to the JVM, ask for private key interactively
             verifyKeyIdIsPathSafe(tokenKeyId); // Don't want to emit random stuff to the console
