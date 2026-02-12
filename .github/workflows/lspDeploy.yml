@@ -17,8 +17,40 @@ on:
       - '.github/workflows/lspDeploy.yml'
 
 jobs:
+  lspBuild:
+    name: Vespa Schema LSP Build Job
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Build Vespa
+        run: |
+          export MAVEN_OPTS="-Xms128m -Xmx1024m"
+          ./bootstrap.sh java
+          mvn install --threads 1C -Pschema-language-server -DskipTests -Dmaven.source.skip -Dmaven.javadoc.skip -Denforcer.skip
+        working-directory: ./
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download node dependencies
+        run: npm ci
+        working-directory: ./integration/schema-language-server/clients/vscode
+
   lspDeploy:
     name: Vespa Schema LSP Deployment Job
+    if: github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -45,7 +77,6 @@ jobs:
       
       - name: "Retrieve version"
         id: retrieve_version
-        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server/utils
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -56,14 +87,12 @@ jobs:
         working-directory: ./integration/schema-language-server/clients/vscode
 
       - name: Publish VScode extension
-        if: github.event_name == 'workflow_dispatch'
         run: npm run publish
         working-directory: ./integration/schema-language-server/clients/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish IntelliJ plugin
-        if: github.event_name == 'workflow_dispatch'
         run: |
           echo $VERSION > VERSION
           gradle buildPlugin
@@ -75,12 +104,10 @@ jobs:
           PLUGIN_ID: 18074
 
       - name: Publish to open-vsx
-        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server/clients/vscode
         run: npx ovsx publish 'vespa-language-support-${{ steps.retrieve_version.outputs.VERSION }}.vsix' -p ${{ secrets.OPEN_VSX_PAT }}
 
       - name: Prepare Github Release
-        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server
         run: |
           mkdir -p ./clients/github-release/target
@@ -89,7 +116,6 @@ jobs:
           VERSION: ${{ steps.retrieve_version.outputs.VERSION }}
       
       - name: Create release
-        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
