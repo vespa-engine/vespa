@@ -3,6 +3,7 @@ package com.yahoo.log;
 
 import com.yahoo.log.event.Event;
 import com.yahoo.log.event.MalformedEventException;
+import com.yahoo.text.Text;
 
 import java.time.Instant;
 import java.util.Locale;
@@ -112,10 +113,10 @@ public class LogMessage
                 return Instant.ofEpochSecond(Long.parseLong(timeStr));
             }
             long seconds = Long.parseLong(timeStr.substring(0, decimalSeparator));
-            long nanoseconds = Long.parseLong(String.format(Locale.ROOT, "%1$-9s", timeStr.substring(decimalSeparator + 1)).replace(' ', '0')); // right pad with zeros
+            long nanoseconds = Long.parseLong(Text.format("%1$-9s", timeStr.substring(decimalSeparator + 1)).replace(' ', '0')); // right pad with zeros
             return Instant.ofEpochSecond(seconds, nanoseconds);
         } catch (NumberFormatException e) {
-            throw new InvalidLogFormatException(String.format(Locale.ROOT, "Failed to parse timestamp: %s. Timestamp string: '%s'", e.getMessage(), timeStr), e);
+            throw new InvalidLogFormatException(Text.format("Failed to parse timestamp: %s. Timestamp string: '%s'", e.getMessage(), timeStr), e);
         }
     }
 
