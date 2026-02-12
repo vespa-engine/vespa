@@ -13,6 +13,7 @@
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/identity.h>
+
 #include <algorithm>
 
 namespace search::expression {
@@ -50,6 +51,29 @@ public:
     virtual void min(const ResultNode & b) { (void) b; }
     virtual void max(const ResultNode & b) { (void) b; }
     virtual void add(const ResultNode & b) { (void) b; }
+
+    // End of Iterator
+    class Sentinel {
+        const size_t _end;
+    public:
+        explicit Sentinel(size_t end) noexcept : _end(end) {}
+        [[nodiscard]] bool valid(size_t pos) const noexcept { return pos < _end; }
+    };
+
+    // Iterator support for range-based for loops
+    class Iterator {
+        const ResultNodeVector* _vec;
+        size_t _index;
+    public:
+        Iterator(const ResultNodeVector* vec, size_t index) noexcept : _vec(vec), _index(index) {}
+        const ResultNode& operator*() const noexcept { return _vec->get(_index); }
+        Iterator& operator++() noexcept { ++_index; return *this; }
+        bool operator!=(Sentinel sentinel) const noexcept { return sentinel.valid(_index); }
+    };
+
+    [[nodiscard]] Iterator begin() const noexcept { return {this, 0}; }
+    [[nodiscard]] Sentinel end() const noexcept { return Sentinel(size()); }
+
 private:
     virtual size_t onSize() const = 0;
     void set(const ResultNode & rhs) override { (void) rhs; }

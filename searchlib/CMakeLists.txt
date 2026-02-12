@@ -137,6 +137,7 @@ vespa_define_module(
     src/tests/expression/filter_predicate_node
     src/tests/expression/float_bucket_result_node
     src/tests/expression/interpolated_document_field_lookup_node
+    src/tests/expression/resultvector_iterator
     src/tests/features
     src/tests/features/beta
     src/tests/features/bm25
