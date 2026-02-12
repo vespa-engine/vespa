@@ -44,6 +44,7 @@
 
 #include <vespa/log/log.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 
 LOG_SETUP(".proton.server.documentdb");
 
@@ -73,6 +74,7 @@ using vespalib::makeLambdaTask;
 using searchcorespi::IFlushTarget;
 using searchcorespi::common::IResourceUsageProvider;
 using searchcorespi::common::ResourceUsage;
+using searchcorespi::common::TransientResourceUsage;
 
 namespace proton {
 
@@ -1145,7 +1147,13 @@ DocumentDB::get_resource_usage() const
     if (!_state->get_load_done())  {
         return ResourceUsage{};
     }
-    return _subDBs.get_resource_usage();
+    auto resource_usage = _subDBs.get_resource_usage();
+    auto config_store_size_on_disk = _config_store->get_size_on_disk();
+    //  Account for document db directory.
+    auto size_on_disk_overhead = DiskSpaceCalculator::directory_placeholder_size();
+    auto extra_size_on_disk = size_on_disk_overhead + config_store_size_on_disk;
+    resource_usage.merge(ResourceUsage{TransientResourceUsage{}, extra_size_on_disk});
+    return resource_usage;
 }
 
 void
