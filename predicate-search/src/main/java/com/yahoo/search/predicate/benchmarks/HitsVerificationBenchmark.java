@@ -11,6 +11,7 @@ import com.yahoo.search.predicate.PredicateQuery;
 import com.yahoo.search.predicate.serialization.PredicateQuerySerializer;
 import com.yahoo.search.predicate.utils.VespaFeedParser;
 import com.yahoo.search.predicate.utils.VespaQueryParser;
+import com.yahoo.text.Text;
 import io.airlift.airline.Arguments;
 import io.airlift.airline.Command;
 import io.airlift.airline.HelpOption;
@@ -24,6 +25,7 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -85,7 +87,7 @@ public class HitsVerificationBenchmark {
 
     private static int runQueries(
             PredicateIndex index, Stream<PredicateQuery> queries, String outputFile) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, false))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, StandardCharsets.UTF_8, false))) {
             AtomicInteger i = new AtomicInteger();
             PredicateIndex.Searcher searcher = index.searcher();
             return queries.map(searcher::search)
@@ -113,7 +115,7 @@ public class HitsVerificationBenchmark {
             writer.append(Integer.toString(i))
                     .append(": ")
                     .append(hits.stream()
-                            .map(hit -> String.format("(%d, 0x%x)", hit.getDocId(), hit.getSubquery()))
+                            .map(hit -> Text.format("(%d, 0x%x)", hit.getDocId(), hit.getSubquery()))
                             .collect(joining(", ", "[", "]")))
                     .append("\n\n");
             return hits.size();

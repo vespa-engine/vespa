@@ -4,6 +4,8 @@ package com.yahoo.search.predicate.utils;
 import com.google.common.net.UrlEscapers;
 import com.yahoo.search.predicate.PredicateQuery;
 import com.yahoo.search.predicate.serialization.PredicateQuerySerializer;
+import com.yahoo.text.Text;
+import com.yahoo.text.Utf8;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -11,6 +13,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,7 +69,7 @@ public class TargetingQueryFileConverter {
 
     private static void writeSubqueriesToFile(List<Query> queries, File output, OutputFormat outputFormat)
             throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(output))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(output, StandardCharsets.UTF_8))) {
             if (outputFormat == OutputFormat.JSON) {
                 writeJSONOutput(writer, queries);
             } else {
@@ -165,14 +168,14 @@ public class TargetingQueryFileConverter {
                     } else {
                         // Note: Cannot use method reference as both method toString(int) and method toString() match.
                         String values = features.collect(joining(", ", "{", "}"));
-                        return String.format("\"0x%s\":%s", Long.toHexString(e.getKey()), values);
+                        return Text.format("\"0x%s\":%s", Long.toHexString(e.getKey()), values);
                     }
                 })
                 .collect(joining(", ", "{", "}"));
     }
 
     private static Subqueries parseRiseQueries(File riseQueryFile, int maxQueries) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(riseQueryFile))) {
+        try (BufferedReader reader = new BufferedReader(Utf8.createReader(riseQueryFile))) {
             Subqueries parsedSubqueries = new Subqueries();
             AtomicInteger counter = new AtomicInteger(1);
             reader.lines()
@@ -263,9 +266,9 @@ public class TargetingQueryFileConverter {
 
         public String asYqlString() {
             if (strValue != null) {
-                return String.format("\"%s\":\"%s\"", key, strValue);
+                return Text.format("\"%s\":\"%s\"", key, strValue);
             } else {
-                return String.format("\"%s\":%dl", key, longValue);
+                return Text.format("\"%s\":%dl", key, longValue);
             }
         }
 
