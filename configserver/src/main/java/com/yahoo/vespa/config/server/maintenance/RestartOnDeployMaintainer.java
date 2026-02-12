@@ -63,6 +63,8 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
         for (Tenant tenant : tenantRepository.getAllTenants()) {
             ApplicationCuratorDatabase database = tenant.getApplicationRepo().database();
             for (ApplicationId id : database.activeApplications()) {
+                // Controls whether to use this maintainer for a specific instance with the feature flag.
+                // Alternatively, the older PendingRestartsMaintainer will be used.
                 boolean shouldWaitForApplyOnRestart = waitForApplyOnRestart
                         .with(INSTANCE_ID, id.serializedForm())
                         .value();
@@ -126,8 +128,8 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
 
         Map<String, List<ServiceConfigState>> statesByHostname = serviceConfigStateFetcher.apply(restarts.hostnames());
 
-        // Minimum observed generation for all services without applyOnRestart across all pending restart nodes.
-        // Services with applyOnRestart are excluded because they can be waiting for restart to apply a new
+        // Minimum observed config generation for all services without applyOnRestart across all pending restart nodes.
+        // Services with applyOnRestart are excluded because they are waiting for restart to apply a new
         // config.
         OptionalLong minStateGeneration = statesByHostname.values().stream()
                 .flatMap(List::stream)
@@ -145,14 +147,15 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
             return restarts;
         }
 
-        // Without any services without applyOnRestart,
-        // nothing holding us back from restarting with the maximum restart generation.
+        // If all services have applyOnRestart set,
+        // nothing is holding us back from restarting with the maximum restart generation.
         // This assumes that services will get the latest config after restart.
         // There is no guarantee for that, but it is the best we can do.
         long readyGeneration = minStateGeneration.orElse(maxRestartGeneration.getAsLong());
 
         // Select nodes with restart generations that are less or equal to the ready generation.
-        // Nodes that only have greater restart generations need to wait until we reach that generation.
+        // Nodes that only have greater restart generations need to wait
+        // until services without applyOnRestart (if any) reach the ready generation.
         Set<String> nodesToRestart = restarts.restartsReadyAt(readyGeneration);
 
         // For each node, check if all it's services with (non-empty) applyOnRestart

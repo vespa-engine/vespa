@@ -80,7 +80,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useNewPrepareForRestart = true;
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
-    private boolean waitForApplyOnRestart = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -139,7 +138,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
     }
     @Override public boolean useTriton() { return useTriton; }
-    @Override public boolean waitForApplyOnRestart() { return waitForApplyOnRestart; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
