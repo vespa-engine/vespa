@@ -97,13 +97,29 @@ func (c *CurlWriter) print(request *http.Request, tlsOptions TLSOptions, timeout
 	return err
 }
 
+// AllowedUrn represents an allowed URN for private service access.
+type AllowedUrn struct {
+	Type string `json:"type"`
+	Urn  string `json:"urn"`
+}
+
+// PrivateServiceInfo contains information about private service configuration.
+type PrivateServiceInfo struct {
+	ServiceID   string       `json:"serviceId,omitempty"`
+	Type        string       `json:"type,omitempty"`
+	AllowedUrns []AllowedUrn `json:"allowedUrns,omitempty"`
+	AuthMethods []string     `json:"authMethods,omitempty"`
+	Endpoints   []string     `json:"endpoints,omitempty"`
+}
+
 // Service represents a Vespa service.
 type Service struct {
-	BaseURL    string
-	Name       string
-	AuthMethod string
-	TLSOptions TLSOptions
-	CurlWriter CurlWriter
+	BaseURL        string
+	Name           string
+	AuthMethod     string
+	TLSOptions     TLSOptions
+	CurlWriter     CurlWriter
+	PrivateService *PrivateServiceInfo
 
 	deployAPI     bool
 	auth          Authenticator

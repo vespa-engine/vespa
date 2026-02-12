@@ -257,6 +257,152 @@ func TestCloudCompatibleWith(t *testing.T) {
 	assert.NotNil(t, target.CompatibleWith(version.MustParse("7.0.0")))
 }
 
+func TestCloudTargetWithPrivateServices(t *testing.T) {
+	var logWriter bytes.Buffer
+	target, client := createCloudTarget(t, &logWriter)
+
+	// Mock endpoints response
+	endpointsResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1",
+		Status: 200,
+		Body: []byte(`{
+			"endpoints": [
+				{"url": "http://a.example.com","scope": "zone", "cluster": "default", "authMethod": "mtls"},
+				{"url": "http://b.example.com","scope": "zone", "cluster": "feed", "authMethod": "mtls"}
+			]
+		}`),
+	}
+
+	// Mock private services response with configured private service
+	privateServicesResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1/private-services",
+		Status: 200,
+		Body: []byte(`{
+			"privateServices": [
+				{
+					"cluster": "default",
+					"serviceId": "com.amazonaws.vpce.us-east-1.vpce-svc-1a2b3c4d5e6f7g8h9",
+					"type": "aws-private-link",
+					"allowedUrns": [
+						{
+							"type": "aws-private-link",
+							"urn": "arn:aws:iam::123456789012:root"
+						}
+					],
+					"authMethods": ["mtls"],
+					"endpoints": []
+				},
+				{
+					"cluster": "feed"
+				}
+			]
+		}`),
+	}
+
+	client.NextResponse(endpointsResponse)
+	client.NextResponse(privateServicesResponse)
+	services, err := target.ContainerServices(time.Millisecond)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(services))
+
+	// Verify the default cluster has private service info
+	var defaultService *Service
+	for _, s := range services {
+		if s.Name == "default" && s.AuthMethod == "mtls" {
+			defaultService = s
+			break
+		}
+	}
+	assert.NotNil(t, defaultService, "Should find default cluster with mtls")
+	assert.NotNil(t, defaultService.PrivateService, "Default cluster should have private service info")
+	assert.Equal(t, "com.amazonaws.vpce.us-east-1.vpce-svc-1a2b3c4d5e6f7g8h9", defaultService.PrivateService.ServiceID)
+	assert.Equal(t, "aws-private-link", defaultService.PrivateService.Type)
+	assert.Equal(t, 1, len(defaultService.PrivateService.AllowedUrns))
+	assert.Equal(t, "aws-private-link", defaultService.PrivateService.AllowedUrns[0].Type)
+	assert.Equal(t, "arn:aws:iam::123456789012:root", defaultService.PrivateService.AllowedUrns[0].Urn)
+	assert.Equal(t, []string{"mtls"}, defaultService.PrivateService.AuthMethods)
+
+	// Verify the feed cluster does not have private service info (only cluster name in response)
+	var feedService *Service
+	for _, s := range services {
+		if s.Name == "feed" && s.AuthMethod == "mtls" {
+			feedService = s
+			break
+		}
+	}
+	assert.NotNil(t, feedService, "Should find feed cluster with mtls")
+	assert.Nil(t, feedService.PrivateService, "Feed cluster should not have private service info")
+}
+
+func TestCloudTargetWithoutPrivateServices(t *testing.T) {
+	var logWriter bytes.Buffer
+	target, client := createCloudTarget(t, &logWriter)
+
+	// Mock endpoints response
+	endpointsResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1",
+		Status: 200,
+		Body: []byte(`{
+			"endpoints": [
+				{"url": "http://a.example.com","scope": "zone", "cluster": "default", "authMethod": "mtls"}
+			]
+		}`),
+	}
+
+	// Mock private services response with no configured private services
+	privateServicesResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1/private-services",
+		Status: 200,
+		Body: []byte(`{
+			"privateServices": [
+				{
+					"cluster": "default"
+				}
+			]
+		}`),
+	}
+
+	client.NextResponse(endpointsResponse)
+	client.NextResponse(privateServicesResponse)
+	services, err := target.ContainerServices(time.Millisecond)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(services))
+
+	// Verify the service does not have private service info
+	assert.Equal(t, "default", services[0].Name)
+	assert.Nil(t, services[0].PrivateService, "Should not have private service info when only cluster name is returned")
+}
+
+func TestCloudTargetPrivateServicesError(t *testing.T) {
+	var logWriter bytes.Buffer
+	target, client := createCloudTarget(t, &logWriter)
+
+	// Mock endpoints response
+	endpointsResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1",
+		Status: 200,
+		Body: []byte(`{
+			"endpoints": [
+				{"url": "http://a.example.com","scope": "zone", "cluster": "default", "authMethod": "mtls"}
+			]
+		}`),
+	}
+
+	// Mock private services endpoint returning error (should be ignored)
+	privateServicesError := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1/private-services",
+		Status: 404,
+	}
+
+	client.NextResponse(endpointsResponse)
+	client.NextResponse(privateServicesError)
+	services, err := target.ContainerServices(time.Millisecond)
+	// Should still succeed even if private-services endpoint fails
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(services))
+	assert.Nil(t, services[0].PrivateService, "Should not have private service info when endpoint fails")
+}
+
 func createCloudTarget(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPClient) {
 	apiKey, err := CreateAPIKey()
 	require.Nil(t, err)

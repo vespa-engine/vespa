@@ -410,3 +410,128 @@ func TestStatusJSONFormatSkipServiceStatus(t *testing.T) {
 	_, hasError := output["error"]
 	assert.False(t, hasError, "Should not have error field when skipping service status")
 }
+
+func TestStatusWithPrivateServicesHumanFormat(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+
+	// Create a service with private service info
+	service := &vespa.Service{
+		BaseURL:    "http://127.0.0.1:8080",
+		Name:       "default",
+		AuthMethod: "mtls",
+		PrivateService: &vespa.PrivateServiceInfo{
+			ServiceID: "com.amazonaws.vpce.us-east-1.vpce-svc-1a2b3c4d5e6f7g8h9",
+			Type:      "aws-private-link",
+			AllowedUrns: []vespa.AllowedUrn{
+				{Type: "aws-private-link", Urn: "arn:aws:iam::123456789012:root"},
+			},
+			AuthMethods: []string{"mtls"},
+			Endpoints:   []string{},
+		},
+	}
+
+	waiter := cli.waiter(0, nil)
+	result := printServiceStatus(service, "human", waiter, cli, true)
+	assert.True(t, result)
+
+	expected := `Container default at http://127.0.0.1:8080 (mtls)
+  Private service: com.amazonaws.vpce.us-east-1.vpce-svc-1a2b3c4d5e6f7g8h9
+  Type: aws-private-link
+  Allowed URNs:
+    - aws-private-link: arn:aws:iam::123456789012:root
+  Auth methods: mtls
+`
+	assert.Equal(t, expected, stdout.String())
+}
+
+func TestStatusWithPrivateServicesJSONFormat(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+
+	// Create a service with private service info
+	service := &vespa.Service{
+		BaseURL:    "http://127.0.0.1:8080",
+		Name:       "default",
+		AuthMethod: "mtls",
+		PrivateService: &vespa.PrivateServiceInfo{
+			ServiceID: "com.amazonaws.vpce.us-east-1.vpce-svc-1a2b3c4d5e6f7g8h9",
+			Type:      "aws-private-link",
+			AllowedUrns: []vespa.AllowedUrn{
+				{Type: "aws-private-link", Urn: "arn:aws:iam::123456789012:root"},
+			},
+			AuthMethods: []string{"mtls"},
+			Endpoints:   []string{"endpoint1.com", "endpoint2.com"},
+		},
+	}
+
+	waiter := cli.waiter(0, nil)
+	result := printServiceStatus(service, "json", waiter, cli, true)
+	assert.True(t, result)
+
+	// Parse and verify JSON output
+	var output map[string]interface{}
+	err := json.Unmarshal([]byte(stdout.String()), &output)
+	assert.Nil(t, err, "Should produce valid JSON")
+	assert.Equal(t, "container", output["type"])
+	assert.Equal(t, "default", output["name"])
+	assert.Equal(t, "http://127.0.0.1:8080", output["url"])
+	assert.Equal(t, "mtls", output["authMethod"])
+
+	// Verify private service info
+	privateService, hasPrivateService := output["privateService"].(map[string]interface{})
+	assert.True(t, hasPrivateService, "Should have privateService field")
+	assert.Equal(t, "com.amazonaws.vpce.us-east-1.vpce-svc-1a2b3c4d5e6f7g8h9", privateService["serviceId"])
+	assert.Equal(t, "aws-private-link", privateService["type"])
+
+	allowedUrns := privateService["allowedUrns"].([]interface{})
+	assert.Equal(t, 1, len(allowedUrns))
+	firstUrn := allowedUrns[0].(map[string]interface{})
+	assert.Equal(t, "aws-private-link", firstUrn["type"])
+	assert.Equal(t, "arn:aws:iam::123456789012:root", firstUrn["urn"])
+
+	authMethods := privateService["authMethods"].([]interface{})
+	assert.Equal(t, 1, len(authMethods))
+	assert.Equal(t, "mtls", authMethods[0])
+
+	endpoints := privateService["endpoints"].([]interface{})
+	assert.Equal(t, 2, len(endpoints))
+	assert.Equal(t, "endpoint1.com", endpoints[0])
+	assert.Equal(t, "endpoint2.com", endpoints[1])
+}
+
+func TestStatusWithoutPrivateServices(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+
+	// Create a service without private service info
+	service := &vespa.Service{
+		BaseURL:    "http://127.0.0.1:8080",
+		Name:       "default",
+		AuthMethod: "mtls",
+	}
+
+	waiter := cli.waiter(0, nil)
+	result := printServiceStatus(service, "human", waiter, cli, true)
+	assert.True(t, result)
+
+	expected := "Container default at http://127.0.0.1:8080 (mtls)\n"
+	assert.Equal(t, expected, stdout.String())
+
+	// Test JSON format
+	stdout.Reset()
+	result = printServiceStatus(service, "json", waiter, cli, true)
+	assert.True(t, result)
+
+	var output map[string]interface{}
+	err := json.Unmarshal([]byte(stdout.String()), &output)
+	assert.Nil(t, err, "Should produce valid JSON")
+	_, hasPrivateService := output["privateService"]
+	assert.False(t, hasPrivateService, "Should not have privateService field when not configured")
+}

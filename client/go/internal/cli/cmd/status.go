@@ -247,6 +247,32 @@ func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CL
 		if s.AuthMethod != "" {
 			sb.WriteString(color.CyanString(fmt.Sprintf(" (%s)", s.AuthMethod)))
 		}
+		if s.PrivateService != nil {
+			sb.WriteString("\n")
+			sb.WriteString(fmt.Sprintf("  Private service: %s", s.PrivateService.ServiceID))
+			sb.WriteString("\n")
+			sb.WriteString(fmt.Sprintf("  Type: %s", s.PrivateService.Type))
+			if len(s.PrivateService.AllowedUrns) > 0 {
+				sb.WriteString("\n")
+				sb.WriteString("  Allowed URNs:")
+				for _, urn := range s.PrivateService.AllowedUrns {
+					sb.WriteString("\n")
+					sb.WriteString(fmt.Sprintf("    - %s: %s", urn.Type, urn.Urn))
+				}
+			}
+			if len(s.PrivateService.AuthMethods) > 0 {
+				sb.WriteString("\n")
+				sb.WriteString(fmt.Sprintf("  Auth methods: %s", strings.Join(s.PrivateService.AuthMethods, ", ")))
+			}
+			if len(s.PrivateService.Endpoints) > 0 {
+				sb.WriteString("\n")
+				sb.WriteString("  Endpoints:")
+				for _, endpoint := range s.PrivateService.Endpoints {
+					sb.WriteString("\n")
+					sb.WriteString(fmt.Sprintf("    - %s", endpoint))
+				}
+			}
+		}
 	case "plain":
 		sb.WriteString(s.BaseURL)
 	case "json":
@@ -265,6 +291,9 @@ func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CL
 		}
 		if s.AuthMethod != "" {
 			output["authMethod"] = s.AuthMethod
+		}
+		if s.PrivateService != nil {
+			output["privateService"] = s.PrivateService
 		}
 		jsonBytes, jsonErr := json.Marshal(output)
 		if jsonErr != nil {
