@@ -47,6 +47,7 @@ public:
     bool remove(IndexDiskDir index_disk_dir);
     common::ResourceUsage get_resource_usage(const IndexDiskLayout& layout) const;
     uint64_t get_size_on_disk(bool include_stale) const;
+    static uint64_t get_size_on_disk_overhead() noexcept;
 };
 
 }
