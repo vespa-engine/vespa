@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>parent</artifactId>
+        <version>8-SNAPSHOT</version>
+        <relativePath>../../parent/pom.xml</relativePath>
+    </parent>
+    <artifactId>schema-language-server-parent</artifactId>
+    <packaging>pom</packaging>
+    <version>8-SNAPSHOT</version>
+    <profiles>
+        <!-- Build schema-language-server modules (language-server and lemminx-vespa).
+             Disabled by default as these are only needed for IDE plugin development/deployment.
+             Enable with -Pschema-language-server or activate in IntelliJ via
+             Maven tool window > Profiles > schema-language-server -->
+        <profile>
+            <id>schema-language-server</id>
+            <modules>
+                <module>language-server</module>
+                <module>lemminx-vespa</module>
+            </modules>
+        </profile>
+    </profiles>
+</project>

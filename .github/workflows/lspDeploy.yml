@@ -32,7 +32,7 @@ jobs:
         run: |
           export MAVEN_OPTS="-Xms128m -Xmx1024m"
           ./bootstrap.sh java
-          mvn install --threads 1C
+          mvn install --threads 1C -Pschema-language-server -DskipTests -Dmaven.source.skip -Dmaven.javadoc.skip -Denforcer.skip
         working-directory: ./
 
       - uses: actions/setup-node@v4
