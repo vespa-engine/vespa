@@ -6,6 +6,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -87,7 +88,7 @@ public class VersionsTestCase {
         ByteArrayOutputStream errorMsg = new ByteArrayOutputStream();
         ErrorHttpResponse errorResponse = (ErrorHttpResponse) v.first;
         errorResponse.render(errorMsg);
-        assertEquals(errorMsg.toString(),
+        assertEquals(errorMsg.toString(StandardCharsets.UTF_8),
                 "Could not parse X-Yahoo-Feed-Protocol-Versionheader of request (values: [1000000000]). " +
                             "Server supports protocol versions [3]");
         assertEquals(Integer.valueOf(-1), v.second);
