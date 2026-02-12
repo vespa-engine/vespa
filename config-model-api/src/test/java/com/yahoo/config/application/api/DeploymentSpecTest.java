@@ -18,6 +18,7 @@ import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.test.ManualClock;
+import com.yahoo.text.Text;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -1452,10 +1453,10 @@ public class DeploymentSpecTest {
                              </endpoints>
                            </instance>
                          </deployment>""";
-        assertInvalid(String.format(xmlForm, "id='foo' region='us-east'", "<region>us-east</region>"), "Instance-level endpoint 'foo': invalid 'region' attribute");
-        assertInvalid(String.format(xmlForm, "id='foo'", "<instance>us-east</instance>"), "Instance-level endpoint 'foo': invalid element 'instance'");
-        assertInvalid(String.format(xmlForm, "type='zone'", "<instance>us-east</instance>"), "Instance-level endpoint: invalid element 'instance'");
-        assertInvalid(String.format(xmlForm, "type='private'", "<instance>us-east</instance>"), "Instance-level endpoint: invalid element 'instance'");
+        assertInvalid(Text.format(xmlForm, "id='foo' region='us-east'", "<region>us-east</region>"), "Instance-level endpoint 'foo': invalid 'region' attribute");
+        assertInvalid(Text.format(xmlForm, "id='foo'", "<instance>us-east</instance>"), "Instance-level endpoint 'foo': invalid element 'instance'");
+        assertInvalid(Text.format(xmlForm, "type='zone'", "<instance>us-east</instance>"), "Instance-level endpoint: invalid element 'instance'");
+        assertInvalid(Text.format(xmlForm, "type='private'", "<instance>us-east</instance>"), "Instance-level endpoint: invalid element 'instance'");
     }
 
     @Test
@@ -1481,16 +1482,16 @@ public class DeploymentSpecTest {
                            </endpoints>
                          </deployment>
                          """;
-        assertInvalid(String.format(xmlForm, "", "weight='1'", "", "main", ""), "'region' attribute must be declared on either <endpoint> or <instance> tag");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "region='us-west-1'", "main", ""), "'region' attribute must be declared on either <endpoint> or <instance> tag");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "", "", "main", ""), "Missing required attribute 'weight' in 'instance");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "", "", ""), "Application-level endpoint 'foo': empty 'instance' element");
-        assertInvalid(String.format(xmlForm, "region='invalid'", "weight='1'", "", "main", ""), "Application-level endpoint 'foo': targets undeclared region 'invalid' in instance 'main'");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='foo'", "", "main", ""), "Application-level endpoint 'foo': invalid weight value 'foo'");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "", "main", "<region>us-east-3</region>"), "Application-level endpoint 'foo': invalid element 'region'");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='0'", "", "main", ""), "Application-level endpoint 'foo': sum of all weights must be positive, got 0");
-        assertInvalid(String.format(xmlForm, "type='zone'", "weight='1'", "", "main", ""), "Endpoints at application level cannot be of type 'zone'");
-        assertInvalid(String.format(xmlForm, "type='private'", "weight='1'", "", "main", ""), "Endpoints at application level cannot be of type 'private'");
+        assertInvalid(Text.format(xmlForm, "", "weight='1'", "", "main", ""), "'region' attribute must be declared on either <endpoint> or <instance> tag");
+        assertInvalid(Text.format(xmlForm, "region='us-west-1'", "weight='1'", "region='us-west-1'", "main", ""), "'region' attribute must be declared on either <endpoint> or <instance> tag");
+        assertInvalid(Text.format(xmlForm, "region='us-west-1'", "", "", "main", ""), "Missing required attribute 'weight' in 'instance");
+        assertInvalid(Text.format(xmlForm, "region='us-west-1'", "weight='1'", "", "", ""), "Application-level endpoint 'foo': empty 'instance' element");
+        assertInvalid(Text.format(xmlForm, "region='invalid'", "weight='1'", "", "main", ""), "Application-level endpoint 'foo': targets undeclared region 'invalid' in instance 'main'");
+        assertInvalid(Text.format(xmlForm, "region='us-west-1'", "weight='foo'", "", "main", ""), "Application-level endpoint 'foo': invalid weight value 'foo'");
+        assertInvalid(Text.format(xmlForm, "region='us-west-1'", "weight='1'", "", "main", "<region>us-east-3</region>"), "Application-level endpoint 'foo': invalid element 'region'");
+        assertInvalid(Text.format(xmlForm, "region='us-west-1'", "weight='0'", "", "main", ""), "Application-level endpoint 'foo': sum of all weights must be positive, got 0");
+        assertInvalid(Text.format(xmlForm, "type='zone'", "weight='1'", "", "main", ""), "Endpoints at application level cannot be of type 'zone'");
+        assertInvalid(Text.format(xmlForm, "type='private'", "weight='1'", "", "main", ""), "Endpoints at application level cannot be of type 'private'");
     }
 
     @Test
