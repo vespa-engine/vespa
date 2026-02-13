@@ -244,6 +244,8 @@ public:
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
     std::vector<std::string> get_children_names() const override;
     std::unique_ptr<vespalib::StateExplorer> get_child(std::string_view name) const override;
+
+    searchcorespi::common::ResourceUsage get_resource_usage() const;
 };
 
 } // namespace proton

@@ -41,11 +41,14 @@
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchcore/proton/matching/session_manager_explorer.h>
 #include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
+#include <vespa/searchcorespi/common/i_resource_usage_provider.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/diskindex/posting_list_cache.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -73,10 +76,14 @@ using CpuCategory = vespalib::CpuUsage::Category;
 
 using document::DocumentTypeRepo;
 using proton::flushengine::SetStrategyResult;
+using search::DiskSpaceCalculator;
 using search::diskindex::IPostingListCache;
 using search::diskindex::PostingListCache;
 using search::engine::MonitorReply;
 using search::transactionlog::DomainStats;
+using searchcorespi::common::IResourceUsageProvider;
+using searchcorespi::common::ResourceUsage;
+using searchcorespi::common::TransientResourceUsage;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
 using vespalib::CpuUsage;
@@ -209,6 +216,29 @@ make_replay_throttling_policy(const ProtonConfig::ReplayThrottlingPolicy& cfg, c
             ? (hw_info.memory().sizeBytes() * std::min(INT64_C(50), -cfg.memoryUsageSoftLimitBytes)) / 100L
             : cfg.memoryUsageSoftLimitBytes;
     return ReplayThrottlingPolicy(params);
+}
+
+class ProtonResourceUsageProvider : public IResourceUsageProvider {
+    const Proton& _proton;
+public:
+    explicit ProtonResourceUsageProvider(const Proton& proton) noexcept;
+    ~ProtonResourceUsageProvider() override;
+    ResourceUsage get_resource_usage() const override;
+};
+
+ProtonResourceUsageProvider::ProtonResourceUsageProvider(const Proton& proton) noexcept
+    : IResourceUsageProvider(),
+      _proton(proton)
+{
+
+}
+
+ProtonResourceUsageProvider::~ProtonResourceUsageProvider() =  default;
+
+ResourceUsage
+ProtonResourceUsageProvider::get_resource_usage() const
+{
+    return _proton.get_resource_usage();
 }
 
 } // namespace <unnamed>
@@ -400,6 +430,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _metricsEngine->addExternalMetrics(_summaryEngine->getMetrics());
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, *_write_filter,
                                                                  *_resource_usage_notifier, *_flushEngine);
+    _diskMemUsageSampler->add_resource_usage_provider(std::make_shared<ProtonResourceUsageProvider>(*this));
 
     LOG(debug, "Start proton server with root at %s and cwd at %s",
         protonConfig.basedir.c_str(), std::filesystem::current_path().string().c_str());
@@ -1199,6 +1230,14 @@ Proton::getPersistence()
 metrics::MetricManager &
 Proton::getMetricManager() {
     return _metricsEngine->getManager();
+}
+
+ResourceUsage
+Proton::get_resource_usage() const
+{
+    // Two directories, "n0" and "n0/documents" and transaction log.
+    auto size_on_disk = DiskSpaceCalculator::directory_placeholder_size() * 2 + _tls->getTransLogServer()->get_size_on_disk();
+    return ResourceUsage{TransientResourceUsage{}, size_on_disk};
 }
 
 } // namespace proton
