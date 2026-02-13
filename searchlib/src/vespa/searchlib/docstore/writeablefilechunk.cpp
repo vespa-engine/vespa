@@ -649,7 +649,7 @@ WriteableFileChunk::get_size_on_disk(const unique_lock & guard) const
     DiskSpaceCalculator calc;
     return frozen()
         ? FileChunk::get_size_on_disk()
-        : calc(_currentDiskDatFootprint + _pendingDiskDatFootprint) + calc(_currentDiskIdxFootprint);
+        : calc(_currentDiskDatFootprint) + calc(_currentDiskIdxFootprint);
 }
 
 size_t
