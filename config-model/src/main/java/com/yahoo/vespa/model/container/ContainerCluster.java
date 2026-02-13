@@ -167,6 +167,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String jvmGCOptions = null;
 
     private volatile boolean deferChangesUntilRestart = false;
+    private boolean applyOnRestartForApplicationMetadataConfigEnabled = false;
     private boolean clientsLegacyMode;
     private List<Client> clients = List.of();
 
@@ -306,6 +307,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void prepare(DeployState deployState) {
         applicationMetaData = deployState.getApplicationPackage().getMetaData();
+        applyOnRestartForApplicationMetadataConfigEnabled = deployState.featureFlags().applyOnRestartForApplicationMetadataConfig();
         doPrepare(deployState);
     }
 
@@ -457,7 +459,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(ComponentsConfig.Builder builder) {
-        builder.setApplyOnRestart(getDeferChangesUntilRestart()); //  Sufficient to set on one config
+        builder.setApplyOnRestart(getDeferChangesUntilRestart());
         builder.components.addAll(ComponentsConfigGenerator.generate(getAllComponents()));
         builder.components(new ComponentsConfig.Components.Builder().id("com.yahoo.container.core.config.HandlersConfigurerDi$RegistriesHack"));
     }
@@ -493,6 +495,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(ApplicationMetadataConfig.Builder builder) {
+        // Setting this for the ComponentsConfig only is not sufficient due to a workaround in ConfigRetriever for an unknown bug.
+        // It's assumed that this config is always used by container clusters (StateHandler)
+        // Enabled by feature flag for testing.
+        if (applyOnRestartForApplicationMetadataConfigEnabled) {
+            builder.setApplyOnRestart(getDeferChangesUntilRestart());
+        }
+        
         if (applicationMetaData != null)
             builder.name(applicationMetaData.getApplicationId().application().value()).
                     timestamp(applicationMetaData.getDeployTimestamp()).
