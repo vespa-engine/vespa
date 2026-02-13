@@ -94,7 +94,7 @@ public class SimpleFeederTest {
                                {"update":"id:simple:simple::1","fields":{"my_str":{"assign":"bar"}}},
                                {"remove":"id:simple:simple::2"}
                              ]""",
-                     dump.toString());
+                     dump.toString(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -129,8 +129,8 @@ public class SimpleFeederTest {
                            {"id":"id:simple:simple::1","fields":{"my_str":"bar"}},
                            {"remove":"id:simple:simple::2"}
                          ]""",
-                     dump.toString());
-        assertFeed(dump.toString(),
+                     dump.toString(StandardCharsets.UTF_8));
+        assertFeed(dump.toString(StandardCharsets.UTF_8),
                 new MessageHandler() {
                     @Override
                     public void handleMessage(Message msg) {
@@ -326,9 +326,9 @@ public class SimpleFeederTest {
         TestDriver(FeederParams params, InputStream in, MessageHandler validator) throws IOException, ListenFailedException {
             server = new SimpleServer(CONFIG_DIR, validator);
             feeder = new SimpleFeeder(params.setConfigId("dir:" + CONFIG_DIR)
-                                            .setStdErr(new PrintStream(err))
+                                            .setStdErr(new PrintStream(err, false, StandardCharsets.UTF_8))
                                             .setInputStreams(List.of(in))
-                                            .setStdOut(new PrintStream(out)));
+                                            .setStdOut(new PrintStream(out, false, StandardCharsets.UTF_8)));
         }
 
         void run() throws Throwable {

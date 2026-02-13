@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -154,7 +155,7 @@ public class VespaFeederTestCase {
     private static class FeedFixture {
         DummySessionFactory sessionFactory = DummySessionFactory.createWithAutoReply();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(outputStream);
+        PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
         DocumentTypeManager typeManager = new DocumentTypeManager();
         FeedFixture() {
             DocumentTypeManagerConfigurer.configure(typeManager, "file:src/test/files/documentmanager.cfg");
@@ -177,7 +178,7 @@ public class VespaFeederTestCase {
         assertFalse(update.getCreateIfNonExistent());
         assertEquals("id:test:news::foo", ((RemoveDocumentMessage) f.sessionFactory.messages.get(2)).getDocumentId().toString());
 
-        assertTrue(f.outputStream.toString().contains("Messages sent to vespa"));
+        assertTrue(f.outputStream.toString(StandardCharsets.UTF_8).contains("Messages sent to vespa"));
     }
 
     @Test
@@ -197,7 +198,7 @@ public class VespaFeederTestCase {
         assertFalse(update.getCreateIfNonExistent());
         assertEquals("id:test:news::foo", ((RemoveDocumentMessage) feedFixture.sessionFactory.messages.get(2)).getDocumentId().toString());
 
-        assertTrue(feedFixture.outputStream.toString().contains("Messages sent to vespa"));
+        assertTrue(feedFixture.outputStream.toString(StandardCharsets.UTF_8).contains("Messages sent to vespa"));
     }
 
     @Test

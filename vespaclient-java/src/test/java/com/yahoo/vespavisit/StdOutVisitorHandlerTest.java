@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -50,10 +51,10 @@ public class StdOutVisitorHandlerTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         var params = createHandlerParams(jsonOutput, false, false);
         params.printIds = true;
-        StdOutVisitorHandler visitorHandler = new StdOutVisitorHandler(params, new PrintStream(out, true));
+        StdOutVisitorHandler visitorHandler = new StdOutVisitorHandler(params, new PrintStream(out, true, StandardCharsets.UTF_8));
         VisitorDataHandler dataHandler = visitorHandler.getDataHandler();
         dataHandler.onDone();
-        String output = out.toString();
+        String output = out.toString(StandardCharsets.UTF_8);
         assertEquals("", output.trim());
     }
 
@@ -62,11 +63,11 @@ public class StdOutVisitorHandlerTest {
     void printing_zero_documents_produces_empty_output(boolean jsonOutput) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         StdOutVisitorHandler visitorHandler =
-                new StdOutVisitorHandler(createHandlerParams(jsonOutput, false, false), new PrintStream(out, true));
+                new StdOutVisitorHandler(createHandlerParams(jsonOutput, false, false), new PrintStream(out, true, StandardCharsets.UTF_8));
         VisitorDataHandler dataHandler = visitorHandler.getDataHandler();
         dataHandler.onDone();
         String expectedOutput = jsonOutput ? "[]" : "";
-        String output = out.toString().trim();
+        String output = out.toString(StandardCharsets.UTF_8).trim();
         assertEquals(expectedOutput, output);
     }
 
@@ -78,7 +79,7 @@ public class StdOutVisitorHandlerTest {
         var putMsg = new PutDocumentMessage(new DocumentPut(doc));
 
         var out = new ByteArrayOutputStream();
-        var visitorHandler = new StdOutVisitorHandler(createHandlerParams(true, tensorShortForm, tensorDirectValues), new PrintStream(out, true));
+        var visitorHandler = new StdOutVisitorHandler(createHandlerParams(true, tensorShortForm, tensorDirectValues), new PrintStream(out, true, StandardCharsets.UTF_8));
         var dataHandler = visitorHandler.getDataHandler();
         var controlSession = mock(VisitorControlSession.class);
         var ackToken = mock(AckToken.class);
@@ -86,7 +87,7 @@ public class StdOutVisitorHandlerTest {
         dataHandler.onMessage(putMsg, ackToken);
         dataHandler.onDone();
 
-        String output = out.toString().trim();
+        String output = out.toString(StandardCharsets.UTF_8).trim();
         assertEquals(expectedOutput, output);
     }
 
@@ -127,7 +128,7 @@ public class StdOutVisitorHandlerTest {
                                               : StdOutVisitorHandler.OutputFormat.JSON;
 
         var out            = new ByteArrayOutputStream();
-        var visitorHandler = new StdOutVisitorHandler(params, new PrintStream(out, true));
+        var visitorHandler = new StdOutVisitorHandler(params, new PrintStream(out, true, StandardCharsets.UTF_8));
         var dataHandler    = visitorHandler.getDataHandler();
         var controlSession = mock(VisitorControlSession.class);
         dataHandler.setSession(controlSession);
@@ -137,7 +138,7 @@ public class StdOutVisitorHandlerTest {
         dataHandler.onMessage(createPutWithDocAndValue(docType, "id:baz:foo::3", "\r\ncool fox\r\n"), mock(AckToken.class));
         dataHandler.onDone();
 
-        String output = out.toString().trim();
+        String output = out.toString(StandardCharsets.UTF_8).trim();
         if (jsonLinesFormat) {
             // JSONL; no implicit start/end array chars or trailing commas after objects
             var expected = """
@@ -165,7 +166,7 @@ public class StdOutVisitorHandlerTest {
         params.nullRender = true;
 
         var out            = new ByteArrayOutputStream();
-        var visitorHandler = new StdOutVisitorHandler(params, new PrintStream(out, true));
+        var visitorHandler = new StdOutVisitorHandler(params, new PrintStream(out, true, StandardCharsets.UTF_8));
         var dataHandler    = visitorHandler.getDataHandler();
         var controlSession = mock(VisitorControlSession.class);
         dataHandler.setSession(controlSession);
@@ -175,7 +176,7 @@ public class StdOutVisitorHandlerTest {
         dataHandler.onMessage(createPutWithDocAndValue(docType, "id:baz:foo::3", "\r\ncool fox\r\n"), mock(AckToken.class));
         dataHandler.onDone();
 
-        String output = out.toString().trim();
+        String output = out.toString(StandardCharsets.UTF_8).trim();
         assertEquals("", output);
     }
 

@@ -3,6 +3,7 @@ package com.yahoo.vespa.security.tool.crypto;
 
 import com.yahoo.security.SealedSharedKey;
 import com.yahoo.text.StringUtilities;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.security.tool.Tool;
 import com.yahoo.vespa.security.tool.ToolDescription;
 import com.yahoo.vespa.security.tool.ToolInvocation;
@@ -46,10 +47,10 @@ public class TokenInfoTool implements Tool {
         var token = SealedSharedKey.fromTokenString(leftoverArgs[0]);
         var stdOut = invocation.stdOut();
 
-        stdOut.format("Version:         %d\n", token.tokenVersion());
-        stdOut.format("Key ID:          %s (%s)\n", StringUtilities.escape(token.keyId().asString()), hex(token.keyId().asBytes()));
-        stdOut.format("HPKE enc:        %s\n", hex(token.enc()));
-        stdOut.format("HPKE ciphertext: %s\n", hex(token.ciphertext()));
+        stdOut.print(Text.format("Version:         %d\n", token.tokenVersion()));
+        stdOut.print(Text.format("Key ID:          %s (%s)\n", StringUtilities.escape(token.keyId().asString()), hex(token.keyId().asBytes())));
+        stdOut.print(Text.format("HPKE enc:        %s\n", hex(token.enc())));
+        stdOut.print(Text.format("HPKE ciphertext: %s\n", hex(token.ciphertext())));
 
         return 0;
     }

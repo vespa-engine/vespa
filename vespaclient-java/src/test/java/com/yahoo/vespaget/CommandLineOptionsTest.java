@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -181,12 +182,12 @@ public class CommandLineOptionsTest {
     void testPrintHelp() {
         ByteArrayOutputStream outContent = new ByteArrayOutputStream();
         PrintStream oldOut = System.out;
-        System.setOut(new PrintStream(outContent));
+        System.setOut(new PrintStream(outContent, false, StandardCharsets.UTF_8));
         try {
             CommandLineOptions options = new CommandLineOptions(emptyStream);
             options.printHelp();
 
-            String output = outContent.toString();
+            String output = outContent.toString(StandardCharsets.UTF_8);
             assertTrue(output.contains("vespa-get <options> [documentid...]"));
             assertTrue(output.contains("Fetch a document from a Vespa Content cluster."));
         } finally {
