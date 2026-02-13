@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.vespa.config.server.session.Session.Status.DELETE;
 import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 import static com.yahoo.vespa.config.server.session.Session.Status.UNKNOWN;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -126,7 +128,7 @@ public class SessionsMaintainerTest {
         // Create a session, set status to UNKNOWN, we don't want to expire those
         // (creation time is then EPOCH, so will be candidate for expiry)
         var sessionId = 5;
-        var session = sessionRepository.createRemoteSession(sessionId);
+        var session = sessionRepository.createRemoteSessionAndActivate(sessionId);
         sessionRepository.createSessionZooKeeperClient(sessionId).createNewSession(clock.instant());
         try (var t = sessionRepository.createSetStatusTransaction(session, UNKNOWN)) {
             t.commit();
@@ -163,7 +165,7 @@ public class SessionsMaintainerTest {
         // Create a local session with invalid application package and check that expiring local sessions still works
         long sessionId = 4;
         var applicationPath = tenantFileSystemDirs.getUserApplicationDir(sessionId).toPath();
-        var session = sessionRepository.createRemoteSession(sessionId);
+        var session = sessionRepository.createRemoteSessionAndActivate(sessionId);
         sessionRepository.createSessionZooKeeperClient(sessionId).createNewSession(clock.instant());
         try (var t = sessionRepository.createSetStatusTransaction(session, PREPARE)) {
             t.commit();
@@ -201,6 +203,26 @@ public class SessionsMaintainerTest {
         var sessions = sessionRepository.getRemoteSessionsFromZooKeeper();
         assertEquals(2, sessions.size());
         assertEquals(List.of(3L, 4L), sessions);
+    }
+
+    @Test
+    public void testDeletingSessionWithStatusDelete() {
+        flagSource.withBooleanFlag(Flags.USE_EXPERIMENTAL_DELETE_SESSIONS_CODE.id(), true);
+        tester = createTester(flagSource);
+        tester.deployApp(testApp, prepareParams()); // session 2 (numbering starts at 2)
+
+        clock.advance(Duration.ofMinutes(10));
+        createDeployment().activate(); // session 3
+        assertNumberOfRemoteSessions(2);
+        assertNumberOfLocalSessions(2);
+
+        sessionRepository.createSetStatusTransaction(sessionRepository.getRemoteSession(2), DELETE);
+        sessionRepository.remoteSessionCache().remove(2L);
+
+        clock.advance(Duration.ofMinutes(60));
+        maintainer.run();
+        assertNumberOfRemoteSessions(1);
+        assertNumberOfLocalSessions(1);
     }
 
     private MaintainerTester createTester() {

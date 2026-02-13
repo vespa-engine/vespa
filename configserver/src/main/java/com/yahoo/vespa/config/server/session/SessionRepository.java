@@ -141,6 +141,7 @@ public class SessionRepository {
     private final int maxNodeSize;
     private final BooleanFlag writeSessionData;
     private final BooleanFlag readSessionData;
+    private final BooleanFlag experimentalDeleteSessions;
     private final InheritableApplications inheritableApplications;
 
     public SessionRepository(TenantName tenantName,
@@ -187,6 +188,7 @@ public class SessionRepository {
         this.maxNodeSize = maxNodeSize;
         this.writeSessionData = Flags.WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
         this.readSessionData = Flags.READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
+        this.experimentalDeleteSessions = Flags.USE_EXPERIMENTAL_DELETE_SESSIONS_CODE.bindTo(flagSource);
         this.inheritableApplications = inheritableApplications;
 
         loadSessions(); // Needs to be done before creating cache below
@@ -219,7 +221,7 @@ public class SessionRepository {
         addLocalSession(session);
         long sessionId = session.getSessionId();
         if (remoteSessionCache.get(sessionId) == null)
-            createRemoteSession(sessionId);
+            createRemoteSessionAndActivate(sessionId);
     }
 
     public void addLocalSession(LocalSession session) {
@@ -376,13 +378,18 @@ public class SessionRepository {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
-    public RemoteSession createRemoteSession(long sessionId) {
-        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient);
+    /** Creates remote sessions and loads it if it is active. Also sets up zk watcher for session id */
+    public RemoteSession createRemoteSessionAndActivate(long sessionId) {
+        var session = createRemoteSession(sessionId);
         loadSessionIfActive(session);
         remoteSessionCache.put(sessionId, session);
         updateSessionStateWatcher(sessionId);
         return session;
+    }
+
+    private RemoteSession createRemoteSession(long sessionId) {
+        var sessionZKClient = createSessionZooKeeperClient(sessionId);
+        return new RemoteSession(tenantName, sessionId, sessionZKClient);
     }
 
     public void deactivateSession(long sessionId) {
@@ -398,6 +405,9 @@ public class SessionRepository {
         transaction.commit();
         transaction.close();
     }
+
+    // Public for testing
+    public Map<Long, RemoteSession> remoteSessionCache() { return remoteSessionCache; }
 
     private List<Long> getSessionListFromDirectoryCache(List<ChildData> children) {
         return getSessionList(children.stream()
@@ -433,7 +443,7 @@ public class SessionRepository {
         if (hasStatusDeleted(sessionId)) return;
 
         log.log(Level.FINE, () -> "Adding remote session " + sessionId);
-        Session session = createRemoteSession(sessionId);
+        Session session = createRemoteSessionAndActivate(sessionId);
         if (session.getStatus() == NEW) {
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             confirmUpload(session);
@@ -619,7 +629,7 @@ public class SessionRepository {
         Set<Long> newSessions = findNewSessionsInFileSystem();
         sessions.removeAll(newSessions);
         Collections.sort(sessions);
-        // Use a LinkedHashSet to avoid duplicates, but preserver order from sorted list
+        // Use a LinkedHashSet to avoid duplicates, but preserve order from sorted list
         var sortedSessions = new LinkedHashSet<>(sessions);
         log.log(Level.FINE, () -> "Sessions for tenant " + tenantName + ": " + sortedSessions);
 
@@ -629,11 +639,11 @@ public class SessionRepository {
         int deletedLocalSessions = 0;
         for (Long sessionId : sortedSessions) {
             try {
-                Session session = remoteSessionCache.get(sessionId);
+                Session session = remoteSessionFromCacheOrCreated(sessionId);
                 Instant createTime;
                 Optional<Instant> localSessionCreateTime = Optional.empty();
                 boolean deleteRemoteSession = true;
-                if (session == null) {
+                if (hasNoCreateTime(session)) {
                     // If remote session is missing (deleted from zookeeper) it will only be present in file system,
                     // so use local session and its creation time from file system
                     var localSession = getOptionalSessionFromFileSystem(sessionId);
@@ -641,7 +651,7 @@ public class SessionRepository {
 
                     session = localSession.get();
                     createTime = localSessionCreated((LocalSession) session);
-                    localSessionCreateTime= Optional.of(createTime);
+                    localSessionCreateTime = Optional.of(createTime);
                     deleteRemoteSession = false;
                 } else {
                     createTime = session.getCreateTime();
@@ -680,6 +690,20 @@ public class SessionRepository {
         }
         log.log(Level.FINE, "Deleted " + deletedRemoteSessions + " remote and " + deletedLocalSessions +
                 " local sessions for tenant " + tenantName + " that had expired");
+    }
+
+    private boolean hasNoCreateTime(Session session) {
+        return (experimentalDeleteSessions.value() && session.getCreateTime() == Instant.EPOCH) ||
+                session == null;
+    }
+
+    private RemoteSession remoteSessionFromCacheOrCreated(Long sessionId) {
+        var session = remoteSessionCache.get(sessionId);
+        if (session == null && experimentalDeleteSessions.value()) {
+            return createRemoteSession(sessionId);
+        } else {
+            return session;
+        }
     }
 
     private record ApplicationLock(Optional<Lock> lock) implements Closeable {
