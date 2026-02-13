@@ -121,7 +121,7 @@ public class ApplicationTest {
                                             ModelConfig.CONFIG_DEF_NAMESPACE,
                                             ModelConfig.CONFIG_DEF_SCHEMA))
                 .serialize(baos, CompressionType.UNCOMPRESSED);
-        assertTrue(baos.toString().startsWith("{\"vespaVersion\":\"1.0.0\",\"hosts\":[{\"name\":\"mytesthost\""));
+        assertTrue(baos.toString(StandardCharsets.UTF_8).startsWith("{\"vespaVersion\":\"1.0.0\",\"hosts\":[{\"name\":\"mytesthost\""));
     }
 
     @Test

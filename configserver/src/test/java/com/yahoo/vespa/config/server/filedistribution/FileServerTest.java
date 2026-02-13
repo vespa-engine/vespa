@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -159,7 +160,7 @@ public class FileServerTest {
         }
 
         fileServer.startFileServing(reference, file.get(), fileReceiver, Set.of(lz4));
-        assertEquals(new String(content.get()), "dummy-data");
+        assertEquals(new String(content.get(), StandardCharsets.UTF_8), "dummy-data");
     }
 
     private void writeFile(String dir) throws IOException {
@@ -214,7 +215,7 @@ public class FileServerTest {
         FileReference fileReference = new FileReference("12y");
         var file = fileServer.getFileDownloadIfNeeded(new FileReferenceDownload(fileReference, "test"));
         fileServer.startFileServing(fileReference, file.get(), new FileReceiver(content), Set.of(compressionType));
-        assertEquals(new String(content.get()), "dummy-data");
+        assertEquals(new String(content.get(), StandardCharsets.UTF_8), "dummy-data");
     }
 
     private static class MockFileDownloader extends FileDownloader {

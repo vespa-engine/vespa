@@ -29,6 +29,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,7 +140,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Test
     public void require_internal_error_when_exception() throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile(temporaryFolder.getRoot().toPath());
-        new FileWriter(outFile).write("rubbish");
+        Files.writeString(outFile.toPath(), "rubbish", StandardCharsets.UTF_8);
         HttpResponse response = createHandler().handle(post(outFile));
         assertHttpStatusCodeErrorCodeAndMessage(response, INTERNAL_SERVER_ERROR,
                                                 HttpErrorResponse.ErrorCode.INTERNAL_SERVER_ERROR,

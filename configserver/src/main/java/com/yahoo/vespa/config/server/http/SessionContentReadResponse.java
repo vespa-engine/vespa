@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -58,7 +59,7 @@ public class SessionContentReadResponse extends HttpResponse {
 
         InputStream resources = Objects.requireNonNull(classLoader.getResourceAsStream("mime.types"),
                                                        "Failed to load resource 'mime.types'");
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resources))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resources, StandardCharsets.UTF_8))) {
             while (reader.ready()) {
                 String line = reader.readLine();
                 if (line.isEmpty() || line.charAt(0) == '#') continue;
