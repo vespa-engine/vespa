@@ -7,6 +7,7 @@ import com.yahoo.cloud.config.DataplaneProxyConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
+import com.yahoo.text.Text;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -59,7 +60,7 @@ public final class DataplaneProxyService extends AbstractComponent {
     public DataplaneProxyService() {
         this(Paths.get(PREFIX), new NginxProxyCommands(), 1, false, false);
     }
-    
+
     DataplaneProxyService(Path root, ProxyCommands proxyCommands, int reloadPeriodMinutes) {
         this(root, proxyCommands, reloadPeriodMinutes, false, false);
     }
@@ -128,8 +129,8 @@ public final class DataplaneProxyService extends AbstractComponent {
                                                    useAzureProxy,
                                                    isDevEnvironment));
                 if (configChanged) {
-                    logger.log(Level.INFO, "Configuring data plane proxy service. Token endpoints: [%s]"
-                            .formatted(String.join(", ", config.tokenEndpoints())));
+                    logger.log(Level.INFO, Text.format("Configuring data plane proxy service. Token endpoints: [%s]",
+                            String.join(", ", config.tokenEndpoints())));
                 }
                 if (configChanged && state == NginxState.RUNNING) {
                     changeState(NginxState.RELOAD_REQUIRED);
@@ -250,7 +251,7 @@ public final class DataplaneProxyService extends AbstractComponent {
             nginxTemplate = replace(nginxTemplate, "vespa_token_port", Integer.toString(vespaTokenPort));
             nginxTemplate = replace(nginxTemplate, "prefix", root.toString());
             String tokenmapping = tokenEndpoints.stream()
-                    .map("        %s vespatoken;"::formatted)
+                    .map(s -> Text.format("        %s vespatoken;", s))
                     .collect(Collectors.joining("\n"));
             nginxTemplate = replace(nginxTemplate, "vespa_token_endpoints", tokenmapping);
 
@@ -319,7 +320,7 @@ public final class DataplaneProxyService extends AbstractComponent {
                 ).start();
                 int exitCode = startCommand.waitFor();
                 if (exitCode != 0) {
-                    throw new RuntimeException("Non-zero exitcode from nginx: %d".formatted(exitCode));
+                    throw new RuntimeException(Text.format("Non-zero exitcode from nginx: %d", exitCode));
                 }
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException("Could not start nginx", e);
@@ -336,7 +337,7 @@ public final class DataplaneProxyService extends AbstractComponent {
                 ).start();
                 int exitCode = stopCommand.waitFor();
                 if (exitCode != 0) {
-                    throw new RuntimeException("Non-zero exitcode from nginx: %d".formatted(exitCode));
+                    throw new RuntimeException(Text.format("Non-zero exitcode from nginx: %d", exitCode));
                 }
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException("Could not start nginx", e);
@@ -354,7 +355,7 @@ public final class DataplaneProxyService extends AbstractComponent {
                 ).start();
                 int exitCode = reloadCommand.waitFor();
                 if (exitCode != 0) {
-                    throw new RuntimeException("Non-zero exitcode from nginx: %d".formatted(exitCode));
+                    throw new RuntimeException(Text.format("Non-zero exitcode from nginx: %d", exitCode));
                 }
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException("Could not start nginx", e);

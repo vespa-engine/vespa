@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Locale;
 import java.util.Date;
 import java.util.function.BiFunction;
 import java.util.logging.Formatter;
@@ -108,7 +109,7 @@ public class LogFileHandlerTestCase {
         File root = newFolder(temporaryFolder, "testlogforsymlinkchecking");
         Formatter formatter = new Formatter() {
             public String format(LogRecord r) {
-                DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
+                DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS", Locale.ROOT);
                 String timeStamp = df.format(new Date(r.getMillis()));
                 return ("[" + timeStamp + "]" + " " + formatMessage(r));
             }
@@ -168,7 +169,7 @@ public class LogFileHandlerTestCase {
     void testcompression_gzip() throws InterruptedException, IOException {
         testcompression(
                 Compression.GZIP, "gz",
-                (compressedFile, __) -> uncheck(() -> new String(new GZIPInputStream(Files.newInputStream(compressedFile)).readAllBytes())));
+                (compressedFile, __) -> uncheck(() -> new String(new GZIPInputStream(Files.newInputStream(compressedFile)).readAllBytes(), StandardCharsets.UTF_8)));
     }
 
     @Test
@@ -181,7 +182,7 @@ public class LogFileHandlerTestCase {
                     byte[] uncompressedBytes = new byte[uncompressedSize];
                     byte[] compressedBytes = Files.readAllBytes(compressedFile);
                     zstdCompressor.decompress(compressedBytes, 0, compressedBytes.length, uncompressedBytes, 0, uncompressedBytes.length);
-                    return new String(uncompressedBytes);
+                    return new String(uncompressedBytes, StandardCharsets.UTF_8);
                 }));
     }
 
@@ -212,7 +213,7 @@ public class LogFileHandlerTestCase {
             Thread.sleep(1);
         }
         assertTrue(compressed.exists());
-        String uncompressedContent = decompressor.apply(compressed.toPath(), content.getBytes().length);
+        String uncompressedContent = decompressor.apply(compressed.toPath(), content.getBytes(StandardCharsets.UTF_8).length);
         assertEquals(uncompressedContent, content);
         h.shutdown();
     }

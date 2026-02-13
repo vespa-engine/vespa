@@ -46,6 +46,7 @@ import com.yahoo.messagebus.jdisc.MbusServer;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
 import com.yahoo.security.tls.Capability;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
@@ -407,7 +408,7 @@ public final class ConfiguredApplication implements Application {
                 }
             }
             if ( ! serversToClose.isEmpty()) {
-                log.info(String.format("Closing %d server instances", serversToClose.size()));
+                log.info(Text.format("Closing %d server instances", serversToClose.size()));
                 for (ServerProvider server : ordered(serversToClose, JettyHttpServer.class, MbusServer.class)) {
                     server.close();
                     startedServers.remove(server);
@@ -498,7 +499,7 @@ public final class ConfiguredApplication implements Application {
         configurer.shutdownConfigRetriever();
         try {
             reconfigurerThread.join();
-            log.info(String.format(
+            log.info(Text.format(
                     "Reconfiguration thread shutdown completed in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
         } catch (InterruptedException e) {
             String message = "Interrupted while waiting for reconfiguration shutdown";

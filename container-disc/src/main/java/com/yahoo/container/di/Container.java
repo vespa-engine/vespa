@@ -17,6 +17,7 @@ import com.yahoo.container.di.componentgraph.core.Node;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.di.config.SubscriberFactory;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.UncheckedInterruptedException;
 import org.osgi.framework.Bundle;
@@ -123,12 +124,12 @@ public class Container {
             updateApplyOnRestart();
 
             if (log.isLoggable(FINE))
-                log.log(FINE, String.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
+                log.log(FINE, Text.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
                                             graph.configKeys(), graph.generation(), snapshot));
 
             if (snapshot instanceof BootstrapConfigs) {
                 if (getBootstrapGeneration() <= previousConfigGeneration) {
-                    throw new IllegalStateException(String.format(
+                    throw new IllegalStateException(Text.format(
                             "Got bootstrap configs out of sequence for old config generation %d.\n" + "Previous config generation is %d",
                             getBootstrapGeneration(), previousConfigGeneration));
                 }
@@ -163,7 +164,7 @@ public class Container {
     }
 
     private String configGenerationsString() {
-        return String.format("bootstrap generation = %d\n" + "components generation: %d\n" + "previous generation: %d",
+        return Text.format("bootstrap generation = %d\n" + "components generation: %d\n" + "previous generation: %d",
                              getBootstrapGeneration(), getComponentsGeneration(), previousConfigGeneration);
     }
 

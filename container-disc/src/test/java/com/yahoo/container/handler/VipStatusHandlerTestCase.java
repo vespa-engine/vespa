@@ -21,6 +21,7 @@ import org.mockito.Mockito;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -98,7 +99,7 @@ public class VipStatusHandlerTestCase {
     void testFileFound() throws IOException {
         File statusFile = File.createTempFile("VipStatusHandlerTestCase", null);
         try {
-            FileWriter writer = new FileWriter(statusFile);
+            FileWriter writer = new FileWriter(statusFile, StandardCharsets.UTF_8);
             String OK = "OK\n";
             writer.write(OK);
             writer.close();

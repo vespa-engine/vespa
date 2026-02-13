@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -54,9 +55,9 @@ public class LogHandlerTest {
         protected void writeLogs(OutputStream out, Instant from, Instant to, long maxLines, Optional<String> hostname)  {
             try {
                 if (to.isAfter(Instant.ofEpochMilli(1000))) {
-                    out.write("newer log".getBytes());
+                    out.write("newer log".getBytes(StandardCharsets.UTF_8));
                 } else {
-                    out.write("older log".getBytes());
+                    out.write("older log".getBytes(StandardCharsets.UTF_8));
                 }
             } catch (Exception e) {}
         }

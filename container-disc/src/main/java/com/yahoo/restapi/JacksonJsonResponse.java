@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A JSON response using Jackson for serialization.
@@ -48,7 +49,7 @@ public class JacksonJsonResponse<T> extends HttpResponse {
         if (log.isLoggable(Level.FINE)) {
             String json = writer.writeValueAsString(entity);
             log.log(Level.FINE, "Writing the following JSON to response output stream:\n" + json);
-            outputStream.write(json.getBytes());
+            outputStream.write(json.getBytes(StandardCharsets.UTF_8));
         } else {
             writer.writeValue(outputStream, entity);
         }
