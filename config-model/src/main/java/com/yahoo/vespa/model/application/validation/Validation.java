@@ -125,7 +125,7 @@ public class Validation {
 
     private static void validateFirstTimeDeployment(Execution execution) {
         new RedundancyValidator().validate((Context) execution);
-        new MinimumNodeCountValidator().validate((Context) execution);
+        new MinimumNodeCountValidator().validate(execution);
     }
 
     private static void validateChanges(Execution execution) {
