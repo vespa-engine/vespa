@@ -25,6 +25,16 @@ using search::attribute::IArrayBoolReadView;
 using search::attribute::IMultiValueAttribute;
 using search::attribute::SearchContextParams;
 
+using IntVec = std::vector<AttributeVector::largeint_t>;
+
+std::vector<bool> to_vec(vespalib::BitSpan span) {
+    std::vector<bool> vec;
+    for (bool bit : span) {
+        vec.push_back(bit);
+    }
+    return vec;
+}
+
 namespace {
 
 void remove_saved_attr() {
@@ -83,54 +93,46 @@ TEST_F(ArrayBoolAttributeTest, empty_document_has_zero_values)
 TEST_F(ArrayBoolAttributeTest, set_and_get_bools)
 {
     EXPECT_TRUE(_attr->addDocs(5));
-    _attr->commit();
-
     std::vector<int8_t> vals = {1, 0, 1, 1, 0};
     _bool_attr->set_bools(1, vals);
+    _attr->commit();
+
     EXPECT_EQ(5u, _attr->getValueCount(1));
 
-    // Read via get(largeint_t*)
-    std::vector<AttributeVector::largeint_t> buf(10);
-    uint32_t count = _attr->get(1, buf.data(), buf.size());
-    EXPECT_EQ(5u, count);
-    EXPECT_EQ(1, buf[0]);
-    EXPECT_EQ(0, buf[1]);
-    EXPECT_EQ(1, buf[2]);
-    EXPECT_EQ(1, buf[3]);
-    EXPECT_EQ(0, buf[4]);
+    std::vector<bool> expected = {true, false, true, true, false};
+    auto bs = _bool_attr->get_bools(1);
+    ASSERT_EQ(to_vec(bs), expected);
 
-    // getInt returns first bool
-    EXPECT_EQ(1, _attr->getInt(1));
+    // Empty document
+    EXPECT_EQ(0u, _attr->getValueCount(2));
+    EXPECT_EQ(0u, _bool_attr->get_bools(2).size());
 }
 
 TEST_F(ArrayBoolAttributeTest, set_bools_replaces_previous_values)
 {
     EXPECT_TRUE(_attr->addDocs(5));
-    _attr->commit();
-
     std::vector<int8_t> vals1 = {1, 0, 1};
     _bool_attr->set_bools(1, vals1);
-    EXPECT_EQ(3u, _attr->getValueCount(1));
-
     std::vector<int8_t> vals2 = {0, 1};
     _bool_attr->set_bools(1, vals2);
+    _attr->commit();
+
     EXPECT_EQ(2u, _attr->getValueCount(1));
 
-    std::vector<AttributeVector::largeint_t> buf(10);
-    _attr->get(1, buf.data(), buf.size());
-    EXPECT_EQ(0, buf[0]);
-    EXPECT_EQ(1, buf[1]);
+    IntVec expected = {0, 1};
+    IntVec buf(expected.size());
+    EXPECT_EQ(expected.size(), _attr->get(1, buf.data(), buf.size()));
+    EXPECT_EQ(expected, buf);
 }
 
 TEST_F(ArrayBoolAttributeTest, clear_doc)
 {
     EXPECT_TRUE(_attr->addDocs(5));
-    _attr->commit();
-
     std::vector<int8_t> vals = {1, 0, 1};
     _bool_attr->set_bools(1, vals);
-    EXPECT_EQ(3u, _attr->getValueCount(1));
+    _attr->commit();
 
+    EXPECT_EQ(3u, _attr->getValueCount(1));
     _attr->clearDoc(1);
     EXPECT_EQ(0u, _attr->getValueCount(1));
 }
@@ -138,46 +140,34 @@ TEST_F(ArrayBoolAttributeTest, clear_doc)
 TEST_F(ArrayBoolAttributeTest, various_bool_counts)
 {
     EXPECT_TRUE(_attr->addDocs(10));
-    _attr->commit();
-
-    // 0 bools
-    EXPECT_EQ(0u, _attr->getValueCount(1));
-
-    // 1 bool
+    // doc 1: 0 bools
     std::vector<int8_t> v1 = {1};
     _bool_attr->set_bools(2, v1);
-    EXPECT_EQ(1u, _attr->getValueCount(2));
-
-    // 7 bools (less than 8)
     std::vector<int8_t> v7 = {1, 0, 1, 0, 1, 0, 1};
     _bool_attr->set_bools(3, v7);
-    EXPECT_EQ(7u, _attr->getValueCount(3));
-
-    // exactly 8 bools
     std::vector<int8_t> v8 = {1, 0, 1, 0, 1, 0, 1, 0};
     _bool_attr->set_bools(4, v8);
-    EXPECT_EQ(8u, _attr->getValueCount(4));
-
-    // 9 bools (more than 8)
     std::vector<int8_t> v9 = {1, 0, 1, 0, 1, 0, 1, 0, 1};
     _bool_attr->set_bools(5, v9);
-    EXPECT_EQ(9u, _attr->getValueCount(5));
-
-    // 16 bools (exactly 2 bytes)
     std::vector<int8_t> v16(16, 1);
     _bool_attr->set_bools(6, v16);
-    EXPECT_EQ(16u, _attr->getValueCount(6));
-
-    // large count
     std::vector<int8_t> v100(100);
     for (int i = 0; i < 100; ++i) {
         v100[i] = (i % 3 == 0) ? 1 : 0;
     }
     _bool_attr->set_bools(7, v100);
+    _attr->commit();
+
+    EXPECT_EQ(0u, _attr->getValueCount(1));
+    EXPECT_EQ(1u, _attr->getValueCount(2));
+    EXPECT_EQ(7u, _attr->getValueCount(3));
+    EXPECT_EQ(8u, _attr->getValueCount(4));
+    EXPECT_EQ(9u, _attr->getValueCount(5));
+    EXPECT_EQ(16u, _attr->getValueCount(6));
     EXPECT_EQ(100u, _attr->getValueCount(7));
 
     // Verify large count values
-    std::vector<AttributeVector::largeint_t> buf(100);
+    IntVec buf(100);
     uint32_t count = _attr->get(7, buf.data(), buf.size());
     EXPECT_EQ(100u, count);
     for (int i = 0; i < 100; ++i) {
@@ -188,10 +178,9 @@ TEST_F(ArrayBoolAttributeTest, various_bool_counts)
 TEST_F(ArrayBoolAttributeTest, read_view)
 {
     EXPECT_TRUE(_attr->addDocs(5));
-    _attr->commit();
-
     std::vector<int8_t> vals = {1, 0, 1, 1};
     _bool_attr->set_bools(1, vals);
+    _attr->commit();
 
     auto* mv_attr = _attr->as_multi_value_attribute();
     ASSERT_NE(nullptr, mv_attr);
@@ -200,63 +189,38 @@ TEST_F(ArrayBoolAttributeTest, read_view)
     auto* read_view = mv_attr->make_read_view(IMultiValueAttribute::ArrayBoolTag(), stash);
     ASSERT_NE(nullptr, read_view);
 
+    std::vector<bool> expected = {true, false, true, true};
     auto bs = read_view->get_values(1);
-    EXPECT_EQ(4u, bs.size());
-    EXPECT_TRUE(bs[0]);
-    EXPECT_FALSE(bs[1]);
-    EXPECT_TRUE(bs[2]);
-    EXPECT_TRUE(bs[3]);
+    ASSERT_EQ(to_vec(bs), expected);
 
     // Empty document
-    auto bs_empty = read_view->get_values(2);
-    EXPECT_EQ(0u, bs_empty.size());
-}
-
-TEST_F(ArrayBoolAttributeTest, get_float)
-{
-    EXPECT_TRUE(_attr->addDocs(5));
-    _attr->commit();
-
-    std::vector<int8_t> vals = {0, 1, 0};
-    _bool_attr->set_bools(1, vals);
-
-    std::vector<double> buf(10);
-    uint32_t count = _attr->get(1, buf.data(), buf.size());
-    EXPECT_EQ(3u, count);
-    EXPECT_EQ(0.0, buf[0]);
-    EXPECT_EQ(1.0, buf[1]);
-    EXPECT_EQ(0.0, buf[2]);
-
-    EXPECT_EQ(0.0, _attr->getFloat(1));
+    EXPECT_EQ(0u, read_view->get_values(2).size());
 }
 
 TEST_F(ArrayBoolAttributeTest, search_context_true)
 {
     EXPECT_TRUE(_attr->addDocs(5));
-    _attr->commit();
-
     std::vector<int8_t> vals1 = {0, 1, 0};
     _bool_attr->set_bools(1, vals1);
-
     std::vector<int8_t> vals2 = {0, 0, 0};
     _bool_attr->set_bools(2, vals2);
-
     std::vector<int8_t> vals3 = {1};
     _bool_attr->set_bools(3, vals3);
+    _attr->commit();
 
     auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>("true", QueryTermSimple::Type::WORD),
                                 SearchContextParams());
     ASSERT_TRUE(ctx->valid());
 
     int32_t weight = 0;
-    // Doc 1: has true at position 1
+    // Doc 1: has true at element 1
     EXPECT_EQ(1, ctx->find(1, 0, weight));
     EXPECT_EQ(1, weight);
 
     // Doc 2: all false, no match
     EXPECT_EQ(-1, ctx->find(2, 0));
 
-    // Doc 3: has true at position 0
+    // Doc 3: has true at element 0
     EXPECT_EQ(0, ctx->find(3, 0));
 
     // Doc 4: empty, no match
@@ -266,26 +230,24 @@ TEST_F(ArrayBoolAttributeTest, search_context_true)
 TEST_F(ArrayBoolAttributeTest, search_context_false)
 {
     EXPECT_TRUE(_attr->addDocs(5));
-    _attr->commit();
-
     std::vector<int8_t> vals1 = {1, 0, 1};
     _bool_attr->set_bools(1, vals1);
+    _attr->commit();
 
     auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>("false", QueryTermSimple::Type::WORD),
                                 SearchContextParams());
     ASSERT_TRUE(ctx->valid());
 
-    // Doc 1: has false at position 1
+    // Doc 1: has false at element 1
     EXPECT_EQ(1, ctx->find(1, 0));
 }
 
 TEST_F(ArrayBoolAttributeTest, search_context_numeric)
 {
     EXPECT_TRUE(_attr->addDocs(5));
-    _attr->commit();
-
     std::vector<int8_t> vals = {0, 1};
     _bool_attr->set_bools(1, vals);
+    _attr->commit();
 
     // "1" matches true
     auto ctx1 = _attr->getSearch(std::make_unique<QueryTermSimple>("1", QueryTermSimple::Type::WORD),
@@ -314,20 +276,17 @@ TEST_F(ArrayBoolAttributeTest, save_and_load)
 {
     remove_saved_attr();
     EXPECT_TRUE(_attr->addDocs(10));
-    _attr->commit();
-
     std::vector<int8_t> vals1 = {1, 0, 1};
     _bool_attr->set_bools(1, vals1);
-
     std::vector<int8_t> vals2 = {0, 1, 1, 0, 1, 0, 1, 0, 1};
     _bool_attr->set_bools(2, vals2);
-
     // Doc 3 empty
     std::vector<int8_t> vals4(100);
     for (int i = 0; i < 100; ++i) {
         vals4[i] = (i % 2 == 0) ? 1 : 0;
     }
     _bool_attr->set_bools(4, vals4);
+    _attr->commit();
 
     _attr->setCreateSerialNum(42);
     _attr->save();
@@ -341,34 +300,30 @@ TEST_F(ArrayBoolAttributeTest, save_and_load)
 
     // Verify doc 1
     EXPECT_EQ(3u, _attr->getValueCount(1));
-    std::vector<AttributeVector::largeint_t> buf(100);
-    _attr->get(1, buf.data(), buf.size());
-    EXPECT_EQ(1, buf[0]);
-    EXPECT_EQ(0, buf[1]);
-    EXPECT_EQ(1, buf[2]);
+    IntVec expected1 = {1, 0, 1};
+    IntVec buf1(expected1.size());
+    EXPECT_EQ(expected1.size(), _attr->get(1, buf1.data(), buf1.size()));
+    EXPECT_EQ(expected1, buf1);
 
     // Verify doc 2
     EXPECT_EQ(9u, _attr->getValueCount(2));
-    _attr->get(2, buf.data(), buf.size());
-    EXPECT_EQ(0, buf[0]);
-    EXPECT_EQ(1, buf[1]);
-    EXPECT_EQ(1, buf[2]);
-    EXPECT_EQ(0, buf[3]);
-    EXPECT_EQ(1, buf[4]);
-    EXPECT_EQ(0, buf[5]);
-    EXPECT_EQ(1, buf[6]);
-    EXPECT_EQ(0, buf[7]);
-    EXPECT_EQ(1, buf[8]);
+    IntVec expected2 = {0, 1, 1, 0, 1, 0, 1, 0, 1};
+    IntVec buf2(expected2.size());
+    EXPECT_EQ(expected2.size(), _attr->get(2, buf2.data(), buf2.size()));
+    EXPECT_EQ(expected2, buf2);
 
     // Verify doc 3 empty
     EXPECT_EQ(0u, _attr->getValueCount(3));
 
     // Verify doc 4 (100 bools)
     EXPECT_EQ(100u, _attr->getValueCount(4));
-    _attr->get(4, buf.data(), buf.size());
+    IntVec expected4(100);
     for (int i = 0; i < 100; ++i) {
-        EXPECT_EQ((i % 2 == 0) ? 1 : 0, buf[i]) << "index " << i;
+        expected4[i] = (i % 2 == 0) ? 1 : 0;
     }
+    IntVec buf4(expected4.size());
+    EXPECT_EQ(expected4.size(), _attr->get(4, buf4.data(), buf4.size()));
+    EXPECT_EQ(expected4, buf4);
 
     remove_saved_attr();
 }
@@ -384,36 +339,164 @@ TEST_F(ArrayBoolAttributeTest, address_space_usage_is_reported)
     EXPECT_EQ(1u, all.count(raw_store));
 }
 
-TEST_F(ArrayBoolAttributeTest, weighted_int_get)
+TEST_F(ArrayBoolAttributeTest, get_array_values)
 {
     EXPECT_TRUE(_attr->addDocs(5));
+    std::vector<int8_t> vals = {1, 0, 1, 1, 0};
+    _bool_attr->set_bools(1, vals);
     _attr->commit();
 
+    // Full buffer
+    IntVec expected_int = {1, 0, 1, 1, 0};
+    IntVec buf_int(expected_int.size());
+    EXPECT_EQ(expected_int.size(), _attr->get(1, buf_int.data(), buf_int.size()));
+    EXPECT_EQ(expected_int, buf_int);
+
+    std::vector<double> expected_double = {1.0, 0.0, 1.0, 1.0, 0.0};
+    std::vector<double> buf_double(expected_double.size());
+    EXPECT_EQ(expected_double.size(), _attr->get(1, buf_double.data(), buf_double.size()));
+    EXPECT_EQ(expected_double, buf_double);
+
+    std::vector<std::string> expected_string = {"1", "0", "1", "1", "0"};
+    std::vector<std::string> buf_string(expected_string.size());
+    EXPECT_EQ(expected_string.size(), _attr->get(1, buf_string.data(), buf_string.size()));
+    EXPECT_EQ(expected_string, buf_string);
+
+    std::vector<AttributeVector::WeightedInt> expected_wint = {{1, 1}, {0, 1}, {1, 1}, {1, 1}, {0, 1}};
+    std::vector<AttributeVector::WeightedInt> buf_wint(expected_wint.size());
+    EXPECT_EQ(expected_wint.size(), _attr->get(1, buf_wint.data(), buf_wint.size()));
+    EXPECT_EQ(expected_wint, buf_wint);
+
+    std::vector<AttributeVector::WeightedFloat> expected_wfloat = {{1.0, 1}, {0.0, 1}, {1.0, 1}, {1.0, 1}, {0.0, 1}};
+    std::vector<AttributeVector::WeightedFloat> buf_wfloat(expected_wfloat.size());
+    EXPECT_EQ(expected_wfloat.size(), _attr->get(1, buf_wfloat.data(), buf_wfloat.size()));
+    EXPECT_EQ(expected_wfloat, buf_wfloat);
+
+    std::vector<AttributeVector::WeightedString> expected_wstring = {{"1", 1}, {"0", 1}, {"1", 1}, {"1", 1}, {"0", 1}};
+    std::vector<AttributeVector::WeightedString> buf_wstring(expected_wstring.size());
+    EXPECT_EQ(expected_wstring.size(), _attr->get(1, buf_wstring.data(), buf_wstring.size()));
+    EXPECT_EQ(expected_wstring, buf_wstring);
+
+    // Types that always return 0
+    const char* cbuf[5];
+    EXPECT_EQ(0u, _attr->get(1, cbuf, 5));
+
+    AttributeVector::EnumHandle ebuf[5];
+    EXPECT_EQ(0u, _attr->get(1, ebuf, 5));
+
+    AttributeVector::WeightedConstChar wccbuf[5];
+    EXPECT_EQ(0u, _attr->get(1, wccbuf, 5));
+
+    AttributeVector::WeightedEnum webuf[5];
+    EXPECT_EQ(0u, _attr->get(1, webuf, 5));
+
+    // Undersized buffer: fills up to sz, returns total count
+    IntVec partial_int = {1, 0};
+    IntVec pbuf_int(partial_int.size());
+    EXPECT_EQ(5u, _attr->get(1, pbuf_int.data(), pbuf_int.size()));
+    EXPECT_EQ(partial_int, pbuf_int);
+
+    std::vector<double> partial_double = {1.0, 0.0};
+    std::vector<double> pbuf_double(partial_double.size());
+    EXPECT_EQ(5u, _attr->get(1, pbuf_double.data(), pbuf_double.size()));
+    EXPECT_EQ(partial_double, pbuf_double);
+
+    std::vector<std::string> partial_string = {"1", "0"};
+    std::vector<std::string> pbuf_string(partial_string.size());
+    EXPECT_EQ(5u, _attr->get(1, pbuf_string.data(), pbuf_string.size()));
+    EXPECT_EQ(partial_string, pbuf_string);
+
+    std::vector<AttributeVector::WeightedInt> partial_wint = {{1, 1}, {0, 1}};
+    std::vector<AttributeVector::WeightedInt> pbuf_wint(partial_wint.size());
+    EXPECT_EQ(5u, _attr->get(1, pbuf_wint.data(), pbuf_wint.size()));
+    EXPECT_EQ(partial_wint, pbuf_wint);
+
+    std::vector<AttributeVector::WeightedFloat> partial_wfloat = {{1.0, 1}, {0.0, 1}};
+    std::vector<AttributeVector::WeightedFloat> pbuf_wfloat(partial_wfloat.size());
+    EXPECT_EQ(5u, _attr->get(1, pbuf_wfloat.data(), pbuf_wfloat.size()));
+    EXPECT_EQ(partial_wfloat, pbuf_wfloat);
+
+    std::vector<AttributeVector::WeightedString> partial_wstring = {{"1", 1}, {"0", 1}};
+    std::vector<AttributeVector::WeightedString> pbuf_wstring(partial_wstring.size());
+    EXPECT_EQ(5u, _attr->get(1, pbuf_wstring.data(), pbuf_wstring.size()));
+    EXPECT_EQ(partial_wstring, pbuf_wstring);
+}
+
+TEST_F(ArrayBoolAttributeTest, get_single_values)
+{
+    EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals = {1, 0, 1};
     _bool_attr->set_bools(1, vals);
+    _attr->commit();
 
-    std::vector<AttributeVector::WeightedInt> buf(10);
-    uint32_t count = _attr->get(1, buf.data(), buf.size());
-    EXPECT_EQ(3u, count);
-    EXPECT_EQ(1, buf[0].getValue());
-    EXPECT_EQ(0, buf[1].getValue());
-    EXPECT_EQ(1, buf[2].getValue());
+    EXPECT_EQ(1, _attr->getInt(1));
+    EXPECT_EQ(1.0, _attr->getFloat(1));
+    EXPECT_TRUE(_attr->get_raw(1).empty());
+    EXPECT_EQ(std::numeric_limits<uint32_t>::max(), _attr->getEnum(1));
+}
+
+TEST_F(ArrayBoolAttributeTest, is_not_sortable)
+{
+    EXPECT_FALSE(_attr->is_sortable());
+}
+
+TEST_F(ArrayBoolAttributeTest, find_enum_returns_false)
+{
+    EXPECT_TRUE(_attr->addDocs(5));
+    std::vector<int8_t> vals = {1, 0, 1};
+    _bool_attr->set_bools(1, vals);
+    _attr->commit();
+    AttributeVector::EnumHandle h;
+    EXPECT_FALSE(_attr->findEnum("1", h));
+    EXPECT_FALSE(_attr->findEnum("0", h));
+}
+
+TEST_F(ArrayBoolAttributeTest, find_folded_enums_returns_empty)
+{
+    EXPECT_TRUE(_attr->addDocs(5));
+    std::vector<int8_t> vals = {1, 0, 1};
+    _bool_attr->set_bools(1, vals);
+    _attr->commit();
+    EXPECT_TRUE(_attr->findFoldedEnums("1").empty());
+    EXPECT_TRUE(_attr->findFoldedEnums("0").empty());
 }
 
 TEST_F(ArrayBoolAttributeTest, shrink_lid_space)
 {
     EXPECT_TRUE(_attr->addDocs(10));
-    _attr->commit();
-
     std::vector<int8_t> vals = {1, 0, 1};
     _bool_attr->set_bools(1, vals);
     _bool_attr->set_bools(8, vals);
+    _attr->commit();
 
     _attr->compactLidSpace(5);
     EXPECT_EQ(5u, _attr->getCommittedDocIdLimit());
 
     // Doc 1 should still be accessible
     EXPECT_EQ(3u, _attr->getValueCount(1));
+}
+
+TEST_F(ArrayBoolAttributeTest, search_context_from_nonzero_elem_id)
+{
+    EXPECT_TRUE(_attr->addDocs(5));
+    std::vector<int8_t> vals = {1, 0, 1, 0, 1};
+    _bool_attr->set_bools(1, vals);
+    _attr->commit();
+
+    auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>("true", QueryTermSimple::Type::WORD),
+                                SearchContextParams());
+
+    // Start from element 0: finds true at element 0
+    EXPECT_EQ(0, ctx->find(1, 0));
+
+    // Start from element 1: skips element 0, finds true at element 2
+    EXPECT_EQ(2, ctx->find(1, 1));
+
+    // Start from element 3: skips elements 0-2, finds true at element 4
+    EXPECT_EQ(4, ctx->find(1, 3));
+
+    // Start from element 5: past the end, no match
+    EXPECT_EQ(-1, ctx->find(1, 5));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
