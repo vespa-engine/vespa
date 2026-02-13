@@ -1359,7 +1359,8 @@
       "public java.lang.Object sidecarsForTest()",
       "public boolean useTriton()",
       "public int searchCoreMaxOutstandingMoveOps()",
-      "public double docprocHandlerThreadpool()"
+      "public double docprocHandlerThreadpool()",
+      "public boolean applyOnRestartForApplicationMetadataConfig()"
     ],
     "fields" : [ ]
   },

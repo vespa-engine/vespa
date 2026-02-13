@@ -399,6 +399,15 @@ public class Flags {
             INSTANCE_ID
     );
 
+    public static final UnboundBooleanFlag APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG = defineFeatureFlag(
+            "apply-on-restart-for-application-metadata-config", false,
+            List.of("glebashnik"), "2026-02-13", "2026-08-13",
+            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " + 
+                    "This might fix deferring config changes until container restart.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
+
     public static final UnboundDoubleFlag HOST_MEMORY_SERVICES_MIXING_FACTOR = defineDoubleFlag(
             "host-memory-services-mixing-factor", 0.0,
             List.of("boeker"), "2026-01-16", "2026-04-16",
