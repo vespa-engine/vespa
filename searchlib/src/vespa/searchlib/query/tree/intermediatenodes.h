@@ -127,7 +127,7 @@ public:
         return *this;
     }
     bool is_expensive() const { return _expensive; }
-    std::vector<uint32_t> get_element_filter() const { return _element_filter; }
+    [[nodiscard]] const std::vector<uint32_t>& get_element_filter() const { return _element_filter; }
 private:
     bool _expensive;
     std::vector<uint32_t> _element_filter;
