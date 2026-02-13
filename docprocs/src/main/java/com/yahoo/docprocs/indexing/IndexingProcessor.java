@@ -24,6 +24,7 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.language.provider.DefaultGeneratorProvider;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -117,20 +118,20 @@ public class IndexingProcessor extends DocumentProcessor {
                 String message = Exceptions.toMessageString(e);
                 return Progress.INVALID_INPUT.withReason(
                         op.getId() != null
-                        ? "Operation on '%s' contains invalid input: %s".formatted(op.getId().toString(), message)
-                        : "Operation contains invalid input: %s".formatted(message));
+                        ? Text.format("Operation on '%s' contains invalid input: %s", op.getId().toString(), message)
+                        : Text.format("Operation contains invalid input: %s", message));
             } catch (OverloadException e) {
                 String message = Exceptions.toMessageString(e);
                 return Progress.OVERLOAD.withReason(
                         op.getId() != null
-                        ? "Operation on '%s' rejected due to overload: %s".formatted(op.getId().toString(), message)
-                        : "Operation rejected due to overload: %s".formatted(message));
+                        ? Text.format("Operation on '%s' rejected due to overload: %s", op.getId().toString(), message)
+                        : Text.format("Operation rejected due to overload: %s", message));
             } catch (TimeoutException e) {
                 String message = Exceptions.toMessageString(e);
                 return Progress.TIMEOUT.withReason(
                         op.getId() != null
-                        ? "Operation on '%s' timed out: %s".formatted(op.getId().toString(), message)
-                        : "Operation timed out: %s".formatted(message));
+                        ? Text.format("Operation on '%s' timed out: %s", op.getId().toString(), message)
+                        : Text.format("Operation timed out: %s", message));
             }
         }
         proc.getDocumentOperations().clear();
