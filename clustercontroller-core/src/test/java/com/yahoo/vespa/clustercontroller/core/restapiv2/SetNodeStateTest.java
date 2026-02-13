@@ -116,7 +116,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         restAPI.setUnitState(new SetUnitStateRequestImpl(
                 "music/distributor/1").setNewState("user", state, reason));
         UnitResponse response = restAPI.getState(new StateRequest("music/distributor/1", 0));
-        String expected = musicClusterExpectedUserStateString("east.g2", "up", "up", state.toLowerCase(), reason);
+        String expected = musicClusterExpectedUserStateString("east.g2", "up", "up", state.toLowerCase(Locale.ROOT), reason);
         assertEquals(expected, jsonWriter.createJson(response).toPrettyString());
     }
 
@@ -125,7 +125,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         for (int index : new int[]{1, 2, 3, 5, 7}) {
             UnitResponse response = restAPI.getState(new StateRequest("music/storage/" + index, 0));
             String actualState = response.getCurrentState().getStatePerType().get("user").id();
-            assertThat(actualState, is(state.toLowerCase()));
+            assertThat(actualState, is(state.toLowerCase(Locale.ROOT)));
             String actualReason = response.getCurrentState().getStatePerType().get("user").reason();
             assertThat(actualReason, is(reason));
         }
@@ -271,13 +271,13 @@ public class SetNodeStateTest extends StateRestApiTest {
         Response.NodeResponse nodeResponse = (Response.NodeResponse) response;
         UnitState unitState = nodeResponse.getStatePerType().get(type);
         assertNotNull(unitState, "No such type " + type + " at path " + path);
-        assertEquals(state.toString().toLowerCase(), unitState.id());
+        assertEquals(state.toString().toLowerCase(Locale.ROOT), unitState.id());
         assertEquals(reason, unitState.reason());
     }
 
     private void assertSetUnitState(int index, State state, String failureReason) throws StateRestApiException {
         SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/" + index)
-                .setNewState("user", state.toString().toLowerCase(), "whatever reason.")
+                .setNewState("user", state.toString().toLowerCase(Locale.ROOT), "whatever reason.")
                 .setCondition(SetUnitStateRequest.Condition.SAFE));
         if (failureReason == null) {
             assertThat(setResponse.getReason(), is("ok"));
@@ -301,7 +301,7 @@ public class SetNodeStateTest extends StateRestApiTest {
     private void assertSetUnitStateFails(int index, State state, String reasonRegex)
             throws StateRestApiException {
         SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/" + index)
-                .setNewState("user", state.toString().toLowerCase(), "whatever reason.")
+                .setNewState("user", state.toString().toLowerCase(Locale.ROOT), "whatever reason.")
                 .setCondition(SetUnitStateRequest.Condition.SAFE));
 
         Matcher matcher = Pattern.compile(reasonRegex).matcher(setResponse.getReason());
