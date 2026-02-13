@@ -183,7 +183,7 @@ DocumentMetaStoreFlushTarget::~DocumentMetaStoreFlushTarget() = default;
 ResourceUsage
 DocumentMetaStoreFlushTarget::get_resource_usage() const
 {
-    uint64_t size_on_disk = _dms->size_on_disk() + AttributeDirectory::get_size_on_disk_overhead();
+    uint64_t size_on_disk = _dms->size_on_disk() + _dmsDir->get_size_on_disk_overhead(true);
     return ResourceUsage{_dmsDir->get_transient_resource_usage(), size_on_disk};
 }
 

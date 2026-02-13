@@ -93,7 +93,7 @@ public:
     bool empty() const;
     std::string getAttributeFileName(SerialNum serialNum);
     searchcorespi::common::TransientResourceUsage get_transient_resource_usage() const;
-    static uint64_t get_size_on_disk_overhead();
+    uint64_t get_size_on_disk_overhead(bool permanent_dir) const;
 };
 
 } // namespace proton
