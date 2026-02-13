@@ -4,9 +4,7 @@ package com.yahoo.container.logging.test;
 import com.yahoo.container.logging.LogFormatter;
 import org.junit.jupiter.api.Test;
 
-import java.util.Date;
 import java.time.Instant;
-import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
