@@ -18,6 +18,7 @@ import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
+import com.yahoo.text.Text;
 
 import java.io.IOException;
 import java.net.URI;
@@ -91,7 +92,7 @@ public class ClusterDeploymentMetricsRetriever {
         }
 
         log.log(Level.FINE, () ->
-                String.format("Metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
+                Text.format("Metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
         );
 
         return clusterMetricsMap;

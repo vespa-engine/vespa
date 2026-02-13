@@ -24,6 +24,7 @@ import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
+import com.yahoo.text.Text;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -183,7 +184,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                 log.log(
                                         FINE,
                                         error,
-                                        () -> String.format("Failed to retrieve service config generation for '%s': %s", service, error.getMessage()));
+                                        () -> Text.format("Failed to retrieve service config generation for '%s': %s", service, error.getMessage()));
                                 temporaryResult.put(service, -1L);
                             }
                             return null;

@@ -18,6 +18,7 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
+import com.yahoo.text.Text;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -83,7 +84,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     try {
                         getPeerIdentity(request)
                                 .ifPresent(peerIdentity -> authorizer.accept(request, peerIdentity));
-                        log.log(Level.FINE, () -> String.format("Authorization succeeded for request '%s' from '%s'",
+                        log.log(Level.FINE, () -> Text.format("Authorization succeeded for request '%s' from '%s'",
                                                                    request.methodName(), request.target().toString()));
                     } catch (Throwable t) {
                         handleAuthorizationFailure(request, t);
@@ -111,7 +112,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                         if (isConfigKeyForSentinelConfig(configKey)) {
                             return; // config processor will return empty sentinel config for unknown nodes
                         }
-                        throw new AuthorizationException(Type.SILENT, String.format("Host '%s' not found in host registry for [%s]", hostname, configKey));
+                        throw new AuthorizationException(Type.SILENT, Text.format("Host '%s' not found in host registry for [%s]", hostname, configKey));
                     }
                     RequestHandler tenantHandler = getTenantHandler(applicationId.tenant());
                     ApplicationId resolvedApplication = tenantHandler.resolveApplicationId(hostname);
@@ -120,12 +121,12 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                         return; // allowed to access
                     }
                     throw new AuthorizationException(
-                            String.format(
+                            Text.format(
                                     "Peer is not allowed to access config owned by %s. Peer is owned by %s",
                                     resolvedApplication.toShortString(), peerOwner.toShortString()));
                 }
             default:
-                throw new AuthorizationException(String.format("'%s' nodes are not allowed to access config", peerIdentity.nodeType()));
+                throw new AuthorizationException(Text.format("'%s' nodes are not allowed to access config", peerIdentity.nodeType()));
         }
     }
 
@@ -144,16 +145,16 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     return; // allowed to access
                 }
                 throw new AuthorizationException(
-                        String.format("Peer is not allowed to access file reference %s. Peer is owned by %s. File references owned by this application: %s",
+                        Text.format("Peer is not allowed to access file reference %s. Peer is owned by %s. File references owned by this application: %s",
                                       requestedFile.value(), peerOwner.toShortString(), filesOwnedByApplication));
             default:
-                throw new AuthorizationException(String.format("'%s' nodes are not allowed to access files", peerIdentity.nodeType()));
+                throw new AuthorizationException(Text.format("'%s' nodes are not allowed to access files", peerIdentity.nodeType()));
         }
     }
 
     private void handleAuthorizationFailure(Request request, Throwable throwable) {
         boolean isAuthorizationException = throwable instanceof AuthorizationException;
-        String errorMessage = String.format("For request '%s' from '%s': %s", request.methodName(), request.target().toString(), throwable.getMessage());
+        String errorMessage = Text.format("For request '%s' from '%s': %s", request.methodName(), request.target().toString(), throwable.getMessage());
         if (!isAuthorizationException || ((AuthorizationException) throwable).type() != Type.SILENT) {
             log.log(Level.INFO, errorMessage);
         }
@@ -179,7 +180,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
         }
         try {
             NodeIdentity identity = nodeIdentifier.identifyNode(certChain);
-            log.log(Level.FINE, () -> String.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
+            log.log(Level.FINE, () -> Text.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
             return Optional.of(identity);
         } catch (NodeIdentifierException e) {
             throw new AuthorizationException("Failed to identify peer: " + e.getMessage(), e);
@@ -202,7 +203,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     private RequestHandler getTenantHandler(TenantName tenantName) {
         return handlerProvider.getRequestHandler(tenantName)
-                .orElseThrow(() -> new AuthorizationException(String.format("No handler exists for tenant '%s'", tenantName.value())));
+                .orElseThrow(() -> new AuthorizationException(Text.format("No handler exists for tenant '%s'", tenantName.value())));
     }
 
     private enum JrtErrorCode {
