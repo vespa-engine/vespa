@@ -5,15 +5,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yahoo.text.Text;
 
 import java.util.HashSet;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public record SidecarResources(
-        @JsonProperty("maxCpu") double maxCpu, 
-        @JsonProperty("minCpu") double minCpu, 
-        @JsonProperty("memoryGiB") double memoryGiB, 
+        @JsonProperty("maxCpu") double maxCpu,
+        @JsonProperty("minCpu") double minCpu,
+        @JsonProperty("memoryGiB") double memoryGiB,
         @JsonProperty("gpu") String gpu) {
     // 0.0 means unlimited, gpu = null means no GPU
     public static SidecarResources DEFAULT = new SidecarResources(0.0, 0.0, 0.0, null);
@@ -21,20 +22,20 @@ public record SidecarResources(
     @JsonCreator
     public SidecarResources {
         if (maxCpu < 0) {
-            throw new IllegalArgumentException("maxCpu must be non-negative, actual %s".formatted(maxCpu));
+            throw new IllegalArgumentException(Text.format("maxCpu must be non-negative, actual %s", maxCpu));
         }
 
         if (minCpu < 0) {
-            throw new IllegalArgumentException("minCpu must be non-negative, actual %s".formatted(minCpu));
+            throw new IllegalArgumentException(Text.format("minCpu must be non-negative, actual %s", minCpu));
         }
 
         if (maxCpu != 0 && minCpu != 0 && maxCpu < minCpu) {
             throw new IllegalArgumentException(
-                    "Non-zero maxCpu must be greater than or equal to non-zero minCpu, actual %s and %s".formatted(maxCpu, minCpu));
+                    Text.format("Non-zero maxCpu must be greater than or equal to non-zero minCpu, actual %s and %s", maxCpu, minCpu));
         }
 
         if (memoryGiB < 0) {
-            throw new IllegalArgumentException("memoryGiB must be non-negative, actual %s".formatted(memoryGiB));
+            throw new IllegalArgumentException(Text.format("memoryGiB must be non-negative, actual %s", memoryGiB));
         }
 
         if (gpu != null && !gpu.equals("all")) {
@@ -46,23 +47,23 @@ public record SidecarResources(
 
                     if (trimmed.isEmpty()) {
                         throw new IllegalArgumentException(
-                                "GPU device indexes can't be empty, actual: %s".formatted(gpu));
+                                Text.format("GPU device indexes can't be empty, actual: %s", gpu));
                     }
 
                     int index = Integer.parseInt(trimmed);
 
                     if (index < 0) {
                         throw new IllegalArgumentException(
-                                "GPU device indexes must be non-negative, actual: %s".formatted(gpu));
+                                Text.format("GPU device indexes must be non-negative, actual: %s", gpu));
                     }
 
                     if (!indexes.add(index)) {
-                        throw new IllegalArgumentException("GPU device indexes contain duplicates: %s".formatted(gpu));
+                        throw new IllegalArgumentException(Text.format("GPU device indexes contain duplicates: %s", gpu));
                     }
                 }
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException(
-                        "GPU must be null, \"all\", or comma-separated list of device indexes, actual: %s".formatted(
+                        Text.format("GPU must be null, \"all\", or comma-separated list of device indexes, actual: %s",
                                 gpu));
             }
         }

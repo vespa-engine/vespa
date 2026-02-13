@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yahoo.text.Text;
 
 import java.util.List;
 import java.util.Map;
@@ -26,21 +27,21 @@ public record Sidecar(
         @JsonProperty("command") List<String> command) {
     private static final int MIN_ID = 0;
     private static final int MAX_ID = 99;
-    
+
     @JsonCreator
     public Sidecar {
         if (id < MIN_ID || id > MAX_ID) {
-            throw new IllegalArgumentException("Sidecar id must be between 0 and 99, actual: %s".formatted(id));
+            throw new IllegalArgumentException(Text.format("Sidecar id must be between 0 and 99, actual: %s", id));
         }
-        
+
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Sidecar name must be specified");
         }
-        
+
         if (image == null || image.isBlank()) {
             throw new IllegalArgumentException("Sidecar image must be specified");
         }
-        
+
         resources = resources == null ? SidecarResources.DEFAULT : resources;
         volumeMounts = volumeMounts == null ? List.of() : volumeMounts;
         envs = envs == null ? Map.of() : envs;
