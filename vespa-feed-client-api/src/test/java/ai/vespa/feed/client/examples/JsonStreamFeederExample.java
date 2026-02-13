@@ -8,6 +8,7 @@ import ai.vespa.feed.client.OperationParameters;
 import ai.vespa.feed.client.Result;
 
 import java.net.URI;
+import java.util.Locale;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -98,7 +99,7 @@ class JsonStreamFeederExample extends Thread implements AutoCloseable {
                         System.err.println(feedClient.stats());
                     }
                     if (throwable != null) {
-                        System.err.printf("Failure for '%s': %s", docId, throwable);
+                        System.err.printf(Locale.ROOT, "Failure for '%s': %s", docId, throwable);
                         throwable.printStackTrace();
                     }
                 });

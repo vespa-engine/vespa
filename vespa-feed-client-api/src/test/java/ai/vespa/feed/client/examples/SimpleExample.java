@@ -9,6 +9,7 @@ import ai.vespa.feed.client.Result;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 class SimpleExample {
@@ -25,7 +26,7 @@ class SimpleExample {
                 if (throwable != null) {
                     throwable.printStackTrace();
                 } else {
-                    System.out.printf("'%s' for document '%s': %s%n", result.type(), result.documentId(), result.resultMessage());
+                    System.out.printf(Locale.ROOT, "'%s' for document '%s': %s%n", result.type(), result.documentId(), result.resultMessage());
                 }
             }));
         }

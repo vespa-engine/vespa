@@ -44,6 +44,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -90,7 +91,7 @@ class JettyCluster implements Cluster {
                 long reqTimeoutMillis = req.timeLeft().toMillis();
                 if (reqTimeoutMillis <= 0) {
                     log.log(Level.FINE, () ->
-                            String.format("Request %s (%s) timed out after '%s' ms",
+                            String.format(Locale.ROOT, "Request %s (%s) timed out after '%s' ms",
                                     req, System.identityHashCode(vessel), req.timeout()));
                     vessel.completeExceptionally(new TimeoutException("operation timed out after '" + req.timeout() + "'"));
                     return;
@@ -117,13 +118,13 @@ class JettyCluster implements Cluster {
                     jettyReq.body(new BytesRequestContent(APPLICATION_JSON.asString(), bytes));
                 }
                 log.log(Level.FINE, () ->
-                        String.format("Dispatching request %s (%s) with timeout %d ms",
+                        String.format(Locale.ROOT, "Dispatching request %s (%s) with timeout %d ms",
                                 req, System.identityHashCode(vessel), reqTimeoutMillis));
                 jettyReq.send(new BufferingResponseListener() {
                     @Override
                     public void onComplete(Result result) {
                         log.log(Level.FINER, () ->
-                                String.format("Completed request %s (%s): %s",
+                                String.format(Locale.ROOT, "Completed request %s (%s): %s",
                                         req, System.identityHashCode(vessel),
                                         result.isFailed()
                                                 ? result.getFailure().toString() : result.getResponse().getStatus()));
@@ -187,7 +188,7 @@ class JettyCluster implements Cluster {
         httpClient.setMaxRequestsQueuedPerDestination(Integer.MAX_VALUE);
         httpClient.setFollowRedirects(false);
         httpClient.setUserAgentField(
-                new HttpField(HttpHeader.USER_AGENT, String.format("vespa-feed-client/%s (Jetty:%s)", Vespa.VERSION, Jetty.VERSION)));
+                new HttpField(HttpHeader.USER_AGENT, String.format(Locale.ROOT, "vespa-feed-client/%s (Jetty:%s)", Vespa.VERSION, Jetty.VERSION)));
         // Stop client from trying different IP address when TLS handshake fails
         httpClient.setSocketAddressResolver(new Ipv4PreferringResolver(httpClient, Duration.ofSeconds(10)));
         httpClient.setHttpCookieStore(new HttpCookieStore.Empty());
@@ -254,7 +255,7 @@ class JettyCluster implements Cluster {
     }
 
     private static String endpointUri(URI uri) {
-        return String.format("%s://%s:%s", uri.getScheme(), uri.getHost(), portOf(uri));
+        return String.format(Locale.ROOT, "%s://%s:%s", uri.getScheme(), uri.getHost(), portOf(uri));
     }
 
     private static class JettyResponse implements HttpResponse {
