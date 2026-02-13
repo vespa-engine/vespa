@@ -190,7 +190,7 @@ FlushableAttribute::~FlushableAttribute() = default;
 ResourceUsage
 FlushableAttribute::get_resource_usage() const
 {
-    uint64_t size_on_disk = _attr->size_on_disk() + AttributeDirectory::get_size_on_disk_overhead() +
+    uint64_t size_on_disk = _attr->size_on_disk() + _attrDir->get_size_on_disk_overhead(false) +
                             _attr->get_memory_allocator_size_on_disk();
     return ResourceUsage{_attrDir->get_transient_resource_usage(), size_on_disk};
 }

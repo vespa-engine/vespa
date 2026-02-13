@@ -317,8 +317,11 @@ AttributeDirectory::get_transient_resource_usage() const
 }
 
 uint64_t
-AttributeDirectory::get_size_on_disk_overhead()
+AttributeDirectory::get_size_on_disk_overhead(bool permanent_dir) const
 {
+    if (empty()) {
+        return permanent_dir ? DiskSpaceCalculator::directory_placeholder_size() : 0;
+    }
     DiskSpaceCalculator calc;
     constexpr uint32_t placeholder_meta_info_txt_size = 1000;
     return DiskSpaceCalculator::directory_placeholder_size() + calc(placeholder_meta_info_txt_size);
