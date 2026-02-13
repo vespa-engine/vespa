@@ -9,8 +9,9 @@ namespace search::expression {
 /**
  * Implements istrue filter in grouping expressions.
  *
- * Checks if a boolean expression evaluates to true. The expression must
- * evaluate to a BoolResultNode, otherwise grouping will fail with an error.
+ * Checks if a boolean expression evaluates to true. The expression is expected
+ * to evaluate to a BoolResultNode. If it is not a boolean, this predicate will
+ * throw.
  **/
 class IsTruePredicateNode : public FilterPredicateNode {
     ExpressionTree _expression;

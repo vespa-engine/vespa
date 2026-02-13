@@ -211,10 +211,6 @@ void
 Grouping::merge(Grouping & b)
 {
     _root.merge(_levels, _firstLevel, 0, b._root);
-    // If either grouping is invalid, the merged result should be invalid
-    if (!b._valid) {
-        _valid = false;
-    }
 }
 
 void

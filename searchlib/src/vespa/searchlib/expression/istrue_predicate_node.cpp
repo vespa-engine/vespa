@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "istrue_predicate_node.h"
 #include "integerresultnode.h"
-#include "resultnode.h"
-#include "resultvector.h"
 
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -17,10 +15,6 @@ IMPLEMENT_IDENTIFIABLE_NS2(search, expression, IsTruePredicateNode, FilterPredic
 
 namespace {
 
-bool is_bool_result(const ResultNode* result) {
-    return result->inherits(BoolResultNode::classId);
-}
-
 const BoolResultNode* as_bool_result(const ResultNode* result) {
     return static_cast<const BoolResultNode*>(result);
 }
@@ -28,23 +22,9 @@ const BoolResultNode* as_bool_result(const ResultNode* result) {
 }
 
 bool IsTruePredicateNode::check(const ResultNode* result) const {
-    if (result->inherits(ResultNodeVector::classId)) {
-        const auto* result_vector = static_cast<const ResultNodeVector *>(result);
-        for (const auto& node : *result_vector) {
-            if (!is_bool_result(&node)) {
-                throw vespalib::IllegalArgumentException(
-                    std::format("istrue() requires boolean input, got {}", node.getClass().name()));
-            }
-            if (as_bool_result(&node)->getBool()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    if (!is_bool_result(result)) {
+    if (!result->inherits(BoolResultNode::classId)) {
         throw vespalib::IllegalArgumentException(
-            std::format("istrue() requires boolean input, got %s", result->getClass().name()));
+            std::format("istrue() requires boolean input, got {}", result->getClass().name()));
     }
 
     return as_bool_result(result)->getBool();
@@ -78,7 +58,6 @@ IsTruePredicateNode::IsTruePredicateNode(ExpressionNode::UP input)
   : _expression(std::move(input))
 {
 }
-
 
 Serializer& IsTruePredicateNode::onSerialize(Serializer& os) const {
     return os << _expression;
