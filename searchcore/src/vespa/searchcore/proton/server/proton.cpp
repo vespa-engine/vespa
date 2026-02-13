@@ -445,6 +445,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     waitForInitDone();
     LOG(info, "Done initializing components");
     calc.init_done();
+    _diskMemUsageSampler->restart(*_scheduler); // Need a resource sample where all document dbs are initialized
 
     _metricsEngine->start(_configUri);
 
