@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/common/serialized_query_tree.h>
+#include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
@@ -9,6 +10,7 @@
 #include <vespa/searchlib/query/streaming/query_builder.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
+#include <vespa/searchlib/query/tree/query_to_protobuf.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
@@ -22,6 +24,7 @@ using search::fef::SimpleTermData;
 using search::fef::TermFieldHandle;
 using search::fef::test::IndexEnvironment;
 using search::query::QueryBuilder;
+using search::query::QueryToProtobuf;
 using search::query::Node;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
@@ -37,6 +40,7 @@ using search::streaming::QueryTermData;
 using search::streaming::QueryTermDataFactory;
 using search::streaming::QueryTermList;
 using search::streaming::SameElementQueryNode;
+using searchlib::searchprotocol::protobuf::QueryTree;
 
 namespace {
 
@@ -162,7 +166,8 @@ SameElementQueryNodeTest::make_query(QueryTweak query_tweak, const std::vector<s
         builder.addStringTerm(s.str(), "", idx, Weight(0));
     }
     auto node = builder.build();
-    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
+    QueryToProtobuf qtp;
+    auto serializedQueryTree = SerializedQueryTree::fromProtobuf(std::make_unique<QueryTree>(qtp.serialize(*node)));
     QueryTermDataFactory empty(nullptr, nullptr);
     auto q = std::make_unique<Query>(empty, *serializedQueryTree);
     auto& top = dynamic_cast<SameElementQueryNode&>(q->getRoot());
@@ -234,7 +239,8 @@ TEST_F(SameElementQueryNodeTest, test_same_element_evaluate)
         builder.addStringTerm("c", "f3", 2, Weight(0));
     }
     Node::UP node = builder.build();
-    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
+    QueryToProtobuf qtp;
+    auto serializedQueryTree = SerializedQueryTree::fromProtobuf(std::make_unique<QueryTree>(qtp.serialize(*node)));
     QueryNodeResultFactory empty;
     Query q(empty, *serializedQueryTree);
     auto * sameElem = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
