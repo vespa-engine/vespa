@@ -73,6 +73,23 @@ public class RelatedDocumentsByNearestNeighborSearcherTestCase {
     }
 
     @Test
+    void testNonTensorEmbeddingFieldReturnsError() {
+        var searcher = new RelatedDocumentsByNearestNeighborSearcher();
+        var query = new Query("?relatedTo.id=doc1&relatedTo.embeddingField=embedding&relatedTo.queryTensorName=q");
+
+        var sourceHit = new Hit("source");
+        sourceHit.setField("embedding", "not a tensor"); // Field exists but is not a Tensor
+
+        var capturedQuery = new Query[1];
+        var result = executeWithCapture(searcher, query, sourceHit, capturedQuery);
+
+        assertNotNull(result.hits().getError(), "Expected error but got none");
+        String errorMsg = result.hits().getError().getDetailedMessage();
+        assertTrue(errorMsg.contains("Could not find document") && errorMsg.contains("has no embedding"),
+                "Error message was: " + errorMsg);
+    }
+
+    @Test
     void testNearestNeighborQueryIsCreated() {
         var searcher = new RelatedDocumentsByNearestNeighborSearcher();
         var query = new Query("?relatedTo.id=doc1&relatedTo.embeddingField=embedding&relatedTo.queryTensorName=q");
