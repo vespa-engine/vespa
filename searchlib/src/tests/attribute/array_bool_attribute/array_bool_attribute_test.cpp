@@ -27,6 +27,14 @@ using search::attribute::SearchContextParams;
 
 using IntVec = std::vector<AttributeVector::largeint_t>;
 
+std::vector<bool> to_vec(vespalib::BitSpan span) {
+    std::vector<bool> vec;
+    for (bool bit : span) {
+        vec.push_back(bit);
+    }
+    return vec;
+}
+
 namespace {
 
 void remove_saved_attr() {
@@ -93,10 +101,7 @@ TEST_F(ArrayBoolAttributeTest, set_and_get_bools)
 
     std::vector<bool> expected = {true, false, true, true, false};
     auto bs = _bool_attr->get_bools(1);
-    ASSERT_EQ(expected.size(), bs.size());
-    for (size_t i = 0; i < expected.size(); ++i) {
-        EXPECT_EQ(expected[i], bool(bs[i])) << "index " << i;
-    }
+    ASSERT_EQ(to_vec(bs), expected);
 
     // Empty document
     EXPECT_EQ(0u, _attr->getValueCount(2));
@@ -186,10 +191,7 @@ TEST_F(ArrayBoolAttributeTest, read_view)
 
     std::vector<bool> expected = {true, false, true, true};
     auto bs = read_view->get_values(1);
-    ASSERT_EQ(expected.size(), bs.size());
-    for (size_t i = 0; i < expected.size(); ++i) {
-        EXPECT_EQ(expected[i], bool(bs[i])) << "index " << i;
-    }
+    ASSERT_EQ(to_vec(bs), expected);
 
     // Empty document
     EXPECT_EQ(0u, read_view->get_values(2).size());
@@ -211,14 +213,14 @@ TEST_F(ArrayBoolAttributeTest, search_context_true)
     ASSERT_TRUE(ctx->valid());
 
     int32_t weight = 0;
-    // Doc 1: has true at position 1
+    // Doc 1: has true at element 1
     EXPECT_EQ(1, ctx->find(1, 0, weight));
     EXPECT_EQ(1, weight);
 
     // Doc 2: all false, no match
     EXPECT_EQ(-1, ctx->find(2, 0));
 
-    // Doc 3: has true at position 0
+    // Doc 3: has true at element 0
     EXPECT_EQ(0, ctx->find(3, 0));
 
     // Doc 4: empty, no match
@@ -236,7 +238,7 @@ TEST_F(ArrayBoolAttributeTest, search_context_false)
                                 SearchContextParams());
     ASSERT_TRUE(ctx->valid());
 
-    // Doc 1: has false at position 1
+    // Doc 1: has false at element 1
     EXPECT_EQ(1, ctx->find(1, 0));
 }
 
@@ -484,16 +486,16 @@ TEST_F(ArrayBoolAttributeTest, search_context_from_nonzero_elem_id)
     auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>("true", QueryTermSimple::Type::WORD),
                                 SearchContextParams());
 
-    // Start from elemId 0: finds true at position 0
+    // Start from element 0: finds true at element 0
     EXPECT_EQ(0, ctx->find(1, 0));
 
-    // Start from elemId 1: skips position 0, finds true at position 2
+    // Start from element 1: skips element 0, finds true at element 2
     EXPECT_EQ(2, ctx->find(1, 1));
 
-    // Start from elemId 3: skips positions 0-2, finds true at position 4
+    // Start from element 3: skips elements 0-2, finds true at element 4
     EXPECT_EQ(4, ctx->find(1, 3));
 
-    // Start from elemId 5: past the end, no match
+    // Start from element 5: past the end, no match
     EXPECT_EQ(-1, ctx->find(1, 5));
 }
 
