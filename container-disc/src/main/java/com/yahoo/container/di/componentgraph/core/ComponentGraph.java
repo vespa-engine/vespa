@@ -111,7 +111,7 @@ public class ComponentGraph {
     public <T> T getInstance(Key<T> key) {
         // TODO: Combine exception handling with lookupGlobalComponent.
         Object ob = lookupGlobalComponent(key).map(Node::component)
-                .orElseThrow(() -> new IllegalStateException(Text.format("No global component with key '%s'  ", key)));
+                .orElseThrow(() -> new IllegalStateException(Text.format("No global component with key '%s'", key)));
         return (T) ob;
     }
 
