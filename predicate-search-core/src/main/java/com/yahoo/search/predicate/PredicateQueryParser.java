@@ -4,6 +4,7 @@ package com.yahoo.search.predicate;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.yahoo.text.Text;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -62,7 +63,7 @@ public class PredicateQueryParser {
         } catch (IOException e) {
             throw new AssertionError("This should never happen when parsing from a String", e);
         } catch (Exception e) {
-            throw new IllegalArgumentException(String.format("Parsing query from JSON failed: '%s'", json), e);
+            throw new IllegalArgumentException(Text.format("Parsing query from JSON failed: '%s'", json), e);
         }
     }
 
@@ -99,11 +100,11 @@ public class PredicateQueryParser {
         }
         if (key == null) {
             throw new IllegalArgumentException(
-                    String.format("Feature key is missing! (%s)", parser.currentLocation()));
+                    Text.format("Feature key is missing! (%s)", parser.currentLocation()));
         }
         if (value == null) {
             throw new IllegalArgumentException(
-                    String.format("Feature value is missing! (%s)", parser.currentLocation()));
+                    Text.format("Feature value is missing! (%s)", parser.currentLocation()));
         }
         featureHandler.accept(key, value, subqueryBitmap);
     }
@@ -112,7 +113,7 @@ public class PredicateQueryParser {
         JsonToken actual = parser.nextToken();
         if (Arrays.stream(expected).noneMatch(e -> e.equals(actual))) {
             throw new IllegalArgumentException(
-                    String.format("Expected a token in %s, got %s (%s).",
+                    Text.format("Expected a token in %s, got %s (%s).",
                             Arrays.toString(expected), actual, parser.currentTokenLocation()));
         }
     }

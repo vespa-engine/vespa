@@ -23,6 +23,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
@@ -127,7 +128,7 @@ public class PredicateIndex {
     public static PredicateIndex fromInputStream(DataInputStream in) throws IOException {
         int version = in.readInt();
         if (version != SERIALIZATION_FORMAT_VERSION) {
-            throw new IllegalArgumentException(String.format(
+            throw new IllegalArgumentException(String.format(Locale.ROOT,
                     "Invalid serialization format version. Expected %d, was %d.", SERIALIZATION_FORMAT_VERSION, version));
         }
         Config config = Config.fromInputStream(in);
