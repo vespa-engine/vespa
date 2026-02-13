@@ -7,8 +7,10 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,7 +24,7 @@ class MultiPartStreamerTest {
         MultiPartStreamer streamer = new MultiPartStreamer("My boundary");
 
         assertEquals("--My boundary--",
-                     new String(streamer.data().readAllBytes()));
+                     new String(streamer.data().readAllBytes(), StandardCharsets.UTF_8));
 
         streamer.addData("data", "uss/enterprise", "lore")
                 .addJson("json", "{\"xml\":false}")
@@ -50,14 +52,15 @@ class MultiPartStreamerTest {
                           Content-Type: application/octet-stream\r
                           \r
                           Hi\r
-                          --My boundary--""".formatted(file.getFileName());
+                          --My boundary--""";
+        expected = String.format(Locale.ROOT, expected, file.getFileName());
 
         assertEquals(expected,
-                     new String(streamer.data().readAllBytes()));
+                     new String(streamer.data().readAllBytes(), StandardCharsets.UTF_8));
 
         // Verify that all data is read again for a new builder.
         assertEquals(expected,
-                     new String(streamer.data().readAllBytes()));
+                     new String(streamer.data().readAllBytes(), StandardCharsets.UTF_8));
 
         assertEquals(List.of("multipart/form-data; boundary=My boundary; charset=utf-8"),
                      streamer.streamTo(HttpRequest.newBuilder(), Method.POST)

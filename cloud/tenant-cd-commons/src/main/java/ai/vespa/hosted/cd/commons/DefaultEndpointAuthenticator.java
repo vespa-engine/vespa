@@ -11,6 +11,7 @@ import com.yahoo.security.X509CertificateUtils;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
@@ -60,13 +61,13 @@ public class DefaultEndpointAuthenticator implements EndpointAuthenticator {
                     privateKeyFile = Properties.dataPlaneKeyFile().get();
             }
             if (certificateFile != null && privateKeyFile != null) {
-                X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificateFile)));
+                X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificateFile), StandardCharsets.UTF_8));
                 if (   Instant.now().isBefore(certificate.getNotBefore().toInstant())
                     || Instant.now().isAfter(certificate.getNotAfter().toInstant()))
                     throw new IllegalStateException("Certificate at '" + certificateFile + "' is valid between " +
                                                     certificate.getNotBefore() + " and " + certificate.getNotAfter() + " — not now.");
 
-                PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyFile)));
+                PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyFile), StandardCharsets.UTF_8));
                 return new SslContextBuilder().withKeyStore(privateKey, certificate).build();
             }
             if ( ! hasLocalTestConfig)
