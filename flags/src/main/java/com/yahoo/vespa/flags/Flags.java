@@ -402,7 +402,7 @@ public class Flags {
     public static final UnboundBooleanFlag APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG = defineFeatureFlag(
             "apply-on-restart-for-application-metadata-config", false,
             List.of("glebashnik"), "2026-02-13", "2026-08-13",
-            "Whether to set applyOnRestart flag on ApplicationMetadataConfig and ComponentsConfig. " + 
+            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " + 
                     "This might fix deferring config changes until container restart.",
             "Takes effect at redeployment",
             INSTANCE_ID
