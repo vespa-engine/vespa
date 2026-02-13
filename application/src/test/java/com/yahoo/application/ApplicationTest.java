@@ -346,7 +346,7 @@ public class ApplicationTest {
             try (DefaultHttpClient client = new org.apache.http.impl.client.DefaultHttpClient()) {
                 HttpResponse response = client.execute(new HttpGet("http://localhost:" + httpPort));
                 assertEquals(200, response.getStatusLine().getStatusCode());
-                BufferedReader r = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+                BufferedReader r = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8));
                 String line;
                 StringBuilder sb = new StringBuilder();
                 while ((line = r.readLine()) != null) {
