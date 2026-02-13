@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.matchers;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.clustercontroller.core.NodeEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -25,13 +26,13 @@ public class NodeEventForBucketSpace extends BaseMatcher<NodeEvent> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format(Locale.ROOT, "NodeEvent for bucket space '%s'", bucketSpace.orElse("null")));
+        description.appendText(Text.format("NodeEvent for bucket space '%s'", bucketSpace.orElse("null")));
     }
 
     @Override
     public void describeMismatch(Object item, Description description) {
         NodeEvent other = (NodeEvent)item;
-        description.appendText(String.format(Locale.ROOT, "got bucket space '%s'", other.getBucketSpace().orElse("null")));
+        description.appendText(Text.format("got bucket space '%s'", other.getBucketSpace().orElse("null")));
     }
 
     public static NodeEventForBucketSpace nodeEventForBucketSpace(String bucketSpace) {

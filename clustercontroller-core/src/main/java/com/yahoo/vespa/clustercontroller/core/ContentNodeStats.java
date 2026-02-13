@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import java.util.Locale;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 
 import java.util.Arrays;
@@ -172,7 +173,7 @@ public class ContentNodeStats {
 
     @Override
     public String toString() {
-        return String.format(Locale.ROOT, "{index=%d, bucketSpaces=[%s]}",
+        return Text.format("{index=%d, bucketSpaces=[%s]}",
                 nodeIndex, Arrays.toString(bucketSpaces.entrySet().toArray()));
     }
 }
