@@ -12,6 +12,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -37,7 +38,7 @@ class DisabledInInstancesCondition implements ExecutionCondition {
 
         List<String> disablingInstances = List.of(annotation.get().value());
         String thisInstance = TestRuntime.get().application().instance();
-        String reason = "Disabled in: %s. Current instance: %s.".formatted(disablingInstances.isEmpty() ? "no instances" : "instances " + String.join(", ", disablingInstances), thisInstance);
+        String reason = String.format(Locale.ROOT, "Disabled in: %s. Current instance: %s.", disablingInstances.isEmpty() ? "no instances" : "instances " + String.join(", ", disablingInstances), thisInstance);
         return disablingInstances.contains(thisInstance) ? ConditionEvaluationResult.disabled(reason) : ConditionEvaluationResult.enabled(reason);
     }
 
