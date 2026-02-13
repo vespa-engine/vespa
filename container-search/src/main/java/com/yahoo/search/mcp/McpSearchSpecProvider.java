@@ -8,8 +8,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
-import com.yahoo.search.result.Coverage;
-import com.yahoo.search.result.Hit;
+import com.yahoo.search.rendering.JsonRenderer;
 import com.yahoo.search.schema.Field;
 import com.yahoo.search.schema.FieldInfo;
 import com.yahoo.search.schema.FieldSet;
@@ -17,17 +16,15 @@ import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.ExecutionFactory;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.text.Text;
+import com.yahoo.text.Utf8;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,6 +50,7 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
     private final Chain<Searcher> searchChain;
     private final SchemaInfo schemaInfo;
     private final CompiledQueryProfileRegistry queryProfileRegistry;
+    private final JsonRenderer jsonRenderer;
 
     /**
      * Construct a search package and populate tools/resources/prompts using Vespa components.
@@ -66,6 +64,7 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
         this.queryProfileRegistry = queryProfileRegistry;
         this.searchChain = executionFactory != null ? executionFactory.searchChainRegistry().getChain("native") : null;
         this.schemaInfo = executionFactory != null ? executionFactory.schemaInfo() : null;
+        this.jsonRenderer = new JsonRenderer();
 
         if (this.executionFactory != null && this.queryProfileRegistry != null) {
             // Tools
@@ -174,61 +173,7 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
         return schemaDetails;
     }
 
-    /** Converts a Vespa Result object to a Map structure. */
-    private Map<String, Object> resultToMap(Result result) {
-        Map<String, Object> rootWrapper = new LinkedHashMap<>();
-        Map<String, Object> root = new LinkedHashMap<>();
-        rootWrapper.put("root", root);
-        root.put("id", result.hits().getId() != null ? result.hits().getId().toString() : null);
-        root.put("relevance", result.hits().getRelevance() != null ? result.hits().getRelevance().getScore() : null);
-        root.put("fields", Map.of("totalCount", result.getTotalHitCount()));
 
-        Coverage cov = result.getCoverage(false);
-        if (cov != null) {
-            root.put("coverage", Map.of(
-                "coverage", cov.getResultPercentage(),
-                "documents", cov.getDocs(),
-                "full", cov.getFull(),
-                "nodes", cov.getNodes(),
-                "results", cov.getResultSets(),
-                "resultsFull", cov.getFullResultSets()
-            ));
-        }
-
-        List<Map<String, Object>> children = new LinkedList<>();
-        for (Iterator<Hit> it = result.hits().deepIterator(); it.hasNext(); ) {
-            Hit hit = it.next();
-            if (!hit.isMeta()) children.add(hitToMap(hit));
-        }
-        root.put("children", children);
-        return rootWrapper;
-    }
-
-    /** Converts a Vespa Hit object to a Map structure. */
-    private Map<String, Object> hitToMap(Hit hit) {
-        Map<String, Object> hitMap = new LinkedHashMap<>();
-        hitMap.put("id", hit.getId() != null ? hit.getId().toString() : null);
-        hitMap.put("relevance", hit.getRelevance() != null ? hit.getRelevance().getScore() : null);
-        hitMap.put("source", hit.getSource());
-        Map<String, Object> fields = new LinkedHashMap<>();
-        hit.forEachField((fieldName, fieldValue) -> fields.put(fieldName, convertFieldValue(fieldValue)));
-        hitMap.put("fields", fields);
-        return hitMap;
-    }
-
-    /** Converts field values to JSON-compatible types. */
-    private Object convertFieldValue(Object fieldValue) {
-        if (fieldValue == null) return null;
-        if (fieldValue instanceof Tensor tensor) {
-            Map<String, Object> cells = new LinkedHashMap<>();
-            tensor.cells().forEach((key, value) -> cells.put(key.toString(), value));
-            return Map.of("type", tensor.type().toString(), "cells", cells);
-        }
-        if (fieldValue instanceof String || fieldValue instanceof Number ||
-                fieldValue instanceof Boolean || fieldValue instanceof Collection ||
-                fieldValue instanceof Map) return fieldValue;
-        return fieldValue.toString();
-    }
 
     // ----------------------------------- Tools -----------------------------------
 
@@ -360,7 +305,14 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
                     execution.fill(result);
                     logger.info("Query returned " + result.getTotalHitCount() + " hits");
 
-                    return new McpSchema.CallToolResult(toJson(resultToMap(result)), false);
+                    // Render response to Json
+                    ByteArrayOutputStream bs = new ByteArrayOutputStream();
+                    var renderer = jsonRenderer.clone();
+                    renderer.init();
+                    renderer.renderResponse(bs, result, execution, null).join();
+                    String renderedResponse = Utf8.toString(bs.toByteArray());
+
+                    return new McpSchema.CallToolResult(renderedResponse, false);
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, "Query execution failed", e);
                     return new McpSchema.CallToolResult("{\"error\": \"" + e.getMessage() + "\"}", true);
