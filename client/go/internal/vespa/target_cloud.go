@@ -50,12 +50,8 @@ type deploymentResponse struct {
 }
 
 type privateService struct {
-	Cluster     string       `json:"cluster"`
-	ServiceID   string       `json:"serviceId,omitempty"`
-	Type        string       `json:"type,omitempty"`
-	AllowedUrns []AllowedUrn `json:"allowedUrns,omitempty"`
-	AuthMethods []string     `json:"authMethods,omitempty"`
-	Endpoints   []string     `json:"endpoints,omitempty"`
+	Cluster string `json:"cluster"`
+	PrivateServiceInfo
 }
 
 type privateServicesResponse struct {
@@ -353,13 +349,7 @@ func (t *cloudTarget) discoverPrivateServices(timeout time.Duration) (map[string
 		for _, ps := range resp.PrivateServices {
 			// Only include if it has actual configuration (not just cluster name)
 			if ps.ServiceID != "" {
-				privateServices[ps.Cluster] = &PrivateServiceInfo{
-					ServiceID:   ps.ServiceID,
-					Type:        ps.Type,
-					AllowedUrns: ps.AllowedUrns,
-					AuthMethods: ps.AuthMethods,
-					Endpoints:   ps.Endpoints,
-				}
+				privateServices[ps.Cluster] = &ps.PrivateServiceInfo
 			}
 		}
 		return true, nil
