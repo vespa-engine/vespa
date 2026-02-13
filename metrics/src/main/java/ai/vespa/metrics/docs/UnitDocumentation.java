@@ -7,6 +7,8 @@ import ai.vespa.metrics.Unit;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -17,7 +19,7 @@ public class UnitDocumentation {
 
     protected static void writeUnitDocumentation(String path, Unit[] units) {
         var referenceBuilder = new StringBuilder();
-        referenceBuilder.append(String.format("""
+        referenceBuilder.append(String.format(Locale.ROOT, """
                         ---
                         # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
                         title: "Metric Units Reference"
@@ -35,7 +37,7 @@ public class UnitDocumentation {
                         </table>
                         """, htmlRows(units)));
 
-        try (FileWriter fileWriter = new FileWriter(path + "/metric-units.html")) {
+        try (FileWriter fileWriter = new FileWriter(path + "/metric-units.html", StandardCharsets.UTF_8)) {
             fileWriter.write(referenceBuilder.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -45,7 +47,7 @@ public class UnitDocumentation {
     private static String htmlRows(Unit[] units) {
         return Stream.of(units)
                 .map(unit ->
-                        String.format(
+                        String.format(Locale.ROOT,
                                 """
                                      <tr>
                                        <td>%s</td>
