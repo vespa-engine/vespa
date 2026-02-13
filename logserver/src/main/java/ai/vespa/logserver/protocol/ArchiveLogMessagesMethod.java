@@ -9,6 +9,7 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.logserver.LogDispatcher;
 import com.yahoo.security.tls.Capability;
+import com.yahoo.text.Text;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -73,7 +74,7 @@ public class ArchiveLogMessagesMethod {
                 int uncompressedSize = rpcRequest.parameters().get(1).asInt32();
                 byte[] logRequestPayload = rpcRequest.parameters().get(2).asData();
                 if (uncompressedSize != logRequestPayload.length) {
-                    rpcRequest.setError(ErrorCode.METHOD_FAILED, String.format("Invalid uncompressed size: got %d while data is of size %d ", uncompressedSize, logRequestPayload.length));
+                    rpcRequest.setError(ErrorCode.METHOD_FAILED, Text.format("Invalid uncompressed size: got %d while data is of size %d ", uncompressedSize, logRequestPayload.length));
                     rpcRequest.returnRequest();
                     return;
                 }
