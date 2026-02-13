@@ -23,6 +23,7 @@ import org.mockito.stubbing.Answer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -95,7 +96,7 @@ public class FeedHandlerV3Test {
     }
 
     static HttpRequest createRequestWithPayload(String payload) {
-        InputStream inputStream = new ByteArrayInputStream(payload.getBytes());
+        InputStream inputStream = new ByteArrayInputStream(payload.getBytes(StandardCharsets.UTF_8));
         HttpRequest request = HttpRequest.createTestRequest("http://dummyhostname:19020/reserved-for-internal-use/feedapi",
                 com.yahoo.jdisc.http.HttpRequest.Method.POST, inputStream);
         request.getJDiscRequest().headers().add(Headers.VERSION, "3");
