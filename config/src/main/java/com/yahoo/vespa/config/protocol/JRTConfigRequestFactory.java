@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.impl.JRTConfigSubscription;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
@@ -42,7 +43,7 @@ public class JRTConfigRequestFactory {
     }
 
     static VespaVersion getCompiledVespaVersion() {
-        return VespaVersion.fromString(String.format("%d.%d.%d",
+        return VespaVersion.fromString(Text.format("%d.%d.%d",
                 com.yahoo.vespa.config.VespaVersion.major,
                 com.yahoo.vespa.config.VespaVersion.minor,
                 com.yahoo.vespa.config.VespaVersion.micro));

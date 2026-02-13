@@ -265,7 +265,7 @@ public class ConfigPayloadBuilderTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ConfigPayload.fromBuilder(builder).serialize(baos, new JsonFormat(true));
         assertEquals("{\"foo\":\"bar\",\"foorio\":{\"bar\":\"bam\",\"bario\":{\"bim\":\"bul\"},\"blim\":[{\"fim\":\"fam\"},{\"blim\":\"blam\"}]},\"arrio\":[\"himbio\"]}",
-                     baos.toString());
+                     baos.toString(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     @Test(expected=IllegalArgumentException.class)

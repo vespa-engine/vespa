@@ -87,7 +87,7 @@ public class StressTester {
         if (verificationFile != null) {
             BufferedReader reader = null;
             try {
-                reader = new BufferedReader(new FileReader(verificationFile));
+                reader = new BufferedReader(new FileReader(verificationFile, java.nio.charset.StandardCharsets.UTF_8));
                 String l;
                 while ((l = reader.readLine()) != null) {
                     String[] line = l.split(",");

@@ -31,7 +31,7 @@ public class ConfigDefinitionBuilderTest {
     // TODO Test ranges
     public void testCreateConfigDefinition() throws IOException {
         File defFile = new File(DEF_NAME);
-        DefParser defParser = new DefParser(defFile.getName(), new FileReader(defFile));
+        DefParser defParser = new DefParser(defFile.getName(), new FileReader(defFile, java.nio.charset.StandardCharsets.UTF_8));
         CNode root = defParser.getTree();
 
         ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(root);

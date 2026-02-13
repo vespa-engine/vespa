@@ -43,7 +43,7 @@ public class ConfigResponseTest {
 
         baos = new ByteArrayOutputStream();
         response.serialize(baos, CompressionType.UNCOMPRESSED);
-        assertEquals(baos.toString(),"{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}");
+        assertEquals(baos.toString(java.nio.charset.StandardCharsets.UTF_8),"{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}");
     }
 
     @Test
@@ -59,7 +59,7 @@ public class ConfigResponseTest {
 
         baos = new ByteArrayOutputStream();
         response.serialize(baos, CompressionType.UNCOMPRESSED);
-        assertEquals(baos.toString(), "{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}");
+        assertEquals(baos.toString(java.nio.charset.StandardCharsets.UTF_8), "{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}");
     }
 
 }
