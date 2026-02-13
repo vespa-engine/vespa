@@ -1,25 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "proxycmd.h"
 #include "methods.h"
+#include "proxycmd.h"
+
 #include <vespa/vespalib/util/signalhandler.h>
+
 #include <iostream>
 #include <unistd.h>
 
-class Application
-{
+class Application {
     Flags _flags;
-    bool parseOpts(int argc, char **argv);
+    bool  parseOpts(int argc, char** argv);
+
 public:
     void usage();
-    int main(int argc, char **argv);
+    int  main(int argc, char** argv);
 
     Application() : _flags() {}
 };
 
-bool
-Application::parseOpts(int argc, char **argv)
-{
+bool Application::parseOpts(int argc, char** argv) {
     int c = '?';
     while ((c = getopt(argc, argv, "m:s:p:h")) != -1) {
         switch (c) {
@@ -44,34 +44,29 @@ Application::parseOpts(int argc, char **argv)
             _flags.args.push_back(arg);
         }
     } else {
-        std::cerr << "ERROR: method "<< _flags.method << " requires " << method.args
-                  << " arguments, only got " << (argc - optind) << std::endl;
+        std::cerr << "ERROR: method " << _flags.method << " requires " << method.args << " arguments, only got "
+                  << (argc - optind) << std::endl;
         return false;
     }
     if (optind != argc) {
-        std::cerr << "ERROR: "<<(argc - optind)<<" extra arguments\n";
+        std::cerr << "ERROR: " << (argc - optind) << " extra arguments\n";
         return false;
     }
     _flags.method = method.rpcMethod;
     return true;
 }
 
-void
-Application::usage()
-{
-    std::cerr <<
-        "Usage: vespa-configproxy-cmd [options]"                                 << std::endl <<
-        "    -m <method>                   method"                         << std::endl <<
-        "    -s <hostname>                 hostname (default: localhost)"  << std::endl <<
-        "    -p <port>                     port number (default: 19090)"   << std::endl <<
-        "Available methods for -m option:"                                 << std::endl;
+void Application::usage() {
+    std::cerr << "Usage: vespa-configproxy-cmd [options]" << std::endl
+              << "    -m <method>                   method" << std::endl
+              << "    -s <hostname>                 hostname (default: localhost)" << std::endl
+              << "    -p <port>                     port number (default: 19090)" << std::endl
+              << "Available methods for -m option:" << std::endl;
     methods::dump();
 }
 
-int
-Application::main(int argc, char **argv)
-{
-    if (! parseOpts(argc, argv)) {
+int Application::main(int argc, char** argv) {
+    if (!parseOpts(argc, argv)) {
         usage();
         return 1;
     }

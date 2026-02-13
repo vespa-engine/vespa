@@ -2,22 +2,20 @@
 #pragma once
 
 namespace vespalib {
-    namespace slime {
-        struct Inspector;
-    }
+namespace slime {
+struct Inspector;
 }
+} // namespace vespalib
 
 namespace config {
 
 class ConfigPayload {
 public:
-    ConfigPayload(const ::vespalib::slime::Inspector & inspector)
-        : _inspector(inspector)
-    {}
-    const ::vespalib::slime::Inspector & get() const { return _inspector; }
+    ConfigPayload(const ::vespalib::slime::Inspector& inspector) : _inspector(inspector) {}
+    const ::vespalib::slime::Inspector& get() const { return _inspector; }
+
 private:
-    const ::vespalib::slime::Inspector & _inspector;
+    const ::vespalib::slime::Inspector& _inspector;
 };
 
 } // namespace config
-

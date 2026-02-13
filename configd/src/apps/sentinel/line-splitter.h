@@ -5,15 +5,15 @@ namespace config::sentinel {
 
 class LineSplitter {
 private:
-    int _fd;
-    int _size;
-    char *_buffer;
-    int _readPos;
-    int _writePos;
-    bool _eof;
+    int   _fd;
+    int   _size;
+    char* _buffer;
+    int   _readPos;
+    int   _writePos;
+    bool  _eof;
 
     LineSplitter();
-    LineSplitter& operator =(const LineSplitter&);
+    LineSplitter& operator=(const LineSplitter&);
     LineSplitter(const LineSplitter&);
 
     bool resize();
@@ -21,11 +21,10 @@ private:
 
 public:
     explicit LineSplitter(int fd);
-    char *getLine();
-    bool eof() const { return _eof && _readPos >= _writePos; }
+    char* getLine();
+    bool  eof() const { return _eof && _readPos >= _writePos; }
 
     ~LineSplitter();
 };
 
-}
-
+} // namespace config::sentinel

@@ -2,10 +2,12 @@
 
 #include "manager.h"
 #include "platform-specific.h"
+
 #include <vespa/config/common/exceptions.h>
-#include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/defaults.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/signalhandler.h>
+
 #include <chrono>
 #include <clocale>
 #include <string>
@@ -16,15 +18,9 @@ LOG_SETUP("sentinel.config-sentinel");
 
 using namespace config;
 
-static bool stop()
-{
-    return (vespalib::SignalHandler::INT.check() ||
-            vespalib::SignalHandler::TERM.check());
-}
+static bool stop() { return (vespalib::SignalHandler::INT.check() || vespalib::SignalHandler::TERM.check()); }
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     int c = getopt(argc, argv, "c:");
     if (c != 'c') {
         LOG(error, "Usage: %s -c <config-id>", argv[0]);
@@ -34,7 +30,7 @@ main(int argc, char **argv)
 
     std::string configId(optarg);
 
-    const char *rootDir = getenv("ROOT");
+    const char* rootDir = getenv("ROOT");
     if (!rootDir) {
         rootDir = vespa::Defaults::vespaHome();
         LOG(warning, "ROOT is not set, using %s", rootDir);
@@ -68,7 +64,7 @@ main(int argc, char **argv)
         LOG(error, "Stopping before boot complete: %s", ex.message());
         EV_STOPPING("config-sentinel", ex.message());
         return EXIT_FAILURE;
-    } catch (ConfigTimeoutException & ex) {
+    } catch (ConfigTimeoutException& ex) {
         LOG(warning, "Timeout getting config, please check your setup. Will exit and restart: %s", ex.message());
         EV_STOPPING("config-sentinel", ex.message());
         return EXIT_FAILURE;
@@ -82,13 +78,13 @@ main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    sentinel::Manager manager(environment);
-    std::vector<pollfd> fds;
+    sentinel::Manager     manager(environment);
+    std::vector<pollfd>   fds;
     vespalib::steady_time lastTime = vespalib::steady_clock::now();
     while (!stop()) {
         try {
             vespalib::SignalHandler::CHLD.clear();
-            manager.doWork();       // Check for child procs & commands
+            manager.doWork(); // Check for child procs & commands
         } catch (InvalidConfigException& ex) {
             LOG(warning, "Configuration problem: (ignoring): %s", ex.message());
         } catch (vespalib::PortListenException& ex) {

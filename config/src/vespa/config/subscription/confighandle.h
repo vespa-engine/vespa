@@ -11,11 +11,9 @@ class ConfigSubscription;
  * A ConfigHandle is a subscription handle that is capable of looking up config
  * objects of a generic type.
  */
-template <typename ConfigType>
-class ConfigHandle
-{
+template <typename ConfigType> class ConfigHandle {
 public:
-    typedef std::unique_ptr<ConfigHandle <ConfigType> > UP;
+    typedef std::unique_ptr<ConfigHandle<ConfigType>> UP;
 
     explicit ConfigHandle(std::shared_ptr<ConfigSubscription> subscription);
     ~ConfigHandle();
@@ -39,9 +37,9 @@ public:
      * @return true if changed, false if not.
      */
     bool isChanged() const;
+
 private:
     std::shared_ptr<ConfigSubscription> _subscription;
 };
 
 } // namespace config
-

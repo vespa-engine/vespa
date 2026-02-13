@@ -2,8 +2,9 @@
 #pragma once
 
 #include "types.h"
-#include <vespa/vespalib/data/slime/object_traverser.h>
+
 #include <vespa/vespalib/data/slime/array_traverser.h>
+#include <vespa/vespalib/data/slime/object_traverser.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace config {
@@ -14,36 +15,36 @@ namespace config {
  */
 class PayloadConverter : public vespalib::slime::ObjectTraverser, public vespalib::slime::ArrayTraverser {
 public:
-    PayloadConverter(const vespalib::slime::Inspector & inspector);
+    PayloadConverter(const vespalib::slime::Inspector& inspector);
     ~PayloadConverter();
-    const StringVector & convert();
-    void field(const vespalib::Memory & symbol, const vespalib::slime::Inspector & inspector) override;
-    void entry(size_t idx, const vespalib::slime::Inspector & inspector) override;
+    const StringVector& convert();
+    void                field(const vespalib::Memory& symbol, const vespalib::slime::Inspector& inspector) override;
+    void                entry(size_t idx, const vespalib::slime::Inspector& inspector) override;
+
 private:
     void printPrefix();
-    void encode(const vespalib::slime::Inspector & inspector);
-    void encode(const vespalib::Memory & symbol, const vespalib::slime::Inspector & inspector);
-    void encodeObject(const vespalib::Memory & symbol, const vespalib::slime::Inspector & object);
-    void encodeArray(const vespalib::Memory & symbol, const vespalib::slime::Inspector & object);
-    void encodeValue(const vespalib::slime::Inspector & value);
-    void encodeString(const std::string & value);
-    void encodeQuotedString(const std::string & value);
+    void encode(const vespalib::slime::Inspector& inspector);
+    void encode(const vespalib::Memory& symbol, const vespalib::slime::Inspector& inspector);
+    void encodeObject(const vespalib::Memory& symbol, const vespalib::slime::Inspector& object);
+    void encodeArray(const vespalib::Memory& symbol, const vespalib::slime::Inspector& object);
+    void encodeValue(const vespalib::slime::Inspector& value);
+    void encodeString(const std::string& value);
+    void encodeQuotedString(const std::string& value);
     void encodeLong(long value);
     void encodeDouble(double value);
     void encodeBool(bool value);
     struct Node {
         std::string name;
-        int arrayIndex;
-        Node(const std::string & nm, int idx) : name(nm), arrayIndex(idx) {}
+        int         arrayIndex;
+        Node(const std::string& nm, int idx) : name(nm), arrayIndex(idx) {}
         Node(int idx) : name(""), arrayIndex(idx) {}
-        Node(const std::string & nm) : name(nm), arrayIndex(-1) {}
+        Node(const std::string& nm) : name(nm), arrayIndex(-1) {}
     };
     using NodeStack = std::vector<Node>;
-    const vespalib::slime::Inspector & _inspector;
-    StringVector                       _lines;
-    NodeStack                          _nodeStack;
-    vespalib::asciistream              _buf;
+    const vespalib::slime::Inspector& _inspector;
+    StringVector                      _lines;
+    NodeStack                         _nodeStack;
+    vespalib::asciistream             _buf;
 };
 
 } // namespace config
-
