@@ -77,7 +77,7 @@ public class ZKMetricUpdaterTest {
         serverThread = Executors.defaultThreadFactory().newThread(() -> {
             while (!Thread.interrupted()) {
                 try (Socket connection = serverSocket.accept()) {
-                    BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
                     String verb = input.readLine();
                     if ("mntr".equals(verb)) {
                         DataOutputStream output = new DataOutputStream(connection.getOutputStream());

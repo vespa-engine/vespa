@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -58,7 +59,7 @@ public class EndpointCertificateMetadataStoreTest {
     public void reads_object_format() {
         curator.set(endpointCertificateMetadataPath,
                 "{\"keyName\": \"vespa.tlskeys.tenant1--app1-key\", \"certName\":\"vespa.tlskeys.tenant1--app1-cert\", \"version\": 0}"
-                        .getBytes());
+                        .getBytes(StandardCharsets.UTF_8));
 
         // Read from zk and verify cert and key are available
         var secrets = endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId)
@@ -75,6 +76,6 @@ public class EndpointCertificateMetadataStoreTest {
         endpointCertificateMetadataStore.writeEndpointCertificateMetadata(applicationId, endpointCertificateMetadata);
 
         assertEquals("{\"keyName\":\"key-name\",\"certName\":\"cert-name\",\"version\":1,\"issuer\":\"digicert\"}",
-                new String(curator.getData(endpointCertificateMetadataPath).orElseThrow()));
+                new String(curator.getData(endpointCertificateMetadataPath).orElseThrow(), StandardCharsets.UTF_8));
     }
 }

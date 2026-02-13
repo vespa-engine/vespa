@@ -15,6 +15,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -83,7 +85,7 @@ public class VersionState {
 
     public void storeVersion(String vespaVersion) {
         curator.set(versionPath, Utf8.toBytes(vespaVersion));
-        try (FileWriter writer = new FileWriter(versionFile)) {
+        try (var writer = Files.newBufferedWriter(versionFile.toPath(), StandardCharsets.UTF_8)) {
             writer.write(vespaVersion);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -99,7 +101,7 @@ public class VersionState {
                 // continue, use value in file
             }
         }
-        try (FileReader reader = new FileReader(versionFile)) {
+        try (var reader = Files.newBufferedReader(versionFile.toPath(), StandardCharsets.UTF_8)) {
             return Version.fromString(IOUtils.readAll(reader));
         } catch (Exception e) {
             return Version.emptyVersion;

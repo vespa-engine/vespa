@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -60,7 +61,7 @@ public class SecretStoreValidatorTest {
         var response = secretStoreValidator.validateSecretStore(app, SystemName.PublicCd, requestBody);
         var body = new ByteArrayOutputStream();
         response.render(body);
-        assertEquals("is ok", body.toString());
+        assertEquals("is ok", body.toString(StandardCharsets.UTF_8));
     }
 
     private Application mockApplication() {
