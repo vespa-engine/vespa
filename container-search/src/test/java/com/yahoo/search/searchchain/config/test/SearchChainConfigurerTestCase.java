@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -288,7 +289,7 @@ public class SearchChainConfigurerTestCase {
 
     public static void printFile(File f, String content) throws IOException {
         OutputStream out = new FileOutputStream(f);
-        out.write(content.getBytes());
+        out.write(content.getBytes(StandardCharsets.UTF_8));
         out.close();
 
     }

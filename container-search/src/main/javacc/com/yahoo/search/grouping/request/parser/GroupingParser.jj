@@ -25,6 +25,7 @@ PARSER_BEGIN(GroupingParser)
 package com.yahoo.search.grouping.request.parser;
 
 import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.LinkedList;
 import com.yahoo.javacc.UnicodeUtilities;
@@ -1094,7 +1095,7 @@ BooleanValue booleanValue() :
 void byteValue(RawBuffer buffer) : { }
 {
     ( ( <INTEGER> { buffer.put(Byte.parseByte(token.image)); } ) |
-      ( <STRING> { buffer.put(token.image.getBytes()); } )
+      ( <STRING> { buffer.put(token.image.getBytes(StandardCharsets.UTF_8)); } )
     )
 }
 

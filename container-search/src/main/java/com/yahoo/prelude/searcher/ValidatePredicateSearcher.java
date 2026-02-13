@@ -14,6 +14,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.querytransform.BooleanSearcher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,13 +68,13 @@ public class ValidatePredicateSearcher extends Searcher {
         private void visit(PredicateQueryItem item) {
             Index index = getIndexFromUnionOfDocumentTypes(item.getIndexName());
             if (!index.isPredicate()) {
-                errorMessages.add(ErrorMessage.createIllegalQuery(String.format("Index '%s' is not a predicate attribute.", index.getName())));
+                errorMessages.add(ErrorMessage.createIllegalQuery(Text.format("Index '%s' is not a predicate attribute.", index.getName())));
             }
             for (PredicateQueryItem.RangeEntry entry : item.getRangeFeatures()) {
                 long value = entry.getValue();
                 if (value < index.getPredicateLowerBound() || value > index.getPredicateUpperBound()) {
                     errorMessages.add(
-                            ErrorMessage.createIllegalQuery(String.format("%s=%d outside configured predicate bounds.", entry.getKey(), value)));
+                            ErrorMessage.createIllegalQuery(Text.format("%s=%d outside configured predicate bounds.", entry.getKey(), value)));
                 }
             }
         }
@@ -83,7 +84,7 @@ public class ValidatePredicateSearcher extends Searcher {
             Index index = getIndexFromUnionOfDocumentTypes(indexName);
             if (index.isPredicate()) {
                 errorMessages.add(
-                        ErrorMessage.createIllegalQuery(String.format("Index '%s' is predicate attribute and can only be used in conjunction with a predicate query operator.", indexName)));
+                        ErrorMessage.createIllegalQuery(Text.format("Index '%s' is predicate attribute and can only be used in conjunction with a predicate query operator.", indexName)));
             }
         }
 

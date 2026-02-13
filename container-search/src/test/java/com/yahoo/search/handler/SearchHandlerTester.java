@@ -11,6 +11,7 @@ import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.net.HostName;
 import com.yahoo.search.Result;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
@@ -159,7 +160,7 @@ public class SearchHandlerTester implements AutoCloseable {
             if (metric.metrics().containsKey(key)) return;
             uncheckInterrupted(() -> Thread.sleep(1));
         }
-        fail(String.format("Could not find metric with key '%s' in '%s'", key, metric));
+        fail(Text.format("Could not find metric with key '%s' in '%s'", key, metric));
     }
 
     private void assertOkResult(RequestHandlerTestDriver.MockResponseHandler response, String expected) {
