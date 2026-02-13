@@ -139,7 +139,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
         switch (config.quantization()) {
             case AUTO:
-                if (valueType == TensorType.Value.FLOAT) {
+                if (valueType == TensorType.Value.FLOAT || valueType == TensorType.Value.BFLOAT16) {
                     if (tensorDim != configuredDim)
                         throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDim));
                 } else if (valueType == TensorType.Value.INT8) {
@@ -151,7 +151,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 }
                 break;
             case FLOAT:
-                if (valueType != TensorType.Value.FLOAT)
+                if (valueType != TensorType.Value.FLOAT && valueType != TensorType.Value.BFLOAT16)
                     throw new IllegalArgumentException(
                             "Quantization 'float' is incompatible with tensor type " + targetTensorType + ".");
                 if (tensorDim != configuredDim)
@@ -182,7 +182,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private String resolveOutputDataType(TensorType targetType) {
         return switch (config.quantization()) {
             case AUTO -> {
-                if (targetType.valueType() == TensorType.Value.FLOAT) {
+                if (targetType.valueType() == TensorType.Value.FLOAT || targetType.valueType() == TensorType.Value.BFLOAT16) {
                     yield "float";
                 } else if (targetType.valueType() == TensorType.Value.INT8) {
                     long tensorDim = targetType.dimensions().get(0).size().orElseThrow();
@@ -238,7 +238,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             String dimensionName = targetType.dimensions().get(0).name();
             return embeddings.stream()
                     .map(embedding -> switch (outputDtype) {
-                        case "float" -> createFloatTensor(embedding, dimensionName);
+                        case "float" -> createFloatTensor(embedding, dimensionName, targetType.valueType());
                         case "int8", "binary" -> createInt8Tensor(embedding, dimensionName);
                         default -> throw new IllegalArgumentException("Unsupported output_dtype: " + outputDtype);
                     })
@@ -330,8 +330,8 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         return remainingMs;
     }
 
-    private Tensor createFloatTensor(List<Number> embedding, String dimensionName) {
-        TensorType type = new TensorType.Builder(TensorType.Value.FLOAT)
+    private Tensor createFloatTensor(List<Number> embedding, String dimensionName, TensorType.Value valueType) {
+        TensorType type = new TensorType.Builder(valueType)
                 .indexed(dimensionName, embedding.size())
                 .build();
         IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);

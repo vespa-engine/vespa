@@ -473,6 +473,53 @@ public class VoyageAIEmbedderTest {
         assertEquals("Tensor dimension 1024 does not match configured dimension 512.", exception.getMessage());
     }
 
+    @Test
+    public void testAutoQuantizationWithBfloat16Tensor() throws Exception {
+        embedder = createEmbedder(1024, "auto");
+
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createFloatSuccessResponse(1024)));
+
+        TensorType targetType = TensorType.fromSpec("tensor<bfloat16>(x[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+
+        Tensor result = embedder.embed("test", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(1024, result.size());
+        assertEquals(TensorType.Value.BFLOAT16, result.type().valueType());
+
+        RecordedRequest request = mockServer.takeRequest();
+        String body = request.getBody().readUtf8();
+        assertTrue(body.contains("\"output_dtype\":\"float\""));
+        assertTrue(body.contains("\"output_dimension\":1024"));
+    }
+
+    @Test
+    public void testExplicitFloatQuantizationWithBfloat16Tensor() throws Exception {
+        embedder = createEmbedder(1024, "float");
+
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createFloatSuccessResponse(1024)));
+
+        TensorType targetType = TensorType.fromSpec("tensor<bfloat16>(x[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+
+        Tensor result = embedder.embed("test", context, targetType);
+
+        assertNotNull(result);
+        assertEquals(1024, result.size());
+        assertEquals(TensorType.Value.BFLOAT16, result.type().valueType());
+
+        RecordedRequest request = mockServer.takeRequest();
+        String body = request.getBody().readUtf8();
+        assertTrue(body.contains("\"output_dtype\":\"float\""));
+    }
+
     // ===== Helper Methods =====
 
     private VoyageAIEmbedder createEmbedder() {
