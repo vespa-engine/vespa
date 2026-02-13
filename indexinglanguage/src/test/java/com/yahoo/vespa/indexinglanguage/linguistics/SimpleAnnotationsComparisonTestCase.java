@@ -15,6 +15,7 @@ import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenType;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleToken;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.indexinglanguage.linguistics.LinguisticsAnnotator.TermOccurrences;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -310,7 +311,7 @@ public class SimpleAnnotationsComparisonTestCase {
 
         @Override
         public String toString() {
-            return String.format("Annotation(from=%d, length=%d, term='%s')", from, length, term);
+            return Text.format("Annotation(from=%d, length=%d, term='%s')", from, length, term);
         }
     }
 
