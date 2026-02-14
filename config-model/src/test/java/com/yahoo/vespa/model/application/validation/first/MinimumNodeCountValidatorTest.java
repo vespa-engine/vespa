@@ -76,6 +76,51 @@ public class MinimumNodeCountValidatorTest {
         });
     }
 
+    @Test
+    void testChangeValidationFromTwoNodesToOne() {
+        // First deployment with 2 nodes should succeed (with override to allow first deployment)
+        var deployment = tester.deploy(null, getContentClusterServices(2, 2), zone, null, "contentClusterId.indexing");
+
+        // Change from 2 nodes to 1 node should fail
+        try {
+            tester.deploy(deployment.getFirst(), getContentClusterServices(1, 1), zone, null, "contentClusterId.indexing");
+            fail("Expected exception when reducing node count below minimum");
+        }
+        catch (Exception expected) {
+            String message = Exceptions.toMessageString(expected);
+            assert message.contains("minimum-node-count") : "Expected 'minimum-node-count' in: " + message;
+            assert message.contains("content cluster 'contentClusterId'") : "Expected content cluster in: " + message;
+        }
+    }
+
+    @Test
+    void testChangeValidationWithAlreadyTooFewNodes() {
+        // First deployment with 1 node (with overrides)
+        var deployment = tester.deploy(null, getContentClusterServices(1, 1), zone, bothOverrides, "contentClusterId.indexing");
+
+        // Redeployment with still 1 node should succeed (no new violation)
+        assertDoesNotThrow(() -> {
+            tester.deploy(deployment.getFirst(), getContentClusterServices(1, 1), zone, bothOverrides, "contentClusterId.indexing");
+        });
+    }
+
+    @Test
+    void testChangeValidationForContainerCluster() {
+        // First deployment with 2 containers should succeed
+        var deployment = tester.deploy(null, getContainerClusterServices(2), zone, null);
+
+        // Change from 2 containers to 1 should fail
+        try {
+            tester.deploy(deployment.getFirst(), getContainerClusterServices(1), zone, null);
+            fail("Expected exception when reducing container count below minimum");
+        }
+        catch (Exception expected) {
+            String message = Exceptions.toMessageString(expected);
+            assert message.contains("minimum-node-count") : "Expected 'minimum-node-count' in: " + message;
+            assert message.contains("container cluster 'default'") : "Expected container cluster in: " + message;
+        }
+    }
+
     private static String getContentClusterServices(int nodeCount, int redundancy) {
         return "<services version='1.0'>" +
                "  <content id='contentClusterId' version='1.0'>" +

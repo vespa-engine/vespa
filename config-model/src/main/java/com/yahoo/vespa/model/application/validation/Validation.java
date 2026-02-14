@@ -125,7 +125,7 @@ public class Validation {
 
     private static void validateFirstTimeDeployment(Execution execution) {
         new RedundancyValidator().validate((Context) execution);
-        new MinimumNodeCountValidator().validate(execution);
+        new MinimumNodeCountValidator().validate((Context) execution);
     }
 
     private static void validateChanges(Execution execution) {
@@ -142,6 +142,7 @@ public class Validation {
         new NodeResourceChangeValidator().validate(execution);
         new CertificateRemovalChangeValidator().validate(execution);
         new RedundancyValidator().validate(execution);
+        new MinimumNodeCountValidator().validate(execution);
         new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
         new RestartOnDeployForLocalLLMValidator().validate(execution);
         new RestartOnDeployForTritonOnnxRuntimeValidator().validate(execution);
