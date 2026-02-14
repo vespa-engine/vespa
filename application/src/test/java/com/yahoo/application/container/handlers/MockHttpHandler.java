@@ -8,6 +8,7 @@ import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
 
 /**
@@ -24,7 +25,7 @@ public class MockHttpHandler extends ThreadedHttpRequestHandler {
         return new HttpResponse(200) {
             @Override
             public void render(OutputStream outputStream) throws IOException {
-                PrintStream out = new PrintStream(outputStream);
+                PrintStream out = new PrintStream(outputStream, true, StandardCharsets.UTF_8);
                 out.print("OK");
                 out.flush();
             }
