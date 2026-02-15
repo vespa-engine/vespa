@@ -97,13 +97,29 @@ func (c *CurlWriter) print(request *http.Request, tlsOptions TLSOptions, timeout
 	return err
 }
 
+// AllowedUrn represents an allowed URN for private service access.
+type AllowedUrn struct {
+	Type string `json:"type"`
+	Urn  string `json:"urn"`
+}
+
+// PrivateServiceInfo contains information about private service configuration.
+type PrivateServiceInfo struct {
+	ServiceID   string       `json:"serviceId,omitempty"`
+	Type        string       `json:"type,omitempty"`
+	AllowedUrns []AllowedUrn `json:"allowedUrns,omitempty"`
+	AuthMethods []string     `json:"authMethods,omitempty"`
+	Endpoints   []string     `json:"endpoints,omitempty"`
+}
+
 // Service represents a Vespa service.
 type Service struct {
-	BaseURL    string
-	Name       string
-	AuthMethod string
-	TLSOptions TLSOptions
-	CurlWriter CurlWriter
+	BaseURL        string
+	Name           string
+	AuthMethod     string
+	TLSOptions     TLSOptions
+	CurlWriter     CurlWriter
+	PrivateService *PrivateServiceInfo
 
 	deployAPI     bool
 	auth          Authenticator
@@ -227,14 +243,25 @@ func (s *Service) Wait(timeout time.Duration) error {
 	return nil
 }
 
-func (s *Service) Description() string {
+// Type returns the type of this service (either "container" or "deploy API").
+func (s *Service) Type() string {
 	if s.deployAPI {
 		return "deploy API"
 	}
+	return "container"
+}
+
+// ServiceName returns the name of this service, which may be empty.
+func (s *Service) ServiceName() string {
+	return s.Name
+}
+
+// Description returns a human-readable description of this service.
+func (s *Service) Description() string {
 	if s.Name == "" {
-		return "container"
+		return s.Type()
 	}
-	return "container " + s.Name
+	return s.Type() + " " + s.Name
 }
 
 // FindService returns the service of given name, found among services, if any.
