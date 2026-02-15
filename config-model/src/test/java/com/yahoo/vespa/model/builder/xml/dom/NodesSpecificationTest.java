@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
@@ -10,6 +11,7 @@ import org.w3c.dom.Document;
 import com.yahoo.component.Version;
 
 import java.util.Optional;
+import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -224,11 +226,47 @@ public class NodesSpecificationTest {
         assertEquals(2, spec.maxResources().groups());
     }
 
+    @Test
+    void testWarningWhenAllThreeAttributesSpecified() {
+        class LogCapture implements DeployLogger {
+            boolean warningLogged = false;
+            String message = "";
+            @Override
+            public void log(Level level, String msg) {
+                // Not used in this test
+            }
+            @Override
+            public void logApplicationPackage(Level level, String msg) {
+                if (level == Level.WARNING) {
+                    warningLogged = true;
+                    message = msg;
+                }
+            }
+        }
+
+        LogCapture logger = new LogCapture();
+        Document nodesXml = XML.getDocument("<nodes count='30' groups='3' group-size='10'/>");
+        NodesSpecification.create(false, false, Version.emptyVersion,
+                                  new ModelElement(nodesXml.getDocumentElement()),
+                                  Optional.empty(), Optional.empty(), logger);
+
+        assertTrue(logger.warningLogged, "Warning should be logged when all three attributes are specified");
+        assertTrue(logger.message.contains("count"), "Warning message should mention 'count'");
+        assertTrue(logger.message.contains("groups"), "Warning message should mention 'groups'");
+        assertTrue(logger.message.contains("group-size"), "Warning message should mention 'group-size'");
+    }
+
     private NodesSpecification nodesSpecification(String nodesElement) {
         Document nodesXml = XML.getDocument(nodesElement);
+        DeployLogger logger = new DeployLogger() {
+            @Override
+            public void log(Level level, String message) {
+                // No-op for most tests
+            }
+        };
         return NodesSpecification.create(false, false, Version.emptyVersion,
                                          new ModelElement(nodesXml.getDocumentElement()),
-                                         Optional.empty(), Optional.empty());
+                                         Optional.empty(), Optional.empty(), logger);
 
     }
 

@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.ToDoubleFunction;
 
+import static java.util.logging.Level.WARNING;
+
 /**
  * A common utility class to represent a requirement for nodes during model building.
  * Such a requirement is commonly specified in services.xml as a <code>nodes</code> element.
@@ -100,9 +102,9 @@ public class NodesSpecification {
 
     static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
                                      ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
-                                     Optional<CloudAccount> cloudAccount) {
+                                     Optional<CloudAccount> cloudAccount, DeployLogger logger) {
         var resolvedElement = resolveElement(nodesElement);
-        var resourceConstraints = toResourceConstraints(resolvedElement);
+        var resourceConstraints = toResourceConstraints(resolvedElement, logger);
         boolean hasCountAttribute = resolvedElement.stringAttribute("count") != null;
         return new NodesSpecification(resourceConstraints.min,
                                       resourceConstraints.max,
@@ -117,13 +119,20 @@ public class NodesSpecification {
                                       hasCountAttribute);
     }
 
-    private static ResourceConstraints toResourceConstraints(ModelElement nodesElement) {
-        var nodes =  rangeFrom(nodesElement, "count");
-        var groups =  rangeFrom(nodesElement, "groups");
-        var groupSize =  rangeFrom(nodesElement, "group-size");
+    private static ResourceConstraints toResourceConstraints(ModelElement nodesElement, DeployLogger logger) {
+        var nodes = rangeFrom(nodesElement, "count");
+        var groups = rangeFrom(nodesElement, "groups");
+        var groupSize = rangeFrom(nodesElement, "group-size");
 
         if (nodes.from().orElse(1) < 1)
             throw new IllegalArgumentException("Min node resources cannot be less than 1, but is " + nodes.from().getAsInt());
+
+        // Warn if all three attributes are specified
+        if (!nodes.isEmpty() && !groups.isEmpty() && !groupSize.isEmpty()) {
+            logger.logApplicationPackage(WARNING, "Specifying all of 'count', 'groups', and 'group-size' for nodes in a content cluster " +
+                                                  "is not recommended as these may conflict. It is sufficient to specify any two of these " +
+                                                  "attributes, using 'groups' and 'group-size' is recommended.");
+        }
 
         // Find the tightest possible limits for groups to avoid falsely concluding we are autoscaling
         // when only specifying group size
@@ -161,7 +170,8 @@ public class NodesSpecification {
                       context.getDeployState().getWantedNodeVespaVersion(),
                       nodesElement,
                       context.getDeployState().getWantedDockerImageRepo(),
-                      context.getDeployState().getProperties().cloudAccount());
+                      context.getDeployState().getProperties().cloudAccount(),
+                      context.getDeployState().getDeployLogger());
     }
 
     /**
@@ -179,7 +189,8 @@ public class NodesSpecification {
                                   context.getDeployState().getWantedNodeVespaVersion(),
                                   nodesElement,
                                   context.getDeployState().getWantedDockerImageRepo(),
-                                  context.getDeployState().getProperties().cloudAccount()));
+                                  context.getDeployState().getProperties().cloudAccount(),
+                                  context.getDeployState().getDeployLogger()));
     }
 
     /**
