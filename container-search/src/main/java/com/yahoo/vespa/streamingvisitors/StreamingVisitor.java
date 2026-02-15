@@ -158,7 +158,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
             ProtobufSerialization.setProtobufAlsoSerialized(false);
         }
         if (sendProtobuf) {
-            var serializationContext = new SerializationContext(1.0); // Not necessary tio track cnotent share in streaming
+            var serializationContext = SerializationContext.ignored(); // Not tracking content share in streaming
             var protobufTree = query.getModel().getQueryTree().toProtobufQueryTree(serializationContext);
             params.setLibraryParameter("querytree", protobufTree.toByteArray());
         }
@@ -264,7 +264,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         while (true) {
             try {
                 switch (code) {
-                    case 0 -> ed.setReturned(query.getModel().getQueryTree().getRoot().encode(buf, new SerializationContext(1.0)));
+                    case 0 -> ed.setReturned(query.getModel().getQueryTree().getRoot().encode(buf, SerializationContext.ignored()));
                     case 1 -> ed.setReturned(QueryEncoder.encodeAsProperties(query, buf));
                     case 2 -> throw new IllegalArgumentException("old aggregation no longer exists!");
                     case 3 -> {

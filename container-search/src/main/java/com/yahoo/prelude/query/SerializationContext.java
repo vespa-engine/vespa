@@ -6,9 +6,30 @@ import com.yahoo.api.annotations.Beta;
 /**
  * Context needed to serialize a query tree.
  *
- * @param contentShare the share of the total content to be queried (across all nodes in the queried group)
- *                     which is being queried on the node we are serializing for here
  * @author bratseth
  */
 @Beta
-public record SerializationContext(double contentShare) {}
+public class SerializationContext {
+
+    private final double contentShare;
+
+    /**
+     * Creates a serialization context.
+     *
+     * @param contentShare the share of the total content to be queried (across all nodes in the queried group)
+     *        which is being queried on the node we are serializing for here
+     */
+    public SerializationContext(double contentShare) {
+        this.contentShare = contentShare;
+    }
+
+    public int contentShareOf(int value) {
+        return (int)Math.ceil(value * contentShare);
+    }
+
+    /** Creates an instance of this which is not expected to be used. */
+    public static SerializationContext ignored() {
+        return new SerializationContext(1.0);
+    }
+
+}

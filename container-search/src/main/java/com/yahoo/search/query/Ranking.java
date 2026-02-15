@@ -45,6 +45,7 @@ public class Ranking implements Cloneable {
     public static final String LIST_FEATURES = "listFeatures";
     public static final String FRESHNESS = "freshness";
     public static final String QUERYCACHE = "queryCache";
+
     public static final String RERANKCOUNT = "rerankCount";
     public static final String KEEPRANKCOUNT = "keepRankCount";
     public static final String RANKSCOREDROPLIMIT = "rankScoreDropLimit";
@@ -79,7 +80,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(LIST_FEATURES, "string", RANKFEATURES.toString()));
         argumentType.addField(new FieldDescription(FRESHNESS, "string", "datetime"));
         argumentType.addField(new FieldDescription(QUERYCACHE, "boolean"));
-        argumentType.addField(new FieldDescription(RERANKCOUNT, "integer"));
+        argumentType.addField(new FieldDescription(RERANKCOUNT, "integer")); // TODO: Remove on Vespa 9
         argumentType.addField(new FieldDescription(KEEPRANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(RANKSCOREDROPLIMIT, "double"));
         argumentType.addField(new FieldDescription(GlobalPhase.GLOBAL_PHASE, new QueryProfileFieldType(GlobalPhase.getArgumentType())));
@@ -114,7 +115,6 @@ public class Ranking implements Cloneable {
 
     private boolean queryCache = false;
 
-    private Integer rerankCount = null;
     private Integer keepRankCount = null;
     private Double rankScoreDropLimit = null;
 
@@ -185,11 +185,19 @@ public class Ranking implements Cloneable {
     /**
      * Sets the number of hits for which the second-phase function will be evaluated.
      * When set, this overrides the setting in the rank profile.
+     *
+     * @deprecated use getSecondPhase().setRerankCount()
      */
-    public void setRerankCount(int rerankCount) { this.rerankCount = rerankCount; }
+    @Deprecated // TODO: Remove on Vespa 9
+    public void setRerankCount(int rerankCount) { secondPhase.setRerankCount(rerankCount); }
 
-    /** Returns the rerank-count that will be used, or null if not set */
-    public Integer getRerankCount() { return rerankCount; }
+    /**
+     * Returns the second-phase rerank-count that will be used, or null if not set.
+     *
+     * @deprecated use getSecondPhase().getRerankCount()
+     */
+    @Deprecated // TODO: Remove on Vespa 9
+    public Integer getRerankCount() { return secondPhase.getRerankCount(); }
 
     /** Sets the keep-rank-count that will be used, or null if not set */
     public void setKeepRankCount(int keepRankCount) { this.keepRankCount = keepRankCount; }
@@ -311,8 +319,6 @@ public class Ranking implements Cloneable {
         matching.prepare(rankProperties);
         softTimeout.prepare(rankProperties);
         prepareNow(freshness);
-        if (rerankCount != null)
-            rankProperties.put("vespa.hitcollector.heapsize", rerankCount);
         if (keepRankCount != null)
             rankProperties.put("vespa.hitcollector.arraysize", keepRankCount);
         if (rankScoreDropLimit != null)
@@ -376,7 +382,6 @@ public class Ranking implements Cloneable {
         if ( ! Objects.equals(sorting, other.sorting)) return false;
         if ( ! Objects.equals(freshness, other.freshness)) return false;
         if ( ! Objects.equals(queryCache, other.queryCache)) return false;
-        if ( ! Objects.equals(rerankCount, other.rerankCount)) return false;
         if ( ! Objects.equals(keepRankCount, other.keepRankCount)) return false;
         if ( ! Objects.equals(rankScoreDropLimit, other.rankScoreDropLimit)) return false;
         if ( ! Objects.equals(rankProperties, other.rankProperties)) return false;
@@ -394,7 +399,7 @@ public class Ranking implements Cloneable {
     @Override
     public int hashCode() {
         return Objects.hash(location, profile, sorting, listFeatures, freshness, queryCache,
-                            rerankCount, keepRankCount, rankScoreDropLimit, rankProperties,
+                            keepRankCount, rankScoreDropLimit, rankProperties,
                             rankFeatures, matchPhase, secondPhase, globalPhase, matching, softTimeout, significance, elementGap);
     }
 
