@@ -144,6 +144,9 @@ private:
     void visit(SameElement &node) override {
         auto* item = _item_stack.back()->mutable_item_same_element();
         copyTermState(node, item->mutable_properties());
+        for (const uint32_t id : node.get_element_filter()) {
+            item->add_element_filter(id);
+        }
         visitNodes(node.getChildren());
     }
 

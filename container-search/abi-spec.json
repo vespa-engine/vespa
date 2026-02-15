@@ -1522,6 +1522,8 @@
       "public java.lang.String getFieldName()",
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getIndexName()",
+      "public java.util.List getElementFilter()",
+      "public void setElementFilter(java.util.List)",
       "public int getNumWords()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"

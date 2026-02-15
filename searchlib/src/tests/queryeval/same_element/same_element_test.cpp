@@ -67,7 +67,9 @@ std::unique_ptr<MatchDataLayout> make_match_data_layout() {
 }
 
 std::unique_ptr<SameElementBlueprint> make_blueprint(QueryTweak query_tweak, MatchDataLayout& mdl,
-                                                     const std::vector<FakeResult> &children, bool fake_attr) {
+                                                     const std::vector<FakeResult> &children,
+                                                     bool fake_attr,
+                                                     std::vector<uint32_t> element_filter = std::vector<uint32_t>()) {
     std::vector<std::unique_ptr<Blueprint>> bp_children;
     bp_children.reserve(children.size());
     std::vector<TermFieldHandle> descendants_index_handles;
@@ -113,7 +115,7 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(QueryTweak query_tweak, Mat
         bp_children.emplace_back(std::move(bp_tweak));
     }
     auto result = std::make_unique<SameElementBlueprint>(make_field_spec(mdl), descendants_index_handles,
-                                                         false);
+                                                         false, std::move(element_filter));
     for (auto& fake : bp_children) {
         result->addChild(std::move(fake));
     }
@@ -121,8 +123,10 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(QueryTweak query_tweak, Mat
 }
 
 std::unique_ptr<SameElementBlueprint> make_blueprint(MatchDataLayout& mdl,
-                                                     const std::vector<FakeResult> &children, bool fake_attr = false) {
-    return make_blueprint(QueryTweak::NORMAL, mdl, children, fake_attr);
+                                                     const std::vector<FakeResult> &children,
+                                                     bool fake_attr = false,
+                                                     std::vector<uint32_t> element_filter = std::vector<uint32_t>()) {
+    return make_blueprint(QueryTweak::NORMAL, mdl, children, fake_attr, std::move(element_filter));
 }
 
 Blueprint::UP finalize(Blueprint::UP bp, bool strict) {
@@ -133,9 +137,9 @@ Blueprint::UP finalize(Blueprint::UP bp, bool strict) {
     return result;
 }
 
-SimpleResult find_matches(const std::vector<FakeResult> &children) {
+SimpleResult find_matches(const std::vector<FakeResult> &children, std::vector<uint32_t> element_filter = std::vector<uint32_t>()) {
     auto mdl = make_match_data_layout();
-    auto bp = finalize(make_blueprint(*mdl, children), false);
+    auto bp = finalize(make_blueprint(*mdl, children, false, std::move(element_filter)), false);
     auto md = mdl->createMatchData();
     auto search = bp->createSearch(*md);
     return SimpleResult().search(*search, 1000);
@@ -319,6 +323,52 @@ TEST(SameElementTest, require_that_rank_below_same_element_works)
     EXPECT_TRUE(search->seek(9));
     search->unpack(9);
     verify_md_elements(*md, "after unpack", 9, { hit({4, 5, 9}), hit({4, 9}) });
+}
+
+TEST(SameElementTest, require_that_simple_match_can_be_found_with_element_filter) {
+    auto a = make_result({{5, {1,3,7}}});
+    auto b = make_result({{5, {3,5,10}}});
+    SimpleResult result = find_matches({a, b}, {3}); // Element filter for id 3
+    SimpleResult expect({5});
+    EXPECT_EQ(result, expect);
+}
+
+TEST(SameElementTest, require_that_simple_match_can_be_found_with_element_filter_with_multiple_ids) {
+    auto a = make_result({{5, {1,3,7}}});
+    auto b = make_result({{5, {3,5,10}}});
+    SimpleResult result = find_matches({a, b}, {1,2,3}); // Element filter for ids 1, 2, and 3
+    SimpleResult expect = SimpleResult({5});
+    EXPECT_EQ(result, expect);
+}
+
+TEST(SameElementTest, require_that_element_filter_prevents_simple_match) {
+    auto a = make_result({{5, {1,3,7}}});
+    auto b = make_result({{5, {3,5,10}}});
+    SimpleResult result = find_matches({a, b}, {2}); // Element filter for id 2
+    SimpleResult expect;
+    EXPECT_EQ(result, expect);
+}
+
+
+TEST(SameElementTest, require_that_element_filter_selects_precisely_correct_elements) {
+    auto a = make_result({{5, {1,3,7,12}},
+                          {10, {1,2,3}},
+                          {15, {3,4,5}},
+                          {20, {4,5,6}},
+                          {25, {1}}});
+    auto mdl = make_match_data_layout();
+    auto bp = finalize(make_blueprint(*mdl, {a}, false, {1, 3}), false);
+    auto md = mdl->createMatchData();
+    auto search = bp->createSearch(*md);
+    search->initRange(1, 1000);
+    auto *se = dynamic_cast<SameElementSearch*>(search.get());
+    ASSERT_TRUE(se != nullptr);
+    verify_elements(*se, 5, {1, 3});
+    verify_elements(*se, 10, {1, 3});
+    verify_elements(*se, 15, {3});
+    verify_elements(*se, 20, {});
+    verify_elements(*se, 25, {1});
+    verify_elements(*se, 30, {});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

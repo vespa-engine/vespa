@@ -16,11 +16,13 @@ namespace search::queryeval {
 
 SameElementBlueprint::SameElementBlueprint(const FieldSpec &field,
                                            const std::vector<search::fef::TermFieldHandle>& descendants_index_handles,
-                                           bool expensive)
+                                           bool expensive,
+                                           std::vector<uint32_t> element_filter)
     : IntermediateBlueprint(),
       _field(field),
       _descendants_index_handles(descendants_index_handles),
-      _expensive(expensive)
+      _expensive(expensive),
+      _element_filter(std::move(element_filter))
 {
 }
 
@@ -117,7 +119,8 @@ SameElementBlueprint::create_same_element_search(MatchData& md, TermFieldMatchDa
     }
     // match data for subtree (subtree_md) must be owned by search iterator
     return std::make_unique<SameElementSearch>(tfmd, std::move(descendants_index_tfmd), std::move(sub_searches),
-                                               strict());
+                                               strict(),
+                                               _element_filter); // Copy element filter, do not move it
 }
 
 SearchIterator::UP

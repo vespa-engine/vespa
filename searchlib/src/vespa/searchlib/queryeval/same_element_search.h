@@ -27,6 +27,7 @@ private:
     std::vector<std::unique_ptr<SearchIterator>> _children;
     std::vector<uint32_t>                        _matchingElements;
     bool                                         _strict;
+    std::vector<uint32_t>                        _element_filter;
 
     void fetch_matching_elements(uint32_t docid, std::vector<uint32_t> &dst);
     bool check_docid_match(uint32_t docid);
@@ -37,7 +38,8 @@ public:
     SameElementSearch(fef::TermFieldMatchData &tfmd,
                       std::vector<fef::TermFieldMatchData*> descendants_index_tfmd,
                       std::vector<std::unique_ptr<SearchIterator>> children,
-                      bool strict);
+                      bool strict,
+                      std::vector<uint32_t> element_filter = std::vector<uint32_t>());
     ~SameElementSearch() override;
     void initRange(uint32_t begin_id, uint32_t end_id) override;
     void doSeek(uint32_t docid) override;
