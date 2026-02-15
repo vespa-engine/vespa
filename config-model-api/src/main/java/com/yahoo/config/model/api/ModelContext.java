@@ -117,6 +117,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
         @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default boolean applyOnRestartForApplicationMetadataConfig() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) { return 0.95; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
