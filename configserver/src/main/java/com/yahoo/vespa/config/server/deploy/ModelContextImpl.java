@@ -28,6 +28,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
+import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
@@ -209,6 +210,7 @@ public class ModelContextImpl implements ModelContext {
         private final int searchCoreMaxOutstandingMoveOps;
         private final double docprocHandlerThreadpool;
         private final boolean applyOnRestartForApplicationMetadataConfig;
+        private final DoubleFlag autoscalerTargetWriteCpuPercentageFlag;
         private final IntFlag heapSizePercentageFlag;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
@@ -256,6 +258,7 @@ public class ModelContextImpl implements ModelContext {
             this.searchCoreMaxOutstandingMoveOps = Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS.bindTo(source).with(appId).with(version).value();
             this.docprocHandlerThreadpool = Flags.DOCPROC_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
             this.applyOnRestartForApplicationMetadataConfig = Flags.APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG.bindTo(source).with(appId).with(version).value();
+            this.autoscalerTargetWriteCpuPercentageFlag = Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE.bindTo(source).with(appId).with(version);
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -304,6 +307,10 @@ public class ModelContextImpl implements ModelContext {
         @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
         @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
         @Override public boolean applyOnRestartForApplicationMetadataConfig() { return applyOnRestartForApplicationMetadataConfig; }
+        @Override public double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) {
+            return clusterId.map(id -> autoscalerTargetWriteCpuPercentageFlag.with(ClusterSpec.Id.from(id)).value())
+                            .orElseGet(autoscalerTargetWriteCpuPercentageFlag::value);
+        }
     }
 
     public static class Properties implements ModelContext.Properties {
