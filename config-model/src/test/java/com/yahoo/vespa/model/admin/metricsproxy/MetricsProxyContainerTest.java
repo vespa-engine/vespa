@@ -8,6 +8,8 @@ import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 
@@ -172,6 +174,34 @@ public class MetricsProxyContainerTest {
                 assertEquals("cluster-controllers", service.dimension(0).value());
             }
         }
+    }
+
+    @Test
+    void heapSizeUsesBaseValuesWhenFlagDisabled() {
+        // Test with default setup - should use base heap size when flag is off
+        VespaModel model = getModel(hostedServicesWithContent(), self_hosted);
+        MetricsProxyContainer container = (MetricsProxyContainer) model.id2producer().get(CONTAINER_CONFIG_ID);
+        QrStartConfig config = model.getConfig(QrStartConfig.class, CONTAINER_CONFIG_ID);
+
+        // Should use base heap (320 MB) regardless of node count
+        assertEquals(320, config.jvm().heapsize());
+        assertEquals(320, config.jvm().minHeapsize());
+    }
+
+    @Test
+    void heapSizeScalesWithNumberOfNodesWhenFlagEnabled() {
+        var deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setScaleMetricsproxyHeapByNodeCount(true));
+
+        // Test with default setup - heap should scale based on node count
+        VespaModel model = getModel(hostedServicesWithContent(), self_hosted, deployStateBuilder);
+        int nodeCount = model.hostSystem().getHosts().size();
+        MetricsProxyContainer container = (MetricsProxyContainer) model.id2producer().get(CONTAINER_CONFIG_ID);
+        QrStartConfig config = model.getConfig(QrStartConfig.class, CONTAINER_CONFIG_ID);
+
+        // Base heap (320) + (nodeCount * 2 MB per node)
+        int expectedHeap = 320 + (nodeCount * 2);
+        assertEquals(expectedHeap, config.jvm().heapsize());
+        assertEquals(expectedHeap, config.jvm().minHeapsize());
     }
 
 

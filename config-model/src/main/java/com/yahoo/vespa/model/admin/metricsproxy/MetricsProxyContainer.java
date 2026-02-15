@@ -49,6 +49,7 @@ public class MetricsProxyContainer extends Container implements
     private final MetricsProxyContainerCluster cluster;
     private final ApplicationId applicationId;
     private final Zone zone;
+    private final boolean scaleHeapByNodeCount;
 
     public MetricsProxyContainer(MetricsProxyContainerCluster cluster, HostResource host, int index, DeployState deployState) {
         super(cluster, host.getHostname(), index, deployState);
@@ -57,6 +58,7 @@ public class MetricsProxyContainer extends Container implements
         this.cluster = cluster;
         this.applicationId = deployState.getApplicationPackage().getApplicationId();
         this.zone = deployState.zone();
+        this.scaleHeapByNodeCount = deployState.featureFlags().scaleMetricsproxyHeapByNodeCount();
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
@@ -159,13 +161,28 @@ public class MetricsProxyContainer extends Container implements
         cluster.getConfig(builder);
         if (clusterMembership.isPresent()) {
             boolean adminCluster = clusterMembership.get().cluster().type() == ClusterSpec.Type.admin;
-            int heapSize = adminCluster ? 96 : 320;
+            int heapSize = calculateHeapSize(adminCluster);
             builder.jvm.heapsize(heapSize);
             builder.jvm.minHeapsize(heapSize);
             builder.jvm.compressedClassSpaceSize(0);
             builder.jvm.baseMaxDirectMemorySize(128);
             builder.jvm.availableProcessors(2);
         }
+    }
+
+    private int calculateHeapSize(boolean adminCluster) {
+        int baseHeapSize = adminCluster ? 96 : 320;
+
+        if (!scaleHeapByNodeCount) {
+            return baseHeapSize;
+        }
+
+        int nodeCount = hostSystem().getHosts().size();
+        int heapPerNode = adminCluster ? 1 : 2;
+        int maxHeapSize = adminCluster ? 512 : 1024;
+
+        int calculatedHeap = baseHeapSize + (heapPerNode * nodeCount);
+        return Math.min(calculatedHeap, maxHeapSize);
     }
 
     private String getNodeRole() {
