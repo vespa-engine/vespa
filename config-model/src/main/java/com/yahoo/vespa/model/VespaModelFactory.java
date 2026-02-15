@@ -86,7 +86,7 @@ public class VespaModelFactory implements ModelFactory {
                 Clock.systemUTC(), Zone.defaultZone());
     }
 
-    private VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock, Zone zone) {
+    protected VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock, Zone zone) {
         this.version = version;
         if (configModelRegistry == null) {
             this.configModelRegistry = new NullConfigModelRegistry();

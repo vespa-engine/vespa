@@ -18,6 +18,7 @@ import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.path.Path;
+import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
@@ -57,6 +58,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ConfigServerBootstrapTest {
 
+    private final ManualClock clock = new ManualClock("2026-02-01T00:00:00");
+
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -64,7 +67,7 @@ public class ConfigServerBootstrapTest {
     public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(9, false);
-        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactory(createHostedModelFactory())
+        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactory(createHostedModelFactory(clock))
                                                                        .configserverConfig(configserverConfig)
                                                                        .hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
@@ -103,7 +106,7 @@ public class ConfigServerBootstrapTest {
     public void testBootstrapWithVipStatusFile() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(9, false);
-        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactory(createHostedModelFactory())
+        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactory(createHostedModelFactory(clock))
                 .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
@@ -123,7 +126,7 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactory(createHostedModelFactory())
+        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactory(createHostedModelFactory(clock))
                 .configserverConfig(configserverConfig).build();
         tester.deployApp("src/test/apps/hosted/");
 
@@ -156,7 +159,7 @@ public class ConfigServerBootstrapTest {
         List<Host> hosts = createHosts(vespaVersion);
         Curator curator = new MockCurator();
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
-                .modelFactory(DeployTester.createModelFactory(Version.fromString(vespaVersion)))
+                .modelFactory(DeployTester.createModelFactory(Version.fromString(vespaVersion), clock))
                 .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
                 .configserverConfig(configserverConfig)
                 .zone(new Zone(Environment.dev, RegionName.defaultName()))
@@ -186,7 +189,7 @@ public class ConfigServerBootstrapTest {
         String oldVespaVersion = "8.100.1";
         Curator curator = new MockCurator();
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
-                .modelFactory(DeployTester.createModelFactory(Version.fromString(oldVespaVersion)))
+                .modelFactory(DeployTester.createModelFactory(Version.fromString(oldVespaVersion), clock))
                 .configserverConfig(configserverConfig)
                 .curator(curator)
                 .build();
