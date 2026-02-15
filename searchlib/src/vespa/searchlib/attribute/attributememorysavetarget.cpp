@@ -61,7 +61,7 @@ AttributeMemorySaveTarget::writeToFile(const TuneFileAttributes &tuneFileAttribu
     if (_header.getEnumerated()) {
         _udatWriter.writeTo(saveTarget.udatWriter());
     }
-    if (_header.hasMultiValue()) {
+    if (_header.needs_idx_file()) {
         _idxWriter.writeTo(saveTarget.idxWriter());
         if (_header.hasWeightedSetType()) {
             _weightWriter.writeTo(saveTarget.weightWriter());

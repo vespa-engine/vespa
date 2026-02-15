@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "array_bool_attribute.h"
-#include "array_bool_attribute_saver.h"
 #include "address_space_components.h"
 #include "search_context.h"
 #include "single_raw_attribute_loader.h"
+#include "single_raw_attribute_saver.h"
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
@@ -396,7 +396,7 @@ std::unique_ptr<AttributeSaver>
 ArrayBoolAttribute::onInitSave(std::string_view fileName)
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
-    return std::make_unique<ArrayBoolAttributeSaver>
+    return std::make_unique<SingleRawAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),
          make_entry_ref_vector_snapshot(_ref_vector, getCommittedDocIdLimit()),
