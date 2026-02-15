@@ -15,6 +15,9 @@ import java.util.Objects;
  */
 public class SecondPhase implements Cloneable {
 
+    static final String rerankCountPropertyName = "vespa.hitcollector.heapsize";
+    static final String totalRerankCountPropertyName = "vespa.hitcollector.totalHeapsize";
+
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
@@ -31,18 +34,35 @@ public class SecondPhase implements Cloneable {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     private Integer rerankCount = null;
+    private Integer totalRerankCount = null;
     private Double rankScoreDropLimit = null;
 
     /**
-     * Sets the number of hits for which the second-phase function will be evaluated.
-     * When set, this overrides the setting in the rank profile.
+     * Sets the number of hits for which the second-phase function will be evaluated on each node.
+     * When set, this overrides the setting in the rank profile, and the totalRerankCount setting.
      */
     public void setRerankCount(int rerankCount) { this.rerankCount = rerankCount; }
 
-    /** Returns the rerank-count that will be used, or null if not set */
+    /**
+     * Returns the number of hits for which the second-phase function will be evaluated per node.
+     * When set, this overrides the setting in the rank profile, and the totalRerankCount setting.
+     */
     public Integer getRerankCount() { return rerankCount; }
 
-    /** Sets the second phase rank-score-drop-limit that will be used, or null if not set */
+    /**
+     * Sets the number of hits for which the second-phase function will be evaluated in total
+     * across all nodes in the group.
+     * When set, this overrides the setting in the rank profile.
+     */
+    public void setTotalRerankCount(int totalRerankCount) { this.totalRerankCount = totalRerankCount; }
+
+    /**
+     * Returns the number of hits for which the second-phase function will be evaluated in total
+     * across all nodes in the group.
+   . */
+    public Integer getTotalRerankCount() { return totalRerankCount; }
+
+    /** Sets the second phase rank-score-drop-limit that will be used, or null if not set. */
     public void setRankScoreDropLimit(double rankScoreDropLimit) { this.rankScoreDropLimit = rankScoreDropLimit; }
 
     /** Returns the second phase rank-score-drop-limit that will be used, or null if not set */
@@ -50,21 +70,25 @@ public class SecondPhase implements Cloneable {
 
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
-        if (rankScoreDropLimit == null) {
-            return;
-        }
-        rankProperties.put("vespa.hitcollector.secondphase.rankscoredroplimit", String.valueOf(rankScoreDropLimit));
+        if (rerankCount != null)
+            rankProperties.put(rerankCountPropertyName, rerankCount);
+        if (totalRerankCount != null)
+            rankProperties.put(totalRerankCountPropertyName, totalRerankCount);
+        if (rankScoreDropLimit != null)
+            rankProperties.put("vespa.hitcollector.secondphase.rankscoredroplimit", String.valueOf(rankScoreDropLimit));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(this.rankScoreDropLimit);
+        return Objects.hash(rerankCount, totalRerankCount, rankScoreDropLimit);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
         if ( ! (o instanceof SecondPhase other)) return false;
+        if ( ! Objects.equals(this.rerankCount, other.rerankCount)) return false;
+        if ( ! Objects.equals(this.totalRerankCount, other.totalRerankCount)) return false;
         if ( ! Objects.equals(this.rankScoreDropLimit, other.rankScoreDropLimit)) return false;
         return true;
     }

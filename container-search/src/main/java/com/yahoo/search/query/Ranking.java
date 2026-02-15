@@ -319,8 +319,6 @@ public class Ranking implements Cloneable {
         matching.prepare(rankProperties);
         softTimeout.prepare(rankProperties);
         prepareNow(freshness);
-        if (rerankCount != null)
-            rankProperties.put("vespa.hitcollector.heapsize", rerankCount);
         if (keepRankCount != null)
             rankProperties.put("vespa.hitcollector.arraysize", keepRankCount);
         if (rankScoreDropLimit != null)
@@ -384,7 +382,6 @@ public class Ranking implements Cloneable {
         if ( ! Objects.equals(sorting, other.sorting)) return false;
         if ( ! Objects.equals(freshness, other.freshness)) return false;
         if ( ! Objects.equals(queryCache, other.queryCache)) return false;
-        if ( ! Objects.equals(rerankCount, other.rerankCount)) return false;
         if ( ! Objects.equals(keepRankCount, other.keepRankCount)) return false;
         if ( ! Objects.equals(rankScoreDropLimit, other.rankScoreDropLimit)) return false;
         if ( ! Objects.equals(rankProperties, other.rankProperties)) return false;
@@ -402,7 +399,7 @@ public class Ranking implements Cloneable {
     @Override
     public int hashCode() {
         return Objects.hash(location, profile, sorting, listFeatures, freshness, queryCache,
-                            rerankCount, keepRankCount, rankScoreDropLimit, rankProperties,
+                            keepRankCount, rankScoreDropLimit, rankProperties,
                             rankFeatures, matchPhase, secondPhase, globalPhase, matching, softTimeout, significance, elementGap);
     }
 
