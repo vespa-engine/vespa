@@ -11,6 +11,7 @@ import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -35,9 +36,9 @@ public class MinimumNodeCountValidatorTest {
         catch (Exception expected) {
             String message = Exceptions.toMessageString(expected);
             // Verify that minimum-node-count validation is triggered for both content and indexing clusters
-            assert message.contains("minimum-node-count") : "Expected 'minimum-node-count' in: " + message;
-            assert message.contains("content cluster 'contentClusterId'") : "Expected content cluster in: " + message;
-            assert message.contains("contentClusterId.indexing") : "Expected indexing cluster in: " + message;
+            assertTrue(message.contains("minimum-node-count"), "Expected 'minimum-node-count' in: " + message);
+            assertTrue(message.contains("content cluster 'contentClusterId'"), "Expected content cluster in: " + message);
+            assertTrue(message.contains("contentClusterId.indexing"), "Expected indexing cluster in: " + message);
         }
     }
 
@@ -49,8 +50,8 @@ public class MinimumNodeCountValidatorTest {
         }
         catch (Exception expected) {
             String message = Exceptions.toMessageString(expected);
-            assert message.contains("Deploying clusters with fewer than 2 nodes in production requires a validation override on first deployment");
-            assert message.contains("container cluster 'default'");
+            assertTrue(message.contains("Deploying clusters with fewer than 2 nodes in production requires a validation override on first deployment"));
+            assertTrue(message.contains("container cluster 'default'"));
         }
     }
 
@@ -88,8 +89,8 @@ public class MinimumNodeCountValidatorTest {
         }
         catch (Exception expected) {
             String message = Exceptions.toMessageString(expected);
-            assert message.contains("minimum-node-count") : "Expected 'minimum-node-count' in: " + message;
-            assert message.contains("content cluster 'contentClusterId'") : "Expected content cluster in: " + message;
+            assertTrue(message.contains("minimum-node-count"), "Expected 'minimum-node-count' in: " + message);
+            assertTrue(message.contains("content cluster 'contentClusterId'"), "Expected content cluster in: " + message);
         }
     }
 
@@ -116,8 +117,8 @@ public class MinimumNodeCountValidatorTest {
         }
         catch (Exception expected) {
             String message = Exceptions.toMessageString(expected);
-            assert message.contains("minimum-node-count") : "Expected 'minimum-node-count' in: " + message;
-            assert message.contains("container cluster 'default'") : "Expected container cluster in: " + message;
+            assertTrue(message.contains("minimum-node-count"), "Expected 'minimum-node-count' in: " + message);
+            assertTrue(message.contains("container cluster 'default'"), "Expected container cluster in: " + message);
         }
     }
 
