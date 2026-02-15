@@ -192,6 +192,13 @@ public class Flags {
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT = defineFeatureFlag(
+            "scale-metricsproxy-heap-by-node-count", false,
+            List.of("hmusum"), "2026-02-15", "2026-08-15",
+            "Whether to scale metrics proxy container heap based on total number of nodes in the application",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
             List.of("andreer"), "2023-08-21", "2026-03-01",

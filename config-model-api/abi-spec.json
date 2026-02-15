@@ -1360,7 +1360,8 @@
       "public boolean useTriton()",
       "public int searchCoreMaxOutstandingMoveOps()",
       "public double docprocHandlerThreadpool()",
-      "public boolean applyOnRestartForApplicationMetadataConfig()"
+      "public boolean applyOnRestartForApplicationMetadataConfig()",
+      "public boolean scaleMetricsproxyHeapByNodeCount()"
     ],
     "fields" : [ ]
   },
