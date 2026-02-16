@@ -175,6 +175,7 @@ public class YqlParser implements Parser {
     public static final String DISTANCE_THRESHOLD = "distanceThreshold";
     public static final String DOCUMENT_FREQUENCY = "documentFrequency";
     public static final String DOT_PRODUCT = "dotProduct";
+    public static final String ELEMENT_FILTER = "elementFilter";
     public static final String EQUIV = "equiv";
     public static final String FILTER = "filter";
     public static final String FREQUENCY = "frequency";
@@ -746,6 +747,8 @@ public class YqlParser implements Parser {
         assertHasFunctionName(ast, SAME_ELEMENT);
 
         SameElementItem sameElement = new SameElementItem(field);
+        extractSameElementAnnotations(ast, sameElement);
+
         // All terms below sameElement are relative to this.
         IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
         for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
@@ -755,6 +758,50 @@ public class YqlParser implements Parser {
         }
         swapIndexCreator(prev);
         return sameElement;
+    }
+
+    /** Extract custom annotations for same element */
+    private void extractSameElementAnnotations(OperatorNode<ExpressionOperator> ast, SameElementItem sameElement) {
+        Object elementFilterObj = getAnnotation(ast, ELEMENT_FILTER, Object.class, null, "element filter list");
+        if (elementFilterObj != null) {
+            List<Integer> filter = new ArrayList<>();
+            if (elementFilterObj instanceof List<?> list) {
+                for (Object val : list) {
+                    filter.add(convertToIntForElementFilter(val));
+                }
+            } else {
+                filter.add(convertToIntForElementFilter(elementFilterObj));
+            }
+            sameElement.setElementFilter(filter);
+        }
+    }
+
+    /** Element filter accepts Integer. Allows Long that is within Integer size. */
+    private int convertToIntForElementFilter(Object val) {
+        if (val == null) {
+            throw new IllegalArgumentException("elementFilter cannot contain null values");
+        }
+        if (val instanceof Integer intVal) {
+            if (intVal < 0) {
+                throw new IllegalArgumentException("elementFilter values must be non-negative, got: " + val);
+            }
+            return intVal;
+        } else if (val instanceof Long longVal) {
+            if (longVal > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException(
+                        "elementFilter values must fit in int32 range, got: " + longVal);
+            }
+            if (longVal < 0) {
+                throw new IllegalArgumentException("elementFilter values must be non-negative, got: " + val);
+            }
+            return longVal.intValue();
+        } else if (val instanceof Double || val instanceof Float) {
+            throw new IllegalArgumentException(
+                    "elementFilter values must be integers, not floating point numbers. Got: " + val);
+        } else {
+            throw new IllegalArgumentException(
+                    "elementFilter values must be integers, got: " + val.getClass().getSimpleName());
+        }
     }
 
     private void fillPhraseItem(CompositeItem phrase, String field, OperatorNode<ExpressionOperator> ast) {

@@ -5,6 +5,8 @@ import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.protect.Validator;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -15,6 +17,7 @@ import java.util.Objects;
 public class SameElementItem extends NonReducibleCompositeItem implements HasIndexItem {
 
     private String fieldName;
+    private List<Integer> elementFilter = new ArrayList<>();
 
     public SameElementItem(String fieldName) {
         Validator.ensureNonEmpty("Field name", fieldName);
@@ -59,6 +62,29 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
         return fieldName;
     }
 
+    /**
+     * Returns the element filter. If set, only the element ids in the element filter is required to match.
+     */
+    public List<Integer> getElementFilter() {
+        return elementFilter;
+    }
+
+    /**
+     * Set an element filter. The filter can not contain null values or negative numbers.
+     * <p>
+     * The filter will be deduplicates and sorted.
+     */
+    public void setElementFilter(List<Integer> filter) {
+        if (filter == null || filter.isEmpty()) {
+            elementFilter = new ArrayList<>();
+            return;
+        }
+        elementFilter = filter.stream()
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
     @Override
     public int getNumWords() {
         return getItemCount();
@@ -81,6 +107,9 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
         var props = SearchProtocol.TermItemProperties.newBuilder();
         props.setIndex(fieldName);
         builder.setProperties(props.build());
+        for (var filter : elementFilter) {
+            builder.addElementFilter(filter);
+        }
         for (var child : items()) {
             builder.addChildren(child.toProtobuf(context));
         }
