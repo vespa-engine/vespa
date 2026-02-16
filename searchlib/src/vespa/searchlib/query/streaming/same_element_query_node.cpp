@@ -65,7 +65,6 @@ SameElementQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
     if (!_element_filter.empty()) {
         element_ids = _element_filter;
         others = std::span<const std::unique_ptr<QueryNode>>(_children.begin(), _children.end());
-
     } else {
         _children.front()->get_element_ids(element_ids);
         others = std::span<const std::unique_ptr<QueryNode>>(_children.begin() + 1, _children.end());
