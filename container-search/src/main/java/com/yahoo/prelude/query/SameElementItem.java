@@ -80,14 +80,6 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
             return;
         }
         elementFilter = filter.stream()
-                .peek(val -> {
-                    if (val == null) {
-                        throw new IllegalArgumentException("elementFilter cannot contain null values");
-                    }
-                    if (val < 0) {
-                        throw new IllegalArgumentException("elementFilter values must be non-negative, got: " + val);
-                    }
-                })
                 .distinct()
                 .sorted()
                 .toList();

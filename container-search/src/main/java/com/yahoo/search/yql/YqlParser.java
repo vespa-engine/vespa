@@ -778,12 +778,21 @@ public class YqlParser implements Parser {
 
     /** Element filter accepts Integer. Allows Long that is within Integer size. */
     private int convertToIntForElementFilter(Object val) {
+        if (val == null) {
+            throw new IllegalArgumentException("elementFilter cannot contain null values");
+        }
         if (val instanceof Integer intVal) {
+            if (intVal < 0) {
+                throw new IllegalArgumentException("elementFilter values must be non-negative, got: " + val);
+            }
             return intVal;
         } else if (val instanceof Long longVal) {
             if (longVal > Integer.MAX_VALUE) {
                 throw new IllegalArgumentException(
                         "elementFilter values must fit in int32 range, got: " + longVal);
+            }
+            if (longVal < 0) {
+                throw new IllegalArgumentException("elementFilter values must be non-negative, got: " + val);
             }
             return longVal.intValue();
         } else if (val instanceof Double || val instanceof Float) {
