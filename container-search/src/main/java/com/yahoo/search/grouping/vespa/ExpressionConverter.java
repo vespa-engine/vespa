@@ -30,6 +30,7 @@ import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.request.HourOfDayFunction;
 import com.yahoo.search.grouping.request.InfiniteValue;
 import com.yahoo.search.grouping.request.InterpolatedLookup;
+import com.yahoo.search.grouping.request.IsTruePredicate;
 import com.yahoo.search.grouping.request.LongValue;
 import com.yahoo.search.grouping.request.MathACosFunction;
 import com.yahoo.search.grouping.request.MathACosHFunction;
@@ -129,6 +130,7 @@ import com.yahoo.searchlib.expression.IntegerBucketResultNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNodeVector;
 import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.InterpolatedLookupNode;
+import com.yahoo.searchlib.expression.IsTruePredicateNode;
 import com.yahoo.searchlib.expression.MD5BitFunctionNode;
 import com.yahoo.searchlib.expression.MathFunctionNode;
 import com.yahoo.searchlib.expression.MaxFunctionNode;
@@ -272,6 +274,8 @@ class ExpressionConverter {
             return new RegexPredicateNode(rp.getPattern(), toExpressionNode(rp.getExpression()));
         } else if (expression instanceof RangePredicate rp) {
             return new RangePredicateNode(rp.getLower(), rp.getUpper(), toExpressionNode(rp.getExpression()), rp.getLowerInclusive(), rp.getUpperInclusive());
+        } else if (expression instanceof IsTruePredicate rp) {
+            return new IsTruePredicateNode(toExpressionNode(rp.getExpression()));
         } else if (expression instanceof NotPredicate np) {
             return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
         } else if (expression instanceof OrPredicate op) {

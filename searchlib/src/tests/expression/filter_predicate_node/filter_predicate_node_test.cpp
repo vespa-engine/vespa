@@ -5,11 +5,14 @@
 #include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/searchlib/expression/filter_predicate_node.h>
 #include <vespa/searchlib/expression/floatresultnode.h>
+#include <vespa/searchlib/expression/integerresultnode.h>
+#include <vespa/searchlib/expression/istrue_predicate_node.h>
 #include <vespa/searchlib/expression/not_predicate_node.h>
 #include <vespa/searchlib/expression/or_predicate_node.h>
 #include <vespa/searchlib/expression/range_predicate_node.h>
 #include <vespa/searchlib/expression/regex_predicate_node.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using namespace search::expression;
 
@@ -35,6 +38,8 @@ public:
     static std::unique_ptr<FilterPredicateNode> make_range(double lower, double upper, std::unique_ptr<ExpressionNode> result_node,
                                                            bool lower_inclusive, bool upper_inclusive);
 
+    static std::unique_ptr<FilterPredicateNode> make_istrue(std::unique_ptr<ExpressionNode> result_node);
+
     static std::unique_ptr<FilterPredicateNode> make_not(std::unique_ptr<FilterPredicateNode> filter_node);
 
     template<typename... Nodes>
@@ -46,6 +51,8 @@ public:
     static std::unique_ptr<ExpressionNode> make_result(const std::string& value);
 
     static std::unique_ptr<ExpressionNode> make_result(double value);
+
+    static std::unique_ptr<ExpressionNode> make_bool_result(bool value);
 };
 
 FilterPredicateNodesTest::FilterPredicateNodesTest() = default;
@@ -69,6 +76,10 @@ std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_regex(const 
 std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_range(double lower, double upper, std::unique_ptr<ExpressionNode> result_node,
                                                                           bool lower_inclusive, bool upper_inclusive) {
     return std::make_unique<RangePredicateNode>(lower, upper, std::move(result_node), lower_inclusive, upper_inclusive);
+}
+
+std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_istrue(std::unique_ptr<ExpressionNode> result_node) {
+    return std::make_unique<IsTruePredicateNode>(std::move(result_node));
 }
 
 std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_not(std::unique_ptr<FilterPredicateNode> filter_node) {
@@ -95,6 +106,10 @@ std::unique_ptr<ExpressionNode> FilterPredicateNodesTest::make_result(const std:
 
 std::unique_ptr<ExpressionNode> FilterPredicateNodesTest::make_result(double value) {
     return std::make_unique<ConstantNode>(std::make_unique<FloatResultNode>(value));
+}
+
+std::unique_ptr<ExpressionNode> FilterPredicateNodesTest::make_bool_result(bool value) {
+    return std::make_unique<ConstantNode>(std::make_unique<BoolResultNode>(value));
 }
 
 TEST_F(FilterPredicateNodesTest, test_regex_match) {
@@ -210,6 +225,28 @@ TEST_F(FilterPredicateNodesTest, test_and_three_arguments) {
             make_regex("bar", make_result("bar")),
             make_regex("baz", make_result("foobar")))).
         evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_istrue_with_true_value) {
+    EXPECT_TRUE(set_node(make_istrue(make_bool_result(true))).evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_istrue_with_false_value) {
+    EXPECT_FALSE(set_node(make_istrue(make_bool_result(false))).evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_istrue_with_double_value_throws) {
+    EXPECT_THROW({
+        set_node(make_istrue(make_result(42.0)));
+        [[maybe_unused]] bool result = evaluate();
+    }, vespalib::IllegalArgumentException);
+}
+
+TEST_F(FilterPredicateNodesTest, test_istrue_with_string_value_throws) {
+    EXPECT_THROW({
+        set_node(make_istrue(make_result("foo")));
+        [[maybe_unused]] bool result = evaluate();
+    }, vespalib::IllegalArgumentException);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
