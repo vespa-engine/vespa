@@ -7,6 +7,7 @@
 #include "single_raw_attribute_saver.h"
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/vespalib/util/stash.h>
@@ -120,7 +121,8 @@ public:
 ArrayBoolAttribute::ArrayBoolAttribute(const std::string& name, const Config& config)
     : AttributeVector(name, config),
       _ref_vector(config.getGrowStrategy(), getGenerationHolder()),
-      _raw_store(get_memory_allocator(), RawBufferStore::array_store_max_type_id, RawBufferStore::array_store_grow_factor)
+      _raw_store(get_memory_allocator(), RawBufferStore::array_store_max_type_id, RawBufferStore::array_store_grow_factor),
+      _total_values(0)
 {
 }
 
@@ -155,7 +157,9 @@ ArrayBoolAttribute::set_bools(DocId docid, std::span<const int8_t> bools)
     updateUncommittedDocIdLimit(docid);
     auto& elem_ref = _ref_vector[docid];
     EntryRef old_ref(elem_ref.load_relaxed());
+    size_t old_count = old_ref.valid() ? decode_bools(_raw_store.get(old_ref)).size() : 0;
     elem_ref.store_release(ref);
+    _total_values += bools.size() - old_count;
     if (old_ref.valid()) {
         _raw_store.remove(old_ref);
     }
@@ -198,12 +202,12 @@ ArrayBoolAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
         return;
     }
     if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
-        this->updateSizes(_ref_vector.size(), _ref_vector.size());
+        this->updateSizes(_total_values, _total_values);
         return;
     }
     vespalib::MemoryUsage total = update_stat();
-    this->updateStatistics(_ref_vector.size(),
-                           _ref_vector.size(),
+    this->updateStatistics(_total_values,
+                           _total_values,
                            total.allocatedBytes(),
                            total.usedBytes(),
                            total.deadBytes(),
@@ -241,8 +245,10 @@ ArrayBoolAttribute::clearDoc(DocId docId)
     EntryRef old_ref(elem_ref.load_relaxed());
     elem_ref.store_relaxed(EntryRef());
     if (old_ref.valid()) {
+        uint32_t old_count = decode_bools(_raw_store.get(old_ref)).size();
+        _total_values -= old_count;
         _raw_store.remove(old_ref);
-        return 1u;
+        return old_count;
     }
     return 0u;
 }
@@ -407,13 +413,40 @@ bool
 ArrayBoolAttribute::onLoad(vespalib::Executor* executor)
 {
     SingleRawAttributeLoader loader(*this, _ref_vector, _raw_store);
-    return loader.on_load(executor);
+    if (!loader.on_load(executor)) {
+        return false;
+    }
+    uint64_t total = 0;
+    uint32_t doc_id_limit = getCommittedDocIdLimit();
+    for (uint32_t docid = 0; docid < doc_id_limit; ++docid) {
+        EntryRef ref = _ref_vector.acquire_elem_ref(docid).load_acquire();
+        if (ref.valid()) {
+            total += decode_bools(_raw_store.get(ref)).size();
+        }
+    }
+    _total_values = total;
+    return true;
 }
 
 void
 ArrayBoolAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
     usage.set(AddressSpaceComponents::raw_store, _raw_store.get_address_space_usage());
+}
+
+uint64_t
+ArrayBoolAttribute::getTotalValueCount() const
+{
+    return _total_values;
+}
+
+uint64_t
+ArrayBoolAttribute::getEstimatedSaveByteSize() const
+{
+    uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT;
+    uint64_t numDocs = getCommittedDocIdLimit();
+    uint64_t totalBits = _total_values;
+    return headerSize + (totalBits + 7) / 8 + numDocs * 5;
 }
 
 uint32_t

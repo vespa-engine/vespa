@@ -29,6 +29,7 @@ class ArrayBoolAttribute : public AttributeVector,
 
     RefVector        _ref_vector;
     RawBufferStore   _raw_store;
+    uint64_t         _total_values;
 
     vespalib::MemoryUsage update_stat();
     EntryRef acquire_entry_ref(DocId docid) const noexcept { return _ref_vector.acquire_elem_ref(docid).load_acquire(); }
@@ -53,6 +54,8 @@ public:
     uint32_t clearDoc(DocId docId) override;
     void onAddDocs(DocId lidLimit) override;
     void onShrinkLidSpace() override;
+    uint64_t getTotalValueCount() const override;
+    uint64_t getEstimatedSaveByteSize() const override;
 
     // Value access
     uint32_t getValueCount(DocId doc) const override;
