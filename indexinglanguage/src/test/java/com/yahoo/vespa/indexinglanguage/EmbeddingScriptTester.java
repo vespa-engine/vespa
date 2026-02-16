@@ -8,6 +8,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
@@ -27,9 +28,15 @@ import static org.junit.Assert.fail;
 public class EmbeddingScriptTester {
 
     private final Map<String, Embedder> embedders;
+    private final MetricReceiver metricReceiver;
 
     public EmbeddingScriptTester(Map<String, Embedder> embedders) {
+        this(embedders, MetricReceiver.nullImplementation);
+    }
+
+    public EmbeddingScriptTester(Map<String, Embedder> embedders, MetricReceiver metricReceiver) {
         this.embedders = embedders;
+        this.metricReceiver = metricReceiver;
     }
 
     public void testStatement(String expressionString, String input, String expected) {
@@ -99,7 +106,10 @@ public class EmbeddingScriptTester {
 
     public Expression expressionFrom(String string) {
         try {
-            return Expression.fromString(string, new SimpleLinguistics(), Map.of(), embedders, Map.of());
+            var context = new ScriptParserContext(new SimpleLinguistics(), Map.of(), embedders, Map.of())
+                    .setMetricReceiver(metricReceiver)
+                    .setInputStream(new com.yahoo.vespa.indexinglanguage.parser.IndexingInput(string));
+            return Expression.newInstance(context);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException(e);

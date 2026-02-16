@@ -15,6 +15,7 @@ import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 
 import java.util.List;
@@ -80,7 +81,8 @@ public class IndexingProcessorTester {
                                      new SimpleLinguistics(),
                                      new ComponentRegistry<>(),
                                      new ComponentRegistry<>(),
-                                     new ComponentRegistry<>());
+                                     new ComponentRegistry<>(),
+                                     MetricReceiver.nullImplementation);
     }
 
     private static IndexingProcessor newProcessor(DocumentTypeManager documentTypes, ScriptManager scripts) {

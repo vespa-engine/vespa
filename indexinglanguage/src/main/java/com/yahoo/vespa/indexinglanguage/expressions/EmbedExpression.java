@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.concurrent.DynamicBatcher;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
@@ -14,6 +15,10 @@ import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.InvocationContext;
+import com.yahoo.metrics.simple.Counter;
+import com.yahoo.metrics.simple.Gauge;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.metrics.simple.Point;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
@@ -24,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -42,21 +48,28 @@ public class EmbedExpression extends Expression  {
     private final String requestedEmbedderId;
 
     private final DynamicBatcher<BatchKey, EmbedInput, Tensor> batcher;
+    private final Gauge batchSize;
+    private final Gauge batchQueueTime;
+    private final Counter batchCount;
 
     /** The destination the embedding will be written to on the form [schema name].[field name] */
     private String destination;
 
-    public EmbedExpression(Linguistics linguistics, Components<Embedder> embedders, String embedderId, List<String> arguments) {
+    public EmbedExpression(Linguistics linguistics, Components<Embedder> embedders, String embedderId,
+                           List<String> arguments, MetricReceiver metricReceiver) {
         this.linguistics = linguistics;
         this.requestedEmbedderId = embedderId;
         embedder = new Components.Selected<>("embedder", embedders, embedderId, true, arguments);
         var bc = embedder.component().batchingConfig();
         this.batcher = bc.isEnabled()
                 ? new DynamicBatcher<>(bc.maxSize(), bc.maxDelay(), this::executeBatch) : null;
+        this.batchSize = metricReceiver.declareGauge(ContainerMetrics.EMBEDDER_BATCH_SIZE.baseName());
+        this.batchQueueTime = metricReceiver.declareGauge(ContainerMetrics.EMBEDDER_BATCH_QUEUE_TIME.baseName());
+        this.batchCount = metricReceiver.declareCounter(ContainerMetrics.EMBEDDER_BATCH_COUNT.baseName());
     }
 
     private record BatchKey(String destination, Language language, TensorType targetType) {}
-    private record EmbedInput(String text, Embedder.Context context) {}
+    private record EmbedInput(String text, Embedder.Context context, long enqueuedAtNanos) {}
 
     /** @return the requested embedder id. This will diverge from the selected embedder's id when executed in config-model */
     public Optional<String> requestedEmbedderId() { return Optional.of(requestedEmbedderId).filter(s -> !s.isEmpty()); }
@@ -262,14 +275,28 @@ public class EmbedExpression extends Expression  {
         var language = context.resolveLanguage(linguistics);
         var key = new BatchKey(destination, language, targetType);
         var embedderContext = createEmbedderContext(context, language);
-        var embedInput = new EmbedInput(input, embedderContext);
+        var embedInput = new EmbedInput(input, embedderContext, System.nanoTime());
         return translateExceptions(() -> batcher.execute(key, embedInput));
     }
 
     private List<Tensor> executeBatch(BatchKey key, List<EmbedInput> inputs) {
         var texts = inputs.stream().map(EmbedInput::text).toList();
         var ctx = combineBatchContexts(inputs);
-        return embedder.component().embed(texts, ctx, key.targetType());
+        var result = embedder.component().embed(texts, ctx, key.targetType());
+        emitBatchMetrics(key, inputs);
+        return result;
+    }
+
+    private void emitBatchMetrics(BatchKey key, List<EmbedInput> inputs) {
+        var point = new Point(Map.of("embedder", embedder.id(),
+                                      "language", key.language().languageCode(),
+                                      "destination", key.destination()));
+        batchSize.sample(inputs.size(), point);
+        batchCount.add(1, point);
+        long now = System.nanoTime();
+        for (var input : inputs) {
+            batchQueueTime.sample((now - input.enqueuedAtNanos()) / 1_000_000.0, point);
+        }
     }
 
     private static Embedder.Context combineBatchContexts(List<EmbedInput> inputs) {

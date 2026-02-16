@@ -24,6 +24,7 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.language.provider.DefaultGeneratorProvider;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
@@ -71,14 +72,16 @@ public class IndexingProcessor extends DocumentProcessor {
                              Linguistics linguistics,
                              ComponentRegistry<Chunker> chunkers,
                              ComponentRegistry<Embedder> embedders,
-                             ComponentRegistry<FieldGenerator> generators) {
+                             ComponentRegistry<FieldGenerator> generators,
+                             MetricReceiver metricReceiver) {
         this(documentTypeManager,
              new ScriptManager(documentTypeManager,
                                ilscriptsConfig,
                                linguistics,
                                toMap(chunkers, null), // No failing default since we add pure Java default components
                                toMap(embedders, DefaultEmbedderProvider.class),
-                               toMap(generators, DefaultGeneratorProvider.class)
+                               toMap(generators, DefaultGeneratorProvider.class),
+                               metricReceiver
                 )
         );
     }

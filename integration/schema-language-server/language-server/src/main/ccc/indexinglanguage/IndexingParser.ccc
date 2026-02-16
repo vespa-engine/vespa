@@ -28,6 +28,7 @@ INJECT IndexingParser:
     import com.yahoo.language.process.Embedder;
     import com.yahoo.language.process.FieldGenerator;
     import com.yahoo.language.Linguistics;
+    import com.yahoo.metrics.simple.MetricReceiver;
 {
 /**
  * @author Simon Thoresen Hult
@@ -478,7 +479,7 @@ Expression embedExp() :
       <EMBED> [ SCAN((identifierStr)+) => (embedderId = identifierStr()) ] arguments = arguments()
     )
     {
-        return new EmbedExpression(linguistics, embedders, embedderId, arguments);
+        return new EmbedExpression(linguistics, embedders, embedderId, arguments, MetricReceiver.nullImplementation);
     }
 ;
 
