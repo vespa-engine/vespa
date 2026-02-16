@@ -39,7 +39,6 @@ namespace {
 
 void remove_saved_attr() {
     std::filesystem::remove("array_bool.dat");
-    std::filesystem::remove("array_bool.idx");
 }
 
 }

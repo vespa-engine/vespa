@@ -2,6 +2,7 @@
 
 #include "attribute_header.h"
 #include "distance_metric_utils.h"
+#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -218,6 +219,12 @@ bool
 AttributeHeader::hasWeightedSetType() const
 {
     return _collectionType.isWeightedSet();
+}
+
+bool
+AttributeHeader::needs_idx_file() const
+{
+    return IAttributeVector::needs_idx_file(_basicType.type(), _collectionType.type());
 }
 
 }
