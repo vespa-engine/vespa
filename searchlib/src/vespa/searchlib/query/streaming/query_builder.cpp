@@ -392,7 +392,10 @@ QueryBuilder::build_equiv_term(const QueryNodeResultFactory& factory, QueryStack
 std::unique_ptr<QueryNode>
 QueryBuilder::build_same_element_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep)
 {
-    auto sen = std::make_unique<SameElementQueryNode>(factory.create(), queryRep.index_as_string(), queryRep.getArity());
+    auto sen = std::make_unique<SameElementQueryNode>(factory.create(),
+                                                      queryRep.index_as_string(),
+                                                      queryRep.getArity(),
+                                                      queryRep.get_element_filter());
     _same_element_view = queryRep.index_as_string();
     _expose_match_data_for_same_element = true;
     auto arity = queryRep.getArity();

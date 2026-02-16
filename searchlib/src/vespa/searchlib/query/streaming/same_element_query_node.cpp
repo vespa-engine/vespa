@@ -14,11 +14,13 @@ using search::fef::MatchData;
 
 namespace search::streaming {
 
-SameElementQueryNode::SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms) noexcept
+SameElementQueryNode::SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index,
+                                           uint32_t num_terms, std::vector<uint32_t> element_filter) noexcept
     : QueryTerm(std::move(result_base), "", index, Type::WORD, Normalizing::NONE),
       _children(),
       _element_ids(),
-      _cached_evaluate_result()
+      _cached_evaluate_result(),
+      _element_filter(std::move(element_filter))
 {
     _children.reserve(num_terms);
 }
@@ -59,8 +61,14 @@ SameElementQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
             return;
         }
     }
-    _children.front()->get_element_ids(element_ids);
-    std::span<const std::unique_ptr<QueryNode>> others(_children.begin() + 1, _children.end());
+    std::span<const std::unique_ptr<QueryNode>> others;
+    if (!_element_filter.empty()) {
+        element_ids = _element_filter;
+        others = std::span<const std::unique_ptr<QueryNode>>(_children.begin(), _children.end());
+    } else {
+        _children.front()->get_element_ids(element_ids);
+        others = std::span<const std::unique_ptr<QueryNode>>(_children.begin() + 1, _children.end());
+    }
     if (others.empty()) {
         return;
     }
