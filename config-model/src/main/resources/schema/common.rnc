@@ -161,23 +161,27 @@ VoyageAIEmbedder =
    element dimensions { "256" | "512" | "1024" | "1536" | "2048" } &
    element quantization { "auto" | "float" | "int8" | "binary" }? &
    element endpoint { xsd:string }? &
-   element truncate { xsd:boolean }?
+   element truncate { xsd:boolean }? &
+   EmbedderBatchingParams
 
 OnnxModelExecutionParams =
     element onnx-execution-mode { "parallel" | "sequential" }? &
     element onnx-interop-threads { xsd:integer }? &
     element onnx-intraop-threads { xsd:integer }? &
     element onnx-gpu-device { xsd:integer }? &
-    element batching {
-        attribute max-size { xsd:integer } &
-        attribute max-delay { xsd:string }?
-    }? &
+    EmbedderBatchingParams &
     element concurrency {
         attribute type { "absolute" | "relative" }? &
         xsd:double { minExclusive = "0.0" }
     }? &
     # Path to model config file, e.g. Triton model config
     element model-config-override { xsd:string }?
+
+EmbedderBatchingParams =
+    element batching {
+        attribute max-size { xsd:integer } &
+        attribute max-delay { xsd:string }
+    }?
 
 EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" | "none" }?
 

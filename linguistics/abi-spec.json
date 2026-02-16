@@ -397,6 +397,28 @@
       "public static final com.yahoo.language.process.Chunker throwsOnUse"
     ]
   },
+  "com.yahoo.language.process.Embedder$Batching" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(int, java.time.Duration)",
+      "public boolean isEnabled()",
+      "public static com.yahoo.language.process.Embedder$Batching of(int, java.time.Duration)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public int maxSize()",
+      "public java.time.Duration maxDelay()"
+    ],
+    "fields" : [
+      "public static final com.yahoo.language.process.Embedder$Batching DISABLED"
+    ]
+  },
   "com.yahoo.language.process.Embedder$Context" : {
     "superClass" : "com.yahoo.language.process.InvocationContext",
     "interfaces" : [ ],
@@ -463,7 +485,8 @@
       "public abstract java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
       "public java.lang.String decode(java.util.List, com.yahoo.language.process.Embedder$Context)",
       "public abstract com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
-      "public java.util.List embed(java.util.List, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
+      "public java.util.List embed(java.util.List, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
+      "public com.yahoo.language.process.Embedder$Batching batchingConfig()"
     ],
     "fields" : [
       "public static final java.lang.String defaultEmbedderId",

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import com.yahoo.concurrent.DynamicBatcher;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
@@ -9,8 +10,10 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
@@ -18,11 +21,13 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 
 /**
@@ -36,14 +41,22 @@ public class EmbedExpression extends Expression  {
     private final Components.Selected<Embedder> embedder;
     private final String requestedEmbedderId;
 
+    private final DynamicBatcher<BatchKey, EmbedInput, Tensor> batcher;
+
     /** The destination the embedding will be written to on the form [schema name].[field name] */
     private String destination;
 
-    public EmbedExpression(Linguistics linguistics, Components<Embedder> embedders, String embedderId, List<String> embedderArguments) {
+    public EmbedExpression(Linguistics linguistics, Components<Embedder> embedders, String embedderId, List<String> arguments) {
         this.linguistics = linguistics;
         this.requestedEmbedderId = embedderId;
-        embedder = new Components.Selected<>("embedder", embedders, embedderId, true, embedderArguments);
+        embedder = new Components.Selected<>("embedder", embedders, embedderId, true, arguments);
+        var bc = embedder.component().batchingConfig();
+        this.batcher = bc.isEnabled()
+                ? new DynamicBatcher<>(bc.maxSize(), bc.maxDelay(), this::executeBatch) : null;
     }
+
+    private record BatchKey(String destination, Language language, TensorType targetType) {}
+    private record EmbedInput(String text, Embedder.Context context) {}
 
     /** @return the requested embedder id. This will diverge from the selected embedder's id when executed in config-model */
     public Optional<String> requestedEmbedderId() { return Optional.of(requestedEmbedderId).filter(s -> !s.isEmpty()); }
@@ -239,23 +252,63 @@ public class EmbedExpression extends Expression  {
     }
 
     private Tensor embed(String input, TensorType targetType, ExecutionContext context) {
+        if (batcher != null) {
+            return embedWithDynamicBatching(input, targetType, context);
+        }
         return invokeEmbedder(ctx -> embedder.component().embed(input, ctx, targetType), context);
+    }
+
+    private Tensor embedWithDynamicBatching(String input, TensorType targetType, ExecutionContext context) {
+        var language = context.resolveLanguage(linguistics);
+        var key = new BatchKey(destination, language, targetType);
+        var embedderContext = createEmbedderContext(context, language);
+        var embedInput = new EmbedInput(input, embedderContext);
+        return translateExceptions(() -> batcher.execute(key, embedInput));
+    }
+
+    private List<Tensor> executeBatch(BatchKey key, List<EmbedInput> inputs) {
+        var texts = inputs.stream().map(EmbedInput::text).toList();
+        var ctx = combineBatchContexts(inputs);
+        return embedder.component().embed(texts, ctx, key.targetType());
+    }
+
+    private static Embedder.Context combineBatchContexts(List<EmbedInput> inputs) {
+        var first = inputs.get(0).context();
+        var earliestDeadline = inputs.stream()
+                .map(input -> input.context().getDeadline())
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .min(Comparator.comparing(InvocationContext.Deadline::asInstant))
+                .orElse(null);
+        var ctx = first.copy();
+        if (earliestDeadline != null) {
+            ctx.setDeadline(earliestDeadline);
+        }
+        return ctx;
     }
 
     private List<Tensor> embedBatch(List<String> texts, TensorType targetType, ExecutionContext context) {
         return invokeEmbedder(ctx -> embedder.component().embed(texts, ctx, targetType), context);
     }
 
-    private <T> T invokeEmbedder(Function<Embedder.Context, T> embedFn, ExecutionContext context) {
+    private Embedder.Context createEmbedderContext(ExecutionContext context, Language language) {
         var embedderContext = new Embedder.Context(destination, context.getCache())
-                .setLanguage(context.resolveLanguage(linguistics))
+                .setLanguage(language)
                 .setEmbedderId(embedder.id());
-
         context.getDeadline().ifPresent(instant ->
                 embedderContext.setDeadline(com.yahoo.language.process.InvocationContext.Deadline.of(instant)));
+        return embedderContext;
+    }
 
+    private <T> T invokeEmbedder(Function<Embedder.Context, T> embedFn, ExecutionContext context) {
+        var language = context.resolveLanguage(linguistics);
+        var embedderContext = createEmbedderContext(context, language);
+        return translateExceptions(() -> embedFn.apply(embedderContext));
+    }
+
+    private <T> T translateExceptions(Supplier<T> fn) {
         try {
-            return embedFn.apply(embedderContext);
+            return fn.get();
         } catch (com.yahoo.language.process.OverloadException e) {
             throw new OverloadException(e.getMessage(), e);
         } catch (com.yahoo.language.process.TimeoutException e) {
@@ -314,18 +367,15 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public String toString() {
-        return "embed" + embedder.argumentsString();
-    }
+    public String toString() { return "embed" + embedder.argumentsString(); }
 
     @Override
     public int hashCode() { return Objects.hash(EmbedExpression.class, embedder); }
 
     @Override
     public boolean equals(Object o) {
-        if ( ! (o instanceof EmbedExpression other)) return false;
-        if ( ! other.embedder.equals(this.embedder)) return false;
-        return true;
+        if (!(o instanceof EmbedExpression other)) return false;
+        return other.embedder.equals(this.embedder);
     }
 
     private static List<IndexedText> filterBlankTexts(Array<StringFieldValue> input) {

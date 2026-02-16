@@ -15,6 +15,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.TypeContext;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -211,6 +212,34 @@ public class EmbeddingScriptTester {
         public MockBatchAwareEmbedder(String expectedDestination) {
             super(expectedDestination, 0);
         }
+
+        @Override
+        public Tensor embed(String text, Context context, TensorType tensorType) {
+            singleCallCount++;
+            return super.embed(text, context, tensorType);
+        }
+
+        @Override
+        public List<Tensor> embed(List<String> texts, Context context, TensorType tensorType) {
+            batchCallCount++;
+            return texts.stream()
+                    .map(text -> super.embed(text, context, tensorType))
+                    .toList();
+        }
+    }
+
+    /** An embedder with batching enabled via {@link #batchingConfig()}. */
+    public static class MockBatchingEmbedder extends MockIndexedEmbedder {
+
+        public int singleCallCount = 0;
+        public int batchCallCount = 0;
+
+        public MockBatchingEmbedder(String expectedDestination) {
+            super(expectedDestination, 0);
+        }
+
+        @Override
+        public Batching batchingConfig() { return Batching.of(8, Duration.ofMillis(100)); }
 
         @Override
         public Tensor embed(String text, Context context, TensorType tensorType) {

@@ -520,6 +520,68 @@ public class VoyageAIEmbedderTest {
         assertTrue(body.contains("\"output_dtype\":\"float\""));
     }
 
+    @Test
+    public void testBatchEmbeddingNonContextualModel() throws Exception {
+        // Mock batch API response with 3 embeddings
+        String responseJson = createFloatBatchSuccessResponse(3, 1024);
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(responseJson));
+
+        embedder = createEmbedder();
+
+        // Test batch embedding
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+        var texts = java.util.List.of("Hello, world!", "Second text", "Third text");
+        var results = embedder.embed(texts, context, targetType);
+
+        // Verify results
+        assertNotNull(results);
+        assertEquals(3, results.size());
+        for (var result : results) {
+            assertEquals(1024, result.size());
+            assertEquals(targetType, result.type());
+        }
+
+        // Verify only 1 API request was made (batch request)
+        assertEquals(1, mockServer.getRequestCount());
+
+        // Verify API request contains all inputs
+        RecordedRequest request = mockServer.takeRequest();
+        assertEquals("POST", request.getMethod());
+        String body = request.getBody().readUtf8();
+        assertTrue(body.contains("\"input\":[\"Hello, world!\",\"Second text\",\"Third text\"]"));
+        assertTrue(body.contains("\"model\":\"voyage-3\""));
+    }
+
+    @Test
+    public void testBatchingConfigDisabledByDefault() {
+        embedder = createEmbedder();
+        var batching = embedder.batchingConfig();
+        assertNotNull(batching);
+        assertEquals(Embedder.Batching.DISABLED, batching);
+    }
+
+    @Test
+    public void testBatchingConfigEnabled() {
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .endpoint(mockServer.url("/v1/embeddings").toString())
+                .model("voyage-3")
+                .dimensions(1024)
+                .timeout(5000);
+        configBuilder.batching.maxSize(16);
+        configBuilder.batching.maxDelayMillis(200);
+        embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
+
+        var batching = embedder.batchingConfig();
+        assertTrue(batching.isEnabled());
+        assertEquals(16, batching.maxSize());
+        assertEquals(Duration.ofMillis(200), batching.maxDelay());
+    }
+
     // ===== Helper Methods =====
 
     private VoyageAIEmbedder createEmbedder() {
@@ -548,24 +610,35 @@ public class VoyageAIEmbedderTest {
     }
 
     private static String createSuccessResponse(int dimensions, IntFunction<String> valueGenerator) {
-        var embedding = new StringBuilder("[");
-        for (int i = 0; i < dimensions; i++) {
-            if (i > 0) embedding.append(",");
-            embedding.append(valueGenerator.apply(i));
+        return createBatchSuccessResponse(1, dimensions, valueGenerator);
+    }
+
+    private static String createBatchSuccessResponse(int batchSize, int dimensions, IntFunction<String> valueGenerator) {
+        var dataEntries = new StringBuilder();
+        for (int b = 0; b < batchSize; b++) {
+            if (b > 0) dataEntries.append(",");
+            var embedding = new StringBuilder("[");
+            for (int i = 0; i < dimensions; i++) {
+                if (i > 0) embedding.append(",");
+                // Vary values by batch index to verify correct ordering
+                embedding.append(valueGenerator.apply(i + b * 1000));
+            }
+            embedding.append("]");
+            dataEntries.append(Text.format("{\"object\": \"embedding\", \"embedding\": %s, \"index\": %d}", embedding, b));
         }
-        embedding.append("]");
-        return  Text.format("""
+        return Text.format("""
                 {
                   "object": "list",
-                  "data": [{"object": "embedding", "embedding": %s, "index": 0}],
+                  "data": [%s],
                   "model": "voyage-3",
-                  "usage": {"total_tokens": 10}
+                  "usage": {"total_tokens": %d}
                 }
-                """, embedding);
+                """, dataEntries, batchSize * 10);
     }
 
     private static String createSuccessResponse(int dimensions) { return createFloatSuccessResponse(dimensions); }
     private static String createFloatSuccessResponse(int dimensions) { return createSuccessResponse(dimensions, i -> Text.format("%.6f", Math.sin(i * 0.1))); }
+    private static String createFloatBatchSuccessResponse(int batchSize, int dimensions) { return createBatchSuccessResponse(batchSize, dimensions, i -> Text.format("%.6f", Math.sin(i * 0.1))); }
     private static String createInt8SuccessResponse(int dimensions) { return createSuccessResponse(dimensions, i -> String.valueOf(i % 128)); }
     private static String createBinarySuccessResponse(int dimensions) { return createInt8SuccessResponse(dimensions); }
 }

@@ -680,4 +680,14 @@ public class EmbeddingScriptTestCase {
                      sparseTensor.getTensor().get());
     }
 
+    @Test
+    public void testBatchingConfigFromEmbedder() {
+        var mockEmbedder = new EmbeddingScriptTester.MockBatchingEmbedder("myDocument.myTensor");
+        var tester = new EmbeddingScriptTester(Map.of("emb1", mockEmbedder));
+
+        tester.testStatement("input myText | embed emb1 | attribute 'myTensor'", "input text", "[105, 110, 112, 117]");
+        assertEquals(0, mockEmbedder.singleCallCount);
+        assertEquals(1, mockEmbedder.batchCallCount);
+    }
+
 }
