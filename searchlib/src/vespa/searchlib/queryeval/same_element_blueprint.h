@@ -17,11 +17,13 @@ private:
     FieldSpec             _field;
     std::vector<search::fef::TermFieldHandle> _descendants_index_handles; // handles with early unpack
     bool                  _expensive;
+    std::vector<uint32_t> _element_filter;
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
     SameElementBlueprint(const FieldSpec &field,
                          const std::vector<search::fef::TermFieldHandle>& descendants_index_handles,
-                         bool expensive);
+                         bool expensive,
+                         std::vector<uint32_t> element_filter = std::vector<uint32_t>());
     SameElementBlueprint(const SameElementBlueprint &) = delete;
     SameElementBlueprint &operator=(const SameElementBlueprint &) = delete;
     ~SameElementBlueprint() override;
