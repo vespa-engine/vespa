@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation.first;
 
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -74,6 +75,19 @@ public class MinimumNodeCountValidatorTest {
         });
         assertDoesNotThrow(() -> {
             tester.deploy(null, getContainerClusterServices(2), zone, null);
+        });
+    }
+
+    @Test
+    void testMinimumNodeCountValidationPassesWhenApplicationIsTester() {
+        var tester = new ValidationTester(7, false,
+                                          new TestProperties().setFirstTimeDeployment(true)
+                                                              .setHostedVespa(true)
+                                                              .setApplicationId(ApplicationId.from("foo", "bar", "default-t")),
+                                          zone);
+        // Should not throw exception when we have 1 node and this is a tester application (tester app has only a container cluster)
+        assertDoesNotThrow(() -> {
+            tester.deploy(null, getContainerClusterServices(1), zone, null);
         });
     }
 
