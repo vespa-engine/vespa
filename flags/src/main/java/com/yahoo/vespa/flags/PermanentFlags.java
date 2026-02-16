@@ -678,6 +678,13 @@ public class PermanentFlags {
             "Takes effect on next maintainer run",
             CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
 
+    public static final UnboundBooleanFlag BACKUP_SINGLE_GROUP = defineFeatureFlag(
+            "backup-single-group", false,
+            "Whether to limit back up to a single group during automatic backup snapshots. " +
+            "Recommended only when node bucket distribution is near equivalent between groups.",
+            "Takes effect on next maintainer run",
+            CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
