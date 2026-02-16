@@ -110,10 +110,14 @@ TEST_F(ArrayBoolAttributeTest, set_and_get_bools)
 TEST_F(ArrayBoolAttributeTest, set_bools_replaces_previous_values)
 {
     EXPECT_TRUE(_attr->addDocs(5));
-    std::vector<int8_t> vals1 = {1, 0, 1};
+    std::vector<int8_t> vals1 = {1, 0, 1, 1, 0};
     _bool_attr->set_bools(1, vals1);
+    EXPECT_EQ(5u, _bool_attr->getTotalValueCount());
+
+    // Replace with fewer bools (5 -> 2)
     std::vector<int8_t> vals2 = {0, 1};
     _bool_attr->set_bools(1, vals2);
+    EXPECT_EQ(2u, _bool_attr->getTotalValueCount());
     _attr->commit();
 
     EXPECT_EQ(2u, _attr->getValueCount(1));
@@ -132,8 +136,10 @@ TEST_F(ArrayBoolAttributeTest, clear_doc)
     _attr->commit();
 
     EXPECT_EQ(3u, _attr->getValueCount(1));
-    _attr->clearDoc(1);
+    EXPECT_EQ(3u, _attr->clearDoc(1));
     EXPECT_EQ(0u, _attr->getValueCount(1));
+    // Clearing an already empty doc returns 0
+    EXPECT_EQ(0u, _attr->clearDoc(1));
 }
 
 TEST_F(ArrayBoolAttributeTest, various_bool_counts)
@@ -496,6 +502,78 @@ TEST_F(ArrayBoolAttributeTest, search_context_from_nonzero_elem_id)
 
     // Start from element 5: past the end, no match
     EXPECT_EQ(-1, ctx->find(1, 5));
+}
+
+TEST_F(ArrayBoolAttributeTest, total_value_count_tracking)
+{
+    EXPECT_TRUE(_attr->addDocs(5));
+    EXPECT_EQ(0u, _bool_attr->getTotalValueCount());
+
+    // Set 3 bools on doc 1
+    std::vector<int8_t> vals1 = {1, 0, 1};
+    _bool_attr->set_bools(1, vals1);
+    EXPECT_EQ(3u, _bool_attr->getTotalValueCount());
+
+    // Set 5 bools on doc 2
+    std::vector<int8_t> vals2 = {1, 0, 1, 1, 0};
+    _bool_attr->set_bools(2, vals2);
+    EXPECT_EQ(8u, _bool_attr->getTotalValueCount());
+
+    // Replace doc 1 with 2 bools (3 -> 2, total 8 - 3 + 2 = 7)
+    std::vector<int8_t> vals1b = {0, 1};
+    _bool_attr->set_bools(1, vals1b);
+    EXPECT_EQ(7u, _bool_attr->getTotalValueCount());
+
+    // Clear doc 2 (total 7 - 5 = 2)
+    _attr->clearDoc(2);
+    EXPECT_EQ(2u, _bool_attr->getTotalValueCount());
+
+    // Clear already empty doc 3 (no change)
+    _attr->clearDoc(3);
+    EXPECT_EQ(2u, _bool_attr->getTotalValueCount());
+
+    // Clear doc 1 (total 2 - 2 = 0)
+    _attr->clearDoc(1);
+    EXPECT_EQ(0u, _bool_attr->getTotalValueCount());
+}
+
+TEST_F(ArrayBoolAttributeTest, total_value_count_after_save_load)
+{
+    remove_saved_attr();
+    EXPECT_TRUE(_attr->addDocs(5));
+    std::vector<int8_t> vals1 = {1, 0, 1};
+    _bool_attr->set_bools(1, vals1);
+    std::vector<int8_t> vals2 = {0, 1, 1, 0, 1};
+    _bool_attr->set_bools(2, vals2);
+    _attr->commit();
+
+    EXPECT_EQ(8u, _bool_attr->getTotalValueCount());
+
+    _attr->setCreateSerialNum(99);
+    _attr->save();
+
+    reset_attr(false);
+    _attr->load();
+
+    EXPECT_EQ(8u, _bool_attr->getTotalValueCount());
+
+    remove_saved_attr();
+}
+
+TEST_F(ArrayBoolAttributeTest, estimated_save_byte_size)
+{
+    EXPECT_TRUE(_attr->addDocs(5));
+    std::vector<int8_t> vals1 = {1, 0, 1};
+    _bool_attr->set_bools(1, vals1);
+    std::vector<int8_t> vals2 = {0, 1, 1, 0, 1};
+    _bool_attr->set_bools(2, vals2);
+    _attr->commit();
+
+    uint64_t estimate = _attr->getEstimatedSaveByteSize();
+    // headerSize = 4096, totalBits = 8, numDocs = 6
+    // 4096 + (8+7)/8 + 6*5 = 4096 + 1 + 30 = 4127 (with 1 reserved doc, 5 added = 6 docs)
+    uint64_t expected = 4096 + (8 + 7) / 8 + 6 * 5;
+    EXPECT_EQ(expected, estimate);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
