@@ -24,10 +24,12 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.InheritableApplications;
+import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
@@ -76,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -86,6 +89,7 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.config.server.session.ActivationTriggers.DeferredReconfiguration;
 import static com.yahoo.vespa.config.server.session.Session.Status.ACTIVATE;
 import static com.yahoo.vespa.config.server.session.Session.Status.DEACTIVATE;
 import static com.yahoo.vespa.config.server.session.Session.Status.NEW;
@@ -464,18 +468,48 @@ public class SessionRepository {
 
         CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
         log.log(Level.FINE, () -> session.logPre() + "Activating " + sessionId);
-        tenantApplications.activateApplication(ensureApplicationLoaded(session), sessionId);
+
+        ApplicationVersions applicationVersions = ensureApplicationLoaded(session);
+        applyDeferredReconfigurationOfClusters(session, applicationVersions);
+
+        tenantApplications.activateApplication(applicationVersions, sessionId);
         log.log(Level.FINE, () -> session.logPre() + "Notifying " + waiter);
         notifyCompletion(waiter);
         log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
     }
 
+    /**
+     * Marks clusters for deferred reconfiguration in the model, i.e. wait until restart to apply new config.
+     * This is similar to {@link com.yahoo.vespa.config.server.deploy.Deployment::applyDeferredReconfigurationOfClusters}
+     * but for {@link ActivationTriggers} from {@link RemoteSession} in ZooKeeper 
+     * rather than from {@link Session} created locally on the config server.
+     */
+    private void applyDeferredReconfigurationOfClusters(RemoteSession session, ApplicationVersions applicationVersions) {
+        var clustersWithDeferredReconfiguration = session.getActivationTriggers().deferredReconfigurations().stream()
+                .map(DeferredReconfiguration::clusterId)
+                .collect(Collectors.toSet());
+        if (clustersWithDeferredReconfiguration.isEmpty()) return;
+
+        // Get the model and mark clusters for deferred reconfiguration
+        var model = applicationVersions.get(session.getVespaVersion())
+                .map(Application::getModel)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot apply deferred reconfiguration: no model available for session " + session.getSessionId()));
+        model.markClustersForDeferredReconfiguration(clustersWithDeferredReconfiguration);
+
+        clustersWithDeferredReconfiguration.forEach(clusterName ->
+                log.log(Level.INFO, session.logPre() +
+                        Text.format("Deferring reconfiguration of cluster '%s' until restart is completed", clusterName)));
+    }
+    
     private void loadSessionIfActive(RemoteSession session) {
         for (ApplicationId applicationId : tenantApplications.activeApplications()) {
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             if (activeSession.isPresent() && activeSession.get() == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
-                tenantApplications.activateApplication(ensureApplicationLoaded(session), session.getSessionId());
+                ApplicationVersions applicationVersions = ensureApplicationLoaded(session);
+                applyDeferredReconfigurationOfClusters(session, applicationVersions);
+                tenantApplications.activateApplication(applicationVersions, session.getSessionId());
                 log.log(Level.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
                 return;
             }
