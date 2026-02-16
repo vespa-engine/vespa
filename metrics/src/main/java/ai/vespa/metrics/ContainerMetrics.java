@@ -214,7 +214,11 @@ public enum ContainerMetrics implements VespaMetrics {
     EMBEDDER_LATENCY("embedder.latency", Unit.MILLISECOND, "Time spent creating an embedding"),
     EMBEDDER_SEQUENCE_LENGTH("embedder.sequence_length", Unit.ITEM, "Number of tokens in the input sequence"),
     EMBEDDER_REQUEST_COUNT("embedder.request.count", Unit.REQUEST, "Number of embedder API requests"),
-    EMBEDDER_REQUEST_FAILURE_COUNT("embedder.request.failure.count", Unit.REQUEST, "Number of failed embedder API requests");
+    EMBEDDER_REQUEST_FAILURE_COUNT("embedder.request.failure.count", Unit.REQUEST, "Number of failed embedder API requests"),
+
+    EMBEDDER_BATCH_SIZE("embedder.batch.size", Unit.ITEM, "Number of items in each dispatched batch"),
+    EMBEDDER_BATCH_QUEUE_TIME("embedder.batch.queue_time", Unit.MILLISECOND, "Time spent waiting in queue before batch dispatch"),
+    EMBEDDER_BATCH_COUNT("embedder.batch.count", Unit.OPERATION, "Number of batch dispatches");
 
     private final String name;
     private final Unit unit;

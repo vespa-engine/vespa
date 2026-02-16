@@ -5,7 +5,6 @@ import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.utils.Duration;
 import org.w3c.dom.Element;
 
 import java.util.Optional;
@@ -47,24 +46,10 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                 .map(opts::withGpuDevice)
                 .orElse(opts);
 
-        var batchingElement = getChild(xml, "batching");
-        if (batchingElement != null) {
-            opts = XML.attribute("max-size", batchingElement)
-                    .map(value -> {
-                        try {
-                            return Integer.parseUnsignedInt(value);
-                        } catch (NumberFormatException e) {
-                            throw new IllegalArgumentException(
-                                    "Batching max-size should be a positive integer, provided: " + value, e);
-                        }
-                    })
-                    .map(opts::withBatchingMaxSize)
-                    .orElse(opts);
-
-            opts = XML.attribute("max-delay", batchingElement)
-                    .map(OnnxEmbedder::parseMillis)
-                    .map(opts::withBatchingMaxDelay)
-                    .orElse(opts);
+        var batchingConfig = EmbedderBatchingConfig.parseBatchingElement(xml);
+        if (batchingConfig != null) {
+            opts = opts.withBatchingMaxSize(batchingConfig.maxSize());
+            opts = opts.withBatchingMaxDelay(batchingConfig.maxDelay());
         }
 
         var concurrencyElement = getChild(xml, "concurrency");
@@ -109,7 +94,4 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
     }
 
 
-    private static java.time.Duration parseMillis(String duration) {
-        return java.time.Duration.ofMillis(new Duration(duration).getMilliSeconds());
-    }
 }

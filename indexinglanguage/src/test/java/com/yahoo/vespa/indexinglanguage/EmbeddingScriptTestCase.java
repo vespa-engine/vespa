@@ -10,6 +10,7 @@ import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
@@ -678,6 +679,40 @@ public class EmbeddingScriptTestCase {
                                  }
                                  """),
                      sparseTensor.getTensor().get());
+    }
+
+    @Test
+    public void testBatchingConfigFromEmbedder() {
+        var mockEmbedder = new EmbeddingScriptTester.MockBatchingEmbedder("myDocument.myTensor");
+        var tester = new EmbeddingScriptTester(Map.of("emb1", mockEmbedder));
+
+        tester.testStatement("input myText | embed emb1 | attribute 'myTensor'", "input text", "[105, 110, 112, 117]");
+        assertEquals(0, mockEmbedder.singleCallCount);
+        assertEquals(1, mockEmbedder.batchCallCount);
+    }
+
+    @Test
+    public void testBatchMetricsEmitted() {
+        var metricReceiver = new MetricReceiver.MockReceiver();
+        var mockEmbedder = new EmbeddingScriptTester.MockBatchingEmbedder("myDocument.myTensor");
+        var tester = new EmbeddingScriptTester(Map.of("emb1", mockEmbedder), metricReceiver);
+
+        tester.testStatement("input myText | embed emb1 | attribute 'myTensor'", "input text", "[105, 110, 112, 117]");
+
+        var snapshot = metricReceiver.getSnapshot();
+        var metrics = snapshot.getValuesByMetricName();
+
+        var batchSizeEntries = metrics.get("embedder.batch.size");
+        assertEquals(1, batchSizeEntries.size());
+        assertEquals(1.0, batchSizeEntries.get(0).getValue().getLast(), 0.001);
+
+        var batchCountEntries = metrics.get("embedder.batch.count");
+        assertEquals(1, batchCountEntries.size());
+        assertEquals(1, batchCountEntries.get(0).getValue().getCount());
+
+        var queueTimeEntries = metrics.get("embedder.batch.queue_time");
+        assertEquals(1, queueTimeEntries.size());
+        assertTrue(queueTimeEntries.get(0).getValue().getLast() >= 0);
     }
 
 }

@@ -5,6 +5,7 @@ import com.yahoo.api.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -77,6 +78,22 @@ public interface Embedder {
                 .map(text -> embed(text, context, tensorType))
                 .toList();
     }
+
+    /** Batching configuration of embed requests. */
+    record Batching(int maxSize, Duration maxDelay) {
+        public static final Batching DISABLED = new Batching(0, Duration.ZERO);
+        public Batching {
+            if (maxSize < 0) throw new IllegalArgumentException("maxSize must be non-negative, got " + maxSize);
+            if (maxDelay.isNegative()) throw new IllegalArgumentException("maxDelay must be non-negative, got " + maxDelay);
+        }
+        public boolean isEnabled() { return maxSize > 1; }
+        public static Batching of(int maxSize, Duration maxDelay) {
+            if (maxSize <= 1 || maxDelay.isZero() || maxDelay.isNegative()) return DISABLED;
+            return new Batching(maxSize, maxDelay);
+        }
+    }
+
+    default Batching batchingConfig() { return Batching.DISABLED; }
 
     class Context extends InvocationContext<Context> {
 

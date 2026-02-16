@@ -57,6 +57,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     // Configuration
     private final VoyageAiEmbedderConfig config;
     private final Embedder.Runtime runtime;
+    private final Embedder.Batching batching;
     private final Secret apiKey;
     private final OkHttpClient httpClient;
     private final String resolvedEndpoint;
@@ -65,6 +66,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     public VoyageAIEmbedder(VoyageAiEmbedderConfig config, Embedder.Runtime runtime, Secrets secretStore) {
         this.config = config;
         this.runtime = runtime;
+        this.batching = Embedder.Batching.of(config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()));
         this.apiKey = secretStore.get(config.apiKeySecretRef());
         this.httpClient = createHttpClient(config);
         this.resolvedEndpoint = resolveEndpoint(config);
@@ -105,6 +107,9 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     }
 
     @Override
+    public Batching batchingConfig() { return batching; }
+
+    @Override
     public List<Integer> embed(String text, Context context) {
         throw new UnsupportedOperationException(
             "VoyageAI embedder only supports embed() with TensorType. " +
@@ -120,7 +125,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Tensor> embed(List<String> texts, Context context, TensorType targetType) {
-        if (!isContextualModel()) return Embedder.super.embed(texts, context, targetType);
         return invokeVoyageAI(texts, context, targetType);
     }
 
@@ -258,7 +262,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                     texts, config.model(), inputType, config.dimensions(), outputDataType);
         } else {
             request = TextRequest.of(
-                    texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
+                    texts, config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         }
         try {
             return objectMapper.writeValueAsString(request);
@@ -429,9 +433,9 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
             @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
 
-        static TextRequest of(String texts, String model, String inputType,
+        static TextRequest of(List<String> texts, String model, String inputType,
                               boolean truncation, Integer outputDimension, String outputDtype) {
-            return new TextRequest(List.of(texts), model, inputType, truncation, outputDimension, outputDtype);
+            return new TextRequest(texts, model, inputType, truncation, outputDimension, outputDtype);
         }
     }
 

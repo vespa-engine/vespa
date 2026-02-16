@@ -8,6 +8,7 @@ import org.w3c.dom.Element;
 
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
+import static com.yahoo.vespa.model.container.component.EmbedderBatchingConfig.parseBatchingElement;
 
 /**
  * Configuration builder for VoyageAI embedder component.
@@ -24,6 +25,7 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
     private final Boolean truncate;
     private final Integer dimensions;
     private final String quantization;
+    private final EmbedderBatchingConfig batching;
 
     @SuppressWarnings("unused")
     public VoyageAIEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
@@ -38,6 +40,7 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         this.endpoint = getChildValue(xml, "endpoint").orElse(null);
         this.truncate = getChildValue(xml, "truncate").map(Boolean::parseBoolean).orElse(null);
         this.quantization = getChildValue(xml, "quantization").orElse("auto");
+        this.batching = parseBatchingElement(xml);
 
         validate();
     }
@@ -62,6 +65,10 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
         }
         if (truncate != null) {
             builder.truncate(truncate);
+        }
+        if (batching != null) {
+            builder.batching.maxSize(batching.maxSize());
+            builder.batching.maxDelayMillis(batching.maxDelay().toMillis());
         }
     }
 }
