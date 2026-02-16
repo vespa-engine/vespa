@@ -50,3 +50,10 @@ group[].nodes[].index int
 # The system will migrate all data away from retired nodes such that they can
 # eventually be removed without partial data loss
 group[].nodes[].retired bool default=false
+
+# Iff true, the ideal state node algorithm uses the relative configured
+# node index within the group instead of the node's distribution key when
+# calculating node scores for a given bucket. This means that bucket-to-node
+# mappings will be the same across groups that have the same number of nodes
+# in an available state.
+relative_node_order_scoring bool default=false

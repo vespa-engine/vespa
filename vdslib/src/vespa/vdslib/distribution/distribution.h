@@ -39,6 +39,7 @@ private:
     bool                       _global;
     bool                       _activePerGroup;
     bool                       _ensurePrimaryPersisted;
+    bool                       _relative_node_order_scoring;
     std::string                _serialized;
 
     struct ResultGroup {

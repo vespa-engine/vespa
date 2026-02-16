@@ -30,7 +30,8 @@ Distribution::Distribution()
       _readyCopies(0),
       _global(false),
       _activePerGroup(false),
-      _ensurePrimaryPersisted(true)
+      _ensurePrimaryPersisted(true),
+      _relative_node_order_scoring(false)
 {
     auto config(getDefaultDistributionConfig(0, 0));
     vespalib::asciistream ost;
@@ -40,6 +41,7 @@ Distribution::Distribution()
     configure(config.get());
 }
 
+// Fields are set through configure() in the constructor body
 Distribution::Distribution(const Distribution& d)
     : _nodeGraph(),
       _node2Group(),
@@ -49,6 +51,7 @@ Distribution::Distribution(const Distribution& d)
       _global(d.is_global()),
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
+      _relative_node_order_scoring(false),
       _serialized(d._serialized)
 {
     vespalib::asciistream ist(_serialized);
@@ -85,7 +88,8 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig&
       _readyCopies(0),
       _global(is_global),
       _activePerGroup(false),
-      _ensurePrimaryPersisted(true)
+      _ensurePrimaryPersisted(true),
+      _relative_node_order_scoring(false)
 {
     vespalib::asciistream ost;
     config::AsciiConfigWriter writer(ost);
@@ -103,6 +107,7 @@ Distribution::Distribution(const std::string& serialized)
       _global(false),
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
+      _relative_node_order_scoring(false),
       _serialized(serialized)
 {
     vespalib::asciistream ist(_serialized);
@@ -115,7 +120,8 @@ Distribution::~Distribution() = default;
 void
 Distribution::configure(const vespa::config::content::StorDistributionConfig& config)
 {
-    using ConfigGroup = vespa::config::content::StorDistributionConfig::Group;
+    using DistrConfig = vespa::config::content::StorDistributionConfig;
+    using ConfigGroup = DistrConfig::Group;
     std::unique_ptr<Group> nodeGraph;
     std::vector<const Group *> node2Group;
     for (uint32_t i=0, n=config.group.size(); i<n; ++i) {
@@ -140,7 +146,10 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
                 }
                 node2Group[nodeIndex] = group.get();
             }
-            group->setNodes(nodes);
+            // We want to normalize node order by distribution keys when we score
+            // using distribution keys, but _not_ when scoring based on relative
+            // configured index (as that would mess up this ordering).
+            group->setNodes(nodes, !config.relativeNodeOrderScoring);
         }
         if (path.empty()) {
             nodeGraph = std::move(group);
@@ -166,6 +175,7 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     _ensurePrimaryPersisted = config.ensurePrimaryPersisted;
     _readyCopies = config.readyCopies;
     _activePerGroup = config.activePerLeafGroup;
+    _relative_node_order_scoring = config.relativeNodeOrderScoring;
     if (_global) {
         // Top-level `_redundancy` is used for flat topologies, in which case global
         // distribution is trivial.
@@ -326,7 +336,9 @@ Distribution::getIdealDistributorGroup(const document::BucketId& bucket, const C
     uint32_t currentIndex = 0;
     const std::map<uint16_t, Group*>& subGroups(parent.getSubGroups());
     for (const auto & subGroup : subGroups) {
-        while (subGroup.first < currentIndex++) random.nextDouble();
+        while (subGroup.first < currentIndex++) {
+            random.nextDouble();
+        }
         double score = random.nextDouble();
         if (subGroup.second->getCapacity() != 1) {
             // Capacity shouldn't possibly be 0.
@@ -351,11 +363,15 @@ Distribution::allDistributorsDown(const Group& g, const ClusterState& cs)
     if (g.isLeafGroup()) {
         for (uint16_t node : g.getNodes()) {
             const NodeState& ns(cs.getNodeState(Node(NodeType::DISTRIBUTOR, node)));
-            if (ns.getState().oneOf("ui")) return false;
+            if (ns.getState().oneOf("ui")) {
+                return false;
+            }
         }
     } else {
         for (const auto & subGroup : g.getSubGroups()) {
-            if (!allDistributorsDown(*subGroup.second, cs)) return false;
+            if (!allDistributorsDown(*subGroup.second, cs)) {
+                return false;
+            }
         }
     }
     return true;
@@ -365,10 +381,13 @@ void
 Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& clusterState, const document::BucketId& bucket,
                             std::vector<uint16_t>& resultNodes, const char* upStates, uint16_t redundancy) const
 {
-    if (redundancy == DEFAULT_REDUNDANCY) redundancy = _redundancy;
+    if (redundancy == DEFAULT_REDUNDANCY) {
+        redundancy = _redundancy;
+    }
     resultNodes.clear();
-    if (redundancy == 0) return;
-
+    if (redundancy == 0) {
+        return;
+    }
     // If bucket is split less than distribution bit, we cannot distribute
     // it. Different nodes own various parts of the bucket.
     if (bucket.getUsedBits() < clusterState.getDistributionBitCount()) {
@@ -406,27 +425,50 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
         tmpResults.reserve(groupRedundancy);
         tmpResults.clear();
         tmpResults.resize(groupRedundancy);
-        for (uint16_t node : nodes) {
+        uint16_t scoring_index = 0;
+        for (const uint16_t node : nodes) {
             // Verify that the node is legal target before starting to grab
             // random number. Helps worst case of having to start new random
             // seed if the node that is out of order is illegal anyways.
             const NodeState& nodeState(clusterState.getNodeState(Node(nodeType, node)));
-            if (!nodeState.getState().oneOf(upStates)) continue;
+            if (!nodeState.getState().oneOf(upStates)) {
+                // For pseudo row-column, we treat Retired nodes as if they do not exist in
+                // the configuration. Since Retired is meant for removing nodes, this is
+                // expected to be the end state either way, so unless we do this up front,
+                // there will be two rounds of data movement.
+                // This has the downside of "shifting down" the assigned nodes for a given
+                // ideal state score by one, which causes mass data redistribution for all
+                // nodes configured _after_ the Retired node. On the upside, if retirement
+                // is done via reconfiguration, the config edge can atomically retire one
+                // node and introduce a new node configured right after it. This node will
+                // then effectively take the old node's place, receiving all its documents
+                // without any other nodes receiving new data.
+                // This has no effect for non-pseudo-row-column, as we always set the
+                // scoring index from the node's distribution key below.
+                if (nodeState.getState() != State::RETIRED) [[likely]] {
+                    ++scoring_index;
+                }
+                continue;
+            }
+            if (!_relative_node_order_scoring) [[likely]] {
+                scoring_index = node;
+            }
             // Get the score from the random number generator. Make sure we
             // pick correct random number. Optimize for the case where we
             // pick in rising order.
-            if (node != randomIndex) {
-                if (node < randomIndex) {
+            if (scoring_index != randomIndex) {
+                if (scoring_index < randomIndex) {
                     random.setSeed(seed);
                     randomIndex = 0;
                 }
-                for (uint32_t k=randomIndex, o=node; k<o; ++k) {
+                for (uint32_t k=randomIndex, o=scoring_index; k<o; ++k) {
                     random.nextDouble();
                 }
-                randomIndex = node;
+                randomIndex = scoring_index;
             }
             double score = random.nextDouble();
             ++randomIndex;
+            ++scoring_index;
             if (nodeState.getCapacity() != vespalib::Double(1.0)) {
                 score = std::pow(score, 1.0 / nodeState.getCapacity().getValue());
             }

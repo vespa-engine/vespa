@@ -133,15 +133,19 @@ Group::setCapacity(vespalib::Double capacity)
 }
 
 void
-Group::setNodes(const std::vector<uint16_t>& nodes)
+Group::setNodes(const std::vector<uint16_t>& nodes, bool normalize_order)
 {
     assert(_distributionSpec.size() == 0);
     _originalNodes = nodes;
     _nodes = nodes;
     // Maintain ordering invariant. Required to ensure node score computations
     // finish in linear time. Failure to maintain invariant may result in
-    // quadratic worst case behavior.
-    std::sort(_nodes.begin(), _nodes.end());
+    // quadratic worst case behavior. This invariant can only be maintained
+    // within a single group, so with many groups it's possible to still get
+    // a worst-case behavior if node indexes are configured in a silly way.
+    if (normalize_order) [[likely]] {
+        std::sort(_nodes.begin(), _nodes.end());
+    }
 }
 
 const Group*

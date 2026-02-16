@@ -180,7 +180,7 @@ struct ExpectedResult {
 void
 verifyJavaDistribution(const std::string& name, const ClusterState& state, const Distribution& distribution,
                        const NodeType& nodeType, uint16_t redundancy, uint16_t nodeCount,
-                       std::string_view upStates, const std::vector<ExpectedResult> results)
+                       std::string_view upStates, const std::vector<ExpectedResult>& results)
 {
     (void) nodeCount;
     for (uint32_t i=0, n=results.size(); i<n; ++i) {
@@ -192,12 +192,6 @@ verifyJavaDistribution(const std::string& name, const ClusterState& state, const
             for (uint32_t j=0, m=nvect.size(); j<m; ++j) {
                 nodes.push_back(Node(nodeType, nvect[j]));
             }
-            /*
-            if (results[i].nodes.toString() != nodes.toString()) {
-                std::cerr << "Failure: " << testId << " "
-                          << results[i].nodes.toString() << " in java but "
-                          << nodes.toString() << " in C++.\n";
-            }// */
             EXPECT_EQ(results[i].nodes.toString(), nodes.toString()) << testId;
             if (results[i].nodes.size() > 0) {
                 EXPECT_EQ(std::string("NONE"), results[i].failure) << testId;
@@ -229,9 +223,9 @@ TEST_F(DistributionTest, test_verify_java_distributions_2)
     for (uint32_t i=0, n=files.size(); i<n; ++i) {
         size_t pos = files[i].find(".java.results");
         if (pos == std::string::npos || pos + 13 != files[i].size()) {
-            //std::cerr << "Skipping unmatched file '" << files[i] << "'.\n";
             continue;
         }
+        std::println(std::cerr, "Cross-checking {}", files[i]);
 
         std::string name(files[i].substr(0, pos));
         using namespace vespalib::slime;
@@ -278,7 +272,6 @@ TEST_F(DistributionTest, test_verify_java_distributions_2)
             results.push_back(result);
         }
         verifyJavaDistribution(name, cs, d, nt, redundancy, nodeCount, upStates, results);
-        //std::cerr << name << ": Verified " << results.size() << " tests.\n";
     }
 }
 
@@ -911,12 +904,12 @@ std::string groupConfig("group[3]\n"
 TEST_F(DistributionTest, test_active_per_group)
 {
     using IndexList = Distribution::IndexList;
-        // Disabled feature
+    // Disabled feature
     {
         Distribution distr("redundancy 4\n" + groupConfig);
         EXPECT_FALSE(distr.activePerGroup());
     }
-        // All nodes split
+    // All nodes split
     {
         Distribution distr("redundancy 4\n"
                            "active_per_leaf_group true\n" + groupConfig);
@@ -939,7 +932,7 @@ TEST_F(DistributionTest, test_active_per_group)
         expected[1].push_back(5);
         EXPECT_EQ(expected, actual);
     }
-        // Only nodes in one group
+    // Only nodes in one group
     {
         Distribution distr("redundancy 4\n"
                            "active_per_leaf_group true\n" + groupConfig);
@@ -955,7 +948,7 @@ TEST_F(DistributionTest, test_active_per_group)
         expected[0].push_back(2);
         EXPECT_EQ(expected, actual);
     }
-        // No nodes
+    // No nodes
     {
         Distribution distr("redundancy 4\n"
                            "active_per_leaf_group true\n" + groupConfig);
@@ -964,7 +957,7 @@ TEST_F(DistributionTest, test_active_per_group)
         std::vector<IndexList> expected;
         EXPECT_EQ(expected, actual);
     }
-        // Random nodes
+    // Random nodes
     {
         Distribution distr("redundancy 4\n"
                            "active_per_leaf_group true\n" + groupConfig);
@@ -1138,4 +1131,109 @@ TEST(DistributionBitMaskTest, distribution_bit_mask_matches_legacy_lut) {
     }
 }
 
+TEST_F(DistributionTest, relative_node_order_scoring_is_distribution_key_invariant) {
+    // 3 groups of 3 nodes, redundancy 6 globally, i.e. 2 within each group
+    std::string cfg_with_3x3_topology = R"(group[4]
+group[0].name "invalid"
+group[0].index "invalid"
+group[0].partitions "*|*|*"
+group[0].nodes[0]
+group[1].name "rack0"
+group[1].index 0
+group[1].nodes[3]
+group[1].nodes[0].index 0
+group[1].nodes[1].index 1
+group[1].nodes[2].index 2
+group[2].name "rack1"
+group[2].index 1
+group[2].nodes[3]
+group[2].nodes[0].index 3
+group[2].nodes[1].index 4
+group[2].nodes[2].index 5
+group[3].name "rack2"
+group[3].index 2
+group[3].nodes[3]
+group[3].nodes[0].index 6
+group[3].nodes[1].index 7
+group[3].nodes[2].index 8
+redundancy 6
+relative_node_order_scoring true
+)";
+
+    const Distribution distr(cfg_with_3x3_topology);
+    const uint16_t key_to_relative_index[9] = {0, 1, 2, 0, 1, 2, 0, 1, 2};
+    constexpr size_t n_buckets = 1000;
+    const ClusterState all_up_state("version:1 storage:9 distributor:9");
+
+    for (size_t i = 0; i < n_buckets; i++) {
+        const document::BucketId bucket_id(16, i);
+        auto nodes = distr.getIdealStorageNodes(all_up_state, bucket_id, "ui");
+        ASSERT_THAT(nodes, SizeIs(6));
+        ASSERT_THAT(nodes, Each(Le(8)));
+        // All replicas should be placed on nodes that have the same _relative_ configured
+        // intra-group ordering across all groups. There are 2 replicas per group.
+        ASSERT_EQ(key_to_relative_index[nodes[0]], key_to_relative_index[nodes[2]]);
+        ASSERT_EQ(key_to_relative_index[nodes[0]], key_to_relative_index[nodes[4]]);
+
+        ASSERT_EQ(key_to_relative_index[nodes[1]], key_to_relative_index[nodes[3]]);
+        ASSERT_EQ(key_to_relative_index[nodes[1]], key_to_relative_index[nodes[5]]);
+
+        // Distributor affinity should be the most ideal node also for relative scoring
+        auto distributor_node = distr.getIdealDistributorNode(all_up_state, bucket_id, "u");
+        ASSERT_EQ(distributor_node, nodes[0]);
+    }
 }
+
+namespace {
+
+std::string make_flat_config_with_relative_scoring(const std::vector<uint16_t>& indexes) {
+    vespalib::asciistream os;
+    os << "redundancy 1\n"
+       << "group[0].index \"invalid\"\n"
+       << "group[0].name \"invalid\"\n"
+       << "group[0].partitions \"*\"\n";
+    for (uint16_t i = 0; i < indexes.size(); ++i) {
+        os << "group[0].nodes[" << i << "].index " << indexes[i] << '\n';
+    }
+    os << "relative_node_order_scoring true\n";
+    return os.str();
+}
+
+} // namespace
+
+TEST_F(DistributionTest, relative_index_scoring_allows_for_verbatim_node_replacement_via_retiring) {
+    std::string cfg_8_nodes = make_flat_config_with_relative_scoring({0, 1, 2, 3, 4, 5, 6, 7});
+    Distribution distr_8(cfg_8_nodes);
+    // Note that node 8 is configured _right after_ 5.
+    // With relative index scoring, config order matters!
+    std::string cfg_9_nodes = make_flat_config_with_relative_scoring({0, 1, 2, 3, 4, 5, 8, 6, 7});
+    Distribution distr_9(cfg_9_nodes);
+    ClusterState state_all_up("version:1 storage:8 distributor:8");
+    // In this state, node 5 is retired with node 8 logically taking up its "slot"
+    // in the relative index order of the ideal state computation. This means that
+    // all its buckets will intrinsically belong to node 8, and no other buckets
+    // in the system will move. This hinges on group node order _not_ being implicitly
+    // normalized to be in distribution key order as part of configuration.
+    ClusterState state_with_retired("version:1 storage:9 .5.s:r distributor:9");
+    constexpr size_t n_buckets = 10'000;
+    for (size_t i = 0; i < n_buckets; i++) {
+        const document::BucketId bucket_id(16, i);
+        auto orig_nodes = distr_8.getIdealStorageNodes(state_all_up, bucket_id, "ui");
+        ASSERT_THAT(orig_nodes, SizeIs(1));
+        auto new_nodes = distr_9.getIdealStorageNodes(state_with_retired, bucket_id, "ui");
+        ASSERT_THAT(new_nodes, SizeIs(1));
+        if (orig_nodes[0] == 5) {
+            // Should be taken over by node 8
+            ASSERT_EQ(new_nodes[0], 8) << bucket_id;
+        } else {
+            // Node should be unchanged
+            ASSERT_EQ(new_nodes[0], orig_nodes[0]) << bucket_id;
+        }
+    }
+}
+
+// See DistributionTestCase.java for additional test cases; these generate cross-language
+// input/output check files that are automatically run against the C++ impl. So there's
+// no need to duplicate it all here.
+
+} // namespace storage::lib

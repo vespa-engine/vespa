@@ -142,7 +142,7 @@ public class Group implements Comparable<Group> {
 
     public void setCapacity(double c) { capacity = c; }
 
-    public void setNodes(List<ConfiguredNode> nodes) {
+    public void setNodes(List<ConfiguredNode> nodes, boolean normalizeOrder) {
         if (distribution != null) {
             throw new IllegalStateException("Cannot add nodes to non-leaf group with distribution set");
         }
@@ -150,7 +150,13 @@ public class Group implements Comparable<Group> {
             throw new IllegalStateException("Cannot add nodes to group with children");
         }
         this.nodes = new ArrayList<>(nodes);
-        Collections.sort(this.nodes);
+        if (normalizeOrder) {
+            Collections.sort(this.nodes);
+        }
+    }
+
+    public void setNodes(List<ConfiguredNode> nodes) {
+        setNodes(nodes, true);
     }
 
     public String getName() { return name; }

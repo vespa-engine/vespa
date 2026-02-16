@@ -6,6 +6,7 @@ import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.document.BucketId;
@@ -26,10 +27,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class Distribution {
 
-    private record Config(Group nodeGraph, int redundancy) { }
+    private record Config(Group nodeGraph, int redundancy, boolean relativeNodeOrderScoring) { }
 
     private ConfigSubscriber configSub;
-    private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1));
+    private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1, false));
 
     public Group getRootGroup() {
         return config.getAcquire().nodeGraph;
@@ -40,7 +41,9 @@ public final class Distribution {
     }
 
     private static int[] getGroupPath(String path) {
-        if (path.equals("invalid")) { return new int[0]; }
+        if (path.equals("invalid")) {
+            return new int[0];
+        }
         StringTokenizer st = new StringTokenizer(path, ".");
         int[] p = new int[st.countTokens()];
         for (int i=0; i<p.length; ++i) {
@@ -68,7 +71,10 @@ public final class Distribution {
                     for (StorDistributionConfig.Group.Nodes node : cg.nodes()) {
                         nodes.add(new ConfiguredNode(node.index(), node.retired()));
                     }
-                    group.setNodes(nodes);
+                    // We want to normalize node order by distribution keys when we score
+                    // using distribution keys, but _not_ when scoring based on relative
+                    // configured index (as that would mess up this ordering).
+                    group.setNodes(nodes, !config.relative_node_order_scoring());
                 } else {
                     group = new Group(index, cg.name(), new Group.Distribution(cg.partitions(), config.redundancy()));
                 }
@@ -83,10 +89,11 @@ public final class Distribution {
                     parent.addSubGroup(group);
                 }
             }
-            if (root == null)
+            if (root == null) {
                 throw new IllegalStateException("Config does not specify a root group");
+            }
             root.calculateDistributionHashValues();
-            Distribution.this.config.setRelease(new Config(root, config.redundancy()));
+            Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.relative_node_order_scoring()));
         } catch (ParseException e) {
             throw new IllegalStateException("Failed to parse config", e);
         }
@@ -111,7 +118,10 @@ public final class Distribution {
                     for (DistributionConfig.Cluster.Group.Nodes node : cg.nodes()) {
                         nodes.add(new ConfiguredNode(node.index(), node.retired()));
                     }
-                    group.setNodes(nodes);
+                    // We want to normalize node order by distribution keys when we score
+                    // using distribution keys, but _not_ when scoring based on relative
+                    // configured index (as that would mess up this ordering).
+                    group.setNodes(nodes, !config.relative_node_order_scoring());
                 } else {
                     group = new Group(index, cg.name(), new Group.Distribution(cg.partitions(), config.redundancy()));
                 }
@@ -126,10 +136,11 @@ public final class Distribution {
                     parent.addSubGroup(group);
                 }
             }
-            if (root == null)
+            if (root == null) {
                 throw new IllegalStateException("Config does not specify a root group");
+            }
             root.calculateDistributionHashValues();
-            Distribution.this.config.setRelease(new Config(root, config.redundancy()));
+            Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.relative_node_order_scoring()));
         } catch (ParseException e) {
             throw new IllegalStateException("Failed to parse config", e);
         }
@@ -154,9 +165,9 @@ public final class Distribution {
     }
 
     private static long lastNBits(long value, int n) {
-        if (n < 0 || n > 63)
+        if (n < 0 || n > 63) {
             throw new IllegalArgumentException("n must be in [0, 63], but was " + n);
-
+        }
         return value & ((1L << n) - 1);
     }
 
@@ -221,11 +232,15 @@ public final class Distribution {
         if (g.isLeafGroup()) {
             for (ConfiguredNode node : g.getNodes()) {
                 NodeState ns = clusterState.getNodeState(new Node(NodeType.DISTRIBUTOR, node.index()));
-                if (ns.getState().oneOf("ui")) return false;
+                if (ns.getState().oneOf("ui")) {
+                    return false;
+                }
             }
         } else {
             for (Group childGroup : g.getSubgroups().values()) {
-                if (!allDistributorsDown(childGroup, clusterState)) return false;
+                if (!allDistributorsDown(childGroup, clusterState)) {
+                    return false;
+                }
             }
         }
         return true;
@@ -241,7 +256,9 @@ public final class Distribution {
         RandomGen random = new RandomGen(seed);
         int currentIndex = 0;
         for(Group g : parent.getSubgroups().values()) {
-            while (g.getIndex() < currentIndex++) random.nextDouble();
+            while (g.getIndex() < currentIndex++) {
+                random.nextDouble();
+            }
             double score = random.nextDouble();
             if (Math.abs(g.getCapacity() - 1.0) > 0.0000001) {
                 score = Math.pow(score, 1.0 / g.getCapacity());
@@ -297,13 +314,10 @@ public final class Distribution {
             while (group.getKey() < currentIndex++) {
                 random.nextDouble();
             }
-
             double score = random.nextDouble();
-
             if (group.getValue().getCapacity() != 1) {
                 score = Math.pow(score, 1.0 / group.getValue().getCapacity());
             }
-
             if (score > tmpResults.get(tmpResults.size() - 1).score) {
                 tmpResults.add(new ScoredGroup(group.getValue(), score));
                 Collections.sort(tmpResults);
@@ -344,7 +358,7 @@ public final class Distribution {
         int randomIndex = 0;
         for (ResultGroup group : groupDistribution) {
             int redundancy = group.redundancy;
-            Collection<ConfiguredNode> nodes = group.group.getNodes();
+            List<ConfiguredNode> nodes = group.group.getNodes();
 
             // Create temporary place to hold results. Use double linked list
             // for cheap access to back(). Stuff in redundancy fake entries to
@@ -353,31 +367,34 @@ public final class Distribution {
             for (int i = 0; i < redundancy; ++i) {
                 tmpResults.add(ScoredNode.makeInvalid());
             }
-
+            int scoringIndex = 0;
             for (ConfiguredNode configuredNode : nodes) {
                 NodeState nodeState = clusterState.getNodeState(new Node(NodeType.STORAGE, configuredNode.index()));
                 if (!nodeState.getState().oneOf(upStates)) {
+                    if (nodeState.getState() != State.RETIRED) {
+                        ++scoringIndex;
+                    }
                     continue;
                 }
-
+                if (!cfg.relativeNodeOrderScoring) {
+                    scoringIndex = configuredNode.index();
+                }
                 // Get the score from the random number generator. Make sure we
                 // pick correct random number. Optimize for the case where we
                 // pick in rising order.
-                if (configuredNode.index() != randomIndex) {
-                    if (configuredNode.index() < randomIndex) {
+                if (scoringIndex != randomIndex) {
+                    if (scoringIndex < randomIndex) {
                         random.setSeed(seed);
                         randomIndex = 0;
                     }
-
-                    for (int k = randomIndex; k < configuredNode.index(); ++k) {
+                    for (int k = randomIndex; k < scoringIndex; ++k) {
                         random.nextDouble();
                     }
-
-                    randomIndex = configuredNode.index();
+                    randomIndex = scoringIndex;
                 }
-
                 double score = random.nextDouble();
                 ++randomIndex;
+                ++scoringIndex;
                 if (nodeState.getCapacity() != 1.0) {
                     score = Math.pow(score, 1.0 / nodeState.getCapacity());
                 }
@@ -428,20 +445,26 @@ public final class Distribution {
         int seed = getDistributorSeed(bucket, state);
         RandomGen random = new RandomGen(seed);
         int randomIndex = 0;
-        List<ConfiguredNode> configuredNodes = idealGroup.getNodes();
+        List<ConfiguredNode> nodes = idealGroup.getNodes();
         ScoredNode node = ScoredNode.makeInvalid();
-        for (ConfiguredNode configuredNode : configuredNodes) {
+        for (int relNodeIndex = 0; relNodeIndex < nodes.size(); ++relNodeIndex) {
+            var configuredNode = nodes.get(relNodeIndex);
+            // Distributors can't be in a Retiring state, so relative scoring index can
+            // always be derived directly from the configured order.
+            int scoringIndex = cfg.relativeNodeOrderScoring ? relNodeIndex : configuredNode.index();
             NodeState nodeState = state.getNodeState(new Node(NodeType.DISTRIBUTOR, configuredNode.index()));
-            if (!nodeState.getState().oneOf(upStates)) continue;
-            if (configuredNode.index() != randomIndex) {
-                if (configuredNode.index() < randomIndex) {
+            if (!nodeState.getState().oneOf(upStates)) {
+                continue;
+            }
+            if (scoringIndex != randomIndex) {
+                if (scoringIndex < randomIndex) {
                     random.setSeed(seed);
                     randomIndex = 0;
                 }
-                for (int k=randomIndex; k < configuredNode.index(); ++k) {
+                for (int k=randomIndex; k < scoringIndex; ++k) {
                     random.nextDouble();
                 }
-                randomIndex = configuredNode.index();
+                randomIndex = scoringIndex;
             }
             double score = random.nextDouble();
             ++randomIndex;
@@ -462,7 +485,9 @@ public final class Distribution {
 
     private boolean visitGroups(GroupVisitor visitor, Map<Integer, Group> groups) {
         for (Group g : groups.values()) {
-            if (!visitor.visitGroup(g)) return false;
+            if (!visitor.visitGroup(g)) {
+                return false;
+            }
             if (!g.isLeafGroup()) {
                 if (!visitGroups(visitor, g.getSubgroups())) {
                     return false;
