@@ -29,7 +29,7 @@ SameElementSearch::fetch_matching_elements(uint32_t docid, std::vector<uint32_t>
 {
     auto begin_with = _children.begin();
     if (!_element_filter.empty()) {
-        elems.insert(elems.end(), _element_filter.begin(), _element_filter.end());
+        elems = _element_filter;
     } else {
         _children.front()->get_element_ids(docid, elems);
         ++begin_with;
