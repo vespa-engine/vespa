@@ -390,13 +390,14 @@ TensorAttribute::prepare_set_tensor(DocId docid, const vespalib::eval::Value& te
 {
     checkTensorType(tensor);
     if (_index) {
+        auto guard = getGenerationHandler().takeGuard();
         VectorBundle vectors(tensor.cells().data, tensor.index().size(), _subspace_type);
         if (tensor_cells_are_unchanged(docid, vectors)) {
             // Don't make changes to the nearest neighbor index when the inserted tensor cells are unchanged.
             // With this optimization we avoid doing unnecessary costly work, first removing the vector point, then inserting the same point.
             return {};
         }
-        return _index->prepare_add_document(docid, vectors, getGenerationHandler().takeGuard());
+        return _index->prepare_add_document(docid, vectors, std::move(guard));
     }
     return {};
 }
