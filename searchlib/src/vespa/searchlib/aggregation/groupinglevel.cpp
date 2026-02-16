@@ -4,6 +4,10 @@
 #include "grouping.h"
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/expression/current_index_setup.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/issue.h>
+
+#include <format>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.groupinglevel");
@@ -110,8 +114,16 @@ template<typename Doc>
 void
 GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
 {
-    if (_filter.allow(doc, rank)) {
-        Group * next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
+    bool allowed = false;
+    try {
+        allowed = _filter.allow(doc, rank);
+    } catch (const vespalib::IllegalArgumentException& e) {
+        vespalib::Issue::report(std::format("Grouping filter error: {}", e.getMessage()));
+        return;
+    }
+
+    if (allowed) {
+        Group* next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
         if ((next != nullptr) && doNext()) { // do next level ?
             next->aggregate(*_grouping, _level + 1, doc, rank);
         }
@@ -134,9 +146,9 @@ template<typename Doc>
 void
 GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
 {
-    const ResultNodeVector & rv(static_cast<const ResultNodeVector &>(result));
-    for (size_t i(0), m(rv.size()); i < m; i++) {
-        const ResultNode & sr(rv.get(i));
+    const ResultNodeVector& rv = static_cast<const ResultNodeVector&>(result);
+    for (size_t i = 0; i < rv.size(); i++) {
+        const ResultNode& sr = rv.get(i);
         _currentIndex.set(i);
         SingleValueGrouper::groupDoc(g, sr, doc, rank);
     }

@@ -187,3 +187,4 @@
 #define CID_search_expression_RangePredicateNode            SEARCHLIB_CID(178)
 
 #define CID_search_aggregation_QuantileAggregationResult    SEARCHLIB_CID(179)
+#define CID_search_expression_IsTruePredicateNode           SEARCHLIB_CID(180)

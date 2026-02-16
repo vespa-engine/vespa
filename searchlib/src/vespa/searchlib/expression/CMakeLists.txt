@@ -40,6 +40,7 @@ vespa_add_library(searchlib_expression OBJECT
     integerresultnode.cpp
     range_predicate_node.cpp
     regex_predicate_node.cpp
+    istrue_predicate_node.cpp
     not_predicate_node.cpp
     multi_arg_predicate_node.cpp
     or_predicate_node.cpp
