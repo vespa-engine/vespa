@@ -100,10 +100,9 @@ public class DynamicBatcher<K, I, O> {
             return processBatch.execute(key, List.of(input)).get(0);
         }
 
-        enum Role {CREATOR, WAITER, EXECUTOR}
         Batch<K, I, O> batch;
-        Role role = Role.CREATOR;
         int index = 0;
+        boolean isExecutor = false;
 
         // Determine batch, role and index
         synchronized (batchesLock) {
@@ -121,35 +120,33 @@ public class DynamicBatcher<K, I, O> {
                         if (existing.inputs.size() == maxBatchSize) {
                             batches.remove(key);
                             existing.isFilling = false;
-                            role = Role.EXECUTOR;
-                        } else {
-                            role = Role.WAITER;
+                            isExecutor = true;
                         }
                     }
                 }
             }
         }
 
-        // Wait for timeout or completion
         boolean removeBatch = false;
-        if (role == Role.CREATOR) {
+        // First thread for the batch waits for the timeout
+        if (index == 0) {
             synchronized (batch.monitor) {
                 onWaiting.run();
                 for (long deadlineMs = batch.deadline.toEpochMilli(), now = timer.instant().toEpochMilli();
-                     !batch.isDone && now < deadlineMs;
+                     batch.isFilling && now < deadlineMs;
                      now = timer.instant().toEpochMilli()) {
                     try { batch.monitor.wait(deadlineMs - now); }
                     catch (InterruptedException e) {}
                 }
-                if (!batch.isDone && batch.isFilling) {
-                    role = Role.EXECUTOR;
+                if (batch.isFilling) {
+                    isExecutor = true;
                     batch.isFilling = false;
                     removeBatch = true;
                 }
             }
         }
 
-        if (role == Role.EXECUTOR) {
+        if (isExecutor) {
             if (removeBatch) {
                 synchronized (batchesLock) { batches.remove(batch.key, batch); }
             }
@@ -158,7 +155,7 @@ public class DynamicBatcher<K, I, O> {
         return awaitResult(batch, index);
     }
 
-    /** Wakes up all waiting threads. For unit testing. */
+    /** Wakes up all waiting threads for the batches still in the map. For unit testing. */
     void wakeup() {
         List<Batch<K, I, O>> snapshot;
         synchronized (batchesLock) {
@@ -170,6 +167,7 @@ public class DynamicBatcher<K, I, O> {
     }
 
     private Batch<K, I, O> startNewBatch(K key, I input) {
+        assert Thread.holdsLock(batchesLock) : "Caller must hold lock on 'batchesLock'";
         var b = new Batch<K, I, O>(key, maxBatchSize, input, timer.instant().plus(maxDelay));
         batches.put(key, b);
         return b;
