@@ -39,7 +39,9 @@ public class MinimumNodeCountValidator implements Validator, ChangeValidator {
     }
 
     private boolean shouldValidate(DeployState deployState) {
-        return deployState.isHosted() && deployState.zone().environment().isProduction();
+        return deployState.isHosted()
+                && deployState.zone().environment().isProduction()
+                && !deployState.getProperties().applicationId().instance().isTester();
     }
 
     private void validateContentClusters(VespaModel model, VespaModel previousModel, Context context) {
