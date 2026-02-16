@@ -98,7 +98,7 @@ public class RankProperties implements Cloneable {
         if (totalRerankCount != null && ! properties.containsKey(SecondPhase.rerankCountPropertyName)) {
             Map<String, List<Object>> serializableProperties = new LinkedHashMap<>(properties);
             serializableProperties.put(SecondPhase.rerankCountPropertyName,
-                                       List.of(context.contentShareOf((int)totalRerankCount.getFirst())));
+                                       List.of(context.contentShareOf((int)totalRerankCount.get(0))));
             return Collections.unmodifiableMap(serializableProperties);
         }
         return Collections.unmodifiableMap(properties);
