@@ -1361,7 +1361,8 @@
       "public boolean useTriton()",
       "public int searchCoreMaxOutstandingMoveOps()",
       "public double docprocHandlerThreadpool()",
-      "public boolean applyOnRestartForApplicationMetadataConfig()"
+      "public boolean applyOnRestartForApplicationMetadataConfig()",
+      "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)"
     ],
     "fields" : [ ]
   },
