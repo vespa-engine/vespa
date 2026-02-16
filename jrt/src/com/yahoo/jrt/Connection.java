@@ -48,6 +48,7 @@ class Connection extends Target {
     private final Supervisor owner;
     private final Spec spec;
     private CryptoSocket socket;
+    private volatile SocketChannel channelForClose;
     private int readSize = READ_SIZE;
     private final boolean server;
     private final AtomicLong requestId = new AtomicLong(0);
@@ -90,6 +91,7 @@ class Connection extends Target {
         this.parent = parent;
         this.owner = owner;
         this.socket = parent.transport().createServerCryptoSocket(channel);
+        this.channelForClose = socket.channel();
         this.spec = null;
         this.tcpNoDelay = tcpNoDelay;
         maxInputSize = owner.getMaxInputBufferSize();
@@ -165,6 +167,7 @@ class Connection extends Target {
         }
         try {
             socket = parent.transport().createClientCryptoSocket(SocketChannel.open(spec.resolveAddress()), spec);
+            channelForClose = socket.channel();  // volatile write for cross-thread visibility
         } catch (Exception e) {
             setLostReason(e);
         }
@@ -178,6 +181,8 @@ class Connection extends Target {
         try {
             socket.channel().configureBlocking(false);
             socket.channel().socket().setTcpNoDelay(tcpNoDelay);
+            socket.channel().socket().setKeepAlive(true);
+            socket.channel().socket().setSoLinger(true, 0);
             selectionKey = socket.channel().register(selector,
                     SelectionKey.OP_READ | SelectionKey.OP_WRITE,
                     this);
@@ -395,12 +400,30 @@ class Connection extends Target {
         return ((socket != null) && (socket.channel() != null));
     }
 
+    @Override
     public void closeSocket() {
-        if (hasSocket()) {
-            try {
-                socket.channel().socket().close();
-            } catch (Exception e) {
-                log.log(Level.WARNING, "Error closing connection", e);
+        SocketChannel ch = channelForClose;  // volatile read — guaranteed cross-thread visibility
+        if (ch != null) {
+            if (ch.isOpen()) {
+                String socketInfo = "";
+                try {
+                    socketInfo = "local=" + ch.socket().getLocalPort() +
+                                 " remote=" + ch.socket().getRemoteSocketAddress();
+                } catch (Exception ignored) {}
+                try {
+                    log.log(Level.INFO, "Closing socket channel: " + socketInfo);
+                    ch.close();
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Error closing socket channel: " + socketInfo, e);
+                }
+            }
+        } else {
+            if (hasSocket()) {
+                try {
+                    socket.channel().close();
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Error closing connection", e);
+                }
             }
         }
     }

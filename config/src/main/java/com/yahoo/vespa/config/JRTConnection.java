@@ -43,6 +43,21 @@ public class JRTConnection implements Connection {
         return address;
     }
 
+    public synchronized void closeTarget() {
+        if (target != null) {
+            logger.log(Level.INFO, "Force-closing connection to " + address +
+                       " (target valid=" + target.isValid() + ")");
+            target.closeSocket();  // Synchronously close TCP socket before async cleanup
+            target.close();
+            target = null;
+        }
+    }
+
+    @Override
+    public void closeConnection() {
+        closeTarget();
+    }
+
     /**
      * This is synchronized to avoid multiple ConfigInstances creating new targets simultaneously, if
      * the existing target is null, invalid or has not yet been initialized.
