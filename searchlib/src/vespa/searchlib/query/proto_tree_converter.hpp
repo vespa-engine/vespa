@@ -360,7 +360,8 @@ public:
     bool handle(const ItemSameElement& item) {
         auto d = fillTermProperties(item.properties());
         uint32_t arity = item.children_size();
-        auto &term = _builder.addSameElement(arity, d.index_view, d.uniqueId, d.weight);
+        std::vector<uint32_t> element_filter(item.element_filter().cbegin(), item.element_filter().cend());
+        auto &term = _builder.addSameElement(arity, d.index_view, d.uniqueId, d.weight, std::move(element_filter));
         if (d.noRankFlag) term.setRanked(false);
         if (d.noPositionDataFlag) term.setPositionData(false);
         for (const auto &child : item.children()) {
