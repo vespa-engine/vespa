@@ -35,6 +35,7 @@ ResourceUsageNotifier::recalcState(const Guard &guard, bool disk_mem_sample)
     ResourceUsageState usage(ResourceUsageWithLimit(diskUsed, _config._diskLimit),
                              ResourceUsageWithLimit(memoryUsed, _config._memoryLimit),
                              get_relative_reserved_disk_space(guard),
+                             _config._reserved_disk_space_factor,
                              get_relative_transient_disk_usage(guard),
                              get_relative_transient_memory_usage(guard),
                              ResourceUsageWithLimit(attribute_address_space_used,

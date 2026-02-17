@@ -17,6 +17,7 @@ class ResourceUsageState
     ResourceUsageWithLimit _diskState;
     ResourceUsageWithLimit _memoryState;
     double                 _reserved_disk_space;
+    double                 _reserved_disk_space_factor;
     double                 _transient_disk_usage;
     double                 _transient_memory_usage;
     ResourceUsageWithLimit _max_attribute_address_space_state;
@@ -29,11 +30,13 @@ public:
     ResourceUsageState(const ResourceUsageWithLimit &diskState_,
                        const ResourceUsageWithLimit &memoryState_,
                        double reserved_disk_space_,
+                       double reserved_disk_space_factor_,
                        double transient_disk_usage_,
                        double transient_memory_usage_);
     ResourceUsageState(const ResourceUsageWithLimit &diskState_,
                        const ResourceUsageWithLimit &memoryState_,
                        double reserved_disk_space_,
+                       double reserved_disk_space_factor_,
                        double transient_disk_usage_,
                        double transient_memory_usage_,
                        const ResourceUsageWithLimit& max_attribute_address_space_state,
