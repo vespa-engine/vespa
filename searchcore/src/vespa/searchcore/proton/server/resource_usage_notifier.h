@@ -34,18 +34,22 @@ public:
     {
         double _memoryLimit;
         double _diskLimit;
+        double _reserved_disk_space_factor;
         AttributeUsageFilterConfig _attribute_limit;
 
-        Config() : Config(1.0, 1.0, AttributeUsageFilterConfig()) { }
+        Config() : Config(1.0, 1.0, 0.0, AttributeUsageFilterConfig()) { }
 
-        Config(double memoryLimit_in, double diskLimit_in, AttributeUsageFilterConfig attribute_limit_in)
+        Config(double memoryLimit_in, double diskLimit_in, double reserved_disk_space_factor_in,
+               AttributeUsageFilterConfig attribute_limit_in)
             : _memoryLimit(memoryLimit_in),
               _diskLimit(diskLimit_in),
+              _reserved_disk_space_factor(reserved_disk_space_factor_in),
               _attribute_limit(attribute_limit_in)
         { }
         bool operator == (const Config & rhs) const noexcept {
             return (_memoryLimit == rhs._memoryLimit) &&
                    (_diskLimit == rhs._diskLimit) &&
+                   (_reserved_disk_space_factor == rhs._reserved_disk_space_factor) &&
                    (_attribute_limit == rhs._attribute_limit);
         }
         bool operator != (const Config & rhs) const noexcept {
