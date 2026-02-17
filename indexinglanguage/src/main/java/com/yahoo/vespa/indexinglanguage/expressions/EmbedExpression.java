@@ -56,6 +56,17 @@ public class EmbedExpression extends Expression  {
     private String destination;
 
     public EmbedExpression(Linguistics linguistics, Components<Embedder> embedders, String embedderId,
+                           List<String> arguments) {
+        this.linguistics = linguistics;
+        this.requestedEmbedderId = embedderId;
+        embedder = new Components.Selected<>("embedder", embedders, embedderId, true, arguments);
+        this.batcher = null;
+        this.batchSize = null;
+        this.batchQueueTime = null;
+        this.batchCount = null;
+    }
+
+    public EmbedExpression(Linguistics linguistics, Components<Embedder> embedders, String embedderId,
                            List<String> arguments, MetricReceiver metricReceiver) {
         this.linguistics = linguistics;
         this.requestedEmbedderId = embedderId;
@@ -288,6 +299,7 @@ public class EmbedExpression extends Expression  {
     }
 
     private void emitBatchMetrics(BatchKey key, List<EmbedInput> inputs) {
+        if (batchSize == null) return;
         var point = new Point(Map.of("embedder", embedder.id(),
                                       "language", key.language().languageCode(),
                                       "destination", key.destination()));
