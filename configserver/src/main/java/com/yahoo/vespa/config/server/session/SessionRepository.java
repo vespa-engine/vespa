@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.EndpointCertificateSecretStore;
+import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -485,13 +486,16 @@ public class SessionRepository {
      * rather than from {@link Session} created locally on the config server.
      */
     private void applyDeferredReconfigurationOfClusters(RemoteSession session, ApplicationVersions applicationVersions) {
-        var clustersWithDeferredReconfiguration = session.getActivationTriggers().deferredReconfigurations().stream()
+        Set<String> clustersWithDeferredReconfiguration = session.getActivationTriggers().deferredReconfigurations().stream()
                 .map(DeferredReconfiguration::clusterId)
                 .collect(Collectors.toSet());
-        if (clustersWithDeferredReconfiguration.isEmpty()) return;
+        
+        if (clustersWithDeferredReconfiguration.isEmpty()) {
+            return;
+        }
 
         // Get the model and mark clusters for deferred reconfiguration
-        var model = applicationVersions.get(session.getVespaVersion())
+        Model model = applicationVersions.get(session.getVespaVersion())
                 .map(Application::getModel)
                 .orElseThrow(() -> new IllegalStateException(
                         "Cannot apply deferred reconfiguration: no model available for session " + session.getSessionId()));
