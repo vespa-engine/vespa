@@ -433,6 +433,16 @@ public class Flags {
             HOSTNAME
     );
 
+    public static final UnboundDoubleFlag SEARCHNODE_RESERVED_DISK_SPACE_FACTOR = defineDoubleFlag(
+            "searchnode-reserved-disk-space-factor", 0.0,
+            List.of("toregge"), "2026-01-17", "2026-10-16",
+            "How much of the calculated reserved disk space should be added to the used disk space when " +
+                    "reporting disk space usage. " +
+                    "0.0 means none at all, 1.0 means the all of the reserved disk space.",
+            "Takes effect at redeployment.",
+            INSTANCE_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

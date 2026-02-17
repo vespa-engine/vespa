@@ -1316,6 +1316,21 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(2_000_000_000, resolveMaxTLSSize(Optional.of(flavor)));
     }
 
+    private double resolveSearchNodeReservedDiskSpaceFactor(double searchNodeReservedDiskSpaceFactor) {
+        var model = createEnd2EndOneNode(new TestProperties().setSearchNodeReservedDiskSpaceFactor(searchNodeReservedDiskSpaceFactor));
+        var cc = model.getContentClusters().get("storage");
+        var protonBuilder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(protonBuilder);
+        var protonConfig = new ProtonConfig(protonBuilder);
+        return protonConfig.writefilter().reserved_disk_space_factor();
+    }
+
+    @Test
+    public void defaultSearchNodeReservedDiskSpaceFactorIsControlledByProperties() {
+        assertEquals(0.0, resolveSearchNodeReservedDiskSpaceFactor(0.0), 0.0);
+        assertEquals(0.3, resolveSearchNodeReservedDiskSpaceFactor(0.3), 0.0);
+    }
+
     void assertZookeeperServerImplementation(String expectedClassName,
                                              ClusterControllerContainerCluster clusterControllerCluster) {
         for (ClusterControllerContainer c : clusterControllerCluster.getContainers()) {

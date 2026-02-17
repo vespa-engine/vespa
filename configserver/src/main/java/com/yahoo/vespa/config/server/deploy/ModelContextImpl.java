@@ -212,6 +212,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean applyOnRestartForApplicationMetadataConfig;
         private final DoubleFlag autoscalerTargetWriteCpuPercentageFlag;
         private final IntFlag heapSizePercentageFlag;
+        private final double searchNodeReservedDiskSpaceFactor;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -259,6 +260,7 @@ public class ModelContextImpl implements ModelContext {
             this.docprocHandlerThreadpool = Flags.DOCPROC_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
             this.applyOnRestartForApplicationMetadataConfig = Flags.APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG.bindTo(source).with(appId).with(version).value();
             this.autoscalerTargetWriteCpuPercentageFlag = Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE.bindTo(source).with(appId).with(version);
+            this.searchNodeReservedDiskSpaceFactor = Flags.SEARCHNODE_RESERVED_DISK_SPACE_FACTOR.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -311,6 +313,7 @@ public class ModelContextImpl implements ModelContext {
             return clusterId.map(id -> autoscalerTargetWriteCpuPercentageFlag.with(ClusterSpec.Id.from(id)).value())
                             .orElseGet(autoscalerTargetWriteCpuPercentageFlag::value);
         }
+        @Override public double searchNodeReservedDiskSpaceFactor() { return searchNodeReservedDiskSpaceFactor; }
     }
 
     public static class Properties implements ModelContext.Properties {
