@@ -20,7 +20,6 @@ import static com.yahoo.vespa.flags.Dimension.APPLICATION;
 import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CERTIFICATE_PROVIDER;
 import static com.yahoo.vespa.flags.Dimension.CLAVE;
-import static com.yahoo.vespa.flags.Dimension.CLOUD;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
@@ -30,7 +29,6 @@ import static com.yahoo.vespa.flags.Dimension.FLAVOR;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.Dimension.SYSTEM;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.Dimension.ZONE_ID;
@@ -684,6 +682,13 @@ public class PermanentFlags {
             "Recommended only when node bucket distribution is near equivalent between groups.",
             "Takes effect on next maintainer run",
             CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
+
+    public static final UnboundListFlag<String> TESTING_FLAVORS_TO_PROVISION = defineListFlag(
+            "testing-flavors-to-provision", List.of(), String.class,
+            "Flavors with lifecycle setting 'testing' to use for provisioning (default is to not provision 'testing' flavors)",
+            "Takes effect immediately",
+            TENANT_ID, APPLICATION, INSTANCE_ID, ZONE_ID, ENVIRONMENT
+    );
 
     private PermanentFlags() {}
 
