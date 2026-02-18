@@ -22,23 +22,23 @@ class TensorRemoveUpdate;
 struct UpdateVisitor {
     virtual ~UpdateVisitor() = default;
 
-    virtual void visit(const DocumentUpdate &value) = 0;
-    virtual void visit(const FieldUpdate &value) = 0;
-    virtual void visit(const RemoveValueUpdate &value) = 0;
-    virtual void visit(const AddValueUpdate &value) = 0;
-    virtual void visit(const ArithmeticValueUpdate &value) = 0;
-    virtual void visit(const AssignValueUpdate &value) = 0;
-    virtual void visit(const ClearValueUpdate &value) = 0;
-    virtual void visit(const MapValueUpdate &value) = 0;
-    virtual void visit(const AddFieldPathUpdate &value) = 0;
-    virtual void visit(const AssignFieldPathUpdate &value) = 0;
-    virtual void visit(const RemoveFieldPathUpdate &value) = 0;
-    virtual void visit(const TensorModifyUpdate &value) = 0;
-    virtual void visit(const TensorAddUpdate &value) = 0;
-    virtual void visit(const TensorRemoveUpdate &value) = 0;
+    virtual void visit(const DocumentUpdate& value) = 0;
+    virtual void visit(const FieldUpdate& value) = 0;
+    virtual void visit(const RemoveValueUpdate& value) = 0;
+    virtual void visit(const AddValueUpdate& value) = 0;
+    virtual void visit(const ArithmeticValueUpdate& value) = 0;
+    virtual void visit(const AssignValueUpdate& value) = 0;
+    virtual void visit(const ClearValueUpdate& value) = 0;
+    virtual void visit(const MapValueUpdate& value) = 0;
+    virtual void visit(const AddFieldPathUpdate& value) = 0;
+    virtual void visit(const AssignFieldPathUpdate& value) = 0;
+    virtual void visit(const RemoveFieldPathUpdate& value) = 0;
+    virtual void visit(const TensorModifyUpdate& value) = 0;
+    virtual void visit(const TensorAddUpdate& value) = 0;
+    virtual void visit(const TensorRemoveUpdate& value) = 0;
 };
 
-#define ACCEPT_UPDATE_VISITOR void accept(UpdateVisitor & visitor) const override { visitor.visit(*this); }
+#define ACCEPT_UPDATE_VISITOR                                                    \
+    void accept(UpdateVisitor& visitor) const override { visitor.visit(*this); }
 
-}  // namespace document
-
+} // namespace document

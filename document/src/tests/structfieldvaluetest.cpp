@@ -1,17 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/repo/newconfigbuilder.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
+
 #include <gmock/gmock.h>
 
-using vespalib::nbostream;
 using document::new_config_builder::NewConfigBuilder;
+using vespalib::nbostream;
 using namespace ::testing;
 
 namespace document {
@@ -24,34 +25,28 @@ protected:
 };
 
 namespace {
-template <typename T>
-void deserialize(nbostream & stream, T &value, const FixedTypeRepo &repo)
-{
-    uint16_t version = Document::getNewestSerializationVersion();
+template <typename T> void deserialize(nbostream& stream, T& value, const FixedTypeRepo& repo) {
+    uint16_t                  version = Document::getNewestSerializationVersion();
     VespaDocumentDeserializer deserializer(repo, stream, version);
     deserializer.read(value);
 }
 
-DocumenttypesConfig
-createConfig() {
+DocumenttypesConfig createConfig() {
     NewConfigBuilder builder;
-    auto& doc = builder.document("test", 42);
+    auto&            doc = builder.document("test", 42);
     doc.addField("int", builder.intTypeRef())
-       .addField("long", builder.longTypeRef())
-       .addField("content", builder.stringTypeRef());
+        .addField("long", builder.longTypeRef())
+        .addField("content", builder.stringTypeRef());
     return builder.config();
 }
 
-}  // namespace
+} // namespace
 
-StructFieldValueTest::StructFieldValueTest()
-    : doc_repo(createConfig())
-{}
+StructFieldValueTest::StructFieldValueTest() : doc_repo(createConfig()) {}
 
-TEST_F(StructFieldValueTest, testEmptyStruct)
-{
-    FixedTypeRepo repo(doc_repo, *doc_repo.getDocumentType(42));
-    const DataType &type = *repo.getDataType("test.header");
+TEST_F(StructFieldValueTest, testEmptyStruct) {
+    FixedTypeRepo    repo(doc_repo, *doc_repo.getDocumentType(42));
+    const DataType&  type = *repo.getDataType("test.header");
     StructFieldValue value(type);
 
     // Serialize & equality
@@ -63,36 +58,35 @@ TEST_F(StructFieldValueTest, testEmptyStruct)
     EXPECT_TRUE(value == value2);
 }
 
-TEST_F(StructFieldValueTest, testStruct)
-{
-    const DocumentType *doc_type = doc_repo.getDocumentType(42);
+TEST_F(StructFieldValueTest, testStruct) {
+    const DocumentType* doc_type = doc_repo.getDocumentType(42);
     ASSERT_TRUE(doc_type != nullptr);
-    FixedTypeRepo repo(doc_repo, *doc_type);
-    const DataType &type = *repo.getDataType("test.header");
+    FixedTypeRepo    repo(doc_repo, *doc_type);
+    const DataType&  type = *repo.getDataType("test.header");
     StructFieldValue value(type);
-    const Field &intF = value.getField("int");
-    const Field &longF = value.getField("long");
-    const Field &strF = value.getField("content");
+    const Field&     intF = value.getField("int");
+    const Field&     longF = value.getField("long");
+    const Field&     strF = value.getField("content");
 
-        // Initially empty
+    // Initially empty
     EXPECT_EQ(size_t(0), value.getSetFieldCount());
     EXPECT_TRUE(!value.hasValue(intF));
 
     value.setValue(intF, IntFieldValue(1));
 
-        // Not empty
+    // Not empty
     EXPECT_EQ(size_t(1), value.getSetFieldCount());
     EXPECT_TRUE(value.hasValue(intF));
 
-        // Adding some more
+    // Adding some more
     value.setValue(longF, LongFieldValue(2));
 
-        // Not empty
+    // Not empty
     EXPECT_EQ(size_t(2), value.getSetFieldCount());
     EXPECT_EQ(1, value.getValue(intF)->getAsInt());
     EXPECT_EQ(2, value.getValue(longF)->getAsInt());
 
-        // Serialize & equality
+    // Serialize & equality
     nbostream buffer(value.serialize());
 
     StructFieldValue value2(type);
@@ -134,15 +128,13 @@ TEST_F(StructFieldValueTest, testStruct)
     EXPECT_TRUE(valuePtr.get());
     EXPECT_EQ(value, *valuePtr);
 
-        // Iterating
+    // Iterating
     const StructFieldValue& constVal(value);
-    for(StructFieldValue::const_iterator it = constVal.begin();
-        it != constVal.end(); ++it)
-    {
+    for (StructFieldValue::const_iterator it = constVal.begin(); it != constVal.end(); ++it) {
         constVal.getValue(it.field());
     }
 
-        // Comparison
+    // Comparison
     value2 = value;
     EXPECT_EQ(0, value.compare(value2));
     value2.remove(intF);
@@ -153,30 +145,27 @@ TEST_F(StructFieldValueTest, testStruct)
     EXPECT_TRUE(value.compare(value2) < 0);
     EXPECT_TRUE(value2.compare(value) > 0);
 
-        // Output
-    EXPECT_EQ(
-            std::string("Struct test.header(\n"
-                        "  int - 1,\n"
-                        "  long - 2\n"
-                        ")"),
-            value.toString(false));
-    EXPECT_EQ(
-            std::string("  Struct test.header(\n"
-                        "..  int - 1,\n"
-                        "..  long - 2\n"
-                        "..)"),
-            "  " + value.toString(true, ".."));
-    EXPECT_EQ(
-            std::string("<value>\n"
-                        "  <int>1</int>\n"
-                        "  <long>2</long>\n"
-                        "</value>"),
-            value.toXml("  "));
+    // Output
+    EXPECT_EQ(std::string("Struct test.header(\n"
+                          "  int - 1,\n"
+                          "  long - 2\n"
+                          ")"),
+              value.toString(false));
+    EXPECT_EQ(std::string("  Struct test.header(\n"
+                          "..  int - 1,\n"
+                          "..  long - 2\n"
+                          "..)"),
+              "  " + value.toString(true, ".."));
+    EXPECT_EQ(std::string("<value>\n"
+                          "  <int>1</int>\n"
+                          "  <long>2</long>\n"
+                          "</value>"),
+              value.toXml("  "));
 
-        // Failure situations.
+    // Failure situations.
 
-        // Refuse to set wrong types
-    try{
+    // Refuse to set wrong types
+    try {
         value2.setValue(intF, StringFieldValue("bar"));
         FAIL() << "Failed to check type equality in setValue";
     } catch (std::exception& e) {
@@ -184,5 +173,4 @@ TEST_F(StructFieldValueTest, testStruct)
     }
 }
 
-} // document
-
+} // namespace document

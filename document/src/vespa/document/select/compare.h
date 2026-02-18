@@ -12,34 +12,35 @@
 
 #pragma once
 
-#include <memory>
 #include "node.h"
 #include "operator.h"
+
 #include <vespa/document/bucket/bucketidfactory.h>
+
+#include <memory>
 
 namespace document::select {
 
 class ValueNode;
 
-class Compare : public Node
-{
+class Compare : public Node {
 private:
     std::unique_ptr<ValueNode> _left;
     std::unique_ptr<ValueNode> _right;
-    const Operator& _operator;
-    const BucketIdFactory& _bucketIdFactory;
+    const Operator&            _operator;
+    const BucketIdFactory&     _bucketIdFactory;
 
     bool isLeafNode() const override { return false; }
+
 public:
-    Compare(std::unique_ptr<ValueNode> left, const Operator& op,
-            std::unique_ptr<ValueNode> right,
+    Compare(std::unique_ptr<ValueNode> left, const Operator& op, std::unique_ptr<ValueNode> right,
             const BucketIdFactory& bucketidfactory);
     ~Compare();
 
-    ResultList contains(const Context &context) const override;
-    ResultList trace(const Context &context, std::ostream& trace) const override;
-    void print(std::ostream&, bool verbose, const std::string& indent) const override;
-    void visit(Visitor& v) const override;
+    ResultList contains(const Context& context) const override;
+    ResultList trace(const Context& context, std::ostream& trace) const override;
+    void       print(std::ostream&, bool verbose, const std::string& indent) const override;
+    void       visit(Visitor& v) const override;
 
     const Operator& getOperator() const { return _operator; }
 
@@ -51,4 +52,4 @@ public:
     const BucketIdFactory& getBucketIdFactory() const { return _bucketIdFactory; }
 };
 
-}
+} // namespace document::select

@@ -11,6 +11,7 @@
 #pragma once
 
 #include "fieldvalue.h"
+
 #include <vespa/document/base/field.h>
 #include <vespa/vespalib/util/vespa_dll_local.h>
 
@@ -29,25 +30,24 @@ class MapFieldValue;
 class WeightedSetFieldValue;
 class StructuredCache;
 
-class StructuredFieldValue : public FieldValue
-{
-    const DataType *_type;
+class StructuredFieldValue : public FieldValue {
+    const DataType* _type;
 
     UP onGetNestedFieldValue(PathRange nested) const override;
     /** @return Retrieve value of given field. Null pointer if not set.
      * Will use container as inplace is present.
      */
     VESPA_DLL_LOCAL FieldValue::UP getValue(const Field& field, FieldValue::UP container) const;
-    VESPA_DLL_LOCAL void updateValue(const Field & field, FieldValue::UP value) const;
-    VESPA_DLL_LOCAL void returnValue(const Field & field, FieldValue::UP value) const;
-    virtual StructuredCache * getCache() const { return nullptr; }
+    VESPA_DLL_LOCAL void           updateValue(const Field& field, FieldValue::UP value) const;
+    VESPA_DLL_LOCAL void           returnValue(const Field& field, FieldValue::UP value) const;
+    virtual StructuredCache*       getCache() const { return nullptr; }
 
 protected:
-    StructuredFieldValue(Type type, const DataType &dataType) : FieldValue(type), _type(&dataType) {}
+    StructuredFieldValue(Type type, const DataType& dataType) : FieldValue(type), _type(&dataType) {}
 
     /** Called from Document when deserializing alters type. */
-    virtual void setType(const DataType& type) { _type = &type; }
-    const DataType &getType() const { return *_type; }
+    virtual void    setType(const DataType& type) { _type = &type; }
+    const DataType& getType() const { return *_type; }
 
     struct StructuredIterator {
         using UP = std::unique_ptr<StructuredIterator>;
@@ -56,8 +56,8 @@ protected:
         virtual const Field* getNextField() = 0;
     };
     class Iterator {
-        StructuredIterator::UP      _iterator;
-        const Field *               _field;
+        StructuredIterator::UP _iterator;
+        const Field*           _field;
 
     public:
         Iterator(); // Generate end iterator
@@ -65,33 +65,32 @@ protected:
         // Generate begin iterator
         Iterator(const StructuredFieldValue& owner, const Field* first);
 
-        const Field &field() const { return *_field; }
-        const Field &operator*() const { return field(); }
-        Iterator& operator++() {
+        const Field& field() const { return *_field; }
+        const Field& operator*() const { return field(); }
+        Iterator&    operator++() {
             _field = _iterator->getNextField();
             return *this;
         }
 
         bool operator==(const Iterator& other) const {
             if (_field == nullptr && other._field == nullptr)
-               // both at end()
-               return true;
+                // both at end()
+                return true;
             if (_field == nullptr || other._field == nullptr)
                 // one at end()
                 return false;
             return (*_field == *other._field);
         }
-        bool operator!=(const Iterator& other) const
-            { return !(operator==(other)); }
+        bool operator!=(const Iterator& other) const { return !(operator==(other)); }
     };
 
-        // Used to implement iterator
+    // Used to implement iterator
     virtual StructuredIterator::UP getIterator(const Field* toFind) const = 0;
 
-        // As overloading doesn't work with polymorphy, have protected functions
-        // doing the functionality, such that we can make utility functions here
-    virtual bool hasFieldValue(const Field&) const = 0;
-    virtual void removeFieldValue(const Field&) = 0;
+    // As overloading doesn't work with polymorphy, have protected functions
+    // doing the functionality, such that we can make utility functions here
+    virtual bool           hasFieldValue(const Field&) const = 0;
+    virtual void           removeFieldValue(const Field&) = 0;
     virtual FieldValue::UP getFieldValue(const Field&) const = 0;
     /**
      * Fetches the value of the field and return true if present.
@@ -100,13 +99,14 @@ protected:
      */
     virtual bool getFieldValue(const Field& field, FieldValue& value) const = 0;
     virtual void setFieldValue(const Field&, FieldValue::UP value) = 0;
-    void setFieldValue(const Field & field, const FieldValue & value);
+    void         setFieldValue(const Field& field, const FieldValue& value);
 
-    fieldvalue::ModificationStatus
-    onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
+    fieldvalue::ModificationStatus onIterateNested(PathRange                    nested,
+                                                   fieldvalue::IteratorHandler& handler) const override;
+
 public:
     StructuredFieldValue* clone() const override = 0;
-    const DataType *getDataType() const override { return _type; }
+    const DataType*       getDataType() const override { return _type; }
 
     /** Wrapper for DataType's hasField() function. */
     virtual bool hasField(std::string_view name) const = 0;
@@ -122,57 +122,40 @@ public:
      * @return True if field is set and stored in value, false if unset.
      * @throws vespalib::IllegalArgumentException If value given has wrong type
      */
-    bool getValue(const Field& field, FieldValue& value) const {
-        return getFieldValue(field, value);
-    }
+    bool getValue(const Field& field, FieldValue& value) const { return getFieldValue(field, value); }
     /** @return Retrieve value of given field. Null pointer if not set. */
-    FieldValue::UP getValue(const Field& field) const {
-        return getFieldValue(field);
-    }
+    FieldValue::UP getValue(const Field& field) const { return getFieldValue(field); }
     /** @return Retrieve value of given field. Null pointer if not set. */
-    FieldValue::UP getValue(std::string_view name) const {
-        return getFieldValue(getField(name));
-    }
+    FieldValue::UP getValue(std::string_view name) const { return getFieldValue(getField(name)); }
     /** @return True if value is set. */
-    bool hasValue(const Field& field) const {
-        return hasFieldValue(field);
-    }
+    bool hasValue(const Field& field) const { return hasFieldValue(field); }
 
     /**
      * Set the given field to contain given value.
      *
      * @throws vespalib::IllegalArgumentException If value given has wrong type
      */
-    void setValue(const Field& field, const FieldValue& value) {
-        setFieldValue(field, value);
-    }
-    void setValue(const Field& field, FieldValue::UP value) {
-        setFieldValue(field, std::move(value));
-    }
-    void setValue(std::string_view fieldName, const FieldValue& value) {
-        setFieldValue(getField(fieldName), value);
-    }
+    void setValue(const Field& field, const FieldValue& value) { setFieldValue(field, value); }
+    void setValue(const Field& field, FieldValue::UP value) { setFieldValue(field, std::move(value)); }
+    void setValue(std::string_view fieldName, const FieldValue& value) { setFieldValue(getField(fieldName), value); }
     void setValue(std::string_view fieldName, FieldValue::UP value) {
         setFieldValue(getField(fieldName), std::move(value));
     }
     /** Remove the value of given field if it is set. */
 
-    //These are affected by the begin/commitTanasaction
+    // These are affected by the begin/commitTanasaction
     void remove(const Field& field);
 
     virtual void clear() = 0;
 
-        // Utility functions for easy but less efficient access
-    bool hasValue(std::string_view fieldName) const {
-        return hasFieldValue(getField(fieldName));
-    }
-    void remove(std::string_view fieldName) {
-        removeFieldValue(getField(fieldName));
-    }
+    // Utility functions for easy but less efficient access
+    bool hasValue(std::string_view fieldName) const { return hasFieldValue(getField(fieldName)); }
+    void remove(std::string_view fieldName) { removeFieldValue(getField(fieldName)); }
 
     size_t getSetFieldCount() const {
         size_t count = 0;
-        for (const_iterator it(begin()), mt(end()); it != mt; ++it, ++count) {}
+        for (const_iterator it(begin()), mt(end()); it != mt; ++it, ++count) {
+        }
         return count;
     }
     virtual bool empty() const = 0;
@@ -184,13 +167,9 @@ public:
     /**
      * return an iterator starting at field, or end() if field was not found
      **/
-    const_iterator find(const Field& field) const {
-        return const_iterator(*this, &field);
-    }
+    const_iterator find(const Field& field) const { return const_iterator(*this, &field); }
 
-    template <typename T>
-    std::unique_ptr<T> getAs(const Field &field) const;
+    template <typename T> std::unique_ptr<T> getAs(const Field& field) const;
 };
 
-} // document
-
+} // namespace document

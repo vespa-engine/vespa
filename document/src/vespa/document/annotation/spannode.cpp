@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "spannode.h"
-#include "spantreevisitor.h"
+
 #include "alternatespanlist.h"
+#include "spantreevisitor.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <ostream>
 
 namespace document {
@@ -15,32 +18,29 @@ public:
     ToStringVisitor();
     ~ToStringVisitor() override;
     std::string str() const { return _os.str(); }
+
 private:
     vespalib::asciistream _os;
-    std::string _indent;
+    std::string           _indent;
 
-    void newline() {
-        _os << "\n" << _indent;
-    }
-    void visitChildren(const SpanList & list) {
-        for (const SpanNode * node : list) {
+    void newline() { _os << "\n" << _indent; }
+    void visitChildren(const SpanList& list) {
+        for (const SpanNode* node : list) {
             newline();
             node->accept(*this);
         }
     }
 
-    void visitChildren(const SimpleSpanList & list) {
-        for (const Span & node : list) {
+    void visitChildren(const SimpleSpanList& list) {
+        for (const Span& node : list) {
             newline();
             node.accept(*this);
         }
     }
 
-    void visit(const Span & span) override {
-        _os << "Span(" << span.from() << ", " << span.length() << ")";
-    }
+    void visit(const Span& span) override { _os << "Span(" << span.from() << ", " << span.length() << ")"; }
 
-    void visit(const SpanList & list) override {
+    void visit(const SpanList& list) override {
         _os << "SpanList(";
         if (list.size() > 1) {
             std::string oldIndent(_indent);
@@ -53,7 +53,7 @@ private:
         }
         _os << ")";
     }
-    void visit(const SimpleSpanList & list) override {
+    void visit(const SimpleSpanList& list) override {
         _os << "SimpleSpanList(";
         if (list.size() > 1) {
             std::string oldIndent(_indent);
@@ -66,7 +66,7 @@ private:
         }
         _os << ")";
     }
-    void visit(const AlternateSpanList & list) override {
+    void visit(const AlternateSpanList& list) override {
         _os << "AlternateSpanList(";
         std::string oldIndent(_indent);
         _indent += "  ";
@@ -81,20 +81,17 @@ private:
     }
 };
 
-ToStringVisitor::ToStringVisitor() : _os(), _indent() { }
+ToStringVisitor::ToStringVisitor() : _os(), _indent() {}
 ToStringVisitor::~ToStringVisitor() = default;
 
-}
+} // namespace
 
-std::string
-SpanNode::toString() const {
+std::string SpanNode::toString() const {
     ToStringVisitor os;
     accept(os);
     return os.str();
 }
 
-std::ostream & operator << (std::ostream & os, const SpanNode & node) {
-    return os << node.toString();
-}
+std::ostream& operator<<(std::ostream& os, const SpanNode& node) { return os << node.toString(); }
 
-}
+} // namespace document

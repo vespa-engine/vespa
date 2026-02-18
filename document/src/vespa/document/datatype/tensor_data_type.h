@@ -2,6 +2,7 @@
 #pragma once
 
 #include "primitivedatatype.h"
+
 #include <vespa/eval/eval/value_type.h>
 
 namespace document {
@@ -11,21 +12,23 @@ namespace document {
  */
 class TensorDataType final : public PrimitiveDataType {
     vespalib::eval::ValueType _tensorType;
+
 public:
     TensorDataType(vespalib::eval::ValueType tensorType);
-    TensorDataType(const TensorDataType &);  //TODO try to avoid
-    TensorDataType & operator=(const TensorDataType &) = delete;
+    TensorDataType(const TensorDataType&); // TODO try to avoid
+    TensorDataType& operator=(const TensorDataType&) = delete;
     ~TensorDataType();
 
-    bool isTensor() const noexcept override { return true; }
-    const TensorDataType* cast_tensor() const noexcept override { return this; }
-    bool equals(const DataType& other) const noexcept override;
+    bool                        isTensor() const noexcept override { return true; }
+    const TensorDataType*       cast_tensor() const noexcept override { return this; }
+    bool                        equals(const DataType& other) const noexcept override;
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void print(std::ostream&, bool verbose, const std::string& indent) const override;
-    static std::unique_ptr<const TensorDataType> fromSpec(const std::string &spec);
-    const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
-    bool isAssignableType(const vespalib::eval::ValueType &tensorType) const;
-    static bool isAssignableType(const vespalib::eval::ValueType &fieldTensorType, const vespalib::eval::ValueType &tensorType);
+    void                        print(std::ostream&, bool verbose, const std::string& indent) const override;
+    static std::unique_ptr<const TensorDataType> fromSpec(const std::string& spec);
+    const vespalib::eval::ValueType&             getTensorType() const { return _tensorType; }
+    bool                                         isAssignableType(const vespalib::eval::ValueType& tensorType) const;
+    static bool                                  isAssignableType(const vespalib::eval::ValueType& fieldTensorType,
+                                                                  const vespalib::eval::ValueType& tensorType);
 };
 
-}
+} // namespace document

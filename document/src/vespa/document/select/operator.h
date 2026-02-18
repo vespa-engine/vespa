@@ -13,6 +13,7 @@
 #pragma once
 
 #include "value.h"
+
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace document::select {
@@ -21,23 +22,20 @@ class Operator : public Printable {
 private:
     using OperatorMap = vespalib::hash_map<std::string, const Operator*>;
     static OperatorMap _operators;
-    std::string _name;
+    std::string        _name;
 
 public:
     Operator(std::string_view name);
     virtual ~Operator() = default;
 
     virtual ResultList compare(const Value&, const Value&) const = 0;
-    virtual ResultList trace(const Value&, const Value&,
-                         std::ostream& trace) const = 0;
+    virtual ResultList trace(const Value&, const Value&, std::ostream& trace) const = 0;
     const std::string& getName() const { return _name; }
 
     static const Operator& get(std::string_view name);
 
-    bool operator==(const Operator& op) const
-        { return (_name == op._name); }
-    bool operator!=(const Operator& op) const
-        { return (_name != op._name); }
+    bool operator==(const Operator& op) const { return (_name == op._name); }
+    bool operator!=(const Operator& op) const { return (_name != op._name); }
 
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
 };
@@ -47,8 +45,7 @@ private:
     ResultList (Value::*_comparator)(const Value&) const;
 
 public:
-    FunctionOperator(std::string_view name,
-                ResultList (Value::*comparator)(const Value&) const)
+    FunctionOperator(std::string_view name, ResultList (Value::*comparator)(const Value&) const)
         : Operator(name), _comparator(comparator) {}
 
     ResultList compare(const Value& a, const Value& b) const override;
@@ -69,7 +66,7 @@ public:
     // Delegates to Value::regexCompare
     ResultList compare(const Value& a, const Value& b) const override;
     ResultList trace(const Value&, const Value&, std::ostream& trace) const override;
-    ResultList match(const std::string & val, std::string_view expr) const;
+    ResultList match(const std::string& val, std::string_view expr) const;
 
     static const RegexOperator REGEX;
 
@@ -109,9 +106,10 @@ public:
      *     simplification, i.e. '***foo***' -> /foo/ and '***' -> //
      */
     static std::string convertToRegex(std::string_view globpattern);
-    static bool containsVariables(std::string_view expression);
+    static bool        containsVariables(std::string_view expression);
 
     static const GlobOperator GLOB;
+
 private:
     friend class Value;
     friend class ArrayValue;
@@ -120,4 +118,4 @@ private:
     ResultList traceImpl(const Value&, const Value&, std::ostream& trace) const;
 };
 
-}
+} // namespace document::select

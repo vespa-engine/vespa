@@ -3,80 +3,67 @@
 #pragma once
 
 #include "valuenode.h"
+
 #include <vespa/document/base/fieldpath.h>
 
 namespace document {
-    class BucketIdFactory;
-    class DocumentId;
-    class BucketId;
-    class DocumentType;
-}
+class BucketIdFactory;
+class DocumentId;
+class BucketId;
+class DocumentType;
+} // namespace document
 
 namespace document::select {
 
-class InvalidValueNode : public ValueNode
-{
+class InvalidValueNode : public ValueNode {
     std::string _name;
+
 public:
     InvalidValueNode(std::string_view name);
 
-    std::unique_ptr<Value> getValue(const Context&) const override {
-        return std::make_unique<InvalidValue>();
-    }
+    std::unique_ptr<Value> getValue(const Context&) const override { return std::make_unique<InvalidValue>(); }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void visit(Visitor& visitor) const override;
 
-    ValueNode::UP clone() const override {
-        return wrapParens(std::make_unique<InvalidValueNode>(_name));
-    }
+    ValueNode::UP clone() const override { return wrapParens(std::make_unique<InvalidValueNode>(_name)); }
 };
 
-class NullValueNode : public ValueNode
-{
+class NullValueNode : public ValueNode {
 public:
     NullValueNode();
 
-    std::unique_ptr<Value> getValue(const Context&) const override {
-        return std::make_unique<NullValue>();
-    }
+    std::unique_ptr<Value> getValue(const Context&) const override { return std::make_unique<NullValue>(); }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     void visit(Visitor& visitor) const override;
 
-    ValueNode::UP clone() const override {
-        return wrapParens(std::make_unique<NullValueNode>());
-    }
+    ValueNode::UP clone() const override { return wrapParens(std::make_unique<NullValueNode>()); }
 };
 
-class StringValueNode : public ValueNode
-{
+class StringValueNode : public ValueNode {
     std::string _value;
+
 public:
     explicit StringValueNode(std::string_view val);
 
     const std::string& getValue() const { return _value; }
 
-    std::unique_ptr<Value> getValue(const Context&) const override {
-        return std::make_unique<StringValue>(_value);
-    }
+    std::unique_ptr<Value> getValue(const Context&) const override { return std::make_unique<StringValue>(_value); }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void visit(Visitor& visitor) const override;
 
-    ValueNode::UP clone() const override {
-        return wrapParens(std::make_unique<StringValueNode>(_value));
-    }
+    ValueNode::UP clone() const override { return wrapParens(std::make_unique<StringValueNode>(_value)); }
 };
 
-class IntegerValueNode : public ValueNode
-{
+class IntegerValueNode : public ValueNode {
     int64_t _value;
-    bool _isBucketValue;
+    bool    _isBucketValue;
+
 public:
-    IntegerValueNode(int64_t val, bool isBucketValue)
-        : _value(val), _isBucketValue(isBucketValue) {}
+    IntegerValueNode(int64_t val, bool isBucketValue) : _value(val), _isBucketValue(isBucketValue) {}
 
     int64_t getValue() const { return _value; }
 
@@ -98,12 +85,8 @@ class BoolValueNode : public IntegerValueNode {
 public:
     explicit BoolValueNode(bool value) : IntegerValueNode(value, false) {}
 
-    [[nodiscard]] bool bool_value() const noexcept {
-        return bool(getValue());
-    }
-    [[nodiscard]] const char* bool_value_str() const noexcept {
-        return bool_value() ? "true" : "false";
-    }
+    [[nodiscard]] bool        bool_value() const noexcept { return bool(getValue()); }
+    [[nodiscard]] const char* bool_value_str() const noexcept { return bool_value() ? "true" : "false"; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void visit(Visitor& visitor) const override;
@@ -113,8 +96,7 @@ public:
     }
 };
 
-class CurrentTimeValueNode : public ValueNode
-{
+class CurrentTimeValueNode : public ValueNode {
 public:
     int64_t getValue() const;
 
@@ -125,61 +107,52 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void visit(Visitor& visitor) const override;
 
-    ValueNode::UP clone() const override {
-        return wrapParens(std::make_unique<CurrentTimeValueNode>());
-    }
+    ValueNode::UP clone() const override { return wrapParens(std::make_unique<CurrentTimeValueNode>()); }
 };
 
-class VariableValueNode : public ValueNode
-{
+class VariableValueNode : public ValueNode {
     std::string _value;
+
 public:
-    VariableValueNode(const std::string & variableName) : _value(variableName) {}
+    VariableValueNode(const std::string& variableName) : _value(variableName) {}
 
     const std::string& getVariableName() const { return _value; }
 
     std::unique_ptr<Value> getValue(const Context& context) const override;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void visit(Visitor& visitor) const override;
+    void                   print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void                   visit(Visitor& visitor) const override;
 
-    ValueNode::UP clone() const override {
-        return wrapParens(std::make_unique<VariableValueNode>(_value));
-    }
+    ValueNode::UP clone() const override { return wrapParens(std::make_unique<VariableValueNode>(_value)); }
 };
 
-class FloatValueNode : public ValueNode
-{
+class FloatValueNode : public ValueNode {
     double _value;
+
 public:
     explicit FloatValueNode(double val) : _value(val) {}
 
     double getValue() const { return _value; }
 
-    std::unique_ptr<Value> getValue(const Context&) const override {
-        return std::make_unique<FloatValue>(_value);
-    }
+    std::unique_ptr<Value> getValue(const Context&) const override { return std::make_unique<FloatValue>(_value); }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void visit(Visitor& visitor) const override;
 
-    ValueNode::UP clone() const override {
-        return wrapParens(std::make_unique<FloatValueNode>(_value));
-    }
+    ValueNode::UP clone() const override { return wrapParens(std::make_unique<FloatValueNode>(_value)); }
 };
 
-class FieldValueNode : public ValueNode
-{
-    std::string _doctype;
-    std::string _fieldExpression;
-    std::string _fieldName;
+class FieldValueNode : public ValueNode {
+    std::string       _doctype;
+    std::string       _fieldExpression;
+    std::string       _fieldName;
     mutable FieldPath _fieldPath;
 
 public:
     FieldValueNode(const std::string& doctype, const std::string& fieldExpression);
-    FieldValueNode(const FieldValueNode &) = delete;
-    FieldValueNode & operator = (const FieldValueNode &) = delete;
-    FieldValueNode(FieldValueNode &&) = default;
-    FieldValueNode & operator = (FieldValueNode &&) = default;
+    FieldValueNode(const FieldValueNode&) = delete;
+    FieldValueNode& operator=(const FieldValueNode&) = delete;
+    FieldValueNode(FieldValueNode&&) = default;
+    FieldValueNode& operator=(FieldValueNode&&) = default;
     ~FieldValueNode() override;
 
     const std::string& getDocType() const { return _doctype; }
@@ -187,18 +160,17 @@ public:
     const std::string& getFieldName() const { return _fieldExpression; }
 
     std::unique_ptr<Value> getValue(const Context& context) const override;
-    std::unique_ptr<Value> traceValue(const Context &context, std::ostream& out) const override;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void visit(Visitor& visitor) const override;
+    std::unique_ptr<Value> traceValue(const Context& context, std::ostream& out) const override;
+    void                   print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void                   visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
         return wrapParens(std::make_unique<FieldValueNode>(_doctype, _fieldExpression));
     }
 
-    static std::string extractFieldName(const std::string & fieldExpression);
+    static std::string extractFieldName(const std::string& fieldExpression);
 
 private:
-
     void initFieldPath(const DocumentType&) const;
 };
 
@@ -208,62 +180,58 @@ class FunctionValueNode;
 // an AST tree returned to the caller.
 class FieldExprNode final : public ValueNode {
     std::unique_ptr<FieldExprNode> _left_expr;
-    std::string _right_expr;
+    std::string                    _right_expr;
+
 public:
     explicit FieldExprNode(const std::string& doctype) : _left_expr(), _right_expr(doctype) {}
     FieldExprNode(std::unique_ptr<FieldExprNode> left_expr, std::string_view right_expr)
-        : ValueNode(left_expr->max_depth() + 1),
-          _left_expr(std::move(left_expr)),
-          _right_expr(right_expr)
-    {}
-    FieldExprNode(const FieldExprNode &) = delete;
-    FieldExprNode & operator = (const FieldExprNode &) = delete;
-    FieldExprNode(FieldExprNode &&) = default;
-    FieldExprNode & operator = (FieldExprNode &&) = default;
+        : ValueNode(left_expr->max_depth() + 1), _left_expr(std::move(left_expr)), _right_expr(right_expr) {}
+    FieldExprNode(const FieldExprNode&) = delete;
+    FieldExprNode& operator=(const FieldExprNode&) = delete;
+    FieldExprNode(FieldExprNode&&) = default;
+    FieldExprNode& operator=(FieldExprNode&&) = default;
     ~FieldExprNode() override;
 
-    std::unique_ptr<FieldValueNode> convert_to_field_value() const;
+    std::unique_ptr<FieldValueNode>    convert_to_field_value() const;
     std::unique_ptr<FunctionValueNode> convert_to_function_call() const;
+
 private:
-    void build_mangled_expression(std::string& dest) const;
+    void               build_mangled_expression(std::string& dest) const;
     const std::string& resolve_doctype() const;
 
     // These are not used, can just return dummy values.
     std::unique_ptr<Value> getValue(const Context& context) const override {
-        (void) context;
+        (void)context;
         return std::unique_ptr<Value>();
     }
-    std::unique_ptr<Value> traceValue(const Context &context, std::ostream& out) const override {
-        (void) context;
-        (void) out;
+    std::unique_ptr<Value> traceValue(const Context& context, std::ostream& out) const override {
+        (void)context;
+        (void)out;
         return std::unique_ptr<Value>();
     }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override {
-        (void) out;
-        (void) verbose;
-        (void) indent;
+        (void)out;
+        (void)verbose;
+        (void)indent;
     }
-    void visit(Visitor& visitor) const override {
-        (void) visitor;
-    }
+    void visit(Visitor& visitor) const override { (void)visitor; }
 
     ValueNode::UP clone() const override {
         if (_left_expr) {
-            return wrapParens(std::make_unique<FieldExprNode>(std::unique_ptr<FieldExprNode>(
-                    static_cast<FieldExprNode*>(_left_expr->clone().release())), _right_expr));
+            return wrapParens(std::make_unique<FieldExprNode>(
+                std::unique_ptr<FieldExprNode>(static_cast<FieldExprNode*>(_left_expr->clone().release())),
+                _right_expr));
         } else {
             return wrapParens(std::make_unique<FieldExprNode>(_right_expr));
         }
     }
 };
 
-class IdValueNode : public ValueNode
-{
+class IdValueNode : public ValueNode {
 public:
     enum Type { SCHEME, NS, TYPE, USER, GROUP, GID, SPEC, BUCKET, ALL };
 
-    IdValueNode(const BucketIdFactory& bucketIdFactory,
-                std::string_view name, std::string_view type,
+    IdValueNode(const BucketIdFactory& bucketIdFactory, std::string_view name, std::string_view type,
                 int widthBits = -1, int divisionBits = -1);
 
     Type getType() const { return _type; }
@@ -272,7 +240,7 @@ public:
 
     std::unique_ptr<Value> getValue(const DocumentId& id) const;
 
-    std::unique_ptr<Value> traceValue(const Context& context, std::ostream &out) const override;
+    std::unique_ptr<Value> traceValue(const Context& context, std::ostream& out) const override;
 
     std::unique_ptr<Value> traceValue(const DocumentId& val, std::ostream& out) const;
 
@@ -281,7 +249,8 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(std::make_unique<IdValueNode>(_bucketIdFactory, _id, _typestring, _widthBits, _divisionBits));
+        return wrapParens(
+            std::make_unique<IdValueNode>(_bucketIdFactory, _id, _typestring, _widthBits, _divisionBits));
     }
 
     int getWidthBits() const { return _widthBits; }
@@ -289,28 +258,27 @@ public:
 
 private:
     const BucketIdFactory& _bucketIdFactory;
-    std::string _id;
-    std::string _typestring;
-    Type _type;
-    int _widthBits;
-    int _divisionBits;
+    std::string            _id;
+    std::string            _typestring;
+    Type                   _type;
+    int                    _widthBits;
+    int                    _divisionBits;
 };
 
-class FunctionValueNode : public ValueNode
-{
+class FunctionValueNode : public ValueNode {
 public:
     enum Function { LOWERCASE, HASH, ABS };
 
     FunctionValueNode(std::string_view name, std::unique_ptr<ValueNode> src);
 
-    Function getFunction() const { return _function; }
+    Function           getFunction() const { return _function; }
     const std::string& getFunctionName() const { return _funcname; }
 
     std::unique_ptr<Value> getValue(const Context& context) const override {
         return getValue(_source->getValue(context));
     }
 
-    std::unique_ptr<Value> traceValue(const Context &context, std::ostream& out) const override {
+    std::unique_ptr<Value> traceValue(const Context& context, std::ostream& out) const override {
         return traceValue(_source->getValue(context), out);
     }
 
@@ -324,34 +292,28 @@ public:
     const ValueNode& getChild() const { return *_source; }
 
 private:
-    Function _function;
-    std::string _funcname;
+    Function                   _function;
+    std::string                _funcname;
     std::unique_ptr<ValueNode> _source;
 
     virtual std::unique_ptr<Value> getValue(std::unique_ptr<Value> val) const;
-    virtual std::unique_ptr<Value> traceValue(std::unique_ptr<Value> val,
-                                            std::ostream& out) const;
+    virtual std::unique_ptr<Value> traceValue(std::unique_ptr<Value> val, std::ostream& out) const;
 };
 
-class ArithmeticValueNode : public ValueNode
-{
+class ArithmeticValueNode : public ValueNode {
 public:
     enum Operator { ADD, SUB, MUL, DIV, MOD };
 
-    ArithmeticValueNode(std::unique_ptr<ValueNode> left,
-                        std::string_view op,
-                        std::unique_ptr<ValueNode> right);
+    ArithmeticValueNode(std::unique_ptr<ValueNode> left, std::string_view op, std::unique_ptr<ValueNode> right);
 
-    Operator getOperator() const { return _operator; }
+    Operator    getOperator() const { return _operator; }
     const char* getOperatorName() const;
 
-    std::unique_ptr<Value>
-    getValue(const Context& context) const override {
+    std::unique_ptr<Value> getValue(const Context& context) const override {
         return getValue(_left->getValue(context), _right->getValue(context));
     }
 
-    std::unique_ptr<Value>
-    traceValue(const Context &context, std::ostream& out) const override {
+    std::unique_ptr<Value> traceValue(const Context& context, std::ostream& out) const override {
         return traceValue(_left->getValue(context), _right->getValue(context), out);
     }
 
@@ -366,15 +328,13 @@ public:
     const ValueNode& getRight() const { return *_right; }
 
 private:
-    Operator _operator;
+    Operator                   _operator;
     std::unique_ptr<ValueNode> _left;
     std::unique_ptr<ValueNode> _right;
 
-    virtual std::unique_ptr<Value> getValue(std::unique_ptr<Value> lval,
-                                          std::unique_ptr<Value> rval) const;
-    virtual std::unique_ptr<Value> traceValue(std::unique_ptr<Value> lval,
-                                            std::unique_ptr<Value> rval,
-                                            std::ostream&) const;
+    virtual std::unique_ptr<Value> getValue(std::unique_ptr<Value> lval, std::unique_ptr<Value> rval) const;
+    virtual std::unique_ptr<Value> traceValue(std::unique_ptr<Value> lval, std::unique_ptr<Value> rval,
+                                              std::ostream&) const;
 };
 
-}
+} // namespace document::select

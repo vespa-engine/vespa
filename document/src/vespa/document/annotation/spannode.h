@@ -13,11 +13,10 @@ struct SpanNode {
 
     virtual ~SpanNode() = default;
 
-    std::string toString() const;
-    virtual void accept(SpanTreeVisitor &visitor) const = 0;
+    std::string  toString() const;
+    virtual void accept(SpanTreeVisitor& visitor) const = 0;
 };
 
-std::ostream & operator << (std::ostream & os, const SpanNode & node);
+std::ostream& operator<<(std::ostream& os, const SpanNode& node);
 
-}  // namespace document
-
+} // namespace document

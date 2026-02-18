@@ -5,17 +5,21 @@
 #include <functional>
 #include <memory>
 
-namespace vespalib::eval { struct Value; struct ValueBuilderFactory; }
+namespace vespalib::eval {
+struct Value;
+struct ValueBuilderFactory;
+} // namespace vespalib::eval
 
 namespace document {
 
 struct TensorUpdate {
 protected:
     ~TensorUpdate() = default;
+
 public:
     using Value = vespalib::eval::Value;
     using ValueBuilderFactory = vespalib::eval::ValueBuilderFactory;
-    virtual std::unique_ptr<Value> apply_to(const Value &tensor, const ValueBuilderFactory &factory) const = 0;
+    virtual std::unique_ptr<Value> apply_to(const Value& tensor, const ValueBuilderFactory& factory) const = 0;
 };
 
-}
+} // namespace document

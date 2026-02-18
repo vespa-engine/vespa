@@ -8,6 +8,7 @@
 #pragma once
 
 #include "numericfieldvalue.h"
+
 #include <vespa/document/datatype/datatype.h>
 
 namespace document {
@@ -19,16 +20,14 @@ public:
     LongFieldValue(Number value = 0) : NumericFieldValue<Number>(Type::LONG, value) {}
     ~LongFieldValue() override;
 
-    void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
-    void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
+    void accept(FieldValueVisitor& visitor) override { visitor.visit(*this); }
+    void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
 
-    const DataType *getDataType() const override { return DataType::LONG; }
+    const DataType* getDataType() const override { return DataType::LONG; }
     LongFieldValue* clone() const override { return new LongFieldValue(*this); }
 
     using NumericFieldValue<Number>::operator=;
-    static std::unique_ptr<LongFieldValue> make(Number value=0) { return std::make_unique<LongFieldValue>(value); }
-
+    static std::unique_ptr<LongFieldValue> make(Number value = 0) { return std::make_unique<LongFieldValue>(value); }
 };
 
-} // document
-
+} // namespace document

@@ -3,7 +3,9 @@
 #include "tensor_update.h"
 #include "valueupdate.h"
 
-namespace vespalib::eval { struct Value; }
+namespace vespalib::eval {
+struct Value;
+}
 
 namespace document {
 
@@ -19,7 +21,7 @@ class TensorFieldValue;
 class TensorRemoveUpdate final : public ValueUpdate, public TensorUpdate {
 private:
     std::unique_ptr<const TensorDataType> _tensorType;
-    std::unique_ptr<TensorFieldValue> _tensor;
+    std::unique_ptr<TensorFieldValue>     _tensor;
 
     friend ValueUpdate;
     TensorRemoveUpdate();
@@ -27,19 +29,18 @@ private:
 
 public:
     explicit TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor);
-    TensorRemoveUpdate(const TensorRemoveUpdate &rhs) = delete;
-    TensorRemoveUpdate &operator=(const TensorRemoveUpdate &rhs) = delete;
+    TensorRemoveUpdate(const TensorRemoveUpdate& rhs) = delete;
+    TensorRemoveUpdate& operator=(const TensorRemoveUpdate& rhs) = delete;
     ~TensorRemoveUpdate() override;
-    const TensorFieldValue &getTensor() const { return *_tensor; }
-    std::unique_ptr<vespalib::eval::Value> applyTo(const vespalib::eval::Value &tensor) const;
-    std::unique_ptr<Value> apply_to(const Value &tensor,
-                                    const ValueBuilderFactory &factory) const override;
-    bool operator==(const ValueUpdate &other) const override;
-    void checkCompatibility(const Field &field) const override;
-    bool applyTo(FieldValue &value) const override;
-    void printXml(XmlOutputStream &xos) const override;
-    void print(std::ostream &out, bool verbose, const std::string &indent) const override;
-    void deserialize(const DocumentTypeRepo &repo, const DataType &type, nbostream &stream) override;
+    const TensorFieldValue&                getTensor() const { return *_tensor; }
+    std::unique_ptr<vespalib::eval::Value> applyTo(const vespalib::eval::Value& tensor) const;
+    std::unique_ptr<Value> apply_to(const Value& tensor, const ValueBuilderFactory& factory) const override;
+    bool                   operator==(const ValueUpdate& other) const override;
+    void                   checkCompatibility(const Field& field) const override;
+    bool                   applyTo(FieldValue& value) const override;
+    void                   printXml(XmlOutputStream& xos) const override;
+    void                   print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream) override;
 };
 
-}
+} // namespace document

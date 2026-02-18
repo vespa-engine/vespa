@@ -1,47 +1,48 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "newconfigbuilder.h"
+
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace document::new_config_builder {
 
-using BDocType        = ::document::config::DocumenttypesConfigBuilder::Doctype;
-using BPrimitiveT     = ::document::config::DocumenttypesConfigBuilder::Doctype::Primitivetype;
-using BArrayT         = ::document::config::DocumenttypesConfigBuilder::Doctype::Arraytype;
-using BMapT           = ::document::config::DocumenttypesConfigBuilder::Doctype::Maptype;
-using BWsetT          = ::document::config::DocumenttypesConfigBuilder::Doctype::Wsettype;
-using BTensorT        = ::document::config::DocumenttypesConfigBuilder::Doctype::Tensortype;
-using BAnnotationT    = ::document::config::DocumenttypesConfigBuilder::Doctype::Annotationtype;
-using BAnnRefT        = ::document::config::DocumenttypesConfigBuilder::Doctype::Annotationref;
-using BStructT        = ::document::config::DocumenttypesConfigBuilder::Doctype::Structtype;
-using BStructField    = ::document::config::DocumenttypesConfigBuilder::Doctype::Structtype::Field;
+using BDocType = ::document::config::DocumenttypesConfigBuilder::Doctype;
+using BPrimitiveT = ::document::config::DocumenttypesConfigBuilder::Doctype::Primitivetype;
+using BArrayT = ::document::config::DocumenttypesConfigBuilder::Doctype::Arraytype;
+using BMapT = ::document::config::DocumenttypesConfigBuilder::Doctype::Maptype;
+using BWsetT = ::document::config::DocumenttypesConfigBuilder::Doctype::Wsettype;
+using BTensorT = ::document::config::DocumenttypesConfigBuilder::Doctype::Tensortype;
+using BAnnotationT = ::document::config::DocumenttypesConfigBuilder::Doctype::Annotationtype;
+using BAnnRefT = ::document::config::DocumenttypesConfigBuilder::Doctype::Annotationref;
+using BStructT = ::document::config::DocumenttypesConfigBuilder::Doctype::Structtype;
+using BStructField = ::document::config::DocumenttypesConfigBuilder::Doctype::Structtype::Field;
 using BStructInherits = ::document::config::DocumenttypesConfigBuilder::Doctype::Structtype::Inherits;
-using BDocInherit     = ::document::config::DocumenttypesConfigBuilder::Doctype::Inherits;
+using BDocInherit = ::document::config::DocumenttypesConfigBuilder::Doctype::Inherits;
 using BDocImportField = ::document::config::DocumenttypesConfigBuilder::Doctype::Importedfield;
 
 namespace {
 
 int32_t hashId(const std::string& name) {
     StructDataType tmp(name);
-    int32_t id = tmp.getId();
+    int32_t        id = tmp.getId();
     return id;
 }
 
 int32_t createFieldId(const std::string& name, int32_t type) {
     StructDataType dummy("dummy", type);
-    Field f(name, dummy);
-    int32_t field_id = f.getId();
+    Field          f(name, dummy);
+    int32_t        field_id = f.getId();
     return field_id;
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 // ==================== NewStruct ====================
 
@@ -51,15 +52,11 @@ NewStruct::NewStruct(NewConfigBuilder& builder, std::string name, int32_t doctyp
       _internalid(hashId(_name)),
       _idx(-1),
       _doctype_idx(doctype_idx),
-      _registered(false)
-{
-}
+      _registered(false) {}
 
 NewStruct::~NewStruct() = default;
 
-int32_t NewStruct::hashId(const std::string& name) const {
-    return ::document::new_config_builder::hashId(name);
-}
+int32_t NewStruct::hashId(const std::string& name) const { return ::document::new_config_builder::hashId(name); }
 
 NewStruct& NewStruct::addField(const std::string& name, TypeRef type) {
     assert(!_registered && "Cannot modify struct after it's been registered");
@@ -97,12 +94,7 @@ TypeRef NewStruct::ref() {
 // ==================== NewArray ====================
 
 NewArray::NewArray(NewConfigBuilder& builder, TypeRef element_type, int32_t doctype_idx)
-    : _builder(builder),
-      _element_type(element_type),
-      _idx(-1),
-      _doctype_idx(doctype_idx),
-      _registered(false)
-{
+    : _builder(builder), _element_type(element_type), _idx(-1), _doctype_idx(doctype_idx), _registered(false) {
     // Auto-register immediately
     _builder.registerArray(*this, _doctype_idx);
 }
@@ -121,9 +113,7 @@ NewWset::NewWset(NewConfigBuilder& builder, TypeRef element_type, int32_t doctyp
       _doctype_idx(doctype_idx),
       _registered(false),
       _removeifzero(false),
-      _createifnonexistent(false)
-{
-}
+      _createifnonexistent(false) {}
 
 NewWset& NewWset::removeIfZero() {
     assert(!_registered && "Cannot modify wset after it's been registered");
@@ -154,8 +144,7 @@ NewMap::NewMap(NewConfigBuilder& builder, TypeRef key_type, TypeRef value_type, 
       _value_type(value_type),
       _idx(-1),
       _doctype_idx(doctype_idx),
-      _registered(false)
-{
+      _registered(false) {
     // Auto-register immediately
     _builder.registerMap(*this, _doctype_idx);
 }
@@ -168,11 +157,7 @@ TypeRef NewMap::ref() {
 // ==================== NewAnnotationRef ====================
 
 NewAnnotationRef::NewAnnotationRef(int32_t annotation_idx) noexcept
-    : _annotation_idx(annotation_idx),
-      _idx(-1),
-      _registered(false)
-{
-}
+    : _annotation_idx(annotation_idx), _idx(-1), _registered(false) {}
 
 TypeRef NewAnnotationRef::ref() {
     if (!_registered) {
@@ -184,15 +169,9 @@ TypeRef NewAnnotationRef::ref() {
 // ==================== NewDocTypeRep ====================
 
 NewDocTypeRep::NewDocTypeRep(NewConfigBuilder& builder, int32_t idx, std::string name)
-    : _builder(builder),
-      _idx(idx),
-      _name(std::move(name))
-{
-}
+    : _builder(builder), _idx(idx), _name(std::move(name)) {}
 
-int32_t NewDocTypeRep::hashId(const std::string& name) const {
-    return ::document::new_config_builder::hashId(name);
-}
+int32_t NewDocTypeRep::hashId(const std::string& name) const { return ::document::new_config_builder::hashId(name); }
 
 NewDocTypeRep& NewDocTypeRep::addField(const std::string& name, TypeRef type) {
     // Find the doctype and contentstruct
@@ -382,17 +361,11 @@ NewDocTypeRep& NewDocTypeRep::fieldSet(const std::string& name, const std::vecto
     return *this;
 }
 
-NewStruct NewDocTypeRep::createStruct(const std::string& name) {
-    return NewStruct(_builder, name, _idx);
-}
+NewStruct NewDocTypeRep::createStruct(const std::string& name) { return NewStruct(_builder, name, _idx); }
 
-NewArray NewDocTypeRep::createArray(TypeRef element_type) {
-    return NewArray(_builder, element_type, _idx);
-}
+NewArray NewDocTypeRep::createArray(TypeRef element_type) { return NewArray(_builder, element_type, _idx); }
 
-NewWset NewDocTypeRep::createWset(TypeRef element_type) {
-    return NewWset(_builder, element_type, _idx);
-}
+NewWset NewDocTypeRep::createWset(TypeRef element_type) { return NewWset(_builder, element_type, _idx); }
 
 NewMap NewDocTypeRep::createMap(TypeRef key_type, TypeRef value_type) {
     return NewMap(_builder, key_type, value_type, _idx);
@@ -420,11 +393,7 @@ TypeRef NewDocTypeRep::registerMap(NewMap&& m) {
 
 // ==================== NewConfigBuilder ====================
 
-NewConfigBuilder::NewConfigBuilder()
-    : _next_idx(10000),
-      _base_document_idx(-1),
-      _position_type_idx(-1)
-{
+NewConfigBuilder::NewConfigBuilder() : _next_idx(10000), _base_document_idx(-1), _position_type_idx(-1) {
     setupBaseDocument();
 }
 
@@ -471,12 +440,12 @@ void NewConfigBuilder::setupBaseDocument() {
 
     // Add built-in position struct (added at end to not disrupt existing idx values)
     const auto& position_type = PositionDataType::getInstance();
-    auto& position_struct = root.structtype.emplace_back();
+    auto&       position_struct = root.structtype.emplace_back();
     position_struct.idx = _next_idx++;
     position_struct.name = "position";
     position_struct.internalid = position_type.getId();
     _idx_to_internalid_map[position_struct.idx] = position_struct.internalid;
-    _position_type_idx = position_struct.idx;  // Save for positionType() method
+    _position_type_idx = position_struct.idx; // Save for positionType() method
 
     // Add x field to position
     auto& x_field = position_struct.field.emplace_back();
@@ -506,7 +475,7 @@ void NewConfigBuilder::addPrimitiveToBase(const std::string& name, int32_t type_
     pt.name = name;
     _config.doctype[0].primitivetype.push_back(pt);
     _primitive_idx_map[type_id] = pt.idx;
-    _idx_to_internalid_map[pt.idx] = type_id;  // Primitives: internalid = DataType::T_* value
+    _idx_to_internalid_map[pt.idx] = type_id; // Primitives: internalid = DataType::T_* value
 }
 
 const DocumenttypesConfig& NewConfigBuilder::config() {
@@ -517,9 +486,7 @@ const DocumenttypesConfig& NewConfigBuilder::config() {
     return _config;
 }
 
-NewDocTypeRep& NewConfigBuilder::document(const std::string& name) {
-    return document(name, hashId(name));
-}
+NewDocTypeRep& NewConfigBuilder::document(const std::string& name) { return document(name, hashId(name)); }
 
 NewDocTypeRep& NewConfigBuilder::document(const std::string& name, int32_t internalid) {
     // Check if document type already exists
@@ -531,9 +498,9 @@ NewDocTypeRep& NewConfigBuilder::document(const std::string& name, int32_t inter
     // Check for ID collision with existing documents
     for (const auto& existing : _config.doctype) {
         if (existing.internalid == internalid && existing.name != name) {
-            throw vespalib::IllegalArgumentException(
-                vespalib::make_string("Document type ID collision: ID %d is already used by document type '%s', cannot assign to '%s'",
-                                     internalid, existing.name.c_str(), name.c_str()));
+            throw vespalib::IllegalArgumentException(vespalib::make_string(
+                "Document type ID collision: ID %d is already used by document type '%s', cannot assign to '%s'",
+                internalid, existing.name.c_str(), name.c_str()));
         }
     }
 
@@ -580,7 +547,7 @@ TypeRef NewConfigBuilder::positionType() {
 }
 
 int32_t NewConfigBuilder::getInternalId(TypeRef type_ref) const {
-    auto it = _idx_to_internalid_map.find(type_ref.idx);
+    auto    it = _idx_to_internalid_map.find(type_ref.idx);
     int32_t iid = (it != _idx_to_internalid_map.end()) ? it->second : 0;
     return iid;
 }
@@ -643,7 +610,7 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
 
     fprintf(stderr, "ERROR getTypeName: idx=%d NOT FOUND!\n", type_ref.idx);
     assert(false && "Type not found in getTypeName");
-    return "";  // Not found
+    return ""; // Not found
 }
 
 void NewConfigBuilder::registerStructField(TypeRef struct_idx, const std::string& fieldname, TypeRef field_idx) {
@@ -656,7 +623,8 @@ void NewConfigBuilder::registerStructField(TypeRef struct_idx, const std::string
                 break;
             }
         }
-        if (target_struct) break;
+        if (target_struct)
+            break;
     }
 
     assert(target_struct && "Struct not found");
@@ -701,8 +669,7 @@ void NewConfigBuilder::registerStruct(NewStruct& s, int32_t doctype_idx) {
     // Check if we already have a struct with this name, fail on collisions
     for (const auto& st : doc->structtype) {
         if (st.name == s._name) {
-            fprintf(stderr, "ERROR: Struct '%s' already exists in doctype idx=%d\n",
-                    s._name.c_str(), doctype_idx);
+            fprintf(stderr, "ERROR: Struct '%s' already exists in doctype idx=%d\n", s._name.c_str(), doctype_idx);
             assert(false && "Struct name collision detected");
         }
     }
@@ -778,9 +745,9 @@ void NewConfigBuilder::registerArray(NewArray& a, int32_t doctype_idx) {
     arr.elementtype = a._element_type.idx;
 
     // Compute internalid as hash based on element type's NAME
-    std::string element_type_name = getTypeName(a._element_type);
+    std::string    element_type_name = getTypeName(a._element_type);
     StructDataType tmp_struct(element_type_name);
-    ArrayDataType tmp_array(tmp_struct);
+    ArrayDataType  tmp_array(tmp_struct);
     arr.internalid = tmp_array.getId();
 
     _idx_to_internalid_map[a._idx] = arr.internalid;
@@ -799,9 +766,9 @@ void NewConfigBuilder::registerWset(NewWset& w, int32_t doctype_idx) {
 
     // Check if we already have a wset with this elementtype, same createifnonexistent and same removeifzero
     for (const auto& wset : doc->wsettype) {
-        if (wset.elementtype == w._element_type.idx &&
-            wset.createifnonexistent == w._createifnonexistent &&
-            wset.removeifzero == w._removeifzero) {
+        if (wset.elementtype == w._element_type.idx && wset.createifnonexistent == w._createifnonexistent &&
+            wset.removeifzero == w._removeifzero)
+        {
             // Reuse existing wset type
             w._idx = wset.idx;
             w._registered = true;
@@ -819,8 +786,8 @@ void NewConfigBuilder::registerWset(NewWset& w, int32_t doctype_idx) {
     wset.elementtype = w._element_type.idx;
 
     // Compute internalid as hash based on element type's NAME
-    std::string element_type_name = getTypeName(w._element_type);
-    StructDataType tmp_struct(element_type_name);
+    std::string         element_type_name = getTypeName(w._element_type);
+    StructDataType      tmp_struct(element_type_name);
     WeightedSetDataType tmp_wset(tmp_struct, w._createifnonexistent, w._removeifzero);
     wset.internalid = tmp_wset.getId();
 
@@ -861,11 +828,11 @@ void NewConfigBuilder::registerMap(NewMap& m, int32_t doctype_idx) {
     map.valuetype = m._value_type.idx;
 
     // Compute internalid as hash based on key and value types' NAMES
-    std::string key_type_name = getTypeName(m._key_type);
-    std::string value_type_name = getTypeName(m._value_type);
+    std::string    key_type_name = getTypeName(m._key_type);
+    std::string    value_type_name = getTypeName(m._value_type);
     StructDataType tmp_key_struct(key_type_name);
     StructDataType tmp_value_struct(value_type_name);
-    MapDataType tmp_map(tmp_key_struct, tmp_value_struct);
+    MapDataType    tmp_map(tmp_key_struct, tmp_value_struct);
     map.internalid = tmp_map.getId();
 
     _idx_to_internalid_map[m._idx] = map.internalid;
@@ -967,4 +934,4 @@ void NewConfigBuilder::finalizeDocType(NewDocTypeRep& doc) {
     }
 }
 
-}  // namespace document::new_config_builder
+} // namespace document::new_config_builder

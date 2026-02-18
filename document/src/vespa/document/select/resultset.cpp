@@ -10,11 +10,7 @@ const ResultSet::PreCalculated ResultSet::_preCalc(ResultSet::illegalMask());
  * Precalculate possible outcomes of boolean operations, given possible
  * inputs.
  */
-ResultSet::PreCalculated::PreCalculated(uint32_t range)
-    : _ands(range * range),
-      _ors(range * range),
-      _nots(range)
-{
+ResultSet::PreCalculated::PreCalculated(uint32_t range) : _ands(range * range), _ors(range * range), _nots(range) {
     uint32_t erange = Result::enumRange;
     for (ResultSet lset; lset.pcvalid(); lset.pcnext()) {
         for (ResultSet rset; rset.pcvalid(); rset.pcnext()) {
@@ -23,11 +19,11 @@ ResultSet::PreCalculated::PreCalculated(uint32_t range)
             for (uint32_t lenum = 0; lenum < erange; ++lenum) {
                 if (!lset.hasEnum(lenum))
                     continue;
-                const Result &lhs(Result::fromEnum(lenum));
+                const Result& lhs(Result::fromEnum(lenum));
                 for (uint32_t renum = 0; renum < erange; ++renum) {
                     if (!rset.hasEnum(renum))
                         continue;
-                    const Result &rhs(Result::fromEnum(renum));
+                    const Result& rhs(Result::fromEnum(renum));
                     myand.add(lhs && rhs);
                     myor.add(lhs || rhs);
                 }
@@ -39,7 +35,7 @@ ResultSet::PreCalculated::PreCalculated(uint32_t range)
         for (uint32_t lenum = 0; lenum < erange; ++lenum) {
             if (!lset.hasEnum(lenum))
                 continue;
-            const Result &lhs(Result::fromEnum(lenum));
+            const Result& lhs(Result::fromEnum(lenum));
             mynot.add(!lhs);
         }
         _nots[lset._val] = mynot;
@@ -48,4 +44,4 @@ ResultSet::PreCalculated::PreCalculated(uint32_t range)
 
 ResultSet::PreCalculated::~PreCalculated() = default;
 
-}
+} // namespace document::select

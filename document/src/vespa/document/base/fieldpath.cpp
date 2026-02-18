@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldpath.h"
+
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/vespalib/util/exceptions.h>
+
 #include <cctype>
 
 using vespalib::IllegalArgumentException;
@@ -22,10 +24,9 @@ FieldPathEntry::FieldPathEntry()
       _lookupIndex(0),
       _lookupKey(),
       _variableName(),
-      _fillInVal()
-{ }
+      _fillInVal() {}
 
-FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex)
+FieldPathEntry::FieldPathEntry(const DataType& dataType, uint32_t arrayIndex)
     : _type(ARRAY_INDEX),
       _name(""),
       _field(),
@@ -33,12 +34,11 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex)
       _lookupIndex(arrayIndex),
       _lookupKey(),
       _variableName(),
-      _fillInVal()
-{
+      _fillInVal() {
     setFillValue(*_dataType);
 }
 
-FieldPathEntry::FieldPathEntry(const Field &fieldRef)
+FieldPathEntry::FieldPathEntry(const Field& fieldRef)
     : _type(STRUCT_FIELD),
       _name(fieldRef.getName()),
       _field(fieldRef),
@@ -46,10 +46,9 @@ FieldPathEntry::FieldPathEntry(const Field &fieldRef)
       _lookupIndex(0),
       _lookupKey(),
       _variableName(),
-      _fillInVal(fieldRef.createValue())
-{ }
+      _fillInVal(fieldRef.createValue()) {}
 
-FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillType, FieldValue::UP lookupKey)
+FieldPathEntry::FieldPathEntry(const DataType& dataType, const DataType& fillType, FieldValue::UP lookupKey)
     : _type(MAP_KEY),
       _name("value"),
       _field(),
@@ -57,12 +56,11 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillTy
       _lookupIndex(0),
       _lookupKey(std::move(lookupKey)),
       _variableName(),
-      _fillInVal()
-{
+      _fillInVal() {
     setFillValue(fillType);
 }
 
-FieldPathEntry::FieldPathEntry(const FieldPathEntry &rhs)
+FieldPathEntry::FieldPathEntry(const FieldPathEntry& rhs)
     : _type(rhs._type),
       _name(rhs._name),
       _field(rhs._field),
@@ -70,20 +68,17 @@ FieldPathEntry::FieldPathEntry(const FieldPathEntry &rhs)
       _lookupIndex(rhs._lookupIndex),
       _lookupKey(rhs._lookupKey ? rhs._lookupKey->clone() : nullptr),
       _variableName(rhs._variableName),
-      _fillInVal(rhs._fillInVal ? rhs._fillInVal->clone() : nullptr)
-{}
+      _fillInVal(rhs._fillInVal ? rhs._fillInVal->clone() : nullptr) {}
 
-void
-FieldPathEntry::setFillValue(const DataType & dataType)
-{
-    const DataType * dt = & dataType;
+void FieldPathEntry::setFillValue(const DataType& dataType) {
+    const DataType* dt = &dataType;
 
     while (true) {
-        const CollectionDataType *ct = dt->cast_collection();
+        const CollectionDataType* ct = dt->cast_collection();
         if (ct != nullptr) {
             dt = &ct->getNestedType();
         } else {
-            const MapDataType * mt = dt->cast_map();
+            const MapDataType* mt = dt->cast_map();
             if (mt != nullptr) {
                 dt = &mt->getValueType();
             } else {
@@ -96,87 +91,79 @@ FieldPathEntry::setFillValue(const DataType & dataType)
     }
 }
 
-FieldPathEntry::FieldPathEntry(const DataType&, const DataType& keyType,
-                               const DataType& valueType, bool keysOnly, bool valuesOnly) :
-    _type(keysOnly ? MAP_ALL_KEYS : MAP_ALL_VALUES),
-    _name(keysOnly ? "key" : "value"),
-    _field(),
-    _dataType(keysOnly ? &keyType : &valueType),
-    _lookupIndex(0),
-    _lookupKey(),
-    _variableName(),
-    _fillInVal()
-{
+FieldPathEntry::FieldPathEntry(const DataType&, const DataType& keyType, const DataType& valueType, bool keysOnly,
+                               bool valuesOnly)
+    : _type(keysOnly ? MAP_ALL_KEYS : MAP_ALL_VALUES),
+      _name(keysOnly ? "key" : "value"),
+      _field(),
+      _dataType(keysOnly ? &keyType : &valueType),
+      _lookupIndex(0),
+      _lookupKey(),
+      _variableName(),
+      _fillInVal() {
     (void)valuesOnly;
     setFillValue(*_dataType);
 }
 
-FieldPathEntry::FieldPathEntry(const DataType & dataType, std::string_view variableName) :
-    _type(VARIABLE),
-    _name(""),
-    _field(),
-    _dataType(&dataType),
-    _lookupIndex(0),
-    _lookupKey(),
-    _variableName(variableName),
-    _fillInVal()
-{
+FieldPathEntry::FieldPathEntry(const DataType& dataType, std::string_view variableName)
+    : _type(VARIABLE),
+      _name(""),
+      _field(),
+      _dataType(&dataType),
+      _lookupIndex(0),
+      _lookupKey(),
+      _variableName(variableName),
+      _fillInVal() {
     setFillValue(*_dataType);
 }
 
-const DataType &
-FieldPathEntry::getDataType() const
-{
-     return _field.valid() ? _field.getDataType() : *_dataType;
-}
+const DataType& FieldPathEntry::getDataType() const { return _field.valid() ? _field.getDataType() : *_dataType; }
 
-FieldValue::UP
-FieldPathEntry::stealFieldValueToSet() const
-{
-    return std::move(_fillInVal);
-}
+FieldValue::UP FieldPathEntry::stealFieldValueToSet() const { return std::move(_fillInVal); }
 
-std::string
-FieldPathEntry::parseKey(std::string_view & key)
-{
+std::string FieldPathEntry::parseKey(std::string_view& key) {
     std::string v;
-    const char *c = key.data();
-    const char *e = c + key.size();
-    for(;(c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++);
+    const char* c = key.data();
+    const char* e = c + key.size();
+    for (; (c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++)
+        ;
     if ((c < e) && (c[0] == '{')) {
-        for(c++;(c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++);
+        for (c++; (c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++)
+            ;
         if ((c < e) && (c[0] == '"')) {
-            const char * start = ++c;
+            const char* start = ++c;
             for (; (c < e) && (c[0] != '"'); c++) {
                 if (c[0] == '\\') {
-                    v.append(start, c-start);
+                    v.append(start, c - start);
                     start = ++c;
                 }
             }
-            v.append(start, c-start);
+            v.append(start, c - start);
             if ((c < e) && (c[0] == '"')) {
                 c++;
             } else {
-                throw IllegalArgumentException(make_string("Escaped key '%s' is incomplete. No matching '\"'",
-                                                           std::string(key).c_str()), VESPA_STRLOC);
+                throw IllegalArgumentException(
+                    make_string("Escaped key '%s' is incomplete. No matching '\"'", std::string(key).c_str()),
+                    VESPA_STRLOC);
             }
         } else {
-            const char * start = c;
+            const char* start = c;
             while ((c < e) && (c[0] != '}')) {
                 c++;
             }
-            v.append(start, c-start);
+            v.append(start, c - start);
         }
-        for(;(c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++);
+        for (; (c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++)
+            ;
         if ((c < e) && (c[0] == '}')) {
             key = std::string_view(c + 1, e - (c + 1));
         } else {
-            throw IllegalArgumentException(make_string("Key '%s' is incomplete. No matching '}'",
-                                                       std::string(key).c_str()), VESPA_STRLOC);
+            throw IllegalArgumentException(
+                make_string("Key '%s' is incomplete. No matching '}'", std::string(key).c_str()), VESPA_STRLOC);
         }
     } else {
-        throw IllegalArgumentException(make_string("key '%s' does not start with '{'",
-                                                   std::string(key).c_str()), VESPA_STRLOC);
+        throw IllegalArgumentException(make_string("key '%s' does not start with '{'", std::string(key).c_str()),
+                                       VESPA_STRLOC);
     }
     return v;
 }
@@ -184,16 +171,13 @@ FieldPathEntry::parseKey(std::string_view & key)
 FieldPath::FieldPath() = default;
 FieldPath::~FieldPath() = default;
 
-FieldPath::FieldPath(const FieldPath & rhs)
-    : _path()
-{
+FieldPath::FieldPath(const FieldPath& rhs) : _path() {
     _path.reserve(rhs.size());
-    for (const auto & e : rhs._path) {
+    for (const auto& e : rhs._path) {
         _path.emplace_back(std::make_unique<FieldPathEntry>(*e));
     }
 }
-FieldPath::iterator
-FieldPath::insert(iterator pos, std::unique_ptr<FieldPathEntry> entry) {
+FieldPath::iterator FieldPath::insert(iterator pos, std::unique_ptr<FieldPathEntry> entry) {
     return _path.insert(pos, std::move(entry));
 }
 void FieldPath::push_back(std::unique_ptr<FieldPathEntry> entry) { _path.emplace_back(entry.release()); }
@@ -201,4 +185,4 @@ void FieldPath::pop_back() { _path.pop_back(); }
 void FieldPath::clear() { _path.clear(); }
 void FieldPath::reserve(size_t sz) { _path.reserve(sz); }
 
-}
+} // namespace document

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "spanlist.h"
+
 #include "spantreevisitor.h"
 
 namespace document {
@@ -11,21 +12,12 @@ SpanList::~SpanList() {
     }
 }
 
-void SpanList::accept(SpanTreeVisitor &visitor) const {
-    visitor.visit(*this);
-}
+void SpanList::accept(SpanTreeVisitor& visitor) const { visitor.visit(*this); }
 
-SimpleSpanList::SimpleSpanList(size_t sz) :
-    _span_vector(sz)
-{
-}
+SimpleSpanList::SimpleSpanList(size_t sz) : _span_vector(sz) {}
 
-SimpleSpanList::~SimpleSpanList()
-{
-}
+SimpleSpanList::~SimpleSpanList() {}
 
-void SimpleSpanList::accept(SpanTreeVisitor &visitor) const {
-    visitor.visit(*this);
-}
+void SimpleSpanList::accept(SpanTreeVisitor& visitor) const { visitor.visit(*this); }
 
-}  // namespace document
+} // namespace document

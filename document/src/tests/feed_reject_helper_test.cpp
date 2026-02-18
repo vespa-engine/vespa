@@ -1,33 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/boolfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/shortfieldvalue.h>
+#include <vespa/document/fieldvalue/doublefieldvalue.h>
+#include <vespa/document/fieldvalue/floatfieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
-#include <vespa/document/fieldvalue/floatfieldvalue.h>
-#include <vespa/document/fieldvalue/doublefieldvalue.h>
-#include <vespa/document/fieldvalue/rawfieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
+#include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
+#include <vespa/document/fieldvalue/shortfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/update/removefieldpathupdate.h>
-#include <vespa/document/update/clearvalueupdate.h>
-#include <vespa/document/update/removevalueupdate.h>
-#include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/addvalueupdate.h>
-#include <vespa/document/update/mapvalueupdate.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/update/tensor_remove_update.h>
-#include <vespa/document/update/tensor_modify_update.h>
+#include <vespa/document/update/clearvalueupdate.h>
+#include <vespa/document/update/mapvalueupdate.h>
+#include <vespa/document/update/removefieldpathupdate.h>
+#include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/tensor_add_update.h>
+#include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/document/update/tensor_partial_update.h>
+#include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/document/util/feed_reject_helper.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <gmock/gmock.h>
 
+#include <gmock/gmock.h>
 
 namespace document {
 
@@ -58,9 +58,10 @@ TEST(DocumentRejectTest, requireThatClearRemoveTensorRemoveAndArtithmeticUpdates
 
 TEST(DocumentRejectTest, requireThatAddMapTensorModifyAndTensorAddUpdatesWillBeRejected) {
     EXPECT_TRUE(FeedRejectHelper::mustReject(AddValueUpdate(std::make_unique<IntFieldValue>())));
-    EXPECT_TRUE(FeedRejectHelper::mustReject(MapValueUpdate(std::make_unique<IntFieldValue>(), std::make_unique<ClearValueUpdate>())));
-    EXPECT_TRUE(FeedRejectHelper::mustReject(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
-                                                                std::make_unique<TensorFieldValue>())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(
+        MapValueUpdate(std::make_unique<IntFieldValue>(), std::make_unique<ClearValueUpdate>())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(
+        TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, std::make_unique<TensorFieldValue>())));
     EXPECT_TRUE(FeedRejectHelper::mustReject(TensorAddUpdate(std::make_unique<TensorFieldValue>())));
 }
 
@@ -69,4 +70,4 @@ TEST(DocumentRejectTest, requireThatAssignUpdatesWillBeRejectedBasedOnTheirConte
     EXPECT_TRUE(FeedRejectHelper::mustReject(AssignValueUpdate(StringFieldValue::make())));
 }
 
-}
+} // namespace document

@@ -10,22 +10,19 @@
 
 #pragma once
 
-#include "value.h"
 #include "parser_limits.h"
+#include "value.h"
 
 namespace document::select {
 
 class Context;
 class Visitor;
 
-class ValueNode : public Printable
-{
+class ValueNode : public Printable {
 public:
     using UP = std::unique_ptr<ValueNode>;
 
-    explicit ValueNode(uint32_t max_depth)
-        : _max_depth(max_depth), _parentheses(false)
-    {
+    explicit ValueNode(uint32_t max_depth) : _max_depth(max_depth), _parentheses(false) {
         throw_parse_error_if_max_depth_exceeded();
     }
     ValueNode() : _max_depth(1), _parentheses(false) {}
@@ -41,14 +38,15 @@ public:
     void clearParentheses() { _parentheses = false; }
     bool hadParentheses() const { return _parentheses; }
 
-    virtual std::unique_ptr<Value> getValue(const Context& context) const  = 0;
-    virtual void visit(Visitor&) const = 0;
-    virtual ValueNode::UP clone() const = 0;
-    virtual std::unique_ptr<Value> traceValue(const Context &context, std::ostream &out) const;
+    virtual std::unique_ptr<Value> getValue(const Context& context) const = 0;
+    virtual void                   visit(Visitor&) const = 0;
+    virtual ValueNode::UP          clone() const = 0;
+    virtual std::unique_ptr<Value> traceValue(const Context& context, std::ostream& out) const;
+
 private:
     uint32_t _max_depth;
-    bool _parentheses; // Set to true if parentheses was used around this part
-                       // Set such that we can recreate original query in print.
+    bool     _parentheses; // Set to true if parentheses was used around this part
+                           // Set such that we can recreate original query in print.
 
 protected:
     void throw_parse_error_if_max_depth_exceeded() const {
@@ -67,4 +65,4 @@ protected:
     std::unique_ptr<Value> defaultTrace(std::unique_ptr<Value> val, std::ostream& out) const;
 };
 
-}
+} // namespace document::select

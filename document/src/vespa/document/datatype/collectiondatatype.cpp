@@ -4,27 +4,19 @@
 
 namespace document {
 
-CollectionDataType::CollectionDataType(std::string_view name,
-                                       const DataType& nestedType) noexcept
-    : DataType(name),
-      _nestedType(&nestedType)
-{ }
+CollectionDataType::CollectionDataType(std::string_view name, const DataType& nestedType) noexcept
+    : DataType(name), _nestedType(&nestedType) {}
 
-CollectionDataType::CollectionDataType(std::string_view name,
-                                       const DataType& nestedType,
-                                       int32_t id) noexcept
-    : DataType(name, id),
-      _nestedType(&nestedType)
-{ }
+CollectionDataType::CollectionDataType(std::string_view name, const DataType& nestedType, int32_t id) noexcept
+    : DataType(name, id), _nestedType(&nestedType) {}
 
 CollectionDataType::~CollectionDataType() = default;
 
-bool
-CollectionDataType::equals(const DataType& other) const noexcept
-{
-    if (!DataType::equals(other)) return false;
-    const CollectionDataType * o = other.cast_collection();
+bool CollectionDataType::equals(const DataType& other) const noexcept {
+    if (!DataType::equals(other))
+        return false;
+    const CollectionDataType* o = other.cast_collection();
     return o && _nestedType->equals(*o->_nestedType);
 }
 
-} // document
+} // namespace document

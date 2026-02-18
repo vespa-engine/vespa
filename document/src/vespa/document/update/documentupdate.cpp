@@ -1,48 +1,49 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentupdate.h"
+
 #include "documentupdateflags.h"
-#include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/serialization/util.h>
-#include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/document/util/serializableexceptions.h>
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/document/util/bufferexceptions.h>
+
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/serialization/util.h>
+#include <vespa/document/serialization/vespadocumentserializer.h>
+#include <vespa/document/util/bufferexceptions.h>
+#include <vespa/document/util/serializableexceptions.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
+
 #include <sstream>
 
+using std::string;
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
-using vespalib::nbostream;
 using vespalib::make_string;
-using std::string;
+using vespalib::nbostream;
 using namespace vespalib::xml;
 
 namespace document {
 
 namespace {
 
-const DocumentType *
-deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostream & stream, std::string_view & documentId)
-{
+const DocumentType* deserializeHeader(const DocumentTypeRepo& repo, vespalib::nbostream& stream,
+                                      std::string_view& documentId) {
     documentId = read_cstr(stream);
     std::string_view typestr = read_cstr(stream);
-    int16_t version = 0;
+    int16_t          version = 0;
     stream >> version;
-    const DocumentType * docType =  repo.getDocumentType(typestr);
+    const DocumentType* docType = repo.getDocumentType(typestr);
     if (!docType) {
         throw DocumentTypeNotFoundException(std::string(typestr), VESPA_STRLOC);
     }
     return docType;
 }
 
-}
+} // namespace
 
-
-DocumentUpdate::DocumentUpdate(const DocumentTypeRepo & repo, const DataType &type, const DocumentId& id)
+DocumentUpdate::DocumentUpdate(const DocumentTypeRepo& repo, const DataType& type, const DocumentId& id)
     : _documentId(id),
       _type(&type),
       _repo(&repo),
@@ -50,10 +51,10 @@ DocumentUpdate::DocumentUpdate(const DocumentTypeRepo & repo, const DataType &ty
       _updates(),
       _fieldPathUpdates(),
       _createIfNonExistent(false),
-      _needHardReserialize(false)
-{
+      _needHardReserialize(false) {
     if (!type.isDocument()) {
-        throw IllegalArgumentException("Cannot generate a document with non-document type " + type.toString() + ".", VESPA_STRLOC);
+        throw IllegalArgumentException("Cannot generate a document with non-document type " + type.toString() + ".",
+                                       VESPA_STRLOC);
     }
     serializeHeader();
 }
@@ -66,43 +67,31 @@ DocumentUpdate::DocumentUpdate()
       _updates(),
       _fieldPathUpdates(),
       _createIfNonExistent(false),
-      _needHardReserialize(false)
-{
-}
+      _needHardReserialize(false) {}
 
 DocumentUpdate::~DocumentUpdate() = default;
 
-bool
-DocumentUpdate::operator==(const DocumentUpdate& other) const
-{
+bool DocumentUpdate::operator==(const DocumentUpdate& other) const {
     return (_backing.size() == other._backing.size()) &&
            (memcmp(_backing.peek(), other._backing.peek(), _backing.size()) == 0);
 }
 
-const DocumentType&
-DocumentUpdate::getType() const noexcept {
-    return static_cast<const DocumentType &> (*_type);
-}
+const DocumentType& DocumentUpdate::getType() const noexcept { return static_cast<const DocumentType&>(*_type); }
 
-const DocumentUpdate::FieldUpdateV &
-DocumentUpdate::getUpdates() const {
+const DocumentUpdate::FieldUpdateV& DocumentUpdate::getUpdates() const {
     ensureDeserialized();
     return _updates;
 }
 
-const DocumentUpdate::FieldPathUpdateV &
-DocumentUpdate::getFieldPathUpdates() const {
+const DocumentUpdate::FieldPathUpdateV& DocumentUpdate::getFieldPathUpdates() const {
     ensureDeserialized();
     return _fieldPathUpdates;
 }
 
-void
-DocumentUpdate::eagerDeserialize() const {
-    ensureDeserialized();
-}
+void DocumentUpdate::eagerDeserialize() const { ensureDeserialized(); }
 
-void DocumentUpdate::lazyDeserialize(const DocumentTypeRepo & repo, nbostream & stream) {
-    size_t start(stream.rp());
+void DocumentUpdate::lazyDeserialize(const DocumentTypeRepo& repo, nbostream& stream) {
+    size_t           start(stream.rp());
     std::string_view voidId;
     deserializeHeader(repo, stream, voidId);
     deserializeBody(repo, stream);
@@ -110,42 +99,36 @@ void DocumentUpdate::lazyDeserialize(const DocumentTypeRepo & repo, nbostream & 
 }
 void DocumentUpdate::ensureDeserialized() const {
     if (_updates.empty() && _fieldPathUpdates.empty()) {
-        const_cast<DocumentUpdate &>(*this).lazyDeserialize(*_repo, const_cast<nbostream &>(_backing));
+        const_cast<DocumentUpdate&>(*this).lazyDeserialize(*_repo, const_cast<nbostream&>(_backing));
     }
 }
 
-DocumentUpdate&
-DocumentUpdate::addUpdate(FieldUpdate &&update) {
+DocumentUpdate& DocumentUpdate::addUpdate(FieldUpdate&& update) {
     ensureDeserialized();
     _updates.push_back(std::move(update));
     reserialize();
     return *this;
 }
 
-DocumentUpdate&
-DocumentUpdate::addFieldPathUpdate(std::unique_ptr<FieldPathUpdate> update) {
+DocumentUpdate& DocumentUpdate::addFieldPathUpdate(std::unique_ptr<FieldPathUpdate> update) {
     ensureDeserialized();
     _fieldPathUpdates.push_back(std::move(update));
     reserialize();
     return *this;
 }
 
-void
-DocumentUpdate::setCreateIfNonExistent(bool value) {
+void DocumentUpdate::setCreateIfNonExistent(bool value) {
     ensureDeserialized();
     _createIfNonExistent = value;
     reserialize();
 }
 
-bool
-DocumentUpdate::getCreateIfNonExistent() const {
+bool DocumentUpdate::getCreateIfNonExistent() const {
     ensureDeserialized();
     return _createIfNonExistent;
 }
 
-void
-DocumentUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
+void DocumentUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const {
     ensureDeserialized();
     out << "DocumentUpdate(";
     if (_type) {
@@ -156,14 +139,14 @@ DocumentUpdate::print(std::ostream& out, bool verbose, const std::string& indent
     std::string nestedIndent = indent + "  ";
     out << "\n" << nestedIndent << "CreateIfNonExistent(" << (_createIfNonExistent ? "true" : "false") << ")";
 
-    for(const auto & update : _updates) {
+    for (const auto& update : _updates) {
         out << "\n" << indent << "  ";
         update.print(out, verbose, nestedIndent);
     }
     if (!_updates.empty()) {
         out << "\n" << indent;
     }
-    for (const auto & update : _fieldPathUpdates) {
+    for (const auto& update : _fieldPathUpdates) {
         out << "\n" << indent << "  ";
         update->print(out, verbose, nestedIndent);
     }
@@ -174,9 +157,7 @@ DocumentUpdate::print(std::ostream& out, bool verbose, const std::string& indent
 }
 
 // Apply this update to the given document.
-void
-DocumentUpdate::applyTo(Document& doc) const
-{
+void DocumentUpdate::applyTo(Document& doc) const {
     ensureDeserialized();
     const DocumentType& type = doc.getType();
     if (_type->getName() != type.getName()) {
@@ -186,18 +167,17 @@ DocumentUpdate::applyTo(Document& doc) const
     }
 
     // Apply legacy updates
-    for(const auto & update : _updates) {
+    for (const auto& update : _updates) {
         update.applyTo(doc);
     }
     TransactionGuard guard(doc);
     // Apply fieldpath updates
-    for (const auto & update : _fieldPathUpdates) {
+    for (const auto& update : _fieldPathUpdates) {
         update->applyTo(doc);
     }
 }
 
-void
-DocumentUpdate::serializeHeader() {
+void DocumentUpdate::serializeHeader() {
     string id_string = _documentId.getScheme().toString();
     _backing.write(id_string.data(), id_string.size());
     _backing << static_cast<uint8_t>(0);
@@ -207,55 +187,42 @@ DocumentUpdate::serializeHeader() {
     _backing << static_cast<uint32_t>(0); // Number of field path updates
 }
 
-void
-DocumentUpdate::serializeHEAD(nbostream &stream) const
-{
+void DocumentUpdate::serializeHEAD(nbostream& stream) const {
     VespaDocumentSerializer serializer(stream);
     serializer.writeHEAD(*this);
 }
 
-int
-DocumentUpdate::serializeFlags(int size_) const
-{
+int DocumentUpdate::serializeFlags(int size_) const {
     DocumentUpdateFlags flags;
     flags.setCreateIfNonExistent(_createIfNonExistent);
     return flags.injectInto(size_);
 }
 
-DocumentUpdate::UP
-DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream && stream)
-{
+DocumentUpdate::UP DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream&& stream) {
     auto update = std::make_unique<DocumentUpdate>();
     update->initHEAD(repo, std::move(stream));
     return update;
 }
 
-DocumentUpdate::UP
-DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream & stream)
-{
+DocumentUpdate::UP DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream& stream) {
     auto update = std::make_unique<DocumentUpdate>();
     update->initHEAD(repo, stream);
     return update;
 }
 
-
-void
-DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream)
-{
+void DocumentUpdate::initHEAD(const DocumentTypeRepo& repo, vespalib::nbostream&& stream) {
     _repo = &repo;
     _backing = std::move(stream);
-    size_t startPos = _backing.rp();
+    size_t           startPos = _backing.rp();
     std::string_view docId;
     _type = deserializeHeader(repo, _backing, docId);
     _documentId.set(docId);
     _backing.rp(startPos);
 }
 
-void
-DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream)
-{
+void DocumentUpdate::initHEAD(const DocumentTypeRepo& repo, vespalib::nbostream& stream) {
     _repo = &repo;
-    size_t startPos = stream.rp();
+    size_t           startPos = stream.rp();
     std::string_view docId;
     _type = deserializeHeader(repo, stream, docId);
     _documentId.set(docId);
@@ -264,15 +231,13 @@ DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & st
     _backing = nbostream(stream.peek() - sz, sz);
 }
 
-void
-DocumentUpdate::deserializeBody(const DocumentTypeRepo &repo, vespalib::nbostream &stream)
-{
+void DocumentUpdate::deserializeBody(const DocumentTypeRepo& repo, vespalib::nbostream& stream) {
     _updates.clear();
     _fieldPathUpdates.clear();
     size_t pos = stream.rp();
     try {
         // Read field updates, if any.
-        if ( ! stream.empty() ) {
+        if (!stream.empty()) {
             int32_t numUpdates = 0;
             stream >> numUpdates;
             _updates.reserve(numUpdates);
@@ -288,30 +253,24 @@ DocumentUpdate::deserializeBody(const DocumentTypeRepo &repo, vespalib::nbostrea
         for (int i = 0; i < numUpdates; ++i) {
             _fieldPathUpdates.emplace_back(FieldPathUpdate::createInstance(repo, *_type, stream).release());
         }
-    } catch (const DeserializeException &) {
+    } catch (const DeserializeException&) {
         stream.rp(pos);
         throw;
-    } catch (const BufferOutOfBoundsException &) {
+    } catch (const BufferOutOfBoundsException&) {
         stream.rp(pos);
         throw;
     }
 }
 
-int
-DocumentUpdate::deserializeFlags(int sizeAndFlags)
-{
+int DocumentUpdate::deserializeFlags(int sizeAndFlags) {
     _createIfNonExistent = DocumentUpdateFlags::extractFlags(sizeAndFlags).getCreateIfNonExistent();
     return DocumentUpdateFlags::extractValue(sizeAndFlags);
 }
 
-void
-DocumentUpdate::printXml(XmlOutputStream& xos) const
-{
+void DocumentUpdate::printXml(XmlOutputStream& xos) const {
     ensureDeserialized();
-    xos << XmlTag("document")
-        << XmlAttribute("type", _type->getName())
-        << XmlAttribute("id", getId().toString());
-    for(const auto & update : _updates) {
+    xos << XmlTag("document") << XmlAttribute("type", _type->getName()) << XmlAttribute("id", getId().toString());
+    for (const auto& update : _updates) {
         xos << XmlTag("alter") << XmlAttribute("field", update.getField().getName());
         update.printXml(xos);
         xos << XmlEndTag();
@@ -319,10 +278,8 @@ DocumentUpdate::printXml(XmlOutputStream& xos) const
     xos << XmlEndTag();
 }
 
-void
-DocumentUpdate::reserialize()
-{
-    nbostream stream;
+void DocumentUpdate::reserialize() {
+    nbostream               stream;
     VespaDocumentSerializer serializer(stream);
     _needHardReserialize = true;
     serializer.writeHEAD(*this);
@@ -330,20 +287,16 @@ DocumentUpdate::reserialize()
     _needHardReserialize = false;
 }
 
-std::string
-DocumentUpdate::toXml(const std::string& indent) const
-{
+std::string DocumentUpdate::toXml(const std::string& indent) const {
     std::ostringstream ost;
-    XmlOutputStream xos(ost, indent);
+    XmlOutputStream    xos(ost, indent);
     printXml(xos);
     return ost.str();
 }
 
-std::ostream &
-operator<<(std::ostream &out, const DocumentUpdate &update)
-{
+std::ostream& operator<<(std::ostream& out, const DocumentUpdate& update) {
     update.print(out, false, "");
     return out;
 }
 
-}
+} // namespace document

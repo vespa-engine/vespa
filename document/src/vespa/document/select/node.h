@@ -10,34 +10,29 @@
 
 #pragma once
 
-#include "resultlist.h"
 #include "context.h"
 #include "parser_limits.h"
+#include "resultlist.h"
 
 namespace document::select {
 
 class Visitor;
 
-class Node : public Printable
-{
+class Node : public Printable {
 protected:
     std::string _name;
-    uint32_t _max_depth;
-    bool _parentheses; // Set to true if parentheses was used around this part
-                       // Set such that we can recreate original query in print.
+    uint32_t    _max_depth;
+    bool        _parentheses; // Set to true if parentheses was used around this part
+                              // Set such that we can recreate original query in print.
 public:
     using UP = std::unique_ptr<Node>;
     using SP = std::shared_ptr<Node>;
 
-    Node(std::string_view name, uint32_t max_depth)
-        : _name(name), _max_depth(max_depth), _parentheses(false)
-    {
+    Node(std::string_view name, uint32_t max_depth) : _name(name), _max_depth(max_depth), _parentheses(false) {
         throw_parse_error_if_max_depth_exceeded();
     }
 
-    explicit Node(std::string_view name)
-        : _name(name), _max_depth(1), _parentheses(false)
-    {}
+    explicit Node(std::string_view name) : _name(name), _max_depth(1), _parentheses(false) {}
     ~Node() override = default;
 
     // Depth is explicitly tracked to limit recursion to a sane maximum when building and
@@ -53,10 +48,11 @@ public:
 
     virtual ResultList contains(const Context&) const = 0;
     virtual ResultList trace(const Context&, std::ostream& trace) const = 0;
-    virtual bool isLeafNode() const { return true; }
-    virtual void visit(Visitor&) const = 0;
+    virtual bool       isLeafNode() const { return true; }
+    virtual void       visit(Visitor&) const = 0;
 
     virtual Node::UP clone() const = 0;
+
 protected:
     void throw_parse_error_if_max_depth_exceeded() const {
         if (_max_depth > ParserLimits::MaxRecursionDepth) {
@@ -73,4 +69,4 @@ protected:
     }
 };
 
-}
+} // namespace document::select

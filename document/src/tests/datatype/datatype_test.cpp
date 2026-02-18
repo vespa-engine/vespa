@@ -7,20 +7,16 @@
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using namespace document;
 
 namespace {
 
-template <typename S>
-void assign(S &lhs, const S &rhs) {
-    lhs = rhs;
-}
+template <typename S> void assign(S& lhs, const S& rhs) { lhs = rhs; }
 
-TEST(DataTypeTest, require_that_assignment_operator_works_for_LongFieldValue)
-{
+TEST(DataTypeTest, require_that_assignment_operator_works_for_LongFieldValue) {
     LongFieldValue val;
     val = "1";
     EXPECT_EQ(1, val.getValue());
@@ -34,15 +30,14 @@ TEST(DataTypeTest, require_that_assignment_operator_works_for_LongFieldValue)
     EXPECT_EQ(5, val.getValue());
 }
 
-TEST(DataTypeTest, require_that_StructDataType_can_redeclare_identical_fields)
-{
+TEST(DataTypeTest, require_that_StructDataType_can_redeclare_identical_fields) {
     StructDataType s("foo");
-    Field field1("field1", 42, *DataType::STRING);
-    Field field2("field2", 42, *DataType::STRING);
+    Field          field1("field1", 42, *DataType::STRING);
+    Field          field2("field2", 42, *DataType::STRING);
 
     s.addField(field1);
-    s.addField(field1);  // ok
-    s.addInheritedField(field1);  // ok
+    s.addField(field1);          // ok
+    s.addInheritedField(field1); // ok
     VESPA_EXPECT_EXCEPTION(s.addField(field2), vespalib::IllegalArgumentException,
                            "Field id in use by field Field(field1");
     s.addInheritedField(field2);
@@ -51,22 +46,16 @@ TEST(DataTypeTest, require_that_StructDataType_can_redeclare_identical_fields)
 
 class TensorDataTypeFixture {
     std::unique_ptr<const TensorDataType> _tensorDataType;
+
 public:
     using ValueType = vespalib::eval::ValueType;
-    TensorDataTypeFixture()
-        : _tensorDataType()
-    {
-    }
+    TensorDataTypeFixture() : _tensorDataType() {}
 
     ~TensorDataTypeFixture();
 
-    void setup(const std::string &spec)
-    {
-        _tensorDataType = TensorDataType::fromSpec(spec);
-    }
+    void setup(const std::string& spec) { _tensorDataType = TensorDataType::fromSpec(spec); }
 
-    bool isAssignableType(const std::string &spec) const
-    {
+    bool isAssignableType(const std::string& spec) const {
         auto assignType = ValueType::from_spec(spec);
         return _tensorDataType->isAssignableType(assignType);
     }
@@ -74,8 +63,7 @@ public:
 
 TensorDataTypeFixture::~TensorDataTypeFixture() = default;
 
-TEST(DataTypeTest, require_that_TensorDataType_can_check_for_assignable_tensor_type)
-{
+TEST(DataTypeTest, require_that_TensorDataType_can_check_for_assignable_tensor_type) {
     TensorDataTypeFixture f;
     f.setup("tensor(x[2])");
     EXPECT_TRUE(f.isAssignableType("tensor(x[2])"));
@@ -84,8 +72,7 @@ TEST(DataTypeTest, require_that_TensorDataType_can_check_for_assignable_tensor_t
     EXPECT_FALSE(f.isAssignableType("tensor(x{})"));
 }
 
-TEST(DataTypeTest, TensorDataType_implements_equals_that_takes_underlying_tensor_type_into_consideration)
-{
+TEST(DataTypeTest, TensorDataType_implements_equals_that_takes_underlying_tensor_type_into_consideration) {
     auto a = TensorDataType::fromSpec("tensor<float>(x[4])");
     auto b = TensorDataType::fromSpec("tensor<bfloat16>(x[4])");
     EXPECT_EQ(*a, *a);
@@ -93,6 +80,6 @@ TEST(DataTypeTest, TensorDataType_implements_equals_that_takes_underlying_tensor
     EXPECT_NE(*b, *a);
 }
 
-}  // namespace
+} // namespace
 
 GTEST_MAIN_RUN_ALL_TESTS()

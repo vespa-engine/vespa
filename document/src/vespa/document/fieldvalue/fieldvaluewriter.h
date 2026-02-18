@@ -10,9 +10,8 @@ class FieldValue;
 struct FieldValueWriter {
     virtual ~FieldValueWriter() = default;
 
-    virtual void writeFieldValue(const FieldValue &value) = 0;
-    virtual void writeSerializedData(const void *buf, size_t length) = 0;
+    virtual void writeFieldValue(const FieldValue& value) = 0;
+    virtual void writeSerializedData(const void* buf, size_t length) = 0;
 };
 
-}  // namespace document
-
+} // namespace document

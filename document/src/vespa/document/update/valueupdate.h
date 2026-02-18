@@ -19,6 +19,7 @@
 #pragma once
 
 #include "updatevisitor.h"
+
 #include <vespa/document/util/identifiableid.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -30,10 +31,10 @@ class Field;
 class FieldValue;
 class DataType;
 
-class ValueUpdate
-{
+class ValueUpdate {
 protected:
     using nbostream = vespalib::nbostream;
+
 public:
     using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
@@ -43,16 +44,17 @@ public:
      * @param type A data type that describes the content of the buffer.
      * @param buffer The stream that containes the serialized update.
      */
-    static std::unique_ptr<ValueUpdate> createInstance(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer);
+    static std::unique_ptr<ValueUpdate> createInstance(const DocumentTypeRepo& repo, const DataType& type,
+                                                       nbostream& buffer);
 
     /** Define all types of value updates. */
     enum ValueUpdateType {
-        Add        = IDENTIFIABLE_CLASSID(AddValueUpdate),
+        Add = IDENTIFIABLE_CLASSID(AddValueUpdate),
         Arithmetic = IDENTIFIABLE_CLASSID(ArithmeticValueUpdate),
-        Assign     = IDENTIFIABLE_CLASSID(AssignValueUpdate),
-        Clear      = IDENTIFIABLE_CLASSID(ClearValueUpdate),
-        Map        = IDENTIFIABLE_CLASSID(MapValueUpdate),
-        Remove     = IDENTIFIABLE_CLASSID(RemoveValueUpdate),
+        Assign = IDENTIFIABLE_CLASSID(AssignValueUpdate),
+        Clear = IDENTIFIABLE_CLASSID(ClearValueUpdate),
+        Map = IDENTIFIABLE_CLASSID(MapValueUpdate),
+        Remove = IDENTIFIABLE_CLASSID(RemoveValueUpdate),
         TensorModify = IDENTIFIABLE_CLASSID(TensorModifyUpdate),
         TensorAdd = IDENTIFIABLE_CLASSID(TensorAddUpdate),
         TensorRemove = IDENTIFIABLE_CLASSID(TensorRemoveUpdate)
@@ -60,7 +62,7 @@ public:
 
     virtual ~ValueUpdate() = default;
     virtual bool operator==(const ValueUpdate&) const = 0;
-    bool operator != (const ValueUpdate & rhs) const { return ! (*this == rhs); }
+    bool         operator!=(const ValueUpdate& rhs) const { return !(*this == rhs); }
 
     /**
      * Recursively checks the compatibility of this value update as
@@ -83,26 +85,27 @@ public:
      * @param type A data type that describes the content of the stream.
      * @param buffer The stream that contains the serialized update object.
      */
-    virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream) = 0;
+    virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream) = 0;
 
     /** @return The operation type. */
     ValueUpdateType getType() const noexcept { return _type; }
-    const char * className() const noexcept;
+    const char*     className() const noexcept;
     /**
      * Visit this fieldvalue for double dispatch.
      */
-    virtual void accept(UpdateVisitor &visitor) const = 0;
+    virtual void accept(UpdateVisitor& visitor) const = 0;
 
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
     virtual void printXml(XmlOutputStream& out) const = 0;
+
 protected:
-    ValueUpdate(ValueUpdateType type) : _type(type) { }
+    ValueUpdate(ValueUpdateType type) : _type(type) {}
+
 private:
     static std::unique_ptr<ValueUpdate> create(ValueUpdateType type);
-    ValueUpdateType _type;
+    ValueUpdateType                     _type;
 };
 
-std::ostream& operator<<(std::ostream& out, const ValueUpdate & p);
+std::ostream& operator<<(std::ostream& out, const ValueUpdate& p);
 
-}
-
+} // namespace document

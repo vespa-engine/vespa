@@ -9,14 +9,15 @@
  */
 
 #include "stringutil.h"
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
+
+#include <algorithm>
+#include <cassert>
 #include <iomanip>
 #include <sstream>
 #include <vector>
-#include <cassert>
-#include <algorithm>
 
 using vespalib::IllegalArgumentException;
 using namespace vespalib::make_string_short;
@@ -24,17 +25,16 @@ using namespace vespalib::make_string_short;
 namespace document {
 
 namespace {
-    char toHex(uint32_t val) {
-        return (val < 10 ? '0' + val : 'a' + (val - 10));
-    }
-}
+char toHex(uint32_t val) { return (val < 10 ? '0' + val : 'a' + (val - 10)); }
+} // namespace
 
 class ReplacementCharacters {
 public:
     ReplacementCharacters();
     static int  needEscape(unsigned char c) { return _needEscape[c]; }
-    static char getChar1(unsigned char c)   { return _replacement1[c]; }
-    static char getChar2(unsigned char c)   { return _replacement2[c]; }
+    static char getChar1(unsigned char c) { return _replacement1[c]; }
+    static char getChar2(unsigned char c) { return _replacement2[c]; }
+
 private:
     static char _needEscape[256];
     static char _replacement1[256];
@@ -45,9 +45,8 @@ char ReplacementCharacters::_needEscape[256];
 char ReplacementCharacters::_replacement1[256];
 char ReplacementCharacters::_replacement2[256];
 
-ReplacementCharacters::ReplacementCharacters()
-{
-    for(size_t i(0); i < sizeof(_needEscape); i++) {
+ReplacementCharacters::ReplacementCharacters() {
+    for (size_t i(0); i < sizeof(_needEscape); i++) {
         const char c = i;
         if (c == '"') {
             _needEscape[i] = 1;
@@ -87,9 +86,7 @@ ReplacementCharacters::ReplacementCharacters()
 
 static ReplacementCharacters _G_ForceInitialisation;
 
-const std::string &
-StringUtil::escape(const std::string & source, std::string & destination, char delimiter)
-{
+const std::string& StringUtil::escape(const std::string& source, std::string& destination, char delimiter) {
     size_t escapeCount(0);
     for (char c : source) {
         if (c == delimiter) {
@@ -127,78 +124,91 @@ StringUtil::escape(const std::string & source, std::string & destination, char d
     return source;
 }
 
-std::string
-StringUtil::unescape(std::string_view source)
-{
+std::string StringUtil::unescape(std::string_view source) {
     vespalib::asciistream ost;
-    for (unsigned int i=0; i<source.size(); ++i) {
-        if (source[i] != '\\') { ost << source[i]; continue; }
+    for (unsigned int i = 0; i < source.size(); ++i) {
+        if (source[i] != '\\') {
+            ost << source[i];
+            continue;
+        }
         // Here we know we have an escape
-        if (i+1 == source.size()) {
+        if (i + 1 == source.size()) {
             throw IllegalArgumentException("Found backslash at end of input", VESPA_STRLOC);
         }
-        if (source[i+1] != 'x') {
-            switch (source[i+1]) {
-            case '\\': ost << '\\'; break;
-            case '"': ost << '"'; break;
-            case 't': ost << '\t'; break;
-            case 'n': ost << '\n'; break;
-            case 'r': ost << '\r'; break;
-            case 'f': ost << '\f'; break;
+        if (source[i + 1] != 'x') {
+            switch (source[i + 1]) {
+            case '\\':
+                ost << '\\';
+                break;
+            case '"':
+                ost << '"';
+                break;
+            case 't':
+                ost << '\t';
+                break;
+            case 'n':
+                ost << '\n';
+                break;
+            case 'r':
+                ost << '\r';
+                break;
+            case 'f':
+                ost << '\f';
+                break;
             default:
-                throw IllegalArgumentException(fmt("Illegal escape sequence \\%c found", source[i+1]), VESPA_STRLOC);
+                throw IllegalArgumentException(fmt("Illegal escape sequence \\%c found", source[i + 1]),
+                                               VESPA_STRLOC);
             }
             ++i;
             continue;
         }
         // Only \x## sequences left..
-        if (i+3 >= source.size()) {
-            throw IllegalArgumentException("Found \\x at end of input",
-                                           VESPA_STRLOC);
+        if (i + 3 >= source.size()) {
+            throw IllegalArgumentException("Found \\x at end of input", VESPA_STRLOC);
         }
-        std::string hexdigits(source.substr(i+2, 2));
-        char* endp = nullptr;
+        std::string hexdigits(source.substr(i + 2, 2));
+        char*       endp = nullptr;
         ost << static_cast<char>(strtol(hexdigits.c_str(), &endp, 16));
         if (*endp) {
-            throw IllegalArgumentException("Value "+hexdigits + " is not a two digit hexadecimal number", VESPA_STRLOC);
+            throw IllegalArgumentException("Value " + hexdigits + " is not a two digit hexadecimal number",
+                                           VESPA_STRLOC);
         }
-        i+=3;
+        i += 3;
     }
     return ost.str();
 }
 
-void
-StringUtil::printAsHex(std::ostream& output, const void* source, unsigned int size, unsigned int columnwidth,
-                       bool inlinePrintables, const std::string& indent)
-{
+void StringUtil::printAsHex(std::ostream& output, const void* source, unsigned int size, unsigned int columnwidth,
+                            bool inlinePrintables, const std::string& indent) {
     assert(columnwidth > 0);
     unsigned char wildChar = '.';
-    const auto * start = reinterpret_cast<const unsigned char*>(source);
-    uint32_t posWidth = 1;
-    for (uint32_t i=size; i>9; i /= 10) { ++posWidth; }
+    const auto*   start = reinterpret_cast<const unsigned char*>(source);
+    uint32_t      posWidth = 1;
+    for (uint32_t i = size; i > 9; i /= 10) {
+        ++posWidth;
+    }
     std::vector<unsigned char> printables(static_cast<size_t>(columnwidth) + 1);
     printables[columnwidth] = '\0';
-    for (unsigned int i=0; i<size; i += columnwidth) {
+    for (unsigned int i = 0; i < size; i += columnwidth) {
         std::ostringstream ost;
-        if (i != 0) ost << "\n" << indent;
+        if (i != 0)
+            ost << "\n" << indent;
         ost << std::dec << std::setw(posWidth) << i << ":";
         bool nonNull = false;
-        for (unsigned int j=0; j<columnwidth; ++j)
-        {
-            if (i+j >= size) {
+        for (unsigned int j = 0; j < columnwidth; ++j) {
+            if (i + j >= size) {
                 ost << "   ";
                 printables[j] = '\0'; // Avoid adding extra chars.
             } else {
                 ost << " " << std::setw(2);
-                bool printable = (start[i+j] >= 33 && start[i+j] <= 126);
+                bool printable = (start[i + j] >= 33 && start[i + j] <= 126);
                 if (inlinePrintables && printable) {
-                    ost << std::setfill(' ') << start[i+j];
+                    ost << std::setfill(' ') << start[i + j];
                 } else {
-                    ost << std::hex << std::setfill('0')
-                        << ((unsigned int) start[i+j]);
-                    printables[j] = (printable ? start[i+j] : wildChar);
+                    ost << std::hex << std::setfill('0') << ((unsigned int)start[i + j]);
+                    printables[j] = (printable ? start[i + j] : wildChar);
                 }
-                nonNull |= (start[i+j] != 0);
+                nonNull |= (start[i + j] != 0);
             }
         }
         if (nonNull) {
@@ -209,6 +219,5 @@ StringUtil::printAsHex(std::ostream& output, const void* source, unsigned int si
         }
     }
 }
-
 
 } // namespace document

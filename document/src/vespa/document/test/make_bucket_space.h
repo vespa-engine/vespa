@@ -9,6 +9,6 @@ namespace document::test {
 // Helper functions used by unit tests
 
 BucketSpace makeBucketSpace() noexcept;
-BucketSpace makeBucketSpace(const std::string &docTypeName) noexcept;
+BucketSpace makeBucketSpace(const std::string& docTypeName) noexcept;
 
-}
+} // namespace document::test

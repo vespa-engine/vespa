@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_modify_update.h"
+
 #include "tensor_partial_update.h"
+
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -16,15 +18,16 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/xmlstream.h>
+
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
+using vespalib::make_string;
 using vespalib::eval::CellType;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::make_string;
 
 using join_fun_t = double (*)(double, double);
 
@@ -32,17 +35,11 @@ namespace document {
 
 namespace {
 
-double
-replace(double, double b)
-{
-    return b;
-}
-    
-join_fun_t
-getJoinFunction(TensorModifyUpdate::Operation operation)
-{
+double replace(double, double b) { return b; }
+
+join_fun_t getJoinFunction(TensorModifyUpdate::Operation operation) {
     using Operation = TensorModifyUpdate::Operation;
-    
+
     switch (operation) {
     case Operation::REPLACE:
         return replace;
@@ -55,11 +52,9 @@ getJoinFunction(TensorModifyUpdate::Operation operation)
     }
 }
 
-std::string
-getJoinFunctionName(TensorModifyUpdate::Operation operation)
-{
+std::string getJoinFunctionName(TensorModifyUpdate::Operation operation) {
     using Operation = TensorModifyUpdate::Operation;
-    
+
     switch (operation) {
     case Operation::REPLACE:
         return "replace";
@@ -72,17 +67,16 @@ getJoinFunctionName(TensorModifyUpdate::Operation operation)
     }
 }
 
-std::unique_ptr<const TensorDataType>
-convertToCompatibleType(const TensorDataType &tensorType)
-{
+std::unique_ptr<const TensorDataType> convertToCompatibleType(const TensorDataType& tensorType) {
     std::vector<ValueType::Dimension> list;
-    for (const auto &dim : tensorType.getTensorType().dimensions()) {
+    for (const auto& dim : tensorType.getTensorType().dimensions()) {
         list.emplace_back(dim.name);
     }
-    return std::make_unique<const TensorDataType>(ValueType::make_type(tensorType.getTensorType().cell_type(), std::move(list)));
+    return std::make_unique<const TensorDataType>(
+        ValueType::make_type(tensorType.getTensorType().cell_type(), std::move(list)));
 }
 
-}
+} // namespace
 
 TensorModifyUpdate::TensorModifyUpdate()
     : ValueUpdate(TensorModify),
@@ -90,37 +84,32 @@ TensorModifyUpdate::TensorModifyUpdate()
       _operation(Operation::MAX_NUM_OPERATIONS),
       _tensorType(),
       _tensor(),
-      _default_cell_value()
-{
-}
+      _default_cell_value() {}
 
 TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor)
     : ValueUpdate(TensorModify),
       TensorUpdate(),
       _operation(operation),
-      _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
-      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release())),
-      _default_cell_value()
-{
+      _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType&>(*tensor->getDataType()))),
+      _tensor(static_cast<TensorFieldValue*>(_tensorType->createFieldValue().release())),
+      _default_cell_value() {
     *_tensor = *tensor;
 }
 
-TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor, double default_cell_value)
+TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor,
+                                       double default_cell_value)
     : ValueUpdate(TensorModify),
       TensorUpdate(),
       _operation(operation),
-      _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
-      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release())),
-      _default_cell_value(default_cell_value)
-{
+      _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType&>(*tensor->getDataType()))),
+      _tensor(static_cast<TensorFieldValue*>(_tensorType->createFieldValue().release())),
+      _default_cell_value(default_cell_value) {
     *_tensor = *tensor;
 }
 
 TensorModifyUpdate::~TensorModifyUpdate() = default;
 
-bool
-TensorModifyUpdate::operator==(const ValueUpdate &other) const
-{
+bool TensorModifyUpdate::operator==(const ValueUpdate& other) const {
     if (other.getType() != TensorModify) {
         return false;
     }
@@ -137,30 +126,25 @@ TensorModifyUpdate::operator==(const ValueUpdate &other) const
     return true;
 }
 
-
-void
-TensorModifyUpdate::checkCompatibility(const Field& field) const
-{
-    if ( ! field.getDataType().isTensor()) {
-        throw IllegalArgumentException(make_string("Cannot perform tensor modify update on non-tensor field '%s'",
-                                                   field.getName().data()), VESPA_STRLOC);
+void TensorModifyUpdate::checkCompatibility(const Field& field) const {
+    if (!field.getDataType().isTensor()) {
+        throw IllegalArgumentException(
+            make_string("Cannot perform tensor modify update on non-tensor field '%s'", field.getName().data()),
+            VESPA_STRLOC);
     }
 }
 
-std::unique_ptr<Value>
-TensorModifyUpdate::applyTo(const Value &tensor) const
-{
+std::unique_ptr<Value> TensorModifyUpdate::applyTo(const Value& tensor) const {
     return apply_to(tensor, FastValueBuilderFactory::get());
 }
 
-std::unique_ptr<Value>
-TensorModifyUpdate::apply_to(const Value &old_tensor,
-                             const ValueBuilderFactory &factory) const
-{
+std::unique_ptr<Value> TensorModifyUpdate::apply_to(const Value&               old_tensor,
+                                                    const ValueBuilderFactory& factory) const {
     if (const auto* cellsTensor = _tensor->getAsTensorPtr()) {
         auto op = getJoinFunction(_operation);
         if (_default_cell_value.has_value()) {
-            return TensorPartialUpdate::modify_with_defaults(old_tensor, op, *cellsTensor, _default_cell_value.value(), factory);
+            return TensorPartialUpdate::modify_with_defaults(old_tensor, op, *cellsTensor,
+                                                             _default_cell_value.value(), factory);
         } else {
             return TensorPartialUpdate::modify(old_tensor, op, *cellsTensor, factory);
         }
@@ -170,22 +154,18 @@ TensorModifyUpdate::apply_to(const Value &old_tensor,
 
 namespace {
 
-std::unique_ptr<Value>
-create_empty_tensor(const ValueType& type)
-{
-    const auto& factory = FastValueBuilderFactory::get();
+std::unique_ptr<Value> create_empty_tensor(const ValueType& type) {
+    const auto&                factory = FastValueBuilderFactory::get();
     vespalib::eval::TensorSpec empty_spec(type.to_spec());
     return vespalib::eval::value_from_spec(empty_spec, factory);
 }
 
-}
+} // namespace
 
-bool
-TensorModifyUpdate::applyTo(FieldValue& value) const
-{
+bool TensorModifyUpdate::applyTo(FieldValue& value) const {
     if (value.isA(FieldValue::Type::TENSOR)) {
-        TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
-        const auto* old_tensor = tensorFieldValue.getAsTensorPtr();
+        TensorFieldValue&      tensorFieldValue = static_cast<TensorFieldValue&>(value);
+        const auto*            old_tensor = tensorFieldValue.getAsTensorPtr();
         std::unique_ptr<Value> new_tensor;
         if (old_tensor) {
             new_tensor = applyTo(*old_tensor);
@@ -197,22 +177,18 @@ TensorModifyUpdate::applyTo(FieldValue& value) const
             tensorFieldValue = std::move(new_tensor);
         }
     } else {
-        std::string err = make_string("Unable to perform a tensor modify update on a '%s' field value",
-                                           value.className());
+        std::string err =
+            make_string("Unable to perform a tensor modify update on a '%s' field value", value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;
 }
 
-void
-TensorModifyUpdate::printXml(XmlOutputStream& xos) const
-{
+void TensorModifyUpdate::printXml(XmlOutputStream& xos) const {
     xos << "{TensorModifyUpdate::printXml not yet implemented}";
 }
 
-void
-TensorModifyUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
+void TensorModifyUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << indent << "TensorModifyUpdate(" << getJoinFunctionName(_operation) << ",";
     if (_tensor) {
         _tensor->print(out, verbose, indent);
@@ -225,23 +201,19 @@ TensorModifyUpdate::print(std::ostream& out, bool verbose, const std::string& in
 
 namespace {
 
-void
-verifyCellsTensorIsSparse(const vespalib::eval::Value *cellsTensor)
-{
+void verifyCellsTensorIsSparse(const vespalib::eval::Value* cellsTensor) {
     if (cellsTensor == nullptr) {
         return;
     }
     if (cellsTensor->type().is_sparse()) {
         return;
     }
-    std::string err = make_string("Expected cells tensor to be sparse, but has type '%s'",
-                                       cellsTensor->type().to_spec().c_str());
+    std::string err =
+        make_string("Expected cells tensor to be sparse, but has type '%s'", cellsTensor->type().to_spec().c_str());
     throw IllegalStateException(err, VESPA_STRLOC);
 }
 
-TensorModifyUpdate::Operation
-decode_operation(uint8_t encoded_op)
-{
+TensorModifyUpdate::Operation decode_operation(uint8_t encoded_op) {
     uint8_t OP_MASK = 0b01111111;
     uint8_t op = encoded_op & OP_MASK;
     if (op >= static_cast<uint8_t>(TensorModifyUpdate::Operation::MAX_NUM_OPERATIONS)) {
@@ -252,18 +224,14 @@ decode_operation(uint8_t encoded_op)
     return static_cast<TensorModifyUpdate::Operation>(op);
 }
 
-bool
-decode_create_non_existing_cells(uint8_t encoded_op)
-{
+bool decode_create_non_existing_cells(uint8_t encoded_op) {
     uint8_t CREATE_FLAG = 0b10000000;
     return (encoded_op & CREATE_FLAG) != 0;
 }
 
-}
+} // namespace
 
-void
-TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &type, nbostream & stream)
-{
+void TensorModifyUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream) {
     uint8_t op;
     stream >> op;
     _operation = decode_operation(op);
@@ -272,10 +240,10 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
         stream >> value;
         _default_cell_value = value;
     }
-    _tensorType = convertToCompatibleType(dynamic_cast<const TensorDataType &>(type));
+    _tensorType = convertToCompatibleType(dynamic_cast<const TensorDataType&>(type));
     auto tensor = _tensorType->createFieldValue();
     if (tensor->isA(FieldValue::Type::TENSOR)) {
-        _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
+        _tensor.reset(static_cast<TensorFieldValue*>(tensor.release()));
     } else {
         std::string err = make_string("Expected tensor field value, got a '%s' field value", tensor->className());
         throw IllegalStateException(err, VESPA_STRLOC);
@@ -285,4 +253,4 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
     verifyCellsTensorIsSparse(_tensor->getAsTensorPtr());
 }
 
-}
+} // namespace document

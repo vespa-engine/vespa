@@ -1,35 +1,32 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stringfieldvalue.h"
+
 #include "literalfieldvalue.hpp"
 
 #include <vespa/document/annotation/spantree.h>
-#include <vespa/document/serialization/annotationserializer.h>
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/objects/hexdump.h>
-#include <vespa/document/serialization/util.h>
-#include <vespa/document/serialization/annotationdeserializer.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/document/serialization/annotationdeserializer.h>
+#include <vespa/document/serialization/annotationserializer.h>
+#include <vespa/document/serialization/util.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
+#include <vespa/vespalib/objects/hexdump.h>
+#include <vespa/vespalib/objects/nbostream.h>
+
 #include <ostream>
 
-using vespalib::nbostream;
-using vespalib::ConstBufferRef;
 using std::string_view;
+using vespalib::ConstBufferRef;
+using vespalib::nbostream;
 
 namespace document {
 
-StringFieldValue::StringFieldValue(const StringFieldValue & rhs)
-    : Parent(rhs),
-      _annotationData(rhs.copyAnnotationData())
-{
-}
+StringFieldValue::StringFieldValue(const StringFieldValue& rhs)
+    : Parent(rhs), _annotationData(rhs.copyAnnotationData()) {}
 
 StringFieldValue::~StringFieldValue() = default;
 
-StringFieldValue &
-StringFieldValue::operator=(const StringFieldValue & rhs)
-{
+StringFieldValue& StringFieldValue::operator=(const StringFieldValue& rhs) {
     if (&rhs != this) {
         Parent::operator=(rhs);
         _annotationData = rhs.copyAnnotationData();
@@ -37,19 +34,17 @@ StringFieldValue::operator=(const StringFieldValue & rhs)
     return *this;
 }
 
-int
-StringFieldValue::compare(const FieldValue& other) const {
+int StringFieldValue::compare(const FieldValue& other) const {
     if (other.isA(Type::STRING)) {
-        const StringFieldValue &other_s(static_cast<const StringFieldValue &>(other));
+        const StringFieldValue& other_s(static_cast<const StringFieldValue&>(other));
         return _value.compare(other_s._value);
     } else {
         return Parent::compare(other);
     }
 }
 
-void
-StringFieldValue::print(std::ostream& out, bool verbose, const std::string& indent) const {
-    if ( ! hasSpanTrees()) {
+void StringFieldValue::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    if (!hasSpanTrees()) {
         Parent::print(out, verbose, indent);
     } else {
         out << "StringFieldValue(\"";
@@ -58,7 +53,7 @@ StringFieldValue::print(std::ostream& out, bool verbose, const std::string& inde
         out << "\"\n" << indent << " " << vespalib::HexDump(buf.data(), buf.size());
         if (verbose) {
             out << "\nSpanTree(\n";
-            for (const auto & tree: getSpanTrees()) {
+            for (const auto& tree : getSpanTrees()) {
                 out << "Tree '" << tree->getName() << "':" << tree->toString() << std::endl;
             }
             out << ")\n";
@@ -67,18 +62,16 @@ StringFieldValue::print(std::ostream& out, bool verbose, const std::string& inde
     }
 }
 
-void StringFieldValue::setSpanTrees(ConstBufferRef serialized, const FixedTypeRepo & repo, uint8_t version, bool isSerializedDataLongLived)
-{
+void StringFieldValue::setSpanTrees(ConstBufferRef serialized, const FixedTypeRepo& repo, uint8_t version,
+                                    bool isSerializedDataLongLived) {
     _annotationData = std::make_unique<AnnotationData>(serialized, repo, version, isSerializedDataLongLived);
 }
 
-
-void StringFieldValue::setSpanTrees(const SpanTrees & trees, const FixedTypeRepo & repo)
-{
+void StringFieldValue::setSpanTrees(const SpanTrees& trees, const FixedTypeRepo& repo) {
     nbostream os;
     putInt1_2_4Bytes(os, trees.size());
     AnnotationSerializer serializer(os);
-    for (const auto & tree : trees) {
+    for (const auto& tree : trees) {
         serializer.write(*tree);
     }
     setSpanTrees(ConstBufferRef(os.peek(), os.size()), repo, VespaDocumentSerializer::getCurrentVersion(), false);
@@ -91,15 +84,10 @@ StringFieldValue::SpanTrees StringFieldValue::getSpanTrees() const {
     return trees;
 }
 
-void
-StringFieldValue::doClearSpanTrees() {
-    _annotationData.reset();
-}
+void StringFieldValue::doClearSpanTrees() { _annotationData.reset(); }
 
-const SpanTree *
-StringFieldValue::findTree(const SpanTrees & trees, string_view name)
-{
-    for(const auto & tree : trees) {
+const SpanTree* StringFieldValue::findTree(const SpanTrees& trees, string_view name) {
+    for (const auto& tree : trees) {
         if (tree->getName() == name) {
             return tree.get();
         }
@@ -107,52 +95,43 @@ StringFieldValue::findTree(const SpanTrees & trees, string_view name)
     return nullptr;
 }
 
-StringFieldValue &
-StringFieldValue::operator=(string_view value)
-{
+StringFieldValue& StringFieldValue::operator=(string_view value) {
     setValue(value);
     _annotationData.reset();
     return *this;
 }
 
-FieldValue &
-StringFieldValue::assign(const FieldValue & rhs)
-{
+FieldValue& StringFieldValue::assign(const FieldValue& rhs) {
     if (rhs.isA(Type::STRING)) {
-        *this = static_cast<const StringFieldValue &>(rhs);
+        *this = static_cast<const StringFieldValue&>(rhs);
     } else {
         *this = rhs.getAsString().operator string_view();
     }
     return *this;
 }
 
-StringFieldValue::AnnotationData::UP
-StringFieldValue::copyAnnotationData() const {
-    return hasSpanTrees()
-           ? std::make_unique<AnnotationData>(*_annotationData)
-           : AnnotationData::UP();
+StringFieldValue::AnnotationData::UP StringFieldValue::copyAnnotationData() const {
+    return hasSpanTrees() ? std::make_unique<AnnotationData>(*_annotationData) : AnnotationData::UP();
 }
 
-StringFieldValue::AnnotationData::AnnotationData(vespalib::ConstBufferRef serialized, const FixedTypeRepo &repo,
+StringFieldValue::AnnotationData::AnnotationData(vespalib::ConstBufferRef serialized, const FixedTypeRepo& repo,
                                                  uint8_t version, bool isSerializedDataLongLived)
-        : _serialized(serialized),
-          _repo(repo.getDocumentTypeRepo()),
-          _docType(repo.getDocumentType()),
-          _version(version)
-{
-    if ( ! isSerializedDataLongLived) {
+    : _serialized(serialized),
+      _repo(repo.getDocumentTypeRepo()),
+      _docType(repo.getDocumentType()),
+      _version(version) {
+    if (!isSerializedDataLongLived) {
         _backingBlob.assign(serialized.c_str(), serialized.c_str() + serialized.size());
         _serialized = ConstBufferRef(&_backingBlob[0], _backingBlob.size());
     }
 }
 
-StringFieldValue::SpanTrees StringFieldValue::AnnotationData::getSpanTrees() const
-{
+StringFieldValue::SpanTrees StringFieldValue::AnnotationData::getSpanTrees() const {
     SpanTrees trees;
     if (hasSpanTrees()) {
-        nbostream is(_serialized.data(), _serialized.size());
-        size_t tree_count = getInt1_2_4Bytes(is);
-        FixedTypeRepo repo(_repo, _docType);
+        nbostream              is(_serialized.data(), _serialized.size());
+        size_t                 tree_count = getInt1_2_4Bytes(is);
+        FixedTypeRepo          repo(_repo, _docType);
         AnnotationDeserializer deserializer(repo, is, _version);
         for (size_t i = 0; i < tree_count; ++i) {
             trees.emplace_back(deserializer.readSpanTree());
@@ -161,9 +140,7 @@ StringFieldValue::SpanTrees StringFieldValue::AnnotationData::getSpanTrees() con
     return trees;
 }
 
-StringFieldValue::AnnotationData::AnnotationData(const StringFieldValue::AnnotationData & rhs) :
-        AnnotationData(rhs._serialized, FixedTypeRepo(rhs._repo, rhs._docType), rhs._version, false)
-{
-}
+StringFieldValue::AnnotationData::AnnotationData(const StringFieldValue::AnnotationData& rhs)
+    : AnnotationData(rhs._serialized, FixedTypeRepo(rhs._repo, rhs._docType), rhs._version, false) {}
 
-} // document
+} // namespace document

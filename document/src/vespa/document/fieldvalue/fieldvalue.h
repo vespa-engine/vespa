@@ -13,27 +13,49 @@
 
 #include "fieldvaluevisitor.h"
 #include "modificationstatus.h"
-#include <vespa/document/util/identifiableid.h>
+
 #include <vespa/document/base/fieldpath.h>
+#include <vespa/document/util/identifiableid.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/util/polymorphicarraybase.h>
 
-namespace vespalib { class nbostream; }
-namespace vespalib::xml { class XmlOutputStream; }
+namespace vespalib {
+class nbostream;
+}
+namespace vespalib::xml {
+class XmlOutputStream;
+}
 
-namespace document::fieldvalue { class IteratorHandler; }
+namespace document::fieldvalue {
+class IteratorHandler;
+}
 
 namespace document {
 
 class DataType;
 
-class FieldValue
-{
+class FieldValue {
 public:
     enum class Type : uint8_t {
-        NONE, BOOL, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE,
-        STRING, RAW, PREDICATE, TENSOR, ANNOTATION_REFERENCE,
-        REFERENCE, ARRAY, WSET, MAP, STRUCT, DOCUMENT
+        NONE,
+        BOOL,
+        BYTE,
+        SHORT,
+        INT,
+        LONG,
+        FLOAT,
+        DOUBLE,
+        STRING,
+        RAW,
+        PREDICATE,
+        TENSOR,
+        ANNOTATION_REFERENCE,
+        REFERENCE,
+        ARRAY,
+        WSET,
+        MAP,
+        STRUCT,
+        DOCUMENT
     };
     using PathRange = FieldPath::Range<FieldPath::const_iterator>;
     using UP = std::unique_ptr<FieldValue>;
@@ -43,8 +65,8 @@ public:
     /**
      * Visit this fieldvalue for double dispatch.
      */
-    virtual void accept(FieldValueVisitor &visitor) = 0;
-    virtual void accept(ConstFieldValueVisitor &visitor) const = 0;
+    virtual void accept(FieldValueVisitor& visitor) = 0;
+    virtual void accept(ConstFieldValueVisitor& visitor) const = 0;
 
     /**
      * operator= is only implemented for leaf types, such that they are
@@ -58,9 +80,9 @@ public:
     virtual FieldValue& assign(const FieldValue&);
 
     /** Get the datatype describing what can be stored in this fieldvalue. */
-    virtual const DataType *getDataType() const = 0;
+    virtual const DataType* getDataType() const = 0;
 
-    void serialize(vespalib::nbostream &stream) const;
+    void                serialize(vespalib::nbostream& stream) const;
     vespalib::nbostream serialize() const;
 
     /**
@@ -80,13 +102,13 @@ public:
     /** Cloneable implementation */
     virtual FieldValue* clone() const = 0;
 
-      // Utility methods to be able to compare values easily
-    bool operator>(const FieldValue& v)  const { return (compare(v) > 0); }
-    bool operator>=(const FieldValue& v) const { return (compare(v) >= 0); }
-    bool operator==(const FieldValue& v) const { return (compare(v) == 0); }
-    bool operator<=(const FieldValue& v) const { return (compare(v) <= 0); }
-    bool operator<(const FieldValue& v)  const { return (compare(v) < 0); }
-    bool operator!=(const FieldValue& v) const { return (compare(v) != 0); }
+    // Utility methods to be able to compare values easily
+    bool           operator>(const FieldValue& v) const { return (compare(v) > 0); }
+    bool           operator>=(const FieldValue& v) const { return (compare(v) >= 0); }
+    bool           operator==(const FieldValue& v) const { return (compare(v) == 0); }
+    bool           operator<=(const FieldValue& v) const { return (compare(v) <= 0); }
+    bool           operator<(const FieldValue& v) const { return (compare(v) < 0); }
+    bool           operator!=(const FieldValue& v) const { return (compare(v) != 0); }
     virtual size_t hash() const;
 
     /** Override toXml from XmlSerializable to add start/stop tags. */
@@ -149,15 +171,16 @@ public:
      * invocations of the before mentioned methods and the additional
      * onPrimitive.
      */
-    fieldvalue::ModificationStatus iterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const;
+    fieldvalue::ModificationStatus iterateNested(PathRange nested, fieldvalue::IteratorHandler& handler) const;
 
-    fieldvalue::ModificationStatus iterateNested(const FieldPath& fieldPath, fieldvalue::IteratorHandler& handler) const {
+    fieldvalue::ModificationStatus iterateNested(const FieldPath&             fieldPath,
+                                                 fieldvalue::IteratorHandler& handler) const {
         return iterateNested(fieldPath.begin(), fieldPath.end(), handler);
     }
 
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
     /** Utility function to get this output as a string.  */
-    std::string toString(bool verbose=false, const std::string& indent="") const;
+    std::string  toString(bool verbose = false, const std::string& indent = "") const;
     virtual void printXml(XmlOutputStream& out) const = 0;
 
     // Utility functions to set commonly used value types.
@@ -169,33 +192,34 @@ public:
     bool isStructured() const noexcept { return (_type == Type::DOCUMENT) || (_type == Type::STRUCT); }
     bool isLiteral() const noexcept { return (_type == Type::STRING) || (_type == Type::RAW); }
     bool isNumeric() const noexcept {
-        return (_type == Type::BYTE) || (_type == Type::SHORT) ||
-               (_type == Type::INT) || (_type == Type::LONG) || (_type == Type::FLOAT) || (_type == Type::DOUBLE);
+        return (_type == Type::BYTE) || (_type == Type::SHORT) || (_type == Type::INT) || (_type == Type::LONG) ||
+               (_type == Type::FLOAT) || (_type == Type::DOUBLE);
     }
-    bool isFixedSizeSingleValue() const noexcept {
-        return (_type == Type::BOOL) || isNumeric();
-    }
-    const char * className() const noexcept;
+    bool        isFixedSizeSingleValue() const noexcept { return (_type == Type::BOOL) || isNumeric(); }
+    const char* className() const noexcept;
+
 protected:
-    FieldValue(Type type) noexcept : _type(type) { }
+    FieldValue(Type type) noexcept : _type(type) {}
     FieldValue(const FieldValue&) = default;
     FieldValue& operator=(const FieldValue&) = default;
-    FieldValue(FieldValue &&) noexcept = default;
-    FieldValue& operator=(FieldValue &&) noexcept = default;
-    static std::unique_ptr<vespalib::IArrayBase> createArray(const DataType & baseType);
+    FieldValue(FieldValue&&) noexcept = default;
+    FieldValue&                                  operator=(FieldValue&&) noexcept = default;
+    static std::unique_ptr<vespalib::IArrayBase> createArray(const DataType& baseType);
+
 private:
-    fieldvalue::ModificationStatus
-    iterateNested(FieldPath::const_iterator start, FieldPath::const_iterator end, fieldvalue::IteratorHandler & handler) const {
+    fieldvalue::ModificationStatus iterateNested(FieldPath::const_iterator start, FieldPath::const_iterator end,
+                                                 fieldvalue::IteratorHandler& handler) const {
         return iterateNested(PathRange(start, end), handler);
     }
-    virtual FieldValue::UP onGetNestedFieldValue(PathRange nested) const;
-    virtual fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const;
+    virtual FieldValue::UP                 onGetNestedFieldValue(PathRange nested) const;
+    virtual fieldvalue::ModificationStatus onIterateNested(PathRange                    nested,
+                                                           fieldvalue::IteratorHandler& handler) const;
 
-    Type  _type;
+    Type _type;
 };
 
-std::ostream& operator<<(std::ostream& out, const FieldValue & p);
+std::ostream& operator<<(std::ostream& out, const FieldValue& p);
 
-vespalib::xml::XmlOutputStream & operator<<(vespalib::xml::XmlOutputStream & out, const FieldValue & p);
+vespalib::xml::XmlOutputStream& operator<<(vespalib::xml::XmlOutputStream& out, const FieldValue& p);
 
-} // document
+} // namespace document

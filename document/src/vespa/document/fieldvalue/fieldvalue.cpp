@@ -1,111 +1,102 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldvalue.h"
+
 #include "arrayfieldvalue.h"
-#include "intfieldvalue.h"
-#include "floatfieldvalue.h"
-#include "stringfieldvalue.h"
-#include "rawfieldvalue.h"
-#include "longfieldvalue.h"
-#include "doublefieldvalue.h"
 #include "bytefieldvalue.h"
-#include "predicatefieldvalue.h"
+#include "doublefieldvalue.h"
+#include "floatfieldvalue.h"
+#include "intfieldvalue.h"
 #include "iteratorhandler.h"
+#include "longfieldvalue.h"
+#include "predicatefieldvalue.h"
+#include "rawfieldvalue.h"
+#include "stringfieldvalue.h"
+
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/polymorphicarrays.h>
 #include <vespa/vespalib/util/xmlstream.h>
+
 #include <sstream>
 
-using vespalib::nbostream;
 using vespalib::IllegalArgumentException;
+using vespalib::nbostream;
 using namespace vespalib::xml;
 
 namespace document {
 
 using namespace fieldvalue;
 
-const char *
-FieldValue::className() const noexcept {
+const char* FieldValue::className() const noexcept {
     switch (type()) {
-        case Type::BOOL:
-            return "BoolFieldValue";
-        case Type::BYTE:
-            return "ByteFieldValue";
-        case Type::SHORT:
-            return "ShortFieldValue";
-        case Type::INT:
-            return "IntFieldValue";
-        case Type::LONG:
-            return "LongFieldValue";
-        case Type::FLOAT:
-            return "FloatFieldValue";
-        case Type::DOUBLE:
-            return "DoubleFieldValue";
-        case Type::STRING:
-            return "StringFieldValue";
-        case Type::RAW:
-            return "RawFieldValue";
-        case Type::PREDICATE:
-            return "PredicateFieldValue";
-        case Type::TENSOR:
-            return "TensorFieldValue";
-        case Type::ANNOTATION_REFERENCE:
-            return "AnnotationReferenceFieldValue";
-        case Type::REFERENCE:
-            return "ReferenceFieldValue";
-        case Type::ARRAY:
-            return "ArrayFieldValue";
-        case Type::WSET:
-            return "WSetFieldValue";
-        case Type::MAP:
-            return "MapFieldValue";
-        case Type::STRUCT:
-            return "StructFieldValue";
-        case Type::DOCUMENT:
-            return "DocumentFieldValue";
-        case Type::NONE:
-        default:
-            abort();
+    case Type::BOOL:
+        return "BoolFieldValue";
+    case Type::BYTE:
+        return "ByteFieldValue";
+    case Type::SHORT:
+        return "ShortFieldValue";
+    case Type::INT:
+        return "IntFieldValue";
+    case Type::LONG:
+        return "LongFieldValue";
+    case Type::FLOAT:
+        return "FloatFieldValue";
+    case Type::DOUBLE:
+        return "DoubleFieldValue";
+    case Type::STRING:
+        return "StringFieldValue";
+    case Type::RAW:
+        return "RawFieldValue";
+    case Type::PREDICATE:
+        return "PredicateFieldValue";
+    case Type::TENSOR:
+        return "TensorFieldValue";
+    case Type::ANNOTATION_REFERENCE:
+        return "AnnotationReferenceFieldValue";
+    case Type::REFERENCE:
+        return "ReferenceFieldValue";
+    case Type::ARRAY:
+        return "ArrayFieldValue";
+    case Type::WSET:
+        return "WSetFieldValue";
+    case Type::MAP:
+        return "MapFieldValue";
+    case Type::STRUCT:
+        return "StructFieldValue";
+    case Type::DOCUMENT:
+        return "DocumentFieldValue";
+    case Type::NONE:
+    default:
+        abort();
     }
 }
-void FieldValue::serialize(nbostream &stream) const {
+void FieldValue::serialize(nbostream& stream) const {
     VespaDocumentSerializer serializer(stream);
     serializer.write(*this);
 }
 
-nbostream
-FieldValue::serialize() const {
+nbostream FieldValue::serialize() const {
     nbostream stream;
     serialize(stream);
     return stream;
 }
 
-size_t
-FieldValue::hash() const
-{
+size_t FieldValue::hash() const {
     vespalib::nbostream os;
     serialize(os);
-    return vespalib::hashValue(os.data(), os.size()) ;
+    return vespalib::hashValue(os.data(), os.size());
 }
 
-int
-FieldValue::compare(const FieldValue& other) const {
-    return getDataType()->cmpId(*other.getDataType());
-}
+int FieldValue::compare(const FieldValue& other) const { return getDataType()->cmpId(*other.getDataType()); }
 
-int
-FieldValue::fastCompare(const FieldValue& other) const {
-    return compare(other);
-}
+int FieldValue::fastCompare(const FieldValue& other) const { return compare(other); }
 
-FieldValue&
-FieldValue::assign(const FieldValue& value)
-{
-    throw IllegalArgumentException(
-            "Cannot assign value of type " + value.getDataType()->toString()
-            + " to value of type " + value.getDataType()->toString(), VESPA_STRLOC);
+FieldValue& FieldValue::assign(const FieldValue& value) {
+    throw IllegalArgumentException("Cannot assign value of type " + value.getDataType()->toString() +
+                                       " to value of type " + value.getDataType()->toString(),
+                                   VESPA_STRLOC);
 }
 
 /**
@@ -114,11 +105,9 @@ FieldValue::assign(const FieldValue& value)
  * though, we've overwritten toXml to write a start tag for leaf nodes, if
  * they are used as root nodes in toXml call.
  */
-std::string
-FieldValue::toXml(const std::string& indent) const
-{
+std::string FieldValue::toXml(const std::string& indent) const {
     std::ostringstream ost;
-    XmlOutputStream xos(ost, indent);
+    XmlOutputStream    xos(ost, indent);
     xos << XmlTag("value");
     printXml(xos);
     xos << XmlEndTag();
@@ -127,76 +116,52 @@ FieldValue::toXml(const std::string& indent) const
 
 // Subtypes should implement the conversion functions that make sense
 
-FieldValue&
-FieldValue::operator=(std::string_view)
-{
+FieldValue& FieldValue::operator=(std::string_view) {
     throw IllegalArgumentException("Cannot assign string to datatype " + getDataType()->toString(), VESPA_STRLOC);
 }
 
-char
-FieldValue::getAsByte() const
-{
+char FieldValue::getAsByte() const {
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::BYTE, VESPA_STRLOC);
 }
 
-int32_t
-FieldValue::getAsInt() const
-{
+int32_t FieldValue::getAsInt() const {
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::INT, VESPA_STRLOC);
 }
 
-int64_t
-FieldValue::getAsLong() const
-{
+int64_t FieldValue::getAsLong() const {
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::LONG, VESPA_STRLOC);
 }
 
-float
-FieldValue::getAsFloat() const
-{
+float FieldValue::getAsFloat() const {
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::FLOAT, VESPA_STRLOC);
 }
 
-double
-FieldValue::getAsDouble() const
-{
+double FieldValue::getAsDouble() const {
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::DOUBLE, VESPA_STRLOC);
 }
 
-std::string
-FieldValue::getAsString() const
-{
+std::string FieldValue::getAsString() const {
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::STRING, VESPA_STRLOC);
 }
 
-std::pair<const char*, size_t>
-FieldValue::getAsRaw() const
-{
+std::pair<const char*, size_t> FieldValue::getAsRaw() const {
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::RAW, VESPA_STRLOC);
 }
 
-FieldValue::UP
-FieldValue::getNestedFieldValue(PathRange nested) const
-{
-    return ( ! nested.atEnd() ) ? onGetNestedFieldValue(nested) : FieldValue::UP();
+FieldValue::UP FieldValue::getNestedFieldValue(PathRange nested) const {
+    return (!nested.atEnd()) ? onGetNestedFieldValue(nested) : FieldValue::UP();
 }
 
-FieldValue::UP
-FieldValue::onGetNestedFieldValue(PathRange nested) const
-{
-    (void) nested;
+FieldValue::UP FieldValue::onGetNestedFieldValue(PathRange nested) const {
+    (void)nested;
     return {};
 }
 
-ModificationStatus
-FieldValue::iterateNested(PathRange nested, IteratorHandler & handler) const
-{
+ModificationStatus FieldValue::iterateNested(PathRange nested, IteratorHandler& handler) const {
     return onIterateNested(nested, handler);
 }
 
-ModificationStatus
-FieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
-{
+ModificationStatus FieldValue::onIterateNested(PathRange nested, IteratorHandler& handler) const {
     if (nested.atEnd()) {
         handler.handlePrimitive(-1, *this);
         return handler.modify(const_cast<FieldValue&>(*this));
@@ -205,9 +170,7 @@ FieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
     }
 }
 
-std::string
-FieldValue::toString(bool verbose, const std::string& indent) const
-{
+std::string FieldValue::toString(bool verbose, const std::string& indent) const {
     std::ostringstream o;
     print(o, verbose, indent);
     return o.str();
@@ -218,22 +181,20 @@ using vespalib::PrimitiveArrayT;
 
 namespace {
 
-class FieldValueFactory : public ComplexArrayT<FieldValue>::Factory
-{
+class FieldValueFactory : public ComplexArrayT<FieldValue>::Factory {
 public:
-    explicit FieldValueFactory(const DataType & dataType) noexcept : _dataType(&dataType) { }
-    FieldValue * create() override { return _dataType->createFieldValue().release(); }
-    FieldValueFactory * clone() const override { return new FieldValueFactory(*this); }
+    explicit FieldValueFactory(const DataType& dataType) noexcept : _dataType(&dataType) {}
+    FieldValue*        create() override { return _dataType->createFieldValue().release(); }
+    FieldValueFactory* clone() const override { return new FieldValueFactory(*this); }
+
 private:
-    const DataType * _dataType;
+    const DataType* _dataType;
 };
 
-}
+} // namespace
 
-std::unique_ptr<vespalib::IArrayBase>
-FieldValue::createArray(const DataType & baseType)
-{
-    switch(baseType.getId()) {
+std::unique_ptr<vespalib::IArrayBase> FieldValue::createArray(const DataType& baseType) {
+    switch (baseType.getId()) {
     case DataType::T_INT:
         return std::make_unique<PrimitiveArrayT<IntFieldValue, FieldValue>>();
     case DataType::T_FLOAT:
@@ -253,14 +214,14 @@ FieldValue::createArray(const DataType & baseType)
     }
 }
 
-std::ostream& operator<<(std::ostream& out, const FieldValue & p) {
+std::ostream& operator<<(std::ostream& out, const FieldValue& p) {
     p.print(out, false, "");
     return out;
 }
 
-XmlOutputStream & operator<<(XmlOutputStream & out, const FieldValue & p) {
+XmlOutputStream& operator<<(XmlOutputStream& out, const FieldValue& p) {
     p.printXml(out);
     return out;
 }
 
-} // document
+} // namespace document

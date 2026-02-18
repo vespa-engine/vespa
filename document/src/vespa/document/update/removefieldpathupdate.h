@@ -5,15 +5,14 @@
 
 namespace document {
 
-class RemoveFieldPathUpdate final : public FieldPathUpdate
-{
+class RemoveFieldPathUpdate final : public FieldPathUpdate {
 public:
     /** For deserialization */
     RemoveFieldPathUpdate() noexcept;
-    RemoveFieldPathUpdate(RemoveFieldPathUpdate &&) noexcept = default;
-    RemoveFieldPathUpdate & operator =(RemoveFieldPathUpdate &&) noexcept = default;
-    RemoveFieldPathUpdate(const RemoveFieldPathUpdate &) = delete;
-    RemoveFieldPathUpdate & operator =(const RemoveFieldPathUpdate &) = delete;
+    RemoveFieldPathUpdate(RemoveFieldPathUpdate&&) noexcept = default;
+    RemoveFieldPathUpdate& operator=(RemoveFieldPathUpdate&&) noexcept = default;
+    RemoveFieldPathUpdate(const RemoveFieldPathUpdate&) = delete;
+    RemoveFieldPathUpdate& operator=(const RemoveFieldPathUpdate&) = delete;
     RemoveFieldPathUpdate(string_view fieldPath) : RemoveFieldPathUpdate(fieldPath, string_view()) {}
     RemoveFieldPathUpdate(string_view fieldPath, string_view whereClause);
     ~RemoveFieldPathUpdate() override;
@@ -21,12 +20,13 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     ACCEPT_UPDATE_VISITOR;
+
 private:
     uint8_t getSerializedType() const override { return RemoveMagic; }
-    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;
+    void    deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
 
-    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document &, const DocumentTypeRepo &) const override;
+    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document&,
+                                                                    const DocumentTypeRepo&) const override;
 };
 
-}
-
+} // namespace document

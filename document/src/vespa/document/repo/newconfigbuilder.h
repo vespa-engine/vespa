@@ -6,6 +6,7 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/datatype.h>
+
 #include <cassert>
 #include <map>
 #include <string>
@@ -23,7 +24,7 @@ class NewStruct;
  * Unlike the old format which used ID-based references, this uses idx values (10000+).
  */
 struct TypeRef {
-    int32_t idx;  // Index in the config (10000+)
+    int32_t idx; // Index in the config (10000+)
 
     explicit TypeRef(int32_t i) : idx(i) {}
     operator int32_t() const { return idx; }
@@ -38,15 +39,15 @@ class NewStruct {
     friend class NewDocTypeRep;
 
 private:
-    NewConfigBuilder& _builder;
-    std::string _name;
-    int32_t _internalid;
-    int32_t _idx;
-    int32_t _doctype_idx;
-    std::vector<std::pair<std::string, TypeRef>> _fields;
+    NewConfigBuilder&                                _builder;
+    std::string                                      _name;
+    int32_t                                          _internalid;
+    int32_t                                          _idx;
+    int32_t                                          _doctype_idx;
+    std::vector<std::pair<std::string, TypeRef>>     _fields;
     std::vector<std::pair<std::string, std::string>> _tensor_fields;
-    std::vector<TypeRef> _inherits;
-    bool _registered;
+    std::vector<TypeRef>                             _inherits;
+    bool                                             _registered;
 
     NewStruct(NewConfigBuilder& builder, std::string name, int32_t doctype_idx);
 
@@ -64,7 +65,7 @@ public:
     NewStruct& inherit(TypeRef parent_struct);
     NewStruct& setId(int32_t internalid);
 
-    TypeRef ref();  // Finalize and get TypeRef for this struct
+    TypeRef ref(); // Finalize and get TypeRef for this struct
 };
 
 /**
@@ -76,10 +77,10 @@ class NewArray {
 
 private:
     NewConfigBuilder& _builder;
-    TypeRef _element_type;
-    int32_t _idx;
-    int32_t _doctype_idx;
-    bool _registered;
+    TypeRef           _element_type;
+    int32_t           _idx;
+    int32_t           _doctype_idx;
+    bool              _registered;
 
     NewArray(NewConfigBuilder& builder, TypeRef element_type, int32_t doctype_idx);
 
@@ -96,19 +97,19 @@ class NewWset {
 
 private:
     NewConfigBuilder& _builder;
-    TypeRef _element_type;
-    int32_t _idx;
-    int32_t _doctype_idx;
-    bool _registered;
-    bool _removeifzero;
-    bool _createifnonexistent;
+    TypeRef           _element_type;
+    int32_t           _idx;
+    int32_t           _doctype_idx;
+    bool              _registered;
+    bool              _removeifzero;
+    bool              _createifnonexistent;
 
     NewWset(NewConfigBuilder& builder, TypeRef element_type, int32_t doctype_idx);
 
 public:
     NewWset& removeIfZero();
     NewWset& createIfNonExistent();
-    TypeRef ref();
+    TypeRef  ref();
 };
 
 /**
@@ -120,11 +121,11 @@ class NewMap {
 
 private:
     NewConfigBuilder& _builder;
-    TypeRef _key_type;
-    TypeRef _value_type;
-    int32_t _idx;
-    int32_t _doctype_idx;
-    bool _registered;
+    TypeRef           _key_type;
+    TypeRef           _value_type;
+    int32_t           _idx;
+    int32_t           _doctype_idx;
+    bool              _registered;
 
     NewMap(NewConfigBuilder& builder, TypeRef key_type, TypeRef value_type, int32_t doctype_idx);
 
@@ -142,7 +143,7 @@ class NewAnnotationRef {
 private:
     int32_t _annotation_idx;
     int32_t _idx;
-    bool _registered;
+    bool    _registered;
 
     explicit NewAnnotationRef(int32_t annotation_idx) noexcept;
 
@@ -158,19 +159,19 @@ class NewDocTypeRep {
     friend class NewConfigBuilder;
 
 private:
-    NewConfigBuilder& _builder;
-    int32_t _idx;
-    std::string _name;
-    std::vector<int32_t> _inherits;
-    std::vector<std::string> _imported_fields;
+    NewConfigBuilder&                               _builder;
+    int32_t                                         _idx;
+    std::string                                     _name;
+    std::vector<int32_t>                            _inherits;
+    std::vector<std::string>                        _imported_fields;
     std::map<std::string, std::vector<std::string>> _field_sets;
 
     // Annotation and reference data
     struct AnnotationTypeData {
-        int32_t idx;
+        int32_t     idx;
         std::string name;
-        int32_t internalid;
-        int32_t datatype_idx;  // -1 if no datatype
+        int32_t     internalid;
+        int32_t     datatype_idx; // -1 if no datatype
     };
     std::vector<AnnotationTypeData> _annotations;
 
@@ -185,13 +186,13 @@ public:
 
     // Type factory methods (create types owned by this doctype)
     NewStruct createStruct(const std::string& name);
-    NewArray createArray(TypeRef element_type);
-    NewWset createWset(TypeRef element_type);
-    NewMap createMap(TypeRef key_type, TypeRef value_type);
-    TypeRef registerStruct(NewStruct&& s);
-    TypeRef registerArray(NewArray&& a);
-    TypeRef registerWset(NewWset&& w);
-    TypeRef registerMap(NewMap&& m);
+    NewArray  createArray(TypeRef element_type);
+    NewWset   createWset(TypeRef element_type);
+    NewMap    createMap(TypeRef key_type, TypeRef value_type);
+    TypeRef   registerStruct(NewStruct&& s);
+    TypeRef   registerArray(NewArray&& a);
+    TypeRef   registerWset(NewWset&& w);
+    TypeRef   registerMap(NewMap&& m);
 
     // Inheritance
     NewDocTypeRep& inherit(int32_t parent_idx);
@@ -200,9 +201,9 @@ public:
     // Annotations
     NewDocTypeRep& annotationType(int32_t id, const std::string& name);
     NewDocTypeRep& annotationType(int32_t id, const std::string& name, TypeRef datatype);
-    TypeRef createAnnotationType(int32_t id, const std::string& name);
-    TypeRef createAnnotationType(int32_t id, const std::string& name, TypeRef datatype);
-    TypeRef createAnnotationReference(TypeRef annotation_type_idx);
+    TypeRef        createAnnotationType(int32_t id, const std::string& name);
+    TypeRef        createAnnotationType(int32_t id, const std::string& name, TypeRef datatype);
+    TypeRef        createAnnotationReference(TypeRef annotation_type_idx);
 
     // Document references
     TypeRef referenceType(int32_t target_doctype_idx);
@@ -232,13 +233,13 @@ class NewConfigBuilder {
 
 private:
     ::document::config::DocumenttypesConfigBuilder _config;
-    std::map<std::string, int32_t> _doctype_map;  // name -> idx
-    std::map<int32_t, int32_t> _primitive_idx_map;  // DataType::Type -> idx
-    std::map<int32_t, int32_t> _idx_to_internalid_map;  // idx -> internalid
-    std::map<int32_t, NewDocTypeRep*> _doctype_builders;  // idx -> NewDocTypeRep
-    int32_t _next_idx;
-    int32_t _base_document_idx;
-    int32_t _position_type_idx;
+    std::map<std::string, int32_t>                 _doctype_map;           // name -> idx
+    std::map<int32_t, int32_t>                     _primitive_idx_map;     // DataType::Type -> idx
+    std::map<int32_t, int32_t>                     _idx_to_internalid_map; // idx -> internalid
+    std::map<int32_t, NewDocTypeRep*>              _doctype_builders;      // idx -> NewDocTypeRep
+    int32_t                                        _next_idx;
+    int32_t                                        _base_document_idx;
+    int32_t                                        _position_type_idx;
 
     void setupBaseDocument();
     void addPrimitiveToBase(const std::string& name, int32_t type_id);
@@ -263,21 +264,21 @@ public:
     NewDocTypeRep& document(const std::string& name, int32_t internalid);
 
     // Get reference to primitive type (returns idx from base document)
-    TypeRef primitiveType(int32_t type_id);  // DataType::T_INT, etc.
+    TypeRef primitiveType(int32_t type_id); // DataType::T_INT, etc.
 
     // convenience methods:
-    TypeRef boolTypeRef()      { return primitiveType(DataType::T_BOOL); }
-    TypeRef byteTypeRef()      { return primitiveType(DataType::T_BYTE); }
-    TypeRef doubleTypeRef()    { return primitiveType(DataType::T_DOUBLE); }
-    TypeRef floatTypeRef()     { return primitiveType(DataType::T_FLOAT); }
-    TypeRef intTypeRef()       { return primitiveType(DataType::T_INT); }
-    TypeRef longTypeRef()      { return primitiveType(DataType::T_LONG); }
+    TypeRef boolTypeRef() { return primitiveType(DataType::T_BOOL); }
+    TypeRef byteTypeRef() { return primitiveType(DataType::T_BYTE); }
+    TypeRef doubleTypeRef() { return primitiveType(DataType::T_DOUBLE); }
+    TypeRef floatTypeRef() { return primitiveType(DataType::T_FLOAT); }
+    TypeRef intTypeRef() { return primitiveType(DataType::T_INT); }
+    TypeRef longTypeRef() { return primitiveType(DataType::T_LONG); }
     TypeRef predicateTypeRef() { return primitiveType(DataType::T_PREDICATE); }
-    TypeRef rawTypeRef()       { return primitiveType(DataType::T_RAW); }
-    TypeRef shortTypeRef()     { return primitiveType(DataType::T_SHORT); }
-    TypeRef stringTypeRef()    { return primitiveType(DataType::T_STRING); }
-    TypeRef tagTypeRef()       { return primitiveType(DataType::T_TAG); }
-    TypeRef uriTypeRef()       { return primitiveType(DataType::T_URI); }
+    TypeRef rawTypeRef() { return primitiveType(DataType::T_RAW); }
+    TypeRef shortTypeRef() { return primitiveType(DataType::T_SHORT); }
+    TypeRef stringTypeRef() { return primitiveType(DataType::T_STRING); }
+    TypeRef tagTypeRef() { return primitiveType(DataType::T_TAG); }
+    TypeRef uriTypeRef() { return primitiveType(DataType::T_URI); }
 
     // Get reference to built-in position type (returns idx from base document)
     TypeRef positionType();
@@ -296,9 +297,9 @@ public:
 
     // Factory methods for types (automatically registered with given doctype)
     NewStruct createStruct(const std::string& name, int32_t doctype_idx);
-    NewArray createArray(TypeRef element_type, int32_t doctype_idx);
-    NewWset createWset(TypeRef element_type, int32_t doctype_idx);
-    NewMap createMap(TypeRef key_type, TypeRef value_type, int32_t doctype_idx);
+    NewArray  createArray(TypeRef element_type, int32_t doctype_idx);
+    NewWset   createWset(TypeRef element_type, int32_t doctype_idx);
+    NewMap    createMap(TypeRef key_type, TypeRef value_type, int32_t doctype_idx);
 };
 
-}  // namespace document::new_config_builder
+} // namespace document::new_config_builder

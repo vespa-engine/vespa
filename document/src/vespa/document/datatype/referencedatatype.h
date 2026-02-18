@@ -12,24 +12,23 @@ namespace document {
  */
 class ReferenceDataType final : public DataType {
     const DocumentType& _targetDocType;
+
 public:
     ReferenceDataType(const DocumentType& targetDocType, int id);
-    ReferenceDataType(const ReferenceDataType &) = delete;
-    ReferenceDataType & operator =(const ReferenceDataType &) = delete;
+    ReferenceDataType(const ReferenceDataType&) = delete;
+    ReferenceDataType& operator=(const ReferenceDataType&) = delete;
     ~ReferenceDataType() override;
 
-    const DocumentType& getTargetType() const noexcept {
-        return _targetDocType;
-    }
+    const DocumentType& getTargetType() const noexcept { return _targetDocType; }
 
     static int32_t makeInternalId(const std::string& targetDocType);
 
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void print(std::ostream&, bool verbose, const std::string& indent) const override;
-    void onBuildFieldPath(FieldPath & path, std::string_view remainingFieldName) const override;
+    void                        print(std::ostream&, bool verbose, const std::string& indent) const override;
+    void                        onBuildFieldPath(FieldPath& path, std::string_view remainingFieldName) const override;
 
-    const ReferenceDataType * cast_reference() const noexcept override { return this; }
-    bool equals(const DataType &type) const noexcept override;
+    const ReferenceDataType* cast_reference() const noexcept override { return this; }
+    bool                     equals(const DataType& type) const noexcept override;
 };
 
-} // document
+} // namespace document

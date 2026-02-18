@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "visitor.h"
 #include "resultset.h"
+#include "visitor.h"
+
 #include <memory>
 
 namespace document::select {
@@ -10,15 +11,14 @@ namespace document::select {
 class Node;
 class ValueNode;
 
-class CloningVisitor : public Visitor
-{
+class CloningVisitor : public Visitor {
 protected:
-    std::unique_ptr<Node> _node;
+    std::unique_ptr<Node>      _node;
     std::unique_ptr<ValueNode> _valueNode;
-    bool _constVal;
-    int _priority;
-    uint32_t _fieldNodes;
-    ResultSet _resultSet;
+    bool                       _constVal;
+    int                        _priority;
+    uint32_t                   _fieldNodes;
+    ResultSet                  _resultSet;
 
     static constexpr int OrPriority = 100;
     static constexpr int AndPriority = 200;
@@ -48,37 +48,36 @@ public:
     CloningVisitor();
     ~CloningVisitor() override;
 
-    void visitAndBranch(const And &expr) override;
-    void visitOrBranch(const Or &expr) override;
-    void visitNotBranch(const Not &expr) override;
-    void visitComparison(const Compare &expr) override;
-    void visitArithmeticValueNode(const ArithmeticValueNode &expr) override;
-    void visitFunctionValueNode(const FunctionValueNode &expr) override;
-    void visitConstant(const Constant &expr) override;
-    void visitInvalidConstant(const InvalidConstant &expr) override;
-    void visitDocumentType(const DocType &expr) override;
-    void visitIdValueNode(const IdValueNode &expr) override;
-    void visitFieldValueNode(const FieldValueNode &expr) override;
-    void visitFloatValueNode(const FloatValueNode &expr) override;
-    void visitVariableValueNode(const VariableValueNode &expr) override;
-    void visitIntegerValueNode(const IntegerValueNode &expr) override;
-    void visitBoolValueNode(const BoolValueNode &expr) override;
-    void visitCurrentTimeValueNode(const CurrentTimeValueNode &expr) override;
-    void visitStringValueNode(const StringValueNode &expr) override;
-    void visitNullValueNode(const NullValueNode &expr) override;
-    void visitInvalidValueNode(const InvalidValueNode &expr) override;
+    void visitAndBranch(const And& expr) override;
+    void visitOrBranch(const Or& expr) override;
+    void visitNotBranch(const Not& expr) override;
+    void visitComparison(const Compare& expr) override;
+    void visitArithmeticValueNode(const ArithmeticValueNode& expr) override;
+    void visitFunctionValueNode(const FunctionValueNode& expr) override;
+    void visitConstant(const Constant& expr) override;
+    void visitInvalidConstant(const InvalidConstant& expr) override;
+    void visitDocumentType(const DocType& expr) override;
+    void visitIdValueNode(const IdValueNode& expr) override;
+    void visitFieldValueNode(const FieldValueNode& expr) override;
+    void visitFloatValueNode(const FloatValueNode& expr) override;
+    void visitVariableValueNode(const VariableValueNode& expr) override;
+    void visitIntegerValueNode(const IntegerValueNode& expr) override;
+    void visitBoolValueNode(const BoolValueNode& expr) override;
+    void visitCurrentTimeValueNode(const CurrentTimeValueNode& expr) override;
+    void visitStringValueNode(const StringValueNode& expr) override;
+    void visitNullValueNode(const NullValueNode& expr) override;
+    void visitInvalidValueNode(const InvalidValueNode& expr) override;
 
-    std::unique_ptr<Node> &getNode() { return _node; }
-    std::unique_ptr<ValueNode> &getValueNode() { return _valueNode; }
+    std::unique_ptr<Node>&      getNode() { return _node; }
+    std::unique_ptr<ValueNode>& getValueNode() { return _valueNode; }
 
     void setNodeParentheses(int priority);
     void setValueNodeParentheses(int priority);
-    void setArithmeticValueNode(const ArithmeticValueNode &expr, std::unique_ptr<ValueNode> lhs,
-                                int lhsPriority, bool lhsConstVal, std::unique_ptr<ValueNode> rhs,
-                                int rhsPriority, bool rhsConstVal);
+    void setArithmeticValueNode(const ArithmeticValueNode& expr, std::unique_ptr<ValueNode> lhs, int lhsPriority,
+                                bool lhsConstVal, std::unique_ptr<ValueNode> rhs, int rhsPriority, bool rhsConstVal);
 
-    void swap(CloningVisitor &rhs);
+    void swap(CloningVisitor& rhs);
     void revisit();
 };
 
-}
+} // namespace document::select

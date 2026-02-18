@@ -14,18 +14,16 @@
 
 namespace document::select {
 
-class InvalidConstant : public Node
-{
+class InvalidConstant : public Node {
 public:
     explicit InvalidConstant(std::string_view value);
 
     ResultList contains(const Context&) const override { return ResultList(Result::Invalid); }
     ResultList trace(const Context&, std::ostream& trace) const override;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void visit(Visitor& v) const override;
+    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void       visit(Visitor& v) const override;
 
     Node::UP clone() const override { return wrapParens(new InvalidConstant(_name)); }
-
 };
 
-}
+} // namespace document::select

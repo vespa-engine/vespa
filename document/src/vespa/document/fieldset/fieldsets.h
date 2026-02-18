@@ -7,28 +7,25 @@ namespace document {
 
 class DocumentType;
 
-class AllFields final : public FieldSet
-{
+class AllFields final : public FieldSet {
 public:
-    static constexpr const char * NAME = "[all]";
+    static constexpr const char* NAME = "[all]";
     ~AllFields() override;
     bool contains(const FieldSet&) const override { return true; }
     Type getType() const override { return Type::ALL; }
 };
 
-class NoFields final : public FieldSet
-{
+class NoFields final : public FieldSet {
 public:
-    static constexpr const char * NAME = "[none]";
+    static constexpr const char* NAME = "[none]";
     ~NoFields() override;
     bool contains(const FieldSet& f) const override { return f.getType() == Type::NONE; }
     Type getType() const override { return Type::NONE; }
 };
 
-class DocIdOnly final : public FieldSet
-{
+class DocIdOnly final : public FieldSet {
 public:
-    static constexpr const char * NAME = "[id]";
+    static constexpr const char* NAME = "[id]";
     ~DocIdOnly() override;
     bool contains(const FieldSet& fields) const override {
         return fields.getType() == Type::DOCID || fields.getType() == Type::NONE;
@@ -36,26 +33,23 @@ public:
     Type getType() const override { return Type::DOCID; }
 };
 
-class DocumentOnly final : public FieldSet
-{
+class DocumentOnly final : public FieldSet {
 public:
-    static constexpr const char * NAME = "[document]";
+    static constexpr const char* NAME = "[document]";
     ~DocumentOnly() override;
     bool contains(const FieldSet& fields) const override {
-        return fields.getType() == Type::DOCUMENT_ONLY
-            || fields.getType() == Type::DOCID
-            || fields.getType() == Type::NONE;
+        return fields.getType() == Type::DOCUMENT_ONLY || fields.getType() == Type::DOCID ||
+               fields.getType() == Type::NONE;
     }
     Type getType() const override { return Type::DOCUMENT_ONLY; }
 };
 
-class FieldCollection : public FieldSet
-{
+class FieldCollection : public FieldSet {
 public:
     using UP = std::unique_ptr<FieldCollection>;
 
     FieldCollection(const DocumentType& docType, Field::Set set);
-    FieldCollection(const FieldCollection &);
+    FieldCollection(const FieldCollection&);
     FieldCollection(FieldCollection&&) noexcept = default;
     ~FieldCollection() override;
     FieldCollection& operator=(const FieldCollection&) = default;
@@ -65,12 +59,13 @@ public:
     Type getType() const override { return Type::SET; }
 
     const DocumentType& getDocumentType() const { return *_docType; }
-    const Field::Set& getFields() const { return _set; }
-    uint64_t hash() const { return _hash; }
+    const Field::Set&   getFields() const { return _set; }
+    uint64_t            hash() const { return _hash; }
+
 private:
     Field::Set          _set;
     uint64_t            _hash;
     const DocumentType* _docType;
 };
 
-}
+} // namespace document

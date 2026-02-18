@@ -11,7 +11,7 @@ class DocumentType;
 class IDocumentTypeRepo {
 public:
     virtual ~IDocumentTypeRepo() = default;
-    virtual const DocumentType *getDocumentType(std::string_view name) const noexcept = 0;
+    virtual const DocumentType* getDocumentType(std::string_view name) const noexcept = 0;
 };
 
-}
+} // namespace document

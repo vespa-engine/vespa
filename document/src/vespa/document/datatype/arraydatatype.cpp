@@ -1,49 +1,37 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "arraydatatype.h"
+
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <ostream>
 
 namespace document {
 
-ArrayDataType::ArrayDataType(const DataType &nestedType, int32_t id)
-    : CollectionDataType("Array<" + nestedType.getName() + ">", nestedType, id)
-{
-}
+ArrayDataType::ArrayDataType(const DataType& nestedType, int32_t id)
+    : CollectionDataType("Array<" + nestedType.getName() + ">", nestedType, id) {}
 
 ArrayDataType::ArrayDataType(const DataType& nestedType)
-    : CollectionDataType("Array<" + nestedType.getName() + ">", nestedType)
-{
-}
+    : CollectionDataType("Array<" + nestedType.getName() + ">", nestedType) {}
 
 ArrayDataType::~ArrayDataType() = default;
 
-FieldValue::UP
-ArrayDataType::createFieldValue() const
-{
-    return std::make_unique<ArrayFieldValue>(*this);
-}
+FieldValue::UP ArrayDataType::createFieldValue() const { return std::make_unique<ArrayFieldValue>(*this); }
 
-void
-ArrayDataType::print(std::ostream& out, bool verbose,
-                     const std::string& indent) const
-{
+void ArrayDataType::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "ArrayDataType(\n" << indent << "    ";
     getNestedType().print(out, verbose, indent + "    ");
     out << ", id " << getId() << ")";
 }
 
-bool
-ArrayDataType::equals(const DataType& other) const noexcept
-{
-    if (this == &other) return true;
+bool ArrayDataType::equals(const DataType& other) const noexcept {
+    if (this == &other)
+        return true;
     return CollectionDataType::equals(other) && other.isArray();
 }
 
-void
-ArrayDataType::onBuildFieldPath(FieldPath & path, std::string_view remainFieldName) const
-{
+void ArrayDataType::onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const {
     if (remainFieldName[0] == '[') {
         size_t endPos = remainFieldName.find(']');
         if (endPos == std::string_view::npos) {
@@ -57,10 +45,12 @@ ArrayDataType::onBuildFieldPath(FieldPath & path, std::string_view remainFieldNa
             getNestedType().buildFieldPath(path, remainFieldName.substr(pos));
 
             if (remainFieldName[1] == '$') {
-                path.insert(path.begin(), std::make_unique<FieldPathEntry>(getNestedType(), remainFieldName.substr(2, endPos - 2)));
+                path.insert(path.begin(),
+                            std::make_unique<FieldPathEntry>(getNestedType(), remainFieldName.substr(2, endPos - 2)));
             } else {
                 // FIXME C++17 range-safe from_chars() instead of atoi()
-                path.insert(path.begin(), std::make_unique<FieldPathEntry>(getNestedType(), atoi(remainFieldName.substr(1, endPos - 1).data())));
+                path.insert(path.begin(), std::make_unique<FieldPathEntry>(
+                                              getNestedType(), atoi(remainFieldName.substr(1, endPos - 1).data())));
             }
         }
     } else {
@@ -68,4 +58,4 @@ ArrayDataType::onBuildFieldPath(FieldPath & path, std::string_view remainFieldNa
     }
 }
 
-} // document
+} // namespace document

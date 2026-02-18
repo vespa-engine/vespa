@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "structdatatype.h"
+
 #include <vespa/document/base/exceptions.h>
-#include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <cassert>
 #include <ostream>
 
@@ -14,28 +17,18 @@ LOG_SETUP(".document.datatype.struct");
 
 namespace document {
 
-using vespalib::make_string;
 using vespalib::IllegalArgumentException;
+using vespalib::make_string;
 
-StructDataType::StructDataType(std::string_view name)
-    : StructuredDataType(name),
-      _nameFieldMap(),
-      _idFieldMap()
-{ }
+StructDataType::StructDataType(std::string_view name) : StructuredDataType(name), _nameFieldMap(), _idFieldMap() {}
 
 StructDataType::StructDataType(std::string_view name, int32_t dataTypeId)
-    : StructuredDataType(name, dataTypeId),
-      _nameFieldMap(),
-      _idFieldMap()
-{ }
+    : StructuredDataType(name, dataTypeId), _nameFieldMap(), _idFieldMap() {}
 
-StructDataType::StructDataType(const StructDataType & rhs) = default;
+StructDataType::StructDataType(const StructDataType& rhs) = default;
 StructDataType::~StructDataType() = default;
 
-void
-StructDataType::print(std::ostream& out, bool verbose,
-                      const std::string& indent) const
-{
+void StructDataType::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "StructDataType(" << getName();
     if (verbose) {
         out << ", id " << getId();
@@ -45,10 +38,10 @@ StructDataType::print(std::ostream& out, bool verbose,
         out << " {";
         assert(_idFieldMap.size() == _nameFieldMap.size());
         if (!_nameFieldMap.empty()) {
-                // Use fieldset to print even though inefficient. Don't need
-                // efficient print, and this gets fields in order
+            // Use fieldset to print even though inefficient. Don't need
+            // efficient print, and this gets fields in order
             Field::Set fields(getFieldSet());
-            for (const Field * field : fields) {
+            for (const Field* field : fields) {
                 out << "\n" << indent << "  " << field->toString(verbose);
             }
             out << "\n" << indent;
@@ -57,14 +50,12 @@ StructDataType::print(std::ostream& out, bool verbose,
     }
 }
 
-void
-StructDataType::addField(const Field& field)
-{
+void StructDataType::addField(const Field& field) {
     std::string error = containsConflictingField(field);
     if (!error.empty()) {
         throw IllegalArgumentException(make_string("Failed to add field '%s' to struct '%s': %s",
-                                                   field.getName().data(), getName().c_str(),
-                                                   error.c_str()), VESPA_STRLOC);
+                                                   field.getName().data(), getName().c_str(), error.c_str()),
+                                       VESPA_STRLOC);
     }
     if (hasField(field.getName())) {
         return;
@@ -74,15 +65,13 @@ StructDataType::addField(const Field& field)
     _idFieldMap[field.getId()] = newF;
 }
 
-void
-StructDataType::addInheritedField(const Field& field)
-{
+void StructDataType::addInheritedField(const Field& field) {
     std::string error = containsConflictingField(field);
     if (!error.empty()) {
-            // Deploy application should fail if overwriting a field with field
-            // of different type. Java version of document sees to this. C++
-            // just accepts what it gets, as to make it easier to alter the
-            // restrictions.
+        // Deploy application should fail if overwriting a field with field
+        // of different type. Java version of document sees to this. C++
+        // just accepts what it gets, as to make it easier to alter the
+        // restrictions.
         LOG(warning, "Inherited field %s conflicts with existing field. Field not added to struct %s: %s",
             field.toString().c_str(), getName().c_str(), error.c_str());
         return;
@@ -95,15 +84,9 @@ StructDataType::addInheritedField(const Field& field)
     _idFieldMap[field.getId()] = newF;
 }
 
-FieldValue::UP
-StructDataType::createFieldValue() const
-{
-    return std::make_unique<StructFieldValue>(*this);
-}
+FieldValue::UP StructDataType::createFieldValue() const { return std::make_unique<StructFieldValue>(*this); }
 
-const Field&
-StructDataType::getField(std::string_view name) const
-{
+const Field& StructDataType::getField(std::string_view name) const {
     StringFieldMap::const_iterator it(_nameFieldMap.find(name));
     if (it == _nameFieldMap.end()) {
         throw FieldNotFoundException(std::string(name), VESPA_STRLOC);
@@ -116,16 +99,13 @@ namespace {
 
 [[noreturn]] void throwFieldNotFound(int32_t fieldId, int version) __attribute__((noinline));
 
-void throwFieldNotFound(int32_t fieldId, int version)
-{
+void throwFieldNotFound(int32_t fieldId, int version) {
     throw FieldNotFoundException(fieldId, version, VESPA_STRLOC);
 }
 
-}
+} // namespace
 
-const Field&
-StructDataType::getField(int32_t fieldId) const
-{
+const Field& StructDataType::getField(int32_t fieldId) const {
     IntFieldMap::const_iterator it(_idFieldMap.find(fieldId));
     if (__builtin_expect(it == _idFieldMap.end(), false)) {
         throwFieldNotFound(fieldId, 7);
@@ -133,22 +113,18 @@ StructDataType::getField(int32_t fieldId) const
     return *it->second;
 }
 
-bool
-StructDataType::hasField(std::string_view name) const noexcept {
+bool StructDataType::hasField(std::string_view name) const noexcept {
     return _nameFieldMap.find(name) != _nameFieldMap.end();
 }
 
-bool
-StructDataType::hasField(int32_t fieldId) const noexcept {
+bool StructDataType::hasField(int32_t fieldId) const noexcept {
     return _idFieldMap.find(fieldId) != _idFieldMap.end();
 }
 
-Field::Set
-StructDataType::getFieldSet() const
-{
+Field::Set StructDataType::getFieldSet() const {
     Field::Set::Builder builder;
     builder.reserve(_idFieldMap.size());
-    for (const auto & entry : _idFieldMap) {
+    for (const auto& entry : _idFieldMap) {
         builder.add(entry.second.get());
     }
     return builder.build();
@@ -156,17 +132,14 @@ StructDataType::getFieldSet() const
 
 namespace {
 // We cannot use Field::operator==(), since that only compares id.
-bool differs(const Field &field1, const Field &field2) {
-    return field1.getId() != field2.getId()
-        || field1.getName() != field2.getName();
+bool differs(const Field& field1, const Field& field2) {
+    return field1.getId() != field2.getId() || field1.getName() != field2.getName();
 }
-}  // namespace
+} // namespace
 
-std::string
-StructDataType::containsConflictingField(const Field& field) const
-{
-    StringFieldMap::const_iterator it1( _nameFieldMap.find(field.getName()));
-    IntFieldMap::const_iterator it2(_idFieldMap.find(field.getId()));
+std::string StructDataType::containsConflictingField(const Field& field) const {
+    StringFieldMap::const_iterator it1(_nameFieldMap.find(field.getName()));
+    IntFieldMap::const_iterator    it2(_idFieldMap.find(field.getId()));
 
     if (it1 != _nameFieldMap.end() && differs(field, *it1->second)) {
         return make_string("Name in use by field with different id %s.", it1->second->toString().c_str());
@@ -178,4 +151,4 @@ StructDataType::containsConflictingField(const Field& field) const
     return "";
 }
 
-} // document
+} // namespace document

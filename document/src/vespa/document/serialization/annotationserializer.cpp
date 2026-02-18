@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "annotationserializer.h"
+
 #include "util.h"
 #include "vespadocumentserializer.h"
+
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
@@ -16,64 +18,59 @@ using vespalib::nbostream;
 
 namespace document {
 
-AnnotationSerializer::AnnotationSerializer(nbostream &stream)
-    : _stream(stream),
-      _span_node_map() {
-}
+AnnotationSerializer::AnnotationSerializer(nbostream& stream) : _stream(stream), _span_node_map() {}
 
-void AnnotationSerializer::write(const SpanTree &tree) {
+void AnnotationSerializer::write(const SpanTree& tree) {
     _span_node_map.clear();
-    StringFieldValue name(tree.getName());
+    StringFieldValue        name(tree.getName());
     VespaDocumentSerializer serializer(_stream);
     serializer.write(name);
     write(tree.getRoot());
     putInt1_2_4Bytes(_stream, tree.numAnnotations());
-    for (const Annotation & a : tree) {
+    for (const Annotation& a : tree) {
         write(a);
     }
 }
 
-void AnnotationSerializer::write(const SpanNode &node) {
+void AnnotationSerializer::write(const SpanNode& node) {
     size_t node_id = _span_node_map.size();
     _span_node_map[&node] = node_id;
     node.accept(*this);
 }
 
-void AnnotationSerializer::writeSpan(const Span &node) {
-    _stream << static_cast<uint8_t>(1);  // Span.ID
+void AnnotationSerializer::writeSpan(const Span& node) {
+    _stream << static_cast<uint8_t>(1); // Span.ID
     putInt1_2_4Bytes(_stream, node.from());
     putInt1_2_4Bytes(_stream, node.length());
 }
 
 namespace {
-void writeSpanList(const SpanList &list, nbostream &stream,
-                   AnnotationSerializer &serializer) {
+void writeSpanList(const SpanList& list, nbostream& stream, AnnotationSerializer& serializer) {
     putInt1_2_4Bytes(stream, list.size());
-    for (const SpanNode * node : list) {
+    for (const SpanNode* node : list) {
         serializer.write(*node);
     }
 }
-void writeSpanList(const SimpleSpanList &list, nbostream &stream,
-                   AnnotationSerializer &serializer) {
+void writeSpanList(const SimpleSpanList& list, nbostream& stream, AnnotationSerializer& serializer) {
     putInt1_2_4Bytes(stream, list.size());
-    for (const SpanNode & node : list) {
+    for (const SpanNode& node : list) {
         serializer.write(node);
     }
 }
-}  // namespace
+} // namespace
 
-void AnnotationSerializer::writeList(const SpanList &list) {
-    _stream << static_cast<uint8_t>(2);  // SpanList.ID
+void AnnotationSerializer::writeList(const SpanList& list) {
+    _stream << static_cast<uint8_t>(2); // SpanList.ID
     writeSpanList(list, _stream, *this);
 }
 
-void AnnotationSerializer::writeList(const SimpleSpanList &list) {
-    _stream << static_cast<uint8_t>(2);  // SpanList.ID
+void AnnotationSerializer::writeList(const SimpleSpanList& list) {
+    _stream << static_cast<uint8_t>(2); // SpanList.ID
     writeSpanList(list, _stream, *this);
 }
 
-void AnnotationSerializer::writeList(const AlternateSpanList &list) {
-    _stream << static_cast<uint8_t>(4);  // AlternateSpanList.ID
+void AnnotationSerializer::writeList(const AlternateSpanList& list) {
+    _stream << static_cast<uint8_t>(4); // AlternateSpanList.ID
     putInt1_2_4Bytes(_stream, list.getNumSubtrees());
     for (size_t i = 0; i < list.getNumSubtrees(); ++i) {
         _stream << list.getProbability(i);
@@ -82,14 +79,14 @@ void AnnotationSerializer::writeList(const AlternateSpanList &list) {
 }
 
 namespace {
-uint8_t getAnnotationFeatures(const Annotation &annotation) {
+uint8_t getAnnotationFeatures(const Annotation& annotation) {
     uint8_t features = annotation.getSpanNode() ? 1 : 0;
     features |= annotation.getFieldValue() ? 2 : 0;
     return features;
 }
-}  // namespace
+} // namespace
 
-void AnnotationSerializer::write(const Annotation &annotation) {
+void AnnotationSerializer::write(const Annotation& annotation) {
     _stream << annotation.getTypeId();
     _stream << getAnnotationFeatures(annotation);
 
@@ -109,4 +106,4 @@ void AnnotationSerializer::write(const Annotation &annotation) {
     _stream.write(tmp_stream.peek(), tmp_stream.size());
 }
 
-}  // namespace document
+} // namespace document

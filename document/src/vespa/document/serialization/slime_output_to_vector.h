@@ -4,13 +4,14 @@
 
 #include <vespa/vespalib/data/output.h>
 #include <vespa/vespalib/data/writable_memory.h>
+
 #include <vector>
 
 namespace document {
 
 class SlimeOutputToVector : public vespalib::Output {
     std::vector<char> _buf;
-    size_t _size;
+    size_t            _size;
 
 public:
     SlimeOutputToVector();
@@ -23,14 +24,13 @@ public:
         return vespalib::WritableMemory(&_buf[_size], _buf.size() - _size);
     }
 
-    Output &commit(size_t commit) override {
+    Output& commit(size_t commit) override {
         _size += commit;
         return *this;
     }
 
-    const char *data() const { return &_buf[0]; }
-    size_t size() const { return _size; }
+    const char* data() const { return &_buf[0]; }
+    size_t      size() const { return _size; }
 };
 
-}  // namespace document
-
+} // namespace document

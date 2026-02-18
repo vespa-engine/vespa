@@ -15,21 +15,21 @@
 #pragma once
 
 #include <vespa/vespalib/util/alloc.h>
+
 #include <cstdint>
 
 namespace document {
 
-class ByteBuffer
-{
+class ByteBuffer {
 public:
     using UP = std::unique_ptr<ByteBuffer>;
 
-    ByteBuffer(const ByteBuffer &);
-    ByteBuffer& operator=(const ByteBuffer &) = delete;
-    ByteBuffer(ByteBuffer &&) noexcept = default;
-    ByteBuffer& operator=(ByteBuffer &&) noexcept = default;
+    ByteBuffer(const ByteBuffer&);
+    ByteBuffer& operator=(const ByteBuffer&) = delete;
+    ByteBuffer(ByteBuffer&&) noexcept = default;
+    ByteBuffer& operator=(ByteBuffer&&) noexcept = default;
 
-    ByteBuffer() noexcept : ByteBuffer(nullptr, 0) { }
+    ByteBuffer() noexcept : ByteBuffer(nullptr, 0) {}
     ~ByteBuffer() = default;
 
     /**
@@ -39,11 +39,7 @@ public:
      * @param len The length of the buffer
      */
     ByteBuffer(const char* buffer, uint32_t len) noexcept
-        : _buffer(const_cast<char *>(buffer)),
-          _len(len),
-          _pos(0),
-          _ownedBuffer()
-    { }
+        : _buffer(const_cast<char*>(buffer)), _len(len), _pos(0), _ownedBuffer() {}
 
     /**
      * Create a buffer with the given content.
@@ -81,8 +77,8 @@ public:
     /**
      * @return Returns the number of bytes remaining in the buffer - that is,
      *         getLength()-getPos().
-    */
-    uint32_t getRemaining() const { return _len -_pos; }
+     */
+    uint32_t getRemaining() const { return _len - _pos; }
 
     /**
      * Moves the position in the buffer.
@@ -94,34 +90,36 @@ public:
      */
     void incPos(uint32_t pos);
 
-    void getNumeric(uint8_t & v);
-    void getNumericNetwork(int16_t & v);
-    void getNumericNetwork(int32_t & v);
+    void getNumeric(uint8_t& v);
+    void getNumericNetwork(int16_t& v);
+    void getNumericNetwork(int32_t& v);
 
-    void getNumericNetwork(int64_t & v);
+    void getNumericNetwork(int64_t& v);
     void getNumeric(int64_t& v);
-    void getNumericNetwork(double & v);
+    void getNumericNetwork(double& v);
 
-    void getChar(char & val) { unsigned char t;getByte(t); val=t; }
-    void getByte(uint8_t & v)         { getNumeric(v); }
-    void getShortNetwork(int16_t & v) { getNumericNetwork(v); }
-    void getIntNetwork(int32_t & v)   { getNumericNetwork(v); }
-    void getLongNetwork(int64_t & v)  { getNumericNetwork(v); }
-    void getLong(int64_t& v)          { getNumeric(v); }
-    void getDoubleNetwork(double & v) { getNumericNetwork(v); }
-    void getBytes(void *buffer, uint32_t count);
+    void getChar(char& val) {
+        unsigned char t;
+        getByte(t);
+        val = t;
+    }
+    void getByte(uint8_t& v) { getNumeric(v); }
+    void getShortNetwork(int16_t& v) { getNumericNetwork(v); }
+    void getIntNetwork(int32_t& v) { getNumericNetwork(v); }
+    void getLongNetwork(int64_t& v) { getNumericNetwork(v); }
+    void getLong(int64_t& v) { getNumeric(v); }
+    void getDoubleNetwork(double& v) { getNumericNetwork(v); }
+    void getBytes(void* buffer, uint32_t count);
 
 private:
-    template<typename T>
-    void getDoubleLongNetwork(T &val);
+    template <typename T> void getDoubleLongNetwork(T& val);
 
     void incPosNoCheck(uint32_t pos) { _pos += pos; }
 
-    const char *   _buffer;
-    uint32_t       _len;
-    uint32_t       _pos;
+    const char*                             _buffer;
+    uint32_t                                _len;
+    uint32_t                                _pos;
     std::unique_ptr<vespalib::alloc::Alloc> _ownedBuffer;
 };
 
-} // document
-
+} // namespace document

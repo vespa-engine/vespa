@@ -1,40 +1,35 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configbuilder.h"
-#include <vespa/document/datatype/structdatatype.h>
 
+#include <vespa/document/datatype/structdatatype.h>
 
 namespace document::config_builder {
 
-int32_t createFieldId(const std::string &name, int32_t type) {
+int32_t createFieldId(const std::string& name, int32_t type) {
     StructDataType dummy("dummy", type);
-    Field f(name, dummy);
+    Field          f(name, dummy);
     return f.getId();
 }
 
 int32_t DatatypeConfig::id_counter = 100;
 
-DatatypeConfig::DatatypeConfig() {
-    id = ++id_counter;
-}
+DatatypeConfig::DatatypeConfig() { id = ++id_counter; }
 
 DatatypeConfig::DatatypeConfig(const DatatypeConfig&) = default;
 DatatypeConfig::~DatatypeConfig() = default;
 DatatypeConfig& DatatypeConfig::operator=(const DatatypeConfig&) = default;
 
-void DatatypeConfig::addNestedType(const TypeOrId &t) {
+void DatatypeConfig::addNestedType(const TypeOrId& t) {
     if (t.has_type) {
-        nested_types.insert(nested_types.end(),
-                            t.type.nested_types.begin(),
-                            t.type.nested_types.end());
+        nested_types.insert(nested_types.end(), t.type.nested_types.begin(), t.type.nested_types.end());
         nested_types.push_back(t.type);
     }
 }
 
-Struct &
-Struct::addTensorField(const std::string &name, const std::string &spec) {
+Struct& Struct::addTensorField(const std::string& name, const std::string& spec) {
     sstruct.field.resize(sstruct.field.size() + 1);
-    auto &field = sstruct.field.back();
+    auto& field = sstruct.field.back();
     field.name = name;
     field.id = createFieldId(name, DataType::T_TENSOR);
     field.datatype = DataType::T_TENSOR;
@@ -44,27 +39,20 @@ Struct::addTensorField(const std::string &name, const std::string &spec) {
 
 namespace {
 
-void addType(const DatatypeConfig &type,
-             DocumenttypesConfig::Documenttype &doc_type) {
-    doc_type.datatype.insert(doc_type.datatype.end(),
-                             type.nested_types.begin(),
-                             type.nested_types.end());
+void addType(const DatatypeConfig& type, DocumenttypesConfig::Documenttype& doc_type) {
+    doc_type.datatype.insert(doc_type.datatype.end(), type.nested_types.begin(), type.nested_types.end());
     doc_type.datatype.push_back(type);
 }
 
-}
+} // namespace
 
-DocTypeRep &
-DocTypeRep::annotationType(int32_t id, const std::string &name, const DatatypeConfig &type) {
+DocTypeRep& DocTypeRep::annotationType(int32_t id, const std::string& name, const DatatypeConfig& type) {
     addType(type, doc_type);
     return annotationType(id, name, type.id);
 }
 
-
-DocTypeRep
-DocumenttypesConfigBuilderHelper::document(int32_t id, const std::string &name,
-                                           const DatatypeConfig &header,
-                                           const DatatypeConfig &body) {
+DocTypeRep DocumenttypesConfigBuilderHelper::document(int32_t id, const std::string& name,
+                                                      const DatatypeConfig& header, const DatatypeConfig& body) {
     assert(header.type == DatatypeConfig::Type::STRUCT);
     assert(body.type == DatatypeConfig::Type::STRUCT);
     _config.documenttype.resize(_config.documenttype.size() + 1);
@@ -77,4 +65,4 @@ DocumenttypesConfigBuilderHelper::document(int32_t id, const std::string &name,
     return DocTypeRep(_config.documenttype.back());
 }
 
-}
+} // namespace document::config_builder

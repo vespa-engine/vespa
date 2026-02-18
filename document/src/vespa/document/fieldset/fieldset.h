@@ -13,17 +13,9 @@ class DocumentTypeRepo;
  * Note that the document id is counted as a field in this context,
  * but referenced by the special name "[id]"
  */
-class FieldSet
-{
+class FieldSet {
 public:
-    enum class Type {
-        FIELD,
-        SET,
-        ALL,
-        NONE,
-        DOCID,
-        DOCUMENT_ONLY
-    };
+    enum class Type { FIELD, SET, ALL, NONE, DOCID, DOCUMENT_ONLY };
 
     using SP = std::shared_ptr<FieldSet>;
     using UP = std::unique_ptr<FieldSet>;
@@ -58,7 +50,8 @@ public:
      * See comment for copyFields() for performance notes.
      * @return The new, (partially) copied document instance.
      */
-    static std::unique_ptr<Document> createDocumentSubsetCopy(const DocumentTypeRepo& type_repo, const Document& src, const FieldSet& fields);
+    static std::unique_ptr<Document> createDocumentSubsetCopy(const DocumentTypeRepo& type_repo, const Document& src,
+                                                              const FieldSet& fields);
 
     /**
      * Strip all fields _except_ the ones that are contained within the
@@ -67,5 +60,4 @@ public:
     static void stripFields(Document& doc, const FieldSet& fieldsToKeep);
 };
 
-}
-
+} // namespace document

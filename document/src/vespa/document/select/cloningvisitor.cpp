@@ -1,31 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "cloningvisitor.h"
-#include "valuenodes.h"
+
 #include "branch.h"
-#include "compare.h" 
+#include "compare.h"
 #include "constant.h"
+#include "doctype.h"
 #include "invalidconstant.h"
-#include "doctype.h" 
+#include "valuenodes.h"
 
 namespace document::select {
 
 CloningVisitor::CloningVisitor()
-    : _node(),
-      _valueNode(),
-      _constVal(false),
-      _priority(-1),
-      _fieldNodes(0u),
-      _resultSet()
-{ }
-
+    : _node(), _valueNode(), _constVal(false), _priority(-1), _fieldNodes(0u), _resultSet() {}
 
 CloningVisitor::~CloningVisitor() = default;
 
-
-void
-CloningVisitor::visitAndBranch(const And &expr)
-{
+void CloningVisitor::visitAndBranch(const And& expr) {
     int priority = AndPriority;
     expr.getLeft().visit(*this);
     bool lhsConstVal = _constVal;
@@ -40,10 +31,7 @@ CloningVisitor::visitAndBranch(const And &expr)
     _node = std::make_unique<And>(std::move(lhs), std::move(rhs), "and");
 };
 
-
-void
-CloningVisitor::visitOrBranch(const Or &expr)
-{
+void CloningVisitor::visitOrBranch(const Or& expr) {
     int priority = OrPriority;
     expr.getLeft().visit(*this);
     bool lhsConstVal = _constVal;
@@ -58,10 +46,7 @@ CloningVisitor::visitOrBranch(const Or &expr)
     _node = std::make_unique<Or>(std::move(lhs), std::move(rhs), "or");
 };
 
-
-void
-CloningVisitor::visitNotBranch(const Not &expr)
-{
+void CloningVisitor::visitNotBranch(const Not& expr) {
     int priority = ComparePriority;
     expr.getChild().visit(*this);
     setNodeParentheses(priority);
@@ -70,10 +55,7 @@ CloningVisitor::visitNotBranch(const Not &expr)
     _node = std::make_unique<Not>(std::move(child), "not");
 };
 
-
-void
-CloningVisitor::visitComparison(const Compare &expr)
-{
+void CloningVisitor::visitComparison(const Compare& expr) {
     int priority = ComparePriority;
     expr.getLeft().visit(*this);
     bool lhsConstVal = _constVal;
@@ -84,34 +66,26 @@ CloningVisitor::visitComparison(const Compare &expr)
     _constVal &= lhsConstVal;
     setValueNodeParentheses(priority);
     std::unique_ptr<ValueNode> rhs(std::move(_valueNode));
-    const Operator &op(expr.getOperator());
+    const Operator&            op(expr.getOperator());
     _priority = priority;
     _resultSet.fill(); // should be less if const
     _node = std::make_unique<Compare>(std::move(lhs), op, std::move(rhs), expr.getBucketIdFactory());
 };
 
-
-void
-CloningVisitor::visitArithmeticValueNode(const ArithmeticValueNode &expr)
-{
+void CloningVisitor::visitArithmeticValueNode(const ArithmeticValueNode& expr) {
     expr.getLeft().visit(*this);
-    bool lhsConstVal = _constVal;
-    int lhsPriority = _priority;
+    bool                       lhsConstVal = _constVal;
+    int                        lhsPriority = _priority;
     std::unique_ptr<ValueNode> lhs(std::move(_valueNode));
     revisit();
     expr.getRight().visit(*this);
-    bool rhsConstVal = _constVal;
-    int rhsPriority = _priority;
+    bool                       rhsConstVal = _constVal;
+    int                        rhsPriority = _priority;
     std::unique_ptr<ValueNode> rhs(std::move(_valueNode));
-    setArithmeticValueNode(expr,
-                           std::move(lhs), lhsPriority, lhsConstVal,
-                           std::move(rhs), rhsPriority, rhsConstVal);
+    setArithmeticValueNode(expr, std::move(lhs), lhsPriority, lhsConstVal, std::move(rhs), rhsPriority, rhsConstVal);
 }
 
-
-void
-CloningVisitor::visitFunctionValueNode(const FunctionValueNode &expr)
-{
+void CloningVisitor::visitFunctionValueNode(const FunctionValueNode& expr) {
     int priority = FuncPriority;
     expr.getChild().visit(*this);
     setValueNodeParentheses(priority);
@@ -120,10 +94,7 @@ CloningVisitor::visitFunctionValueNode(const FunctionValueNode &expr)
     _valueNode = std::make_unique<FunctionValueNode>(expr.getFunctionName(), std::move(child));
 };
 
-
-void
-CloningVisitor::visitConstant(const Constant &expr)
-{
+void CloningVisitor::visitConstant(const Constant& expr) {
     _constVal = true;
     _priority = ConstPriority;
     bool val = expr.getConstantValue();
@@ -131,21 +102,15 @@ CloningVisitor::visitConstant(const Constant &expr)
     _node = std::make_unique<Constant>(val);
 }
 
-
-void
-CloningVisitor::visitInvalidConstant(const InvalidConstant &expr)
-{
-    (void) expr;
+void CloningVisitor::visitInvalidConstant(const InvalidConstant& expr) {
+    (void)expr;
     _constVal = true;
     _priority = InvalidConstPriority;
     _resultSet.add(Result::Invalid);
     _node = std::make_unique<InvalidConstant>("invalid");
 }
 
-
-void
-CloningVisitor::visitDocumentType(const DocType &expr)
-{
+void CloningVisitor::visitDocumentType(const DocType& expr) {
     _constVal = false;
     _priority = DocumentTypePriority;
     _resultSet.add(Result::True);
@@ -153,126 +118,84 @@ CloningVisitor::visitDocumentType(const DocType &expr)
     _node = expr.clone();
 }
 
-
-void
-CloningVisitor::visitIdValueNode(const IdValueNode &expr)
-{
+void CloningVisitor::visitIdValueNode(const IdValueNode& expr) {
     _constVal = false;
     ++_fieldNodes; // needs document id, thus needs document
     _valueNode = expr.clone();
     _priority = IdPriority;
 }
 
-
-void
-CloningVisitor::visitFieldValueNode(const FieldValueNode &expr)
-{
+void CloningVisitor::visitFieldValueNode(const FieldValueNode& expr) {
     _constVal = false;
     ++_fieldNodes; // needs document id, thus needs document
     _valueNode = expr.clone();
     _priority = FieldValuePriority;
 }
 
-
-void
-CloningVisitor::visitFloatValueNode(const FloatValueNode &expr)
-{
+void CloningVisitor::visitFloatValueNode(const FloatValueNode& expr) {
     _constVal = true;
     _valueNode = expr.clone();
     _priority = FloatPriority;
 }
 
-
-void
-CloningVisitor::visitVariableValueNode(const VariableValueNode &expr)
-{
+void CloningVisitor::visitVariableValueNode(const VariableValueNode& expr) {
     _valueNode = std::make_unique<VariableValueNode>(expr.getVariableName());
     _priority = VariablePriority;
 }
 
-
-void
-CloningVisitor::visitIntegerValueNode(const IntegerValueNode &expr)
-{
+void CloningVisitor::visitIntegerValueNode(const IntegerValueNode& expr) {
     _constVal = true;
     _valueNode = expr.clone();
     _priority = IntegerPriority;
 }
 
-
-void
-CloningVisitor::visitBoolValueNode(const BoolValueNode &expr)
-{
+void CloningVisitor::visitBoolValueNode(const BoolValueNode& expr) {
     _constVal = true;
     _valueNode = expr.clone();
     _priority = BoolPriority;
 }
 
-
-void
-CloningVisitor::visitCurrentTimeValueNode(const CurrentTimeValueNode &expr)
-{
+void CloningVisitor::visitCurrentTimeValueNode(const CurrentTimeValueNode& expr) {
     _constVal = false;
     _valueNode = expr.clone();
     _priority = CurrentTimePriority;
 }
 
-
-void
-CloningVisitor::visitStringValueNode(const StringValueNode &expr)
-{
+void CloningVisitor::visitStringValueNode(const StringValueNode& expr) {
     _constVal = true;
     _valueNode = expr.clone();
     _priority = StringPriority;
 }
 
-
-void
-CloningVisitor::visitNullValueNode(const NullValueNode &expr)
-{
+void CloningVisitor::visitNullValueNode(const NullValueNode& expr) {
     _constVal = true;
     _valueNode = expr.clone();
     _priority = NullValPriority;
 }
 
-void
-CloningVisitor::visitInvalidValueNode(const InvalidValueNode &expr)
-{
+void CloningVisitor::visitInvalidValueNode(const InvalidValueNode& expr) {
     _constVal = true;
     _valueNode = expr.clone();
     _priority = InvalidValPriority;
 }
 
-
-void
-CloningVisitor::setNodeParentheses(int priority)
-{
+void CloningVisitor::setNodeParentheses(int priority) {
     if (_priority < priority)
         _node->setParentheses();
 }
 
-
-void
-CloningVisitor::setValueNodeParentheses(int priority)
-{
+void CloningVisitor::setValueNodeParentheses(int priority) {
     if (_priority < priority)
         _valueNode->setParentheses();
 }
 
-
-void
-CloningVisitor::setArithmeticValueNode(const ArithmeticValueNode &expr,
-                                       std::unique_ptr<ValueNode> lhs,
-                                       int lhsPriority,
-                                       bool lhsConstVal,
-                                       std::unique_ptr<ValueNode> rhs,
-                                       int rhsPriority,
-                                       bool rhsConstVal)
-{
+void CloningVisitor::setArithmeticValueNode(const ArithmeticValueNode& expr, std::unique_ptr<ValueNode> lhs,
+                                            int lhsPriority, bool lhsConstVal, std::unique_ptr<ValueNode> rhs,
+                                            int rhsPriority, bool rhsConstVal) {
     bool lassoc = false;
     bool rassoc = false;
-    int priority = 0;
-    switch(expr.getOperator()) {
+    int  priority = 0;
+    switch (expr.getOperator()) {
     case ArithmeticValueNode::ADD:
         priority = AddPriority;
         lassoc = true;
@@ -296,23 +219,18 @@ CloningVisitor::setArithmeticValueNode(const ArithmeticValueNode &expr,
         lassoc = true;
         break;
     }
-    if (lhsPriority < priority ||
-        (lhsPriority == priority && !lassoc)) {
+    if (lhsPriority < priority || (lhsPriority == priority && !lassoc)) {
         lhs->setParentheses();
     }
     _constVal = lhsConstVal && rhsConstVal;
-    if (rhsPriority < priority ||
-        (rhsPriority == priority && !rassoc)) {
+    if (rhsPriority < priority || (rhsPriority == priority && !rassoc)) {
         rhs->setParentheses();
     }
     _priority = priority;
     _valueNode = std::make_unique<ArithmeticValueNode>(std::move(lhs), expr.getOperatorName(), std::move(rhs));
 }
 
-
-void
-CloningVisitor::swap(CloningVisitor &rhs)
-{
+void CloningVisitor::swap(CloningVisitor& rhs) {
     std::swap(_constVal, rhs._constVal);
     std::swap(_priority, rhs._priority);
     std::swap(_node, rhs._node);
@@ -321,13 +239,10 @@ CloningVisitor::swap(CloningVisitor &rhs)
     std::swap(_fieldNodes, rhs._fieldNodes);
 }
 
-
-void
-CloningVisitor::revisit()
-{
+void CloningVisitor::revisit() {
     _constVal = false;
     _priority = -1;
     _resultSet.clear();
 }
 
-}
+} // namespace document::select

@@ -3,34 +3,36 @@
 #pragma once
 
 #include "predicate_slime_visitor.h"
+
 #include <memory>
 #include <string>
 
 namespace vespalib {
-    class Slime;
-    class asciistream;
-}
+class Slime;
+class asciistream;
+} // namespace vespalib
 
 namespace document {
 
 class PredicatePrinter : PredicateSlimeVisitor {
     std::unique_ptr<vespalib::asciistream> _out;
-    bool _negated;
+    bool                                   _negated;
 
-    void visitFeatureSet(const Inspector &i) override;
-    void visitFeatureRange(const Inspector &i) override;
-    void visitNegation(const Inspector &i) override;
-    void visitConjunction(const Inspector &i) override;
-    void visitDisjunction(const Inspector &i) override;
-    void visitTrue(const Inspector &i) override;
-    void visitFalse(const Inspector &i) override;
+    void visitFeatureSet(const Inspector& i) override;
+    void visitFeatureRange(const Inspector& i) override;
+    void visitNegation(const Inspector& i) override;
+    void visitConjunction(const Inspector& i) override;
+    void visitDisjunction(const Inspector& i) override;
+    void visitTrue(const Inspector& i) override;
+    void visitFalse(const Inspector& i) override;
 
     std::string str() const;
 
     PredicatePrinter();
     ~PredicatePrinter();
+
 public:
-    static std::string print(const vespalib::Slime &slime);
+    static std::string print(const vespalib::Slime& slime);
 };
 
-}  // namespace document
+} // namespace document

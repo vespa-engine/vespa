@@ -16,18 +16,18 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/buffer.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/util/buffer.h>
+
 #include <vector>
 
 namespace document {
 
 namespace serializablearray {
-    class BufferMap;
+class BufferMap;
 }
 
-class SerializableArray
-{
+class SerializableArray {
 public:
     /**
      * Contains the id of a field, the size and a buffer reference that is either
@@ -37,36 +37,40 @@ public:
     class Entry {
     public:
         Entry() : _id(0), _sz(0), _data() {}
-        Entry(int i) : _id(i), _sz(0), _data()  {}
+        Entry(int i) : _id(i), _sz(0), _data() {}
         Entry(uint32_t i, uint32_t sz, uint32_t off) : _id(i), _sz(sz), _data(off) {}
-        Entry(uint32_t i, uint32_t sz, const char * buf) : _id(i), _sz(sz | BUFFER_MASK), _data(buf) {}
+        Entry(uint32_t i, uint32_t sz, const char* buf) : _id(i), _sz(sz | BUFFER_MASK), _data(buf) {}
 
-        int32_t id() const { return _id; }
+        int32_t  id() const { return _id; }
         uint32_t size() const { return _sz & ~BUFFER_MASK; }
-        bool hasBuffer() const { return (_sz & BUFFER_MASK); }
-        bool operator < (const Entry & e) const { return cmp(e) < 0; }
-        int cmp(const Entry & e) const { return _id - e._id; }
-        void setBuffer(const char * buffer) { _data._buffer = buffer; _sz |= BUFFER_MASK; }
-        VESPA_DLL_LOCAL const char * getBuffer(const ByteBuffer * readOnlyBuffer) const;
+        bool     hasBuffer() const { return (_sz & BUFFER_MASK); }
+        bool     operator<(const Entry& e) const { return cmp(e) < 0; }
+        int      cmp(const Entry& e) const { return _id - e._id; }
+        void     setBuffer(const char* buffer) {
+            _data._buffer = buffer;
+            _sz |= BUFFER_MASK;
+        }
+        VESPA_DLL_LOCAL const char* getBuffer(const ByteBuffer* readOnlyBuffer) const;
+
     private:
         uint32_t getOffset() const { return _data._offset; }
-        enum { BUFFER_MASK=0x80000000 };
-        int32_t      _id;
-        uint32_t     _sz;
+        enum { BUFFER_MASK = 0x80000000 };
+        int32_t  _id;
+        uint32_t _sz;
         union Data {
-           Data() : _buffer(0) { }
-           Data(const char * buffer) : _buffer(buffer) { }
-           Data(uint32_t offset) : _offset(offset) { }
-           const char * _buffer;
-           uint32_t     _offset;
+            Data() : _buffer(0) {}
+            Data(const char* buffer) : _buffer(buffer) {}
+            Data(uint32_t offset) : _offset(offset) {}
+            const char* _buffer;
+            uint32_t    _offset;
         } _data;
     };
-    class EntryMap : public std::vector<Entry>
-    {
+    class EntryMap : public std::vector<Entry> {
     private:
-        using V=std::vector<Entry>;
+        using V = std::vector<Entry>;
+
     public:
-        EntryMap() : V() { }
+        EntryMap() : V() {}
     };
 
     static const uint32_t ReservedId = 100;
@@ -77,8 +81,8 @@ public:
     SerializableArray();
     SerializableArray(const SerializableArray&);
     SerializableArray& operator=(const SerializableArray&);
-    SerializableArray(SerializableArray &&) noexcept;
-    SerializableArray& operator=(SerializableArray &&) noexcept;
+    SerializableArray(SerializableArray&&) noexcept;
+    SerializableArray& operator=(SerializableArray&&) noexcept;
     ~SerializableArray();
 
     void set(EntryMap entries, ByteBuffer buffer);
@@ -120,20 +124,19 @@ public:
 
     bool empty() const { return _entries.empty(); }
 
-    const ByteBuffer* getSerializedBuffer() const {
-        return &_uncompSerData;
-    }
+    const ByteBuffer* getSerializedBuffer() const { return &_uncompSerData; }
 
-    const EntryMap & getEntries() const { return _entries; }
+    const EntryMap& getEntries() const { return _entries; }
+
 private:
     /** Contains the stored attributes, with reference to the real data.. */
-    EntryMap                  _entries;
+    EntryMap _entries;
     /** Data we deserialized from, if applicable. */
-    ByteBuffer                _uncompSerData;
+    ByteBuffer                                    _uncompSerData;
     std::unique_ptr<serializablearray::BufferMap> _owned;
 
     VESPA_DLL_LOCAL EntryMap::const_iterator find(int id) const;
     VESPA_DLL_LOCAL EntryMap::iterator find(int id);
 };
 
-} // document
+} // namespace document
