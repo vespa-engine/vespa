@@ -16,3 +16,14 @@ vespa_add_executable(mt_stress_hnsw_app TEST
     vespa_searchlib
     GTest::gtest
 )
+
+vespa_add_executable(hnsw_bench_app TEST
+    SOURCES
+    hnsw_bench.cpp
+    DEPENDS
+    vespa_searchlib
+    absl::flags
+    absl::flags_parse
+    absl::flags_usage
+)
+vespa_add_target_external_dependency(hnsw_bench_app benchmark)
