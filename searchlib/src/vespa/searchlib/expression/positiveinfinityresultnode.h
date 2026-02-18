@@ -22,6 +22,8 @@ private:
     double onGetFloat(size_t index)    const override;
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
     size_t onGetRawByteSize() const override { return 0; }
+
+    std::string_view friendly_type_name() const noexcept override { return "infinity"; }
 };
 
 }

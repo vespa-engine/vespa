@@ -12,6 +12,7 @@ private:
     int64_t _to;
     static IntegerBucketResultNode _nullResult;
 
+    std::string_view friendly_type_name() const noexcept override { return "integer_bucket"; }
     size_t onGetRawByteSize() const override { return sizeof(_from) + sizeof(_to); }
     void create(void * buf)  const override  { (void) buf; }
     void destroy(void * buf) const override  { (void) buf; }

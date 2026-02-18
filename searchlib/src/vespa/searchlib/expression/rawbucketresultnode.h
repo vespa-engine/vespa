@@ -36,6 +36,8 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const RawBucketResultNode& getNullBucket() const override { return getNull(); }
     static const RawBucketResultNode & getNull() { return _nullResult; }
+
+    std::string_view friendly_type_name() const noexcept override { return "raw_bucket"; }
 };
 
 }

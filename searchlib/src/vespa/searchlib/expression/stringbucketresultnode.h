@@ -43,6 +43,8 @@ public:
     }
     const StringBucketResultNode& getNullBucket() const override { return getNull(); }
     static const StringBucketResultNode & getNull() { return _nullResult; }
+
+    std::string_view friendly_type_name() const noexcept override { return "string_bucket"; }
 };
 
 }
