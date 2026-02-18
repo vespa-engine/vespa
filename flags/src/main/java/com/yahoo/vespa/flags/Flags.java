@@ -256,6 +256,13 @@ public class Flags {
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+    public static final UnboundBooleanFlag USE_GRAFANA_ALLOY = defineFeatureFlag(
+            "use-grafana-alloy", false,
+            List.of("onur"), "2026-02-17", "2026-08-01",
+            "Whether to use Grafana Alloy instead of otelcol-contrib for telemetry collection",
+            "Takes effect on next host-admin tick",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
             List.of("arnej"), "2023-07-26", "2027-01-01",
