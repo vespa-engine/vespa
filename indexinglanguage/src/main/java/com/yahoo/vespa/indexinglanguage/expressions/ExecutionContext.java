@@ -111,6 +111,7 @@ public class ExecutionContext {
 
     public Language resolveLanguage(Linguistics linguistics) {
         if (assignedLanguage != Language.UNKNOWN) return assignedLanguage;
+        if (detectedLanguage != Language.UNKNOWN) return detectedLanguage;
         if (linguistics == null) return Language.ENGLISH;
 
         Detection detection = linguistics.getDetector().detect(String.valueOf(currentValue), null);
@@ -134,17 +135,14 @@ public class ExecutionContext {
      * Clears all state in this pertaining to the current indexing statement
      * Does not clear the cache.
      * Note that assignLanguage is not cleared; an indexing statement doing
-     * set_language should affect following statements.
+     * set_language should affect the following statements.
      */
     public ExecutionContext clear() {
         // We do not really want to clear variables here, but because
         // indexing statements are re-ordered letting them survive
         // will be even more confusing than clearing them.
         variables.clear();
-        // We should probably clear detectedLanguage, but
-        // it looks like the statements that use it will reset it
-        // using resolveLanguage anyway.
-        // TODO: detectedLanguage = Language.UNKNOWN;
+        detectedLanguage = Language.UNKNOWN;
         currentValue = null;
         // note: must not reset per-document or global values (like isReindexingOperation, deadline)
         return this;
