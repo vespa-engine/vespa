@@ -1594,19 +1594,15 @@
     ]
   },
   "com.yahoo.prelude.query.SerializationContext" : {
-    "superClass" : "java.lang.Record",
+    "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public",
-      "final",
-      "record"
+      "public"
     ],
     "methods" : [
       "public void <init>(double)",
-      "public final java.lang.String toString()",
-      "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)",
-      "public double contentShare()"
+      "public int contentShareOf(int)",
+      "public static com.yahoo.prelude.query.SerializationContext ignored()"
     ],
     "fields" : [ ]
   },
@@ -7566,6 +7562,7 @@
       "public void remove(java.lang.String)",
       "public boolean isEmpty()",
       "public java.util.Map asMap()",
+      "public java.util.Map asMap(com.yahoo.prelude.query.SerializationContext)",
       "public int encode(java.nio.ByteBuffer, boolean)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -7586,6 +7583,10 @@
     "methods" : [
       "public void <init>()",
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public void setRerankCount(int)",
+      "public java.lang.Integer getRerankCount()",
+      "public void setTotalRerankCount(int)",
+      "public java.lang.Integer getTotalRerankCount()",
       "public void setRankScoreDropLimit(double)",
       "public java.lang.Double getRankScoreDropLimit()",
       "public void prepare(com.yahoo.search.query.ranking.RankProperties)",

@@ -221,7 +221,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     private int resolveTargetHits(SerializationContext context) {
         if (targetHits != null) return targetHits;
         if (totalTargetHits != null)
-            return (int)Math.ceil(totalTargetHits * context.contentShare());
+            return context.contentShareOf(totalTargetHits);
         return defaultTargetHits;
     }
 

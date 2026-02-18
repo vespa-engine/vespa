@@ -3,6 +3,7 @@ package com.yahoo.search.query.ranking;
 
 import com.yahoo.fs4.GetDocSumsPacket;
 import com.yahoo.fs4.MapEncoder;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.text.JSON;
 
@@ -90,6 +91,18 @@ public class RankProperties implements Cloneable {
 
     /** Returns a modifiable map of the properties of this */
     public Map<String, List<Object>> asMap() { return properties; }
+
+    /** Returns an unmodifiable map of the properties of this for serialization purposes */
+    public Map<String, List<Object>> asMap(SerializationContext context) {
+        List<Object> totalRerankCount = properties.get(SecondPhase.totalRerankCountPropertyName);
+        if (totalRerankCount != null && ! properties.containsKey(SecondPhase.rerankCountPropertyName)) {
+            Map<String, List<Object>> serializableProperties = new LinkedHashMap<>(properties);
+            serializableProperties.put(SecondPhase.rerankCountPropertyName,
+                                       List.of(context.contentShareOf((int)totalRerankCount.get(0))));
+            return Collections.unmodifiableMap(serializableProperties);
+        }
+        return Collections.unmodifiableMap(properties);
+    }
 
     /** Encodes this in a binary internal representation and returns the number of property maps encoded (0 or 1) */
     public int encode(ByteBuffer buffer, boolean encodeQueryData) {
