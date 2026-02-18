@@ -10,7 +10,7 @@ namespace search::tensor {
 class VectorBundle;
 
 /**
- * Interface that provides access to the vector that is associated with the the given document id.
+ * Interface that provides access to the vector that is associated with the given document id.
  *
  * All vectors should be the same size and either of type float or double.
  */
