@@ -1,13 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "fn_table.h"
 #include "highway.h"
+#include "fn_table.h"
 #include "platform_generic.h"
 #include "target_info.h"
 #include <hwy/base.h>
 #include <algorithm>
 #include <cassert>
 #include <format>
+
+// clang-format off
 
 // This file will be recursively included into itself with different target
 // compilation parameters. See the Highway docs.
@@ -18,6 +20,8 @@
 #include "hwy_kernel-inl.h"
 #include "hwy_aux_ops-inl.h"
 #include <hwy/contrib/dot/dot-inl.h>
+
+// clang-format on
 
 HWY_BEFORE_NAMESPACE();
 namespace vespalib::hwaccelerated { // NOLINT: must nest namespaces
