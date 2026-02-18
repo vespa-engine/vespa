@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include "attributevector.h"
+#include "array_bool_attribute_access.h"
 #include "raw_buffer_store.h"
-#include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace search::attribute {
@@ -20,8 +19,7 @@ namespace search::attribute {
  * Values are set directly per document (no change vector), similar to
  * SingleRawAttribute and tensor attributes.
  */
-class ArrayBoolAttribute : public AttributeVector,
-                           public IMultiValueAttribute
+class ArrayBoolAttribute : public ArrayBoolAttributeAccess
 {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
@@ -42,7 +40,7 @@ public:
     ArrayBoolAttribute(const std::string& name, const Config& config);
     ~ArrayBoolAttribute() override;
 
-    vespalib::BitSpan get_bools(DocId docid) const;
+    vespalib::BitSpan get_bools(DocId docid) const override;
     void set_bools(DocId docid, std::span<const int8_t> bools);
 
     // AttributeVector overrides
@@ -57,33 +55,11 @@ public:
     uint64_t getTotalValueCount() const override;
     uint64_t getEstimatedSaveByteSize() const override;
 
-    // Value access
-    uint32_t getValueCount(DocId doc) const override;
-    largeint_t getInt(DocId doc) const override;
-    double getFloat(DocId doc) const override;
-    std::span<const char> get_raw(DocId doc) const override;
-    uint32_t get(DocId doc, largeint_t* v, uint32_t sz) const override;
-    uint32_t get(DocId doc, double* v, uint32_t sz) const override;
-    uint32_t get(DocId doc, std::string* v, uint32_t sz) const override;
-    uint32_t get(DocId doc, const char** v, uint32_t sz) const override;
-    uint32_t get(DocId doc, EnumHandle* e, uint32_t sz) const override;
-    uint32_t get(DocId doc, WeightedInt* v, uint32_t sz) const override;
-    uint32_t get(DocId doc, WeightedFloat* v, uint32_t sz) const override;
-    uint32_t get(DocId doc, WeightedString* v, uint32_t sz) const override;
-    uint32_t get(DocId doc, WeightedConstChar* v, uint32_t sz) const override;
-    uint32_t get(DocId doc, WeightedEnum* v, uint32_t sz) const override;
-    uint32_t getEnum(DocId doc) const override;
-    bool is_sortable() const noexcept override;
-    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
-                                                                      common::sortspec::MissingPolicy policy,
-                                                                      std::string_view missing_value) const override;
-
     // Search
     std::unique_ptr<SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams& params) const override;
 
     // IMultiValueAttribute
-    const IMultiValueAttribute* as_multi_value_attribute() const override;
     const IArrayBoolReadView* make_read_view(ArrayBoolTag, vespalib::Stash&) const override;
 };
 

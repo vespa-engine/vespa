@@ -9,15 +9,11 @@
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
-#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/vespalib/util/stash.h>
-#include <cassert>
 
 using vespalib::datastore::EntryRef;
 
 namespace search::attribute {
-
-using largeint_t = IAttributeVector::largeint_t;
 
 namespace {
 
@@ -119,7 +115,7 @@ public:
 } // anonymous namespace
 
 ArrayBoolAttribute::ArrayBoolAttribute(const std::string& name, const Config& config)
-    : AttributeVector(name, config),
+    : ArrayBoolAttributeAccess(name, config),
       _ref_vector(config.getGrowStrategy(), getGenerationHolder()),
       _raw_store(get_memory_allocator(), RawBufferStore::array_store_max_type_id, RawBufferStore::array_store_grow_factor),
       _total_values(0)
@@ -265,131 +261,10 @@ ArrayBoolAttribute::onShrinkLidSpace()
     setNumDocs(committed_doc_id_limit);
 }
 
-uint32_t
-ArrayBoolAttribute::getValueCount(DocId doc) const
-{
-    return get_bools(doc).size();
-}
-
-largeint_t
-ArrayBoolAttribute::getInt(DocId doc) const
-{
-    auto bools = get_bools(doc);
-    return (bools.size() > 0 && bools[0]) ? 1 : 0;
-}
-
-double
-ArrayBoolAttribute::getFloat(DocId doc) const
-{
-    return static_cast<double>(getInt(doc));
-}
-
-std::span<const char>
-ArrayBoolAttribute::get_raw(DocId) const
-{
-    return {};
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, largeint_t* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = bools[i] ? 1 : 0;
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, double* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = bools[i] ? 1.0 : 0.0;
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, std::string* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = bools[i] ? "1" : "0";
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId, const char**, uint32_t) const
-{
-    return 0;
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId, EnumHandle*, uint32_t) const
-{
-    return 0;
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, WeightedInt* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = WeightedInt(bools[i] ? 1 : 0);
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, WeightedFloat* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = WeightedFloat(bools[i] ? 1.0 : 0.0);
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, WeightedString* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = WeightedString(bools[i] ? "1" : "0");
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId, WeightedConstChar*, uint32_t) const
-{
-    return 0;
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId, WeightedEnum*, uint32_t) const
-{
-    return 0;
-}
-
 std::unique_ptr<attribute::SearchContext>
 ArrayBoolAttribute::getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams&) const
 {
     return std::make_unique<ArrayBoolSearchContext>(std::move(term), *this);
-}
-
-const IMultiValueAttribute*
-ArrayBoolAttribute::as_multi_value_attribute() const
-{
-    return this;
 }
 
 const IArrayBoolReadView*
@@ -447,27 +322,6 @@ ArrayBoolAttribute::getEstimatedSaveByteSize() const
     uint64_t numDocs = getCommittedDocIdLimit();
     uint64_t totalBits = _total_values;
     return headerSize + (totalBits + 7) / 8 + numDocs * 5;
-}
-
-uint32_t
-ArrayBoolAttribute::getEnum(DocId) const
-{
-    return std::numeric_limits<uint32_t>::max();
-}
-
-bool
-ArrayBoolAttribute::is_sortable() const noexcept
-{
-    return false;
-}
-
-std::unique_ptr<attribute::ISortBlobWriter>
-ArrayBoolAttribute::make_sort_blob_writer(bool, const common::BlobConverter*,
-                                          common::sortspec::MissingPolicy,
-                                          std::string_view) const
-{
-    assert(false && "ArrayBoolAttribute is not sortable");
-    return {};
 }
 
 }
