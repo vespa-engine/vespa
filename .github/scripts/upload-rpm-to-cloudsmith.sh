@@ -23,7 +23,7 @@ fi
 
 RPM=$1
 OS_DISTRO=el
-RELEASEVER=8
+RELEASEVER=$2
 
 main() {
 
