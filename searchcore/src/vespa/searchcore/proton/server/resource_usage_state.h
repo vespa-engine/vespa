@@ -16,6 +16,8 @@ class ResourceUsageState
 {
     ResourceUsageWithLimit _diskState;
     ResourceUsageWithLimit _memoryState;
+    double                 _non_transient_disk_usage;
+    double                 _non_transient_memory_usage;
     double                 _reserved_disk_space;
     double                 _reserved_disk_space_factor;
     double                 _transient_disk_usage;
@@ -29,12 +31,16 @@ public:
                        const ResourceUsageWithLimit &memoryState_);
     ResourceUsageState(const ResourceUsageWithLimit &diskState_,
                        const ResourceUsageWithLimit &memoryState_,
+                       double non_transient_disk_usage_,
+                       double non_transient_memory_usage_,
                        double reserved_disk_space_,
                        double reserved_disk_space_factor_,
                        double transient_disk_usage_,
                        double transient_memory_usage_);
     ResourceUsageState(const ResourceUsageWithLimit &diskState_,
                        const ResourceUsageWithLimit &memoryState_,
+                       double non_transient_disk_usage_,
+                       double non_transient_memory_usage_,
                        double reserved_disk_space_,
                        double reserved_disk_space_factor_,
                        double transient_disk_usage_,
@@ -49,8 +55,8 @@ public:
     double reserved_disk_space() const noexcept { return _reserved_disk_space; }
     double transient_disk_usage() const noexcept { return _transient_disk_usage; }
     double transient_memory_usage() const noexcept { return _transient_memory_usage; }
-    double non_transient_disk_usage() const { return std::max(0.0, _diskState.usage() - _transient_disk_usage); }
-    double non_transient_memory_usage() const { return std::max(0.0, _memoryState.usage() - _transient_memory_usage); }
+    double non_transient_disk_usage() const noexcept { return _non_transient_disk_usage; }
+    double non_transient_memory_usage() const noexcept { return _non_transient_memory_usage; }
     bool aboveDiskLimit(double resourceLimitFactor) const { return diskState().aboveLimit(resourceLimitFactor); }
     bool aboveMemoryLimit(double resourceLimitFactor) const { return memoryState().aboveLimit(resourceLimitFactor); }
     const ResourceUsageWithLimit& max_attribute_address_space_state() const noexcept {
