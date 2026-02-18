@@ -92,8 +92,29 @@ public class ExecutionContextTestCase {
         ExecutionContext ctx = new ExecutionContext();
         ctx.setCurrentValue(new StringFieldValue("\u3072\u3089\u304c\u306a"));
         assertEquals(Language.JAPANESE, ctx.resolveLanguage(new SimpleLinguistics()));
+        // Detected language is cached; clear() resets it for the next statement
+        ctx.clear();
         ctx.setCurrentValue(new StringFieldValue("\ud55c\uae00\uacfc"));
         assertEquals(Language.KOREAN, ctx.resolveLanguage(new SimpleLinguistics()));
+    }
+
+    @Test
+    public void requireThatDetectedLanguageIsCached() {
+        ExecutionContext ctx = new ExecutionContext();
+        ctx.setCurrentValue(new StringFieldValue("\u3072\u3089\u304c\u306a"));
+        assertEquals(Language.JAPANESE, ctx.resolveLanguage(new SimpleLinguistics()));
+        // Second call within same statement returns cached result
+        ctx.setCurrentValue(new StringFieldValue("\ud55c\uae00\uacfc"));
+        assertEquals(Language.JAPANESE, ctx.resolveLanguage(new SimpleLinguistics()));
+    }
+
+    @Test
+    public void requireThatClearResetsDetectedLanguage() {
+        ExecutionContext ctx = new ExecutionContext();
+        ctx.setCurrentValue(new StringFieldValue("\u3072\u3089\u304c\u306a"));
+        assertEquals(Language.JAPANESE, ctx.resolveLanguage(new SimpleLinguistics()));
+        ctx.clear();
+        assertEquals(Language.UNKNOWN, ctx.getLanguage());
     }
 
     @Test
