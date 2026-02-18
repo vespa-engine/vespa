@@ -936,7 +936,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
 
         const auto &usage_filter = *_write_filter;
         auto dm_metrics = _resource_usage_notifier->get_metrics();
-        metrics.resourceUsage.disk.set(dm_metrics.non_transient_disk_usage());
+        metrics.resourceUsage.disk.set(dm_metrics.reported_disk_usage());
         metrics.resourceUsage.disk_usage.total.set(dm_metrics.total_disk_usage());
         metrics.resourceUsage.disk_usage.total_util.set(dm_metrics.total_disk_utilization());
         metrics.resourceUsage.disk_usage.transient.set(dm_metrics.transient_disk_usage());

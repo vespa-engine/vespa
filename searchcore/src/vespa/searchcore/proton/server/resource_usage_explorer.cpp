@@ -46,7 +46,10 @@ ResourceUsageExplorer::get_state(const vespalib::slime::Inserter &inserter, bool
         disk.setDouble("limit", usageState.diskState().limit());
         disk.setDouble("utilization", usageState.diskState().utilization());
         disk.setDouble("reserved", usageState.reserved_disk_space());
+        disk.setDouble("reserved-factor", usageState.reserved_disk_space_factor());
         disk.setDouble("transient", usageState.transient_disk_usage());
+        disk.setDouble("non-transient", usageState.non_transient_disk_usage());
+        disk.setDouble("reported", usageState.reported_disk_usage());
         convertDiskStatsToSlime(_usage_notifier.getHwInfo(), _usage_notifier.getDiskUsedSize(), disk.setObject("stats"));
 
         Cursor &memory = object.setObject("memory");
