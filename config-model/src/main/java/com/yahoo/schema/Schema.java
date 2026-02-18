@@ -65,7 +65,6 @@ public class Schema implements ImmutableSchema {
 
     private Boolean rawAsBase64 = null;
 
-    /** The stemming setting of this schema. Default is BEST. */
     private Stemming stemming = null;
 
     private final FieldSets fieldSets = new FieldSets(Optional.of(this));
@@ -204,7 +203,7 @@ public class Schema implements ImmutableSchema {
     /** Returns whether fields should be stemmed by default or not. Default is BEST. This is never null. */
     public Stemming getStemming() {
         if (stemming != null) return stemming;
-        if (inherited.isEmpty()) return Stemming.BEST;
+        if (inherited.isEmpty()) return Stemming.BEST; // TODO Vespa 9: Change default to multiple
         return requireInherited().getStemming();
     }
 
