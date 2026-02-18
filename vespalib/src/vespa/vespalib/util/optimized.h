@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/vespa_dll_local.h>
+
 #include <bit>
 
 namespace vespalib {
@@ -57,7 +59,4 @@ public:
  * @return index [0-63] of lsb, 0 if none.
  **/
 
-#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
-
 }
-
