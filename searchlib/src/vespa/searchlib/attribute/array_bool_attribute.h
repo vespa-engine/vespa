@@ -5,7 +5,10 @@
 #include "attributevector.h"
 #include "raw_buffer_store.h"
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
+#include <vespa/searchlib/attribute/search_context.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <cstring>
 
 namespace search::attribute {
 
@@ -85,6 +88,58 @@ public:
     // IMultiValueAttribute
     const IMultiValueAttribute* as_multi_value_attribute() const override;
     const IArrayBoolReadView* make_read_view(ArrayBoolTag, vespalib::Stash&) const override;
+};
+
+class ArrayBoolSearchContext : public SearchContext {
+    const ArrayBoolAttribute& _attr;
+    bool _want_true;
+    bool _valid;
+
+    bool valid() const override { return _valid; }
+
+    int32_t onFind(DocId docId, int32_t elemId, int32_t& weight) const override {
+        int32_t result = onFind(docId, elemId);
+        weight = (result >= 0) ? 1 : 0;
+        return result;
+    }
+
+    int32_t onFind(DocId docId, int32_t elemId) const override {
+        auto bools = _attr.get_bools(docId);
+        for (uint32_t i = static_cast<uint32_t>(elemId); i < bools.size(); ++i) {
+            if (bools[i] == _want_true) {
+                return static_cast<int32_t>(i);
+            }
+        }
+        return -1;
+    }
+
+public:
+    ArrayBoolSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const ArrayBoolAttribute& attr)
+        : SearchContext(attr),
+          _attr(attr),
+          _want_true(true),
+          _valid(qTerm->isValid())
+    {
+        if ((strcmp("0", qTerm->getTerm()) == 0) || (strcasecmp("false", qTerm->getTerm()) == 0)) {
+            _want_true = false;
+        } else if ((strcmp("1", qTerm->getTerm()) != 0) && (strcasecmp("true", qTerm->getTerm()) != 0)) {
+            _valid = false;
+        }
+    }
+
+    HitEstimate calc_hit_estimate() const override {
+        return _valid ? HitEstimate(_attr.getCommittedDocIdLimit()) : HitEstimate(0);
+    }
+
+    uint32_t get_committed_docid_limit() const noexcept override {
+        return _attr.getCommittedDocIdLimit();
+    }
+
+    const ArrayBoolSearchContext* as_array_bool_search_context() const override { return this; }
+
+    const ArrayBoolAttribute& get_attribute() const { return _attr; }
+    bool get_want_true() const { return _want_true; }
+    bool get_valid() const { return _valid; }
 };
 
 }

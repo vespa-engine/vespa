@@ -45,52 +45,6 @@ vespalib::BitSpan decode_bools(std::span<const char> raw) noexcept {
     return vespalib::BitSpan(raw.data() + 1, count);
 }
 
-class ArrayBoolSearchContext : public SearchContext {
-    const ArrayBoolAttribute& _attr;
-    bool _want_true;
-    bool _valid;
-
-    bool valid() const override { return _valid; }
-
-    int32_t onFind(DocId docId, int32_t elemId, int32_t& weight) const override {
-        int32_t result = onFind(docId, elemId);
-        weight = (result >= 0) ? 1 : 0;
-        return result;
-    }
-
-    int32_t onFind(DocId docId, int32_t elemId) const override {
-        auto bools = _attr.get_bools(docId);
-        for (uint32_t i = static_cast<uint32_t>(elemId); i < bools.size(); ++i) {
-            if (bools[i] == _want_true) {
-                return static_cast<int32_t>(i);
-            }
-        }
-        return -1;
-    }
-
-public:
-    ArrayBoolSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const ArrayBoolAttribute& attr)
-        : SearchContext(attr),
-          _attr(attr),
-          _want_true(true),
-          _valid(qTerm->isValid())
-    {
-        if ((strcmp("0", qTerm->getTerm()) == 0) || (strcasecmp("false", qTerm->getTerm()) == 0)) {
-            _want_true = false;
-        } else if ((strcmp("1", qTerm->getTerm()) != 0) && (strcasecmp("true", qTerm->getTerm()) != 0)) {
-            _valid = false;
-        }
-    }
-
-    HitEstimate calc_hit_estimate() const override {
-        return _valid ? HitEstimate(_attr.getCommittedDocIdLimit()) : HitEstimate(0);
-    }
-
-    uint32_t get_committed_docid_limit() const noexcept override {
-        return _attr.getCommittedDocIdLimit();
-    }
-};
-
 class ArrayBoolReadView : public IArrayBoolReadView {
     const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& _ref_vector;
     const RawBufferStore& _raw_store;
@@ -117,6 +71,8 @@ public:
 };
 
 } // anonymous namespace
+
+
 
 ArrayBoolAttribute::ArrayBoolAttribute(const std::string& name, const Config& config)
     : AttributeVector(name, config),
