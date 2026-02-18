@@ -8,6 +8,7 @@
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
+#include <gmock/gmock.h>
 #include <atomic>
 
 using storage::spi::AttributeResourceUsage;
@@ -36,6 +37,23 @@ struct MyResourceUsageListener : public storage::spi::ResourceUsageListener
     }
     size_t get_update_count() const { return _update_count; }
 };
+
+
+bool mostly_equal_resource_usage(const ResourceUsage& lhs, const ResourceUsage& rhs)
+{
+    double eps = 1e-9;
+    auto& alhs = lhs.get_attribute_address_space_usage();
+    auto& arhs = rhs.get_attribute_address_space_usage();
+    return std::abs(lhs.get_disk_usage() - rhs.get_disk_usage()) < eps &&
+           std::abs(lhs.get_memory_usage() - rhs.get_memory_usage()) < eps &&
+           std::abs(alhs.get_usage() - arhs.get_usage()) < eps &&
+           alhs.get_name() == arhs.get_name();
+}
+
+MATCHER_P(MostlyEqualResourceUsage, expected, "")
+{
+    return mostly_equal_resource_usage(expected, arg);
+}
 
 }
 
@@ -103,6 +121,13 @@ TEST_F(ResourceUsageTrackerTest, transient_resource_usage_is_subtracted_from_abs
     EXPECT_EQ(ResourceUsage(0.4, 0.3), get_usage());
     notify(0.8, 0.5, 0.0, 0.0, 0.0, 0.0, 0.8, 0.5);
     EXPECT_EQ(ResourceUsage(0.0, 0.0), get_usage());
+}
+
+TEST_F(ResourceUsageTrackerTest, reserved_disk_space_is_scaled_by_reserved_disk_space_factor)
+{
+    auto register_guard = _tracker->set_listener(*_listener);
+    notify(0.8, 0.5, 0.4, 0.3, 0.4, 0.5, 0.1, 0.2);
+    EXPECT_THAT(get_usage(), MostlyEqualResourceUsage(ResourceUsage(0.6, 0.3)));
 }
 
 TEST_F(ResourceUsageTrackerTest, forwarding_depends_on_register_guard)

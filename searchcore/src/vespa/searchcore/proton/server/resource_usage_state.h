@@ -53,6 +53,7 @@ public:
     const ResourceUsageWithLimit &diskState() const noexcept { return _diskState; }
     const ResourceUsageWithLimit &memoryState() const noexcept { return _memoryState; }
     double reserved_disk_space() const noexcept { return _reserved_disk_space; }
+    double reserved_disk_space_factor() const noexcept { return _reserved_disk_space_factor; }
     double transient_disk_usage() const noexcept { return _transient_disk_usage; }
     double transient_memory_usage() const noexcept { return _transient_memory_usage; }
     double non_transient_disk_usage() const noexcept { return _non_transient_disk_usage; }
@@ -63,6 +64,10 @@ public:
         return _max_attribute_address_space_state;
     }
     const AttributeUsageStats& attribute_usage() const noexcept { return _attribute_usage; }
+    // Disk usage reported to cluster controller and exported as metric.
+    double reported_disk_usage() const noexcept {
+        return _non_transient_disk_usage + _reserved_disk_space * _reserved_disk_space_factor;
+    }
 };
 
 } // namespace proton
