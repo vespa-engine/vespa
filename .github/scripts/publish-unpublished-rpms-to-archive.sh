@@ -100,7 +100,7 @@ for rpm in *.rpm; do
   [ -e "$rpm" ] || continue
   echo "Uploading $rpm ..."
   if [ "${DRY_RUN:-false}" != "true" ]; then
-    if ! "$MYDIR/upload-rpm-to-cloudsmith.sh" "$rpm" ; then
+    if ! "$MYDIR/upload-rpm-to-cloudsmith.sh" "$rpm" "${OSVERSION}" ; then
       echo "Could not upload $rpm"
       UPLOAD_FAILED=true
     else
