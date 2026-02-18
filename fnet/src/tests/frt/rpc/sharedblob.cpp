@@ -1,34 +1,30 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <vector>
 
-constexpr size_t ALLOC_LIMIT=1024;
+constexpr size_t ALLOC_LIMIT = 1024;
 
-struct MyBlob : FRT_ISharedBlob
-{
+struct MyBlob : FRT_ISharedBlob {
     int refcnt;
     MyBlob() : refcnt(1) {}
-    uint32_t getLen() override { return (strlen("blob_test") + 1); }
-    const char *getData() override { return "blob_test"; }
-    void addRef() override { ++refcnt; }
-    void subRef() override { --refcnt; }
+    uint32_t    getLen() override { return (strlen("blob_test") + 1); }
+    const char* getData() override { return "blob_test"; }
+    void        addRef() override { ++refcnt; }
+    void        subRef() override { --refcnt; }
 };
 
-struct Data
-{
-    enum {
-        SMALL = (ALLOC_LIMIT / 2),
-        LARGE = (ALLOC_LIMIT * 2)
-    };
+struct Data {
+    enum { SMALL = (ALLOC_LIMIT / 2), LARGE = (ALLOC_LIMIT * 2) };
 
-    char    *buf;
+    char*    buf;
     uint32_t len;
 
-    Data(const char *pt, uint32_t l) : buf(new char[l]), len(l) {
+    Data(const char* pt, uint32_t l) : buf(new char[l]), len(l) {
         if (len > 0) {
             memcpy(buf, pt, len);
         }
@@ -38,14 +34,14 @@ struct Data
             memset(buf, c, len);
         }
     }
-    Data(const Data &rhs) : buf(new char[rhs.len]), len(rhs.len) {
+    Data(const Data& rhs) : buf(new char[rhs.len]), len(rhs.len) {
         if (len > 0) {
             memcpy(buf, rhs.buf, len);
         }
     }
-    Data &operator=(const Data &rhs) {
+    Data& operator=(const Data& rhs) {
         if (this != &rhs) {
-            delete [] buf;
+            delete[] buf;
             buf = new char[rhs.len];
             len = rhs.len;
             if (len > 0) {
@@ -67,16 +63,13 @@ struct Data
         }
         return true;
     }
-    ~Data() {
-        delete [] buf;
-    }
+    ~Data() { delete[] buf; }
 };
 
-struct DataSet
-{
+struct DataSet {
     std::vector<Data> blobs;
 
-    void sample(FRT_Values &v) {
+    void sample(FRT_Values& v) {
         blobs.push_back(Data(v.GetNumValues(), 'V'));
         for (uint32_t i = 0; i < v.GetNumValues(); ++i) {
             if (v.GetType(i) == FRT_VALUE_DATA) {
@@ -85,24 +78,21 @@ struct DataSet
             } else if (v.GetType(i) == FRT_VALUE_DATA_ARRAY) {
                 blobs.push_back(Data(v[i]._data_array._len, 'X'));
                 for (uint32_t j = 0; j < v[i]._data_array._len; ++j) {
-                    blobs.push_back(Data(v[i]._data_array._pt[j]._buf,
-                                            v[i]._data_array._pt[j]._len));
+                    blobs.push_back(Data(v[i]._data_array._pt[j]._buf, v[i]._data_array._pt[j]._len));
                 }
             }
         }
     }
 };
 
-struct ServerSampler : public FRT_Invokable
-{
-    DataSet        &dataSet;
-    FRT_RPCRequest *clientReq;
-    FRT_RPCRequest *serverReq;
+struct ServerSampler : public FRT_Invokable {
+    DataSet&        dataSet;
+    FRT_RPCRequest* clientReq;
+    FRT_RPCRequest* serverReq;
 
-    ServerSampler(DataSet &ds, FRT_RPCRequest *cr) : dataSet(ds), clientReq(cr), serverReq(nullptr) {}
+    ServerSampler(DataSet& ds, FRT_RPCRequest* cr) : dataSet(ds), clientReq(cr), serverReq(nullptr) {}
 
-    void RPC_test(FRT_RPCRequest *req)
-    {
+    void RPC_test(FRT_RPCRequest* req) {
         if (clientReq != nullptr) {
             dataSet.sample(*clientReq->GetParams()); // client params after drop
         }
@@ -129,10 +119,10 @@ struct ServerSampler : public FRT_Invokable
 
 TEST(SharedBlobTest, testExplicitShared) {
     fnet::frt::StandaloneFRT frt;
-    FRT_Supervisor & orb = frt.supervisor();
-    MyBlob         blob;
+    FRT_Supervisor&          orb = frt.supervisor();
+    MyBlob                   blob;
 
-    FRT_RPCRequest *req = orb.AllocRPCRequest();
+    FRT_RPCRequest* req = orb.AllocRPCRequest();
     EXPECT_TRUE(blob.refcnt == 1);
 
     req->GetParams()->AddSharedData(&blob);
@@ -181,15 +171,14 @@ TEST(SharedBlobTest, testExplicitShared) {
 }
 
 TEST(SharedBlobTest, testImplicitShared) {
-    DataSet dataSet;
+    DataSet                  dataSet;
     fnet::frt::StandaloneFRT frt;
-    FRT_Supervisor & orb = frt.supervisor();
-    FRT_RPCRequest *req = orb.AllocRPCRequest();
-    ServerSampler serverSampler(dataSet, req);
+    FRT_Supervisor&          orb = frt.supervisor();
+    FRT_RPCRequest*          req = orb.AllocRPCRequest();
+    ServerSampler            serverSampler(dataSet, req);
     {
         FRT_ReflectionBuilder rb(&orb);
-        rb.DefineMethod("test", "*", "*",
-                        FRT_METHOD(ServerSampler::RPC_test), &serverSampler);
+        rb.DefineMethod("test", "*", "*", FRT_METHOD(ServerSampler::RPC_test), &serverSampler);
     }
     orb.Listen(0);
     int port = orb.GetListenPort();
@@ -197,7 +186,7 @@ TEST(SharedBlobTest, testImplicitShared) {
 
     char tmp[64];
     snprintf(tmp, sizeof(tmp), "tcp/localhost:%d", port);
-    FRT_Target *target = orb.GetTarget(tmp);
+    FRT_Target* target = orb.GetTarget(tmp);
     req->SetMethodName("test");
     {
         Data data(Data::SMALL, 'a');
@@ -208,13 +197,13 @@ TEST(SharedBlobTest, testImplicitShared) {
         req->GetParams()->AddData(data.buf, data.len);
     }
     {
-        char *data = req->GetParams()->AddData(Data::LARGE);
+        char* data = req->GetParams()->AddData(Data::LARGE);
         memset(data, 'c', Data::LARGE);
     }
     {
-        Data data1(Data::SMALL, 'd');
-        Data data2(Data::LARGE, 'e');
-        FRT_DataValue *arr = req->GetParams()->AddDataArray(2);
+        Data           data1(Data::SMALL, 'd');
+        Data           data2(Data::LARGE, 'e');
+        FRT_DataValue* arr = req->GetParams()->AddDataArray(2);
         req->GetParams()->SetData(&arr[0], data1.buf, data1.len);
         req->GetParams()->SetData(&arr[1], data2.buf, data2.len);
     }

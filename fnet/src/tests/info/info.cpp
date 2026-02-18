@@ -1,63 +1,60 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/frt/supervisor.h>
-#include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/channel.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/info.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <mutex>
-#include <condition_variable>
- 
-struct RPC : public FRT_Invokable
-{
-  void GetInfo(FRT_RPCRequest *req)
-  {
-    req->GetReturn()->AddString(FNET_Info::GetFNETVersion());
-    const char *endian_str = "UNKNOWN";
-    if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE)
-      endian_str = "LITTLE";
-    if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_BIG)
-      endian_str = "BIG";
-    req->GetReturn()->AddString(endian_str);
-    req->GetReturn()->AddInt32(FD_SETSIZE);
-    req->GetReturn()->AddInt32(sizeof(FRT_RPCRequest));
-  }
 
-  void Init(FRT_Supervisor *s)
-  {
-    FRT_ReflectionBuilder rb(s);
-    //-------------------------------------------------------------------
-    rb.DefineMethod("getInfo", "", "ssii",
-                    FRT_METHOD(RPC::GetInfo), this);
-    // FNET version
-    // endian
-    // FD_SETSIZE
-    // req object size
-    //-------------------------------------------------------------------
-  }
+#include <condition_variable>
+#include <mutex>
+
+struct RPC : public FRT_Invokable {
+    void GetInfo(FRT_RPCRequest* req) {
+        req->GetReturn()->AddString(FNET_Info::GetFNETVersion());
+        const char* endian_str = "UNKNOWN";
+        if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE)
+            endian_str = "LITTLE";
+        if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_BIG)
+            endian_str = "BIG";
+        req->GetReturn()->AddString(endian_str);
+        req->GetReturn()->AddInt32(FD_SETSIZE);
+        req->GetReturn()->AddInt32(sizeof(FRT_RPCRequest));
+    }
+
+    void Init(FRT_Supervisor* s) {
+        FRT_ReflectionBuilder rb(s);
+        //-------------------------------------------------------------------
+        rb.DefineMethod("getInfo", "", "ssii", FRT_METHOD(RPC::GetInfo), this);
+        // FNET version
+        // endian
+        // FD_SETSIZE
+        // req object size
+        //-------------------------------------------------------------------
+    }
 };
 
 TEST(InfoTest, info) {
-    RPC rpc;
+    RPC                      rpc;
     fnet::frt::StandaloneFRT server;
-    FRT_Supervisor & orb = server.supervisor();
-    char spec[64];
+    FRT_Supervisor&          orb = server.supervisor();
+    char                     spec[64];
     rpc.Init(&orb);
     ASSERT_TRUE(orb.Listen("tcp/0"));
     snprintf(spec, sizeof(spec), "tcp/localhost:%d", orb.GetListenPort());
 
-    FRT_Target     *target      = orb.GetTarget(spec);
-    FRT_RPCRequest *local_info  = orb.AllocRPCRequest();
-    FRT_RPCRequest *remote_info = orb.AllocRPCRequest();
+    FRT_Target*     target = orb.GetTarget(spec);
+    FRT_RPCRequest* local_info = orb.AllocRPCRequest();
+    FRT_RPCRequest* remote_info = orb.AllocRPCRequest();
 
     rpc.GetInfo(local_info);
     remote_info->SetMethodName("getInfo");
     target->InvokeSync(remote_info, 10.0);
     EXPECT_FALSE(remote_info->IsError());
 
-    FRT_Values &l = *local_info->GetReturn();
- // FRT_Values &r = *remote_info->GetReturn();
+    FRT_Values& l = *local_info->GetReturn();
+    // FRT_Values &r = *remote_info->GetReturn();
 
     fprintf(stderr, "FNET Version: %s\n", l[0]._string._str);
     fprintf(stderr, "Endian: %s\n", l[1]._string._str);
@@ -69,8 +66,7 @@ TEST(InfoTest, info) {
     remote_info->internal_subref();
 };
 
-TEST(InfoTest, size_of_important_objects)
-{
+TEST(InfoTest, size_of_important_objects) {
 #ifdef __APPLE__
     constexpr size_t MUTEX_SIZE = 64u;
 #elif defined(__aarch64__)

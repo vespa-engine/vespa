@@ -8,6 +8,4 @@ FNET_Config::FNET_Config()
       _maxInputBufferSize(0x10000),
       _maxOutputBufferSize(0x10000),
       _tcpNoDelay(true),
-      _drop_empty_buffers(false)
-{
-}
+      _drop_empty_buffers(false) {}

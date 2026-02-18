@@ -2,23 +2,27 @@
 
 #pragma once
 
-#include "config.h"
-#include "iocomponent.h"
-#include "databuffer.h"
-#include "context.h"
 #include "channellookup.h"
+#include "config.h"
+#include "context.h"
+#include "databuffer.h"
+#include "iocomponent.h"
 #include "packetqueue.h"
-#include <vespa/vespalib/net/socket_handle.h>
+
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_socket.h>
+#include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/util/size_literals.h>
+
 #include <atomic>
 
 class FNET_IPacketStreamer;
 class FNET_IServerAdapter;
 class FNET_IPacketHandler;
 
-namespace vespalib::net { class ConnectionAuthContext; }
+namespace vespalib::net {
+class ConnectionAuthContext;
+}
 
 /**
  * This class represents a single connection with another
@@ -28,34 +32,22 @@ namespace vespalib::net { class ConnectionAuthContext; }
  * connection. Only the client side may open new channels on the
  * connection.
  **/
-class FNET_Connection : public FNET_IOComponent
-{
+class FNET_Connection : public FNET_IOComponent {
 public:
-    enum State : uint8_t {
-        FNET_CONNECTING,
-        FNET_CONNECTED,
-        FNET_CLOSING,
-        FNET_CLOSED
-    };
+    enum State : uint8_t { FNET_CONNECTING, FNET_CONNECTED, FNET_CLOSING, FNET_CLOSED };
 
-    enum {
-        FNET_READ_SIZE  = 16_Ki,
-        FNET_READ_REDO  = 10,
-        FNET_WRITE_SIZE = 16_Ki,
-        FNET_WRITE_REDO = 10
-    };
+    enum { FNET_READ_SIZE = 16_Ki, FNET_READ_REDO = 10, FNET_WRITE_SIZE = 16_Ki, FNET_WRITE_REDO = 10 };
 
 private:
     struct Flags {
-        Flags(const FNET_Config &cfg) :
-            _gotheader(false),
-            _inCallback(false),
-            _callbackWait(false),
-            _discarding(false),
-            _framed(false),
-            _handshake_work_pending(false),
-            _drop_empty_buffers(cfg._drop_empty_buffers)
-        { }
+        Flags(const FNET_Config& cfg)
+            : _gotheader(false),
+              _inCallback(false),
+              _callbackWait(false),
+              _discarding(false),
+              _framed(false),
+              _handshake_work_pending(false),
+              _drop_empty_buffers(cfg._drop_empty_buffers) {}
         bool _gotheader;
         bool _inCallback;
         bool _callbackWait;
@@ -65,44 +57,42 @@ private:
         bool _drop_empty_buffers;
     };
     struct ResolveHandler : public vespalib::AsyncResolver::ResultHandler {
-        FNET_Connection *connection;
+        FNET_Connection*        connection;
         vespalib::SocketAddress address;
-        ResolveHandler(FNET_Connection *conn) noexcept;
+        ResolveHandler(FNET_Connection* conn) noexcept;
         void handle_result(vespalib::SocketAddress result) override;
         ~ResolveHandler();
     };
     using ResolveHandlerSP = std::shared_ptr<ResolveHandler>;
-    FNET_IPacketStreamer    *_streamer;        // custom packet streamer
-    FNET_IServerAdapter     *_serverAdapter;   // only on server side
-    vespalib::CryptoSocket::UP _socket;        // socket for this conn
-    ResolveHandlerSP         _resolve_handler; // async resolve callback
-    FNET_Context             _context;         // connection context
-    std::atomic<State>       _state;           // connection state. May be polled outside lock
-    Flags                    _flags;           // Packed flags.
-    uint32_t                 _packetLength;    // packet length
-    uint32_t                 _packetCode;      // packet code
-    uint32_t                 _packetCHID;      // packet chid
-    uint32_t                 _writeWork;       // pending write work
-    uint32_t                 _currentID;       // current channel ID
-    FNET_DataBuffer          _input;           // input buffer
-    FNET_PacketQueue_NoLock  _queue;           // outer output queue
-    FNET_PacketQueue_NoLock  _myQueue;         // inner output queue
-    FNET_DataBuffer          _output;          // output buffer
-    FNET_ChannelLookup       _channels;        // channel 'DB'
-    FNET_Channel            *_callbackTarget;  // target of current callback
+    FNET_IPacketStreamer*      _streamer;        // custom packet streamer
+    FNET_IServerAdapter*       _serverAdapter;   // only on server side
+    vespalib::CryptoSocket::UP _socket;          // socket for this conn
+    ResolveHandlerSP           _resolve_handler; // async resolve callback
+    FNET_Context               _context;         // connection context
+    std::atomic<State>         _state;           // connection state. May be polled outside lock
+    Flags                      _flags;           // Packed flags.
+    uint32_t                   _packetLength;    // packet length
+    uint32_t                   _packetCode;      // packet code
+    uint32_t                   _packetCHID;      // packet chid
+    uint32_t                   _writeWork;       // pending write work
+    uint32_t                   _currentID;       // current channel ID
+    FNET_DataBuffer            _input;           // input buffer
+    FNET_PacketQueue_NoLock    _queue;           // outer output queue
+    FNET_PacketQueue_NoLock    _myQueue;         // inner output queue
+    FNET_DataBuffer            _output;          // output buffer
+    FNET_ChannelLookup         _channels;        // channel 'DB'
+    FNET_Channel*              _callbackTarget;  // target of current callback
 
     std::unique_ptr<vespalib::net::ConnectionAuthContext> _auth_context;
 
     static std::atomic<uint64_t> _num_connections; // total number of connections
-
 
     /**
      * Get next ID that may be used for multiplexing on this connection.
      *
      * @return (hopefully) unique ID used for multiplexing.
      **/
-    uint32_t GetNextID()
-    {
+    uint32_t GetNextID() {
         uint32_t ret = _currentID;
         if (ret == FNET_NOID)
             ret += 2;
@@ -122,10 +112,8 @@ private:
      *                control packets all channels are callback
      *                targets at the same time.
      **/
-    void WaitCallback(std::unique_lock<std::mutex> &guard, FNET_Channel *channel)
-    {
-        while (_flags._inCallback
-               && (_callbackTarget == channel || _callbackTarget == nullptr)) {
+    void WaitCallback(std::unique_lock<std::mutex>& guard, FNET_Channel* channel) {
+        while (_flags._inCallback && (_callbackTarget == channel || _callbackTarget == nullptr)) {
             _flags._callbackWait = true;
             _ioc_cond.wait(guard);
         }
@@ -137,9 +125,8 @@ private:
      * called. When this method returns the object will be in callback
      * mode, but not locked.
      **/
-    void BeforeCallback(std::unique_lock<std::mutex> &guard, FNET_Channel *channel)
-    {
-        _flags._inCallback     = true;
+    void BeforeCallback(std::unique_lock<std::mutex>& guard, FNET_Channel* channel) {
+        _flags._inCallback = true;
         _callbackTarget = channel;
         guard.unlock();
     }
@@ -150,8 +137,7 @@ private:
      * called, but not locked. When this method returns the object is no
      * longer in callback mode, but locked.
      **/
-    void AfterCallback(std::unique_lock<std::mutex> &guard)
-    {
+    void AfterCallback(std::unique_lock<std::mutex>& guard) {
         guard.lock();
         _flags._inCallback = false;
         if (_flags._callbackWait) {
@@ -163,7 +149,7 @@ private:
     /**
      * @return a string describing the given connection state.
      **/
-    const char *GetStateString(State state);
+    const char* GetStateString(State state);
 
     /**
      * Set connection state.
@@ -215,8 +201,8 @@ private:
     bool writePendingAfterConnect();
 
 public:
-    FNET_Connection(const FNET_Connection &) = delete;
-    FNET_Connection &operator=(const FNET_Connection &) = delete;
+    FNET_Connection(const FNET_Connection&) = delete;
+    FNET_Connection& operator=(const FNET_Connection&) = delete;
 
     /**
      * Construct a connection in server aspect.
@@ -227,11 +213,8 @@ public:
      * @param socket the underlying socket used for IO
      * @param spec listen spec
      **/
-    FNET_Connection(FNET_TransportThread *owner,
-                    FNET_IPacketStreamer *streamer,
-                    FNET_IServerAdapter *serverAdapter,
-                    vespalib::SocketHandle socket,
-                    const char *spec);
+    FNET_Connection(FNET_TransportThread* owner, FNET_IPacketStreamer* streamer, FNET_IServerAdapter* serverAdapter,
+                    vespalib::SocketHandle socket, const char* spec);
 
     /**
      * Construct a connection in client aspect.
@@ -242,17 +225,13 @@ public:
      * @param context initial context for this connection
      * @param spec connect spec
      **/
-    FNET_Connection(FNET_TransportThread *owner,
-                    FNET_IPacketStreamer *streamer,
-                    FNET_IServerAdapter *serverAdapter,
-                    FNET_Context context,
-                    const char *spec);
+    FNET_Connection(FNET_TransportThread* owner, FNET_IPacketStreamer* streamer, FNET_IServerAdapter* serverAdapter,
+                    FNET_Context context, const char* spec);
 
     /**
      * Destructor.
      **/
     ~FNET_Connection() override;
-
 
     /**
      * Is this the server endpoint of a network connection?
@@ -261,7 +240,6 @@ public:
      **/
     bool IsServer() const { return (_currentID & 0x1) == 1; }
 
-
     /**
      * Is this the client endpoint of a network connection?
      *
@@ -269,15 +247,12 @@ public:
      **/
     bool IsClient() const { return (_currentID & 0x1) == 0; }
 
-
     /**
      * Is the given channel id generated by our peer?
      *
      * @return true/false
      **/
-    bool IsFromPeer(uint32_t chid) const {
-        return ((_currentID & 0x01) != (chid & 0x01));
-    }
+    bool IsFromPeer(uint32_t chid) const { return ((_currentID & 0x01) != (chid & 0x01)); }
 
     /**
      * @return address spec of socket peer. Only makes sense to call on non-listening sockets.
@@ -291,31 +266,26 @@ public:
      **/
     bool CanAcceptChannels() const { return _serverAdapter != nullptr; }
 
-
     /**
      * Assign a context to this connection.
      * @param context the context for this connection
      **/
     void SetContext(FNET_Context context) { _context = context; }
 
-
     /**
      * @return the context for this connection
      **/
     FNET_Context GetContext() { return _context; }
 
-
     /**
      * @return a pointer to the context for this connection
      **/
-    FNET_Context *GetContextPT() { return &_context; }
-
+    FNET_Context* GetContextPT() { return &_context; }
 
     /**
      * @return current connection state. May be stale if read outside lock.
      **/
     State GetState() const noexcept { return _state.load(std::memory_order_relaxed); }
-
 
     /**
      * Initialize connection. This method should be called directly
@@ -326,7 +296,7 @@ public:
      **/
     bool Init();
 
-    FNET_IServerAdapter *server_adapter() override;
+    FNET_IServerAdapter* server_adapter() override;
 
     /**
      * Called by the transport thread as the initial part of adding
@@ -351,7 +321,6 @@ public:
      **/
     bool handle_handshake_act() override;
 
-
     /**
      * Open a new channel on this connection. This method will return
      * nullptr of this connection is broken. Note that this method may only
@@ -364,10 +333,7 @@ public:
      * @param context application specific context.
      * @param chid store the channel id at this location if not nullptr
      **/
-    FNET_Channel *OpenChannel(FNET_IPacketHandler *handler,
-                              FNET_Context context,
-                              uint32_t *chid = nullptr);
-
+    FNET_Channel* OpenChannel(FNET_IPacketHandler* handler, FNET_Context context, uint32_t* chid = nullptr);
 
     /**
      * Open a new channel on this connection that may only be used to
@@ -378,8 +344,7 @@ public:
      *
      * @return an object representing the opened channel.
      **/
-    FNET_Channel *OpenChannel();
-
+    FNET_Channel* OpenChannel();
 
     /**
      * Close a channel. Note that this only closes the network to
@@ -389,8 +354,7 @@ public:
      * @return false if the channel was not found.
      * @param channel the channel to close.
      **/
-    bool CloseChannel(FNET_Channel *channel);
-
+    bool CloseChannel(FNET_Channel* channel);
 
     /**
      * Free a channel object. The channel may not be used after this
@@ -398,8 +362,7 @@ public:
      *
      * @param channel the channel to free.
      **/
-    void FreeChannel(FNET_Channel *channel);
-
+    void FreeChannel(FNET_Channel* channel);
 
     /**
      * Close and Free a channel in a single operation. This has the same
@@ -408,8 +371,7 @@ public:
      *
      * @param channel the channel to close and free.
      **/
-    void CloseAndFreeChannel(FNET_Channel *channel);
-
+    void CloseAndFreeChannel(FNET_Channel* channel);
 
     /**
      * Post a packet on the output queue. Note that the packet will not
@@ -420,8 +382,7 @@ public:
      * @param packet the packet to queue for sending.
      * @param chid the channel id for the packet
      **/
-    bool PostPacket(FNET_Packet *packet, uint32_t chid);
-
+    bool PostPacket(FNET_Packet* packet, uint32_t chid);
 
     /**
      * Sync with this connection. When this method is invoked it will
@@ -432,13 +393,11 @@ public:
      **/
     void Sync();
 
-
     /**
      * Close this connection immidiately. NOTE: this method should only
      * be called by the transport thread.
      **/
     void Close() override;
-
 
     /**
      * Called by the transport layer when a read event has occurred.
@@ -446,7 +405,6 @@ public:
      * @return false if connection broken, true otherwise.
      **/
     bool HandleReadEvent() override;
-
 
     /**
      * Called by the transport layer when a write event has occurred.
@@ -474,7 +432,5 @@ public:
     /**
      * @return the total number of connection objects
      **/
-    static uint64_t get_num_connections() {
-        return _num_connections.load(std::memory_order_relaxed);
-    }
+    static uint64_t get_num_connections() { return _num_connections.load(std::memory_order_relaxed); }
 };

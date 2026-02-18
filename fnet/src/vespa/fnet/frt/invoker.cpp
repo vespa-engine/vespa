@@ -1,37 +1,29 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "invoker.h"
+
 #include "supervisor.h"
+
 #include <vespa/fnet/channel.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet.frt.invoker");
 
-FRT_SingleReqWait::FRT_SingleReqWait()
-    : _lock(),
-      _cond(),
-      _done(false),
-      _waiting(false)
-{ }
+FRT_SingleReqWait::FRT_SingleReqWait() : _lock(), _cond(), _done(false), _waiting(false) {}
 
 FRT_SingleReqWait::~FRT_SingleReqWait() {}
 
-void
-FRT_SingleReqWait::WaitReq()
-{
+void FRT_SingleReqWait::WaitReq() {
     std::unique_lock<std::mutex> guard(_lock);
     _waiting = true;
-    while(!_done) {
+    while (!_done) {
         _cond.wait(guard);
     }
     _waiting = false;
 }
 
-
-void
-FRT_SingleReqWait::RequestDone(FRT_RPCRequest *req)
-{
-    (void) req;
+void FRT_SingleReqWait::RequestDone(FRT_RPCRequest* req) {
+    (void)req;
     std::lock_guard<std::mutex> guard(_lock);
     _done = true;
     if (_waiting) {
@@ -39,37 +31,26 @@ FRT_SingleReqWait::RequestDone(FRT_RPCRequest *req)
     }
 }
 
-
-FRT_RPCInvoker::FRT_RPCInvoker(FRT_Supervisor *supervisor,
-                               FRT_RPCRequest *req,
-                               bool noReply)
-    : _req(req),
-      _method(supervisor->GetReflectionManager()
-              ->LookupMethod(req->GetMethodName())),
-      _noReply(noReply)
-{
+FRT_RPCInvoker::FRT_RPCInvoker(FRT_Supervisor* supervisor, FRT_RPCRequest* req, bool noReply)
+    : _req(req), _method(supervisor->GetReflectionManager()->LookupMethod(req->GetMethodName())), _noReply(noReply) {
     if (LOG_WOULD_LOG(debug)) {
         std::string methodName(_req->GetMethodName(), _req->GetMethodNameLen());
         LOG(debug, "invoke(server) init: '%s'", methodName.c_str());
     }
-    req->SetReturnHandler(this); // RPC req -> FNET_Connection link is via this ptr; set prior to access filter invocation.
+    req->SetReturnHandler(
+        this); // RPC req -> FNET_Connection link is via this ptr; set prior to access filter invocation.
     if (_method == nullptr) {
         if (!req->IsError()) { // may be BAD_REQUEST
             req->SetError(FRTE_RPC_NO_SUCH_METHOD);
         }
-    } else if (!FRT_Values::CheckTypes(_method->GetParamSpec(),
-                                       req->GetParamSpec()))
-    {
+    } else if (!FRT_Values::CheckTypes(_method->GetParamSpec(), req->GetParamSpec())) {
         req->SetError(FRTE_RPC_WRONG_PARAMS);
-    } else if (_method->GetRequestAccessFilter() &&
-               !_method->GetRequestAccessFilter()->allow(*req))
-    {
+    } else if (_method->GetRequestAccessFilter() && !_method->GetRequestAccessFilter()->allow(*req)) {
         req->SetError(FRTE_RPC_PERMISSION_DENIED);
     }
 }
 
-bool FRT_RPCInvoker::Invoke()
-{
+bool FRT_RPCInvoker::Invoke() {
     bool detached = false;
     _req->SetDetachedPT(&detached);
     (_method->GetHandler()->*_method->GetMethod())(_req);
@@ -79,22 +60,16 @@ bool FRT_RPCInvoker::Invoke()
     return true;
 }
 
-void
-FRT_RPCInvoker::HandleDone(bool freeChannel)
-{
-    FNET_Channel *ch = _req->GetContext()._value.CHANNEL;
+void FRT_RPCInvoker::HandleDone(bool freeChannel) {
+    FNET_Channel* ch = _req->GetContext()._value.CHANNEL;
 
     // check return value(s)
-    if (!_req->IsError() &&
-        !FRT_Values::CheckTypes(_method->GetReturnSpec(),
-                                _req->GetReturnSpec()))
-    {
+    if (!_req->IsError() && !FRT_Values::CheckTypes(_method->GetReturnSpec(), _req->GetReturnSpec())) {
         _req->SetError(FRTE_RPC_WRONG_RETURN);
     }
     if (LOG_WOULD_LOG(debug)) {
         std::string methodName(_req->GetMethodName(), _req->GetMethodNameLen());
-        LOG(debug, "invoke(server) done: '%s': '%s'",
-            methodName.c_str(), FRT_GetErrorCodeName(_req->GetErrorCode()));
+        LOG(debug, "invoke(server) done: '%s': '%s'", methodName.c_str(), FRT_GetErrorCodeName(_req->GetErrorCode()));
     }
     // send response to client or get rid of it
     if (_noReply || (_req->GetErrorCode() == FRTE_RPC_BAD_REQUEST))
@@ -107,23 +82,13 @@ FRT_RPCInvoker::HandleDone(bool freeChannel)
         ch->Free();
 }
 
-void
-FRT_RPCInvoker::HandleReturn()
-{
-    HandleDone(true);
-}
+void FRT_RPCInvoker::HandleReturn() { HandleDone(true); }
 
-
-FNET_Connection *
-FRT_RPCInvoker::GetConnection()
-{
-    return _req->GetContext()._value.CHANNEL->GetConnection();
-}
+FNET_Connection* FRT_RPCInvoker::GetConnection() { return _req->GetContext()._value.CHANNEL->GetConnection(); }
 
 //-----------------------------------------------------------------------------
 
-void FRT_HookInvoker::Invoke()
-{
+void FRT_HookInvoker::Invoke() {
     bool detached = false;
     _req->SetDetachedPT(&detached);
     (_hook->GetHandler()->*_hook->GetMethod())(_req);
@@ -131,30 +96,17 @@ void FRT_HookInvoker::Invoke()
     _req->internal_subref();
 }
 
-void
-FRT_HookInvoker::HandleReturn()
-{
+void FRT_HookInvoker::HandleReturn() {
     // hooks cannot be detached
     LOG_ABORT("should not be reached");
 }
 
-
-FNET_Connection *
-FRT_HookInvoker::GetConnection()
-{
-    return _conn;
-}
+FNET_Connection* FRT_HookInvoker::GetConnection() { return _conn; }
 
 //-----------------------------------------------------------------------------
 
-FRT_RPCAdapter::FRT_RPCAdapter(FNET_Scheduler *scheduler,
-                               FRT_RPCRequest *req,
-                               FRT_IRequestWait *waiter)
-    : FNET_Task(scheduler),
-      _req(req),
-      _waiter(waiter),
-      _channel(nullptr)
-{
+FRT_RPCAdapter::FRT_RPCAdapter(FNET_Scheduler* scheduler, FRT_RPCRequest* req, FRT_IRequestWait* waiter)
+    : FNET_Task(scheduler), _req(req), _waiter(waiter), _channel(nullptr) {
     if (LOG_WOULD_LOG(debug)) {
         std::string methodName(_req->GetMethodName(), _req->GetMethodNameLen());
         LOG(debug, "invoke(client) init: '%s'", methodName.c_str());
@@ -162,21 +114,16 @@ FRT_RPCAdapter::FRT_RPCAdapter(FNET_Scheduler *scheduler,
     req->SetAbortHandler(this);
 }
 
-void
-FRT_RPCAdapter::HandleDone()
-{
+void FRT_RPCAdapter::HandleDone() {
     if (LOG_WOULD_LOG(debug)) {
         std::string methodName(_req->GetMethodName(), _req->GetMethodNameLen());
-        LOG(debug, "invoke(client) done: '%s': '%s'",
-            methodName.c_str(), FRT_GetErrorCodeName(_req->GetErrorCode()));
+        LOG(debug, "invoke(client) done: '%s': '%s'", methodName.c_str(), FRT_GetErrorCodeName(_req->GetErrorCode()));
     }
     // give req back to caller
     _waiter->RequestDone(_req);
 }
 
-bool
-FRT_RPCAdapter::HandleAbort()
-{
+bool FRT_RPCAdapter::HandleAbort() {
     if (!_req->GetCompletionToken()) { // too late
         return false;
     }
@@ -189,10 +136,7 @@ FRT_RPCAdapter::HandleAbort()
     return true;
 }
 
-
-void
-FRT_RPCAdapter::PerformTask()
-{
+void FRT_RPCAdapter::PerformTask() {
     if (!_req->GetCompletionToken()) { // too late
         return;
     }
@@ -205,10 +149,7 @@ FRT_RPCAdapter::PerformTask()
     HandleDone();
 }
 
-
-FNET_IPacketHandler::HP_RetCode
-FRT_RPCAdapter::HandlePacket(FNET_Packet *packet, FNET_Context)
-{
+FNET_IPacketHandler::HP_RetCode FRT_RPCAdapter::HandlePacket(FNET_Packet* packet, FNET_Context) {
     if (!_req->GetCompletionToken()) { // too late
         packet->Free();
         return FNET_KEEP_CHANNEL;

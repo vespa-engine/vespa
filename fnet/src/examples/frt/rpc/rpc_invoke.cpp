@@ -1,23 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-rpc-invoke");
 
-class RPCClient
-{
+class RPCClient {
 private:
-    static bool addArg(FRT_RPCRequest *req, const char *param) {
+    static bool addArg(FRT_RPCRequest* req, const char* param) {
         int len = strlen(param);
         if (len < 2 || param[1] != ':') {
             return false;
         }
-        const char *value = param + 2;
+        const char* value = param + 2;
         switch (param[0]) {
         case 'b':
             req->GetParams()->AddInt8(strtoll(value, nullptr, 0));
@@ -45,19 +44,15 @@ private:
         }
         return true;
     }
-    int run(int argc, char **argv);
+    int run(int argc, char** argv);
 
 public:
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 };
 
-bool timeout_specified(char **argv) {
-    return strcmp(argv[1], "-t") == 0;
-}
+bool timeout_specified(char** argv) { return strcmp(argv[1], "-t") == 0; }
 
-int
-RPCClient::main(int argc, char **argv)
-{
+int RPCClient::main(int argc, char** argv) {
     if ((argc < 3) || (timeout_specified(argv) && argc < 5)) {
         fprintf(stderr, "usage: vespa-rpc-invoke [-t timeout] <connectspec> <method> [args]\n");
         fprintf(stderr, "    -t timeout in seconds\n");
@@ -67,30 +62,28 @@ RPCClient::main(int argc, char **argv)
     }
     try {
         return run(argc, argv);
-    } catch (const std::exception & e) {
+    } catch (const std::exception& e) {
         fprintf(stderr, "Caught exception : '%s'", e.what());
         return 2;
     }
 }
 
-int
-RPCClient::run(int argc, char **argv)
-{
-    int retCode = 0;
+int RPCClient::run(int argc, char** argv) {
+    int                      retCode = 0;
     fnet::frt::StandaloneFRT server;
-    FRT_Supervisor & supervisor = server.supervisor();
-    int targetArg = 1;
-    int methNameArg = 2;
-    int startOfArgs = 3;
-    int timeOut = 10;
+    FRT_Supervisor&          supervisor = server.supervisor();
+    int                      targetArg = 1;
+    int                      methNameArg = 2;
+    int                      startOfArgs = 3;
+    int                      timeOut = 10;
     if (timeout_specified(argv)) {
-      timeOut = atoi(argv[2]);
-      targetArg = 3;
-      methNameArg = 4;
-      startOfArgs = 5;
+        timeOut = atoi(argv[2]);
+        targetArg = 3;
+        methNameArg = 4;
+        startOfArgs = 5;
     }
-    FRT_Target *target = supervisor.GetTarget(argv[targetArg]);
-    FRT_RPCRequest *req = supervisor.AllocRPCRequest();
+    FRT_Target*     target = supervisor.GetTarget(argv[targetArg]);
+    FRT_RPCRequest* req = supervisor.AllocRPCRequest();
     req->SetMethodName(argv[methNameArg]);
     for (int i = startOfArgs; i < argc; ++i) {
         if (!addArg(req, argv[i])) {
@@ -107,9 +100,7 @@ RPCClient::run(int argc, char **argv)
             fprintf(stdout, "RETURN VALUES:\n");
             req->GetReturn()->Print();
         } else {
-            fprintf(stderr, "error(%d): %s\n",
-                    req->GetErrorCode(),
-                    req->GetErrorMessage());
+            fprintf(stderr, "error(%d): %s\n", req->GetErrorCode(), req->GetErrorMessage());
             retCode = 3;
         }
     }
@@ -118,8 +109,7 @@ RPCClient::run(int argc, char **argv)
     return retCode;
 }
 
-
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     RPCClient myapp;
     return myapp.main(argc, argv);
