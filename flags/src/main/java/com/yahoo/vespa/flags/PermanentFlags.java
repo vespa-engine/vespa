@@ -685,8 +685,8 @@ public class PermanentFlags {
 
     public static final UnboundListFlag<String> ALLOW_FLAVORS = defineListFlag(
             "allow-flavors", List.of(), String.class,
-            "Flavors in lifecycle 'new' that we will allow provisioning " +
-                    "(default is to not provision new flavors). Each string in the list is a glob, e.g. 'c4d-*' or 'c4d-high*'.",
+            "Flavors that that we will allow provisioning (flavors with lifecycle 'active' are allowed by default)" +
+                    ". Each string in the list is a glob, e.g. 'c4d-*' or 'c4d-high*'.",
             "Takes effect immediately",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
     );
