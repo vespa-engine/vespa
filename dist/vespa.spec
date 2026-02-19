@@ -33,7 +33,7 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
 %global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_depencencies_version 1.7.0
+%global _vespa_build_depencencies_version 1.8.0
 %global _vespa_gtest_version 1.16.0
 %global _vespa_protobuf_version 5.30.1
 %global _vespa_openblas_version 0.3.27
@@ -409,11 +409,13 @@ getent passwd %{_vespa_user} >/dev/null || \
     useradd -r %{?_vespa_user_uid:-u %{_vespa_user_uid}} -g %{_vespa_group} --home-dir %{_prefix} -s /sbin/nologin \
     -c "Create owner of all Vespa data files" %{_vespa_user}
 %endif
-%if 0%{?el8} || 0%{?el9}
-# TODO Hardcoded toolset version, should be detected in a better way.
-mkdir -p /opt/rh
-ln -sf /opt/rh/gcc-toolset-14 /opt/rh/gcc-toolset
-%endif
+# TODO Hardcoded toolset versions, should be detected in a better way.
+for toolset_version in 16 15 14; do
+    rpm -q gcc-toolset-${toolset_version}-gcc >/dev/null &&
+        test -d /opt/rh/gcc-toolset-${toolset_version} &&
+        ln -snf gcc-toolset-${toolset_version} /opt/rh/gcc-toolset &&
+        break
+done
 echo "pathmunge %{_prefix}/bin" > /etc/profile.d/vespa.sh
 echo "export VESPA_HOME=%{_prefix}" >> /etc/profile.d/vespa.sh
 exit 0
