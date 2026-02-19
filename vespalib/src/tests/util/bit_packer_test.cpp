@@ -30,9 +30,9 @@ TEST(BitPackerTest, bits_can_be_packed)
     }
     EXPECT_EQ(packer.size(), 24);
     ASSERT_EQ(packer.storage().size(), 3);
-    EXPECT_EQ(std::to_integer<char>(packer.storage()[0]), 0b11100011);
-    EXPECT_EQ(std::to_integer<char>(packer.storage()[1]), 0b00011100);
-    EXPECT_EQ(std::to_integer<char>(packer.storage()[2]), 0b00001111);
+    EXPECT_EQ(packer.storage()[0], std::byte{0b11100011});
+    EXPECT_EQ(packer.storage()[1], std::byte{0b00011100});
+    EXPECT_EQ(packer.storage()[2], std::byte{0b00001111});
 }
 
 TEST(BitPackerTest, bit_span_can_be_created) {

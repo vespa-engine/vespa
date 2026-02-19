@@ -8,24 +8,6 @@ using vespalib::BitSpan;
 
 namespace {
 
-std::vector<int> list(std::vector<int> bits) { return bits; }
-std::vector<uint8_t> pack(std::vector<int> bits) {
-    size_t cnt = 0;
-    uint8_t byte = 0;
-    std::vector<uint8_t> result;
-    for (bool bit: bits) {
-        byte |= (uint8_t(bit) << (cnt % 8));
-        if ((++cnt % 8) == 0) {
-            result.push_back(byte);
-            byte = 0;
-        }
-    }
-    if ((cnt % 8) != 0) {
-        result.push_back(byte);
-    }
-    return result;
-}
-
 std::vector<int> extract_with_range(BitSpan span) {
     std::vector<int> result;
     for (bool bit: span) {
@@ -43,11 +25,14 @@ std::vector<int> extract_with_loop(BitSpan span) {
 }
 
 // shared test data, one int per bit
-auto my_bits = list({1, 1, 0, 0, 0, 1, 1, 1,
-                     0, 0, 1, 1, 1, 0, 0, 0,
-                     1, 1, 1, 1, 0, 0, 0, 0});
-// shared test data, bits packed into 3 bytes
-auto packed = pack(my_bits);
+std::vector<int> my_bits = {1, 1, 0, 0, 0, 1, 1, 1,
+                            0, 0, 1, 1, 1, 0, 0, 0,
+                            1, 1, 1, 1, 0, 0, 0, 0};
+
+// shared test data, bits packed into 3 bytes (NOTE: LSB first)
+std::vector<std::byte> packed = {std::byte{0b11100011},
+                                 std::byte{0b00011100},
+                                 std::byte{0b00001111}};
 
 } // namespace
 
