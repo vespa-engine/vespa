@@ -1,0 +1,17 @@
+{
+  "com.yahoo.data.access.Inspector" : [
+    "com.yahoo.data.disclosure.DataSink",
+    "com.yahoo.data.disclosure.DataSource"
+  ],
+  "com.yahoo.data.access.simple.Value$StringValue" : [
+    "com.yahoo.data.disclosure.DataSink"
+  ],
+  "com.yahoo.tensor.TensorDataSource" : [
+    "com.yahoo.data.disclosure.DataSink",
+    "com.yahoo.data.disclosure.DataSource",
+    "com.yahoo.tensor.serialization.JsonFormat$EncodeOptions"
+  ],
+  "com.yahoo.vespa.objects.BufferSerializer" : [
+    "com.yahoo.io.GrowableByteBuffer"
+  ]
+}

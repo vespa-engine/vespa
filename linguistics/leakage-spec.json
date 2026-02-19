@@ -1,0 +1,5 @@
+{
+  "com.yahoo.language.process.SpecialTokenRegistry" : [
+    "com.yahoo.vespa.configdefinition.SpecialtokensConfig"
+  ]
+}
