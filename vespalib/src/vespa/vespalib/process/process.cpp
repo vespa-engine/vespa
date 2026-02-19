@@ -1,29 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "process.h"
-#include "pipe.h"
+
 #include "close_all_files.h"
+#include "pipe.h"
 
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/size_literals.h>
 
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include <csignal>
-#include <unistd.h>
-#include <fcntl.h>
 
 namespace vespalib {
 
-Process::Process(const std::string &cmd, bool capture_stderr)
-  : _pid(-1),
-    _in(),
-    _out(),
-    _in_buf(4_Ki),
-    _out_buf(4_Ki),
-    _eof(false)
-{
+Process::Process(const std::string& cmd, bool capture_stderr)
+    : _pid(-1), _in(), _out(), _in_buf(4_Ki), _out_buf(4_Ki), _eof(false) {
     Pipe pipe_in = Pipe::create();
     Pipe pipe_out = Pipe::create();
     REQUIRE(pipe_in.valid() && pipe_out.valid());
@@ -40,12 +35,12 @@ Process::Process(const std::string &cmd, bool capture_stderr)
             ::close(dev_null);
         }
         close_all_files();
-        const char *sh_args[4];
+        const char* sh_args[4];
         sh_args[0] = "sh";
         sh_args[1] = "-c";
         sh_args[2] = cmd.c_str();
         sh_args[3] = nullptr;
-        execv("/bin/sh", const_cast<char * const *>(sh_args));
+        execv("/bin/sh", const_cast<char* const*>(sh_args));
         abort();
     } else {
         _pid = pid;
@@ -56,12 +51,10 @@ Process::Process(const std::string &cmd, bool capture_stderr)
     }
 }
 
-Memory
-Process::obtain()
-{
+Memory Process::obtain() {
     if ((_out_buf.obtain().size == 0) && !_eof) {
         WritableMemory buf = _out_buf.reserve(4_Ki);
-        ssize_t res = read(_out.fd(), buf.data, buf.size);
+        ssize_t        res = read(_out.fd(), buf.data, buf.size);
         while ((res == -1) && (errno == EINTR)) {
             res = read(_out.fd(), buf.data, buf.size);
         }
@@ -75,22 +68,14 @@ Process::obtain()
     return _out_buf.obtain();
 }
 
-Input &
-Process::evict(size_t bytes)
-{
+Input& Process::evict(size_t bytes) {
     _out_buf.evict(bytes);
     return *this;
 }
 
-WritableMemory
-Process::reserve(size_t bytes)
-{
-    return _in_buf.reserve(bytes);
-}
+WritableMemory Process::reserve(size_t bytes) { return _in_buf.reserve(bytes); }
 
-Output &
-Process::commit(size_t bytes)
-{
+Output& Process::commit(size_t bytes) {
     _in_buf.commit(bytes);
     Memory buf = _in_buf.obtain();
     while (buf.size > 0) {
@@ -105,8 +90,7 @@ Process::commit(size_t bytes)
     return *this;
 }
 
-std::string
-Process::read_line() {
+std::string Process::read_line() {
     std::string line;
     for (auto mem = obtain(); (mem.size > 0); mem = obtain()) {
         for (size_t i = 0; i < mem.size; ++i) {
@@ -122,11 +106,9 @@ Process::read_line() {
     return line;
 }
 
-int
-Process::join()
-{
+int Process::join() {
     pid_t res;
-    int status;
+    int   status;
     do {
         res = waitpid(_pid, &status, 0);
     } while ((res == -1) && (errno == EINTR));
@@ -138,17 +120,14 @@ Process::join()
     return (0x80000000 | status);
 }
 
-Process::~Process()
-{
+Process::~Process() {
     if (valid()) {
         kill(_pid, SIGKILL);
         join();
     }
 }
 
-bool
-Process::run(const std::string &cmd, std::string &output)
-{
+bool Process::run(const std::string& cmd, std::string& output) {
     Process proc(cmd);
     proc.close();
     for (auto mem = proc.obtain(); mem.size > 0; mem = proc.obtain()) {
@@ -161,9 +140,7 @@ Process::run(const std::string &cmd, std::string &output)
     return (proc.join() == 0);
 }
 
-bool
-Process::run(const std::string &cmd)
-{
+bool Process::run(const std::string& cmd) {
     std::string ignore_output;
     return run(cmd, ignore_output);
 }

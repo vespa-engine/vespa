@@ -9,8 +9,7 @@ namespace vespalib::slime {
 /**
  * Enumeration of slime data types.
  **/
-class Type
-{
+class Type {
 private:
     uint32_t _id;
 
@@ -19,15 +18,14 @@ protected:
 
 public:
     uint32_t getId() const noexcept { return _id; }
-    bool operator==(const Type &rhs) const noexcept { return _id == rhs._id; }
+    bool     operator==(const Type& rhs) const noexcept { return _id == rhs._id; }
 };
 
 /**
  * Separate types for each data type; to be able to specify types at
  * compile-time as well as run-time.
  **/
-template<int T>
-struct TypeType : public Type {
+template <int T> struct TypeType : public Type {
     static const uint32_t ID = T;
     static const TypeType instance;
     TypeType() : Type(ID) {}

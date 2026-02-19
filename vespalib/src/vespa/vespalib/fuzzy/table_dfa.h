@@ -2,6 +2,7 @@
 #pragma once
 
 #include "levenshtein_dfa.h"
+
 #include <vector>
 
 namespace vespalib::fuzzy {
@@ -26,9 +27,7 @@ namespace vespalib::fuzzy {
  * exceeding the boundary of the word itself. This means that the
  * simulated dfa can be stepped freely without checking for word size.
  **/
-template <uint8_t N>
-class TableDfa final : public LevenshteinDfa::Impl
-{
+template <uint8_t N> class TableDfa final : public LevenshteinDfa::Impl {
 public:
     // characteristic vector for a specific input value indicating how
     // it matches the window starting at the minimal boundary.
@@ -42,14 +41,14 @@ public:
         std::array<CV, window_size()> list;
         Lookup() noexcept : list() {}
     };
-    
+
 private:
     const std::vector<Lookup> _lookup;
     const bool                _is_cased;
     const bool                _is_prefix;
 
-    static std::vector<Lookup> make_lookup(const std::vector<uint32_t> &str);
-    
+    static std::vector<Lookup> make_lookup(const std::vector<uint32_t>& str);
+
 public:
     using MatchResult = LevenshteinDfa::MatchResult;
     TableDfa(std::vector<uint32_t> str, bool is_cased, bool is_prefix);
@@ -57,8 +56,8 @@ public:
     [[nodiscard]] MatchResult match(std::string_view source) const override;
     [[nodiscard]] MatchResult match(std::string_view source, std::string& successor_out) const override;
     [[nodiscard]] MatchResult match(std::string_view source, std::vector<uint32_t>& successor_out) const override;
-    [[nodiscard]] size_t memory_usage() const noexcept override;
-    void dump_as_graphviz(std::ostream& os) const override;
+    [[nodiscard]] size_t      memory_usage() const noexcept override;
+    void                      dump_as_graphviz(std::ostream& os) const override;
 };
 
-}
+} // namespace vespalib::fuzzy

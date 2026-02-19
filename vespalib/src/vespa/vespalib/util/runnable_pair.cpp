@@ -4,15 +4,9 @@
 
 namespace vespalib {
 
-RunnablePair::RunnablePair(Runnable &first, Runnable &second)
-    : _first(first),
-      _second(second)
-{
-}
+RunnablePair::RunnablePair(Runnable& first, Runnable& second) : _first(first), _second(second) {}
 
-void
-RunnablePair::run()
-{
+void RunnablePair::run() {
     _first.run();
     _second.run();
 }

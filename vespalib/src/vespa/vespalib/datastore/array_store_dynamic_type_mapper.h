@@ -26,10 +26,9 @@ template <typename EntryT> class LargeArrayBufferType;
  * Type id 0 uses LargeBufferType, which handles any array size but uses
  * heap allocation.
  */
-template <typename ElemT>
-class ArrayStoreDynamicTypeMapper : public vespalib::datastore::ArrayStoreTypeMapper
-{
+template <typename ElemT> class ArrayStoreDynamicTypeMapper : public vespalib::datastore::ArrayStoreTypeMapper {
     uint32_t _max_static_array_buffer_type_id;
+
 public:
     using SmallBufferType = vespalib::datastore::SmallArrayBufferType<ElemT>;
     using DynamicBufferType = vespalib::datastore::DynamicArrayBufferType<ElemT>;
@@ -38,10 +37,14 @@ public:
     ArrayStoreDynamicTypeMapper();
     ArrayStoreDynamicTypeMapper(uint32_t max_buffer_type_id, double grow_factor, size_t max_buffer_size);
     ~ArrayStoreDynamicTypeMapper();
-    void setup_array_sizes(uint32_t max_buffer_type_id, double grow_factor, size_t max_buffer_size);
-    size_t get_entry_size(uint32_t type_id) const;
-    bool is_dynamic_buffer(uint32_t type_id) const noexcept { return type_id > _max_static_array_buffer_type_id; }
-    uint32_t count_dynamic_buffer_types(uint32_t max_type_id) const noexcept { return (max_type_id > _max_static_array_buffer_type_id) ? (max_type_id - _max_static_array_buffer_type_id) : 0u; }
+    void     setup_array_sizes(uint32_t max_buffer_type_id, double grow_factor, size_t max_buffer_size);
+    size_t   get_entry_size(uint32_t type_id) const;
+    bool     is_dynamic_buffer(uint32_t type_id) const noexcept { return type_id > _max_static_array_buffer_type_id; }
+    uint32_t count_dynamic_buffer_types(uint32_t max_type_id) const noexcept {
+        return (max_type_id > _max_static_array_buffer_type_id)
+                   ? (max_type_id - _max_static_array_buffer_type_id)
+                   : 0u;
+    }
 };
 
 extern template class ArrayStoreDynamicTypeMapper<char>;
@@ -53,4 +56,4 @@ extern template class ArrayStoreDynamicTypeMapper<float>;
 extern template class ArrayStoreDynamicTypeMapper<double>;
 extern template class ArrayStoreDynamicTypeMapper<AtomicEntryRef>;
 
-}
+} // namespace vespalib::datastore

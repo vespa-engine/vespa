@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/alloc.h>
+
 #include <cstdint>
 #include <string>
 
@@ -15,8 +16,7 @@ data serialization.
 All of the numeric helper methods (putInt/Long/Double etc.) in this class
 store the numbers in network byte order.
 */
-class GrowableByteBuffer
-{
+class GrowableByteBuffer {
 public:
     /**
        Creates a new GrowableByteBuffer with the given initial length and grow factor.
@@ -36,7 +36,7 @@ public:
     /**
        Returns a pointer to the start of the allocated buffer.
     */
-    const char* getBuffer() const { return static_cast<const char *>(_buffer.get()); }
+    const char* getBuffer() const { return static_cast<const char*>(_buffer.get()); }
 
     /**
        Returns the current position.
@@ -46,7 +46,7 @@ public:
     /**
        Adds the given buffer to this buffer.
     */
-    void putBytes(const void * buffer, uint32_t length);
+    void putBytes(const void* buffer, uint32_t length);
 
     /**
        Adds a short to the buffer.
@@ -97,5 +97,4 @@ private:
     uint32_t _position;
 };
 
-}
-
+} // namespace vespalib

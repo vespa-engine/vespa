@@ -4,8 +4,10 @@
 #include "dfa_matcher.h"
 #include "levenshtein_dfa.h"
 #include "unicode_utils.h"
+
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
+
 #include <cassert>
 #include <concepts>
 
@@ -18,8 +20,7 @@ namespace vespalib::fuzzy {
  * The implementation is agnostic to how the underlying DFA is implemented, but requires
  * an appropriate adapter that satisfies the DfaMatcher concept contracts.
  */
-template <uint8_t MaxEdits>
-struct MatchAlgorithm {
+template <uint8_t MaxEdits> struct MatchAlgorithm {
     using MatchResult = LevenshteinDfa::MatchResult;
 
     static constexpr uint8_t max_edits() noexcept { return MaxEdits; }
@@ -170,24 +171,21 @@ struct MatchAlgorithm {
      * TODO let matcher know if source string is pre-normalized (i.e. lowercased).
      */
     template <DfaMatcher Matcher, typename SuccessorT>
-    static MatchResult match(const Matcher& matcher,
-                             std::string_view source,
-                             SuccessorT& successor_out)
-    {
+    static MatchResult match(const Matcher& matcher, std::string_view source, SuccessorT& successor_out) {
         using StateType = typename Matcher::StateType;
         Utf8Reader u8_reader(source.data(), source.size());
-        uint32_t n_prefix_chars    = static_cast<uint32_t>(successor_out.size()); // Don't touch any existing prefix
-        uint32_t char_after_prefix = 0;
-        StateType last_state_with_higher_out = StateType{};
+        uint32_t   n_prefix_chars = static_cast<uint32_t>(successor_out.size()); // Don't touch any existing prefix
+        uint32_t   char_after_prefix = 0;
+        StateType  last_state_with_higher_out = StateType{};
 
         StateType state = matcher.start();
         while (u8_reader.hasMore()) {
             if (matcher.is_prefix() && matcher.is_match(state)) {
                 return minimal_matching_prefix_distance(matcher, state, u8_reader);
             }
-            const auto pos_before_char = static_cast<uint32_t>(successor_out.size());
-            const uint32_t raw_mch     = u8_reader.getChar();
-            const uint32_t mch         = normalized_match_char(raw_mch, matcher.is_cased());
+            const auto     pos_before_char = static_cast<uint32_t>(successor_out.size());
+            const uint32_t raw_mch = u8_reader.getChar();
+            const uint32_t mch = normalized_match_char(raw_mch, matcher.is_cased());
             append_utf32_char(successor_out, mch);
             if (matcher.has_higher_out_edge(state, mch)) {
                 last_state_with_higher_out = state;
@@ -201,8 +199,8 @@ struct MatchAlgorithm {
                 // Can never match; find the successor
                 successor_out.resize(n_prefix_chars); // Always <= successor_out.size()
                 assert(matcher.valid_state(last_state_with_higher_out));
-                backtrack_and_emit_greater_suffix(matcher, last_state_with_higher_out,
-                                                  char_after_prefix, successor_out);
+                backtrack_and_emit_greater_suffix(
+                    matcher, last_state_with_higher_out, char_after_prefix, successor_out);
                 return MatchResult::make_mismatch(max_edits());
             }
         }
@@ -219,17 +217,16 @@ struct MatchAlgorithm {
      * Simplified match loop which does _not_ emit a successor on mismatch. Otherwise the
      * exact same semantics as the successor-emitting `match()` overload.
      */
-    template <DfaMatcher Matcher>
-    static MatchResult match(const Matcher& matcher, std::string_view source) {
+    template <DfaMatcher Matcher> static MatchResult match(const Matcher& matcher, std::string_view source) {
         using StateType = typename Matcher::StateType;
         Utf8Reader u8_reader(source.data(), source.size());
-        StateType state = matcher.start();
+        StateType  state = matcher.start();
         while (u8_reader.hasMore()) {
             if (matcher.is_prefix() && matcher.is_match(state)) {
                 return minimal_matching_prefix_distance(matcher, state, u8_reader);
             }
             const uint32_t mch = normalized_match_char(u8_reader.getChar(), matcher.is_cased());
-            auto maybe_next    = matcher.match_input(state, mch);
+            auto           maybe_next = matcher.match_input(state, mch);
             if (matcher.can_match(maybe_next)) {
                 state = maybe_next;
             } else {
@@ -260,14 +257,12 @@ struct MatchAlgorithm {
      * source characters to get a minimal distance.
      */
     template <DfaMatcher Matcher>
-    static MatchResult minimal_matching_prefix_distance(const Matcher& matcher,
-                                                        typename Matcher::StateType state,
-                                                        Utf8Reader& u8_reader)
-    {
+    static MatchResult minimal_matching_prefix_distance(
+        const Matcher& matcher, typename Matcher::StateType state, Utf8Reader& u8_reader) {
         auto min_edits = matcher.match_edit_distance(state);
         while (u8_reader.hasMore()) {
             const uint32_t mch = normalized_match_char(u8_reader.getChar(), matcher.is_cased());
-            auto maybe_next    = matcher.match_input(state, mch);
+            auto           maybe_next = matcher.match_input(state, mch);
             if (matcher.can_match(maybe_next)) {
                 state = maybe_next;
                 min_edits = std::min(min_edits, matcher.match_edit_distance(state));
@@ -291,11 +286,8 @@ struct MatchAlgorithm {
      */
     template <DfaMatcher Matcher, typename SuccessorT>
     static void backtrack_and_emit_greater_suffix(
-            const Matcher& matcher,
-            typename Matcher::StateParamType last_state_with_higher_out,
-            const uint32_t input_at_branch,
-            SuccessorT& successor)
-    {
+        const Matcher& matcher, typename Matcher::StateParamType last_state_with_higher_out,
+        const uint32_t input_at_branch, SuccessorT& successor) {
         auto wildcard_state = matcher.match_wildcard(last_state_with_higher_out);
         if (matcher.can_match(wildcard_state)) {
             // `input_at_branch` may be U+10FFFF, with +1 being outside legal Unicode _code point_
@@ -312,10 +304,12 @@ struct MatchAlgorithm {
                 return;
             } // else: handle exact match below (it will be found as the first higher out edge)
         }
-        const auto first_highest_edge = matcher.lowest_higher_explicit_out_edge(last_state_with_higher_out, input_at_branch);
+        const auto first_highest_edge =
+            matcher.lowest_higher_explicit_out_edge(last_state_with_higher_out, input_at_branch);
         assert(matcher.valid_edge(first_highest_edge));
         append_utf32_char(successor, matcher.edge_to_u32char(first_highest_edge));
-        emit_smallest_matching_suffix(matcher, matcher.edge_to_state(last_state_with_higher_out, first_highest_edge), successor);
+        emit_smallest_matching_suffix(
+            matcher, matcher.edge_to_state(last_state_with_higher_out, first_highest_edge), successor);
     }
 
     /**
@@ -347,14 +341,11 @@ struct MatchAlgorithm {
      *
      *     "fx" -> "fxod"
      */
-     // TODO consider variant for only emitting _prefix of suffix_ to avoid having to generate
-     //  the full string? Won't generate a matching string, but will be lexicographically greater.
+    // TODO consider variant for only emitting _prefix of suffix_ to avoid having to generate
+    //  the full string? Won't generate a matching string, but will be lexicographically greater.
     template <DfaMatcher Matcher, typename SuccessorT>
     static void emit_smallest_matching_suffix(
-            const Matcher& matcher,
-            typename Matcher::StateParamType from,
-            SuccessorT& str)
-    {
+        const Matcher& matcher, typename Matcher::StateParamType from, SuccessorT& str) {
         auto state = from;
         while (!matcher.is_match(state)) {
             // Optimization: if the only way for the remaining suffix to match is for it to be
@@ -384,4 +375,4 @@ struct MatchAlgorithm {
     }
 };
 
-}
+} // namespace vespalib::fuzzy

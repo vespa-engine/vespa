@@ -4,6 +4,7 @@
 
 #include "idestructorcallback.h"
 #include "time.h"
+
 #include <functional>
 
 namespace vespalib {
@@ -19,4 +20,4 @@ public:
     virtual std::unique_ptr<IDestructorCallback> registerInvoke(InvokeFunc func) = 0;
 };
 
-}
+} // namespace vespalib

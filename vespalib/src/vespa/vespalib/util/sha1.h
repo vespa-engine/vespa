@@ -20,8 +20,7 @@ namespace vespalib {
  * input. After all input has been given to the process function, use
  * the get_digest function to calculate the final digest.
  **/
-class Sha1
-{
+class Sha1 {
 private:
     uint32_t _state[5];
     uint32_t _count[2];
@@ -47,7 +46,7 @@ public:
      * @param data input data
      * @param len input data len
      **/
-    void process(const char *data, size_t len);
+    void process(const char* data, size_t len);
 
     /**
      * Calculate final digest. By adjusting the digestLen parameter
@@ -57,7 +56,7 @@ public:
      * @param digest where to put the digest
      * @param digestLen how much digest we want (max 20)
      **/
-    void get_digest(char *digest, size_t digestLen = 20);
+    void get_digest(char* digest, size_t digestLen = 20);
 
     /**
      * Calculate the SHA-1 digest prefix based on the given input buffer.
@@ -67,8 +66,7 @@ public:
      * @param digest where to put the digest prefix
      * @param digestLen the length of the wanted digest prefix (max 20)
      **/
-    static void hash(const char *buf, size_t bufLen,
-                     char *digest, size_t digestLen);
+    static void hash(const char* buf, size_t bufLen, char* digest, size_t digestLen);
 };
 
 } // namespace vespalib

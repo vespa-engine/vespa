@@ -4,6 +4,7 @@
 
 #include "buffer_free_list.h"
 #include "entryref.h"
+
 #include <vector>
 
 namespace vespalib::datastore {
@@ -25,14 +26,12 @@ public:
     FreeList(const FreeList&) = delete;
     FreeList& operator=(const FreeList&) = delete;
     FreeList& operator=(BufferFreeList&&) = delete;
-    void attach(BufferFreeList& buf_list);
-    void detach(BufferFreeList& buf_list) noexcept;
+    void      attach(BufferFreeList& buf_list);
+    void      detach(BufferFreeList& buf_list) noexcept;
 
-    bool empty() const noexcept { return _free_lists.empty(); }
-    size_t size() const noexcept { return _free_lists.size(); }
-    EntryRef pop_entry() noexcept {
-        return _free_lists.back()->pop_entry();
-    }
+    bool     empty() const noexcept { return _free_lists.empty(); }
+    size_t   size() const noexcept { return _free_lists.size(); }
+    EntryRef pop_entry() noexcept { return _free_lists.back()->pop_entry(); }
 };
 
-}
+} // namespace vespalib::datastore

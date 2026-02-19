@@ -2,10 +2,12 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <stdlib.h>
+
 #include <algorithm>
-#include <vector>
 #include <cassert>
+#include <vector>
 
 using namespace vespalib;
 
@@ -14,35 +16,35 @@ using namespace vespalib;
 using int_up = std::unique_ptr<int>;
 
 template <typename T> T wrap(int value);
-template <> int wrap<int>(int value) { return value; }
-template <> int_up wrap<int_up>(int value) { return int_up(new int(value)); }
+template <> int         wrap<int>(int value) { return value; }
+template <> int_up      wrap<int_up>(int value) { return int_up(new int(value)); }
 
-int unwrap(const int &value) { return value; }
-int unwrap(const int_up &value) { return *value; }
+int unwrap(const int& value) { return value; }
+int unwrap(const int_up& value) { return *value; }
 
 // verbose types needed to avoid warning
 
 struct CmpInt {
-    bool operator()(const int &a, const int &b) const {
-        return (a < b);
-    }
+    bool operator()(const int& a, const int& b) const { return (a < b); }
 };
 
 struct CmpIntUp {
-    bool operator()(const int_up &a, const int_up &b) const {
-        return (*a < *b);
-    }
+    bool operator()(const int_up& a, const int_up& b) const { return (*a < *b); }
 };
 
 //-----------------------------------------------------------------------------
 
-template <typename Heap> struct IsRight { enum { VALUE = 0 }; };
-template <> struct IsRight<RightHeap> { enum { VALUE = 1 }; };
-template <> struct IsRight<RightArrayHeap> { enum { VALUE = 1 }; };
+template <typename Heap> struct IsRight {
+    enum { VALUE = 0 };
+};
+template <> struct IsRight<RightHeap> {
+    enum { VALUE = 1 };
+};
+template <> struct IsRight<RightArrayHeap> {
+    enum { VALUE = 1 };
+};
 
-bool operator==(const std::vector<int_up> &a,
-                const std::vector<int> &b)
-{
+bool operator==(const std::vector<int_up>& a, const std::vector<int>& b) {
     if (a.size() != b.size()) {
         return false;
     }
@@ -57,7 +59,7 @@ bool operator==(const std::vector<int_up> &a,
 size_t _G_InputSize = 1000;
 
 struct Input {
-    size_t n;
+    size_t           n;
     std::vector<int> data;
     Input() : n(_G_InputSize), data() {
         srandom(42);
@@ -68,17 +70,15 @@ struct Input {
     }
 };
 
-
-template <typename Heap, typename Value = int, typename Cmp = CmpInt>
-struct MySetup {
+template <typename Heap, typename Value = int, typename Cmp = CmpInt> struct MySetup {
     using IUP = MySetup<Heap, int_up, CmpIntUp>;
-    Input &input;
+    Input&             input;
     std::vector<Value> data;
-    Cmp cmp;
-    size_t limit;
-    MySetup(Input &i) : input(i), data(), cmp(), limit(0) {}
+    Cmp                cmp;
+    size_t             limit;
+    MySetup(Input& i) : input(i), data(), cmp(), limit(0) {}
 
-    static void dumpData(Value *begin, Value *end) {
+    static void dumpData(Value* begin, Value* end) {
         int n = 10;
         while ((end - begin) > n) {
             for (int i = 0; i < n; ++i) {
@@ -92,7 +92,7 @@ struct MySetup {
         fprintf(stderr, "\n");
     }
 
-    static int peek_at(Value *begin, Value *end, size_t idx) {
+    static int peek_at(Value* begin, Value* end, size_t idx) {
         if (&Heap::front(begin, end) == begin) {
             return unwrap(*(begin + idx)); // normal order
         } else {
@@ -100,18 +100,16 @@ struct MySetup {
         }
     }
 
-    static void checkHeap(Value *begin, Value *end) {
+    static void checkHeap(Value* begin, Value* end) {
         size_t len = (end - begin);
         for (size_t i = 0; i < len; ++i) {
             size_t child1 = (2 * i) + 1;
             size_t child2 = (2 * i) + 2;
             if (child1 < len) {
-                ASSERT_LE(peek_at(begin, end, i),
-                          peek_at(begin, end, child1)) << (dumpData(begin, end), "");
+                ASSERT_LE(peek_at(begin, end, i), peek_at(begin, end, child1)) << (dumpData(begin, end), "");
             }
             if (child2 < len) {
-                ASSERT_LE(peek_at(begin, end, i),
-                          peek_at(begin, end, child2)) << (dumpData(begin, end), "");
+                ASSERT_LE(peek_at(begin, end, i), peek_at(begin, end, child2)) << (dumpData(begin, end), "");
             }
         }
     }
@@ -133,7 +131,7 @@ struct MySetup {
         }
         push();
     }
-    Value &front() {
+    Value& front() {
         if (IsRight<Heap>::VALUE) {
             return Heap::front(&data[limit], &data[data.size()]);
         } else {
@@ -221,8 +219,7 @@ struct MySetup {
             if (data.size() == ref.size()) {
                 for (size_t i = 0; i < ref.size(); ++i) {
                     if (unwrap(data[i]) != ref[i]) {
-                        fprintf(stderr, "data[%zu] != %d, ref[%zu] = %d\n",
-                                i, unwrap(data[i]), i, ref[i]);
+                        fprintf(stderr, "data[%zu] != %d, ref[%zu] = %d\n", i, unwrap(data[i]), i, ref[i]);
                     }
                 }
             } else {
@@ -246,53 +243,53 @@ TEST(LeftRightHeapTest, require_correct_heap_tags) {
 }
 
 TEST(LeftRightHeapTest, verify_left_heap_invariants_and_sorting) {
-    Input f1;
+    Input             f1;
     MySetup<LeftHeap> f2(f1);
     f2.test();
 }
 TEST(LeftRightHeapTest, verify_right_heap_invariants_and_sorting) {
-    Input f1;
+    Input              f1;
     MySetup<RightHeap> f2(f1);
     f2.test();
 }
 TEST(LeftRightHeapTest, verify_left_array_heap_invariants_and_sorting) {
-    Input f1;
+    Input                  f1;
     MySetup<LeftArrayHeap> f2(f1);
     f2.test();
 }
 TEST(LeftRightHeapTest, verify_right_array_heap_invariants_and_sorting) {
-    Input f1;
+    Input                   f1;
     MySetup<RightArrayHeap> f2(f1);
     f2.test();
 }
 TEST(LeftRightHeapTest, verify_left_std_heap_invariants_and_sorting) {
-    Input f1;
+    Input                f1;
     MySetup<LeftStdHeap> f2(f1);
     f2.test();
 }
 
 TEST(LeftRightHeapTest, verify_move_only_left_heap_invariants_and_sorting) {
-    Input f1;
+    Input                  f1;
     MySetup<LeftHeap>::IUP f2(f1);
     f2.test();
 }
 TEST(LeftRightHeapTest, verify_move_only_right_heap_invariants_and_sorting) {
-    Input f1;
+    Input                   f1;
     MySetup<RightHeap>::IUP f2(f1);
     f2.test();
 }
 TEST(LeftRightHeapTest, verify_move_only_left_array_heap_invariants_and_sorting) {
-    Input f1;
+    Input                       f1;
     MySetup<LeftArrayHeap>::IUP f2(f1);
     f2.test();
 }
 TEST(LeftRightHeapTest, verify_move_only_right_array_heap_invariants_and_sorting) {
-    Input f1;
+    Input                        f1;
     MySetup<RightArrayHeap>::IUP f2(f1);
     f2.test();
 }
 TEST(LeftRightHeapTest, verify_move_only_left_std_heap_invariants_and_sorting) {
-    Input f1;
+    Input                     f1;
     MySetup<LeftStdHeap>::IUP f2(f1);
     f2.test();
 }

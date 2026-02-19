@@ -12,15 +12,15 @@ namespace vespalib {
  * you do not control allocation yourself.
  * The effect is implementation dependent. vespamalloc applies this only for the calling thread.
  **/
-class MallocMmapGuard
-{
+class MallocMmapGuard {
 public:
     MallocMmapGuard(size_t mmapLimit);
-    MallocMmapGuard(const MallocMmapGuard &) = delete;
-    MallocMmapGuard & operator=(const MallocMmapGuard &) = delete;
-    MallocMmapGuard(MallocMmapGuard &&) = delete;
-    MallocMmapGuard & operator=(MallocMmapGuard &&) = delete;
+    MallocMmapGuard(const MallocMmapGuard&) = delete;
+    MallocMmapGuard& operator=(const MallocMmapGuard&) = delete;
+    MallocMmapGuard(MallocMmapGuard&&) = delete;
+    MallocMmapGuard& operator=(MallocMmapGuard&&) = delete;
     ~MallocMmapGuard();
+
 private:
     std::thread::id _threadId;
 };

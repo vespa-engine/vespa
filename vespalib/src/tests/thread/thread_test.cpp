@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/thread.h>
+
 #include <iostream>
 
 using namespace vespalib;
@@ -17,38 +18,35 @@ struct Agent : public Runnable {
     }
 };
 
-void my_fun(bool *was_run) {
-    *was_run = true;
-}
+void my_fun(bool* was_run) { *was_run = true; }
 
-Runnable::init_fun_t wrap(Runnable::init_fun_t init, bool *init_called) {
-    return [=](Runnable &target)
-           {
-               fprintf(stderr, "lambda run in thread %zu\n", thread::as_zu(std::this_thread::get_id()));
-               *init_called = true;
-               return init(target);
-           };
+Runnable::init_fun_t wrap(Runnable::init_fun_t init, bool* init_called) {
+    return [=](Runnable& target) {
+        fprintf(stderr, "lambda run in thread %zu\n", thread::as_zu(std::this_thread::get_id()));
+        *init_called = true;
+        return init(target);
+    };
 }
 
 TEST(ThreadTest, main_thread) {
     auto my_id = std::this_thread::get_id();
-    std::cerr <<    "main thread(with     <<): " << my_id << "\n";
+    std::cerr << "main thread(with     <<): " << my_id << "\n";
     fprintf(stderr, "main thread(with printf): %zu\n", thread::as_zu(my_id));
 }
 
 TEST(ThreadTest, run_vespalib__Runnable_with_init_function) {
     Agent agent;
-    bool init_called = false;
-    auto thread = thread::start(agent, wrap(test_agent_thread, &init_called));
+    bool  init_called = false;
+    auto  thread = thread::start(agent, wrap(test_agent_thread, &init_called));
     thread.join();
     EXPECT_TRUE(init_called);
     EXPECT_TRUE(agent.was_run);
 }
 
 TEST(ThreadTest, use_thread_pool_to_run_multiple_things) {
-    Agent agent;
-    bool init_called = false;
-    bool was_run = false;
+    Agent      agent;
+    bool       init_called = false;
+    bool       was_run = false;
     ThreadPool pool;
     EXPECT_TRUE(pool.empty());
     EXPECT_EQ(pool.size(), 0u);

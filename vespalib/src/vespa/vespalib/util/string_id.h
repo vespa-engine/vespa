@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/allocator.h>
+
 #include <cstdint>
 #include <vector>
 
@@ -23,23 +24,25 @@ class SharedStringRepo;
  **/
 class string_id {
     friend class ::vespalib::SharedStringRepo;
+
 private:
     uint32_t _id;
     explicit constexpr string_id(uint32_t value_in) noexcept : _id(value_in) {}
+
 public:
     constexpr string_id() noexcept : _id(0) {}
-    constexpr string_id(const string_id &) noexcept = default;
-    constexpr string_id(string_id &&) noexcept = default;
-    constexpr string_id &operator=(const string_id &) noexcept = default;
-    constexpr string_id &operator=(string_id &&) noexcept = default;
-    constexpr uint32_t hash() const noexcept { return _id; }
-    constexpr uint32_t value() const noexcept { return _id; }
+    constexpr string_id(const string_id&) noexcept = default;
+    constexpr string_id(string_id&&) noexcept = default;
+    constexpr string_id& operator=(const string_id&) noexcept = default;
+    constexpr string_id& operator=(string_id&&) noexcept = default;
+    constexpr uint32_t   hash() const noexcept { return _id; }
+    constexpr uint32_t   value() const noexcept { return _id; }
     // NB: not lexical sorting order, but can be used in maps
-    constexpr bool operator<(const string_id &rhs) const noexcept { return (_id < rhs._id); }
-    constexpr bool operator==(const string_id &rhs) const noexcept { return (_id == rhs._id); }
-    constexpr bool operator!=(const string_id &rhs) const noexcept { return (_id != rhs._id); }
+    constexpr bool operator<(const string_id& rhs) const noexcept { return (_id < rhs._id); }
+    constexpr bool operator==(const string_id& rhs) const noexcept { return (_id == rhs._id); }
+    constexpr bool operator!=(const string_id& rhs) const noexcept { return (_id != rhs._id); }
 };
 
 using StringIdVector = std::vector<string_id, vespalib::allocator_large<string_id>>;
 
-}
+} // namespace vespalib

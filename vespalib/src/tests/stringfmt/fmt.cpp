@@ -1,16 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string;
 using vespalib::make_string_short::fmt;
 
-TEST(FmtTest, test_that_make_string_formats_as_one_can_expect)
-{
-    int i=7;
-    int j=0x666;
-    const char *s = "a test ";
+TEST(FmtTest, test_that_make_string_formats_as_one_can_expect) {
+    int         i = 7;
+    int         j = 0x666;
+    const char* s = "a test ";
 
     std::string foo = make_string("%d/%x", i, j);
     std::string bar = make_string("%d/%x", i, j).c_str();
@@ -28,14 +27,15 @@ TEST(FmtTest, test_that_make_string_formats_as_one_can_expect)
     tst = "a t";
     EXPECT_TRUE(tst == make_string("%.3s", s));
 
-    const char *p = "really really really really "
-              "very very very very very "
-              "extremely extremely extremely extremely "
-              "very very very very very "
-              "really really really really "
-              "insanely insanely insanely insanely "
-              "hugely hugely hugely hugely "
-              "bloated fat long string";
+    const char* p =
+        "really really really really "
+        "very very very very very "
+        "extremely extremely extremely extremely "
+        "very very very very very "
+        "really really really really "
+        "insanely insanely insanely insanely "
+        "hugely hugely hugely hugely "
+        "bloated fat long string";
     tst = p;
     EXPECT_TRUE(tst == make_string("%s", p));
 }

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "handle.h"
+
 #include <string>
 
 namespace vespalib::metrics {
@@ -13,10 +14,9 @@ struct DimensionTag {};
 /**
  * Opaque handle representing an uniquely named dimension.
  **/
-struct Dimension : Handle<DimensionTag>
-{
+struct Dimension : Handle<DimensionTag> {
     explicit Dimension(size_t id) : Handle(id) {}
-    static Dimension from_name(const std::string& name);
+    static Dimension   from_name(const std::string& name);
     const std::string& as_name() const;
 };
 

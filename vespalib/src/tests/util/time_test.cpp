@@ -1,22 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <cinttypes>
-#include <thread>
+#include <vespa/vespalib/util/time.h>
+
 #include <atomic>
+#include <cinttypes>
 #include <iostream>
+#include <thread>
 
 using namespace vespalib;
 
 TEST(TimeTest, steady_time_is_compatible_with_steady_clock) {
     steady_time t = steady_clock::now();
-    (void) t;
+    (void)t;
 }
 
 TEST(TimeTest, system_time_is_compatible_with_system_clock) {
     system_time t = system_clock::now();
-    (void) t;
+    (void)t;
 }
 
 TEST(TimeTest, atomic_duration_is_lock_free) {
@@ -65,9 +66,7 @@ TEST(TimeTest, conversion_of_max) {
     EXPECT_EQ(9223372036.8547764, vespalib::to_s(vespalib::duration::max()));
 }
 
-TEST(TimeTest, default_timer_frequency_is_1000_hz) {
-    EXPECT_EQ(1000u, getVespaTimerHz());
-}
+TEST(TimeTest, default_timer_frequency_is_1000_hz) { EXPECT_EQ(1000u, getVespaTimerHz()); }
 
 TEST(TimeTest, timeout_is_relative_to_frequency) {
     EXPECT_EQ(1000u, getVespaTimerHz());
@@ -100,7 +99,7 @@ TEST(TimeTest, saturated_add_without_overflow) {
 
 TEST(TimeTest, saturated_add_with_overflow) {
     steady_time future(1000000000s);
-    steady_time  past(-1000000000s);
+    steady_time past(-1000000000s);
     EXPECT_EQ(saturated_add(future, duration::max()), steady_time::max());
     EXPECT_EQ(saturated_add(past, duration::min()), steady_time::min());
 }

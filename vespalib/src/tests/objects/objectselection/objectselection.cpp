@@ -1,23 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/objects/identifiable.hpp>
-#include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/vespalib/objects/objectoperation.h>
+#include <vespa/vespalib/objects/objectpredicate.h>
+
+#include <vespa/vespalib/objects/identifiable.hpp>
 
 using namespace vespalib;
 
-#define CID_Foo  60000005
-#define CID_Bar  60000010
+#define CID_Foo 60000005
+#define CID_Bar 60000010
 
-struct Foo : public Identifiable
-{
+struct Foo : public Identifiable {
     using CP = IdentifiablePtr<Foo>;
     std::vector<CP> nodes;
 
     DECLARE_IDENTIFIABLE(Foo);
-    virtual Foo *clone() const { return new Foo(*this); }
-    void selectMembers(const ObjectPredicate &p, ObjectOperation &o) override {
+    virtual Foo* clone() const { return new Foo(*this); }
+    void         selectMembers(const ObjectPredicate& p, ObjectOperation& o) override {
         for (uint32_t i = 0; i < nodes.size(); ++i) {
             nodes[i]->select(p, o);
         }
@@ -25,33 +25,26 @@ struct Foo : public Identifiable
 };
 IMPLEMENT_IDENTIFIABLE(Foo, Identifiable);
 
-struct Bar : public Foo
-{
+struct Bar : public Foo {
     int value;
 
     DECLARE_IDENTIFIABLE(Bar);
     Bar() : value(0) {}
     Bar(int v) { value = v; }
-    Bar *clone() const override { return new Bar(*this); }
+    Bar* clone() const override { return new Bar(*this); }
 };
 IMPLEMENT_IDENTIFIABLE(Bar, Identifiable);
 
-struct ObjectType : public ObjectPredicate
-{
+struct ObjectType : public ObjectPredicate {
     uint32_t cid;
     ObjectType(uint32_t id) : cid(id) {}
-    bool check(const Identifiable &obj) const override {
-        return (obj.getClass().id() == cid);
-    }
+    bool check(const Identifiable& obj) const override { return (obj.getClass().id() == cid); }
 };
 
-struct ObjectCollect : public ObjectOperation
-{
+struct ObjectCollect : public ObjectOperation {
     std::vector<Identifiable*> nodes;
     ~ObjectCollect() override;
-    void execute(Identifiable &obj) override {
-        nodes.push_back(&obj);
-    }
+    void execute(Identifiable& obj) override { nodes.push_back(&obj); }
 };
 
 ObjectCollect::~ObjectCollect() = default;
@@ -72,7 +65,7 @@ TEST(ObjectSelectionTest, objectselection_test) {
         f1.nodes.push_back(f2);
         f1.nodes.push_back(f3);
 
-        ObjectType predicate(Bar::classId);
+        ObjectType    predicate(Bar::classId);
         ObjectCollect operation;
         f1.select(predicate, operation);
         ASSERT_TRUE(operation.nodes.size() == 4);

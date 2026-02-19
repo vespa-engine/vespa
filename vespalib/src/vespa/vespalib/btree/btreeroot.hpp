@@ -2,12 +2,13 @@
 
 #pragma once
 
-#include "btreeroot.h"
+#include "btreeaggregator.hpp"
 #include "btreebuilder.h"
-#include "btreerootbase.hpp"
 #include "btreeinserter.hpp"
 #include "btreeremover.hpp"
-#include "btreeaggregator.hpp"
+#include "btreeroot.h"
+#include "btreerootbase.hpp"
+
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace vespalib::btree {
@@ -15,19 +16,17 @@ namespace vespalib::btree {
 //----------------------- BTreeRoot ------------------------------------------//
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
-std::string
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-toString(BTreeNode::Ref node,
-         const NodeAllocatorType &allocator) const
-{
+std::string BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::toString(
+    BTreeNode::Ref node, const NodeAllocatorType& allocator) const {
     vespalib::asciistream ss;
     if (allocator.isLeafRef(node)) {
         ss << "{" << allocator.toString(node) << "}";
     } else {
-        const InternalNodeType * inode = allocator.mapInternalRef(node);
+        const InternalNodeType* inode = allocator.mapInternalRef(node);
         ss << "{" << allocator.toString(inode) << ",children(" << inode->validSlots() << ")[";
         for (size_t i = 0; i < inode->validSlots(); ++i) {
-            if (i > 0) ss << ",";
+            if (i > 0)
+                ss << ",";
             ss << "c[" << i << "]" << toString(inode->getChild(i), allocator);
         }
         ss << "]}";
@@ -35,19 +34,15 @@ toString(BTreeNode::Ref node,
     return ss.str();
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, class AggrCalcT>
-bool
-BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-isValid(BTreeNode::Ref node,
-        bool ignoreMinSlots, uint32_t level, const NodeAllocatorType &allocator,
-        CompareT comp, AggrCalcT aggrCalc) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
+bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::isValid(
+    BTreeNode::Ref node, bool ignoreMinSlots, uint32_t level, const NodeAllocatorType& allocator, CompareT comp,
+    AggrCalcT aggrCalc) const {
     if (allocator.isLeafRef(node)) {
         if (level != 0) {
             return false;
         }
-        const LeafNodeType * lnode = allocator.mapLeafRef(node);
+        const LeafNodeType* lnode = allocator.mapLeafRef(node);
         if (level != lnode->getLevel()) {
             return false;
         }
@@ -70,17 +65,16 @@ isValid(BTreeNode::Ref node,
         if (level == 0) {
             return false;
         }
-        const InternalNodeType * inode = allocator.mapInternalRef(node);
+        const InternalNodeType* inode = allocator.mapInternalRef(node);
         if (level != inode->getLevel()) {
             return false;
         }
         if (inode->validSlots() > InternalNodeType::maxSlots())
             return false;
-        if (inode->validSlots() < InternalNodeType::minSlots() &&
-            !ignoreMinSlots)
+        if (inode->validSlots() < InternalNodeType::minSlots() && !ignoreMinSlots)
             return false;
-        size_t lChildren = 0;
-        size_t iChildren = 0;
+        size_t   lChildren = 0;
+        size_t   iChildren = 0;
         uint32_t validLeaves = 0;
         for (size_t i = 0; i < inode->validSlots(); ++i) {
             if (i > 0 && !comp(inode->getKey(i - 1), inode->getKey(i))) {
@@ -122,10 +116,8 @@ isValid(BTreeNode::Ref node,
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 typename BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::Iterator
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-findHelper(BTreeNode::Ref root, const KeyType & key,
-           const NodeAllocatorType & allocator, CompareT comp)
-{
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::findHelper(
+    BTreeNode::Ref root, const KeyType& key, const NodeAllocatorType& allocator, CompareT comp) {
     Iterator itr(BTreeNode::Ref(), allocator);
     itr.lower_bound(root, key, comp);
     if (itr.valid() && comp(key, itr.getKey())) {
@@ -136,9 +128,8 @@ findHelper(BTreeNode::Ref root, const KeyType & key,
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 typename BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::Iterator
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-lowerBoundHelper(BTreeNode::Ref root, const KeyType & key, const NodeAllocatorType & allocator, CompareT comp)
-{
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::lowerBoundHelper(
+    BTreeNode::Ref root, const KeyType& key, const NodeAllocatorType& allocator, CompareT comp) {
     Iterator itr(BTreeNode::Ref(), allocator);
     itr.lower_bound(root, key, comp);
     return itr;
@@ -146,10 +137,8 @@ lowerBoundHelper(BTreeNode::Ref root, const KeyType & key, const NodeAllocatorTy
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 typename BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::Iterator
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-upperBoundHelper(BTreeNode::Ref root, const KeyType & key,
-                 const NodeAllocatorType & allocator, CompareT comp)
-{
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::upperBoundHelper(
+    BTreeNode::Ref root, const KeyType& key, const NodeAllocatorType& allocator, CompareT comp) {
     Iterator itr(root, allocator);
     if (itr.valid() && !comp(key, itr.getKey())) {
         itr.seekPast(key, comp);
@@ -157,14 +146,11 @@ upperBoundHelper(BTreeNode::Ref root, const KeyType & key,
     return itr;
 }
 
-
 //----------------------- BTreeRoot::FrozenView ----------------------------------//
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 typename BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::ConstIterator
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-FrozenView::find(const KeyType & key, CompareT comp) const
-{
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::FrozenView::find(const KeyType& key, CompareT comp) const {
     ConstIterator itr(BTreeNode::Ref(), *_allocator);
     itr.lower_bound(_frozenRoot, key, comp);
     if (itr.valid() && comp(key, itr.getKey())) {
@@ -175,9 +161,7 @@ FrozenView::find(const KeyType & key, CompareT comp) const
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 typename BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::ConstIterator
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-FrozenView::lowerBound(const KeyType & key, CompareT comp) const
-{
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::FrozenView::lowerBound(const KeyType& key, CompareT comp) const {
     ConstIterator itr(BTreeNode::Ref(), *_allocator);
     itr.lower_bound(_frozenRoot, key, comp);
     return itr;
@@ -185,9 +169,7 @@ FrozenView::lowerBound(const KeyType & key, CompareT comp) const
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 typename BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::ConstIterator
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-FrozenView::upperBound(const KeyType & key, CompareT comp) const
-{
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::FrozenView::upperBound(const KeyType& key, CompareT comp) const {
     ConstIterator itr(_frozenRoot, *_allocator);
     if (itr.valid() && !comp(key, itr.getKey())) {
         itr.seekPast(key, comp);
@@ -204,10 +186,7 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT, type
 BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::~BTreeRootT() = default;
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
-void
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-clear(NodeAllocatorType &allocator)
-{
+void BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::clear(NodeAllocatorType& allocator) {
     if (NodeAllocatorType::isValidRef(_root)) {
         this->recursiveDelete(_root, allocator);
         _root = BTreeNode::Ref();
@@ -218,46 +197,35 @@ clear(NodeAllocatorType &allocator)
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 typename BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::Iterator
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-find(const KeyType & key, const NodeAllocatorType & allocator, CompareT comp) const
-{
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::find(
+    const KeyType& key, const NodeAllocatorType& allocator, CompareT comp) const {
     return findHelper(_root, key, allocator, comp);
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 typename BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::Iterator
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-lowerBound(const KeyType & key, const NodeAllocatorType & allocator, CompareT comp) const
-{
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::lowerBound(
+    const KeyType& key, const NodeAllocatorType& allocator, CompareT comp) const {
     return lowerBoundHelper(_root, key, allocator, comp);
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 typename BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::Iterator
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-upperBound(const KeyType & key, const NodeAllocatorType & allocator, CompareT comp) const
-{
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::upperBound(
+    const KeyType& key, const NodeAllocatorType& allocator, CompareT comp) const {
     return upperBoundHelper(_root, key, allocator, comp);
 }
 
-
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
-size_t
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-size(const NodeAllocatorType &allocator) const
-{
+size_t BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::size(const NodeAllocatorType& allocator) const {
     if (NodeAllocatorType::isValidRef(_root)) {
         return allocator.validLeaves(_root);
     }
     return 0u;
 }
 
-
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
-size_t
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-frozenSize(const NodeAllocatorType &allocator) const
-{
+size_t BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::frozenSize(const NodeAllocatorType& allocator) const {
     BTreeNode::Ref frozenRoot = getFrozenRoot();
     if (NodeAllocatorType::isValidRef(frozenRoot)) {
         return allocator.validLeaves(frozenRoot);
@@ -265,12 +233,8 @@ frozenSize(const NodeAllocatorType &allocator) const
     return 0u;
 }
 
-
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
-std::string
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-toString(const NodeAllocatorType &allocator) const
-{
+std::string BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::toString(const NodeAllocatorType& allocator) const {
     vespalib::asciistream ss;
     if (NodeAllocatorType::isValidRef(_root)) {
         ss << "root(" << toString(_root, allocator) << ")";
@@ -278,61 +242,44 @@ toString(const NodeAllocatorType &allocator) const
     return ss.str();
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, class AggrCalcT>
-bool
-BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-isValid(const NodeAllocatorType &allocator,
-        CompareT comp) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
+bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::isValid(
+    const NodeAllocatorType& allocator, CompareT comp) const {
     if (NodeAllocatorType::isValidRef(_root)) {
-        uint32_t level  = allocator.getLevel(_root);
+        uint32_t level = allocator.getLevel(_root);
         return isValid(_root, true, level, allocator, comp, AggrCalcT());
     }
     return true;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, class AggrCalcT>
-bool
-BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-isValidFrozen(const NodeAllocatorType &allocator, CompareT comp) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
+bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::isValidFrozen(
+    const NodeAllocatorType& allocator, CompareT comp) const {
     BTreeNode::Ref frozenRoot = getFrozenRoot();
     if (NodeAllocatorType::isValidRef(frozenRoot)) {
-        uint32_t level  = allocator.getLevel(frozenRoot);
+        uint32_t level = allocator.getLevel(frozenRoot);
         return isValid(frozenRoot, true, level, allocator, comp, AggrCalcT());
     }
     return true;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
-size_t
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-bitSize(const NodeAllocatorType &allocator) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
+size_t BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::bitSize(const NodeAllocatorType& allocator) const {
     size_t ret = sizeof(BTreeRootT) * 8;
     if (NodeAllocatorType::isValidRef(_root))
         ret += bitSize(_root, allocator);
     return ret;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
-size_t
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-bitSize(BTreeNode::Ref node, const NodeAllocatorType &allocator) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
+size_t BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::bitSize(
+    BTreeNode::Ref node, const NodeAllocatorType& allocator) const {
     if (allocator.isLeafRef(node)) {
         return sizeof(LeafNodeType) * 8;
     } else {
-        size_t ret = sizeof(InternalNodeType) * 8;
-        const InternalNodeType * inode = allocator.mapInternalRef(node);
-        size_t slots = inode->validSlots();
+        size_t                  ret = sizeof(InternalNodeType) * 8;
+        const InternalNodeType* inode = allocator.mapInternalRef(node);
+        size_t                  slots = inode->validSlots();
         for (size_t i = 0; i < slots; ++i) {
             ret += bitSize(inode->getChild(i), allocator);
         }
@@ -340,26 +287,16 @@ bitSize(BTreeNode::Ref node, const NodeAllocatorType &allocator) const
     }
 }
 
-
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
-void
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-thaw(Iterator &itr)
-{
+void BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::thaw(Iterator& itr) {
     bool oldFrozen = isFrozen();
     _root = itr.thaw(_root);
     if (oldFrozen && !isFrozen())
         itr.getAllocator().needFreeze(this);
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, class AggrCalcT>
-void
-BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-assign(Builder &rhs,
-       NodeAllocatorType &allocator)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
+void BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::assign(Builder& rhs, NodeAllocatorType& allocator) {
     this->clear(allocator);
 
     bool oldFrozen = isFrozen();
@@ -368,15 +305,10 @@ assign(Builder &rhs,
         allocator.needFreeze(this);
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, class AggrCalcT>
-bool
-BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-insert(const KeyType & key, const DataType & data,
-       NodeAllocatorType &allocator, CompareT comp,
-       const AggrCalcT &aggrCalc)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
+bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::insert(
+    const KeyType& key, const DataType& data, NodeAllocatorType& allocator, CompareT comp,
+    const AggrCalcT& aggrCalc) {
     Iterator itr(BTreeNode::Ref(), allocator);
     itr.lower_bound(_root, key, comp);
     if (itr.valid() && !comp(key, itr.getKey()))
@@ -385,31 +317,19 @@ insert(const KeyType & key, const DataType & data,
     return true;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, class AggrCalcT>
-void
-BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-insert(Iterator &itr,
-       const KeyType &key, const DataType &data,
-       const AggrCalcT &aggrCalc)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
+void BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::insert(
+    Iterator& itr, const KeyType& key, const DataType& data, const AggrCalcT& aggrCalc) {
     using Inserter = BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
     bool oldFrozen = isFrozen();
-    Inserter::insert(_root, itr, key, data,aggrCalc);
+    Inserter::insert(_root, itr, key, data, aggrCalc);
     if (oldFrozen && !isFrozen())
         itr.getAllocator().needFreeze(this);
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, class AggrCalcT>
-bool
-BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-remove(const KeyType & key,
-       NodeAllocatorType &allocator, CompareT comp,
-       const AggrCalcT &aggrCalc)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
+bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::remove(
+    const KeyType& key, NodeAllocatorType& allocator, CompareT comp, const AggrCalcT& aggrCalc) {
     Iterator itr(BTreeNode::Ref(), allocator);
     itr.lower_bound(_root, key, comp);
     if (!itr.valid() || comp(key, itr.getKey()))
@@ -418,13 +338,8 @@ remove(const KeyType & key,
     return true;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, class AggrCalcT>
-void
-BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-remove(Iterator &itr, const AggrCalcT &aggrCalc)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
+void BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::remove(Iterator& itr, const AggrCalcT& aggrCalc) {
     using Remover = BTreeRemover<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
     bool oldFrozen = isFrozen();
     Remover::remove(_root, itr, aggrCalc);
@@ -432,12 +347,8 @@ remove(Iterator &itr, const AggrCalcT &aggrCalc)
         itr.getAllocator().needFreeze(this);
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, class AggrCalcT>
-void
-BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-move_nodes(NodeAllocatorType &allocator)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
+void BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::move_nodes(NodeAllocatorType& allocator) {
     Iterator itr = this->begin(allocator);
     this->setRoot(itr.moveFirstLeafNode(this->getRoot()), allocator);
     while (itr.valid()) {
@@ -445,4 +356,4 @@ move_nodes(NodeAllocatorType &allocator)
     }
 }
 
-}
+} // namespace vespalib::btree

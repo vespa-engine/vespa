@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "avx3_dl.h"
+
 #include "avxprivate.hpp"
 #include "fn_table.h"
 #include "x64_generic.h"
@@ -51,41 +52,35 @@ void my_and_128(size_t offset, const std::vector<std::pair<const void*, bool>>& 
 void my_or_128(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) noexcept {
     helper::orChunks<64, 2>(offset, src, dest);
 }
-TargetInfo my_target_info() noexcept {
-    return {"AutoVec", "AVX3_DL", 64};
-}
+TargetInfo my_target_info() noexcept { return {"AutoVec", "AVX3_DL", 64}; }
 
-} // anon ns
+} // namespace
 
 namespace {
 
 [[nodiscard]] dispatch::FnTable build_fn_table() {
     dispatch::FnTable ft(my_target_info());
-    ft.dot_product_i8  = my_dot_product_i8;
+    ft.dot_product_i8 = my_dot_product_i8;
     ft.dot_product_f32 = my_dot_product_f32;
     ft.dot_product_f64 = my_dot_product_f64;
-    ft.squared_euclidean_distance_i8  = my_squared_euclidean_distance_i8;
+    ft.squared_euclidean_distance_i8 = my_squared_euclidean_distance_i8;
     ft.squared_euclidean_distance_f32 = my_squared_euclidean_distance_f32;
     ft.squared_euclidean_distance_f64 = my_squared_euclidean_distance_f64;
     ft.binary_hamming_distance = my_binary_hamming_distance;
     ft.population_count = my_population_count;
     ft.convert_bfloat16_to_float = my_convert_bfloat16_to_float;
     ft.and_128 = my_and_128;
-    ft.or_128  = my_or_128;
+    ft.or_128 = my_or_128;
     return ft;
 }
 
-} // anon ns
+} // namespace
 
-TargetInfo
-Avx3DlAccelerator::target_info() const noexcept {
-    return my_target_info();
-}
+TargetInfo Avx3DlAccelerator::target_info() const noexcept { return my_target_info(); }
 
-const dispatch::FnTable&
-Avx3DlAccelerator::fn_table() const {
+const dispatch::FnTable& Avx3DlAccelerator::fn_table() const {
     static const dispatch::FnTable tbl = build_fn_table();
     return tbl;
 }
 
-}
+} // namespace vespalib::hwaccelerated

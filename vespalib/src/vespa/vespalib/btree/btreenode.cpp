@@ -6,8 +6,7 @@ namespace vespalib::btree {
 
 NoAggregated BTreeNodeAggregatedWrap<NoAggregated>::_instance;
 
-template <>
-MinMaxAggregated BTreeNodeAggregatedWrap<MinMaxAggregated>::_instance = MinMaxAggregated();
+template <> MinMaxAggregated BTreeNodeAggregatedWrap<MinMaxAggregated>::_instance = MinMaxAggregated();
 
 template class BTreeNodeDataWrap<uint32_t, 16>;
 template class BTreeNodeDataWrap<BTreeNoLeafData, 16>;

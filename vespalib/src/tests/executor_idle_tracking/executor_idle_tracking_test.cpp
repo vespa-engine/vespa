@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/executor_idle_tracking.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/executor_idle_tracking.h>
 
 using namespace vespalib;
 
@@ -56,7 +56,7 @@ TEST(ExecutorIdleTrackingTest, can_calculate_idle_metric) {
     state.was_idle(5ms);
     state.was_idle(15ms);
     state.was_idle(3ms);
-    state.was_idle(7ms); // 50 ms total idle
+    state.was_idle(7ms);                       // 50 ms total idle
     EXPECT_EQ(state.reset(at(120ms), 5), 0.5); // 100 ms total time
     EXPECT_EQ(state.reset(at(140ms), 5), 0.0);
     state.was_idle(25ms);

@@ -26,8 +26,7 @@ struct Base64 {
      * @todo This seems to be more than needed. Inspect what encode() does and
      *       make this the exact size.
      **/
-    static int getMaximumEncodeLength(int sourcelen)
-        { return std::max(6, 2 * sourcelen + 2); }
+    static int getMaximumEncodeLength(int sourcelen) { return std::max(6, 2 * sourcelen + 2); }
 
     /**
      * @param The length of the base64 encoded string to decode.
@@ -38,8 +37,7 @@ struct Base64 {
      * @todo This seems to be more than needed. Inspect what decode() does and
      *       make this the exact size.
      **/
-    static int getMaximumDecodeLength(int sourcelen)
-        { return sourcelen; }
+    static int getMaximumDecodeLength(int sourcelen) { return sourcelen; }
 
     /**
      * Encodes a string of binary data to base 64.
@@ -49,8 +47,7 @@ struct Base64 {
      *
      * @return The base64 encoded string.
      */
-    static std::string encode(const std::string& source)
-        { return encode(source.c_str(), source.size()); }
+    static std::string encode(const std::string& source) { return encode(source.c_str(), source.size()); }
 
     /**
      * Encodes binary data to base 64.
@@ -77,8 +74,7 @@ struct Base64 {
      *         added). -1 is returned if there was not enough space in the dest
      *         buffer to store all of the data.
      */
-    static int encode(const char* source, int sourcelen,
-                      char* dest, int destlen);
+    static int encode(const char* source, int sourcelen, char* dest, int destlen);
 
     /**
      * Decodes base64 data to binary format.
@@ -91,8 +87,7 @@ struct Base64 {
      * @throws Throw IllegalArgumentException if source contains illegal base 64
      *         characters that are not whitespace.
      */
-    static std::string decode(const std::string& source)
-        { return decode(source.c_str(), source.size()); }
+    static std::string decode(const std::string& source) { return decode(source.c_str(), source.size()); }
 
     /**
      * Decodes base64 data to binary format.
@@ -116,9 +111,7 @@ struct Base64 {
      *         representation, or -1 if there wasn't enough bytes available in
      *         dest.
      */
-    static int decode(const char* source, int sourcelen,
-                      char* dest, int destlen);
+    static int decode(const char* source, int sourcelen, char* dest, int destlen);
 };
 
-}  // namespace vespalib
-
+} // namespace vespalib

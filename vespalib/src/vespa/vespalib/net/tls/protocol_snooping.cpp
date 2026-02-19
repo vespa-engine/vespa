@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "protocol_snooping.h"
+
 #include <vespa/vespalib/util/size_literals.h>
-#include <iostream>
-#include <cstdlib>
+
 #include <stdint.h>
+
+#include <cstdlib>
+#include <iostream>
 
 namespace vespalib::net::tls::snooping {
 
@@ -13,9 +16,7 @@ namespace {
 
 // From RFC 5246:
 // 0x16 - Handshake content type byte of TLSCiphertext record
-inline bool is_tls_handshake_packet(const char* buf) {
-    return (buf[0] == 0x16);
-}
+inline bool is_tls_handshake_packet(const char* buf) { return (buf[0] == 0x16); }
 
 // First byte of 2-byte ProtocolVersion, always 3 on TLSv1.2 and v1.3
 // Next is the TLS minor version, either 1 or 3 depending on version (though the
@@ -28,21 +29,16 @@ inline bool is_expected_tls_protocol_version(const char* buf) {
 
 // Length is big endian u16 in bytes 3, 4
 inline uint16_t tls_record_length(const char* buf) {
-    return (uint16_t(static_cast<unsigned char>(buf[3]) << 8)
-            + static_cast<unsigned char>(buf[4]));
+    return (uint16_t(static_cast<unsigned char>(buf[3]) << 8) + static_cast<unsigned char>(buf[4]));
 }
 
 // First byte of Handshake record in byte 5, which shall be ClientHello (0x01)
-inline bool is_client_hello_handshake_record(const char* buf) {
-    return (buf[5] == 0x01);
-}
+inline bool is_client_hello_handshake_record(const char* buf) { return (buf[5] == 0x01); }
 
 // Last 2 bytes are the 2 first big-endian bytes of a 3-byte Handshake
 // record length field. No support for records that are large enough that
 // the MSB should ever be non-zero.
-inline bool client_hello_record_size_within_expected_bounds(const char* buf) {
-    return (buf[6] == 0x00);
-}
+inline bool client_hello_record_size_within_expected_bounds(const char* buf) { return (buf[6] == 0x00); }
 
 // The byte after the MSB of the 24-bit handshake record size should be equal
 // to the most significant byte of the record length value, minus the Handshake
@@ -55,7 +51,7 @@ inline bool handshake_record_size_matches_length(const char* buf, uint16_t lengt
     return (static_cast<unsigned char>(buf[7]) == ((length - 4) >> 8));
 }
 
-} // anon ns
+} // namespace
 
 TlsSnoopingResult snoop_client_hello_header(const char* buf) noexcept {
     if (!is_tls_handshake_packet(buf)) {
@@ -89,13 +85,20 @@ TlsSnoopingResult snoop_client_hello_header(const char* buf) noexcept {
 
 const char* to_string(TlsSnoopingResult result) noexcept {
     switch (result) {
-    case TlsSnoopingResult::ProbablyTls:                return "ProbablyTls";
-    case TlsSnoopingResult::HandshakeMismatch:          return "HandshakeMismatch";
-    case TlsSnoopingResult::ProtocolVersionMismatch:    return "ProtocolVersionMismatch";
-    case TlsSnoopingResult::RecordSizeRfcViolation:     return "RecordSizeRfcViolation";
-    case TlsSnoopingResult::RecordNotClientHello:       return "RecordNotClientHello";
-    case TlsSnoopingResult::ClientHelloRecordTooBig:    return "ClientHelloRecordTooBig";
-    case TlsSnoopingResult::ExpectedRecordSizeMismatch: return "ExpectedRecordSizeMismatch";
+    case TlsSnoopingResult::ProbablyTls:
+        return "ProbablyTls";
+    case TlsSnoopingResult::HandshakeMismatch:
+        return "HandshakeMismatch";
+    case TlsSnoopingResult::ProtocolVersionMismatch:
+        return "ProtocolVersionMismatch";
+    case TlsSnoopingResult::RecordSizeRfcViolation:
+        return "RecordSizeRfcViolation";
+    case TlsSnoopingResult::RecordNotClientHello:
+        return "RecordNotClientHello";
+    case TlsSnoopingResult::ClientHelloRecordTooBig:
+        return "ClientHelloRecordTooBig";
+    case TlsSnoopingResult::ExpectedRecordSizeMismatch:
+        return "ExpectedRecordSizeMismatch";
     }
     abort();
 }
@@ -125,4 +128,4 @@ const char* describe_result(TlsSnoopingResult result) noexcept {
     abort();
 }
 
-}
+} // namespace vespalib::net::tls::snooping

@@ -2,23 +2,25 @@
 
 #pragma once
 
-#include "reactor.h"
-#include "http_request.h"
 #include "handle_manager.h"
-#include <vespa/vespalib/net/crypto_socket.h>
+#include "http_request.h"
+#include "reactor.h"
+
 #include <vespa/vespalib/data/smart_buffer.h>
-#include <functional>
+#include <vespa/vespalib/net/crypto_socket.h>
+
 #include <atomic>
+#include <functional>
 
 namespace vespalib::portal {
 
-class HttpConnection : public Reactor::EventHandler
-{
+class HttpConnection : public Reactor::EventHandler {
 public:
     enum class State { HANDSHAKE, READ_REQUEST, DISPATCH, WAIT, WRITE_REPLY, CLOSE, NOTIFY, END };
+
 private:
     using handler_fun_t = std::function<void(HttpConnection*)>;
-    using AuthCtxPtr    = std::unique_ptr<net::ConnectionAuthContext>;
+    using AuthCtxPtr = std::unique_ptr<net::ConnectionAuthContext>;
 
     HandleGuard        _guard;
     State              _state;
@@ -44,17 +46,16 @@ private:
 
 public:
     using UP = std::unique_ptr<HttpConnection>;
-    HttpConnection(HandleGuard guard, Reactor &reactor, CryptoSocket::UP socket, handler_fun_t handler);
+    HttpConnection(HandleGuard guard, Reactor& reactor, CryptoSocket::UP socket, handler_fun_t handler);
     ~HttpConnection();
-    void handle_event(bool read, bool write) override;
-    State get_state() const { return _state; }
-    void resolve_host(const std::string &my_host) { _request.resolve_host(my_host); }
-    const HttpRequest &get_request() const { return _request; }
+    void               handle_event(bool read, bool write) override;
+    State              get_state() const { return _state; }
+    void               resolve_host(const std::string& my_host) { _request.resolve_host(my_host); }
+    const HttpRequest& get_request() const { return _request; }
     // Precondition: handshake must have been completed
-    const net::ConnectionAuthContext &auth_context() const noexcept { return *_auth_ctx; }
+    const net::ConnectionAuthContext& auth_context() const noexcept { return *_auth_ctx; }
 
-    void respond_with_content(std::string_view content_type,
-                              std::string_view content);
+    void respond_with_content(std::string_view content_type, std::string_view content);
     void respond_with_error(int code, const std::string_view msg);
 };
 

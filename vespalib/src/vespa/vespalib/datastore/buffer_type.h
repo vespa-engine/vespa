@@ -3,48 +3,51 @@
 #pragma once
 
 #include "atomic_entry_ref.h"
+
 #include <string>
 #include <vector>
 
-namespace vespalib::alloc { class MemoryAllocator; }
+namespace vespalib::alloc {
+class MemoryAllocator;
+}
 
 namespace vespalib::datastore {
 
 using EntryCount = uint32_t;
 
 /**
- * Abstract class used to manage allocation and de-allocation of a specific data type in underlying memory buffers in a data store.
- * Each buffer is owned by an instance of BufferState.
+ * Abstract class used to manage allocation and de-allocation of a specific data type in underlying memory buffers in
+ * a data store. Each buffer is owned by an instance of BufferState.
  *
  * This class handles allocation of both single elements (_arraySize = 1) and array of elements (_arraySize > 1).
  * The strategy for how to grow buffers is specified as well.
  */
-class BufferTypeBase
-{
+class BufferTypeBase {
 public:
     using EntryCount = vespalib::datastore::EntryCount;
     class CleanContext {
     private:
-        std::atomic<size_t> &_extraUsedBytes;
-        std::atomic<size_t> &_extraHoldBytes;
+        std::atomic<size_t>& _extraUsedBytes;
+        std::atomic<size_t>& _extraHoldBytes;
+
     public:
         CleanContext(std::atomic<size_t>& extraUsedBytes, std::atomic<size_t>& extraHoldBytes) noexcept
-            : _extraUsedBytes(extraUsedBytes),
-              _extraHoldBytes(extraHoldBytes)
-        {}
+            : _extraUsedBytes(extraUsedBytes), _extraHoldBytes(extraHoldBytes) {}
         void extraBytesCleaned(size_t value) noexcept;
     };
 
-    BufferTypeBase(const BufferTypeBase &rhs) = delete;
-    BufferTypeBase & operator=(const BufferTypeBase &rhs) = delete;
-    BufferTypeBase(BufferTypeBase &&rhs) noexcept;
-    BufferTypeBase & operator=(BufferTypeBase &&rhs) noexcept;
-    BufferTypeBase(uint32_t entry_size_in, uint32_t buffer_underflow_size_in, uint32_t arraySize, uint32_t min_entries, uint32_t max_entries) noexcept;
-    BufferTypeBase(uint32_t entry_size_in, uint32_t buffer_underflow_size_in, uint32_t arraySize, uint32_t min_entries, uint32_t max_entries,
-                   uint32_t num_entries_for_new_buffer, float allocGrowFactor) noexcept;
+    BufferTypeBase(const BufferTypeBase& rhs) = delete;
+    BufferTypeBase& operator=(const BufferTypeBase& rhs) = delete;
+    BufferTypeBase(BufferTypeBase&& rhs) noexcept;
+    BufferTypeBase& operator=(BufferTypeBase&& rhs) noexcept;
+    BufferTypeBase(uint32_t entry_size_in, uint32_t buffer_underflow_size_in, uint32_t arraySize,
+                   uint32_t min_entries, uint32_t max_entries) noexcept;
+    BufferTypeBase(uint32_t entry_size_in, uint32_t buffer_underflow_size_in, uint32_t arraySize,
+                   uint32_t min_entries, uint32_t max_entries, uint32_t num_entries_for_new_buffer,
+                   float allocGrowFactor) noexcept;
     virtual ~BufferTypeBase();
-    virtual void destroy_entries(void *buffer, EntryCount num_entries) = 0;
-    virtual void fallback_copy(void *newBuffer, const void *oldBuffer, EntryCount num_entries) = 0;
+    virtual void destroy_entries(void* buffer, EntryCount num_entries) = 0;
+    virtual void fallback_copy(void* newBuffer, const void* oldBuffer, EntryCount num_entries) = 0;
 
     /**
      * Return number of reserved entries at start of buffer, to avoid
@@ -55,17 +58,20 @@ public:
     /**
      * Initialize reserved elements at start of buffer.
      */
-    virtual void initialize_reserved_entries(void *buffer, EntryCount reserved_entries) = 0;
-    size_t entry_size() const noexcept { return _entry_size; }
-    uint32_t buffer_underflow_size() const noexcept { return _buffer_underflow_size; }
-    virtual void clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx) = 0;
-    size_t getArraySize() const noexcept { return _arraySize; }
-    virtual void on_active(uint32_t bufferId, std::atomic<EntryCount>* used_entries, std::atomic<EntryCount>* dead_entries, void* buffer);
-    void on_hold(uint32_t buffer_id, const std::atomic<EntryCount>* used_entries, const std::atomic<EntryCount>* dead_entries);
+    virtual void initialize_reserved_entries(void* buffer, EntryCount reserved_entries) = 0;
+    size_t       entry_size() const noexcept { return _entry_size; }
+    uint32_t     buffer_underflow_size() const noexcept { return _buffer_underflow_size; }
+    virtual void clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx) = 0;
+    size_t       getArraySize() const noexcept { return _arraySize; }
+    virtual void on_active(uint32_t bufferId, std::atomic<EntryCount>* used_entries,
+                           std::atomic<EntryCount>* dead_entries, void* buffer);
+    void         on_hold(uint32_t buffer_id, const std::atomic<EntryCount>* used_entries,
+                         const std::atomic<EntryCount>* dead_entries);
     virtual void on_free(EntryCount used_entries) noexcept;
-    void resume_primary_buffer(uint32_t buffer_id, std::atomic<EntryCount>* used_entries, std::atomic<EntryCount>* dead_entries);
+    void         resume_primary_buffer(
+                uint32_t buffer_id, std::atomic<EntryCount>* used_entries, std::atomic<EntryCount>* dead_entries);
     virtual const alloc::MemoryAllocator* get_memory_allocator() const;
-    virtual bool is_dynamic_array_buffer_type() const noexcept;
+    virtual bool                          is_dynamic_array_buffer_type() const noexcept;
 
     /**
      * Calculate number of entries to allocate for new buffer given how many free entries are needed.
@@ -74,20 +80,19 @@ public:
 
     void clamp_max_entries(uint32_t max_entries) noexcept;
 
-    uint32_t get_active_buffers_count() const noexcept { return _active_buffers.size(); }
+    uint32_t                     get_active_buffers_count() const noexcept { return _active_buffers.size(); }
     const std::vector<uint32_t>& get_active_buffers() const noexcept { return _active_buffers; }
-    size_t get_max_entries() const noexcept { return _max_entries; }
-    uint32_t get_scaled_num_entries_for_new_buffer() const noexcept;
+    size_t                       get_max_entries() const noexcept { return _max_entries; }
+    uint32_t                     get_scaled_num_entries_for_new_buffer() const noexcept;
     uint32_t get_num_entries_for_new_buffer() const noexcept { return _num_entries_for_new_buffer; }
-protected:
 
+protected:
     struct BufferCounts {
         EntryCount used_entries;
         EntryCount dead_entries;
         BufferCounts() noexcept : used_entries(0), dead_entries(0) {}
         BufferCounts(EntryCount used_entries_in, EntryCount dead_entries_in) noexcept
-            : used_entries(used_entries_in), dead_entries(dead_entries_in)
-        {}
+            : used_entries(used_entries_in), dead_entries(dead_entries_in) {}
     };
 
     /**
@@ -99,9 +104,9 @@ protected:
             const std::atomic<EntryCount>* used_ptr;
             const std::atomic<EntryCount>* dead_ptr;
             ActiveBufferCounts() noexcept : used_ptr(nullptr), dead_ptr(nullptr) {}
-            ActiveBufferCounts(const std::atomic<EntryCount>* used_ptr_in, const std::atomic<EntryCount>* dead_ptr_in) noexcept
-                : used_ptr(used_ptr_in), dead_ptr(dead_ptr_in)
-            {}
+            ActiveBufferCounts(
+                const std::atomic<EntryCount>* used_ptr_in, const std::atomic<EntryCount>* dead_ptr_in) noexcept
+                : used_ptr(used_ptr_in), dead_ptr(dead_ptr_in) {}
         };
         std::vector<ActiveBufferCounts> _counts;
 
@@ -111,11 +116,11 @@ protected:
         void remove_buffer(const std::atomic<EntryCount>* used_entries, const std::atomic<EntryCount>* dead_entries);
         BufferCounts last_buffer() const noexcept;
         BufferCounts all_buffers() const noexcept;
-        bool empty() const noexcept { return _counts.empty(); }
+        bool         empty() const noexcept { return _counts.empty(); }
     };
 
-    uint32_t _entry_size;   // Number of bytes in an allocation unit
-    uint32_t _arraySize;    // Number of elements in an allocation unit
+    uint32_t _entry_size; // Number of bytes in an allocation unit
+    uint32_t _arraySize;  // Number of elements in an allocation unit
 
     /*
      * Buffer underflow size is the size of an area before the start
@@ -126,13 +131,13 @@ protected:
      * for the dynamic array buffer type).
      */
     uint32_t _buffer_underflow_size;
-    uint32_t _min_entries;  // Minimum number of entries to allocate in a buffer
-    uint32_t _max_entries;  // Maximum number of entries to allocate in a buffer
+    uint32_t _min_entries; // Minimum number of entries to allocate in a buffer
+    uint32_t _max_entries; // Maximum number of entries to allocate in a buffer
     // Number of entries needed before allocating a new buffer instead of just resizing the first one
-    uint32_t _num_entries_for_new_buffer;
-    float    _allocGrowFactor;
-    uint32_t _holdBuffers;
-    size_t   _hold_used_entries;  // Number of used entries in all held buffers for this type.
+    uint32_t               _num_entries_for_new_buffer;
+    float                  _allocGrowFactor;
+    uint32_t               _holdBuffers;
+    size_t                 _hold_used_entries; // Number of used entries in all held buffers for this type.
     AggregatedBufferCounts _aggr_counts;
     std::vector<uint32_t>  _active_buffers;
 };
@@ -140,29 +145,28 @@ protected:
 /**
  * Concrete class used to manage allocation and de-allocation of elements of type ElemType in data store buffers.
  */
-template <typename ElemT, typename EmptyT = ElemT>
-class BufferType : public BufferTypeBase
-{
+template <typename ElemT, typename EmptyT = ElemT> class BufferType : public BufferTypeBase {
 public:
     using ElemType = ElemT;
     using EmptyType = EmptyT;
+
 protected:
     static const ElemType& empty_entry() noexcept;
 
 public:
-    BufferType() noexcept : BufferType(1,1,1) {}
-    BufferType(const BufferType &rhs) = delete;
-    BufferType & operator=(const BufferType &rhs) = delete;
-    BufferType(BufferType && rhs) noexcept = default;
-    BufferType & operator=(BufferType && rhs) noexcept = default;
+    BufferType() noexcept : BufferType(1, 1, 1) {}
+    BufferType(const BufferType& rhs) = delete;
+    BufferType& operator=(const BufferType& rhs) = delete;
+    BufferType(BufferType&& rhs) noexcept = default;
+    BufferType& operator=(BufferType&& rhs) noexcept = default;
     BufferType(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries) noexcept;
-    BufferType(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries,
-               uint32_t num_entries_for_new_buffer, float allocGrowFactor) noexcept;
+    BufferType(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries, uint32_t num_entries_for_new_buffer,
+               float allocGrowFactor) noexcept;
     ~BufferType() override;
-    void destroy_entries(void *buffer, EntryCount num_entries) override;
-    void fallback_copy(void *newBuffer, const void *oldBuffer, EntryCount num_entries) override;
-    void initialize_reserved_entries(void *buffer, EntryCount reserved_entries) override;
-    void clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext cleanCxt) override;
+    void destroy_entries(void* buffer, EntryCount num_entries) override;
+    void fallback_copy(void* newBuffer, const void* oldBuffer, EntryCount num_entries) override;
+    void initialize_reserved_entries(void* buffer, EntryCount reserved_entries) override;
+    void clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext cleanCxt) override;
 };
 
 extern template class BufferType<char>;
@@ -173,4 +177,4 @@ extern template class BufferType<int32_t>;
 extern template class BufferType<std::string>;
 extern template class BufferType<AtomicEntryRef>;
 
-}
+} // namespace vespalib::datastore

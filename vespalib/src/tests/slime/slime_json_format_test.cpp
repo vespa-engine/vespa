@@ -1,24 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/test_path.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/input.h>
 #include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/data/simple_buffer.h>
-#include <iostream>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/test_path.h>
+
 #include <fstream>
+#include <iostream>
 
 using namespace vespalib::slime::convenience;
 using vespalib::Input;
 using vespalib::MemoryInput;
 
-std::string make_json(const Slime &slime, bool compact) {
+std::string make_json(const Slime& slime, bool compact) {
     vespalib::SimpleBuffer buf;
     vespalib::slime::JsonFormat::encode(slime, buf, compact);
     return buf.get().make_string();
 }
 
-bool parse_json(const std::string &json, Slime &slime) {
+bool parse_json(const std::string& json, Slime& slime) {
     size_t size = vespalib::slime::JsonFormat::decode(json, slime);
     if (size == 0) {
         fprintf(stderr, "json parsing failed:\n%s", make_json(slime, false).c_str());
@@ -26,7 +27,7 @@ bool parse_json(const std::string &json, Slime &slime) {
     return (size > 0);
 }
 
-bool parse_json_bytes(const Memory & json, Slime &slime) {
+bool parse_json_bytes(const Memory& json, Slime& slime) {
     size_t size = vespalib::slime::JsonFormat::decode(json, slime);
     if (size == 0) {
         fprintf(stderr, "json parsing failed:\n%s", make_json(slime, false).c_str());
@@ -34,7 +35,7 @@ bool parse_json_bytes(const Memory & json, Slime &slime) {
     return (size > 0);
 }
 
-double json_double(const std::string &str) {
+double json_double(const std::string& str) {
     Slime slime;
     if (vespalib::slime::JsonFormat::decode(str, slime) != str.size()) {
         fprintf(stderr, "json number parsing failed:\n%s", make_json(slime, false).c_str());
@@ -43,7 +44,7 @@ double json_double(const std::string &str) {
     return slime.get().asDouble();
 }
 
-int64_t json_long(const std::string &str) {
+int64_t json_long(const std::string& str) {
     Slime slime;
     if (vespalib::slime::JsonFormat::decode(str, slime) != str.size()) {
         fprintf(stderr, "json number parsing failed:\n%s", make_json(slime, false).c_str());
@@ -52,8 +53,8 @@ int64_t json_long(const std::string &str) {
     return slime.get().asLong();
 }
 
-std::string json_string(const std::string &str) {
-    Slime slime;
+std::string json_string(const std::string& str) {
+    Slime       slime;
     std::string quoted("\"");
     quoted.append(str);
     quoted.append("\"");
@@ -64,19 +65,19 @@ std::string json_string(const std::string &str) {
     return slime.get().asString().make_string();
 }
 
-std::string normalize(const std::string &json) {
+std::string normalize(const std::string& json) {
     Slime slime;
     EXPECT_TRUE(vespalib::slime::JsonFormat::decode(json, slime) > 0);
     return make_json(slime, true);
 }
 
-std::string normalize(Input &input) {
+std::string normalize(Input& input) {
     Slime slime;
     EXPECT_TRUE(vespalib::slime::JsonFormat::decode(input, slime) > 0);
     return make_json(slime, true);
 }
 
-bool check_valid(const std::string &json) {
+bool check_valid(const std::string& json) {
     Slime slime;
     return (vespalib::slime::JsonFormat::decode(json, slime) > 0);
 }
@@ -145,7 +146,7 @@ TEST(SlimeJsonFormatTest, encode_string) {
 
 TEST(SlimeJsonFormatTest, encode_data) {
     Slime f;
-    char buf[8];
+    char  buf[8];
     for (int i = 0; i < 8; ++i) {
         buf[i] = ((i * 2) << 4) | (i * 2 + 1);
     }
@@ -155,47 +156,49 @@ TEST(SlimeJsonFormatTest, encode_data) {
 }
 
 TEST(SlimeJsonFormatTest, encode_empty_array) {
-    Slime f;
-    Cursor &c = f.setArray();
+    Slime   f;
+    Cursor& c = f.setArray();
     (void)c;
     EXPECT_EQ("[]", make_json(f, true));
     EXPECT_EQ("[\n"
-                 "]\n", make_json(f, false));
+              "]\n",
+              make_json(f, false));
 }
 
 TEST(SlimeJsonFormatTest, encode_empty_object) {
-    Slime f;
-    Cursor &c = f.setObject();
+    Slime   f;
+    Cursor& c = f.setObject();
     (void)c;
     EXPECT_EQ("{}", make_json(f, true));
     EXPECT_EQ("{\n"
-                 "}\n", make_json(f, false));
+              "}\n",
+              make_json(f, false));
 }
 
 TEST(SlimeJsonFormatTest, encode_array) {
-    Slime f;
-    Cursor &c = f.setArray();
+    Slime   f;
+    Cursor& c = f.setArray();
     c.addLong(123);
     c.addDouble(0.5);
     c.addString("foo");
     c.addBool(true);
     EXPECT_EQ("[123,0.5,\"foo\",true]", make_json(f, true));
     EXPECT_EQ("[\n"
-                 "    123,\n"
-                 "    0.5,\n"
-                 "    \"foo\",\n"
-                 "    true\n"
-                 "]\n", make_json(f, false));
+              "    123,\n"
+              "    0.5,\n"
+              "    \"foo\",\n"
+              "    true\n"
+              "]\n",
+              make_json(f, false));
 }
 
 TEST(SlimeJsonFormatTest, encode_object) {
-    Slime f;
-    Cursor &c = f.setObject();
+    Slime   f;
+    Cursor& c = f.setObject();
     c.setLong("a", 10);
     EXPECT_TRUE(c.valid());
     c.setLong("b", 20);
-    EXPECT_TRUE(("{\"b\":20,\"a\":10}" == make_json(f, true)) ||
-                ("{\"a\":10,\"b\":20}" == make_json(f, true)));
+    EXPECT_TRUE(("{\"b\":20,\"a\":10}" == make_json(f, true)) || ("{\"a\":10,\"b\":20}" == make_json(f, true)));
     EXPECT_TRUE(("{\n"
                  "    \"b\": 20,\n"
                  "    \"a\": 10\n"
@@ -207,23 +210,24 @@ TEST(SlimeJsonFormatTest, encode_object) {
 }
 
 TEST(SlimeJsonFormatTest, encode_nesting) {
-    Slime f;
-    Cursor &c = f.setObject().setObject("a").setArray("b").addArray();
+    Slime   f;
+    Cursor& c = f.setObject().setObject("a").setArray("b").addArray();
     c.addLong(1);
     c.addLong(2);
     c.addLong(3);
     EXPECT_EQ("{\"a\":{\"b\":[[1,2,3]]}}", make_json(f, true));
     EXPECT_EQ("{\n"
-                 "    \"a\": {\n"
-                 "        \"b\": [\n"
-                 "            [\n"
-                 "                1,\n"
-                 "                2,\n"
-                 "                3\n"
-                 "            ]\n"
-                 "        ]\n"
-                 "    }\n"
-                 "}\n", make_json(f, false));
+              "    \"a\": {\n"
+              "        \"b\": [\n"
+              "            [\n"
+              "                1,\n"
+              "                2,\n"
+              "                3\n"
+              "            ]\n"
+              "        ]\n"
+              "    }\n"
+              "}\n",
+              make_json(f, false));
 }
 
 TEST(SlimeJsonFormatTest, decode_null) {
@@ -247,22 +251,22 @@ TEST(SlimeJsonFormatTest, decode_false) {
 }
 
 TEST(SlimeJsonFormatTest, decode_number) {
-    EXPECT_EQ(0.0,  json_double("0"));
-    EXPECT_EQ(1.0,  json_double("1"));
-    EXPECT_EQ(2.0,  json_double("2"));
-    EXPECT_EQ(3.0,  json_double("3"));
-    EXPECT_EQ(4.0,  json_double("4"));
-    EXPECT_EQ(5.0,  json_double("5"));
-    EXPECT_EQ(6.0,  json_double("6"));
-    EXPECT_EQ(7.0,  json_double("7"));
-    EXPECT_EQ(8.0,  json_double("8"));
-    EXPECT_EQ(9.0,  json_double("9"));
+    EXPECT_EQ(0.0, json_double("0"));
+    EXPECT_EQ(1.0, json_double("1"));
+    EXPECT_EQ(2.0, json_double("2"));
+    EXPECT_EQ(3.0, json_double("3"));
+    EXPECT_EQ(4.0, json_double("4"));
+    EXPECT_EQ(5.0, json_double("5"));
+    EXPECT_EQ(6.0, json_double("6"));
+    EXPECT_EQ(7.0, json_double("7"));
+    EXPECT_EQ(8.0, json_double("8"));
+    EXPECT_EQ(9.0, json_double("9"));
     EXPECT_EQ(-9.0, json_double("-9"));
-    EXPECT_EQ(5.5,  json_double("5.5"));
-    EXPECT_EQ(5e7,  json_double("5e7"));
+    EXPECT_EQ(5.5, json_double("5.5"));
+    EXPECT_EQ(5e7, json_double("5e7"));
 
-    EXPECT_EQ(5L,   json_long("5"));
-    EXPECT_EQ(5L,   json_long("5.5"));
+    EXPECT_EQ(5L, json_long("5"));
+    EXPECT_EQ(5L, json_long("5.5"));
     EXPECT_EQ(50000000L, json_long("5e7"));
     EXPECT_EQ(9223372036854775807L, json_long("9223372036854775807"));
 }
@@ -365,8 +369,8 @@ TEST(SlimeJsonFormatTest, decode_object) {
     Memory m = f.get()["e"].asData();
     EXPECT_EQ(3u, m.size);
     EXPECT_EQ((char)255, m.data[0]);
-    EXPECT_EQ((char)0,   m.data[1]);
-    EXPECT_EQ((char)17,  m.data[2]);
+    EXPECT_EQ((char)0, m.data[1]);
+    EXPECT_EQ((char)17, m.data[2]);
 }
 
 TEST(SlimeJsonFormatTest, decode_nesting) {
@@ -391,7 +395,7 @@ TEST(SlimeJsonFormatTest, decode_whitespace) {
     EXPECT_EQ(std::string("[1,2,3]"), normalize(" [ 1 , 2 , 3 ] "));
     EXPECT_EQ(std::string("{\"a\":1}"), normalize(" { \"a\" : 1 } "));
     EXPECT_EQ(normalize("{\"a\":{\"b\":[[1,2,3]],\"c\":[[4]]}}"),
-                 normalize(" { \"a\" : { \"b\" : [ [ 1 , 2 , 3 ] ] , \"c\" : [ [ 4 ] ] } } "));
+              normalize(" { \"a\" : { \"b\" : [ [ 1 , 2 , 3 ] ] , \"c\" : [ [ 4 ] ] } } "));
 }
 
 TEST(SlimeJsonFormatTest, decode_invalid_input) {
@@ -421,13 +425,13 @@ TEST(SlimeJsonFormatTest, decode_simplified_form) {
 }
 
 TEST(SlimeJsonFormatTest, decode_bytes_not_null_terminated) {
-    Slime f;
+    Slime         f;
     std::ifstream file(TEST_PATH("large_json.txt"));
     ASSERT_TRUE(file.is_open());
     std::stringstream buf;
     buf << file.rdbuf();
     std::string str = buf.str();
-    Memory mem(str.c_str(), 18911);
+    Memory      mem(str.c_str(), 18911);
     EXPECT_TRUE(parse_json_bytes(mem, f));
 }
 

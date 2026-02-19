@@ -1,18 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stringfmt.h"
-#include <memory>
+
 #include <cassert>
+#include <memory>
 
 namespace vespalib {
 
 //-----------------------------------------------------------------------------
 
-std::string
-make_string_va(const char *fmt, va_list ap)
-{
+std::string make_string_va(const char* fmt, va_list ap) {
     va_list ap2;
-    int size = -1;
+    int     size = -1;
 
     char buffer[128];
     va_copy(ap2, ap);
@@ -40,8 +39,7 @@ make_string_va(const char *fmt, va_list ap)
  * @param fmt format string
  * @return formatted std::string
  **/
-std::string make_string(const char *fmt, ...)
-{
+std::string make_string(const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     std::string ret = make_string_va(fmt, ap);
@@ -50,14 +48,13 @@ std::string make_string(const char *fmt, ...)
 }
 
 namespace make_string_short {
-std::string fmt(const char *format, ...)
-{
+std::string fmt(const char* format, ...) {
     va_list ap;
     va_start(ap, format);
     std::string ret = make_string_va(format, ap);
     va_end(ap);
     return ret;
 }
-} // namespace vespalib::make_string_short
+} // namespace make_string_short
 
 } // namespace vespalib

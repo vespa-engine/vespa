@@ -1,25 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sync_crypto_socket.h"
+
 #include <cassert>
 
 namespace vespalib {
 
 namespace {
 
-ssize_t read_from_buffer(SmartBuffer &src, char *dst, size_t len) {
+ssize_t read_from_buffer(SmartBuffer& src, char* dst, size_t len) {
     auto data = src.obtain();
     auto chunk = std::min(len, data.size);
     if (chunk > 0) {
         memcpy(dst, data.data, chunk);
         src.evict(chunk);
     }
-    return chunk;    
+    return chunk;
 }
 
-bool is_blocked(ssize_t res, int error) {
-    return ((res < 0) && ((error == EWOULDBLOCK) || (error == EAGAIN)));
-}
+bool is_blocked(ssize_t res, int error) { return ((res < 0) && ((error == EWOULDBLOCK) || (error == EAGAIN))); }
 
 void set_blocking(int fd) {
     SocketHandle handle(fd);
@@ -27,11 +26,9 @@ void set_blocking(int fd) {
     handle.release();
 }
 
-} // namespace vespalib::<unnamed>
+} // namespace
 
-SyncCryptoSocket::UP
-SyncCryptoSocket::create(CryptoSocket::UP socket)
-{
+SyncCryptoSocket::UP SyncCryptoSocket::create(CryptoSocket::UP socket) {
     set_blocking(socket->get_fd());
     for (;;) {
         switch (socket->handshake()) {
@@ -50,9 +47,7 @@ SyncCryptoSocket::create(CryptoSocket::UP socket)
 
 SyncCryptoSocket::~SyncCryptoSocket() = default;
 
-ssize_t
-SyncCryptoSocket::read(char *buf, size_t len)
-{
+ssize_t SyncCryptoSocket::read(char* buf, size_t len) {
     if (_buffer.obtain().size > 0) {
         return read_from_buffer(_buffer, buf, len);
     } else if (len < _socket->min_read_buffer_size()) {
@@ -75,9 +70,7 @@ SyncCryptoSocket::read(char *buf, size_t len)
     }
 }
 
-ssize_t
-SyncCryptoSocket::write(const char *buf, size_t len)
-{
+ssize_t SyncCryptoSocket::write(const char* buf, size_t len) {
     size_t written = 0;
     while (written < len) {
         auto write_res = _socket->write(buf + written, len - written);
@@ -98,9 +91,7 @@ SyncCryptoSocket::write(const char *buf, size_t len)
     return written;
 }
 
-ssize_t
-SyncCryptoSocket::half_close()
-{
+ssize_t SyncCryptoSocket::half_close() {
     auto half_close_res = _socket->half_close();
     while (is_blocked(half_close_res, errno)) {
         half_close_res = _socket->half_close();
@@ -108,15 +99,12 @@ SyncCryptoSocket::half_close()
     return half_close_res;
 }
 
-SyncCryptoSocket::UP
-SyncCryptoSocket::create_client(CryptoEngine &engine, SocketHandle socket, const SocketSpec &spec)
-{
+SyncCryptoSocket::UP SyncCryptoSocket::create_client(
+    CryptoEngine& engine, SocketHandle socket, const SocketSpec& spec) {
     return create(engine.create_client_crypto_socket(std::move(socket), spec));
 }
 
-SyncCryptoSocket::UP
-SyncCryptoSocket::create_server(CryptoEngine &engine, SocketHandle socket)
-{
+SyncCryptoSocket::UP SyncCryptoSocket::create_server(CryptoEngine& engine, SocketHandle socket) {
     return create(engine.create_server_crypto_socket(std::move(socket)));
 }
 

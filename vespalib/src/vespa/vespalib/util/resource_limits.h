@@ -18,10 +18,11 @@ class ResourceLimits {
     uint32_t _cpu;
 
     ResourceLimits(uint64_t memory, uint32_t cpu);
+
 public:
     static ResourceLimits create();
-    uint64_t memory() const noexcept { return _memory; }
-    uint32_t cpu() const noexcept { return _cpu; }
+    uint64_t              memory() const noexcept { return _memory; }
+    uint32_t              cpu() const noexcept { return _cpu; }
 };
 
-}
+} // namespace vespalib

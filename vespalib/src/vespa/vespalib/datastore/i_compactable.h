@@ -19,4 +19,4 @@ struct ICompactable {
     virtual EntryRef move_on_compact(EntryRef ref) = 0;
 };
 
-}
+} // namespace vespalib::datastore

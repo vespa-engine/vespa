@@ -7,23 +7,20 @@
  */
 
 #include "file.h"
+
 #include <vespa/vespalib/util/error.h>
-#include <sstream>
-#include <cstring>
+
 #include <fcntl.h>
-#include <cstdlib>
+
 #include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <sstream>
 
 using vespalib::getLastErrorString;
 
-DirectIOException::DirectIOException(const char * fileName, const void * buffer, size_t length, int64_t offset) :
-    std::exception(),
-    _what(),
-    _fileName(fileName),
-    _buffer(buffer),
-    _length(length),
-    _offset(offset)
-{
+DirectIOException::DirectIOException(const char* fileName, const void* buffer, size_t length, int64_t offset)
+    : std::exception(), _what(), _fileName(fileName), _buffer(buffer), _length(length), _offset(offset) {
     std::ostringstream os;
     os << "DirectIO failed for file '" << fileName << "' buffer=0x" << std::hex << reinterpret_cast<size_t>(buffer);
     os << " length=0x" << length << " offset=0x" << offset;
@@ -42,82 +39,59 @@ bool FastOS_FileInterface::_fsyncEnabled = false;
 
 static const size_t MAX_CHUNK_SIZE = 0x4000000; // 64 MB
 
-FastOS_FileInterface::FastOS_FileInterface(const char *filename)
+FastOS_FileInterface::FastOS_FileInterface(const char* filename)
     : _fAdviseOptions(_defaultFAdviseOptions),
       _chunkSize(MAX_CHUNK_SIZE),
       _filename(filename != nullptr ? filename : ""),
       _openFlags(0),
       _directIOEnabled(false),
-      _syncWritesEnabled(false)
-{
-}
-
+      _syncWritesEnabled(false) {}
 
 FastOS_FileInterface::~FastOS_FileInterface() = default;
 
-void
-FastOS_FileInterface::ReadBuf(void *buffer, size_t length)
-{
+void FastOS_FileInterface::ReadBuf(void* buffer, size_t length) {
     ssize_t readResult = Read(buffer, length);
 
     if ((readResult == -1) || (static_cast<size_t>(readResult) != length)) {
-        std::string errorString = readResult != -1 ?
-                                  std::string("short read") :
-                                  getLastErrorString();
+        std::string        errorString = readResult != -1 ? std::string("short read") : getLastErrorString();
         std::ostringstream os;
         os << "Fatal: Reading " << length << " bytes from '" << GetFileName() << "' failed: " << errorString;
         throw std::runtime_error(os.str());
     }
 }
 
-void
-FastOS_FileInterface::WriteBuf(const void *buffer, size_t length)
-{
-    WriteBufInternal(buffer, length);
-}
+void FastOS_FileInterface::WriteBuf(const void* buffer, size_t length) { WriteBufInternal(buffer, length); }
 
-void
-FastOS_FileInterface::WriteBufInternal(const void *buffer, size_t length)
-{
+void FastOS_FileInterface::WriteBufInternal(const void* buffer, size_t length) {
     ssize_t writeResult = Write2(buffer, length);
     if (length - writeResult != 0) {
-        std::string errorString = writeResult != -1 ?
-                                  std::string("short write") :
-                                  getLastErrorString();
+        std::string        errorString = writeResult != -1 ? std::string("short write") : getLastErrorString();
         std::ostringstream os;
-        os << "Fatal: Writing " << length << " bytes to '" << GetFileName() << "' failed (wrote " << writeResult << "): " << errorString;
+        os << "Fatal: Writing " << length << " bytes to '" << GetFileName() << "' failed (wrote " << writeResult
+           << "): " << errorString;
         throw std::runtime_error(os.str());
     }
 }
 
-bool
-FastOS_FileInterface::CheckedWrite(const void *buffer, size_t len)
-{
+bool FastOS_FileInterface::CheckedWrite(const void* buffer, size_t len) {
     ssize_t writeResult = Write2(buffer, len);
     if (writeResult < 0) {
         std::string errorString = getLastErrorString();
-        fprintf(stderr, "Writing %lu bytes to '%s' failed: %s\n",
-                static_cast<unsigned long>(len),
-                GetFileName(),
+        fprintf(stderr, "Writing %lu bytes to '%s' failed: %s\n", static_cast<unsigned long>(len), GetFileName(),
                 errorString.c_str());
         return false;
     }
     if (writeResult != (ssize_t)len) {
         fprintf(stderr, "Short write, tried to write %lu bytes to '%s', only wrote %lu bytes\n",
-                static_cast<unsigned long>(len),
-                GetFileName(),
-                static_cast<unsigned long>(writeResult));
+                static_cast<unsigned long>(len), GetFileName(), static_cast<unsigned long>(writeResult));
         return false;
     }
     return true;
 }
 
-
-void
-FastOS_FileInterface::ReadBuf(void *buffer, size_t length, int64_t readOffset)
-{
+void FastOS_FileInterface::ReadBuf(void* buffer, size_t length, int64_t readOffset) {
     if (!SetPosition(readOffset)) {
-        std::string errorString = getLastErrorString();
+        std::string        errorString = getLastErrorString();
         std::ostringstream os;
         os << "Fatal: Setting fileoffset to " << readOffset << " in '" << GetFileName() << "' : " << errorString;
         throw std::runtime_error(os.str());
@@ -125,40 +99,24 @@ FastOS_FileInterface::ReadBuf(void *buffer, size_t length, int64_t readOffset)
     ReadBuf(buffer, length);
 }
 
-
-void
-FastOS_FileInterface::EnableDirectIO()
-{
+void FastOS_FileInterface::EnableDirectIO() {
     // Only subclasses with support for DirectIO do something here.
 }
 
-
-void
-FastOS_FileInterface::EnableSyncWrites()
-{
+void FastOS_FileInterface::EnableSyncWrites() {
     if (!IsOpened())
         _syncWritesEnabled = true;
 }
 
-
-bool
-FastOS_FileInterface::
-GetDirectIORestrictions(size_t &memoryAlignment,
-                        size_t &transferGranularity,
-                        size_t &transferMaximum)
-{
+bool FastOS_FileInterface::GetDirectIORestrictions(
+    size_t& memoryAlignment, size_t& transferGranularity, size_t& transferMaximum) {
     memoryAlignment = 1;
     transferGranularity = 1;
     transferMaximum = 0x7FFFFFFF;
     return false;
 }
 
-bool
-FastOS_FileInterface::DirectIOPadding(int64_t offset,
-                                      size_t buflen,
-                                      size_t &padBefore,
-                                      size_t &padAfter)
-{
+bool FastOS_FileInterface::DirectIOPadding(int64_t offset, size_t buflen, size_t& padBefore, size_t& padAfter) {
     (void)offset;
     (void)buflen;
     padBefore = 0;
@@ -166,130 +124,69 @@ FastOS_FileInterface::DirectIOPadding(int64_t offset,
     return false;
 }
 
-
-void *
-FastOS_FileInterface::allocateIOBuffer(size_t byteSize)
-{
-    return malloc(byteSize);    // Default - use malloc allignment
+void* FastOS_FileInterface::allocateIOBuffer(size_t byteSize) {
+    return malloc(byteSize); // Default - use malloc allignment
 }
 
-size_t
-FastOS_FileInterface::getMaxDirectIOMemAlign()
-{
-    return 1u;
-}
+size_t FastOS_FileInterface::getMaxDirectIOMemAlign() { return 1u; }
 
-void *
-FastOS_FileInterface::AllocateDirectIOBuffer(size_t byteSize)
-{
-    return allocateIOBuffer(byteSize);
-}
+void* FastOS_FileInterface::AllocateDirectIOBuffer(size_t byteSize) { return allocateIOBuffer(byteSize); }
 
-void
-FastOS_FileInterface::enableMemoryMap(int mmapFlags)
-{
+void FastOS_FileInterface::enableMemoryMap(int mmapFlags) {
     // Only subclases with support for memory mapping do something here.
-    (void) mmapFlags;
+    (void)mmapFlags;
 }
 
-
-void *
-FastOS_FileInterface::MemoryMapPtr(int64_t position) const
-{
+void* FastOS_FileInterface::MemoryMapPtr(int64_t position) const {
     // Only subclases with support for memory mapping do something here.
-    (void) position;
+    (void)position;
     return nullptr;
 }
 
-
-bool
-FastOS_FileInterface::IsMemoryMapped() const
-{
+bool FastOS_FileInterface::IsMemoryMapped() const {
     // Only subclases with support for memory mapping do something here.
     return false;
 }
 
-const char *
-FastOS_FileInterface::GetFileName() const
-{
-    return _filename.c_str();
+const char* FastOS_FileInterface::GetFileName() const { return _filename.c_str(); }
+
+bool FastOS_FileInterface::OpenReadWrite(const char* filename) {
+    return Open(FASTOS_FILE_OPEN_READ | FASTOS_FILE_OPEN_WRITE, filename);
 }
 
-
-bool
-FastOS_FileInterface::OpenReadWrite(const char *filename)
-{
-    return Open(FASTOS_FILE_OPEN_READ |
-                FASTOS_FILE_OPEN_WRITE, filename);
-}
-
-
-bool
-FastOS_FileInterface::OpenReadOnlyExisting(bool abortIfNotExist,
-        const char *filename)
-{
-    bool rc = Open(FASTOS_FILE_OPEN_READ |
-                   FASTOS_FILE_OPEN_EXISTING,
-                   filename);
+bool FastOS_FileInterface::OpenReadOnlyExisting(bool abortIfNotExist, const char* filename) {
+    bool rc = Open(FASTOS_FILE_OPEN_READ | FASTOS_FILE_OPEN_EXISTING, filename);
 
     if (abortIfNotExist && (!rc)) {
         std::string errorString = getLastErrorString();
-        fprintf(stderr,
-                "Cannot open %s: %s\n",
-                filename,
-                errorString.c_str());
+        fprintf(stderr, "Cannot open %s: %s\n", filename, errorString.c_str());
         abort();
     }
 
     return rc;
 }
 
-
-bool
-FastOS_FileInterface::OpenWriteOnlyTruncate(const char *filename)
-{
+bool FastOS_FileInterface::OpenWriteOnlyTruncate(const char* filename) {
     // printf("********* OpenWriteOnlyTruncate %s\n", filename);
-    return  Open(FASTOS_FILE_OPEN_WRITE |
-                 FASTOS_FILE_OPEN_CREATE |
-                 FASTOS_FILE_OPEN_TRUNCATE,
-                 filename);
+    return Open(FASTOS_FILE_OPEN_WRITE | FASTOS_FILE_OPEN_CREATE | FASTOS_FILE_OPEN_TRUNCATE, filename);
 }
 
-
-bool
-FastOS_FileInterface::OpenWriteOnlyExisting(bool abortIfNotExist,
-        const char *filename)
-{
-    bool rc = Open(FASTOS_FILE_OPEN_WRITE |
-                   FASTOS_FILE_OPEN_EXISTING,
-                   filename);
+bool FastOS_FileInterface::OpenWriteOnlyExisting(bool abortIfNotExist, const char* filename) {
+    bool rc = Open(FASTOS_FILE_OPEN_WRITE | FASTOS_FILE_OPEN_EXISTING, filename);
 
     if (abortIfNotExist && (!rc)) {
         std::string errorString = getLastErrorString();
-        fprintf(stderr,
-                "Cannot open %s: %s\n",
-                filename,
-                errorString.c_str());
+        fprintf(stderr, "Cannot open %s: %s\n", filename, errorString.c_str());
         abort();
     }
 
     return rc;
 }
 
-bool
-FastOS_FileInterface::OpenReadOnly(const char *filename)
-{
-    return Open(FASTOS_FILE_OPEN_READ |
-                FASTOS_FILE_OPEN_EXISTING,
-                filename);
+bool FastOS_FileInterface::OpenReadOnly(const char* filename) {
+    return Open(FASTOS_FILE_OPEN_READ | FASTOS_FILE_OPEN_EXISTING, filename);
 }
 
-bool
-FastOS_FileInterface::OpenWriteOnly(const char *filename)
-{
-    return Open(FASTOS_FILE_OPEN_WRITE, filename);
-}
+bool FastOS_FileInterface::OpenWriteOnly(const char* filename) { return Open(FASTOS_FILE_OPEN_WRITE, filename); }
 
-void FastOS_FileInterface::dropFromCache() const
-{
-}
+void FastOS_FileInterface::dropFromCache() const {}

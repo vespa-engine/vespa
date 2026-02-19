@@ -9,16 +9,13 @@ namespace vespalib {
 /**
  * abstract interface for an iterable sequence.
  **/
-template <typename T>
-struct Sequence
-{
+template <typename T> struct Sequence {
     using UP = std::unique_ptr<Sequence>;
 
     virtual bool valid() const = 0;
-    virtual T get() const = 0;
+    virtual T    get() const = 0;
     virtual void next() = 0;
     virtual ~Sequence() = default;
 };
 
 } // namespace vespalib
-

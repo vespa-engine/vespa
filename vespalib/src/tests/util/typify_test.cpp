@@ -1,21 +1,31 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/typify.h>
 
 using namespace vespalib;
 
-struct A { static constexpr int value_from_type = 1; };
-struct B { static constexpr int value_from_type = 2; };
+struct A {
+    static constexpr int value_from_type = 1;
+};
+struct B {
+    static constexpr int value_from_type = 2;
+};
 
-struct MyIntA { int value; };
-struct MyIntB { int value; };
-struct MyIntC { int value; }; // no typifier for this type
+struct MyIntA {
+    int value;
+};
+struct MyIntB {
+    int value;
+};
+struct MyIntC {
+    int value;
+}; // no typifier for this type
 
 // MyIntA -> A or B
 struct TypifyMyIntA {
     template <typename T> using Result = TypifyResultType<T>;
-    template <typename F> static decltype(auto) resolve(MyIntA value, F &&f) {
+    template <typename F> static decltype(auto) resolve(MyIntA value, F&& f) {
         if (value.value == 1) {
             return f(Result<A>());
         } else if (value.value == 2) {
@@ -27,8 +37,8 @@ struct TypifyMyIntA {
 
 // MyIntB -> TypifyResultValue<int,1> or TypifyResultValue<int,2>
 struct TypifyMyIntB {
-    template <int VALUE> using Result = TypifyResultValue<int,VALUE>;
-    template <typename F> static decltype(auto) resolve(MyIntB value, F &&f) {
+    template <int VALUE> using Result = TypifyResultValue<int, VALUE>;
+    template <typename F> static decltype(auto) resolve(MyIntB value, F&& f) {
         if (value.value == 1) {
             return f(Result<1>());
         } else if (value.value == 2) {
@@ -47,8 +57,8 @@ struct GetFromType {
 };
 
 TEST(TypifyTest, simple_type_typification_works) {
-    auto res1 = typify_invoke<1,TX,GetFromType>(MyIntA{1});
-    auto res2 = typify_invoke<1,TX,GetFromType>(MyIntA{2});
+    auto res1 = typify_invoke<1, TX, GetFromType>(MyIntA{1});
+    auto res2 = typify_invoke<1, TX, GetFromType>(MyIntA{2});
     EXPECT_EQ(res1, 1);
     EXPECT_EQ(res2, 2);
 }
@@ -58,8 +68,8 @@ struct GetFromValue {
 };
 
 TEST(TypifyTest, simple_value_typification_works) {
-    auto res1 = typify_invoke<1,TX,GetFromValue>(MyIntB{1});
-    auto res2 = typify_invoke<1,TX,GetFromValue>(MyIntB{2});
+    auto res1 = typify_invoke<1, TX, GetFromValue>(MyIntB{1});
+    auto res2 = typify_invoke<1, TX, GetFromValue>(MyIntB{2});
     EXPECT_EQ(res1, 1);
     EXPECT_EQ(res2, 2);
 }
@@ -79,10 +89,10 @@ struct MaybeSum {
 };
 
 TEST(TypifyTest, complex_typification_works) {
-    auto res1 = typify_invoke<4,TX,MaybeSum>(false, MyIntA{2}, false, MyIntB{1}, MyIntC{4});
-    auto res2 = typify_invoke<4,TX,MaybeSum>(false, MyIntA{2},  true, MyIntB{1}, MyIntC{4});
-    auto res3 = typify_invoke<4,TX,MaybeSum>(true,  MyIntA{2}, false, MyIntB{1}, MyIntC{4});
-    auto res4 = typify_invoke<4,TX,MaybeSum>(true,  MyIntA{2},  true, MyIntB{1}, MyIntC{4});
+    auto res1 = typify_invoke<4, TX, MaybeSum>(false, MyIntA{2}, false, MyIntB{1}, MyIntC{4});
+    auto res2 = typify_invoke<4, TX, MaybeSum>(false, MyIntA{2}, true, MyIntB{1}, MyIntC{4});
+    auto res3 = typify_invoke<4, TX, MaybeSum>(true, MyIntA{2}, false, MyIntB{1}, MyIntC{4});
+    auto res4 = typify_invoke<4, TX, MaybeSum>(true, MyIntA{2}, true, MyIntB{1}, MyIntC{4});
     EXPECT_EQ(res1, 4);
     EXPECT_EQ(res2, 5);
     EXPECT_EQ(res3, 6);
@@ -94,26 +104,24 @@ struct Singleton {
     virtual ~Singleton() = default;
 };
 
-template <int A, int B>
-struct MySingleton : Singleton {
+template <int A, int B> struct MySingleton : Singleton {
     MySingleton() = default;
-    MySingleton(const MySingleton &) = delete;
-    MySingleton &operator=(const MySingleton &) = delete;
-    int get() const override { return A + B; }
+    MySingleton(const MySingleton&) = delete;
+    MySingleton& operator=(const MySingleton&) = delete;
+    int          get() const override { return A + B; }
 };
 
 struct GetSingleton {
-    template <typename A, typename B>
-    static const Singleton &invoke() {
+    template <typename A, typename B> static const Singleton& invoke() {
         static MySingleton<A::value, B::value> obj;
         return obj;
     }
 };
 
 TEST(TypifyTest, typify_invoke_can_return_object_reference) {
-    const Singleton &s1 = typify_invoke<2,TX,GetSingleton>(MyIntB{1}, MyIntB{1});
-    const Singleton &s2 = typify_invoke<2,TX,GetSingleton>(MyIntB{2}, MyIntB{2});
-    const Singleton &s3 = typify_invoke<2,TX,GetSingleton>(MyIntB{2}, MyIntB{2});
+    const Singleton& s1 = typify_invoke<2, TX, GetSingleton>(MyIntB{1}, MyIntB{1});
+    const Singleton& s2 = typify_invoke<2, TX, GetSingleton>(MyIntB{2}, MyIntB{2});
+    const Singleton& s3 = typify_invoke<2, TX, GetSingleton>(MyIntB{2}, MyIntB{2});
     EXPECT_EQ(s1.get(), 2);
     EXPECT_EQ(s2.get(), 4);
     EXPECT_EQ(s3.get(), 4);

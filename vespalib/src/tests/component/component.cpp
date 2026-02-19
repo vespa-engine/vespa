@@ -1,56 +1,44 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 LOG_SETUP("component_test");
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/component/version.h>
 #include <vespa/vespalib/component/versionspecification.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
+
 #include <format>
 
 using namespace vespalib;
 
-void
-check_lt(const VersionSpecification::string &lhs, 
-         const VersionSpecification::string &rhs)
-{
+void check_lt(const VersionSpecification::string& lhs, const VersionSpecification::string& rhs) {
     SCOPED_TRACE(std::format("check: {} < {}", lhs, rhs));
     EXPECT_TRUE(VersionSpecification(lhs) < VersionSpecification(rhs));
     EXPECT_FALSE(VersionSpecification(lhs) == VersionSpecification(rhs));
     EXPECT_FALSE(VersionSpecification(rhs) < VersionSpecification(lhs));
 }
 
-void
-check_eq(const VersionSpecification::string &lhs, 
-         const VersionSpecification::string &rhs)
-{
+void check_eq(const VersionSpecification::string& lhs, const VersionSpecification::string& rhs) {
     SCOPED_TRACE(std::format("check: {} == {}", lhs, rhs));
     EXPECT_FALSE(VersionSpecification(lhs) < VersionSpecification(rhs));
     EXPECT_TRUE(VersionSpecification(lhs) == VersionSpecification(rhs));
     EXPECT_FALSE(VersionSpecification(rhs) < VersionSpecification(lhs));
 }
 
-void
-check_ne(const VersionSpecification::string &lhs, 
-         const VersionSpecification::string &rhs)
-{
+void check_ne(const VersionSpecification::string& lhs, const VersionSpecification::string& rhs) {
     SCOPED_TRACE(std::format("check: {} != {}", lhs, rhs));
     EXPECT_TRUE(VersionSpecification(lhs) < VersionSpecification(rhs) ||
                 VersionSpecification(rhs) < VersionSpecification(lhs));
     EXPECT_FALSE(VersionSpecification(lhs) == VersionSpecification(rhs));
 }
 
-void
-check_gt(const VersionSpecification::string &lhs, 
-         const VersionSpecification::string &rhs)
-{
+void check_gt(const VersionSpecification::string& lhs, const VersionSpecification::string& rhs) {
     SCOPED_TRACE(std::format("check: {} > {}", lhs, rhs));
     EXPECT_FALSE(VersionSpecification(lhs) < VersionSpecification(rhs));
     EXPECT_FALSE(VersionSpecification(lhs) == VersionSpecification(rhs));
     EXPECT_TRUE(VersionSpecification(rhs) < VersionSpecification(lhs));
 }
 
-TEST(ComponentTest, requireThatCompareToIsSymmetric)
-{
+TEST(ComponentTest, requireThatCompareToIsSymmetric) {
     check_lt("1", "2");
     check_eq("2", "2");
     check_gt("2", "1");
@@ -68,8 +56,7 @@ TEST(ComponentTest, requireThatCompareToIsSymmetric)
     check_gt("5.6.7.8", "1.2.3.4");
 }
 
-TEST(ComponentTest, requireThatCompareToIsTransitive)
-{
+TEST(ComponentTest, requireThatCompareToIsTransitive) {
     check_lt("1", "2");
     check_lt("2", "3");
     check_lt("1", "3");
@@ -87,8 +74,7 @@ TEST(ComponentTest, requireThatCompareToIsTransitive)
     check_lt("1.1.1.1", "1.1.1.3");
 }
 
-TEST(ComponentTest, requireThatUnspecifiedComponentDoesNotMatchSpecified)
-{
+TEST(ComponentTest, requireThatUnspecifiedComponentDoesNotMatchSpecified) {
     check_eq("1", "1");
     check_ne("1", "1.2");
     check_ne("1", "1.2.3");
@@ -110,8 +96,7 @@ TEST(ComponentTest, requireThatUnspecifiedComponentDoesNotMatchSpecified)
     check_eq("1.2.3.4", "1.2.3.4");
 }
 
-TEST(ComponentTest, testText)
-{
+TEST(ComponentTest, testText) {
     VersionSpecification v("0.1.2.3");
     EXPECT_EQ(0, v.getMajor());
     EXPECT_EQ(1, v.getMinor());
@@ -127,14 +112,17 @@ TEST(ComponentTest, testText)
     EXPECT_EQ(0, v.getMinor());
     EXPECT_EQ(0, v.getMicro());
     EXPECT_EQ("", v.getQualifier());
-    VESPA_EXPECT_EXCEPTION(v = VersionSpecification("-1"), IllegalArgumentException, "integer must start with a digit");
-    VESPA_EXPECT_EXCEPTION(v = VersionSpecification("1.-1"), IllegalArgumentException, "integer must start with a digit");
-    VESPA_EXPECT_EXCEPTION(v = VersionSpecification("1.2.-1"), IllegalArgumentException, "integer must start with a digit");
-    VESPA_EXPECT_EXCEPTION(v = VersionSpecification("1.2.3.-1"), IllegalArgumentException, "Invalid character in qualifier");
+    VESPA_EXPECT_EXCEPTION(
+        v = VersionSpecification("-1"), IllegalArgumentException, "integer must start with a digit");
+    VESPA_EXPECT_EXCEPTION(
+        v = VersionSpecification("1.-1"), IllegalArgumentException, "integer must start with a digit");
+    VESPA_EXPECT_EXCEPTION(
+        v = VersionSpecification("1.2.-1"), IllegalArgumentException, "integer must start with a digit");
+    VESPA_EXPECT_EXCEPTION(
+        v = VersionSpecification("1.2.3.-1"), IllegalArgumentException, "Invalid character in qualifier");
 }
 
-TEST(ComponentTest, testText2)
-{
+TEST(ComponentTest, testText2) {
     Version v("0.1.2.3");
     EXPECT_EQ(0, v.getMajor());
     EXPECT_EQ(1, v.getMinor());
@@ -156,24 +144,22 @@ TEST(ComponentTest, testText2)
     VESPA_EXPECT_EXCEPTION(v = Version("1.2.3.-1"), IllegalArgumentException, "Invalid character in qualifier");
 }
 
-TEST(ComponentTest, testEmpty)
-{
-    Version ev;
+TEST(ComponentTest, testEmpty) {
+    Version              ev;
     VersionSpecification evs;
 
     EXPECT_EQ("", ev.toAbbreviatedString());
     EXPECT_EQ("0.0.0", ev.toString());
     EXPECT_EQ("*.*.*", evs.toString());
 
-    EXPECT_TRUE(ev == Version(0,0,0,""));
+    EXPECT_TRUE(ev == Version(0, 0, 0, ""));
 
     EXPECT_TRUE(evs.matches(ev));
-    EXPECT_TRUE(evs.matches(Version(1,2,3)));
-    EXPECT_TRUE(!evs.matches(Version(1,2,3,"foo")));
+    EXPECT_TRUE(evs.matches(Version(1, 2, 3)));
+    EXPECT_TRUE(!evs.matches(Version(1, 2, 3, "foo")));
 }
 
-TEST(ComponentTest, testSimple)
-{
+TEST(ComponentTest, testSimple) {
     // test Version:
 
     Version v(1, 2, 3, "qualifier");
@@ -202,8 +188,7 @@ TEST(ComponentTest, testSimple)
     EXPECT_TRUE(vs.matches(v));
 }
 
-TEST(ComponentTest, Version_toAbbreviatedString_truncates_trailing_zeroed_components_while_toString_does_not)
-{
+TEST(ComponentTest, Version_toAbbreviatedString_truncates_trailing_zeroed_components_while_toString_does_not) {
     Version v000(0, 0, 0, "");
     EXPECT_EQ("", v000.toAbbreviatedString());
     EXPECT_EQ("0.0.0", v000.toString());
@@ -261,8 +246,7 @@ TEST(ComponentTest, Version_toAbbreviatedString_truncates_trailing_zeroed_compon
     EXPECT_EQ("1.2.3.qualifier", v111qs.toString());
 }
 
-TEST(ComponentTest, VersionSpecification_toString_does_not_truncate_trailing_zeroed_components)
-{
+TEST(ComponentTest, VersionSpecification_toString_does_not_truncate_trailing_zeroed_components) {
     VersionSpecification vs000(0, 0, 0, "");
     EXPECT_EQ("0.0.0", vs000.toString());
     VersionSpecification vs000s("0.0.0");

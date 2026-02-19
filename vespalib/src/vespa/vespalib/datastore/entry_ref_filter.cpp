@@ -5,24 +5,16 @@
 namespace vespalib::datastore {
 
 EntryRefFilter::EntryRefFilter(std::vector<bool> filter, uint32_t offset_bits)
-    : _filter(std::move(filter)),
-      _offset_bits(offset_bits)
-{
-}
+    : _filter(std::move(filter)), _offset_bits(offset_bits) {}
 
 EntryRefFilter::EntryRefFilter(uint32_t num_buffers, uint32_t offset_bits)
-    : _filter(num_buffers),
-      _offset_bits(offset_bits)
-{
-}
+    : _filter(num_buffers), _offset_bits(offset_bits) {}
 
 EntryRefFilter::~EntryRefFilter() = default;
 
-EntryRefFilter
-EntryRefFilter::create_all_filter(uint32_t num_buffers, uint32_t offset_bits)
-{
+EntryRefFilter EntryRefFilter::create_all_filter(uint32_t num_buffers, uint32_t offset_bits) {
     std::vector<bool> filter(num_buffers, true);
     return EntryRefFilter(std::move(filter), offset_bits);
 }
 
-}
+} // namespace vespalib::datastore

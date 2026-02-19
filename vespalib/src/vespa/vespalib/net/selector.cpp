@@ -9,16 +9,13 @@ namespace {
 //-----------------------------------------------------------------------------
 
 struct SingleFdHandler {
-    int my_fd;
+    int  my_fd;
     bool got_wakeup;
     bool got_read;
     bool got_write;
-    SingleFdHandler(int my_fd_in)
-        : my_fd(my_fd_in), got_wakeup(false), got_read(false), got_write(false) {}
-    void handle_wakeup() {
-        got_wakeup = true;
-    }
-    void handle_event(int &ctx, bool read, bool write) {
+    SingleFdHandler(int my_fd_in) : my_fd(my_fd_in), got_wakeup(false), got_read(false), got_write(false) {}
+    void handle_wakeup() { got_wakeup = true; }
+    void handle_event(int& ctx, bool read, bool write) {
         if ((ctx == my_fd) && read) {
             got_read = true;
         }
@@ -28,25 +25,15 @@ struct SingleFdHandler {
     }
 };
 
-} // namespace vespalib::<unnamed>
+} // namespace
 
 //-----------------------------------------------------------------------------
 
-SingleFdSelector::SingleFdSelector(int fd)
-    : _fd(fd),
-      _selector()
-{
-    _selector.add(_fd, _fd, false, false);
-}
+SingleFdSelector::SingleFdSelector(int fd) : _fd(fd), _selector() { _selector.add(_fd, _fd, false, false); }
 
-SingleFdSelector::~SingleFdSelector()
-{
-    _selector.remove(_fd);
-}
+SingleFdSelector::~SingleFdSelector() { _selector.remove(_fd); }
 
-bool
-SingleFdSelector::wait_readable()
-{
+bool SingleFdSelector::wait_readable() {
     _selector.update(_fd, _fd, true, false);
     for (;;) {
         _selector.poll(-1);
@@ -61,9 +48,7 @@ SingleFdSelector::wait_readable()
     }
 }
 
-bool
-SingleFdSelector::wait_writable()
-{
+bool SingleFdSelector::wait_writable() {
     _selector.update(_fd, _fd, false, true);
     for (;;) {
         _selector.poll(-1);
@@ -78,11 +63,7 @@ SingleFdSelector::wait_writable()
     }
 }
 
-void
-SingleFdSelector::wakeup()
-{
-    _selector.wakeup();
-}
+void SingleFdSelector::wakeup() { _selector.wakeup(); }
 
 //-----------------------------------------------------------------------------
 

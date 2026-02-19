@@ -2,7 +2,9 @@
 #pragma once
 
 #include "alloc.h"
+
 #include <vespa/vespalib/stllike/hash_fun.h>
+
 #include <compare>
 
 namespace vespalib {
@@ -58,33 +60,39 @@ class RawRelativeFrequencySketch {
     size_t       _estimated_sample_count;
     size_t       _window_size;
     uint32_t     _block_mask_bits;
+
 public:
     explicit RawRelativeFrequencySketch(size_t count);
     ~RawRelativeFrequencySketch();
 
-    void add_by_hash(uint64_t hash) noexcept;
+    void                  add_by_hash(uint64_t hash) noexcept;
     [[nodiscard]] uint8_t add_and_count_by_hash(uint64_t hash) noexcept;
     // Note: since this compares _hashes_ rather than elements this has strong ordering semantics.
-    [[nodiscard]] std::strong_ordering estimate_relative_frequency_by_hash(uint64_t lhs_hash, uint64_t rhs_hash) const noexcept;
+    [[nodiscard]] std::strong_ordering estimate_relative_frequency_by_hash(
+        uint64_t lhs_hash, uint64_t rhs_hash) const noexcept;
 
     // Gets the raw underlying counter value saturated in [0, 15] for a given hash.
     [[nodiscard]] uint8_t count_min_by_hash(uint64_t hash) const noexcept;
 
     [[nodiscard]] size_t window_size() const noexcept { return _window_size; }
+
 private:
     void div_all_by_2() noexcept __attribute__((noinline));
 
-    template <bool ReturnMinCount>
-    uint8_t add_by_hash_impl(uint64_t hash) noexcept;
+    template <bool ReturnMinCount> uint8_t add_by_hash_impl(uint64_t hash) noexcept;
 };
 
 template <typename H, typename T>
 concept SketchHasher = requires(H h, T t) {
     // Hashers should never throw.
-    { h(t) } noexcept;
+    {
+        h(t)
+    } noexcept;
     // We need a 64-bit hash output (not using uint64_t since STL is standardized
     // on returning size_t from hash functions).
-    { h(t) } -> std::same_as<size_t>;
+    {
+        h(t)
+    } -> std::same_as<size_t>;
 };
 
 /**
@@ -100,14 +108,13 @@ template <typename T, SketchHasher<T> Hash = std::hash<T>, bool HasGoodEntropyHa
 class RelativeFrequencySketch {
     RawRelativeFrequencySketch _impl;
     [[no_unique_address]] Hash _hash;
+
 public:
     // Initializes a sketch used for estimating frequencies for an underlying cache
     // (or similar data structure) that can hold a maximum of `count` entries.
-    explicit RelativeFrequencySketch(size_t count, Hash hash = Hash{})
-        : _impl(count),
-          _hash(hash)
-    {}
+    explicit RelativeFrequencySketch(size_t count, Hash hash = Hash{}) : _impl(count), _hash(hash) {}
     ~RelativeFrequencySketch() = default;
+
 private:
     [[nodiscard]] uint64_t hash_elem(const T& elem) const noexcept {
         uint64_t hash = _hash(elem);
@@ -116,12 +123,11 @@ private:
         }
         return hash;
     }
+
 public:
     // Increments the estimated frequency for the given element, identified by its hash.
     // Frequency is saturated at 15.
-    void add(const T& elem) noexcept {
-        _impl.add_by_hash(hash_elem(elem));
-    }
+    void add(const T& elem) noexcept { _impl.add_by_hash(hash_elem(elem)); }
     // Same as `add` but returns Count-Min estimate from _after_ `elem` has been added.
     [[nodiscard]] uint8_t add_and_count(const T& elem) noexcept {
         return _impl.add_and_count_by_hash(hash_elem(elem));
@@ -130,9 +136,7 @@ public:
     // a probabilistic sketch, the frequency may be overestimated. Note that automatic counter
     // decaying will over time reduce the reported frequency of elements that are no longer
     // added to the sketch.
-    [[nodiscard]] uint8_t count_min(const T& elem) const noexcept {
-        return _impl.count_min_by_hash(hash_elem(elem));
-    }
+    [[nodiscard]] uint8_t count_min(const T& elem) const noexcept { return _impl.count_min_by_hash(hash_elem(elem)); }
     [[nodiscard]] std::weak_ordering estimate_relative_frequency(const T& lhs, const T& rhs) const noexcept {
         const uint64_t lhs_hash = hash_elem(lhs);
         const uint64_t rhs_hash = hash_elem(rhs);
@@ -144,4 +148,4 @@ public:
     [[nodiscard]] size_t window_size() const noexcept { return _impl.window_size(); }
 };
 
-} // vespalib
+} // namespace vespalib

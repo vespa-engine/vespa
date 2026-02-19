@@ -31,6 +31,7 @@ namespace vespalib {
 class ThreadIdleTracker {
 private:
     steady_time _idle_tag = steady_time::min();
+
 public:
     bool is_idle() const { return (_idle_tag != steady_time::min()); }
     void set_idle(steady_time t) {
@@ -61,12 +62,11 @@ public:
 class ExecutorIdleTracker {
 private:
     steady_time _start;
-    duration _total_idle = duration::zero();
+    duration    _total_idle = duration::zero();
+
 public:
     ExecutorIdleTracker(steady_time t) : _start(t) {}
-    void was_idle(duration how_long_idle) {
-        _total_idle += how_long_idle;
-    }
+    void   was_idle(duration how_long_idle) { _total_idle += how_long_idle; }
     double reset(steady_time t, size_t num_threads) {
         double idle = count_ns(_total_idle);
         double elapsed = std::max(idle, double(count_ns((t - _start) * num_threads)));
@@ -76,4 +76,4 @@ public:
     }
 };
 
-}
+} // namespace vespalib

@@ -5,46 +5,42 @@
 #include "implicit_levenshtein_dfa.h"
 #include "match_algorithm.hpp"
 #include "sparse_state.h"
+
 #include <cassert>
 #include <stdexcept>
 
 namespace vespalib::fuzzy {
 
 // DfaMatcher adapter for implicit DFA implementation
-template <typename Traits>
-struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
+template <typename Traits> struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
     using Base = DfaSteppingBase<Traits>;
 
     using StateType = typename Base::StateType;
-    using EdgeType  = uint32_t; // Just the raw u32 character value
+    using EdgeType = uint32_t; // Just the raw u32 character value
 
     using StateParamType = const StateType&;
 
     using Base::_u32_str;
-    using Base::max_edits;
-    using Base::start;
-    using Base::match_edit_distance;
-    using Base::step;
+    using Base::can_match;
     using Base::can_wildcard_step;
     using Base::is_match;
-    using Base::can_match;
+    using Base::match_edit_distance;
+    using Base::max_edits;
+    using Base::start;
+    using Base::step;
 
     std::span<const char>     _target_as_utf8;
     std::span<const uint32_t> _target_utf8_char_offsets;
     const bool                _is_cased;
     const bool                _is_prefix;
 
-    ImplicitDfaMatcher(std::span<const uint32_t> u32_str,
-                       std::span<const char>     target_as_utf8,
-                       std::span<const uint32_t> target_utf8_char_offsets,
-                       bool is_cased,
-                       bool is_prefix) noexcept
+    ImplicitDfaMatcher(std::span<const uint32_t> u32_str, std::span<const char> target_as_utf8,
+                       std::span<const uint32_t> target_utf8_char_offsets, bool is_cased, bool is_prefix) noexcept
         : Base(u32_str),
           _target_as_utf8(target_as_utf8),
           _target_utf8_char_offsets(target_utf8_char_offsets),
           _is_cased(is_cased),
-          _is_prefix(is_prefix)
-    {}
+          _is_prefix(is_prefix) {}
 
     // start, is_match, can_match, match_edit_distance are all provided by base type
 
@@ -63,8 +59,7 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
         return false;
     }
 
-    template <typename F>
-    void for_each_char(const StateType& state, F&& f) const noexcept(noexcept(f(uint32_t{}))) {
+    template <typename F> void for_each_char(const StateType& state, F&& f) const noexcept(noexcept(f(uint32_t{}))) {
         for (uint32_t i = 0; i < state.size(); ++i) {
             const auto idx = state.index(i);
             if ((idx < _u32_str.size())) [[likely]] {
@@ -74,27 +69,17 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
     }
 
     bool has_explicit_higher_out_edge(const StateType& state, uint32_t ch) const noexcept {
-        return has_any_char_matching(state, [ch](uint32_t state_ch) noexcept {
-            return state_ch > ch;
-        });
+        return has_any_char_matching(state, [ch](uint32_t state_ch) noexcept { return state_ch > ch; });
     }
 
     bool has_higher_out_edge(const StateType& state, uint32_t mch) const noexcept {
         return (has_explicit_higher_out_edge(state, mch) || can_wildcard_step(state));
     }
-    StateType match_input(const StateType& state, uint32_t mch) const noexcept {
-        return step(state, mch);
-    }
-    bool valid_state(const StateType& state) const noexcept {
-        return !state.empty();
-    }
-    StateType match_wildcard(const StateType& state) const noexcept {
-        return step(state, WILDCARD);
-    }
-    bool has_exact_explicit_out_edge(const StateType& state, uint32_t ch) const noexcept {
-        return has_any_char_matching(state, [ch](uint32_t state_ch) noexcept {
-            return state_ch == ch;
-        });
+    StateType match_input(const StateType& state, uint32_t mch) const noexcept { return step(state, mch); }
+    bool      valid_state(const StateType& state) const noexcept { return !state.empty(); }
+    StateType match_wildcard(const StateType& state) const noexcept { return step(state, WILDCARD); }
+    bool      has_exact_explicit_out_edge(const StateType& state, uint32_t ch) const noexcept {
+        return has_any_char_matching(state, [ch](uint32_t state_ch) noexcept { return state_ch == ch; });
     }
     EdgeType lowest_higher_explicit_out_edge(const StateType& state, uint32_t ch) const noexcept {
         uint32_t min_ch = UINT32_MAX;
@@ -107,21 +92,13 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
     }
     EdgeType smallest_explicit_out_edge(const StateType& state) const noexcept {
         uint32_t min_ch = UINT32_MAX;
-        for_each_char(state, [&min_ch](uint32_t state_ch) noexcept {
-            min_ch = std::min(min_ch, state_ch);
-        });
+        for_each_char(state, [&min_ch](uint32_t state_ch) noexcept { min_ch = std::min(min_ch, state_ch); });
         return min_ch;
     }
-    bool valid_edge(EdgeType edge) const noexcept {
-        return edge != UINT32_MAX;
-    }
-    uint32_t edge_to_u32char(EdgeType edge) const noexcept {
-        return edge;
-    }
-    StateType edge_to_state(const StateType& state, EdgeType edge) const noexcept {
-        return step(state, edge);
-    }
-    bool implies_exact_match_suffix(const StateType& state) const noexcept {
+    bool      valid_edge(EdgeType edge) const noexcept { return edge != UINT32_MAX; }
+    uint32_t  edge_to_u32char(EdgeType edge) const noexcept { return edge; }
+    StateType edge_to_state(const StateType& state, EdgeType edge) const noexcept { return step(state, edge); }
+    bool      implies_exact_match_suffix(const StateType& state) const noexcept {
         // Only one entry in the sparse matrix row and it implies no edits can be done.
         // I.e. only way to match the target string suffix is to match it _exactly_.
         return (state.size() == 1 && state.cost(0) == max_edits());
@@ -140,29 +117,30 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
 };
 
 template <typename Traits>
-LevenshteinDfa::MatchResult
-ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str) const {
-    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased, _is_prefix);
+LevenshteinDfa::MatchResult ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str) const {
+    ImplicitDfaMatcher<Traits> matcher(
+        _u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased, _is_prefix);
     return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str);
 }
 
 template <typename Traits>
-LevenshteinDfa::MatchResult
-ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::string& successor_out) const {
-    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased, _is_prefix);
+LevenshteinDfa::MatchResult ImplicitLevenshteinDfa<Traits>::match(
+    std::string_view u8str, std::string& successor_out) const {
+    ImplicitDfaMatcher<Traits> matcher(
+        _u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased, _is_prefix);
     return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str, successor_out);
 }
 
 template <typename Traits>
-LevenshteinDfa::MatchResult
-ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::vector<uint32_t>& successor_out) const {
-    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased, _is_prefix);
+LevenshteinDfa::MatchResult ImplicitLevenshteinDfa<Traits>::match(
+    std::string_view u8str, std::vector<uint32_t>& successor_out) const {
+    ImplicitDfaMatcher<Traits> matcher(
+        _u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased, _is_prefix);
     return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str, successor_out);
 }
 
-template <typename Traits>
-void ImplicitLevenshteinDfa<Traits>::dump_as_graphviz(std::ostream&) const {
+template <typename Traits> void ImplicitLevenshteinDfa<Traits>::dump_as_graphviz(std::ostream&) const {
     throw std::runtime_error("Graphviz output not available for implicit Levenshtein DFA");
 }
 
-}
+} // namespace vespalib::fuzzy

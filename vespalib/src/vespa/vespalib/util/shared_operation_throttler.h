@@ -2,10 +2,12 @@
 #pragma once
 
 #include "time.h"
+
+#include <limits.h>
+
 #include <functional>
 #include <memory>
 #include <string>
-#include <limits.h>
 
 namespace vespalib {
 
@@ -45,16 +47,13 @@ public:
     class Token {
         SharedOperationThrottler* _throttler;
         uint64_t                  _operation_resource_usage;
+
     public:
         constexpr Token(SharedOperationThrottler* throttler, uint64_t operation_resource_usage, TokenCtorTag) noexcept
-            : _throttler(throttler),
-              _operation_resource_usage(operation_resource_usage)
-        {}
+            : _throttler(throttler), _operation_resource_usage(operation_resource_usage) {}
         constexpr Token() noexcept : _throttler(nullptr), _operation_resource_usage(0) {}
         constexpr Token(Token&& rhs) noexcept
-            : _throttler(rhs._throttler),
-              _operation_resource_usage(rhs._operation_resource_usage)
-        {
+            : _throttler(rhs._throttler), _operation_resource_usage(rhs._operation_resource_usage) {
             rhs._throttler = nullptr;
             rhs._operation_resource_usage = 0;
         }
@@ -65,21 +64,19 @@ public:
         Token& operator=(const Token&) = delete;
 
         [[nodiscard]] constexpr bool valid() const noexcept { return (_throttler != nullptr); }
-        void reset() noexcept;
+        void                         reset() noexcept;
     };
 
     virtual ~SharedOperationThrottler() = default;
 
     // Acquire a valid throttling token, uninterruptedly blocking until one can be obtained.
     [[nodiscard]] virtual Token blocking_acquire_one(uint64_t operation_resource_usage) noexcept = 0;
-    [[nodiscard]] Token blocking_acquire_one() noexcept {
-        return blocking_acquire_one(0);
-    }
+    [[nodiscard]] Token         blocking_acquire_one() noexcept { return blocking_acquire_one(0); }
     // Attempt to acquire a valid throttling token, waiting up to `timeout` for one to be
     // available. If the deadline is reached without any tokens becoming available, an
     // invalid token will be returned.
-    [[nodiscard]] virtual Token blocking_acquire_one(vespalib::steady_time deadline,
-                                                     uint64_t operation_resource_usage) noexcept = 0;
+    [[nodiscard]] virtual Token blocking_acquire_one(
+        vespalib::steady_time deadline, uint64_t operation_resource_usage) noexcept = 0;
     [[nodiscard]] Token blocking_acquire_one(vespalib::steady_time deadline) noexcept {
         return blocking_acquire_one(deadline, 0);
     }
@@ -87,9 +84,7 @@ public:
     // An invalid token will be returned if none is available. Never blocks (other than
     // when contending for the internal throttler mutex).
     [[nodiscard]] virtual Token try_acquire_one(uint64_t operation_resource_usage) noexcept = 0;
-    [[nodiscard]] Token try_acquire_one() noexcept {
-        return try_acquire_one(0);
-    }
+    [[nodiscard]] Token         try_acquire_one() noexcept { return try_acquire_one(0); }
 
     // May return 0, in which case the window size is unlimited.
     [[nodiscard]] virtual uint32_t current_window_size() const noexcept = 0;
@@ -103,18 +98,18 @@ public:
     [[nodiscard]] virtual uint64_t max_resource_usage() const noexcept = 0;
 
     struct DynamicThrottleParams {
-        uint32_t window_size_increment      = 20;
-        uint32_t min_window_size            = 20;
-        uint32_t max_window_size            = INT_MAX; // signed max to be 1-1 compatible with Java defaults
-        double resize_rate                  = 3.0;
-        double window_size_decrement_factor = 1.2;
-        double window_size_backoff          = 0.95;
+        uint32_t window_size_increment = 20;
+        uint32_t min_window_size = 20;
+        uint32_t max_window_size = INT_MAX; // signed max to be 1-1 compatible with Java defaults
+        double   resize_rate = 3.0;
+        double   window_size_decrement_factor = 1.2;
+        double   window_size_backoff = 0.95;
 
         // Soft limit of some undefined unit of resource usage. The limit is soft in
         // that at least 1 operation must always be possible to schedule, even if this
         // single operation by itself exceeds the usage limit. A limit of 0 means no
         // limit is enforced.
-        uint64_t resource_usage_soft_limit  = 0;
+        uint64_t resource_usage_soft_limit = 0;
 
         bool operator==(const DynamicThrottleParams&) const noexcept = default;
         bool operator!=(const DynamicThrottleParams&) const noexcept = default;
@@ -132,11 +127,12 @@ public:
 
     // Creates a throttler that uses a DynamicThrottlePolicy under the hood
     static std::unique_ptr<SharedOperationThrottler> make_dynamic_throttler(const DynamicThrottleParams& params);
-    static std::unique_ptr<SharedOperationThrottler> make_dynamic_throttler(const DynamicThrottleParams& params,
-                                                                            std::function<steady_time()> time_provider);
+    static std::unique_ptr<SharedOperationThrottler> make_dynamic_throttler(
+        const DynamicThrottleParams& params, std::function<steady_time()> time_provider);
+
 private:
     // Exclusively called from a valid Token. Thread safe.
     virtual void release_one(uint64_t operation_resource_usage) noexcept = 0;
 };
 
-}
+} // namespace vespalib

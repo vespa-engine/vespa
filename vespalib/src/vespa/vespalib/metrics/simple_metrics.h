@@ -9,11 +9,12 @@
 #include "label.h"
 #include "metric_id.h"
 #include "metrics_manager.h"
-#include "point_builder.h"
 #include "point.h"
+#include "point_builder.h"
 #include "producer.h"
 #include "simple_metrics_manager.h"
 #include "snapshots.h"
+
 #include <chrono>
 #include <memory>
 #include <string>

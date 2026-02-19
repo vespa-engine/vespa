@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "type_traits.h"
-#include <vespa/vespalib/data/slime/slime.h>
+
 #include <vespa/vespalib/data/simple_buffer.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib::slime::convenience;
 using namespace vespalib::slime::binary_format;
@@ -16,14 +17,14 @@ const uint32_t TYPE_LIMIT = 8;     // 3 bits for type
 const uint32_t META_LIMIT = 32;    // 5 bits for meta
 const uint32_t MAX_CMPR_SIZE = 10; // 70 bits
 const uint32_t MAX_NUM_SIZE = 8;   // int64_t or double
-const uint32_t HEX_COUNT  = 25;    // bytes per line in hex dump
+const uint32_t HEX_COUNT = 25;     // bytes per line in hex dump
 
 //-----------------------------------------------------------------------------
 
 struct MemCmp {
     Memory memory;
-    explicit MemCmp(const Memory &mem) : memory(mem) {}
-    bool operator==(const MemCmp &rhs) const {
+    explicit MemCmp(const Memory& mem) : memory(mem) {}
+    bool operator==(const MemCmp& rhs) const {
         if (memory.size != rhs.memory.size) {
             return false;
         }
@@ -36,7 +37,7 @@ struct MemCmp {
     }
 };
 
-std::ostream &operator<<(std::ostream &os, const MemCmp &obj) {
+std::ostream& operator<<(std::ostream& os, const MemCmp& obj) {
     uint32_t written = 0;
     os << "size: " << obj.memory.size << "(bytes)" << std::endl;
     for (size_t i = 0; i < obj.memory.size; ++i, ++written) {
@@ -58,7 +59,7 @@ void verify_cmpr_ulong(uint64_t value, SimpleBuffer expect) {
     SimpleBuffer buf1;
     SimpleBuffer buf2;
     { // use direct low-level encode
-        char tmp[MAX_CMPR_SIZE];
+        char     tmp[MAX_CMPR_SIZE];
         uint32_t len = encode_cmpr_ulong(tmp, value);
         for (size_t i = 0; i < len; ++i) {
             buf1.add(tmp[i]);
@@ -80,8 +81,8 @@ void verify_cmpr_ulong(uint64_t value, SimpleBuffer expect) {
 
 //-----------------------------------------------------------------------------
 
-void verifyMultiEncode(const Slime & slime, const SimpleBuffer &expect) {
-    size_t cnt = 5;
+void verifyMultiEncode(const Slime& slime, const SimpleBuffer& expect) {
+    size_t                    cnt = 5;
     std::vector<SimpleBuffer> buffers(cnt);
     BinaryFormat::encode(slime, buffers[0]);
     for (size_t i = 1; i < cnt; ++i) {
@@ -96,74 +97,46 @@ void verifyMultiEncode(const Slime & slime, const SimpleBuffer &expect) {
 //-----------------------------------------------------------------------------
 
 namespace {
-template <typename T>
-void encodeBasic(OutputWriter &out,
-                 const typename TypeTraits<T>::PassType &value);
+template <typename T> void encodeBasic(OutputWriter& out, const typename TypeTraits<T>::PassType& value);
 
-template <>
-void encodeBasic<BOOL>(OutputWriter &out, const bool &value)
-{
+template <> void encodeBasic<BOOL>(OutputWriter& out, const bool& value) {
     out.write(encode_type_and_meta(BOOL::ID, value ? 1 : 0));
 }
 
-template <> void encodeBasic<LONG>(OutputWriter &out, const int64_t &value)
-{
+template <> void encodeBasic<LONG>(OutputWriter& out, const int64_t& value) {
     write_type_and_bytes<false>(out, LONG::ID, encode_zigzag(value));
 }
 
-template <> void encodeBasic<DOUBLE>(OutputWriter &out, const double &value)
-{
+template <> void encodeBasic<DOUBLE>(OutputWriter& out, const double& value) {
     write_type_and_bytes<true>(out, DOUBLE::ID, encode_double(value));
 }
 
-template <> void encodeBasic<STRING>(OutputWriter &out, const Memory &value)
-{
+template <> void encodeBasic<STRING>(OutputWriter& out, const Memory& value) {
     write_type_and_size(out, STRING::ID, value.size);
     out.write(value.data, value.size);
 }
 
-template <> void encodeBasic<DATA>(OutputWriter &out, const Memory &value)
-{
+template <> void encodeBasic<DATA>(OutputWriter& out, const Memory& value) {
     write_type_and_size(out, DATA::ID, value.size);
     out.write(value.data, value.size);
 }
-} // namespace <unnamed>
+} // namespace
 
 //-----------------------------------------------------------------------------
 
-template <typename T>
-void
-setSlimeValue(Slime& slime, const typename TypeTraits<T>::PassType &value);
+template <typename T> void setSlimeValue(Slime& slime, const typename TypeTraits<T>::PassType& value);
 
-template <>
-void
-setSlimeValue<BOOL>(Slime& slime, const TypeTraits<BOOL>::PassType &value) {
-    slime.setBool(value);
-}
-template <>
-void
-setSlimeValue<LONG>(Slime& slime, const TypeTraits<LONG>::PassType &value) {
-    slime.setLong(value);
-}
-template <>
-void
-setSlimeValue<DOUBLE>(Slime& slime, const TypeTraits<DOUBLE>::PassType &value) {
+template <> void setSlimeValue<BOOL>(Slime& slime, const TypeTraits<BOOL>::PassType& value) { slime.setBool(value); }
+template <> void setSlimeValue<LONG>(Slime& slime, const TypeTraits<LONG>::PassType& value) { slime.setLong(value); }
+template <> void setSlimeValue<DOUBLE>(Slime& slime, const TypeTraits<DOUBLE>::PassType& value) {
     slime.setDouble(value);
 }
-template <>
-void
-setSlimeValue<STRING>(Slime& slime, const TypeTraits<STRING>::PassType &value) {
+template <> void setSlimeValue<STRING>(Slime& slime, const TypeTraits<STRING>::PassType& value) {
     slime.setString(value);
 }
-template <>
-void
-setSlimeValue<DATA>(Slime& slime, const TypeTraits<DATA>::PassType &value) {
-    slime.setData(value);
-}
+template <> void setSlimeValue<DATA>(Slime& slime, const TypeTraits<DATA>::PassType& value) { slime.setData(value); }
 
-
-template <typename T>
-void verifyBasic(const typename TypeTraits<T>::PassType &value) {
+template <typename T> void verifyBasic(const typename TypeTraits<T>::PassType& value) {
     Slime slime;
     setSlimeValue<T>(slime, value);
     SimpleBuffer expect;
@@ -202,15 +175,11 @@ TEST(SlimeBinaryFormatTest, testZigZagConversion) {
     EXPECT_EQ(2000UL, encode_zigzag(1000L));
     EXPECT_EQ(1000L, decode_zigzag(encode_zigzag(1000L)));
 
-    EXPECT_EQ(0xffffffffffffffffUL,
-               encode_zigzag(0x8000000000000000L));
-    EXPECT_EQ(int64_t(0x8000000000000000L),
-               decode_zigzag(encode_zigzag(0x8000000000000000L)));
+    EXPECT_EQ(0xffffffffffffffffUL, encode_zigzag(0x8000000000000000L));
+    EXPECT_EQ(int64_t(0x8000000000000000L), decode_zigzag(encode_zigzag(0x8000000000000000L)));
 
-    EXPECT_EQ(0xfffffffffffffffeUL,
-               encode_zigzag(0x7fffffffffffffffL));
-    EXPECT_EQ(0x7fffffffffffffffL,
-               decode_zigzag(encode_zigzag(0x7fffffffffffffffL)));
+    EXPECT_EQ(0xfffffffffffffffeUL, encode_zigzag(0x7fffffffffffffffL));
+    EXPECT_EQ(0x7fffffffffffffffL, decode_zigzag(encode_zigzag(0x7fffffffffffffffL)));
 }
 
 TEST(SlimeBinaryFormatTest, testDoubleConversion) {
@@ -247,10 +216,8 @@ TEST(SlimeBinaryFormatTest, testCmprUlong) {
     // check min/max values for different byte counts
     for (uint32_t n = 1; n <= MAX_CMPR_SIZE; ++n) {
         SCOPED_TRACE(vespalib::make_string("n = %d", n));
-        uint64_t min = (n == 1) ? 0x00
-                       : (1ULL << ((n - 1) * 7));
-        uint64_t max = (n == MAX_CMPR_SIZE) ? 0xffffffffffffffff
-                       : (1ULL << (n * 7)) - 1;
+        uint64_t     min = (n == 1) ? 0x00 : (1ULL << ((n - 1) * 7));
+        uint64_t     max = (n == MAX_CMPR_SIZE) ? 0xffffffffffffffff : (1ULL << (n * 7)) - 1;
         SimpleBuffer expect_min;
         SimpleBuffer expect_max;
         for (uint32_t i = 0; i < n; ++i) {
@@ -277,7 +244,7 @@ TEST(SlimeBinaryFormatTest, testCmprUlong) {
     for (int mul = 1; mul <= 15; ++mul) { // 8(i) * 15(mul) = 120 <= 127 = 0x7f
         SCOPED_TRACE(vespalib::make_string("mul = %d", mul));
         SimpleBuffer expect;
-        uint64_t value = 0;
+        uint64_t     value = 0;
         for (uint32_t i = 0; i < MAX_CMPR_SIZE - 1; ++i) {
             value |= (uint64_t(i * mul) << (i * 7));
             if (i < MAX_CMPR_SIZE - 2) {
@@ -311,9 +278,9 @@ TEST(SlimeBinaryFormatTest, testTypeAndSize) {
             EXPECT_EQ(MemCmp(expect.get()), MemCmp(actual.get()));
             {
                 InputReader input(expect);
-                char byte = input.read();
-                uint32_t decodedType = decode_type(byte);
-                uint64_t decodedSize = read_size(input, decode_meta(byte));
+                char        byte = input.read();
+                uint32_t    decodedType = decode_type(byte);
+                uint64_t    decodedSize = read_size(input, decode_meta(byte));
                 EXPECT_EQ(type, decodedType);
                 EXPECT_EQ(size, decodedSize);
                 EXPECT_EQ(input.get_offset(), actual.get().size);
@@ -325,39 +292,32 @@ TEST(SlimeBinaryFormatTest, testTypeAndSize) {
 
 namespace {
 
-uint64_t build_bits(uint32_t type, uint32_t n, uint32_t pre, bool hi,
-                    SimpleBuffer &expect)
-{
+uint64_t build_bits(uint32_t type, uint32_t n, uint32_t pre, bool hi, SimpleBuffer& expect) {
     uint64_t value = 0;
     expect.add(encode_type_and_meta(type, n));
     for (uint32_t i = 0; i < n; ++i) {
         char byte = (i < pre) ? 0x00 : (0x11 * (i - pre + 1));
         expect.add(byte);
         int shift = hi ? ((7 - i) * 8) : (i * 8);
-        value |= ((uint64_t(byte)&0xff) << shift);
+        value |= ((uint64_t(byte) & 0xff) << shift);
     }
     return value;
 }
 
-} // namespace <unnamed>
+} // namespace
 
 TEST(SlimeBinaryFormatTest, testTypeAndBytes) {
     for (uint32_t type = 0; type < TYPE_LIMIT; ++type) {
-        SCOPED_TRACE(vespalib::make_string("type = %d",
-                                           type));
+        SCOPED_TRACE(vespalib::make_string("type = %d", type));
         for (uint32_t n = 0; n <= MAX_NUM_SIZE; ++n) {
-            SCOPED_TRACE(vespalib::make_string("n = %d",
-                                               n));
+            SCOPED_TRACE(vespalib::make_string("n = %d", n));
             for (uint32_t pre = 0; (pre == 0) || (pre < n); ++pre) {
-                SCOPED_TRACE(vespalib::make_string("pre = %d",
-                                                   pre));
+                SCOPED_TRACE(vespalib::make_string("pre = %d", pre));
                 for (int hi = 0; hi < 2; ++hi) {
-                    SCOPED_TRACE(vespalib::make_string("hi = %d",
-                                                       hi));
+                    SCOPED_TRACE(vespalib::make_string("hi = %d", hi));
                     SimpleBuffer expect;
                     SimpleBuffer actual;
-                    uint64_t bits = build_bits(type, n, pre,
-                                               (hi != 0), expect);
+                    uint64_t     bits = build_bits(type, n, pre, (hi != 0), expect);
                     {
                         OutputWriter out(actual, 32);
                         if (hi != 0) {
@@ -369,8 +329,8 @@ TEST(SlimeBinaryFormatTest, testTypeAndBytes) {
                     EXPECT_EQ(MemCmp(expect.get()), MemCmp(actual.get()));
                     {
                         InputReader input(expect);
-                        uint32_t size = decode_meta(input.read());
-                        uint64_t decodedBits;
+                        uint32_t    size = decode_meta(input.read());
+                        uint64_t    decodedBits;
                         if (hi != 0) {
                             decodedBits = read_bytes<true>(input, size);
                         } else {
@@ -387,13 +347,13 @@ TEST(SlimeBinaryFormatTest, testTypeAndBytes) {
 }
 
 TEST(SlimeBinaryFormatTest, testEmpty) {
-    Slime slime;
+    Slime        slime;
     SimpleBuffer expect;
     SimpleBuffer actual;
     {
         OutputWriter out(expect, 32);
         write_cmpr_ulong(out, 0); // num symbols
-        out.write(0);       // nix
+        out.write(0);             // nix
     }
     BinaryFormat::encode(slime, actual);
     EXPECT_EQ(MemCmp(expect.get()), MemCmp(actual.get()));
@@ -434,10 +394,10 @@ TEST(SlimeBinaryFormatTest, testBasic) {
 }
 
 TEST(SlimeBinaryFormatTest, testArray) {
-    Slime slime;
+    Slime        slime;
     SimpleBuffer expect;
     SimpleBuffer actual;
-    Cursor &c = slime.setArray();
+    Cursor&      c = slime.setArray();
     c.addNix();
     c.addBool(true);
     c.addLong(5);
@@ -461,10 +421,10 @@ TEST(SlimeBinaryFormatTest, testArray) {
 }
 
 TEST(SlimeBinaryFormatTest, testObject) {
-    Slime slime;
+    Slime        slime;
     SimpleBuffer expect;
     SimpleBuffer actual;
-    Cursor &c = slime.setObject();
+    Cursor&      c = slime.setObject();
     c.setNix("a");
     c.setBool("b", true);
     c.setLong("c", 5);
@@ -508,16 +468,16 @@ TEST(SlimeBinaryFormatTest, testObject) {
 TEST(SlimeBinaryFormatTest, testNesting) {
     SimpleBuffer expect;
     SimpleBuffer actual;
-    Slime slime;
+    Slime        slime;
     {
-        Cursor &c1 = slime.setObject();
+        Cursor& c1 = slime.setObject();
         {
             c1.setLong("bar", 10);
             {
-                Cursor &c2 = c1.setArray("foo");
-                c2.addLong(20);                 // [0]
+                Cursor& c2 = c1.setArray("foo");
+                c2.addLong(20); // [0]
                 {
-                    Cursor &c3 = c2.addObject(); // [1]
+                    Cursor& c3 = c2.addObject(); // [1]
                     c3.setLong("answer", 42);
                 }
             }
@@ -525,21 +485,21 @@ TEST(SlimeBinaryFormatTest, testNesting) {
     }
     {
         OutputWriter out(expect, 32);
-        write_cmpr_ulong(out, 3);   // num symbols
+        write_cmpr_ulong(out, 3); // num symbols
         write_cmpr_ulong(out, 3);
-        out.write("bar", 3);    // 0
+        out.write("bar", 3); // 0
         write_cmpr_ulong(out, 3);
-        out.write("foo", 3);    // 1
+        out.write("foo", 3); // 1
         write_cmpr_ulong(out, 6);
         out.write("answer", 6); // 2
         write_type_and_size(out, OBJECT::ID, 2);
-        write_cmpr_ulong(out, 0);   // bar
+        write_cmpr_ulong(out, 0); // bar
         encodeBasic<LONG>(out, 10);
-        write_cmpr_ulong(out, 1);   // foo
+        write_cmpr_ulong(out, 1); // foo
         write_type_and_size(out, ARRAY::ID, 2);
         encodeBasic<LONG>(out, 20);
         write_type_and_size(out, OBJECT::ID, 1);
-        write_cmpr_ulong(out, 2);   // answer
+        write_cmpr_ulong(out, 2); // answer
         encodeBasic<LONG>(out, 42);
     }
     BinaryFormat::encode(slime, actual);
@@ -550,17 +510,17 @@ TEST(SlimeBinaryFormatTest, testNesting) {
 TEST(SlimeBinaryFormatTest, testSymbolReuse) {
     SimpleBuffer expect;
     SimpleBuffer actual;
-    Slime slime;
+    Slime        slime;
     {
-        Cursor &c1 = slime.setArray();
+        Cursor& c1 = slime.setArray();
         {
             {
-                Cursor &c2 = c1.addObject();
+                Cursor& c2 = c1.addObject();
                 c2.setLong("foo", 10);
                 c2.setLong("bar", 20);
             }
             {
-                Cursor &c2 = c1.addObject();
+                Cursor& c2 = c1.addObject();
                 c2.setLong("foo", 100);
                 c2.setLong("bar", 200);
             }
@@ -568,21 +528,21 @@ TEST(SlimeBinaryFormatTest, testSymbolReuse) {
     }
     {
         OutputWriter out(expect, 32);
-        write_cmpr_ulong(out, 2);   // num symbols
+        write_cmpr_ulong(out, 2); // num symbols
         write_cmpr_ulong(out, 3);
         out.write("foo", 3); // 0
         write_cmpr_ulong(out, 3);
         out.write("bar", 3); // 1
         write_type_and_size(out, ARRAY::ID, 2);
         write_type_and_size(out, OBJECT::ID, 2);
-        write_cmpr_ulong(out, 0);   // foo
+        write_cmpr_ulong(out, 0); // foo
         encodeBasic<LONG>(out, 10);
-        write_cmpr_ulong(out, 1);   // bar
+        write_cmpr_ulong(out, 1); // bar
         encodeBasic<LONG>(out, 20);
         write_type_and_size(out, OBJECT::ID, 2);
-        write_cmpr_ulong(out, 0);   // foo
+        write_cmpr_ulong(out, 0); // foo
         encodeBasic<LONG>(out, 100);
-        write_cmpr_ulong(out, 1);   // bar
+        write_cmpr_ulong(out, 1); // bar
         encodeBasic<LONG>(out, 200);
     }
     BinaryFormat::encode(slime, actual);
@@ -619,7 +579,7 @@ TEST(SlimeBinaryFormatTest, testOptionalDecodeOrder) {
     }
     Slime slime;
     EXPECT_TRUE(BinaryFormat::decode(data.get(), slime));
-    Cursor &c = slime.get();
+    Cursor& c = slime.get();
     EXPECT_TRUE(slime.get().valid());
     EXPECT_EQ(OBJECT::ID, slime.get().type().getId());
     EXPECT_EQ(5u, c.children());
@@ -631,7 +591,7 @@ TEST(SlimeBinaryFormatTest, testOptionalDecodeOrder) {
     EXPECT_TRUE(!c[5].valid()); // not ARRAY
 }
 
-Slime from_json(const std::string &json) {
+Slime from_json(const std::string& json) {
     Slime slime;
     EXPECT_TRUE(vespalib::slime::JsonFormat::decode(json, slime) > 0);
     return slime;

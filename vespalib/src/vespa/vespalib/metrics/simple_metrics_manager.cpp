@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "simple_metrics_manager.h"
+
 #include "simple_tick.h"
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -11,8 +13,7 @@ namespace metrics {
 
 using Guard = std::lock_guard<std::mutex>;
 
-SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config,
-                                           Tick::UP tick_supplier)
+SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig& config, Tick::UP tick_supplier)
     : _currentSamples(),
       _tickSupplier(std::move(tick_supplier)),
       _startTime(_tickSupplier->first()),
@@ -22,58 +23,43 @@ SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config,
       _firstBucket(0),
       _maxBuckets(config.sliding_window_seconds),
       _totalsBucket(0, _startTime, _startTime),
-      _thread(&SimpleMetricsManager::tickerLoop, this)
-{
-    if (_maxBuckets < 1) _maxBuckets = 1;
+      _thread(&SimpleMetricsManager::tickerLoop, this) {
+    if (_maxBuckets < 1)
+        _maxBuckets = 1;
     Point empty = pointFrom(PointMap());
     assert(empty.id() == 0);
 }
 
-SimpleMetricsManager::~SimpleMetricsManager()
-{
-    stopThread();
+SimpleMetricsManager::~SimpleMetricsManager() { stopThread(); }
+
+std::shared_ptr<MetricsManager> SimpleMetricsManager::create(const SimpleManagerConfig& config) {
+    return std::shared_ptr<MetricsManager>(new SimpleMetricsManager(config, std::make_unique<SimpleTick>()));
 }
 
-std::shared_ptr<MetricsManager>
-SimpleMetricsManager::create(const SimpleManagerConfig &config)
-{
-    return std::shared_ptr<MetricsManager>(
-            new SimpleMetricsManager(config, std::make_unique<SimpleTick>()));
+std::shared_ptr<MetricsManager> SimpleMetricsManager::createForTest(
+    const SimpleManagerConfig& config, Tick::UP tick_supplier) {
+    return std::shared_ptr<MetricsManager>(new SimpleMetricsManager(config, std::move(tick_supplier)));
 }
 
-std::shared_ptr<MetricsManager>
-SimpleMetricsManager::createForTest(const SimpleManagerConfig &config,
-                                    Tick::UP tick_supplier)
-{
-    return std::shared_ptr<MetricsManager>(
-            new SimpleMetricsManager(config, std::move(tick_supplier)));
-}
-
-Counter
-SimpleMetricsManager::counter(const std::string &name, const std::string &)
-{
+Counter SimpleMetricsManager::counter(const std::string& name, const std::string&) {
     MetricId mi = MetricId::from_name(name);
     _metricTypes.check(mi.id(), name, MetricTypes::MetricType::COUNTER);
     LOG(debug, "counter with metric name %s -> %zu", name.c_str(), mi.id());
     return Counter(shared_from_this(), mi);
 }
 
-Gauge
-SimpleMetricsManager::gauge(const std::string &name, const std::string &)
-{
+Gauge SimpleMetricsManager::gauge(const std::string& name, const std::string&) {
     MetricId mi = MetricId::from_name(name);
     _metricTypes.check(mi.id(), name, MetricTypes::MetricType::GAUGE);
     LOG(debug, "gauge with metric name %s -> %zu", name.c_str(), mi.id());
     return Gauge(shared_from_this(), mi);
 }
 
-Bucket
-SimpleMetricsManager::mergeBuckets()
-{
+Bucket SimpleMetricsManager::mergeBuckets() {
     Guard bucketsGuard(_bucketsLock);
     if (_buckets.size() > 0) {
         TimeStamp startTime = _buckets[_firstBucket].startTime;
-        Bucket merger(0, startTime, startTime);
+        Bucket    merger(0, startTime, startTime);
         for (size_t i = 0; i < _buckets.size(); i++) {
             size_t off = (_firstBucket + i) % _buckets.size();
             merger.merge(_buckets[off]);
@@ -85,16 +71,12 @@ SimpleMetricsManager::mergeBuckets()
     return Bucket(0, _startTime, _curTime);
 }
 
-Bucket
-SimpleMetricsManager::totalsBucket()
-{
+Bucket SimpleMetricsManager::totalsBucket() {
     Guard bucketsGuard(_bucketsLock);
     return _totalsBucket;
 }
 
-Snapshot
-SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
-{
+Snapshot SimpleMetricsManager::snapshotFrom(const Bucket& bucket) {
     std::vector<PointSnapshot> points;
 
     double s = bucket.startTime.count();
@@ -112,51 +94,44 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
     Snapshot snap(s, e);
     {
         for (size_t point_id = 0; point_id <= max_point_id; ++point_id) {
-            const PointMap &map = Point(point_id).as_map();
-            PointSnapshot point;
-            for (const PointMap::value_type &kv : map) {
+            const PointMap& map = Point(point_id).as_map();
+            PointSnapshot   point;
+            for (const PointMap::value_type& kv : map) {
                 point.dimensions.emplace_back(kv.first.as_name(), kv.second.as_value());
             }
             snap.add(point);
         }
     }
     for (const CounterAggregator& entry : bucket.counters) {
-        MetricId mi = entry.idx.first;
-        Point p = entry.idx.second;
-        size_t pi = p.id();
-        const std::string &name = mi.as_name();
-        CounterSnapshot val(name, snap.points()[pi], entry);
+        MetricId           mi = entry.idx.first;
+        Point              p = entry.idx.second;
+        size_t             pi = p.id();
+        const std::string& name = mi.as_name();
+        CounterSnapshot    val(name, snap.points()[pi], entry);
         snap.add(val);
     }
     for (const GaugeAggregator& entry : bucket.gauges) {
-        MetricId mi = entry.idx.first;
-        Point p = entry.idx.second;
-        size_t pi = p.id();
-        const std::string &name = mi.as_name();
-        GaugeSnapshot val(name, snap.points()[pi], entry);
+        MetricId           mi = entry.idx.first;
+        Point              p = entry.idx.second;
+        size_t             pi = p.id();
+        const std::string& name = mi.as_name();
+        GaugeSnapshot      val(name, snap.points()[pi], entry);
         snap.add(val);
     }
     return snap;
 }
 
-Snapshot
-SimpleMetricsManager::snapshot()
-{
+Snapshot SimpleMetricsManager::snapshot() {
     Bucket merged = mergeBuckets();
     return snapshotFrom(merged);
 }
 
-Snapshot
-SimpleMetricsManager::totalSnapshot()
-{
+Snapshot SimpleMetricsManager::totalSnapshot() {
     Bucket totals = totalsBucket();
     return snapshotFrom(totals);
 }
 
-void
-SimpleMetricsManager::collectCurrentSamples(TimeStamp prev,
-                                            TimeStamp curr)
-{
+void SimpleMetricsManager::collectCurrentSamples(TimeStamp prev, TimeStamp curr) {
     CurrentSamples samples;
     _currentSamples.extract(samples);
     Bucket newBucket(++_collectCnt, prev, curr);
@@ -172,38 +147,26 @@ SimpleMetricsManager::collectCurrentSamples(TimeStamp prev,
     }
 }
 
-Dimension
-SimpleMetricsManager::dimension(const std::string &name)
-{
+Dimension SimpleMetricsManager::dimension(const std::string& name) {
     Dimension dim = Dimension::from_name(name);
     LOG(debug, "dimension name %s -> %zu", name.c_str(), dim.id());
     return dim;
 }
 
-Label
-SimpleMetricsManager::label(const std::string &value)
-{
+Label SimpleMetricsManager::label(const std::string& value) {
     Label l = Label::from_value(value);
     LOG(debug, "label value %s -> %zu", value.c_str(), l.id());
     return l;
 }
 
-PointBuilder
-SimpleMetricsManager::pointBuilder(Point from)
-{
-    const PointMap &map = from.as_map();
+PointBuilder SimpleMetricsManager::pointBuilder(Point from) {
+    const PointMap& map = from.as_map();
     return PointBuilder(shared_from_this(), map);
 }
 
-Point
-SimpleMetricsManager::pointFrom(PointMap map)
-{
-    return Point::from_map(std::move(map));
-}
+Point SimpleMetricsManager::pointFrom(PointMap map) { return Point::from_map(std::move(map)); }
 
-void
-SimpleMetricsManager::tickerLoop()
-{
+void SimpleMetricsManager::tickerLoop() {
     while (_tickSupplier->alive()) {
         TimeStamp now = _tickSupplier->next(_curTime);
         if (_tickSupplier->alive()) {
@@ -212,20 +175,16 @@ SimpleMetricsManager::tickerLoop()
     }
 }
 
-void
-SimpleMetricsManager::stopThread()
-{
+void SimpleMetricsManager::stopThread() {
     _tickSupplier->kill();
     _thread.join();
 }
 
-void
-SimpleMetricsManager::tick(TimeStamp now)
-{
+void SimpleMetricsManager::tick(TimeStamp now) {
     TimeStamp prev = _curTime;
     collectCurrentSamples(prev, now);
     _curTime = now;
 }
 
-} // namespace vespalib::metrics
+} // namespace metrics
 } // namespace vespalib

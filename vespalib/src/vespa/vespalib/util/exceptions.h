@@ -14,6 +14,7 @@
 
 #include "exception.h"
 #include "stringfmt.h"
+
 #include <memory>
 
 namespace vespalib {
@@ -67,35 +68,35 @@ class ExceptionWithPayload : public std::exception {
 public:
     class Anything {
     public:
-       using UP = std::unique_ptr<Anything>;
-       virtual ~Anything() = default;
+        using UP = std::unique_ptr<Anything>;
+        virtual ~Anything() = default;
     };
     explicit ExceptionWithPayload(std::string_view msg);
     ExceptionWithPayload(std::string_view msg, Anything::UP payload);
-    ExceptionWithPayload(ExceptionWithPayload &&) noexcept;
-    ExceptionWithPayload & operator = (ExceptionWithPayload &&) noexcept;
+    ExceptionWithPayload(ExceptionWithPayload&&) noexcept;
+    ExceptionWithPayload& operator=(ExceptionWithPayload&&) noexcept;
     ~ExceptionWithPayload() override;
-    void setPayload(Anything::UP payload) { _payload = std::move(payload); }
-    const char * what() const noexcept override;
+    void        setPayload(Anything::UP payload) { _payload = std::move(payload); }
+    const char* what() const noexcept override;
+
 private:
-    std::string _msg;
-    Anything::UP     _payload;
+    std::string  _msg;
+    Anything::UP _payload;
 };
 
 class OOMException : public ExceptionWithPayload {
 public:
-    explicit OOMException(std::string_view msg) : ExceptionWithPayload(msg) { }
-    OOMException(std::string_view msg, Anything::UP payload) : ExceptionWithPayload(msg, std::move(payload)) { }
+    explicit OOMException(std::string_view msg) : ExceptionWithPayload(msg) {}
+    OOMException(std::string_view msg, Anything::UP payload) : ExceptionWithPayload(msg, std::move(payload)) {}
 };
 
 /**
  * @brief Exception indicating the failure to listen for connections
  * on a socket.
  **/
-class PortListenException : public Exception
-{
+class PortListenException : public Exception {
 private:
-    int _port;
+    int         _port;
     std::string _protocol;
 
     std::string make_message(int port, std::string_view protocol, std::string_view msg);
@@ -103,16 +104,16 @@ private:
 public:
     PortListenException(int port, std::string_view protocol, std::string_view msg = "",
                         std::string_view location = "", int skipStack = 0);
-    PortListenException(int port, std::string_view protocol, const Exception &cause, std::string_view msg = "",
+    PortListenException(int port, std::string_view protocol, const Exception& cause, std::string_view msg = "",
                         std::string_view location = "", int skipStack = 0);
-    PortListenException(PortListenException &&) noexcept;
-    PortListenException & operator = (PortListenException &&) noexcept;
-    PortListenException(const PortListenException &);
-    PortListenException & operator = (const PortListenException &);
+    PortListenException(PortListenException&&) noexcept;
+    PortListenException& operator=(PortListenException&&) noexcept;
+    PortListenException(const PortListenException&);
+    PortListenException& operator=(const PortListenException&);
     ~PortListenException() override;
     VESPA_DEFINE_EXCEPTION_SPINE(PortListenException);
-    int get_port() const { return _port; }
-    const std::string &get_protocol() const { return _protocol; }
+    int                get_port() const { return _port; }
+    const std::string& get_protocol() const { return _protocol; }
 };
 
 //-----------------------------------------------------------------------------
@@ -122,18 +123,28 @@ public:
  **/
 class IoException : public Exception {
 public:
-    enum Type { UNSPECIFIED,
-                ILLEGAL_PATH, NO_PERMISSION, DISK_PROBLEM,
-                INTERNAL_FAILURE, NO_SPACE, NOT_FOUND, CORRUPT_DATA,
-                TOO_MANY_OPEN_FILES, DIRECTORY_HAVE_CONTENT, FILE_FULL,
-                ALREADY_EXISTS };
+    enum Type {
+        UNSPECIFIED,
+        ILLEGAL_PATH,
+        NO_PERMISSION,
+        DISK_PROBLEM,
+        INTERNAL_FAILURE,
+        NO_SPACE,
+        NOT_FOUND,
+        CORRUPT_DATA,
+        TOO_MANY_OPEN_FILES,
+        DIRECTORY_HAVE_CONTENT,
+        FILE_FULL,
+        ALREADY_EXISTS
+    };
 
     IoException(std::string_view msg, Type type, std::string_view location, int skipStack = 0);
-    IoException(std::string_view msg, Type type, const Exception& cause, std::string_view location, int skipStack = 0);
-    IoException(const IoException &);
-    IoException & operator =(const IoException &) = delete;
-    IoException(IoException &&) noexcept;
-    IoException & operator =(IoException &&) noexcept;
+    IoException(std::string_view msg, Type type, const Exception& cause, std::string_view location,
+                int skipStack = 0);
+    IoException(const IoException&);
+    IoException& operator=(const IoException&) = delete;
+    IoException(IoException&&) noexcept;
+    IoException& operator=(IoException&&) noexcept;
     ~IoException() override;
 
     VESPA_DEFINE_EXCEPTION_SPINE(IoException);
@@ -151,12 +162,13 @@ private:
 
 class SilenceUncaughtException : public ExceptionWithPayload::Anything {
 public:
-    SilenceUncaughtException(const SilenceUncaughtException &) = delete;
-    SilenceUncaughtException & operator = (const SilenceUncaughtException &) = delete;
-    SilenceUncaughtException(SilenceUncaughtException &&) noexcept = delete;
-    SilenceUncaughtException & operator=(SilenceUncaughtException &&) noexcept = delete;
-    SilenceUncaughtException(const std::exception & e);
+    SilenceUncaughtException(const SilenceUncaughtException&) = delete;
+    SilenceUncaughtException& operator=(const SilenceUncaughtException&) = delete;
+    SilenceUncaughtException(SilenceUncaughtException&&) noexcept = delete;
+    SilenceUncaughtException& operator=(SilenceUncaughtException&&) noexcept = delete;
+    SilenceUncaughtException(const std::exception& e);
     ~SilenceUncaughtException() override;
+
 private:
     std::terminate_handler _oldTerminate;
 };
@@ -176,7 +188,6 @@ private:
  * have an elevated chance of causing issues when being thrown across
  * code that is not completely exception safe.
  **/
-void rethrow_if_unsafe(const std::exception &e);
+void rethrow_if_unsafe(const std::exception& e);
 
-}
-
+} // namespace vespalib

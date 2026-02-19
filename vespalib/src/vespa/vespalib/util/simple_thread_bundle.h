@@ -3,8 +3,8 @@
 #pragma once
 
 #include "count_down_latch.h"
-#include "thread.h"
 #include "runnable.h"
+#include "thread.h"
 #include "thread_bundle.h"
 
 namespace vespalib {
@@ -19,8 +19,8 @@ namespace fixed_thread_bundle {
  **/
 struct Work {
     Runnable* const* targets;
-    size_t cnt;
-    CountDownLatch *latch;
+    size_t           cnt;
+    CountDownLatch*  latch;
     Work() noexcept : targets(nullptr), cnt(0), latch(nullptr) {}
 };
 
@@ -28,9 +28,9 @@ struct Work {
  * the subset of work to be done by a single thread.
  **/
 struct Part {
-    const Work &work;
-    size_t offset;
-    Part(const Work &w, size_t o) noexcept : work(w), offset(o) {}
+    const Work& work;
+    size_t      offset;
+    Part(const Work& w, size_t o) noexcept : work(w), offset(o) {}
     bool valid() const noexcept { return (offset < work.cnt); }
     void perform() const {
         if (valid()) {
@@ -44,14 +44,14 @@ struct Part {
  * countable signal path between threads.
  **/
 struct Signal {
-    bool valid;
-    size_t generation;
-    std::unique_ptr<std::mutex> monitor;
+    bool                                     valid;
+    size_t                                   generation;
+    std::unique_ptr<std::mutex>              monitor;
     std::unique_ptr<std::condition_variable> cond;
     Signal() noexcept;
-    Signal(Signal &&) noexcept = default;
+    Signal(Signal&&) noexcept = default;
     ~Signal();
-    size_t wait(size_t &localGen) const {
+    size_t wait(size_t& localGen) const {
         std::unique_lock guard(*monitor);
         while (localGen == generation) {
             cond->wait(guard);
@@ -78,14 +78,13 @@ struct Signal {
     }
 };
 
-} // namespace vespalib::fixed_thread_bundle
+} // namespace fixed_thread_bundle
 
 /**
  * A ThreadBundle implementation employing a fixed set of internal
  * threads. The internal Pool class can be used to recycle bundles.
  **/
-class SimpleThreadBundle : public ThreadBundle
-{
+class SimpleThreadBundle : public ThreadBundle {
 public:
     using Work = fixed_thread_bundle::Work;
     using Signal = fixed_thread_bundle::Signal;
@@ -94,42 +93,42 @@ public:
     using UP = std::unique_ptr<SimpleThreadBundle>;
     enum Strategy { USE_SIGNAL_LIST, USE_SIGNAL_TREE, USE_BROADCAST };
 
-    class Pool
-    {
+    class Pool {
     private:
-        std::mutex _lock;
-        size_t     _bundleSize;
-        init_fun_t _init_fun;
+        std::mutex                       _lock;
+        size_t                           _bundleSize;
+        init_fun_t                       _init_fun;
         std::vector<SimpleThreadBundle*> _bundles;
 
     public:
         class Guard {
         public:
-            explicit Guard(Pool & pool) : _bundle(pool.obtain()), _pool(pool) {}
-            Guard(const Guard &) = delete;
-            Guard & operator =(const Guard &) = delete;
+            explicit Guard(Pool& pool) : _bundle(pool.obtain()), _pool(pool) {}
+            Guard(const Guard&) = delete;
+            Guard& operator=(const Guard&) = delete;
             ~Guard() { _pool.release(std::move(_bundle)); }
-            SimpleThreadBundle & bundle() { return *_bundle; }
+            SimpleThreadBundle& bundle() { return *_bundle; }
+
         private:
-            SimpleThreadBundle::UP  _bundle;
-            Pool                   &_pool;
+            SimpleThreadBundle::UP _bundle;
+            Pool&                  _pool;
         };
         Pool(size_t bundleSize, init_fun_t init_fun);
         explicit Pool(size_t bundleSize) : Pool(bundleSize, Runnable::default_init_function) {}
         ~Pool();
         Guard getBundle() { return Guard(*this); }
-        //TODO Make private
+        // TODO Make private
         SimpleThreadBundle::UP obtain();
-        void release(SimpleThreadBundle::UP bundle);
+        void                   release(SimpleThreadBundle::UP bundle);
     };
 
 private:
     struct Worker : Runnable {
         using UP = std::unique_ptr<Worker>;
-        std::thread thread;
-        Signal &signal;
+        std::thread  thread;
+        Signal&      signal;
         Runnable::UP hook;
-        Worker(Signal &s, init_fun_t init_fun, Runnable::UP h);
+        Worker(Signal& s, init_fun_t init_fun, Runnable::UP h);
         void run() override;
     };
 
@@ -141,9 +140,8 @@ private:
 public:
     SimpleThreadBundle(size_t size, init_fun_t init_fun, Strategy strategy);
     SimpleThreadBundle(size_t size, Strategy strategy)
-      : SimpleThreadBundle(size, Runnable::default_init_function, strategy) {}
-    explicit SimpleThreadBundle(size_t size)
-            : SimpleThreadBundle(size, USE_SIGNAL_LIST) {}
+        : SimpleThreadBundle(size, Runnable::default_init_function, strategy) {}
+    explicit SimpleThreadBundle(size_t size) : SimpleThreadBundle(size, USE_SIGNAL_LIST) {}
     ~SimpleThreadBundle() override;
     size_t size() const override;
     using ThreadBundle::run;

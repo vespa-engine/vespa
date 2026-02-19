@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/slime/object_value.h>
-#include <vespa/vespalib/data/slime/array_value.h>
-#include <vespa/vespalib/data/slime/strfmt.h>
 #include <vespa/vespalib/data/simple_buffer.h>
-#include <vespa/vespalib/data/slime/symbol_table.h>
+#include <vespa/vespalib/data/slime/array_value.h>
 #include <vespa/vespalib/data/slime/basic_value.h>
-#include <type_traits>
+#include <vespa/vespalib/data/slime/object_value.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/slime/strfmt.h>
+#include <vespa/vespalib/data/slime/symbol_table.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <type_traits>
 
 #include <vespa/log/log.h>
 LOG_SETUP("slime_test");
@@ -16,18 +17,18 @@ LOG_SETUP("slime_test");
 using namespace vespalib::slime::convenience;
 
 TEST(SlimeTest, print_sizes) {
+    using vespalib::slime::ArrayValue;
+    using vespalib::slime::BasicBoolValue;
+    using vespalib::slime::BasicDataValue;
+    using vespalib::slime::BasicDoubleValue;
+    using vespalib::slime::BasicLongValue;
+    using vespalib::slime::BasicStringValue;
+    using vespalib::slime::NixValue;
+    using vespalib::slime::ObjectValue;
     using vespalib::slime::SymbolTable;
     using vespalib::slime::Value;
-    using vespalib::slime::NixValue;
-    using vespalib::slime::BasicBoolValue;
-    using vespalib::slime::BasicLongValue;
-    using vespalib::slime::BasicDoubleValue;
-    using vespalib::slime::BasicStringValue;
-    using vespalib::slime::BasicDataValue;
-    using vespalib::slime::ArrayValue;
-    using vespalib::slime::ObjectValue;
 
-    const char *pattern = "size of %s: %5u\n";
+    const char* pattern = "size of %s: %5u\n";
     fprintf(stderr, pattern, "Slime             ", sizeof(Slime));
     fprintf(stderr, pattern, "SymbolTable       ", sizeof(SymbolTable));
     fprintf(stderr, pattern, "Type              ", sizeof(Type));
@@ -58,9 +59,8 @@ TEST(SlimeTest, test_type_ids) {
 TEST(SlimeTest, test_empty) {
     Slime slime;
     for (int i = 0; i < 2; ++i) {
-        Cursor &cur = (i == 0 ?
-                       slime.get() :        // i = 0 -> empty object
-                       *vespalib::slime::NixValue::invalid()); // i = 1 -> invalid cursor
+        Cursor& cur = (i == 0 ? slime.get() :                      // i = 0 -> empty object
+                           *vespalib::slime::NixValue::invalid()); // i = 1 -> invalid cursor
         if (i == 0) {
             EXPECT_TRUE(cur.valid());
         } else {
@@ -115,7 +115,7 @@ TEST(SlimeTest, test_basic) {
     }
     { // STRING
         std::string str("string");
-        Slime slime;
+        Slime       slime;
         slime.setString(Memory(str));
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQ(vespalib::slime::STRING::ID, slime.get().type().getId());
@@ -123,7 +123,7 @@ TEST(SlimeTest, test_basic) {
     }
     { // DATA
         std::string data("data");
-        Slime slime;
+        Slime       slime;
         slime.setData(Memory(data));
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQ(vespalib::slime::DATA::ID, slime.get().type().getId());
@@ -132,8 +132,8 @@ TEST(SlimeTest, test_basic) {
 }
 
 TEST(SlimeTest, test_array) {
-    Slime slime;
-    Cursor &c = slime.setArray();
+    Slime   slime;
+    Cursor& c = slime.setArray();
     EXPECT_TRUE(slime.get().valid());
     EXPECT_EQ(vespalib::slime::ARRAY::ID, slime.get().type().getId());
     EXPECT_EQ(0u, c.children());
@@ -158,8 +158,8 @@ TEST(SlimeTest, test_array) {
 }
 
 TEST(SlimeTest, test_object) {
-    Slime slime;
-    Cursor &c = slime.setObject();
+    Slime   slime;
+    Cursor& c = slime.setObject();
     EXPECT_TRUE(slime.get().valid());
     EXPECT_EQ(vespalib::slime::OBJECT::ID, slime.get().type().getId());
     EXPECT_EQ(0u, c.children());
@@ -188,46 +188,46 @@ TEST(SlimeTest, test_chaining) {
     // returned. If the add fails for some reason, an invalid cursor
     // is returned instead.
     {
-        Slime slime;
-        Cursor &c = slime.setArray();
+        Slime   slime;
+        Cursor& c = slime.setArray();
         EXPECT_EQ(5, c.addLong(5).asLong());
     }
     {
-        Slime slime;
-        Cursor &c = slime.setObject();
+        Slime   slime;
+        Cursor& c = slime.setObject();
         EXPECT_EQ(5, c.setLong("a", 5).asLong());
     }
 }
 
 TEST(SlimeTest, test_proxy_conversion) {
-    Slime slime;
-    Cursor &c = slime.setLong(10);
-    Inspector &i1 = c;
+    Slime      slime;
+    Cursor&    c = slime.setLong(10);
+    Inspector& i1 = c;
     EXPECT_EQ(10u, i1.asLong());
-    Inspector &i2 = slime.get();
+    Inspector& i2 = slime.get();
     EXPECT_EQ(10u, i2.asLong());
-    const Slime &const_slime = slime;
-    Inspector &i3 = const_slime.get();
+    const Slime& const_slime = slime;
+    Inspector&   i3 = const_slime.get();
     EXPECT_EQ(10u, i3.asLong());
 }
 
 TEST(SlimeTest, test_nesting) {
     Slime slime;
     {
-        Cursor &c1 = slime.setObject();
+        Cursor& c1 = slime.setObject();
         {
             c1.setLong("bar", 10);
             {
-                Cursor &c2 = c1.setArray("foo");
-                c2.addLong(20);                 // [0]
+                Cursor& c2 = c1.setArray("foo");
+                c2.addLong(20); // [0]
                 {
-                    Cursor &c3 = c2.addObject(); // [1]
+                    Cursor& c3 = c2.addObject(); // [1]
                     c3.setLong("answer", 42);
                 }
             }
         }
     }
-    Cursor &c = slime.get();
+    Cursor& c = slime.get();
     EXPECT_EQ(10, c["bar"].asLong());
     EXPECT_EQ(20, c["foo"][0].asLong());
     EXPECT_EQ(42, c["foo"][1]["answer"].asLong());
@@ -260,14 +260,14 @@ TEST(SlimeTest, cross_type_number_conversion) {
 TEST(SlimeTest, slime_toString_produces_human_readable_JSON) {
     Slime slime;
     {
-        Cursor &c1 = slime.setObject();
+        Cursor& c1 = slime.setObject();
         {
             c1.setLong("bar", 10);
             {
-                Cursor &c2 = c1.setArray("foo");
-                c2.addLong(20);                 // [0]
+                Cursor& c2 = c1.setArray("foo");
+                c2.addLong(20); // [0]
                 {
-                    Cursor &c3 = c2.addObject(); // [1]
+                    Cursor& c3 = c2.addObject(); // [1]
                     c3.setLong("answer", 42);
                 }
             }
@@ -298,7 +298,7 @@ TEST(SlimeTest, require_that_slime_objects_can_be_moved) {
 }
 
 TEST(SlimeTest, require_that_we_can_replace_symbol_table) {
-    const Memory A("a");
+    const Memory                     A("a");
     vespalib::slime::SymbolTable::UP symbols = std::make_unique<vespalib::slime::SymbolTable>();
     EXPECT_TRUE(symbols->lookup(A).undefined());
     symbols->insert(A);
@@ -324,13 +324,13 @@ TEST(SlimeTest, require_that_slime_objects_can_be_compared) {
     EXPECT_EQ(Slime().setArray(), Slime().setArray());
     EXPECT_EQ(Slime().setObject(), Slime().setObject());
     {
-        Slime a;
-        Cursor &arr_a = a.setArray();
+        Slime   a;
+        Cursor& arr_a = a.setArray();
         arr_a.addLong(1);
         arr_a.addLong(2);
         arr_a.addLong(3);
-        Slime b;
-        Cursor &arr_b = b.setArray();
+        Slime   b;
+        Cursor& arr_b = b.setArray();
         arr_b.addLong(1);
         arr_b.addLong(2);
         arr_b.addLong(3);
@@ -344,13 +344,13 @@ TEST(SlimeTest, require_that_slime_objects_can_be_compared) {
         EXPECT_NE(b, a);
     }
     {
-        Slime a;
-        Cursor &obj_a = a.setObject();
+        Slime   a;
+        Cursor& obj_a = a.setObject();
         obj_a.setLong("foo", 1);
         obj_a.setLong("bar", 2);
         obj_a.setLong("baz", 3);
-        Slime b;
-        Cursor &obj_b = b.setObject();
+        Slime   b;
+        Cursor& obj_b = b.setObject();
         obj_b.setLong("foo", 1);
         obj_b.setLong("bar", 2);
         obj_b.setLong("baz", 3);
@@ -370,8 +370,8 @@ TEST(SlimeTest, require_that_slime_objects_can_be_compared) {
 }
 
 TEST(SlimeTest, require_that_nix_equality_checks_validity) {
-    const Inspector &good_nix = *vespalib::slime::NixValue::instance();
-    const Inspector &bad_nix = *vespalib::slime::NixValue::invalid();
+    const Inspector& good_nix = *vespalib::slime::NixValue::instance();
+    const Inspector& bad_nix = *vespalib::slime::NixValue::invalid();
     EXPECT_EQ(good_nix, good_nix);
     EXPECT_EQ(bad_nix, bad_nix);
     EXPECT_NE(good_nix, bad_nix);
@@ -379,11 +379,11 @@ TEST(SlimeTest, require_that_nix_equality_checks_validity) {
 }
 
 TEST(SlimeTest, require_that_we_can_resolve_to_symbol_table_from_a_cursor) {
-    Slime slime;
-    Cursor &c1 = slime.setObject();
-    Cursor &c2 = c1.setArray("foo");
-    Cursor &c3 = c1.setLong("bar", 5);
-    Cursor &c4 = c2.addObject();
+    Slime        slime;
+    Cursor&      c1 = slime.setObject();
+    Cursor&      c2 = c1.setArray("foo");
+    Cursor&      c3 = c1.setLong("bar", 5);
+    Cursor&      c4 = c2.addObject();
     const Memory A("a");
     const Memory B("b");
     const Memory C("c");
@@ -413,24 +413,18 @@ TEST(SlimeTest, require_that_we_can_resolve_to_symbol_table_from_a_cursor) {
     EXPECT_TRUE(sd == slime.lookup(D));
 }
 
-template <typename T>
-void verify_cursor_ref(T &&) {
-    EXPECT_TRUE((std::is_same<Cursor&,T>::value));
-}
+template <typename T> void verify_cursor_ref(T&&) { EXPECT_TRUE((std::is_same<Cursor&, T>::value)); }
 
-template <typename T>
-void verify_inspector_ref(T &&) {
-    EXPECT_TRUE((std::is_same<Inspector&,T>::value));
-}
+template <typename T> void verify_inspector_ref(T&&) { EXPECT_TRUE((std::is_same<Inspector&, T>::value)); }
 
 TEST(SlimeTest, require_that_top_level_convenience_accessors_work_as_expected_for_objects) {
-    Slime object;
-    Cursor &c = object.setObject();
+    Slime   object;
+    Cursor& c = object.setObject();
     c.setLong("a", 10);
     c.setLong("b", 20);
     c.setLong("c", 30);
-    Symbol sym_b = object.lookup("b");
-    const Slime &const_object = object;
+    Symbol       sym_b = object.lookup("b");
+    const Slime& const_object = object;
     GTEST_DO(verify_cursor_ref(object[0]));
     GTEST_DO(verify_inspector_ref(const_object[0]));
     EXPECT_EQ(object[0].asLong(), 0);
@@ -442,13 +436,13 @@ TEST(SlimeTest, require_that_top_level_convenience_accessors_work_as_expected_fo
 }
 
 TEST(SlimeTest, require_that_top_level_convenience_accessors_work_as_expected_for_arrays) {
-    Slime array;
-    Cursor &c = array.setArray();
+    Slime   array;
+    Cursor& c = array.setArray();
     c.addLong(10);
     c.addLong(20);
     c.addLong(30);
-    Symbol sym_b(1);
-    const Slime &const_array = array;
+    Symbol       sym_b(1);
+    const Slime& const_array = array;
     GTEST_DO(verify_cursor_ref(array[0]));
     GTEST_DO(verify_inspector_ref(const_array[0]));
     EXPECT_EQ(array[0].asLong(), 10);

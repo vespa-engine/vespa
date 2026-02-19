@@ -8,13 +8,16 @@
 *****************************************************************************/
 
 #include "unix_file.h"
+
 #include <vespa/vespalib/util/error.h>
-#include <sstream>
-#include <cassert>
-#include <unistd.h>
+
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <cassert>
+#include <sstream>
 #ifdef __linux__
 #include <sys/vfs.h>
 #else
@@ -31,60 +34,39 @@ using vespalib::getErrorString;
 using vespalib::getLastErrorString;
 
 namespace {
-    constexpr uint64_t ONE_G = 1000 * 1000 * 1000;
+constexpr uint64_t ONE_G = 1000 * 1000 * 1000;
 }
 
-ssize_t
-FastOS_UNIX_File::Read(void *buffer, size_t len)
-{
-    return File_RW_Ops::read(_filedes, buffer, len);
-}
+ssize_t FastOS_UNIX_File::Read(void* buffer, size_t len) { return File_RW_Ops::read(_filedes, buffer, len); }
 
+ssize_t FastOS_UNIX_File::Write2(const void* buffer, size_t len) { return File_RW_Ops::write(_filedes, buffer, len); }
 
-ssize_t
-FastOS_UNIX_File::Write2(const void *buffer, size_t len)
-{
-    return File_RW_Ops::write(_filedes, buffer, len);
-}
-
-bool
-FastOS_UNIX_File::SetPosition(int64_t desiredPosition)
-{
+bool FastOS_UNIX_File::SetPosition(int64_t desiredPosition) {
     int64_t position = lseek(_filedes, desiredPosition, SEEK_SET);
 
     return (position == desiredPosition);
 }
 
+int64_t FastOS_UNIX_File::getPosition() const { return lseek(_filedes, 0, SEEK_CUR); }
 
-int64_t
-FastOS_UNIX_File::getPosition() const
-{
-    return lseek(_filedes, 0, SEEK_CUR);
-}
-
-void FastOS_UNIX_File::ReadBuf(void *buffer, size_t length, int64_t readOffset)
-{
+void FastOS_UNIX_File::ReadBuf(void* buffer, size_t length, int64_t readOffset) {
     ssize_t readResult;
 
     readResult = File_RW_Ops::pread(_filedes, buffer, length, readOffset);
     if (static_cast<size_t>(readResult) != length) {
-        std::string errorString = readResult != -1 ?
-                                  std::string("short read") :
-                                  getLastErrorString();
+        std::string        errorString = readResult != -1 ? std::string("short read") : getLastErrorString();
         std::ostringstream os;
-        os << "Fatal: Reading " << length << " bytes, got " << readResult << " from '"
-           << GetFileName() << "' failed: " << errorString;
+        os << "Fatal: Reading " << length << " bytes, got " << readResult << " from '" << GetFileName()
+           << "' failed: " << errorString;
         throw std::runtime_error(os.str());
     }
 }
 
-bool
-FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
-{
+bool FastOS_UNIX_File::Stat(const char* filename, FastOS_StatInfo* statInfo) {
     bool rc = false;
 
     struct stat stbuf{};
-    int lstatres;
+    int         lstatres;
 
     do {
         lstatres = lstat(filename, &stbuf);
@@ -100,7 +82,8 @@ FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
 #elif defined(__APPLE__)
         modTimeNS += stbuf.st_mtimespec.tv_nsec;
 #endif
-        statInfo->_modifiedTime = vespalib::system_time(std::chrono::duration_cast<vespalib::system_time::duration>(std::chrono::nanoseconds(modTimeNS)));
+        statInfo->_modifiedTime = vespalib::system_time(
+            std::chrono::duration_cast<vespalib::system_time::duration>(std::chrono::nanoseconds(modTimeNS)));
         rc = true;
     } else {
         if (errno == ENOENT) {
@@ -113,20 +96,12 @@ FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
     return rc;
 }
 
-int FastOS_UNIX_File::GetMaximumFilenameLength (const char *pathName)
-{
-    return pathconf(pathName, _PC_NAME_MAX);
-}
+int FastOS_UNIX_File::GetMaximumFilenameLength(const char* pathName) { return pathconf(pathName, _PC_NAME_MAX); }
 
-int FastOS_UNIX_File::GetMaximumPathLength(const char *pathName)
-{
-    return pathconf(pathName, _PC_PATH_MAX);
-}
+int FastOS_UNIX_File::GetMaximumPathLength(const char* pathName) { return pathconf(pathName, _PC_PATH_MAX); }
 
-unsigned int
-FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags)
-{
-    unsigned int accessFlags=0;
+unsigned int FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags) {
+    unsigned int accessFlags = 0;
 
     if ((openFlags & (FASTOS_FILE_OPEN_READ | FASTOS_FILE_OPEN_DIRECTIO)) != 0) {
         if ((openFlags & FASTOS_FILE_OPEN_WRITE) != 0) {
@@ -173,9 +148,7 @@ constexpr int ALWAYS_SUPPORTED_MMAP_FLAGS = ~MAP_HUGETLB;
 constexpr int ALWAYS_SUPPORTED_MMAP_FLAGS = ~0;
 #endif
 
-bool
-FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
-{
+bool FastOS_UNIX_File::Open(unsigned int openFlags, const char* filename) {
     assert(_filedes == -1);
 
     if (filename != nullptr) {
@@ -191,11 +164,12 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
         _openFlags = openFlags;
         if (_mmapEnabled) {
             int64_t filesize = getSize();
-            auto mlen = static_cast<size_t>(filesize);
+            auto    mlen = static_cast<size_t>(filesize);
             if ((static_cast<int64_t>(mlen) == filesize) && (mlen > 0)) {
-                void *mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | _mmapFlags, _filedes, 0);
+                void* mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | _mmapFlags, _filedes, 0);
                 if (mbase == MAP_FAILED) {
-                    mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | (_mmapFlags & ALWAYS_SUPPORTED_MMAP_FLAGS), _filedes, 0);
+                    mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | (_mmapFlags & ALWAYS_SUPPORTED_MMAP_FLAGS),
+                                 _filedes, 0);
                 }
                 if (mbase != MAP_FAILED) {
 #ifdef __linux__
@@ -207,7 +181,8 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
                         eCode = posix_madvise(mbase, mlen, POSIX_MADV_SEQUENTIAL);
                     }
                     if (eCode != 0) {
-                        fprintf(stderr, "Failed: posix_madvise(%p, %ld, %d) = %d\n", mbase, mlen, fadviseOptions, eCode);
+                        fprintf(stderr, "Failed: posix_madvise(%p, %ld, %d) = %d\n", mbase, mlen, fadviseOptions,
+                                eCode);
                     }
                     eCode = madvise(mbase, mlen, MADV_DONTDUMP);
                     if (eCode != 0) {
@@ -221,8 +196,9 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
                     close(_filedes);
                     _filedes = -1;
                     std::ostringstream os;
-                    os << "mmap of file '" << GetFileName() << "' with flags '" << std::hex << (MAP_SHARED | _mmapFlags) << std::dec
-                       << "' failed with error :'" << getErrorString(error) << "'";
+                    os << "mmap of file '" << GetFileName() << "' with flags '" << std::hex
+                       << (MAP_SHARED | _mmapFlags) << std::dec << "' failed with error :'" << getErrorString(error)
+                       << "'";
                     throw std::runtime_error(os.str());
                 }
             }
@@ -232,17 +208,13 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
     return rc;
 }
 
-void FastOS_UNIX_File::dropFromCache() const
-{
+void FastOS_UNIX_File::dropFromCache() const {
 #ifdef __linux__
     posix_fadvise(_filedes, 0, 0, POSIX_FADV_DONTNEED);
 #endif
 }
 
-
-bool
-FastOS_UNIX_File::Close()
-{
+bool FastOS_UNIX_File::Close() {
     bool ok = true;
 
     if (_filedes >= 0) {
@@ -252,7 +224,7 @@ FastOS_UNIX_File::Close()
 
         if (_mmapbase != nullptr) {
             madvise(_mmapbase, _mmaplen, MADV_DONTNEED);
-            munmap(static_cast<char *>(_mmapbase), _mmaplen);
+            munmap(static_cast<char*>(_mmapbase), _mmaplen);
             _mmapbase = nullptr;
             _mmaplen = 0;
         }
@@ -265,11 +237,8 @@ FastOS_UNIX_File::Close()
     return ok;
 }
 
-
-int64_t
-FastOS_UNIX_File::getSize() const
-{
-    int64_t fileSize=-1;
+int64_t FastOS_UNIX_File::getSize() const {
+    int64_t     fileSize = -1;
     struct stat stbuf{};
 
     assert(IsOpened());
@@ -283,21 +252,13 @@ FastOS_UNIX_File::getSize() const
     return fileSize;
 }
 
-
-bool
-FastOS_UNIX_File::Sync()
-{
+bool FastOS_UNIX_File::Sync() {
     assert(IsOpened());
 
-    return _fsyncEnabled
-        ? (fsync(_filedes) == 0)
-        : true;
+    return _fsyncEnabled ? (fsync(_filedes) == 0) : true;
 }
 
-
-bool
-FastOS_UNIX_File::SetSize(int64_t newSize)
-{
+bool FastOS_UNIX_File::SetSize(int64_t newSize) {
     bool rc = false;
 
     if (ftruncate(_filedes, static_cast<off_t>(newSize)) == 0) {
@@ -307,10 +268,9 @@ FastOS_UNIX_File::SetSize(int64_t newSize)
     return rc;
 }
 
-int64_t FastOS_UNIX_File::GetFreeDiskSpace (const char *path)
-{
+int64_t FastOS_UNIX_File::GetFreeDiskSpace(const char* path) {
     struct statfs statBuf{};
-    int statVal = statfs(path, &statBuf);
+    int           statVal = statfs(path, &statBuf);
     if (statVal == 0) {
         return int64_t(statBuf.f_bavail) * int64_t(statBuf.f_bsize);
     }
@@ -318,9 +278,7 @@ int64_t FastOS_UNIX_File::GetFreeDiskSpace (const char *path)
     return -1;
 }
 
-int
-FastOS_UNIX_File::count_open_files()
-{
+int FastOS_UNIX_File::count_open_files() {
 #ifdef __APPLE__
     int buffer_size = proc_pidinfo(getpid(), PROC_PIDLISTFDS, 0, nullptr, 0);
     return buffer_size / sizeof(proc_fdinfo);

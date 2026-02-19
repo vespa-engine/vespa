@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/util/alloc.h>
+
+#include <cassert>
 #include <cstdint>
 #include <cstring>
-#include <cassert>
-#include <vespa/vespalib/util/alloc.h>
 
 namespace vespalib {
 
@@ -29,24 +30,23 @@ namespace vespalib {
  * the data will be relocated within the buffer and/or a bigger buffer
  * will be allocated.
  **/
-class DataBuffer
-{
+class DataBuffer {
 private:
     using Alloc = alloc::Alloc;
-    size_t         _alignment;
-    char          *_externalBuf;
-    char          *_bufstart;
-    char          *_bufend;
-    char          *_datapt;
-    char          *_freept;
-    Alloc          _buffer;
+    size_t _alignment;
+    char*  _externalBuf;
+    char*  _bufstart;
+    char*  _bufend;
+    char*  _datapt;
+    char*  _freept;
+    Alloc  _buffer;
 
 public:
     using UP = std::unique_ptr<DataBuffer>;
-    DataBuffer(const DataBuffer &) = delete;
-    DataBuffer &operator=(const DataBuffer &) = delete;
-    DataBuffer(DataBuffer &&) noexcept = default;
-    DataBuffer &operator=(DataBuffer &&) noexcept = default;
+    DataBuffer(const DataBuffer&) = delete;
+    DataBuffer& operator=(const DataBuffer&) = delete;
+    DataBuffer(DataBuffer&&) noexcept = default;
+    DataBuffer& operator=(DataBuffer&&) noexcept = default;
 
     /**
      * Construct a databuffer.
@@ -54,7 +54,7 @@ public:
      * @param len the initial size of the buffer.
      * @param alignment required memory alignment for data start
      **/
-    DataBuffer(size_t len = 1024, size_t alignment = 1, const Alloc & initial = Alloc::alloc(0)) noexcept;
+    DataBuffer(size_t len = 1024, size_t alignment = 1, const Alloc& initial = Alloc::alloc(0)) noexcept;
 
     /**
      * Construct a databuffer using externally allocated memory. Note
@@ -64,63 +64,60 @@ public:
      * @param buf pointer to preallocated memory
      * @param len length of preallocated memory
      **/
-    DataBuffer(void *buf, size_t len) noexcept :
-        _alignment(1),
-        _externalBuf(static_cast<char *>(buf)),
-        _bufstart(_externalBuf),
-        _bufend(_externalBuf + len),
-        _datapt(_bufstart),
-        _freept(_bufstart),
-        _buffer(Alloc::alloc(0))
-    { }
+    DataBuffer(void* buf, size_t len) noexcept
+        : _alignment(1),
+          _externalBuf(static_cast<char*>(buf)),
+          _bufstart(_externalBuf),
+          _bufend(_externalBuf + len),
+          _datapt(_bufstart),
+          _freept(_bufstart),
+          _buffer(Alloc::alloc(0)) {}
 
-    DataBuffer(const void *buf, size_t len) noexcept :
-        _alignment(1),
-        _externalBuf(static_cast<char *>(const_cast<void *>(buf))),
-        _bufstart(_externalBuf),
-        _bufend(_bufstart + len),
-        _datapt(_bufstart),
-        _freept(_bufend),
-        _buffer(Alloc::alloc(0))
-    { }
+    DataBuffer(const void* buf, size_t len) noexcept
+        : _alignment(1),
+          _externalBuf(static_cast<char*>(const_cast<void*>(buf))),
+          _bufstart(_externalBuf),
+          _bufend(_bufstart + len),
+          _datapt(_bufstart),
+          _freept(_bufend),
+          _buffer(Alloc::alloc(0)) {}
 
     ~DataBuffer();
 
     /**
      * @return a pointer to the dead part of this buffer.
      **/
-    char     *getDead() const { return _bufstart;           }
+    char* getDead() const { return _bufstart; }
 
     /**
      * @return a pointer to the data part of this buffer.
      **/
-    char     *getData() const { return _datapt;             }
+    char* getData() const { return _datapt; }
 
     /**
      * @return a pointer to the free part of this buffer.
      **/
-    char     *getFree() const { return _freept;             }
+    char* getFree() const { return _freept; }
 
     /**
      * @return the length of the dead part of this buffer.
      **/
-    size_t    getDeadLen() const { return _datapt - _bufstart; }
+    size_t getDeadLen() const { return _datapt - _bufstart; }
 
     /**
      * @return the length of the data part of this buffer.
      **/
-    size_t    getDataLen() const { return _freept - _datapt;   }
+    size_t getDataLen() const { return _freept - _datapt; }
 
     /**
      * @return the length of the free part of this buffer.
      **/
-    size_t    getFreeLen() const { return _bufend - _freept;   }
+    size_t getFreeLen() const { return _bufend - _freept; }
 
     /**
      * @return the length of the entire buffer.
      **/
-    size_t    getBufSize() const { return _bufend - _bufstart; }
-
+    size_t getBufSize() const { return _bufend - _bufstart; }
 
     /**
      * 'Move' bytes from the free part to the data part of this buffer.
@@ -139,7 +136,6 @@ public:
      * @param len number of bytes to 'move'.
      **/
     void moveDataToDead(size_t len) { _datapt += len; }
-
 
     /**
      * 'Move' bytes from the dead part to the data part of this buffer.
@@ -160,12 +156,10 @@ public:
      **/
     void moveDataToFree(size_t len);
 
-
     /**
      * Clear this buffer.
      **/
     void clear() { _datapt = _freept = _bufstart; }
-
 
     /**
      * Shrink this buffer. The given value is the new wanted size of
@@ -197,20 +191,17 @@ public:
      *
      * @param needbytes required size of free part.
      **/
-    void ensureFree(size_t needbytes)
-    {
+    void ensureFree(size_t needbytes) {
         if (needbytes > getFreeLen())
             pack(needbytes);
     }
-
 
     /**
      * Write an 8-bit unsigned integer to this buffer.
      *
      * @param n the integer to write.
      **/
-    void writeInt8(uint8_t n)
-    {
+    void writeInt8(uint8_t n) {
         ensureFree(1);
         *_freept++ = (char)n;
     }
@@ -220,8 +211,7 @@ public:
      *
      * @param n the integer to write.
      **/
-    void writeInt16(uint16_t n)
-    {
+    void writeInt16(uint16_t n) {
         ensureFree(2);
         _freept[1] = (char)n;
         n >>= 8;
@@ -234,8 +224,7 @@ public:
      *
      * @param n the integer to write.
      **/
-    void writeInt32(uint32_t n)
-    {
+    void writeInt32(uint32_t n) {
         ensureFree(4);
         _freept[3] = (char)n;
         n >>= 8;
@@ -252,8 +241,7 @@ public:
      *
      * @param n the integer to write.
      **/
-    void writeInt64(uint64_t n)
-    {
+    void writeInt64(uint64_t n) {
         ensureFree(8);
         _freept[7] = (char)n;
         n >>= 8;
@@ -273,26 +261,20 @@ public:
         _freept += 8;
     }
 
-
-
     /**
      * Read an 8-bit unsigned integer from this buffer.
      *
      * @return the integer that has been read.
      **/
-    uint8_t readInt8()
-    {
-        return (unsigned char)(*_datapt++);
-    }
+    uint8_t readInt8() { return (unsigned char)(*_datapt++); }
 
     /**
      * Read a 16-bit unsigned integer from this buffer.
      *
      * @return the integer that has been read.
      **/
-    uint16_t readInt16()
-    {
-        unsigned char *tmp = (unsigned char *)(_datapt);
+    uint16_t readInt16() {
+        unsigned char* tmp = (unsigned char*)(_datapt);
         _datapt += 2;
         return ((*tmp << 8) + *(tmp + 1));
     }
@@ -303,9 +285,8 @@ public:
      *
      * @return the integer that has been read.
      **/
-    uint16_t readInt16Reverse()
-    {
-        unsigned char *tmp = (unsigned char *)(_datapt);
+    uint16_t readInt16Reverse() {
+        unsigned char* tmp = (unsigned char*)(_datapt);
         _datapt += 2;
         return ((*(tmp + 1) << 8) + *tmp);
     }
@@ -315,13 +296,10 @@ public:
      *
      * @return the integer that has been read.
      **/
-    uint32_t readInt32()
-    {
-        unsigned char *tmp = (unsigned char *)(_datapt);
+    uint32_t readInt32() {
+        unsigned char* tmp = (unsigned char*)(_datapt);
         _datapt += 4;
-        return
-            ((((((uint32_t)(*tmp << 8) + *(tmp + 1)) << 8)
-               + *(tmp + 2)) << 8) + *(tmp + 3));
+        return ((((((uint32_t)(*tmp << 8) + *(tmp + 1)) << 8) + *(tmp + 2)) << 8) + *(tmp + 3));
     }
 
     /**
@@ -330,13 +308,10 @@ public:
      *
      * @return the integer that has been read.
      **/
-    uint32_t readInt32Reverse()
-    {
-        unsigned char *tmp = (unsigned char *)(_datapt);
+    uint32_t readInt32Reverse() {
+        unsigned char* tmp = (unsigned char*)(_datapt);
         _datapt += 4;
-        return
-            ((((((uint32_t)(*(tmp + 3) << 8) + *(tmp + 2)) << 8)
-               + *(tmp + 1)) << 8) + *tmp);
+        return ((((((uint32_t)(*(tmp + 3) << 8) + *(tmp + 2)) << 8) + *(tmp + 1)) << 8) + *tmp);
     }
 
     /**
@@ -344,15 +319,17 @@ public:
      *
      * @return the integer that has been read.
      **/
-    uint64_t readInt64()
-    {
-        unsigned char *tmp = (unsigned char *)(_datapt);
+    uint64_t readInt64() {
+        unsigned char* tmp = (unsigned char*)(_datapt);
         _datapt += 8;
-        return
-            ((((((((((((((uint64_t)(*tmp << 8) + *(tmp + 1)) << 8)
-                       + *(tmp + 2)) << 8) + *(tmp + 3)) << 8)
-                   + *(tmp + 4)) << 8) + *(tmp + 5)) << 8)
-               + *(tmp + 6)) << 8) + *(tmp + 7));
+        return ((((((((((((((uint64_t)(*tmp << 8) + *(tmp + 1)) << 8) + *(tmp + 2)) << 8) + *(tmp + 3)) << 8) +
+                      *(tmp + 4))
+                     << 8) +
+                    *(tmp + 5))
+                   << 8) +
+                  *(tmp + 6))
+                 << 8) +
+                *(tmp + 7));
     }
 
     /**
@@ -361,47 +338,44 @@ public:
      *
      * @return the integer that has been read.
      **/
-    uint64_t readInt64Reverse()
-    {
-        unsigned char *tmp = (unsigned char *)(_datapt);
+    uint64_t readInt64Reverse() {
+        unsigned char* tmp = (unsigned char*)(_datapt);
         _datapt += 8;
-        return
-            ((((((((((((((uint64_t)(*(tmp + 7) << 8) + *(tmp + 6)) << 8)
-                       + *(tmp + 5)) << 8) + *(tmp + 4)) << 8)
-                   + *(tmp + 3)) << 8) + *(tmp + 2)) << 8)
-               + *(tmp + 1)) << 8) + *tmp);
+        return ((((((((((((((uint64_t)(*(tmp + 7) << 8) + *(tmp + 6)) << 8) + *(tmp + 5)) << 8) + *(tmp + 4)) << 8) +
+                      *(tmp + 3))
+                     << 8) +
+                    *(tmp + 2))
+                   << 8) +
+                  *(tmp + 1))
+                 << 8) +
+                *tmp);
     }
 
-    float readFloat()
-    {
-        float f;
+    float readFloat() {
+        float    f;
         uint32_t i = readInt32();
         memcpy(&f, &i, sizeof(f));
         return f;
     }
 
-    double readDouble()
-    {
-        double f;
+    double readDouble() {
+        double   f;
         uint64_t i = readInt64();
         memcpy(&f, &i, sizeof(f));
         return f;
     }
 
-    void writeFloat(float f)
-    {
+    void writeFloat(float f) {
         uint32_t i;
         memcpy(&i, &f, sizeof(f));
         writeInt32(i);
     }
 
-    void writeDouble(double f)
-    {
+    void writeDouble(double f) {
         uint64_t i;
         memcpy(&i, &f, sizeof(f));
         writeInt64(i);
     }
-
 
     /**
      * Peek at an 8-bit unsigned integer in this buffer. Unlike a read
@@ -410,10 +384,9 @@ public:
      * @param offset offset of the integer to access.
      * @return value of the accessed integer.
      **/
-    uint8_t peekInt8(size_t offset)
-    {
+    uint8_t peekInt8(size_t offset) {
         assert(getDataLen() >= offset + 1);
-        return (uint8_t) *(_datapt + offset);
+        return (uint8_t)*(_datapt + offset);
     }
 
     /**
@@ -423,11 +396,10 @@ public:
      * @param offset offset of the integer to access.
      * @return value of the accessed integer.
      **/
-    uint16_t peekInt16(size_t offset)
-    {
+    uint16_t peekInt16(size_t offset) {
         assert(getDataLen() >= offset + 2);
-        unsigned char *tmp = (unsigned char *)(_datapt + offset);
-        return (uint16_t) ((*tmp << 8) + *(tmp + 1));
+        unsigned char* tmp = (unsigned char*)(_datapt + offset);
+        return (uint16_t)((*tmp << 8) + *(tmp + 1));
     }
 
     /**
@@ -438,11 +410,10 @@ public:
      * @param offset offset of the integer to access.
      * @return value of the accessed integer.
      **/
-    uint16_t peekInt16Reverse(size_t offset)
-    {
+    uint16_t peekInt16Reverse(size_t offset) {
         assert(getDataLen() >= offset + 2);
-        unsigned char *tmp = (unsigned char *)(_datapt + offset);
-        return (uint16_t) ((*(tmp + 1) << 8) + *tmp);
+        unsigned char* tmp = (unsigned char*)(_datapt + offset);
+        return (uint16_t)((*(tmp + 1) << 8) + *tmp);
     }
 
     /**
@@ -452,13 +423,10 @@ public:
      * @param offset offset of the integer to access.
      * @return value of the accessed integer.
      **/
-    uint32_t peekInt32(size_t offset)
-    {
+    uint32_t peekInt32(size_t offset) {
         assert(getDataLen() >= offset + 4);
-        unsigned char *tmp = (unsigned char *)(_datapt + offset);
-        return
-            ((((((uint32_t)(*tmp << 8) + *(tmp + 1)) << 8)
-               + *(tmp + 2)) << 8) + *(tmp + 3));
+        unsigned char* tmp = (unsigned char*)(_datapt + offset);
+        return ((((((uint32_t)(*tmp << 8) + *(tmp + 1)) << 8) + *(tmp + 2)) << 8) + *(tmp + 3));
     }
 
     /**
@@ -469,13 +437,10 @@ public:
      * @param offset offset of the integer to access.
      * @return value of the accessed integer.
      **/
-    uint32_t peekInt32Reverse(size_t offset)
-    {
+    uint32_t peekInt32Reverse(size_t offset) {
         assert(getDataLen() >= offset + 4);
-        unsigned char *tmp = (unsigned char *)(_datapt + offset);
-        return
-            ((((((uint32_t)(*(tmp + 3) << 8) + *(tmp + 2)) << 8)
-               + *(tmp + 1)) << 8) + *tmp);
+        unsigned char* tmp = (unsigned char*)(_datapt + offset);
+        return ((((((uint32_t)(*(tmp + 3) << 8) + *(tmp + 2)) << 8) + *(tmp + 1)) << 8) + *tmp);
     }
 
     /**
@@ -485,15 +450,17 @@ public:
      * @param offset offset of the integer to access.
      * @return value of the accessed integer.
      **/
-    uint64_t peekInt64(size_t offset)
-    {
+    uint64_t peekInt64(size_t offset) {
         assert(getDataLen() >= offset + 8);
-        unsigned char *tmp = (unsigned char *)(_datapt + offset);
-        return
-            ((((((((((((((uint64_t)(*tmp << 8) + *(tmp + 1)) << 8)
-                       + *(tmp + 2)) << 8) + *(tmp + 3)) << 8)
-                   + *(tmp + 4)) << 8) + *(tmp + 5)) << 8)
-               + *(tmp + 6)) << 8) + *(tmp + 7));
+        unsigned char* tmp = (unsigned char*)(_datapt + offset);
+        return ((((((((((((((uint64_t)(*tmp << 8) + *(tmp + 1)) << 8) + *(tmp + 2)) << 8) + *(tmp + 3)) << 8) +
+                      *(tmp + 4))
+                     << 8) +
+                    *(tmp + 5))
+                   << 8) +
+                  *(tmp + 6))
+                 << 8) +
+                *(tmp + 7));
     }
 
     /**
@@ -504,17 +471,18 @@ public:
      * @param offset offset of the integer to access.
      * @return value of the accessed integer.
      **/
-    uint64_t peekInt64Reverse(size_t offset)
-    {
+    uint64_t peekInt64Reverse(size_t offset) {
         assert(getDataLen() >= offset + 8);
-        unsigned char *tmp = (unsigned char *)(_datapt + offset);
-        return
-            ((((((((((((((uint64_t)(*(tmp + 7) << 8) + *(tmp + 6)) << 8)
-                       + *(tmp + 5)) << 8) + *(tmp + 4)) << 8)
-                   + *(tmp + 3)) << 8) + *(tmp + 2)) << 8)
-               + *(tmp + 1)) << 8) + *tmp);
+        unsigned char* tmp = (unsigned char*)(_datapt + offset);
+        return ((((((((((((((uint64_t)(*(tmp + 7) << 8) + *(tmp + 6)) << 8) + *(tmp + 5)) << 8) + *(tmp + 4)) << 8) +
+                      *(tmp + 3))
+                     << 8) +
+                    *(tmp + 2))
+                   << 8) +
+                  *(tmp + 1))
+                 << 8) +
+                *tmp);
     }
-
 
     /**
      * Write bytes to this buffer.
@@ -522,8 +490,7 @@ public:
      * @param src source byte buffer.
      * @param len number of bytes to write.
      **/
-    void writeBytes(const void *src, size_t len)
-    {
+    void writeBytes(const void* src, size_t len) {
         ensureFree(len);
         memcpy(_freept, src, len);
         _freept += len;
@@ -534,8 +501,7 @@ public:
      *
      * @param len number of zero-bytes to write.
      **/
-    void zeroFill(size_t len)
-    {
+    void zeroFill(size_t len) {
         ensureFree(len);
         memset(_freept, 0, len);
         _freept += len;
@@ -547,8 +513,7 @@ public:
      * @param dst destination byte buffer.
      * @param len number of bytes to read.
      **/
-    void readBytes(void *dst, size_t len)
-    {
+    void readBytes(void* dst, size_t len) {
         memcpy(dst, _datapt, len);
         _datapt += len;
     }
@@ -561,8 +526,7 @@ public:
      * @param len number of bytes to extract.
      * @param offset byte offset into the buffer.
      **/
-    void peekBytes(void *dst, size_t len, size_t offset)
-    {
+    void peekBytes(void* dst, size_t len, size_t offset) {
         assert(_freept >= _datapt + offset + len);
         memcpy(dst, _datapt + offset, len);
     }
@@ -574,7 +538,7 @@ public:
      * @return true(equal)/false(not equal)
      * @param other the other buffer.
      **/
-    bool equals(DataBuffer *other);
+    bool equals(DataBuffer* other);
 
     /**
      * Print a human-readable representation of this buffer to
@@ -586,8 +550,7 @@ public:
      * Run some asserts to verify that this databuffer is in a legal
      * state.
      **/
-    void assertValid()
-    {
+    void assertValid() {
         assert(_bufstart <= _datapt);
         assert(_datapt <= _freept);
         assert(_freept <= _bufend);
@@ -605,10 +568,9 @@ public:
      *
      * @param other the other buffer.
      **/
-    void swap(DataBuffer &other);
+    void swap(DataBuffer& other);
 
     Alloc stealBuffer() &&;
 };
 
 } // namespace vespalib
-

@@ -7,4 +7,3 @@ namespace vespalib::crypto {
 VESPA_IMPLEMENT_EXCEPTION(CryptoException, Exception);
 
 }
-

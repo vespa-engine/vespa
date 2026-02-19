@@ -9,7 +9,7 @@ namespace {
 struct SelfState : slime::ObjectTraverser {
     Slime result;
     SelfState() : result() { result.setObject(); }
-    void field(const Memory &key, const slime::Inspector &value) override {
+    void field(const Memory& key, const slime::Inspector& value) override {
         if (value.type().getId() != slime::OBJECT::ID) {
             slime::inject(value, slime::ObjectInserter(result.get(), key));
         }
@@ -18,18 +18,16 @@ struct SelfState : slime::ObjectTraverser {
 
 struct ChildrenNames : slime::ObjectTraverser {
     std::vector<std::string> result;
-    void field(const Memory &key, const slime::Inspector &value) override {
+    void                     field(const Memory& key, const slime::Inspector& value) override {
         if (value.type().getId() == slime::OBJECT::ID) {
             result.push_back(key.make_string());
         }
     }
 };
 
-} // namespace vespalib::<unnamed>
+} // namespace
 
-void
-SlimeExplorer::get_state(const slime::Inserter &inserter, bool full) const
-{
+void SlimeExplorer::get_state(const slime::Inserter& inserter, bool full) const {
     SelfState state;
     _self.traverse(state);
     if (state.result.get().fields() > 0) {
@@ -40,18 +38,14 @@ SlimeExplorer::get_state(const slime::Inserter &inserter, bool full) const
     }
 }
 
-std::vector<std::string>
-SlimeExplorer::get_children_names() const
-{
+std::vector<std::string> SlimeExplorer::get_children_names() const {
     ChildrenNames names;
     _self.traverse(names);
     return names.result;
 }
 
-std::unique_ptr<StateExplorer>
-SlimeExplorer::get_child(std::string_view name) const
-{
-    slime::Inspector &child = _self[name];
+std::unique_ptr<StateExplorer> SlimeExplorer::get_child(std::string_view name) const {
+    slime::Inspector& child = _self[name];
     if (!child.valid()) {
         return std::unique_ptr<StateExplorer>(nullptr);
     }

@@ -5,6 +5,7 @@
 #include "datastorebase.h"
 #include "entryref.h"
 #include "handle.h"
+
 #include <span>
 
 namespace vespalib::datastore {
@@ -12,27 +13,23 @@ namespace vespalib::datastore {
 /**
  * Allocator used to allocate entries of a specific type in an underlying data store.
  */
-template <typename EntryT, typename RefT>
-class Allocator
-{
+template <typename EntryT, typename RefT> class Allocator {
 public:
     using ConstArrayRef = std::span<const EntryT>;
     using HandleType = Handle<EntryT>;
 
 protected:
-    DataStoreBase &_store;
-    uint32_t _typeId;
+    DataStoreBase& _store;
+    uint32_t       _typeId;
 
 public:
-    Allocator(DataStoreBase &store, uint32_t typeId);
+    Allocator(DataStoreBase& store, uint32_t typeId);
 
-    template <typename ... Args>
-    HandleType alloc(Args && ... args);
+    template <typename... Args> HandleType alloc(Args&&... args);
 
-    HandleType allocArray(ConstArrayRef array);
-    HandleType allocArray();
-    template <typename BufferType>
-    HandleType alloc_dynamic_array(ConstArrayRef array);
+    HandleType                                allocArray(ConstArrayRef array);
+    HandleType                                allocArray();
+    template <typename BufferType> HandleType alloc_dynamic_array(ConstArrayRef array);
 };
 
-}
+} // namespace vespalib::datastore

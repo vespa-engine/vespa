@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/hdr_abort.h>
-#include <vespa/vespalib/util/alloc.h>
 #include <vespa/fastos/file_interface.h>
+#include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/hdr_abort.h>
 
 /**
  * Provides buffered file access.
  */
-class Fast_BufferedFile : public FastOS_FileInterface
-{
+class Fast_BufferedFile : public FastOS_FileInterface {
 private:
     using Alloc = vespalib::alloc::Alloc;
     /** The number of bytes left in the file. */
@@ -18,20 +17,20 @@ private:
     /** Pointer to the start of the buffer. Correctly aligned for direct IO */
     Alloc _buf;
     /** Pointer to the input point in the buffer. */
-    char *_bufi;
+    char* _bufi;
     /** Pointer to the end of the buffer. */
-    char *_bufe;
+    char* _bufe;
     /** The file position for next read or write. */
     int64_t _filepos;
     /** True if the file should be read using direct IO */
     bool _directIOEnabled;
 
-    char * buf() { return static_cast<char *>(_buf.get()); }
-    const char * buf() const { return static_cast<const char *>(_buf.get()); }
+    char*       buf() { return static_cast<char*>(_buf.get()); }
+    const char* buf() const { return static_cast<const char*>(_buf.get()); }
     /** The file instance used for low-level file access. */
     std::unique_ptr<FastOS_FileInterface> _file;
 
-    Fast_BufferedFile(FastOS_FileInterface *file, size_t bufferSize);
+    Fast_BufferedFile(FastOS_FileInterface* file, size_t bufferSize);
     /**
      * Reset the internal start and end pointers to the
      * head of the buffer, thus "emptying" it.
@@ -52,11 +51,12 @@ private:
      * amount, the method will abort.
      */
     void fillReadBuf();
+
 public:
     Fast_BufferedFile();
     explicit Fast_BufferedFile(size_t bufferSize);
-    Fast_BufferedFile(const Fast_BufferedFile &) = delete;
-    Fast_BufferedFile & operator = (const Fast_BufferedFile &) = delete;
+    Fast_BufferedFile(const Fast_BufferedFile&) = delete;
+    Fast_BufferedFile& operator=(const Fast_BufferedFile&) = delete;
 
     /**
      * Delete the file instance used for low-level file access.
@@ -67,20 +67,20 @@ public:
      *
      * @param name The name of the file to open.
      */
-    void ReadOpenExisting(const char *name);
+    void ReadOpenExisting(const char* name);
     /**
      * Open a file for reading.
      *
      * @param name The name of the file to open.
      */
-    void ReadOpen(const char *name);
+    void ReadOpen(const char* name);
 
     /**
      * Open file for writing.
      *
      * @param name The name of the file to open.
      */
-    void WriteOpen(const char *name);
+    void WriteOpen(const char* name);
 
     /**
      * Read the next line of the buffered file into a buffer,
@@ -90,7 +90,7 @@ public:
      * @param buflen The size of the buffer.
      * @return Pointer to the start of the next line, of NULL if no line.
      */
-    char * ReadLine(char *buf, size_t buflen);
+    char* ReadLine(char* buf, size_t buflen);
     /**
      * Write a buffer to a buffered file, flushing to file
      * as necessary.
@@ -105,7 +105,7 @@ public:
      *
      * @param src The source string.
      */
-    void WriteString(const char *src);
+    void WriteString(const char* src);
     /**
      * Read from the buffered file into a buffer, reading from
      * the file as necessary.
@@ -114,7 +114,7 @@ public:
      * @param dstlen The length of the destination buffer.
      * @return The number of bytes read.
      */
-    [[nodiscard]] ssize_t Read(void *dst, size_t dstlen) override;
+    [[nodiscard]] ssize_t Read(void* dst, size_t dstlen) override;
     /**
      * Write one byte to the buffered file, flushing to
      * file if necessary.
@@ -146,20 +146,20 @@ public:
      *
      * @return int64_t The size of the file.
      */
-    int64_t getSize () const override;
+    int64_t getSize() const override;
     /**
      * Truncate or extend the file to a new size. Required write
      * access.
      *
      * @return bool True if successful.
      */
-    bool SetSize (int64_t s) override;
+    bool SetSize(int64_t s) override;
     /**
      * Test if the file is opened.
      *
      * @return bool True if the file is currently opened.
      */
-    bool IsOpened () const override;
+    bool IsOpened() const override;
     /**
      * Force completion of pending disk writes (flush cache).
      */
@@ -180,7 +180,7 @@ public:
      * Flush the buffer, and close the file instance.
      * @return The result of the Close operation.
      */
-    [[nodiscard]] bool Close () override;
+    [[nodiscard]] bool Close() override;
     /**
      * Get the buffered file position, in bytes.
      * This takes into account the data in the buffer, that has
@@ -188,7 +188,7 @@ public:
      *
      * @return int64_t The file position.
      */
-    int64_t getPosition () const override;
+    int64_t getPosition() const override;
     /**
      * Set the position in the file. The next read or write
      * will continue from this position.
@@ -203,7 +203,7 @@ public:
      *
      * @return name of buffered file, or NULL if no file.
      */
-    const char *GetFileName() const override;
+    const char* GetFileName() const override;
 
     /**
      * Just forwarded to the real file to support FastOS_FileInterface.

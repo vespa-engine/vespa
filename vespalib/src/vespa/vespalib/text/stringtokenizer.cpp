@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stringtokenizer.h"
+
 #include <cstdint>
 #include <cstring>
 
 namespace {
 
-class AsciiSet
-{
+class AsciiSet {
 public:
     explicit AsciiSet(std::string_view s) {
         memset(_set, 0, sizeof(_set));
@@ -15,12 +15,9 @@ public:
             add(c);
         }
     }
-    [[nodiscard]] bool contains(uint8_t c) const {
-        return _set[c];
-    }
-    void add(uint8_t c) {
-        _set[c] = true;
-    }
+    [[nodiscard]] bool contains(uint8_t c) const { return _set[c]; }
+    void               add(uint8_t c) { _set[c] = true; }
+
 private:
     // For smaller memory footprint it might be changed with using 256 bits instead.
     bool _set[256];
@@ -33,9 +30,7 @@ using TokenList = vespalib::StringTokenizer::TokenList;
  * strip leading and trailing sequences
  * of characters contained in the strip set.
  **/
-Token
-stripString(std::string_view source, const AsciiSet & strip)
-{
+Token stripString(std::string_view source, const AsciiSet& strip) {
     Token::size_type start = 0;
     while (start < source.size() && strip.contains(source[start])) {
         ++start;
@@ -47,8 +42,7 @@ stripString(std::string_view source, const AsciiSet & strip)
     return source.substr(start, stop - start);
 }
 
-size_t
-countSeparators(std::string_view source, const AsciiSet & sep) {
+size_t countSeparators(std::string_view source, const AsciiSet& sep) {
     size_t count(0);
     for (char c : source) {
         if (sep.contains(c)) {
@@ -58,30 +52,26 @@ countSeparators(std::string_view source, const AsciiSet & sep) {
     return count;
 }
 
-void
-parse(TokenList& output, std::string_view source, const AsciiSet & separators, const AsciiSet & strip)
-{
+void parse(TokenList& output, std::string_view source, const AsciiSet& separators, const AsciiSet& strip) {
     Token::size_type start = 0;
     for (Token::size_type i = 0; i < source.size(); ++i) {
         if (separators.contains(source[i])) {
-            output.push_back(stripString(source.substr(start, i-start), strip));
-            start = i+1;
+            output.push_back(stripString(source.substr(start, i - start), strip));
+            start = i + 1;
         }
     }
     output.push_back(stripString(source.substr(start), strip));
     // Don't keep a single empty element
-    if (output.size() == 1 && output[0].empty()) output.pop_back();
+    if (output.size() == 1 && output[0].empty())
+        output.pop_back();
 }
 
-} // private namespace
+} // namespace
 
 namespace vespalib {
 
-StringTokenizer::StringTokenizer(std::string_view source,
-                                 std::string_view separators,
-                                 std::string_view strip)
-    : _tokens()
-{
+StringTokenizer::StringTokenizer(std::string_view source, std::string_view separators, std::string_view strip)
+    : _tokens() {
     AsciiSet sep(separators);
     AsciiSet str(strip);
     _tokens.reserve(countSeparators(source, sep) + 1);
@@ -90,22 +80,22 @@ StringTokenizer::StringTokenizer(std::string_view source,
 
 StringTokenizer::~StringTokenizer() = default;
 
-void
-StringTokenizer::removeEmptyTokens()
-{
+void StringTokenizer::removeEmptyTokens() {
     size_t emptyCount(0);
-    for (const auto & token : _tokens) {
-        if (token.empty()) emptyCount++;
+    for (const auto& token : _tokens) {
+        if (token.empty())
+            emptyCount++;
     }
     if (emptyCount == 0) {
         return;
     }
     TokenList tokenlist;
     tokenlist.reserve(_tokens.size() - emptyCount);
-    for (const auto & token : _tokens) {
-        if (!token.empty()) tokenlist.push_back(token);
+    for (const auto& token : _tokens) {
+        if (!token.empty())
+            tokenlist.push_back(token);
     }
     _tokens.swap(tokenlist);
 }
 
-}
+} // namespace vespalib

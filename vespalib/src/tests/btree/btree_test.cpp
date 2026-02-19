@@ -1,23 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/btree/btreeroot.h>
-#include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/btree/btreenodeallocator.h>
+#include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/btree/btreestore.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/btree/btree_printer.h>
 #include <vespa/vespalib/util/rand48.h>
 
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreenode.hpp>
-#include <vespa/vespalib/btree/btreenodestore.hpp>
-#include <vespa/vespalib/btree/btreeiterator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreebuilder.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreenodestore.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
-#include <vespa/vespalib/datastore/compaction_strategy.h>
-#include <vespa/vespalib/test/btree/btree_printer.h>
-#include <vespa/vespalib/gtest/gtest.h>
+
 #include <string>
 
 #include <vespa/log/log.h>
@@ -31,35 +32,24 @@ namespace vespalib::btree {
 
 namespace {
 
-template <typename T>
-std::string
-toStr(const T & v)
-{
+template <typename T> std::string toStr(const T& v) {
     std::stringstream ss;
     ss << v;
     return ss.str();
 }
 
-class SequenceValidator
-{
-    int _wanted_count;
-    int _prev_key;
-    int _count;
+class SequenceValidator {
+    int  _wanted_count;
+    int  _prev_key;
+    int  _count;
     bool _failed;
 
 public:
     SequenceValidator(int start, int wanted_count)
-        : _wanted_count(wanted_count),
-          _prev_key(start - 1),
-          _count(0),
-          _failed(false)
-    {
-    }
+        : _wanted_count(wanted_count), _prev_key(start - 1), _count(0), _failed(false) {}
 
-    bool failed() const {
-        return _failed || _wanted_count != _count;
-    }
-    
+    bool failed() const { return _failed || _wanted_count != _count; }
+
     void operator()(int key) {
         if (key != _prev_key + 1) {
             _failed = true;
@@ -69,26 +59,20 @@ public:
     }
 };
 
-class ForeachKeyValidator
-{
-    SequenceValidator & _validator;
+class ForeachKeyValidator {
+    SequenceValidator& _validator;
+
 public:
-    ForeachKeyValidator(SequenceValidator &validator)
-        : _validator(validator)
-    {
-    }
-    void operator()(int key) {
-        _validator(key);
-    }
+    ForeachKeyValidator(SequenceValidator& validator) : _validator(validator) {}
+    void operator()(int key) { _validator(key); }
 };
 
-template <typename Iterator>
-void validate_subrange(Iterator &start, Iterator &end, SequenceValidator &validator) {
+template <typename Iterator> void validate_subrange(Iterator& start, Iterator& end, SequenceValidator& validator) {
     start.foreach_key_range(end, ForeachKeyValidator(validator));
     EXPECT_FALSE(validator.failed());
 }
 
-}
+} // namespace
 
 using MyTraits = BTreeTraits<4, 4, 31, false>;
 
@@ -97,31 +81,23 @@ using MyTraits = BTreeTraits<4, 4, 31, false>;
 #ifdef KEYWRAP
 
 // Force use of functor to compare keys.
-class WrapInt
-{
+class WrapInt {
 public:
     int _val;
     WrapInt(int val) : _val(val) {}
     WrapInt() : _val(0) {}
-    bool operator==(const WrapInt & rhs) const { return _val == rhs._val; }
+    bool operator==(const WrapInt& rhs) const { return _val == rhs._val; }
 };
 
-std::ostream &
-operator<<(std::ostream &s, const WrapInt &i)
-{
+std::ostream& operator<<(std::ostream& s, const WrapInt& i) {
     s << i._val;
     return s;
 }
 
 using MyKey = WrapInt;
-class MyComp
-{
+class MyComp {
 public:
-    bool
-    operator()(const WrapInt &a, const WrapInt &b) const
-    {
-        return a._val < b._val;
-    }
+    bool operator()(const WrapInt& a, const WrapInt& b) const { return a._val < b._val; }
 };
 
 #define UNWRAP(key) (key._val)
@@ -131,12 +107,8 @@ using MyComp = std::less<int>;
 #define UNWRAP(key) (key)
 #endif
 
-typedef BTree<MyKey, std::string,
-              btree::NoAggregated,
-              MyComp, MyTraits> MyTree;
-typedef BTreeStore<MyKey, std::string,
-                   btree::NoAggregated,
-                   MyComp, MyTraits> MyTreeStore;
+typedef BTree<MyKey, std::string, btree::NoAggregated, MyComp, MyTraits>      MyTree;
+typedef BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp, MyTraits> MyTreeStore;
 using MyTreeBuilder = MyTree::Builder;
 using MyLeafNode = MyTree::LeafNodeType;
 using MyInternalNode = MyTree::InternalNodeType;
@@ -148,19 +120,13 @@ using MyKeyDataRefPair = MyTreeStore::KeyDataTypeRefPair;
 using SetTreeB = BTree<int, BTreeNoLeafData, btree::NoAggregated>;
 
 using LSeekTraits = BTreeTraits<16, 16, 10, false>;
-typedef BTree<int, BTreeNoLeafData, btree::NoAggregated,
-              std::less<int>, LSeekTraits> SetTreeL;
+typedef BTree<int, BTreeNoLeafData, btree::NoAggregated, std::less<int>, LSeekTraits> SetTreeL;
 
 struct LeafPairLess {
-    bool operator()(const LeafPair & lhs, const LeafPair & rhs) const {
-        return UNWRAP(lhs.first) < UNWRAP(rhs.first);
-    }
+    bool operator()(const LeafPair& lhs, const LeafPair& rhs) const { return UNWRAP(lhs.first) < UNWRAP(rhs.first); }
 };
 
-template <typename ManagerType>
-void
-cleanup(GenerationHandler & g, ManagerType & m)
-{
+template <typename ManagerType> void cleanup(GenerationHandler& g, ManagerType& m) {
     m.freeze();
     m.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
@@ -168,12 +134,8 @@ cleanup(GenerationHandler & g, ManagerType & m)
 }
 
 template <typename ManagerType, typename NodeType>
-void
-cleanup(GenerationHandler & g,
-        ManagerType & m,
-        BTreeNode::Ref n1Ref, NodeType * n1,
-        BTreeNode::Ref n2Ref = BTreeNode::Ref(), NodeType * n2 = nullptr)
-{
+void cleanup(GenerationHandler& g, ManagerType& m, BTreeNode::Ref n1Ref, NodeType* n1,
+             BTreeNode::Ref n2Ref = BTreeNode::Ref(), NodeType* n2 = nullptr) {
     assert(ManagerType::isValidRef(n1Ref));
     m.holdNode(n1Ref, n1);
     if (n2 != nullptr) {
@@ -185,11 +147,8 @@ cleanup(GenerationHandler & g,
     cleanup(g, m);
 }
 
-template<typename Tree>
-bool
-assertTree(const std::string &exp, const Tree &t)
-{
-    std::stringstream ss;
+template <typename Tree> bool assertTree(const std::string& exp, const Tree& t) {
+    std::stringstream                                                       ss;
     test::BTreePrinter<std::stringstream, typename Tree::NodeAllocatorType> printer(ss, t.getAllocator());
     printer.print(t.getRoot());
     bool result = true;
@@ -197,12 +156,9 @@ assertTree(const std::string &exp, const Tree &t)
     return result;
 }
 
-template <typename Tree>
-void
-populateTree(Tree &t, uint32_t count, uint32_t delta)
-{
+template <typename Tree> void populateTree(Tree& t, uint32_t count, uint32_t delta) {
     uint32_t key = 1;
-    int32_t value = 101;
+    int32_t  value = 101;
     for (uint32_t i = 0; i < count; ++i) {
         t.insert(key, value);
         key += delta;
@@ -210,39 +166,28 @@ populateTree(Tree &t, uint32_t count, uint32_t delta)
     }
 }
 
-template <typename Tree>
-void
-populateLeafNode(Tree &t)
-{
-    populateTree(t, 4, 2);
-}
-
+template <typename Tree> void populateLeafNode(Tree& t) { populateTree(t, 4, 2); }
 
 class BTreeTest : public ::testing::Test {
 protected:
-    template <typename LeafNodeType>
-    bool assertLeafNode(const std::string & exp, const LeafNodeType & n);
-    bool assertSeek(int skey, int ekey, const MyTree & tree);
-    bool assertSeek(int skey, int ekey, MyTree::Iterator & itr);
-    bool assertMemoryUsage(const vespalib::MemoryUsage & exp, const vespalib::MemoryUsage & act);
-    void buildSubTree(const std::vector<LeafPair> &sub, size_t numEntries);
-    template <typename TreeType>
-    void requireThatLowerBoundWorksT();
-    template <typename TreeType>
-    void requireThatUpperBoundWorksT();
-    void requireThatIteratorDistanceWorks(int numEntries);
-    void test_step_forward(int num_entries);
-    void test_step_backward(int num_entries);
+    template <typename LeafNodeType> bool assertLeafNode(const std::string& exp, const LeafNodeType& n);
+    bool                                  assertSeek(int skey, int ekey, const MyTree& tree);
+    bool                                  assertSeek(int skey, int ekey, MyTree::Iterator& itr);
+    bool assertMemoryUsage(const vespalib::MemoryUsage& exp, const vespalib::MemoryUsage& act);
+    void buildSubTree(const std::vector<LeafPair>& sub, size_t numEntries);
+    template <typename TreeType> void requireThatLowerBoundWorksT();
+    template <typename TreeType> void requireThatUpperBoundWorksT();
+    void                              requireThatIteratorDistanceWorks(int numEntries);
+    void                              test_step_forward(int num_entries);
+    void                              test_step_backward(int num_entries);
 };
 
-template <typename LeafNodeType>
-bool
-BTreeTest::assertLeafNode(const std::string & exp, const LeafNodeType & n)
-{
+template <typename LeafNodeType> bool BTreeTest::assertLeafNode(const std::string& exp, const LeafNodeType& n) {
     std::stringstream ss;
     ss << "[";
     for (uint32_t i = 0; i < n.validSlots(); ++i) {
-        if (i > 0) ss << ",";
+        if (i > 0)
+            ss << ",";
         ss << n.getKey(i) << ":" << n.getData(i);
     }
     ss << "]";
@@ -251,16 +196,12 @@ BTreeTest::assertLeafNode(const std::string & exp, const LeafNodeType & n)
     return result;
 }
 
-bool
-BTreeTest::assertSeek(int skey, int ekey, const MyTree & tree)
-{
+bool BTreeTest::assertSeek(int skey, int ekey, const MyTree& tree) {
     MyTree::Iterator itr = tree.begin();
     return assertSeek(skey, ekey, itr);
 }
 
-bool
-BTreeTest::assertSeek(int skey, int ekey, MyTree::Iterator & itr)
-{
+bool BTreeTest::assertSeek(int skey, int ekey, MyTree::Iterator& itr) {
     MyTree::Iterator bseekItr = itr;
     MyTree::Iterator lseekItr = itr;
     bseekItr.binarySeek(skey);
@@ -278,9 +219,7 @@ BTreeTest::assertSeek(int skey, int ekey, MyTree::Iterator & itr)
     return result;
 }
 
-bool
-BTreeTest::assertMemoryUsage(const vespalib::MemoryUsage & exp, const vespalib::MemoryUsage & act)
-{
+bool BTreeTest::assertMemoryUsage(const vespalib::MemoryUsage& exp, const vespalib::MemoryUsage& act) {
     bool result = true;
     EXPECT_EQ(exp.allocatedBytes(), act.allocatedBytes()) << (result = false, "");
     if (!result) {
@@ -299,17 +238,16 @@ BTreeTest::assertMemoryUsage(const vespalib::MemoryUsage & exp, const vespalib::
 }
 
 TEST_F(BTreeTest, control_iterator_size) {
-    EXPECT_EQ(120u,  sizeof(BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>));
-    EXPECT_EQ(120u,  sizeof(BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoAggregated>));
+    EXPECT_EQ(120u, sizeof(BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>));
+    EXPECT_EQ(120u, sizeof(BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoAggregated>));
     EXPECT_EQ(288u, sizeof(MyTree::Iterator));
 }
 
-TEST_F(BTreeTest, require_that_node_insert_works)
-{
-    GenerationHandler g;
-    MyNodeAllocator m;
+TEST_F(BTreeTest, require_that_node_insert_works) {
+    GenerationHandler   g;
+    MyNodeAllocator     m;
     MyLeafNode::RefPair nPair = m.allocLeafNode();
-    MyLeafNode *n = nPair.data;
+    MyLeafNode*         n = nPair.data;
     EXPECT_TRUE(n->isLeaf());
     EXPECT_EQ(0u, n->validSlots());
     n->insert(0, 20, "b");
@@ -331,9 +269,7 @@ TEST_F(BTreeTest, require_that_node_insert_works)
     cleanup(g, m, nPair.ref, n);
 }
 
-
-TEST_F(BTreeTest, require_that_tree_insert_works)
-{
+TEST_F(BTreeTest, require_that_tree_insert_works) {
     using Tree = BTree<MyKey, int32_t, btree::NoAggregated, MyComp, MyTraits>;
     {
         Tree t;
@@ -352,7 +288,8 @@ TEST_F(BTreeTest, require_that_tree_insert_works)
         t.insert(4, 104);
         EXPECT_TRUE(assertTree("{{4,7}} -> "
                                "{{1:101,3:103,4:104},"
-                               "{5:105,7:107}}", t));
+                               "{5:105,7:107}}",
+                               t));
     }
     { // new entry in split node
         Tree t;
@@ -360,7 +297,8 @@ TEST_F(BTreeTest, require_that_tree_insert_works)
         t.insert(6, 106);
         EXPECT_TRUE(assertTree("{{5,7}} -> "
                                "{{1:101,3:103,5:105},"
-                               "{6:106,7:107}}", t));
+                               "{6:106,7:107}}",
+                               t));
     }
     { // new entry at end
         Tree t;
@@ -368,24 +306,29 @@ TEST_F(BTreeTest, require_that_tree_insert_works)
         t.insert(8, 108);
         EXPECT_TRUE(assertTree("{{5,8}} -> "
                                "{{1:101,3:103,5:105},"
-                               "{7:107,8:108}}", t));
+                               "{7:107,8:108}}",
+                               t));
     }
     { // multi level node split
         Tree t;
         populateTree(t, 16, 2);
-        EXPECT_TRUE(assertTree("{{7,15,23,31}} -> "
-                               "{{1:101,3:103,5:105,7:107},"
-                               "{9:109,11:111,13:113,15:115},"
-                               "{17:117,19:119,21:121,23:123},"
-                               "{25:125,27:127,29:129,31:131}}", t));
+        EXPECT_TRUE(assertTree(
+            "{{7,15,23,31}} -> "
+            "{{1:101,3:103,5:105,7:107},"
+            "{9:109,11:111,13:113,15:115},"
+            "{17:117,19:119,21:121,23:123},"
+            "{25:125,27:127,29:129,31:131}}",
+            t));
         t.insert(33, 133);
-        EXPECT_TRUE(assertTree("{{23,33}} -> "
-                               "{{7,15,23},{29,33}} -> "
-                               "{{1:101,3:103,5:105,7:107},"
-                               "{9:109,11:111,13:113,15:115},"
-                               "{17:117,19:119,21:121,23:123},"
-                               "{25:125,27:127,29:129},"
-                               "{31:131,33:133}}", t));
+        EXPECT_TRUE(assertTree(
+            "{{23,33}} -> "
+            "{{7,15,23},{29,33}} -> "
+            "{{1:101,3:103,5:105,7:107},"
+            "{9:109,11:111,13:113,15:115},"
+            "{17:117,19:119,21:121,23:123},"
+            "{25:125,27:127,29:129},"
+            "{31:131,33:133}}",
+            t));
     }
     { // give to left node to avoid split
         Tree t;
@@ -393,11 +336,13 @@ TEST_F(BTreeTest, require_that_tree_insert_works)
         t.remove(5);
         EXPECT_TRUE(assertTree("{{7,15}} -> "
                                "{{1:101,3:103,7:107},"
-                               "{9:109,11:111,13:113,15:115}}", t));
+                               "{9:109,11:111,13:113,15:115}}",
+                               t));
         t.insert(10, 110);
         EXPECT_TRUE(assertTree("{{9,15}} -> "
                                "{{1:101,3:103,7:107,9:109},"
-                               "{10:110,11:111,13:113,15:115}}", t));
+                               "{10:110,11:111,13:113,15:115}}",
+                               t));
     }
     { // give to left node to avoid split, and move to left node
         Tree t;
@@ -406,11 +351,13 @@ TEST_F(BTreeTest, require_that_tree_insert_works)
         t.remove(5);
         EXPECT_TRUE(assertTree("{{7,15}} -> "
                                "{{1:101,7:107},"
-                               "{9:109,11:111,13:113,15:115}}", t));
+                               "{9:109,11:111,13:113,15:115}}",
+                               t));
         t.insert(8, 108);
         EXPECT_TRUE(assertTree("{{9,15}} -> "
                                "{{1:101,7:107,8:108,9:109},"
-                               "{11:111,13:113,15:115}}", t));
+                               "{11:111,13:113,15:115}}",
+                               t));
     }
     { // not give to left node to avoid split, but insert at end at left node
         Tree t;
@@ -418,11 +365,13 @@ TEST_F(BTreeTest, require_that_tree_insert_works)
         t.remove(5);
         EXPECT_TRUE(assertTree("{{7,15}} -> "
                                "{{1:101,3:103,7:107},"
-                               "{9:109,11:111,13:113,15:115}}", t));
+                               "{9:109,11:111,13:113,15:115}}",
+                               t));
         t.insert(8, 108);
         EXPECT_TRUE(assertTree("{{8,15}} -> "
                                "{{1:101,3:103,7:107,8:108},"
-                               "{9:109,11:111,13:113,15:115}}", t));
+                               "{9:109,11:111,13:113,15:115}}",
+                               t));
     }
     { // give to right node to avoid split
         Tree t;
@@ -430,11 +379,13 @@ TEST_F(BTreeTest, require_that_tree_insert_works)
         t.remove(13);
         EXPECT_TRUE(assertTree("{{7,15}} -> "
                                "{{1:101,3:103,5:105,7:107},"
-                               "{9:109,11:111,15:115}}", t));
+                               "{9:109,11:111,15:115}}",
+                               t));
         t.insert(4, 104);
         EXPECT_TRUE(assertTree("{{5,15}} -> "
                                "{{1:101,3:103,4:104,5:105},"
-                               "{7:107,9:109,11:111,15:115}}", t));
+                               "{7:107,9:109,11:111,15:115}}",
+                               t));
     }
     { // give to right node to avoid split and move to right node
         using MyTraits6 = BTreeTraits<6, 6, 31, false>;
@@ -447,19 +398,19 @@ TEST_F(BTreeTest, require_that_tree_insert_works)
         t.remove(23);
         EXPECT_TRUE(assertTree("{{11,17}} -> "
                                "{{1:101,3:103,5:105,7:107,9:109,11:111},"
-                               "{13:113,15:115,17:117}}", t));
+                               "{13:113,15:115,17:117}}",
+                               t));
         t.insert(10, 110);
         EXPECT_TRUE(assertTree("{{7,17}} -> "
                                "{{1:101,3:103,5:105,7:107},"
-                               "{9:109,10:110,11:111,13:113,15:115,17:117}}", t));
+                               "{9:109,10:110,11:111,13:113,15:115,17:117}}",
+                               t));
     }
 }
 
-MyLeafNode::RefPair
-getLeafNode(MyNodeAllocator &allocator)
-{
+MyLeafNode::RefPair getLeafNode(MyNodeAllocator& allocator) {
     MyLeafNode::RefPair nPair = allocator.allocLeafNode();
-    MyLeafNode *n = nPair.data;
+    MyLeafNode*         n = nPair.data;
     n->insert(0, 1, "a");
     n->insert(1, 3, "c");
     n->insert(2, 5, "e");
@@ -467,39 +418,38 @@ getLeafNode(MyNodeAllocator &allocator)
     return nPair;
 }
 
-TEST_F(BTreeTest, require_that_node_split_insert_works)
-{
+TEST_F(BTreeTest, require_that_node_split_insert_works) {
     { // new entry in current node
-        GenerationHandler g;
-        MyNodeAllocator m;
+        GenerationHandler   g;
+        MyNodeAllocator     m;
         MyLeafNode::RefPair nPair = getLeafNode(m);
-        MyLeafNode *n = nPair.data;
+        MyLeafNode*         n = nPair.data;
         MyLeafNode::RefPair sPair = m.allocLeafNode();
-        MyLeafNode *s = sPair.data;
+        MyLeafNode*         s = sPair.data;
         n->splitInsert(s, 2, 4, "d");
         EXPECT_TRUE(assertLeafNode("[1:a,3:c,4:d]", *n));
         EXPECT_TRUE(assertLeafNode("[5:e,7:g]", *s));
         cleanup(g, m, nPair.ref, n, sPair.ref, s);
     }
     { // new entry in split node
-        GenerationHandler g;
-        MyNodeAllocator m;
+        GenerationHandler   g;
+        MyNodeAllocator     m;
         MyLeafNode::RefPair nPair = getLeafNode(m);
-        MyLeafNode *n = nPair.data;
+        MyLeafNode*         n = nPair.data;
         MyLeafNode::RefPair sPair = m.allocLeafNode();
-        MyLeafNode *s = sPair.data;
+        MyLeafNode*         s = sPair.data;
         n->splitInsert(s, 3, 6, "f");
         EXPECT_TRUE(assertLeafNode("[1:a,3:c,5:e]", *n));
         EXPECT_TRUE(assertLeafNode("[6:f,7:g]", *s));
         cleanup(g, m, nPair.ref, n, sPair.ref, s);
     }
     { // new entry at end
-        GenerationHandler g;
-        MyNodeAllocator m;
+        GenerationHandler   g;
+        MyNodeAllocator     m;
         MyLeafNode::RefPair nPair = getLeafNode(m);
-        MyLeafNode *n = nPair.data;
+        MyLeafNode*         n = nPair.data;
         MyLeafNode::RefPair sPair = m.allocLeafNode();
-        MyLeafNode *s = sPair.data;
+        MyLeafNode*         s = sPair.data;
         n->splitInsert(s, 4, 8, "h");
         EXPECT_TRUE(assertLeafNode("[1:a,3:c,5:e]", *n));
         EXPECT_TRUE(assertLeafNode("[7:g,8:h]", *s));
@@ -509,34 +459,30 @@ TEST_F(BTreeTest, require_that_node_split_insert_works)
 
 namespace {
 
-struct BTreeStealTraits
-{
-    static constexpr size_t LEAF_SLOTS = 6;
-    static constexpr size_t INTERNAL_SLOTS = 6;
-    static constexpr size_t PATH_SIZE = 20;
+struct BTreeStealTraits {
+    static constexpr size_t                LEAF_SLOTS = 6;
+    static constexpr size_t                INTERNAL_SLOTS = 6;
+    static constexpr size_t                PATH_SIZE = 20;
     [[maybe_unused]] static constexpr bool BINARY_SEEK = true;
 };
 
-}
+} // namespace
 
-TEST_F(BTreeTest, require_that_node_steal_works)
-{
-    typedef BTreeLeafNode<int, std::string,
-        btree::NoAggregated, 6> MyStealNode;
-    typedef BTreeNodeAllocator<int, std::string,
-        btree::NoAggregated,
-        BTreeStealTraits::INTERNAL_SLOTS, BTreeStealTraits::LEAF_SLOTS>
+TEST_F(BTreeTest, require_that_node_steal_works) {
+    typedef BTreeLeafNode<int, std::string, btree::NoAggregated, 6> MyStealNode;
+    typedef BTreeNodeAllocator<int, std::string, btree::NoAggregated, BTreeStealTraits::INTERNAL_SLOTS,
+                               BTreeStealTraits::LEAF_SLOTS>
         MyStealManager;
     { // steal all from left
-        GenerationHandler g;
-        MyStealManager m;
+        GenerationHandler    g;
+        MyStealManager       m;
         MyStealNode::RefPair nPair = m.allocLeafNode();
-        MyStealNode *n = nPair.data;
+        MyStealNode*         n = nPair.data;
         n->insert(0, 4, "d");
         n->insert(1, 5, "e");
         EXPECT_TRUE(!n->isAtLeastHalfFull());
         MyStealNode::RefPair vPair = m.allocLeafNode();
-        MyStealNode *v = vPair.data;
+        MyStealNode*         v = vPair.data;
         v->insert(0, 1, "a");
         v->insert(1, 2, "b");
         v->insert(2, 3, "c");
@@ -546,15 +492,15 @@ TEST_F(BTreeTest, require_that_node_steal_works)
         cleanup(g, m, nPair.ref, n, vPair.ref, v);
     }
     { // steal all from right
-        GenerationHandler g;
-        MyStealManager m;
+        GenerationHandler    g;
+        MyStealManager       m;
         MyStealNode::RefPair nPair = m.allocLeafNode();
-        MyStealNode *n = nPair.data;
+        MyStealNode*         n = nPair.data;
         n->insert(0, 1, "a");
         n->insert(1, 2, "b");
         EXPECT_TRUE(!n->isAtLeastHalfFull());
         MyStealNode::RefPair vPair = m.allocLeafNode();
-        MyStealNode *v = vPair.data;
+        MyStealNode*         v = vPair.data;
         v->insert(0, 3, "c");
         v->insert(1, 4, "d");
         v->insert(2, 5, "e");
@@ -564,15 +510,15 @@ TEST_F(BTreeTest, require_that_node_steal_works)
         cleanup(g, m, nPair.ref, n, vPair.ref, v);
     }
     { // steal some from left
-        GenerationHandler g;
-        MyStealManager m;
+        GenerationHandler    g;
+        MyStealManager       m;
         MyStealNode::RefPair nPair = m.allocLeafNode();
-        MyStealNode *n = nPair.data;
+        MyStealNode*         n = nPair.data;
         n->insert(0, 5, "e");
         n->insert(1, 6, "f");
         EXPECT_TRUE(!n->isAtLeastHalfFull());
         MyStealNode::RefPair vPair = m.allocLeafNode();
-        MyStealNode *v = vPair.data;
+        MyStealNode*         v = vPair.data;
         v->insert(0, 1, "a");
         v->insert(1, 2, "b");
         v->insert(2, 3, "c");
@@ -585,15 +531,15 @@ TEST_F(BTreeTest, require_that_node_steal_works)
         cleanup(g, m, nPair.ref, n, vPair.ref, v);
     }
     { // steal some from right
-        GenerationHandler g;
-        MyStealManager m;
+        GenerationHandler    g;
+        MyStealManager       m;
         MyStealNode::RefPair nPair = m.allocLeafNode();
-        MyStealNode *n = nPair.data;
+        MyStealNode*         n = nPair.data;
         n->insert(0, 1, "a");
         n->insert(1, 2, "b");
         EXPECT_TRUE(!n->isAtLeastHalfFull());
         MyStealNode::RefPair vPair = m.allocLeafNode();
-        MyStealNode *v = vPair.data;
+        MyStealNode*         v = vPair.data;
         v->insert(0, 3, "c");
         v->insert(1, 4, "d");
         v->insert(2, 5, "e");
@@ -607,9 +553,8 @@ TEST_F(BTreeTest, require_that_node_steal_works)
     }
 }
 
-TEST_F(BTreeTest, require_that_tree_remove_steal_works)
-{
-    using MyStealTree = BTree<MyKey, int32_t,btree::NoAggregated, MyComp, BTreeStealTraits, NoAggrCalc>;
+TEST_F(BTreeTest, require_that_tree_remove_steal_works) {
+    using MyStealTree = BTree<MyKey, int32_t, btree::NoAggregated, MyComp, BTreeStealTraits, NoAggrCalc>;
     { // steal all from left
         MyStealTree t;
         t.insert(10, 110);
@@ -622,7 +567,8 @@ TEST_F(BTreeTest, require_that_tree_remove_steal_works)
         t.remove(35);
         EXPECT_TRUE(assertTree("{{30,60}} -> "
                                "{{10:110,20:120,30:130},"
-                               "{40:140,50:150,60:160}}", t));
+                               "{40:140,50:150,60:160}}",
+                               t));
         t.remove(50);
         EXPECT_TRUE(assertTree("{{10:110,20:120,30:130,40:140,60:160}}", t));
     }
@@ -638,7 +584,8 @@ TEST_F(BTreeTest, require_that_tree_remove_steal_works)
         t.remove(35);
         EXPECT_TRUE(assertTree("{{30,60}} -> "
                                "{{10:110,20:120,30:130},"
-                               "{40:140,50:150,60:160}}", t));
+                               "{40:140,50:150,60:160}}",
+                               t));
         t.remove(20);
         EXPECT_TRUE(assertTree("{{10:110,30:130,40:140,50:150,60:160}}", t));
     }
@@ -654,11 +601,13 @@ TEST_F(BTreeTest, require_that_tree_remove_steal_works)
         t.insert(40, 140);
         EXPECT_TRUE(assertTree("{{50,80}} -> "
                                "{{10:110,20:120,30:130,40:140,50:150},"
-                               "{60:160,70:170,80:180}}", t));
+                               "{60:160,70:170,80:180}}",
+                               t));
         t.remove(60);
         EXPECT_TRUE(assertTree("{{30,80}} -> "
                                "{{10:110,20:120,30:130},"
-                               "{40:140,50:150,70:170,80:180}}", t));
+                               "{40:140,50:150,70:170,80:180}}",
+                               t));
     }
     { // steal some from right
         MyStealTree t;
@@ -674,31 +623,31 @@ TEST_F(BTreeTest, require_that_tree_remove_steal_works)
         t.remove(40);
         EXPECT_TRUE(assertTree("{{30,90}} -> "
                                "{{10:110,20:120,30:130},"
-                               "{50:150,60:160,70:170,80:180,90:190}}", t));
+                               "{50:150,60:160,70:170,80:180,90:190}}",
+                               t));
         t.remove(20);
         EXPECT_TRUE(assertTree("{{60,90}} -> "
                                "{{10:110,30:130,50:150,60:160},"
-                               "{70:170,80:180,90:190}}", t));
+                               "{70:170,80:180,90:190}}",
+                               t));
     }
 }
 
-TEST_F(BTreeTest, require_that_node_remove_works)
-{
-    GenerationHandler g;
-    MyNodeAllocator m;
+TEST_F(BTreeTest, require_that_node_remove_works) {
+    GenerationHandler   g;
+    MyNodeAllocator     m;
     MyLeafNode::RefPair nPair = getLeafNode(m);
-    MyLeafNode *n = nPair.data;
+    MyLeafNode*         n = nPair.data;
     n->remove(1);
     EXPECT_TRUE(assertLeafNode("[1:a,5:e,7:g]", *n));
     cleanup(g, m, nPair.ref, n);
 }
 
-TEST_F(BTreeTest, require_that_node_lower_bound_works)
-{
-    GenerationHandler g;
-    MyNodeAllocator m;
+TEST_F(BTreeTest, require_that_node_lower_bound_works) {
+    GenerationHandler   g;
+    MyNodeAllocator     m;
     MyLeafNode::RefPair nPair = getLeafNode(m);
-    MyLeafNode *n = nPair.data;
+    MyLeafNode*         n = nPair.data;
     EXPECT_EQ(1u, n->lower_bound(3, MyComp()));
     EXPECT_FALSE(MyComp()(3, n->getKey(1u)));
     EXPECT_EQ(0u, n->lower_bound(0, MyComp()));
@@ -711,33 +660,27 @@ TEST_F(BTreeTest, require_that_node_lower_bound_works)
     cleanup(g, m, nPair.ref, n);
 }
 
-void
-generateData(std::vector<LeafPair> & data, size_t numEntries)
-{
+void generateData(std::vector<LeafPair>& data, size_t numEntries) {
     data.reserve(numEntries);
     vespalib::Rand48 rnd;
     rnd.srand48(10);
     for (size_t i = 0; i < numEntries; ++i) {
-        int num = rnd.lrand48() % 10000000;
+        int         num = rnd.lrand48() % 10000000;
         std::string str = toStr(num);
         data.push_back(std::make_pair(num, str));
     }
 }
 
-
-void
-BTreeTest::buildSubTree(const std::vector<LeafPair> &sub,
-                   size_t numEntries)
-{
+void BTreeTest::buildSubTree(const std::vector<LeafPair>& sub, size_t numEntries) {
     GenerationHandler g;
-    MyTree tree;
-    MyTreeBuilder builder(tree.getAllocator());
+    MyTree            tree;
+    MyTreeBuilder     builder(tree.getAllocator());
 
     std::vector<LeafPair> sorted(sub.begin(), sub.begin() + numEntries);
     std::sort(sorted.begin(), sorted.end(), LeafPairLess());
     for (size_t i = 0; i < numEntries; ++i) {
-        int num = UNWRAP(sorted[i].first);
-        const std::string & str = sorted[i].second;
+        int                num = UNWRAP(sorted[i].first);
+        const std::string& str = sorted[i].second;
         builder.insert(num, str);
     }
     tree.assign(builder);
@@ -782,26 +725,25 @@ BTreeTest::buildSubTree(const std::vector<LeafPair> &sub,
     EXPECT_TRUE(!ritr.valid());
 }
 
-TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree)
-{
-    GenerationHandler g;
-    MyTree tree;
+TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree) {
+    GenerationHandler     g;
+    MyTree                tree;
     std::vector<LeafPair> exp;
     std::vector<LeafPair> sorted;
-    size_t numEntries = 1000;
+    size_t                numEntries = 1000;
     generateData(exp, numEntries);
     sorted = exp;
     std::sort(sorted.begin(), sorted.end(), LeafPairLess());
     // insert entries
     for (size_t i = 0; i < numEntries; ++i) {
-        int num = UNWRAP(exp[i].first);
-        const std::string & str = exp[i].second;
+        int                num = UNWRAP(exp[i].first);
+        const std::string& str = exp[i].second;
         EXPECT_TRUE(!tree.find(num).valid());
-        //LOG(info, "insert[%zu](%d, %s)", i, num, str.c_str());
+        // LOG(info, "insert[%zu](%d, %s)", i, num, str.c_str());
         EXPECT_TRUE(tree.insert(num, str));
         EXPECT_TRUE(!tree.insert(num, str));
         for (size_t j = 0; j <= i; ++j) {
-            //LOG(info, "find[%zu](%d)", j, exp[j].first._val);
+            // LOG(info, "find[%zu](%d)", j, exp[j].first._val);
             MyTree::Iterator itr = tree.find(exp[j].first);
             EXPECT_TRUE(itr.valid());
             EXPECT_EQ(exp[j].first, itr.getKey());
@@ -811,7 +753,7 @@ TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree)
         EXPECT_TRUE(tree.isValid());
         buildSubTree(exp, i + 1);
     }
-    //std::cout << "tree: " << tree.toString() << std::endl;
+    // std::cout << "tree: " << tree.toString() << std::endl;
 
     {
         MyTree::Iterator itr = tree.begin();
@@ -871,9 +813,9 @@ TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree)
     {
         // Use a compaction strategy that will compact all active buffers
         auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
-        MyTree::NodeAllocatorType &manager = tree.getAllocator();
-        auto compacting_buffers = manager.start_compact_worst(compaction_strategy);
-        MyTree::Iterator itr = tree.begin();
+        MyTree::NodeAllocatorType& manager = tree.getAllocator();
+        auto                       compacting_buffers = manager.start_compact_worst(compaction_strategy);
+        MyTree::Iterator           itr = tree.begin();
         tree.setRoot(itr.moveFirstLeafNode(tree.getRoot()));
         while (itr.valid()) {
             // LOG(info, "Leaf moved to %d", UNWRAP(itr.getKey()));
@@ -888,8 +830,8 @@ TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree)
     // remove entries
     for (size_t i = 0; i < numEntries; ++i) {
         int num = UNWRAP(exp[i].first);
-        //LOG(info, "remove[%zu](%d)", i, num);
-        //std::cout << "tree: " << tree.toString() << std::endl;
+        // LOG(info, "remove[%zu](%d)", i, num);
+        // std::cout << "tree: " << tree.toString() << std::endl;
         EXPECT_TRUE(tree.remove(num));
         EXPECT_TRUE(!tree.find(num).valid());
         EXPECT_TRUE(!tree.remove(num));
@@ -904,11 +846,10 @@ TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree)
     }
 }
 
-TEST_F(BTreeTest, require_that_sorted_tree_insert_works)
-{
+TEST_F(BTreeTest, require_that_sorted_tree_insert_works) {
     {
         GenerationHandler g;
-        MyTree tree;
+        MyTree            tree;
         for (int i = 0; i < 1000; ++i) {
             EXPECT_TRUE(tree.insert(i, toStr(i)));
             MyTree::Iterator itr = tree.find(i);
@@ -919,7 +860,7 @@ TEST_F(BTreeTest, require_that_sorted_tree_insert_works)
     }
     {
         GenerationHandler g;
-        MyTree tree;
+        MyTree            tree;
         for (int i = 1000; i > 0; --i) {
             EXPECT_TRUE(tree.insert(i, toStr(i)));
             MyTree::Iterator itr = tree.find(i);
@@ -930,35 +871,33 @@ TEST_F(BTreeTest, require_that_sorted_tree_insert_works)
     }
 }
 
-TEST_F(BTreeTest, require_that_corner_case_tree_find_works)
-{
+TEST_F(BTreeTest, require_that_corner_case_tree_find_works) {
     GenerationHandler g;
-    MyTree tree;
+    MyTree            tree;
     for (int i = 1; i < 100; ++i) {
         tree.insert(i, toStr(i));
     }
-    EXPECT_TRUE(!tree.find(0).valid()); // lower than lowest
+    EXPECT_TRUE(!tree.find(0).valid());    // lower than lowest
     EXPECT_TRUE(!tree.find(1000).valid()); // higher than highest
 }
 
-TEST_F(BTreeTest, require_that_basic_tree_iterator_works)
-{
+TEST_F(BTreeTest, require_that_basic_tree_iterator_works) {
     GenerationHandler g;
-    MyTree tree;
+    MyTree            tree;
     EXPECT_TRUE(!tree.begin().valid());
     std::vector<LeafPair> exp;
-    size_t numEntries = 1000;
+    size_t                numEntries = 1000;
     generateData(exp, numEntries);
     for (size_t i = 0; i < numEntries; ++i) {
         tree.insert(exp[i].first, exp[i].second);
     }
     std::sort(exp.begin(), exp.end(), LeafPairLess());
-    size_t ei = 0;
+    size_t           ei = 0;
     MyTree::Iterator itr = tree.begin();
     MyTree::Iterator ritr;
     EXPECT_EQ(1000u, itr.size());
     for (; itr.valid(); ++itr) {
-        //LOG(info, "itr(%d, %s)", itr.getKey(), itr.getData().c_str());
+        // LOG(info, "itr(%d, %s)", itr.getKey(), itr.getData().c_str());
         EXPECT_EQ(UNWRAP(exp[ei].first), UNWRAP(itr.getKey()));
         EXPECT_EQ(exp[ei].second, itr.getData());
         ei++;
@@ -967,21 +906,20 @@ TEST_F(BTreeTest, require_that_basic_tree_iterator_works)
     EXPECT_EQ(numEntries, ei);
     for (; ritr.valid(); --ritr) {
         --ei;
-        //LOG(info, "itr(%d, %s)", itr.getKey(), itr.getData().c_str());
+        // LOG(info, "itr(%d, %s)", itr.getKey(), itr.getData().c_str());
         EXPECT_EQ(UNWRAP(exp[ei].first), UNWRAP(ritr.getKey()));
         EXPECT_EQ(exp[ei].second, ritr.getData());
     }
 }
 
-TEST_F(BTreeTest, require_that_tree_iterator_seek_works)
-{
+TEST_F(BTreeTest, require_that_tree_iterator_seek_works) {
     GenerationHandler g;
-    MyTree tree;
+    MyTree            tree;
     for (int i = 0; i < 40; i += 2) {
         tree.insert(i, toStr(i));
     }
-    //std::cout << tree.toString() << std::endl;
-    EXPECT_TRUE(assertSeek(2, 2, tree)); // next key
+    // std::cout << tree.toString() << std::endl;
+    EXPECT_TRUE(assertSeek(2, 2, tree));   // next key
     EXPECT_TRUE(assertSeek(10, 10, tree)); // skip to existing
     EXPECT_TRUE(assertSeek(26, 26, tree)); // skip to existing
     EXPECT_TRUE(assertSeek(11, 12, tree)); // skip to non-existing
@@ -1003,7 +941,7 @@ TEST_F(BTreeTest, require_that_tree_iterator_seek_works)
     {
         MyTree::Iterator itr = tree.begin();
         MyTree::Iterator itr2 = tree.begin();
-        itr.binarySeek(40); // outside
+        itr.binarySeek(40);  // outside
         itr2.linearSeek(40); // outside
         EXPECT_TRUE(!itr.valid());
         EXPECT_TRUE(!itr2.valid());
@@ -1025,7 +963,7 @@ TEST_F(BTreeTest, require_that_tree_iterator_seek_works)
         }
     }
     GenerationHandler g2;
-    MyTree tree2; // only leaf node
+    MyTree            tree2; // only leaf node
     tree2.insert(0, "0");
     tree2.insert(2, "2");
     tree2.insert(4, "4");
@@ -1034,17 +972,16 @@ TEST_F(BTreeTest, require_that_tree_iterator_seek_works)
     {
         MyTree::Iterator itr = tree2.begin();
         MyTree::Iterator itr2 = tree2.begin();
-        itr.binarySeek(5); // outside
+        itr.binarySeek(5);  // outside
         itr2.linearSeek(5); // outside
         EXPECT_TRUE(!itr.valid());
         EXPECT_TRUE(!itr2.valid());
     }
 }
 
-TEST_F(BTreeTest, require_that_tree_iterator_assign_works)
-{
+TEST_F(BTreeTest, require_that_tree_iterator_assign_works) {
     GenerationHandler g;
-    MyTree tree;
+    MyTree            tree;
     for (int i = 0; i < 1000; ++i) {
         tree.insert(i, toStr(i));
     }
@@ -1060,35 +997,31 @@ TEST_F(BTreeTest, require_that_tree_iterator_assign_works)
     }
 }
 
-size_t
-adjustAllocatedBytes(size_t nodeCount, size_t nodeSize)
-{
+size_t adjustAllocatedBytes(size_t nodeCount, size_t nodeSize) {
     // Note: Sizes of underlying data store buffers are power of 2.
     size_t allocatedBytes = vespalib::roundUp2inN(nodeCount * nodeSize);
     size_t adjustedNodeCount = allocatedBytes / nodeSize;
     return adjustedNodeCount * nodeSize;
 }
 
-TEST_F(BTreeTest, require_that_memory_usage_is_calculated)
-{
+TEST_F(BTreeTest, require_that_memory_usage_is_calculated) {
     constexpr size_t BASE_ALLOCATED = 28744u;
     constexpr size_t BASE_USED = 24920;
-    typedef BTreeNodeAllocator<int32_t, int8_t,
-        btree::NoAggregated,
-        MyTraits::INTERNAL_SLOTS, MyTraits::LEAF_SLOTS> NodeAllocator;
+    typedef BTreeNodeAllocator<int32_t, int8_t, btree::NoAggregated, MyTraits::INTERNAL_SLOTS, MyTraits::LEAF_SLOTS>
+        NodeAllocator;
     using INode = NodeAllocator::InternalNodeType;
     using LNode = NodeAllocator::LeafNodeType;
     using IRef = NodeAllocator::InternalNodeTypeRefPair;
     using LRef = NodeAllocator::LeafNodeTypeRefPair;
-    LOG(info, "sizeof(BTreeNode)=%zu, sizeof(INode)=%zu, sizeof(LNode)=%zu",
-        sizeof(BTreeNode), sizeof(INode), sizeof(LNode));
+    LOG(info, "sizeof(BTreeNode)=%zu, sizeof(INode)=%zu, sizeof(LNode)=%zu", sizeof(BTreeNode), sizeof(INode),
+        sizeof(LNode));
     EXPECT_GT(sizeof(INode), sizeof(LNode));
     GenerationHandler gh;
     gh.incGeneration();
-    NodeAllocator tm;
+    NodeAllocator         tm;
     vespalib::MemoryUsage mu;
-    const uint32_t initialInternalNodes = 128u;
-    const uint32_t initialLeafNodes = 128u;
+    const uint32_t        initialInternalNodes = 128u;
+    const uint32_t        initialLeafNodes = 128u;
     mu.incAllocatedBytes(adjustAllocatedBytes(initialInternalNodes, sizeof(INode)));
     mu.incAllocatedBytes(adjustAllocatedBytes(initialLeafNodes, sizeof(LNode)));
     mu.incAllocatedBytes(BASE_ALLOCATED);
@@ -1132,12 +1065,9 @@ TEST_F(BTreeTest, require_that_memory_usage_is_calculated)
     EXPECT_TRUE(assertMemoryUsage(mu, tm.getMemoryUsage()));
 }
 
-template <typename TreeType>
-void
-BTreeTest::requireThatLowerBoundWorksT()
-{
+template <typename TreeType> void BTreeTest::requireThatLowerBoundWorksT() {
     GenerationHandler g;
-    TreeType t;
+    TreeType          t;
     EXPECT_TRUE(t.insert(10, BTreeNoLeafData()));
     EXPECT_TRUE(t.insert(20, BTreeNoLeafData()));
     EXPECT_TRUE(t.insert(30, BTreeNoLeafData()));
@@ -1146,28 +1076,24 @@ BTreeTest::requireThatLowerBoundWorksT()
     EXPECT_EQ(30, t.lowerBound(21).getKey());
     EXPECT_EQ(30, t.lowerBound(30).getKey());
     EXPECT_TRUE(!t.lowerBound(31).valid());
-    for (int i = 40; i < 1000; i+=10) {
+    for (int i = 40; i < 1000; i += 10) {
         EXPECT_TRUE(t.insert(i, BTreeNoLeafData()));
     }
-    for (int i = 9; i < 990; i+=10) {
+    for (int i = 9; i < 990; i += 10) {
         EXPECT_EQ(i + 1, t.lowerBound(i).getKey());
         EXPECT_EQ(i + 1, t.lowerBound(i + 1).getKey());
     }
     EXPECT_TRUE(!t.lowerBound(991).valid());
 }
 
-TEST_F(BTreeTest, require_that_lower_bound_works)
-{
+TEST_F(BTreeTest, require_that_lower_bound_works) {
     requireThatLowerBoundWorksT<SetTreeB>();
     requireThatLowerBoundWorksT<SetTreeL>();
 }
 
-template <typename TreeType>
-void
-BTreeTest::requireThatUpperBoundWorksT()
-{
+template <typename TreeType> void BTreeTest::requireThatUpperBoundWorksT() {
     GenerationHandler g;
-    TreeType t;
+    TreeType          t;
     EXPECT_TRUE(t.insert(10, BTreeNoLeafData()));
     EXPECT_TRUE(t.insert(20, BTreeNoLeafData()));
     EXPECT_TRUE(t.insert(30, BTreeNoLeafData()));
@@ -1175,52 +1101,50 @@ BTreeTest::requireThatUpperBoundWorksT()
     EXPECT_EQ(30, t.upperBound(20).getKey());
     EXPECT_EQ(30, t.upperBound(21).getKey());
     EXPECT_TRUE(!t.upperBound(30).valid());
-    for (int i = 40; i < 1000; i+=10) {
+    for (int i = 40; i < 1000; i += 10) {
         EXPECT_TRUE(t.insert(i, BTreeNoLeafData()));
     }
-    for (int i = 9; i < 980; i+=10) {
+    for (int i = 9; i < 980; i += 10) {
         EXPECT_EQ(i + 1, t.upperBound(i).getKey());
         EXPECT_EQ(i + 11, t.upperBound(i + 1).getKey());
     }
     EXPECT_TRUE(!t.upperBound(990).valid());
 }
 
-TEST_F(BTreeTest, require_that_upper_bound_works)
-{
+TEST_F(BTreeTest, require_that_upper_bound_works) {
     requireThatUpperBoundWorksT<SetTreeB>();
     requireThatUpperBoundWorksT<SetTreeL>();
 }
 
 struct UpdKeyComp {
-    int _remainder;
+    int            _remainder;
     mutable size_t _numErrors;
     UpdKeyComp(int remainder) : _remainder(remainder), _numErrors(0) {}
-    bool operator() (const int & lhs, const int & rhs) const {
-        if (lhs % 2 != _remainder) ++_numErrors;
-        if (rhs % 2 != _remainder) ++_numErrors;
+    bool operator()(const int& lhs, const int& rhs) const {
+        if (lhs % 2 != _remainder)
+            ++_numErrors;
+        if (rhs % 2 != _remainder)
+            ++_numErrors;
         return lhs < rhs;
     }
 };
 
-TEST_F(BTreeTest, require_that_update_of_key_works)
-{
-    typedef BTree<int, BTreeNoLeafData,
-        btree::NoAggregated,
-        UpdKeyComp &> UpdKeyTree;
+TEST_F(BTreeTest, require_that_update_of_key_works) {
+    typedef BTree<int, BTreeNoLeafData, btree::NoAggregated, UpdKeyComp&> UpdKeyTree;
     using UpdKeyTreeIterator = UpdKeyTree::Iterator;
     GenerationHandler g;
-    UpdKeyTree t;
-    UpdKeyComp cmp1(0);
-    for (int i = 0; i < 1000; i+=2) {
+    UpdKeyTree        t;
+    UpdKeyComp        cmp1(0);
+    for (int i = 0; i < 1000; i += 2) {
         EXPECT_TRUE(t.insert(i, BTreeNoLeafData(), cmp1));
     }
     EXPECT_EQ(0u, cmp1._numErrors);
-    for (int i = 0; i < 1000; i+=2) {
+    for (int i = 0; i < 1000; i += 2) {
         UpdKeyTreeIterator itr = t.find(i, cmp1);
         itr.writeKey(i + 1);
     }
     UpdKeyComp cmp2(1);
-    for (int i = 1; i < 1000; i+=2) {
+    for (int i = 1; i < 1000; i += 2) {
         UpdKeyTreeIterator itr = t.find(i, cmp2);
         EXPECT_TRUE(itr.valid());
     }
@@ -1229,28 +1153,20 @@ TEST_F(BTreeTest, require_that_update_of_key_works)
 
 namespace {
 
-template <typename TreeStore>
-void
-insert(TreeStore& s, EntryRef& root, typename TreeStore::KeyDataType addition)
-{
+template <typename TreeStore> void insert(TreeStore& s, EntryRef& root, typename TreeStore::KeyDataType addition) {
     s.apply(root, &addition, &addition + 1, nullptr, nullptr);
 }
 
-template <typename TreeStore>
-void
-remove(TreeStore& s, EntryRef& root, typename TreeStore::KeyType removal)
-{
+template <typename TreeStore> void remove(TreeStore& s, EntryRef& root, typename TreeStore::KeyType removal) {
     s.apply(root, nullptr, nullptr, &removal, &removal + 1);
 }
 
-}
+} // namespace
 
-TEST_F(BTreeTest, require_that_small_nodes_works)
-{
-    typedef BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp,
-        BTreeDefaultTraits> TreeStore;
-    GenerationHandler g;
-    TreeStore s;
+TEST_F(BTreeTest, require_that_small_nodes_works) {
+    typedef BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp, BTreeDefaultTraits> TreeStore;
+    GenerationHandler                                                                       g;
+    TreeStore                                                                               s;
 
     EntryRef root;
     EXPECT_EQ(0u, s.size(root));
@@ -1283,9 +1199,9 @@ TEST_F(BTreeTest, require_that_small_nodes_works)
     EXPECT_EQ(101u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
     for (uint32_t i = 0; i < 100; ++i) {
-        remove(s, root,  1000 + i);
+        remove(s, root, 1000 + i);
         EXPECT_EQ(100 - i, s.size(root));
-        EXPECT_EQ(100 - i <= TreeStore::clusterLimit,  s.isSmallArray(root));
+        EXPECT_EQ(100 - i <= TreeStore::clusterLimit, s.isSmallArray(root));
     }
     EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
@@ -1301,31 +1217,23 @@ TEST_F(BTreeTest, require_that_small_nodes_works)
 namespace {
 
 template <typename TreeStore, typename AdditionsVector, typename RemovalsVector>
-void
-apply_tree_mutations(TreeStore& s,
-                     EntryRef& root,
-                     const AdditionsVector& additions,
-                     const RemovalsVector& removals)
-{
+void apply_tree_mutations(
+    TreeStore& s, EntryRef& root, const AdditionsVector& additions, const RemovalsVector& removals) {
     s.apply(root, additions.empty() ? nullptr : &additions[0],
-                  additions.empty() ? nullptr : &additions[0] + additions.size(),
-                  removals.empty()  ? nullptr : &removals[0],
-                  removals.empty()  ? nullptr : &removals[0] + removals.size());
+            additions.empty() ? nullptr : &additions[0] + additions.size(), removals.empty() ? nullptr : &removals[0],
+            removals.empty() ? nullptr : &removals[0] + removals.size());
 }
 
-}
+} // namespace
 
-
-TEST_F(BTreeTest, require_that_apply_works)
-{
-    typedef BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp,
-        BTreeDefaultTraits> TreeStore;
+TEST_F(BTreeTest, require_that_apply_works) {
+    typedef BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp, BTreeDefaultTraits> TreeStore;
     using KeyType = TreeStore::KeyType;
     using KeyDataType = TreeStore::KeyDataType;
-    GenerationHandler g;
-    TreeStore s;
+    GenerationHandler        g;
+    TreeStore                s;
     std::vector<KeyDataType> additions;
-    std::vector<KeyType> removals;
+    std::vector<KeyType>     removals;
 
     EntryRef root;
     EXPECT_EQ(0u, s.size(root));
@@ -1365,7 +1273,7 @@ TEST_F(BTreeTest, require_that_apply_works)
         additions.push_back(KeyDataType(1000 + i, "big"));
         apply_tree_mutations(s, root, additions, removals);
         EXPECT_EQ(5u + i, s.size(root));
-        EXPECT_EQ(5u + i <= TreeStore::clusterLimit,  s.isSmallArray(root));
+        EXPECT_EQ(5u + i <= TreeStore::clusterLimit, s.isSmallArray(root));
     }
 
     additions.clear();
@@ -1391,10 +1299,10 @@ TEST_F(BTreeTest, require_that_apply_works)
     for (uint32_t i = 0; i < 100; ++i) {
         additions.clear();
         removals.clear();
-        removals.push_back(1000 +i);
+        removals.push_back(1000 + i);
         apply_tree_mutations(s, root, additions, removals);
         EXPECT_EQ(100 - i, s.size(root));
-        EXPECT_EQ(100 - i <= TreeStore::clusterLimit,  s.isSmallArray(root));
+        EXPECT_EQ(100 - i <= TreeStore::clusterLimit, s.isSmallArray(root));
     }
     EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
@@ -1432,31 +1340,22 @@ TEST_F(BTreeTest, require_that_apply_works)
     s.reclaim_memory(g.get_oldest_used_generation());
 }
 
-class MyTreeTestIterator : public MyTree::Iterator
-{
+class MyTreeTestIterator : public MyTree::Iterator {
 public:
-    MyTreeTestIterator(const MyTree::Iterator &rhs)
-        : MyTree::Iterator(rhs)
-    {
-    }
+    MyTreeTestIterator(const MyTree::Iterator& rhs) : MyTree::Iterator(rhs) {}
 
     int getPathSize() const { return _pathSize; }
 };
 
-
-void
-BTreeTest::requireThatIteratorDistanceWorks(int numEntries)
-{
+void BTreeTest::requireThatIteratorDistanceWorks(int numEntries) {
     GenerationHandler g;
-    MyTree tree;
+    MyTree            tree;
     using Iterator = MyTree::Iterator;
     for (int i = 0; i < numEntries; ++i) {
         tree.insert(i, toStr(i));
     }
     MyTreeTestIterator tit = tree.begin();
-    LOG(info,
-        "numEntries=%d, iterator pathSize=%d",
-        numEntries, tit.getPathSize());
+    LOG(info, "numEntries=%d, iterator pathSize=%d", numEntries, tit.getPathSize());
     Iterator it = tree.begin();
     for (int i = 0; i <= numEntries; ++i) {
         Iterator iit = tree.lowerBound(i);
@@ -1490,7 +1389,7 @@ BTreeTest::requireThatIteratorDistanceWorks(int numEntries)
             iitbsp2.binarySeekPast(i);
         }
         EXPECT_EQ(i, static_cast<int>(iit.position()));
-        EXPECT_EQ(i < numEntries, iit.valid()); 
+        EXPECT_EQ(i < numEntries, iit.valid());
         EXPECT_TRUE(iit.identical(it));
         EXPECT_TRUE(iit.identical(iitls));
         EXPECT_TRUE(iit.identical(iitbs));
@@ -1509,7 +1408,7 @@ BTreeTest::requireThatIteratorDistanceWorks(int numEntries)
         for (int j = 0; j <= numEntries; ++j) {
             Iterator jit = tree.lowerBound(j);
             EXPECT_EQ(j, static_cast<int>(jit.position()));
-            EXPECT_EQ(j < numEntries, jit.valid()); 
+            EXPECT_EQ(j < numEntries, jit.valid());
             EXPECT_EQ(i - j, iit - jit);
             EXPECT_EQ(j - i, jit - iit);
 
@@ -1523,11 +1422,9 @@ BTreeTest::requireThatIteratorDistanceWorks(int numEntries)
     }
 }
 
-void
-BTreeTest::test_step_forward(int num_entries)
-{
+void BTreeTest::test_step_forward(int num_entries) {
     GenerationHandler g;
-    MyTree tree;
+    MyTree            tree;
     for (int i = 0; i < num_entries; ++i) {
         tree.insert(i, toStr(i));
     }
@@ -1551,11 +1448,9 @@ BTreeTest::test_step_forward(int num_entries)
     }
 }
 
-void
-BTreeTest::test_step_backward(int num_entries)
-{
+void BTreeTest::test_step_backward(int num_entries) {
     GenerationHandler g;
-    MyTree tree;
+    MyTree            tree;
     for (int i = 0; i < num_entries; ++i) {
         tree.insert(i, toStr(i));
     }
@@ -1577,8 +1472,7 @@ BTreeTest::test_step_backward(int num_entries)
     }
 }
 
-TEST_F(BTreeTest, require_that_iterator_distance_works)
-{
+TEST_F(BTreeTest, require_that_iterator_distance_works) {
     requireThatIteratorDistanceWorks(0);
     requireThatIteratorDistanceWorks(1);
     requireThatIteratorDistanceWorks(3);
@@ -1588,8 +1482,7 @@ TEST_F(BTreeTest, require_that_iterator_distance_works)
     requireThatIteratorDistanceWorks(400);
 }
 
-TEST_F(BTreeTest, require_that_step_forward_works)
-{
+TEST_F(BTreeTest, require_that_step_forward_works) {
     test_step_forward(0);
     test_step_forward(1);
     test_step_forward(3);
@@ -1599,8 +1492,7 @@ TEST_F(BTreeTest, require_that_step_forward_works)
     test_step_forward(400);
 }
 
-TEST_F(BTreeTest, require_that_step_backward_works)
-{
+TEST_F(BTreeTest, require_that_step_backward_works) {
     test_step_backward(0);
     test_step_backward(1);
     test_step_backward(3);
@@ -1610,8 +1502,7 @@ TEST_F(BTreeTest, require_that_step_backward_works)
     test_step_backward(400);
 }
 
-TEST_F(BTreeTest, require_that_foreach_key_works)
-{
+TEST_F(BTreeTest, require_that_foreach_key_works) {
     using Tree = BTree<int, int, btree::NoAggregated, MyComp, MyTraits>;
     using Iterator = typename Tree::ConstIterator;
     Tree t;
@@ -1627,9 +1518,9 @@ TEST_F(BTreeTest, require_that_foreach_key_works)
         // Subranges
         for (int startval = 1; startval < 259; ++startval) {
             for (int endval = 1; endval < 259; ++endval) {
-                SequenceValidator validator(startval, std::max(0, std::min(endval,257) - std::min(startval, 257)));
-                Iterator start = t.lowerBound(startval);
-                Iterator end = t.lowerBound(endval);
+                SequenceValidator validator(startval, std::max(0, std::min(endval, 257) - std::min(startval, 257)));
+                Iterator          start = t.lowerBound(startval);
+                Iterator          end = t.lowerBound(endval);
                 validate_subrange(start, end, validator);
             }
         }
@@ -1638,11 +1529,8 @@ TEST_F(BTreeTest, require_that_foreach_key_works)
 
 namespace {
 
-template <typename Tree>
-void
-inc_generation(GenerationHandler &g, Tree &t)
-{
-    auto &s = t.getAllocator();
+template <typename Tree> void inc_generation(GenerationHandler& g, Tree& t) {
+    auto& s = t.getAllocator();
     s.freeze();
     s.assign_generation(g.getCurrentGeneration());
     g.incGeneration();
@@ -1650,25 +1538,19 @@ inc_generation(GenerationHandler &g, Tree &t)
 }
 
 template <typename Tree>
-void
-make_iterators(Tree& t, std::vector<int>& list, std::vector<typename Tree::ConstIterator>& iterators)
-{
+void make_iterators(Tree& t, std::vector<int>& list, std::vector<typename Tree::ConstIterator>& iterators) {
     for (auto key : list) {
         iterators.emplace_back(t.lowerBound(key));
     }
     iterators.emplace_back(t.lowerBound(300));
 }
 
-class KeyRangeValidator
-{
-    std::vector<int> &_list;
-    size_t _curr_pos;
+class KeyRangeValidator {
+    std::vector<int>& _list;
+    size_t            _curr_pos;
+
 public:
-    KeyRangeValidator(std::vector<int> &list, size_t start_pos)
-        : _list(list),
-          _curr_pos(start_pos)
-    {
-    }
+    KeyRangeValidator(std::vector<int>& list, size_t start_pos) : _list(list), _curr_pos(start_pos) {}
     void operator()(int key) {
         assert(_curr_pos < _list.size());
         EXPECT_EQ(key, _list[_curr_pos]);
@@ -1677,16 +1559,15 @@ public:
     size_t curr_pos() const noexcept { return _curr_pos; }
 };
 
-}
+} // namespace
 
-TEST_F(BTreeTest, require_that_compaction_works)
-{
+TEST_F(BTreeTest, require_that_compaction_works) {
     using Tree = BTree<int, int, btree::NoAggregated, MyComp, MyTraits>;
-    GenerationHandler g;
-    Tree t;
-    std::vector<int> before_list;
+    GenerationHandler                         g;
+    Tree                                      t;
+    std::vector<int>                          before_list;
     std::vector<typename Tree::ConstIterator> before_iterators;
-    std::vector<int> after_list;
+    std::vector<int>                          after_list;
     std::vector<typename Tree::ConstIterator> after_iterators;
     for (uint32_t i = 1; i < 256; ++i) {
         t.insert(i, 101);
@@ -1718,19 +1599,21 @@ TEST_F(BTreeTest, require_that_compaction_works)
             if (i <= j) {
                 KeyRangeValidator validate_keys(before_list, i);
                 EXPECT_EQ(i, validate_keys.curr_pos());
-                before_iterators[i].foreach_key_range(after_iterators[j], [&validate_keys](int key) { validate_keys(key); });
+                before_iterators[i].foreach_key_range(
+                    after_iterators[j], [&validate_keys](int key) { validate_keys(key); });
                 EXPECT_EQ(j, validate_keys.curr_pos());
             }
             if (j <= i) {
                 KeyRangeValidator validate_keys(before_list, j);
                 EXPECT_EQ(j, validate_keys.curr_pos());
-                after_iterators[j].foreach_key_range(before_iterators[i], [&validate_keys](int key) { validate_keys(key); });
+                after_iterators[j].foreach_key_range(
+                    before_iterators[i], [&validate_keys](int key) { validate_keys(key); });
                 EXPECT_EQ(i, validate_keys.curr_pos());
             }
         }
     }
 }
 
-}
+} // namespace vespalib::btree
 
 GTEST_MAIN_RUN_ALL_TESTS()

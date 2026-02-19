@@ -4,24 +4,22 @@
 
 #include "generation_hold_list.h"
 #include "generationhandler.h"
+
 #include <memory>
 
 namespace vespalib {
 
-class GenerationHeldBase
-{
+class GenerationHeldBase {
 public:
     using generation_t = GenerationHandler::generation_t;
     using UP = std::unique_ptr<GenerationHeldBase>;
     using SP = std::shared_ptr<GenerationHeldBase>;
 
 private:
-    size_t	 _byte_size;
+    size_t _byte_size;
 
 public:
-    GenerationHeldBase(size_t byte_size_in) noexcept
-        : _byte_size(byte_size_in)
-    { }
+    GenerationHeldBase(size_t byte_size_in) noexcept : _byte_size(byte_size_in) {}
 
     virtual ~GenerationHeldBase();
     constexpr size_t byte_size() const noexcept { return _byte_size; }
@@ -38,5 +36,4 @@ public:
     GenerationHolder() noexcept;
 };
 
-}
-
+} // namespace vespalib

@@ -16,24 +16,22 @@ class HandleManager;
  **/
 class HandleGuard {
     friend class HandleManager;
+
 private:
-    HandleManager *_manager;
+    HandleManager* _manager;
     uint64_t       _handle;
-    HandleGuard(HandleManager &manager_in, uint64_t handle_in)
-        : _manager(&manager_in), _handle(handle_in) {}
+    HandleGuard(HandleManager& manager_in, uint64_t handle_in) : _manager(&manager_in), _handle(handle_in) {}
     void unlock();
+
 public:
     HandleGuard() : _manager(nullptr), _handle(0) {}
-    HandleGuard(const HandleGuard &) = delete;
-    HandleGuard &operator=(const HandleGuard &) = delete;
-    HandleGuard(HandleGuard &&rhs)
-        : _manager(rhs._manager),
-          _handle(rhs._handle)
-    {
+    HandleGuard(const HandleGuard&) = delete;
+    HandleGuard& operator=(const HandleGuard&) = delete;
+    HandleGuard(HandleGuard&& rhs) : _manager(rhs._manager), _handle(rhs._handle) {
         rhs._manager = nullptr;
         rhs._handle = 0;
     }
-    HandleGuard &operator=(HandleGuard &&rhs) {
+    HandleGuard& operator=(HandleGuard&& rhs) {
         unlock();
         _manager = rhs._manager;
         _handle = rhs._handle;
@@ -41,7 +39,7 @@ public:
         rhs._handle = 0;
         return *this;
     }
-    bool valid() { return (_manager != nullptr); }
+    bool     valid() { return (_manager != nullptr); }
     uint64_t handle() const { return _handle; }
     ~HandleGuard();
 };
@@ -60,38 +58,35 @@ public:
  * credit for the destruction of the handle and responsibility for
  * cleaning up after it.
  **/
-class HandleManager
-{
+class HandleManager {
     friend class HandleGuard;
+
 private:
     struct Entry {
         std::condition_variable cond;
         bool                    disable;
         size_t                  use_cnt;
         size_t                  wait_cnt;
-        bool should_notify() const {
-            return ((use_cnt == 0) && (wait_cnt > 0));
-        }
-        bool should_erase() const {
-            return (disable && (use_cnt == 0) && (wait_cnt == 0));
-        }
+        bool                    should_notify() const { return ((use_cnt == 0) && (wait_cnt > 0)); }
+        bool                    should_erase() const { return (disable && (use_cnt == 0) && (wait_cnt == 0)); }
         Entry() : cond(), disable(false), use_cnt(0), wait_cnt(0) {}
         ~Entry();
     };
 
-    mutable std::mutex       _lock;
-    uint64_t                 _next_handle;
-    std::map<uint64_t,Entry> _repo;
+    mutable std::mutex        _lock;
+    uint64_t                  _next_handle;
+    std::map<uint64_t, Entry> _repo;
 
     void unlock(uint64_t handle);
+
 public:
     HandleManager();
     ~HandleManager();
-    size_t size() const;
-    bool empty() const { return (size() == 0); }
-    uint64_t create();
-    HandleGuard lock(uint64_t handle);
-    bool destroy(uint64_t handle);
+    size_t          size() const;
+    bool            empty() const { return (size() == 0); }
+    uint64_t        create();
+    HandleGuard     lock(uint64_t handle);
+    bool            destroy(uint64_t handle);
     static uint64_t null_handle() { return 0; }
 };
 

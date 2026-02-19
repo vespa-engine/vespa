@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cstdint>
 #include <atomic>
+#include <cstdint>
 
 namespace vespalib {
 
@@ -14,12 +14,11 @@ namespace vespalib {
  * first generation, and it will be different from all later
  * generations, even when the counter wraps around.
  **/
-class GenCnt
-{
+class GenCnt {
 private:
     std::atomic<uint32_t> _val;
-public:
 
+public:
     /**
      * @brief Create a generation counter with value 0
      **/
@@ -32,7 +31,7 @@ public:
      **/
     GenCnt(uint32_t val) noexcept : _val(val) {}
 
-    GenCnt(const GenCnt &rhs) noexcept : _val(rhs.getAsInt()) {}
+    GenCnt(const GenCnt& rhs) noexcept : _val(rhs.getAsInt()) {}
 
     /**
      * @brief empty destructor
@@ -45,7 +44,7 @@ public:
      * @return this object, for chaining
      * @param n how much to increment the generation counter
      **/
-    GenCnt &add(uint32_t n = 1);
+    GenCnt& add(uint32_t n = 1);
 
     /**
      * @brief Check if this generation counter is inside the given
@@ -65,7 +64,7 @@ public:
      * @return distance between this and other
      * @param other other object occurring after this one
      **/
-    uint32_t distance(const GenCnt &other) const;
+    uint32_t distance(const GenCnt& other) const;
 
     /**
      * @brief Check if this GenCnt is equal to another GenCnt
@@ -73,7 +72,7 @@ public:
      * @return true if <i>this</i> is equal to <i>rhs</i>
      * @param rhs the right hand side in the comparison
      **/
-    bool operator==(const GenCnt &rhs) const { return rhs._val == _val; }
+    bool operator==(const GenCnt& rhs) const { return rhs._val == _val; }
 
     /**
      * @brief Check if this GenCnt is not equal to another GenCnt
@@ -81,7 +80,7 @@ public:
      * @return true if <i>this</i> is not equal to <i>rhs</i>
      * @param rhs the right hand side in the comparison
      **/
-    bool operator!=(const GenCnt &rhs) const { return rhs._val != _val; }
+    bool operator!=(const GenCnt& rhs) const { return rhs._val != _val; }
 
     /**
      * @brief Assignment operator
@@ -89,7 +88,7 @@ public:
      * @return this object
      * @param src the object we want to copy
      **/
-    GenCnt &operator=(const GenCnt &src);
+    GenCnt& operator=(const GenCnt& src);
 
     /**
      * @brief Get the generation counter as an integer
@@ -112,4 +111,3 @@ public:
 };
 
 } // namespace vespalib
-

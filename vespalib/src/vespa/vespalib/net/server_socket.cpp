@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "server_socket.h"
+
 #include "socket_spec.h"
-#include <sys/stat.h>
+
 #include <dirent.h>
 #include <errno.h>
+#include <sys/stat.h>
+
 #include <chrono>
 #include <thread>
 
@@ -25,7 +28,7 @@ SocketHandle adjust_blocking(SocketHandle handle, bool value) {
 
 bool is_blocked(int err) { return ((err == EWOULDBLOCK) || (err == EAGAIN)); }
 
-bool is_socket(const std::string &path) {
+bool is_socket(const std::string& path) {
     struct stat info;
     if (path.empty() || (lstat(path.c_str(), &info) != 0)) {
         return false;
@@ -33,22 +36,19 @@ bool is_socket(const std::string &path) {
     return S_ISSOCK(info.st_mode);
 }
 
-}
+} // namespace
 
-void
-ServerSocket::cleanup()
-{
+void ServerSocket::cleanup() {
     if (valid() && is_socket(_path)) {
         unlink(_path.c_str());
     }
 }
 
-ServerSocket::ServerSocket(const SocketSpec &spec)
+ServerSocket::ServerSocket(const SocketSpec& spec)
     : _handle(adjust_blocking(spec.server_address().listen(), false)),
       _path(spec.path()),
       _blocking(true),
-      _shutdown(false)
-{
+      _shutdown(false) {
     if (!_handle.valid() && is_socket(_path)) {
         if (!spec.client_address().connect_async().valid()) {
             LOG(warning, "removing old socket: '%s'", _path.c_str());
@@ -61,28 +61,19 @@ ServerSocket::ServerSocket(const SocketSpec &spec)
     }
 }
 
-ServerSocket::ServerSocket(const std::string &spec)
-    : ServerSocket(SocketSpec(spec))
-{
-}
+ServerSocket::ServerSocket(const std::string& spec) : ServerSocket(SocketSpec(spec)) {}
 
-ServerSocket::ServerSocket(int port)
-    : ServerSocket(SocketSpec::from_port(port))
-{
-}
+ServerSocket::ServerSocket(int port) : ServerSocket(SocketSpec::from_port(port)) {}
 
-ServerSocket::ServerSocket(ServerSocket &&rhs)
+ServerSocket::ServerSocket(ServerSocket&& rhs)
     : _handle(std::move(rhs._handle)),
       _path(std::move(rhs._path)),
       _blocking(rhs._blocking),
-      _shutdown(rhs._shutdown.load(std::memory_order_acquire))
-{
+      _shutdown(rhs._shutdown.load(std::memory_order_acquire)) {
     rhs._path.clear();
 }
 
-ServerSocket &
-ServerSocket::operator=(ServerSocket &&rhs)
-{
+ServerSocket& ServerSocket::operator=(ServerSocket&& rhs) {
     cleanup();
     _handle = std::move(rhs._handle);
     _path = std::move(rhs._path);
@@ -92,22 +83,14 @@ ServerSocket::operator=(ServerSocket &&rhs)
     return *this;
 }
 
-SocketAddress
-ServerSocket::address() const
-{
-    return SocketAddress::address_of(_handle.get());
-}
+SocketAddress ServerSocket::address() const { return SocketAddress::address_of(_handle.get()); }
 
-void
-ServerSocket::shutdown()
-{
+void ServerSocket::shutdown() {
     _shutdown.store(true, std::memory_order_release);
     _handle.shutdown();
 }
 
-SocketHandle
-ServerSocket::accept()
-{
+SocketHandle ServerSocket::accept() {
     if (!_blocking) {
         return adjust_blocking(_handle.accept(), true);
     } else {

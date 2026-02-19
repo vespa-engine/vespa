@@ -3,14 +3,13 @@
 #pragma once
 
 #include "btreebuilder.h"
+
 #include <cassert>
 
 namespace vespalib::btree {
 
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-BTreeBuilder(NodeAllocatorType &allocator)
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::BTreeBuilder(NodeAllocatorType& allocator)
     : _allocator(allocator),
       _numInternalNodes(0),
       _numLeafNodes(0),
@@ -18,17 +17,14 @@ BTreeBuilder(NodeAllocatorType &allocator)
       _inodes(),
       _leaf(),
       _defaultAggrCalc(),
-      _aggrCalc(_defaultAggrCalc)
-{
+      _aggrCalc(_defaultAggrCalc) {
     _leaf = _allocator.allocLeafNode();
     ++_numLeafNodes;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-BTreeBuilder(NodeAllocatorType &allocator, const AggrCalcT &aggrCalc)
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::BTreeBuilder(
+    NodeAllocatorType& allocator, const AggrCalcT& aggrCalc)
     : _allocator(allocator),
       _numInternalNodes(0),
       _numLeafNodes(0),
@@ -36,35 +32,25 @@ BTreeBuilder(NodeAllocatorType &allocator, const AggrCalcT &aggrCalc)
       _inodes(),
       _leaf(),
       _defaultAggrCalc(),
-      _aggrCalc(aggrCalc)
-{
+      _aggrCalc(aggrCalc) {
     _leaf = _allocator.allocLeafNode();
     ++_numLeafNodes;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-~BTreeBuilder()
-{
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::~BTreeBuilder() {
     clear();
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-void
-BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-recursiveDelete(NodeRef node)
-{
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::recursiveDelete(NodeRef node) {
     assert(_allocator.isValidRef(node));
     if (_allocator.isLeafRef(node)) {
         _allocator.holdNode(node, _allocator.mapLeafRef(node));
         _numLeafNodes--;
         return;
     }
-    InternalNodeType *inode = _allocator.mapInternalRef(node);
+    InternalNodeType* inode = _allocator.mapInternalRef(node);
     for (unsigned int i = 0; i < inode->validSlots(); ++i) {
         recursiveDelete(inode->getChild(i));
     }
@@ -72,18 +58,13 @@ recursiveDelete(NodeRef node)
     _numInternalNodes--;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-void
-BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-normalize()
-{
-    std::vector<NodeRef> leftInodes;    // left to rightmost nodes in tree
-    LeafNodeType *leftLeaf;
-    NodeRef child;
-    unsigned int level;
-    LeafNodeType *leafNode = _leaf.data;
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::normalize() {
+    std::vector<NodeRef> leftInodes; // left to rightmost nodes in tree
+    LeafNodeType*        leftLeaf;
+    NodeRef              child;
+    unsigned int         level;
+    LeafNodeType*        leafNode = _leaf.data;
 
     if (_inodes.size() == 0) {
         if (leafNode->validSlots() == 0) {
@@ -91,8 +72,7 @@ normalize()
             assert(_numInserts == 0);
             _allocator.holdNode(_leaf.ref, _leaf.data);
             _numLeafNodes--;
-            _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(nullptr));
-
+            _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType*>(nullptr));
         }
         if constexpr (AggrCalcT::hasAggregated()) {
             Aggregator::recalc(*leafNode, _aggrCalc);
@@ -106,16 +86,15 @@ normalize()
     }
     /* Adjust validLeaves for rightmost nodes */
     for (level = 0; level < _inodes.size(); level++) {
-        InternalNodeType *inode = _inodes[level].data;
-        NodeRef lcRef(inode->get_last_child_relaxed());
+        InternalNodeType* inode = _inodes[level].data;
+        NodeRef           lcRef(inode->get_last_child_relaxed());
         assert(NodeAllocatorType::isValidRef(lcRef));
         assert((level == 0) == _allocator.isLeafRef(lcRef));
         inode->incValidLeaves(_allocator.validLeaves(inode->get_last_child_relaxed()));
-        inode->update(inode->validSlots() - 1,
-                      level == 0 ?
-                      _allocator.mapLeafRef(lcRef)->getLastKey() :
-                      _allocator.mapInternalRef(lcRef)->getLastKey(),
-                      lcRef);
+        inode->update(
+            inode->validSlots() - 1,
+            level == 0 ? _allocator.mapLeafRef(lcRef)->getLastKey() : _allocator.mapInternalRef(lcRef)->getLastKey(),
+            lcRef);
         if constexpr (AggrCalcT::hasAggregated()) {
             Aggregator::recalc(*inode, _allocator, _aggrCalc);
         }
@@ -126,8 +105,8 @@ normalize()
     /* Build vector of left to rightmost internal nodes (except root level) */
     level = _inodes.size() - 1;
     for (;;) {
-        NodeRef iRef = _inodes[level].ref;
-        InternalNodeType *inode = _inodes[level].data;
+        NodeRef           iRef = _inodes[level].ref;
+        InternalNodeType* inode = _inodes[level].data;
         if (inode->validSlots() < 2) {
             /* Use last child of left to rightmost node on level */
             assert(level + 1 < _inodes.size());
@@ -152,13 +131,11 @@ normalize()
 
     /* Check fanout on rightmost leaf node */
     if (leafNode->validSlots() < LeafNodeType::minSlots()) {
-        InternalNodeType *pnode = _inodes[0].data;
-        if (leftLeaf->validSlots() + leafNode->validSlots() <
-            2 * LeafNodeType::minSlots()) {
+        InternalNodeType* pnode = _inodes[0].data;
+        if (leftLeaf->validSlots() + leafNode->validSlots() < 2 * LeafNodeType::minSlots()) {
             leftLeaf->stealAllFromRightNode(leafNode);
             if (pnode->validSlots() == 1) {
-                InternalNodeType *lpnode =
-                    _allocator.mapInternalRef(leftInodes[0]);
+                InternalNodeType* lpnode = _allocator.mapInternalRef(leftInodes[0]);
                 lpnode->incValidLeaves(pnode->validLeaves());
                 pnode->setValidLeaves(0);
             }
@@ -177,10 +154,8 @@ normalize()
                 Aggregator::recalc(*leafNode, _aggrCalc);
             }
             if (pnode->validSlots() == 1) {
-                InternalNodeType *lpnode =
-                    _allocator.mapInternalRef(leftInodes[0]);
-                uint32_t steal = leafNode->validLeaves() -
-                                 pnode->validLeaves();
+                InternalNodeType* lpnode = _allocator.mapInternalRef(leftInodes[0]);
+                uint32_t          steal = leafNode->validLeaves() - pnode->validLeaves();
                 pnode->incValidLeaves(steal);
                 lpnode->decValidLeaves(steal);
                 if constexpr (AggrCalcT::hasAggregated()) {
@@ -190,8 +165,8 @@ normalize()
             }
         }
         if (pnode->validSlots() > 0) {
-            uint32_t s = pnode->validSlots() - 1;
-            LeafNodeType *l = _allocator.mapLeafRef(pnode->get_child_relaxed(s));
+            uint32_t      s = pnode->validSlots() - 1;
+            LeafNodeType* l = _allocator.mapLeafRef(pnode->get_child_relaxed(s));
             pnode->write_key_relaxed(s, l->getLastKey());
             if (s > 0) {
                 --s;
@@ -200,29 +175,26 @@ normalize()
             }
         }
         if (!leftInodes.empty() && _allocator.isValidRef(leftInodes[0])) {
-            InternalNodeType *lpnode =
-                _allocator.mapInternalRef(leftInodes[0]);
-            uint32_t s = lpnode->validSlots() - 1;
-            LeafNodeType *l = _allocator.mapLeafRef(lpnode->get_child_relaxed(s));
+            InternalNodeType* lpnode = _allocator.mapInternalRef(leftInodes[0]);
+            uint32_t          s = lpnode->validSlots() - 1;
+            LeafNodeType*     l = _allocator.mapLeafRef(lpnode->get_child_relaxed(s));
             lpnode->write_key_relaxed(s, l->getLastKey());
         }
     }
 
     /* Check fanout on rightmost internal nodes except root node */
     for (level = 0; level + 1 < _inodes.size(); level++) {
-        InternalNodeType *inode = _inodes[level].data;
-        NodeRef leftInodeRef = leftInodes[level];
+        InternalNodeType* inode = _inodes[level].data;
+        NodeRef           leftInodeRef = leftInodes[level];
         assert(NodeAllocatorType::isValidRef(leftInodeRef));
-        InternalNodeType *leftInode = _allocator.mapInternalRef(leftInodeRef);
+        InternalNodeType* leftInode = _allocator.mapInternalRef(leftInodeRef);
 
-        InternalNodeType *pnode = _inodes[level + 1].data;
+        InternalNodeType* pnode = _inodes[level + 1].data;
         if (inode->validSlots() < InternalNodeType::minSlots()) {
-            if (leftInode->validSlots() + inode->validSlots() <
-                2 * InternalNodeType::minSlots()) {
+            if (leftInode->validSlots() + inode->validSlots() < 2 * InternalNodeType::minSlots()) {
                 leftInode->stealAllFromRightNode(inode);
                 if (pnode->validSlots() == 1) {
-                    InternalNodeType *lpnode =
-                        _allocator.mapInternalRef(leftInodes[level + 1]);
+                    InternalNodeType* lpnode = _allocator.mapInternalRef(leftInodes[level + 1]);
                     lpnode->incValidLeaves(pnode->validLeaves());
                     pnode->setValidLeaves(0);
                 }
@@ -241,10 +213,8 @@ normalize()
                     Aggregator::recalc(*inode, _allocator, _aggrCalc);
                 }
                 if (pnode->validSlots() == 1) {
-                    InternalNodeType *lpnode =
-                        _allocator.mapInternalRef(leftInodes[level + 1]);
-                    uint32_t steal = inode->validLeaves() -
-                                     pnode->validLeaves();
+                    InternalNodeType* lpnode = _allocator.mapInternalRef(leftInodes[level + 1]);
+                    uint32_t          steal = inode->validLeaves() - pnode->validLeaves();
                     pnode->incValidLeaves(steal);
                     lpnode->decValidLeaves(steal);
                     if constexpr (AggrCalcT::hasAggregated()) {
@@ -255,9 +225,8 @@ normalize()
             }
         }
         if (pnode->validSlots() > 0) {
-            uint32_t s = pnode->validSlots() - 1;
-            InternalNodeType *n =
-                _allocator.mapInternalRef(pnode->get_child_relaxed(s));
+            uint32_t          s = pnode->validSlots() - 1;
+            InternalNodeType* n = _allocator.mapInternalRef(pnode->get_child_relaxed(s));
             pnode->write_key_relaxed(s, n->getLastKey());
             if (s > 0) {
                 --s;
@@ -265,19 +234,16 @@ normalize()
                 pnode->write_key_relaxed(s, n->getLastKey());
             }
         }
-        if (level + 1 < leftInodes.size() &&
-            _allocator.isValidRef(leftInodes[level + 1])) {
-            InternalNodeType *lpnode =
-                _allocator.mapInternalRef(leftInodes[level + 1]);
-            uint32_t s = lpnode->validSlots() - 1;
-            InternalNodeType *n =
-                _allocator.mapInternalRef(lpnode->get_child_relaxed(s));
+        if (level + 1 < leftInodes.size() && _allocator.isValidRef(leftInodes[level + 1])) {
+            InternalNodeType* lpnode = _allocator.mapInternalRef(leftInodes[level + 1]);
+            uint32_t          s = lpnode->validSlots() - 1;
+            InternalNodeType* n = _allocator.mapInternalRef(lpnode->get_child_relaxed(s));
             lpnode->write_key_relaxed(s, n->getLastKey());
         }
     }
     /* Check fanout on root node */
     assert(level < _inodes.size());
-    InternalNodeType *inode = _inodes[level].data;
+    InternalNodeType* inode = _inodes[level].data;
     assert(inode != nullptr);
     assert(inode->validSlots() >= 1);
     if (inode->validSlots() == 1) {
@@ -294,15 +260,10 @@ normalize()
     }
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-void
-BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-allocNewLeafNode()
-{
-    InternalNodeType  *inode;
-    NodeRef child;
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::allocNewLeafNode() {
+    InternalNodeType* inode;
+    NodeRef           child;
 
     if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*_leaf.data, _aggrCalc);
@@ -315,14 +276,12 @@ allocNewLeafNode()
     unsigned int level = 0;
     for (;;) {
         if (level >= _inodes.size()) {
-            InternalNodeTypeRefPair iPair(
-                    _allocator.allocInternalNode(level + 1));
+            InternalNodeTypeRefPair iPair(_allocator.allocInternalNode(level + 1));
             inode = iPair.data;
             _numInternalNodes++;
             if (level > 0) {
-                InternalNodeType *cnode = _inodes[level - 1].data;
-                inode->insert(0, cnode->getLastKey(),
-                              _inodes[level - 1].ref);
+                InternalNodeType* cnode = _inodes[level - 1].data;
+                inode->insert(0, cnode->getLastKey(), _inodes[level - 1].ref);
                 inode->setValidLeaves(cnode->validLeaves());
             } else {
                 inode->insert(0, _leaf.data->getLastKey(), _leaf.ref);
@@ -336,17 +295,15 @@ allocNewLeafNode()
         assert(inode->validSlots() > 0);
         NodeRef lcRef(inode->get_last_child_relaxed());
         inode->incValidLeaves(_allocator.validLeaves(lcRef));
-        inode->update(inode->validSlots() - 1,
-                      level == 0 ?
-                      _allocator.mapLeafRef(lcRef)->getLastKey() :
-                      _allocator.mapInternalRef(lcRef)->getLastKey(),
-                      lcRef);
+        inode->update(
+            inode->validSlots() - 1,
+            level == 0 ? _allocator.mapLeafRef(lcRef)->getLastKey() : _allocator.mapInternalRef(lcRef)->getLastKey(),
+            lcRef);
         if (inode->validSlots() >= InternalNodeType::maxSlots()) {
             if (AggrCalcT::hasAggregated()) {
                 Aggregator::recalc(*inode, _allocator, _aggrCalc);
             }
-            InternalNodeTypeRefPair iPair(
-                    _allocator.allocInternalNode(level + 1));
+            InternalNodeTypeRefPair iPair(_allocator.allocInternalNode(level + 1));
             inode = iPair.data;
             _numInternalNodes++;
             inode->insert(0, KeyType(), child);
@@ -368,29 +325,19 @@ allocNewLeafNode()
     _leaf = lPair;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-void
-BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-insert(const KeyT &key,
-       const DataT &data)
-{
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::insert(
+    const KeyT& key, const DataT& data) {
     if (_leaf.data->validSlots() >= LeafNodeType::maxSlots())
         allocNewLeafNode();
-    LeafNodeType *leaf = _leaf.data;
+    LeafNodeType* leaf = _leaf.data;
     leaf->insert(leaf->validSlots(), key, data);
     ++_numInserts;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-typename BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS,
-                      AggrCalcT>::NodeRef
-BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-handover()
-{
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+typename BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::NodeRef
+BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::handover() {
     NodeRef ret;
 
     normalize();
@@ -401,7 +348,7 @@ handover()
         ret = _leaf.ref;
     }
 
-    _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(nullptr));
+    _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType*>(nullptr));
 
     _inodes.clear();
     _numInternalNodes = 0;
@@ -409,29 +356,19 @@ handover()
     return ret;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-void
-BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-reuse()
-{
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::reuse() {
     clear();
     _leaf = _allocator.allocLeafNode();
     ++_numLeafNodes;
     _numInserts = 0u;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT,
-          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-void
-BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-clear()
-{
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::clear() {
     if (!_inodes.empty()) {
         recursiveDelete(_inodes.back().ref);
-        _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(nullptr));
+        _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType*>(nullptr));
         _inodes.clear();
     }
     if (NodeAllocatorType::isValidRef(_leaf.ref)) {
@@ -439,7 +376,7 @@ clear()
         assert(_numLeafNodes == 1);
         _allocator.holdNode(_leaf.ref, _leaf.data);
         --_numLeafNodes;
-        _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(nullptr));
+        _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType*>(nullptr));
     } else {
         assert(_leaf.data == nullptr);
     }
@@ -447,4 +384,4 @@ clear()
     assert(_numInternalNodes == 0);
 }
 
-}
+} // namespace vespalib::btree

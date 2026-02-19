@@ -2,6 +2,7 @@
 #pragma once
 
 #include "hashtable.h"
+
 #include <algorithm>
 
 namespace vespalib {
@@ -11,15 +12,11 @@ namespace {
 /// TODO Currently we require that you have atleast one element in _nodes to avoid one extra branch
 /// However that means that empty unused hashtables are larger than necessary.
 /// This we should probably reconsider.
-template<typename Modulator>
-uint32_t
-computeModulo(size_t size) {
+template <typename Modulator> uint32_t computeModulo(size_t size) {
     return (size > 0) ? Modulator::selectHashTableSize(roundUp2inN(size) / 3) : 1;
 }
 
-template <typename NodeStore>
-NodeStore
-createStore(size_t size, uint32_t modulo) {
+template <typename NodeStore> NodeStore createStore(size_t size, uint32_t modulo) {
     size = (size > 0) ? roundUp2inN(std::max(size_t(modulo), roundUp2inN(size))) : 1;
     NodeStore store;
     store.reserve(size);
@@ -27,10 +24,9 @@ createStore(size_t size, uint32_t modulo) {
     return store;
 }
 
-}
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::swap(hashtable & rhs)
-{
+} // namespace
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::swap(hashtable& rhs) {
     std::swap(_modulator, rhs._modulator);
     std::swap(_count, rhs._count);
     _nodes.swap(rhs._nodes);
@@ -39,36 +35,34 @@ void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::swap(hashtable &
     std::swap(_keyExtractor, rhs._keyExtractor);
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(size_t reservedSpace) :
-    _modulator(computeModulo<Modulator>(reservedSpace)),
-    _count(0),
-    _nodes(createStore<NodeStore>(reservedSpace, _modulator.getTableSize()))
-{ }
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(size_t reservedSpace)
+    : _modulator(computeModulo<Modulator>(reservedSpace)),
+      _count(0),
+      _nodes(createStore<NodeStore>(reservedSpace, _modulator.getTableSize())) {}
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(size_t reservedSpace, const Hash & hasher, const Equal & equal) :
-    _modulator(computeModulo<Modulator>(reservedSpace)),
-    _count(0),
-    _nodes(createStore<NodeStore>(reservedSpace, _modulator.getTableSize())),
-    _hasher(hasher),
-    _equal(equal)
-{ }
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(
+    size_t reservedSpace, const Hash& hasher, const Equal& equal)
+    : _modulator(computeModulo<Modulator>(reservedSpace)),
+      _count(0),
+      _nodes(createStore<NodeStore>(reservedSpace, _modulator.getTableSize())),
+      _hasher(hasher),
+      _equal(equal) {}
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(const hashtable &) = default;
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(const hashtable&) = default;
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator> &
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::operator = (const hashtable &) = default;
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>&
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::operator=(const hashtable&) = default;
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::~hashtable() = default;
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key) noexcept
-{
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key& key) noexcept {
     next_t h = hash(key);
     if (__builtin_expect(_nodes[h].valid(), true)) {
         do {
@@ -81,11 +75,10 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key)
     return end();
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-template< typename AltKey>
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+template <typename AltKey>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key) noexcept
-{
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey& key) noexcept {
     next_t h = hash(key);
     if (__builtin_expect(_nodes[h].valid(), true)) {
         do {
@@ -98,9 +91,9 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & k
     return end();
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::const_iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key) const noexcept {
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key& key) const noexcept {
     next_t h = hash(key);
     if (__builtin_expect(_nodes[h].valid(), true)) {
         do {
@@ -113,9 +106,8 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key)
     return end();
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(const Key & key) {
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(const Key& key) {
     const_iterator found(find(key));
     if (found != end()) {
         DefaultMoveHandler moveHandler;
@@ -123,23 +115,22 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(const Key & key
     }
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::clear() {
-    if (_count == 0) return; // Already empty and properly initialized
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::clear() {
+    if (_count == 0)
+        return; // Already empty and properly initialized
 
     _nodes.clear();
     _count = 0;
     _nodes.resize(getTableSize());
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-template< typename V >
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+template <typename V>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_result
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal(V && node)
-{
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal(V&& node) {
     const next_t h = hash(_keyExtractor(node));
-    if ( ! _nodes[h].valid() ) [[likely]] {
+    if (!_nodes[h].valid()) [[likely]] {
         _nodes[h] = std::forward<V>(node);
         _count++;
         return insert_result(iterator(this, h), true);
@@ -147,11 +138,10 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal(V && 
     return insert_internal_cold(std::forward<V>(node), h);
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-template< typename V >
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+template <typename V>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_result
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal_cold(V && node, next_t h)
-{
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal_cold(V&& node, next_t h) {
     for (next_t c(h); c != Node::npos; c = _nodes[c].getNext()) {
         if (_equal(_keyExtractor(_nodes[c].getValue()), _keyExtractor(node))) {
             return insert_result(iterator(this, c), false);
@@ -165,15 +155,13 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal_cold(
         _count++;
         return insert_result(iterator(this, newIdx), true);
     } else {
-        resize(_nodes.capacity()*2);
+        resize(_nodes.capacity() * 2);
         return insert_internal(std::forward<V>(node));
     }
 }
 
-
 template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
-void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value && value) {
+void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value&& value) {
     const next_t h = hash(_keyExtractor(value));
     if (!_nodes[h].valid()) [[likely]] {
         _nodes[h] = std::move(value);
@@ -185,21 +173,19 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value &&
         _nodes.emplace_back(std::move(value), p);
         _count++;
     } else {
-        resize(_nodes.capacity()*2);
+        resize(_nodes.capacity() * 2);
         force_insert(std::move(value));
     }
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-template<typename MoveHandler>
-void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::reclaim(MoveHandler & moveHandler, next_t node)
-{
-    size_t last(_nodes.size()-1);
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+template <typename MoveHandler>
+void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::reclaim(MoveHandler& moveHandler, next_t node) {
+    size_t last(_nodes.size() - 1);
     if (last >= getTableSize()) {
         if (last != node) {
             next_t h = hash(_keyExtractor(_nodes[last].getValue()));
-            for (next_t n(_nodes[h].getNext()); n != last; n=_nodes[h].getNext()) {
+            for (next_t n(_nodes[h].getNext()); n != last; n = _nodes[h].getNext()) {
                 h = n;
             }
             move(moveHandler, last, node);
@@ -209,11 +195,9 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::reclaim(MoveHandler &
     }
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 template <typename Func>
-void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::for_each(Func func) const
-{
+void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::for_each(Func func) const {
     uint32_t i(0);
     for (; i < _modulator.getTableSize(); i++) {
         if (_nodes[i].valid()) {
@@ -225,11 +209,10 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::for_each(Func func) c
     }
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 template <typename MoveHandler>
-void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(MoveHandler & moveHandler, next_t h, const const_iterator & it)
-{
+void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(
+    MoveHandler& moveHandler, next_t h, const const_iterator& it) {
     next_t prev = Node::npos;
     do {
         if (h == it.getInternalIndex()) {
@@ -253,11 +236,9 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(MoveHandler & m
     } while (h != Node::npos);
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::resize(size_t newSize)
-{
-    next_t newModulo = computeModulo<Modulator>(newSize);
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::resize(size_t newSize) {
+    next_t    newModulo = computeModulo<Modulator>(newSize);
     NodeStore newStore = createStore<NodeStore>(newSize, newModulo);
     _modulator = Modulator(newModulo);
     _count = 0;
@@ -265,32 +246,23 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::resize(size_t newSize
     move(std::move(newStore));
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::move(NodeStore && oldStore)
-{
-    for (auto & entry : oldStore) {
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::move(NodeStore&& oldStore) {
+    for (auto& entry : oldStore) {
         if (entry.valid()) {
             force_insert(std::move(entry.getValue()));
         }
     }
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-size_t
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::getMemoryConsumption() const
-{
-    return sizeof(hashtable<Key, Value, Hash, Equal, KeyExtract>)
-            + _nodes.capacity() * sizeof(Node);
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+size_t hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::getMemoryConsumption() const {
+    return sizeof(hashtable<Key, Value, Hash, Equal, KeyExtract>) + _nodes.capacity() * sizeof(Node);
 }
 
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-size_t
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::getMemoryUsed() const
-{
-    return sizeof(hashtable<Key, Value, Hash, Equal, KeyExtract>)
-            + _nodes.size() * sizeof(Node);
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+size_t hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::getMemoryUsed() const {
+    return sizeof(hashtable<Key, Value, Hash, Equal, KeyExtract>) + _nodes.size() * sizeof(Node);
 }
 
-}
-
+} // namespace vespalib

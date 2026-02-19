@@ -4,8 +4,6 @@
 
 using namespace vespalib;
 
-TEST(HostNameTest, require_that_host_name_can_be_obtained) {
-    EXPECT_NE("", HostName::get());
-}
+TEST(HostNameTest, require_that_host_name_can_be_obtained) { EXPECT_NE("", HostName::get()); }
 
 GTEST_MAIN_RUN_ALL_TESTS()

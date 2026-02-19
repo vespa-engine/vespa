@@ -8,21 +8,14 @@ class BtreeNoLeafData;
 
 namespace test {
 
-template <typename ostream, typename DataT>
-void printData(ostream &os, const DataT &data);
+template <typename ostream, typename DataT> void printData(ostream& os, const DataT& data);
 
-template <typename ostream, typename DataT>
-void printData(ostream &os, const DataT &data)
-{
-    os << ":" << data;
+template <typename ostream, typename DataT> void printData(ostream& os, const DataT& data) { os << ":" << data; }
+
+template <typename ostream> void printData(ostream& os, const BTreeNoLeafData& data) {
+    (void)os;
+    (void)data;
 }
 
-template <typename ostream>
-void printData(ostream &os, const BTreeNoLeafData &data)
-{
-    (void) os;
-    (void) data;
-}
-
-} // namespace vespalib::btree::test
+} // namespace test
 } // namespace vespalib::btree

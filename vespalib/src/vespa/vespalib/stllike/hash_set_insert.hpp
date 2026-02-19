@@ -6,21 +6,18 @@
 
 namespace vespalib {
 
-template<typename K, typename H, typename EQ, typename M>
-template<typename InputIterator>
-hash_set<K, H, EQ, M>::hash_set(InputIterator first, InputIterator last)
-    : _ht(last - first)
-{
+template <typename K, typename H, typename EQ, typename M>
+template <typename InputIterator>
+hash_set<K, H, EQ, M>::hash_set(InputIterator first, InputIterator last) : _ht(last - first) {
     insert(first, last);
 }
 
-template<typename K, typename H, typename EQ, typename M>
-template<typename InputIt>
-void
-hash_set<K, H, EQ, M>::insert(InputIt first, InputIt last) {
+template <typename K, typename H, typename EQ, typename M>
+template <typename InputIt>
+void hash_set<K, H, EQ, M>::insert(InputIt first, InputIt last) {
     for (; first < last; first++) {
         insert(*first);
     }
 }
 
-}
+} // namespace vespalib

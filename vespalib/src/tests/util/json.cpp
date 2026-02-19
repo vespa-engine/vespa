@@ -1,15 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/jsonstream.h>
-#include <vespa/vespalib/util/jsonexception.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/jsonexception.h>
+#include <vespa/vespalib/util/jsonstream.h>
 
 using namespace vespalib;
 
-
-TEST(JSONTest, test_json_writer_values)
-{
+TEST(JSONTest, test_json_writer_values) {
     JSONStringer js;
 
     { // bool
@@ -88,8 +86,7 @@ TEST(JSONTest, test_json_writer_values)
     }
 }
 
-TEST(JSONTest, test_json_writer_object)
-{
+TEST(JSONTest, test_json_writer_object) {
     JSONStringer js;
 
     { // single pair
@@ -101,40 +98,59 @@ TEST(JSONTest, test_json_writer_object)
         EXPECT_EQ(js.view(), "{\"k1\":1,\"k2\":2}");
     }
     { // object in object
-        js.clear().beginObject().appendKey("k1").beginObject().appendKey("k1.1").appendInt64(11l).endObject().endObject();
+        js.clear()
+            .beginObject()
+            .appendKey("k1")
+            .beginObject()
+            .appendKey("k1.1")
+            .appendInt64(11l)
+            .endObject()
+            .endObject();
         EXPECT_EQ(js.view(), "{\"k1\":{\"k1.1\":11}}");
     }
     { // object in object (multiple pairs)
-        js.clear().beginObject().
-            appendKey("k1").
-            beginObject().
-            appendKey("k1.1").appendInt64(11l).
-            appendKey("k1.2").appendInt64(12l).
-            endObject().
-            appendKey("k2").
-            beginObject().
-            appendKey("k2.1").appendInt64(21l).
-            appendKey("k2.2").appendInt64(22l).
-            endObject().
-            endObject();
+        js.clear()
+            .beginObject()
+            .appendKey("k1")
+            .beginObject()
+            .appendKey("k1.1")
+            .appendInt64(11l)
+            .appendKey("k1.2")
+            .appendInt64(12l)
+            .endObject()
+            .appendKey("k2")
+            .beginObject()
+            .appendKey("k2.1")
+            .appendInt64(21l)
+            .appendKey("k2.2")
+            .appendInt64(22l)
+            .endObject()
+            .endObject();
         EXPECT_EQ(js.view(), "{\"k1\":{\"k1.1\":11,\"k1.2\":12},\"k2\":{\"k2.1\":21,\"k2.2\":22}}");
     }
     { // array in object
-        js.clear().beginObject().appendKey("k1").
-            beginArray().appendInt64(1l).appendInt64(2l).endArray().endObject();
+        js.clear().beginObject().appendKey("k1").beginArray().appendInt64(1l).appendInt64(2l).endArray().endObject();
         EXPECT_EQ(js.view(), "{\"k1\":[1,2]}");
     }
     { // array in object (multiple pairs)
-        js.clear().beginObject().
-            appendKey("k1").beginArray().appendInt64(1l).appendInt64(2l).endArray().
-            appendKey("k2").beginArray().appendInt64(3l).appendInt64(4l).endArray().
-            endObject();
+        js.clear()
+            .beginObject()
+            .appendKey("k1")
+            .beginArray()
+            .appendInt64(1l)
+            .appendInt64(2l)
+            .endArray()
+            .appendKey("k2")
+            .beginArray()
+            .appendInt64(3l)
+            .appendInt64(4l)
+            .endArray()
+            .endObject();
         EXPECT_EQ(js.view(), "{\"k1\":[1,2],\"k2\":[3,4]}");
     }
 }
 
-TEST(JSONTest, test_json_writer_array)
-{
+TEST(JSONTest, test_json_writer_array) {
     JSONStringer js;
 
     { // single element
@@ -150,29 +166,44 @@ TEST(JSONTest, test_json_writer_array)
         EXPECT_EQ(js.view(), "[[1]]");
     }
     { // array in array (multiple elements)
-        js.clear().beginArray().
-            beginArray().appendInt64(1l).appendInt64(2l).endArray().
-            beginArray().appendInt64(3l).appendInt64(4l).endArray().
-            endArray();
+        js.clear()
+            .beginArray()
+            .beginArray()
+            .appendInt64(1l)
+            .appendInt64(2l)
+            .endArray()
+            .beginArray()
+            .appendInt64(3l)
+            .appendInt64(4l)
+            .endArray()
+            .endArray();
         EXPECT_EQ(js.view(), "[[1,2],[3,4]]");
     }
     { // object in array
-        js.clear().beginArray().
-            beginObject().appendKey("k1").appendInt64(1l).endObject().
-            endArray();
+        js.clear().beginArray().beginObject().appendKey("k1").appendInt64(1l).endObject().endArray();
         EXPECT_EQ(js.view(), "[{\"k1\":1}]");
     }
     { // object in array (multiple elements)
-        js.clear().beginArray().
-            beginObject().appendKey("k1").appendInt64(1l).appendKey("k2").appendInt64(2l).endObject().
-            beginObject().appendKey("k3").appendInt64(3l).appendKey("k4").appendInt64(4l).endObject().
-            endArray();
+        js.clear()
+            .beginArray()
+            .beginObject()
+            .appendKey("k1")
+            .appendInt64(1l)
+            .appendKey("k2")
+            .appendInt64(2l)
+            .endObject()
+            .beginObject()
+            .appendKey("k3")
+            .appendInt64(3l)
+            .appendKey("k4")
+            .appendInt64(4l)
+            .endObject()
+            .endArray();
         EXPECT_EQ(js.view(), "[{\"k1\":1,\"k2\":2},{\"k3\":3,\"k4\":4}]");
     }
 }
 
-TEST(JSONTest, test_json_writer_complex)
-{
+TEST(JSONTest, test_json_writer_complex) {
     JSONStringer js;
 
     js.beginObject();
@@ -249,180 +280,171 @@ TEST(JSONTest, test_json_writer_complex)
         js.endArray();
     }
     js.endObject();
-    EXPECT_EQ(js.view(), "{\"k1\":{\"k1.1\":1,\"k1.2\":[2,3]},\"k2\":{\"k2.1\":{\"k2.1.1\":4,\"k2.1.2\":[5,6]}},\"k3\":[{\"k3.1\":7,\"k3.2\":[8,9]},{\"k3.1\":10,\"k3.2\":[11,12]}]}");
+    EXPECT_EQ(js.view(), "{\"k1\":{\"k1.1\":1,\"k1.2\":[2,3]},\"k2\":{\"k2.1\":{\"k2.1.1\":4,\"k2.1.2\":[5,6]}},"
+                         "\"k3\":[{\"k3.1\":7,\"k3.2\":[8,9]},{\"k3.1\":10,\"k3.2\":[11,12]}]}");
 }
 
 namespace {
-    struct Builder : public vespalib::JsonStreamTypes {
-        void build(JsonStream& s) {
-            s << Object() << "k1" << Object()
-                << "k1.1" << 1
-                << "k1.2" << Array()
-                    << 2l << 3ll << End()
-                << End()
-              << "k2" << Object()
-                << "k2.1" << Object()
-                    << "k2.1.1" << 4u
-                    << "k2.1.2" << Array()
-                        << 5ul << 6ull << End()
-                    << End()
-                << End()
-              << "k3" << Array()
-                << Object()
-                    << "k3.1" << -7
-                    << "k3.2" << Array()
-                        << -8l << -9ll << End()
-                    << End()
-                << Object()
-                    << "k3.1" << 10l
-                    << "k3.2" << Array()
-                        << 11l << 12l << End()
-                    << End()
-                << End()
-              << End();
-        }
-    };
-}
+struct Builder : public vespalib::JsonStreamTypes {
+    void build(JsonStream& s) {
+        s << Object() << "k1" << Object() << "k1.1" << 1 << "k1.2" << Array() << 2l << 3ll << End() << End() << "k2"
+          << Object() << "k2.1" << Object() << "k2.1.1" << 4u << "k2.1.2" << Array() << 5ul << 6ull << End() << End()
+          << End() << "k3" << Array() << Object() << "k3.1" << -7 << "k3.2" << Array() << -8l << -9ll << End()
+          << End() << Object() << "k3.1" << 10l << "k3.2" << Array() << 11l << 12l << End() << End() << End()
+          << End();
+    }
+};
+} // namespace
 
-TEST(JSONTest, test_json_stream)
-{
+TEST(JSONTest, test_json_stream) {
     vespalib::asciistream as;
-    vespalib::JsonStream stream(as);
-    Builder b;
+    vespalib::JsonStream  stream(as);
+    Builder               b;
     b.build(stream);
     stream.finalize();
-    EXPECT_EQ(as.view(), "{\"k1\":{\"k1.1\":1,\"k1.2\":[2,3]},\"k2\":{\"k2.1\":{\"k2.1.1\":4,\"k2.1.2\":[5,6]}},\"k3\":[{\"k3.1\":-7,\"k3.2\":[-8,-9]},{\"k3.1\":10,\"k3.2\":[11,12]}]}");
+    EXPECT_EQ(as.view(), "{\"k1\":{\"k1.1\":1,\"k1.2\":[2,3]},\"k2\":{\"k2.1\":{\"k2.1.1\":4,\"k2.1.2\":[5,6]}},"
+                         "\"k3\":[{\"k3.1\":-7,\"k3.2\":[-8,-9]},{\"k3.1\":10,\"k3.2\":[11,12]}]}");
 }
 
-TEST(JSONTest, test_json_stream_errors)
-{
+TEST(JSONTest, test_json_stream_errors) {
     using namespace vespalib::jsonstream;
-        // Unsupported object keys
-    try{
+    // Unsupported object keys
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << Object();
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: An object value cannot be an object key ({}(ObjectExpectingKey))", e.getReason());
+        EXPECT_EQ("Invalid state on call: An object value cannot be an object key ({}(ObjectExpectingKey))",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << true;
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: A bool value cannot be an object key ({}(ObjectExpectingKey))", e.getReason());
+        EXPECT_EQ("Invalid state on call: A bool value cannot be an object key ({}(ObjectExpectingKey))",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << 13;
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: An int64_t value cannot be an object key ({}(ObjectExpectingKey))", e.getReason());
+        EXPECT_EQ("Invalid state on call: An int64_t value cannot be an object key ({}(ObjectExpectingKey))",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << uint64_t(13);
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: A uint64_t value cannot be an object key ({}(ObjectExpectingKey))", e.getReason());
+        EXPECT_EQ("Invalid state on call: A uint64_t value cannot be an object key ({}(ObjectExpectingKey))",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << 0.5;
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: A double value cannot be an object key ({}(ObjectExpectingKey))", e.getReason());
+        EXPECT_EQ("Invalid state on call: A double value cannot be an object key ({}(ObjectExpectingKey))",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << jsonstream::Array();
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: An array value cannot be an object key ({}(ObjectExpectingKey))", e.getReason());
+        EXPECT_EQ("Invalid state on call: An array value cannot be an object key ({}(ObjectExpectingKey))",
+                  e.getReason());
     }
-        // Invalid points to add End()
-    try{
+    // Invalid points to add End()
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << "foo" << End();
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: Object got key but not value. Cannot end it now ({foo}(ObjectExpectingValue))", e.getReason());
+        EXPECT_EQ(
+            "Invalid state on call: Object got key but not value. Cannot end it now ({foo}(ObjectExpectingValue))",
+            e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << End();
     } catch (vespalib::JsonStreamException& e) {
         EXPECT_EQ("Invalid state on call: No tag to end. At root ((RootExpectingArrayOrObjectStart))", e.getReason());
     }
-        // Adding to finalized stream
-    try{
+    // Adding to finalized stream
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << End() << "foo";
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't add a string value. (Finalized)", e.getReason());
+        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't add a string value. (Finalized)",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << End() << false;
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't add a bool value. (Finalized)", e.getReason());
+        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't add a bool value. (Finalized)",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << End() << 13;
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't add a long long value. (Finalized)", e.getReason());
+        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't add a long long value. (Finalized)",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << End() << 13u;
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't add an unsigned long long value. (Finalized)", e.getReason());
+        EXPECT_EQ(
+            "Invalid state on call: Stream already finalized. Can't add an unsigned long long value. (Finalized)",
+            e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << End() << 0.2;
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't add a double value. (Finalized)", e.getReason());
+        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't add a double value. (Finalized)",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << End() << Object();
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't start a new object. (Finalized)", e.getReason());
+        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't start a new object. (Finalized)",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << End() << jsonstream::Array();
     } catch (vespalib::JsonStreamException& e) {
-        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't start a new array. (Finalized)", e.getReason());
+        EXPECT_EQ("Invalid state on call: Stream already finalized. Can't start a new array. (Finalized)",
+                  e.getReason());
     }
-    try{
+    try {
         vespalib::asciistream as;
-        vespalib::JsonStream stream(as);
+        vespalib::JsonStream  stream(as);
         stream << Object() << End() << End();
     } catch (vespalib::JsonStreamException& e) {
         EXPECT_EQ("Invalid state on call: Stream already finalized. Can't end it. (Finalized)", e.getReason());
     }
 }
 
-TEST(JSONTest, test_json_stream_state_reporting)
-{
+TEST(JSONTest, test_json_stream_state_reporting) {
     using namespace vespalib::jsonstream;
     vespalib::asciistream as;
-    vespalib::JsonStream stream(as);
-    stream << jsonstream::Array() << 13
-                      << "foo"
-                      << Object() << "key" << "value" << End()
-                      << false
-           << End();
+    vespalib::JsonStream  stream(as);
+    stream << jsonstream::Array() << 13 << "foo" << Object() << "key" << "value" << End() << false << End();
     EXPECT_EQ("Current: Finalized", stream.getJsonStreamState());
 }

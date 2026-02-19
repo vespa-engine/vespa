@@ -4,12 +4,13 @@
  */
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
-#include <sys/types.h>
-
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/util/casts.h>
+
+#include <sys/types.h>
+
+#include <cstddef>
+#include <cstdint>
 
 /** ucs4_t is the type of the 4-byte UCS4 characters */
 using ucs4_t = uint32_t;
@@ -45,8 +46,8 @@ public:
      */
     static bool IsWordChar(ucs4_t testchar) noexcept {
         if (testchar < (maxCodeBlocks * 0x100)) {
-            unsigned int entry = (testchar >> 6);
-            unsigned int bitnum = (testchar & 63);
+            unsigned int  entry = (testchar >> 6);
+            unsigned int  bitnum = (testchar & 63);
             unsigned long mask = 1ul << bitnum;
             unsigned long bits = _wordCharBits[entry];
             return (bits & mask) != 0;
@@ -64,10 +65,10 @@ public:
      * @return The next UCS4 character, or _BadUTF8Char if the
      *         next character is invalid.
      */
-    static ucs4_t GetUTF8Char(const unsigned char *& src) noexcept;
-    static ucs4_t GetUTF8Char(const char *& src) noexcept {
-        const unsigned char *temp = char_p_cast<unsigned char>(src);
-        ucs4_t res = GetUTF8Char(temp);
+    static ucs4_t GetUTF8Char(const unsigned char*& src) noexcept;
+    static ucs4_t GetUTF8Char(const char*& src) noexcept {
+        const unsigned char* temp = char_p_cast<unsigned char>(src);
+        ucs4_t               res = GetUTF8Char(temp);
         src = char_p_cast<char>(temp);
         return res;
     }
@@ -78,7 +79,7 @@ public:
      * @param i The UCS4 character.
      * @return Pointer to the next position in dst after the putted byte(s).
      */
-    static char *utf8cput(char *dst, ucs4_t i) noexcept {
+    static char* utf8cput(char* dst, ucs4_t i) noexcept {
         if (i < 128)
             *dst++ = i;
         else if (i < 0x800) {
@@ -116,7 +117,7 @@ public:
      * @param src The UTF-8 source buffer.
      * @return A pointer to the destination string.
      */
-    static ucs4_t *ucs4copy(ucs4_t *dst, const char *src) noexcept;
+    static ucs4_t* ucs4copy(ucs4_t* dst, const char* src) noexcept;
 
     /**
      * Get the length of the UTF-8 representation of an UCS4 character.
@@ -143,10 +144,7 @@ public:
      * @param testchar The character to lowercase.
      * @return The lowercase of the input, if defined. Else the input character.
      */
-    static ucs4_t ToLower(ucs4_t testchar) noexcept
-    {
-        return vespalib::LowerCase::convert(testchar);
-    }
+    static ucs4_t ToLower(ucs4_t testchar) noexcept { return vespalib::LowerCase::convert(testchar); }
 
     /** Move forwards or backwards a number of characters within an UTF8 buffer
      * Modify pos to yield new position if possible
@@ -158,15 +156,14 @@ public:
      *        Offset 0 means move to the start of the current character.
      * @return Number of bytes moved, or -1 if out of range
      */
-    static int UTF8move(unsigned const char* start, size_t length,
-                        unsigned const char*& pos, off_t offset) noexcept;
+    static int UTF8move(unsigned const char* start, size_t length, unsigned const char*& pos, off_t offset) noexcept;
 
     /**
      * Find the number of characters in an UCS4 string.
      * @param str The UCS4 string.
      * @return The number of characters.
      */
-    static size_t ucs4strlen(const ucs4_t *str) noexcept;
+    static size_t ucs4strlen(const ucs4_t* str) noexcept;
 
     /**
      * Convert UCS4 to UTF-8, bounded by max lengths.
@@ -176,8 +173,7 @@ public:
      * @param maxsrc The maximum number of characters to convert from src.
      * @return A pointer to the destination.
      */
-    static char *utf8ncopy(char *dst, const ucs4_t *src, int maxdst, int maxsrc) noexcept;
-
+    static char* utf8ncopy(char* dst, const ucs4_t* src, int maxdst, int maxsrc) noexcept;
 
     /**
      * Compare an UTF-8 string to a UCS4 string, analogous to strcmp(3).
@@ -187,7 +183,7 @@ public:
      *        if s1 is, respectively, less than, matching, or greater than s2.
      * NB Only used in local test
      */
-    static int utf8cmp(const char *s1, const ucs4_t *s2) noexcept;
+    static int utf8cmp(const char* s1, const ucs4_t* s2) noexcept;
 
     /**
      * Get the next UCS4 character from an UTF-8 string buffer.
@@ -198,12 +194,12 @@ public:
      * @return The next UCS4 character, or _BadUTF8Char if the
      *         next character is invalid.
      */
-    static ucs4_t GetUTF8CharNonAscii(unsigned const char *&src) noexcept;
+    static ucs4_t GetUTF8CharNonAscii(unsigned const char*& src) noexcept;
 
     // this is really an alias of the above function
-    static ucs4_t GetUTF8CharNonAscii(const char *&src) noexcept {
-        unsigned const char *temp = char_p_cast<unsigned char>(src);
-        ucs4_t res = GetUTF8CharNonAscii(temp);
+    static ucs4_t GetUTF8CharNonAscii(const char*& src) noexcept {
+        unsigned const char* temp = char_p_cast<unsigned char>(src);
+        ucs4_t               res = GetUTF8CharNonAscii(temp);
         src = char_p_cast<char>(temp);
         return res;
     }

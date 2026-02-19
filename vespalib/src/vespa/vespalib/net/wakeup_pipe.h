@@ -19,12 +19,13 @@ class WakeupPipe {
 private:
     SocketHandle _reader;
     SocketHandle _writer;
+
 public:
     WakeupPipe();
     ~WakeupPipe();
-    int get_read_fd() const { return _reader.get(); }
+    int  get_read_fd() const { return _reader.get(); }
     void write_token();
     void read_tokens();
 };
 
-}
+} // namespace vespalib

@@ -4,9 +4,11 @@
 
 #include "btreenode.h"
 #include "btreenodestore.h"
+
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <string>
 #include <vector>
 
@@ -14,13 +16,8 @@ namespace vespalib::btree {
 
 template <typename, typename, typename, size_t, size_t> class BTreeRootBase;
 
-template <typename KeyT,
-          typename DataT,
-          typename AggrT,
-          size_t INTERNAL_SLOTS,
-          size_t LEAF_SLOTS>
-class BTreeNodeAllocator
-{
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
+class BTreeNodeAllocator {
 public:
     using InternalNodeType = BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS>;
     using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>;
@@ -37,11 +34,11 @@ private:
     NodeStore _nodeStore;
 
     using RefVector = vespalib::Array<BTreeNode::Ref>;
-    using BTreeRootBaseTypeVector = vespalib::Array<BTreeRootBaseType *>;
+    using BTreeRootBaseTypeVector = vespalib::Array<BTreeRootBaseType*>;
 
     // Nodes that might not be frozen.
-    RefVector _internalToFreeze;
-    RefVector _leafToFreeze;
+    RefVector               _internalToFreeze;
+    RefVector               _leafToFreeze;
     BTreeRootBaseTypeVector _treeToFreeze;
 
     // Nodes held until freeze is performed
@@ -49,18 +46,14 @@ private:
     RefVector _leafHoldUntilFreeze;
 
 public:
-    BTreeNodeAllocator(const BTreeNodeAllocator &rhs) = delete;
-    BTreeNodeAllocator & operator=(const BTreeNodeAllocator &rhs) = delete;
+    BTreeNodeAllocator(const BTreeNodeAllocator& rhs) = delete;
+    BTreeNodeAllocator& operator=(const BTreeNodeAllocator& rhs) = delete;
     BTreeNodeAllocator();
     ~BTreeNodeAllocator();
 
-    void disableFreeLists() noexcept {
-        _nodeStore.disableFreeLists();
-    }
+    void disableFreeLists() noexcept { _nodeStore.disableFreeLists(); }
 
-    void disable_entry_hold_list() {
-        _nodeStore.disable_entry_hold_list();
-    }
+    void disable_entry_hold_list() { _nodeStore.disable_entry_hold_list(); }
 
     /**
      * Allocate internal node.
@@ -70,26 +63,26 @@ public:
     /*
      * Allocate leaf node.
      */
-    LeafNodeTypeRefPair allocLeafNode();
-    InternalNodeTypeRefPair thawNode(BTreeNode::Ref nodeRef, InternalNodeType *node);
-    LeafNodeTypeRefPair thawNode(BTreeNode::Ref nodeRef, LeafNodeType *node);
-    BTreeNode::Ref thawNode(BTreeNode::Ref node);
+    LeafNodeTypeRefPair     allocLeafNode();
+    InternalNodeTypeRefPair thawNode(BTreeNode::Ref nodeRef, InternalNodeType* node);
+    LeafNodeTypeRefPair     thawNode(BTreeNode::Ref nodeRef, LeafNodeType* node);
+    BTreeNode::Ref          thawNode(BTreeNode::Ref node);
 
     /**
      * hold internal node until freeze/generation constraint is satisfied.
      */
-    void holdNode(BTreeNode::Ref nodeRef, InternalNodeType *node);
+    void holdNode(BTreeNode::Ref nodeRef, InternalNodeType* node);
 
     /**
      * hold leaf node until freeze/generation constraint is satisfied.
      */
-    void holdNode(BTreeNode::Ref nodeRef, LeafNodeType *node);
+    void holdNode(BTreeNode::Ref nodeRef, LeafNodeType* node);
 
     /**
      * Mark that tree needs to be frozen.  Tree must be kept alive until
      * freeze operation has completed.
      */
-    void needFreeze(BTreeRootBaseType *tree);
+    void needFreeze(BTreeRootBaseType* tree);
 
     /**
      * Freeze all nodes that are not already frozen.
@@ -119,70 +112,67 @@ public:
         return _nodeStore.isLeafRef(ref);
     }
 
-    const InternalNodeType *mapInternalRef(BTreeNode::Ref ref) const noexcept {
+    const InternalNodeType* mapInternalRef(BTreeNode::Ref ref) const noexcept {
         return _nodeStore.mapInternalRef(ref);
     }
 
-    InternalNodeType *mapInternalRef(BTreeNode::Ref ref) noexcept {
-        return _nodeStore.mapInternalRef(ref);
-    }
+    InternalNodeType* mapInternalRef(BTreeNode::Ref ref) noexcept { return _nodeStore.mapInternalRef(ref); }
 
-    const LeafNodeType *mapLeafRef(BTreeNode::Ref ref) const noexcept {
-        return _nodeStore.mapLeafRef(ref);
-    }
+    const LeafNodeType* mapLeafRef(BTreeNode::Ref ref) const noexcept { return _nodeStore.mapLeafRef(ref); }
 
-    LeafNodeType *mapLeafRef(BTreeNode::Ref ref) noexcept {
-        return _nodeStore.mapLeafRef(ref);
-    }
+    LeafNodeType* mapLeafRef(BTreeNode::Ref ref) noexcept { return _nodeStore.mapLeafRef(ref); }
 
-    template <typename NodeType>
-    const NodeType *mapRef(BTreeNode::Ref ref) const noexcept {
+    template <typename NodeType> const NodeType* mapRef(BTreeNode::Ref ref) const noexcept {
         return _nodeStore.template mapRef<NodeType>(ref);
     }
 
-    template <typename NodeType>
-    NodeType *mapRef(BTreeNode::Ref ref) noexcept {
+    template <typename NodeType> NodeType* mapRef(BTreeNode::Ref ref) noexcept {
         return _nodeStore.template mapRef<NodeType>(ref);
     }
 
-    InternalNodeTypeRefPair moveInternalNode(const InternalNodeType *node);
-    LeafNodeTypeRefPair moveLeafNode(const LeafNodeType *node);
-    uint32_t validLeaves(BTreeNode::Ref ref) const noexcept;
+    InternalNodeTypeRefPair moveInternalNode(const InternalNodeType* node);
+    LeafNodeTypeRefPair     moveLeafNode(const LeafNodeType* node);
+    uint32_t                validLeaves(BTreeNode::Ref ref) const noexcept;
 
     /*
      * Extract level from ref.
      */
-    uint32_t getLevel(BTreeNode::Ref ref) const noexcept;
-    const KeyT &getLastKey(BTreeNode::Ref node) const noexcept;
-    const AggrT &getAggregated(BTreeNode::Ref node) const noexcept;
+    uint32_t     getLevel(BTreeNode::Ref ref) const noexcept;
+    const KeyT&  getLastKey(BTreeNode::Ref node) const noexcept;
+    const AggrT& getAggregated(BTreeNode::Ref node) const noexcept;
 
     vespalib::MemoryUsage getMemoryUsage() const noexcept;
 
     std::string toString(BTreeNode::Ref ref) const;
-    std::string toString(const BTreeNode * node) const;
+    std::string toString(const BTreeNode* node) const;
 
     bool getCompacting(EntryRef ref) noexcept { return _nodeStore.getCompacting(ref); }
 
-    std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst(const CompactionStrategy& compaction_strategy) { return _nodeStore.start_compact_worst(compaction_strategy); }
+    std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst(
+        const CompactionStrategy& compaction_strategy) {
+        return _nodeStore.start_compact_worst(compaction_strategy);
+    }
 
-    template <typename FunctionType>
-    void foreach_key(EntryRef ref, FunctionType func) const {
+    template <typename FunctionType> void foreach_key(EntryRef ref, FunctionType func) const {
         _nodeStore.foreach_key(ref, func);
     }
 
-    template <typename FunctionType>
-    void foreach(EntryRef ref, FunctionType func) const {
-        _nodeStore.foreach(ref, func);
+    template <typename FunctionType> void foreach (EntryRef ref, FunctionType func) const {
+        _nodeStore.foreach (ref, func);
     }
 
-    const NodeStore &getNodeStore() const noexcept { return _nodeStore; }
+    const NodeStore& getNodeStore() const noexcept { return _nodeStore; }
 };
 
-extern template class BTreeNodeAllocator<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeNodeAllocator<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeNodeAllocator<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeNodeAllocator<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeNodeAllocator<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeNodeAllocator<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS,
+                                         BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeNodeAllocator<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS,
+                                         BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeNodeAllocator<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS,
+                                         BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeNodeAllocator<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated,
+                                         BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeNodeAllocator<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
+                                         BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
 
-}
-
+} // namespace vespalib::btree

@@ -19,10 +19,10 @@
  * typically in exceptions.
  * @return a std::string containing the function, source file, and line number
  **/
-#define VESPA_STRLOC vespalib::make_string("%s in %s:%d",__func__,__FILE__,__LINE__)
+#define VESPA_STRLOC vespalib::make_string("%s in %s:%d", __func__, __FILE__, __LINE__)
 
 /**
  * Create a new token by concatenating two tokens (token pasting)
  **/
-#define VESPA_CAT_IMPL(a, b) a ## b
+#define VESPA_CAT_IMPL(a, b) a##b
 #define VESPA_CAT(a, b) VESPA_CAT_IMPL(a, b)

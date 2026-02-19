@@ -20,14 +20,11 @@ namespace vespalib {
 class LevenshteinDistance {
 public:
     // Iff `prefix_match` == true, `right` is the candidate to match against prefix `left`
-    static std::optional<uint32_t> calculate(std::span<const uint32_t> left,
-                                             std::span<const uint32_t> right,
-                                             uint32_t threshold,
-                                             bool prefix_match);
+    static std::optional<uint32_t> calculate(
+        std::span<const uint32_t> left, std::span<const uint32_t> right, uint32_t threshold, bool prefix_match);
 
-    static std::optional<uint32_t> calculate(std::span<const uint32_t> left,
-                                             std::span<const uint32_t> right,
-                                             uint32_t threshold);
+    static std::optional<uint32_t> calculate(
+        std::span<const uint32_t> left, std::span<const uint32_t> right, uint32_t threshold);
 };
 
-}
+} // namespace vespalib

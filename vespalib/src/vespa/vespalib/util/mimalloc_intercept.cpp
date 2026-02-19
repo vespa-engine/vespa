@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mimalloc_intercept.h"
+
 #include <absl/debugging/stacktrace.h>
 #include <absl/debugging/symbolize.h>
+
 #include <atomic>
 #include <cerrno>
 #include <chrono>
@@ -24,17 +26,15 @@ extern "C" {
 #if !defined(__APPLE__)
 // From https://microsoft.github.io/mimalloc/group__extended.html
 typedef void mi_error_fun(int err, void* arg);
-void mi_register_error(mi_error_fun* err_fn, void* arg) __attribute__((weak));
+void         mi_register_error(mi_error_fun* err_fn, void* arg) __attribute__((weak));
 #endif
-
 }
 
 namespace vespalib {
 
 namespace {
 
-__attribute__((noreturn))
-void terminate_on_mi_malloc_failure_once(int err, [[maybe_unused]] void* arg) {
+__attribute__((noreturn)) void terminate_on_mi_malloc_failure_once(int err, [[maybe_unused]] void* arg) {
     // From https://microsoft.github.io/mimalloc/group__extended.html:
     // "The possible error codes are:
     //   EAGAIN:    Double free was detected (only in debug and secure mode).
@@ -64,11 +64,11 @@ void terminate_on_mi_malloc_failure_once(int err, [[maybe_unused]] void* arg) {
         // Don't make any assumptions on which frames can be omitted from the stack trace.
         // This is both dependent on compiler optimizations and the underlying mimalloc code.
         constexpr int skip_frames = 0;
-        void* frames[max_frames];
-        int depth = absl::GetStackTrace(frames, max_frames, skip_frames);
+        void*         frames[max_frames];
+        int           depth = absl::GetStackTrace(frames, max_frames, skip_frames);
         for (int i = 0; i < depth; ++i) {
             const char* sym = "(unknown)";
-            char tmp[1024];
+            char        tmp[1024];
             if (absl::Symbolize(frames[i], tmp, sizeof(tmp))) {
                 sym = tmp;
             }
@@ -78,11 +78,20 @@ void terminate_on_mi_malloc_failure_once(int err, [[maybe_unused]] void* arg) {
     } else {
         const char* msg;
         switch (err) {
-        case EAGAIN:    msg = "double-free"; break;
-        case EFAULT:    msg = "corrupted free-list or metadata"; break;
-        case EOVERFLOW: msg = "too large allocation request"; break;
-        case EINVAL:    msg = "trying to free or reallocate an invalid pointer"; break;
-        default:        msg = "(unknown error)";
+        case EAGAIN:
+            msg = "double-free";
+            break;
+        case EFAULT:
+            msg = "corrupted free-list or metadata";
+            break;
+        case EOVERFLOW:
+            msg = "too large allocation request";
+            break;
+        case EINVAL:
+            msg = "trying to free or reallocate an invalid pointer";
+            break;
+        default:
+            msg = "(unknown error)";
         }
         fprintf(stderr, "mimalloc has reported an invariant violation: %s (errno %d). Terminating.\n", msg, err);
         abort();
@@ -97,7 +106,7 @@ void terminate_on_mi_malloc_failure_once(int err, [[maybe_unused]] void* arg) {
 // the two should always be kept in the same translation unit and in this order.
 std::atomic_flag error_handler_entered{};
 
-} // anon ns
+} // namespace
 
 void terminate_on_mi_malloc_failure(int err, void* fwd_arg) {
     // Only allow the first failing thread to enter the error handler. The error handler
@@ -134,6 +143,6 @@ public:
 
 [[maybe_unused]] MiMallocAutoRegisterErrorHandler init_mi_malloc_error_handler;
 
-} // anon ns
+} // namespace
 
-}
+} // namespace vespalib

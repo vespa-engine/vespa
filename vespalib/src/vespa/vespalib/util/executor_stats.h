@@ -11,38 +11,33 @@ namespace vespalib {
 /**
  * Used for aggregating values, preserving min, max, sum and count.
  */
-template <typename T>
-class AggregatedAverage {
+template <typename T> class AggregatedAverage {
 public:
-    AggregatedAverage() : AggregatedAverage(0ul, T(0), std::numeric_limits<T>::max(), std::numeric_limits<T>::min()) { }
-    explicit AggregatedAverage(T value) : AggregatedAverage(1, value, value, value) { }
+    AggregatedAverage()
+        : AggregatedAverage(0ul, T(0), std::numeric_limits<T>::max(), std::numeric_limits<T>::min()) {}
+    explicit AggregatedAverage(T value) : AggregatedAverage(1, value, value, value) {}
     AggregatedAverage(size_t count_in, T total_in, T min_in, T max_in)
-        : _count(count_in),
-          _total(total_in),
-          _min(min_in),
-          _max(max_in)
-    { }
-    AggregatedAverage & operator += (const AggregatedAverage & rhs) {
+        : _count(count_in), _total(total_in), _min(min_in), _max(max_in) {}
+    AggregatedAverage& operator+=(const AggregatedAverage& rhs) {
         add(rhs);
         return *this;
     }
-    void add(const AggregatedAverage & rhs) {
-        add(rhs._count, rhs._total, rhs._min, rhs._max);
-    }
-    void add(T value) {
-        add(1, value, value, value);
-    }
+    void add(const AggregatedAverage& rhs) { add(rhs._count, rhs._total, rhs._min, rhs._max); }
+    void add(T value) { add(1, value, value, value); }
     void add(size_t count_in, T total_in, T min_in, T max_in) {
         _count += count_in;
         _total += total_in;
-        if (min_in < _min) _min = min_in;
-        if (max_in > _max) _max = max_in;
+        if (min_in < _min)
+            _min = min_in;
+        if (max_in > _max)
+            _max = max_in;
     }
     size_t count() const { return _count; }
-    T total() const { return _total; }
-    T min() const { return _min; }
-    T max() const { return _max; }
+    T      total() const { return _total; }
+    T      min() const { return _min; }
+    T      max() const { return _max; }
     double average() const { return (_count > 0) ? (double(_total) / _count) : 0; }
+
 private:
     size_t _count;
     T      _total;
@@ -56,9 +51,10 @@ private:
  **/
 class ExecutorStats {
 private:
-    size_t   _threadCount;
-    double   _absUtil;
-    double   _saturation;
+    size_t _threadCount;
+    double _absUtil;
+    double _saturation;
+
 public:
     using QueueSizeT = AggregatedAverage<size_t>;
     QueueSizeT queueSize;
@@ -74,21 +70,18 @@ public:
           queueSize(queueSize_in),
           acceptedTasks(accepted),
           rejectedTasks(rejected),
-          wakeupCount(wakeupCount_in)
-    {}
-    void aggregate(const ExecutorStats & rhs) {
+          wakeupCount(wakeupCount_in) {}
+    void aggregate(const ExecutorStats& rhs) {
         _threadCount += rhs._threadCount;
-        queueSize = QueueSizeT(queueSize.count() + rhs.queueSize.count(),
-                               queueSize.total() + rhs.queueSize.total(),
-                               queueSize.min() + rhs.queueSize.min(),
-                               queueSize.max() + rhs.queueSize.max());
+        queueSize = QueueSizeT(queueSize.count() + rhs.queueSize.count(), queueSize.total() + rhs.queueSize.total(),
+                               queueSize.min() + rhs.queueSize.min(), queueSize.max() + rhs.queueSize.max());
         acceptedTasks += rhs.acceptedTasks;
         rejectedTasks += rhs.rejectedTasks;
         wakeupCount += rhs.wakeupCount;
         _absUtil += rhs._absUtil;
         _saturation = std::max(_saturation, rhs.get_saturation());
     }
-    ExecutorStats & setUtil(uint32_t threadCount, double idle) {
+    ExecutorStats& setUtil(uint32_t threadCount, double idle) {
         _threadCount = threadCount;
         _absUtil = (1.0 - idle) * threadCount;
         _saturation = getUtil();
@@ -99,5 +92,4 @@ public:
     double get_saturation() const { return _saturation; }
 };
 
-}
-
+} // namespace vespalib

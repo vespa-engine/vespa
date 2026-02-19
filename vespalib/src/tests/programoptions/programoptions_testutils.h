@@ -12,8 +12,8 @@
 namespace vespalib {
 
 class AppOptions {
-    int _argc;
-    const char** _argv;
+    int                      _argc;
+    const char**             _argv;
     std::vector<std::string> _source;
 
     AppOptions(const AppOptions&);
@@ -23,10 +23,8 @@ public:
     AppOptions(const std::string& optString);
     ~AppOptions();
 
-    int getArgCount() const { return _argc; }
+    int                getArgCount() const { return _argc; }
     const char* const* getArguments() const { return _argv; }
-
 };
 
-} // vespalib
-
+} // namespace vespalib

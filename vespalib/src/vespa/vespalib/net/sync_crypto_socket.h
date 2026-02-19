@@ -2,10 +2,12 @@
 
 #pragma once
 
-#include <memory>
-#include "crypto_socket.h"
 #include "crypto_engine.h"
+#include "crypto_socket.h"
+
 #include <vespa/vespalib/data/smart_buffer.h>
+
+#include <memory>
 
 namespace vespalib {
 
@@ -17,22 +19,23 @@ namespace vespalib {
  * write function blocks until all data can be written or an error
  * occurs. Note that this class is not thread-safe.
  **/
-class SyncCryptoSocket
-{
+class SyncCryptoSocket {
 public:
     using UP = std::unique_ptr<SyncCryptoSocket>;
+
 private:
     CryptoSocket::UP _socket;
-    SmartBuffer _buffer;
+    SmartBuffer      _buffer;
     SyncCryptoSocket(CryptoSocket::UP socket) : _socket(std::move(socket)), _buffer(0) {}
     static UP create(CryptoSocket::UP socket);
+
 public:
     ~SyncCryptoSocket();
-    ssize_t read(char *buf, size_t len);
-    ssize_t write(const char *buf, size_t len);
-    ssize_t half_close();
-    static UP create_client(CryptoEngine &engine, SocketHandle socket, const SocketSpec &spec);
-    static UP create_server(CryptoEngine &engine, SocketHandle socket);
+    ssize_t   read(char* buf, size_t len);
+    ssize_t   write(const char* buf, size_t len);
+    ssize_t   half_close();
+    static UP create_client(CryptoEngine& engine, SocketHandle socket, const SocketSpec& spec);
+    static UP create_server(CryptoEngine& engine, SocketHandle socket);
 };
 
 } // namespace vespalib

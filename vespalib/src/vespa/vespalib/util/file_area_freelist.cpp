@@ -1,45 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "file_area_freelist.h"
+
 #include <cassert>
 
 namespace vespalib::alloc {
 
-FileAreaFreeList::FileAreaFreeList()
-    : _free_areas(),
-      _free_sizes(),
-      _fences()
-{
-}
+FileAreaFreeList::FileAreaFreeList() : _free_areas(), _free_sizes(), _fences() {}
 
-FileAreaFreeList::~FileAreaFreeList()
-{
-    assert(_fences.empty());
-}
+FileAreaFreeList::~FileAreaFreeList() { assert(_fences.empty()); }
 
-void
-FileAreaFreeList::remove_from_size_set(uint64_t offset, size_t size)
-{
+void FileAreaFreeList::remove_from_size_set(uint64_t offset, size_t size) {
     auto itr = _free_sizes.find(size);
     assert(itr != _free_sizes.end());
-    auto &offsets = itr->second;
-    auto erased_count = offsets.erase(offset);
+    auto& offsets = itr->second;
+    auto  erased_count = offsets.erase(offset);
     assert(erased_count != 0u);
     if (offsets.empty()) {
         _free_sizes.erase(itr);
     }
 }
 
-std::pair<uint64_t, size_t>
-FileAreaFreeList::prepare_reuse_area(size_t size)
-{
+std::pair<uint64_t, size_t> FileAreaFreeList::prepare_reuse_area(size_t size) {
     auto itr = _free_sizes.lower_bound(size);
     if (itr == _free_sizes.end()) {
         return std::make_pair(bad_offset, 0); // No free areas of sufficient size
     }
     auto old_size = itr->first;
     assert(old_size >= size);
-    auto &offsets = itr->second;
+    auto& offsets = itr->second;
     assert(!offsets.empty());
     auto oitr = offsets.begin();
     auto offset = *oitr;
@@ -51,9 +40,7 @@ FileAreaFreeList::prepare_reuse_area(size_t size)
     return std::make_pair(offset, old_size);
 }
 
-uint64_t
-FileAreaFreeList::alloc(size_t size)
-{
+uint64_t FileAreaFreeList::alloc(size_t size) {
     auto reuse_candidate = prepare_reuse_area(size);
     auto offset = reuse_candidate.first;
     if (offset == bad_offset) {
@@ -72,9 +59,7 @@ FileAreaFreeList::alloc(size_t size)
     return offset;
 }
 
-void
-FileAreaFreeList::free(uint64_t offset, size_t size)
-{
+void FileAreaFreeList::free(uint64_t offset, size_t size) {
     auto itr = _free_areas.lower_bound(offset);
     if (itr != _free_areas.end() && itr->first <= offset + size) {
         assert(itr->first == offset + size);
@@ -111,9 +96,7 @@ FileAreaFreeList::free(uint64_t offset, size_t size)
     assert(ins_res.second);
 }
 
-void
-FileAreaFreeList::add_premmapped_area(uint64_t offset, size_t size)
-{
+void FileAreaFreeList::add_premmapped_area(uint64_t offset, size_t size) {
     auto itr = _free_areas.lower_bound(offset);
     if (itr != _free_areas.end()) {
         assert(itr->first >= offset + size);
@@ -125,9 +108,7 @@ FileAreaFreeList::add_premmapped_area(uint64_t offset, size_t size)
     assert(fences_ins_res.second);
 }
 
-void
-FileAreaFreeList::remove_premmapped_area(uint64_t offset, size_t size)
-{
+void FileAreaFreeList::remove_premmapped_area(uint64_t offset, size_t size) {
     auto itr = _free_areas.lower_bound(offset);
     assert(itr != _free_areas.end());
     assert(itr->first == offset);
@@ -145,4 +126,4 @@ FileAreaFreeList::remove_premmapped_area(uint64_t offset, size_t size)
     _fences.erase(offset);
 }
 
-}
+} // namespace vespalib::alloc

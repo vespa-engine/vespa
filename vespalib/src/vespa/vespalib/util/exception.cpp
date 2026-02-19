@@ -8,53 +8,29 @@
 
 namespace vespalib {
 
-ExceptionPtr::ExceptionPtr()
-    : _ref(nullptr)
-{
-}
+ExceptionPtr::ExceptionPtr() : _ref(nullptr) {}
 
-ExceptionPtr::ExceptionPtr(const Exception &e)
-    : _ref(e.clone())
-{
-}
+ExceptionPtr::ExceptionPtr(const Exception& e) : _ref(e.clone()) {}
 
-ExceptionPtr::ExceptionPtr(const ExceptionPtr &rhs)
-    : _ref(rhs._ref != nullptr ? rhs._ref->clone() : nullptr)
-{
-}
+ExceptionPtr::ExceptionPtr(const ExceptionPtr& rhs) : _ref(rhs._ref != nullptr ? rhs._ref->clone() : nullptr) {}
 
-ExceptionPtr &
-ExceptionPtr::operator=(const Exception &rhs)
-{
+ExceptionPtr& ExceptionPtr::operator=(const Exception& rhs) {
     ExceptionPtr tmp(rhs);
     swap(tmp);
     return *this;
 }
 
-ExceptionPtr &
-ExceptionPtr::operator=(const ExceptionPtr &rhs)
-{
+ExceptionPtr& ExceptionPtr::operator=(const ExceptionPtr& rhs) {
     ExceptionPtr tmp(rhs);
     swap(tmp);
     return *this;
 }
 
-void
-ExceptionPtr::swap(ExceptionPtr &other)
-{
-    std::swap(_ref, other._ref);
-}
+void ExceptionPtr::swap(ExceptionPtr& other) { std::swap(_ref, other._ref); }
 
-ExceptionPtr::~ExceptionPtr()
-{
-    delete _ref;
-}
+ExceptionPtr::~ExceptionPtr() { delete _ref; }
 
-void
-swap(ExceptionPtr &a, ExceptionPtr &b)
-{
-    a.swap(b);
-}
+void swap(ExceptionPtr& a, ExceptionPtr& b) { a.swap(b); }
 
 //-----------------------------------------------------------------------------
 
@@ -64,33 +40,26 @@ Exception::Exception(std::string_view msg, std::string_view location, int skipSt
       _location(location),
       _stackframes(getStackTraceFrames(_stack, STACK_FRAME_BUFFER_SIZE)),
       _skipStack(skipStack),
-      _cause()
-{
-}
+      _cause() {}
 
-Exception::Exception(std::string_view msg, const Exception &cause, std::string_view location, int skipStack)
+Exception::Exception(std::string_view msg, const Exception& cause, std::string_view location, int skipStack)
     : _what(),
       _msg(msg),
       _location(location),
       _stackframes(getStackTraceFrames(_stack, STACK_FRAME_BUFFER_SIZE)),
       _skipStack(skipStack),
-      _cause(cause)
-{}
+      _cause(cause) {}
 
-Exception::Exception(const Exception &) = default;
-Exception & Exception::operator = (const Exception &) = default;
-Exception::Exception(Exception &&) noexcept = default;
-Exception & Exception::operator = (Exception &&) noexcept = default;
+Exception::Exception(const Exception&) = default;
+Exception& Exception::operator=(const Exception&) = default;
+Exception::Exception(Exception&&) noexcept = default;
+Exception& Exception::operator=(Exception&&) noexcept = default;
 Exception::~Exception() = default;
 
-const char *
-Exception::what() const noexcept
-{
+const char* Exception::what() const noexcept {
     if (_what.empty()) {
         _what.append(toString());
-        for (const Exception *next = getCause();
-             next != nullptr; next = next->getCause())
-        {
+        for (const Exception* next = getCause(); next != nullptr; next = next->getCause()) {
             _what.append("\n--> Caused by: ");
             _what.append(next->toString());
         }
@@ -98,27 +67,13 @@ Exception::what() const noexcept
     return _what.c_str();
 }
 
-const char *
-Exception::getName() const
-{
-    return "Exception";
-}
+const char* Exception::getName() const { return "Exception"; }
 
-Exception *
-Exception::clone() const
-{
-    return new Exception(*this);
-}
+Exception* Exception::clone() const { return new Exception(*this); }
 
-void
-Exception::throwSelf() const
-{
-    throw Exception(*this);
-}
+void Exception::throwSelf() const { throw Exception(*this); }
 
-std::string
-Exception::toString() const
-{
+std::string Exception::toString() const {
     std::string str;
     str.append(getName());
     str.append(": ");

@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/time/time_box.h>
+
 #include <thread>
 
 TEST(TimeBoxTest, require_that_long_lived_timebox_returns_falling_time_left_numbers) {
     vespalib::TimeBox box(3600);
-    double last_timeLeft = box.timeLeft();
+    double            last_timeLeft = box.timeLeft();
     for (int i = 0; i < 10; i++) {
         EXPECT_TRUE(box.hasTimeLeft());
         double timeLeft = box.timeLeft();

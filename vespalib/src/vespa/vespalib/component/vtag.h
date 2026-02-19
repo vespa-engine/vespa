@@ -16,11 +16,10 @@ extern char VersionTagPkg[];
 extern char VersionTagComponent[];
 extern char VersionTagArch[];
 
-
 class Vtag {
 public:
     static Version currentVersion;
-    static void printVersionNice();
+    static void    printVersionNice();
 };
 
-}
+} // namespace vespalib

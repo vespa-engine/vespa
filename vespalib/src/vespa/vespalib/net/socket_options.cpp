@@ -19,11 +19,9 @@ bool set_bool_opt(int fd, int level, int name, bool value) {
     return (setsockopt(fd, level, name, &data, sizeof(data)) == 0);
 }
 
-} // namespace vespalib::<unnamed>
+} // namespace
 
-bool
-SocketOptions::set_blocking(int fd, bool value)
-{
+bool SocketOptions::set_blocking(int fd, bool value) {
     int flags = fcntl(fd, F_GETFL, nullptr);
     if (flags != -1) {
         if (value) {
@@ -36,33 +34,15 @@ SocketOptions::set_blocking(int fd, bool value)
     return false;
 }
 
-bool
-SocketOptions::set_nodelay(int fd, bool value)
-{
-    return set_bool_opt(fd, IPPROTO_TCP, TCP_NODELAY, value);
-}
+bool SocketOptions::set_nodelay(int fd, bool value) { return set_bool_opt(fd, IPPROTO_TCP, TCP_NODELAY, value); }
 
-bool
-SocketOptions::set_reuse_addr(int fd, bool value)
-{
-    return set_bool_opt(fd, SOL_SOCKET, SO_REUSEADDR, value);
-}
+bool SocketOptions::set_reuse_addr(int fd, bool value) { return set_bool_opt(fd, SOL_SOCKET, SO_REUSEADDR, value); }
 
-bool
-SocketOptions::set_ipv6_only(int fd, bool value)
-{
-    return set_bool_opt(fd, IPPROTO_IPV6, IPV6_V6ONLY, value);
-}
+bool SocketOptions::set_ipv6_only(int fd, bool value) { return set_bool_opt(fd, IPPROTO_IPV6, IPV6_V6ONLY, value); }
 
-bool
-SocketOptions::set_keepalive(int fd, bool value)
-{
-    return set_bool_opt(fd, SOL_SOCKET, SO_KEEPALIVE, value);
-}
+bool SocketOptions::set_keepalive(int fd, bool value) { return set_bool_opt(fd, SOL_SOCKET, SO_KEEPALIVE, value); }
 
-bool
-SocketOptions::set_linger(int fd, bool enable, int value)
-{
+bool SocketOptions::set_linger(int fd, bool enable, int value) {
     struct linger data;
     memset(&data, 0, sizeof(data));
     data.l_onoff = enable;

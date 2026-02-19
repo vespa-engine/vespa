@@ -8,4 +8,4 @@ template class ExplicitLevenshteinDfaImpl<2>;
 template class ExplicitLevenshteinDfaBuilder<FixedMaxEditDistanceTraits<1>>;
 template class ExplicitLevenshteinDfaBuilder<FixedMaxEditDistanceTraits<2>>;
 
-}
+} // namespace vespalib::fuzzy

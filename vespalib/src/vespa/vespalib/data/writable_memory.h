@@ -11,10 +11,10 @@ namespace vespalib {
  * does not have ownership of the referenced memory region.
  **/
 struct WritableMemory {
-    char   *data;
-    size_t  size;
+    char*  data;
+    size_t size;
     WritableMemory() : data(nullptr), size(0) {}
-    WritableMemory(char *d, size_t s) : data(d), size(s) {}
+    WritableMemory(char* d, size_t s) : data(d), size(s) {}
 };
 
 } // namespace vespalib

@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "data_store_explorer.h"
+
 #include "datastorebase.h"
+
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/state_explorer_utils.h>
+
 #include <algorithm>
 
 using vespalib::slime::ArrayInserter;
@@ -24,10 +27,11 @@ class BufferTypeStateStats {
     uint32_t _hold_entries;
     uint64_t _extra_used_bytes;
     uint64_t _extra_hold_bytes;
+
 public:
     BufferTypeStateStats() noexcept;
-    void aggregate(const BufferState& state) noexcept;
-    void stats_to_slime(Inserter& inserter);
+    void     aggregate(const BufferState& state) noexcept;
+    void     stats_to_slime(Inserter& inserter);
     uint32_t buffers() const noexcept { return _buffers; }
     uint32_t allocated_entries() const noexcept { return _allocated_entries; }
     uint32_t used_entries() const noexcept { return _used_entries; }
@@ -44,13 +48,9 @@ BufferTypeStateStats::BufferTypeStateStats() noexcept
       _dead_entries(0),
       _hold_entries(0),
       _extra_used_bytes(0),
-      _extra_hold_bytes(0)
-{
-}
+      _extra_hold_bytes(0) {}
 
-void
-BufferTypeStateStats::aggregate(const BufferState& state) noexcept
-{
+void BufferTypeStateStats::aggregate(const BufferState& state) noexcept {
     ++_buffers;
     _allocated_entries += state.capacity();
     _used_entries += state.size();
@@ -60,10 +60,7 @@ BufferTypeStateStats::aggregate(const BufferState& state) noexcept
     _extra_hold_bytes += state.stats().extra_hold_bytes();
 }
 
-
-void
-BufferTypeStateStats::stats_to_slime(Inserter& inserter)
-{
+void BufferTypeStateStats::stats_to_slime(Inserter& inserter) {
     if (_buffers != 0) {
         auto& object = inserter.insertObject();
         object.setLong("count", _buffers);
@@ -77,23 +74,23 @@ BufferTypeStateStats::stats_to_slime(Inserter& inserter)
 }
 
 class BufferTypeStats {
-    uint32_t _type_id;
-    uint32_t _entry_size;
-    uint32_t _array_size;
-    uint32_t _max_entries;
+    uint32_t             _type_id;
+    uint32_t             _entry_size;
+    uint32_t             _array_size;
+    uint32_t             _max_entries;
     BufferTypeStateStats _active;
     BufferTypeStateStats _hold;
 
 public:
     BufferTypeStats() noexcept;
-    bool is_initialized() const noexcept { return _active.buffers() != 0 || _hold.buffers() != 0; }
-    void aggregate(const BufferState& state) noexcept;
-    void stats_to_slime(Inserter& inserter);
+    bool     is_initialized() const noexcept { return _active.buffers() != 0 || _hold.buffers() != 0; }
+    void     aggregate(const BufferState& state) noexcept;
+    void     stats_to_slime(Inserter& inserter);
     uint32_t type_id() const noexcept { return _type_id; }
     uint64_t entry_size() const noexcept { return _entry_size; }
     const BufferTypeStateStats& active() const noexcept { return _active; }
     const BufferTypeStateStats& hold() const noexcept { return _hold; }
-    uint32_t buffers() const noexcept { return active().buffers() + hold().buffers(); }
+    uint32_t                    buffers() const noexcept { return active().buffers() + hold().buffers(); }
     uint32_t allocated_entries() const noexcept { return active().allocated_entries() + hold().allocated_entries(); }
     uint32_t used_entries() const noexcept { return active().used_entries() + hold().used_entries(); }
     uint32_t dead_entries() const noexcept { return active().dead_entries() + hold().dead_entries(); }
@@ -107,18 +104,9 @@ public:
 };
 
 BufferTypeStats::BufferTypeStats() noexcept
-    : _type_id(0),
-      _entry_size(0),
-      _array_size(0),
-      _max_entries(0),
-      _active(),
-      _hold()
-{
-}
+    : _type_id(0), _entry_size(0), _array_size(0), _max_entries(0), _active(), _hold() {}
 
-void
-BufferTypeStats::aggregate(const BufferState& state) noexcept
-{
+void BufferTypeStats::aggregate(const BufferState& state) noexcept {
     if (!is_initialized()) {
         _type_id = state.getTypeId();
         auto type_handler = state.getTypeHandler();
@@ -127,20 +115,17 @@ BufferTypeStats::aggregate(const BufferState& state) noexcept
         _max_entries = type_handler->get_max_entries();
     }
     switch (state.getState()) {
-        case BufferState::State::ACTIVE:
-            _active.aggregate(state);
+    case BufferState::State::ACTIVE:
+        _active.aggregate(state);
         break;
-        case BufferState::State::HOLD:
-            _hold.aggregate(state);
+    case BufferState::State::HOLD:
+        _hold.aggregate(state);
         break;
-        case BufferState::State::FREE:
-            ;
+    case BufferState::State::FREE:;
     }
 }
 
-void
-BufferTypeStats::stats_to_slime(Inserter& inserter)
-{
+void BufferTypeStats::stats_to_slime(Inserter& inserter) {
     auto& object = inserter.insertObject();
     object.setLong("type_id", _type_id);
     object.setLong("entry_size", _entry_size);
@@ -148,7 +133,7 @@ BufferTypeStats::stats_to_slime(Inserter& inserter)
     object.setLong("max_entries", _max_entries);
     object.setLong("allocated_bytes", allocated_bytes());
     object.setLong("used_bytes", used_bytes());
-    object.setLong("dead_bytes",dead_bytes());
+    object.setLong("dead_bytes", dead_bytes());
     object.setLong("hold_bytes", hold_bytes());
     ObjectInserter active_buffers(object, "active_buffers");
     _active.stats_to_slime(active_buffers);
@@ -157,7 +142,7 @@ BufferTypeStats::stats_to_slime(Inserter& inserter)
 }
 
 struct GreaterResourceUsage {
-    bool operator()(const BufferTypeStats& lhs, const BufferTypeStats &rhs) const noexcept {
+    bool operator()(const BufferTypeStats& lhs, const BufferTypeStats& rhs) const noexcept {
         if (lhs.buffers() != rhs.buffers()) {
             return lhs.buffers() > rhs.buffers();
         }
@@ -178,20 +163,21 @@ struct GreaterResourceUsage {
 };
 
 class Stats {
-    uint32_t _type_id_limit;
-    uint32_t _bufferid_limit;
-    uint32_t _max_num_buffers;
-    uint32_t _max_entries;
-    uint32_t _active_buffers;
-    uint32_t _free_buffers;
-    uint32_t _hold_buffers;
+    uint32_t                     _type_id_limit;
+    uint32_t                     _bufferid_limit;
+    uint32_t                     _max_num_buffers;
+    uint32_t                     _max_entries;
+    uint32_t                     _active_buffers;
+    uint32_t                     _free_buffers;
+    uint32_t                     _hold_buffers;
     std::vector<BufferTypeStats> _buffer_type_stats;
+
 public:
     Stats();
     ~Stats();
-    void buffer_stats_scan(const DataStoreBase& store);
-    void buffer_type_scan(const DataStoreBase& store);
-    void  buffer_stats_to_slime(Cursor& object);
+    void     buffer_stats_scan(const DataStoreBase& store);
+    void     buffer_type_scan(const DataStoreBase& store);
+    void     buffer_stats_to_slime(Cursor& object);
     uint32_t buffer_type_stats_to_slime(Cursor& array);
     uint32_t type_id_limit() const noexcept { return _type_id_limit; }
     uint32_t bufferid_limit() const noexcept { return _bufferid_limit; }
@@ -207,15 +193,11 @@ Stats::Stats()
       _active_buffers(0),
       _free_buffers(0),
       _hold_buffers(0),
-      _buffer_type_stats()
-{
-}
+      _buffer_type_stats() {}
 
 Stats::~Stats() = default;
 
-void
-Stats::buffer_stats_scan(const DataStoreBase& store)
-{
+void Stats::buffer_stats_scan(const DataStoreBase& store) {
     _bufferid_limit = store.get_bufferid_limit_acquire();
     _max_num_buffers = store.getMaxNumBuffers();
     _max_entries = store.get_max_entries();
@@ -227,24 +209,22 @@ Stats::buffer_stats_scan(const DataStoreBase& store)
         auto& buffer_meta = store.getBufferMeta(id);
         auto& state = *buffer_meta.get_state_acquire();
         switch (state.getState()) {
-            case BufferState::State::ACTIVE:
-                ++_active_buffers;
-                _type_id_limit = std::max(_type_id_limit, buffer_meta.getTypeId() + 1);
+        case BufferState::State::ACTIVE:
+            ++_active_buffers;
+            _type_id_limit = std::max(_type_id_limit, buffer_meta.getTypeId() + 1);
             break;
-            case BufferState::State::HOLD:
-                ++_hold_buffers;
-                _type_id_limit = std::max(_type_id_limit, buffer_meta.getTypeId() + 1);
+        case BufferState::State::HOLD:
+            ++_hold_buffers;
+            _type_id_limit = std::max(_type_id_limit, buffer_meta.getTypeId() + 1);
             break;
-            case BufferState::State::FREE:
-                ++_free_buffers;
+        case BufferState::State::FREE:
+            ++_free_buffers;
             break;
         }
     }
 }
 
-void
-Stats::buffer_type_scan(const DataStoreBase& store)
-{
+void Stats::buffer_type_scan(const DataStoreBase& store) {
     _buffer_type_stats.clear();
     _buffer_type_stats.resize(_type_id_limit);
     for (uint32_t id = 0; id < _bufferid_limit; ++id) {
@@ -257,19 +237,15 @@ Stats::buffer_type_scan(const DataStoreBase& store)
     }
 }
 
-void
-Stats::buffer_stats_to_slime(Cursor& object)
-{
+void Stats::buffer_stats_to_slime(Cursor& object) {
     object.setLong("active", _active_buffers);
     object.setLong("hold", _hold_buffers);
     object.setLong("free", _free_buffers);
 }
 
-uint32_t
-Stats::buffer_type_stats_to_slime(Cursor& array)
-{
+uint32_t Stats::buffer_type_stats_to_slime(Cursor& array) {
     std::sort(_buffer_type_stats.begin(), _buffer_type_stats.end(), GreaterResourceUsage());
-    uint32_t skipped = 0;
+    uint32_t      skipped = 0;
     ArrayInserter ai(array);
     for (auto& stats : _buffer_type_stats) {
         if (stats.allocated_entries() > 0) {
@@ -281,22 +257,17 @@ Stats::buffer_type_stats_to_slime(Cursor& array)
     return skipped;
 }
 
-}
+} // namespace
 
-DataStoreExplorer::DataStoreExplorer(const DataStoreBase &store)
-    : StateExplorer(),
-      _store(store)
-{
-}
+DataStoreExplorer::DataStoreExplorer(const DataStoreBase& store) : StateExplorer(), _store(store) {}
 
 DataStoreExplorer::~DataStoreExplorer() = default;
 
-void
-DataStoreExplorer::get_state(const Inserter& inserter, bool full) const
-{
+void DataStoreExplorer::get_state(const Inserter& inserter, bool full) const {
     auto& object = inserter.insertObject();
     StateExplorerUtils::memory_usage_to_slime(_store.getMemoryUsage(), object.setObject("memory_usage"));
-    StateExplorerUtils::memory_usage_to_slime(_store.getDynamicMemoryUsage(), object.setObject("dynamic_memory_usage"));
+    StateExplorerUtils::memory_usage_to_slime(
+        _store.getDynamicMemoryUsage(), object.setObject("dynamic_memory_usage"));
     StateExplorerUtils::address_space_to_slime(_store.getAddressSpaceUsage(), object.setObject("address_space"));
     Stats stats;
     stats.buffer_stats_scan(_store);
@@ -312,4 +283,4 @@ DataStoreExplorer::get_state(const Inserter& inserter, bool full) const
     }
 }
 
-}
+} // namespace vespalib::datastore

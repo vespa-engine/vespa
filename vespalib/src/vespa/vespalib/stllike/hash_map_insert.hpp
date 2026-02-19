@@ -7,12 +7,11 @@ namespace vespalib {
 
 template <typename K, typename V, typename H, typename EQ, typename M>
 template <typename InputIt>
-void
-hash_map<K, V, H, EQ, M>::insert(InputIt first, InputIt last) {
+void hash_map<K, V, H, EQ, M>::insert(InputIt first, InputIt last) {
     while (first != last) {
         insert(*first);
         ++first;
     }
 }
 
-}
+} // namespace vespalib

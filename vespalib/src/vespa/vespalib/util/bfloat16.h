@@ -37,28 +37,28 @@ public:
     constexpr BFloat16(float value) noexcept : _bits(float_to_bits(value)) {}
     BFloat16() noexcept = default;
     ~BFloat16() noexcept = default;
-    constexpr BFloat16(const BFloat16 &other) noexcept = default;
-    constexpr BFloat16(BFloat16 &&other) noexcept = default;
-    constexpr BFloat16& operator=(const BFloat16 &other) noexcept = default;
-    constexpr BFloat16& operator=(BFloat16 &&other) noexcept = default;
+    constexpr BFloat16(const BFloat16& other) noexcept = default;
+    constexpr BFloat16(BFloat16&& other) noexcept = default;
+    constexpr BFloat16& operator=(const BFloat16& other) noexcept = default;
+    constexpr BFloat16& operator=(BFloat16&& other) noexcept = default;
     constexpr BFloat16& operator=(float value) noexcept {
         _bits = float_to_bits(value);
         return *this;
     }
 
-    constexpr operator float () const noexcept { return bits_to_float(_bits); }
+    constexpr operator float() const noexcept { return bits_to_float(_bits); }
 
     constexpr float to_float() const noexcept { return bits_to_float(_bits); }
-    constexpr void assign(float value) noexcept { _bits = float_to_bits(value); }
+    constexpr void  assign(float value) noexcept { _bits = float_to_bits(value); }
 
     constexpr uint16_t get_bits() const noexcept { return _bits; }
-    constexpr void assign_bits(uint16_t value) noexcept { _bits = value; }
+    constexpr void     assign_bits(uint16_t value) noexcept { _bits = value; }
 };
 
-}
+} // namespace vespalib
 
 namespace std {
-template<> class numeric_limits<vespalib::BFloat16> {
+template <> class numeric_limits<vespalib::BFloat16> {
 public:
     static constexpr bool is_specialized = true;
     static constexpr bool is_signed = true;
@@ -76,7 +76,7 @@ public:
     static constexpr bool tinyness_before = false;
 
     static constexpr std::float_round_style round_style = std::round_toward_zero;
-    static constexpr int radix = 2;
+    static constexpr int                    radix = 2;
 
     static constexpr int digits = 8;
     static constexpr int digits10 = 2;
@@ -94,15 +94,11 @@ public:
     static constexpr vespalib::BFloat16 max() noexcept { return 0x1.FEp127; }
     static constexpr vespalib::BFloat16 min() noexcept { return 0x1.0p-126; }
     static constexpr vespalib::BFloat16 round_error() noexcept { return 1.0; }
-    static constexpr vespalib::BFloat16 infinity() noexcept {
-        return std::numeric_limits<float>::infinity();
-    }
-    static constexpr vespalib::BFloat16 quiet_NaN() noexcept {
-        return std::numeric_limits<float>::quiet_NaN();
-    }
+    static constexpr vespalib::BFloat16 infinity() noexcept { return std::numeric_limits<float>::infinity(); }
+    static constexpr vespalib::BFloat16 quiet_NaN() noexcept { return std::numeric_limits<float>::quiet_NaN(); }
     static constexpr vespalib::BFloat16 signaling_NaN() noexcept {
         return std::numeric_limits<float>::signaling_NaN();
     }
 };
 
-}
+} // namespace std

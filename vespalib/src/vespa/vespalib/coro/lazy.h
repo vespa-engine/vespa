@@ -5,8 +5,8 @@
 #include "waiting_for.h"
 
 #include <coroutine>
-#include <optional>
 #include <exception>
+#include <optional>
 #include <utility>
 
 namespace vespalib::coro {
@@ -23,16 +23,15 @@ namespace vespalib::coro {
  * assumed to be produced asynchronously. If you need to access it
  * from the outside (in that specific thread); use sync_wait.
  **/
-template <std::movable T>
-class [[nodiscard]] Lazy {
+template <std::movable T> class [[nodiscard]] Lazy {
 public:
     struct promise_type final : PromiseState<T> {
         using PromiseState<T>::result;
-        Lazy<T> get_return_object() { return Lazy(Handle::from_promise(*this)); }
+        Lazy<T>                    get_return_object() { return Lazy(Handle::from_promise(*this)); }
         static std::suspend_always initial_suspend() noexcept { return {}; }
-        static auto final_suspend() noexcept {
+        static auto                final_suspend() noexcept {
             struct awaiter {
-                bool await_ready() const noexcept { return false; }
+                bool                    await_ready() const noexcept { return false; }
                 std::coroutine_handle<> await_suspend(Handle handle) const noexcept {
                     return handle.promise().waiter;
                 }
@@ -40,13 +39,8 @@ public:
             };
             return awaiter();
         }
-        template <typename RET>
-        void return_value(RET &&ret_value) {
-            result.set_value(std::forward<RET>(ret_value));
-        }
-        void unhandled_exception() noexcept {
-            result.set_error(std::current_exception());
-        }
+        template <typename RET> void return_value(RET&& ret_value) { result.set_value(std::forward<RET>(ret_value)); }
+        void                         unhandled_exception() noexcept { result.set_error(std::current_exception()); }
         promise_type() noexcept : PromiseState<T>() {}
         ~promise_type();
     };
@@ -55,11 +49,10 @@ public:
 private:
     Handle _handle;
 
-    template <typename RET>
-    struct WaitFor {
+    template <typename RET> struct WaitFor {
         Handle handle;
         WaitFor(Handle handle_in) noexcept : handle(handle_in) {}
-        bool await_ready() const noexcept { return handle.done(); }
+        bool   await_ready() const noexcept { return handle.done(); }
         Handle await_suspend(std::coroutine_handle<> waiter) const noexcept {
             handle.promise().waiter = waiter;
             return handle;
@@ -67,23 +60,23 @@ private:
         decltype(auto) await_resume() const { return RET::get(handle.promise()); }
     };
     struct LValue {
-        static T& get(auto &&promise) { return promise.result.get_value(); }
+        static T& get(auto&& promise) { return promise.result.get_value(); }
     };
     struct RValue {
-        static T&& get(auto &&promise) { return std::move(promise.result).get_value(); }
+        static T&& get(auto&& promise) { return std::move(promise.result).get_value(); }
     };
     struct Result {
-        static Received<T>&& get(auto &&promise) { return std::move(promise.result); }
+        static Received<T>&& get(auto&& promise) { return std::move(promise.result); }
     };
     struct Nothing {
-        static void get(auto &&) {}
+        static void get(auto&&) {}
     };
 
 public:
-    Lazy(const Lazy &) = delete;
-    Lazy &operator=(const Lazy &) = delete;
+    Lazy(const Lazy&) = delete;
+    Lazy& operator=(const Lazy&) = delete;
     explicit Lazy(Handle handle_in) noexcept : _handle(handle_in) {}
-    Lazy(Lazy &&rhs) noexcept : _handle(std::exchange(rhs._handle, nullptr)) {}
+    Lazy(Lazy&& rhs) noexcept : _handle(std::exchange(rhs._handle, nullptr)) {}
     auto operator co_await() & noexcept { return WaitFor<LValue>(_handle); }
     auto operator co_await() && noexcept { return WaitFor<RValue>(_handle); }
     auto forward() noexcept { return WaitFor<Result>(_handle); }
@@ -95,11 +88,10 @@ public:
     }
 };
 
-template<std::movable T>
-Lazy<T>::promise_type::~promise_type() = default;
+template <std::movable T> Lazy<T>::promise_type::~promise_type() = default;
 
 // signal the completion of work without any result value
 struct Done {};
 using Work = Lazy<Done>;
 
-}
+} // namespace vespalib::coro

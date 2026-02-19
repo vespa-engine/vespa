@@ -1,18 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/printable.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/printable.h>
 
 struct Foo : public vespalib::Printable {
-    int val;
+    int         val;
     std::string other;
 
     Foo(int v, std::string o) : val(v), other(o) {}
 
-    void print(std::ostream& out, bool verbose = false,
-               const std::string& indent = "") const override
-    {
+    void print(std::ostream& out, bool verbose = false, const std::string& indent = "") const override {
         out << "Foo(val = " << val;
         if (verbose) {
             out << ", other:\n" << indent << "  " << other;
@@ -28,9 +26,7 @@ struct Bar : public Foo {
 
     Bar(int j, int v, std::string o) : Foo(v, o), i(j) {}
 
-    void print(std::ostream& out, bool verbose = false,
-               const std::string& indent = "") const override
-    {
+    void print(std::ostream& out, bool verbose = false, const std::string& indent = "") const override {
         out << "Bar(" << i << ")";
         if (verbose) {
             out << " : ";
@@ -44,9 +40,7 @@ struct AsciiFoo : public vespalib::AsciiPrintable {
 
     AsciiFoo(int v) : val(v) {}
 
-    void print(vespalib::asciistream& out,
-               const PrintProperties& p) const override
-    {
+    void print(vespalib::asciistream& out, const PrintProperties& p) const override {
         if (p.verbose()) {
             out << "AsciiFoo(" << val << ")";
         } else {
@@ -60,12 +54,11 @@ struct AsciiBar : public vespalib::AsciiPrintable {
 
     AsciiBar(int v) : _foo(v) {}
 
-    void print(vespalib::asciistream& out,
-               const PrintProperties& p) const override
-    {
+    void print(vespalib::asciistream& out, const PrintProperties& p) const override {
         if (p.verbose()) {
             out << "AsciiBar() {"
-                << "\n" << p.indent(1);
+                << "\n"
+                << p.indent(1);
             _foo.print(out, p.indentedCopy());
             out << "\n" << p.indent() << "}";
         } else {
@@ -74,17 +67,18 @@ struct AsciiBar : public vespalib::AsciiPrintable {
     }
 };
 
-TEST(PrintableTest, test_simple)
-{
+TEST(PrintableTest, test_simple) {
     Foo foo(3, "myval");
     Bar bar(7, 3, "otherval");
 
     EXPECT_EQ("Foo(val = 3, other size 5)", foo.toString());
     EXPECT_EQ("Foo(val = 3, other size 5)", foo.toString(false, "  "));
     EXPECT_EQ("Foo(val = 3, other:\n"
-              "  myval)", foo.toString(true));
+              "  myval)",
+              foo.toString(true));
     EXPECT_EQ("Foo(val = 3, other:\n"
-              "    myval)", foo.toString(true, "  "));
+              "    myval)",
+              foo.toString(true, "  "));
 
     std::ostringstream ost;
     ost << foo;
@@ -93,18 +87,18 @@ TEST(PrintableTest, test_simple)
     EXPECT_EQ("Bar(7)", bar.toString());
     EXPECT_EQ("Bar(7)", bar.toString(false, "  "));
     EXPECT_EQ("Bar(7) : Foo(val = 3, other:\n"
-              "    otherval)", bar.toString(true));
+              "    otherval)",
+              bar.toString(true));
     EXPECT_EQ("Bar(7) : Foo(val = 3, other:\n"
-              "      otherval)", bar.toString(true, "  "));
+              "      otherval)",
+              bar.toString(true, "  "));
 }
 
-TEST(PrintableTest, test_ascii_variant)
-{
+TEST(PrintableTest, test_ascii_variant) {
     AsciiFoo foo(19);
 
     EXPECT_EQ("19", foo.toString());
-    EXPECT_EQ("AsciiFoo(19)",
-              foo.toString(vespalib::AsciiPrintable::VERBOSE));
+    EXPECT_EQ("AsciiFoo(19)", foo.toString(vespalib::AsciiPrintable::VERBOSE));
     {
         vespalib::asciistream as;
         as << foo;
@@ -119,7 +113,8 @@ TEST(PrintableTest, test_ascii_variant)
     EXPECT_EQ("3", bar.toString());
     EXPECT_EQ("AsciiBar() {\n"
               "  AsciiFoo(3)\n"
-              "}", bar.toString(vespalib::AsciiPrintable::VERBOSE));
+              "}",
+              bar.toString(vespalib::AsciiPrintable::VERBOSE));
     {
         vespalib::asciistream as;
         as << bar;

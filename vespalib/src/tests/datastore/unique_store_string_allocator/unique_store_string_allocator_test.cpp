@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/datastore/buffer_stats.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
+
+#include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
+
 #include <vector>
 
 using namespace vespalib::datastore;
@@ -14,52 +16,36 @@ using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::test::MemoryAllocatorObserver;
 using AllocStats = MemoryAllocatorObserver::Stats;
 
-
 namespace {
 
 std::string small("small");
 std::string middle("middle long string");
 std::string spaces1000(1000, ' ');
 
-}
+} // namespace
 
-template <typename RefT = EntryRefT<22>>
-struct TestBase : public ::testing::Test {
+template <typename RefT = EntryRefT<22>> struct TestBase : public ::testing::Test {
     using EntryRefType = RefT;
 
-    AllocStats allocStats;
+    AllocStats                               allocStats;
     UniqueStoreStringAllocator<EntryRefType> allocator;
-    generation_t generation;
-    TestBase()
-        : allocStats(),
-          allocator(std::make_unique<MemoryAllocatorObserver>(allocStats)),
-          generation(1)
-    {}
-    void assert_add(const char *input) {
+    generation_t                             generation;
+    TestBase() : allocStats(), allocator(std::make_unique<MemoryAllocatorObserver>(allocStats)), generation(1) {}
+    void assert_add(const char* input) {
         EntryRef ref = add(input);
         assert_get(ref, input);
     }
-    EntryRef add(const char *input) {
-        return allocator.allocate(input);
-    }
-    void assert_get(EntryRef ref, const char *exp) const {
-        const char *act = allocator.get(ref);
+    EntryRef add(const char* input) { return allocator.allocate(input); }
+    void     assert_get(EntryRef ref, const char* exp) const {
+        const char* act = allocator.get(ref);
         EXPECT_STREQ(exp, act);
     }
-    void remove(EntryRef ref) {
-        allocator.hold(ref);
-    }
-    EntryRef move_on_compact(EntryRef ref) {
-        return allocator.move_on_compact(ref);
-    }
-    uint32_t get_buffer_id(EntryRef ref) const {
-        return EntryRefType(ref).bufferId();
-    }
-    BufferState &buffer_state(EntryRef ref) {
-        return allocator.get_data_store().getBufferState(get_buffer_id(ref));
-    }
-    void assert_buffer_state(EntryRef ref, const TestBufferStats expStats) {
-        auto & stats = buffer_state(ref).stats();
+    void         remove(EntryRef ref) { allocator.hold(ref); }
+    EntryRef     move_on_compact(EntryRef ref) { return allocator.move_on_compact(ref); }
+    uint32_t     get_buffer_id(EntryRef ref) const { return EntryRefType(ref).bufferId(); }
+    BufferState& buffer_state(EntryRef ref) { return allocator.get_data_store().getBufferState(get_buffer_id(ref)); }
+    void         assert_buffer_state(EntryRef ref, const TestBufferStats expStats) {
+        auto& stats = buffer_state(ref).stats();
         EXPECT_EQ(expStats._used, buffer_state(ref).size());
         EXPECT_EQ(expStats._hold, stats.hold_entries());
         EXPECT_EQ(expStats._dead, stats.dead_entries());
@@ -75,15 +61,13 @@ struct TestBase : public ::testing::Test {
 using StringTest = TestBase<EntryRefT<22>>;
 using SmallOffsetStringTest = TestBase<EntryRefT<10, 10>>;
 
-TEST_F(StringTest, can_add_and_get_values)
-{
+TEST_F(StringTest, can_add_and_get_values) {
     assert_add(small.c_str());
     assert_add(middle.c_str());
     assert_add(spaces1000.c_str());
 }
 
-TEST_F(StringTest, entries_are_put_on_hold_when_value_is_removed)
-{
+TEST_F(StringTest, entries_are_put_on_hold_when_value_is_removed) {
     EntryRef ref = add(small.c_str());
     assert_buffer_state(ref, TestBufferStats().used(1).hold(0).dead(0));
     remove(ref);
@@ -92,8 +76,7 @@ TEST_F(StringTest, entries_are_put_on_hold_when_value_is_removed)
     assert_buffer_state(ref, TestBufferStats().used(1).hold(0).dead(1));
 }
 
-TEST_F(StringTest, extra_bytes_used_is_tracked)
-{
+TEST_F(StringTest, extra_bytes_used_is_tracked) {
     EntryRef ref = add(spaces1000.c_str());
     // Note: The first buffer have the first element reserved -> we expect 2 elements used here.
     assert_buffer_state(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(1001));
@@ -113,8 +96,7 @@ TEST_F(StringTest, extra_bytes_used_is_tracked)
     assert_buffer_state(ref, TestBufferStats().used(3).hold(0).dead(3));
 }
 
-TEST_F(StringTest, string_length_determines_buffer)
-{
+TEST_F(StringTest, string_length_determines_buffer) {
     EntryRef ref1 = add(small.c_str());
     EntryRef ref2 = add(middle.c_str());
     EntryRef ref3 = add(spaces1000.c_str());
@@ -126,8 +108,7 @@ TEST_F(StringTest, string_length_determines_buffer)
     EXPECT_EQ(get_buffer_id(ref1), get_buffer_id(ref4));
 }
 
-TEST_F(StringTest, free_list_is_used_when_enabled)
-{
+TEST_F(StringTest, free_list_is_used_when_enabled) {
     // Free lists are default enabled for UniqueStoreStringAllocator
     EntryRef ref1 = add(small.c_str());
     EntryRef ref2 = add(spaces1000.c_str());
@@ -142,8 +123,7 @@ TEST_F(StringTest, free_list_is_used_when_enabled)
     assert_buffer_state(ref2, TestBufferStats().used(2).hold(0).dead(1).extra_used(1001));
 }
 
-TEST_F(StringTest, free_list_is_not_used_when_disabled)
-{
+TEST_F(StringTest, free_list_is_not_used_when_disabled) {
     allocator.get_data_store().disableFreeLists();
     EntryRef ref1 = add(small.c_str());
     EntryRef ref2 = add(spaces1000.c_str());
@@ -158,8 +138,7 @@ TEST_F(StringTest, free_list_is_not_used_when_disabled)
     assert_buffer_state(ref2, TestBufferStats().used(3).hold(0).dead(2).extra_used(1001));
 }
 
-TEST_F(StringTest, free_list_is_never_used_for_move_on_compact)
-{
+TEST_F(StringTest, free_list_is_never_used_for_move_on_compact) {
     // Free lists are default enabled for UniqueStoreStringAllocator
     EntryRef ref1 = add(small.c_str());
     EntryRef ref2 = add(spaces1000.c_str());
@@ -176,13 +155,9 @@ TEST_F(StringTest, free_list_is_never_used_for_move_on_compact)
     assert_buffer_state(ref2, TestBufferStats().used(4).hold(0).dead(2).extra_used(2002));
 }
 
-TEST_F(StringTest, provided_memory_allocator_is_used)
-{
-    EXPECT_EQ(AllocStats(18, 0), allocStats);
-}
+TEST_F(StringTest, provided_memory_allocator_is_used) { EXPECT_EQ(AllocStats(18, 0), allocStats); }
 
-TEST_F(SmallOffsetStringTest, new_underlying_buffer_is_allocated_when_current_is_full)
-{
+TEST_F(SmallOffsetStringTest, new_underlying_buffer_is_allocated_when_current_is_full) {
     uint32_t first_buffer_id = get_buffer_id(add(small.c_str()));
     for (uint32_t i = 0; i < (SmallOffsetStringTest::EntryRefType::offsetSize() - 1); ++i) {
         uint32_t buffer_id = get_buffer_id(add(small.c_str()));

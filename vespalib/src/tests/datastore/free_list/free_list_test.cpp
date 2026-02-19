@@ -1,23 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/datastore/entryref.hpp>
 #include <vespa/vespalib/datastore/free_list.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/vespalib/datastore/entryref.hpp>
+
 #include <vector>
 
 using namespace vespalib::datastore;
 
 using MyEntryRef = EntryRefT<8, 4>;
 
-struct FreeListTest : public testing::Test
-{
-    FreeList list;
-    std::atomic<EntryCount> dead_entries;
+struct FreeListTest : public testing::Test {
+    FreeList                    list;
+    std::atomic<EntryCount>     dead_entries;
     std::vector<BufferFreeList> bufs;
-    FreeListTest()
-        : list(),
-          bufs()
-    {
+    FreeListTest() : list(), bufs() {
         for (size_t i = 0; i < 3; ++i) {
             bufs.emplace_back(dead_entries);
         }
@@ -27,24 +25,17 @@ struct FreeListTest : public testing::Test
             buf.disable();
         }
     }
-    void enable(uint32_t buffer_id) {
-        bufs[buffer_id].enable(list);
-    }
+    void enable(uint32_t buffer_id) { bufs[buffer_id].enable(list); }
     void enable_all() {
         for (auto& buf : bufs) {
             buf.enable(list);
         }
     }
-    void push_entry(MyEntryRef ref) {
-        bufs[ref.bufferId()].push_entry(ref);
-    }
-    MyEntryRef pop_entry() {
-        return {list.pop_entry()};
-    }
+    void       push_entry(MyEntryRef ref) { bufs[ref.bufferId()].push_entry(ref); }
+    MyEntryRef pop_entry() { return {list.pop_entry()}; }
 };
 
-TEST_F(FreeListTest, entry_refs_are_reused_in_lifo_order)
-{
+TEST_F(FreeListTest, entry_refs_are_reused_in_lifo_order) {
     enable(0);
     push_entry({10, 0});
     push_entry({11, 0});
@@ -54,8 +45,7 @@ TEST_F(FreeListTest, entry_refs_are_reused_in_lifo_order)
     EXPECT_EQ(MyEntryRef(10, 0), pop_entry());
 }
 
-TEST_F(FreeListTest, buffer_free_list_attaches_and_detaches_from_free_list)
-{
+TEST_F(FreeListTest, buffer_free_list_attaches_and_detaches_from_free_list) {
     enable(0);
     EXPECT_TRUE(list.empty());
     push_entry({10, 0});
@@ -67,8 +57,7 @@ TEST_F(FreeListTest, buffer_free_list_attaches_and_detaches_from_free_list)
     EXPECT_TRUE(list.empty());
 }
 
-TEST_F(FreeListTest, disable_clears_all_entry_refs_and_detaches_from_free_list)
-{
+TEST_F(FreeListTest, disable_clears_all_entry_refs_and_detaches_from_free_list) {
     enable(0);
     push_entry({10, 0});
     EXPECT_EQ(1, list.size());
@@ -81,8 +70,7 @@ TEST_F(FreeListTest, disable_clears_all_entry_refs_and_detaches_from_free_list)
     EXPECT_FALSE(bufs[0].enabled());
 }
 
-TEST_F(FreeListTest, buffer_free_lists_are_reused_in_lifo_order)
-{
+TEST_F(FreeListTest, buffer_free_lists_are_reused_in_lifo_order) {
     enable_all();
     EXPECT_TRUE(list.empty());
     push_entry({10, 0});
@@ -112,8 +100,7 @@ TEST_F(FreeListTest, buffer_free_lists_are_reused_in_lifo_order)
     EXPECT_TRUE(list.empty());
 }
 
-TEST_F(FreeListTest, buffer_free_list_can_be_disabled_and_detached_when_not_currently_reused)
-{
+TEST_F(FreeListTest, buffer_free_list_can_be_disabled_and_detached_when_not_currently_reused) {
     enable_all();
     push_entry({10, 0});
     push_entry({20, 1});
@@ -124,8 +111,7 @@ TEST_F(FreeListTest, buffer_free_list_can_be_disabled_and_detached_when_not_curr
     EXPECT_TRUE(list.empty());
 }
 
-TEST_F(FreeListTest, dead_entries_count_is_updated_when_popping_an_entry)
-{
+TEST_F(FreeListTest, dead_entries_count_is_updated_when_popping_an_entry) {
     enable(0);
     push_entry({10, 0});
     dead_entries.store(18, std::memory_order_relaxed);
@@ -134,4 +120,3 @@ TEST_F(FreeListTest, dead_entries_count_is_updated_when_popping_an_entry)
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

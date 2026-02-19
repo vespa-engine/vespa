@@ -6,7 +6,8 @@ namespace vespalib::net::tls {
 
 namespace {
 
-bool matches_single_san_dns_requirement(const PeerCredentials& peer_creds, const RequiredPeerCredential& requirement) {
+bool matches_single_san_dns_requirement(
+    const PeerCredentials& peer_creds, const RequiredPeerCredential& requirement) {
     for (const auto& provided_cred : peer_creds.dns_sans) {
         if (requirement.matches(provided_cred)) {
             return true;
@@ -15,7 +16,8 @@ bool matches_single_san_dns_requirement(const PeerCredentials& peer_creds, const
     return false;
 }
 
-bool matches_single_san_uri_requirement(const PeerCredentials& peer_creds, const RequiredPeerCredential& requirement) {
+bool matches_single_san_uri_requirement(
+    const PeerCredentials& peer_creds, const RequiredPeerCredential& requirement) {
     for (const auto& provided_cred : peer_creds.uri_sans) {
         if (requirement.matches(provided_cred)) {
             return true;
@@ -52,10 +54,11 @@ bool matches_all_policy_requirements(const PeerCredentials& peer_creds, const Pe
     return true;
 }
 
-} // anon ns
+} // namespace
 
 class PolicyConfiguredCertificateVerifier : public CertificateVerificationCallback {
     AuthorizedPeers _authorized_peers;
+
 public:
     explicit PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers) noexcept;
 
@@ -74,7 +77,7 @@ VerificationResult PolicyConfiguredCertificateVerifier::verify(const PeerCredent
         return VerificationResult::make_authorized_with_all_capabilities();
     }
     CapabilitySet caps;
-    bool matched_any_policy = false;
+    bool          matched_any_policy = false;
     for (const auto& policy : _authorized_peers.peer_policies()) {
         if (matches_all_policy_requirements(peer_creds, policy)) {
             caps.add_all(policy.granted_capabilities());
@@ -92,4 +95,4 @@ std::shared_ptr<CertificateVerificationCallback> create_verify_callback_from(Aut
     return std::make_shared<PolicyConfiguredCertificateVerifier>(std::move(authorized_peers));
 }
 
-} // vespalib::net::tls
+} // namespace vespalib::net::tls

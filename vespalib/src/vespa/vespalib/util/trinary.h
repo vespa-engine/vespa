@@ -4,9 +4,6 @@
 
 namespace vespalib {
 
-enum class Trinary {
-   True, False, Undefined
-};
+enum class Trinary { True, False, Undefined };
 
 } // namespace vespalib
-

@@ -11,29 +11,25 @@ const std::string dfa_implicit = "dfa_implicit";
 const std::string dfa_explicit = "dfa_explicit";
 const std::string dfa_table = "dfa_table";
 
-}
+} // namespace
 
-std::string
-to_string(FuzzyMatchingAlgorithm algo)
-{
+std::string to_string(FuzzyMatchingAlgorithm algo) {
     switch (algo) {
-        case FuzzyMatchingAlgorithm::BruteForce:
-            return brute_force;
-        case FuzzyMatchingAlgorithm::DfaImplicit:
-            return dfa_implicit;
-        case FuzzyMatchingAlgorithm::DfaExplicit:
-            return dfa_explicit;
-        case FuzzyMatchingAlgorithm::DfaTable:
-            return dfa_table;
-        default:
-            return "";
+    case FuzzyMatchingAlgorithm::BruteForce:
+        return brute_force;
+    case FuzzyMatchingAlgorithm::DfaImplicit:
+        return dfa_implicit;
+    case FuzzyMatchingAlgorithm::DfaExplicit:
+        return dfa_explicit;
+    case FuzzyMatchingAlgorithm::DfaTable:
+        return dfa_table;
+    default:
+        return "";
     }
 }
 
-FuzzyMatchingAlgorithm
-fuzzy_matching_algorithm_from_string(const std::string& algo,
-                                     FuzzyMatchingAlgorithm default_algo)
-{
+FuzzyMatchingAlgorithm fuzzy_matching_algorithm_from_string(
+    const std::string& algo, FuzzyMatchingAlgorithm default_algo) {
     if (algo == brute_force) {
         return FuzzyMatchingAlgorithm::BruteForce;
     } else if (algo == dfa_implicit) {
@@ -46,11 +42,9 @@ fuzzy_matching_algorithm_from_string(const std::string& algo,
     return default_algo;
 }
 
-std::ostream&
-operator<<(std::ostream& out, FuzzyMatchingAlgorithm algo)
-{
+std::ostream& operator<<(std::ostream& out, FuzzyMatchingAlgorithm algo) {
     out << to_string(algo);
     return out;
 }
 
-}
+} // namespace vespalib

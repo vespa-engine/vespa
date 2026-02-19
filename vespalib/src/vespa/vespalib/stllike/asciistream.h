@@ -7,13 +7,13 @@
 
 namespace vespalib {
 
-///Modifiers to make usage similar to std::stream
-enum Base {bin=2, oct=8, dec=10, hex=16};
+/// Modifiers to make usage similar to std::stream
+enum Base { bin = 2, oct = 8, dec = 10, hex = 16 };
 
-///Modifiers to make usage similar to std::stream
-enum FloatSpec {automatic, fixed, scientific};
+/// Modifiers to make usage similar to std::stream
+enum FloatSpec { automatic, fixed, scientific };
 
-enum FloatModifier {defaultdotting, forcedot};
+enum FloatModifier { defaultdotting, forcedot };
 
 #define VESPALIB_ASCIISTREAM_MAX_PRECISION 32
 
@@ -27,84 +27,142 @@ enum FloatModifier {defaultdotting, forcedot};
  * However it is considerably more lightweight than the std::stream
  * variant. It does not support 'locale' and other expensive stuff;
  * and can be seen as "convenience without sacrificing speed".
-*/
-class asciistream
-{
+ */
+class asciistream {
 public:
     asciistream();
     asciistream(std::string_view buf);
     ~asciistream();
-    asciistream(const asciistream & rhs);
-    asciistream & operator = (const asciistream & rhs);
-    asciistream(asciistream &&) noexcept;
-    asciistream & operator = (asciistream &&) noexcept;
-    void swap(asciistream & rhs) noexcept;
-    asciistream & operator << (bool v)                { if (v) { *this << '1'; } else { *this << '0'; } return *this; }
-    asciistream & operator << (char v)                { doFill(1); write(&v, 1); return *this; }
-    asciistream & operator << (signed char v)         { doFill(1); write(&v, 1); return *this; }
-    asciistream & operator << (unsigned char v)       { doFill(1); write(&v, 1); return *this; }
-    asciistream & operator << (const char * v)        { if (v != nullptr) { size_t n(strlen(v)); doFill(n); write(v, n); } return *this; }
-    asciistream & operator << (const std::string & v)      { doFill(v.size()); write(v.data(), v.size()); return *this; }
-    asciistream & operator << (std::string_view v)    { doFill(v.size()); write(v.data(), v.size()); return *this; }
-    asciistream & operator << (short v)    { return *this << static_cast<long long>(v); }
-    asciistream & operator << (unsigned short v)   { return *this << static_cast<unsigned long long>(v); }
-    asciistream & operator << (int v)    { return *this << static_cast<long long>(v); }
-    asciistream & operator << (unsigned int v)   { return *this << static_cast<unsigned long long>(v); }
-    asciistream & operator << (const void* p);
-    asciistream & operator << (long v)      { return *this << static_cast<long long>(v); }
-    asciistream & operator << (unsigned long v) { return *this << static_cast<unsigned long long>(v); }
-    asciistream & operator << (long long v);
-    asciistream & operator << (unsigned long long v);
-    asciistream & operator << (float v);
-    asciistream & operator << (double v);
-    asciistream & operator << (Base v)                { _base = v; return *this; }
-    asciistream & operator >> (Base v)                { _base = v; return *this; }
-    asciistream & operator << (FloatSpec v)           { _floatSpec = v; return *this; }
-    asciistream & operator >> (FloatSpec v)           { _floatSpec = v; return *this; }
-    asciistream & operator << (FloatModifier v)       { _floatModifier = v; return *this; }
-    asciistream & operator >> (FloatModifier v)       { _floatModifier = v; return *this; }
-    asciistream & operator >> (bool & v);
-    asciistream & operator >> (char & v);
-    asciistream & operator >> (signed char & v);
-    asciistream & operator >> (unsigned char & v);
-    asciistream & operator >> (std::string & v);
-    asciistream & operator >> (short & v);
-    asciistream & operator >> (unsigned short & v);
-    asciistream & operator >> (int & v);
-    asciistream & operator >> (unsigned int & v);
-    asciistream & operator >> (long & v);
-    asciistream & operator >> (unsigned long & v);
-    asciistream & operator >> (long long & v);
-    asciistream & operator >> (unsigned long long & v);
-    asciistream & operator >> (float & v);
-    asciistream & operator >> (double & v);
-    std::string  str() const { return std::string(c_str(), size()); }
+    asciistream(const asciistream& rhs);
+    asciistream& operator=(const asciistream& rhs);
+    asciistream(asciistream&&) noexcept;
+    asciistream& operator=(asciistream&&) noexcept;
+    void         swap(asciistream& rhs) noexcept;
+    asciistream& operator<<(bool v) {
+        if (v) {
+            *this << '1';
+        } else {
+            *this << '0';
+        }
+        return *this;
+    }
+    asciistream& operator<<(char v) {
+        doFill(1);
+        write(&v, 1);
+        return *this;
+    }
+    asciistream& operator<<(signed char v) {
+        doFill(1);
+        write(&v, 1);
+        return *this;
+    }
+    asciistream& operator<<(unsigned char v) {
+        doFill(1);
+        write(&v, 1);
+        return *this;
+    }
+    asciistream& operator<<(const char* v) {
+        if (v != nullptr) {
+            size_t n(strlen(v));
+            doFill(n);
+            write(v, n);
+        }
+        return *this;
+    }
+    asciistream& operator<<(const std::string& v) {
+        doFill(v.size());
+        write(v.data(), v.size());
+        return *this;
+    }
+    asciistream& operator<<(std::string_view v) {
+        doFill(v.size());
+        write(v.data(), v.size());
+        return *this;
+    }
+    asciistream& operator<<(short v) { return *this << static_cast<long long>(v); }
+    asciistream& operator<<(unsigned short v) { return *this << static_cast<unsigned long long>(v); }
+    asciistream& operator<<(int v) { return *this << static_cast<long long>(v); }
+    asciistream& operator<<(unsigned int v) { return *this << static_cast<unsigned long long>(v); }
+    asciistream& operator<<(const void* p);
+    asciistream& operator<<(long v) { return *this << static_cast<long long>(v); }
+    asciistream& operator<<(unsigned long v) { return *this << static_cast<unsigned long long>(v); }
+    asciistream& operator<<(long long v);
+    asciistream& operator<<(unsigned long long v);
+    asciistream& operator<<(float v);
+    asciistream& operator<<(double v);
+    asciistream& operator<<(Base v) {
+        _base = v;
+        return *this;
+    }
+    asciistream& operator>>(Base v) {
+        _base = v;
+        return *this;
+    }
+    asciistream& operator<<(FloatSpec v) {
+        _floatSpec = v;
+        return *this;
+    }
+    asciistream& operator>>(FloatSpec v) {
+        _floatSpec = v;
+        return *this;
+    }
+    asciistream& operator<<(FloatModifier v) {
+        _floatModifier = v;
+        return *this;
+    }
+    asciistream& operator>>(FloatModifier v) {
+        _floatModifier = v;
+        return *this;
+    }
+    asciistream&     operator>>(bool& v);
+    asciistream&     operator>>(char& v);
+    asciistream&     operator>>(signed char& v);
+    asciistream&     operator>>(unsigned char& v);
+    asciistream&     operator>>(std::string& v);
+    asciistream&     operator>>(short& v);
+    asciistream&     operator>>(unsigned short& v);
+    asciistream&     operator>>(int& v);
+    asciistream&     operator>>(unsigned int& v);
+    asciistream&     operator>>(long& v);
+    asciistream&     operator>>(unsigned long& v);
+    asciistream&     operator>>(long long& v);
+    asciistream&     operator>>(unsigned long long& v);
+    asciistream&     operator>>(float& v);
+    asciistream&     operator>>(double& v);
+    std::string      str() const { return std::string(c_str(), size()); }
     std::string_view view() const { return std::string_view(c_str(), size()); }
-    const char * c_str() const { return _rbuf.data() + _rPos; }
-    size_t        size() const { return length() - _rPos; }
-    bool         empty() const { return size() == 0; }
-    bool           eof() const { return empty(); }
-    bool          fail() const { return false; }
-    size_t    capacity() const { return _wbuf.capacity(); }
-    void         clear() { _rPos = 0; _wbuf.clear(); _rbuf = _wbuf; }
+    const char*      c_str() const { return _rbuf.data() + _rPos; }
+    size_t           size() const { return length() - _rPos; }
+    bool             empty() const { return size() == 0; }
+    bool             eof() const { return empty(); }
+    bool             fail() const { return false; }
+    size_t           capacity() const { return _wbuf.capacity(); }
+    void             clear() {
+        _rPos = 0;
+        _wbuf.clear();
+        _rbuf = _wbuf;
+    }
     class Width {
     public:
-        Width(size_t width) : _width(width) { }
+        Width(size_t width) : _width(width) {}
         size_t getWidth() const { return _width; }
+
     private:
         uint32_t _width;
     };
     class Fill {
     public:
-        Fill(char fill) : _fill(fill) { }
+        Fill(char fill) : _fill(fill) {}
         char getFill() const { return _fill; }
+
     private:
         char _fill;
     };
     class Precision {
     public:
-        Precision(size_t precision) : _precision(precision) { }
+        Precision(size_t precision) : _precision(precision) {}
         size_t getPrecision() const { return _precision; }
+
     private:
         uint32_t _precision;
     };
@@ -133,44 +191,56 @@ public:
             _as._fill = _fill;
             _as._precision = _precision;
         }
+
     private:
-        asciistream&    _as;
-        Base            _base;
-        FloatSpec       _floatSpec;
-        FloatModifier   _floatModifier;
-        uint32_t        _width;
-        char            _fill;
-        uint8_t         _precision;
+        asciistream&  _as;
+        Base          _base;
+        FloatSpec     _floatSpec;
+        FloatModifier _floatModifier;
+        uint32_t      _width;
+        char          _fill;
+        uint8_t       _precision;
     };
 
-    asciistream & operator << (Width v)      { _width = v.getWidth(); return *this; }
-    asciistream & operator >> (Width v)      { _width = v.getWidth(); return *this; }
-    asciistream & operator << (Fill v)       { _fill = v.getFill(); return *this; }
-    asciistream & operator >> (Fill v)       { _fill = v.getFill(); return *this; }
-    asciistream & operator << (Precision v);
-    asciistream & operator >> (Precision v);
-    void eatWhite();
+    asciistream& operator<<(Width v) {
+        _width = v.getWidth();
+        return *this;
+    }
+    asciistream& operator>>(Width v) {
+        _width = v.getWidth();
+        return *this;
+    }
+    asciistream& operator<<(Fill v) {
+        _fill = v.getFill();
+        return *this;
+    }
+    asciistream& operator>>(Fill v) {
+        _fill = v.getFill();
+        return *this;
+    }
+    asciistream&       operator<<(Precision v);
+    asciistream&       operator>>(Precision v);
+    void               eatWhite();
     static asciistream createFromFile(std::string_view fileName);
     static asciistream createFromDevice(std::string_view fileName);
-    std::string getline(char delim='\n');
-    char getFill() const noexcept { return _fill; }
-    size_t getWidth() const noexcept { return static_cast<size_t>(_width); } // match input type of setw
-    Base getBase() const noexcept { return _base; }
+    std::string        getline(char delim = '\n');
+    char               getFill() const noexcept { return _fill; }
+    size_t             getWidth() const noexcept { return static_cast<size_t>(_width); } // match input type of setw
+    Base               getBase() const noexcept { return _base; }
+
 private:
-    template <typename T>
-    void printFixed(T v) __attribute__((noinline));
-    template <typename T>
-    void printScientific(T v) __attribute__((noinline));
-    void eatNonWhite();
-    void doReallyFill(size_t currWidth);
-    void doFill(size_t currWidth) {
+    template <typename T> void printFixed(T v) __attribute__((noinline));
+    template <typename T> void printScientific(T v) __attribute__((noinline));
+    void                       eatNonWhite();
+    void                       doReallyFill(size_t currWidth);
+    void                       doFill(size_t currWidth) {
         if (_width > currWidth) {
             doReallyFill(currWidth);
         }
         _width = 0;
     }
-    void write(const void * buf, size_t len);
-    size_t length() const { return _rbuf.size(); }
+    void             write(const void* buf, size_t len);
+    size_t           length() const { return _rbuf.size(); }
     size_t           _rPos;
     std::string      _wbuf;
     std::string_view _rbuf;
@@ -182,11 +252,10 @@ private:
     uint8_t          _precision;
 };
 
-ssize_t getline(asciistream & is, std::string & line, char delim='\n');
+ssize_t getline(asciistream& is, std::string& line, char delim = '\n');
 
-inline asciistream::Width setw(size_t v)             { return asciistream::Width(v); }
-inline asciistream::Fill setfill(char v)             { return asciistream::Fill(v); }
+inline asciistream::Width     setw(size_t v) { return asciistream::Width(v); }
+inline asciistream::Fill      setfill(char v) { return asciistream::Fill(v); }
 inline asciistream::Precision setprecision(size_t v) { return asciistream::Precision(v); }
 
-}
-
+} // namespace vespalib

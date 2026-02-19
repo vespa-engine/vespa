@@ -30,6 +30,7 @@
 #pragma once
 
 #include "xmlserializable.h"
+
 #include <cstdint>
 #include <iosfwd>
 #include <list>
@@ -51,10 +52,11 @@ enum class XmlTagFlags { NONE = 0, CONVERT_ILLEGAL_CHARACTERS = 1 };
  * @brief Start a new tag with given name.
  */
 class XmlTag {
-    std::string _name;
+    std::string                   _name;
     std::unique_ptr<XmlAttribute> _attributes;
-    std::unique_ptr<XmlContent> _content;
-    XmlTagFlags _flags;
+    std::unique_ptr<XmlContent>   _content;
+    XmlTagFlags                   _flags;
+
 public:
     XmlTag(const XmlTag&);
     XmlTag(const std::string& name, XmlTagFlags = XmlTagFlags::NONE);
@@ -83,22 +85,21 @@ public:
  * closed, so add all attributes before starting to add new XML child tags.
  */
 class XmlAttribute {
-    std::string _name;
-    std::string _value;
+    std::string                   _name;
+    std::string                   _value;
     std::unique_ptr<XmlAttribute> _next;
+
 public:
     enum Flag { NONE = 0x0, HEX = 0x1 };
     XmlAttribute(const XmlAttribute&);
     /** Add any value that can be written to an ostringstream. */
-    template<typename T>
-    XmlAttribute(const std::string& name, T value, uint32_t flags = NONE);
-    XmlAttribute(const std::string& name, const char * value, uint32_t flags = NONE);
+    template <typename T> XmlAttribute(const std::string& name, T value, uint32_t flags = NONE);
+    XmlAttribute(const std::string& name, const char* value, uint32_t flags = NONE);
     ~XmlAttribute();
 
     const std::string& getName() const { return _name; }
     const std::string& getValue() const { return _value; }
 };
-
 
 /**
  * @class document::XmlContent
@@ -110,13 +111,15 @@ public:
 class XmlContent {
 public:
     enum Type { AUTO, ESCAPED, BASE64 };
+
 protected:
     XmlContent(Type type);
+
 private:
-    Type _type;
-    std::string _content;
+    Type                        _type;
+    std::string                 _content;
     std::unique_ptr<XmlContent> _nextContent;
-    std::unique_ptr<XmlTag> _nextTag;
+    std::unique_ptr<XmlTag>     _nextTag;
 
 public:
     XmlContent();
@@ -124,7 +127,7 @@ public:
     XmlContent(const std::string& value);
     ~XmlContent();
 
-    Type getType() const { return _type; }
+    Type               getType() const { return _type; }
     const std::string& getContent() const { return _content; }
 };
 
@@ -173,23 +176,21 @@ public:
  * as more information might be required before knowing what to print.
  */
 class XmlOutputStream {
-    const std::string _indent;
-    std::ostream& _wrappedStream;
-    std::list<std::string> _tagStack;
+    const std::string       _indent;
+    std::ostream&           _wrappedStream;
+    std::list<std::string>  _tagStack;
     std::unique_ptr<XmlTag> _cachedTag;
     std::list<XmlAttribute> _cachedAttributes;
-    std::list<XmlContent> _cachedContent;
-    XmlContent::Type _cachedContentType;
+    std::list<XmlContent>   _cachedContent;
+    XmlContent::Type        _cachedContentType;
 
     void flush(bool endTag);
 
 public:
-
     XmlOutputStream(std::ostream& ostream, const std::string& indent = "");
     ~XmlOutputStream();
 
-    bool isFinalized() const
-        { return (_tagStack.empty() && _cachedTag.get() == 0); }
+    bool isFinalized() const { return (_tagStack.empty() && _cachedTag.get() == 0); }
 
     std::ostream& getWrappedStream() { return _wrappedStream; }
 
@@ -207,5 +208,4 @@ public:
     XmlOutputStream& operator<<(double d);
 };
 
-}
-
+} // namespace vespalib::xml

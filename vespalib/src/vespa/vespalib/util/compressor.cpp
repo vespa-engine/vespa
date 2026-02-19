@@ -2,8 +2,10 @@
 
 #include "lz4compressor.h"
 #include "zstdcompressor.h"
-#include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <stdexcept>
 
 using vespalib::alloc::Alloc;
@@ -14,39 +16,33 @@ namespace vespalib::compression {
 
 namespace {
 
-template <typename F>
-void with_compressor(CompressionConfig::Type type, F &&f) {
+template <typename F> void with_compressor(CompressionConfig::Type type, F&& f) {
     switch (type) {
-    case CompressionConfig::LZ4:
-    {
+    case CompressionConfig::LZ4: {
         LZ4Compressor lz4;
         f(lz4);
-    }
-    break;
-    case CompressionConfig::ZSTD:
-    {
+    } break;
+    case CompressionConfig::ZSTD: {
         ZStdCompressor zstd;
         f(zstd);
-    }
-    break;
+    } break;
     default:
         throw std::runtime_error(make_string("No implementation for compression type '%d'", type));
         break;
     }
 }
 
-}
+} // namespace
 
 //-----------------------------------------------------------------------------
 
-CompressionConfig::Type
-compress(ICompressor & compressor, CompressionConfig compression, const ConstBufferRef & org, DataBuffer & dest)
-{
+CompressionConfig::Type compress(
+    ICompressor& compressor, CompressionConfig compression, const ConstBufferRef& org, DataBuffer& dest) {
     CompressionConfig::Type type(CompressionConfig::NONE);
     dest.ensureFree(compressor.adjustProcessLen(0, org.size()));
     size_t compressedSize(dest.getFreeLen());
     if (compressor.process(compression, org.c_str(), org.size(), dest.getFree(), compressedSize)) {
-        if (compressedSize < ((org.size() * compression.threshold)/100)) {
+        if (compressedSize < ((org.size() * compression.threshold) / 100)) {
             dest.moveFreeToData(compressedSize);
             type = compression.type;
         }
@@ -54,20 +50,16 @@ compress(ICompressor & compressor, CompressionConfig compression, const ConstBuf
     return type;
 }
 
-CompressionConfig::Type
-docompress(CompressionConfig compression, const ConstBufferRef & org, DataBuffer & dest)
-{
+CompressionConfig::Type docompress(CompressionConfig compression, const ConstBufferRef& org, DataBuffer& dest) {
     switch (compression.type) {
-    case CompressionConfig::LZ4:
-        {
-            LZ4Compressor lz4;
-            return compress(lz4, compression, org, dest);
-        }
-    case CompressionConfig::ZSTD:
-        {
-            ZStdCompressor zstd;
-            return compress(zstd, compression, org, dest);
-        }
+    case CompressionConfig::LZ4: {
+        LZ4Compressor lz4;
+        return compress(lz4, compression, org, dest);
+    }
+    case CompressionConfig::ZSTD: {
+        ZStdCompressor zstd;
+        return compress(zstd, compression, org, dest);
+    }
     case CompressionConfig::NONE_MULTI:
         return CompressionConfig::NONE_MULTI;
     case CompressionConfig::NONE:
@@ -76,21 +68,20 @@ docompress(CompressionConfig compression, const ConstBufferRef & org, DataBuffer
     }
 }
 
-CompressionConfig::Type
-compress(CompressionConfig::Type compression, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap) {
+CompressionConfig::Type compress(
+    CompressionConfig::Type compression, const ConstBufferRef& org, DataBuffer& dest, bool allowSwap) {
     return compress(CompressionConfig(compression), org, dest, allowSwap);
 }
 
-CompressionConfig::Type
-compress(CompressionConfig compression, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
-{
+CompressionConfig::Type compress(
+    CompressionConfig compression, const ConstBufferRef& org, DataBuffer& dest, bool allowSwap) {
     CompressionConfig::Type type(CompressionConfig::NONE);
     if (org.size() >= compression.minSize) {
         type = docompress(compression, org, dest);
     }
     if ((type == CompressionConfig::NONE) || (type == CompressionConfig::NONE_MULTI)) {
         if (allowSwap) {
-            DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
+            DataBuffer tmp(const_cast<char*>(org.c_str()), org.size());
             tmp.moveFreeToData(org.size());
             dest.swap(tmp);
         } else {
@@ -100,51 +91,44 @@ compress(CompressionConfig compression, const ConstBufferRef & org, DataBuffer &
     return type;
 }
 
-
-void
-decompress(ICompressor & decompressor, size_t uncompressedLen, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
-{
+void decompress(ICompressor& decompressor, size_t uncompressedLen, const ConstBufferRef& org, DataBuffer& dest,
+                bool allowSwap) {
     dest.ensureFree(uncompressedLen);
     size_t realUncompressedLen(dest.getFreeLen());
-    if ( ! decompressor.unprocess(org.c_str(), org.size(), dest.getFree(), realUncompressedLen) ) {
-        if ( uncompressedLen < realUncompressedLen) {
+    if (!decompressor.unprocess(org.c_str(), org.size(), dest.getFree(), realUncompressedLen)) {
+        if (uncompressedLen < realUncompressedLen) {
             if (allowSwap) {
-                DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
+                DataBuffer tmp(const_cast<char*>(org.c_str()), org.size());
                 tmp.moveFreeToData(org.size());
                 dest.swap(tmp);
             } else {
                 dest.writeBytes(org.c_str(), org.size());
             }
         } else {
-            throw std::runtime_error(make_string("unprocess failed had %zu, wanted %zu, got %zu",
-                                                 org.size(), uncompressedLen, realUncompressedLen));
+            throw std::runtime_error(make_string(
+                "unprocess failed had %zu, wanted %zu, got %zu", org.size(), uncompressedLen, realUncompressedLen));
         }
     } else {
         dest.moveFreeToData(realUncompressedLen);
     }
 }
 
-void
-decompress(CompressionConfig::Type type, size_t uncompressedLen, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
-{
+void decompress(CompressionConfig::Type type, size_t uncompressedLen, const ConstBufferRef& org, DataBuffer& dest,
+                bool allowSwap) {
     switch (type) {
-    case CompressionConfig::LZ4:
-        {
-            LZ4Compressor lz4;
-            decompress(lz4, uncompressedLen, org, dest, allowSwap);
-        }
-        break;
-        case CompressionConfig::ZSTD:
-        {
-            ZStdCompressor zstd;
-            decompress(zstd, uncompressedLen, org, dest, allowSwap);
-        }
-        break;
+    case CompressionConfig::LZ4: {
+        LZ4Compressor lz4;
+        decompress(lz4, uncompressedLen, org, dest, allowSwap);
+    } break;
+    case CompressionConfig::ZSTD: {
+        ZStdCompressor zstd;
+        decompress(zstd, uncompressedLen, org, dest, allowSwap);
+    } break;
     case CompressionConfig::NONE:
     case CompressionConfig::NONE_MULTI:
     case CompressionConfig::UNCOMPRESSABLE:
         if (allowSwap) {
-            DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
+            DataBuffer tmp(const_cast<char*>(org.c_str()), org.size());
             tmp.moveFreeToData(org.size());
             dest.swap(tmp);
         } else {
@@ -170,55 +154,45 @@ size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t payloadSize
 
 //-----------------------------------------------------------------------------
 
-Compress::Compress(CompressionConfig config,
-                   const char *uncompressed_data, size_t uncompressed_size)
-    : _space(),
-      _type(CompressionConfig::NONE),
-      _data(uncompressed_data),
-      _size(uncompressed_size)
-{
+Compress::Compress(CompressionConfig config, const char* uncompressed_data, size_t uncompressed_size)
+    : _space(), _type(CompressionConfig::NONE), _data(uncompressed_data), _size(uncompressed_size) {
     if (config.useCompression() && (uncompressed_size >= config.minSize)) {
-        with_compressor(config.type, [this, &config, uncompressed_data, uncompressed_size](ICompressor &compressor)
-                        {
-                            size_t compressed_size = compressor.adjustProcessLen(0, uncompressed_size);
-                            _space = alloc::Alloc::allocHeap(compressed_size);
-                            if (compressor.process(config, uncompressed_data, uncompressed_size, _space.get(), compressed_size) &&
-                                (compressed_size < ((uncompressed_size * config.threshold)/100)))
-                            {
-                                _type = config.type;
-                                _data = static_cast<char *>(_space.get());
-                                _size = compressed_size;
-                            } else {
-                                _space = alloc::Alloc::allocHeap();
-                            }
-                        });
+        with_compressor(config.type, [this, &config, uncompressed_data, uncompressed_size](ICompressor& compressor) {
+            size_t compressed_size = compressor.adjustProcessLen(0, uncompressed_size);
+            _space = alloc::Alloc::allocHeap(compressed_size);
+            if (compressor.process(config, uncompressed_data, uncompressed_size, _space.get(), compressed_size) &&
+                (compressed_size < ((uncompressed_size * config.threshold) / 100)))
+            {
+                _type = config.type;
+                _data = static_cast<char*>(_space.get());
+                _size = compressed_size;
+            } else {
+                _space = alloc::Alloc::allocHeap();
+            }
+        });
     }
 }
 
-Decompress::Decompress(CompressionConfig::Type type, size_t uncompressed_size,
-                       const char *compressed_data, size_t compressed_size)
-    : _space(),
-      _data(compressed_data),
-      _size(compressed_size)
-{
+Decompress::Decompress(
+    CompressionConfig::Type type, size_t uncompressed_size, const char* compressed_data, size_t compressed_size)
+    : _space(), _data(compressed_data), _size(compressed_size) {
     if (CompressionConfig::isCompressed(type)) {
-        with_compressor(type, [this, uncompressed_size, compressed_data, compressed_size](ICompressor &compressor)
-                        {
-                            _space = alloc::Alloc::allocHeap(uncompressed_size);
-                            size_t produced_size = uncompressed_size;
-                            if (compressor.unprocess(compressed_data, compressed_size, _space.get(), produced_size) &&
-                                (uncompressed_size == produced_size))
-                            {
-                                _data = static_cast<char *>(_space.get());
-                                _size = uncompressed_size;
-                            } else {
-                                throw std::runtime_error(make_string("unprocess failed; had %zu, wanted %zu, got %zu",
-                                                compressed_size, uncompressed_size, produced_size));
-                            }
-                        });
+        with_compressor(type, [this, uncompressed_size, compressed_data, compressed_size](ICompressor& compressor) {
+            _space = alloc::Alloc::allocHeap(uncompressed_size);
+            size_t produced_size = uncompressed_size;
+            if (compressor.unprocess(compressed_data, compressed_size, _space.get(), produced_size) &&
+                (uncompressed_size == produced_size))
+            {
+                _data = static_cast<char*>(_space.get());
+                _size = uncompressed_size;
+            } else {
+                throw std::runtime_error(make_string("unprocess failed; had %zu, wanted %zu, got %zu",
+                                                     compressed_size, uncompressed_size, produced_size));
+            }
+        });
     }
 }
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace vespalib::compression

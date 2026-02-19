@@ -2,20 +2,16 @@
 
 #pragma once
 
-#include "btreetraits.h"
 #include "btreenode.h"
 #include "btreenodeallocator.h"
+#include "btreetraits.h"
+
 #include <atomic>
 
 namespace vespalib::btree {
 
-template <typename KeyT,
-          typename DataT,
-          typename AggrT,
-          size_t INTERNAL_SLOTS,
-          size_t LEAF_SLOTS>
-class BTreeRootBase
-{
+template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
+class BTreeRootBase {
 protected:
     using KeyType = KeyT;
     using DataType = DataT;
@@ -25,25 +21,22 @@ protected:
     using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>;
     using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
 
-    BTreeNode::Ref  _root;
+    BTreeNode::Ref        _root;
     std::atomic<uint32_t> _frozenRoot;
 
-    static_assert(sizeof(_root) == sizeof(_frozenRoot),
-                  "BTree root reference size mismatch");
+    static_assert(sizeof(_root) == sizeof(_frozenRoot), "BTree root reference size mismatch");
 
     BTreeRootBase();
-    BTreeRootBase(const BTreeRootBase &rhs);
-    BTreeRootBase &operator=(const BTreeRootBase &rhs);
+    BTreeRootBase(const BTreeRootBase& rhs);
+    BTreeRootBase& operator=(const BTreeRootBase& rhs);
     ~BTreeRootBase();
 
 public:
-    void freeze(NodeAllocatorType &allocator);
+    void freeze(NodeAllocatorType& allocator);
 
-    bool isFrozen() const {
-        return (_root.ref() == _frozenRoot.load(std::memory_order_relaxed));
-    }
+    bool isFrozen() const { return (_root.ref() == _frozenRoot.load(std::memory_order_relaxed)); }
 
-    void setRoot(BTreeNode::Ref newRoot, NodeAllocatorType &allocator) {
+    void setRoot(BTreeNode::Ref newRoot, NodeAllocatorType& allocator) {
         bool oldFrozen = isFrozen();
         _root = newRoot;
         if (oldFrozen && !isFrozen())
@@ -60,21 +53,15 @@ public:
         _frozenRoot = newRoot.ref();
     }
 
-    BTreeNode::Ref getRoot() const {
-        return _root;
-    }
+    BTreeNode::Ref getRoot() const { return _root; }
 
-    BTreeNode::Ref getFrozenRoot() const {
-        return BTreeNode::Ref(_frozenRoot.load(std::memory_order_acquire));
-    }
+    BTreeNode::Ref getFrozenRoot() const { return BTreeNode::Ref(_frozenRoot.load(std::memory_order_acquire)); }
 
     BTreeNode::Ref getFrozenRootRelaxed() const {
         return BTreeNode::Ref(_frozenRoot.load(std::memory_order_relaxed));
     }
 
-    const AggrT &getAggregated(const NodeAllocatorType &allocator) const {
-        return allocator.getAggregated(_root);
-    }
+    const AggrT& getAggregated(const NodeAllocatorType& allocator) const { return allocator.getAggregated(_root); }
 
     void recycle() {
         _root = BTreeNode::Ref();
@@ -82,13 +69,18 @@ public:
     }
 
 protected:
-    void recursiveDelete(BTreeNode::Ref node, NodeAllocatorType &allocator);
+    void recursiveDelete(BTreeNode::Ref node, NodeAllocatorType& allocator);
 };
 
-extern template class BTreeRootBase<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeRootBase<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeRootBase<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeRootBase<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeRootBase<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS,
+                                    BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS,
+                                    BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS,
+                                    BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated,
+                                    BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
+                                    BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
 
-}
+} // namespace vespalib::btree

@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bufferstate.h"
+
 #include <vespa/vespalib/util/memory_allocator.h>
-#include <limits>
+
 #include <cassert>
+#include <limits>
 
 using vespalib::alloc::Alloc;
 using vespalib::alloc::MemoryAllocator;
@@ -19,12 +21,9 @@ BufferState::BufferState() noexcept
       _typeId(0),
       _state(State::FREE),
       _disable_entry_hold_list(false),
-      _compacting(false)
-{
-}
+      _compacting(false) {}
 
-BufferState::~BufferState()
-{
+BufferState::~BufferState() {
     assert(getState() == State::FREE);
     assert(!_free_list.enabled());
     assert(_free_list.empty());
@@ -39,9 +38,7 @@ struct AllocResult {
     AllocResult(size_t entries_, size_t bytes_) noexcept : entries(entries_), bytes(bytes_) {}
 };
 
-size_t
-roundUpToMatchAllocator(size_t sz) noexcept
-{
+size_t roundUpToMatchAllocator(size_t sz) noexcept {
     if (sz == 0) {
         return 0;
     }
@@ -56,12 +53,11 @@ roundUpToMatchAllocator(size_t sz) noexcept
     }
 }
 
-AllocResult
-calc_allocation(uint32_t bufferId, BufferTypeBase &typeHandler, size_t free_entries_needed, bool resizing)
-{
+AllocResult calc_allocation(
+    uint32_t bufferId, BufferTypeBase& typeHandler, size_t free_entries_needed, bool resizing) {
     size_t alloc_entries = typeHandler.calc_entries_to_alloc(bufferId, free_entries_needed, resizing);
     size_t entry_size = typeHandler.entry_size();
-    auto buffer_underflow_size = typeHandler.buffer_underflow_size();
+    auto   buffer_underflow_size = typeHandler.buffer_underflow_size();
     size_t allocBytes = roundUpToMatchAllocator(alloc_entries * entry_size + buffer_underflow_size);
     size_t maxAllocBytes = typeHandler.get_max_entries() * entry_size + buffer_underflow_size;
     if (allocBytes > maxAllocBytes) {
@@ -72,12 +68,10 @@ calc_allocation(uint32_t bufferId, BufferTypeBase &typeHandler, size_t free_entr
     return {adjusted_alloc_entries, allocBytes};
 }
 
-}
+} // namespace
 
-void
-BufferState::on_active(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
-                       size_t free_entries_needed, std::atomic<void*>& buffer)
-{
+void BufferState::on_active(uint32_t bufferId, uint32_t typeId, BufferTypeBase* typeHandler,
+                            size_t free_entries_needed, std::atomic<void*>& buffer) {
     assert(buffer.load(std::memory_order_relaxed) == nullptr);
     assert(_buffer.get() == nullptr);
     assert(getState() == State::FREE);
@@ -91,11 +85,12 @@ BufferState::on_active(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeH
     assert(_free_list.empty());
 
     size_t reserved_entries = typeHandler->get_reserved_entries(bufferId);
-    (void) reserved_entries;
+    (void)reserved_entries;
     AllocResult alloc = calc_allocation(bufferId, *typeHandler, free_entries_needed, false);
     assert(alloc.entries >= reserved_entries + free_entries_needed);
     auto allocator = typeHandler->get_memory_allocator();
-    _buffer = (allocator != nullptr) ? Alloc::alloc_with_allocator(allocator) : Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE);
+    _buffer = (allocator != nullptr) ? Alloc::alloc_with_allocator(allocator)
+                                     : Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE);
     _buffer.create(alloc.bytes).swap(_buffer);
     assert(_buffer.get() != nullptr || alloc.entries == 0u);
     auto buffer_underflow_size = typeHandler->buffer_underflow_size();
@@ -106,13 +101,11 @@ BufferState::on_active(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeH
     _typeId = typeId;
     _arraySize = typeHandler->getArraySize();
     _state.store(State::ACTIVE, std::memory_order_release);
-    typeHandler->on_active(bufferId, &_stats.used_entries_ref(), &_stats.dead_entries_ref(),
-                           buffer.load(std::memory_order::relaxed));
+    typeHandler->on_active(
+        bufferId, &_stats.used_entries_ref(), &_stats.dead_entries_ref(), buffer.load(std::memory_order::relaxed));
 }
 
-void
-BufferState::onHold(uint32_t buffer_id)
-{
+void BufferState::onHold(uint32_t buffer_id) {
     assert(getState() == State::ACTIVE);
     auto type_handler = getTypeHandler();
     assert(type_handler != nullptr);
@@ -126,9 +119,7 @@ BufferState::onHold(uint32_t buffer_id)
     _free_list.disable();
 }
 
-void
-BufferState::onFree(std::atomic<void*>& buffer)
-{
+void BufferState::onFree(std::atomic<void*>& buffer) {
     assert(getState() == State::HOLD);
     auto type_handler = getTypeHandler();
     assert(type_handler != nullptr);
@@ -148,10 +139,7 @@ BufferState::onFree(std::atomic<void*>& buffer)
     _disable_entry_hold_list = false;
 }
 
-
-void
-BufferState::dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer)
-{
+void BufferState::dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer) {
     if (getState() == State::FREE) {
         assert(buffer.load(std::memory_order_relaxed) == nullptr);
         return;
@@ -167,15 +155,9 @@ BufferState::dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer)
     assert(buffer.load(std::memory_order_relaxed) == nullptr);
 }
 
-void
-BufferState::disable_entry_hold_list()
-{
-    _disable_entry_hold_list = true;
-}
+void BufferState::disable_entry_hold_list() { _disable_entry_hold_list = true; }
 
-bool
-BufferState::hold_entries(size_t num_entries, size_t extra_bytes)
-{
+bool BufferState::hold_entries(size_t num_entries, size_t extra_bytes) {
     assert(isActive());
     if (_disable_entry_hold_list) {
         // The elements are directly marked as dead as they are not put on hold.
@@ -187,9 +169,7 @@ BufferState::hold_entries(size_t num_entries, size_t extra_bytes)
     return false;
 }
 
-void
-BufferState::free_entries(EntryRef ref, size_t num_entries, size_t ref_offset)
-{
+void BufferState::free_entries(EntryRef ref, size_t num_entries, size_t ref_offset) {
     if (isActive()) {
         if (_free_list.enabled() && (num_entries == 1)) {
             _free_list.push_entry(ref);
@@ -201,24 +181,24 @@ BufferState::free_entries(EntryRef ref, size_t num_entries, size_t ref_offset)
     _stats.dec_hold_entries(num_entries);
     auto type_handler = getTypeHandler();
     auto buffer_underflow_size = type_handler->buffer_underflow_size();
-    type_handler->clean_hold(get_buffer(buffer_underflow_size), ref_offset, num_entries,
-                             BufferTypeBase::CleanContext(_stats.extra_used_bytes_ref(), _stats.extra_hold_bytes_ref()));
+    type_handler->clean_hold(
+        get_buffer(buffer_underflow_size), ref_offset, num_entries,
+        BufferTypeBase::CleanContext(_stats.extra_used_bytes_ref(), _stats.extra_hold_bytes_ref()));
 }
 
-void
-BufferState::fallback_resize(uint32_t bufferId, size_t free_entries_needed,
-                            std::atomic<void*>& buffer, Alloc &holdBuffer)
-{
+void BufferState::fallback_resize(
+    uint32_t bufferId, size_t free_entries_needed, std::atomic<void*>& buffer, Alloc& holdBuffer) {
     assert(getState() == State::ACTIVE);
     auto type_handler = getTypeHandler();
     assert(type_handler != nullptr);
     assert(holdBuffer.get() == nullptr);
-    auto buffer_underflow_size = type_handler->buffer_underflow_size();
+    auto        buffer_underflow_size = type_handler->buffer_underflow_size();
     AllocResult alloc = calc_allocation(bufferId, *type_handler, free_entries_needed, true);
     assert(alloc.entries >= size() + free_entries_needed);
     assert(alloc.entries > capacity());
     Alloc newBuffer = _buffer.create(alloc.bytes);
-    type_handler->fallback_copy(get_buffer(newBuffer, buffer_underflow_size), buffer.load(std::memory_order_relaxed), size());
+    type_handler->fallback_copy(
+        get_buffer(newBuffer, buffer_underflow_size), buffer.load(std::memory_order_relaxed), size());
     holdBuffer.swap(_buffer);
     std::atomic_thread_fence(std::memory_order_release);
     _buffer = std::move(newBuffer);
@@ -226,11 +206,8 @@ BufferState::fallback_resize(uint32_t bufferId, size_t free_entries_needed,
     _stats.set_alloc_entries(alloc.entries);
 }
 
-void
-BufferState::resume_primary_buffer(uint32_t buffer_id)
-{
+void BufferState::resume_primary_buffer(uint32_t buffer_id) {
     getTypeHandler()->resume_primary_buffer(buffer_id, &_stats.used_entries_ref(), &_stats.dead_entries_ref());
 }
 
-}
-
+} // namespace vespalib::datastore

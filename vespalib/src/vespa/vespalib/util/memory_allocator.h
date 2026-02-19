@@ -3,20 +3,25 @@
 #pragma once
 
 #include <vespa/vespalib/util/size_literals.h>
-#include <utility>
+
 #include <cstddef>
+#include <utility>
 
 namespace vespalib::alloc {
 
 class PtrAndSize {
 public:
     PtrAndSize() noexcept : _ptr(nullptr), _sz(0ul) {}
-    PtrAndSize(void * ptr, size_t sz) noexcept;
-    void * get() const noexcept { return _ptr; }
+    PtrAndSize(void* ptr, size_t sz) noexcept;
+    void*  get() const noexcept { return _ptr; }
     size_t size() const noexcept { return _sz; }
-    void reset() noexcept { _ptr = nullptr; _sz = 0ul; }
+    void   reset() noexcept {
+        _ptr = nullptr;
+        _sz = 0ul;
+    }
+
 private:
-    void * _ptr;
+    void*  _ptr;
     size_t _sz;
 };
 
@@ -27,16 +32,14 @@ class MemoryAllocator {
 public:
     static constexpr size_t PAGE_SIZE = 4_Ki;
     static constexpr size_t HUGEPAGE_SIZE = 2_Mi;
-    MemoryAllocator(const MemoryAllocator &) = delete;
-    MemoryAllocator & operator = (const MemoryAllocator &) = delete;
+    MemoryAllocator(const MemoryAllocator&) = delete;
+    MemoryAllocator& operator=(const MemoryAllocator&) = delete;
     MemoryAllocator() noexcept = default;
     virtual ~MemoryAllocator() = default;
     virtual PtrAndSize alloc(size_t sz) const = 0;
-    virtual void free(PtrAndSize alloc) const noexcept = 0;
+    virtual void       free(PtrAndSize alloc) const noexcept = 0;
     // Allow for freeing memory there size is the size requested, and not the size allocated.
-    virtual void free(void * ptr, size_t sz) const noexcept {
-        free(PtrAndSize(ptr, sz));
-    }
+    virtual void free(void* ptr, size_t sz) const noexcept { free(PtrAndSize(ptr, sz)); }
     /*
      * If possible the allocations will be resized. If it was possible it will return the real size,
      * if not it shall return 0.
@@ -47,11 +50,9 @@ public:
      * @return true if successful.
      */
     virtual size_t resize_inplace(PtrAndSize current, size_t newSize) const = 0;
-    static size_t roundUpToHugePages(size_t sz) noexcept {
-        return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
-    }
-    static const MemoryAllocator * select_allocator();
-    static const MemoryAllocator * select_allocator(size_t mmapLimit, size_t alignment);
+    static size_t roundUpToHugePages(size_t sz) noexcept { return (sz + (HUGEPAGE_SIZE - 1)) & ~(HUGEPAGE_SIZE - 1); }
+    static const MemoryAllocator* select_allocator();
+    static const MemoryAllocator* select_allocator(size_t mmapLimit, size_t alignment);
 };
 
-}
+} // namespace vespalib::alloc

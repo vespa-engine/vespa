@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/datastore/compaction_strategy.h>
-#include <vespa/vespalib/datastore/unique_store.hpp>
-#include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/vespalib/datastore/unique_store.hpp>
+#include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("unique_store_dictionary_test");
@@ -24,32 +25,22 @@ private:
     }
 
 public:
-    explicit Comparator(uint32_t to_find) noexcept
-        : _to_find(to_find)
-    {}
+    explicit Comparator(uint32_t to_find) noexcept : _to_find(to_find) {}
     bool less(const EntryRef lhs, const EntryRef rhs) const noexcept override {
         return resolve(lhs).ref() < resolve(rhs).ref();
     }
     bool equal(const EntryRef lhs, const EntryRef rhs) const noexcept override {
         return resolve(lhs).ref() == resolve(rhs).ref();
     }
-    size_t hash(const EntryRef rhs) const noexcept override {
-        return rhs.valid() ? rhs.ref() : _to_find.ref();
-    }
+    size_t hash(const EntryRef rhs) const noexcept override { return rhs.valid() ? rhs.ref() : _to_find.ref(); }
 };
 
-template <typename UniqueStoreDictionaryType>
-struct UniqueStoreDictionaryTest : public ::testing::Test {
-    UniqueStoreDictionaryType dict;
+template <typename UniqueStoreDictionaryType> struct UniqueStoreDictionaryTest : public ::testing::Test {
+    UniqueStoreDictionaryType                           dict;
     std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> snapshot;
-    vespalib::GenerationHandler gen_handler;
+    vespalib::GenerationHandler                         gen_handler;
 
-    UniqueStoreDictionaryTest()
-        : dict(std::make_unique<Comparator>(0)),
-          snapshot(),
-          gen_handler()
-    {
-    }
+    UniqueStoreDictionaryTest() : dict(std::make_unique<Comparator>(0)), snapshot(), gen_handler() {}
     UniqueStoreDictionaryTest& add(uint32_t value) {
         auto result = dict.add(Comparator(value), [=]() noexcept { return EntryRef(value); });
         assert(result.inserted());
@@ -73,11 +64,13 @@ struct UniqueStoreDictionaryTest : public ::testing::Test {
     }
 };
 
-using UniqueStoreDictionaryTestTypes = ::testing::Types<DefaultUniqueStoreDictionary, UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>, UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>;
+using UniqueStoreDictionaryTestTypes =
+    ::testing::Types<DefaultUniqueStoreDictionary,
+                     UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>,
+                     UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>;
 TYPED_TEST_SUITE(UniqueStoreDictionaryTest, UniqueStoreDictionaryTestTypes);
 
-TYPED_TEST(UniqueStoreDictionaryTest, can_count_occurrences_of_a_key)
-{
+TYPED_TEST(UniqueStoreDictionaryTest, can_count_occurrences_of_a_key) {
     this->add(3).add(5).take_snapshot();
     EXPECT_EQ(0, this->snapshot->count(Comparator(2)));
     EXPECT_EQ(1, this->snapshot->count(Comparator(3)));
@@ -85,8 +78,7 @@ TYPED_TEST(UniqueStoreDictionaryTest, can_count_occurrences_of_a_key)
     EXPECT_EQ(1, this->snapshot->count(Comparator(5)));
 }
 
-TYPED_TEST(UniqueStoreDictionaryTest, can_count_occurrences_of_keys_in_a_range)
-{
+TYPED_TEST(UniqueStoreDictionaryTest, can_count_occurrences_of_keys_in_a_range) {
     if (!this->dict.get_has_btree_dictionary()) {
         return;
     }
@@ -101,17 +93,15 @@ TYPED_TEST(UniqueStoreDictionaryTest, can_count_occurrences_of_keys_in_a_range)
     EXPECT_EQ(0, this->snapshot->count_in_range(Comparator(5), Comparator(3)));
 }
 
-TYPED_TEST(UniqueStoreDictionaryTest, can_iterate_all_keys)
-{
+TYPED_TEST(UniqueStoreDictionaryTest, can_iterate_all_keys) {
     using EntryRefVector = std::vector<EntryRef>;
     this->add(3).add(5).add(7).take_snapshot();
     EntryRefVector refs;
-    this->snapshot->foreach_key([&](AtomicEntryRef ref){ refs.emplace_back(ref.load_relaxed()); });
+    this->snapshot->foreach_key([&](AtomicEntryRef ref) { refs.emplace_back(ref.load_relaxed()); });
     EXPECT_EQ(EntryRefVector({EntryRef(3), EntryRef(5), EntryRef(7)}), refs);
 }
 
-TYPED_TEST(UniqueStoreDictionaryTest, memory_usage_is_reported)
-{
+TYPED_TEST(UniqueStoreDictionaryTest, memory_usage_is_reported) {
     auto initial_usage = this->dict.get_memory_usage();
     this->add(10);
     auto usage = this->dict.get_memory_usage();
@@ -120,8 +110,7 @@ TYPED_TEST(UniqueStoreDictionaryTest, memory_usage_is_reported)
     EXPECT_EQ(0, usage.allocatedBytesOnHold());
 }
 
-TYPED_TEST(UniqueStoreDictionaryTest, compaction_works)
-{
+TYPED_TEST(UniqueStoreDictionaryTest, compaction_works) {
     for (uint32_t i = 1; i < 100; ++i) {
         this->add(i);
     }
@@ -129,8 +118,8 @@ TYPED_TEST(UniqueStoreDictionaryTest, compaction_works)
         this->remove(i);
     }
     this->inc_generation();
-    auto btree_memory_usage_before = this->dict.get_btree_memory_usage();
-    auto hash_memory_usage_before = this->dict.get_hash_memory_usage();
+    auto               btree_memory_usage_before = this->dict.get_btree_memory_usage();
+    auto               hash_memory_usage_before = this->dict.get_hash_memory_usage();
     CompactionStrategy compaction_strategy;
     for (uint32_t i = 0; i < 15; ++i) {
         this->dict.compact_worst(true, true, compaction_strategy);
@@ -154,7 +143,7 @@ TYPED_TEST(UniqueStoreDictionaryTest, compaction_works)
     }
     this->take_snapshot();
     std::vector<EntryRef> refs;
-    this->snapshot->foreach_key([&](const AtomicEntryRef& ref){ refs.emplace_back(ref.load_relaxed()); });
+    this->snapshot->foreach_key([&](const AtomicEntryRef& ref) { refs.emplace_back(ref.load_relaxed()); });
     EXPECT_EQ(exp_refs, refs);
 }
 

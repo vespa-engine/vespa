@@ -24,14 +24,14 @@ namespace vespalib {
  * @author arnej27959
  * @author bratseth
  **/
-class Version
-{
+class Version {
 public:
     using string = std::string;
+
 private:
-    int _major;
-    int _minor;
-    int _micro;
+    int    _major;
+    int    _minor;
+    int    _micro;
     string _qualifier;
     string _stringValue;
     string _abbreviatedStringValue;
@@ -60,9 +60,9 @@ public:
      *         the qualifier string contains non-word/digit-characters
      */
 
-    Version(int major = 0, int minor = 0, int micro = 0, const string & qualifier = "");
-    Version(const Version &);
-    Version & operator = (const Version &);
+    Version(int major = 0, int minor = 0, int micro = 0, const string& qualifier = "");
+    Version(const Version&);
+    Version& operator=(const Version&);
     ~Version();
 
     /**
@@ -84,7 +84,7 @@ public:
      * @throws IllegalArgumentException If <code>version</code> is improperly
      *         formatted.
      */
-    Version(const string & versionString);
+    Version(const string& versionString);
 
     /** @brief Returns the major component of this version, or 0 if not specified */
     int getMajor() const { return _major; }
@@ -96,20 +96,20 @@ public:
     int getMicro() const { return _micro; }
 
     /** @brief Returns the qualifier component of this version, or "" if not specified */
-    const string &  getQualifier() const { return _qualifier; }
+    const string& getQualifier() const { return _qualifier; }
 
     /**
      * @brief Returns the string representation of this version identifier as major.minor.micro.qualifier,
      * omitting the remaining parts after reaching the first unspecified component.
      * Unspecified version component is equivalent to 0 (or the empty string for qualifier).
      */
-    const string & toAbbreviatedString() const { return _abbreviatedStringValue; }
+    const string& toAbbreviatedString() const { return _abbreviatedStringValue; }
 
     /**
      * @brief Returns the string representation of this version identifier as major.minor.micro,
      * or major.minor.micro.qualifier if a non-empty qualifier was specified.
      */
-    const string & toString() const { return _stringValue; }
+    const string& toString() const { return _stringValue; }
 
     /**
      * @brief Compares this Version object to another.
@@ -145,10 +145,8 @@ public:
      *         less than, equal to, or greater than the specified <code>Version</code> object.
      * @throws ClassCastException if the specified object is not a <code>Version</code>.
      */
-    int compareTo(const Version& other) const;
+    int  compareTo(const Version& other) const;
     bool operator<(const Version& other) const { return compareTo(other) < 0; }
-
 };
 
 } // namespace vespalib
-

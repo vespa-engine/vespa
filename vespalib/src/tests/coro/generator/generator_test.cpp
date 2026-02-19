@@ -1,24 +1,26 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/coro/lazy.h>
 #include <vespa/vespalib/coro/generator.h>
-#include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/coro/lazy.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/require.h>
+
 #include <ranges>
 #include <vector>
 
-using vespalib::coro::Lazy;
 using vespalib::coro::Generator;
+using vespalib::coro::Lazy;
 
 class Unmovable {
 private:
     int _value;
+
 public:
     Unmovable() = delete;
-    Unmovable &operator=(const Unmovable &) = delete;
-    Unmovable(const Unmovable &) = delete;
-    Unmovable &operator=(Unmovable &&) = delete;
-    Unmovable(Unmovable &&) = delete;
+    Unmovable& operator=(const Unmovable&) = delete;
+    Unmovable(const Unmovable&) = delete;
+    Unmovable& operator=(Unmovable&&) = delete;
+    Unmovable(Unmovable&&) = delete;
     Unmovable(int value) : _value(value) {}
     int get() const { return _value; }
 };
@@ -36,10 +38,10 @@ Generator<int> make_numbers(int begin, int end) {
 }
 
 Generator<int> make_numbers(int begin, int split, int end) {
-    for (int num: make_numbers(begin, split)) {
+    for (int num : make_numbers(begin, split)) {
         co_yield num;
     }
-    for (int num: make_numbers(split, end)) {
+    for (int num : make_numbers(split, end)) {
         co_yield num;
     }
 }
@@ -71,17 +73,18 @@ Generator<int> make_failed_numbers(int begin, int end, int fail) {
 
 Generator<int> make_safe(Generator<int> gen) {
     try {
-        for (int num: gen) {
+        for (int num : gen) {
             co_yield num;
         }
-    } catch (...) {}
+    } catch (...) {
+    }
 }
 
 Generator<int> a_then_b(Generator<int> a, Generator<int> b) {
-    for (int num: a) {
+    for (int num : a) {
         co_yield num;
     }
-    for (int num: b) {
+    for (int num : b) {
         co_yield num;
     }
 }
@@ -110,9 +113,9 @@ TEST(GeneratorTest, generate_no_numbers) {
 }
 
 TEST(GeneratorTest, generate_movable_values) {
-    auto gen = make_movable(1,4);
+    auto                              gen = make_movable(1, 4);
     std::vector<std::unique_ptr<int>> res;
-    for(auto pos = gen.begin(); pos != gen.end(); ++pos) {
+    for (auto pos = gen.begin(); pos != gen.end(); ++pos) {
         res.push_back(*pos);
     }
     ASSERT_EQ(res.size(), 3);
@@ -122,7 +125,7 @@ TEST(GeneratorTest, generate_movable_values) {
 }
 
 TEST(GeneratorTest, generate_unmovable_values) {
-    auto gen = make_unmovable(1,4);
+    auto gen = make_unmovable(1, 4);
     auto pos = gen.begin();
     auto end = gen.end();
     ASSERT_FALSE(pos == end);
@@ -139,7 +142,7 @@ TEST(GeneratorTest, generate_unmovable_values) {
 
 TEST(GeneratorTest, range_based_for_loop) {
     int expect = 1;
-    for (int x: make_numbers(1, 10)) {
+    for (int x : make_numbers(1, 10)) {
         EXPECT_EQ(x, expect);
         ++expect;
     }
@@ -147,7 +150,7 @@ TEST(GeneratorTest, range_based_for_loop) {
 }
 
 TEST(GeneratorTest, explicit_range_for_loop) {
-    int expect = 1;
+    int  expect = 1;
     auto gen = make_numbers(1, 10);
     auto pos = std::ranges::begin(gen);
     auto end = std::ranges::end(gen);
@@ -160,7 +163,7 @@ TEST(GeneratorTest, explicit_range_for_loop) {
 
 TEST(GeneratorTest, nested_generator) {
     int expect = 1;
-    for (int x: make_numbers(1, 4, 10)) {
+    for (int x : make_numbers(1, 4, 10)) {
         EXPECT_EQ(x, expect);
         ++expect;
     }
@@ -169,7 +172,7 @@ TEST(GeneratorTest, nested_generator) {
 
 TEST(GeneratorTest, deeper_nested_generator) {
     int expect = 1;
-    for (int x: a_then_b(make_numbers(1, 3, 5), make_numbers(5, 7, 10))) {
+    for (int x : a_then_b(make_numbers(1, 3, 5), make_numbers(5, 7, 10))) {
         EXPECT_EQ(x, expect);
         ++expect;
     }
@@ -204,7 +207,7 @@ TEST(GeneratorTest, forwarded_exception) {
 
 TEST(GeneratorTest, exception_captured_by_parent_generator) {
     int expect = 1;
-    for (int x: a_then_b(make_safe(make_failed_numbers(1, 10, 5)), make_numbers(5, 10))) {
+    for (int x : a_then_b(make_safe(make_failed_numbers(1, 10, 5)), make_numbers(5, 10))) {
         EXPECT_EQ(x, expect);
         ++expect;
     }

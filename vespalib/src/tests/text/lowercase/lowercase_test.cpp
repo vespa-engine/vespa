@@ -4,13 +4,13 @@ LOG_SETUP("lowercase_test");
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/text/lowercase.h>
-#include <iostream>
+
 #include <fstream>
+#include <iostream>
 
 using namespace vespalib;
 
-TEST(LowercaseTest, test_basic_lowercase)
-{
+TEST(LowercaseTest, test_basic_lowercase) {
     EXPECT_EQ('a', LowerCase::convert('A'));
     EXPECT_EQ((int8_t)'a', LowerCase::convert((int8_t)'A'));
     EXPECT_EQ((uint8_t)'a', LowerCase::convert((uint8_t)'A'));
@@ -20,7 +20,7 @@ TEST(LowercaseTest, test_basic_lowercase)
     EXPECT_TRUE(yellData.good());
 
     while (yellData.good()) {
-        uint32_t hi=0, lo=0;
+        uint32_t hi = 0, lo = 0;
         yellData >> hi >> lo;
         EXPECT_EQ(lo, LowerCase::convert(hi));
         if (lo != LowerCase::convert(hi)) {
@@ -31,8 +31,7 @@ TEST(LowercaseTest, test_basic_lowercase)
     }
 }
 
-TEST(LowercaseTest, lowercase_utf8_string_to_ucs4)
-{
+TEST(LowercaseTest, lowercase_utf8_string_to_ucs4) {
     auto res = LowerCase::convert_to_ucs4(std::string_view("ABC"));
     EXPECT_EQ(3u, res.size());
     EXPECT_EQ((uint32_t)'a', res[0]);

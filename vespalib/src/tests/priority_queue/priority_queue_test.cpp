@@ -35,7 +35,7 @@ TEST(PriorityQueueTest, require_that_default_priority_order_works) {
 }
 
 TEST(PriorityQueueTest, require_that_priority_order_can_be_specified) {
-    PriorityQueue<int, std::greater<int> > queue;
+    PriorityQueue<int, std::greater<int>> queue;
     EXPECT_EQ(true, queue.empty());
     EXPECT_EQ(0u, queue.size());
     queue.push(5);
@@ -63,7 +63,7 @@ TEST(PriorityQueueTest, require_that_priority_order_can_be_specified) {
 }
 
 TEST(PriorityQueueTest, require_that_a_random_item_can_be_accessed_and_removed) {
-    size_t n = 100;
+    size_t             n = 100;
     PriorityQueue<int> queue;
     std::vector<int>   seen(100, 0);
     for (size_t i = 0; i < n; ++i) {
@@ -81,15 +81,13 @@ TEST(PriorityQueueTest, require_that_a_random_item_can_be_accessed_and_removed) 
 }
 
 struct MyCmp {
-    int *ref;
-    MyCmp(int *r) : ref(r) {}
-    bool operator()(const int &a, const int &b) {
-        return (ref[a] < ref[b]);
-    }
+    int* ref;
+    MyCmp(int* r) : ref(r) {}
+    bool operator()(const int& a, const int& b) { return (ref[a] < ref[b]); }
 };
 
 TEST(PriorityQueueTest, require_that_the_comparator_can_have_state) {
-    std::vector<int> ref(5);
+    std::vector<int>          ref(5);
     PriorityQueue<int, MyCmp> queue(MyCmp(&ref.front()));
     ref[3] = 1;
     ref[2] = 2;
@@ -102,11 +100,16 @@ TEST(PriorityQueueTest, require_that_the_comparator_can_have_state) {
     queue.push(3);
     queue.push(4);
     ASSERT_EQ(5u, queue.size());
-    EXPECT_EQ(3, queue.front()); queue.pop_front();
-    EXPECT_EQ(2, queue.front()); queue.pop_front();
-    EXPECT_EQ(0, queue.front()); queue.pop_front();
-    EXPECT_EQ(4, queue.front()); queue.pop_front();
-    EXPECT_EQ(1, queue.front()); queue.pop_front();
+    EXPECT_EQ(3, queue.front());
+    queue.pop_front();
+    EXPECT_EQ(2, queue.front());
+    queue.pop_front();
+    EXPECT_EQ(0, queue.front());
+    queue.pop_front();
+    EXPECT_EQ(4, queue.front());
+    queue.pop_front();
+    EXPECT_EQ(1, queue.front());
+    queue.pop_front();
 }
 
 TEST(PriorityQueueTest, require_that_the_heap_algorithm_can_be_changed) {
@@ -118,16 +121,15 @@ TEST(PriorityQueueTest, require_that_the_heap_algorithm_can_be_changed) {
     ASSERT_EQ(100u, queue.size());
     for (int i = 0; i < 100; ++i) {
         EXPECT_EQ(queue.front(), queue.any());
-        EXPECT_EQ(i, queue.front()); queue.pop_front();
+        EXPECT_EQ(i, queue.front());
+        queue.pop_front();
     }
 }
 
 using int_up = std::unique_ptr<int>;
 int_up wrap(int value) { return int_up(new int(value)); }
 struct CmpIntUp {
-    bool operator()(const int_up &a, const int_up &b) const {
-        return (*a < *b);
-    }
+    bool operator()(const int_up& a, const int_up& b) const { return (*a < *b); }
 };
 
 TEST(PriorityQueueTest, require_that_priority_queue_works_with_move_only_objects) {
@@ -138,11 +140,16 @@ TEST(PriorityQueueTest, require_that_priority_queue_works_with_move_only_objects
     queue.push(wrap(10));
     queue.push(wrap(2));
     std::vector<int_up> stash;
-    stash.push_back(std::move(queue.front())); queue.pop_front();
-    stash.push_back(std::move(queue.front())); queue.pop_front();
-    stash.push_back(std::move(queue.front())); queue.pop_front();
-    stash.push_back(std::move(queue.front())); queue.pop_front();
-    stash.push_back(std::move(queue.front())); queue.pop_front();
+    stash.push_back(std::move(queue.front()));
+    queue.pop_front();
+    stash.push_back(std::move(queue.front()));
+    queue.pop_front();
+    stash.push_back(std::move(queue.front()));
+    queue.pop_front();
+    stash.push_back(std::move(queue.front()));
+    queue.pop_front();
+    stash.push_back(std::move(queue.front()));
+    queue.pop_front();
     ASSERT_EQ(5u, stash.size());
     EXPECT_EQ(2, *stash[0]);
     EXPECT_EQ(3, *stash[1]);
@@ -152,13 +159,13 @@ TEST(PriorityQueueTest, require_that_priority_queue_works_with_move_only_objects
 }
 
 struct MyItem {
-    int value;
-    int *ref;
-    MyItem(int v, int &r) noexcept : value(v), ref(&r) {}
-    MyItem(const MyItem &) noexcept = delete;
-    MyItem &operator=(const MyItem &) noexcept = delete;
-    MyItem(MyItem &&rhs) noexcept : value(rhs.value), ref(rhs.ref) { rhs.ref = nullptr; }
-    MyItem &operator=(MyItem &&rhs) noexcept {
+    int  value;
+    int* ref;
+    MyItem(int v, int& r) noexcept : value(v), ref(&r) {}
+    MyItem(const MyItem&) noexcept = delete;
+    MyItem& operator=(const MyItem&) noexcept = delete;
+    MyItem(MyItem&& rhs) noexcept : value(rhs.value), ref(rhs.ref) { rhs.ref = nullptr; }
+    MyItem& operator=(MyItem&& rhs) noexcept {
         value = rhs.value;
         ref = rhs.ref;
         rhs.ref = nullptr;
@@ -169,12 +176,12 @@ struct MyItem {
             ++(*ref);
         }
     }
-    bool operator<(const MyItem &rhs) const { return (value < rhs.value); }
+    bool operator<(const MyItem& rhs) const { return (value < rhs.value); }
 };
 
 TEST(PriorityQueueTest, require_that_popped_elements_are_destructed) {
     PriorityQueue<MyItem> queue;
-    int cnt = 0;
+    int                   cnt = 0;
     queue.push(MyItem(5, cnt));
     queue.push(MyItem(7, cnt));
     queue.push(MyItem(3, cnt));

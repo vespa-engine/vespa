@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "state_api.h"
+
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/tls/capability.h>
 #include <vespa/vespalib/util/jsonwriter.h>
+
 #include <functional>
 
 using vespalib::net::tls::Capability;
@@ -15,9 +17,9 @@ namespace vespalib {
 namespace {
 
 struct ConfigRenderer : ComponentConfigProducer::Consumer {
-    JSONStringer &json;
-    explicit ConfigRenderer(JSONStringer &j) : json(j) {}
-    void add(const ComponentConfigProducer::Config &config) override {
+    JSONStringer& json;
+    explicit ConfigRenderer(JSONStringer& j) : json(j) {}
+    void add(const ComponentConfigProducer::Config& config) override {
         json.appendKey(config.name);
         json.beginObject();
         json.appendKey("generation");
@@ -32,9 +34,9 @@ struct ConfigRenderer : ComponentConfigProducer::Consumer {
 
 struct ConfigGenerationObserver : ComponentConfigProducer::Consumer {
     size_t maxGen;
-    bool seenSome;
+    bool   seenSome;
     ConfigGenerationObserver() : maxGen(0), seenSome(false) {}
-    void add(const ComponentConfigProducer::Config &config) override {
+    void add(const ComponentConfigProducer::Config& config) override {
         if (seenSome) {
             maxGen = std::max(maxGen, config.gen);
         } else {
@@ -44,7 +46,7 @@ struct ConfigGenerationObserver : ComponentConfigProducer::Consumer {
     }
 };
 
-void build_health_status(JSONStringer &json, const HealthProducer &healthProducer) {
+void build_health_status(JSONStringer& json, const HealthProducer& healthProducer) {
     HealthProducer::Health health = healthProducer.getHealth();
     json.appendKey("status");
     json.beginObject();
@@ -59,10 +61,8 @@ void build_health_status(JSONStringer &json, const HealthProducer &healthProduce
     json.endObject();
 }
 
-std::string get_param(const std::map<std::string,std::string> &params,
-                           std::string_view param_name,
-                           std::string_view default_value)
-{
+std::string get_param(
+    const std::map<std::string, std::string>& params, std::string_view param_name, std::string_view default_value) {
     auto maybe_value = params.find(std::string(param_name));
     if (maybe_value == params.end()) {
         return std::string(default_value);
@@ -70,25 +70,25 @@ std::string get_param(const std::map<std::string,std::string> &params,
     return maybe_value->second;
 }
 
-void render_link(JSONStringer &json, const std::string &host, const std::string &path) {
+void render_link(JSONStringer& json, const std::string& host, const std::string& path) {
     json.beginObject();
     json.appendKey("url");
     json.appendString("http://" + host + path);
     json.endObject();
 }
 
-std::string respond_root(const JsonHandlerRepo &repo, const std::string &host, bool limit_endpoints) {
+std::string respond_root(const JsonHandlerRepo& repo, const std::string& host, bool limit_endpoints) {
     JSONStringer json;
     json.beginObject();
     json.appendKey("resources");
     json.beginArray();
     if (!limit_endpoints) {
-        for (auto path: {"/state/v1/health", "/state/v1/metrics", "/state/v1/config"}) {
+        for (auto path : {"/state/v1/health", "/state/v1/metrics", "/state/v1/config"}) {
             render_link(json, host, path);
         }
     }
     render_link(json, host, "/state/v1/version");
-    for (const std::string &path: repo.get_root_resources()) {
+    for (const std::string& path : repo.get_root_resources()) {
         render_link(json, host, path);
     }
     json.endArray();
@@ -96,7 +96,7 @@ std::string respond_root(const JsonHandlerRepo &repo, const std::string &host, b
     return json.str();
 }
 
-std::string respond_health(const HealthProducer &healthProducer) {
+std::string respond_health(const HealthProducer& healthProducer) {
     JSONStringer json;
     json.beginObject();
     build_health_status(json, healthProducer);
@@ -104,10 +104,8 @@ std::string respond_health(const HealthProducer &healthProducer) {
     return json.str();
 }
 
-std::string respond_json_metrics(const std::string &consumer,
-                                      const HealthProducer &healthProducer,
-                                      MetricsProducer &metricsProducer)
-{
+std::string respond_json_metrics(
+    const std::string& consumer, const HealthProducer& healthProducer, MetricsProducer& metricsProducer) {
     JSONStringer json;
     json.beginObject();
     build_health_status(json, healthProducer);
@@ -123,22 +121,20 @@ std::string respond_json_metrics(const std::string &consumer,
 }
 
 JsonGetHandler::Response cap_check_and_respond_metrics(
-        const net::ConnectionAuthContext &auth_ctx,
-        const std::map<std::string,std::string> &params,
-        const std::string& default_consumer,
-        std::function<JsonGetHandler::Response(const std::string&, MetricsProducer::ExpositionFormat)> response_fn)
-{
+    const net::ConnectionAuthContext& auth_ctx, const std::map<std::string, std::string>& params,
+    const std::string&                                                                             default_consumer,
+    std::function<JsonGetHandler::Response(const std::string&, MetricsProducer::ExpositionFormat)> response_fn) {
     if (!auth_ctx.capabilities().contains(Capability::content_metrics_api())) {
         return JsonGetHandler::Response::make_failure(403, "Forbidden");
     }
-    auto consumer   = get_param(params, "consumer", default_consumer);
+    auto consumer = get_param(params, "consumer", default_consumer);
     auto format_str = get_param(params, "format", "json");
-    auto format     = (format_str == "prometheus" ? MetricsProducer::ExpositionFormat::Prometheus
-                                                  : MetricsProducer::ExpositionFormat::JSON);
+    auto format = (format_str == "prometheus" ? MetricsProducer::ExpositionFormat::Prometheus
+                                              : MetricsProducer::ExpositionFormat::JSON);
     return response_fn(consumer, format);
 }
 
-std::string respond_config(ComponentConfigProducer &componentConfigProducer) {
+std::string respond_config(ComponentConfigProducer& componentConfigProducer) {
     JSONStringer json;
     json.beginObject();
     { // config
@@ -169,43 +165,32 @@ std::string respond_version() {
     return json.str();
 }
 
-JsonGetHandler::Response cap_checked(const net::ConnectionAuthContext &auth_ctx,
-                                     CapabilitySet required_caps,
-                                     std::function<std::string()> fn)
-{
+JsonGetHandler::Response cap_checked(
+    const net::ConnectionAuthContext& auth_ctx, CapabilitySet required_caps, std::function<std::string()> fn) {
     if (!auth_ctx.capabilities().contains_all(required_caps)) {
         return JsonGetHandler::Response::make_failure(403, "Forbidden");
     }
     return JsonGetHandler::Response::make_ok_with_json(fn());
 }
 
-JsonGetHandler::Response cap_checked(const net::ConnectionAuthContext &auth_ctx,
-                                     Capability required_cap,
-                                     std::function<std::string()> fn)
-{
+JsonGetHandler::Response cap_checked(
+    const net::ConnectionAuthContext& auth_ctx, Capability required_cap, std::function<std::string()> fn) {
     return cap_checked(auth_ctx, CapabilitySet::of({required_cap}), std::move(fn));
 }
 
-constexpr const char* prometheus_content_type() noexcept {
-    return "text/plain; version=0.0.4";
-}
+constexpr const char* prometheus_content_type() noexcept { return "text/plain; version=0.0.4"; }
 
-} // namespace vespalib::<unnamed>
+} // namespace
 
-JsonGetHandler::Response
-StateApi::get(const std::string &host,
-              const std::string &path,
-              const std::map<std::string,std::string> &params,
-              const net::ConnectionAuthContext &auth_ctx) const
-{
+JsonGetHandler::Response StateApi::get(
+    const std::string& host, const std::string& path, const std::map<std::string, std::string>& params,
+    const net::ConnectionAuthContext& auth_ctx) const {
     if (path == "/state/v1/" || path == "/state/v1") {
         return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { // TODO consider http_unclassified
             return respond_root(_handler_repo, host, _limit_endpoints.load());
         });
     } else if (path == "/state/v1/version") {
-        return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] {
-            return respond_version();
-        });
+        return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { return respond_version(); });
     } else if (!_limit_endpoints.load()) {
         if (path == "/state/v1/health") {
             return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { // TODO consider http_unclassified
@@ -217,24 +202,28 @@ StateApi::get(const std::string &host,
             // in Prometheus metrics regardless of the specified consumer).
             return cap_check_and_respond_metrics(auth_ctx, params, "statereporter", [&](auto& consumer, auto format) {
                 if (format == MetricsProducer::ExpositionFormat::Prometheus) {
-                    auto metrics_text = _metricsProducer.getMetrics(consumer, MetricsProducer::ExpositionFormat::Prometheus);
-                    return JsonGetHandler::Response::make_ok_with_content_type(std::move(metrics_text), prometheus_content_type());
+                    auto metrics_text =
+                        _metricsProducer.getMetrics(consumer, MetricsProducer::ExpositionFormat::Prometheus);
+                    return JsonGetHandler::Response::make_ok_with_content_type(
+                        std::move(metrics_text), prometheus_content_type());
                 } else {
                     auto json = respond_json_metrics(consumer, _healthProducer, _metricsProducer);
                     return JsonGetHandler::Response::make_ok_with_json(std::move(json));
                 }
             });
         } else if (path == "/state/v1/config") {
-            return cap_checked(auth_ctx, Capability::content_state_api(), [&] {
-                return respond_config(_componentConfigProducer);
-            });
+            return cap_checked(
+                auth_ctx, Capability::content_state_api(), [&] { return respond_config(_componentConfigProducer); });
         } else if (path == "/metrics/total") {
             return cap_check_and_respond_metrics(auth_ctx, params, "", [&](auto& consumer, auto format) {
                 if (format == MetricsProducer::ExpositionFormat::Prometheus) {
-                    auto metrics_text = _metricsProducer.getTotalMetrics(consumer, MetricsProducer::ExpositionFormat::Prometheus);
-                    return JsonGetHandler::Response::make_ok_with_content_type(std::move(metrics_text), prometheus_content_type());
+                    auto metrics_text =
+                        _metricsProducer.getTotalMetrics(consumer, MetricsProducer::ExpositionFormat::Prometheus);
+                    return JsonGetHandler::Response::make_ok_with_content_type(
+                        std::move(metrics_text), prometheus_content_type());
                 } else {
-                    auto json = _metricsProducer.getTotalMetrics(consumer, vespalib::MetricsProducer::ExpositionFormat::JSON);
+                    auto json =
+                        _metricsProducer.getTotalMetrics(consumer, vespalib::MetricsProducer::ExpositionFormat::JSON);
                     return JsonGetHandler::Response::make_ok_with_json(std::move(json));
                 }
             });
@@ -252,16 +241,8 @@ StateApi::get(const std::string &host,
 
 //-----------------------------------------------------------------------------
 
-StateApi::StateApi(const HealthProducer &hp,
-                   MetricsProducer &mp,
-                   ComponentConfigProducer &ccp,
-                   bool limit_endpoints)
-    : _healthProducer(hp),
-      _metricsProducer(mp),
-      _componentConfigProducer(ccp),
-      _limit_endpoints(limit_endpoints)
-{
-}
+StateApi::StateApi(const HealthProducer& hp, MetricsProducer& mp, ComponentConfigProducer& ccp, bool limit_endpoints)
+    : _healthProducer(hp), _metricsProducer(mp), _componentConfigProducer(ccp), _limit_endpoints(limit_endpoints) {}
 
 StateApi::~StateApi() = default;
 

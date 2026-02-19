@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "optimized.h"
 #include "memory_allocator.h"
+#include "optimized.h"
+
 #include <memory>
 
 namespace vespalib::alloc {
@@ -12,15 +13,14 @@ namespace vespalib::alloc {
  * It can be created, moved, swapped.
  * The allocation strategy is decided upon creation.
  * It can also create additional allocations with the same allocation strategy.
-**/
-class Alloc
-{
+ **/
+class Alloc {
 public:
-    size_t size() const noexcept { return _alloc.size(); }
-    void * get() noexcept { return _alloc.get(); }
-    const void * get() const noexcept { return _alloc.get(); }
-    void * operator -> () noexcept { return get(); }
-    const void * operator -> () const noexcept { return get(); }
+    size_t      size() const noexcept { return _alloc.size(); }
+    void*       get() noexcept { return _alloc.get(); }
+    const void* get() const noexcept { return _alloc.get(); }
+    void*       operator->() noexcept { return get(); }
+    const void* operator->() const noexcept { return get(); }
     /*
      * If possible the allocations will be resized. If it was possible it will return true
      * And you have an area that can be accessed up to the new size.
@@ -30,16 +30,11 @@ public:
      * @return true if successful.
      */
     bool resize_inplace(size_t newSize);
-    Alloc(const Alloc &) = delete;
-    Alloc & operator = (const Alloc &) = delete;
-    Alloc(Alloc && rhs) noexcept
-        : _alloc(rhs._alloc),
-          _allocator(rhs._allocator)
-    {
-        rhs.clear();
-    }
-    Alloc & operator=(Alloc && rhs) noexcept {
-        if (this != & rhs) {
+    Alloc(const Alloc&) = delete;
+    Alloc& operator=(const Alloc&) = delete;
+    Alloc(Alloc&& rhs) noexcept : _alloc(rhs._alloc), _allocator(rhs._allocator) { rhs.clear(); }
+    Alloc& operator=(Alloc&& rhs) noexcept {
+        if (this != &rhs) {
             if (_alloc.get() != nullptr) {
                 _allocator->free(_alloc);
             }
@@ -49,11 +44,9 @@ public:
         }
         return *this;
     }
-    Alloc() noexcept : _alloc(), _allocator(nullptr) { }
-    ~Alloc() noexcept {
-        reset();
-    }
-    void swap(Alloc & rhs) noexcept {
+    Alloc() noexcept : _alloc(), _allocator(nullptr) {}
+    ~Alloc() noexcept { reset(); }
+    void swap(Alloc& rhs) noexcept {
         std::swap(_alloc, rhs._alloc);
         std::swap(_allocator, rhs._allocator);
     }
@@ -63,59 +56,45 @@ public:
             _alloc.reset();
         }
     }
-    Alloc create(size_t sz) const noexcept {
-        return (sz == 0) ? Alloc(_allocator) : Alloc(_allocator, sz);
-    }
+    Alloc create(size_t sz) const noexcept { return (sz == 0) ? Alloc(_allocator) : Alloc(_allocator, sz); }
 
     static Alloc allocAlignedHeap(size_t sz, size_t alignment);
-    static Alloc allocHeap(size_t sz=0);
-    static Alloc allocMMap(size_t sz=0);
+    static Alloc allocHeap(size_t sz = 0);
+    static Alloc allocMMap(size_t sz = 0);
     /**
      * Optional alignment is assumed to be <= system page size, since mmap
      * is always used when size is above limit.
      */
     static Alloc alloc(size_t sz) noexcept;
     static Alloc alloc_aligned(size_t sz, size_t alignment) noexcept;
-    static Alloc alloc(size_t sz, size_t mmapLimit, size_t alignment=0) noexcept;
+    static Alloc alloc(size_t sz, size_t mmapLimit, size_t alignment = 0) noexcept;
     static Alloc alloc() noexcept;
     static Alloc alloc_with_allocator(const MemoryAllocator* allocator) noexcept;
+
 private:
-    Alloc(const MemoryAllocator * allocator, size_t sz) noexcept
-        : _alloc(allocator->alloc(sz)),
-          _allocator(allocator)
-    { }
-    explicit Alloc(const MemoryAllocator * allocator) noexcept
-        : _alloc(),
-          _allocator(allocator)
-    { }
+    Alloc(const MemoryAllocator* allocator, size_t sz) noexcept
+        : _alloc(allocator->alloc(sz)), _allocator(allocator) {}
+    explicit Alloc(const MemoryAllocator* allocator) noexcept : _alloc(), _allocator(allocator) {}
     void clear() noexcept {
         _alloc.reset();
         _allocator = nullptr;
     }
-    PtrAndSize              _alloc;
-    const MemoryAllocator * _allocator;
+    PtrAndSize             _alloc;
+    const MemoryAllocator* _allocator;
 };
 
-}
+} // namespace vespalib::alloc
 
 namespace vespalib {
 
 /// Rounds up to the closest number that is a power of 2
-inline size_t
-roundUp2inN(size_t minimum) noexcept {
-    return 2ul << Optimized::msbIdx(minimum - 1);
-}
+inline size_t roundUp2inN(size_t minimum) noexcept { return 2ul << Optimized::msbIdx(minimum - 1); }
 
 /// Rounds minElems up to the closest number where minElems*elemSize is a power of 2
-inline size_t
-roundUp2inN(size_t minElems, size_t elemSize) noexcept {
-    return roundUp2inN(minElems * elemSize)/elemSize;
+inline size_t roundUp2inN(size_t minElems, size_t elemSize) noexcept {
+    return roundUp2inN(minElems * elemSize) / elemSize;
 }
 
-template <typename T>
-size_t
-roundUp2inN(size_t elems) noexcept {
-    return roundUp2inN(elems, sizeof(T));
-}
+template <typename T> size_t roundUp2inN(size_t elems) noexcept { return roundUp2inN(elems, sizeof(T)); }
 
-}
+} // namespace vespalib

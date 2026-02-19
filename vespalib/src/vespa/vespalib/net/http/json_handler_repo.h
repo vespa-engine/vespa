@@ -3,8 +3,9 @@
 #pragma once
 
 #include "json_get_handler.h"
-#include <mutex>
+
 #include <memory>
+#include <mutex>
 #include <vector>
 
 namespace vespalib {
@@ -20,8 +21,7 @@ namespace vespalib {
  * tied for longest prefix, the most recently added handler will be
  * selected.
  **/
-class JsonHandlerRepo : public JsonGetHandler
-{
+class JsonHandlerRepo : public JsonGetHandler {
 public:
     struct Token {
         using UP = std::unique_ptr<Token>;
@@ -30,14 +30,12 @@ public:
 
 private:
     struct Hook {
-        size_t seq;
-        std::string path_prefix;
-        const JsonGetHandler *handler;
-        Hook(size_t seq_in,
-             std::string_view prefix_in,
-             const JsonGetHandler &handler_in) noexcept
+        size_t                seq;
+        std::string           path_prefix;
+        const JsonGetHandler* handler;
+        Hook(size_t seq_in, std::string_view prefix_in, const JsonGetHandler& handler_in) noexcept
             : seq(seq_in), path_prefix(prefix_in), handler(&handler_in) {}
-        bool operator <(const Hook &rhs) const noexcept {
+        bool operator<(const Hook& rhs) const noexcept {
             if (path_prefix.size() == rhs.path_prefix.size()) {
                 return (seq > rhs.seq);
             }
@@ -46,33 +44,28 @@ private:
     };
 
     struct Resource {
-        size_t seq;
+        size_t      seq;
         std::string path;
-        Resource(size_t seq_in, std::string_view path_in) noexcept
-            : seq(seq_in), path(path_in) {}
+        Resource(size_t seq_in, std::string_view path_in) noexcept : seq(seq_in), path(path_in) {}
     };
 
     struct State {
         using SP = std::shared_ptr<State>;
-        std::mutex lock;
-        size_t seq;
-        std::vector<Hook> hooks;
+        std::mutex            lock;
+        size_t                seq;
+        std::vector<Hook>     hooks;
         std::vector<Resource> root_resources;
         State() noexcept : lock(), seq(0), hooks(), root_resources() {}
-        size_t bind(std::string_view path_prefix,
-                    const JsonGetHandler &get_handler);
+        size_t bind(std::string_view path_prefix, const JsonGetHandler& get_handler);
         size_t add_root_resource(std::string_view path);
-        void unbind(size_t my_seq);
+        void   unbind(size_t my_seq);
     };
 
     struct Unbinder : Token {
         State::SP state;
-        size_t my_seq;
-        Unbinder(State::SP state_in, size_t my_seq_in) noexcept
-            : state(std::move(state_in)), my_seq(my_seq_in) {}
-        ~Unbinder() override {
-            state->unbind(my_seq);
-        }
+        size_t    my_seq;
+        Unbinder(State::SP state_in, size_t my_seq_in) noexcept : state(std::move(state_in)), my_seq(my_seq_in) {}
+        ~Unbinder() override { state->unbind(my_seq); }
     };
 
     std::shared_ptr<State> _state;
@@ -80,12 +73,12 @@ private:
 public:
     JsonHandlerRepo();
     ~JsonHandlerRepo() override;
-    Token::UP bind(std::string_view path_prefix, const JsonGetHandler &get_handler);
-    Token::UP add_root_resource(std::string_view path);
+    Token::UP                              bind(std::string_view path_prefix, const JsonGetHandler& get_handler);
+    Token::UP                              add_root_resource(std::string_view path);
     [[nodiscard]] std::vector<std::string> get_root_resources() const;
-    [[nodiscard]] Response get(const std::string &host, const std::string &path,
-                               const std::map<std::string,std::string> &params,
-                               const net::ConnectionAuthContext &auth_ctx) const override;
+    [[nodiscard]] Response                 get(
+                        const std::string& host, const std::string& path, const std::map<std::string, std::string>& params,
+                        const net::ConnectionAuthContext& auth_ctx) const override;
 };
 
 } // namespace vespalib

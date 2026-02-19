@@ -4,33 +4,23 @@
 
 namespace vespalib {
 
-SimpleComponentConfigProducer::SimpleComponentConfigProducer()
-    : _lock(),
-      _state()
-{
-}
+SimpleComponentConfigProducer::SimpleComponentConfigProducer() : _lock(), _state() {}
 
 SimpleComponentConfigProducer::~SimpleComponentConfigProducer() = default;
 
-void
-SimpleComponentConfigProducer::addConfig(const Config &config)
-{
+void SimpleComponentConfigProducer::addConfig(const Config& config) {
     std::lock_guard guard(_lock);
     _state.insert(std::make_pair(config.name, config)).first->second = config;
 }
 
-void
-SimpleComponentConfigProducer::removeConfig(const std::string &name)
-{
+void SimpleComponentConfigProducer::removeConfig(const std::string& name) {
     std::lock_guard guard(_lock);
     _state.erase(name);
 }
 
-void
-SimpleComponentConfigProducer::getComponentConfig(Consumer &consumer)
-{
+void SimpleComponentConfigProducer::getComponentConfig(Consumer& consumer) {
     std::lock_guard guard(_lock);
-    for (const auto & entry : _state) {
+    for (const auto& entry : _state) {
         consumer.add(entry.second);
     }
 }

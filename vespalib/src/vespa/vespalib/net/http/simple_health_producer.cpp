@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "simple_health_producer.h"
+
 #include <vespa/defaults.h>
+
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -10,9 +12,7 @@ namespace {
 struct DiskPing {
     std::string path;
 
-    DiskPing()
-      : path(vespa::Defaults::underVespaHome("var/run/diskping."))
-    {
+    DiskPing() : path(vespa::Defaults::underVespaHome("var/run/diskping.")) {
         int pid = getpid();
         while (pid > 0) {
             char c = '0' + (pid % 10);
@@ -21,7 +21,7 @@ struct DiskPing {
         }
     }
     bool failed() {
-        const char *fn = path.c_str();
+        const char* fn = path.c_str();
         ::unlink(fn);
         int fd = ::creat(fn, S_IRWXU);
         if (fd < 0) {
@@ -39,36 +39,25 @@ bool diskFailed() {
     return disk.failed();
 }
 
-}
+} // namespace
 
 namespace vespalib {
 
-SimpleHealthProducer::SimpleHealthProducer()
-    : _lock(),
-      _health(true, "")
-{
-    setOk();
-}
+SimpleHealthProducer::SimpleHealthProducer() : _lock(), _health(true, "") { setOk(); }
 
 SimpleHealthProducer::~SimpleHealthProducer() = default;
 
-void
-SimpleHealthProducer::setOk()
-{
+void SimpleHealthProducer::setOk() {
     std::lock_guard guard(_lock);
     _health = Health(true, "All OK");
 }
 
-void
-SimpleHealthProducer::setFailed(const std::string &msg)
-{
+void SimpleHealthProducer::setFailed(const std::string& msg) {
     std::lock_guard guard(_lock);
     _health = Health(false, msg);
 }
 
-HealthProducer::Health
-SimpleHealthProducer::getHealth() const
-{
+HealthProducer::Health SimpleHealthProducer::getHealth() const {
     std::lock_guard guard(_lock);
     if (_health.ok && diskFailed()) {
         return Health(false, "disk ping failed");

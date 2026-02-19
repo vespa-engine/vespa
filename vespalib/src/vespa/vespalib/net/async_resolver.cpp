@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "async_resolver.h"
+
 #include "socket_spec.h"
+
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -14,17 +16,11 @@ VESPA_THREAD_STACK_TAG(async_resolver_executor_thread);
 
 //-----------------------------------------------------------------------------
 
-AsyncResolver::time_point
-AsyncResolver::SteadyClock::now()
-{
-    return std::chrono::steady_clock::now();
-}
+AsyncResolver::time_point AsyncResolver::SteadyClock::now() { return std::chrono::steady_clock::now(); }
 
 //-----------------------------------------------------------------------------
 
-std::string
-AsyncResolver::SimpleHostResolver::ip_address(const std::string &host_name)
-{
+std::string AsyncResolver::SimpleHostResolver::ip_address(const std::string& host_name) {
     return SocketAddress::select_remote(80, host_name.c_str()).ip_address();
 }
 
@@ -36,21 +32,17 @@ AsyncResolver::Params::Params()
       max_cache_size(10000),
       max_result_age(60.0),
       max_resolve_time(1.0),
-      num_threads(4)
-{
-}
+      num_threads(4) {}
 
 //-----------------------------------------------------------------------------
 
-std::string
-AsyncResolver::LoggingHostResolver::ip_address(const std::string &host_name)
-{
-    auto before = _clock->now();
+std::string AsyncResolver::LoggingHostResolver::ip_address(const std::string& host_name) {
+    auto        before = _clock->now();
     std::string ip_address = _resolver->ip_address(host_name);
-    seconds resolve_time = (_clock->now() - before);
+    seconds     resolve_time = (_clock->now() - before);
     if (resolve_time >= _max_resolve_time) {
-        LOG(warning, "slow resolve time: '%s' -> '%s' (%g s)",
-            host_name.c_str(), ip_address.c_str(), resolve_time.count());
+        LOG(warning, "slow resolve time: '%s' -> '%s' (%g s)", host_name.c_str(), ip_address.c_str(),
+            resolve_time.count());
     }
     if (ip_address.empty()) {
         LOG(warning, "could not resolve host name: '%s'", host_name.c_str());
@@ -60,9 +52,8 @@ AsyncResolver::LoggingHostResolver::ip_address(const std::string &host_name)
 
 //-----------------------------------------------------------------------------
 
-bool
-AsyncResolver::CachingHostResolver::should_evict_oldest_entry(const std::lock_guard<std::mutex> &, time_point now)
-{
+bool AsyncResolver::CachingHostResolver::should_evict_oldest_entry(
+    const std::lock_guard<std::mutex>&, time_point now) {
     if (_queue.empty()) {
         return false;
     }
@@ -72,10 +63,8 @@ AsyncResolver::CachingHostResolver::should_evict_oldest_entry(const std::lock_gu
     return (_queue.front()->second.end_time <= now);
 }
 
-bool
-AsyncResolver::CachingHostResolver::lookup(const std::string &host_name, std::string &ip_address)
-{
-    auto now = _clock->now();
+bool AsyncResolver::CachingHostResolver::lookup(const std::string& host_name, std::string& ip_address) {
+    auto                        now = _clock->now();
     std::lock_guard<std::mutex> guard(_lock);
     while (should_evict_oldest_entry(guard, now)) {
         _map.erase(_queue.front());
@@ -90,32 +79,27 @@ AsyncResolver::CachingHostResolver::lookup(const std::string &host_name, std::st
     return false;
 }
 
-void
-AsyncResolver::CachingHostResolver::store(const std::string &host_name, const std::string &ip_address)
-{
+void AsyncResolver::CachingHostResolver::store(const std::string& host_name, const std::string& ip_address) {
     auto end_time = _clock->now() + std::chrono::duration_cast<time_point::duration>(_max_result_age);
     std::lock_guard<std::mutex> guard(_lock);
-    auto res = _map.emplace(host_name, Entry(ip_address, end_time));
+    auto                        res = _map.emplace(host_name, Entry(ip_address, end_time));
     if (res.second) {
         _queue.push(res.first);
     }
     assert(_map.size() == _queue.size());
 }
 
-AsyncResolver::CachingHostResolver::CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, size_t max_cache_size, seconds max_result_age) noexcept
+AsyncResolver::CachingHostResolver::CachingHostResolver(
+    Clock::SP clock, HostResolver::SP resolver, size_t max_cache_size, seconds max_result_age) noexcept
     : _clock(std::move(clock)),
       _resolver(std::move(resolver)),
       _max_cache_size(max_cache_size),
       _max_result_age(max_result_age),
       _lock(),
       _map(),
-      _queue()
-{
-}
+      _queue() {}
 
-std::string
-AsyncResolver::CachingHostResolver::ip_address(const std::string &host_name)
-{
+std::string AsyncResolver::CachingHostResolver::ip_address(const std::string& host_name) {
     std::string ip_address;
     if (lookup(host_name, ip_address)) {
         return ip_address;
@@ -129,10 +113,8 @@ AsyncResolver::CachingHostResolver::ip_address(const std::string &host_name)
 
 //-----------------------------------------------------------------------------
 
-void
-AsyncResolver::ResolveTask::run()
-{
-    if (ResultHandler::SP handler = weak_handler.lock()) {        
+void AsyncResolver::ResolveTask::run() {
+    if (ResultHandler::SP handler = weak_handler.lock()) {
         SocketSpec socket_spec(spec);
         if (!socket_spec.valid()) {
             LOG(warning, "invalid socket spec: '%s'", spec.c_str());
@@ -146,41 +128,32 @@ AsyncResolver::ResolveTask::run()
 
 //-----------------------------------------------------------------------------
 
-std::mutex AsyncResolver::_shared_lock;
+std::mutex        AsyncResolver::_shared_lock;
 AsyncResolver::SP AsyncResolver::_shared_resolver(nullptr);
 
 AsyncResolver::AsyncResolver(HostResolver::SP resolver, size_t num_threads)
     : _resolver(std::move(resolver)),
-      _executor(std::make_unique<ThreadStackExecutor>(num_threads, async_resolver_executor_thread))
-{
-}
+      _executor(std::make_unique<ThreadStackExecutor>(num_threads, async_resolver_executor_thread)) {}
 
 AsyncResolver::~AsyncResolver() = default;
 
-void
-AsyncResolver::wait_for_pending_resolves() {
-    _executor->sync();
-}
+void AsyncResolver::wait_for_pending_resolves() { _executor->sync(); }
 
-void
-AsyncResolver::resolve_async(const std::string &spec, ResultHandler::WP result_handler)
-{
+void AsyncResolver::resolve_async(const std::string& spec, ResultHandler::WP result_handler) {
     auto task = std::make_unique<ResolveTask>(spec, *_resolver, std::move(result_handler));
     auto rejected = _executor->execute(std::move(task));
     assert(!rejected);
 }
 
-AsyncResolver::SP
-AsyncResolver::create(Params params)
-{
-    auto logger = std::make_shared<LoggingHostResolver>(params.clock, std::move(params.resolver), params.max_resolve_time);
-    auto cacher = std::make_shared<CachingHostResolver>(std::move(params.clock), std::move(logger), params.max_cache_size, params.max_result_age);
+AsyncResolver::SP AsyncResolver::create(Params params) {
+    auto logger =
+        std::make_shared<LoggingHostResolver>(params.clock, std::move(params.resolver), params.max_resolve_time);
+    auto cacher = std::make_shared<CachingHostResolver>(
+        std::move(params.clock), std::move(logger), params.max_cache_size, params.max_result_age);
     return SP(new AsyncResolver(std::move(cacher), params.num_threads));
 }
 
-AsyncResolver::SP
-AsyncResolver::get_shared()
-{
+AsyncResolver::SP AsyncResolver::get_shared() {
     std::lock_guard<std::mutex> guard(_shared_lock);
     if (!_shared_resolver) {
         _shared_resolver = create(Params());

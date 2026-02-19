@@ -3,6 +3,7 @@
 
 #include "counter_aggregator.h"
 #include "gauge_aggregator.h"
+
 #include <string>
 #include <vector>
 
@@ -12,13 +13,11 @@ class DimensionBinding {
 private:
     const std::string _dimensionName;
     const std::string _labelValue;
+
 public:
-    const std::string &dimensionName() const { return _dimensionName; }
-    const std::string &labelValue() const { return _labelValue; }
-    DimensionBinding(const std::string &a,
-                     const std::string &v) noexcept
-        : _dimensionName(a), _labelValue(v)
-    {}
+    const std::string& dimensionName() const { return _dimensionName; }
+    const std::string& labelValue() const { return _labelValue; }
+    DimensionBinding(const std::string& a, const std::string& v) noexcept : _dimensionName(a), _labelValue(v) {}
     ~DimensionBinding() {}
 };
 
@@ -28,31 +27,32 @@ struct PointSnapshot {
 
 class CounterSnapshot {
 private:
-    const std::string _name;
-    const PointSnapshot &_point;
-    const size_t _count;
+    const std::string    _name;
+    const PointSnapshot& _point;
+    const size_t         _count;
+
 public:
-    CounterSnapshot(const std::string &n, const PointSnapshot &p, const CounterAggregator &c)
-        : _name(n), _point(p), _count(c.count)
-    {}
+    CounterSnapshot(const std::string& n, const PointSnapshot& p, const CounterAggregator& c)
+        : _name(n), _point(p), _count(c.count) {}
     ~CounterSnapshot() {}
-    const std::string &name() const { return _name; }
-    const PointSnapshot &point() const { return _point; }
-    size_t count() const { return _count; }
+    const std::string&   name() const { return _name; }
+    const PointSnapshot& point() const { return _point; }
+    size_t               count() const { return _count; }
 };
 
 class GaugeSnapshot {
 private:
-    const std::string _name;
-    const PointSnapshot &_point;
-    const size_t _observedCount;
-    const double _averageValue;
-    const double _sumValue;
-    const double _minValue;
-    const double _maxValue;
-    const double _lastValue;
+    const std::string    _name;
+    const PointSnapshot& _point;
+    const size_t         _observedCount;
+    const double         _averageValue;
+    const double         _sumValue;
+    const double         _minValue;
+    const double         _maxValue;
+    const double         _lastValue;
+
 public:
-    GaugeSnapshot(const std::string &n, const PointSnapshot &p, const GaugeAggregator &c)
+    GaugeSnapshot(const std::string& n, const PointSnapshot& p, const GaugeAggregator& c)
         : _name(n),
           _point(p),
           _observedCount(c.observedCount),
@@ -60,48 +60,40 @@ public:
           _sumValue(c.sumValue),
           _minValue(c.minValue),
           _maxValue(c.maxValue),
-          _lastValue(c.lastValue)
-    {}
+          _lastValue(c.lastValue) {}
     ~GaugeSnapshot() {}
-    const std::string &name() const { return _name; }
-    const PointSnapshot &point() const { return _point; }
-    size_t observedCount() const { return _observedCount; }
-    double averageValue() const { return _averageValue; }
-    double sumValue() const { return _sumValue; }
-    double minValue() const { return _minValue; }
-    double maxValue() const { return _maxValue; }
-    double lastValue() const { return _lastValue; }
+    const std::string&   name() const { return _name; }
+    const PointSnapshot& point() const { return _point; }
+    size_t               observedCount() const { return _observedCount; }
+    double               averageValue() const { return _averageValue; }
+    double               sumValue() const { return _sumValue; }
+    double               minValue() const { return _minValue; }
+    double               maxValue() const { return _maxValue; }
+    double               lastValue() const { return _lastValue; }
 };
 
 class Snapshot {
 private:
-    double _start;
-    double _end;
+    double                       _start;
+    double                       _end;
     std::vector<CounterSnapshot> _counters;
-    std::vector<GaugeSnapshot> _gauges;
-    std::vector<PointSnapshot> _points;
+    std::vector<GaugeSnapshot>   _gauges;
+    std::vector<PointSnapshot>   _points;
+
 public:
     double startTime() const { return _start; }; // seconds since 1970
-    double endTime()   const { return _end; };   // seconds since 1970
+    double endTime() const { return _end; };     // seconds since 1970
 
-    const std::vector<CounterSnapshot> &counters() const {
-        return _counters;
-    }
-    const std::vector<GaugeSnapshot> &gauges() const {
-        return _gauges;
-    }
-    const std::vector<PointSnapshot> &points() const {
-        return _points;
-    }
+    const std::vector<CounterSnapshot>& counters() const { return _counters; }
+    const std::vector<GaugeSnapshot>&   gauges() const { return _gauges; }
+    const std::vector<PointSnapshot>&   points() const { return _points; }
 
     // builders:
-    Snapshot(double s, double e)
-        : _start(s), _end(e), _counters(), _gauges()
-    {}
+    Snapshot(double s, double e) : _start(s), _end(e), _counters(), _gauges() {}
     ~Snapshot() {}
-    void add(const PointSnapshot &entry)   { _points.push_back(entry); }
-    void add(const CounterSnapshot &entry) { _counters.push_back(entry); }
-    void add(const GaugeSnapshot &entry)   { _gauges.push_back(entry); }
+    void add(const PointSnapshot& entry) { _points.push_back(entry); }
+    void add(const CounterSnapshot& entry) { _counters.push_back(entry); }
+    void add(const GaugeSnapshot& entry) { _gauges.push_back(entry); }
 };
 
-}
+} // namespace vespalib::metrics

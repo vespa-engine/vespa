@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 
 namespace vespalib {
 
@@ -12,16 +12,16 @@ namespace vespalib {
  * single element. It enables directional exchange of data where reads
  * and writes are alternating.
  **/
-template <typename T>
-class Latch {
+template <typename T> class Latch {
 private:
     std::mutex              _lock;
     std::condition_variable _cond;
     char                    _space[sizeof(T)];
     bool                    _has_value;
 
-    void *as_void() { return &_space[0]; }
-    T *as_value() { return (T*)as_void(); }
+    void* as_void() { return &_space[0]; }
+    T*    as_value() { return (T*)as_void(); }
+
 public:
     Latch() : _lock(), _cond(), _space(), _has_value(false) {}
     ~Latch() {

@@ -12,8 +12,8 @@ namespace vespalib {
 struct Pipe {
     FileDescriptor read_end;
     FileDescriptor write_end;
-    bool valid() const { return (read_end.valid() && write_end.valid()); }
-    static Pipe create();
+    bool           valid() const { return (read_end.valid() && write_end.valid()); }
+    static Pipe    create();
     ~Pipe();
 };
 

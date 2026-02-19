@@ -14,8 +14,8 @@ public:
     static Point empty;
     explicit Point(size_t id) : Handle<Point>(id) {}
 
-    static Point from_map(const PointMap& map);
-    static Point from_map(PointMap&& map);
+    static Point    from_map(const PointMap& map);
+    static Point    from_map(PointMap&& map);
     const PointMap& as_map() const;
 };
 

@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "time_bomb.h"
+
 #include <cstdint>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.test.time_bomb");
 
@@ -9,7 +11,7 @@ namespace vespalib {
 
 namespace {
 
-void bomb(Gate &gate, vespalib::duration timeout) {
+void bomb(Gate& gate, vespalib::duration timeout) {
     if (timeout > 5s) {
         if (gate.await(timeout - 5s)) {
             return;
@@ -26,16 +28,11 @@ void bomb(Gate &gate, vespalib::duration timeout) {
     LOG_ABORT("should not be reached");
 }
 
-} // namespace vespalib::<unnamed>
+} // namespace
 
-TimeBomb::TimeBomb(duration timeout)
-    : _gate(),
-      _thread(bomb, std::ref(_gate), timeout)
-{
-}
+TimeBomb::TimeBomb(duration timeout) : _gate(), _thread(bomb, std::ref(_gate), timeout) {}
 
-TimeBomb::~TimeBomb()
-{
+TimeBomb::~TimeBomb() {
     _gate.countDown();
     _thread.join();
 }

@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
 
-template<typename T> bool is_size_t(T) { return false; }
-template<> bool is_size_t<size_t>(size_t) { return true; }
+template <typename T> bool is_size_t(T) { return false; }
+template <> bool           is_size_t<size_t>(size_t) { return true; }
 
-TEST(SizeLiteralsTest, simple_usage)
-{
+TEST(SizeLiteralsTest, simple_usage) {
     auto v1k = 1_Ki;
     auto v1m = 1_Mi;
     auto v1g = 1_Gi;
@@ -20,7 +19,8 @@ TEST(SizeLiteralsTest, simple_usage)
     EXPECT_EQ(v1k, 1024ul);
     EXPECT_EQ(v1m, 1024ul * 1024ul);
     EXPECT_EQ(v1g, 1024ul * 1024ul * 1024ul);
-    EXPECT_EQ(v1t, 1024ul * 1024ul * 1024ul * 1024ul);;
+    EXPECT_EQ(v1t, 1024ul * 1024ul * 1024ul * 1024ul);
+    ;
 
     EXPECT_EQ(v42k, 42ul * 1024ul);
     EXPECT_EQ(v42m, 42ul * 1024ul * 1024ul);

@@ -2,7 +2,7 @@
 
 #include <vespa/fastlib/text/unicodeutil.h>
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     for (ucs4_t testchar = 0; testchar < 0x10000; testchar++) {
         printf("%08x %08x\n", testchar, Fast_UnicodeUtil::ToLower(testchar));
     }

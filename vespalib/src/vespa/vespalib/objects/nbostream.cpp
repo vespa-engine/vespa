@@ -1,63 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "nbostream.h"
+
 #include "hexdump.h"
+
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cassert>
 
 namespace vespalib {
 
-nbostream::nbostream(size_t initialSize) :
-    _wbuf(),
-    _rbuf(),
-    _rp(0),
-    _wp(0),
-    _state(ok),
-    _longLivedBuffer(false)
-{
+nbostream::nbostream(size_t initialSize) : _wbuf(), _rbuf(), _rp(0), _wp(0), _state(ok), _longLivedBuffer(false) {
     extend(initialSize);
 }
 
-nbostream::nbostream(const void * buf, size_t sz, bool longLivedBuffer) :
-    _wbuf(),
-    _rbuf(buf, sz),
-    _rp(0),
-    _wp(sz),
-    _state(ok),
-    _longLivedBuffer(longLivedBuffer)
-{ }
+nbostream::nbostream(const void* buf, size_t sz, bool longLivedBuffer)
+    : _wbuf(), _rbuf(buf, sz), _rp(0), _wp(sz), _state(ok), _longLivedBuffer(longLivedBuffer) {}
 
-nbostream_longlivedbuf::nbostream_longlivedbuf(const void * buf, size_t sz) :
-    nbostream(buf, sz, true)
-{ }
+nbostream_longlivedbuf::nbostream_longlivedbuf(const void* buf, size_t sz) : nbostream(buf, sz, true) {}
 
-nbostream_longlivedbuf::nbostream_longlivedbuf(size_t initialSize) :
-    nbostream(initialSize)
-{ }
+nbostream_longlivedbuf::nbostream_longlivedbuf(size_t initialSize) : nbostream(initialSize) {}
 
-nbostream::nbostream(const void * buf, size_t sz) :
-    nbostream(buf, sz, false)
-{ }
+nbostream::nbostream(const void* buf, size_t sz) : nbostream(buf, sz, false) {}
 
-nbostream::nbostream(Alloc && buf, size_t sz) :
-    _wbuf(std::move(buf), sz),
-    _rbuf(_wbuf.data(), sz),
-    _rp(0),
-    _wp(sz),
-    _state(ok),
-    _longLivedBuffer(false)
-{
+nbostream::nbostream(Alloc&& buf, size_t sz)
+    : _wbuf(std::move(buf), sz), _rbuf(_wbuf.data(), sz), _rp(0), _wp(sz), _state(ok), _longLivedBuffer(false) {
     assert(_wbuf.size() >= sz);
 }
 
-nbostream::nbostream(const nbostream & rhs) :
-    _wbuf(),
-    _rbuf(),
-    _rp(0),
-    _wp(0),
-    _state(ok),
-    _longLivedBuffer(false)
-{
+nbostream::nbostream(const nbostream& rhs) : _wbuf(), _rbuf(), _rp(0), _wp(0), _state(ok), _longLivedBuffer(false) {
     extend(rhs.size());
     _wp = rhs.size();
     if (_wp > 0) {
@@ -65,14 +36,13 @@ nbostream::nbostream(const nbostream & rhs) :
     }
 }
 
-nbostream::nbostream(nbostream && rhs) noexcept
+nbostream::nbostream(nbostream&& rhs) noexcept
     : _wbuf(std::move(rhs._wbuf)),
       _rbuf(rhs._rbuf),
       _rp(rhs._rp),
       _wp(rhs._wp),
       _state(rhs._state),
-      _longLivedBuffer(rhs._longLivedBuffer)
-{
+      _longLivedBuffer(rhs._longLivedBuffer) {
     rhs._rp = 0;
     rhs._wp = 0;
     rhs._rbuf = ConstBufferRef();
@@ -87,15 +57,13 @@ nbostream::nbostream(nbostream && rhs) noexcept
     }
 }
 
-nbostream &
-nbostream::operator = (nbostream && rhs) noexcept {
+nbostream& nbostream::operator=(nbostream&& rhs) noexcept {
     nbostream tmp(std::move(rhs));
     swap(tmp);
     return *this;
 }
 
-nbostream &
-nbostream::operator = (const nbostream & rhs) {
+nbostream& nbostream::operator=(const nbostream& rhs) {
     if (this != &rhs) {
         nbostream n(rhs);
         swap(n);
@@ -105,25 +73,21 @@ nbostream::operator = (const nbostream & rhs) {
 
 nbostream::~nbostream() = default;
 
-void nbostream::fail(State s)
-{
+void nbostream::fail(State s) {
     _state = static_cast<State>(_state | s);
-    throw IllegalStateException(make_string("Stream failed bufsize(%zu), readp(%zu), writep(%zu)", _wbuf.size(), _rp, _wp), VESPA_STRLOC);
+    throw IllegalStateException(
+        make_string("Stream failed bufsize(%zu), readp(%zu), writep(%zu)", _wbuf.size(), _rp, _wp), VESPA_STRLOC);
 }
 
-std::ostream & operator << (std::ostream & os, const nbostream & s) {
-    return os << HexDump(&s._rbuf[s._rp], s.left());
-}
+std::ostream& operator<<(std::ostream& os, const nbostream& s) { return os << HexDump(&s._rbuf[s._rp], s.left()); }
 
-void nbostream::reserve(size_t sz)
-{
+void nbostream::reserve(size_t sz) {
     if (capacity() < sz) {
         extend(sz - capacity());
     }
 }
 
-void nbostream::compact()
-{
+void nbostream::compact() {
     if (left() > 0) {
         memmove(_wbuf.data(), &_rbuf[_rp], left());
     }
@@ -131,9 +95,7 @@ void nbostream::compact()
     _rp = 0;
 }
 
-
-void nbostream::extend(size_t extraSize)
-{
+void nbostream::extend(size_t extraSize) {
     if (_wbuf.data() != _rbuf.c_str()) {
         _wbuf.resize(roundUp2inN(_rbuf.size() + extraSize));
         compact();
@@ -148,7 +110,7 @@ void nbostream::extend(size_t extraSize)
     }
 }
 
-void nbostream::swap(Buffer & buf) {
+void nbostream::swap(Buffer& buf) {
     if (_rp != 0) {
         compact();
     }
@@ -160,8 +122,7 @@ void nbostream::swap(Buffer & buf) {
     _state = ok;
 }
 
-void nbostream::swap(nbostream & os)
-{
+void nbostream::swap(nbostream& os) {
     std::swap(_rp, os._rp);
     std::swap(_wp, os._wp);
     std::swap(_state, os._state);
@@ -170,4 +131,4 @@ void nbostream::swap(nbostream & os)
     std::swap(_longLivedBuffer, os._longLivedBuffer);
 }
 
-}
+} // namespace vespalib

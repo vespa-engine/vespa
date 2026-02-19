@@ -36,8 +36,8 @@ class Avx3DlAccelerator : public Avx2Accelerator {
 public:
     ~Avx3DlAccelerator() override = default;
 
-    TargetInfo target_info() const noexcept override;
+    TargetInfo               target_info() const noexcept override;
     const dispatch::FnTable& fn_table() const override;
 };
 
-}
+} // namespace vespalib::hwaccelerated

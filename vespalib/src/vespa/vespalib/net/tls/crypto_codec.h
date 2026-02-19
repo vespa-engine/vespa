@@ -2,10 +2,14 @@
 #pragma once
 
 #include "capability_set.h"
+
 #include <vespa/vespalib/net/socket_address.h>
+
 #include <memory>
 
-namespace vespalib { class SocketSpec; }
+namespace vespalib {
+class SocketSpec;
+}
 
 namespace vespalib::net::tls {
 
@@ -14,12 +18,7 @@ struct HandshakeResult {
     size_t bytes_consumed = 0;
     // Handshake bytes produced that must be sent to the peer.
     size_t bytes_produced = 0;
-    enum class State {
-        Failed,
-        Done,
-        NeedsMorePeerData,
-        NeedsWork
-    };
+    enum class State { Failed, Done, NeedsMorePeerData, NeedsWork };
     State state = State::Failed;
 
     bool failed() const noexcept { return (state == State::Failed); }
@@ -32,7 +31,7 @@ struct EncodeResult {
     size_t bytes_consumed = 0;
     // Ciphertext bytes produced that must be sent to the peer
     size_t bytes_produced = 0;
-    bool failed = true;
+    bool   failed = true;
 };
 
 struct DecodeResult {
@@ -40,12 +39,7 @@ struct DecodeResult {
     size_t bytes_consumed = 0;
     // Plaintext bytes produced.
     size_t bytes_produced = 0;
-    enum class State {
-        Failed,
-        OK,
-        NeedsMorePeerData,
-        Closed
-    };
+    enum class State { Failed, OK, NeedsMorePeerData, Closed };
     State state = State::Failed;
 
     bool closed() const noexcept { return (state == State::Closed); }
@@ -65,9 +59,7 @@ struct PeerCredentials;
  */
 class CryptoCodec {
 public:
-    enum class Mode {
-        Client, Server
-    };
+    enum class Mode { Client, Server };
 
     virtual ~CryptoCodec() = default;
 
@@ -114,8 +106,8 @@ public:
      *                If result.needs_work() it is guaranteed that zero bytes have been
      *                consumed from the from_peer buffer or produced to the to_peer buffer.
      */
-    virtual HandshakeResult handshake(const char* from_peer, size_t from_peer_buf_size,
-                                      char* to_peer, size_t to_peer_buf_size) noexcept = 0;
+    virtual HandshakeResult handshake(
+        const char* from_peer, size_t from_peer_buf_size, char* to_peer, size_t to_peer_buf_size) noexcept = 0;
 
     /*
      * Perform any CPU-heavy handshake operations that have been initiated by handshake().
@@ -146,8 +138,8 @@ public:
      *                Size of written frame is given by result.bytes_produced. This
      *                includes all protocol-specific frame overhead.
      */
-    virtual EncodeResult encode(const char* plaintext, size_t plaintext_size,
-                                char* ciphertext, size_t ciphertext_size) noexcept = 0;
+    virtual EncodeResult encode(
+        const char* plaintext, size_t plaintext_size, char* ciphertext, size_t ciphertext_size) noexcept = 0;
     /*
      * Attempt to decode ciphertext sent by the peer into plaintext. Since
      * ciphertext is sent in frames, it's possible that invoking decode()
@@ -163,8 +155,8 @@ public:
      * Postcondition: if result.state == DecodeResult::State::OK, at least 1
      *                complete frame has been written to the `plaintext` buffer
      */
-    virtual DecodeResult decode(const char* ciphertext, size_t ciphertext_size,
-                                char* plaintext, size_t plaintext_size) noexcept = 0;
+    virtual DecodeResult decode(
+        const char* ciphertext, size_t ciphertext_size, char* plaintext, size_t plaintext_size) noexcept = 0;
 
     /**
      * Encodes a frame into `ciphertext` which signals to the peer that all writes
@@ -195,13 +187,10 @@ public:
      *
      * Throws CryptoException if resources cannot be allocated for the codec.
      */
-    static std::unique_ptr<CryptoCodec>
-    create_default_client_codec(std::shared_ptr<TlsContext> ctx,
-                                const SocketSpec& peer_spec,
-                                const SocketAddress& peer_address);
-    static std::unique_ptr<CryptoCodec>
-    create_default_server_codec(std::shared_ptr<TlsContext> ctx,
-                                const SocketAddress& peer_address);
+    static std::unique_ptr<CryptoCodec> create_default_client_codec(
+        std::shared_ptr<TlsContext> ctx, const SocketSpec& peer_spec, const SocketAddress& peer_address);
+    static std::unique_ptr<CryptoCodec> create_default_server_codec(
+        std::shared_ptr<TlsContext> ctx, const SocketAddress& peer_address);
 };
 
-}
+} // namespace vespalib::net::tls

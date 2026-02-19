@@ -6,9 +6,7 @@
 
 namespace vespalib::portal {
 
-void
-HandleGuard::unlock()
-{
+void HandleGuard::unlock() {
     if (valid()) {
         _manager->unlock(_handle);
         _manager = nullptr;
@@ -16,24 +14,18 @@ HandleGuard::unlock()
     }
 }
 
-HandleGuard::~HandleGuard()
-{
-    unlock();
-}
+HandleGuard::~HandleGuard() { unlock(); }
 
 //-----------------------------------------------------------------------------
 
-HandleManager::Entry::~Entry()
-{
+HandleManager::Entry::~Entry() {
     assert(use_cnt == 0);
     assert(wait_cnt == 0);
 }
 
-void
-HandleManager::unlock(uint64_t handle)
-{
+void HandleManager::unlock(uint64_t handle) {
     std::lock_guard guard(_lock);
-    auto pos = _repo.find(handle);
+    auto            pos = _repo.find(handle);
     assert(pos != _repo.end());
     --pos->second.use_cnt;
     if (pos->second.should_notify()) {
@@ -41,36 +33,25 @@ HandleManager::unlock(uint64_t handle)
     }
 }
 
-HandleManager::HandleManager()
-    : _lock(),
-      _next_handle(1),
-      _repo()
-{
-}
+HandleManager::HandleManager() : _lock(), _next_handle(1), _repo() {}
 
 HandleManager::~HandleManager() = default;
 
-size_t
-HandleManager::size() const
-{
+size_t HandleManager::size() const {
     std::lock_guard guard(_lock);
     return _repo.size();
 }
 
-uint64_t
-HandleManager::create()
-{
+uint64_t HandleManager::create() {
     std::lock_guard guard(_lock);
-    uint64_t handle = _next_handle++;
+    uint64_t        handle = _next_handle++;
     _repo[handle];
     return handle;
 }
 
-HandleGuard
-HandleManager::lock(uint64_t handle)
-{
+HandleGuard HandleManager::lock(uint64_t handle) {
     std::lock_guard guard(_lock);
-    auto pos = _repo.find(handle);
+    auto            pos = _repo.find(handle);
     if (pos == _repo.end()) {
         return HandleGuard();
     }
@@ -81,11 +62,9 @@ HandleManager::lock(uint64_t handle)
     return HandleGuard(*this, handle);
 }
 
-bool
-HandleManager::destroy(uint64_t handle)
-{
+bool HandleManager::destroy(uint64_t handle) {
     std::unique_lock guard(_lock);
-    auto pos = _repo.find(handle);
+    auto             pos = _repo.find(handle);
     if (pos == _repo.end()) {
         return false;
     }

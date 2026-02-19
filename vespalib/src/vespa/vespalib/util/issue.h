@@ -31,39 +31,40 @@ namespace vespalib {
  * Note that the objects binding handlers to threads must not be
  * destructed out of order; just let them go out of scope.
  **/
-class Issue
-{
+class Issue {
 private:
     std::string _message;
+
 public:
     Issue(std::string message);
-    const std::string &message() const { return _message; }
+    const std::string& message() const { return _message; }
     struct Handler {
-        virtual void handle(const Issue &issue) = 0;
+        virtual void handle(const Issue& issue) = 0;
         virtual ~Handler() = default;
     };
-    class Binding
-    {
+    class Binding {
     public:
         struct Link {
-            Handler &handler;
-            Link *next;
+            Handler& handler;
+            Link*    next;
         };
+
     private:
         Link _link;
+
     public:
-        Binding(Handler &handler);
-        Binding(Binding &&) = delete;
-        Binding(const Binding &) = delete;
-        Binding &operator=(Binding &&) = delete;
-        Binding &operator=(const Binding &) = delete;
+        Binding(Handler& handler);
+        Binding(Binding&&) = delete;
+        Binding(const Binding&) = delete;
+        Binding& operator=(Binding&&) = delete;
+        Binding& operator=(const Binding&) = delete;
         ~Binding();
     };
-    static void report(const Issue &issue);
-    static Binding listen(Handler &handler);
-    static void report(std::string msg);
-    static void report(const std::exception &e);
-    static void report(const char *format, ...) __attribute__ ((format (printf,1,2)));
+    static void    report(const Issue& issue);
+    static Binding listen(Handler& handler);
+    static void    report(std::string msg);
+    static void    report(const std::exception& e);
+    static void    report(const char* format, ...) __attribute__((format(printf, 1, 2)));
 };
 
-}
+} // namespace vespalib

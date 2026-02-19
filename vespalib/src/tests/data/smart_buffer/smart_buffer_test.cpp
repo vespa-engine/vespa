@@ -1,18 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 
-void checkMemory(const std::string &expect, const Memory &mem) {
-    EXPECT_EQ(expect, std::string(mem.data, mem.size));
-}
+void checkMemory(const std::string& expect, const Memory& mem) { EXPECT_EQ(expect, std::string(mem.data, mem.size)); }
 
-void checkBuffer(const std::string &expect, SmartBuffer &buf) {
-    GTEST_DO(checkMemory(expect, buf.obtain()));
-}
+void checkBuffer(const std::string& expect, SmartBuffer& buf) { GTEST_DO(checkMemory(expect, buf.obtain())); }
 
-void write_buf(const std::string &str, SmartBuffer &buf) {
+void write_buf(const std::string& str, SmartBuffer& buf) {
     WritableMemory mem = buf.reserve(str.size());
     for (size_t i = 0; i < str.size(); ++i) {
         mem.data[i] = str.data()[i];

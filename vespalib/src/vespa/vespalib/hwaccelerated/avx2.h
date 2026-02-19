@@ -13,8 +13,8 @@ class Avx2Accelerator : public X64GenericAccelerator {
 public:
     ~Avx2Accelerator() override = default;
 
-    TargetInfo target_info() const noexcept override;
+    TargetInfo               target_info() const noexcept override;
     const dispatch::FnTable& fn_table() const override;
 };
 
-}
+} // namespace vespalib::hwaccelerated

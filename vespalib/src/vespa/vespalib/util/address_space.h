@@ -11,8 +11,7 @@ namespace vespalib {
  * Represents an address space with number of bytes/entries used
  * and the limit number of bytes/entries this address space can represent.
  */
-class AddressSpace
-{
+class AddressSpace {
 private:
     size_t _used;
     size_t _dead;
@@ -30,11 +29,11 @@ public:
         }
         return 0;
     }
-    bool operator==(const AddressSpace &rhs) const noexcept {
+    bool operator==(const AddressSpace& rhs) const noexcept {
         return _used == rhs._used && _dead == rhs._dead && _limit == rhs._limit;
     }
 };
 
-std::ostream &operator << (std::ostream &out, const AddressSpace &rhs);
+std::ostream& operator<<(std::ostream& out, const AddressSpace& rhs);
 
-}
+} // namespace vespalib

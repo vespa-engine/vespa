@@ -20,10 +20,10 @@ struct JsonStreamTypes {
 };
 // Use namespace in function to avoid prefixing namespace everywhere.
 namespace jsonstream {
-    using Object = JsonStreamTypes::Object;
-    using Array = JsonStreamTypes::Array;
-    using End = JsonStreamTypes::End;
-}
+using Object = JsonStreamTypes::Object;
+using Array = JsonStreamTypes::Array;
+using End = JsonStreamTypes::End;
+} // namespace jsonstream
 
 // We can disable this if it ends up being a performance issue.
 // Really useful to explain what code bits have tried to write invalid json
@@ -32,37 +32,33 @@ namespace jsonstream {
 
 class JsonStream : public JsonStreamTypes {
     JSONWriter _writer;
-    enum class State {
-        ROOT,
-        OBJECT_EXPECTING_KEY,
-        OBJECT_EXPECTING_VALUE,
-        ARRAY
-    };
+    enum class State { ROOT, OBJECT_EXPECTING_KEY, OBJECT_EXPECTING_VALUE, ARRAY };
     static const char* getStateName(const State&);
     struct StateEntry {
-        State state;
+        State       state;
         std::string object_key;
-        size_t array_index;
+        size_t      array_index;
 
         StateEntry() noexcept;
         StateEntry(State s) noexcept;
         StateEntry(State s, std::string_view key) noexcept;
-        StateEntry(const StateEntry &) noexcept;
-        StateEntry & operator =(const StateEntry &) noexcept;
+        StateEntry(const StateEntry&) noexcept;
+        StateEntry& operator=(const StateEntry&) noexcept;
         ~StateEntry();
     };
     std::vector<StateEntry> _state;
 
-    StateEntry & top() { return _state.back(); }
-    const StateEntry & top() const { return _state.back(); }
-    void pop() { _state.resize(_state.size() - 1); }
-    void push(const StateEntry & e) { _state.push_back(e); }
+    StateEntry&       top() { return _state.back(); }
+    const StateEntry& top() const { return _state.back(); }
+    void              pop() { _state.resize(_state.size() - 1); }
+    void              push(const StateEntry& e) { _state.push_back(e); }
+
 public:
     JsonStream(asciistream&, bool createIndents = false);
     JsonStream(const JsonStream&) = delete;
     JsonStream& operator=(const JsonStream&) = delete;
-    JsonStream(JsonStream &&) = default;
-    JsonStream& operator=(JsonStream &&) = default;
+    JsonStream(JsonStream&&) = default;
+    JsonStream& operator=(JsonStream&&) = default;
     ~JsonStream();
 
     JsonStream& operator<<(std::string_view);
@@ -75,18 +71,13 @@ public:
     JsonStream& operator<<(const Array&);
     JsonStream& operator<<(const End&);
 
-        // Additional functions provided to let compiler work out correct
-        // function without requiring user to cast their value
-    JsonStream& operator<<(unsigned long v)
-        { return operator<<(static_cast<unsigned long long>(v)); }
-    JsonStream& operator<<(unsigned int v)
-        { return operator<<(static_cast<unsigned long long>(v)); }
-    JsonStream& operator<<(long v)
-        { return operator<<(static_cast<long long>(v)); }
-    JsonStream& operator<<(int v)
-        { return operator<<(static_cast<long long>(v)); }
-    JsonStream& operator<<(const char* c)
-        { return operator<<(std::string_view(c)); }
+    // Additional functions provided to let compiler work out correct
+    // function without requiring user to cast their value
+    JsonStream& operator<<(unsigned long v) { return operator<<(static_cast<unsigned long long>(v)); }
+    JsonStream& operator<<(unsigned int v) { return operator<<(static_cast<unsigned long long>(v)); }
+    JsonStream& operator<<(long v) { return operator<<(static_cast<long long>(v)); }
+    JsonStream& operator<<(int v) { return operator<<(static_cast<long long>(v)); }
+    JsonStream& operator<<(const char* c) { return operator<<(std::string_view(c)); }
 
     JsonStream& finalize();
 
@@ -94,8 +85,7 @@ public:
 
 private:
     std::string getStateString() const;
-    void fail(std::string_view error) const;
+    void        fail(std::string_view error) const;
 };
 
-} // vespalib
-
+} // namespace vespalib

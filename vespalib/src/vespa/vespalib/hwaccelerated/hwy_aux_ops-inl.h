@@ -59,11 +59,8 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 // Using raw SVE types mirrors how overloads are done in Highway's `arm_sve-inl.h`
 template <size_t N, int kPow2>
-HWY_API
-void ReorderWidenSub(hn::Simd<int16_t, N, kPow2>,
-                     svint8_t a, svint8_t b,
-                     svint16_t& sub0, svint16_t& sub1) noexcept
-{
+HWY_API void ReorderWidenSub(
+    hn::Simd<int16_t, N, kPow2>, svint8_t a, svint8_t b, svint16_t& sub0, svint16_t& sub1) noexcept {
     sub0 = svsublt_s16(a, b); // Top (odd) lanes
     sub1 = svsublb_s16(a, b); // Bottom (even) lanes
 }
@@ -72,14 +69,13 @@ void ReorderWidenSub(hn::Simd<int16_t, N, kPow2>,
 
 // Generic fallback for reordered widening subtraction
 template <typename D, typename V>
-HWY_API
-void ReorderWidenSub(D d, V a, V b, hn::VFromD<D>& sub0, hn::VFromD<D>& sub1) noexcept {
+HWY_API void ReorderWidenSub(D d, V a, V b, hn::VFromD<D>& sub0, hn::VFromD<D>& sub1) noexcept {
     sub0 = hn::Sub(hn::PromoteLowerTo(d, a), hn::PromoteLowerTo(d, b));
     sub1 = hn::Sub(hn::PromoteUpperTo(d, a), hn::PromoteUpperTo(d, b));
 }
 
-} // HWY_NAMESPACE
-} // vespalib::hwaccelerated
+} // namespace HWY_NAMESPACE
+} // namespace vespalib::hwaccelerated
 HWY_AFTER_NAMESPACE();
 
 #endif // VESPA_HWY_AUX_OPS_INL_H_TARGET

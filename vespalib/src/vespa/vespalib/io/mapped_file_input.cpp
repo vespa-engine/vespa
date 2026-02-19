@@ -1,19 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mapped_file_input.h"
+
 #include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace vespalib {
 
-MappedFileInput::MappedFileInput(const std::string &file_name)
-    : _fd(open(file_name.c_str(), O_RDONLY)),
-      _data((char *)MAP_FAILED),
-      _size(0),
-      _used(0)
-{
+MappedFileInput::MappedFileInput(const std::string& file_name)
+    : _fd(open(file_name.c_str(), O_RDONLY)), _data((char*)MAP_FAILED), _size(0), _used(0) {
     struct stat info;
     if ((_fd != -1) && fstat(_fd, &info) == 0) {
         _data = static_cast<char*>(mmap(nullptr, info.st_size, PROT_READ, MAP_SHARED, _fd, 0));
@@ -27,8 +24,7 @@ MappedFileInput::MappedFileInput(const std::string &file_name)
     }
 }
 
-MappedFileInput::~MappedFileInput()
-{
+MappedFileInput::~MappedFileInput() {
     if (valid()) {
         munmap(_data, _size);
     }
@@ -37,20 +33,11 @@ MappedFileInput::~MappedFileInput()
     }
 }
 
-bool MappedFileInput::valid() const
-{
-    return (_data != MAP_FAILED);
-}
+bool MappedFileInput::valid() const { return (_data != MAP_FAILED); }
 
-Memory
-MappedFileInput::obtain()
-{
-    return Memory((_data + _used), (_size - _used));
-}
+Memory MappedFileInput::obtain() { return Memory((_data + _used), (_size - _used)); }
 
-Input &
-MappedFileInput::evict(size_t bytes)
-{
+Input& MappedFileInput::evict(size_t bytes) {
     _used += bytes;
     return *this;
 }

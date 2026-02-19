@@ -11,8 +11,7 @@ namespace vespalib {
  * the output data itself is owned by the object implementing this
  * interface.
  **/
-struct Output
-{
+struct Output {
     /**
      * Reserve space for more output data. The returned WritableMemory
      * must contain at least the requested number of bytes.
@@ -29,7 +28,7 @@ struct Output
      * @return this object, for chaining
      * @param bytes number of bytes to commit
      **/
-    virtual Output &commit(size_t bytes) = 0;
+    virtual Output& commit(size_t bytes) = 0;
 
     virtual ~Output();
 };

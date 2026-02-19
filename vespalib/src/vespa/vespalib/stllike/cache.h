@@ -2,8 +2,10 @@
 #pragma once
 
 #include "lrucache_map.h"
+
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/relative_frequency_sketch.h>
+
 #include <atomic>
 #include <mutex>
 #include <vector>
@@ -12,12 +14,11 @@ namespace vespalib {
 
 struct CacheStats;
 
-template <typename K, typename V>
-class NullStore {
+template <typename K, typename V> class NullStore {
 public:
     bool read(const K&, V&) const { return false; }
-    void write(const K&, const V&) { }
-    void erase(const K&) { }
+    void write(const K&, const V&) {}
+    void erase(const K&) {}
 };
 
 /**
@@ -28,22 +29,14 @@ public:
  * @param SizeK is the method to get the space needed by the key in addition to what you get with sizeof.
  * @param SizeV is the method to get the space needed by the value in addition to what you get with sizeof.
  */
-template <
-    typename P,
-    typename B,
-    typename sizeK = zero<typename P::Key>,
-    typename sizeV = zero<typename P::Value>
->
+template <typename P, typename B, typename sizeK = zero<typename P::Key>, typename sizeV = zero<typename P::Value>>
 struct CacheParam : P {
     using BackingStore = B;
     using SizeK = sizeK;
     using SizeV = sizeV;
 };
 
-enum class CacheSegment {
-    Probationary,
-    Protected
-};
+enum class CacheSegment { Probationary, Protected };
 
 /**
  * This is a cache using the underlying LRU implementation as the store. It is modelled as a
@@ -88,8 +81,7 @@ enum class CacheSegment {
  * promotion is denied, the candidate element is placed at the LRU head of the probationary
  * segment instead, giving it another chance.
  */
-template <typename P>
-class cache {
+template <typename P> class cache {
     using Lru = lrucache_map<P>;
     friend class SizeConstrainedLru;
     friend class ProbationarySegmentLru;
@@ -103,8 +95,9 @@ class cache {
         cache&              _owner;
         std::atomic<size_t> _size_bytes;
         std::atomic<size_t> _capacity_bytes;
+
     public:
-        using KeyT   = typename P::Key;
+        using KeyT = typename P::Key;
         using ValueT = typename P::Value; // Not to be confused with P::value_type, which is a std::pair
 
         SizeConstrainedLru(cache& owner, size_t capacity_bytes);
@@ -140,34 +133,26 @@ class cache {
         using Lru::trim;
 
         // Invokes functor `fn` for each segment key in LRU order (new to old)
-        template <typename F>
-        void for_each_key(F fn);
+        template <typename F> void for_each_key(F fn);
 
         [[nodiscard]] std::vector<KeyT> dump_segment_keys_in_lru_order();
 
+        using Lru::capacity;
         using Lru::empty;
         using Lru::size;
-        using Lru::capacity;
 
         void set_max_elements(size_t max_elems) { Lru::maxElements(max_elems); }
         void set_capacity_bytes(size_t capacity_bytes) noexcept { _capacity_bytes = capacity_bytes; }
 
-        [[nodiscard]] size_t size_bytes() const noexcept {
-            return _size_bytes.load(std::memory_order_relaxed);
-        }
+        [[nodiscard]] size_t size_bytes() const noexcept { return _size_bytes.load(std::memory_order_relaxed); }
         [[nodiscard]] size_t capacity_bytes() const noexcept {
             return _capacity_bytes.load(std::memory_order_relaxed);
         }
+
     private:
-        void set_size_bytes(size_t new_sz) noexcept {
-            _size_bytes.store(new_sz, std::memory_order_relaxed);
-        }
-        void add_size_bytes(size_t pos_delta) noexcept {
-            set_size_bytes(size_bytes() + pos_delta);
-        }
-        void sub_size_bytes(size_t neg_delta) noexcept {
-            set_size_bytes(size_bytes() - neg_delta);
-        }
+        void set_size_bytes(size_t new_sz) noexcept { _size_bytes.store(new_sz, std::memory_order_relaxed); }
+        void add_size_bytes(size_t pos_delta) noexcept { set_size_bytes(size_bytes() + pos_delta); }
+        void sub_size_bytes(size_t neg_delta) noexcept { set_size_bytes(size_bytes() - neg_delta); }
     };
 
     class ProbationarySegmentLru final : public SizeConstrainedLru {
@@ -193,14 +178,15 @@ class cache {
 
 protected:
     using BackingStore = typename P::BackingStore;
-    using Hash         = typename P::Hash;
-    using K            = typename P::Key;
-    using V            = typename P::Value;
-    using SizeK        = typename P::SizeK;
-    using SizeV        = typename P::SizeV;
-    using value_type   = typename P::value_type;
+    using Hash = typename P::Hash;
+    using K = typename P::Key;
+    using V = typename P::Value;
+    using SizeK = typename P::SizeK;
+    using SizeV = typename P::SizeV;
+    using value_type = typename P::value_type;
+
 public:
-    using key_type     = K;
+    using key_type = K;
 
     cache(BackingStore& backing_store, size_t max_probationary_bytes, size_t max_protected_bytes);
 
@@ -245,17 +231,13 @@ public:
         return _probationary_segment.capacity_bytes() + _protected_segment.capacity_bytes();
     }
     // Thread safe
-    [[nodiscard]] size_t size() const noexcept {
-        return _probationary_segment.size() + _protected_segment.size();
-    }
+    [[nodiscard]] size_t size() const noexcept { return _probationary_segment.size() + _protected_segment.size(); }
     // Thread safe
     [[nodiscard]] size_t sizeBytes() const noexcept {
         return _probationary_segment.size_bytes() + _protected_segment.size_bytes();
     }
     // _Not_ thread safe
-    [[nodiscard]] bool empty() const noexcept {
-        return _probationary_segment.empty() && _protected_segment.empty();
-    }
+    [[nodiscard]] bool empty() const noexcept { return _probationary_segment.empty() && _protected_segment.empty(); }
 
     [[nodiscard]] size_t segment_size(CacheSegment seg) const noexcept;
     [[nodiscard]] size_t segment_size_bytes(CacheSegment seg) const noexcept;
@@ -328,24 +310,22 @@ public:
 
     [[nodiscard]] virtual CacheStats get_stats() const;
 
-    size_t           getHit() const noexcept { return _hit.load(std::memory_order_relaxed); }
-    size_t          getMiss() const noexcept { return _miss.load(std::memory_order_relaxed); }
-    size_t   getNonExisting() const noexcept { return _non_existing.load(std::memory_order_relaxed); }
-    size_t          getRace() const noexcept { return _race.load(std::memory_order_relaxed); }
-    size_t        getInsert() const noexcept { return _insert.load(std::memory_order_relaxed); }
-    size_t         getWrite() const noexcept { return _write.load(std::memory_order_relaxed); }
-    size_t    getInvalidate() const noexcept { return _invalidate.load(std::memory_order_relaxed); }
-    size_t        getLookup() const noexcept { return _lookup.load(std::memory_order_relaxed); }
-    size_t      lfu_dropped() const noexcept { return _lfu_dropped.load(std::memory_order_relaxed); }
+    size_t getHit() const noexcept { return _hit.load(std::memory_order_relaxed); }
+    size_t getMiss() const noexcept { return _miss.load(std::memory_order_relaxed); }
+    size_t getNonExisting() const noexcept { return _non_existing.load(std::memory_order_relaxed); }
+    size_t getRace() const noexcept { return _race.load(std::memory_order_relaxed); }
+    size_t getInsert() const noexcept { return _insert.load(std::memory_order_relaxed); }
+    size_t getWrite() const noexcept { return _write.load(std::memory_order_relaxed); }
+    size_t getInvalidate() const noexcept { return _invalidate.load(std::memory_order_relaxed); }
+    size_t getLookup() const noexcept { return _lookup.load(std::memory_order_relaxed); }
+    size_t lfu_dropped() const noexcept { return _lfu_dropped.load(std::memory_order_relaxed); }
     size_t lfu_not_promoted() const noexcept { return _lfu_not_promoted.load(std::memory_order_relaxed); }
 
     /**
      * Returns the number of bytes that are always implicitly added for each element
      * present in the cache.
-    */
-    [[nodiscard]] constexpr static size_t per_element_fixed_overhead() noexcept {
-        return sizeof(value_type);
-    }
+     */
+    [[nodiscard]] constexpr static size_t per_element_fixed_overhead() noexcept { return sizeof(value_type); }
 
     // For testing. Not const since backing lrucache_map does not have const_iterator
     [[nodiscard]] std::vector<K> dump_segment_keys_in_lru_order(CacheSegment segment);
@@ -353,33 +333,32 @@ public:
 protected:
     using UniqueLock = std::unique_lock<std::mutex>;
     [[nodiscard]] UniqueLock getGuard() const;
-    void invalidate(const UniqueLock& guard, const K& key);
-    [[nodiscard]] bool hasKey(const UniqueLock& guard, const K& key) const;
+    void                     invalidate(const UniqueLock& guard, const K& key);
+    [[nodiscard]] bool       hasKey(const UniqueLock& guard, const K& key) const;
+
 private:
     // Implicitly updates LRU segment(s) on hit.
     // Precondition: _hashLock is held.
     [[nodiscard]] bool try_fill_from_cache(const K& key, V& val_out, const std::lock_guard<std::mutex>& guard);
 
-    [[nodiscard]] bool multi_segment() const noexcept { return _protected_segment.capacity_bytes() != 0; }
-    void lfu_add(const K& key) noexcept;
+    [[nodiscard]] bool    multi_segment() const noexcept { return _protected_segment.capacity_bytes() != 0; }
+    void                  lfu_add(const K& key) noexcept;
     [[nodiscard]] uint8_t lfu_add_and_count(const K& key) noexcept;
-    [[nodiscard]] bool lfu_accepts_insertion(const K& key, const V& value,
-                                             const SizeConstrainedLru& segment,
-                                             uint8_t candidate_freq) const noexcept;
+    [[nodiscard]] bool    lfu_accepts_insertion(
+           const K& key, const V& value, const SizeConstrainedLru& segment, uint8_t candidate_freq) const noexcept;
     [[nodiscard]] bool lfu_accepts_insertion(const K& key, const V& value, const SizeConstrainedLru& segment);
 
-    void trim_segments();
-    void verifyHashLock(const UniqueLock& guard) const;
+    void                 trim_segments();
+    void                 verifyHashLock(const UniqueLock& guard) const;
     [[nodiscard]] size_t calcSize(const K& k, const V& v) const noexcept {
         return per_element_fixed_overhead() + _sizeK(k) + _sizeV(v);
     }
     [[nodiscard]] std::mutex& getLock(const K& k) noexcept {
         size_t h(_hasher(k));
-        return _addLocks[h%(sizeof(_addLocks)/sizeof(_addLocks[0]))];
+        return _addLocks[h % (sizeof(_addLocks) / sizeof(_addLocks[0]))];
     }
 
-    template <typename V>
-    static void increment_stat(std::atomic<V>& v, const std::lock_guard<std::mutex>&) noexcept {
+    template <typename V> static void increment_stat(std::atomic<V>& v, const std::lock_guard<std::mutex>&) noexcept {
         v.store(v.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
     }
     template <typename V>
@@ -407,12 +386,12 @@ private:
     BackingStore&               _store;
     std::unique_ptr<SketchType> _sketch;
 
-    ProbationarySegmentLru      _probationary_segment;
-    ProtectedSegmentLru         _protected_segment;
+    ProbationarySegmentLru _probationary_segment;
+    ProtectedSegmentLru    _protected_segment;
 
-    mutable std::mutex          _hashLock;
+    mutable std::mutex _hashLock;
     // Striped locks that can be used for having locked access to the backing store.
-    std::mutex                  _addLocks[113];
+    std::mutex _addLocks[113];
 };
 
-}
+} // namespace vespalib

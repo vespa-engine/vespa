@@ -1,23 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
-#include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/text/lowercase.h>
 
 using namespace vespalib;
 
-
-template <typename T>
-void assert_span(std::span<const T> left, std::vector<T> right) {
+template <typename T> void assert_span(std::span<const T> left, std::vector<T> right) {
     EXPECT_TRUE(std::equal(left.begin(), left.end(), right.begin(), right.end()));
 }
 
 TEST(FuzzyMatcherTest, get_prefix_edge_cases) {
     assert_span(FuzzyMatcher::get_prefix({1, 2, 3}, 0), {});
-    assert_span(FuzzyMatcher::get_prefix({1, 2, 3}, 1), {1 });
+    assert_span(FuzzyMatcher::get_prefix({1, 2, 3}, 1), {1});
     assert_span(FuzzyMatcher::get_prefix({1, 2, 3}, 2), {1, 2});
     assert_span(FuzzyMatcher::get_prefix({1, 2, 3}, 3), {1, 2, 3});
-    assert_span(FuzzyMatcher::get_prefix({1, 2, 3}, 10),{1, 2, 3});
+    assert_span(FuzzyMatcher::get_prefix({1, 2, 3}, 10), {1, 2, 3});
     assert_span(FuzzyMatcher::get_prefix({}, 0), {});
     assert_span(FuzzyMatcher::get_prefix({}, 10), {});
 }
@@ -29,7 +27,7 @@ TEST(FuzzyMatcherTest, get_suffix_edge_cases) {
     assert_span(FuzzyMatcher::get_suffix({1, 2, 3}, 3), {});
     assert_span(FuzzyMatcher::get_suffix({1, 2, 3}, 10), {});
     assert_span(FuzzyMatcher::get_suffix({}, 0), {});
-    assert_span(FuzzyMatcher::get_suffix({}, 10),{});
+    assert_span(FuzzyMatcher::get_suffix({}, 10), {});
 }
 
 TEST(FuzzyMatcherTest, fuzzy_match_empty_prefix) {

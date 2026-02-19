@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "transport_security_options_reading.h"
+
+#include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
-#include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/net/tls/capability_set.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/util/exceptions.h>
+
 #include <filesystem>
 
 namespace vespalib::net::tls {
@@ -41,7 +43,8 @@ namespace {
 
 void verify_referenced_file_exists(const std::string& file_path) {
     if (!std::filesystem::exists(std::filesystem::path(file_path))) {
-        throw IllegalArgumentException(make_string("File '%s' referenced by TLS config does not exist", file_path.c_str()));
+        throw IllegalArgumentException(
+            make_string("File '%s' referenced by TLS config does not exist", file_path.c_str()));
     }
 }
 
@@ -55,7 +58,7 @@ std::string load_file_referenced_by_field(const Inspector& cursor, const char* f
 }
 
 RequiredPeerCredential parse_peer_credential(const Inspector& req_entry) {
-    auto field_string = req_entry["field"].asString().make_string();
+    auto                          field_string = req_entry["field"].asString().make_string();
     RequiredPeerCredential::Field field;
     if (field_string == "CN") {
         field = RequiredPeerCredential::Field::CN;
@@ -64,9 +67,8 @@ RequiredPeerCredential parse_peer_credential(const Inspector& req_entry) {
     } else if (field_string == "SAN_URI") {
         field = RequiredPeerCredential::Field::SAN_URI;
     } else {
-        throw IllegalArgumentException(make_string(
-                "Unsupported credential field type: '%s'. Supported are: CN, SAN_DNS",
-                field_string.c_str()));
+        throw IllegalArgumentException(
+            make_string("Unsupported credential field type: '%s'. Supported are: CN, SAN_DNS", field_string.c_str()));
     }
     auto match = req_entry["must-match"].asString().make_string();
     return RequiredPeerCredential(field, std::move(match));
@@ -103,7 +105,7 @@ CapabilitySet parse_capabilities(const Inspector& caps) {
 
 PeerPolicy parse_peer_policy(const Inspector& peer_entry) {
     auto required_creds = parse_peer_credentials(peer_entry["required-credentials"]);
-    auto capabilities   = parse_capabilities(peer_entry["capabilities"]);
+    auto capabilities = parse_capabilities(peer_entry["capabilities"]);
     return {std::move(required_creds), std::move(capabilities)};
 }
 
@@ -136,7 +138,7 @@ std::vector<std::string> parse_accepted_ciphers(const Inspector& accepted_cipher
 
 std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
     Slime root;
-    auto parsed = slime::JsonFormat::decode(input, root);
+    auto  parsed = slime::JsonFormat::decode(input, root);
     if (parsed == 0) {
         throw IllegalArgumentException("Provided TLS config file is not valid JSON");
     }
@@ -148,7 +150,7 @@ std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
     // TLS context code which actually tries to extract key and certificate material
     // from them.
     auto ca_certs = load_file_referenced_by_field(files, "ca-certificates");
-    auto certs    = load_file_referenced_by_field(files, "certificates");
+    auto certs = load_file_referenced_by_field(files, "certificates");
     auto priv_key = load_file_referenced_by_field(files, "private-key");
     auto authorized_peers = parse_authorized_peers(root["authorized-peers"]);
     auto accepted_ciphers = parse_accepted_ciphers(root["accepted-ciphers"]);
@@ -160,18 +162,18 @@ std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
     }
 
     auto options = std::make_unique<TransportSecurityOptions>(
-            TransportSecurityOptions::Params()
-                .ca_certs_pem(ca_certs)
-                .cert_chain_pem(certs)
-                .private_key_pem(priv_key)
-                .authorized_peers(std::move(authorized_peers))
-                .accepted_ciphers(std::move(accepted_ciphers))
-                .disable_hostname_validation(disable_hostname_validation));
+        TransportSecurityOptions::Params()
+            .ca_certs_pem(ca_certs)
+            .cert_chain_pem(certs)
+            .private_key_pem(priv_key)
+            .authorized_peers(std::move(authorized_peers))
+            .accepted_ciphers(std::move(accepted_ciphers))
+            .disable_hostname_validation(disable_hostname_validation));
     secure_memzero(&priv_key[0], priv_key.size());
     return options;
 }
 
-} // anon ns
+} // namespace
 
 std::unique_ptr<TransportSecurityOptions> read_options_from_json_string(const std::string& json_data) {
     MemoryInput file_input(json_data);
@@ -186,4 +188,4 @@ std::unique_ptr<TransportSecurityOptions> read_options_from_json_file(const std:
     return load_from_input(file_input);
 }
 
-}
+} // namespace vespalib::net::tls

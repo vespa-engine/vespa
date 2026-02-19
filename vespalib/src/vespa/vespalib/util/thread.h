@@ -3,15 +3,16 @@
 #pragma once
 
 #include "runnable.h"
-#include <thread>
+
 #include <concepts>
+#include <thread>
 
 namespace vespalib {
 
 namespace thread {
-[[nodiscard]] std::thread start(Runnable &runnable, Runnable::init_fun_t init_fun);
-size_t as_zu(std::thread::id id);
-}
+[[nodiscard]] std::thread start(Runnable& runnable, Runnable::init_fun_t init_fun);
+size_t                    as_zu(std::thread::id id);
+} // namespace thread
 
 /**
  * Keeps track of multiple running threads. Calling join will join all
@@ -21,27 +22,28 @@ size_t as_zu(std::thread::id id);
 class ThreadPool {
 private:
     std::vector<std::thread> _threads;
+
 public:
     ThreadPool() noexcept : _threads() {}
-    void start(Runnable &runnable, Runnable::init_fun_t init_fun) {
+    void start(Runnable& runnable, Runnable::init_fun_t init_fun) {
         reserve(size() + 1);
         _threads.push_back(thread::start(runnable, std::move(init_fun)));
     }
-    template<typename F, typename... Args>
-    requires std::invocable<F,Args...>
-    void start(F &&f, Args && ... args) {
+    template <typename F, typename... Args>
+        requires std::invocable<F, Args...>
+    void start(F&& f, Args&&... args) {
         reserve(size() + 1);
         _threads.emplace_back(std::forward<F>(f), std::forward<Args>(args)...);
     };
-    void reserve(size_t capacity) { _threads.reserve(capacity); }
+    void   reserve(size_t capacity) { _threads.reserve(capacity); }
     size_t size() const { return _threads.size(); }
-    bool empty() const { return _threads.empty(); }
-    void join() {
-        for (auto &thread: _threads) {
+    bool   empty() const { return _threads.empty(); }
+    void   join() {
+        for (auto& thread : _threads) {
             thread.join();
         }
         _threads.clear();
     }
 };
 
-}
+} // namespace vespalib

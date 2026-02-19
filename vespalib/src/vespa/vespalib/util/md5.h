@@ -8,9 +8,8 @@
 
 #ifdef __cplusplus
 extern "C" {
-void fastc_md5sum(const void *s, size_t len, unsigned char *key);
+void fastc_md5sum(const void* s, size_t len, unsigned char* key);
 }
 #else
-void fastc_md5sum(const void *s, size_t len, unsigned char *key);
+void fastc_md5sum(const void* s, size_t len, unsigned char* key);
 #endif
-

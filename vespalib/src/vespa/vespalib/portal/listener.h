@@ -3,22 +3,24 @@
 #pragma once
 
 #include "reactor.h"
+
 #include <vespa/vespalib/net/server_socket.h>
+
 #include <functional>
 
 namespace vespalib::portal {
 
-class Listener : public Reactor::EventHandler
-{
+class Listener : public Reactor::EventHandler {
 private:
-    ServerSocket _server_socket;
+    ServerSocket                      _server_socket;
     std::function<void(SocketHandle)> _handler;
-    Reactor::Token::UP _token;
+    Reactor::Token::UP                _token;
+
 public:
     using UP = std::unique_ptr<Listener>;
-    Listener(Reactor &reactor, int port, std::function<void(SocketHandle)> handler);
+    Listener(Reactor& reactor, int port, std::function<void(SocketHandle)> handler);
     ~Listener();
-    int listen_port() const { return _server_socket.address().port(); }
+    int  listen_port() const { return _server_socket.address().port(); }
     void handle_event(bool read, bool write) override;
 };
 

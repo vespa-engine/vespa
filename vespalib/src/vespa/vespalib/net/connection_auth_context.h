@@ -3,17 +3,17 @@
 #pragma once
 
 // TODO consider moving out of tls sub-namespace
-#include <vespa/vespalib/net/tls/peer_credentials.h>
 #include <vespa/vespalib/net/tls/capability_set.h>
+#include <vespa/vespalib/net/tls/peer_credentials.h>
 
 namespace vespalib::net {
 
 class ConnectionAuthContext {
     tls::PeerCredentials _peer_credentials;
     tls::CapabilitySet   _capabilities;
+
 public:
-    ConnectionAuthContext(tls::PeerCredentials peer_credentials,
-                          tls::CapabilitySet capabilities) noexcept;
+    ConnectionAuthContext(tls::PeerCredentials peer_credentials, tls::CapabilitySet capabilities) noexcept;
 
     ConnectionAuthContext(const ConnectionAuthContext&);
     ConnectionAuthContext& operator=(const ConnectionAuthContext&);
@@ -23,7 +23,7 @@ public:
     ~ConnectionAuthContext();
 
     const tls::PeerCredentials& peer_credentials() const noexcept { return _peer_credentials; }
-    const tls::CapabilitySet& capabilities() const noexcept { return _capabilities; }
+    const tls::CapabilitySet&   capabilities() const noexcept { return _capabilities; }
 };
 
-}
+} // namespace vespalib::net

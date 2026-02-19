@@ -1,14 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "http_server.h"
-#include <vespa/vespalib/net/crypto_engine.h>
+
 #include <vespa/vespalib/net/connection_auth_context.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 namespace vespalib {
 
-void
-HttpServer::get(Portal::GetRequest req)
-{
+void HttpServer::get(Portal::GetRequest req) {
     auto response = _handler_repo.get(req.get_host(), req.get_path(), req.export_params(), req.auth_context());
     if (response.failed()) {
         req.respond_with_error(response.status_code(), response.status_message());
@@ -22,13 +21,8 @@ HttpServer::get(Portal::GetRequest req)
 HttpServer::HttpServer(int port_in)
     : _handler_repo(),
       _server(Portal::create(CryptoEngine::get_default(), port_in)),
-      _root(_server->bind("/", *this))
-{
-}
+      _root(_server->bind("/", *this)) {}
 
-HttpServer::~HttpServer()
-{
-    _root.reset();
-}
+HttpServer::~HttpServer() { _root.reset(); }
 
 } // namespace vespalib

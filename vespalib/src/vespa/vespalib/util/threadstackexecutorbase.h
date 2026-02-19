@@ -2,38 +2,35 @@
 
 #pragma once
 
+#include "arrayqueue.hpp"
+#include "eventbarrier.hpp"
+#include "executor_idle_tracking.h"
+#include "gate.h"
 #include "thread.h"
 #include "threadexecutor.h"
-#include "eventbarrier.hpp"
-#include "arrayqueue.hpp"
-#include "gate.h"
-#include "executor_idle_tracking.h"
-#include <vector>
+
 #include <functional>
+#include <vector>
 
 namespace vespalib {
 
 /**
  * An executor service that executes tasks in multiple threads.
  **/
-class ThreadStackExecutorBase : public SyncableThreadExecutor,
-                                public Runnable
-{
+class ThreadStackExecutorBase : public SyncableThreadExecutor, public Runnable {
 public:
     using unique_lock = std::unique_lock<std::mutex>;
 
 private:
-
     struct TaggedTask {
         Task::UP task;
         uint32_t token;
         TaggedTask() : task(nullptr), token(0) {}
-        TaggedTask(Task::UP task_in, uint32_t token_in)
-            : task(std::move(task_in)), token(token_in) {}
-        TaggedTask(TaggedTask &&rhs) = default;
-        TaggedTask(const TaggedTask &rhs) = delete;
-        TaggedTask &operator=(const TaggedTask &rhs) = delete;
-        TaggedTask &operator=(TaggedTask &&rhs) {
+        TaggedTask(Task::UP task_in, uint32_t token_in) : task(std::move(task_in)), token(token_in) {}
+        TaggedTask(TaggedTask&& rhs) = default;
+        TaggedTask(const TaggedTask& rhs) = delete;
+        TaggedTask& operator=(const TaggedTask& rhs) = delete;
+        TaggedTask& operator=(TaggedTask&& rhs) {
             assert(task.get() == nullptr); // no overwrites
             task = std::move(rhs.task);
             token = rhs.token;
@@ -59,34 +56,34 @@ private:
     };
 
     struct BlockedThread {
-        const uint32_t wait_task_count;
-        mutable std::mutex lock;
+        const uint32_t                  wait_task_count;
+        mutable std::mutex              lock;
         mutable std::condition_variable cond;
-        bool blocked;
+        bool                            blocked;
         BlockedThread(uint32_t wait_task_count_in)
             : wait_task_count(wait_task_count_in), lock(), cond(), blocked(true) {}
         void wait() const;
         void unblock();
     };
 
-    ThreadPool                           _pool;
-    mutable std::mutex                   _lock;
-    std::condition_variable              _cond;
-    ExecutorStats                        _stats;
-    ExecutorIdleTracker                  _idleTracker;
-    Gate                                 _executorCompletion;
-    ArrayQueue<TaggedTask>               _tasks;
-    ArrayQueue<Worker*>                  _workers;
-    std::vector<BlockedThread*>          _blocked;
-    EventBarrier<BarrierCompletion>      _barrier;
-    uint32_t                             _taskCount;
-    uint32_t                             _taskLimit;
-    bool                                 _closed;
-    init_fun_t                           _init_fun;
-    static thread_local ThreadStackExecutorBase *_master;
+    ThreadPool                                   _pool;
+    mutable std::mutex                           _lock;
+    std::condition_variable                      _cond;
+    ExecutorStats                                _stats;
+    ExecutorIdleTracker                          _idleTracker;
+    Gate                                         _executorCompletion;
+    ArrayQueue<TaggedTask>                       _tasks;
+    ArrayQueue<Worker*>                          _workers;
+    std::vector<BlockedThread*>                  _blocked;
+    EventBarrier<BarrierCompletion>              _barrier;
+    uint32_t                                     _taskCount;
+    uint32_t                                     _taskLimit;
+    bool                                         _closed;
+    init_fun_t                                   _init_fun;
+    static thread_local ThreadStackExecutorBase* _master;
 
-    void block_thread(const unique_lock &, BlockedThread &blocked_thread);
-    void unblock_threads(const unique_lock &);
+    void block_thread(const unique_lock&, BlockedThread& blocked_thread);
+    void unblock_threads(const unique_lock&);
 
     /**
      * Assign the given task to the given idle worker. This will wake
@@ -95,7 +92,7 @@ private:
      * @param task the task to assign
      * @param worker an idle worker
      **/
-    void assignTask(TaggedTask task, Worker &worker);
+    void assignTask(TaggedTask task, Worker& worker);
 
     /**
      * Obtain a new task to be run by the given worker.  This function
@@ -105,7 +102,7 @@ private:
      * @return true if a task was obtained, false if we are done
      * @param worker the worker looking for work
      **/
-    bool obtainTask(Worker &worker);
+    bool obtainTask(Worker& worker);
 
     // Runnable (all workers live here)
     void run() override;
@@ -115,14 +112,14 @@ protected:
      * This will tell if a task will be accepted or not.
      * An implementation might decide to block.
      */
-    virtual bool acceptNewTask(unique_lock & guard, std::condition_variable & cond) = 0;
+    virtual bool acceptNewTask(unique_lock& guard, std::condition_variable& cond) = 0;
 
     /**
      * If blocking implementation, this might wake up any waiters.
      *
      * @param monitor to use for signaling.
      */
-    virtual void wakeup(unique_lock & guard, std::condition_variable & cond) = 0;
+    virtual void wakeup(unique_lock& guard, std::condition_variable& cond) = 0;
 
     /**
      *  Will tell you if the executor has been closed for new tasks.
@@ -171,8 +168,8 @@ protected:
     void internalSetTaskLimit(uint32_t taskLimit);
 
 public:
-    ThreadStackExecutorBase(const ThreadStackExecutorBase &) = delete;
-    ThreadStackExecutorBase & operator = (const ThreadStackExecutorBase &) = delete;
+    ThreadStackExecutorBase(const ThreadStackExecutorBase&) = delete;
+    ThreadStackExecutorBase& operator=(const ThreadStackExecutorBase&) = delete;
 
     /**
      * Returns the number of idle workers. This is mostly useful for testing.
@@ -190,7 +187,7 @@ public:
      *
      * @return this object; for chaining
      **/
-    ThreadStackExecutorBase &sync() override;
+    ThreadStackExecutorBase& sync() override;
 
     /**
      * Block the calling thread until the current task count is equal
@@ -200,8 +197,8 @@ public:
      **/
     void wait_for_task_count(uint32_t task_count);
 
-    size_t getNumThreads() const override;
-    void setTaskLimit(uint32_t taskLimit) override;
+    size_t   getNumThreads() const override;
+    void     setTaskLimit(uint32_t taskLimit) override;
     uint32_t getTaskLimit() const override;
 
     void wakeup() override;
@@ -212,7 +209,7 @@ public:
      *
      * @return this object; for chaining
      **/
-    ThreadStackExecutorBase &shutdown() override;
+    ThreadStackExecutorBase& shutdown() override;
 
     /**
      * Will invoke shutdown then sync.

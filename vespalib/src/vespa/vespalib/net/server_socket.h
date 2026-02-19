@@ -2,36 +2,37 @@
 
 #pragma once
 
-#include "socket_handle.h"
 #include "socket_address.h"
+#include "socket_handle.h"
+
 #include <atomic>
 
 namespace vespalib {
 
 class SocketSpec;
 
-class ServerSocket
-{
+class ServerSocket {
 private:
-    SocketHandle _handle;
-    std::string _path;
-    bool _blocking;
+    SocketHandle      _handle;
+    std::string       _path;
+    bool              _blocking;
     std::atomic<bool> _shutdown;
 
     void cleanup();
+
 public:
     ServerSocket() : _handle(), _path(), _blocking(false), _shutdown(false) {}
-    explicit ServerSocket(const SocketSpec &spec);
-    explicit ServerSocket(const std::string &spec);
+    explicit ServerSocket(const SocketSpec& spec);
+    explicit ServerSocket(const std::string& spec);
     explicit ServerSocket(int port);
-    ServerSocket(ServerSocket &&rhs);
-    ServerSocket &operator=(ServerSocket &&rhs);
+    ServerSocket(ServerSocket&& rhs);
+    ServerSocket& operator=(ServerSocket&& rhs);
     ~ServerSocket() { cleanup(); }
-    bool valid() const { return _handle.valid(); }
-    int get_fd() const { return _handle.get(); }
+    bool          valid() const { return _handle.valid(); }
+    int           get_fd() const { return _handle.get(); }
     SocketAddress address() const;
-    void shutdown();
-    bool set_blocking(bool value) {
+    void          shutdown();
+    bool          set_blocking(bool value) {
         _blocking = value;
         return true;
     }

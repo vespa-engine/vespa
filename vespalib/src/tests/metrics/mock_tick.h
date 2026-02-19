@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/metrics/clock.h>
+
 #include <atomic>
+#include <cassert>
 #include <condition_variable>
 #include <mutex>
-#include <vespa/vespalib/metrics/clock.h>
-#include <cassert>
 
 namespace vespalib::metrics {
 
@@ -17,7 +18,7 @@ private:
     struct Value {
         Value() noexcept : value(0.0), valid(false) {}
         TimeStamp value;
-        bool    valid;
+        bool      valid;
     };
 
     TimeStamp               _first_value;
@@ -27,7 +28,7 @@ private:
     Value                   _prev;
     Value                   _next;
 
-    void push(Value &dst, TimeStamp value) {
+    void push(Value& dst, TimeStamp value) {
         Guard guard(_lock);
         while (_alive && dst.valid) {
             _cond.wait(guard);
@@ -37,7 +38,7 @@ private:
         _cond.notify_one();
     }
 
-    TimeStamp pop(Value &src) {
+    TimeStamp pop(Value& src) {
         Guard guard(_lock);
         while (_alive && !src.valid) {
             _cond.wait(guard);
@@ -47,7 +48,7 @@ private:
         return src.value;
     }
 
-    TimeStamp peek(const Value &src) {
+    TimeStamp peek(const Value& src) {
         Guard guard(_lock);
         while (_alive && !src.valid) {
             _cond.wait(guard);
@@ -81,12 +82,13 @@ public:
 class TickProxy : public Tick {
 private:
     std::shared_ptr<Tick> _tick;
+
 public:
     explicit TickProxy(std::shared_ptr<Tick> tick) noexcept : _tick(std::move(tick)) {}
     TimeStamp first() override { return _tick->first(); }
     TimeStamp next(TimeStamp prev) override { return _tick->next(prev); }
-    bool alive() const override { return _tick->alive(); }
-    void kill() override { _tick->kill(); }
+    bool      alive() const override { return _tick->alive(); }
+    void      kill() override { _tick->kill(); }
 };
 
 } // namespace vespalib::metrics

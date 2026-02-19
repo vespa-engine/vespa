@@ -23,30 +23,24 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 // Accumulator adding by arithmetic sum of two vectors
 struct VecAdd {
-    HWY_INLINE auto operator()(auto lhs, auto rhs) const noexcept {
-        return hn::Add(lhs, rhs);
-    }
+    HWY_INLINE auto operator()(auto lhs, auto rhs) const noexcept { return hn::Add(lhs, rhs); }
 };
 
 // Accumulator reduction by summing across all vector lanes of `accu`.
 struct LaneReduceSum {
-    HWY_INLINE auto operator()(auto d0, auto accu) const noexcept {
-        return hn::ReduceSum(d0, accu);
-    }
+    HWY_INLINE auto operator()(auto d0, auto accu) const noexcept { return hn::ReduceSum(d0, accu); }
 };
 
 // The counter for the current intra-loop trip counter in an unrolled loop body.
 // E.g. for a loop with an unroll factor of 4, the dispatcher function will
 // be instantiated with IterNum<N> with N in {0, 1, 2, 3}.
-template <size_t N>
-struct IterNum {
+template <size_t N> struct IterNum {
     static constexpr size_t value = N;
 };
 
 // The number of accumulators that a kernel function should be invoked with, i.e.
 // its accumulator arity.
-template <size_t N>
-struct FnAccuArity {
+template <size_t N> struct FnAccuArity {
     static constexpr size_t value = N;
 };
 
@@ -78,10 +72,8 @@ struct FnAccuArity {
 // 4-way accumulator dispatch
 
 template <size_t Idx, typename KernelFn, typename VecT, typename AccuV>
-HWY_INLINE
-void dispatch(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
-              AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept
-{
+HWY_INLINE void dispatch(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec, AccuV& accu0, AccuV& accu1,
+                         AccuV& accu2, AccuV& accu3) noexcept {
     constexpr size_t my_idx = Idx % 4;
     if constexpr (my_idx == 0) {
         kernel_fn(vec, accu0);
@@ -95,10 +87,8 @@ void dispatch(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
 }
 
 template <size_t Idx, typename KernelFn, typename LhsT, typename RhsT, typename AccuV>
-HWY_INLINE
-void dispatch_pairwise(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
-                       AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept
-{
+HWY_INLINE void dispatch_pairwise(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
+                                  AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept {
     constexpr size_t my_idx = Idx % 4;
     if constexpr (my_idx == 0) {
         kernel_fn(lhs, rhs, accu0);
@@ -112,10 +102,8 @@ void dispatch_pairwise(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT 
 }
 
 template <size_t Idx, typename KernelFn, typename VecT, typename AccuV>
-HWY_INLINE
-void dispatch(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
-              AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept
-{
+HWY_INLINE void dispatch(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec, AccuV& accu0, AccuV& accu1,
+                         AccuV& accu2, AccuV& accu3) noexcept {
     constexpr size_t my_idx = Idx % 2;
     if constexpr (my_idx == 0) {
         kernel_fn(vec, accu0, accu1);
@@ -125,10 +113,8 @@ void dispatch(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
 }
 
 template <size_t Idx, typename KernelFn, typename LhsT, typename RhsT, typename AccuV>
-HWY_INLINE
-void dispatch_pairwise(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
-                       AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept
-{
+HWY_INLINE void dispatch_pairwise(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
+                                  AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept {
     constexpr size_t my_idx = Idx % 2;
     if constexpr (my_idx == 0) {
         kernel_fn(lhs, rhs, accu0, accu1);
@@ -138,29 +124,23 @@ void dispatch_pairwise(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT 
 }
 
 template <size_t Idx, typename KernelFn, typename VecT, typename AccuV>
-HWY_INLINE
-void dispatch(FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
-              AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept
-{
+HWY_INLINE void dispatch(FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec, AccuV& accu0, AccuV& accu1,
+                         AccuV& accu2, AccuV& accu3) noexcept {
     kernel_fn(vec, accu0, accu1, accu2, accu3);
 }
 
 template <size_t Idx, typename KernelFn, typename LhsT, typename RhsT, typename AccuV>
-HWY_INLINE
-void dispatch_pairwise(FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
-                       AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept
-{
+HWY_INLINE void dispatch_pairwise(FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
+                                  AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3) noexcept {
     kernel_fn(lhs, rhs, accu0, accu1, accu2, accu3);
 }
 
 // 8-way accumulator dispatch
 
 template <size_t Idx, typename KernelFn, typename VecT, typename AccuV>
-HWY_INLINE
-void dispatch(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
-              AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3,
-              AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept
-{
+HWY_INLINE void dispatch(
+    FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec, AccuV& accu0, AccuV& accu1, AccuV& accu2,
+    AccuV& accu3, AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept {
     constexpr size_t my_idx = Idx % 8;
     if constexpr (my_idx == 0) {
         kernel_fn(vec, accu0);
@@ -182,11 +162,9 @@ void dispatch(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
 }
 
 template <size_t Idx, typename KernelFn, typename LhsT, typename RhsT, typename AccuV>
-HWY_INLINE
-void dispatch_pairwise(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
-                       AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3,
-                       AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept
-{
+HWY_INLINE void dispatch_pairwise(
+    FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs, AccuV& accu0, AccuV& accu1, AccuV& accu2,
+    AccuV& accu3, AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept {
     constexpr size_t my_idx = Idx % 8;
     if constexpr (my_idx == 0) {
         kernel_fn(lhs, rhs, accu0);
@@ -208,11 +186,9 @@ void dispatch_pairwise(FnAccuArity<1>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT 
 }
 
 template <size_t Idx, typename KernelFn, typename VecT, typename AccuV>
-HWY_INLINE
-void dispatch(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
-              AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3,
-              AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept
-{
+HWY_INLINE void dispatch(
+    FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec, AccuV& accu0, AccuV& accu1, AccuV& accu2,
+    AccuV& accu3, AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept {
     constexpr size_t my_idx = Idx % 4;
     if constexpr (my_idx == 0) {
         kernel_fn(vec, accu0, accu1);
@@ -226,11 +202,9 @@ void dispatch(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
 }
 
 template <size_t Idx, typename KernelFn, typename LhsT, typename RhsT, typename AccuV>
-HWY_INLINE
-void dispatch_pairwise(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
-                       AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3,
-                       AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept
-{
+HWY_INLINE void dispatch_pairwise(
+    FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs, AccuV& accu0, AccuV& accu1, AccuV& accu2,
+    AccuV& accu3, AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept {
     constexpr size_t my_idx = Idx % 4;
     if constexpr (my_idx == 0) {
         kernel_fn(lhs, rhs, accu0, accu1);
@@ -244,11 +218,9 @@ void dispatch_pairwise(FnAccuArity<2>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT 
 }
 
 template <size_t Idx, typename KernelFn, typename VecT, typename AccuV>
-HWY_INLINE
-void dispatch(FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
-              AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3,
-              AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept
-{
+HWY_INLINE void dispatch(
+    FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec, AccuV& accu0, AccuV& accu1, AccuV& accu2,
+    AccuV& accu3, AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept {
     constexpr size_t my_idx = Idx % 2;
     if constexpr (my_idx == 0) {
         kernel_fn(vec, accu0, accu1, accu2, accu3);
@@ -258,11 +230,9 @@ void dispatch(FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
 }
 
 template <size_t Idx, typename KernelFn, typename LhsT, typename RhsT, typename AccuV>
-HWY_INLINE
-void dispatch_pairwise(FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
-                       AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3,
-                       AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept
-{
+HWY_INLINE void dispatch_pairwise(
+    FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs, AccuV& accu0, AccuV& accu1, AccuV& accu2,
+    AccuV& accu3, AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept {
     constexpr size_t my_idx = Idx % 2;
     if constexpr (my_idx == 0) {
         kernel_fn(lhs, rhs, accu0, accu1, accu2, accu3);
@@ -272,20 +242,16 @@ void dispatch_pairwise(FnAccuArity<4>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT 
 }
 
 template <size_t Idx, typename KernelFn, typename VecT, typename AccuV>
-HWY_INLINE
-void dispatch(FnAccuArity<8>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec,
-              AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3,
-              AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept
-{
+HWY_INLINE void dispatch(
+    FnAccuArity<8>, IterNum<Idx>, KernelFn&& kernel_fn, VecT vec, AccuV& accu0, AccuV& accu1, AccuV& accu2,
+    AccuV& accu3, AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept {
     kernel_fn(vec, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7);
 }
 
 template <size_t Idx, typename KernelFn, typename LhsT, typename RhsT, typename AccuV>
-HWY_INLINE
-void dispatch_pairwise(FnAccuArity<8>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs,
-                       AccuV& accu0, AccuV& accu1, AccuV& accu2, AccuV& accu3,
-                       AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept
-{
+HWY_INLINE void dispatch_pairwise(
+    FnAccuArity<8>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT lhs, RhsT rhs, AccuV& accu0, AccuV& accu1, AccuV& accu2,
+    AccuV& accu3, AccuV& accu4, AccuV& accu5, AccuV& accu6, AccuV& accu7) noexcept {
     kernel_fn(lhs, rhs, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7);
 }
 
@@ -297,26 +263,22 @@ void dispatch_pairwise(FnAccuArity<8>, IterNum<Idx>, KernelFn&& kernel_fn, LhsT 
 // to the unroll trip counter. This can then be used by the dispatcher function to choose
 // which accumulator to use for this particular instantiation and kernel accumulator arity.
 
-template <size_t UnrollFactor>
-struct UnrolledLoopBody;
+template <size_t UnrollFactor> struct UnrolledLoopBody;
 
-template <>
-struct UnrolledLoopBody<1> {
+template <> struct UnrolledLoopBody<1> {
     template <size_t Arity, typename D, typename T, typename KernelFn, typename... AccuVecs>
-    HWY_INLINE
-    static void elementwise_load_and_dispatch(const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a,
-                                              size_t i, const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept
-    {
+    HWY_INLINE static void elementwise_load_and_dispatch(
+        const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, size_t i, const size_t N, KernelFn kernel_fn,
+        AccuVecs&&... accu_vecs) noexcept {
         (void)N;
         const auto a0 = hn::LoadU(d, a + i);
         dispatch(arity, IterNum<0>{}, kernel_fn, a0, std::forward<AccuVecs>(accu_vecs)...);
     }
 
     template <size_t Arity, typename D, typename T, typename KernelFn, typename... AccuVecs>
-    HWY_INLINE
-    static void pairwise_load_and_dispatch(const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b,
-                                           size_t i, const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept
-    {
+    HWY_INLINE static void pairwise_load_and_dispatch(
+        const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, size_t i,
+        const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept {
         (void)N;
         const auto a0 = hn::LoadU(d, a + i);
         const auto b0 = hn::LoadU(d, b + i);
@@ -324,13 +286,11 @@ struct UnrolledLoopBody<1> {
     }
 };
 
-template <>
-struct UnrolledLoopBody<2> {
+template <> struct UnrolledLoopBody<2> {
     template <size_t Arity, typename D, typename T, typename KernelFn, typename... AccuVecs>
-    HWY_INLINE
-    static void elementwise_load_and_dispatch(const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a,
-                                              size_t i, const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept
-    {
+    HWY_INLINE static void elementwise_load_and_dispatch(
+        const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, size_t i, const size_t N, KernelFn kernel_fn,
+        AccuVecs&&... accu_vecs) noexcept {
         const auto a0 = hn::LoadU(d, a + i);
         i += N;
         dispatch(arity, IterNum<0>{}, kernel_fn, a0, std::forward<AccuVecs>(accu_vecs)...);
@@ -339,10 +299,9 @@ struct UnrolledLoopBody<2> {
     }
 
     template <size_t Arity, typename D, typename T, typename KernelFn, typename... AccuVecs>
-    HWY_INLINE
-    static void pairwise_load_and_dispatch(const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b,
-                                           size_t i, const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept
-    {
+    HWY_INLINE static void pairwise_load_and_dispatch(
+        const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, size_t i,
+        const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept {
         const auto a0 = hn::LoadU(d, a + i);
         const auto b0 = hn::LoadU(d, b + i);
         i += N;
@@ -353,13 +312,11 @@ struct UnrolledLoopBody<2> {
     }
 };
 
-template <>
-struct UnrolledLoopBody<4> {
+template <> struct UnrolledLoopBody<4> {
     template <size_t Arity, typename D, typename T, typename KernelFn, typename... AccuVecs>
-    HWY_INLINE
-    static void elementwise_load_and_dispatch(const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a,
-                                              size_t i, const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept
-    {
+    HWY_INLINE static void elementwise_load_and_dispatch(
+        const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, size_t i, const size_t N, KernelFn kernel_fn,
+        AccuVecs&&... accu_vecs) noexcept {
         const auto a0 = hn::LoadU(d, a + i);
         i += N;
         dispatch(arity, IterNum<0>{}, kernel_fn, a0, std::forward<AccuVecs>(accu_vecs)...);
@@ -374,10 +331,9 @@ struct UnrolledLoopBody<4> {
     }
 
     template <size_t Arity, typename D, typename T, typename KernelFn, typename... AccuVecs>
-    HWY_INLINE
-    static void pairwise_load_and_dispatch(const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b,
-                                           size_t i, const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept
-    {
+    HWY_INLINE static void pairwise_load_and_dispatch(
+        const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, size_t i,
+        const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept {
         const auto a0 = hn::LoadU(d, a + i);
         const auto b0 = hn::LoadU(d, b + i);
         i += N;
@@ -396,13 +352,11 @@ struct UnrolledLoopBody<4> {
     }
 };
 
-template <>
-struct UnrolledLoopBody<8> {
+template <> struct UnrolledLoopBody<8> {
     template <size_t Arity, typename D, typename T, typename KernelFn, typename... AccuVecs>
-    HWY_INLINE
-    static void elementwise_load_and_dispatch(const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a,
-                                              size_t i, const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept
-    {
+    HWY_INLINE static void elementwise_load_and_dispatch(
+        const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, size_t i, const size_t N, KernelFn kernel_fn,
+        AccuVecs&&... accu_vecs) noexcept {
         const auto a0 = hn::LoadU(d, a + i);
         i += N;
         dispatch(arity, IterNum<0>{}, kernel_fn, a0, std::forward<AccuVecs>(accu_vecs)...);
@@ -429,10 +383,9 @@ struct UnrolledLoopBody<8> {
     }
 
     template <size_t Arity, typename D, typename T, typename KernelFn, typename... AccuVecs>
-    HWY_INLINE
-    static void pairwise_load_and_dispatch(const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b,
-                                           size_t i, const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept
-    {
+    HWY_INLINE static void pairwise_load_and_dispatch(
+        const FnAccuArity<Arity> arity, D d, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, size_t i,
+        const size_t N, KernelFn kernel_fn, AccuVecs&&... accu_vecs) noexcept {
         const auto a0 = hn::LoadU(d, a + i);
         const auto b0 = hn::LoadU(d, b + i);
         i += N;
@@ -478,34 +431,21 @@ struct UnrolledLoopBody<8> {
 // did not exist in the first place. For most distance functions this is implicitly the
 // case since the contribution of lhs 0 vs rhs 0 is also 0.
 
-template <size_t UnrollFactor>
-struct KernelBody {
-    template <
-        size_t Arity,
-        typename D,
-        typename T = hn::TFromD<D>,
-        typename KernelFn,
-        typename... Accumulators
-    >
-    HWY_INLINE
-    static void pairwise_body_impl(
-            const FnAccuArity<Arity> arity,
-            const D d,
-            const T* HWY_RESTRICT a, const T* HWY_RESTRICT b,
-            const size_t n_elems,
-            const KernelFn kernel_fn,
-            Accumulators&&... accumulators) noexcept
-    {
+template <size_t UnrollFactor> struct KernelBody {
+    template <size_t Arity, typename D, typename T = hn::TFromD<D>, typename KernelFn, typename... Accumulators>
+    HWY_INLINE static void pairwise_body_impl(
+        const FnAccuArity<Arity> arity, const D d, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b,
+        const size_t n_elems, const KernelFn kernel_fn, Accumulators&&... accumulators) noexcept {
         HWY_LANES_CONSTEXPR const size_t N = hn::Lanes(d);
-        size_t i = 0;
-        for (; (i + UnrollFactor*N) <= n_elems; i += UnrollFactor*N) {
-            UnrolledLoopBody<UnrollFactor>::pairwise_load_and_dispatch(arity, d, a, b, i, N, kernel_fn,
-                                                                       std::forward<Accumulators>(accumulators)...);
+        size_t                           i = 0;
+        for (; (i + UnrollFactor * N) <= n_elems; i += UnrollFactor * N) {
+            UnrolledLoopBody<UnrollFactor>::pairwise_load_and_dispatch(
+                arity, d, a, b, i, N, kernel_fn, std::forward<Accumulators>(accumulators)...);
         }
         // Boundary case: up to (and including) UnrollFactor-1 whole vectors at the end
         for (; (i + N) <= n_elems; i += N) {
-            UnrolledLoopBody<1>::pairwise_load_and_dispatch(arity, d, a, b, i, N, kernel_fn,
-                                                            std::forward<Accumulators>(accumulators)...);
+            UnrolledLoopBody<1>::pairwise_load_and_dispatch(
+                arity, d, a, b, i, N, kernel_fn, std::forward<Accumulators>(accumulators)...);
         }
         // Process up any final stragglers of < N elems
         const size_t rem = n_elems - i;
@@ -513,72 +453,50 @@ struct KernelBody {
             // Lanes OOB will be _zero_
             const auto a0 = hn::LoadN(d, a + i, rem);
             const auto b0 = hn::LoadN(d, b + i, rem);
-            dispatch_pairwise(arity, IterNum<0>{}, kernel_fn, a0, b0,
-                              std::forward<Accumulators>(accumulators)...);
+            dispatch_pairwise(arity, IterNum<0>{}, kernel_fn, a0, b0, std::forward<Accumulators>(accumulators)...);
         }
     }
 
-    template <
-        size_t Arity,
-        typename D,
-        typename T = hn::TFromD<D>,
-        typename KernelFn,
-        typename... Accumulators
-    >
-    HWY_INLINE
-    static void elementwise_body_impl(
-            const FnAccuArity<Arity> arity,
-            const D d,
-            const T* HWY_RESTRICT a,
-            const size_t n_elems,
-            const KernelFn kernel_fn,
-            Accumulators&&... accumulators) noexcept
-    {
+    template <size_t Arity, typename D, typename T = hn::TFromD<D>, typename KernelFn, typename... Accumulators>
+    HWY_INLINE static void elementwise_body_impl(
+        const FnAccuArity<Arity> arity, const D d, const T* HWY_RESTRICT a, const size_t n_elems,
+        const KernelFn kernel_fn, Accumulators&&... accumulators) noexcept {
         HWY_LANES_CONSTEXPR const size_t N = hn::Lanes(d);
-        size_t i = 0;
-        for (; (i + UnrollFactor*N) <= n_elems; i += UnrollFactor*N) {
-            UnrolledLoopBody<UnrollFactor>::elementwise_load_and_dispatch(arity, d, a, i, N, kernel_fn,
-                                                                          std::forward<Accumulators>(accumulators)...);
+        size_t                           i = 0;
+        for (; (i + UnrollFactor * N) <= n_elems; i += UnrollFactor * N) {
+            UnrolledLoopBody<UnrollFactor>::elementwise_load_and_dispatch(
+                arity, d, a, i, N, kernel_fn, std::forward<Accumulators>(accumulators)...);
         }
         // Boundary case: up to (and including) UnrollFactor-1 whole vectors at the end
         for (; (i + N) <= n_elems; i += N) {
-            UnrolledLoopBody<1>::elementwise_load_and_dispatch(arity, d, a, i, N, kernel_fn,
-                                                               std::forward<Accumulators>(accumulators)...);
+            UnrolledLoopBody<1>::elementwise_load_and_dispatch(
+                arity, d, a, i, N, kernel_fn, std::forward<Accumulators>(accumulators)...);
         }
         // Process up any final stragglers of < N elems
         const size_t rem = n_elems - i;
         if (rem != 0) {
             // Lanes OOB will be _zero_
             const auto a0 = hn::LoadN(d, a + i, rem);
-            dispatch(arity, IterNum<0>{}, kernel_fn, a0,
-                     std::forward<Accumulators>(accumulators)...);
+            dispatch(arity, IterNum<0>{}, kernel_fn, a0, std::forward<Accumulators>(accumulators)...);
         }
     }
 };
 
-template <size_t N>
-struct UnrolledBy {
+template <size_t N> struct UnrolledBy {
     constexpr static size_t unrolled_by_v = N;
 };
 
-template <size_t N>
-struct UsesNAccumulators {
+template <size_t N> struct UsesNAccumulators {
     constexpr static size_t uses_n_accumulators_v = N;
 };
 
-template <size_t N>
-struct HasAccumulatorArity {
+template <size_t N> struct HasAccumulatorArity {
     constexpr static size_t fn_has_accu_arity_v = N;
 };
 
 // TODO replace with concept constraints instead?
 //  For now, use distinct value names to cause compilation errors on wrong arg ordering
-template <
-    typename UsesNAccumulatorsT,
-    typename UnrolledByT,
-    typename FnHasAccuArityT
->
-struct HwyReduceKernel;
+template <typename UsesNAccumulatorsT, typename UnrolledByT, typename FnHasAccuArityT> struct HwyReduceKernel;
 
 // Ideally we would be able to make our lives easier by representing N parallel accumulators
 // with having a vector array of size N. Unfortunately, vector types may be _sizeless_ on
@@ -594,10 +512,8 @@ struct HwyReduceKernel<UsesNAccumulators<4>, UnrolledByT, FnHasAccuArityT> {
     static constexpr size_t Arity = FnHasAccuArityT::fn_has_accu_arity_v;
 
     template <typename AccuReducerFn, typename AccuV>
-    HWY_INLINE
-    static AccuV parallel_reduce_accumulators(AccuReducerFn accu_reducer_fn,
-                                              AccuV accu0, AccuV accu1, AccuV accu2, AccuV accu3) noexcept
-    {
+    HWY_INLINE static AccuV parallel_reduce_accumulators(
+        AccuReducerFn accu_reducer_fn, AccuV accu0, AccuV accu1, AccuV accu2, AccuV accu3) noexcept {
         // 4-way reduction tree:
         //  0 + 1 => 0, 2 + 3 => 2
         //  0 + 2 => result
@@ -606,62 +522,35 @@ struct HwyReduceKernel<UsesNAccumulators<4>, UnrolledByT, FnHasAccuArityT> {
         return accu_reducer_fn(accu0, accu2);
     }
 
-    template <
-        typename D,
-        typename DA,
-        typename T = hn::TFromD<D>,
-        typename R = hn::TFromD<DA>,
-        typename KernelFn,
-        typename AccuReducerFn,
-        typename LaneReducerFn
-    >
+    template <typename D, typename DA, typename T = hn::TFromD<D>, typename R = hn::TFromD<DA>, typename KernelFn,
+              typename AccuReducerFn, typename LaneReducerFn>
     [[nodiscard]] static R elementwise(
-            const D d,
-            const DA da,
-            const T* HWY_RESTRICT a,
-            const size_t n_elems,
-            const hn::Vec<DA> init_accu,
-            const KernelFn kernel_fn,
-            const AccuReducerFn accu_reducer_fn,
-            const LaneReducerFn lane_reducer_fn) noexcept
-    {
+        const D d, const DA da, const T* HWY_RESTRICT a, const size_t n_elems, const hn::Vec<DA> init_accu,
+        const KernelFn kernel_fn, const AccuReducerFn accu_reducer_fn, const LaneReducerFn lane_reducer_fn) noexcept {
         using AccuV = hn::Vec<DA>;
         AccuV accu0 = init_accu;
         AccuV accu1 = init_accu;
         AccuV accu2 = init_accu;
         AccuV accu3 = init_accu;
-        KernelBody<UnrollFactor>::elementwise_body_impl(FnAccuArity<Arity>{}, d, a, n_elems, kernel_fn,
-                                                        accu0, accu1, accu2, accu3);
+        KernelBody<UnrollFactor>::elementwise_body_impl(
+            FnAccuArity<Arity>{}, d, a, n_elems, kernel_fn, accu0, accu1, accu2, accu3);
         AccuV reduced = parallel_reduce_accumulators(accu_reducer_fn, accu0, accu1, accu2, accu3);
         return lane_reducer_fn(da, reduced);
     }
 
-    template <
-        typename D,
-        typename DA,
-        typename T = hn::TFromD<D>,
-        typename R = hn::TFromD<DA>,
-        typename KernelFn,
-        typename AccuReducerFn,
-        typename LaneReducerFn
-    >
+    template <typename D, typename DA, typename T = hn::TFromD<D>, typename R = hn::TFromD<DA>, typename KernelFn,
+              typename AccuReducerFn, typename LaneReducerFn>
     [[nodiscard]] static R pairwise(
-            const D d,
-            const DA da,
-            const T* HWY_RESTRICT a, const T* HWY_RESTRICT b,
-            const size_t n_elems,
-            const hn::Vec<DA> init_accu,
-            const KernelFn kernel_fn,
-            const AccuReducerFn accu_reducer_fn,
-            const LaneReducerFn lane_reducer_fn) noexcept
-    {
+        const D d, const DA da, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, const size_t n_elems,
+        const hn::Vec<DA> init_accu, const KernelFn kernel_fn, const AccuReducerFn accu_reducer_fn,
+        const LaneReducerFn lane_reducer_fn) noexcept {
         using AccuV = hn::Vec<DA>;
         AccuV accu0 = init_accu;
         AccuV accu1 = init_accu;
         AccuV accu2 = init_accu;
         AccuV accu3 = init_accu;
-        KernelBody<UnrollFactor>::pairwise_body_impl(FnAccuArity<Arity>{}, d, a, b, n_elems, kernel_fn,
-                                                     accu0, accu1, accu2, accu3);
+        KernelBody<UnrollFactor>::pairwise_body_impl(
+            FnAccuArity<Arity>{}, d, a, b, n_elems, kernel_fn, accu0, accu1, accu2, accu3);
         AccuV reduced = parallel_reduce_accumulators(accu_reducer_fn, accu0, accu1, accu2, accu3);
         return lane_reducer_fn(da, reduced);
     }
@@ -674,11 +563,9 @@ struct HwyReduceKernel<UsesNAccumulators<8>, UnrolledByT, FnHasAccuArityT> {
     static constexpr size_t Arity = FnHasAccuArityT::fn_has_accu_arity_v;
 
     template <typename AccuReducerFn, typename AccuV>
-    HWY_INLINE
-    static AccuV parallel_reduce_accumulators(AccuReducerFn accu_reducer_fn,
-                                              AccuV accu0, AccuV accu1, AccuV accu2, AccuV accu3,
-                                              AccuV accu4, AccuV accu5, AccuV accu6, AccuV accu7) noexcept
-    {
+    HWY_INLINE static AccuV parallel_reduce_accumulators(
+        AccuReducerFn accu_reducer_fn, AccuV accu0, AccuV accu1, AccuV accu2, AccuV accu3, AccuV accu4, AccuV accu5,
+        AccuV accu6, AccuV accu7) noexcept {
         // 8-way reduction tree:
         //  first 0+1 => 0, 2+3 => 2, 4+5 => 4, 6+7 => 6
         //  then  0+2 => 0, 4+6 => 4
@@ -694,25 +581,11 @@ struct HwyReduceKernel<UsesNAccumulators<8>, UnrolledByT, FnHasAccuArityT> {
         return accu_reducer_fn(accu0, accu4);
     }
 
-    template <
-        typename D,
-        typename DA,
-        typename T = hn::TFromD<D>,
-        typename R = hn::TFromD<DA>,
-        typename KernelFn,
-        typename AccuReducerFn,
-        typename LaneReducerFn
-    >
+    template <typename D, typename DA, typename T = hn::TFromD<D>, typename R = hn::TFromD<DA>, typename KernelFn,
+              typename AccuReducerFn, typename LaneReducerFn>
     [[nodiscard]] static R elementwise(
-            const D d,
-            const DA da,
-            const T* HWY_RESTRICT a,
-            const size_t n_elems,
-            const hn::Vec<DA> init_accu,
-            const KernelFn kernel_fn,
-            const AccuReducerFn accu_reducer_fn,
-            const LaneReducerFn lane_reducer_fn) noexcept
-    {
+        const D d, const DA da, const T* HWY_RESTRICT a, const size_t n_elems, const hn::Vec<DA> init_accu,
+        const KernelFn kernel_fn, const AccuReducerFn accu_reducer_fn, const LaneReducerFn lane_reducer_fn) noexcept {
         using AccuV = hn::Vec<DA>;
         AccuV accu0 = init_accu;
         AccuV accu1 = init_accu;
@@ -722,32 +595,19 @@ struct HwyReduceKernel<UsesNAccumulators<8>, UnrolledByT, FnHasAccuArityT> {
         AccuV accu5 = init_accu;
         AccuV accu6 = init_accu;
         AccuV accu7 = init_accu;
-        KernelBody<UnrollFactor>::elementwise_body_impl(FnAccuArity<Arity>{}, d, a, n_elems, kernel_fn,
-                                                        accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7);
-        AccuV reduced = parallel_reduce_accumulators(accu_reducer_fn, accu0, accu1, accu2,
-                                                     accu3, accu4, accu5, accu6, accu7);
+        KernelBody<UnrollFactor>::elementwise_body_impl(
+            FnAccuArity<Arity>{}, d, a, n_elems, kernel_fn, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7);
+        AccuV reduced =
+            parallel_reduce_accumulators(accu_reducer_fn, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7);
         return lane_reducer_fn(da, reduced);
     }
 
-    template <
-        typename D,
-        typename DA,
-        typename T = hn::TFromD<D>,
-        typename R = hn::TFromD<DA>,
-        typename KernelFn,
-        typename AccuReducerFn,
-        typename LaneReducerFn
-    >
+    template <typename D, typename DA, typename T = hn::TFromD<D>, typename R = hn::TFromD<DA>, typename KernelFn,
+              typename AccuReducerFn, typename LaneReducerFn>
     [[nodiscard]] static R pairwise(
-            const D d,
-            const DA da,
-            const T* HWY_RESTRICT a, const T* HWY_RESTRICT b,
-            const size_t n_elems,
-            const hn::Vec<DA> init_accu,
-            const KernelFn kernel_fn,
-            const AccuReducerFn accu_reducer_fn,
-            const LaneReducerFn lane_reducer_fn) noexcept
-    {
+        const D d, const DA da, const T* HWY_RESTRICT a, const T* HWY_RESTRICT b, const size_t n_elems,
+        const hn::Vec<DA> init_accu, const KernelFn kernel_fn, const AccuReducerFn accu_reducer_fn,
+        const LaneReducerFn lane_reducer_fn) noexcept {
         using AccuV = hn::Vec<DA>;
         AccuV accu0 = init_accu;
         AccuV accu1 = init_accu;
@@ -757,10 +617,10 @@ struct HwyReduceKernel<UsesNAccumulators<8>, UnrolledByT, FnHasAccuArityT> {
         AccuV accu5 = init_accu;
         AccuV accu6 = init_accu;
         AccuV accu7 = init_accu;
-        KernelBody<UnrollFactor>::pairwise_body_impl(FnAccuArity<Arity>{}, d, a, b, n_elems, kernel_fn,
-                                                     accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7);
-        AccuV reduced = parallel_reduce_accumulators(accu_reducer_fn, accu0, accu1, accu2,
-                                                     accu3, accu4, accu5, accu6, accu7);
+        KernelBody<UnrollFactor>::pairwise_body_impl(FnAccuArity<Arity>{}, d, a, b, n_elems, kernel_fn, accu0, accu1,
+                                                     accu2, accu3, accu4, accu5, accu6, accu7);
+        AccuV reduced =
+            parallel_reduce_accumulators(accu_reducer_fn, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7);
         return lane_reducer_fn(da, reduced);
     }
 };
@@ -771,14 +631,14 @@ struct HwyReduceKernel<UsesNAccumulators<8>, UnrolledByT, FnHasAccuArityT> {
 // maintaining a running sum across the chunks. The sum type must be one that is _not_
 // expected to overflow regardless of the input size.
 template <size_t MaxChunkSize, typename SumT, typename F, typename T>
-[[nodiscard]] SumT
-compute_chunked_sum(F&& fn, const T* HWY_RESTRICT lhs, const T* HWY_RESTRICT rhs, const size_t sz) noexcept {
+[[nodiscard]] SumT compute_chunked_sum(
+    F&& fn, const T* HWY_RESTRICT lhs, const T* HWY_RESTRICT rhs, const size_t sz) noexcept {
     if (sz <= MaxChunkSize) [[likely]] {
         return fn(lhs, rhs, sz);
     }
     // Process input in chunks that are small enough that the intermediate accumulators
     // won't overflow, but large enough that we can spin up the vector steam engines fully.
-    SumT sum{};
+    SumT   sum{};
     size_t i = 0;
     for (; i + MaxChunkSize <= sz; i += MaxChunkSize) {
         sum += fn(lhs + i, rhs + i, MaxChunkSize);
@@ -789,9 +649,8 @@ compute_chunked_sum(F&& fn, const T* HWY_RESTRICT lhs, const T* HWY_RESTRICT rhs
     return sum;
 }
 
-
-}  // namespace HWY_NAMESPACE
-}  // namespace vespalib::hwaccelerated
+} // namespace HWY_NAMESPACE
+} // namespace vespalib::hwaccelerated
 HWY_AFTER_NAMESPACE();
 
 #endif // VESPA_HWY_KERNEL_INL_H_TARGET

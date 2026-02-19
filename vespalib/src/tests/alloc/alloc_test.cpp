@@ -3,12 +3,14 @@
 #include <vespa/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <cstddef>
+
 #include <sys/mman.h>
+
+#include <cstddef>
 
 using namespace vespalib;
 using namespace vespalib::alloc;
@@ -19,12 +21,9 @@ size_t page_sz = round_up_to_page_size(1);
 
 }
 
-template <typename T>
-void
-testSwap(T & a, T & b)
-{
-    void * tmpA(a.get());
-    void * tmpB(b.get());
+template <typename T> void testSwap(T& a, T& b) {
+    void* tmpA(a.get());
+    void* tmpB(b.get());
     EXPECT_EQ(page_sz, a.size());
     EXPECT_EQ(2 * page_sz, b.size());
     std::swap(a, b);
@@ -69,7 +68,8 @@ TEST(AllocTest, test_basics) {
         EXPECT_TRUE(h.get() != nullptr);
     }
     {
-        VESPA_EXPECT_EXCEPTION(Alloc::allocAlignedHeap(100, 7), IllegalArgumentException, "Alloc::allocAlignedHeap(100, 7) does not support 7 alignment");
+        VESPA_EXPECT_EXCEPTION(Alloc::allocAlignedHeap(100, 7), IllegalArgumentException,
+                               "Alloc::allocAlignedHeap(100, 7) does not support 7 alignment");
         Alloc h = Alloc::allocAlignedHeap(100, 1_Ki);
         EXPECT_EQ(100u, h.size());
         EXPECT_TRUE(h.get() != nullptr);
@@ -123,24 +123,24 @@ TEST(AllocTest, no_rounding_of_small_heap_buffer) {
 }
 
 TEST(AllocTest, no_rounding_of_large_heap_buffer) {
-    Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE*11+3, MemoryAllocator::HUGEPAGE_SIZE*16);
-    EXPECT_EQ(size_t(MemoryAllocator::HUGEPAGE_SIZE*11+3), buf.size());
+    Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE * 11 + 3, MemoryAllocator::HUGEPAGE_SIZE * 16);
+    EXPECT_EQ(size_t(MemoryAllocator::HUGEPAGE_SIZE * 11 + 3), buf.size());
 }
 
 TEST(AllocTest, rounding_of_small_mmaped_buffer) {
     Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE);
     EXPECT_EQ(MemoryAllocator::HUGEPAGE_SIZE, buf.size());
-    buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE+1);
-    EXPECT_EQ(MemoryAllocator::HUGEPAGE_SIZE*2ul, buf.size());
+    buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE + 1);
+    EXPECT_EQ(MemoryAllocator::HUGEPAGE_SIZE * 2ul, buf.size());
 }
 
 TEST(AllocTest, rounding_of_large_mmaped_buffer) {
-    Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE*11+3);
-    EXPECT_EQ(MemoryAllocator::HUGEPAGE_SIZE*12ul, buf.size());
+    Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE * 11 + 3);
+    EXPECT_EQ(MemoryAllocator::HUGEPAGE_SIZE * 12ul, buf.size());
 }
 
 void verifyExtension(Alloc& buf, size_t currSZ, size_t newSZ) {
-    bool expectSuccess = (currSZ != newSZ);
+    bool  expectSuccess = (currSZ != newSZ);
     void* oldPtr = buf.get();
     EXPECT_EQ(currSZ, buf.size());
     EXPECT_EQ(expectSuccess, buf.resize_inplace(currSZ + 1));
@@ -165,34 +165,34 @@ TEST(AllocTest, auto_alloced_heap_alloc_can_not_be_extended) {
 
 TEST(AllocTest, auto_alloced_heap_alloc_can_not_be_extended__even_if_resize_will_be_mmapped) {
     Alloc buf = Alloc::alloc(100);
-    void * oldPtr = buf.get();
+    void* oldPtr = buf.get();
     EXPECT_EQ(100ul, buf.size());
-    EXPECT_FALSE(buf.resize_inplace(MemoryAllocator::HUGEPAGE_SIZE*3));
+    EXPECT_FALSE(buf.resize_inplace(MemoryAllocator::HUGEPAGE_SIZE * 3));
     EXPECT_EQ(oldPtr, buf.get());
     EXPECT_EQ(100ul, buf.size());
 }
 
-void ensureRoomForExtension(const Alloc & buf, Alloc & reserved) {
+void ensureRoomForExtension(const Alloc& buf, Alloc& reserved) {
     // Normally mmapping starts at the top and grows down in address space.
     // Then there is no room to extend the last mapping.
     // So in order to verify this we first mmap a reserved area that we unmap
     // before we test extension.
     if (reserved.get() > buf.get()) {
-        EXPECT_EQ(reserved.get(), static_cast<const void *>(static_cast<const char *>(buf.get()) + buf.size()));
+        EXPECT_EQ(reserved.get(), static_cast<const void*>(static_cast<const char*>(buf.get()) + buf.size()));
         {
             Alloc().swap(reserved);
         }
     }
 }
 
-void verifyNoExtensionWhenNoRoom(Alloc & buf, Alloc & reserved, size_t sz) {
+void verifyNoExtensionWhenNoRoom(Alloc& buf, Alloc& reserved, size_t sz) {
     if (reserved.get() > buf.get()) {
         // Normally mmapping starts at the top and grows down in address space.
         // Then there is no room to extend the last mapping.
-        EXPECT_EQ(reserved.get(), static_cast<const void *>(static_cast<const char *>(buf.get()) + buf.size()));
+        EXPECT_EQ(reserved.get(), static_cast<const void*>(static_cast<const char*>(buf.get()) + buf.size()));
         GTEST_DO(verifyExtension(buf, sz, sz));
     } else {
-        EXPECT_EQ(buf.get(), static_cast<const void *>(static_cast<const char *>(reserved.get()) + reserved.size()));
+        EXPECT_EQ(buf.get(), static_cast<const void*>(static_cast<const char*>(reserved.get()) + reserved.size()));
         GTEST_DO(verifyExtension(reserved, sz, sz));
     }
 }
@@ -226,7 +226,7 @@ TEST(AllocTest, mmap_alloc_can_not_be_extended_if_no_room) {
 
 TEST(AllocTest, heap_alloc_can_not_be_shrinked) {
     Alloc buf = Alloc::allocHeap(101);
-    void * oldPtr = buf.get();
+    void* oldPtr = buf.get();
     EXPECT_EQ(101ul, buf.size());
     EXPECT_FALSE(buf.resize_inplace(100));
     EXPECT_EQ(oldPtr, buf.get());
@@ -240,7 +240,7 @@ TEST(AllocTest, heap_alloc_cannot_be_shrunk_to_zero) {
 
 TEST(AllocTest, mmap_alloc_can_be_shrinked) {
     Alloc buf = Alloc::allocMMap(page_sz + 1);
-    void * oldPtr = buf.get();
+    void* oldPtr = buf.get();
     EXPECT_EQ(2 * page_sz, buf.size());
     EXPECT_TRUE(buf.resize_inplace(page_sz - 1));
     EXPECT_EQ(oldPtr, buf.get());
@@ -254,7 +254,7 @@ TEST(AllocTest, mmap_alloc_cannot_be_shrunk_to_zero) {
 
 TEST(AllocTest, auto_alloced_heap_alloc_can_not_be_shrinked) {
     Alloc buf = Alloc::alloc(101);
-    void * oldPtr = buf.get();
+    void* oldPtr = buf.get();
     EXPECT_EQ(101ul, buf.size());
     EXPECT_FALSE(buf.resize_inplace(100));
     EXPECT_EQ(oldPtr, buf.get());
@@ -268,10 +268,10 @@ TEST(AllocTest, auto_alloced_heap_alloc_cannot_be_shrunk_to_zero) {
 
 TEST(AllocTest, auto_alloced_mmap_alloc_can_be_shrinked) {
     static constexpr size_t SZ = MemoryAllocator::HUGEPAGE_SIZE;
-    Alloc buf = Alloc::alloc(SZ + 1);
-    void * oldPtr = buf.get();
+    Alloc                   buf = Alloc::alloc(SZ + 1);
+    void*                   oldPtr = buf.get();
     EXPECT_EQ(SZ + MemoryAllocator::HUGEPAGE_SIZE, buf.size());
-    EXPECT_TRUE(buf.resize_inplace(SZ-1));
+    EXPECT_TRUE(buf.resize_inplace(SZ - 1));
     EXPECT_EQ(oldPtr, buf.get());
     EXPECT_EQ(SZ, buf.size());
 }
@@ -283,13 +283,13 @@ TEST(AllocTest, auto_alloced_mmap_alloc_cannot_be_shrunk_to_zero) {
 
 TEST(AllocTest, auto_alloced_mmap_alloc_can_not_be_shrinked_below_HUGEPAGE_SIZE_div_2_plus_1) {
     static constexpr size_t SZ = MemoryAllocator::HUGEPAGE_SIZE;
-    Alloc buf = Alloc::alloc(SZ + 1);
-    void * oldPtr = buf.get();
+    Alloc                   buf = Alloc::alloc(SZ + 1);
+    void*                   oldPtr = buf.get();
     EXPECT_EQ(SZ + MemoryAllocator::HUGEPAGE_SIZE, buf.size());
-    EXPECT_TRUE(buf.resize_inplace(SZ/2 + 1));
+    EXPECT_TRUE(buf.resize_inplace(SZ / 2 + 1));
     EXPECT_EQ(oldPtr, buf.get());
     EXPECT_EQ(SZ, buf.size());
-    EXPECT_FALSE(buf.resize_inplace(SZ/2));
+    EXPECT_FALSE(buf.resize_inplace(SZ / 2));
     EXPECT_EQ(oldPtr, buf.get());
     EXPECT_EQ(SZ, buf.size());
     EXPECT_TRUE(buf.resize_inplace(SZ));

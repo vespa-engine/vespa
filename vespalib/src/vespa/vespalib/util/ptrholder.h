@@ -23,17 +23,16 @@ namespace vespalib {
  * ignore new versions all together. This class was originally
  * designed to keep track of config objects.
  **/
-template <typename T>
-class PtrHolder
-{
+template <typename T> class PtrHolder {
 private:
-    std::shared_ptr<T>  _current;
-    std::shared_ptr<T>  _next;
-    mutable std::mutex  _lock;
+    std::shared_ptr<T> _current;
+    std::shared_ptr<T> _next;
+    mutable std::mutex _lock;
     using LockGuard = std::lock_guard<std::mutex>;
+
 public:
-    PtrHolder(const PtrHolder &) = delete;
-    PtrHolder &operator=(const PtrHolder &) = delete;
+    PtrHolder(const PtrHolder&) = delete;
+    PtrHolder& operator=(const PtrHolder&) = delete;
     /**
      * @brief Create an empty PtrHolder with both current and new
      * pointers set to 0
@@ -70,7 +69,7 @@ public:
      *
      * @param obj the new value
      **/
-    void set(T *obj) {
+    void set(T* obj) {
         std::shared_ptr<T> tmp;
         {
             LockGuard guard(_lock);
@@ -124,7 +123,6 @@ public:
     }
 };
 
-template<typename T>
-PtrHolder<T>::~PtrHolder() = default;
+template <typename T> PtrHolder<T>::~PtrHolder() = default;
 
 } // namespace vespalib

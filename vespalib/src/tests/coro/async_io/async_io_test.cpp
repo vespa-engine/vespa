@@ -1,30 +1,32 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/coro/lazy.h>
-#include <vespa/vespalib/coro/detached.h>
-#include <vespa/vespalib/coro/completion.h>
-#include <vespa/vespalib/coro/async_io.h>
 #include <vespa/vespalib/coro/async_crypto_socket.h>
-#include <vespa/vespalib/net/socket_spec.h>
-#include <vespa/vespalib/net/server_socket.h>
-#include <vespa/vespalib/net/socket_handle.h>
-#include <vespa/vespalib/net/socket_address.h>
-#include <vespa/vespalib/net/crypto_engine.h>
-#include <vespa/vespalib/util/require.h>
-#include <vespa/vespalib/util/classname.h>
-#include <vespa/vespalib/test/make_tls_options_for_testing.h>
-#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
-#include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
+#include <vespa/vespalib/coro/async_io.h>
+#include <vespa/vespalib/coro/completion.h>
+#include <vespa/vespalib/coro/detached.h>
+#include <vespa/vespalib/coro/lazy.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/server_socket.h>
+#include <vespa/vespalib/net/socket_address.h>
+#include <vespa/vespalib/net/socket_handle.h>
+#include <vespa/vespalib/net/socket_spec.h>
+#include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
+#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
+#include <vespa/vespalib/test/make_tls_options_for_testing.h>
+#include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/util/require.h>
 
 using namespace vespalib;
 using namespace vespalib::coro;
 using namespace vespalib::test;
 
-std::string impl_spec(AsyncIo &async) {
+std::string impl_spec(AsyncIo& async) {
     switch (async.get_impl_tag()) {
-    case AsyncIo::ImplTag::EPOLL: return "epoll";
-    case AsyncIo::ImplTag::URING: return "uring";
+    case AsyncIo::ImplTag::EPOLL:
+        return "epoll";
+    case AsyncIo::ImplTag::URING:
+        return "uring";
     }
     abort();
 }
@@ -38,7 +40,7 @@ Detached self_exiting_run_loop(AsyncIo::SP async) {
     fprintf(stderr, "self_exiting_run_loop -> exiting\n");
 }
 
-Work run_loop(AsyncIo &async, int a, int b) {
+Work run_loop(AsyncIo& async, int a, int b) {
     for (int i = a; i < b; ++i) {
         co_await async.schedule();
         fprintf(stderr, "run_loop [%d,%d> -> current value: %d\n", a, b, i);
@@ -47,8 +49,8 @@ Work run_loop(AsyncIo &async, int a, int b) {
 }
 
 TEST(AsyncIoTest, create_async_io) {
-    auto async = AsyncIo::create();
-    AsyncIo &api = async;
+    auto     async = AsyncIo::create();
+    AsyncIo& api = async;
     fprintf(stderr, "async_io impl: %s\n", impl_spec(api).c_str());
 }
 
@@ -71,10 +73,10 @@ TEST(AsyncIoTest, shutdown_with_self_exiting_coroutine) {
     f2.wait();
 }
 
-Lazy<size_t> write_msg(AsyncCryptoSocket &socket, const std::string &msg) {
+Lazy<size_t> write_msg(AsyncCryptoSocket& socket, const std::string& msg) {
     size_t written = 0;
     while (written < msg.size()) {
-        size_t write_size = (msg.size() - written);
+        size_t  write_size = (msg.size() - written);
         ssize_t write_result = co_await socket.write(msg.data() + written, write_size);
         if (write_result <= 0) {
             co_return written;
@@ -84,11 +86,11 @@ Lazy<size_t> write_msg(AsyncCryptoSocket &socket, const std::string &msg) {
     co_return written;
 }
 
-Lazy<std::string> read_msg(AsyncCryptoSocket &socket, size_t wanted_bytes) {
-    char tmp[64];
+Lazy<std::string> read_msg(AsyncCryptoSocket& socket, size_t wanted_bytes) {
+    char        tmp[64];
     std::string result;
     while (result.size() < wanted_bytes) {
-        size_t read_size = std::min(sizeof(tmp), wanted_bytes - result.size());
+        size_t  read_size = std::min(sizeof(tmp), wanted_bytes - result.size());
         ssize_t read_result = co_await socket.read(tmp, read_size);
         if (read_result <= 0) {
             co_return result;
@@ -98,7 +100,7 @@ Lazy<std::string> read_msg(AsyncCryptoSocket &socket, size_t wanted_bytes) {
     co_return result;
 }
 
-Work verify_socket_io(AsyncCryptoSocket &socket, bool is_server) {
+Work verify_socket_io(AsyncCryptoSocket& socket, bool is_server) {
     std::string server_message = "hello, this is the server speaking";
     std::string client_message = "please pick up, I need to talk to you";
     if (is_server) {
@@ -115,7 +117,7 @@ Work verify_socket_io(AsyncCryptoSocket &socket, bool is_server) {
     co_return Done{};
 }
 
-Work async_server(AsyncIo &async, CryptoEngine &engine, ServerSocket &server_socket) {
+Work async_server(AsyncIo& async, CryptoEngine& engine, ServerSocket& server_socket) {
     auto server_addr = server_socket.address();
     auto server_spec = server_addr.spec();
     fprintf(stderr, "listening at '%s' (fd = %d)\n", server_spec.c_str(), server_socket.get_fd());
@@ -128,7 +130,7 @@ Work async_server(AsyncIo &async, CryptoEngine &engine, ServerSocket &server_soc
     co_return co_await verify_socket_io(*socket, true);
 }
 
-Work async_client(AsyncIo &async, CryptoEngine &engine, ServerSocket &server_socket) {
+Work async_client(AsyncIo& async, CryptoEngine& engine, ServerSocket& server_socket) {
     auto server_addr = server_socket.address();
     auto server_spec = SocketSpec(server_addr.spec());
     fprintf(stderr, "connecting to '%s'\n", server_spec.spec().c_str());
@@ -142,16 +144,16 @@ Work async_client(AsyncIo &async, CryptoEngine &engine, ServerSocket &server_soc
     co_return co_await verify_socket_io(*socket, false);
 }
 
-void verify_socket_io(CryptoEngine &engine, AsyncIo::ImplTag prefer_impl = AsyncIo::ImplTag::EPOLL) {
+void verify_socket_io(CryptoEngine& engine, AsyncIo::ImplTag prefer_impl = AsyncIo::ImplTag::EPOLL) {
     ServerSocket server_socket("tcp/0");
     server_socket.set_blocking(false);
     auto async = AsyncIo::create(prefer_impl);
-    fprintf(stderr, "verify_socket_io: crypto engine: %s, async impl: %s\n",
-            getClassName(engine).c_str(), impl_spec(async).c_str());
+    fprintf(stderr, "verify_socket_io: crypto engine: %s, async impl: %s\n", getClassName(engine).c_str(),
+            impl_spec(async).c_str());
     auto f1 = make_future(async_server(async, engine, server_socket));
     auto f2 = make_future(async_client(async, engine, server_socket));
-    (void) f1.get();
-    (void) f2.get();
+    (void)f1.get();
+    (void)f2.get();
 }
 
 TEST(AsyncIoTest, raw_socket_io) {

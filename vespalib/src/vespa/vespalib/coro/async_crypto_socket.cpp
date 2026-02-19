@@ -1,59 +1,56 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "async_crypto_socket.h"
+
+#include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/net/tls/crypto_codec.h>
 #include <vespa/vespalib/net/tls/protocol_snooping.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
-#include <vespa/vespalib/net/tls/crypto_codec.h>
-#include <vespa/vespalib/data/smart_buffer.h>
 
 namespace vespalib::coro {
 
 namespace {
 
 using net::tls::CryptoCodec;
-using net::tls::HandshakeResult;
-using net::tls::EncodeResult;
 using net::tls::DecodeResult;
+using net::tls::EncodeResult;
+using net::tls::HandshakeResult;
 
 struct InvalidSocket : AsyncCryptoSocket {
-    Lazy<ssize_t> read(char *, size_t) override { co_return -EINVAL; }
-    Lazy<ssize_t> write(const char *, size_t) override { co_return -EINVAL; }
+    Lazy<ssize_t> read(char*, size_t) override { co_return -EINVAL; }
+    Lazy<ssize_t> write(const char*, size_t) override { co_return -EINVAL; }
 };
 
 struct RawSocket : AsyncCryptoSocket {
-    AsyncIo::SP async;
+    AsyncIo::SP  async;
     SocketHandle handle;
-    RawSocket(AsyncIo &async_in, SocketHandle handle_in)
+    RawSocket(AsyncIo& async_in, SocketHandle handle_in)
         : async(async_in.shared_from_this()), handle(std::move(handle_in)) {}
-    RawSocket(RawSocket &&) noexcept;
+    RawSocket(RawSocket&&) noexcept;
     ~RawSocket() override;
-    Lazy<ssize_t> read(char *buf, size_t len) override {
-        return async->read(handle, buf, len);
-    }
-    Lazy<ssize_t> write(const char *buf, size_t len) override {
-        return async->write(handle, buf, len);
-    }
+    Lazy<ssize_t> read(char* buf, size_t len) override { return async->read(handle, buf, len); }
+    Lazy<ssize_t> write(const char* buf, size_t len) override { return async->write(handle, buf, len); }
 };
 
 RawSocket::~RawSocket() = default;
 
 struct SnoopedRawSocket : AsyncCryptoSocket {
-    AsyncIo::SP async;
+    AsyncIo::SP  async;
     SocketHandle handle;
-    SmartBuffer data;
-    SnoopedRawSocket(AsyncIo &async_in, SocketHandle handle_in)
+    SmartBuffer  data;
+    SnoopedRawSocket(AsyncIo& async_in, SocketHandle handle_in)
         : async(async_in.shared_from_this()), handle(std::move(handle_in)), data(0) {}
-    SnoopedRawSocket(SnoopedRawSocket &&) noexcept;
+    SnoopedRawSocket(SnoopedRawSocket&&) noexcept;
     ~SnoopedRawSocket() override;
-    void inject_data(const char *buf, size_t len) {
+    void inject_data(const char* buf, size_t len) {
         if (len > 0) {
             auto dst = data.reserve(len);
             memcpy(dst.data, buf, len);
             data.commit(len);
         }
     }
-    Lazy<ssize_t> read_from_buffer(char *buf, size_t len) {
-        auto src = data.obtain();
+    Lazy<ssize_t> read_from_buffer(char* buf, size_t len) {
+        auto   src = data.obtain();
         size_t frame = std::min(len, src.size);
         if (frame > 0) {
             memcpy(buf, src.data, frame);
@@ -62,33 +59,35 @@ struct SnoopedRawSocket : AsyncCryptoSocket {
         }
         co_return frame;
     }
-    Lazy<ssize_t> read(char *buf, size_t len) override {
+    Lazy<ssize_t> read(char* buf, size_t len) override {
         if (data.empty()) {
             return async->read(handle, buf, len);
         } else {
             return read_from_buffer(buf, len);
         }
     }
-    Lazy<ssize_t> write(const char *buf, size_t len) override {
-        return async->write(handle, buf, len);
-    }
+    Lazy<ssize_t> write(const char* buf, size_t len) override { return async->write(handle, buf, len); }
 };
 
 SnoopedRawSocket::~SnoopedRawSocket() = default;
 
 struct TlsSocket : AsyncCryptoSocket {
-    AsyncIo::SP async;
-    SocketHandle handle;
+    AsyncIo::SP                  async;
+    SocketHandle                 handle;
     std::unique_ptr<CryptoCodec> codec;
-    SmartBuffer app_input;
-    SmartBuffer enc_input;
-    SmartBuffer enc_output;
-    TlsSocket(AsyncIo &async_in, SocketHandle handle_in, std::unique_ptr<CryptoCodec> codec_in)
-      : async(async_in.shared_from_this()), handle(std::move(handle_in)), codec(std::move(codec_in)),
-        app_input(0), enc_input(0), enc_output(0) {}
-    TlsSocket(TlsSocket &&) noexcept;
+    SmartBuffer                  app_input;
+    SmartBuffer                  enc_input;
+    SmartBuffer                  enc_output;
+    TlsSocket(AsyncIo& async_in, SocketHandle handle_in, std::unique_ptr<CryptoCodec> codec_in)
+        : async(async_in.shared_from_this()),
+          handle(std::move(handle_in)),
+          codec(std::move(codec_in)),
+          app_input(0),
+          enc_input(0),
+          enc_output(0) {}
+    TlsSocket(TlsSocket&&) noexcept;
     ~TlsSocket() override;
-    void inject_enc_input(const char *buf, size_t len) {
+    void inject_enc_input(const char* buf, size_t len) {
         if (len > 0) {
             auto dst = enc_input.reserve(len);
             memcpy(dst.data, buf, len);
@@ -108,7 +107,7 @@ struct TlsSocket : AsyncCryptoSocket {
         co_return true;
     }
     Lazy<bool> fill_enc_input() {
-        auto dst = enc_input.reserve(codec->min_encode_buffer_size());
+        auto    dst = enc_input.reserve(codec->min_encode_buffer_size());
         ssize_t res = co_await async->read(handle, dst.data, dst.size);
         if (res > 0) {
             enc_input.commit(res);
@@ -125,8 +124,10 @@ struct TlsSocket : AsyncCryptoSocket {
             enc_input.evict(hs_res.bytes_consumed);
             enc_output.commit(hs_res.bytes_produced);
             switch (hs_res.state) {
-            case ::vespalib::net::tls::HandshakeResult::State::Failed: co_return false;
-            case ::vespalib::net::tls::HandshakeResult::State::Done: co_return co_await flush_enc_output();
+            case ::vespalib::net::tls::HandshakeResult::State::Failed:
+                co_return false;
+            case ::vespalib::net::tls::HandshakeResult::State::Done:
+                co_return co_await flush_enc_output();
             case ::vespalib::net::tls::HandshakeResult::State::NeedsWork:
                 codec->do_handshake_work();
                 break;
@@ -142,7 +143,7 @@ struct TlsSocket : AsyncCryptoSocket {
             }
         }
     }
-    Lazy<ssize_t> read(char *buf, size_t len) override {
+    Lazy<ssize_t> read(char* buf, size_t len) override {
         while (app_input.empty()) {
             auto src = enc_input.obtain();
             auto dst = app_input.reserve(codec->min_decode_buffer_size());
@@ -162,7 +163,7 @@ struct TlsSocket : AsyncCryptoSocket {
                 }
             }
         }
-        auto src = app_input.obtain();
+        auto   src = app_input.obtain();
         size_t frame = std::min(len, src.size);
         if (frame > 0) {
             memcpy(buf, src.data, frame);
@@ -170,7 +171,7 @@ struct TlsSocket : AsyncCryptoSocket {
         }
         co_return frame;
     }
-    Lazy<ssize_t> write(const char *buf, size_t len) override {
+    Lazy<ssize_t> write(const char* buf, size_t len) override {
         auto dst = enc_output.reserve(codec->min_encode_buffer_size());
         auto res = codec->encode(buf, len, dst.data, dst.size);
         if (res.failed) {
@@ -196,13 +197,13 @@ Lazy<AsyncCryptoSocket::UP> try_handshake(std::unique_ptr<TlsSocket> tls_socket)
     }
 }
 
-Lazy<AsyncCryptoSocket::UP> accept_tls(AsyncIo &async, AbstractTlsCryptoEngine &crypto, SocketHandle handle) {
+Lazy<AsyncCryptoSocket::UP> accept_tls(AsyncIo& async, AbstractTlsCryptoEngine& crypto, SocketHandle handle) {
     auto tls_codec = crypto.create_tls_server_crypto_codec(handle);
     auto tls_socket = std::make_unique<TlsSocket>(async, std::move(handle), std::move(tls_codec));
     co_return co_await try_handshake(std::move(tls_socket));
 }
 
-Lazy<AsyncCryptoSocket::UP> accept_maybe_tls(AsyncIo &async, AbstractTlsCryptoEngine &crypto, SocketHandle handle) {
+Lazy<AsyncCryptoSocket::UP> accept_maybe_tls(AsyncIo& async, AbstractTlsCryptoEngine& crypto, SocketHandle handle) {
     char buf[net::tls::snooping::min_header_bytes_to_observe()];
     memset(buf, 0, sizeof(buf));
     size_t snooped = 0;
@@ -225,24 +226,22 @@ Lazy<AsyncCryptoSocket::UP> accept_maybe_tls(AsyncIo &async, AbstractTlsCryptoEn
     }
 }
 
-Lazy<AsyncCryptoSocket::UP> connect_tls(AsyncIo &async, AbstractTlsCryptoEngine &crypto, SocketHandle handle, SocketSpec spec) {
+Lazy<AsyncCryptoSocket::UP> connect_tls(
+    AsyncIo& async, AbstractTlsCryptoEngine& crypto, SocketHandle handle, SocketSpec spec) {
     auto tls_codec = crypto.create_tls_client_crypto_codec(handle, spec);
     auto tls_socket = std::make_unique<TlsSocket>(async, std::move(handle), std::move(tls_codec));
     co_return co_await try_handshake(std::move(tls_socket));
 }
 
-}
+} // namespace
 
 AsyncCryptoSocket::~AsyncCryptoSocket() = default;
 
-Lazy<AsyncCryptoSocket::UP>
-AsyncCryptoSocket::accept(AsyncIo &async, CryptoEngine &crypto,
-                          SocketHandle handle)
-{
+Lazy<AsyncCryptoSocket::UP> AsyncCryptoSocket::accept(AsyncIo& async, CryptoEngine& crypto, SocketHandle handle) {
     if (dynamic_cast<NullCryptoEngine*>(&crypto)) {
         co_return std::make_unique<RawSocket>(async, std::move(handle));
     }
-    if (auto *tls_engine = dynamic_cast<AbstractTlsCryptoEngine*>(&crypto)) {
+    if (auto* tls_engine = dynamic_cast<AbstractTlsCryptoEngine*>(&crypto)) {
         if (tls_engine->always_use_tls_when_server()) {
             co_return co_await accept_tls(async, *tls_engine, std::move(handle));
         } else {
@@ -252,15 +251,13 @@ AsyncCryptoSocket::accept(AsyncIo &async, CryptoEngine &crypto,
     co_return std::make_unique<InvalidSocket>();
 }
 
-Lazy<AsyncCryptoSocket::UP>
-AsyncCryptoSocket::connect(AsyncIo &async, CryptoEngine &crypto,
-                           SocketHandle handle, SocketSpec spec)
-{
+Lazy<AsyncCryptoSocket::UP> AsyncCryptoSocket::connect(
+    AsyncIo& async, CryptoEngine& crypto, SocketHandle handle, SocketSpec spec) {
     if (dynamic_cast<NullCryptoEngine*>(&crypto)) {
-        (void) spec; // no SNI for plaintext sockets
+        (void)spec; // no SNI for plaintext sockets
         co_return std::make_unique<RawSocket>(async, std::move(handle));
     }
-    if (auto *tls_engine = dynamic_cast<AbstractTlsCryptoEngine*>(&crypto)) {
+    if (auto* tls_engine = dynamic_cast<AbstractTlsCryptoEngine*>(&crypto)) {
         if (tls_engine->use_tls_when_client()) {
             co_return co_await connect_tls(async, *tls_engine, std::move(handle), spec);
         } else {
@@ -270,4 +267,4 @@ AsyncCryptoSocket::connect(AsyncIo &async, CryptoEngine &crypto,
     co_return std::make_unique<InvalidSocket>();
 }
 
-}
+} // namespace vespalib::coro

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Levenshtein distance algorithm is based off Java implementation from apache commons-text library licensed under the Apache 2.0 license.
+// Levenshtein distance algorithm is based off Java implementation from apache commons-text library licensed under the
+// Apache 2.0 license.
 
 #include "levenshtein_distance.h"
 
@@ -9,10 +10,8 @@
 
 namespace vespalib {
 
-std::optional<uint32_t>
-LevenshteinDistance::calculate(std::span<const uint32_t> left, std::span<const uint32_t> right,
-                               uint32_t threshold, bool prefix_match)
-{
+std::optional<uint32_t> LevenshteinDistance::calculate(
+    std::span<const uint32_t> left, std::span<const uint32_t> right, uint32_t threshold, bool prefix_match) {
     assert(left.size() <= static_cast<size_t>(INT32_MAX));
     assert(right.size() <= static_cast<size_t>(INT32_MAX));
     threshold = std::min(threshold, static_cast<uint32_t>(std::numeric_limits<int32_t>::max()));
@@ -45,8 +44,8 @@ LevenshteinDistance::calculate(std::span<const uint32_t> left, std::span<const u
         }
     }
 
-    std::vector<uint32_t> p(n+1); // 'previous' cost array, horizontally
-    std::vector<uint32_t> d(n+1); // cost array, horizontally
+    std::vector<uint32_t> p(n + 1); // 'previous' cost array, horizontally
+    std::vector<uint32_t> d(n + 1); // cost array, horizontally
 
     const uint32_t boundary = std::min(n, threshold) + 1;
 
@@ -70,8 +69,7 @@ LevenshteinDistance::calculate(std::span<const uint32_t> left, std::span<const u
 
         int32_t min = std::max(1, static_cast<int32_t>(j) - static_cast<int32_t>(threshold));
 
-        uint32_t max = j > std::numeric_limits<uint32_t>::max() - threshold ?
-                       n : std::min(n, j + threshold);
+        uint32_t max = j > std::numeric_limits<uint32_t>::max() - threshold ? n : std::min(n, j + threshold);
         // ignore entry left of leftmost
         if (min > 1) {
             assert(static_cast<size_t>(min) <= d.size());
@@ -117,10 +115,9 @@ LevenshteinDistance::calculate(std::span<const uint32_t> left, std::span<const u
     return std::nullopt;
 }
 
-std::optional<uint32_t>
-LevenshteinDistance::calculate(std::span<const uint32_t> left, std::span<const uint32_t> right, uint32_t threshold)
-{
+std::optional<uint32_t> LevenshteinDistance::calculate(
+    std::span<const uint32_t> left, std::span<const uint32_t> right, uint32_t threshold) {
     return calculate(left, right, threshold, false);
 }
 
-} // vespalib
+} // namespace vespalib

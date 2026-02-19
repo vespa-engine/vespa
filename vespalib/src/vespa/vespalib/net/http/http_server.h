@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/portal/portal.h>
 #include "json_handler_repo.h"
+
+#include <vespa/vespalib/portal/portal.h>
 
 namespace vespalib {
 
@@ -15,21 +16,21 @@ namespace vespalib {
  * the server has been started. Request dispatching is done using a
  * JsonHandlerRepo.
  **/
-class HttpServer : public Portal::GetHandler
-{
+class HttpServer : public Portal::GetHandler {
 private:
-    JsonHandlerRepo _handler_repo;
-    Portal::SP _server;
+    JsonHandlerRepo   _handler_repo;
+    Portal::SP        _server;
     Portal::Token::UP _root;
 
     void get(Portal::GetRequest req) override;
+
 public:
     using UP = std::unique_ptr<HttpServer>;
     HttpServer(int port_in);
     ~HttpServer();
-    const std::string &host() const { return _server->my_host(); }
-    JsonHandlerRepo &repo() { return _handler_repo; }
-    int port() const { return _server->listen_port(); }
+    const std::string& host() const { return _server->my_host(); }
+    JsonHandlerRepo&   repo() { return _handler_repo; }
+    int                port() const { return _server->listen_port(); }
 };
 
 } // namespace vespalib

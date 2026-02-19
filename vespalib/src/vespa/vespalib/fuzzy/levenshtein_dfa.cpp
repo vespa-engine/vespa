@@ -1,66 +1,65 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "levenshtein_dfa.h"
+
 #include "explicit_levenshtein_dfa.h"
 #include "implicit_levenshtein_dfa.h"
 #include "table_dfa.h"
-#include "levenshtein_dfa.h"
 #include "unicode_utils.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <memory>
 
 namespace vespalib::fuzzy {
 
-LevenshteinDfa::LevenshteinDfa(std::unique_ptr<Impl> impl) noexcept
-    : _impl(std::move(impl))
-{}
+LevenshteinDfa::LevenshteinDfa(std::unique_ptr<Impl> impl) noexcept : _impl(std::move(impl)) {}
 
 LevenshteinDfa::LevenshteinDfa(LevenshteinDfa&&) noexcept = default;
 LevenshteinDfa& LevenshteinDfa::operator=(LevenshteinDfa&&) noexcept = default;
 
 LevenshteinDfa::~LevenshteinDfa() = default;
 
-LevenshteinDfa::MatchResult
-LevenshteinDfa::match(std::string_view u8str) const {
-    return _impl->match(u8str);
-}
+LevenshteinDfa::MatchResult LevenshteinDfa::match(std::string_view u8str) const { return _impl->match(u8str); }
 
-LevenshteinDfa::MatchResult
-LevenshteinDfa::match(std::string_view u8str, std::string& successor_out) const {
+LevenshteinDfa::MatchResult LevenshteinDfa::match(std::string_view u8str, std::string& successor_out) const {
     return _impl->match(u8str, successor_out);
 }
 
-LevenshteinDfa::MatchResult
-LevenshteinDfa::match(std::string_view u8str, std::vector<uint32_t>& successor_out) const {
+LevenshteinDfa::MatchResult LevenshteinDfa::match(
+    std::string_view u8str, std::vector<uint32_t>& successor_out) const {
     return _impl->match(u8str, successor_out);
 }
 
-size_t LevenshteinDfa::memory_usage() const noexcept {
-    return _impl->memory_usage();
-}
+size_t LevenshteinDfa::memory_usage() const noexcept { return _impl->memory_usage(); }
 
-void LevenshteinDfa::dump_as_graphviz(std::ostream& out) const {
-    _impl->dump_as_graphviz(out);
-}
+void LevenshteinDfa::dump_as_graphviz(std::ostream& out) const { _impl->dump_as_graphviz(out); }
 
-LevenshteinDfa LevenshteinDfa::build(std::string_view target_string, uint8_t max_edits,
-                                     Casing casing, DfaType dfa_type, Matching matching) {
+LevenshteinDfa LevenshteinDfa::build(
+    std::string_view target_string, uint8_t max_edits, Casing casing, DfaType dfa_type, Matching matching) {
     if (max_edits != 1 && max_edits != 2) {
         throw std::invalid_argument(make_string("Levenshtein DFA max_edits must be in {1, 2}, was %u", max_edits));
     }
-    const bool is_cased    = (casing == Casing::Cased);
-    const bool is_prefix   = (matching == Matching::Prefix);
-    auto target_string_u32 = is_cased ? utf8_string_to_utf32(target_string)
-                                      : utf8_string_to_utf32_lowercased(target_string);
+    const bool is_cased = (casing == Casing::Cased);
+    const bool is_prefix = (matching == Matching::Prefix);
+    auto       target_string_u32 =
+        is_cased ? utf8_string_to_utf32(target_string) : utf8_string_to_utf32_lowercased(target_string);
     if (dfa_type == DfaType::Implicit) {
         if (max_edits == 1) {
-            return LevenshteinDfa(std::make_unique<ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<1>>>(std::move(target_string_u32), is_cased, is_prefix));
+            return LevenshteinDfa(std::make_unique<ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<1>>>(
+                std::move(target_string_u32), is_cased, is_prefix));
         } else { // max_edits == 2
-            return LevenshteinDfa(std::make_unique<ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<2>>>(std::move(target_string_u32), is_cased, is_prefix));
+            return LevenshteinDfa(std::make_unique<ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<2>>>(
+                std::move(target_string_u32), is_cased, is_prefix));
         }
-    } else if(dfa_type == DfaType::Explicit) {
+    } else if (dfa_type == DfaType::Explicit) {
         if (max_edits == 1) {
-            return ExplicitLevenshteinDfaBuilder<FixedMaxEditDistanceTraits<1>>(std::move(target_string_u32), is_cased, is_prefix).build_dfa();
+            return ExplicitLevenshteinDfaBuilder<FixedMaxEditDistanceTraits<1>>(
+                       std::move(target_string_u32), is_cased, is_prefix)
+                .build_dfa();
         } else { // max_edits == 2
-            return ExplicitLevenshteinDfaBuilder<FixedMaxEditDistanceTraits<2>>(std::move(target_string_u32), is_cased, is_prefix).build_dfa();
+            return ExplicitLevenshteinDfaBuilder<FixedMaxEditDistanceTraits<2>>(
+                       std::move(target_string_u32), is_cased, is_prefix)
+                .build_dfa();
         }
     } else { // DfaType::Table
         if (max_edits == 1) {
@@ -71,7 +70,8 @@ LevenshteinDfa LevenshteinDfa::build(std::string_view target_string, uint8_t max
     }
 }
 
-LevenshteinDfa LevenshteinDfa::build(std::string_view target_string, uint8_t max_edits, Casing casing, DfaType dfa_type) {
+LevenshteinDfa LevenshteinDfa::build(
+    std::string_view target_string, uint8_t max_edits, Casing casing, DfaType dfa_type) {
     return build(target_string, max_edits, casing, dfa_type, Matching::FullString);
 }
 
@@ -120,10 +120,14 @@ std::ostream& operator<<(std::ostream& os, LevenshteinDfa::Casing c) {
 
 std::ostream& operator<<(std::ostream& os, LevenshteinDfa::Matching m) {
     switch (m) {
-    case LevenshteinDfa::Matching::FullString: os << "FullString"; return os;
-    case LevenshteinDfa::Matching::Prefix:     os << "Prefix"; return os;
+    case LevenshteinDfa::Matching::FullString:
+        os << "FullString";
+        return os;
+    case LevenshteinDfa::Matching::Prefix:
+        os << "Prefix";
+        return os;
     }
     abort();
 }
 
-}
+} // namespace vespalib::fuzzy

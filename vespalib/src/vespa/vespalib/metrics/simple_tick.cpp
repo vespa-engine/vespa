@@ -7,36 +7,27 @@ namespace {
 
 const TimeStamp oneSec{1.0};
 
-TimeStamp now()
-{
+TimeStamp now() {
     using Clock = std::chrono::system_clock;
     Clock::time_point now = Clock::now();
     return now.time_since_epoch();
 }
 
-} // namespace <unnamed>
+} // namespace
 
-SimpleTick::SimpleTick()
-    : _lock(), _runFlag(true), _cond()
-{}
+SimpleTick::SimpleTick() : _lock(), _runFlag(true), _cond() {}
 
-TimeStamp
-SimpleTick::first()
-{
-    return now();
-}
+TimeStamp SimpleTick::first() { return now(); }
 
-TimeStamp
-SimpleTick::next(TimeStamp prev)
-{
+TimeStamp SimpleTick::next(TimeStamp prev) {
     std::unique_lock<std::mutex> locker(_lock);
     while (_runFlag) {
         TimeStamp curr = now();
         if (curr - prev >= oneSec) {
             return curr;
         } else if (curr < prev) {
-             // clock was adjusted backwards
-             prev = curr;
+            // clock was adjusted backwards
+            prev = curr;
             _cond.wait_for(locker, oneSec);
         } else {
             _cond.wait_for(locker, oneSec - (curr - prev));
@@ -45,18 +36,12 @@ SimpleTick::next(TimeStamp prev)
     return now();
 }
 
-void
-SimpleTick::kill()
-{
+void SimpleTick::kill() {
     std::unique_lock<std::mutex> locker(_lock);
     _runFlag.store(false);
     _cond.notify_all();
 }
 
-bool
-SimpleTick::alive() const
-{
-    return _runFlag;
-}
+bool SimpleTick::alive() const { return _runFlag; }
 
 } // namespace vespalib::metrics

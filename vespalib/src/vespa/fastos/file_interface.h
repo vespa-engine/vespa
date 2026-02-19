@@ -10,15 +10,16 @@
 #pragma once
 
 #include <vespa/vespalib/util/time.h>
+
 #include <string>
 
-inline constexpr int FASTOS_FILE_OPEN_READ      = (1<<0);
-inline constexpr int FASTOS_FILE_OPEN_WRITE     = (1<<1);
-inline constexpr int FASTOS_FILE_OPEN_EXISTING  = (1<<2);
-inline constexpr int FASTOS_FILE_OPEN_CREATE    = (1<<3);
-inline constexpr int FASTOS_FILE_OPEN_TRUNCATE  = (1<<4);
-inline constexpr int FASTOS_FILE_OPEN_DIRECTIO  = (1<<7);
-inline constexpr int FASTOS_FILE_OPEN_SYNCWRITES = (1<<9); // synchronous writes
+inline constexpr int FASTOS_FILE_OPEN_READ = (1 << 0);
+inline constexpr int FASTOS_FILE_OPEN_WRITE = (1 << 1);
+inline constexpr int FASTOS_FILE_OPEN_EXISTING = (1 << 2);
+inline constexpr int FASTOS_FILE_OPEN_CREATE = (1 << 3);
+inline constexpr int FASTOS_FILE_OPEN_TRUNCATE = (1 << 4);
+inline constexpr int FASTOS_FILE_OPEN_DIRECTIO = (1 << 7);
+inline constexpr int FASTOS_FILE_OPEN_SYNCWRITES = (1 << 9); // synchronous writes
 
 /**
  * This class contains regular file-access functionality.
@@ -51,57 +52,56 @@ inline constexpr int FASTOS_FILE_OPEN_SYNCWRITES = (1<<9); // synchronous writes
  * @endcode
  */
 
-class DirectIOException : public std::exception
-{
+class DirectIOException : public std::exception {
 public:
-    DirectIOException(const char * fileName, const void * buffer, size_t length, int64_t offset);
+    DirectIOException(const char* fileName, const void* buffer, size_t length, int64_t offset);
     ~DirectIOException();
-    const char* what() const noexcept override { return _what.c_str(); }
-    const void * getBuffer() const { return _buffer; }
-    size_t       getLength() const { return _length; }
-    int64_t      getOffset() const { return _offset; }
-    const std::string & getFileName() const { return _fileName; }
+    const char*        what() const noexcept override { return _what.c_str(); }
+    const void*        getBuffer() const { return _buffer; }
+    size_t             getLength() const { return _length; }
+    int64_t            getOffset() const { return _offset; }
+    const std::string& getFileName() const { return _fileName; }
+
 private:
-    std::string  _what;
-    std::string  _fileName;
-    const void * _buffer;
-    size_t       _length;
-    int64_t      _offset;
+    std::string _what;
+    std::string _fileName;
+    const void* _buffer;
+    size_t      _length;
+    int64_t     _offset;
 };
 
-class FastOS_FileInterface
-{
+class FastOS_FileInterface {
 private:
-    FastOS_FileInterface (const FastOS_FileInterface&);
+    FastOS_FileInterface(const FastOS_FileInterface&);
     FastOS_FileInterface& operator=(const FastOS_FileInterface&);
 
     // Default options for madvise used on every file opening. Default is FADV_NORMAL
     // Set with setDefaultFAdviseOptions() application wide.
     // And setFAdviseOptions() per file.
-    static int    _defaultFAdviseOptions;
-    int           _fAdviseOptions;
-    size_t        _chunkSize;
-    void WriteBufInternal(const void *buffer, size_t length);
+    static int _defaultFAdviseOptions;
+    int        _fAdviseOptions;
+    size_t     _chunkSize;
+    void       WriteBufInternal(const void* buffer, size_t length);
 
 protected:
-    static bool   _fsyncEnabled;
-    std::string   _filename;
-    unsigned int  _openFlags;
-    bool          _directIOEnabled;
-    bool          _syncWritesEnabled;
+    static bool  _fsyncEnabled;
+    std::string  _filename;
+    unsigned int _openFlags;
+    bool         _directIOEnabled;
+    bool         _syncWritesEnabled;
 
 public:
     static void enableFSync() noexcept { _fsyncEnabled = true; }
     static void setDefaultFAdviseOptions(int options) noexcept { _defaultFAdviseOptions = options; }
-    int getFAdviseOptions()                     const noexcept { return _fAdviseOptions; }
-    void setFAdviseOptions(int options)               noexcept { _fAdviseOptions = options; }
+    int         getFAdviseOptions() const noexcept { return _fAdviseOptions; }
+    void        setFAdviseOptions(int options) noexcept { _fAdviseOptions = options; }
 
     /**
      * Constructor. A filename could be supplied at this point, or specified
      * later using @ref Open().
      * @param filename  a filename (optional)
      */
-    FastOS_FileInterface(const char *filename=nullptr);
+    FastOS_FileInterface(const char* filename = nullptr);
 
     /**
      * Destructor. If the current file is open, the destructor will close
@@ -114,7 +114,7 @@ public:
      * has been set, an empty string is returned instead.
      * @return The filename associated with the File object
      */
-    virtual const char *GetFileName() const;
+    virtual const char* GetFileName() const;
 
     /**
      * Open a file.
@@ -130,7 +130,7 @@ public:
      *                     or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    virtual bool Open(unsigned int openFlags, const char *filename=nullptr) = 0;
+    virtual bool Open(unsigned int openFlags, const char* filename = nullptr) = 0;
 
     /**
      * Open a file for read/write access. The file will be created if it does
@@ -141,7 +141,7 @@ public:
      *                       or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenReadWrite(const char *filename=nullptr);
+    bool OpenReadWrite(const char* filename = nullptr);
 
     /**
      * Open a file for read access. This method fails if the file does
@@ -153,7 +153,7 @@ public:
      *                         or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenReadOnlyExisting (bool abortIfNotExist=false, const char *filename=nullptr);
+    bool OpenReadOnlyExisting(bool abortIfNotExist = false, const char* filename = nullptr);
 
     /**
      * Open a file for write access. If the file does not exist, it is created.
@@ -164,7 +164,7 @@ public:
      *                         or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenWriteOnlyTruncate(const char *filename=nullptr);
+    bool OpenWriteOnlyTruncate(const char* filename = nullptr);
 
     /**
      * Open a file for write access. This method fails if the file does
@@ -176,7 +176,7 @@ public:
      *                         or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenWriteOnlyExisting (bool abortIfNotExist=false, const char *filename=nullptr);
+    bool OpenWriteOnlyExisting(bool abortIfNotExist = false, const char* filename = nullptr);
 
     /**
      * Open a file for read-access only. This method fails if the file does
@@ -187,7 +187,7 @@ public:
      *                       or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenReadOnly(const char *filename=nullptr);
+    bool OpenReadOnly(const char* filename = nullptr);
 
     /**
      * Open a file for write-access only.  The file will be created if it does
@@ -198,7 +198,7 @@ public:
      *                       or a previous call to Open().
      * @return Boolean success/failure
      */
-    bool OpenWriteOnly(const char *filename=nullptr);
+    bool OpenWriteOnly(const char* filename = nullptr);
 
     /**
      * Close the file. The call will successfully do nothing if the file
@@ -220,7 +220,7 @@ public:
      * @return The number of bytes which was actually read,
      *         or -1 on error.
      */
-    [[nodiscard]] virtual ssize_t Read(void *buffer, size_t length) = 0;
+    [[nodiscard]] virtual ssize_t Read(void* buffer, size_t length) = 0;
 
     /**
      * Write [len] bytes from [buffer].  This is just a wrapper for
@@ -230,7 +230,7 @@ public:
      * @param len     number of bytes to write
      * @return Boolean success/failure
      */
-    [[nodiscard]] bool CheckedWrite(const void *buffer, size_t len);
+    [[nodiscard]] bool CheckedWrite(const void* buffer, size_t len);
 
     /**
      * Write [len] bytes from [buffer].
@@ -238,7 +238,7 @@ public:
      * @param len     number of bytes to write
      * @return The number of bytes actually written, or -1 on error
      */
-    [[nodiscard]] virtual ssize_t Write2(const void *buffer, size_t len) = 0;
+    [[nodiscard]] virtual ssize_t Write2(const void* buffer, size_t len) = 0;
 
     /**
      * Read [length] bytes into [buffer]. Caution! If the actual number
@@ -249,7 +249,7 @@ public:
      * @param buffer  buffer pointer
      * @param length  number of bytes to read
      */
-    virtual void ReadBuf(void *buffer, size_t length);
+    virtual void ReadBuf(void* buffer, size_t length);
 
     /**
      * Write [length] bytes from [buffer] in chunks. Caution! If the write fails,
@@ -259,8 +259,7 @@ public:
      * @param buffer  buffer pointer
      * @param length  number of bytes to write
      */
-    virtual void WriteBuf(const void *buffer, size_t length);
-
+    virtual void WriteBuf(const void* buffer, size_t length);
 
     /**
      * Read [length] bytes at file offset [readOffset] into [buffer].
@@ -273,7 +272,7 @@ public:
      * @param length      number of bytes to read
      * @param readOffset  file offset where the read operation starts
      */
-    virtual void ReadBuf(void *buffer, size_t length, int64_t readOffset);
+    virtual void ReadBuf(void* buffer, size_t length, int64_t readOffset);
 
     /**
      * Set the filepointer. The next @ref Read() or @ref Write() will
@@ -306,16 +305,12 @@ public:
     /**
      * Are we in some kind of file read mode?
      */
-    bool IsReadMode() {
-        return ((_openFlags & FASTOS_FILE_OPEN_READ) != 0);
-    }
+    bool IsReadMode() { return ((_openFlags & FASTOS_FILE_OPEN_READ) != 0); }
 
     /**
      * Are we in some kind of file write mode?
      */
-    bool IsWriteMode() {
-        return ((_openFlags & FASTOS_FILE_OPEN_WRITE) != 0);
-    }
+    bool IsWriteMode() { return ((_openFlags & FASTOS_FILE_OPEN_WRITE) != 0); }
 
     /**
      * Truncate or extend the file to the new size.
@@ -369,10 +364,8 @@ public:
      *                              bytes.
      * @return  True if direct disk I/O is being used for this file, else false.
      */
-    virtual bool
-    GetDirectIORestrictions(size_t &memoryAlignment,
-                            size_t &transferGranularity,
-                            size_t &transferMaximum);
+    virtual bool GetDirectIORestrictions(
+        size_t& memoryAlignment, size_t& transferGranularity, size_t& transferMaximum);
 
     /**
      * Retrieve the required padding for direct I/O to be used.
@@ -385,10 +378,7 @@ public:
      * @return   True if the file access can be accomplished with
      *           direct I/O, else false.
      */
-    virtual bool DirectIOPadding(int64_t offset,
-                                 size_t buflen,
-                                 size_t &padBefore,
-                                 size_t &padAfter);
+    virtual bool DirectIOPadding(int64_t offset, size_t buflen, size_t& padBefore, size_t& padAfter);
 
     /**
      * Allocate a buffer for normal io.
@@ -396,7 +386,7 @@ public:
      * @return pointer value or nullptr if out of memory
      *         Use free() with this pointer to deallocate the buffer.
      */
-    static void *allocateIOBuffer(size_t byteSize);
+    static void* allocateIOBuffer(size_t byteSize);
 
     /**
      * Get maximum memory alignment for directio buffers.
@@ -411,7 +401,7 @@ public:
      * @return Aligned pointer value or nullptr if out of memory.
      *         Use free() with this pointer to deallocate the buffer.
      */
-    virtual void *AllocateDirectIOBuffer(size_t byteSize);
+    virtual void* AllocateDirectIOBuffer(size_t byteSize);
 
     /**
      * Enable mapping of complete file contents into the address space of the
@@ -425,7 +415,7 @@ public:
      * @return location of file data in memory.  If the file is not mapped,
      * nullptr is returned.
      */
-    virtual void *MemoryMapPtr(int64_t position) const;
+    virtual void* MemoryMapPtr(int64_t position) const;
 
     /**
      * Inquiry if file content is mapped into memory.
@@ -439,22 +429,19 @@ public:
     virtual void dropFromCache() const;
 };
 
-
 /**
  * The class serves as a container for information returned by
  * @ref FastOS_File::Stat().
  */
-class FastOS_StatInfo
-{
+class FastOS_StatInfo {
 public:
     /**
      * Possible error codes.
      */
-    enum StatError
-    {
-        Ok,           //!< ok
-        Unknown,      //!< unknown error
-        FileNotFound  //!< file not found error
+    enum StatError {
+        Ok,          //!< ok
+        Unknown,     //!< unknown error
+        FileNotFound //!< file not found error
     };
 
     StatError _error;

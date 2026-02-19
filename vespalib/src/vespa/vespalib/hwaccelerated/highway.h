@@ -3,6 +3,7 @@
 #pragma once
 
 #include "iaccelerated.h"
+
 #include <memory>
 
 namespace vespalib::hwaccelerated {
@@ -19,4 +20,4 @@ public:
     [[nodiscard]] static std::vector<std::unique_ptr<IAccelerated>> create_supported_targets();
 };
 
-}
+} // namespace vespalib::hwaccelerated

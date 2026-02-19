@@ -4,8 +4,6 @@
 
 namespace vespalib::test {
 
-Nexus::~Nexus() {
-    _vote.destroy();
-}
+Nexus::~Nexus() { _vote.destroy(); }
 
-}
+} // namespace vespalib::test

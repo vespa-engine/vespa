@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/classname.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+
 #include <execinfo.h>
+
 #include <csignal>
 #include <cstdlib>
 #include <string>
 
-#if defined (__has_include)
+#if defined(__has_include)
 #if __has_include(<unwind.h>)
 #define VESPA_BACKTRACE_HAS_UNWIND_H
 #include <unwind.h>
@@ -30,16 +32,14 @@ namespace {
  * @param line A single line from backtrace_symbols
  * @return The demangled line or the original line if demangling fails
  */
-std::string
-demangleBacktraceLine(const std::string& line)
-{
+std::string demangleBacktraceLine(const std::string& line) {
     size_t symBegin = line.find_first_of('(');
     if (symBegin != std::string::npos) {
         size_t symEnd = line.find_first_of('+', symBegin);
         if (symEnd != std::string::npos) {
             std::string mangled = line.substr(symBegin + 1, symEnd - symBegin - 1);
             std::string demangled = vespalib::demangle(mangled.c_str());
-            if ( ! demangled.empty()) {
+            if (!demangled.empty()) {
                 // Create string matching original backtrace line format,
                 // except with demangled function signature
                 std::string ret(line.c_str(), symBegin + 1);
@@ -80,7 +80,7 @@ _Unwind_Reason_Code unwind_callback(_Unwind_Context* ctx, void* caller_arg) {
 
 #endif
 
-} // anon ns
+} // namespace
 
 bool has_signal_safe_collect_stack_frames() noexcept {
 #ifdef VESPA_BACKTRACE_HAS_UNWIND_H
@@ -107,16 +107,11 @@ size_t signal_safe_collect_stack_frames(void** frames_out, size_t frames_max) {
 #endif
 }
 
-int
-getStackTraceFrames(void** framesOut, int maxFrames) {
-    return backtrace(framesOut, maxFrames);
-}
+int getStackTraceFrames(void** framesOut, int maxFrames) { return backtrace(framesOut, maxFrames); }
 
-std::string
-getStackTrace(int ignoreTop, void* const* stack, int size)
-{
+std::string getStackTrace(int ignoreTop, void* const* stack, int size) {
     asciistream ost;
-    char** symbols = backtrace_symbols(stack, size);
+    char**      symbols = backtrace_symbols(stack, size);
     if (symbols) {
         ost << "Backtrace:";
         for (int i = ignoreTop; i < size; ++i) {
@@ -127,12 +122,11 @@ getStackTrace(int ignoreTop, void* const* stack, int size)
     return ost.str();
 }
 
-std::string
-getStackTrace(int ignoreTop) {
+std::string getStackTrace(int ignoreTop) {
     ignoreTop += 1;
     void* stack[25];
-    int size = backtrace(stack, 25);
+    int   size = backtrace(stack, 25);
     return getStackTrace(ignoreTop, stack, size);
 }
 
-} // vespalib
+} // namespace vespalib

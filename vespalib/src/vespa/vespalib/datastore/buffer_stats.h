@@ -4,6 +4,7 @@
 
 #include "buffer_type.h"
 #include "memory_stats.h"
+
 #include <atomic>
 
 namespace vespalib::datastore {
@@ -27,8 +28,8 @@ protected:
     // Number of bytes that are heap allocated (and used) by elements that are stored in this buffer.
     // For simple types this is always 0.
     std::atomic<size_t> _extra_used_bytes;
-    // Number of bytes that are heap allocated (and used) by elements that are stored in this buffer and is now on hold.
-    // For simple types this is always 0.
+    // Number of bytes that are heap allocated (and used) by elements that are stored in this buffer and is now on
+    // hold. For simple types this is always 0.
     std::atomic<size_t> _extra_hold_bytes;
 
 public:
@@ -47,7 +48,9 @@ public:
     size_t extra_used_bytes() const noexcept { return _extra_used_bytes.load(std::memory_order_relaxed); }
     size_t extra_hold_bytes() const noexcept { return _extra_hold_bytes.load(std::memory_order_relaxed); }
 
-    void inc_extra_used_bytes(size_t value) noexcept { _extra_used_bytes.store(extra_used_bytes() + value, std::memory_order_relaxed); }
+    void inc_extra_used_bytes(size_t value) noexcept {
+        _extra_used_bytes.store(extra_used_bytes() + value, std::memory_order_relaxed);
+    }
 
     void add_to_mem_stats(size_t entry_size, MemoryStats& stats) const noexcept;
 };
@@ -62,15 +65,20 @@ public:
     void set_alloc_entries(size_t value) noexcept { _alloc_entries.store(value, std::memory_order_relaxed); }
     void set_dead_entries(size_t value) noexcept { _dead_entries.store(value, std::memory_order_relaxed); }
     void set_hold_entries(size_t value) noexcept { _hold_entries.store(value, std::memory_order_relaxed); }
-    void inc_dead_entries(size_t value) noexcept { _dead_entries.store(dead_entries() + value, std::memory_order_relaxed); }
-    void inc_hold_entries(size_t value) noexcept { _hold_entries.store(hold_entries() + value, std::memory_order_relaxed); }
+    void inc_dead_entries(size_t value) noexcept {
+        _dead_entries.store(dead_entries() + value, std::memory_order_relaxed);
+    }
+    void inc_hold_entries(size_t value) noexcept {
+        _hold_entries.store(hold_entries() + value, std::memory_order_relaxed);
+    }
     void dec_hold_entries(size_t value) noexcept;
-    void inc_extra_hold_bytes(size_t value) noexcept { _extra_hold_bytes.store(extra_hold_bytes() + value, std::memory_order_relaxed); }
+    void inc_extra_hold_bytes(size_t value) noexcept {
+        _extra_hold_bytes.store(extra_hold_bytes() + value, std::memory_order_relaxed);
+    }
     std::atomic<EntryCount>& used_entries_ref() noexcept { return _used_entries; }
     std::atomic<EntryCount>& dead_entries_ref() noexcept { return _dead_entries; }
-    std::atomic<size_t>& extra_used_bytes_ref() noexcept { return _extra_used_bytes; }
-    std::atomic<size_t>& extra_hold_bytes_ref() noexcept { return _extra_hold_bytes; }
+    std::atomic<size_t>&     extra_used_bytes_ref() noexcept { return _extra_used_bytes; }
+    std::atomic<size_t>&     extra_hold_bytes_ref() noexcept { return _extra_hold_bytes; }
 };
 
-}
-
+} // namespace vespalib::datastore

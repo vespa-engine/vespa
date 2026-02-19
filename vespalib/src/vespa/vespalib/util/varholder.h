@@ -6,16 +6,15 @@
 
 namespace vespalib {
 
-template <typename T>
-class VarHolder
-{
-    T                   _v;
-    mutable std::mutex  _lock;
+template <typename T> class VarHolder {
+    T                  _v;
+    mutable std::mutex _lock;
+
 public:
     VarHolder() : _v(), _lock() {}
     explicit VarHolder(T v) : _v(std::move(v)), _lock() {}
-    VarHolder(const VarHolder &) = delete;
-    VarHolder & operator = (const VarHolder &) = delete;
+    VarHolder(const VarHolder&) = delete;
+    VarHolder& operator=(const VarHolder&) = delete;
     ~VarHolder();
 
     void set(T v) {
@@ -35,7 +34,6 @@ public:
     }
 };
 
-template <typename T>
-VarHolder<T>::~VarHolder() = default;
+template <typename T> VarHolder<T>::~VarHolder() = default;
 
-}
+} // namespace vespalib

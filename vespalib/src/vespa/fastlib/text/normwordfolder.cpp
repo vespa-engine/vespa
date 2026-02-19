@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "normwordfolder.h"
-#include <mutex>
+
 #include <cstring>
+#include <mutex>
 
 bool Fast_NormalizeWordFolder::_isInitialized = false;
 
@@ -21,29 +22,24 @@ ucs4_t Fast_NormalizeWordFolder::_halfwidth_fullwidthMap[240];
 
 namespace {
 
-std::mutex G_initMutex;
+std::mutex               G_initMutex;
 Fast_NormalizeWordFolder G_forceWorldFolderInit;
-}
+} // namespace
 
-
-void
-Fast_NormalizeWordFolder::Setup(uint32_t flags)
-{
+void Fast_NormalizeWordFolder::Setup(uint32_t flags) {
     // Only allow setting these when not initialized or initializing...
     {
         std::lock_guard<std::mutex> initGuard(G_initMutex);
-        _doAccentRemoval         = (DO_ACCENT_REMOVAL           & flags) != 0;
-        _doSharpSSubstitution    = (DO_SHARP_S_SUBSTITUTION     & flags) != 0;
-        _doLigatureSubstitution  = (DO_LIGATURE_SUBSTITUTION    & flags) != 0;
-        _doMulticharExpansion    = (DO_MULTICHAR_EXPANSION      & flags) != 0;
+        _doAccentRemoval = (DO_ACCENT_REMOVAL & flags) != 0;
+        _doSharpSSubstitution = (DO_SHARP_S_SUBSTITUTION & flags) != 0;
+        _doLigatureSubstitution = (DO_LIGATURE_SUBSTITUTION & flags) != 0;
+        _doMulticharExpansion = (DO_MULTICHAR_EXPANSION & flags) != 0;
         _isInitialized = false;
     }
     Initialize();
 }
 
-void
-Fast_NormalizeWordFolder::Initialize()
-{
+void Fast_NormalizeWordFolder::Initialize() {
     unsigned int i;
     if (!_isInitialized) {
         std::lock_guard<std::mutex> initGuard(G_initMutex);
@@ -62,13 +58,13 @@ Fast_NormalizeWordFolder::Initialize()
                 _foldCase[0xc0] = 'a';
                 _foldCase[0xc1] = 'a';
                 _foldCase[0xc2] = 'a';
-                _foldCase[0xc3] = 'a';  // A tilde
+                _foldCase[0xc3] = 'a'; // A tilde
                 _foldCase[0xc7] = 'c';
                 _foldCase[0xc8] = 'e';
                 _foldCase[0xc9] = 'e';
                 _foldCase[0xca] = 'e';
                 _foldCase[0xcb] = 'e';
-                _foldCase[0xcc] = 'i';  // I grave
+                _foldCase[0xcc] = 'i'; // I grave
                 _foldCase[0xcd] = 'i';
                 _foldCase[0xce] = 'i';
                 _foldCase[0xcf] = 'i';
@@ -386,7 +382,6 @@ Fast_NormalizeWordFolder::Initialize()
             // 0xFFEF -> id
             _halfwidth_fullwidthMap[0xEF] = 0xFFEF;
 
-
             //
             // DONE
             //
@@ -395,21 +390,16 @@ Fast_NormalizeWordFolder::Initialize()
     }
 }
 
-Fast_NormalizeWordFolder::Fast_NormalizeWordFolder()
-{
-    Initialize();
-}
-
+Fast_NormalizeWordFolder::Fast_NormalizeWordFolder() { Initialize(); }
 
 Fast_NormalizeWordFolder::~Fast_NormalizeWordFolder() = default;
 
-const char*
-Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4_t *dstbuf,
-                                       ucs4_t *dstbufend, const char*& origstart, size_t& tokenlen) const
-{
+const char* Fast_NormalizeWordFolder::UCS4Tokenize(
+    const char* buf, const char* bufend, ucs4_t* dstbuf, ucs4_t* dstbufend, const char*& origstart,
+    size_t& tokenlen) const {
     using vespalib::char_p_cast;
-    const char *retval = bufend;
-    ucs4_t c;
+    const char*          retval = bufend;
+    ucs4_t               c;
     const unsigned char *p, *ep, *prev_p;
     p = char_p_cast<unsigned char>(buf);
     ep = char_p_cast<unsigned char>(bufend);
@@ -420,7 +410,8 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4
     while (p < ep) {
         if (*p < 128) {
             c = *p++;
-            if (_isWord[c]) break;
+            if (_isWord[c])
+                break;
         } else {
             c = Fast_UnicodeUtil::GetUTF8Char(p);
             if (IsWordCharOrIA(c))
@@ -441,7 +432,7 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4
     if (c == 0xFFF9) { // ANCHOR
         // Collect up to and including terminator
         while (p < ep) {
-            if (*p < 128) {  // Note, no exit on plain ASCII
+            if (*p < 128) { // Note, no exit on plain ASCII
                 target.copy(*p++);
             } else {
                 c = Fast_UnicodeUtil::GetUTF8Char(p);
@@ -451,15 +442,15 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4
                 }
             }
         }
-        if (c == 0xFFFA) {                   // SEPARATOR => start folding again
+        if (c == 0xFFFA) { // SEPARATOR => start folding again
             while (p < ep) {
-                if (*p < 128 ) {             // Common case, ASCII
+                if (*p < 128) { // Common case, ASCII
                     c = *p++;
                     target.fold(c);
                 } else {
                     c = Fast_UnicodeUtil::GetUTF8Char(p);
                     target.fold(c);
-                    if (c == 0xFFFB) {       // TERMINATOR => Exit condition
+                    if (c == 0xFFFB) { // TERMINATOR => Exit condition
                         break;
                     }
                 }
@@ -467,9 +458,10 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4
         }
     } else {
         while (p < ep) {
-            if (*p < 128 ) {                 // Common case, ASCII
+            if (*p < 128) { // Common case, ASCII
                 c = *p;
-                if (!_isWord[c]) break;
+                if (!_isWord[c])
+                    break;
                 p++;
             } else {
                 prev_p = p;

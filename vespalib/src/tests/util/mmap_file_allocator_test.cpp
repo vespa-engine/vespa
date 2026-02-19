@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/mmap_file_allocator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/mmap_file_allocator.h>
+
 #include <sys/mman.h>
 
 using vespalib::alloc::MemoryAllocator;
@@ -14,48 +15,35 @@ std::string basedir("mmap-file-allocator-dir");
 std::string hello("hello");
 std::string world("world");
 
-struct MyAlloc
-{
+struct MyAlloc {
     const MemoryAllocator& allocator;
     void*                  data;
     size_t                 size;
 
     MyAlloc(MemoryAllocator& allocator_in, PtrAndSize buf)
-        : allocator(allocator_in),
-          data(buf.get()),
-          size(buf.size())
-    {
-    }
+        : allocator(allocator_in), data(buf.get()), size(buf.size()) {}
 
-    ~MyAlloc()
-    {
-        allocator.free(data, size);
-    }
+    ~MyAlloc() { allocator.free(data, size); }
 
     PtrAndSize asPair() const noexcept { return PtrAndSize(data, size); }
 };
 
-}
+} // namespace
 
 struct AllocatorSetup {
     uint32_t small_limit;
     uint32_t premmap_size;
 
     AllocatorSetup(uint32_t small_limit_in, uint32_t premmap_size_in)
-        : small_limit(small_limit_in),
-          premmap_size(premmap_size_in)
-    {
-    }
+        : small_limit(small_limit_in), premmap_size(premmap_size_in) {}
 };
 
-std::ostream& operator<<(std::ostream& os, const AllocatorSetup setup)
-{
+std::ostream& operator<<(std::ostream& os, const AllocatorSetup setup) {
     os << "small" << setup.small_limit << "premm" << setup.premmap_size;
     return os;
 }
 
-class MmapFileAllocatorTest : public ::testing::TestWithParam<AllocatorSetup>
-{
+class MmapFileAllocatorTest : public ::testing::TestWithParam<AllocatorSetup> {
 protected:
     MmapFileAllocator _allocator;
 
@@ -65,27 +53,22 @@ public:
 };
 
 MmapFileAllocatorTest::MmapFileAllocatorTest()
-    : _allocator(basedir, GetParam().small_limit, GetParam().premmap_size)
-{
-}
+    : _allocator(basedir, GetParam().small_limit, GetParam().premmap_size) {}
 
 MmapFileAllocatorTest::~MmapFileAllocatorTest() = default;
 
-INSTANTIATE_TEST_SUITE_P(MmapFileAllocatorMultiTest,
-                         MmapFileAllocatorTest,
-                         testing::Values(AllocatorSetup(0, 1_Mi), AllocatorSetup(512, 1_Mi), AllocatorSetup(128_Ki, 1_Mi)), testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(
+    MmapFileAllocatorMultiTest, MmapFileAllocatorTest,
+    testing::Values(AllocatorSetup(0, 1_Mi), AllocatorSetup(512, 1_Mi), AllocatorSetup(128_Ki, 1_Mi)),
+    testing::PrintToStringParamName());
 
-
-
-TEST_P(MmapFileAllocatorTest, zero_sized_allocation_is_handled)
-{
+TEST_P(MmapFileAllocatorTest, zero_sized_allocation_is_handled) {
     MyAlloc buf(_allocator, _allocator.alloc(0));
     EXPECT_EQ(nullptr, buf.data);
     EXPECT_EQ(0u, buf.size);
 }
 
-TEST_P(MmapFileAllocatorTest, mmap_file_allocator_works)
-{
+TEST_P(MmapFileAllocatorTest, mmap_file_allocator_works) {
     MyAlloc buf(_allocator, _allocator.alloc(300));
     EXPECT_LE(300u, buf.size);
     EXPECT_TRUE(buf.data != nullptr);
@@ -106,8 +89,7 @@ TEST_P(MmapFileAllocatorTest, mmap_file_allocator_works)
     }
 }
 
-TEST_P(MmapFileAllocatorTest, reuse_file_offset_works)
-{
+TEST_P(MmapFileAllocatorTest, reuse_file_offset_works) {
     constexpr size_t size_300 = 300;
     constexpr size_t size_600 = 600;
     assert(hello.size() + 1 <= size_300);

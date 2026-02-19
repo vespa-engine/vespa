@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "simple_thread_bundle.h"
+
 #include "exceptions.h"
+
 #include <cassert>
 
 using namespace vespalib::fixed_thread_bundle;
@@ -13,20 +15,20 @@ VESPA_THREAD_STACK_TAG(simple_thread_bundle_executor);
 namespace {
 
 struct SignalHook : Runnable {
-    Signal &signal;
-    explicit SignalHook(Signal &s) noexcept : signal(s) {}
+    Signal& signal;
+    explicit SignalHook(Signal& s) noexcept : signal(s) {}
     void run() override { signal.send(); }
 };
 
 struct BroadcastHook : Runnable {
-    Signal &signal;
-    explicit BroadcastHook(Signal &s) noexcept : signal(s) {}
+    Signal& signal;
+    explicit BroadcastHook(Signal& s) noexcept : signal(s) {}
     void run() override { signal.broadcast(); }
 };
 
 struct PartHook : Runnable {
     Part part;
-    explicit PartHook(const Part &p) noexcept : part(p) {}
+    explicit PartHook(const Part& p) noexcept : part(p) {}
     void run() override { part.perform(); }
 };
 
@@ -40,15 +42,13 @@ struct HookPair : Runnable {
     }
 };
 
-Runnable::UP wrap(Runnable *runnable) noexcept {
-    return Runnable::UP(runnable);
-}
+Runnable::UP wrap(Runnable* runnable) noexcept { return Runnable::UP(runnable); }
 
 Runnable::UP chain(Runnable::UP first, Runnable::UP second) {
     return std::make_unique<HookPair>(std::move(first), std::move(second));
 }
 
-} // namespace vespalib::<unnamed>
+} // namespace
 
 //-----------------------------------------------------------------------------
 
@@ -56,29 +56,20 @@ Signal::Signal() noexcept
     : valid(true),
       generation(0),
       monitor(std::make_unique<std::mutex>()),
-      cond(std::make_unique<std::condition_variable>())
-{}
+      cond(std::make_unique<std::condition_variable>()) {}
 Signal::~Signal() = default;
 
 SimpleThreadBundle::Pool::Pool(size_t bundleSize, init_fun_t init_fun)
-    : _lock(),
-      _bundleSize(bundleSize),
-      _init_fun(init_fun),
-      _bundles()
-{
-}
+    : _lock(), _bundleSize(bundleSize), _init_fun(init_fun), _bundles() {}
 
-SimpleThreadBundle::Pool::~Pool()
-{
+SimpleThreadBundle::Pool::~Pool() {
     while (!_bundles.empty()) {
         delete _bundles.back();
         _bundles.pop_back();
     }
 }
 
-SimpleThreadBundle::UP
-SimpleThreadBundle::Pool::obtain()
-{
+SimpleThreadBundle::UP SimpleThreadBundle::Pool::obtain() {
     {
         std::lock_guard guard(_lock);
         if (!_bundles.empty()) {
@@ -90,9 +81,7 @@ SimpleThreadBundle::Pool::obtain()
     return std::make_unique<SimpleThreadBundle>(_bundleSize, _init_fun, USE_SIGNAL_LIST);
 }
 
-void
-SimpleThreadBundle::Pool::release(SimpleThreadBundle::UP bundle)
-{
+void SimpleThreadBundle::Pool::release(SimpleThreadBundle::UP bundle) {
     std::lock_guard guard(_lock);
     _bundles.push_back(bundle.get());
     bundle.release();
@@ -101,11 +90,7 @@ SimpleThreadBundle::Pool::release(SimpleThreadBundle::UP bundle)
 //-----------------------------------------------------------------------------
 
 SimpleThreadBundle::SimpleThreadBundle(size_t size_in, Runnable::init_fun_t init_fun, Strategy strategy)
-    : _work(),
-      _signals(),
-      _workers(),
-      _hook()
-{
+    : _work(), _signals(), _workers(), _hook() {
     if (size_in == 0) {
         throw IllegalArgumentException("size must be greater than 0");
     }
@@ -140,25 +125,18 @@ SimpleThreadBundle::SimpleThreadBundle(size_t size_in, Runnable::init_fun_t init
     }
 }
 
-SimpleThreadBundle::~SimpleThreadBundle()
-{
-    for (auto & _signal : _signals) {
+SimpleThreadBundle::~SimpleThreadBundle() {
+    for (auto& _signal : _signals) {
         _signal.cancel();
     }
-    for (const auto & _worker : _workers) {
+    for (const auto& _worker : _workers) {
         _worker->thread.join();
     }
 }
 
-size_t
-SimpleThreadBundle::size() const
-{
-    return (_workers.size() + 1);
-}
+size_t SimpleThreadBundle::size() const { return (_workers.size() + 1); }
 
-void
-SimpleThreadBundle::run(Runnable* const* targets, size_t cnt)
-{
+void SimpleThreadBundle::run(Runnable* const* targets, size_t cnt) {
     if (cnt > size()) {
         throw IllegalArgumentException("too many targets");
     }
@@ -177,17 +155,13 @@ SimpleThreadBundle::run(Runnable* const* targets, size_t cnt)
     latch.await();
 }
 
-SimpleThreadBundle::Worker::Worker(Signal &s, Runnable::init_fun_t init_fun, Runnable::UP h)
-  : thread(),
-    signal(s),
-    hook(std::move(h))
-{
+SimpleThreadBundle::Worker::Worker(Signal& s, Runnable::init_fun_t init_fun, Runnable::UP h)
+    : thread(), signal(s), hook(std::move(h)) {
     thread = thread::start(*this, std::move(init_fun));
 }
 
-void
-SimpleThreadBundle::Worker::run() {
-    for (size_t gen = 0; signal.wait(gen) > 0; ) {
+void SimpleThreadBundle::Worker::run() {
+    for (size_t gen = 0; signal.wait(gen) > 0;) {
         hook->run();
     }
 }

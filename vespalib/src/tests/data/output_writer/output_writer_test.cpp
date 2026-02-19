@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/output_writer.h>
+#include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 
@@ -17,9 +17,10 @@ TEST(OutputWriterTest, output_writer_smoke_test) {
         dst.write('\n');
         dst.printf("%d + %d = %d\n", 2, 2, 4);
     }
-    std::string expect = "abc\n"
-                              "foo bar\n"
-                              "2 + 2 = 4\n";
+    std::string expect =
+        "abc\n"
+        "foo bar\n"
+        "2 + 2 = 4\n";
     EXPECT_EQ(Memory(expect), buffer.get());
 }
 
@@ -27,7 +28,7 @@ TEST(OutputWriterTest, require_that_reserve_commit_works_as_expected) {
     SimpleBuffer buffer;
     {
         OutputWriter dst(buffer, 3);
-        char *p = dst.reserve(5);
+        char*        p = dst.reserve(5);
         p[0] = 'a';
         p[1] = 'b';
         p[2] = 'c';
@@ -41,10 +42,11 @@ TEST(OutputWriterTest, require_that_reserve_commit_works_as_expected) {
 }
 
 TEST(OutputWriterTest, require_that_large_printf_works) {
-    const char *str = "12345678901234567890123456789012345678901234567890"
-                      "12345678901234567890123456789012345678901234567890"
-                      "12345678901234567890123456789012345678901234567890"
-                      "12345678901234567890123456789012345678901234567890";
+    const char* str =
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890";
     size_t str_len = strlen(str);
     EXPECT_EQ(str_len, 200u);
     SimpleBuffer buffer;

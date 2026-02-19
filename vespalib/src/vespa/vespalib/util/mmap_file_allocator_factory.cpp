@@ -1,23 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mmap_file_allocator_factory.h"
+
 #include "mmap_file_allocator.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <filesystem>
 
 namespace vespalib::alloc {
 
-MmapFileAllocatorFactory::MmapFileAllocatorFactory()
-    : _dir_name(),
-      _generation(0)
-{
-}
+MmapFileAllocatorFactory::MmapFileAllocatorFactory() : _dir_name(), _generation(0) {}
 
 MmapFileAllocatorFactory::~MmapFileAllocatorFactory() = default;
 
-void
-MmapFileAllocatorFactory::setup(const std::string& dir_name)
-{
+void MmapFileAllocatorFactory::setup(const std::string& dir_name) {
     _dir_name = dir_name;
     _generation = 0;
     if (!_dir_name.empty()) {
@@ -25,9 +22,7 @@ MmapFileAllocatorFactory::setup(const std::string& dir_name)
     }
 }
 
-std::unique_ptr<MemoryAllocator>
-MmapFileAllocatorFactory::make_memory_allocator(const std::string& name)
-{
+std::unique_ptr<MemoryAllocator> MmapFileAllocatorFactory::make_memory_allocator(const std::string& name) {
     if (_dir_name.empty()) {
         return {};
     }
@@ -36,11 +31,9 @@ MmapFileAllocatorFactory::make_memory_allocator(const std::string& name)
     return std::make_unique<MmapFileAllocator>(os.str());
 };
 
-MmapFileAllocatorFactory&
-MmapFileAllocatorFactory::instance()
-{
+MmapFileAllocatorFactory& MmapFileAllocatorFactory::instance() {
     static MmapFileAllocatorFactory instance;
     return instance;
 }
 
-}
+} // namespace vespalib::alloc

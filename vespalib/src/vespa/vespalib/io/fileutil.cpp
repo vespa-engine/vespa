@@ -1,16 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fileutil.h"
-#include <vespa/vespalib/util/exceptions.h>
+
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <cassert>
-#include <filesystem>
+
 #include <dirent.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <unistd.h>
+
+#include <cassert>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.io.fileutil");
@@ -21,8 +24,7 @@ namespace vespalib {
 
 namespace {
 
-FileInfo::UP
-processStat(struct stat& filestats, bool result, std::string_view path) {
+FileInfo::UP processStat(struct stat& filestats, bool result, std::string_view path) {
     FileInfo::UP resval;
     if (result) {
         resval = std::make_unique<FileInfo>();
@@ -35,40 +37,27 @@ processStat(struct stat& filestats, bool result, std::string_view path) {
             << "errno(" << errno << "): " << getErrorString(errno);
         throw IoException(ost.view(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
-    LOG(debug, "stat(%s): Existed? %s, Plain file? %s, Directory? %s, Size: %" PRIu64,
-        std::string(path).c_str(),
-        resval.get() ? "true" : "false",
-        resval.get() && resval->_plainfile ? "true" : "false",
-        resval.get() && resval->_directory ? "true" : "false",
-        resval.get() ? resval->_size : 0);
+    LOG(debug, "stat(%s): Existed? %s, Plain file? %s, Directory? %s, Size: %" PRIu64, std::string(path).c_str(),
+        resval.get() ? "true" : "false", resval.get() && resval->_plainfile ? "true" : "false",
+        resval.get() && resval->_directory ? "true" : "false", resval.get() ? resval->_size : 0);
     return resval;
 }
 
-std::string
-safeStrerror(int errnum)
-{
-    return getErrorString(errnum);
-}
+std::string safeStrerror(int errnum) { return getErrorString(errnum); }
 
-}
+} // namespace
 
-File::File(std::string_view filename)
-    : _fd(-1),
-      _filename(filename)
-{ }
+File::File(std::string_view filename) : _fd(-1), _filename(filename) {}
 
-File::~File()
-{
-    if (_fd != -1) close();
+File::~File() {
+    if (_fd != -1)
+        close();
 }
 
 namespace {
-int openAndCreateDirsIfMissing(const std::string & filename, int flags, bool createDirsIfMissing)
-{
+int openAndCreateDirsIfMissing(const std::string& filename, int flags, bool createDirsIfMissing) {
     int fd = ::open(filename.c_str(), flags, 0644);
-    if (fd < 0 && errno == ENOENT && ((flags & O_CREAT) != 0)
-        && createDirsIfMissing)
-    {
+    if (fd < 0 && errno == ENOENT && ((flags & O_CREAT) != 0) && createDirsIfMissing) {
         auto pos = filename.rfind('/');
         if (pos != std::string::npos) {
             std::string path(filename.substr(0, pos));
@@ -79,10 +68,9 @@ int openAndCreateDirsIfMissing(const std::string & filename, int flags, bool cre
     }
     return fd;
 }
-}
+} // namespace
 
-void
-File::open(int flags, bool autoCreateDirectories) {
+void File::open(int flags, bool autoCreateDirectories) {
     if ((flags & File::READONLY) != 0) {
         if ((flags & File::CREATE) != 0) {
             throw IllegalArgumentException("Cannot use READONLY and CREATE options at the same time", VESPA_STRLOC);
@@ -94,34 +82,32 @@ File::open(int flags, bool autoCreateDirectories) {
             throw IllegalArgumentException("No point in auto-creating directories on read only access", VESPA_STRLOC);
         }
     }
-    int openflags = ((flags & File::READONLY) != 0 ? O_RDONLY : O_RDWR)
-                  | ((flags & File::CREATE)  != 0 ? O_CREAT : 0)
-                  | ((flags & File::TRUNC) != 0 ? O_TRUNC: 0);
+    int openflags = ((flags & File::READONLY) != 0 ? O_RDONLY : O_RDWR) |
+                    ((flags & File::CREATE) != 0 ? O_CREAT : 0) | ((flags & File::TRUNC) != 0 ? O_TRUNC : 0);
     int fd = openAndCreateDirsIfMissing(_filename, openflags, autoCreateDirectories);
     if (fd < 0) {
         asciistream ost;
-        ost << "open(" << _filename << ", 0x" << hex << flags << dec
-            << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
+        ost << "open(" << _filename << ", 0x" << hex << flags << dec << "): Failed, errno(" << errno
+            << "): " << safeStrerror(errno);
         throw IoException(ost.view(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
-    if (_fd != -1) close();
+    if (_fd != -1)
+        close();
     _fd = fd;
     LOG(debug, "open(%s, %d). File opened with file descriptor %d.", _filename.c_str(), flags, fd);
 }
 
-FileInfo
-File::stat() const
-{
+FileInfo File::stat() const {
     struct ::stat filestats;
-    FileInfo::UP result;
+    FileInfo::UP  result;
     if (isOpen()) {
         result = processStat(filestats, fstat(_fd, &filestats) == 0, _filename);
         assert(result.get()); // The file must exist in a file instance
     } else {
         result = processStat(filestats, ::stat(_filename.c_str(), &filestats) == 0, _filename);
-            // If the file does not exist yet, act like it does. It will
-            // probably be created when opened.
-        if ( ! result) {
+        // If the file does not exist yet, act like it does. It will
+        // probably be created when opened.
+        if (!result) {
             result = std::make_unique<FileInfo>();
             result->_size = 0;
             result->_directory = false;
@@ -131,9 +117,7 @@ File::stat() const
     return *result;
 }
 
-void
-File::resize(off_t size)
-{
+void File::resize(off_t size) {
     if (ftruncate(_fd, size) != 0) {
         asciistream ost;
         ost << "resize(" << _filename << ", " << size << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
@@ -142,9 +126,7 @@ File::resize(off_t size)
     LOG(debug, "resize(%s): Resized to %" PRIu64 " bytes.", _filename.c_str(), size);
 }
 
-off_t
-File::write(const void *buf, size_t bufsize, off_t offset)
-{
+off_t File::write(const void* buf, size_t bufsize, off_t offset) {
     size_t left = bufsize;
     LOG(debug, "write(%s): Writing %zu bytes at offset %" PRIu64 ".", _filename.c_str(), bufsize, offset);
 
@@ -153,24 +135,22 @@ File::write(const void *buf, size_t bufsize, off_t offset)
         if (written > 0) {
             LOG(spam, "write(%s): Wrote %zd bytes at offset %" PRIu64 ".", _filename.c_str(), written, offset);
             left -= written;
-            buf = ((const char*) buf) + written;
+            buf = ((const char*)buf) + written;
             offset += written;
         } else if (written == 0) {
             LOG(spam, "write(%s): Wrote %zd bytes at offset %" PRIu64 ".", _filename.c_str(), written, offset);
             assert(false); // Can this happen?
         } else if (errno != EINTR && errno != EAGAIN) {
             asciistream ost;
-            ost << "write(" << _fd << ", " << buf << ", " << left << ", " << offset
-                << "), Failed, errno(" << errno << "): " << safeStrerror(errno);
+            ost << "write(" << _fd << ", " << buf << ", " << left << ", " << offset << "), Failed, errno(" << errno
+                << "): " << safeStrerror(errno);
             throw IoException(ost.view(), IoException::getErrorType(errno), VESPA_STRLOC);
         }
     }
     return bufsize;
 }
 
-size_t
-File::read(void *buf, size_t bufsize, off_t offset) const
-{
+size_t File::read(void* buf, size_t bufsize, off_t offset) const {
     size_t remaining = bufsize;
     LOG(debug, "read(%s): Reading %zu bytes from offset %" PRIu64 ".", _filename.c_str(), bufsize, offset);
 
@@ -179,29 +159,27 @@ File::read(void *buf, size_t bufsize, off_t offset) const
         if (bytesread > 0) {
             LOG(spam, "read(%s): Read %zd bytes from offset %" PRIu64 ".", _filename.c_str(), bytesread, offset);
             remaining -= bytesread;
-            buf = ((char*) buf) + bytesread;
+            buf = ((char*)buf) + bytesread;
             offset += bytesread;
         } else if (bytesread == 0) { // EOF
             LOG(spam, "read(%s): Found EOF. Zero bytes read from offset %" PRIu64 ".", _filename.c_str(), offset);
             break;
         } else if (errno != EINTR && errno != EAGAIN) {
             asciistream ost;
-            ost << "read(" << _fd << ", " << buf << ", " << remaining << ", "
-                << offset << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
+            ost << "read(" << _fd << ", " << buf << ", " << remaining << ", " << offset << "): Failed, errno("
+                << errno << "): " << safeStrerror(errno);
             throw IoException(ost.view(), IoException::getErrorType(errno), VESPA_STRLOC);
         }
     }
     return bufsize - remaining;
 }
 
-std::string
-File::readAll() const
-{
+std::string File::readAll() const {
     std::string content;
 
     // Limit ourselves to 4K on the stack. If this becomes a problem we should
     // allocate on the heap.
-    char buffer[4_Ki];
+    char  buffer[4_Ki];
     off_t offset = 0;
 
     while (true) {
@@ -216,49 +194,41 @@ File::readAll() const
     }
 }
 
-std::string
-File::readAll(std::string_view path)
-{
+std::string File::readAll(std::string_view path) {
     File file(path);
     file.open(File::READONLY);
     return file.readAll();
 }
 
-void
-File::sync()
-{
+void File::sync() {
     if (_fd != -1) {
         if (::fsync(_fd) == 0) {
             LOG(debug, "sync(%s): File synchronized with disk.", _filename.c_str());
         } else {
-            LOG(warning, "fsync(%s): Failed to sync file. errno(%d): %s",
-                _filename.c_str(), errno, safeStrerror(errno).c_str());
+            LOG(warning, "fsync(%s): Failed to sync file. errno(%d): %s", _filename.c_str(), errno,
+                safeStrerror(errno).c_str());
         }
     } else {
         LOG(debug, "sync(%s): Called on closed file.", _filename.c_str());
     }
 }
 
-void
-File::sync(std::string_view path)
-{
+void File::sync(std::string_view path) {
     File file(path);
     file.open(READONLY);
     file.sync();
     file.close();
 }
 
-bool
-File::close()
-{
+bool File::close() {
     if (_fd != -1) {
         if (::close(_fd) == 0) {
             LOG(debug, "close(%s): Closed file with descriptor %i.", _filename.c_str(), _fd);
             _fd = -1;
             return true;
         } else {
-            LOG(warning, "close(%s): Failed to close file. errno(%d): %s",
-                _filename.c_str(), errno, safeStrerror(errno).c_str());
+            LOG(warning, "close(%s): Failed to close file. errno(%d): %s", _filename.c_str(), errno,
+                safeStrerror(errno).c_str());
             _fd = -1;
             return false;
         }
@@ -268,40 +238,32 @@ File::close()
     return true;
 }
 
-bool
-File::unlink()
-{
+bool File::unlink() {
     close();
     return fs::remove(fs::path(_filename));
 }
 
-DirectoryList
-listDirectory(const std::string & path)
-{
-    DIR* dir = ::opendir(path.c_str());
+DirectoryList listDirectory(const std::string& path) {
+    DIR*           dir = ::opendir(path.c_str());
     struct dirent* entry;
-    DirectoryList result;
+    DirectoryList  result;
     if (dir) {
         while ((entry = readdir(dir))) {
             std::string name(entry->d_name);
             assert(!name.empty());
-            if (name[0] == '.' && (name.size() == 1
-                                   || (name.size() == 2 && name[1] == '.')))
-            {
+            if (name[0] == '.' && (name.size() == 1 || (name.size() == 2 && name[1] == '.'))) {
                 continue; // Ignore '.' and '..' files
             }
             result.push_back(name);
         }
     } else {
-        throw IoException("Failed to list directory '" + path + "'",
-                          IoException::getErrorType(errno), VESPA_STRLOC);
+        throw IoException("Failed to list directory '" + path + "'", IoException::getErrorType(errno), VESPA_STRLOC);
     }
     ::closedir(dir);
     return result;
 }
 
-std::string dirname(std::string_view name)
-{
+std::string dirname(std::string_view name) {
     size_t found = name.rfind('/');
     if (found == std::string::npos) {
         return std::string(".");
@@ -314,9 +276,8 @@ std::string dirname(std::string_view name)
 
 namespace {
 
-void addStat(asciistream &os, std::string_view name_view)
-{
-    std::string name(name_view);
+void addStat(asciistream& os, std::string_view name_view) {
+    std::string   name(name_view);
     struct ::stat filestat;
     memset(&filestat, '\0', sizeof(filestat));
     int statres = ::stat(name.c_str(), &filestat);
@@ -329,25 +290,22 @@ void addStat(asciistream &os, std::string_view name_view)
         std::error_code ec(err, std::system_category());
         os << " errno=" << err << "(\"" << ec.message() << "\")";
     } else {
-        os << " mode=" << oct << filestat.st_mode << dec <<
-            " uid=" << filestat.st_uid << " gid=" << filestat.st_gid <<
-            " size=" << filestat.st_size << " mtime=" << filestat.st_mtime;
+        os << " mode=" << oct << filestat.st_mode << dec << " uid=" << filestat.st_uid << " gid=" << filestat.st_gid
+           << " size=" << filestat.st_size << " mtime=" << filestat.st_mtime;
     }
     os << "]";
 }
 
-}
+} // namespace
 
-std::string
-getOpenErrorString(const int osError, std::string_view filename)
-{
+std::string getOpenErrorString(const int osError, std::string_view filename) {
     asciistream os;
     std::string dirName(dirname(filename));
-    os << "error="  << osError << "(\"" << getErrorString(osError) << "\") fileStat";
+    os << "error=" << osError << "(\"" << getErrorString(osError) << "\") fileStat";
     addStat(os, filename);
     os << " dirStat";
     addStat(os, dirName);
     return os.str();
 }
 
-} // vespalib
+} // namespace vespalib

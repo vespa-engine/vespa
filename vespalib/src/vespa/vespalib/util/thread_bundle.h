@@ -3,18 +3,19 @@
 #pragma once
 
 #include "runnable.h"
-#include <vector>
+
 #include <ranges>
+#include <vector>
 
 namespace vespalib {
 
 namespace thread_bundle {
 
 template <typename T>
-concept direct_dispatch_array = std::ranges::contiguous_range<T> &&
-    std::ranges::sized_range<T> &&
-    (std::is_same_v<std::ranges::range_value_t<T>,Runnable*> ||
-     std::is_same_v<std::ranges::range_value_t<T>,Runnable::UP>);
+concept direct_dispatch_array =
+    std::ranges::contiguous_range<T> && std::ranges::sized_range<T> &&
+    (std::is_same_v<std::ranges::range_value_t<T>, Runnable*> ||
+     std::is_same_v<std::ranges::range_value_t<T>, Runnable::UP>);
 
 }
 
@@ -41,21 +42,20 @@ struct ThreadBundle {
     virtual void run(Runnable* const* targets, size_t cnt) = 0;
 
     // convenience run wrapper
-    template <thread_bundle::direct_dispatch_array Array>
-    void run(const Array &items) {
+    template <thread_bundle::direct_dispatch_array Array> void run(const Array& items) {
         static_assert(sizeof(std::ranges::range_value_t<Array>) == sizeof(Runnable*));
         run(reinterpret_cast<Runnable* const*>(std::ranges::data(items)), std::ranges::size(items));
     }
 
     // convenience run wrapper
     template <std::ranges::range List>
-    requires (!thread_bundle::direct_dispatch_array<List>)
-    void run(List &items) {
+        requires(!thread_bundle::direct_dispatch_array<List>)
+    void run(List& items) {
         std::vector<Runnable*> targets;
         if constexpr (std::ranges::sized_range<List>) {
             targets.reserve(std::ranges::size(items));
         }
-        for (auto &item: items) {
+        for (auto& item : items) {
             targets.push_back(resolve(item));
         }
         run(targets.data(), targets.size());
@@ -67,13 +67,12 @@ struct ThreadBundle {
     virtual ~ThreadBundle() = default;
 
     // a thread bundle that can only run things in the current thread.
-    static ThreadBundle &trivial();
+    static ThreadBundle& trivial();
 
 private:
-    Runnable *resolve(Runnable *target) { return target; }
-    Runnable *resolve(Runnable &target) { return &target; }
-    template <typename T>
-    Runnable *resolve(const std::unique_ptr<T> &target) { return target.get(); }
+    Runnable*                       resolve(Runnable* target) { return target; }
+    Runnable*                       resolve(Runnable& target) { return &target; }
+    template <typename T> Runnable* resolve(const std::unique_ptr<T>& target) { return target.get(); }
 };
 
 } // namespace vespalib

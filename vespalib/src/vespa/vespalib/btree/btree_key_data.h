@@ -11,49 +11,34 @@ namespace vespalib::btree {
  * indicate that leaf nodes have no data (similar to std::set having less
  * information than std::map).
  */
-class BTreeNoLeafData
-{
+class BTreeNoLeafData {
 public:
     static BTreeNoLeafData _instance;
 };
 
-
-template <typename KeyT, typename DataT>
-class BTreeKeyData
-{
+template <typename KeyT, typename DataT> class BTreeKeyData {
 public:
     using KeyType = KeyT;
     using DataType = DataT;
 
-    KeyT _key;
+    KeyT  _key;
     DataT _data;
 
-    BTreeKeyData() noexcept
-        : _key(),
-          _data()
-    {}
+    BTreeKeyData() noexcept : _key(), _data() {}
 
-    BTreeKeyData(const KeyT &key, const DataT &data) noexcept
-        : _key(key),
-          _data(data)
-    {}
+    BTreeKeyData(const KeyT& key, const DataT& data) noexcept : _key(key), _data(data) {}
 
-    void setData(const DataT &data) { _data = data; }
-    const DataT &getData() const { return _data; }
+    void         setData(const DataT& data) { _data = data; }
+    const DataT& getData() const { return _data; }
 
     /**
      * This operator only works when using direct keys.  References to
      * externally stored keys will not be properly sorted.
      */
-    bool operator<(const BTreeKeyData &rhs) const noexcept {
-        return _key < rhs._key;
-    }
+    bool operator<(const BTreeKeyData& rhs) const noexcept { return _key < rhs._key; }
 };
 
-
-template <typename KeyT>
-class BTreeKeyData<KeyT, BTreeNoLeafData>
-{
+template <typename KeyT> class BTreeKeyData<KeyT, BTreeNoLeafData> {
 public:
     using KeyType = KeyT;
     using DataType = BTreeNoLeafData;
@@ -62,21 +47,16 @@ public:
 
     BTreeKeyData() noexcept : _key() {}
 
-    BTreeKeyData(const KeyT &key, const BTreeNoLeafData &) noexcept
-        : _key(key)
-    {
-    }
+    BTreeKeyData(const KeyT& key, const BTreeNoLeafData&) noexcept : _key(key) {}
 
-    void setData(const BTreeNoLeafData &) { }
-    const BTreeNoLeafData &getData() const { return BTreeNoLeafData::_instance; }
+    void                   setData(const BTreeNoLeafData&) {}
+    const BTreeNoLeafData& getData() const { return BTreeNoLeafData::_instance; }
 
     /**
      * This operator only works when using direct keys.  References to
      * externally stored keys will not be properly sorted.
      */
-    bool operator<(const BTreeKeyData &rhs) const noexcept {
-        return _key < rhs._key;
-    }
+    bool operator<(const BTreeKeyData& rhs) const noexcept { return _key < rhs._key; }
 };
 
 extern template class BTreeKeyData<uint32_t, uint32_t>;

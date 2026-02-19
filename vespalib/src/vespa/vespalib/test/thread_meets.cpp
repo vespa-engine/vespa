@@ -4,14 +4,9 @@
 
 namespace vespalib::test {
 
-void
-ThreadMeets::Nop::mingle()
-{
-}
+void ThreadMeets::Nop::mingle() {}
 
-void
-ThreadMeets::Avg::mingle()
-{
+void ThreadMeets::Avg::mingle() {
     double sum = 0;
     for (size_t i = 0; i < size(); ++i) {
         sum += in(i);
@@ -22,9 +17,7 @@ ThreadMeets::Avg::mingle()
     }
 }
 
-void
-ThreadMeets::Vote::mingle()
-{
+void ThreadMeets::Vote::mingle() {
     size_t true_cnt = 0;
     size_t false_cnt = 0;
     for (size_t i = 0; i < size(); ++i) {
@@ -40,4 +33,4 @@ ThreadMeets::Vote::mingle()
     }
 }
 
-}
+} // namespace vespalib::test

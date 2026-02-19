@@ -1,15 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
-#include <vespa/vespalib/datastore/unique_store.hpp>
-#include <vespa/vespalib/datastore/unique_store_remapper.h>
-#include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
-#include <vespa/vespalib/datastore/unique_store_string_comparator.h>
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
+#include <vespa/vespalib/datastore/unique_store_remapper.h>
+#include <vespa/vespalib/datastore/unique_store_string_comparator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/datastore/buffer_stats.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/traits.h>
+
+#include <vespa/vespalib/datastore/unique_store.hpp>
+#include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
+
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -24,38 +26,37 @@ using vespalib::alloc::test::MemoryAllocatorObserver;
 using AllocStats = MemoryAllocatorObserver::Stats;
 using TestBufferStats = vespalib::datastore::test::BufferStats;
 
-template <typename UniqueStoreT>
-struct TestBaseValues {
+template <typename UniqueStoreT> struct TestBaseValues {
     using UniqueStoreType = UniqueStoreT;
     using ValueType = typename UniqueStoreType::EntryType;
     static std::vector<ValueType> values;
 };
 
-template <typename UniqueStoreTypeAndDictionaryType>
-struct TestBase : public ::testing::Test {
+template <typename UniqueStoreTypeAndDictionaryType> struct TestBase : public ::testing::Test {
     using UniqueStoreType = typename UniqueStoreTypeAndDictionaryType::UniqueStoreType;
     using EntryRefType = typename UniqueStoreType::RefType;
     using ValueType = typename UniqueStoreType::EntryType;
     using ValueConstRefType = typename UniqueStoreType::EntryConstRefType;
     using ComparatorType = typename UniqueStoreType::ComparatorType;
-    using ReferenceStoreValueType = std::conditional_t<std::is_same_v<ValueType, const char *>, std::string, ValueType>;
-    using ReferenceStore = std::map<EntryRef, std::pair<ReferenceStoreValueType,uint32_t>>;
+    using ReferenceStoreValueType =
+        std::conditional_t<std::is_same_v<ValueType, const char*>, std::string, ValueType>;
+    using ReferenceStore = std::map<EntryRef, std::pair<ReferenceStoreValueType, uint32_t>>;
 
-    AllocStats stats;
+    AllocStats      stats;
     UniqueStoreType store;
-    ReferenceStore refStore;
-    generation_t generation;
+    ReferenceStore  refStore;
+    generation_t    generation;
 
     TestBase();
     ~TestBase() override;
     const std::vector<ValueType>& values() const noexcept { return TestBaseValues<UniqueStoreType>::values; }
-    void assertAdd(ValueConstRefType input) {
+    void                          assertAdd(ValueConstRefType input) {
         EntryRef ref = add(input);
         assertGet(ref, input);
     }
     EntryRef add(ValueConstRefType input) {
         UniqueStoreAddResult addResult = store.add(input);
-        EntryRef result = addResult.ref();
+        EntryRef             result = addResult.ref();
         auto insres = refStore.insert(std::make_pair(result, std::make_pair(ReferenceStoreValueType(input), 1u)));
         EXPECT_EQ(insres.second, addResult.inserted());
         if (!insres.second) {
@@ -65,7 +66,8 @@ struct TestBase : public ::testing::Test {
     }
     void alignRefStore(EntryRef ref, ValueConstRefType input, uint32_t refcnt) {
         if (refcnt > 0) {
-            auto insres = refStore.insert(std::make_pair(ref, std::make_pair(ReferenceStoreValueType(input), refcnt)));
+            auto insres =
+                refStore.insert(std::make_pair(ref, std::make_pair(ReferenceStoreValueType(input), refcnt)));
             if (!insres.second) {
                 insres.first->second.second = refcnt;
             }
@@ -86,24 +88,20 @@ struct TestBase : public ::testing::Test {
             refStore.erase(ref);
         }
     }
-    void remove(ValueConstRefType input) {
-        remove(getEntryRef(input));
-    }
-    uint32_t getBufferId(EntryRef ref) const {
-        return EntryRefType(ref).bufferId();
-    }
-    void assertBufferState(EntryRef ref, const TestBufferStats expStats) const {
+    void     remove(ValueConstRefType input) { remove(getEntryRef(input)); }
+    uint32_t getBufferId(EntryRef ref) const { return EntryRefType(ref).bufferId(); }
+    void     assertBufferState(EntryRef ref, const TestBufferStats expStats) const {
         EXPECT_EQ(expStats._used, store.bufferState(ref).size());
         EXPECT_EQ(expStats._hold, store.bufferState(ref).stats().hold_entries());
         EXPECT_EQ(expStats._dead, store.bufferState(ref).stats().dead_entries());
     }
     void assertStoreContent() const {
-        for (const auto &elem : refStore) {
+        for (const auto& elem : refStore) {
             assertGet(elem.first, elem.second.first);
         }
     }
     EntryRef getEntryRef(ValueConstRefType input) {
-        for (const auto &elem : refStore) {
+        for (const auto& elem : refStore) {
             if (elem.second.first == input) {
                 return elem.first;
             }
@@ -121,7 +119,7 @@ struct TestBase : public ::testing::Test {
         auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
         auto remapper = store.compact_worst(compaction_spec, compaction_strategy);
         std::vector<AtomicEntryRef> refs;
-        for (const auto &elem : refStore) {
+        for (const auto& elem : refStore) {
             refs.push_back(AtomicEntryRef(elem.first));
         }
         refs.push_back(AtomicEntryRef());
@@ -137,13 +135,14 @@ struct TestBase : public ::testing::Test {
         for (size_t i = 0; i < refs.size(); ++i) {
             ASSERT_EQ(0u, compactedRefStore.count(compactedRefs[i].load_relaxed()));
             ASSERT_EQ(1u, refStore.count(refs[i].load_relaxed()));
-            compactedRefStore.insert(std::make_pair(compactedRefs[i].load_relaxed(), refStore[refs[i].load_relaxed()]));
+            compactedRefStore.insert(
+                std::make_pair(compactedRefs[i].load_relaxed(), refStore[refs[i].load_relaxed()]));
         }
         refStore = compactedRefStore;
     }
     size_t entrySize() const { return sizeof(ValueType); }
-    auto getBuilder(uint32_t uniqueValuesHint) { return store.getBuilder(uniqueValuesHint); }
-    auto getEnumerator(bool sort_unique_values) { return store.getEnumerator(sort_unique_values); }
+    auto   getBuilder(uint32_t uniqueValuesHint) { return store.getBuilder(uniqueValuesHint); }
+    auto   getEnumerator(bool sort_unique_values) { return store.getEnumerator(sort_unique_values); }
     size_t get_reserved(EntryRef ref) {
         return store.bufferState(ref).getTypeHandler()->get_reserved_entries(getBufferId(ref));
     }
@@ -151,24 +150,25 @@ struct TestBase : public ::testing::Test {
 
 template <typename UniqueStoreTypeAndDictionaryType>
 TestBase<UniqueStoreTypeAndDictionaryType>::TestBase()
-    : stats(),
-      store(std::make_unique<MemoryAllocatorObserver>(stats)),
-      refStore(),
-      generation(1)
-{
+    : stats(), store(std::make_unique<MemoryAllocatorObserver>(stats)), refStore(), generation(1) {
     switch (UniqueStoreTypeAndDictionaryType::dictionary_type) {
     case DictionaryType::BTREE:
         EXPECT_TRUE(store.get_dictionary().get_has_btree_dictionary());
         EXPECT_FALSE(store.get_dictionary().get_has_hash_dictionary());
         break;
     case DictionaryType::BTREE_AND_HASH:
-        store.set_dictionary(std::make_unique<UniqueStoreDictionary<uniquestore::DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>>(std::make_unique<ComparatorType>(store.get_data_store())));
+        store.set_dictionary(
+            std::make_unique<
+                UniqueStoreDictionary<uniquestore::DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>>(
+                std::make_unique<ComparatorType>(store.get_data_store())));
         EXPECT_TRUE(store.get_dictionary().get_has_btree_dictionary());
         EXPECT_TRUE(store.get_dictionary().get_has_hash_dictionary());
         break;
     case DictionaryType::HASH:
     default:
-        store.set_dictionary(std::make_unique<UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>(std::make_unique<ComparatorType>(store.get_data_store())));
+        store.set_dictionary(
+            std::make_unique<UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>(
+                std::make_unique<ComparatorType>(store.get_data_store())));
         EXPECT_FALSE(store.get_dictionary().get_has_btree_dictionary());
         EXPECT_TRUE(store.get_dictionary().get_has_hash_dictionary());
     }
@@ -177,112 +177,98 @@ TestBase<UniqueStoreTypeAndDictionaryType>::TestBase()
 template <typename UniqueStoreTypeAndDictionaryType>
 TestBase<UniqueStoreTypeAndDictionaryType>::~TestBase() = default;
 
-using NumberUniqueStore  = UniqueStore<uint32_t>;
-using StringUniqueStore  = UniqueStore<std::string>;
-using CStringUniqueStore = UniqueStore<const char *, EntryRefT<22>, UniqueStoreStringComparator<EntryRefT<22>>, UniqueStoreStringAllocator<EntryRefT<22>>>;
-using DoubleUniqueStore  = UniqueStore<double>;
-using SmallOffsetNumberUniqueStore = UniqueStore<uint32_t, EntryRefT<10,10>>;
+using NumberUniqueStore = UniqueStore<uint32_t>;
+using StringUniqueStore = UniqueStore<std::string>;
+using CStringUniqueStore = UniqueStore<const char*, EntryRefT<22>, UniqueStoreStringComparator<EntryRefT<22>>,
+                                       UniqueStoreStringAllocator<EntryRefT<22>>>;
+using DoubleUniqueStore = UniqueStore<double>;
+using SmallOffsetNumberUniqueStore = UniqueStore<uint32_t, EntryRefT<10, 10>>;
 
-template <>
-std::vector<uint32_t> TestBaseValues<NumberUniqueStore>::values{10, 20, 30, 10 };
-template <>
-std::vector<std::string> TestBaseValues<StringUniqueStore>::values{ "aa", "bbb", "ccc", "aa" };
-template <>
-std::vector<const char *> TestBaseValues<CStringUniqueStore>::values{ "aa", "bbb", "ccc", "aa" };
-template <>
-std::vector<double> TestBaseValues<DoubleUniqueStore>::values{ 10.0, 20.0, 30.0, 10.0 };
+template <> std::vector<uint32_t>    TestBaseValues<NumberUniqueStore>::values{10, 20, 30, 10};
+template <> std::vector<std::string> TestBaseValues<StringUniqueStore>::values{"aa", "bbb", "ccc", "aa"};
+template <> std::vector<const char*> TestBaseValues<CStringUniqueStore>::values{"aa", "bbb", "ccc", "aa"};
+template <> std::vector<double>      TestBaseValues<DoubleUniqueStore>::values{10.0, 20.0, 30.0, 10.0};
 
-struct BTreeNumberUniqueStore
-{
+struct BTreeNumberUniqueStore {
     using UniqueStoreType = NumberUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
-struct BTreeStringUniqueStore
-{
+struct BTreeStringUniqueStore {
     using UniqueStoreType = StringUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
-struct BTreeCStringUniqueStore
-{
+struct BTreeCStringUniqueStore {
     using UniqueStoreType = CStringUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
-struct BTreeDoubleUniqueStore
-{
+struct BTreeDoubleUniqueStore {
     using UniqueStoreType = DoubleUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
-struct BTreeSmallOffsetNumberUniqueStore
-{
+struct BTreeSmallOffsetNumberUniqueStore {
     using UniqueStoreType = SmallOffsetNumberUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
-struct HybridNumberUniqueStore
-{
+struct HybridNumberUniqueStore {
     using UniqueStoreType = NumberUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
-struct HybridStringUniqueStore
-{
+struct HybridStringUniqueStore {
     using UniqueStoreType = StringUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
-struct HybridCStringUniqueStore
-{
+struct HybridCStringUniqueStore {
     using UniqueStoreType = CStringUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
-struct HybridDoubleUniqueStore
-{
+struct HybridDoubleUniqueStore {
     using UniqueStoreType = DoubleUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
-struct HybridSmallOffsetNumberUniqueStore
-{
+struct HybridSmallOffsetNumberUniqueStore {
     using UniqueStoreType = SmallOffsetNumberUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
-struct HashNumberUniqueStore
-{
+struct HashNumberUniqueStore {
     using UniqueStoreType = NumberUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::HASH;
 };
 
-struct HashStringUniqueStore
-{
+struct HashStringUniqueStore {
     using UniqueStoreType = StringUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::HASH;
 };
 
-struct HashCStringUniqueStore
-{
+struct HashCStringUniqueStore {
     using UniqueStoreType = CStringUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::HASH;
 };
 
-struct HashDoubleUniqueStore
-{
+struct HashDoubleUniqueStore {
     using UniqueStoreType = DoubleUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::HASH;
 };
 
-struct HashSmallOffsetNumberUniqueStore
-{
+struct HashSmallOffsetNumberUniqueStore {
     using UniqueStoreType = SmallOffsetNumberUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::HASH;
 };
 
-using UniqueStoreTestTypes = ::testing::Types<BTreeNumberUniqueStore, BTreeStringUniqueStore, BTreeCStringUniqueStore, BTreeDoubleUniqueStore, HybridNumberUniqueStore, HybridStringUniqueStore, HybridCStringUniqueStore, HybridDoubleUniqueStore, HashNumberUniqueStore, HashStringUniqueStore, HashCStringUniqueStore, HashDoubleUniqueStore>;
+using UniqueStoreTestTypes =
+    ::testing::Types<BTreeNumberUniqueStore, BTreeStringUniqueStore, BTreeCStringUniqueStore, BTreeDoubleUniqueStore,
+                     HybridNumberUniqueStore, HybridStringUniqueStore, HybridCStringUniqueStore,
+                     HybridDoubleUniqueStore, HashNumberUniqueStore, HashStringUniqueStore, HashCStringUniqueStore,
+                     HashDoubleUniqueStore>;
 TYPED_TEST_SUITE(TestBase, UniqueStoreTestTypes);
 
 using NumberTest = TestBase<BTreeNumberUniqueStore>;
@@ -291,30 +277,26 @@ using CStringTest = TestBase<BTreeCStringUniqueStore>;
 using DoubleTest = TestBase<BTreeDoubleUniqueStore>;
 using SmallOffsetNumberTest = TestBase<BTreeSmallOffsetNumberUniqueStore>;
 
-TEST(UniqueStoreTest, trivial_and_non_trivial_types_are_tested)
-{
+TEST(UniqueStoreTest, trivial_and_non_trivial_types_are_tested) {
     EXPECT_TRUE(vespalib::can_skip_destruction<NumberTest::ValueType>);
     EXPECT_FALSE(vespalib::can_skip_destruction<StringTest::ValueType>);
 }
 
-TYPED_TEST(TestBase, can_add_and_get_values)
-{
-    for (auto &val : this->values()) {
+TYPED_TEST(TestBase, can_add_and_get_values) {
+    for (auto& val : this->values()) {
         this->assertAdd(val);
     }
 }
 
-TYPED_TEST(TestBase, entries_are_put_on_hold_when_value_is_removed)
-{
+TYPED_TEST(TestBase, entries_are_put_on_hold_when_value_is_removed) {
     EntryRef ref = this->add(this->values()[0]);
-    size_t reserved = this->get_reserved(ref);
+    size_t   reserved = this->get_reserved(ref);
     this->assertBufferState(ref, TestBufferStats().used(1 + reserved).hold(0).dead(reserved));
     this->store.remove(ref);
     this->assertBufferState(ref, TestBufferStats().used(1 + reserved).hold(1).dead(reserved));
 }
 
-TYPED_TEST(TestBase, entries_are_reference_counted)
-{
+TYPED_TEST(TestBase, entries_are_reference_counted) {
     EntryRef ref = this->add(this->values()[0]);
     EntryRef ref2 = this->add(this->values()[0]);
     EXPECT_EQ(ref.ref(), ref2.ref());
@@ -327,8 +309,7 @@ TYPED_TEST(TestBase, entries_are_reference_counted)
     this->assertBufferState(ref, TestBufferStats().used(1 + reserved).hold(1).dead(reserved));
 }
 
-TEST_F(SmallOffsetNumberTest, new_underlying_buffer_is_allocated_when_current_is_full)
-{
+TEST_F(SmallOffsetNumberTest, new_underlying_buffer_is_allocated_when_current_is_full) {
     uint32_t firstBufferId = getBufferId(add(1));
     for (uint32_t i = 0; i < (SmallOffsetNumberTest::EntryRefType::offsetSize() - 2); ++i) {
         uint32_t bufferId = getBufferId(add(i + 2));
@@ -346,8 +327,7 @@ TEST_F(SmallOffsetNumberTest, new_underlying_buffer_is_allocated_when_current_is
     assertStoreContent();
 }
 
-TYPED_TEST(TestBase, store_can_be_compacted)
-{
+TYPED_TEST(TestBase, store_can_be_compacted) {
     EntryRef val0Ref = this->add(this->values()[0]);
     EntryRef val1Ref = this->add(this->values()[1]);
     ASSERT_NO_FATAL_FAILURE(this->remove(this->add(this->values()[2])));
@@ -372,16 +352,16 @@ TYPED_TEST(TestBase, store_can_be_compacted)
     this->assertStoreContent();
 }
 
-TYPED_TEST(TestBase, store_can_be_instantiated_with_builder)
-{
+TYPED_TEST(TestBase, store_can_be_instantiated_with_builder) {
     auto builder = this->getBuilder(2);
     builder.add(this->values()[0]);
     builder.add(this->values()[1]);
     builder.setupRefCounts();
     EntryRef val0Ref = builder.mapEnumValueToEntryRef(1);
     EntryRef val1Ref = builder.mapEnumValueToEntryRef(2);
-    size_t reserved = this->get_reserved(val0Ref);
-    this->assertBufferState(val0Ref, TestBufferStats().used(2 + reserved).dead(reserved)); // Note: First entry is reserved
+    size_t   reserved = this->get_reserved(val0Ref);
+    this->assertBufferState(
+        val0Ref, TestBufferStats().used(2 + reserved).dead(reserved)); // Note: First entry is reserved
     EXPECT_TRUE(val0Ref.valid());
     EXPECT_TRUE(val1Ref.valid());
     EXPECT_NE(val0Ref.ref(), val1Ref.ref());
@@ -395,14 +375,13 @@ TYPED_TEST(TestBase, store_can_be_instantiated_with_builder)
     EXPECT_EQ(val1Ref.ref(), this->add(this->values()[1]).ref());
 }
 
-TYPED_TEST(TestBase, store_can_be_enumerated)
-{
+TYPED_TEST(TestBase, store_can_be_enumerated) {
     EntryRef val0Ref = this->add(this->values()[0]);
     EntryRef val1Ref = this->add(this->values()[1]);
     ASSERT_NO_FATAL_FAILURE(this->remove(this->add(this->values()[2])));
     this->reclaim_memory();
 
-    auto enumerator = this->getEnumerator(true);
+    auto                  enumerator = this->getEnumerator(true);
     std::vector<uint32_t> refs;
     enumerator.foreach_key([&](const AtomicEntryRef& ref) { refs.push_back(ref.load_relaxed().ref()); });
     std::vector<uint32_t> expRefs;
@@ -418,29 +397,23 @@ TYPED_TEST(TestBase, store_can_be_enumerated)
     EXPECT_EQ(2u, enumValue2);
 }
 
-TYPED_TEST(TestBase, provided_memory_allocator_is_used)
-{
-    if constexpr (std::is_same_v<const char *, typename TestFixture::ValueType>) {
+TYPED_TEST(TestBase, provided_memory_allocator_is_used) {
+    if constexpr (std::is_same_v<const char*, typename TestFixture::ValueType>) {
         EXPECT_EQ(AllocStats(18, 0), this->stats);
     } else {
         EXPECT_EQ(AllocStats(1, 0), this->stats);
     }
 }
 
-TEST_F(DoubleTest, nan_is_handled)
-{
+TEST_F(DoubleTest, nan_is_handled) {
     std::vector<double> myvalues = {
-        std::numeric_limits<double>::quiet_NaN(),
-        std::numeric_limits<double>::infinity(),
-        -std::numeric_limits<double>::infinity(),
-        10.0,
-        -std::numeric_limits<double>::quiet_NaN(),
-        std::numeric_limits<double>::infinity(),
-        -std::numeric_limits<double>::infinity()
-    };
+        std::numeric_limits<double>::quiet_NaN(),  std::numeric_limits<double>::infinity(),
+        -std::numeric_limits<double>::infinity(),  10.0,
+        -std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::infinity(),
+        -std::numeric_limits<double>::infinity()};
     std::vector<EntryRef> refs;
     refs.push_back(EntryRef());
-    for (auto &value : myvalues) {
+    for (auto& value : myvalues) {
         refs.emplace_back(add(value));
     }
     reclaim_memory();
@@ -453,10 +426,10 @@ TEST_F(DoubleTest, nan_is_handled)
     auto enumerator = getEnumerator(true);
     enumerator.enumerateValues();
     std::vector<uint32_t> enumerated;
-    for (auto &ref : refs) {
+    for (auto& ref : refs) {
         enumerated.push_back(enumerator.mapEntryRefToEnumValue(ref));
     }
-    std::vector<uint32_t> exp_enumerated = { 0, 1, 4, 2, 3, 1, 4, 2 };
+    std::vector<uint32_t> exp_enumerated = {0, 1, 4, 2, 3, 1, 4, 2};
     EXPECT_EQ(exp_enumerated, enumerated);
 }
 
@@ -471,5 +444,5 @@ TEST_F(DoubleTest, control_memory_usage) {
     EXPECT_EQ(155692u, store.getMemoryUsage().allocatedBytes());
     EXPECT_EQ(49956u, store.getMemoryUsage().usedBytes());
 }
-                
+
 GTEST_MAIN_RUN_ALL_TESTS()

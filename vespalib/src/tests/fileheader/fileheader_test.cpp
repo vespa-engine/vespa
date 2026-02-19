@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/data/fileheader.h>
+#include <vespa/fastos/file.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
-#include <vespa/fastos/file.h>
+
 #include <filesystem>
 
 using namespace vespalib;
@@ -19,24 +20,21 @@ class FileHeaderTest : public ::testing::Test {
 protected:
     FileHeaderTest();
     ~FileHeaderTest() override;
-    bool testReadError(DataBuffer &buf, const std::string &expected);
+    bool testReadError(DataBuffer& buf, const std::string& expected);
     void testReadSize(bool mapped);
     void testReadSizeErrors(bool mapped);
-    bool testReadSizeError(DataBuffer &buf, const std::string &expected, bool mapped);
+    bool testReadSizeError(DataBuffer& buf, const std::string& expected, bool mapped);
 };
 
 FileHeaderTest::FileHeaderTest() = default;
 FileHeaderTest::~FileHeaderTest() = default;
 
-TEST_F(FileHeaderTest, test_tag)
-{
+TEST_F(FileHeaderTest, test_tag) {
     {
         std::vector<GenericHeader::Tag> tags;
         tags.push_back(GenericHeader::Tag("foo", 6.9));
         tags.push_back(GenericHeader::Tag("foo", 6.9f));
-        for (std::vector<GenericHeader::Tag>::iterator it = tags.begin();
-             it != tags.end(); ++it)
-        {
+        for (std::vector<GenericHeader::Tag>::iterator it = tags.begin(); it != tags.end(); ++it) {
             GenericHeader::Tag tag = *it;
             for (uint32_t i = 0; i < 2; ++i) {
                 EXPECT_EQ(GenericHeader::Tag::TYPE_FLOAT, tag.getType());
@@ -45,7 +43,7 @@ TEST_F(FileHeaderTest, test_tag)
                 EXPECT_NEAR(6.9, tag.asFloat(), 1E-6);
                 EXPECT_EQ(0, tag.asInteger());
 
-                uint32_t len = tag.getSize();
+                uint32_t   len = tag.getSize();
                 DataBuffer buf(len);
                 EXPECT_EQ(len, tag.write(buf));
 
@@ -64,9 +62,7 @@ TEST_F(FileHeaderTest, test_tag)
         tags.push_back(GenericHeader::Tag("foo", (int32_t)69));
         tags.push_back(GenericHeader::Tag("foo", (uint32_t)69));
         tags.push_back(GenericHeader::Tag("foo", (int64_t)69));
-        for (std::vector<GenericHeader::Tag>::iterator it = tags.begin();
-             it != tags.end(); ++it)
-        {
+        for (std::vector<GenericHeader::Tag>::iterator it = tags.begin(); it != tags.end(); ++it) {
             GenericHeader::Tag tag = *it;
             for (uint32_t i = 0; i < 2; ++i) {
                 EXPECT_EQ(GenericHeader::Tag::TYPE_INTEGER, tag.getType());
@@ -75,7 +71,7 @@ TEST_F(FileHeaderTest, test_tag)
                 EXPECT_EQ(0.0, tag.asFloat());
                 EXPECT_EQ(69l, tag.asInteger());
 
-                uint32_t len = tag.getSize();
+                uint32_t   len = tag.getSize();
                 DataBuffer buf(len);
                 EXPECT_EQ(len, tag.write(buf));
 
@@ -94,7 +90,7 @@ TEST_F(FileHeaderTest, test_tag)
             EXPECT_EQ(0.0, tag.asFloat());
             EXPECT_EQ(0, tag.asInteger());
 
-            uint32_t len = tag.getSize();
+            uint32_t   len = tag.getSize();
             DataBuffer buf(len);
             EXPECT_EQ(len, tag.write(buf));
 
@@ -115,8 +111,7 @@ TEST_F(FileHeaderTest, test_tag)
     }
 }
 
-TEST_F(FileHeaderTest, test_tag_errors)
-{
+TEST_F(FileHeaderTest, test_tag_errors) {
     DataBuffer buf(1024);
     buf.writeBytes("foo", 3);
     buf.writeInt8(0);
@@ -126,7 +121,7 @@ TEST_F(FileHeaderTest, test_tag_errors)
     try {
         tag.read(buf);
         EXPECT_TRUE(false);
-    } catch (IllegalHeaderException &e) {
+    } catch (IllegalHeaderException& e) {
         EXPECT_EQ("Can not deserialize empty tag.", e.getMessage());
     }
     EXPECT_EQ("bar", tag.getName());
@@ -134,8 +129,7 @@ TEST_F(FileHeaderTest, test_tag_errors)
     EXPECT_EQ(6.9, tag.asFloat());
 }
 
-TEST_F(FileHeaderTest, test_tag_iteration)
-{
+TEST_F(FileHeaderTest, test_tag_iteration) {
     GenericHeader header;
     header.putTag(GenericHeader::Tag("foo", 6.9));
     header.putTag(GenericHeader::Tag("bar", 6699));
@@ -147,8 +141,7 @@ TEST_F(FileHeaderTest, test_tag_iteration)
     EXPECT_EQ("foo", header.getTag(2).getName());
 }
 
-TEST_F(FileHeaderTest, test_generic_header)
-{
+TEST_F(FileHeaderTest, test_generic_header) {
     GenericHeader header;
     EXPECT_TRUE(header.isEmpty());
     EXPECT_EQ(0u, header.getNumTags());
@@ -212,8 +205,7 @@ TEST_F(FileHeaderTest, test_generic_header)
     EXPECT_TRUE(header.getTag("baz").isEmpty());
 }
 
-TEST_F(FileHeaderTest, test_buffer_reader)
-{
+TEST_F(FileHeaderTest, test_buffer_reader) {
     DataBuffer src(256);
     for (uint32_t i = 0; i < 256; ++i) {
         src.writeInt8((uint8_t)i);
@@ -221,7 +213,7 @@ TEST_F(FileHeaderTest, test_buffer_reader)
 
     GenericHeader::BufferReader reader(src);
 
-    char dst[7];
+    char     dst[7];
     uint32_t sum = 0;
     while (sum < 256) {
         uint32_t len = (uint32_t)reader.getData(dst, 7);
@@ -233,13 +225,12 @@ TEST_F(FileHeaderTest, test_buffer_reader)
     EXPECT_EQ(256u, sum);
 }
 
-TEST_F(FileHeaderTest, test_buffer_writer)
-{
-    DataBuffer dst(256);
+TEST_F(FileHeaderTest, test_buffer_writer) {
+    DataBuffer                  dst(256);
     GenericHeader::BufferWriter writer(dst);
 
     uint32_t sum = 0;
-    while(sum < 256) {
+    while (sum < 256) {
         char src[7];
         for (uint32_t i = 0; i < 7; ++i) {
             src[i] = (uint8_t)(sum + i);
@@ -257,10 +248,9 @@ TEST_F(FileHeaderTest, test_buffer_writer)
     }
 }
 
-TEST_F(FileHeaderTest, test_buffer_access)
-{
+TEST_F(FileHeaderTest, test_buffer_access) {
     DataBuffer buf;
-    uint32_t len;
+    uint32_t   len;
     {
         GenericHeader header;
         header.putTag(GenericHeader::Tag("foo", 6.9));
@@ -276,7 +266,7 @@ TEST_F(FileHeaderTest, test_buffer_access)
         EXPECT_EQ(len, header.write(writer));
     }
     {
-        GenericHeader header;
+        GenericHeader               header;
         GenericHeader::BufferReader reader(buf);
         EXPECT_EQ(len, header.read(reader));
 
@@ -291,8 +281,7 @@ TEST_F(FileHeaderTest, test_buffer_access)
     }
 }
 
-TEST_F(FileHeaderTest, test_file_reader)
-{
+TEST_F(FileHeaderTest, test_file_reader) {
     {
         FastOS_File file;
         ASSERT_TRUE(file.OpenWriteOnlyTruncate(fileheader_tmp.c_str()));
@@ -308,9 +297,9 @@ TEST_F(FileHeaderTest, test_file_reader)
         ASSERT_TRUE(file.OpenReadOnly(fileheader_tmp.c_str()));
         FileHeader::FileReader reader(file);
 
-        char buf[7];
+        char     buf[7];
         uint32_t sum = 0;
-        while(sum < 256) {
+        while (sum < 256) {
             uint32_t len = (uint32_t)reader.getData(buf, 7);
             for (uint32_t i = 0; i < len; ++i) {
                 EXPECT_EQ(sum + i, (uint8_t)buf[i]);
@@ -324,15 +313,14 @@ TEST_F(FileHeaderTest, test_file_reader)
     }
 }
 
-TEST_F(FileHeaderTest, test_file_writer)
-{
+TEST_F(FileHeaderTest, test_file_writer) {
     {
         FastOS_File file;
         ASSERT_TRUE(file.OpenWriteOnlyTruncate(fileheader_tmp.c_str()));
         FileHeader::FileWriter writer(file);
 
         uint32_t sum = 0;
-        while(sum < 256) {
+        while (sum < 256) {
             char src[7];
             for (uint32_t i = 0; i < 7; ++i) {
                 src[i] = (uint8_t)(sum + i);
@@ -358,8 +346,7 @@ TEST_F(FileHeaderTest, test_file_writer)
     }
 }
 
-TEST_F(FileHeaderTest, test_file_header)
-{
+TEST_F(FileHeaderTest, test_file_header) {
     uint32_t len = 0;
     {
         FileHeader header;
@@ -412,8 +399,7 @@ TEST_F(FileHeaderTest, test_file_header)
     }
 }
 
-TEST_F(FileHeaderTest, test_file_align)
-{
+TEST_F(FileHeaderTest, test_file_align) {
     for (uint32_t alignTo = 1; alignTo < 16; ++alignTo) {
         FileHeader header(alignTo);
         header.putTag(FileHeader::Tag("foo", "bar"));
@@ -421,8 +407,7 @@ TEST_F(FileHeaderTest, test_file_align)
     }
 }
 
-TEST_F(FileHeaderTest, test_file_size)
-{
+TEST_F(FileHeaderTest, test_file_size) {
     for (uint32_t minSize = 0; minSize < 512; ++minSize) {
         FileHeader header(1u, minSize);
         header.putTag(FileHeader::Tag("foo", "bar"));
@@ -430,8 +415,7 @@ TEST_F(FileHeaderTest, test_file_size)
     }
 }
 
-TEST_F(FileHeaderTest, test_read_errors)
-{
+TEST_F(FileHeaderTest, test_read_errors) {
     {
         DataBuffer buf;
         EXPECT_TRUE(testReadError(buf, "Failed to read header info."));
@@ -469,9 +453,7 @@ TEST_F(FileHeaderTest, test_read_errors)
     }
 }
 
-bool
-FileHeaderTest::testReadError(DataBuffer &buf, const std::string &expected)
-{
+bool FileHeaderTest::testReadError(DataBuffer& buf, const std::string& expected) {
     GenericHeader header;
     header.putTag(GenericHeader::Tag("foo", "bar"));
     try {
@@ -479,7 +461,7 @@ FileHeaderTest::testReadError(DataBuffer &buf, const std::string &expected)
         header.read(reader);
         EXPECT_TRUE(false);
         return false;
-    } catch (IllegalHeaderException &e) {
+    } catch (IllegalHeaderException& e) {
         bool failed = false;
         EXPECT_EQ(expected, e.getMessage()) << (failed = true, "");
         if (failed) {
@@ -495,8 +477,7 @@ FileHeaderTest::testReadError(DataBuffer &buf, const std::string &expected)
     return !failed;
 }
 
-TEST_F(FileHeaderTest, test_write_errors)
-{
+TEST_F(FileHeaderTest, test_write_errors) {
     GenericHeader header;
     header.putTag(GenericHeader::Tag("foo", 69));
 
@@ -508,7 +489,7 @@ TEST_F(FileHeaderTest, test_write_errors)
         GenericHeader::BufferWriter writer(buf);
         header.write(writer);
         EXPECT_TRUE(false);
-    } catch (IllegalHeaderException &e) {
+    } catch (IllegalHeaderException& e) {
         EXPECT_EQ("Failed to write header.", e.getMessage());
     }
 
@@ -516,8 +497,7 @@ TEST_F(FileHeaderTest, test_write_errors)
     EXPECT_EQ(69, header.getTag("foo").asInteger());
 }
 
-TEST_F(FileHeaderTest, test_rewrite_errors)
-{
+TEST_F(FileHeaderTest, test_rewrite_errors) {
     FileHeader header;
     header.putTag(FileHeader::Tag("foo", "bar"));
     uint32_t len = header.getSize();
@@ -535,17 +515,16 @@ TEST_F(FileHeaderTest, test_rewrite_errors)
         try {
             header.rewriteFile(file);
             EXPECT_TRUE(false);
-        } catch (IllegalHeaderException &e) {
+        } catch (IllegalHeaderException& e) {
             EXPECT_EQ("Failed to rewrite resized header.", e.getMessage());
         }
     }
 }
 
-TEST_F(FileHeaderTest, test_layout)
-{
+TEST_F(FileHeaderTest, test_layout) {
     FileHeader header;
     {
-        FastOS_File file;
+        FastOS_File       file;
         const std::string fileName = TEST_PATH("fileheader.dat");
         ASSERT_TRUE(file.OpenReadOnly(fileName.c_str()));
         uint32_t len = header.readFile(file);
@@ -560,43 +539,31 @@ TEST_F(FileHeaderTest, test_layout)
     EXPECT_EQ("666999", header.getTag("baz").asString());
 }
 
-
-void
-FileHeaderTest::testReadSize(bool mapped)
-{
-        DataBuffer buf;
-        buf.writeInt32(GenericHeader::MAGIC);
-        buf.writeInt32(21);
-        buf.writeInt32(GenericHeader::VERSION);
-        buf.writeInt32(1);
-        uint32_t headerLen;
-        if (mapped) {
-            GenericHeader::MMapReader reader(buf.getData(), buf.getDataLen());
-            headerLen = FileHeader::readSize(reader);
-        } else {
-            GenericHeader::BufferReader reader(buf);
-            headerLen = FileHeader::readSize(reader);
-        }
-        EXPECT_EQ(21u, headerLen);
+void FileHeaderTest::testReadSize(bool mapped) {
+    DataBuffer buf;
+    buf.writeInt32(GenericHeader::MAGIC);
+    buf.writeInt32(21);
+    buf.writeInt32(GenericHeader::VERSION);
+    buf.writeInt32(1);
+    uint32_t headerLen;
+    if (mapped) {
+        GenericHeader::MMapReader reader(buf.getData(), buf.getDataLen());
+        headerLen = FileHeader::readSize(reader);
+    } else {
+        GenericHeader::BufferReader reader(buf);
+        headerLen = FileHeader::readSize(reader);
+    }
+    EXPECT_EQ(21u, headerLen);
 }
 
-TEST_F(FileHeaderTest, test_read_size_unmapped)
-{
-    testReadSize(false);
-}
+TEST_F(FileHeaderTest, test_read_size_unmapped) { testReadSize(false); }
 
-TEST_F(FileHeaderTest, test_read_size_mapped)
-{
-    testReadSize(true);
-}
+TEST_F(FileHeaderTest, test_read_size_mapped) { testReadSize(true); }
 
-void
-FileHeaderTest::testReadSizeErrors(bool mapped)
-{
+void FileHeaderTest::testReadSizeErrors(bool mapped) {
     {
         DataBuffer buf;
-        EXPECT_TRUE(testReadSizeError(buf, "Failed to read header info.",
-                                      mapped));
+        EXPECT_TRUE(testReadSizeError(buf, "Failed to read header info.", mapped));
     }
     {
         DataBuffer buf;
@@ -604,8 +571,7 @@ FileHeaderTest::testReadSizeErrors(bool mapped)
         buf.writeInt32(8);
         buf.writeInt32(0);
         buf.writeInt32(0);
-        EXPECT_TRUE(testReadSizeError(buf, "Failed to verify magic bits.",
-                                      mapped));
+        EXPECT_TRUE(testReadSizeError(buf, "Failed to verify magic bits.", mapped));
     }
     {
         DataBuffer buf;
@@ -613,8 +579,7 @@ FileHeaderTest::testReadSizeErrors(bool mapped)
         buf.writeInt32(8);
         buf.writeInt32(GenericHeader::VERSION);
         buf.writeInt32(0);
-        EXPECT_TRUE(testReadSizeError(buf, "Failed to verify header size.",
-                                      mapped));
+        EXPECT_TRUE(testReadSizeError(buf, "Failed to verify header size.", mapped));
     }
     {
         DataBuffer buf;
@@ -622,26 +587,15 @@ FileHeaderTest::testReadSizeErrors(bool mapped)
         buf.writeInt32(16);
         buf.writeInt32(-1);
         buf.writeInt32(0);
-        EXPECT_TRUE(testReadSizeError(buf,
-                                      "Failed to verify header version.",
-                                      mapped));
+        EXPECT_TRUE(testReadSizeError(buf, "Failed to verify header version.", mapped));
     }
 }
 
-TEST_F(FileHeaderTest, test_read_size_errors_unmapped)
-{
-    testReadSizeErrors(false);
-}
+TEST_F(FileHeaderTest, test_read_size_errors_unmapped) { testReadSizeErrors(false); }
 
-TEST_F(FileHeaderTest, test_read_size_errors_mapped)
-{
-    testReadSizeErrors(true);
-}
+TEST_F(FileHeaderTest, test_read_size_errors_mapped) { testReadSizeErrors(true); }
 
-bool
-FileHeaderTest::testReadSizeError(DataBuffer &buf, const std::string &expected,
-                        bool mapped)
-{
+bool FileHeaderTest::testReadSizeError(DataBuffer& buf, const std::string& expected, bool mapped) {
     uint32_t headerLen = 0u;
     try {
         if (mapped) {
@@ -653,7 +607,7 @@ FileHeaderTest::testReadSizeError(DataBuffer &buf, const std::string &expected,
         }
         EXPECT_TRUE(false);
         return false;
-    } catch (IllegalHeaderException &e) {
+    } catch (IllegalHeaderException& e) {
         bool failed = false;
         EXPECT_EQ(expected, e.getMessage()) << (failed = true, "");
         if (failed) {

@@ -2,24 +2,24 @@
 #pragma once
 
 #include <vespa/vespalib/util/vespa_dll_local.h>
+
 #include <cstdint>
 #include <cstring>
-#include <string_view>
 #include <string>
+#include <string_view>
 
 namespace vespalib {
 
 // returns a reference to a shared empty string
-const std::string &empty_string() noexcept;
+const std::string& empty_string() noexcept;
 
 /**
  * Utility function to format an unsigned integer into a new
  * string instance.
  **/
-static inline std::string stringify(uint64_t number) noexcept
-{
+static inline std::string stringify(uint64_t number) noexcept {
     char digits[64];
-    int numdigits = 0;
+    int  numdigits = 0;
     do {
         digits[numdigits++] = '0' + (number % 10);
         number /= 10;
@@ -31,7 +31,7 @@ static inline std::string stringify(uint64_t number) noexcept
     return retval;
 }
 
-void chomp(std::string & s) noexcept;
-std::string safe_char_2_string(const char * p);
+void        chomp(std::string& s) noexcept;
+std::string safe_char_2_string(const char* p);
 
 } // namespace vespalib

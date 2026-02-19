@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vector>
-#include <functional>
-#include <algorithm>
 #include "left_right_heap.h"
+
+#include <algorithm>
+#include <functional>
+#include <vector>
 
 namespace vespalib {
 
@@ -22,9 +23,7 @@ namespace vespalib {
  * supported. Please refer to the left-right heap benchmarks to figure
  * out what implementation fits your case best.
  **/
-template <typename T, typename C = std::less<T>, typename H = LeftHeap>
-class PriorityQueue
-{
+template <typename T, typename C = std::less<T>, typename H = LeftHeap> class PriorityQueue {
 private:
     C              _cmp;
     std::vector<T> _data;
@@ -32,30 +31,25 @@ private:
 public:
     PriorityQueue() : _cmp(), _data() { H::require_left_heap(); }
     PriorityQueue(C cmp) : _cmp(cmp), _data() { H::require_left_heap(); }
-    bool empty() const { return _data.empty(); }
+    bool   empty() const { return _data.empty(); }
     size_t size() const { return _data.size(); }
-    void push(const T &item) {
+    void   push(const T& item) {
         _data.push_back(item);
         H::template push<T, C>(&_data[0], &_data[size()], _cmp);
     }
-    void push(T &&item) {
+    void push(T&& item) {
         _data.push_back(std::move(item));
         H::template push<T, C>(&_data[0], &_data[size()], _cmp);
     }
-    T &front() {
-        return H::template front<T>(&_data[0], &_data[size()]);
-    }
-    void adjust() {
-        H::template adjust<T,C>(&_data[0], &_data[size()], _cmp);
-    }
+    T&   front() { return H::template front<T>(&_data[0], &_data[size()]); }
+    void adjust() { H::template adjust<T, C>(&_data[0], &_data[size()], _cmp); }
     void pop_front() {
         H::template pop<T, C>(&_data[0], &_data[size()], _cmp);
         _data.pop_back();
     }
-    T &any() { return _data.back(); }
+    T&   any() { return _data.back(); }
     void pop_any() { _data.pop_back(); }
     void reserve(size_t sz) { _data.reserve(sz); }
 };
 
 } // namespace vespalib
-

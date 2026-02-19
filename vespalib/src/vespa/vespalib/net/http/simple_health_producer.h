@@ -3,23 +3,22 @@
 #pragma once
 
 #include "health_producer.h"
+
 #include <mutex>
 
 namespace vespalib {
 
-class SimpleHealthProducer : public HealthProducer
-{
+class SimpleHealthProducer : public HealthProducer {
 private:
-    mutable std::mutex _lock;
+    mutable std::mutex     _lock;
     HealthProducer::Health _health;
 
 public:
     SimpleHealthProducer();
     ~SimpleHealthProducer() override;
-    void setOk();
-    void setFailed(const std::string &msg);
+    void   setOk();
+    void   setFailed(const std::string& msg);
     Health getHealth() const override;
 };
 
 } // namespace vespalib
-

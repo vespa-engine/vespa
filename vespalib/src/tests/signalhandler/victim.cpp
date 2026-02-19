@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/signalhandler.h>
-#include <cstdio>
+
 #include <unistd.h>
+
+#include <cstdio>
 
 using vespalib::SignalHandler;
 
-int main(int argc, char **argv) {
-    (void) argc;
-    (void) argv;
+int main(int argc, char** argv) {
+    (void)argc;
+    (void)argv;
     SignalHandler::TERM.hook();
     kill(getpid(), SIGTERM);
     if (SignalHandler::TERM.check()) {

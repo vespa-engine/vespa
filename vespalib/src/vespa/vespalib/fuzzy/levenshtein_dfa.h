@@ -119,11 +119,9 @@ public:
     class MatchResult {
         uint8_t _max_edits;
         uint8_t _edits;
+
     public:
-        constexpr MatchResult(uint8_t max_edits, uint8_t edits) noexcept
-            : _max_edits(max_edits),
-              _edits(edits)
-        {}
+        constexpr MatchResult(uint8_t max_edits, uint8_t edits) noexcept : _max_edits(max_edits), _edits(edits) {}
 
         static constexpr MatchResult make_match(uint8_t max_edits, uint8_t edits) noexcept {
             return {max_edits, edits};
@@ -133,7 +131,7 @@ public:
             return {max_edits, static_cast<uint8_t>(max_edits + 1)};
         }
 
-        [[nodiscard]] constexpr bool matches() const noexcept { return _edits <= _max_edits; }
+        [[nodiscard]] constexpr bool    matches() const noexcept { return _edits <= _max_edits; }
         [[nodiscard]] constexpr uint8_t edits() const noexcept { return _edits; }
         [[nodiscard]] constexpr uint8_t max_edits() const noexcept { return _max_edits; }
     };
@@ -142,13 +140,15 @@ public:
         virtual ~Impl() = default;
         [[nodiscard]] virtual MatchResult match(std::string_view u8str) const = 0;
         [[nodiscard]] virtual MatchResult match(std::string_view u8str, std::string& successor_out) const = 0;
-        [[nodiscard]] virtual MatchResult match(std::string_view u8str, std::vector<uint32_t>& successor_out) const = 0;
+        [[nodiscard]] virtual MatchResult match(
+            std::string_view u8str, std::vector<uint32_t>& successor_out) const = 0;
         [[nodiscard]] virtual size_t memory_usage() const noexcept = 0;
-        virtual void dump_as_graphviz(std::ostream& out) const = 0;
+        virtual void                 dump_as_graphviz(std::ostream& out) const = 0;
     };
 
 private:
     std::unique_ptr<Impl> _impl;
+
 public:
     explicit LevenshteinDfa(std::unique_ptr<Impl> impl) noexcept;
     LevenshteinDfa(LevenshteinDfa&&) noexcept;
@@ -236,11 +236,7 @@ public:
      */
     [[nodiscard]] size_t memory_usage() const noexcept;
 
-    enum class DfaType {
-        Implicit,
-        Explicit,
-        Table
-    };
+    enum class DfaType { Implicit, Explicit, Table };
 
     /**
      * Specifies the character case matching semantics of the DFA.
@@ -300,11 +296,11 @@ public:
      *
      * `target_string` must not contain any null UTF-8 chars.
      */
-    [[nodiscard]] static LevenshteinDfa build(std::string_view target_string, uint8_t max_edits,
-                                              Casing casing, DfaType dfa_type, Matching matching);
+    [[nodiscard]] static LevenshteinDfa build(
+        std::string_view target_string, uint8_t max_edits, Casing casing, DfaType dfa_type, Matching matching);
 
-    [[nodiscard]] static LevenshteinDfa build(std::string_view target_string, uint8_t max_edits,
-                                              Casing casing, DfaType dfa_type);
+    [[nodiscard]] static LevenshteinDfa build(
+        std::string_view target_string, uint8_t max_edits, Casing casing, DfaType dfa_type);
 
     /**
      * Same as build() but currently always returns an implicit DFA.
@@ -333,4 +329,4 @@ std::ostream& operator<<(std::ostream& os, LevenshteinDfa::DfaType dt);
 std::ostream& operator<<(std::ostream& os, LevenshteinDfa::Casing c);
 std::ostream& operator<<(std::ostream& os, LevenshteinDfa::Matching m);
 
-}
+} // namespace vespalib::fuzzy

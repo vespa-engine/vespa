@@ -4,7 +4,6 @@
 
 #include "entryref.h"
 
-
 namespace vespalib::datastore {
 
 /*
@@ -12,15 +11,12 @@ namespace vespalib::datastore {
  */
 class UniqueStoreAddResult {
     EntryRef _ref;
-    bool _inserted;
+    bool     _inserted;
+
 public:
-    UniqueStoreAddResult(EntryRef ref_, bool inserted_)
-        : _ref(ref_),
-          _inserted(inserted_)
-    {
-    }
+    UniqueStoreAddResult(EntryRef ref_, bool inserted_) : _ref(ref_), _inserted(inserted_) {}
     EntryRef ref() const { return _ref; }
-    bool inserted() { return _inserted; }
+    bool     inserted() { return _inserted; }
 };
 
-}
+} // namespace vespalib::datastore

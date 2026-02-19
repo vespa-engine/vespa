@@ -3,6 +3,7 @@
 #include <vespa/vespalib/crypto/private_key.h>
 #include <vespa/vespalib/crypto/x509_certificate.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <gmock/gmock.h>
 
 using namespace ::testing;
@@ -20,10 +21,11 @@ TEST(CryptoTest, generated_p256_ec_private_key_can_be_exported_to_pem_format) {
 
 TEST(CryptoTest, generated_x509_certificate_can_be_exported_to_pem_format) {
     auto dn = X509Certificate::DistinguishedName()
-            .country("NO").locality("Trondheim")
-            .organization("Cool Unit Test Writers")
-            .organizational_unit("Only the finest tests, yes")
-            .add_common_name("cooltests.example.com");
+                  .country("NO")
+                  .locality("Trondheim")
+                  .organization("Cool Unit Test Writers")
+                  .organizational_unit("Only the finest tests, yes")
+                  .add_common_name("cooltests.example.com");
     auto subject = X509Certificate::SubjectInfo(std::move(dn));
     auto key = PrivateKey::generate_p256_ec_key();
     auto params = X509Certificate::Params::self_signed(std::move(subject), key);
@@ -32,4 +34,4 @@ TEST(CryptoTest, generated_x509_certificate_can_be_exported_to_pem_format) {
     EXPECT_THAT(pem, StartsWith("-----BEGIN CERTIFICATE-----"));
 }
 
-}
+} // namespace vespalib::crypto

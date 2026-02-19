@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "gencnt.h"
+
 #include <cassert>
 
 namespace vespalib {
 
-GenCnt &
-GenCnt::add(uint32_t n)
-{
+GenCnt& GenCnt::add(uint32_t n) {
     uint32_t newVal = _val + n;
     if (newVal < _val) {
         // avoid wrap-around to 0
@@ -17,10 +16,7 @@ GenCnt::add(uint32_t n)
     return *this;
 }
 
-
-bool
-GenCnt::inRangeInclusive(GenCnt a, GenCnt b) const
-{
+bool GenCnt::inRangeInclusive(GenCnt a, GenCnt b) const {
     if (_val == 0) {
         return (a._val == 0);
     }
@@ -37,10 +33,7 @@ GenCnt::inRangeInclusive(GenCnt a, GenCnt b) const
     }
 }
 
-
-uint32_t
-GenCnt::distance(const GenCnt &other) const
-{
+uint32_t GenCnt::distance(const GenCnt& other) const {
     if (other._val == 0) {
         // special case
         assert(_val == 0);
@@ -54,10 +47,7 @@ GenCnt::distance(const GenCnt &other) const
     return (other._val - _val - 1);
 }
 
-
-GenCnt &
-GenCnt::operator=(const GenCnt &src)
-{
+GenCnt& GenCnt::operator=(const GenCnt& src) {
     _val = src.getAsInt();
     return *this;
 }

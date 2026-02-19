@@ -1,19 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "unicode_utils.h"
+
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/casts.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <stdexcept>
 
 namespace vespalib::fuzzy {
 
 namespace {
 
-template <bool ToLowercase>
-std::vector<uint32_t> utf8_string_to_utf32_impl(std::string_view str) {
-    std::string_view ch_str(str.data(), str.size());
-    Utf8Reader utf8_reader(ch_str); // TODO consider integrating simdutf library
+template <bool ToLowercase> std::vector<uint32_t> utf8_string_to_utf32_impl(std::string_view str) {
+    std::string_view      ch_str(str.data(), str.size());
+    Utf8Reader            utf8_reader(ch_str); // TODO consider integrating simdutf library
     std::vector<uint32_t> u32ret;
     u32ret.reserve(str.size()); // Will over-allocate for all non-ASCII
     while (utf8_reader.hasMore()) {
@@ -22,20 +23,17 @@ std::vector<uint32_t> utf8_string_to_utf32_impl(std::string_view str) {
         } else {
             u32ret.emplace_back(utf8_reader.getChar());
         }
-
     }
     return u32ret;
 }
 
-}
+} // namespace
 
 std::vector<uint32_t> utf8_string_to_utf32_lowercased(std::string_view str) {
     return utf8_string_to_utf32_impl<true>(str);
 }
 
-std::vector<uint32_t> utf8_string_to_utf32(std::string_view str) {
-    return utf8_string_to_utf32_impl<false>(str);
-}
+std::vector<uint32_t> utf8_string_to_utf32(std::string_view str) { return utf8_string_to_utf32_impl<false>(str); }
 
 std::vector<uint32_t> utf8_string_to_utf32(std::u8string_view u8str) {
     return utf8_string_to_utf32(std::string_view(char_p_cast<char>(u8str.data()), u8str.size()));
@@ -71,7 +69,7 @@ namespace {
 
     // Yanked and modified from utf8.cpp:
     if (codepoint < 0x80) {
-        u8buf[0] = (char) codepoint;
+        u8buf[0] = (char)codepoint;
         return 1;
     } else if (codepoint < 0x800) {
         char low6 = (codepoint & low_6bits_mask);
@@ -124,13 +122,13 @@ namespace {
     }
 }
 
-} // anon ns
+} // namespace
 
 // TODO optimize inlined in header for case where u32_char is < 0x80?
 void append_utf32_char(std::string& out_str, uint32_t u32_char) {
     unsigned char u8buf[4];
-    uint8_t u8bytes = encode_utf8_char(u32_char, u8buf);
+    uint8_t       u8bytes = encode_utf8_char(u32_char, u8buf);
     out_str.append(char_p_cast<char>(u8buf), u8bytes);
 }
 
-}
+} // namespace vespalib::fuzzy

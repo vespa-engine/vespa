@@ -3,7 +3,9 @@
 #pragma once
 
 #include "wakeup_pipe.h"
+
 #include <poll.h>
+
 #include <map>
 #include <mutex>
 
@@ -15,10 +17,9 @@
 namespace vespalib {
 
 // structure describing which event occurred.
-struct epoll_event
-{
+struct epoll_event {
     struct {
-        void *ptr;
+        void* ptr;
     } data;
     uint32_t events;
 };
@@ -27,19 +28,19 @@ struct epoll_event
  * The Epoll class is a thin wrapper around basic emulation of the epoll
  * related system calls.
  **/
-class Epoll
-{
+class Epoll {
 private:
-    std::mutex _monitored_lock;
-    WakeupPipe _wakeup;
+    std::mutex                 _monitored_lock;
+    WakeupPipe                 _wakeup;
     std::map<int, epoll_event> _monitored;
+
 public:
     Epoll();
     ~Epoll();
-    void add(int fd, void *ctx, bool read, bool write);
-    void update(int fd, void *ctx, bool read, bool write);
-    void remove(int fd);
-    size_t wait(epoll_event *events, size_t max_events, int timeout_ms);
+    void   add(int fd, void* ctx, bool read, bool write);
+    void   update(int fd, void* ctx, bool read, bool write);
+    void   remove(int fd);
+    size_t wait(epoll_event* events, size_t max_events, int timeout_ms);
 };
 
-}
+} // namespace vespalib

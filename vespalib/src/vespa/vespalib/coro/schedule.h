@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
+
 #include <coroutine>
 #include <exception>
 #include <stdexcept>
@@ -16,17 +17,15 @@ struct ScheduleFailedException : std::runtime_error {
 // Schedule the current coroutine on the given executor. Throws an
 // exception if the request was rejected by the executor.
 
-auto schedule(Executor &executor) {
+auto schedule(Executor& executor) {
     struct [[nodiscard]] awaiter {
-        Executor &executor;
-        awaiter(Executor &executor_in)
-            : executor(executor_in) {}
+        Executor& executor;
+        awaiter(Executor& executor_in) : executor(executor_in) {}
         bool await_ready() const noexcept { return false; }
         void await_suspend(std::coroutine_handle<> handle) __attribute__((noinline)) {
             struct ResumeTask : Executor::Task {
                 std::coroutine_handle<> handle;
-                ResumeTask(std::coroutine_handle<> handle_in)
-                  : handle(handle_in) {}
+                ResumeTask(std::coroutine_handle<> handle_in) : handle(handle_in) {}
                 void run() override { handle.resume(); }
             };
             Executor::Task::UP task = std::make_unique<ResumeTask>(handle);
@@ -45,18 +44,16 @@ auto schedule(Executor &executor) {
 // the awaiter returns false, the request was rejected by the executor
 // and the coroutine is still running in our original context.
 
-auto try_schedule(Executor &executor) {
+auto try_schedule(Executor& executor) {
     struct [[nodiscard]] awaiter {
-        Executor &executor;
-        bool accepted;
-        awaiter(Executor &executor_in)
-            : executor(executor_in), accepted(true) {}
+        Executor& executor;
+        bool      accepted;
+        awaiter(Executor& executor_in) : executor(executor_in), accepted(true) {}
         bool await_ready() const noexcept { return false; }
         bool await_suspend(std::coroutine_handle<> handle) __attribute__((noinline)) {
             struct ResumeTask : Executor::Task {
                 std::coroutine_handle<> handle;
-                ResumeTask(std::coroutine_handle<> handle_in)
-                  : handle(handle_in) {}
+                ResumeTask(std::coroutine_handle<> handle_in) : handle(handle_in) {}
                 void run() override { handle.resume(); }
             };
             Executor::Task::UP task = std::make_unique<ResumeTask>(handle);
@@ -75,4 +72,4 @@ auto try_schedule(Executor &executor) {
     return awaiter(executor);
 }
 
-}
+} // namespace vespalib::coro

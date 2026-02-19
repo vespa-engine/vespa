@@ -2,7 +2,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/time.h>
+
 #include <sys/resource.h>
+
 #include <string>
 
 namespace vespalib {
@@ -27,13 +29,13 @@ public:
      * Will create an RUsage and initialize member with RUSAGE_CHILDREN
      **/
     std::string toString();
-    RUsage & operator -= (const RUsage & rhs);
+    RUsage&     operator-=(const RUsage& rhs);
+
 private:
     vespalib::duration _time;
 };
 
-RUsage operator -(const RUsage & a, const RUsage & b);
-timeval operator -(const timeval & a, const timeval & b);
+RUsage  operator-(const RUsage& a, const RUsage& b);
+timeval operator-(const timeval& a, const timeval& b);
 
-}
-
+} // namespace vespalib

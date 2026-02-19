@@ -31,4 +31,3 @@ public:
 };
 
 } // namespace vespalib
-

@@ -15,13 +15,9 @@ MemoryStats::MemoryStats() noexcept
       _holdBytes(0),
       _freeBuffers(0),
       _activeBuffers(0),
-      _holdBuffers(0)
-{
-}
+      _holdBuffers(0) {}
 
-MemoryStats&
-MemoryStats::operator+=(const MemoryStats& rhs) noexcept
-{
+MemoryStats& MemoryStats::operator+=(const MemoryStats& rhs) noexcept {
     _alloc_entries += rhs._alloc_entries;
     _used_entries += rhs._used_entries;
     _dead_entries += rhs._dead_entries;
@@ -36,5 +32,4 @@ MemoryStats::operator+=(const MemoryStats& rhs) noexcept
     return *this;
 }
 
-}
-
+} // namespace vespalib::datastore

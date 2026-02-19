@@ -11,25 +11,21 @@ namespace vespalib {
  * that uses mmap prefering huge pages for large allocations.
  * This is a good fit for use with std::vector and std::deque.
  */
-template <typename T>
-class allocator_large {
+template <typename T> class allocator_large {
 public:
     allocator_large() noexcept : _allocator(alloc::MemoryAllocator::select_allocator()) {}
     using value_type = T;
-    constexpr T * allocate(std::size_t n) {
-        return static_cast<T *>(_allocator->alloc(n*sizeof(T)).get());
-    }
-    void deallocate(T * p, std::size_t n) {
-        _allocator->free(p, n*sizeof(T));
-    }
-    const alloc::MemoryAllocator * allocator() const { return _allocator; }
+    constexpr T* allocate(std::size_t n) { return static_cast<T*>(_allocator->alloc(n * sizeof(T)).get()); }
+    void         deallocate(T* p, std::size_t n) { _allocator->free(p, n * sizeof(T)); }
+    const alloc::MemoryAllocator* allocator() const { return _allocator; }
+
 private:
-    const alloc::MemoryAllocator * _allocator;
+    const alloc::MemoryAllocator* _allocator;
 };
 
-template< class T1, class T2 >
-constexpr bool operator==( const allocator_large<T1>& lhs, const allocator_large<T2>& rhs ) noexcept {
+template <class T1, class T2>
+constexpr bool operator==(const allocator_large<T1>& lhs, const allocator_large<T2>& rhs) noexcept {
     return lhs.allocator() == rhs.allocator();
 }
 
-}
+} // namespace vespalib

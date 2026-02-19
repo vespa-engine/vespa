@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vector>
+#include "mix_hash.h"
+
 #include <algorithm>
 #include <cstdint>
-#include "mix_hash.h"
+#include <vector>
 
 namespace vespalib {
 
@@ -23,39 +24,35 @@ class GenerateHashTable {
     using KeyV = std::vector<KeyT>;
     using Taken = std::vector<bool>;
     struct Bucket {
-        Idx slot;
+        Idx               slot;
         std::vector<KeyT> keys;
-        bool operator< (const Bucket& other) const noexcept {
-            return keys.size() > other.keys.size();
-        }
+        bool              operator<(const Bucket& other) const noexcept { return keys.size() > other.keys.size(); }
     };
     const KeyV _keys;
-    KeyV _bias;
+    KeyV       _bias;
     const KeyT _size;
-    Taken _takenSlots;
+    Taken      _takenSlots;
 
-    GenerateHashTable(KeyV keys)
-      : _keys(std::move(keys)),
-        _bias(),
-        _size(_keys.size())
-    {
+    GenerateHashTable(KeyV keys) : _keys(std::move(keys)), _bias(), _size(_keys.size()) {
         _bias.resize(_size);
         _takenSlots.resize(_size);
     }
 
-    struct FoundBias { KeyT bias; Taken taken; };
+    struct FoundBias {
+        KeyT  bias;
+        Taken taken;
+    };
 
     FoundBias findBias(const KeyV& keys) const;
 
     void findBiases();
 
 public:
-
     /** Hashes each valid value of "key" to a unique index */
     struct BiasedHash {
         const KeyV biasTable;
-        Idx hash(KeyT key) const {
-            Idx l1hash = mix_hash(key, 0, biasTable.size());
+        Idx        hash(KeyT key) const {
+            Idx  l1hash = mix_hash(key, 0, biasTable.size());
             KeyT bias = biasTable[l1hash];
             return mix_hash(key, bias, biasTable.size());
         }

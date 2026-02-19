@@ -1,49 +1,38 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "buffer_free_list.h"
+
 #include "free_list.h"
+
 #include <cassert>
 
 namespace vespalib::datastore {
 
-void
-BufferFreeList::attach()
-{
+void BufferFreeList::attach() {
     assert(_free_list != nullptr);
     _free_list->attach(*this);
 }
 
-void
-BufferFreeList::detach() noexcept
-{
+void BufferFreeList::detach() noexcept {
     assert(_free_list != nullptr);
     _free_list->detach(*this);
 }
 
 BufferFreeList::BufferFreeList(std::atomic<EntryCount>& dead_entries) noexcept
-    : _dead_entries(dead_entries),
-      _free_list(),
-      _free_refs()
-{
-}
+    : _dead_entries(dead_entries), _free_list(), _free_refs() {}
 
-BufferFreeList::~BufferFreeList()
-{
+BufferFreeList::~BufferFreeList() {
     assert(_free_list == nullptr);
     assert(_free_refs.empty());
 }
 
-void
-BufferFreeList::enable(FreeList& free_list) noexcept
-{
+void BufferFreeList::enable(FreeList& free_list) noexcept {
     assert(_free_list == nullptr);
     assert(_free_refs.empty());
     _free_list = &free_list;
 }
 
-void
-BufferFreeList::disable() noexcept
-{
+void BufferFreeList::disable() noexcept {
     if (!empty()) {
         detach();
         EntryRefArray().swap(_free_refs);
@@ -51,15 +40,13 @@ BufferFreeList::disable() noexcept
     _free_list = nullptr;
 }
 
-void
-BufferFreeList::push_entry(EntryRef ref) {
+void BufferFreeList::push_entry(EntryRef ref) {
     if (empty()) {
         attach();
     }
     _free_refs.push_back(ref);
 }
-EntryRef
-BufferFreeList::pop_entry() noexcept {
+EntryRef BufferFreeList::pop_entry() noexcept {
     EntryRef ret = _free_refs.back();
     _free_refs.pop_back();
     if (empty()) {
@@ -69,5 +56,4 @@ BufferFreeList::pop_entry() noexcept {
     return ret;
 }
 
-}
-
+} // namespace vespalib::datastore

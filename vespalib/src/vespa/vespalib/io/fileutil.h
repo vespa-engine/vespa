@@ -28,7 +28,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/memory.h>
+
 #include <unistd.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -44,7 +46,6 @@ struct FileInfo {
     bool  _plainfile;
     bool  _directory;
     off_t _size;
-
 };
 
 /**
@@ -67,6 +68,7 @@ private:
      * yet, you will get fileinfo describing an empty file.
      */
     FileInfo stat() const;
+
 public:
     using UP = std::unique_ptr<File>;
 
@@ -118,7 +120,7 @@ public:
      * @throw IoException If we failed to write to the file.
      * @return            Always return bufsize.
      */
-    off_t write(const void *buf, size_t bufsize, off_t offset);
+    off_t write(const void* buf, size_t bufsize, off_t offset);
 
     /**
      * Read characters from a file.
@@ -133,7 +135,7 @@ public:
      * @return            The number of bytes actually read. If less than
      *                    bufsize, this indicates that EOF was reached.
      */
-    size_t read(void *buf, size_t bufsize, off_t offset) const;
+    size_t read(void* buf, size_t bufsize, off_t offset) const;
 
     /**
      * Read the file into a string.
@@ -174,8 +176,8 @@ public:
  * List the contents of the given directory.
  */
 using DirectoryList = std::vector<std::string>;
-extern DirectoryList listDirectory(const std::string & path);
-std::string dirname(std::string_view name);
-std::string getOpenErrorString(const int osError, std::string_view name);
+extern DirectoryList listDirectory(const std::string& path);
+std::string          dirname(std::string_view name);
+std::string          getOpenErrorString(const int osError, std::string_view name);
 
-} // vespalib
+} // namespace vespalib

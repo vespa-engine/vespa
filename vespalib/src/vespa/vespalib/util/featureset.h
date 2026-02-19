@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/data/memory.h>
+
 #include <map>
 #include <memory>
 #include <optional>
@@ -15,32 +16,22 @@ namespace vespalib {
  * This class holds information about a set of features for a set of
  * documents.
  **/
-class FeatureSet
-{
+class FeatureSet {
 public:
     class Value {
     private:
         std::vector<char> _data;
-        double _value;
+        double            _value;
+
     public:
-        Value() noexcept
-            : _data(),
-              _value(0.0)
-        {
-        }
-        Value(double value_in) noexcept
-            : _data(),
-              _value(value_in)
-        {
-        }
-        bool operator==(const Value &rhs) const {
-            return ((_data == rhs._data) && (_value == rhs._value));
-        }
-        bool is_double() const { return _data.empty(); }
-        bool is_data() const { return !_data.empty(); }
+        Value() noexcept : _data(), _value(0.0) {}
+        Value(double value_in) noexcept : _data(), _value(value_in) {}
+        bool   operator==(const Value& rhs) const { return ((_data == rhs._data) && (_value == rhs._value)); }
+        bool   is_double() const { return _data.empty(); }
+        bool   is_data() const { return !_data.empty(); }
         double as_double() const { return _value; }
         vespalib::Memory as_data() const { return vespalib::Memory(&_data[0], _data.size()); }
-        void set_double(double value) {
+        void             set_double(double value) {
             _data.clear();
             _value = value;
         }
@@ -52,13 +43,14 @@ public:
 
     using string = std::string;
     using StringVector = std::vector<string>;
-private:
-    StringVector _names;
-    std::vector<uint32_t> _docIds;
-    std::vector<Value> _values;
 
-    FeatureSet(const FeatureSet &);
-    FeatureSet & operator=(const FeatureSet &);
+private:
+    StringVector          _names;
+    std::vector<uint32_t> _docIds;
+    std::vector<Value>    _values;
+
+    FeatureSet(const FeatureSet&);
+    FeatureSet& operator=(const FeatureSet&);
 
 public:
     using SP = std::shared_ptr<FeatureSet>;
@@ -77,21 +69,21 @@ public:
      * @param names names of all features
      * @param expectDocs the number of documents we expect to store information about
      **/
-    FeatureSet(const StringVector &names, uint32_t expectDocs);
+    FeatureSet(const StringVector& names, uint32_t expectDocs);
 
     /**
      * Check whether this object is equal to the given object.
      *
      * @return true if the objects are equal.
      **/
-    bool equals(const FeatureSet &rhs) const;
+    bool equals(const FeatureSet& rhs) const;
 
     /**
      * Obtain the names of all the features tracked by this object.
      *
      * @return feature names
      **/
-    const StringVector &getNames() const { return _names; }
+    const StringVector& getNames() const { return _names; }
 
     /**
      * Obtain the number of features this object contains information
@@ -100,7 +92,6 @@ public:
      * @return number of features
      **/
     uint32_t numFeatures() const { return _names.size(); }
-
 
     std::optional<uint32_t> get_name_idx(const std::string& name) const;
 
@@ -137,7 +128,7 @@ public:
      * @return true if this object contains information about all the given documents
      * @param docIds the documents we want information about
      **/
-    bool contains(const std::vector<uint32_t> &docIds) const;
+    bool contains(const std::vector<uint32_t>& docIds) const;
 
     /**
      * Obtain the feature values belonging to a document based on the
@@ -148,9 +139,9 @@ public:
      * @return pointer to features
      * @param idx index into docid array
      **/
-    Value *getFeaturesByIndex(uint32_t idx);
+    Value* getFeaturesByIndex(uint32_t idx);
 
-    const Value *getFeaturesByIndex(uint32_t idx) const;
+    const Value* getFeaturesByIndex(uint32_t idx) const;
 
     /**
      * Obtain the feature values belonging to a document based on the
@@ -160,14 +151,14 @@ public:
      * @return pointer to features
      * @param docId docid value
      **/
-    const Value *getFeaturesByDocId(uint32_t docId) const;
+    const Value* getFeaturesByDocId(uint32_t docId) const;
 };
 
 // An even simpler feature container. Used to pass match features around.
 struct FeatureValues {
     using Value = FeatureSet::Value;
     std::vector<std::string> names;
-    std::vector<Value> values; // values.size() == names.size() * N
+    std::vector<Value>       values; // values.size() == names.size() * N
     FeatureValues() noexcept;
     FeatureValues(const FeatureValues& rhs);
     FeatureValues(FeatureValues&& rhs) noexcept;
@@ -176,4 +167,4 @@ struct FeatureValues {
     FeatureValues& operator=(FeatureValues&& rhs) noexcept;
 };
 
-}
+} // namespace vespalib

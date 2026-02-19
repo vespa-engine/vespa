@@ -2,22 +2,18 @@
 
 #include <vespa/vespalib/trace/trace.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <sys/time.h>
 
 namespace vespalib {
 
-Trace::Trace(const Trace &rhs)
-    : _root(),
-      _level(rhs._level)
-{
+Trace::Trace(const Trace& rhs) : _root(), _level(rhs._level) {
     if (!rhs.isEmpty()) {
         _root = std::make_unique<TraceNode>(rhs.getRoot());
     }
 }
 
-bool
-Trace::trace(uint32_t level, const std::string &note, bool addTime)
-{
+bool Trace::trace(uint32_t level, const std::string& note, bool addTime) {
     if (!shouldTrace(level)) {
         return false;
     }
@@ -31,24 +27,16 @@ Trace::trace(uint32_t level, const std::string &note, bool addTime)
     return true;
 }
 
-std::string
-Trace::toString(size_t limit) const {
-    return _root ? _root->toString(limit) : "";
-}
+std::string Trace::toString(size_t limit) const { return _root ? _root->toString(limit) : ""; }
 
-std::string
-Trace::encode() const {
-    return isEmpty() ? "" : getRoot().encode();
-}
+std::string Trace::encode() const { return isEmpty() ? "" : getRoot().encode(); }
 
-void
-Trace::clear() {
+void Trace::clear() {
     _level = 0;
     _root.reset();
 }
 
-TraceNode &
-Trace::ensureRoot() {
+TraceNode& Trace::ensureRoot() {
     if (!_root) {
         _root = std::make_unique<TraceNode>();
     }

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "handle.h"
+
 #include <string>
 
 namespace vespalib::metrics {
@@ -13,10 +14,9 @@ struct LabelTag {};
 /**
  * Opaque handle representing an unique label value.
  **/
-struct Label : Handle<LabelTag>
-{
+struct Label : Handle<LabelTag> {
     explicit Label(size_t id) : Handle(id) {}
-    static Label from_value(const std::string& value);
+    static Label       from_value(const std::string& value);
     const std::string& as_value() const;
 };
 

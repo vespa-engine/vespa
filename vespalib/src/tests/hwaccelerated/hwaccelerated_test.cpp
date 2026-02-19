@@ -2,14 +2,17 @@
 
 #include "data_utils.h"
 #include "scoped_fn_table_override.h"
+
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/hwaccelerated/float4.h>
-#include <vespa/vespalib/hwaccelerated/fn_table.h>
 #include <vespa/vespalib/hwaccelerated/float8_luts.h>
-#include <vespa/vespalib/hwaccelerated/highway.h>
+#include <vespa/vespalib/hwaccelerated/fn_table.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
+#include <vespa/vespalib/hwaccelerated/highway.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+
 #include <gmock/gmock.h>
+
 #include <limits>
 #include <random>
 
@@ -35,10 +38,11 @@ void verify_euclidean_distance(std::span<const IAccelerated*> accels, size_t tes
             sum += d * d;
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_euclidean_distance(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
+            LOG(spam, "verify_euclidean_distance(accel=%s, len=%zu, offset=%zu)",
+                accel->target_info().to_string().c_str(), test_length, j);
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            double computed = squared_euclidean_distance(&a[j], &b[j], test_length - j);
-            ASSERT_NEAR(sum, computed, sum*approx_factor) << accel->target_info().to_string();
+            double                computed = squared_euclidean_distance(&a[j], &b[j], test_length - j);
+            ASSERT_NEAR(sum, computed, sum * approx_factor) << accel->target_info().to_string();
         }
     }
 }
@@ -52,10 +56,11 @@ void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_lengt
             sum += a[i] * b[i];
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(), test_length, j);
+            LOG(spam, "verify_dot_product(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(),
+                test_length, j);
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            auto computed = static_cast<double>(dot_product(&a[j], &b[j], test_length - j));
-            ASSERT_NEAR(sum, computed, std::fabs(sum*approx_factor)) << accel->target_info().to_string();
+            auto                  computed = static_cast<double>(dot_product(&a[j], &b[j], test_length - j));
+            ASSERT_NEAR(sum, computed, std::fabs(sum * approx_factor)) << accel->target_info().to_string();
         }
     }
 }
@@ -84,7 +89,8 @@ std::vector<const IAccelerated*> all_accelerators_to_test() {
 void verify_euclidean_distance(std::span<const IAccelerated*> accelerators, size_t testLength) {
     verify_euclidean_distance<int8_t>(accelerators, testLength, 0.0);
     verify_euclidean_distance<float>(accelerators, testLength, 0.0001); // Small deviation requiring EXPECT_APPROX
-    verify_euclidean_distance<BFloat16>(accelerators, testLength, 0.001f); // Reduced BF16 precision requires more slack
+    verify_euclidean_distance<BFloat16>(
+        accelerators, testLength, 0.001f); // Reduced BF16 precision requires more slack
     verify_euclidean_distance<double>(accelerators, testLength, 0.0);
 }
 
@@ -97,12 +103,18 @@ constexpr std::span<const size_t> test_lengths() noexcept {
     // verify_... checks all suffixes from offsets [0, 32), so test lengths must be at least this long.
     // Lengths relative to max_chunk_i32_boundary limits are for testing chunk overflow handling.
     static size_t lengths[] = {
-        32u, 64u, 256u, 1024u,
-        euclidean_max_chunk_i32_boundary - 1, euclidean_max_chunk_i32_boundary,
-        euclidean_max_chunk_i32_boundary + 1, euclidean_max_chunk_i32_boundary + 256,
-        dot_max_chunk_i32_boundary - 1, dot_max_chunk_i32_boundary,
-        dot_max_chunk_i32_boundary + 1, dot_max_chunk_i32_boundary + 256
-    };
+        32u,
+        64u,
+        256u,
+        1024u,
+        euclidean_max_chunk_i32_boundary - 1,
+        euclidean_max_chunk_i32_boundary,
+        euclidean_max_chunk_i32_boundary + 1,
+        euclidean_max_chunk_i32_boundary + 256,
+        dot_max_chunk_i32_boundary - 1,
+        dot_max_chunk_i32_boundary,
+        dot_max_chunk_i32_boundary + 1,
+        dot_max_chunk_i32_boundary + 256};
     return lengths;
 }
 
@@ -118,7 +130,8 @@ struct HwAcceleratedTest : Test {
 TEST_F(HwAcceleratedTest, euclidean_distance_impls_match_source_of_truth) {
     auto accelerators = all_accelerators_to_test();
     for (size_t test_length : test_lengths()) {
-        ASSERT_NO_FATAL_FAILURE(verify_euclidean_distance(accelerators, test_length)) << "with length " << test_length;
+        ASSERT_NO_FATAL_FAILURE(verify_euclidean_distance(accelerators, test_length))
+            << "with length " << test_length;
     }
 }
 
@@ -153,10 +166,12 @@ void verify_euclidean_distance_no_overflow(std::span<const IAccelerated*> accels
             sum += d * d;
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_euclidean_distance_no_overflow(accel=%s, len=%zu)", accel->target_info().to_string().c_str(), i);
+            LOG(spam, "verify_euclidean_distance_no_overflow(accel=%s, len=%zu)",
+                accel->target_info().to_string().c_str(), i);
             ScopedFnTableOverride fn_scope(accel->fn_table());
             auto computed = static_cast<int64_t>(squared_euclidean_distance(lhs.data(), rhs.data(), i));
-            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->target_info().to_string();
+            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel "
+                                     << accel->target_info().to_string();
         }
     }
 }
@@ -179,10 +194,12 @@ void verify_dot_product_no_overflow(std::span<const IAccelerated*> accels, size_
             sum += lhs[j] * rhs[j];
         }
         for (const auto* accel : accels) {
-            LOG(spam, "verify_dot_product_no_overflow(accel=%s, len=%zu)", accel->target_info().to_string().c_str(), i);
+            LOG(spam, "verify_dot_product_no_overflow(accel=%s, len=%zu)", accel->target_info().to_string().c_str(),
+                i);
             ScopedFnTableOverride fn_scope(accel->fn_table());
-            int64_t computed = dot_product(lhs.data(), rhs.data(), i);
-            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel " << accel->target_info().to_string();
+            int64_t               computed = dot_product(lhs.data(), rhs.data(), i);
+            ASSERT_EQ(sum, computed) << "overflow at length " << i << " for accel "
+                                     << accel->target_info().to_string();
         }
     }
 }
@@ -197,20 +214,16 @@ TEST_F(HwAcceleratedTest, chunked_i8_dot_product_does_not_overflow) {
 class UnalignedPtr {
     void*  _aligned_ptr = nullptr;
     size_t _unalignment = 0;
+
 public:
-    constexpr UnalignedPtr(void* mem, size_t unalignment) noexcept
-        : _aligned_ptr(mem),
-          _unalignment(unalignment)
-    {}
+    constexpr UnalignedPtr(void* mem, size_t unalignment) noexcept : _aligned_ptr(mem), _unalignment(unalignment) {}
     // Make noncopyable/nonmovable for simplicity
     UnalignedPtr(const UnalignedPtr&) = delete;
     UnalignedPtr& operator=(const UnalignedPtr&) = delete;
     UnalignedPtr(UnalignedPtr&&) noexcept = delete;
     UnalignedPtr& operator=(UnalignedPtr&&) noexcept = delete;
 
-    ~UnalignedPtr() {
-        free(_aligned_ptr);
-    }
+    ~UnalignedPtr() { free(_aligned_ptr); }
 
     [[nodiscard]] void* as_unaligned_ptr() noexcept {
         return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(_aligned_ptr) + _unalignment);
@@ -219,18 +232,18 @@ public:
 
 [[nodiscard]] UnalignedPtr alloc_unaligned(size_t sz, size_t unalignment = 0) {
     constexpr size_t ALIGN = 8;
-    void* mem;
-    int r = posix_memalign(&mem, ALIGN, sz);
+    void*            mem;
+    int              r = posix_memalign(&mem, ALIGN, sz);
     assert(r == 0);
     return {mem, unalignment};
 }
 
 void flip_one_bit(void* memory, const void* other_memory, size_t sz) {
-    auto* buf       = reinterpret_cast<uint8_t*>(memory);
+    auto* buf = reinterpret_cast<uint8_t*>(memory);
     auto* other_buf = reinterpret_cast<const uint8_t*>(other_memory);
     while (true) {
-        size_t byte_idx = random() % sz; // TODO non-deprecated PRNG
-        size_t bit_idx = random() % 8; // TODO non-deprecated PRNG
+        size_t  byte_idx = random() % sz; // TODO non-deprecated PRNG
+        size_t  bit_idx = random() % 8;   // TODO non-deprecated PRNG
         uint8_t cmp = other_buf[byte_idx];
         uint8_t old = buf[byte_idx];
         uint8_t bit = 1u << bit_idx;
@@ -247,7 +260,7 @@ void check_with_flipping(std::span<const IAccelerated*> accels, void* mem_a, voi
     memset(mem_a, 0, sz);
     memset(mem_b, 0, sz);
     size_t dist = 0;
-    auto check_accelerators = [&] {
+    auto   check_accelerators = [&] {
         for (const auto* accel : accels) {
             ScopedFnTableOverride fn_scope(accel->fn_table());
             ASSERT_EQ(binary_hamming_distance(mem_a, mem_b, sz), dist) << accel->target_info().to_string();
@@ -273,7 +286,7 @@ void check_with_sizes(std::span<const IAccelerated*> accels, size_t lhs_unalign,
 }
 
 TEST_F(HwAcceleratedTest, binary_hamming_distance_with_alignments) {
-    auto accelerators = all_accelerators_to_test();
+    auto                                   accelerators = all_accelerators_to_test();
     std::vector<std::pair<size_t, size_t>> lhs_rhs_unalignments = {{0, 0}, {1, 0}, {0, 1}, {3, 0}, {0, 7}, {2, 6}};
     for (const auto& [lhs_unalign, rhs_unalign] : lhs_rhs_unalignments) {
         ASSERT_NO_FATAL_FAILURE(check_with_sizes(accelerators, lhs_unalign, rhs_unalign));
@@ -282,21 +295,13 @@ TEST_F(HwAcceleratedTest, binary_hamming_distance_with_alignments) {
 
 using namespace dispatch;
 
-void PrintTo(const TargetInfo& info, std::ostream* os) {
-    *os << info.to_string();
-}
+void PrintTo(const TargetInfo& info, std::ostream* os) { *os << info.to_string(); }
 
-int64_t my_dot_i8_a(const int8_t*, const int8_t*, size_t sz) noexcept {
-    return sz;
-}
+int64_t my_dot_i8_a(const int8_t*, const int8_t*, size_t sz) noexcept { return sz; }
 
-int64_t my_dot_i8_b(const int8_t*, const int8_t*, size_t sz) noexcept {
-    return sz;
-}
+int64_t my_dot_i8_b(const int8_t*, const int8_t*, size_t sz) noexcept { return sz; }
 
-size_t my_popcount(const uint64_t*, size_t sz) noexcept {
-    return sz;
-}
+size_t my_popcount(const uint64_t*, size_t sz) noexcept { return sz; }
 
 TargetInfo a_info("BoringImpl", "Dusty calculator", 128);
 TargetInfo b_info("MyCoolImpl", "Liquid cooled 6502", 1024);
@@ -357,24 +362,24 @@ TEST(Float4E2M1WideningTest, f32_conversion_matches_source_of_truth) {
     }
     // See: https://onnx.ai/onnx/technical/float4.html
     // Exact floating point equality checking is desired
-    EXPECT_THAT(output, ElementsAre( 0.f,  0.5f,  1.f,  1.5f,  2.f,  3.f,  4.f,  6.f,
-                                    -0.f, -0.5f, -1.f, -1.5f, -2.f, -3.f, -4.f, -6.f));
+    EXPECT_THAT(output, ElementsAre(0.f, 0.5f, 1.f, 1.5f, 2.f, 3.f, 4.f, 6.f, -0.f, -0.5f, -1.f, -1.5f, -2.f, -3.f,
+                                    -4.f, -6.f));
 }
 
 TEST(Float4E2M1WideningTest, can_widen_fp4_e2m1_to_fp8_types) {
     for (uint32_t i = 0; i < 16; ++i) {
         const uint8_t  as_e4m3fn_bits = Float4E2M1ToFloat8E4M3FnConv::widen(i);
-        const uint8_t  as_e5m2_bits   = Float4E2M1ToFloat8E5M2Conv::widen(i);
-        const uint32_t as_f32_bits    = Float4E2M1ToFloat32Conv::widen(i); // for cross-checking
-        const auto as_e4m3fn_float    = std::bit_cast<float>(fp8_e4m3fn_f32_bits_lut[as_e4m3fn_bits]);
-        const auto as_e5m2_float      = std::bit_cast<float>(fp8_e5m2_f32_bits_lut[as_e5m2_bits]);
-        const auto as_f32_float       = std::bit_cast<float>(as_f32_bits);
+        const uint8_t  as_e5m2_bits = Float4E2M1ToFloat8E5M2Conv::widen(i);
+        const uint32_t as_f32_bits = Float4E2M1ToFloat32Conv::widen(i); // for cross-checking
+        const auto     as_e4m3fn_float = std::bit_cast<float>(fp8_e4m3fn_f32_bits_lut[as_e4m3fn_bits]);
+        const auto     as_e5m2_float = std::bit_cast<float>(fp8_e5m2_f32_bits_lut[as_e5m2_bits]);
+        const auto     as_f32_float = std::bit_cast<float>(as_f32_bits);
         // Exact floating point equality checking is desired
         EXPECT_EQ(as_e4m3fn_float, as_e5m2_float);
         EXPECT_EQ(as_e5m2_float, as_f32_float);
     }
 }
 
-} // vespalib::hwaccelerated
+} // namespace vespalib::hwaccelerated
 
 GTEST_MAIN_RUN_ALL_TESTS()

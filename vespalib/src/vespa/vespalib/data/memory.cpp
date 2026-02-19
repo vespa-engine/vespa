@@ -1,18 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memory.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace vespalib {
 
-std::string
-Memory::make_string() const
-{
-    return std::string(data, size);
-}
+std::string Memory::make_string() const { return std::string(data, size); }
 
-std::ostream &
-operator<<(std::ostream &os, const Memory &memory) {
+std::ostream& operator<<(std::ostream& os, const Memory& memory) {
     uint32_t written = 0;
     uint32_t hexCount = 25;
     os << "size: " << memory.size << "(bytes)" << std::endl;

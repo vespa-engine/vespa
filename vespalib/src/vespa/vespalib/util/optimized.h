@@ -11,13 +11,17 @@ namespace vespalib {
 /**
  * @brief Optimized instructions class
  **/
-class Optimized
-{
+class Optimized {
 public:
-
-    static constexpr int msbIdx(unsigned int v) noexcept { return v ? sizeof(unsigned int) * 8 - 1 - std::countl_zero(v) : 0; }
-    static constexpr int msbIdx(unsigned long v) noexcept { return v ? sizeof(unsigned long) * 8 - 1 - std::countl_zero(v) : 0; }
-    static constexpr int msbIdx(unsigned long long v) noexcept  { return v ? sizeof(unsigned long long) * 8 - 1 - std::countl_zero(v) : 0; }
+    static constexpr int msbIdx(unsigned int v) noexcept {
+        return v ? sizeof(unsigned int) * 8 - 1 - std::countl_zero(v) : 0;
+    }
+    static constexpr int msbIdx(unsigned long v) noexcept {
+        return v ? sizeof(unsigned long) * 8 - 1 - std::countl_zero(v) : 0;
+    }
+    static constexpr int msbIdx(unsigned long long v) noexcept {
+        return v ? sizeof(unsigned long long) * 8 - 1 - std::countl_zero(v) : 0;
+    }
     static constexpr int lsbIdx(unsigned int v) noexcept { return v ? std::countr_zero(v) : 0; }
     static constexpr int lsbIdx(unsigned long v) noexcept { return v ? std::countr_zero(v) : 0; }
     static constexpr int lsbIdx(unsigned long long v) noexcept { return v ? std::countr_zero(v) : 0; }
@@ -59,4 +63,4 @@ public:
  * @return index [0-63] of lsb, 0 if none.
  **/
 
-}
+} // namespace vespalib

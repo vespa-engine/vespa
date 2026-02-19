@@ -4,8 +4,8 @@
 
 namespace vespalib::slime {
 
-template<int T> const uint32_t TypeType<T>::ID;
-template<int T> const TypeType<T> TypeType<T>::instance;
+template <int T> const uint32_t    TypeType<T>::ID;
+template <int T> const TypeType<T> TypeType<T>::instance;
 
 template struct TypeType<NIX::ID>;
 template struct TypeType<BOOL::ID>;

@@ -19,4 +19,4 @@ public:
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };
 
-}
+} // namespace vespalib::datastore

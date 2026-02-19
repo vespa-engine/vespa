@@ -1,31 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "iaccelerated.h"
+
 #include "fn_table.h"
 #include "functions.h"
-#include "iaccelerated.h"
 #include "highway.h"
 #ifdef __x86_64__
-#    define VESPA_HWACCEL_ARCH_NAME "x86-64"
-#    include "x64_generic.h"
-#    include "avx2.h"
-#    include "avx3.h"
-#    include "avx3_dl.h"
+#define VESPA_HWACCEL_ARCH_NAME "x86-64"
+#include "avx2.h"
+#include "avx3.h"
+#include "avx3_dl.h"
+#include "x64_generic.h"
 #else // aarch64
-#    define VESPA_HWACCEL_ARCH_NAME "aarch64"
-#    include "neon.h"
-#    include "neon_fp16_dotprod.h"
-#    include "sve.h"
-#    include "sve2.h"
+#define VESPA_HWACCEL_ARCH_NAME "aarch64"
+#include "neon.h"
+#include "neon_fp16_dotprod.h"
+#include "sve.h"
+#include "sve2.h"
 // There's no __builtin_cpu_supports() on aarch64, so we have to go via getauxval()
 // HW capability bits, _iff_ it exists on the platform. Otherwise we just have to
 // assume that the default baseline build settings are OK.
-#    if defined(__has_include)
-#        if __has_include(<asm/hwcap.h>)
-#            define VESPA_HAS_AARCH64_HWCAP_H
-#        endif
-#    endif
+#if defined(__has_include)
+#if __has_include(<asm/hwcap.h>)
+#define VESPA_HAS_AARCH64_HWCAP_H
+#endif
+#endif
 #endif
 #include <vespa/vespalib/util/memory.h>
+
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -35,8 +37,8 @@
 #include <vector>
 
 #ifdef VESPA_HAS_AARCH64_HWCAP_H
-#    include <sys/auxv.h> // getauxval()
-#    include <asm/hwcap.h> // AT_HWCAP / AT_HWCAP2 definitions
+#include <asm/hwcap.h> // AT_HWCAP / AT_HWCAP2 definitions
+#include <sys/auxv.h>  // getauxval()
 #endif
 
 #include <vespa/log/log.h>
@@ -58,10 +60,8 @@ namespace {
 // AVX3 is ~Skylake with AVX512{F, VL, DQ, BW, CD}
 [[nodiscard]] bool supports_avx3_target() noexcept {
     // TODO should this check for "x86-64-v4" instead? v4 corresponds to Skylake
-    return (__builtin_cpu_supports("avx512f") &&
-            __builtin_cpu_supports("avx512vl") &&
-            __builtin_cpu_supports("avx512dq") &&
-            __builtin_cpu_supports("avx512bw") &&
+    return (__builtin_cpu_supports("avx512f") && __builtin_cpu_supports("avx512vl") &&
+            __builtin_cpu_supports("avx512dq") && __builtin_cpu_supports("avx512bw") &&
             __builtin_cpu_supports("avx512cd"));
 }
 
@@ -70,13 +70,9 @@ namespace {
 // There's currently no "x86-64-vN" alias with an N high enough to cover this target,
 // so we have to do things the hard way.
 [[nodiscard]] bool supports_avx3_dl_target() noexcept {
-    return (supports_avx3_target() &&
-            __builtin_cpu_supports("avx512vnni") &&
-            __builtin_cpu_supports("vpclmulqdq") &&
-            __builtin_cpu_supports("avx512vbmi") &&
-            __builtin_cpu_supports("avx512vbmi2") &&
-            __builtin_cpu_supports("avx512vpopcntdq") &&
-            __builtin_cpu_supports("avx512bitalg") &&
+    return (supports_avx3_target() && __builtin_cpu_supports("avx512vnni") && __builtin_cpu_supports("vpclmulqdq") &&
+            __builtin_cpu_supports("avx512vbmi") && __builtin_cpu_supports("avx512vbmi2") &&
+            __builtin_cpu_supports("avx512vpopcntdq") && __builtin_cpu_supports("avx512bitalg") &&
             __builtin_cpu_supports("gfni"));
 }
 
@@ -97,9 +93,9 @@ namespace {
     // HWCAP_ASIMDDP (ID_AA64ISAR0_EL1.DP)     ==> dotproduct support
 #if defined(HWCAP_AES) && defined(HWCAP_ASIMDHP) && defined(HWCAP_ASIMDDP)
     const unsigned long hw = getauxval(AT_HWCAP);
-    const bool has_aes     = (hw & HWCAP_AES) != 0;
-    const bool has_fp16    = (hw & HWCAP_ASIMDHP) != 0;
-    const bool has_dotprod = (hw & HWCAP_ASIMDDP) != 0;
+    const bool          has_aes = (hw & HWCAP_AES) != 0;
+    const bool          has_fp16 = (hw & HWCAP_ASIMDHP) != 0;
+    const bool          has_dotprod = (hw & HWCAP_ASIMDDP) != 0;
     return (has_aes && has_fp16 && has_dotprod);
 #else
     return false;
@@ -116,7 +112,7 @@ namespace {
         return false;
     }
     const unsigned long hw = getauxval(AT_HWCAP);
-    const bool has_sve = (hw & HWCAP_SVE) != 0;
+    const bool          has_sve = (hw & HWCAP_SVE) != 0;
     return has_sve;
 #else
     return false;
@@ -130,7 +126,7 @@ namespace {
         return false;
     }
     const unsigned long hw = getauxval(AT_HWCAP2);
-    const bool has_sve2 = (hw & HWCAP2_SVE2) != 0;
+    const bool          has_sve2 = (hw & HWCAP2_SVE2) != 0;
     return has_sve2;
 #else
     return false;
@@ -149,15 +145,15 @@ namespace target {
 // _higher_ than what's enabled by default.
 
 #ifdef __x86_64__
-constexpr uint32_t AVX3_DL           = 3;
-constexpr uint32_t AVX3              = 2;
-constexpr uint32_t AVX2              = 1;
-constexpr uint32_t X64_GENERIC       = 0;
+constexpr uint32_t AVX3_DL = 3;
+constexpr uint32_t AVX3 = 2;
+constexpr uint32_t AVX2 = 1;
+constexpr uint32_t X64_GENERIC = 0;
 #else
-constexpr uint32_t SVE2              = 3;
-constexpr uint32_t SVE               = 2;
+constexpr uint32_t SVE2 = 3;
+constexpr uint32_t SVE = 2;
 constexpr uint32_t NEON_FP16_DOTPROD = 1;
-constexpr uint32_t NEON              = 0;
+constexpr uint32_t NEON = 0;
 #endif
 
 #ifdef __x86_64__
@@ -169,16 +165,25 @@ constexpr uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
 [[nodiscard]] const char* level_u32_to_str(uint32_t level) noexcept {
     switch (level) {
 #ifdef __x86_64__
-    case AVX3_DL:           return "AVX3_DL";
-    case AVX3:              return "AVX3";
-    case AVX2:              return "AVX2";
-    default:                return "X64_GENERIC";
+    case AVX3_DL:
+        return "AVX3_DL";
+    case AVX3:
+        return "AVX3";
+    case AVX2:
+        return "AVX2";
+    default:
+        return "X64_GENERIC";
 #else
-    case SVE2:              return "SVE2";
-    case SVE:               return "SVE";
-    case NEON_FP16_DOTPROD: return "NEON_FP16_DOTPROD";
-    case NEON:              return "NEON";
-    default:                return "NEON";
+    case SVE2:
+        return "SVE2";
+    case SVE:
+        return "SVE";
+    case NEON_FP16_DOTPROD:
+        return "NEON_FP16_DOTPROD";
+    case NEON:
+        return "NEON";
+    default:
+        return "NEON";
 #endif
     }
 }
@@ -205,8 +210,8 @@ constexpr uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
         return NEON;
     }
 #endif
-    LOG(info, "Unknown vectorization target level for " VESPA_HWACCEL_ARCH_NAME ": '%s'. Using %s.",
-        str.c_str(), level_u32_to_str(DEFAULT_LEVEL));
+    LOG(info, "Unknown vectorization target level for " VESPA_HWACCEL_ARCH_NAME ": '%s'. Using %s.", str.c_str(),
+        level_u32_to_str(DEFAULT_LEVEL));
     return DEFAULT_LEVEL;
 }
 
@@ -237,29 +242,26 @@ constexpr uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
 #endif
 }
 
-} // target
+} // namespace target
 
 class EnabledTargetLevel {
     const uint32_t _max_native_level;
     const bool     _with_highway;
+
 public:
     constexpr EnabledTargetLevel(uint32_t max_native_level, bool with_highway) noexcept
-        : _max_native_level(max_native_level),
-          _with_highway(with_highway)
-    {}
+        : _max_native_level(max_native_level), _with_highway(with_highway) {}
     [[maybe_unused]] [[nodiscard]] bool is_enabled(uint32_t level) const noexcept {
         return level <= _max_native_level;
     }
-    [[nodiscard]] bool with_highway() const noexcept { return _with_highway; }
+    [[nodiscard]] bool                      with_highway() const noexcept { return _with_highway; }
     [[nodiscard]] static EnabledTargetLevel create_from_env_var();
 };
 
-constexpr bool should_use_highway_by_default() noexcept {
-    return true;
-}
+constexpr bool should_use_highway_by_default() noexcept { return true; }
 
 EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
-    const uint32_t supported_level       = target::max_supported_level();
+    const uint32_t supported_level = target::max_supported_level();
     const uint32_t default_enabled_level = std::min(target::DEFAULT_LEVEL, supported_level);
     // This is a variable for internal testing only. If you're _not_ using this for internal
     // Vespa testing, I will break into your kitchen and make a mess out of your pots and pans.
@@ -287,18 +289,15 @@ EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
     return target_level;
 }
 
-template<typename T>
-std::vector<T> create_and_fill(size_t sz) {
+template <typename T> std::vector<T> create_and_fill(size_t sz) {
     std::vector<T> v(sz);
     for (size_t i(0); i < sz; i++) {
-        v[i] = rand()%100;
+        v[i] = rand() % 100;
     }
     return v;
 }
 
-template <typename T, typename SumT = T>
-void
-verify_dot_product() {
+template <typename T, typename SumT = T> void verify_dot_product() {
     constexpr size_t test_length = 255;
     srand(1);
     std::vector<T> a = create_and_fill<T>(test_length);
@@ -306,7 +305,7 @@ verify_dot_product() {
     for (size_t j(0); j < 0x20; j++) {
         SumT sum(0);
         for (size_t i(j); i < test_length; i++) {
-            sum += a[i]*b[i];
+            sum += a[i] * b[i];
         }
         SumT hwComputedSum(dot_product(&a[j], &b[j], test_length - j));
         if (sum != hwComputedSum) {
@@ -316,9 +315,7 @@ verify_dot_product() {
     }
 }
 
-template <typename T, typename SumT = T>
-void
-verify_euclidean_distance() {
+template <typename T, typename SumT = T> void verify_euclidean_distance() {
     constexpr size_t test_length = 255;
     srand(1);
     std::vector<T> a = create_and_fill<T>(test_length);
@@ -336,17 +333,17 @@ verify_euclidean_distance() {
     }
 }
 
-void
-verify_population_count() {
-    const uint64_t words[7] = {0x123456789abcdef0L,  // 32
-                               0x0000000000000000L,  // 0
-                               0x8000000000000000L,  // 1
-                               0xdeadbeefbeefdeadUL, // 48
-                               0x5555555555555555L,  // 32
-                               0x00000000000000001,  // 1
-                               0xffffffffffffffff};  // 64
+void verify_population_count() {
+    const uint64_t words[7] = {
+        0x123456789abcdef0L,  // 32
+        0x0000000000000000L,  // 0
+        0x8000000000000000L,  // 1
+        0xdeadbeefbeefdeadUL, // 48
+        0x5555555555555555L,  // 32
+        0x00000000000000001,  // 1
+        0xffffffffffffffff};  // 64
     constexpr size_t expected = 32 + 0 + 1 + 48 + 32 + 1 + 64;
-    size_t hwComputedPopulationCount = population_count(words, VESPA_NELEMS(words));
+    size_t           hwComputedPopulationCount = population_count(words, VESPA_NELEMS(words));
     if (hwComputedPopulationCount != expected) {
         fprintf(stderr, "Accelerator is not computing populationCount correctly. Expected %zu, computed %zu\n",
                 expected, hwComputedPopulationCount);
@@ -354,30 +351,26 @@ verify_population_count() {
     }
 }
 
-void
-fill(std::vector<uint64_t>& v, size_t n) {
+void fill(std::vector<uint64_t>& v, size_t n) {
     v.reserve(n);
     for (size_t i(0); i < n; i++) {
         v.emplace_back(random());
     }
 }
 
-void
-simple_and_with(std::vector<uint64_t>& dest, const std::vector<uint64_t>& src) {
+void simple_and_with(std::vector<uint64_t>& dest, const std::vector<uint64_t>& src) {
     for (size_t i(0); i < dest.size(); i++) {
         dest[i] &= src[i];
     }
 }
 
-void
-simple_or_with(std::vector<uint64_t>& dest, const std::vector<uint64_t>& src) {
+void simple_or_with(std::vector<uint64_t>& dest, const std::vector<uint64_t>& src) {
     for (size_t i(0); i < dest.size(); i++) {
         dest[i] |= src[i];
     }
 }
 
-std::vector<uint64_t>
-simple_invert(const std::vector<uint64_t>& src) {
+std::vector<uint64_t> simple_invert(const std::vector<uint64_t>& src) {
     std::vector<uint64_t> inverted;
     inverted.reserve(src.size());
     for (uint64_t i : src) {
@@ -386,20 +379,15 @@ simple_invert(const std::vector<uint64_t>& src) {
     return inverted;
 }
 
-std::vector<uint64_t>
-optionally_invert(bool invert, std::vector<uint64_t> v) {
+std::vector<uint64_t> optionally_invert(bool invert, std::vector<uint64_t> v) {
     return invert ? simple_invert(v) : std::move(v);
 }
 
-bool should_invert(bool invertSome) {
-    return invertSome ? (random() & 1) : false;
-}
+bool should_invert(bool invertSome) { return invertSome ? (random() & 1) : false; }
 
-void
-verify_or_128(const std::vector<std::vector<uint64_t>>& vectors,
-              size_t offset, size_t num_vectors, bool invertSome)
-{
-    std::vector<std::pair<const void *, bool>> vRefs;
+void verify_or_128(
+    const std::vector<std::vector<uint64_t>>& vectors, size_t offset, size_t num_vectors, bool invertSome) {
+    std::vector<std::pair<const void*, bool>> vRefs;
     for (size_t j(0); j < num_vectors; j++) {
         vRefs.emplace_back(&vectors[j][0], should_invert(invertSome));
     }
@@ -417,11 +405,9 @@ verify_or_128(const std::vector<std::vector<uint64_t>>& vectors,
     }
 }
 
-void
-verify_and_128(const std::vector<std::vector<uint64_t>>& vectors,
-               size_t offset, size_t num_vectors, bool invertSome)
-{
-    std::vector<std::pair<const void *, bool>> vRefs;
+void verify_and_128(
+    const std::vector<std::vector<uint64_t>>& vectors, size_t offset, size_t num_vectors, bool invertSome) {
+    std::vector<std::pair<const void*, bool>> vRefs;
     for (size_t j(0); j < num_vectors; j++) {
         vRefs.emplace_back(&vectors[j][0], should_invert(invertSome));
     }
@@ -438,9 +424,8 @@ verify_and_128(const std::vector<std::vector<uint64_t>>& vectors,
     }
 }
 
-void
-verify_or_128() {
-    std::vector<std::vector<uint64_t>> vectors(3) ;
+void verify_or_128() {
+    std::vector<std::vector<uint64_t>> vectors(3);
     for (auto& v : vectors) {
         fill(v, 32);
     }
@@ -452,8 +437,7 @@ verify_or_128() {
     }
 }
 
-void
-verify_and_128() {
+void verify_and_128() {
     std::vector<std::vector<uint64_t>> vectors(3);
     for (auto& v : vectors) {
         fill(v, 32);
@@ -499,11 +483,10 @@ void verify_active_function_table() {
     return dispatch::build_composite_fn_table(fn_tables, true);
 }
 
-} // anon ns
+} // namespace
 
-std::vector<std::unique_ptr<IAccelerated>>
-IAccelerated::create_supported_auto_vectorized_targets() {
-    const auto target_level = enabled_target_level();
+std::vector<std::unique_ptr<IAccelerated>> IAccelerated::create_supported_auto_vectorized_targets() {
+    const auto                                 target_level = enabled_target_level();
     std::vector<std::unique_ptr<IAccelerated>> targets;
 #ifdef __x86_64__
     if (target_level.is_enabled(target::AVX3_DL)) {
@@ -533,10 +516,11 @@ IAccelerated::create_supported_auto_vectorized_targets() {
 
 namespace dispatch {
 
-#define VESPA_HWACCEL_PATCH_FN_TABLE_VISITOR(fn_type, fn_field, fn_id) \
+#define VESPA_HWACCEL_PATCH_FN_TABLE_VISITOR(fn_type, fn_field, fn_id)                                          \
     if ((src_tbl.fn_field) != nullptr && (!exclude_suboptimal || !src_tbl.fn_is_tagged_as_suboptimal(fn_id))) { \
-        composite_tbl.fn_field = src_tbl.fn_field; \
-        composite_tbl.fn_target_infos[static_cast<size_t>(fn_id)] = src_tbl.fn_target_infos[static_cast<size_t>(fn_id)]; \
+        composite_tbl.fn_field = src_tbl.fn_field;                                                              \
+        composite_tbl.fn_target_infos[static_cast<size_t>(fn_id)] =                                             \
+            src_tbl.fn_target_infos[static_cast<size_t>(fn_id)];                                                \
     }
 
 FnTable build_composite_fn_table(std::span<const FnTable> fn_tables, bool exclude_suboptimal) noexcept {
@@ -551,10 +535,8 @@ FnTable build_composite_fn_table(std::span<const FnTable> fn_tables, bool exclud
     return composite_tbl;
 }
 
-FnTable build_composite_fn_table(const FnTable& fn_table,
-                                 const FnTable& base_table,
-                                 bool exclude_suboptimal) noexcept
-{
+FnTable build_composite_fn_table(
+    const FnTable& fn_table, const FnTable& base_table, bool exclude_suboptimal) noexcept {
     std::vector<FnTable> fn_tables;
     fn_tables.emplace_back(fn_table);
     fn_tables.emplace_back(base_table);
@@ -580,7 +562,7 @@ BuildFnTableAndPatchFunctionsAtStartup::BuildFnTableAndPatchFunctionsAtStartup()
 
 BuildFnTableAndPatchFunctionsAtStartup build_fn_table_once;
 
-#define VESPA_HWACCEL_DEBUG_LOG_FN_ENTRY(fn_type, fn_field, fn_id) \
+#define VESPA_HWACCEL_DEBUG_LOG_FN_ENTRY(fn_type, fn_field, fn_id)                    \
     LOG(debug, "%s => %s", #fn_field, tbl.fn_target_info(fn_id).to_string().c_str());
 
 void debug_log_fn_table_update(const FnTable& tbl) {
@@ -593,7 +575,7 @@ FnTable& mutable_active_fn_table() noexcept {
     return active_table;
 }
 
-} // anon ns
+} // namespace
 
 const FnTable& active_fn_table() noexcept {
     return mutable_active_fn_table(); // ... but as const
@@ -615,6 +597,6 @@ void thread_unsafe_update_function_dispatch_pointers(const FnTable& fns) {
     VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_COPY_TABLE_TO_FN_PTR_VISITOR);
 }
 
-} // dispatch
+} // namespace dispatch
 
-} // vespalib::hwaccelerated
+} // namespace vespalib::hwaccelerated

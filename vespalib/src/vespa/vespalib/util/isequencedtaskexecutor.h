@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/executor_stats.h>
 #include <vespa/vespalib/util/lambdatask.h>
+
 #include <mutex>
 #include <string>
 #include <vector>
@@ -14,17 +15,17 @@ namespace vespalib {
  * Interface class to run multiple tasks in parallel, but tasks with same
  * id has to be run in sequence.
  */
-class ISequencedTaskExecutor : public IWakeup
-{
+class ISequencedTaskExecutor : public IWakeup {
 public:
     class ExecutorId {
     public:
-        ExecutorId() noexcept : ExecutorId(0) { }
-        explicit ExecutorId(uint32_t id) noexcept : _id(id) { }
+        ExecutorId() noexcept : ExecutorId(0) {}
+        explicit ExecutorId(uint32_t id) noexcept : _id(id) {}
         uint32_t getId() const noexcept { return _id; }
-        bool operator != (ExecutorId rhs) const noexcept { return _id != rhs._id; }
-        bool operator == (ExecutorId rhs) const noexcept { return _id == rhs._id; }
-        bool operator < (ExecutorId rhs) const noexcept { return _id < rhs._id; }
+        bool     operator!=(ExecutorId rhs) const noexcept { return _id != rhs._id; }
+        bool     operator==(ExecutorId rhs) const noexcept { return _id == rhs._id; }
+        bool     operator<(ExecutorId rhs) const noexcept { return _id < rhs._id; }
+
     private:
         uint32_t _id;
     };
@@ -39,7 +40,7 @@ public:
      * @return              executor id
      */
     virtual ExecutorId getExecutorId(uint64_t componentId) const = 0;
-    uint32_t getNumExecutors() const { return _numExecutors; }
+    uint32_t           getNumExecutors() const { return _numExecutors; }
 
     ExecutorId getExecutorIdFromName(std::string_view componentId) const;
 
@@ -69,18 +70,17 @@ public:
     /**
      * Call this one to ensure you get the attention of the workers.
      */
-    void wakeup() override { }
+    void wakeup() override {}
 
     /**
      * Wrap lambda function into a task and schedule it to be run.
      * Caller must ensure that pointers and references are valid and
      * call sync_all before tearing down pointed to/referenced data.
-      *
+     *
      * @param id        which internal executor to use
      * @param function  function to be wrapped in a task and later executed
      */
-    template <class FunctionType>
-    void executeLambda(ExecutorId id, FunctionType &&function) {
+    template <class FunctionType> void executeLambda(ExecutorId id, FunctionType&& function) {
         executeTask(id, makeLambdaTask(std::forward<FunctionType>(function)));
     }
     /**
@@ -100,8 +100,7 @@ public:
      * @param componentId   component id
      * @param function      function to be wrapped in a task and later executed
      */
-    template <class FunctionType>
-    void execute(uint64_t componentId, FunctionType &&function) {
+    template <class FunctionType> void execute(uint64_t componentId, FunctionType&& function) {
         ExecutorId id = getExecutorId(componentId);
         executeTask(id, makeLambdaTask(std::forward<FunctionType>(function)));
     }
@@ -114,13 +113,12 @@ public:
      * @param id        executor id
      * @param function  function to be wrapped in a task and later executed
      */
-    template <class FunctionType>
-    void execute(ExecutorId id, FunctionType &&function) {
+    template <class FunctionType> void execute(ExecutorId id, FunctionType&& function) {
         executeTask(id, makeLambdaTask(std::forward<FunctionType>(function)));
     }
 
 private:
-    uint32_t                     _numExecutors;
+    uint32_t _numExecutors;
 };
 
-}
+} // namespace vespalib

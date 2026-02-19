@@ -24,14 +24,14 @@ namespace vespalib {
  * @author arnej27959
  * @author bratseth
  **/
-class VersionSpecification
-{
+class VersionSpecification {
 public:
     using string = Version::string;
+
 private:
-    int _major;
-    int _minor;
-    int _micro;
+    int    _major;
+    int    _minor;
+    int    _micro;
     string _qualifier;
     string _stringValue;
 
@@ -49,9 +49,7 @@ private:
 
 public:
     /** @brief constant signifying an unspecified component */
-    enum {
-        UNSPECIFIED = -1
-    };
+    enum { UNSPECIFIED = -1 };
 
     /**
      * @brief Creates a version specification from the specified components.
@@ -65,12 +63,12 @@ public:
      *         an earlier component is not specified but a later one is
      */
 
-    VersionSpecification(int major = UNSPECIFIED, int minor = UNSPECIFIED,
-                         int micro = UNSPECIFIED, const string & qualifier = "");
-    VersionSpecification(const VersionSpecification &);
+    VersionSpecification(
+        int major = UNSPECIFIED, int minor = UNSPECIFIED, int micro = UNSPECIFIED, const string& qualifier = "");
+    VersionSpecification(const VersionSpecification&);
     ~VersionSpecification();
 
-    VersionSpecification &operator=(const VersionSpecification &rhs);
+    VersionSpecification& operator=(const VersionSpecification& rhs);
     /**
      * @brief Creates a version specification from the specified string.
      *
@@ -90,19 +88,19 @@ public:
      * @throws IllegalArgumentException If <code>version</code> is improperly
      *         formatted.
      */
-    VersionSpecification(const string & versionString);
+    VersionSpecification(const string& versionString);
 
     /** @brief Returns the major component of this version, or 0 if not specified */
-    int getMajor() const { return _major==UNSPECIFIED ? 0 : _major; }
+    int getMajor() const { return _major == UNSPECIFIED ? 0 : _major; }
 
     /** @brief Returns the minor component of this version, or 0 if not specified */
-    int getMinor() const { return _minor==UNSPECIFIED ? 0 : _minor; }
+    int getMinor() const { return _minor == UNSPECIFIED ? 0 : _minor; }
 
     /** @brief Returns the micro component of this version, or 0 if not specified */
-    int getMicro() const { return _micro==UNSPECIFIED ? 0 : _micro; }
+    int getMicro() const { return _micro == UNSPECIFIED ? 0 : _micro; }
 
     /** @brief Returns the qualifier component of this version, or "" if not specified */
-    const string & getQualifier() const { return _qualifier; }
+    const string& getQualifier() const { return _qualifier; }
 
     /** @brief Returns the specified major component, which may be UNSPECIFIED */
     int getSpecifiedMajor() const { return _major; }
@@ -117,7 +115,7 @@ public:
      * @brief Returns the string representation of this version specification as major.minor.micro,
      * or major.minor.micro.qualifier if a non-empty qualifier was specified.
      */
-    const string & toString() const { return _stringValue; }
+    const string& toString() const { return _stringValue; }
 
     /**
      * @brief Compares this <code>VersionSpecification</code> to another.
@@ -154,9 +152,8 @@ public:
      *         less than, equal to, or greater than the specified <code>VersionSpecification</code> object.
      * @throws ClassCastException if the specified object is not a <code>VersionSpecification</code>.
      */
-    int compareTo(const VersionSpecification& other) const;
+    int  compareTo(const VersionSpecification& other) const;
     bool operator<(const VersionSpecification& other) const { return compareTo(other) < 0; }
-
 
     /**
      * @brief Returns true if the given Version matches this specification.
@@ -170,8 +167,7 @@ public:
     bool matches(const Version& version) const;
 
 private:
-    static bool matches(int spec, int v) ;
+    static bool matches(int spec, int v);
 };
 
 } // namespace vespalib
-

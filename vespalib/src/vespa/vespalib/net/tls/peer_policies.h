@@ -2,6 +2,7 @@
 #pragma once
 
 #include "capability_set.h"
+
 #include <iosfwd>
 #include <memory>
 #include <string>
@@ -20,34 +21,33 @@ struct CredentialMatchPattern {
 
 class RequiredPeerCredential {
 public:
-    enum class Field {
-        CN, SAN_DNS, SAN_URI
-    };
+    enum class Field { CN, SAN_DNS, SAN_URI };
+
 private:
-    Field _field = Field::SAN_DNS;
-    std::string _original_pattern;
+    Field                                         _field = Field::SAN_DNS;
+    std::string                                   _original_pattern;
     std::shared_ptr<const CredentialMatchPattern> _match_pattern;
+
 public:
     RequiredPeerCredential() = default;
     RequiredPeerCredential(Field field, std::string_view must_match_pattern);
-    RequiredPeerCredential(const RequiredPeerCredential &) noexcept;
-    RequiredPeerCredential & operator=(const RequiredPeerCredential &) = delete;
-    RequiredPeerCredential(RequiredPeerCredential &&) noexcept;
-    RequiredPeerCredential & operator=(RequiredPeerCredential &&) noexcept;
+    RequiredPeerCredential(const RequiredPeerCredential&) noexcept;
+    RequiredPeerCredential& operator=(const RequiredPeerCredential&) = delete;
+    RequiredPeerCredential(RequiredPeerCredential&&) noexcept;
+    RequiredPeerCredential& operator=(RequiredPeerCredential&&) noexcept;
     ~RequiredPeerCredential();
 
     bool operator==(const RequiredPeerCredential& rhs) const {
         // We assume (opaque) _match_pattern matches rhs._match_pattern if the pattern
         // strings they were created from are equal. This should be fully deterministic.
-        return ((_field == rhs._field)
-                && (_original_pattern == rhs._original_pattern));
+        return ((_field == rhs._field) && (_original_pattern == rhs._original_pattern));
     }
 
     [[nodiscard]] bool matches(std::string_view str) const noexcept {
         return (_match_pattern && _match_pattern->matches(str));
     }
 
-    [[nodiscard]] Field field() const noexcept { return _field; }
+    [[nodiscard]] Field              field() const noexcept { return _field; }
     [[nodiscard]] const std::string& original_pattern() const noexcept { return _original_pattern; }
 };
 
@@ -55,13 +55,13 @@ class PeerPolicy {
     // _All_ credentials must match for the policy itself to match.
     std::vector<RequiredPeerCredential> _required_peer_credentials;
     CapabilitySet                       _granted_capabilities;
+
 public:
     PeerPolicy();
     // This policy is created with a full capability set, i.e. unrestricted access.
     explicit PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials);
 
-    PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials,
-               CapabilitySet granted_capabilities);
+    PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials, CapabilitySet granted_capabilities);
 
     ~PeerPolicy();
 
@@ -72,26 +72,20 @@ public:
     [[nodiscard]] const std::vector<RequiredPeerCredential>& required_peer_credentials() const noexcept {
         return _required_peer_credentials;
     }
-    [[nodiscard]] const CapabilitySet& granted_capabilities() const noexcept {
-        return _granted_capabilities;
-    }
+    [[nodiscard]] const CapabilitySet& granted_capabilities() const noexcept { return _granted_capabilities; }
 };
 
 class AuthorizedPeers {
     // A peer will be authorized iff it matches _one or more_ policies.
     std::vector<PeerPolicy> _peer_policies;
-    bool _allow_all_if_empty;
+    bool                    _allow_all_if_empty;
 
-    explicit AuthorizedPeers(bool allow_all_if_empty)
-        : _peer_policies(),
-          _allow_all_if_empty(allow_all_if_empty)
-    {}
+    explicit AuthorizedPeers(bool allow_all_if_empty) : _peer_policies(), _allow_all_if_empty(allow_all_if_empty) {}
+
 public:
     AuthorizedPeers() : _peer_policies(), _allow_all_if_empty(false) {}
     explicit AuthorizedPeers(std::vector<PeerPolicy> peer_policies_)
-        : _peer_policies(std::move(peer_policies_)),
-          _allow_all_if_empty(false)
-    {}
+        : _peer_policies(std::move(peer_policies_)), _allow_all_if_empty(false) {}
 
     AuthorizedPeers(const AuthorizedPeers&);
     AuthorizedPeers& operator=(const AuthorizedPeers&) = delete;
@@ -99,16 +93,10 @@ public:
     AuthorizedPeers& operator=(AuthorizedPeers&&) noexcept;
     ~AuthorizedPeers();
 
-    static AuthorizedPeers allow_all_authenticated() {
-        return AuthorizedPeers(true);
-    }
+    static AuthorizedPeers allow_all_authenticated() { return AuthorizedPeers(true); }
 
-    bool operator==(const AuthorizedPeers& rhs) const {
-        return (_peer_policies == rhs._peer_policies);
-    }
-    [[nodiscard]] bool allows_all_authenticated() const noexcept {
-        return _allow_all_if_empty;
-    }
+    bool               operator==(const AuthorizedPeers& rhs) const { return (_peer_policies == rhs._peer_policies); }
+    [[nodiscard]] bool allows_all_authenticated() const noexcept { return _allow_all_if_empty; }
     [[nodiscard]] const std::vector<PeerPolicy>& peer_policies() const noexcept { return _peer_policies; }
 };
 
@@ -116,4 +104,4 @@ std::ostream& operator<<(std::ostream&, const RequiredPeerCredential&);
 std::ostream& operator<<(std::ostream&, const PeerPolicy&);
 std::ostream& operator<<(std::ostream&, const AuthorizedPeers&);
 
-} // vespalib::net::tls
+} // namespace vespalib::net::tls

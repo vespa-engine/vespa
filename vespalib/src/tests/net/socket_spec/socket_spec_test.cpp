@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/net/socket_spec.h>
+
 #include <iomanip>
 #include <ostream>
 
@@ -10,16 +11,15 @@ using namespace vespalib;
 namespace vespalib {
 
 void PrintTo(const SocketSpec& spec, std::ostream* os) {
-    *os << std::boolalpha << "{valid=" << spec.valid() << ", path=" << std::quoted(spec.path()) <<
-        ", name= " << std::quoted(spec.name()) << ", host=" << std::quoted(spec.host()) <<
-        ", host_with_fallback=" << std::quoted(spec.host_with_fallback()) << ", port=" << spec.port() << "}";
+    *os << std::boolalpha << "{valid=" << spec.valid() << ", path=" << std::quoted(spec.path())
+        << ", name= " << std::quoted(spec.name()) << ", host=" << std::quoted(spec.host())
+        << ", host_with_fallback=" << std::quoted(spec.host_with_fallback()) << ", port=" << spec.port() << "}";
 }
 
-}
+} // namespace vespalib
 
-bool verify(const SocketSpec &spec, bool valid, const std::string &path, const std::string &name,
-            const std::string &host, const std::string &host_with_fallback, int port)
-{
+bool verify(const SocketSpec& spec, bool valid, const std::string& path, const std::string& name,
+            const std::string& host, const std::string& host_with_fallback, int port) {
     bool retval = true;
     EXPECT_EQ(spec.valid(), valid) << (retval = false, "");
     EXPECT_EQ(spec.path(), path) << (retval = false, "");
@@ -27,7 +27,8 @@ bool verify(const SocketSpec &spec, bool valid, const std::string &path, const s
     EXPECT_EQ(spec.host(), host) << (retval = false, "");
     EXPECT_EQ(spec.host_with_fallback(), host_with_fallback) << (retval = false, "");
     EXPECT_EQ(spec.port(), port) << (retval = false, "");
-    return retval;;
+    return retval;
+    ;
 }
 
 bool has_only_path(const SocketSpec& spec, const std::string& path) {
@@ -38,27 +39,21 @@ bool has_only_name(const SocketSpec& spec, const std::string& name) {
     return verify(spec, true, "", name, "", "", -1);
 }
 
-bool has_only_host_port(const SocketSpec &spec, const std::string &host, int port) {
+bool has_only_host_port(const SocketSpec& spec, const std::string& host, int port) {
     return verify(spec, true, "", "", host, host, port);
 }
 
-bool has_only_port(const SocketSpec &spec, int port) {
-    return verify(spec, true, "", "", "", "localhost", port);
-}
+bool has_only_port(const SocketSpec& spec, int port) { return verify(spec, true, "", "", "", "localhost", port); }
 
-bool is_invalid(const SocketSpec &spec) {
-    return verify(spec, false, "", "", "", "", -1);
-}
+bool is_invalid(const SocketSpec& spec) { return verify(spec, false, "", "", "", "", -1); }
 
 struct HasSpec {
-    bool operator()(const std::string &str, const std::string &expected) const {
+    bool operator()(const std::string& str, const std::string& expected) const {
         bool retval = true;
         EXPECT_EQ(SocketSpec(str).spec(), expected) << (retval = false, "");
         return retval;
     }
-    bool operator()(const std::string& str) const {
-        return operator()(str, str);
-    }
+    bool operator()(const std::string& str) const { return operator()(str, str); }
 } has_spec;
 
 //-----------------------------------------------------------------------------
@@ -125,9 +120,9 @@ TEST(SocketSpecTest, require_that_port_only_spec_resolves_to_non_wildcard_client
 }
 
 TEST(SocketSpecTest, require_that_replace_host_makes_new_spec_with_replaced_host) {
-    SocketSpec old_spec("tcp/host:123");
-    const SocketSpec &const_spec = old_spec;
-    SocketSpec new_spec = const_spec.replace_host("foo");
+    SocketSpec        old_spec("tcp/host:123");
+    const SocketSpec& const_spec = old_spec;
+    SocketSpec        new_spec = const_spec.replace_host("foo");
     EXPECT_PRED3(has_only_host_port, old_spec, "host", 123);
     EXPECT_PRED3(has_only_host_port, new_spec, "foo", 123);
 }
@@ -140,8 +135,6 @@ TEST(SocketSpecTest, require_that_replace_host_gives_invalid_spec_when_used_with
     EXPECT_PRED1(is_invalid, SocketSpec("ipc/name:my_socket").replace_host("foo"));
 }
 
-TEST(SocketSpecTest, require_that_invalid_socket_spec_is_not_valid) {
-    EXPECT_FALSE(SocketSpec::invalid.valid());
-}
+TEST(SocketSpecTest, require_that_invalid_socket_spec_is_not_valid) { EXPECT_FALSE(SocketSpec::invalid.valid()); }
 
 GTEST_MAIN_RUN_ALL_TESTS()

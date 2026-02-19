@@ -3,6 +3,7 @@
 
 #include <vespa/config.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
+
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -19,46 +20,32 @@ constexpr const uint32_t WILDCARD = UINT32_MAX;
  * within k edits. This means that for a fixed k, it suffices to maintain state
  * for up to and including diag(k) consecutive cells for any given matrix row.
  */
-constexpr inline uint8_t diag(uint8_t k) noexcept {
-    return k*2 + 1;
-}
+constexpr inline uint8_t diag(uint8_t k) noexcept { return k * 2 + 1; }
 
-template <uint8_t MaxEdits>
-struct FixedSparseState {
+template <uint8_t MaxEdits> struct FixedSparseState {
 private:
-    static_assert(MaxEdits > 0 && MaxEdits <= UINT8_MAX/2);
+    static_assert(MaxEdits > 0 && MaxEdits <= UINT8_MAX / 2);
 
     std::array<uint32_t, diag(MaxEdits)> indices;
-    std::array<uint8_t,  diag(MaxEdits)> costs; // elems are 1-1 with indices vector
-    uint8_t sz;
+    std::array<uint8_t, diag(MaxEdits)>  costs; // elems are 1-1 with indices vector
+    uint8_t                              sz;
+
 public:
     constexpr FixedSparseState() noexcept : indices(), costs(), sz(0) {}
 
-    [[nodiscard]] constexpr bool empty() const noexcept {
-        return (sz == 0);
-    }
+    [[nodiscard]] constexpr bool empty() const noexcept { return (sz == 0); }
 
-    [[nodiscard]] constexpr uint32_t size() const noexcept {
-        return sz;
-    }
+    [[nodiscard]] constexpr uint32_t size() const noexcept { return sz; }
 
-    [[nodiscard]] constexpr uint32_t index(uint32_t entry_idx) const noexcept {
-        return indices[entry_idx];
-    }
+    [[nodiscard]] constexpr uint32_t index(uint32_t entry_idx) const noexcept { return indices[entry_idx]; }
 
-    [[nodiscard]] constexpr uint8_t cost(uint32_t entry_idx) const noexcept {
-        return costs[entry_idx];
-    }
+    [[nodiscard]] constexpr uint8_t cost(uint32_t entry_idx) const noexcept { return costs[entry_idx]; }
 
     // Precondition: !empty()
-    [[nodiscard]] constexpr uint32_t last_index() const noexcept {
-        return indices[sz - 1];
-    }
+    [[nodiscard]] constexpr uint32_t last_index() const noexcept { return indices[sz - 1]; }
 
     // Precondition: !empty()
-    [[nodiscard]] constexpr uint8_t last_cost() const noexcept {
-        return costs[sz - 1];
-    }
+    [[nodiscard]] constexpr uint8_t last_cost() const noexcept { return costs[sz - 1]; }
 
     void append(uint32_t index, uint8_t cost) noexcept {
         assert(sz < diag(MaxEdits));
@@ -72,13 +59,13 @@ public:
             return false;
         }
         return (std::equal(indices.begin(), indices.begin() + sz, rhs.indices.begin()) &&
-                std::equal(costs.begin(),   costs.begin()   + sz, rhs.costs.begin()));
+                std::equal(costs.begin(), costs.begin() + sz, rhs.costs.begin()));
     }
 
     struct hash {
         size_t operator()(const FixedSparseState& s) const noexcept {
             static_assert(std::is_same_v<uint32_t, std::decay_t<decltype(s.indices[0])>>);
-            static_assert(std::is_same_v<uint8_t,  std::decay_t<decltype(s.costs[0])>>);
+            static_assert(std::is_same_v<uint8_t, std::decay_t<decltype(s.costs[0])>>);
             return (xxhash::xxh3_64(s.indices.data(), s.sz * sizeof(uint32_t)) ^
                     xxhash::xxh3_64(s.costs.data(), s.sz));
         }
@@ -96,7 +83,8 @@ public:
  * Only meant as a debugging aid during development, as states with high indices
  * will emit very large strings.
  */
-template <uint8_t MaxEdits> [[maybe_unused]]
+template <uint8_t MaxEdits>
+[[maybe_unused]]
 std::ostream& operator<<(std::ostream& os, const FixedSparseState<MaxEdits>& s) {
     os << "[";
     size_t last_idx = 0;
@@ -114,12 +102,11 @@ std::ostream& operator<<(std::ostream& os, const FixedSparseState<MaxEdits>& s) 
     return os;
 }
 
-template <uint8_t MaxEdits>
-struct FixedMaxEditsTransitions {
-    static_assert(MaxEdits > 0 && MaxEdits <= UINT8_MAX/2);
+template <uint8_t MaxEdits> struct FixedMaxEditsTransitions {
+    static_assert(MaxEdits > 0 && MaxEdits <= UINT8_MAX / 2);
 
     std::array<uint32_t, diag(MaxEdits)> out_u32_chars;
-    uint8_t size;
+    uint8_t                              size;
 
     constexpr FixedMaxEditsTransitions() noexcept : out_u32_chars(), size(0) {}
 
@@ -158,14 +145,11 @@ struct FixedMaxEditsTransitions {
     }
 };
 
-template <uint8_t MaxEdits>
-struct FixedMaxEditDistanceTraits {
-    static_assert(MaxEdits > 0 && MaxEdits <= UINT8_MAX/2);
-    using StateType       = FixedSparseState<MaxEdits>;
+template <uint8_t MaxEdits> struct FixedMaxEditDistanceTraits {
+    static_assert(MaxEdits > 0 && MaxEdits <= UINT8_MAX / 2);
+    using StateType = FixedSparseState<MaxEdits>;
     using TransitionsType = FixedMaxEditsTransitions<MaxEdits>;
-    constexpr static uint8_t max_edits() noexcept {
-        return MaxEdits;
-    }
+    constexpr static uint8_t max_edits() noexcept { return MaxEdits; }
 };
 
-}
+} // namespace vespalib::fuzzy

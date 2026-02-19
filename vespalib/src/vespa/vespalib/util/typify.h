@@ -3,6 +3,7 @@
 #pragma once
 
 #include "traits.h"
+
 #include <cstddef>
 #include <utility>
 
@@ -36,7 +37,7 @@ template <typename T, T VALUE> struct TypifyResultValue {
  * but is supplied for convenience and as example. The resolved
  * template should be called 'templ' for consistency across typifiers.
  **/
-template <template<typename> typename TT> struct TypifyResultSimpleTemplate {
+template <template <typename> typename TT> struct TypifyResultSimpleTemplate {
     template <typename T> using templ = TT<T>;
 };
 
@@ -48,7 +49,7 @@ template <template<typename> typename TT> struct TypifyResultSimpleTemplate {
  **/
 struct TypifyBool {
     template <bool VALUE> using Result = TypifyResultValue<bool, VALUE>;
-    template <typename F> static decltype(auto) resolve(bool value, F &&f) {
+    template <typename F> static decltype(auto) resolve(bool value, F&& f) {
         if (value) {
             return f(Result<true>());
         } else {
@@ -63,28 +64,30 @@ struct TypifyBool {
  * Template used to combine individual typifiers into a typifier able
  * to resolve multiple types.
  **/
-template <typename ...Ts> struct TypifyValue : Ts... { using Ts::resolve...; };
+template <typename... Ts> struct TypifyValue : Ts... {
+    using Ts::resolve...;
+};
 
 //-----------------------------------------------------------------------------
 
-template <size_t N, typename Typifier, typename Target, typename ...Rs> struct TypifyInvokeImpl {
+template <size_t N, typename Typifier, typename Target, typename... Rs> struct TypifyInvokeImpl {
     static decltype(auto) select() {
         static_assert(sizeof...(Rs) == N);
         return Target::template invoke<Rs...>();
     }
-    template <typename T, typename ...Args> static decltype(auto) select(T &&value, Args &&...args) {
+    template <typename T, typename... Args> static decltype(auto) select(T&& value, Args&&... args) {
         if constexpr (N == sizeof...(Rs)) {
             return Target::template invoke<Rs...>(std::forward<T>(value), std::forward<Args>(args)...);
         } else {
-            return Typifier::resolve(value, [&](auto t)->decltype(auto)
-                                     {
-                                         using X = decltype(t);
-                                         if constexpr (has_type_type<X>) {
-                                             return TypifyInvokeImpl<N, Typifier, Target, Rs..., typename X::type>::select(std::forward<Args>(args)...);
-                                         } else {
-                                             return TypifyInvokeImpl<N, Typifier, Target, Rs..., X>::select(std::forward<Args>(args)...);
-                                         }
-                                     });
+            return Typifier::resolve(value, [&](auto t) -> decltype(auto) {
+                using X = decltype(t);
+                if constexpr (has_type_type<X>) {
+                    return TypifyInvokeImpl<N, Typifier, Target, Rs..., typename X::type>::select(
+                        std::forward<Args>(args)...);
+                } else {
+                    return TypifyInvokeImpl<N, Typifier, Target, Rs..., X>::select(std::forward<Args>(args)...);
+                }
+            });
         }
     }
 };
@@ -100,11 +103,12 @@ template <size_t N, typename Typifier, typename Target, typename ...Rs> struct T
  * their wrappers when passed as template parameters. Please refer to
  * the unit test for examples.
  **/
-template <size_t N, typename Typifier, typename Target, typename ...Args> decltype(auto) typify_invoke(Args && ...args) {
+template <size_t N, typename Typifier, typename Target, typename... Args>
+decltype(auto) typify_invoke(Args&&... args) {
     static_assert(N > 0);
-    return TypifyInvokeImpl<N,Typifier,Target>::select(std::forward<Args>(args)...);
+    return TypifyInvokeImpl<N, Typifier, Target>::select(std::forward<Args>(args)...);
 }
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace vespalib

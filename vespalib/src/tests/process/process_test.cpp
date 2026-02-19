@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/process/process.h>
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/process/process.h>
 
 using vespalib::Input;
 using vespalib::Output;
@@ -15,13 +15,9 @@ using vespalib::slime::JsonFormat;
 
 //-----------------------------------------------------------------------------
 
-TEST(ProcessTest, simple_run_ignore_output) {
-    EXPECT_TRUE(Process::run("echo foo"));
-}
+TEST(ProcessTest, simple_run_ignore_output) { EXPECT_TRUE(Process::run("echo foo")); }
 
-TEST(ProcessTest, simple_run_ignore_output_failure) {
-    EXPECT_FALSE(Process::run("false"));
-}
+TEST(ProcessTest, simple_run_ignore_output_failure) { EXPECT_FALSE(Process::run("false")); }
 
 //-----------------------------------------------------------------------------
 
@@ -60,7 +56,7 @@ TEST(ProcessTest, proc_failure) {
 TEST(ProcessTest, proc_kill) {
     {
         Process proc("sleep 60");
-        (void) proc;
+        (void)proc;
     }
 }
 
@@ -72,7 +68,7 @@ std::string line3 = "this is last line";
 
 TEST(ProcessTest, read_line) {
     Process proc("cat");
-    for (const std::string &line: {std::cref(line1), std::cref(line2), std::cref(line3)}) {
+    for (const std::string& line : {std::cref(line1), std::cref(line2), std::cref(line3)}) {
         auto mem = proc.reserve(line.size() + 1);
         memcpy(mem.data, line.data(), line.size());
         mem.data[line.size()] = '\n';
@@ -90,9 +86,9 @@ TEST(ProcessTest, read_line) {
 }
 
 TEST(ProcessTest, read_line_without_newline) {
-    Process proc("cat");
-    const auto &line = line3;
-    auto mem = proc.reserve(line.size());
+    Process     proc("cat");
+    const auto& line = line3;
+    auto        mem = proc.reserve(line.size());
     memcpy(mem.data, line.data(), line.size());
     proc.commit(line.size());
     fprintf(stderr, "write: %s\n", line.c_str());
@@ -106,25 +102,25 @@ TEST(ProcessTest, read_line_without_newline) {
 
 //-----------------------------------------------------------------------------
 
-void write_slime(const Slime &slime, Output &out) {
+void write_slime(const Slime& slime, Output& out) {
     JsonFormat::encode(slime, out, true);
     out.reserve(1).data[0] = '\n';
     out.commit(1);
 }
 
-Slime read_slime(Input &input) {
+Slime read_slime(Input& input) {
     Slime slime;
     EXPECT_TRUE(JsonFormat::decode(input, slime));
     return slime;
 }
 
-std::string to_json(const Slime &slime) {
+std::string to_json(const Slime& slime) {
     SimpleBuffer buf;
     JsonFormat::encode(slime, buf, true);
     return buf.get().make_string();
 }
 
-Slime from_json(const std::string &json) {
+Slime from_json(const std::string& json) {
     Slime slime;
     EXPECT_TRUE(JsonFormat::decode(json, slime));
     return slime;
@@ -136,7 +132,7 @@ Slime obj3 = from_json("{a:1,b:2,c:3,d:[1,2,3]}");
 
 TEST(ProcessTest, read_write_test) {
     Process proc("cat");
-    for (const Slime &obj: {std::cref(obj1), std::cref(obj2), std::cref(obj3)}) {
+    for (const Slime& obj : {std::cref(obj1), std::cref(obj2), std::cref(obj3)}) {
         write_slime(obj, proc);
         fprintf(stderr, "write: %s\n", to_json(obj).c_str());
         auto res = read_slime(proc);

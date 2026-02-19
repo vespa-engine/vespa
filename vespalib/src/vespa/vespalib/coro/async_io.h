@@ -4,8 +4,9 @@
 
 #include "lazy.h"
 
-#include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/server_socket.h>
+#include <vespa/vespalib/net/socket_handle.h>
+
 #include <memory>
 #include <string>
 
@@ -19,10 +20,10 @@ namespace vespalib::coro {
 
 struct AsyncIo : std::enable_shared_from_this<AsyncIo> {
     // these objects should not be copied around
-    AsyncIo(const AsyncIo &) = delete;
-    AsyncIo(AsyncIo &&) = delete;
-    AsyncIo &operator=(const AsyncIo &) = delete;
-    AsyncIo &operator=(AsyncIo &&) = delete;
+    AsyncIo(const AsyncIo&) = delete;
+    AsyncIo(AsyncIo&&) = delete;
+    AsyncIo& operator=(const AsyncIo&) = delete;
+    AsyncIo& operator=(AsyncIo&&) = delete;
     virtual ~AsyncIo();
     using SP = std::shared_ptr<AsyncIo>;
 
@@ -34,16 +35,17 @@ struct AsyncIo : std::enable_shared_from_this<AsyncIo> {
     class Owner {
     private:
         std::shared_ptr<AsyncIo> _async_io;
-        bool _init_shutdown_called;
-        bool _fini_shutdown_called;
+        bool                     _init_shutdown_called;
+        bool                     _fini_shutdown_called;
+
     public:
         Owner(std::shared_ptr<AsyncIo> async_io);
-        Owner(const Owner &) = delete;
-        Owner &operator=(const Owner &) = delete;
-        Owner(Owner &&) = default;
-        Owner &operator=(Owner &&) = default;
+        Owner(const Owner&) = delete;
+        Owner& operator=(const Owner&) = delete;
+        Owner(Owner&&) = default;
+        Owner&      operator=(Owner&&) = default;
         AsyncIo::SP share() { return _async_io->shared_from_this(); }
-        operator AsyncIo &() { return *_async_io; }
+        operator AsyncIo&() { return *_async_io; }
         void init_shutdown();
         void fini_shutdown();
         ~Owner();
@@ -57,11 +59,11 @@ struct AsyncIo : std::enable_shared_from_this<AsyncIo> {
     virtual ImplTag get_impl_tag() = 0;
 
     // api for async io used by coroutines
-    virtual Lazy<SocketHandle> accept(ServerSocket &server_socket) = 0;
-    virtual Lazy<SocketHandle> connect(const SocketAddress &addr) = 0;
-    virtual Lazy<ssize_t> read(SocketHandle &handle, char *buf, size_t len) = 0;
-    virtual Lazy<ssize_t> write(SocketHandle &handle, const char *buf, size_t len) = 0;
-    virtual Lazy<bool> schedule() = 0;
+    virtual Lazy<SocketHandle> accept(ServerSocket& server_socket) = 0;
+    virtual Lazy<SocketHandle> connect(const SocketAddress& addr) = 0;
+    virtual Lazy<ssize_t>      read(SocketHandle& handle, char* buf, size_t len) = 0;
+    virtual Lazy<ssize_t>      write(SocketHandle& handle, const char* buf, size_t len) = 0;
+    virtual Lazy<bool>         schedule() = 0;
 
 protected:
     // may only be created via subclass
@@ -74,4 +76,4 @@ private:
     virtual void fini_shutdown() = 0;
 };
 
-}
+} // namespace vespalib::coro

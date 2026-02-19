@@ -1,66 +1,56 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/util/rusage.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/rusage.h>
+
 #include <vespa/vespalib/util/array.hpp>
-#include <csignal>
+
 #include <algorithm>
+#include <csignal>
 
 #include <vespa/log/log.h>
 LOG_SETUP("sort_benchmark");
 
 using namespace vespalib;
 
-class SortBenchmark : public ::testing::Test
-{
+class SortBenchmark : public ::testing::Test {
     int    _argc;
     char** _argv;
+
 public:
-    SortBenchmark(int argc, char **argv);
+    SortBenchmark(int argc, char** argv);
     ~SortBenchmark() override;
     void TestBody() override;
+
 protected:
-    template<typename T>
-    vespalib::Array<T> create(size_t count);
-    template<typename T>
-    void sortDirect(size_t count);
-    template<typename T>
-    void sortInDirect(size_t count);
+    template <typename T> vespalib::Array<T> create(size_t count);
+    template <typename T> void               sortDirect(size_t count);
+    template <typename T> void               sortInDirect(size_t count);
 };
 
-SortBenchmark::SortBenchmark(int argc, char** argv)
-    : testing::Test(),
-      _argc(argc),
-      _argv(argv)
-{
-}
+SortBenchmark::SortBenchmark(int argc, char** argv) : testing::Test(), _argc(argc), _argv(argv) {}
 
 SortBenchmark::~SortBenchmark() = default;
 
-template<size_t N>
-class TT
-{
+template <size_t N> class TT {
 public:
-    TT(uint64_t v) : _v(v) { }
-    bool operator < (const TT & rhs) const noexcept { return _v < rhs._v; }
+    TT(uint64_t v) : _v(v) {}
+    bool operator<(const TT& rhs) const noexcept { return _v < rhs._v; }
+
 private:
     uint64_t _v;
     uint8_t  _payLoad[N - sizeof(uint64_t)];
 };
 
-template <typename T>
-class I
-{
+template <typename T> class I {
 public:
-    I(const T * p) : _p(p) { }
-    bool operator < (const I & rhs) const noexcept { return *_p < *rhs._p; }
+    I(const T* p) : _p(p) {}
+    bool operator<(const I& rhs) const noexcept { return *_p < *rhs._p; }
+
 private:
-    const T * _p;
+    const T* _p;
 };
 
-template<typename T>
-vespalib::Array<T>
-SortBenchmark::create(size_t count)
-{
+template <typename T> vespalib::Array<T> SortBenchmark::create(size_t count) {
     vespalib::Array<T> v;
     v.reserve(count);
     srand(0);
@@ -70,39 +60,33 @@ SortBenchmark::create(size_t count)
     return v;
 }
 
-template<typename T>
-void SortBenchmark::sortDirect(size_t count)
-{
+template <typename T> void SortBenchmark::sortDirect(size_t count) {
     vespalib::Array<T> v(create<T>(count));
     LOG(info, "Running sortDirect with %ld count and payload of %ld", v.size(), sizeof(T));
-    for (size_t j=0; j < 10; j++) {
+    for (size_t j = 0; j < 10; j++) {
         vespalib::Array<T> t(v);
         std::sort(t.begin(), t.end());
     }
 }
 
-template<typename T>
-void SortBenchmark::sortInDirect(size_t count)
-{
+template <typename T> void SortBenchmark::sortInDirect(size_t count) {
     vespalib::Array<T> k(create<T>(count));
     LOG(info, "Running sortInDirect with %ld count and payload of %ld", k.size(), sizeof(T));
-    vespalib::Array< I<T> > v;
+    vespalib::Array<I<T>> v;
     v.reserve(k.size());
     for (size_t i(0), m(k.size()); i < m; i++) {
         v.push_back(&k[i]);
     }
-    for (size_t j=0; j < 10; j++) {
-        vespalib::Array< I<T> > t(v);
+    for (size_t j = 0; j < 10; j++) {
+        vespalib::Array<I<T>> t(v);
         std::sort(t.begin(), t.end());
     }
 }
 
-void
-SortBenchmark::TestBody()
-{
+void SortBenchmark::TestBody() {
     std::string type("sortdirect");
-    size_t count = 1000000;
-    size_t payLoad = 0;
+    size_t      count = 1000000;
+    size_t      payLoad = 0;
     if (_argc > 1) {
         type = _argv[1];
     }
@@ -112,7 +96,7 @@ SortBenchmark::TestBody()
     if (_argc > 3) {
         payLoad = strtol(_argv[3], nullptr, 0);
     }
-     steady_time start(steady_clock::now());
+    steady_time start(steady_clock::now());
     if (payLoad < 8) {
         using T = TT<8>;
         if (type == "sortdirect") {
@@ -193,8 +177,8 @@ SortBenchmark::TestBody()
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
-    ::testing::RegisterTest("SortBenchmark", "benchmark", nullptr, "",
-                            __FILE__, __LINE__,
-                            [=]() -> SortBenchmark* { return new SortBenchmark(argc, argv); });
+    ::testing::RegisterTest("SortBenchmark", "benchmark", nullptr, "", __FILE__, __LINE__, [=]() -> SortBenchmark* {
+        return new SortBenchmark(argc, argv);
+    });
     return RUN_ALL_TESTS();
 }

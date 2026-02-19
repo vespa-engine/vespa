@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
+
 #include <string>
 
 using namespace vespalib;
@@ -91,36 +93,33 @@ using MyKey = std::shared_ptr<std::string>;
 using MyData = std::shared_ptr<std::string>;
 
 struct SharedEqual {
-    bool operator()(const MyKey& a, const MyKey& b) const noexcept {
-        return ((*a) == (*b));
-    }
+    bool operator()(const MyKey& a, const MyKey& b) const noexcept { return ((*a) == (*b)); }
 };
 
 struct SharedHash {
     size_t operator()(const MyKey& arg) const noexcept { return arg->size(); }
 };
 
-
 TEST(LruCacheMapTest, cache_insert_over_resize) {
     using LS = std::shared_ptr<std::string>;
     using Cache = lrucache_map<LruParam<int, LS>>;
 
-    Cache cache(100);
+    Cache  cache(100);
     size_t sum(0);
-    for (size_t i(0); i < cache.capacity()*10; i++) {
+    for (size_t i(0); i < cache.capacity() * 10; i++) {
         LS s(std::make_shared<std::string>("abc"));
         cache[random()] = s;
         sum += strlen(s->c_str());
         EXPECT_EQ(strlen(s->c_str()), s->size());
     }
-    EXPECT_EQ(sum, cache.capacity()*10*3);
+    EXPECT_EQ(sum, cache.capacity() * 10 * 3);
 }
 
 TEST(LruCacheMapTest, cache_erase_by_key) {
     lrucache_map<LruParam<MyKey, MyData, SharedHash, SharedEqual>> cache(4);
 
     MyData d(std::make_shared<std::string>("foo"));
-    MyKey k(std::make_shared<std::string>("barlol"));
+    MyKey  k(std::make_shared<std::string>("barlol"));
     // Verify start conditions.
     EXPECT_EQ(cache.size(), 0);
     EXPECT_EQ(d.use_count(), 1);
@@ -171,8 +170,7 @@ TEST(LruCacheMapTest, cache_iterator) {
 
 namespace {
 
-template <typename C>
-std::string lru_key_order(C& cache) {
+template <typename C> std::string lru_key_order(C& cache) {
     std::string keys;
     for (auto it = cache.begin(); it != cache.end(); ++it) {
         if (!keys.empty()) {
@@ -183,7 +181,7 @@ std::string lru_key_order(C& cache) {
     return keys;
 }
 
-}
+} // namespace
 
 TEST(LruCacheMapTest, cache_erase_by_iterator) {
     using Cache = lrucache_map<LruParam<int, std::string>>;
@@ -245,7 +243,7 @@ TEST(LruCacheMapTest, find_and_lazy_ref_elides_updating_LRU_head_when_less_than_
     cache.insert(4, "c");
     EXPECT_EQ(lru_key_order(cache), "4 3 2 1");
     EXPECT_NE(cache.find_and_lazy_ref(1), nullptr);
-    EXPECT_EQ(lru_key_order(cache), "1 4 3 2"); // At long last, our time to LRU shine
+    EXPECT_EQ(lru_key_order(cache), "1 4 3 2");     // At long last, our time to LRU shine
     EXPECT_EQ(cache.find_and_lazy_ref(5), nullptr); // Key not found
     EXPECT_EQ(lru_key_order(cache), "1 4 3 2");
 }

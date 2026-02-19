@@ -13,7 +13,7 @@ class Symbol;
  * tagged with symbol id.
  **/
 struct ObjectSymbolTraverser {
-    virtual void field(const Symbol &symbol, const Inspector &inspector) = 0;
+    virtual void field(const Symbol& symbol, const Inspector& inspector) = 0;
     virtual ~ObjectSymbolTraverser() = default;
 };
 
@@ -22,7 +22,7 @@ struct ObjectSymbolTraverser {
  * tagged with symbol name.
  **/
 struct ObjectTraverser {
-    virtual void field(const Memory &symbol, const Inspector &inspector) = 0;
+    virtual void field(const Memory& symbol, const Inspector& inspector) = 0;
     virtual ~ObjectTraverser() = default;
 };
 

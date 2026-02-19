@@ -5,7 +5,7 @@
 
 using vespalib::coro::Detached;
 
-Detached set_result(int &res, int value) {
+Detached set_result(int& res, int value) {
     res = value;
     co_return;
 }

@@ -1,12 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mmap_file_allocator.h"
-#include "round_up_to_page_size.h"
+
 #include "exceptions.h"
+#include "round_up_to_page_size.h"
 #include "stringfmt.h"
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <fcntl.h>
 #include <sys/mman.h>
+
 #include <cassert>
 #include <filesystem>
 
@@ -16,9 +20,7 @@ namespace fs = std::filesystem;
 namespace vespalib::alloc {
 
 MmapFileAllocator::MmapFileAllocator(std::string dir_name)
-    : MmapFileAllocator(std::move(dir_name), default_small_limit, default_premmap_size)
-{
-}
+    : MmapFileAllocator(std::move(dir_name), default_small_limit, default_premmap_size) {}
 
 MmapFileAllocator::MmapFileAllocator(std::string dir_name, uint32_t small_limit, uint32_t premmap_size)
     : _dir_name(std::move(dir_name)),
@@ -30,14 +32,12 @@ MmapFileAllocator::MmapFileAllocator(std::string dir_name, uint32_t small_limit,
       _freelist(),
       _small_allocations(),
       _small_freelist(),
-      _premmapped_areas()
-{
+      _premmapped_areas() {
     fs::create_directories(fs::path(_dir_name));
     _file.open(O_RDWR | O_CREAT | O_TRUNC, false);
 }
 
-MmapFileAllocator::~MmapFileAllocator()
-{
+MmapFileAllocator::~MmapFileAllocator() {
     assert(_small_allocations.empty());
     assert(_allocations.size() == _premmapped_areas.size());
     for (auto& area : _premmapped_areas) {
@@ -58,9 +58,7 @@ MmapFileAllocator::~MmapFileAllocator()
     fs::remove_all(fs::path(_dir_name));
 }
 
-uint64_t
-MmapFileAllocator::alloc_area(size_t sz) const
-{
+uint64_t MmapFileAllocator::alloc_area(size_t sz) const {
     uint64_t offset = _freelist.alloc(sz);
     if (offset != FileAreaFreeList::bad_offset) {
         return offset;
@@ -71,9 +69,7 @@ MmapFileAllocator::alloc_area(size_t sz) const
     return offset;
 }
 
-PtrAndSize
-MmapFileAllocator::alloc(size_t sz) const
-{
+PtrAndSize MmapFileAllocator::alloc(size_t sz) const {
     if (sz == 0) {
         return {}; // empty allocation
     }
@@ -86,16 +82,16 @@ MmapFileAllocator::alloc(size_t sz) const
     }
 }
 
-PtrAndSize
-MmapFileAllocator::alloc_large(size_t sz) const
-{
+PtrAndSize MmapFileAllocator::alloc_large(size_t sz) const {
     sz = round_up_to_page_size(sz);
     uint64_t offset = alloc_area(sz);
-    void *buf = mmap(nullptr, sz, PROT_READ | PROT_WRITE, MAP_SHARED, _file.getFileDescriptor(), offset);
+    void*    buf = mmap(nullptr, sz, PROT_READ | PROT_WRITE, MAP_SHARED, _file.getFileDescriptor(), offset);
     if (buf == MAP_FAILED) {
-        throw IoException(fmt("Failed mmap(nullptr, %zu, PROT_READ | PROT_WRITE, MAP_SHARED, %s(fd=%d), %" PRIu64 "). Reason given by OS = '%s'",
-                              sz, _file.getFilename().c_str(), _file.getFileDescriptor(), offset, getLastErrorString().c_str()),
-                          IoException::getErrorType(errno), VESPA_STRLOC);
+        throw IoException(
+            fmt("Failed mmap(nullptr, %zu, PROT_READ | PROT_WRITE, MAP_SHARED, %s(fd=%d), %" PRIu64
+                "). Reason given by OS = '%s'",
+                sz, _file.getFilename().c_str(), _file.getFileDescriptor(), offset, getLastErrorString().c_str()),
+            IoException::getErrorType(errno), VESPA_STRLOC);
     }
     assert(buf != nullptr);
     // Register allocation
@@ -110,9 +106,7 @@ MmapFileAllocator::alloc_large(size_t sz) const
     return {buf, sz};
 }
 
-void*
-MmapFileAllocator::map_premapped_offset_to_ptr(uint64_t offset, size_t size) const
-{
+void* MmapFileAllocator::map_premapped_offset_to_ptr(uint64_t offset, size_t size) const {
     auto itr = _premmapped_areas.lower_bound(offset);
     if (itr == _premmapped_areas.end() || itr->first > offset) {
         assert(itr != _premmapped_areas.begin());
@@ -126,9 +120,7 @@ MmapFileAllocator::map_premapped_offset_to_ptr(uint64_t offset, size_t size) con
     return static_cast<char*>(itr->second) + (offset - aitr->second.offset);
 }
 
-PtrAndSize
-MmapFileAllocator::alloc_small(size_t sz) const
-{
+PtrAndSize MmapFileAllocator::alloc_small(size_t sz) const {
     uint64_t offset = _small_freelist.alloc(sz);
     if (offset == FileAreaFreeList::bad_offset) {
         auto new_premmap = alloc_large(_premmap_size);
@@ -149,9 +141,7 @@ MmapFileAllocator::alloc_small(size_t sz) const
     return {ptr, sz};
 }
 
-void
-MmapFileAllocator::free(PtrAndSize alloc) const noexcept
-{
+void MmapFileAllocator::free(PtrAndSize alloc) const noexcept {
     if (alloc.size() == 0) {
         assert(alloc.get() == nullptr);
         return; // empty allocation
@@ -164,9 +154,7 @@ MmapFileAllocator::free(PtrAndSize alloc) const noexcept
     }
 }
 
-uint64_t
-MmapFileAllocator::remove_allocation(PtrAndSize alloc, Allocations& allocations) const noexcept
-{
+uint64_t MmapFileAllocator::remove_allocation(PtrAndSize alloc, Allocations& allocations) const noexcept {
     // Check that matching allocation is registered
     auto itr = allocations.find(alloc.get());
     assert(itr != allocations.end());
@@ -177,35 +165,25 @@ MmapFileAllocator::remove_allocation(PtrAndSize alloc, Allocations& allocations)
     return offset;
 }
 
-void
-MmapFileAllocator::free_large(PtrAndSize alloc) const noexcept
-{
+void MmapFileAllocator::free_large(PtrAndSize alloc) const noexcept {
     auto offset = remove_allocation(alloc, _allocations);
-    int retval = madvise(alloc.get(), alloc.size(), MADV_DONTNEED);
+    int  retval = madvise(alloc.get(), alloc.size(), MADV_DONTNEED);
     assert(retval == 0);
     retval = munmap(alloc.get(), alloc.size());
     assert(retval == 0);
     _freelist.free(offset, alloc.size());
 }
 
-void
-MmapFileAllocator::free_small(PtrAndSize alloc) const noexcept
-{
+void MmapFileAllocator::free_small(PtrAndSize alloc) const noexcept {
     auto offset = remove_allocation(alloc, _small_allocations);
     _small_freelist.free(offset, alloc.size());
 }
 
-size_t
-MmapFileAllocator::resize_inplace(PtrAndSize, size_t) const
-{
-    return 0;
-}
+size_t MmapFileAllocator::resize_inplace(PtrAndSize, size_t) const { return 0; }
 
-uint64_t
-MmapFileAllocator::get_size_on_disk() const noexcept
-{
+uint64_t MmapFileAllocator::get_size_on_disk() const noexcept {
     constexpr uint32_t directory_placeholder_size = 4_Ki;
     return directory_placeholder_size + _end_offset.load(std::memory_order_relaxed);
 }
 
-}
+} // namespace vespalib::alloc

@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/macro.h>
 #include <vespa/vespalib/util/error.h>
+#include <vespa/vespalib/util/macro.h>
+
 #include <exception>
 
 #define VESPALIB_EXCEPTION_USEBACKTRACES
@@ -25,11 +26,11 @@
  *
  * @param MyClass the name of your class
  **/
-#define VESPA_DEFINE_EXCEPTION_SPINE(MyClass) \
-  const char *getName() const override;       \
-  Exception *clone() const override;          \
-  void throwSelf() const override;            \
-  MyClass& setCause(const vespalib::Exception& cause);
+#define VESPA_DEFINE_EXCEPTION_SPINE(MyClass)               \
+    const char* getName() const override;                   \
+    Exception*  clone() const override;                     \
+    void        throwSelf() const override;                 \
+    MyClass&    setCause(const vespalib::Exception& cause);
 
 /**
  * @def VESPA_IMPLEMENT_EXCEPTION_SPINE(MyClass)
@@ -39,12 +40,14 @@
  * \ref VESPA_DEFINE_EXCEPTION_SPINE
  * @param MyClass the name of your class
  **/
-#define VESPA_IMPLEMENT_EXCEPTION_SPINE(MyClass)                             \
-  const char *MyClass::getName() const { return VESPA_STRINGIZE(MyClass); }  \
-  vespalib::Exception *MyClass::clone() const { return new MyClass(*this); } \
-  void MyClass::throwSelf() const { throw MyClass(*this); }                  \
-  MyClass& MyClass::setCause(const vespalib::Exception& cause)               \
-        { _cause = vespalib::ExceptionPtr(cause); return *this; }
+#define VESPA_IMPLEMENT_EXCEPTION_SPINE(MyClass)                                       \
+    const char*          MyClass::getName() const { return VESPA_STRINGIZE(MyClass); } \
+    vespalib::Exception* MyClass::clone() const { return new MyClass(*this); }         \
+    void                 MyClass::throwSelf() const { throw MyClass(*this); }          \
+    MyClass&             MyClass::setCause(const vespalib::Exception& cause) {         \
+        _cause = vespalib::ExceptionPtr(cause);                            \
+        return *this;                                                      \
+    }
 
 /**
  * @def VESPA_DEFINE_EXCEPTION(MyClass, Parent)
@@ -58,20 +61,18 @@
  * @param MyClass the name of your class
  * @param Parent the name of the parent class (often just Exception)
  **/
-#define VESPA_DEFINE_EXCEPTION(MyClass, Parent)                            \
-class MyClass : public Parent {                                            \
-public:                                                                    \
-    explicit MyClass(std::string_view msg,                              \
-            std::string_view location = "", int skipStack = 0);         \
-    MyClass(std::string_view msg, const Exception &cause,               \
-            std::string_view location = "", int skipStack = 0);         \
-    MyClass(const MyClass &);                                              \
-    MyClass & operator=(const MyClass &) = delete;                         \
-    MyClass(MyClass &&) noexcept;                                          \
-    MyClass & operator=(MyClass &&) noexcept;                              \
-    ~MyClass() override;                                                   \
-    VESPA_DEFINE_EXCEPTION_SPINE(MyClass)                                  \
-};
+#define VESPA_DEFINE_EXCEPTION(MyClass, Parent)                                                                   \
+    class MyClass : public Parent {                                                                               \
+    public:                                                                                                       \
+        explicit MyClass(std::string_view msg, std::string_view location = "", int skipStack = 0);                \
+        MyClass(std::string_view msg, const Exception& cause, std::string_view location = "", int skipStack = 0); \
+        MyClass(const MyClass&);                                                                                  \
+        MyClass& operator=(const MyClass&) = delete;                                                              \
+        MyClass(MyClass&&) noexcept;                                                                              \
+        MyClass& operator=(MyClass&&) noexcept;                                                                   \
+        ~MyClass() override;                                                                                      \
+        VESPA_DEFINE_EXCEPTION_SPINE(MyClass)                                                                     \
+    };
 
 /**
  * @def VESPA_IMPLEMENT_EXCEPTION(MyClass)
@@ -81,17 +82,15 @@ public:                                                                    \
  * \ref VESPA_DEFINE_EXCEPTION
  * @param MyClass the name of your class
  **/
-#define VESPA_IMPLEMENT_EXCEPTION(MyClass, Parent)                           \
-    MyClass::MyClass(std::string_view msg,                                \
-            std::string_view location, int skipStack)                     \
-        : Parent(msg, location, skipStack + 1) {}                            \
-    MyClass::MyClass(std::string_view msg, const Exception &cause,        \
-            std::string_view location, int skipStack)                     \
-        : Parent(msg, cause, location, skipStack + 1) {}                     \
-    MyClass::MyClass(const MyClass &) = default;                             \
-    MyClass::MyClass(MyClass &&) noexcept = default;                         \
-    MyClass & MyClass::operator=(MyClass &&) noexcept = default;             \
-    MyClass::~MyClass() = default;                                           \
+#define VESPA_IMPLEMENT_EXCEPTION(MyClass, Parent)                                                           \
+    MyClass::MyClass(std::string_view msg, std::string_view location, int skipStack)                         \
+        : Parent(msg, location, skipStack + 1) {}                                                            \
+    MyClass::MyClass(std::string_view msg, const Exception& cause, std::string_view location, int skipStack) \
+        : Parent(msg, cause, location, skipStack + 1) {}                                                     \
+    MyClass::MyClass(const MyClass&) = default;                                                              \
+    MyClass::MyClass(MyClass&&) noexcept = default;                                                          \
+    MyClass& MyClass::operator=(MyClass&&) noexcept = default;                                               \
+    MyClass::~MyClass() = default;                                                                           \
     VESPA_IMPLEMENT_EXCEPTION_SPINE(MyClass)
 
 namespace vespalib {
@@ -108,28 +107,28 @@ class ExceptionPtr;
  * you always get a deep copy, so you can even pass it around to
  * a different thread if needed.
  **/
-class ExceptionPtr
-{
+class ExceptionPtr {
 private:
-    Exception *_ref;
+    Exception* _ref;
+
 public:
     /** @brief default constructor (object will contain a null pointer until assigned). */
     ExceptionPtr();
 
     /** @brief constructor making a copy of an existing exception. */
-    explicit ExceptionPtr(const Exception &e);
+    explicit ExceptionPtr(const Exception& e);
 
     /** @brief copy constructor (deep copy) */
-    ExceptionPtr(const ExceptionPtr &rhs);
+    ExceptionPtr(const ExceptionPtr& rhs);
 
     /** @brief assignment making a copy of an existing exception */
-    ExceptionPtr &operator=(const Exception &rhs);
+    ExceptionPtr& operator=(const Exception& rhs);
 
     /** @brief assignment making a deep copy of another ExceptionPtr */
-    ExceptionPtr &operator=(const ExceptionPtr &rhs);
+    ExceptionPtr& operator=(const ExceptionPtr& rhs);
 
     /** @brief swaps contents with another ExceptionPtr */
-    void swap(ExceptionPtr &other);
+    void swap(ExceptionPtr& other);
 
     /** @brief destructor doing cleanup if needed */
     ~ExceptionPtr();
@@ -138,14 +137,14 @@ public:
     [[nodiscard]] bool isSet() const { return (_ref != nullptr); }
 
     /** @brief get pointer to currently held exception, returns NULL if not set */
-    [[nodiscard]] const Exception *get() const { return _ref; }
+    [[nodiscard]] const Exception* get() const { return _ref; }
 
     /** @brief use pointer to currently held exception, will crash if not set */
-    const Exception *operator->() const { return _ref; }
+    const Exception* operator->() const { return _ref; }
 };
 
 /** swaps contents of two ExceptionPtr objects */
-void swap(ExceptionPtr &a, ExceptionPtr &b);
+void swap(ExceptionPtr& a, ExceptionPtr& b);
 
 //-----------------------------------------------------------------------------
 
@@ -169,20 +168,19 @@ void swap(ExceptionPtr &a, ExceptionPtr &b);
  * macros.
  *
  **/
-class Exception : public std::exception
-{
+class Exception : public std::exception {
 private:
     static const int STACK_FRAME_BUFFER_SIZE = 25;
 
     mutable std::string _what;
-    std::string    _msg;
-    std::string    _location;
-    void*          _stack[STACK_FRAME_BUFFER_SIZE];
-    int            _stackframes;
-    int            _skipStack;
+    std::string         _msg;
+    std::string         _location;
+    void*               _stack[STACK_FRAME_BUFFER_SIZE];
+    int                 _stackframes;
+    int                 _skipStack;
 
 protected:
-    ExceptionPtr   _cause;
+    ExceptionPtr _cause;
 
 public:
     /**
@@ -207,35 +205,33 @@ public:
      *                  should send (skipStack + 1) to the parent constructor (see
      *                  \ref VESPA_DEFINE_EXCEPTION for subclass implementation).
      **/
-    Exception(std::string_view msg, const Exception &cause,
-              std::string_view location = "", int skipStack = 0);
-    Exception(const Exception &);
-    Exception & operator = (const Exception &);
-    Exception(Exception &&) noexcept;
-    Exception & operator = (Exception &&) noexcept;
+    Exception(std::string_view msg, const Exception& cause, std::string_view location = "", int skipStack = 0);
+    Exception(const Exception&);
+    Exception& operator=(const Exception&);
+    Exception(Exception&&) noexcept;
+    Exception& operator=(Exception&&) noexcept;
     ~Exception() override;
 
-
     /** @brief Returns a string describing the current exception, including cause if any */
-    const char *what() const noexcept override; // should not be overridden
+    const char* what() const noexcept override; // should not be overridden
 
     /** @brief Returns a pointer to underlying cause (or NULL if no cause) */
-    const Exception *getCause() const { return _cause.get(); }
+    const Exception* getCause() const { return _cause.get(); }
 
     /** @brief Returns the msg parameter that this Exception was constructed with */
-    const std::string &getMessage() const { return _msg; }
+    const std::string& getMessage() const { return _msg; }
 
     /** @brief Returns the message string */
-    const char *message() const { return _msg.c_str(); }
+    const char* message() const { return _msg.c_str(); }
 
     /** @brief Returns the location parameter that this Exception was constructed with */
-    const std::string &getLocation() const { return _location; }
+    const std::string& getLocation() const { return _location; }
 
     /** @brief Returns the actual class name of the exception */
-    virtual const char *getName() const;
+    virtual const char* getName() const;
 
     /** @brief Clones the actual object */
-    virtual Exception *clone() const;
+    virtual Exception* clone() const;
 
     /** @brief Throw a copy of this object */
     virtual void throwSelf() const;

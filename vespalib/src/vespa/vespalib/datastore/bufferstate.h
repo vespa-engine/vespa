@@ -6,8 +6,9 @@
 #include "buffer_stats.h"
 #include "buffer_type.h"
 #include "entryref.h"
-#include <vespa/vespalib/util/generationhandler.h>
+
 #include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/generationhandler.h>
 
 namespace vespalib::datastore {
 
@@ -18,34 +19,36 @@ namespace vespalib::datastore {
  * It uses a type handler (BufferTypeBase) to manage allocation and de-allocation of a specific data type.
  *
  * A newly allocated buffer starts in state FREE where no memory is allocated.
- * It then transitions to state ACTIVE via onActive(), where memory is allocated based on calculation from BufferTypeBase.
- * It then transitions to state HOLD via onHold() when the buffer is no longer needed.
- * It is kept in this state until all reader threads are no longer accessing the buffer.
- * Finally, it transitions back to FREE via onFree() and memory is de-allocated.
+ * It then transitions to state ACTIVE via onActive(), where memory is allocated based on calculation from
+ * BufferTypeBase. It then transitions to state HOLD via onHold() when the buffer is no longer needed. It is kept in
+ * this state until all reader threads are no longer accessing the buffer. Finally, it transitions back to FREE via
+ * onFree() and memory is de-allocated.
  *
  * This class also supports use of free lists, where previously allocated entries in the buffer can be re-used.
  * First the entry is put on hold, then on the free list (counted as dead) to be re-used.
  */
-class BufferState
-{
+class BufferState {
 public:
     using Alloc = vespalib::alloc::Alloc;
 
     enum class State : uint8_t { FREE, ACTIVE, HOLD };
 
 private:
-    InternalBufferStats _stats;
-    BufferFreeList      _free_list;
+    InternalBufferStats          _stats;
+    BufferFreeList               _free_list;
     std::atomic<BufferTypeBase*> _typeHandler;
-    Alloc              _buffer;
-    uint32_t           _arraySize;
-    uint16_t           _typeId;
-    std::atomic<State> _state;
-    bool               _disable_entry_hold_list : 1;
-    bool               _compacting : 1;
+    Alloc                        _buffer;
+    uint32_t                     _arraySize;
+    uint16_t                     _typeId;
+    std::atomic<State>           _state;
+    bool                         _disable_entry_hold_list : 1;
+    bool                         _compacting : 1;
 
-    static void *get_buffer(Alloc& buffer, uint32_t buffer_underflow_size) noexcept { return static_cast<char *>(buffer.get()) + buffer_underflow_size; }
-    void *get_buffer(uint32_t buffer_underflow_size) noexcept { return get_buffer(_buffer, buffer_underflow_size); }
+    static void* get_buffer(Alloc& buffer, uint32_t buffer_underflow_size) noexcept {
+        return static_cast<char*>(buffer.get()) + buffer_underflow_size;
+    }
+    void* get_buffer(uint32_t buffer_underflow_size) noexcept { return get_buffer(_buffer, buffer_underflow_size); }
+
 public:
     /**
      * TODO: Check if per-buffer free lists are useful, or if
@@ -53,8 +56,8 @@ public:
      */
 
     BufferState() noexcept;
-    BufferState(const BufferState &) = delete;
-    BufferState & operator=(const BufferState &) = delete;
+    BufferState(const BufferState&) = delete;
+    BufferState& operator=(const BufferState&) = delete;
     ~BufferState();
 
     /**
@@ -66,8 +69,8 @@ public:
      * @param free_entries_needed Number of entries needed to be free in the memory allocated.
      * @param buffer              Start of allocated buffer return value.
      */
-    void on_active(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
-                   size_t free_entries_needed, std::atomic<void*>& buffer);
+    void on_active(uint32_t bufferId, uint32_t typeId, BufferTypeBase* typeHandler, size_t free_entries_needed,
+                   std::atomic<void*>& buffer);
 
     /**
      * Transition from ACTIVE to HOLD state.
@@ -99,57 +102,53 @@ public:
      */
     void free_entries(EntryRef ref, size_t num_entries, size_t ref_offset);
 
-    BufferStats& stats() noexcept { return _stats; }
+    BufferStats&       stats() noexcept { return _stats; }
     const BufferStats& stats() const noexcept { return _stats; }
 
     void enable_free_list(FreeList& type_free_list) noexcept { _free_list.enable(type_free_list); }
     void disable_free_list() noexcept { _free_list.disable(); }
 
-    size_t size() const noexcept { return _stats.size(); }
-    size_t capacity() const noexcept { return _stats.capacity(); }
-    size_t remaining() const noexcept { return _stats.remaining(); }
-    void dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer);
+    size_t   size() const noexcept { return _stats.size(); }
+    size_t   capacity() const noexcept { return _stats.capacity(); }
+    size_t   remaining() const noexcept { return _stats.remaining(); }
+    void     dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer);
     uint32_t getTypeId() const noexcept { return _typeId; }
     uint32_t getArraySize() const noexcept { return _arraySize; }
-    bool getCompacting() const noexcept { return _compacting; }
-    void setCompacting() noexcept { _compacting = true; }
-    void fallback_resize(uint32_t bufferId, size_t free_entries_needed, std::atomic<void*>& buffer, Alloc &holdBuffer);
+    bool     getCompacting() const noexcept { return _compacting; }
+    void     setCompacting() noexcept { _compacting = true; }
+    void     fallback_resize(
+            uint32_t bufferId, size_t free_entries_needed, std::atomic<void*>& buffer, Alloc& holdBuffer);
 
-    bool isActive(uint32_t typeId) const noexcept {
-        return (isActive() && (_typeId == typeId));
-    }
-    bool isActive() const noexcept { return (getState() == State::ACTIVE); }
-    bool isOnHold() const noexcept { return (getState() == State::HOLD); }
-    bool isFree() const noexcept { return (getState() == State::FREE); }
-    State getState() const noexcept { return _state.load(std::memory_order_relaxed); }
-    const BufferTypeBase *getTypeHandler() const noexcept { return _typeHandler.load(std::memory_order_relaxed); }
-    BufferTypeBase *getTypeHandler() noexcept { return _typeHandler.load(std::memory_order_relaxed); }
+    bool                  isActive(uint32_t typeId) const noexcept { return (isActive() && (_typeId == typeId)); }
+    bool                  isActive() const noexcept { return (getState() == State::ACTIVE); }
+    bool                  isOnHold() const noexcept { return (getState() == State::HOLD); }
+    bool                  isFree() const noexcept { return (getState() == State::FREE); }
+    State                 getState() const noexcept { return _state.load(std::memory_order_relaxed); }
+    const BufferTypeBase* getTypeHandler() const noexcept { return _typeHandler.load(std::memory_order_relaxed); }
+    BufferTypeBase*       getTypeHandler() noexcept { return _typeHandler.load(std::memory_order_relaxed); }
 
     void resume_primary_buffer(uint32_t buffer_id);
 };
 
 class BufferAndMeta {
 public:
-    BufferAndMeta() noexcept : BufferAndMeta(nullptr, nullptr, 0, 0) { }
+    BufferAndMeta() noexcept : BufferAndMeta(nullptr, nullptr, 0, 0) {}
     std::atomic<void*>& get_atomic_buffer() noexcept { return _buffer; }
-    void* get_buffer_relaxed() noexcept { return _buffer.load(std::memory_order_relaxed); }
-    const void* get_buffer_acquire() const noexcept { return _buffer.load(std::memory_order_acquire); }
-    uint32_t getTypeId() const noexcept { return _typeId; }
-    uint32_t get_array_size() const noexcept { return _array_size; }
-    BufferState * get_state_relaxed() noexcept { return _state.load(std::memory_order_relaxed); }
-    const BufferState * get_state_acquire() const noexcept  { return _state.load(std::memory_order_acquire); }
-    uint32_t get_entry_size() const noexcept { return _entry_size; }
-    void setTypeId(uint32_t typeId) noexcept { _typeId = typeId; }
-    void set_array_size(uint32_t arraySize) noexcept { _array_size = arraySize; }
-    void set_entry_size(uint32_t entry_size) noexcept { _entry_size = entry_size; }
-    void set_state(BufferState * state) noexcept { _state.store(state, std::memory_order_release); }
+    void*               get_buffer_relaxed() noexcept { return _buffer.load(std::memory_order_relaxed); }
+    const void*         get_buffer_acquire() const noexcept { return _buffer.load(std::memory_order_acquire); }
+    uint32_t            getTypeId() const noexcept { return _typeId; }
+    uint32_t            get_array_size() const noexcept { return _array_size; }
+    BufferState*        get_state_relaxed() noexcept { return _state.load(std::memory_order_relaxed); }
+    const BufferState*  get_state_acquire() const noexcept { return _state.load(std::memory_order_acquire); }
+    uint32_t            get_entry_size() const noexcept { return _entry_size; }
+    void                setTypeId(uint32_t typeId) noexcept { _typeId = typeId; }
+    void                set_array_size(uint32_t arraySize) noexcept { _array_size = arraySize; }
+    void                set_entry_size(uint32_t entry_size) noexcept { _entry_size = entry_size; }
+    void                set_state(BufferState* state) noexcept { _state.store(state, std::memory_order_release); }
+
 private:
-    BufferAndMeta(void* buffer, BufferState * state, uint32_t typeId, uint32_t arraySize) noexcept
-        : _buffer(buffer),
-          _state(state),
-          _typeId(typeId),
-          _array_size(arraySize)
-    { }
+    BufferAndMeta(void* buffer, BufferState* state, uint32_t typeId, uint32_t arraySize) noexcept
+        : _buffer(buffer), _state(state), _typeId(typeId), _array_size(arraySize) {}
     std::atomic<void*>        _buffer;
     std::atomic<BufferState*> _state;
     uint32_t                  _typeId;
@@ -159,4 +158,4 @@ private:
     };
 };
 
-}
+} // namespace vespalib::datastore

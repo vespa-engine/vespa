@@ -5,36 +5,24 @@
 namespace vespalib {
 
 ThreadStackExecutorBase::Worker::Worker()
-    : lock(),
-      cond(),
-      idleTracker(),
-      pre_guard(0xaaaaaaaa),
-      idle(true),
-      post_guard(0x55555555),
-      task()
-{}
+    : lock(), cond(), idleTracker(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
 
-void
-ThreadStackExecutorBase::Worker::verify(bool expect_idle) const {
-    (void) expect_idle;
+void ThreadStackExecutorBase::Worker::verify(bool expect_idle) const {
+    (void)expect_idle;
     assert(pre_guard == 0xaaaaaaaa);
     assert(post_guard == 0x55555555);
     assert(idle == expect_idle);
     assert(!task.task == expect_idle);
 }
 
-void
-ThreadStackExecutorBase::BlockedThread::wait() const
-{
+void ThreadStackExecutorBase::BlockedThread::wait() const {
     unique_lock guard(lock);
     while (blocked) {
         cond.wait(guard);
     }
 }
 
-void
-ThreadStackExecutorBase::BlockedThread::unblock()
-{
+void ThreadStackExecutorBase::BlockedThread::unblock() {
     unique_lock guard(lock);
     blocked = false;
     cond.notify_one();
@@ -42,35 +30,27 @@ ThreadStackExecutorBase::BlockedThread::unblock()
 
 //-----------------------------------------------------------------------------
 
-thread_local ThreadStackExecutorBase *ThreadStackExecutorBase::_master = nullptr;
+thread_local ThreadStackExecutorBase* ThreadStackExecutorBase::_master = nullptr;
 
 //-----------------------------------------------------------------------------
 
-void
-ThreadStackExecutorBase::block_thread(const unique_lock &, BlockedThread &blocked_thread)
-{
+void ThreadStackExecutorBase::block_thread(const unique_lock&, BlockedThread& blocked_thread) {
     auto pos = _blocked.begin();
-    while ((pos != _blocked.end()) &&
-           ((*pos)->wait_task_count < blocked_thread.wait_task_count))
-    {
+    while ((pos != _blocked.end()) && ((*pos)->wait_task_count < blocked_thread.wait_task_count)) {
         ++pos;
     }
     _blocked.insert(pos, &blocked_thread);
 }
 
-void
-ThreadStackExecutorBase::unblock_threads(const unique_lock &)
-{
+void ThreadStackExecutorBase::unblock_threads(const unique_lock&) {
     while (!_blocked.empty() && (_taskCount <= _blocked.back()->wait_task_count)) {
-        BlockedThread &blocked_thread = *(_blocked.back());
+        BlockedThread& blocked_thread = *(_blocked.back());
         _blocked.pop_back();
         blocked_thread.unblock();
     }
 }
 
-void
-ThreadStackExecutorBase::assignTask(TaggedTask task, Worker &worker)
-{
+void ThreadStackExecutorBase::assignTask(TaggedTask task, Worker& worker) {
     unique_lock guard(worker.lock);
     worker.verify(/* idle: */ true);
     worker.idle = false;
@@ -78,9 +58,7 @@ ThreadStackExecutorBase::assignTask(TaggedTask task, Worker &worker)
     worker.cond.notify_one();
 }
 
-bool
-ThreadStackExecutorBase::obtainTask(Worker &worker)
-{
+bool ThreadStackExecutorBase::obtainTask(Worker& worker) {
     {
         unique_lock guard(_lock);
         if (!worker.idle) {
@@ -114,9 +92,7 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
     return !worker.idle;
 }
 
-void
-ThreadStackExecutorBase::run()
-{
+void ThreadStackExecutorBase::run() {
     Worker worker;
     _master = this;
     worker.verify(/* idle: */ true);
@@ -147,46 +123,31 @@ ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t taskLimit, init_fun_t 
       _taskCount(0),
       _taskLimit(taskLimit),
       _closed(false),
-      _init_fun(init_fun)
-{
+      _init_fun(init_fun) {
     assert(taskLimit > 0);
 }
 
-void
-ThreadStackExecutorBase::start(uint32_t threads)
-{
+void ThreadStackExecutorBase::start(uint32_t threads) {
     assert(threads > 0);
     for (uint32_t i = 0; i < threads; ++i) {
         _pool.start(*this, _init_fun);
     }
 }
 
-size_t
-ThreadStackExecutorBase::getNumThreads() const {
-    return _pool.size();
-}
+size_t ThreadStackExecutorBase::getNumThreads() const { return _pool.size(); }
 
-void
-ThreadStackExecutorBase::setTaskLimit(uint32_t taskLimit)
-{
-    internalSetTaskLimit(taskLimit);
-}
+void ThreadStackExecutorBase::setTaskLimit(uint32_t taskLimit) { internalSetTaskLimit(taskLimit); }
 
-uint32_t
-ThreadStackExecutorBase::getTaskLimit() const
-{
+uint32_t ThreadStackExecutorBase::getTaskLimit() const {
     unique_lock guard(_lock);
     return _taskLimit;
 }
 
-void
-ThreadStackExecutorBase::wakeup() {
+void ThreadStackExecutorBase::wakeup() {
     // Nothing to do here as workers are always attentive.
 }
 
-void
-ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit)
-{
+void ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit) {
     unique_lock guard(_lock);
     if (!_closed) {
         _taskLimit = taskLimit;
@@ -194,19 +155,15 @@ ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit)
     }
 }
 
-size_t
-ThreadStackExecutorBase::num_idle_workers() const
-{
+size_t ThreadStackExecutorBase::num_idle_workers() const {
     std::unique_lock guard(_lock);
     return _workers.size();
 }
 
-ExecutorStats
-ThreadStackExecutorBase::getStats()
-{
+ExecutorStats ThreadStackExecutorBase::getStats() {
     std::unique_lock guard(_lock);
-    ExecutorStats stats = _stats;
-    steady_time now = steady_clock::now();
+    ExecutorStats    stats = _stats;
+    steady_time      now = steady_clock::now();
     for (size_t i(0); i < _workers.size(); i++) {
         _idleTracker.was_idle(_workers.access(i)->idleTracker.reset(now));
     }
@@ -217,9 +174,7 @@ ThreadStackExecutorBase::getStats()
     return stats;
 }
 
-ThreadStackExecutorBase::Task::UP
-ThreadStackExecutorBase::execute(Task::UP task)
-{
+ThreadStackExecutorBase::Task::UP ThreadStackExecutorBase::execute(Task::UP task) {
     unique_lock guard(_lock);
     if (acceptNewTask(guard, _cond)) {
         TaggedTask taggedTask(std::move(task), _barrier.startEvent());
@@ -227,7 +182,7 @@ ThreadStackExecutorBase::execute(Task::UP task)
         ++_stats.acceptedTasks;
         _stats.queueSize.add(_taskCount);
         if (!_workers.empty()) {
-            Worker *worker = _workers.back();
+            Worker* worker = _workers.back();
             _workers.popBack();
             _idleTracker.was_idle(worker->idleTracker.set_active(steady_clock::now()));
             _stats.wakeupCount++;
@@ -242,9 +197,7 @@ ThreadStackExecutorBase::execute(Task::UP task)
     return task;
 }
 
-ThreadStackExecutorBase &
-ThreadStackExecutorBase::shutdown()
-{
+ThreadStackExecutorBase& ThreadStackExecutorBase::shutdown() {
     ArrayQueue<Worker*> idle;
     {
         unique_lock guard(_lock);
@@ -261,9 +214,7 @@ ThreadStackExecutorBase::shutdown()
     return *this;
 }
 
-ThreadStackExecutorBase &
-ThreadStackExecutorBase::sync()
-{
+ThreadStackExecutorBase& ThreadStackExecutorBase::sync() {
     BarrierCompletion barrierCompletion;
     {
         std::unique_lock guard(_lock);
@@ -275,9 +226,7 @@ ThreadStackExecutorBase::sync()
     return *this;
 }
 
-void
-ThreadStackExecutorBase::wait_for_task_count(uint32_t task_count)
-{
+void ThreadStackExecutorBase::wait_for_task_count(uint32_t task_count) {
     std::unique_lock guard(_lock);
     if (_taskCount <= task_count) {
         return;
@@ -288,16 +237,13 @@ ThreadStackExecutorBase::wait_for_task_count(uint32_t task_count)
     self.wait();
 }
 
-void
-ThreadStackExecutorBase::cleanup()
-{
+void ThreadStackExecutorBase::cleanup() {
     shutdown().sync();
     _executorCompletion.countDown();
     _pool.join();
 }
 
-ThreadStackExecutorBase::~ThreadStackExecutorBase()
-{
+ThreadStackExecutorBase::~ThreadStackExecutorBase() {
     assert(_taskCount == 0);
     assert(_blocked.empty());
 }

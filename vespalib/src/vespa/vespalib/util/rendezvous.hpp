@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "exceptions.h"
+
 #include <algorithm>
 #include <cassert>
 #include <limits>
@@ -9,28 +10,24 @@ namespace vespalib {
 
 namespace {
 
-void throw_illegal_state() {
-    throw(IllegalStateException("trying to use destroyed rendezvous"));
-}
+void throw_illegal_state() { throw(IllegalStateException("trying to use destroyed rendezvous")); }
 
 bool is_bad_gen(size_t destroyed_at, size_t my_gen) {
     // handle generation wrap-around
     return (my_gen - destroyed_at) < (std::numeric_limits<size_t>::max() / 2);
 }
 
-} // unnamed
+} // namespace
 
 template <typename IN, typename OUT, bool external_id>
-void
-Rendezvous<IN, OUT, external_id>::check_destroyed(size_t my_gen, const std::unique_lock<std::mutex> &) const {
+void Rendezvous<IN, OUT, external_id>::check_destroyed(size_t my_gen, const std::unique_lock<std::mutex>&) const {
     if (_destroyed.load(std::memory_order_relaxed) && is_bad_gen(_destroyed_at, my_gen)) {
         throw_illegal_state();
     }
 }
 
 template <typename IN, typename OUT, bool external_id>
-void
-Rendezvous<IN, OUT, external_id>::meet_self(IN &input, OUT &output) {
+void Rendezvous<IN, OUT, external_id>::meet_self(IN& input, OUT& output) {
     if (_destroyed.load(std::memory_order_relaxed)) {
         throw_illegal_state();
     }
@@ -40,9 +37,8 @@ Rendezvous<IN, OUT, external_id>::meet_self(IN &input, OUT &output) {
 }
 
 template <typename IN, typename OUT, bool external_id>
-void
-Rendezvous<IN, OUT, external_id>::meet_others(IN &input, OUT &output, size_t my_id, std::unique_lock<std::mutex> guard)
-{
+void Rendezvous<IN, OUT, external_id>::meet_others(
+    IN& input, OUT& output, size_t my_id, std::unique_lock<std::mutex> guard) {
     size_t my_gen = _gen;
     check_destroyed(my_gen, guard);
     if (external_id) {
@@ -78,19 +74,15 @@ Rendezvous<IN, OUT, external_id>::Rendezvous(size_t n)
       _in(n, nullptr),
       _out(n, nullptr),
       _destroyed(false),
-      _destroyed_at(0)
-{
+      _destroyed_at(0) {
     if (n == 0) {
         throw IllegalArgumentException("size must be greater than 0");
     }
 }
 
-template <typename IN, typename OUT, bool external_id>
-Rendezvous<IN, OUT, external_id>::~Rendezvous() = default;
+template <typename IN, typename OUT, bool external_id> Rendezvous<IN, OUT, external_id>::~Rendezvous() = default;
 
-template <typename IN, typename OUT, bool external_id>
-void
-Rendezvous<IN, OUT, external_id>::destroy() {
+template <typename IN, typename OUT, bool external_id> void Rendezvous<IN, OUT, external_id>::destroy() {
     std::unique_lock guard(_lock);
     if (!_destroyed.load(std::memory_order_relaxed)) {
         _destroyed.store(true, std::memory_order_relaxed);
@@ -100,9 +92,8 @@ Rendezvous<IN, OUT, external_id>::destroy() {
 }
 
 template <typename IN, typename OUT, bool external_id>
-OUT
-Rendezvous<IN, OUT, external_id>::rendezvous(IN input)
-    requires (!external_id)
+OUT Rendezvous<IN, OUT, external_id>::rendezvous(IN input)
+    requires(!external_id)
 {
     OUT ret{};
     static_assert(!external_id);
@@ -116,9 +107,8 @@ Rendezvous<IN, OUT, external_id>::rendezvous(IN input)
 }
 
 template <typename IN, typename OUT, bool external_id>
-OUT
-Rendezvous<IN, OUT, external_id>::rendezvous(IN input, size_t my_id)
-    requires (external_id)
+OUT Rendezvous<IN, OUT, external_id>::rendezvous(IN input, size_t my_id)
+    requires(external_id)
 {
     OUT ret{};
     assert(my_id < _size);

@@ -2,10 +2,12 @@
 
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <memory>
-#include <cassert>
+
 #include <sys/mman.h>
+
+#include <cassert>
 #include <filesystem>
+#include <memory>
 
 const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
 const std::string roFilename = srcDir + "/hello.txt";
@@ -19,12 +21,12 @@ struct Generated {
 };
 
 void MemoryMapTestImpl(int mmap_flags) {
-    Generated guard;
-    const int bufSize = 1000;
+    Generated   guard;
+    const int   bufSize = 1000;
     FastOS_File file("generated/memorymaptest");
     ASSERT_TRUE(file.OpenReadWrite());
     std::vector<char> space(bufSize);
-    char *buffer = space.data();
+    char*             buffer = space.data();
     for (int i = 0; i < bufSize; i++) {
         buffer[i] = i % 256;
     }
@@ -33,8 +35,8 @@ void MemoryMapTestImpl(int mmap_flags) {
     assert(close_ok);
     file.enableMemoryMap(mmap_flags);
     ASSERT_TRUE(file.OpenReadOnly());
-    bool mmapEnabled = file.IsMemoryMapped();
-    char *mmapBuffer = static_cast<char *>(file.MemoryMapPtr(0));
+    bool  mmapEnabled = file.IsMemoryMapped();
+    char* mmapBuffer = static_cast<char*>(file.MemoryMapPtr(0));
     fprintf(stderr, "Memory mapping %s\n", mmapEnabled ? "enabled" : "disabled");
     fprintf(stderr, "Map address: 0x%p\n", mmapBuffer);
     if (mmapEnabled) {
@@ -51,12 +53,12 @@ TEST(FileTest, MemoryMapTestHuge) { MemoryMapTestImpl(MAP_HUGETLB); }
 #endif
 
 TEST(FileTest, DirectIOTest) {
-    Generated guard;
-    const int bufSize = 40000;
+    Generated   guard;
+    const int   bufSize = 40000;
     FastOS_File file("generated/diotest");
     ASSERT_TRUE(file.OpenWriteOnly());
     std::vector<char> space(bufSize);
-    char *buffer = space.data();
+    char*             buffer = space.data();
     for (int i = 0; i < bufSize; i++) {
         buffer[i] = 'A' + (i % 17);
     }
@@ -68,22 +70,18 @@ TEST(FileTest, DirectIOTest) {
     size_t memoryAlignment = 0;
     size_t transferGranularity = 0;
     size_t transferMaximum = 0;
-    bool dioEnabled = file.GetDirectIORestrictions(memoryAlignment,
-                                                   transferGranularity,
-                                                   transferMaximum);
+    bool   dioEnabled = file.GetDirectIORestrictions(memoryAlignment, transferGranularity, transferMaximum);
     fprintf(stderr, "DirectIO %s\n", dioEnabled ? "enabled" : "disabled");
     fprintf(stderr, "Memory alignment: %zu bytes\n", memoryAlignment);
     fprintf(stderr, "Transfer granularity: %zu bytes\n", transferGranularity);
     fprintf(stderr, "Transfer maximum: %zu bytes\n", transferMaximum);
     if (dioEnabled) {
-        int eachRead = (8192 + transferGranularity - 1) / transferGranularity;
+        int               eachRead = (8192 + transferGranularity - 1) / transferGranularity;
         std::vector<char> space2(eachRead * transferGranularity + memoryAlignment - 1);
-        char *buffer2 = space2.data();
-        char *alignPtr = buffer2;
-        unsigned int align =
-            static_cast<unsigned int>
-            (reinterpret_cast<unsigned long>(alignPtr) &
-             (memoryAlignment - 1));
+        char*             buffer2 = space2.data();
+        char*             alignPtr = buffer2;
+        unsigned int      align =
+            static_cast<unsigned int>(reinterpret_cast<unsigned long>(alignPtr) & (memoryAlignment - 1));
         if (align != 0) {
             alignPtr = &alignPtr[memoryAlignment - align];
         }
@@ -96,27 +94,27 @@ TEST(FileTest, DirectIOTest) {
             }
             file.ReadBuf(alignPtr, readThisTime, pos);
             for (int i = 0; i < readThisTime; i++) {
-                ASSERT_EQ(alignPtr[i], char('A' + ((i+pos) % 17)));
+                ASSERT_EQ(alignPtr[i], char('A' + ((i + pos) % 17)));
             }
             residue -= readThisTime;
             pos += readThisTime;
         }
         ASSERT_TRUE(file.SetPosition(1));
         try {
-            const int attemptReadBytes = 173;
+            const int             attemptReadBytes = 173;
             [[maybe_unused]] auto res = file.Read(buffer, attemptReadBytes);
             EXPECT_TRUE(false);
-        } catch (const DirectIOException &) {
+        } catch (const DirectIOException&) {
             fprintf(stderr, "got DirectIOException as expected\n");
         } catch (...) {
             EXPECT_TRUE(false);
         }
         ASSERT_TRUE(file.SetPosition(1));
         try {
-            const int attemptReadBytes = 4096;
+            const int             attemptReadBytes = 4096;
             [[maybe_unused]] auto res = file.Read(buffer, attemptReadBytes);
             EXPECT_TRUE(false);
-        } catch (const DirectIOException &) {
+        } catch (const DirectIOException&) {
             fprintf(stderr, "got DirectIOException as expected\n");
         } catch (...) {
             EXPECT_TRUE(false);
@@ -145,7 +143,7 @@ TEST(FileTest, ReadOnlyTest) {
 
 TEST(FileTest, WriteOnlyTest) {
     Generated guard;
-    auto myFile = std::make_unique<FastOS_File>(woFilename.c_str());
+    auto      myFile = std::make_unique<FastOS_File>(woFilename.c_str());
     ASSERT_TRUE(myFile->OpenWriteOnly());
     EXPECT_EQ(myFile->getSize(), 0);
     char dummyData[6] = "Dummy";
@@ -160,7 +158,7 @@ TEST(FileTest, WriteOnlyTest) {
 
 TEST(FileTest, ReadWriteTest) {
     Generated guard;
-    auto myFile = std::make_unique<FastOS_File>(rwFilename.c_str());
+    auto      myFile = std::make_unique<FastOS_File>(rwFilename.c_str());
     ASSERT_FALSE(myFile->OpenReadOnlyExisting());
     ASSERT_TRUE(myFile->OpenReadWrite());
     ASSERT_EQ(myFile->getSize(), 0);
@@ -183,7 +181,7 @@ TEST(FileTest, ReadWriteTest) {
 
 TEST(FileTest, ReadBufTest) {
     FastOS_File file(roFilename.c_str());
-    char buffer[20];
+    char        buffer[20];
     ASSERT_TRUE(file.OpenReadOnly());
     EXPECT_EQ(file.getPosition(), 0);
     EXPECT_EQ(file.Read(buffer, 4), 4);
@@ -204,10 +202,10 @@ TEST(FileTest, DiskFreeSpaceTest) {
 TEST(FileTest, MaxLengthTest) {
     int maxval = FastOS_File::GetMaximumFilenameLength(".");
     EXPECT_GT(maxval, 5);
-    EXPECT_LT(maxval, (512*1024));
+    EXPECT_LT(maxval, (512 * 1024));
     maxval = FastOS_File::GetMaximumPathLength(".");
     EXPECT_GT(maxval, 5);
-    EXPECT_LT(maxval, (512*1024));
+    EXPECT_LT(maxval, (512 * 1024));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

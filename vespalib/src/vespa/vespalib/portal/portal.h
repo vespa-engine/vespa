@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "handle_manager.h"
 #include "listener.h"
 #include "reactor.h"
-#include "handle_manager.h"
 
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/crypto_socket.h>
@@ -17,29 +17,33 @@
 
 namespace vespalib {
 
-namespace portal { class HttpConnection; }
-namespace net { class ConnectionAuthContext; }
+namespace portal {
+class HttpConnection;
+}
+namespace net {
+class ConnectionAuthContext;
+}
 
 /**
  * Minimal HTTP server and connection establishment manager.
  **/
-class Portal
-{
+class Portal {
 public:
     using SP = std::shared_ptr<Portal>;
 
     class Token {
         friend class Portal;
+
     private:
-        Portal &_portal;
+        Portal&  _portal;
         uint64_t _handle;
-        Token(const Token &) = delete;
-        Token &operator=(const Token &) = delete;
-        Token(Token &&) = delete;
-        Token &operator=(Token &&) = delete;
-        Token(Portal &portal, uint64_t handle)
-            : _portal(portal), _handle(handle) {}
+        Token(const Token&) = delete;
+        Token& operator=(const Token&) = delete;
+        Token(Token&&) = delete;
+        Token& operator=(Token&&) = delete;
+        Token(Portal& portal, uint64_t handle) : _portal(portal), _handle(handle) {}
         uint64_t handle() const { return _handle; }
+
     public:
         using UP = std::unique_ptr<Token>;
         ~Token();
@@ -47,28 +51,27 @@ public:
 
     class GetRequest {
         friend class Portal;
+
     private:
-        portal::HttpConnection *_conn;
-        GetRequest(portal::HttpConnection &conn) : _conn(&conn) {}
+        portal::HttpConnection* _conn;
+        GetRequest(portal::HttpConnection& conn) : _conn(&conn) {}
+
     public:
-        GetRequest(const GetRequest &rhs) = delete;
-        GetRequest &operator=(const GetRequest &rhs) = delete;
-        GetRequest &operator=(GetRequest &&rhs) = delete;
-        GetRequest(GetRequest &&rhs) noexcept : _conn(rhs._conn) {
-            rhs._conn = nullptr;
-        }
-        bool active() const { return (_conn != nullptr); }
-        const std::string &get_header(const std::string &name) const;
-        const std::string &get_host() const;
-        const std::string &get_uri() const;
-        const std::string &get_path() const;
-        bool has_param(const std::string &name) const;
-        const std::string &get_param(const std::string &name) const;
+        GetRequest(const GetRequest& rhs) = delete;
+        GetRequest& operator=(const GetRequest& rhs) = delete;
+        GetRequest& operator=(GetRequest&& rhs) = delete;
+        GetRequest(GetRequest&& rhs) noexcept : _conn(rhs._conn) { rhs._conn = nullptr; }
+        bool                               active() const { return (_conn != nullptr); }
+        const std::string&                 get_header(const std::string& name) const;
+        const std::string&                 get_host() const;
+        const std::string&                 get_uri() const;
+        const std::string&                 get_path() const;
+        bool                               has_param(const std::string& name) const;
+        const std::string&                 get_param(const std::string& name) const;
         std::map<std::string, std::string> export_params() const;
-        void respond_with_content(std::string_view content_type,
-                                  std::string_view content);
+        void respond_with_content(std::string_view content_type, std::string_view content);
         void respond_with_error(int code, std::string_view msg);
-        const net::ConnectionAuthContext &auth_context() const noexcept;
+        const net::ConnectionAuthContext& auth_context() const noexcept;
         ~GetRequest();
     };
 
@@ -79,12 +82,12 @@ public:
 
 private:
     struct BindState {
-        uint64_t handle;
+        uint64_t    handle;
         std::string prefix;
-        GetHandler *handler;
-        BindState(uint64_t handle_in, std::string prefix_in, GetHandler &handler_in) noexcept
+        GetHandler* handler;
+        BindState(uint64_t handle_in, std::string prefix_in, GetHandler& handler_in) noexcept
             : handle(handle_in), prefix(std::move(prefix_in)), handler(&handler_in) {}
-        bool operator<(const BindState &rhs) const noexcept {
+        bool operator<(const BindState& rhs) const noexcept {
             if (prefix.size() == rhs.prefix.size()) {
                 return (handle > rhs.handle);
             }
@@ -99,24 +102,25 @@ private:
     portal::Listener::UP   _listener;
     std::mutex             _lock;
     std::vector<BindState> _bind_list;
-    std::string       _my_host;
+    std::string            _my_host;
 
     Token::UP make_token();
-    void cancel_token(Token &token);
+    void      cancel_token(Token& token);
 
-    portal::HandleGuard lookup_get_handler(const std::string &uri, GetHandler *&handler);
-    void evict_handle(uint64_t handle);
+    portal::HandleGuard lookup_get_handler(const std::string& uri, GetHandler*& handler);
+    void                evict_handle(uint64_t handle);
 
     void handle_accept(portal::HandleGuard guard, SocketHandle socket);
-    void handle_http(portal::HttpConnection *conn);
+    void handle_http(portal::HttpConnection* conn);
 
     Portal(CryptoEngine::SP crypto, int port);
+
 public:
     ~Portal();
-    static SP create(CryptoEngine::SP crypto, int port);
-    int listen_port() const { return _listener->listen_port(); }
-    const std::string &my_host() const { return _my_host; }
-    Token::UP bind(const std::string &path_prefix, GetHandler &handler);
+    static SP          create(CryptoEngine::SP crypto, int port);
+    int                listen_port() const { return _listener->listen_port(); }
+    const std::string& my_host() const { return _my_host; }
+    Token::UP          bind(const std::string& path_prefix, GetHandler& handler);
 };
 
 } // namespace vespalib

@@ -1,28 +1,28 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "openssl_crypto_codec_impl.h"
-#include "openssl_tls_context_impl.h"
-#include "direct_buffer_bio.h"
 
+#include "direct_buffer_bio.h"
+#include "openssl_tls_context_impl.h"
+
+#include <vespa/log/bufferedlogger.h>
 #include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/net/tls/crypto_codec.h>
 #include <vespa/vespalib/net/tls/statistics.h>
 
-#include <mutex>
-#include <vector>
-#include <memory>
-#include <stdexcept>
-
-#include <openssl/ssl.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/pem.h>
+#include <openssl/ssl.h>
 
-#include <vespa/log/bufferedlogger.h>
+#include <memory>
+#include <mutex>
+#include <stdexcept>
+#include <vector>
 LOG_SETUP(".vespalib.net.tls.openssl_crypto_codec_impl");
 
 #if (OPENSSL_VERSION_NUMBER < 0x10000000L)
 // < 1.0 requires explicit thread ID callback support.
-#  error "Provided OpenSSL version is too darn old, need at least 1.0"
+#error "Provided OpenSSL version is too darn old, need at least 1.0"
 #endif
 
 /*
@@ -42,9 +42,7 @@ namespace vespalib::net::tls::impl {
 
 namespace {
 
-bool verify_buf(const char *buf, size_t len) {
-    return ((len < INT32_MAX) && ((len == 0) || (buf != nullptr)));
-}
+bool verify_buf(const char* buf, size_t len) { return ((len < INT32_MAX) && ((len == 0) || (buf != nullptr))); }
 
 const char* ssl_error_to_str(int ssl_error) noexcept {
     // From https://www.openssl.org/docs/manmaster/man3/SSL_get_error.html
@@ -95,45 +93,27 @@ HandshakeResult handshaked_bytes(size_t consumed, size_t produced, HandshakeResu
     return {consumed, produced, state};
 }
 
-HandshakeResult handshake_completed() noexcept {
-    return {0, 0, HandshakeResult::State::Done};
-}
+HandshakeResult handshake_completed() noexcept { return {0, 0, HandshakeResult::State::Done}; }
 
-HandshakeResult handshake_needs_work() noexcept {
-    return {0, 0, HandshakeResult::State::NeedsWork};
-}
+HandshakeResult handshake_needs_work() noexcept { return {0, 0, HandshakeResult::State::NeedsWork}; }
 
-HandshakeResult handshake_needs_peer_data() noexcept {
-    return {0, 0, HandshakeResult::State::NeedsMorePeerData};
-}
+HandshakeResult handshake_needs_peer_data() noexcept { return {0, 0, HandshakeResult::State::NeedsMorePeerData}; }
 
-HandshakeResult handshake_failed() noexcept {
-    return {0, 0, HandshakeResult::State::Failed};
-}
+HandshakeResult handshake_failed() noexcept { return {0, 0, HandshakeResult::State::Failed}; }
 
-EncodeResult encode_failed() noexcept {
-    return {0, 0, true};
-}
+EncodeResult encode_failed() noexcept { return {0, 0, true}; }
 
-EncodeResult encoded_bytes(size_t consumed, size_t produced) noexcept {
-    return {consumed, produced, false};
-}
+EncodeResult encoded_bytes(size_t consumed, size_t produced) noexcept { return {consumed, produced, false}; }
 
-DecodeResult decode_failed() noexcept {
-    return {0, 0, DecodeResult::State::Failed};
-}
+DecodeResult decode_failed() noexcept { return {0, 0, DecodeResult::State::Failed}; }
 
-DecodeResult decode_peer_has_closed() noexcept {
-    return {0, 0, DecodeResult::State::Closed};
-}
+DecodeResult decode_peer_has_closed() noexcept { return {0, 0, DecodeResult::State::Closed}; }
 
 DecodeResult decoded_frames_with_plaintext_bytes(size_t produced_bytes) noexcept {
     return {0, produced_bytes, DecodeResult::State::OK};
 }
 
-DecodeResult decode_needs_more_peer_data() noexcept {
-    return {0, 0, DecodeResult::State::NeedsMorePeerData};
-}
+DecodeResult decode_needs_more_peer_data() noexcept { return {0, 0, DecodeResult::State::NeedsMorePeerData}; }
 
 DecodeResult decoded_bytes(size_t consumed, size_t produced, DecodeResult::State state) noexcept {
     return {consumed, produced, state};
@@ -165,26 +145,22 @@ void log_ssl_error(const char* source, const SocketAddress& peer_address, int ss
     // Buffer the emitted log messages on the peer's IP address. This prevents a single misbehaving
     // client from flooding our logs, while at the same time ensuring that logs for other clients
     // aren't lost.
-    LOGBT(warning, peer_address.ip_address(),
-          "%s (with peer '%s') returned unexpected error: %s (%s)",
-          source, peer_address.spec().c_str(),
-          ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
+    LOGBT(warning, peer_address.ip_address(), "%s (with peer '%s') returned unexpected error: %s (%s)", source,
+          peer_address.spec().c_str(), ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
 }
 
-} // anon ns
+} // namespace
 
-OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx,
-                                               const SocketSpec& peer_spec,
-                                               const SocketAddress& peer_address,
-                                               Mode mode)
+OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(
+    std::shared_ptr<OpenSslTlsContextImpl> ctx, const SocketSpec& peer_spec, const SocketAddress& peer_address,
+    Mode mode)
     : _ctx(std::move(ctx)),
       _peer_spec(peer_spec),
       _peer_address(peer_address),
       _ssl(::SSL_new(_ctx->native_context())),
       _mode(mode),
       _deferred_handshake_params(),
-      _deferred_handshake_result()
-{
+      _deferred_handshake_result() {
     if (!_ssl) {
         throw CryptoException("Failed to create new SSL from SSL_CTX");
     }
@@ -210,7 +186,7 @@ OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContext
      *  decode() : SSL_read(plaintext) <--(_input_bio ciphertext)--   [peer]
      *
      */
-    BioPtr tmp_input_bio  = new_tls_frame_const_memory_bio();
+    BioPtr tmp_input_bio = new_tls_frame_const_memory_bio();
     BioPtr tmp_output_bio = new_tls_frame_mutable_memory_bio();
     // Connect BIOs used internally by OpenSSL. This transfers ownership. No return values to check.
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
@@ -219,7 +195,7 @@ OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContext
 #else
     ::SSL_set_bio(_ssl.get(), tmp_input_bio.get(), tmp_output_bio.get());
 #endif
-    _input_bio  = tmp_input_bio.release();
+    _input_bio = tmp_input_bio.release();
     _output_bio = tmp_output_bio.release();
     if (_mode == Mode::Client) {
         ::SSL_set_connect_state(_ssl.get());
@@ -236,22 +212,17 @@ OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContext
 
 OpenSslCryptoCodecImpl::~OpenSslCryptoCodecImpl() = default;
 
-std::unique_ptr<OpenSslCryptoCodecImpl>
-OpenSslCryptoCodecImpl::make_client_codec(std::shared_ptr<OpenSslTlsContextImpl> ctx,
-                                          const SocketSpec& peer_spec,
-                                          const SocketAddress& peer_address)
-{
+std::unique_ptr<OpenSslCryptoCodecImpl> OpenSslCryptoCodecImpl::make_client_codec(
+    std::shared_ptr<OpenSslTlsContextImpl> ctx, const SocketSpec& peer_spec, const SocketAddress& peer_address) {
     // Naked new due to private ctor
     return std::unique_ptr<OpenSslCryptoCodecImpl>(
-            new OpenSslCryptoCodecImpl(std::move(ctx), peer_spec, peer_address, Mode::Client));
+        new OpenSslCryptoCodecImpl(std::move(ctx), peer_spec, peer_address, Mode::Client));
 }
-std::unique_ptr<OpenSslCryptoCodecImpl>
-OpenSslCryptoCodecImpl::make_server_codec(std::shared_ptr<OpenSslTlsContextImpl> ctx,
-                                          const SocketAddress& peer_address)
-{
+std::unique_ptr<OpenSslCryptoCodecImpl> OpenSslCryptoCodecImpl::make_server_codec(
+    std::shared_ptr<OpenSslTlsContextImpl> ctx, const SocketAddress& peer_address) {
     // Naked new due to private ctor
     return std::unique_ptr<OpenSslCryptoCodecImpl>(
-            new OpenSslCryptoCodecImpl(std::move(ctx), SocketSpec::invalid, peer_address, Mode::Server));
+        new OpenSslCryptoCodecImpl(std::move(ctx), SocketSpec::invalid, peer_address, Mode::Server));
 }
 
 void OpenSslCryptoCodecImpl::enable_hostname_validation_if_requested() {
@@ -289,9 +260,8 @@ std::optional<std::string> OpenSslCryptoCodecImpl::client_provided_sni_extension
     return std::string(sni_host_raw);
 }
 
-HandshakeResult OpenSslCryptoCodecImpl::handshake(const char* from_peer, size_t from_peer_buf_size,
-                                                  char* to_peer, size_t to_peer_buf_size) noexcept
-{
+HandshakeResult OpenSslCryptoCodecImpl::handshake(
+    const char* from_peer, size_t from_peer_buf_size, char* to_peer, size_t to_peer_buf_size) noexcept {
     LOG_ASSERT(verify_buf(from_peer, from_peer_buf_size) && verify_buf(to_peer, to_peer_buf_size));
     LOG_ASSERT(!_deferred_handshake_params.has_value()); // do_handshake_work() not called as expected
 
@@ -318,19 +288,21 @@ HandshakeResult OpenSslCryptoCodecImpl::handshake(const char* from_peer, size_t 
     const bool first_client_send = ((_mode == Mode::Client) && SSL_in_before(_ssl.get()));
     const bool needs_work = ((from_peer_buf_size > 0) || first_client_send);
     if (needs_work) {
-        _deferred_handshake_params = DeferredHandshakeParams(from_peer, from_peer_buf_size, to_peer, to_peer_buf_size);
+        _deferred_handshake_params =
+            DeferredHandshakeParams(from_peer, from_peer_buf_size, to_peer, to_peer_buf_size);
         return handshake_needs_work();
     }
     return handshake_needs_peer_data();
 }
 
 void OpenSslCryptoCodecImpl::do_handshake_work() noexcept {
-    LOG_ASSERT(_deferred_handshake_params.has_value());  // handshake() not called as expected
-    LOG_ASSERT(!_deferred_handshake_result.has_value()); // do_handshake_work() called multiple times without handshake()
+    LOG_ASSERT(_deferred_handshake_params.has_value()); // handshake() not called as expected
+    LOG_ASSERT(
+        !_deferred_handshake_result.has_value()); // do_handshake_work() called multiple times without handshake()
     const auto params = *_deferred_handshake_params;
     _deferred_handshake_params = std::optional<DeferredHandshakeParams>();
 
-    ConstBufferViewGuard const_view_guard(*_input_bio, params.from_peer, params.from_peer_buf_size);
+    ConstBufferViewGuard   const_view_guard(*_input_bio, params.from_peer, params.from_peer_buf_size);
     MutableBufferViewGuard mut_view_guard(*_output_bio, params.to_peer, params.to_peer_buf_size);
 
     const auto consume_res = do_handshake_and_consume_peer_input_bytes();
@@ -342,9 +314,8 @@ void OpenSslCryptoCodecImpl::do_handshake_work() noexcept {
     // SSL_do_handshake() might have produced more data to send. Note: handshake may
     // be complete at this point.
     const int produced = BIO_pending(_output_bio);
-    _deferred_handshake_result = handshaked_bytes(consume_res.bytes_consumed,
-                                                  static_cast<size_t>(produced),
-                                                  consume_res.state);
+    _deferred_handshake_result =
+        handshaked_bytes(consume_res.bytes_consumed, static_cast<size_t>(produced), consume_res.state);
 }
 
 HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_bytes() noexcept {
@@ -369,8 +340,8 @@ HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_byte
             LOG(error, "SSL handshake is not completed even though no more peer data is requested");
             return handshake_failed();
         }
-        LOG(debug, "SSL_do_handshake() with %s is complete, using protocol %s",
-            _peer_address.spec().c_str(), SSL_get_version(_ssl.get()));
+        LOG(debug, "SSL_do_handshake() with %s is complete, using protocol %s", _peer_address.spec().c_str(),
+            SSL_get_version(_ssl.get()));
         ConnectionStatistics::get(_mode == Mode::Server).inc_tls_connections();
         return handshake_consumed_bytes_and_is_complete(static_cast<size_t>(consumed));
     } else {
@@ -380,8 +351,8 @@ HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_byte
     }
 }
 
-EncodeResult OpenSslCryptoCodecImpl::encode(const char* plaintext, size_t plaintext_size,
-                                            char* ciphertext, size_t ciphertext_size) noexcept {
+EncodeResult OpenSslCryptoCodecImpl::encode(
+    const char* plaintext, size_t plaintext_size, char* ciphertext, size_t ciphertext_size) noexcept {
     LOG_ASSERT(verify_buf(plaintext, plaintext_size) && verify_buf(ciphertext, ciphertext_size));
 
     if (!SSL_is_init_finished(_ssl.get())) {
@@ -411,8 +382,8 @@ EncodeResult OpenSslCryptoCodecImpl::encode(const char* plaintext, size_t plaint
     const int produced = BIO_pending(_output_bio);
     return encoded_bytes(bytes_consumed, static_cast<size_t>(produced));
 }
-DecodeResult OpenSslCryptoCodecImpl::decode(const char* ciphertext, size_t ciphertext_size,
-                                            char* plaintext, size_t plaintext_size) noexcept {
+DecodeResult OpenSslCryptoCodecImpl::decode(
+    const char* ciphertext, size_t ciphertext_size, char* plaintext, size_t plaintext_size) noexcept {
     LOG_ASSERT(verify_buf(ciphertext, ciphertext_size) && verify_buf(plaintext, plaintext_size));
 
     if (!SSL_is_init_finished(_ssl.get())) {
@@ -423,7 +394,7 @@ DecodeResult OpenSslCryptoCodecImpl::decode(const char* ciphertext, size_t ciphe
     // _output_bio not written to here
 
     const int input_pending_before = BIO_pending(_input_bio);
-    auto produce_res = drain_and_produce_plaintext_from_ssl(plaintext, static_cast<int>(plaintext_size));
+    auto      produce_res = drain_and_produce_plaintext_from_ssl(plaintext, static_cast<int>(plaintext_size));
     const int input_pending_after = BIO_pending(_input_bio);
 
     LOG_ASSERT(input_pending_before >= input_pending_after);
@@ -435,7 +406,7 @@ DecodeResult OpenSslCryptoCodecImpl::decode(const char* ciphertext, size_t ciphe
 }
 
 DecodeResult OpenSslCryptoCodecImpl::drain_and_produce_plaintext_from_ssl(
-        char* plaintext, size_t plaintext_size) noexcept {
+    char* plaintext, size_t plaintext_size) noexcept {
     ::ERR_clear_error();
     // SSL_read() is named a bit confusingly. We read _from_ the SSL-internal state
     // via the input BIO _into_ to the receiving plaintext buffer.
@@ -472,8 +443,8 @@ DecodeResult OpenSslCryptoCodecImpl::remap_ssl_read_failure_to_decode_result(int
 EncodeResult OpenSslCryptoCodecImpl::half_close(char* ciphertext, size_t ciphertext_size) noexcept {
     LOG_ASSERT(verify_buf(ciphertext, ciphertext_size));
     MutableBufferViewGuard mut_view_guard(*_output_bio, ciphertext, ciphertext_size);
-    const int pending_before = BIO_pending(_output_bio);
-    int ssl_result = ::SSL_shutdown(_ssl.get());
+    const int              pending_before = BIO_pending(_output_bio);
+    int                    ssl_result = ::SSL_shutdown(_ssl.get());
     if (ssl_result < 0) {
         log_ssl_error("SSL_shutdown()", _peer_address, ::SSL_get_error(_ssl.get(), ssl_result));
         return encode_failed();
@@ -483,7 +454,7 @@ EncodeResult OpenSslCryptoCodecImpl::half_close(char* ciphertext, size_t ciphert
     return encoded_bytes(0, static_cast<size_t>(pending_after - pending_before));
 }
 
-}
+} // namespace vespalib::net::tls::impl
 
 // External references:
 //  [0] http://openssl.6102.n7.nabble.com/nonblocking-implementation-question-tp1728p1732.html

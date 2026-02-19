@@ -1,17 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/time_bomb.h>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/socket_spec.h>
+#include <vespa/vespalib/test/time_bomb.h>
+
 #include <atomic>
 
 using namespace vespalib;
 
 struct ResultSetter : public AsyncResolver::ResultHandler {
-    SocketAddress &addr;
+    SocketAddress&    addr;
     std::atomic<bool> done;
-    ResultSetter(SocketAddress &addr_out) noexcept : addr(addr_out), done(false) {}
+    ResultSetter(SocketAddress& addr_out) noexcept : addr(addr_out), done(false) {}
     void handle_result(SocketAddress result) override {
         addr = result;
         done = true;
@@ -23,9 +24,7 @@ struct MyClock : public AsyncResolver::Clock {
     using seconds = AsyncResolver::seconds;
     time_point my_now;
     ~MyClock() override;
-    void set_now(seconds t) {
-        my_now = time_point(std::chrono::duration_cast<time_point::duration>(t));
-    }
+    void set_now(seconds t) { my_now = time_point(std::chrono::duration_cast<time_point::duration>(t)); }
     AsyncResolver::time_point now() override { return my_now; }
 };
 
@@ -33,10 +32,9 @@ MyClock::~MyClock() = default;
 
 struct BlockingHostResolver : public AsyncResolver::HostResolver {
     CountDownLatch callers;
-    Gate barrier;
-    BlockingHostResolver(size_t num_callers) noexcept
-        : callers(num_callers), barrier() {}
-    std::string ip_address(const std::string &) override {
+    Gate           barrier;
+    BlockingHostResolver(size_t num_callers) noexcept : callers(num_callers), barrier() {}
+    std::string ip_address(const std::string&) override {
         callers.countDown();
         barrier.await();
         return "127.0.0.7";
@@ -46,28 +44,28 @@ struct BlockingHostResolver : public AsyncResolver::HostResolver {
 };
 
 struct MyHostResolver : public AsyncResolver::HostResolver {
-    std::mutex ip_lock;
-    std::map<std::string,std::string> ip_map;
-    std::map<std::string, size_t> ip_cnt;
+    std::mutex                         ip_lock;
+    std::map<std::string, std::string> ip_map;
+    std::map<std::string, size_t>      ip_cnt;
     MyHostResolver() : ip_lock(), ip_map(), ip_cnt() {}
     ~MyHostResolver() override;
-    std::string ip_address(const std::string &host) override {
+    std::string ip_address(const std::string& host) override {
         std::lock_guard<std::mutex> guard(ip_lock);
         ++ip_cnt[host];
         return ip_map[host];
     }
-    void set_ip_addr(const std::string &host, const std::string &ip_addr) {
+    void set_ip_addr(const std::string& host, const std::string& ip_addr) {
         std::lock_guard<std::mutex> guard(ip_lock);
         ip_map[host] = ip_addr;
     }
-    size_t get_cnt(const std::string &host) {
+    size_t get_cnt(const std::string& host) {
         std::lock_guard<std::mutex> guard(ip_lock);
         return ip_cnt[host];
     }
     size_t get_total_cnt() {
-        size_t total = 0;
+        size_t                      total = 0;
         std::lock_guard<std::mutex> guard(ip_lock);
-        for (const auto &entry: ip_cnt) {
+        for (const auto& entry : ip_cnt) {
             total += entry.second;
         }
         return total;
@@ -77,18 +75,15 @@ struct MyHostResolver : public AsyncResolver::HostResolver {
 MyHostResolver::~MyHostResolver() = default;
 
 struct ResolveFixture {
-    std::shared_ptr<MyClock> clock;
+    std::shared_ptr<MyClock>        clock;
     std::shared_ptr<MyHostResolver> host_resolver;
-    AsyncResolver::SP async_resolver;
-    void set_ip_addr(const std::string &host, const std::string &ip) {
-        host_resolver->set_ip_addr(host, ip);
-    }
-    size_t get_cnt(const std::string &host) { return host_resolver->get_cnt(host); }
+    AsyncResolver::SP               async_resolver;
+    void   set_ip_addr(const std::string& host, const std::string& ip) { host_resolver->set_ip_addr(host, ip); }
+    size_t get_cnt(const std::string& host) { return host_resolver->get_cnt(host); }
     size_t get_total_cnt() { return host_resolver->get_total_cnt(); }
-    void set_now(double s) { clock->set_now(MyClock::seconds(s)); }
+    void   set_now(double s) { clock->set_now(MyClock::seconds(s)); }
     ResolveFixture(size_t max_cache_size = 10000)
-        : clock(new MyClock()), host_resolver(new MyHostResolver()), async_resolver()
-    {
+        : clock(new MyClock()), host_resolver(new MyHostResolver()), async_resolver() {
         AsyncResolver::Params params;
         params.clock = clock;
         params.resolver = host_resolver;
@@ -106,9 +101,9 @@ struct ResolveFixture {
         set_ip_addr("e", "127.0.5.1");
     }
     ~ResolveFixture();
-    std::string resolve(const std::string &spec) {
+    std::string resolve(const std::string& spec) {
         SocketAddress result;
-        auto handler = std::make_shared<ResultSetter>(result);
+        auto          handler = std::make_shared<ResultSetter>(result);
         async_resolver->resolve_async(spec, handler);
         async_resolver->wait_for_pending_resolves();
         EXPECT_TRUE(handler->done);
@@ -129,7 +124,7 @@ TEST(AsyncResolverTest, require_that_default_async_resolver_is_tuned_as_expected
     EXPECT_EQ(params.max_cache_size, 10000u);
     EXPECT_EQ(params.max_result_age.count(), 60.0);
     EXPECT_EQ(params.max_resolve_time.count(), 1.0);
-    EXPECT_EQ(params.num_threads, 4u);    
+    EXPECT_EQ(params.num_threads, 4u);
 }
 
 TEST(AsyncResolverTest, require_that_shared_async_resolver_is_shared) {
@@ -141,10 +136,10 @@ TEST(AsyncResolverTest, require_that_shared_async_resolver_is_shared) {
 }
 
 TEST(AsyncResolverTest, require_that_shared_async_resolver_can_resolve_connect_spec) {
-    std::string spec("tcp/localhost:123");
+    std::string   spec("tcp/localhost:123");
     SocketAddress result;
-    auto resolver = AsyncResolver::get_shared();
-    auto handler = std::make_shared<ResultSetter>(result);
+    auto          resolver = AsyncResolver::get_shared();
+    auto          handler = std::make_shared<ResultSetter>(result);
     resolver->resolve_async(spec, handler);
     resolver->wait_for_pending_resolves();
     std::string resolved = result.spec();
@@ -157,7 +152,7 @@ TEST(AsyncResolverTest, require_that_shared_async_resolver_can_resolve_connect_s
 
 TEST(AsyncResolverTest, require_that_steady_clock_is_steady_clock) {
     AsyncResolver::SteadyClock clock;
-    auto past = std::chrono::steady_clock::now();
+    auto                       past = std::chrono::steady_clock::now();
     for (size_t i = 0; i < 10; ++i) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         auto now = ((i % 2) == 0) ? clock.now() : std::chrono::steady_clock::now();
@@ -167,9 +162,9 @@ TEST(AsyncResolverTest, require_that_steady_clock_is_steady_clock) {
 }
 
 TEST(AsyncResolverTest, require_that_simple_host_resolver_can_resolve_host_name) {
-    std::string host_name("localhost");
+    std::string                       host_name("localhost");
     AsyncResolver::SimpleHostResolver resolver;
-    auto resolved = resolver.ip_address(host_name);
+    auto                              resolved = resolver.ip_address(host_name);
     fprintf(stderr, "resolver(host_name:%s) -> '%s'\n", host_name.c_str(), resolved.c_str());
     EXPECT_NE(resolved, host_name);
     EXPECT_EQ(resolved, SocketSpec("tcp/localhost:123").client_address().ip_address());
@@ -278,16 +273,16 @@ TEST(AsyncResolverTest, require_that_multiple_cache_entries_can_be_evicted_at_th
 }
 
 TEST(AsyncResolverTest, require_that_slow_host_lookups_trigger_warning__manual_log_inspection) {
-    TimeBomb f1(60);
-    auto my_clock = std::make_shared<MyClock>();
-    auto host_resolver = std::make_shared<BlockingHostResolver>(1);
+    TimeBomb              f1(60);
+    auto                  my_clock = std::make_shared<MyClock>();
+    auto                  host_resolver = std::make_shared<BlockingHostResolver>(1);
     AsyncResolver::Params params;
     params.clock = my_clock;
     params.resolver = host_resolver;
     params.max_resolve_time = AsyncResolver::seconds(1.0);
-    auto resolver = AsyncResolver::create(params);
+    auto          resolver = AsyncResolver::create(params);
     SocketAddress result;
-    auto handler = std::make_shared<ResultSetter>(result);
+    auto          handler = std::make_shared<ResultSetter>(result);
     resolver->resolve_async("tcp/some_host:123", handler);
     host_resolver->wait_for_callers();
     my_clock->set_now(MyClock::seconds(1.0));
@@ -299,18 +294,18 @@ TEST(AsyncResolverTest, require_that_slow_host_lookups_trigger_warning__manual_l
 }
 
 TEST(AsyncResolverTest, require_that_discarding_result_handlers_will_avoid_pending_work__but_complete_started_work) {
-    TimeBomb f1(60);
-    auto host_resolver = std::make_shared<BlockingHostResolver>(2);
+    TimeBomb              f1(60);
+    auto                  host_resolver = std::make_shared<BlockingHostResolver>(2);
     AsyncResolver::Params params;
     params.resolver = host_resolver;
     params.num_threads = 2;
-    auto resolver = AsyncResolver::create(params);
+    auto          resolver = AsyncResolver::create(params);
     SocketAddress result1;
     SocketAddress result2;
     SocketAddress result3;
-    auto handler1 = std::make_shared<ResultSetter>(result1);
-    auto handler2 = std::make_shared<ResultSetter>(result2);
-    auto handler3 = std::make_shared<ResultSetter>(result3);
+    auto          handler1 = std::make_shared<ResultSetter>(result1);
+    auto          handler2 = std::make_shared<ResultSetter>(result2);
+    auto          handler3 = std::make_shared<ResultSetter>(result3);
     resolver->resolve_async("tcp/x:123", handler1);
     resolver->resolve_async("tcp/y:123", handler2);
     resolver->resolve_async("tcp/z:123", handler3);
@@ -326,16 +321,16 @@ TEST(AsyncResolverTest, require_that_discarding_result_handlers_will_avoid_pendi
 }
 
 TEST(AsyncResolverTest, require_that_cache_races_can_be_provoked) {
-    TimeBomb f1(60);
-    auto host_resolver = std::make_shared<BlockingHostResolver>(2);
+    TimeBomb              f1(60);
+    auto                  host_resolver = std::make_shared<BlockingHostResolver>(2);
     AsyncResolver::Params params;
     params.resolver = host_resolver;
     params.num_threads = 2;
-    auto resolver = AsyncResolver::create(params);
+    auto          resolver = AsyncResolver::create(params);
     SocketAddress result1;
     SocketAddress result2;
-    auto handler1 = std::make_shared<ResultSetter>(result1);
-    auto handler2 = std::make_shared<ResultSetter>(result2);
+    auto          handler1 = std::make_shared<ResultSetter>(result1);
+    auto          handler2 = std::make_shared<ResultSetter>(result2);
     resolver->resolve_async("tcp/same_host:123", handler1);
     resolver->resolve_async("tcp/same_host:123", handler2);
     host_resolver->wait_for_callers();

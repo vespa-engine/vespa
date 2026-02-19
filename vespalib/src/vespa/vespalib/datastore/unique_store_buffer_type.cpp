@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "unique_store_buffer_type.hpp"
+
 #include "unique_store_entry.h"
 
 namespace vespalib::datastore {
@@ -21,5 +22,4 @@ template class UniqueStoreBufferType<UniqueStoreEntry<uint32_t>>;
 template class UniqueStoreBufferType<UniqueStoreEntry<float>>;
 template class UniqueStoreBufferType<UniqueStoreEntry<double>>;
 
-};
-
+}; // namespace vespalib::datastore

@@ -1,17 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <xxhash.h>
-#include <cassert>
-#include <vector>
-#include <map>
-#include <set>
-#include <memory>
-#include <algorithm>
-#include <unistd.h>
-#include <string>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <string.h>
+#include <unistd.h>
+#include <xxhash.h>
+
+#include <algorithm>
+#include <cassert>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
 
 using vespalib::make_string_short::fmt;
 
@@ -25,19 +27,20 @@ size_t trace_limit = 9;
 
 class Hasher {
 private:
-    XXH3_state_t *_state;
+    XXH3_state_t* _state;
+
 public:
     Hasher() : _state(XXH3_createState()) { assert(_state != nullptr && "Out of memory!"); }
     ~Hasher() { XXH3_freeState(_state); }
-    void reset() { XXH3_64bits_reset(_state); }
-    void update(const char *buf, size_t len) { XXH3_64bits_update(_state, buf, len); }
+    void     reset() { XXH3_64bits_reset(_state); }
+    void     update(const char* buf, size_t len) { XXH3_64bits_update(_state, buf, len); }
     uint64_t get() const { return XXH3_64bits_digest(_state); }
 };
 
-uint64_t get_hash(const std::vector<std::string> &list) {
+uint64_t get_hash(const std::vector<std::string>& list) {
     static Hasher hasher;
     hasher.reset();
-    for (const auto &item: list) {
+    for (const auto& item : list) {
         hasher.update(item.data(), item.size());
     }
     return hasher.get();
@@ -47,23 +50,21 @@ uint64_t get_hash(const std::vector<std::string> &list) {
 
 class SymbolHist {
 private:
-    std::map<std::string,size_t> _hist;
+    std::map<std::string, size_t> _hist;
+
 public:
-    void add(const std::string &value, size_t weight) {
-        _hist[value] += weight;
-    }
-    void dump(FILE *dst) {
-        std::vector<std::pair<std::string,size_t>> entries;
-        for (const auto &entry: _hist) {
+    void add(const std::string& value, size_t weight) { _hist[value] += weight; }
+    void dump(FILE* dst) {
+        std::vector<std::pair<std::string, size_t>> entries;
+        for (const auto& entry : _hist) {
             entries.push_back(entry);
         }
-        std::sort(entries.begin(), entries.end(), [](const auto &a, const auto &b)
-                  {
-                      if (a.second != b.second) {
-                          return (a.second > b.second);
-                      }
-                      return a.first.size() < b.first.size();
-                  });
+        std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
+            if (a.second != b.second) {
+                return (a.second > b.second);
+            }
+            return a.first.size() < b.first.size();
+        });
         fprintf(dst, "  hot symbols:\n");
         size_t i = 0;
         size_t worst_score = 0;
@@ -80,7 +81,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-std::string get_symbol_from_frame(const std::string &frame) {
+std::string get_symbol_from_frame(const std::string& frame) {
     auto pos1 = frame.find("#");
     pos1 = frame.find(" ", pos1);
     auto pos2 = frame.rfind(" /");
@@ -88,19 +89,19 @@ std::string get_symbol_from_frame(const std::string &frame) {
         return {};
     }
     if (pos2 == npos) {
-        return frame.substr(pos1+1);
+        return frame.substr(pos1 + 1);
     }
-    return frame.substr(pos1+1, pos2-pos1-1);
+    return frame.substr(pos1 + 1, pos2 - pos1 - 1);
 }
 
-void strip_after(std::string &str, const std::string &delimiter) {
+void strip_after(std::string& str, const std::string& delimiter) {
     auto pos = str.find(delimiter);
     if (pos != npos) {
         str = str.substr(0, pos);
     }
 }
 
-void replace_first(std::string &str, const std::string &old_str, const std::string &new_str) {    
+void replace_first(std::string& str, const std::string& old_str, const std::string& new_str) {
     auto pos = str.find(old_str);
     if (pos != npos) {
         str.replace(pos, old_str.size(), new_str);
@@ -109,58 +110,55 @@ void replace_first(std::string &str, const std::string &old_str, const std::stri
 
 class StackTrace {
 private:
-    std::string _heading;
+    std::string              _heading;
     std::vector<std::string> _frames;
-    uint64_t _hash;
-    bool _is_read;
-    bool _is_write;
+    uint64_t                 _hash;
+    bool                     _is_read;
+    bool                     _is_write;
+
 public:
-    StackTrace(const std::string &heading) noexcept;
-    StackTrace(const StackTrace &);
-    StackTrace(StackTrace &&) noexcept;
-    StackTrace & operator=(StackTrace &&) noexcept;
+    StackTrace(const std::string& heading) noexcept;
+    StackTrace(const StackTrace&);
+    StackTrace(StackTrace&&) noexcept;
+    StackTrace& operator=(StackTrace&&) noexcept;
     ~StackTrace();
-    void add_frame(const std::string &frame) {
-        _frames.push_back(frame);
-    }
+    void add_frame(const std::string& frame) { _frames.push_back(frame); }
     void done() {
         strip_after(_heading, " at 0x");
         replace_first(_heading, "Previous", "");
         replace_first(_heading, "Atomic", "atomic");
-        replace_first(_heading, "Read", "read"); 
+        replace_first(_heading, "Read", "read");
         replace_first(_heading, "Write", "write");
         _is_read = (_heading.find("read") != npos);
         _is_write = (_heading.find("write") != npos);
         _hash = get_hash(_frames);
     }
-    bool is_read() const { return _is_read; }
-    bool is_write() const { return _is_write; }
+    bool     is_read() const { return _is_read; }
+    bool     is_write() const { return _is_write; }
     uint64_t hash() const { return _hash; }
-    void update(SymbolHist &hist, size_t weight) const {
-        for (const auto &frame: _frames) {
+    void     update(SymbolHist& hist, size_t weight) const {
+        for (const auto& frame : _frames) {
             hist.add(get_symbol_from_frame(frame), weight);
         }
     }
-    const std::string &heading() const { return _heading; }
-    void dump(FILE *dst, const std::string &info) const {
+    const std::string& heading() const { return _heading; }
+    void               dump(FILE* dst, const std::string& info) const {
         fprintf(dst, "%s %s\n", _heading.c_str(), info.c_str());
-        for (const auto &frame: _frames) {
+        for (const auto& frame : _frames) {
             fprintf(dst, "%s\n", frame.c_str());
         }
         fprintf(dst, "\n");
     }
 };
 
-StackTrace::StackTrace(const std::string &heading) noexcept
-    : _heading(heading), _frames(), _hash(), _is_read(false), _is_write(false)
-{}
-StackTrace::StackTrace(const StackTrace &) = default;
-StackTrace::StackTrace(StackTrace &&) noexcept = default;
-StackTrace & StackTrace::operator=(StackTrace &&) noexcept = default;
+StackTrace::StackTrace(const std::string& heading) noexcept
+    : _heading(heading), _frames(), _hash(), _is_read(false), _is_write(false) {}
+StackTrace::StackTrace(const StackTrace&) = default;
+StackTrace::StackTrace(StackTrace&&) noexcept = default;
+StackTrace& StackTrace::operator=(StackTrace&&) noexcept = default;
 StackTrace::~StackTrace() = default;
 
-std::vector<StackTrace>
-extract_traces(const std::vector<std::string> &lines, size_t cutoff) {
+std::vector<StackTrace> extract_traces(const std::vector<std::string>& lines, size_t cutoff) {
     std::vector<StackTrace> result;
     for (size_t i = 1; (i < lines.size()) && (result.size() < cutoff); ++i) {
         auto pos = lines[i].find("#0 ");
@@ -169,9 +167,7 @@ extract_traces(const std::vector<std::string> &lines, size_t cutoff) {
             result.emplace_back(lines[i - 1]);
             result.back().add_frame(lines[i]);
             for (i = i + 1; i < lines.size(); ++i) {
-                if (((i - start) > trace_limit) ||
-                    (lines[i].find("#") == npos))
-                {
+                if (((i - start) > trace_limit) || (lines[i].find("#") == npos)) {
                     break;
                 }
                 result.back().add_frame(lines[i]);
@@ -186,8 +182,8 @@ extract_traces(const std::vector<std::string> &lines, size_t cutoff) {
 
 enum class ReportType { UNKNOWN, RACE };
 
-ReportType detect_report_type(const std::vector<std::string> &lines) {
-    for (const auto &line: lines) {
+ReportType detect_report_type(const std::vector<std::string>& lines) {
+    for (const auto& line : lines) {
         if (line.starts_with("WARNING: ThreadSanitizer: data race")) {
             return ReportType::RACE;
         }
@@ -197,14 +193,12 @@ ReportType detect_report_type(const std::vector<std::string> &lines) {
 
 //-----------------------------------------------------------------------------
 
-bool is_delimiter(const std::string &line) {
+bool is_delimiter(const std::string& line) {
     // TSAN delimiter is 18=, look for at least 16=
     return (line.find("================") < line.size());
 }
 
-void dump_delimiter(FILE *dst) {
-    fprintf(dst, "==================\n");
-}
+void dump_delimiter(FILE* dst) { fprintf(dst, "==================\n"); }
 
 //-----------------------------------------------------------------------------
 
@@ -212,9 +206,9 @@ struct Report {
     using UP = std::unique_ptr<Report>;
     using SP = std::shared_ptr<Report>;
     virtual std::vector<std::string> make_keys() const = 0;
-    virtual void merge(const Report &report) = 0;
-    virtual size_t count() const = 0;
-    virtual void dump(FILE *dst) const = 0;
+    virtual void                     merge(const Report& report) = 0;
+    virtual size_t                   count() const = 0;
+    virtual void                     dump(FILE* dst) const = 0;
     virtual ~Report() = default;
 };
 
@@ -223,21 +217,16 @@ size_t raw_reports = 0;
 class RawReport : public Report {
 private:
     std::vector<std::string> _lines;
-    size_t _count;
+    size_t                   _count;
+
 public:
-    RawReport(const std::vector<std::string> &lines)
-      : _lines(lines), _count(1)
-    {
-        ++raw_reports;
-    }
-    std::vector<std::string> make_keys() const override {
-        return {fmt("raw:%" PRIu64, get_hash(_lines))};
-    }
-    void merge(const Report &) override { ++_count; }
-    size_t count() const override { return _count; }
-    void dump(FILE *dst) const override {
-        for (const auto &line: _lines) {
-            fprintf(dst, "%s\n", line.c_str());            
+    RawReport(const std::vector<std::string>& lines) : _lines(lines), _count(1) { ++raw_reports; }
+    std::vector<std::string> make_keys() const override { return {fmt("raw:%" PRIu64, get_hash(_lines))}; }
+    void                     merge(const Report&) override { ++_count; }
+    size_t                   count() const override { return _count; }
+    void                     dump(FILE* dst) const override {
+        for (const auto& line : _lines) {
+            fprintf(dst, "%s\n", line.c_str());
         }
     }
 };
@@ -248,17 +237,17 @@ class RaceReport : public Report {
 private:
     struct Node {
         StackTrace trace;
-        size_t before;
-        size_t after;
-        size_t count() const { return before + after; }
+        size_t     before;
+        size_t     after;
+        size_t     count() const { return before + after; }
     };
     std::vector<Node> _nodes;
-    size_t _wr;
-    size_t _rw;
-    size_t _ww;
+    size_t            _wr;
+    size_t            _rw;
+    size_t            _ww;
 
-    void add(const Node &node) {
-        for (Node &dst: _nodes) {
+    void add(const Node& node) {
+        for (Node& dst : _nodes) {
             if (dst.trace.hash() == node.trace.hash()) {
                 dst.before += node.before;
                 dst.after += node.after;
@@ -270,9 +259,7 @@ private:
 
 public:
     // Note: b happened before a
-    RaceReport(const StackTrace &a, const StackTrace &b)
-      : _nodes({{a, 0, 1}, {b, 1, 0}}), _wr(0), _rw(0), _ww(0)
-    {
+    RaceReport(const StackTrace& a, const StackTrace& b) : _nodes({{a, 0, 1}, {b, 1, 0}}), _wr(0), _rw(0), _ww(0) {
         if (b.is_write() && a.is_write()) {
             ++_ww;
             ++write_write_races;
@@ -287,35 +274,32 @@ public:
 
     std::vector<std::string> make_keys() const override {
         std::vector<std::string> result;
-        for (const auto &node: _nodes) {
+        for (const auto& node : _nodes) {
             result.push_back(fmt("race:%" PRIu64, node.trace.hash()));
         }
         return result;
     }
-    void merge(const Report &report) override {
+    void merge(const Report& report) override {
         // should have correct type due to key prefix
-        const auto &rhs = dynamic_cast<const RaceReport &>(report);
+        const auto& rhs = dynamic_cast<const RaceReport&>(report);
         _wr += rhs._wr;
         _rw += rhs._rw;
         _ww += rhs._ww;
-        for (const auto &node: rhs._nodes) {
+        for (const auto& node : rhs._nodes) {
             add(node);
         }
     }
     size_t count() const override { return (_wr + _rw + _ww); }
-    void dump(FILE *dst) const override {
-        std::vector<const Node *> list;
-        for (const auto &node: _nodes) {
+    void   dump(FILE* dst) const override {
+        std::vector<const Node*> list;
+        for (const auto& node : _nodes) {
             list.push_back(&node);
         }
-        std::sort(list.begin(), list.end(),
-                  [](const auto *a, const auto *b) {
-                      return (a->count() > b->count());
-                  });
+        std::sort(list.begin(), list.end(), [](const auto* a, const auto* b) { return (a->count() > b->count()); });
         fprintf(dst, "WARNING: data race cluster with %zu conflicts between %zu traces\n", count(), list.size());
         fprintf(dst, " WR: %zu, RW: %zu, WW: %zu\n", _wr, _rw, _ww);
         SymbolHist sym_hist;
-        for (const auto *node: list) {
+        for (const auto* node : list) {
             node->trace.update(sym_hist, node->count());
             node->trace.dump(dst, fmt("(%zu before, %zu after)", node->before, node->after));
         }
@@ -325,18 +309,18 @@ public:
 
 //-----------------------------------------------------------------------------
 
-using ReportMap = std::map<std::string,Report::SP>;
+using ReportMap = std::map<std::string, Report::SP>;
 using MapPos = ReportMap::const_iterator;
 
-size_t total_reports = 0;
-ReportMap report_map;
+size_t     total_reports = 0;
+ReportMap  report_map;
 SymbolHist race_sym_hist;
 
 void handle_report(std::unique_ptr<Report> report) {
     ++total_reports;
-    auto keys = report->make_keys();
+    auto                    keys = report->make_keys();
     std::vector<Report::SP> found;
-    for (const auto &key: keys) {
+    for (const auto& key : keys) {
         auto pos = report_map.find(key);
         if (pos != report_map.end()) {
             found.push_back(pos->second);
@@ -344,7 +328,7 @@ void handle_report(std::unique_ptr<Report> report) {
     }
     if (found.empty()) {
         Report::SP my_report = std::move(report);
-        for (const auto &key: keys) {
+        for (const auto& key : keys) {
             report_map[key] = my_report;
         }
     } else {
@@ -355,20 +339,18 @@ void handle_report(std::unique_ptr<Report> report) {
         }
         found[0]->merge(*report);
         keys = found[0]->make_keys();
-        for (const auto &key: keys) {
+        for (const auto& key : keys) {
             report_map[key] = found[0];
         }
     }
 }
 
-void make_report(const std::vector<std::string> &lines) {
+void make_report(const std::vector<std::string>& lines) {
     auto type = detect_report_type(lines);
     if (type == ReportType::RACE) {
         auto traces = extract_traces(lines, 2);
-        if ((traces.size() == 2) &&
-            !(traces[0].is_read() == traces[0].is_write()) &&
-            !(traces[1].is_read() == traces[1].is_write()) &&
-            (traces[0].is_write() || traces[1].is_write()))
+        if ((traces.size() == 2) && !(traces[0].is_read() == traces[0].is_write()) &&
+            !(traces[1].is_read() == traces[1].is_write()) && (traces[0].is_write() || traces[1].is_write()))
         {
             traces[0].update(race_sym_hist, 1);
             traces[1].update(race_sym_hist, 1);
@@ -378,8 +360,8 @@ void make_report(const std::vector<std::string> &lines) {
     return handle_report(std::make_unique<RawReport>(lines));
 }
 
-void handle_line(const std::string &line) {
-    static bool inside = false;
+void handle_line(const std::string& line) {
+    static bool                     inside = false;
     static std::vector<std::string> lines;
     if (is_delimiter(line)) {
         inside = !inside;
@@ -393,8 +375,8 @@ void handle_line(const std::string &line) {
 }
 
 void read_input() {
-    char buf[64_Ki];
-    bool eof = false;
+    char        buf[64_Ki];
+    bool        eof = false;
     std::string line;
     while (!eof) {
         ssize_t res = read(STDIN_FILENO, buf, sizeof(buf));
@@ -417,18 +399,15 @@ void read_input() {
 }
 
 void write_output() {
-    std::set<const Report *> seen;
-    std::vector<const Report *> list;
-    for (const auto &[key, value]: report_map) {
+    std::set<const Report*>    seen;
+    std::vector<const Report*> list;
+    for (const auto& [key, value] : report_map) {
         if (seen.insert(value.get()).second) {
             list.push_back(value.get());
         }
     }
-    std::sort(list.begin(), list.end(),
-              [](const auto *a, const auto *b) {
-                  return (a->count() > b->count());
-              });
-    for (const auto *report: list) {
+    std::sort(list.begin(), list.end(), [](const auto* a, const auto* b) { return (a->count() > b->count()); });
+    for (const auto* report : list) {
         dump_delimiter(stdout);
         report->dump(stdout);
         dump_delimiter(stdout);
@@ -439,11 +418,11 @@ void write_output() {
     race_sym_hist.dump(stderr);
 }
 
-int main(int, char **) {
+int main(int, char**) {
     try {
         read_input();
         write_output();
-    } catch (std::string &err) {
+    } catch (std::string& err) {
         fprintf(stderr, "%s\n", err.c_str());
         return 1;
     }

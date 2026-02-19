@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "runnable.h"
 #include "executor.h"
-#include <mutex>
+#include "runnable.h"
+
 #include <vespa/vespalib/util/time.h>
+
 #include <array>
+#include <future>
 #include <map>
 #include <memory>
-#include <future>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -34,7 +36,7 @@ struct ThreadSampler {
 
 ThreadSampler::UP create_thread_sampler(bool force_mock_impl = false, double expected_util = 0.16);
 
-} // cpu_usage
+} // namespace cpu_usage
 
 /**
  * Tracks accumulative cpu usage across threads and work
@@ -47,41 +49,40 @@ ThreadSampler::UP create_thread_sampler(bool force_mock_impl = false, double exp
  * specified cpu use. Note that MyUsage instances may shadow each
  * other, but must be destructed in reverse construction order.
  **/
-class CpuUsage
-{
+class CpuUsage {
 public:
     // The kind of work performed by a thread. Used to separate
     // different kinds of CPU usage. Note that categories are
     // exclusive/non-overlapping; a thread can only perform one kind
     // of CPU work at any specific time.
     enum class Category {
-        SETUP   = 0, // usage related to system setup (init/(re-)config/etc.)
-        READ    = 1, // usage related to reading data from the system
-        WRITE   = 2, // usage related to writing data to the system
+        SETUP = 0,   // usage related to system setup (init/(re-)config/etc.)
+        READ = 1,    // usage related to reading data from the system
+        WRITE = 2,   // usage related to writing data to the system
         COMPACT = 3, // usage related to internal data re-structuring
-        OTHER   = 4  // all other cpu usage not in the categories above
+        OTHER = 4    // all other cpu usage not in the categories above
     };
-    static std::string &name_of(Category cat);
+    static std::string&     name_of(Category cat);
     static constexpr size_t index_of(Category cat) { return static_cast<size_t>(cat); }
     static constexpr size_t num_categories = 5;
 
-    template <typename T>
-    class PerCategory {
+    template <typename T> class PerCategory {
     private:
-        std::array<T,num_categories> _array;
+        std::array<T, num_categories> _array;
+
     public:
         PerCategory() : _array() {}
-        size_t size() const { return _array.size(); }
-        T &operator[](size_t idx) { return _array[idx]; }
-        T &operator[](Category cat) { return _array[index_of(cat)]; }
-        const T &operator[](size_t idx) const { return _array[idx]; }
-        const T &operator[](Category cat) const { return _array[index_of(cat)]; }
+        size_t   size() const { return _array.size(); }
+        T&       operator[](size_t idx) { return _array[idx]; }
+        T&       operator[](Category cat) { return _array[index_of(cat)]; }
+        const T& operator[](size_t idx) const { return _array[idx]; }
+        const T& operator[](Category cat) const { return _array[index_of(cat)]; }
     };
 
     // A sample contains how much CPU has been spent in each category.
     class Sample : public PerCategory<duration> {
     public:
-        void merge(const Sample &rhs) {
+        void merge(const Sample& rhs) {
             for (size_t i = 0; i < size(); ++i) {
                 (*this)[i] += rhs[i];
             }
@@ -100,15 +101,15 @@ public:
     // auto my_usage = CpuUsage::use(my_cat);
     class MyUsage {
     private:
-        Category _old_cat;
+        Category        _old_cat;
         static Category set_cpu_category_for_this_thread(Category cat) noexcept;
+
     public:
-        MyUsage(Category cat)
-          : _old_cat(set_cpu_category_for_this_thread(cat)) {}
-        MyUsage(MyUsage &&) = delete;
-        MyUsage(const MyUsage &) = delete;
-        MyUsage &operator=(MyUsage &&) = delete;
-        MyUsage &operator=(const MyUsage &) = delete;
+        MyUsage(Category cat) : _old_cat(set_cpu_category_for_this_thread(cat)) {}
+        MyUsage(MyUsage&&) = delete;
+        MyUsage(const MyUsage&) = delete;
+        MyUsage& operator=(MyUsage&&) = delete;
+        MyUsage& operator=(const MyUsage&) = delete;
         ~MyUsage() { set_cpu_category_for_this_thread(_old_cat); }
     };
 
@@ -124,10 +125,8 @@ private:
     struct SampleConflict {
         std::promise<TimedSample>       sample_promise;
         std::shared_future<TimedSample> future_sample;
-        size_t waiters;
-        SampleConflict() : sample_promise(),
-                           future_sample(sample_promise.get_future()),
-                           waiters(0) {}
+        size_t                          waiters;
+        SampleConflict() : sample_promise(), future_sample(sample_promise.get_future()), waiters(0) {}
     };
 
     // Interface used to perform destructive sampling of the CPU spent
@@ -150,58 +149,54 @@ private:
         ThreadTrackerImpl(cpu_usage::ThreadSampler::UP sampler);
         // only called by owning thread
         Category set_category(Category new_cat) noexcept;
-        Sample sample() noexcept override;
+        Sample   sample() noexcept override;
     };
 
-    std::mutex                                 _lock;
-    Sample                                     _usage;
-    std::map<ThreadTracker*,ThreadTracker::SP> _threads;
-    bool                                       _sampling;
-    std::unique_ptr<SampleConflict>            _conflict;
-    std::vector<ThreadTracker::SP>             _pending_add;
-    std::vector<ThreadTracker::SP>             _pending_remove;
+    std::mutex                                  _lock;
+    Sample                                      _usage;
+    std::map<ThreadTracker*, ThreadTracker::SP> _threads;
+    bool                                        _sampling;
+    std::unique_ptr<SampleConflict>             _conflict;
+    std::vector<ThreadTracker::SP>              _pending_add;
+    std::vector<ThreadTracker::SP>              _pending_remove;
 
     CpuUsage();
-    CpuUsage(CpuUsage &&) = delete;
-    CpuUsage(const CpuUsage &) = delete;
-    CpuUsage &operator=(CpuUsage &&) = delete;
-    CpuUsage &operator=(const CpuUsage &) = delete;
+    CpuUsage(CpuUsage&&) = delete;
+    CpuUsage(const CpuUsage&) = delete;
+    CpuUsage& operator=(CpuUsage&&) = delete;
+    CpuUsage& operator=(const CpuUsage&) = delete;
     ~CpuUsage();
 
-    static CpuUsage &self();
+    static CpuUsage& self();
 
-    void do_add_thread(const Guard &guard, ThreadTracker::SP tracker);
-    void do_remove_thread(const Guard &guard, ThreadTracker::SP tracker);
+    void do_add_thread(const Guard& guard, ThreadTracker::SP tracker);
+    void do_remove_thread(const Guard& guard, ThreadTracker::SP tracker);
 
     void add_thread(ThreadTracker::SP tracker);
     void remove_thread(ThreadTracker::SP tracker);
 
-    void handle_pending(const Guard &guard);
+    void        handle_pending(const Guard& guard);
     TimedSample do_sample();
     TimedSample sample_or_wait();
 
 public:
-    static MyUsage use(Category cat) { return MyUsage(cat); }
-    static TimedSample sample();
+    static MyUsage              use(Category cat) { return MyUsage(cat); }
+    static TimedSample          sample();
     static Runnable::init_fun_t wrap(Runnable::init_fun_t init, Category cat);
-    static Executor::Task::UP wrap(Executor::Task::UP task, Category cat);
+    static Executor::Task::UP   wrap(Executor::Task::UP task, Category cat);
 };
 
 /**
  * Simple class used to track cpu utilization over time.
  **/
-class CpuUtil
-{
+class CpuUtil {
 private:
-    duration _min_delay;
-    CpuUsage::TimedSample _old_sample;
+    duration                      _min_delay;
+    CpuUsage::TimedSample         _old_sample;
     CpuUsage::PerCategory<double> _util;
 
 public:
-    CpuUtil(duration min_delay = 850ms)
-      : _min_delay(min_delay),
-        _old_sample(CpuUsage::sample()),
-        _util() {}
+    CpuUtil(duration min_delay = 850ms) : _min_delay(min_delay), _old_sample(CpuUsage::sample()), _util() {}
 
     CpuUsage::PerCategory<double> get_util() {
         if (steady_clock::now() >= (_old_sample.first + _min_delay)) {
@@ -216,4 +211,4 @@ public:
     }
 };
 
-} // namespace
+} // namespace vespalib

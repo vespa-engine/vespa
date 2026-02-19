@@ -7,28 +7,17 @@ using namespace vespalib::slime;
 
 namespace vespalib {
 
-SlimeTraceDeserializer::SlimeTraceDeserializer(const Inspector & inspector)
-    : _inspector(inspector)
-{
-}
+SlimeTraceDeserializer::SlimeTraceDeserializer(const Inspector& inspector) : _inspector(inspector) {}
 
-TraceNode
-SlimeTraceDeserializer::deserialize() const
-{
-    return deserialize(_inspector);
-}
+TraceNode SlimeTraceDeserializer::deserialize() const { return deserialize(_inspector); }
 
-TraceNode
-SlimeTraceDeserializer::deserialize(const Inspector & inspector)
-{
+TraceNode SlimeTraceDeserializer::deserialize(const Inspector& inspector) {
     TraceNode node(deserializeTraceNode(inspector));
     deserializeChildren(inspector[SlimeTraceSerializer::CHILDREN], node);
     return node;
 }
 
-TraceNode
-SlimeTraceDeserializer::deserializeTraceNode(const Inspector & inspector)
-{
+TraceNode SlimeTraceDeserializer::deserializeTraceNode(const Inspector& inspector) {
     system_time timestamp(std::chrono::milliseconds(decodeTimestamp(inspector)));
     if (hasPayload(inspector)) {
         std::string note(decodePayload(inspector));
@@ -37,32 +26,24 @@ SlimeTraceDeserializer::deserializeTraceNode(const Inspector & inspector)
     return TraceNode(timestamp);
 }
 
-bool
-SlimeTraceDeserializer::hasPayload(const Inspector & inspector)
-{
+bool SlimeTraceDeserializer::hasPayload(const Inspector& inspector) {
     return inspector[SlimeTraceSerializer::PAYLOAD].valid();
 }
 
-std::string
-SlimeTraceDeserializer::decodePayload(const Inspector & inspector)
-{
+std::string SlimeTraceDeserializer::decodePayload(const Inspector& inspector) {
     return inspector[SlimeTraceSerializer::PAYLOAD].asString().make_string();
 }
 
-int64_t
-SlimeTraceDeserializer::decodeTimestamp(const Inspector & inspector)
-{
+int64_t SlimeTraceDeserializer::decodeTimestamp(const Inspector& inspector) {
     return inspector[SlimeTraceSerializer::TIMESTAMP].asLong();
 }
 
-void
-SlimeTraceDeserializer::deserializeChildren(const Inspector & inspector, TraceNode & node)
-{
+void SlimeTraceDeserializer::deserializeChildren(const Inspector& inspector, TraceNode& node) {
     for (size_t i(0); i < inspector.children(); i++) {
-        Inspector & child(inspector[i]);
-        TraceNode childNode(deserialize(child));
+        Inspector& child(inspector[i]);
+        TraceNode  childNode(deserialize(child));
         node.addChild(childNode);
     }
 }
 
-}
+} // namespace vespalib

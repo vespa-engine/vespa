@@ -2,28 +2,23 @@
 
 #pragma once
 
-#include "btreestore.h"
 #include "btreebuilder.h"
 #include "btreebuilder.hpp"
+#include "btreestore.h"
+
 #include <vespa/vespalib/datastore/compacting_buffers.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
-#include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/optimized.h>
+
+#include <vespa/vespalib/datastore/datastore.hpp>
 
 namespace vespalib::btree {
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-BTreeStore()
-    : BTreeStore(true)
-{
-}
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::BTreeStore() : BTreeStore(true) {}
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-BTreeStore(bool init)
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::BTreeStore(bool init)
     : _store(),
       _treeType(1, MIN_BUFFER_ARRAYS, RefType::offsetSize()),
       _small1Type(1, MIN_BUFFER_ARRAYS, RefType::offsetSize()),
@@ -36,8 +31,7 @@ BTreeStore(bool init)
       _small8Type(8, MIN_BUFFER_ARRAYS, RefType::offsetSize()),
       _allocator(),
       _aggrCalc(),
-      _builder(_allocator, _aggrCalc)
-{
+      _builder(_allocator, _aggrCalc) {
     // XXX: order here makes typeId + 1 == clusterSize for small arrays,
     // code elsewhere depends on it.
     _store.addType(&_small1Type);
@@ -55,77 +49,52 @@ BTreeStore(bool init)
     }
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-BTreeStore<KeyT, DataT, AggrT, CompareT,TraitsT, AggrCalcT>::~BTreeStore()
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::~BTreeStore() {
     _builder.clear();
-    _store.dropBuffers();   // Drop buffers before type handlers are dropped
+    _store.dropBuffers(); // Drop buffers before type handlers are dropped
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-KeyDataTypeRefPair
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-allocNewKeyData(uint32_t clusterSize)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::KeyDataTypeRefPair
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::allocNewKeyData(uint32_t clusterSize) {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
     return _store.allocator<KeyDataType>(typeId).allocArray();
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-KeyDataTypeRefPair
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-allocKeyData(uint32_t clusterSize)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::KeyDataTypeRefPair
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::allocKeyData(uint32_t clusterSize) {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
     return _store.freeListAllocator<KeyDataType, datastore::DefaultReclaimer<KeyDataType>>(typeId).allocArray();
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-KeyDataTypeRefPair
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-allocNewKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::KeyDataTypeRefPair
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::allocNewKeyDataCopy(
+    const KeyDataType* rhs, uint32_t clusterSize) {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
     return _store.allocator<KeyDataType>(typeId).allocArray(std::span<const KeyDataType>(rhs, clusterSize));
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-KeyDataTypeRefPair
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-allocKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::KeyDataTypeRefPair
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::allocKeyDataCopy(
+    const KeyDataType* rhs, uint32_t clusterSize) {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    return _store.freeListAllocator<KeyDataType, datastore::DefaultReclaimer<KeyDataType>>(typeId).
-            allocArray(std::span<const KeyDataType>(rhs, clusterSize));
+    return _store.freeListAllocator<KeyDataType, datastore::DefaultReclaimer<KeyDataType>>(typeId).allocArray(
+        std::span<const KeyDataType>(rhs, clusterSize));
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-const typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-KeyDataType *
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-lower_bound(const KeyDataType *b, const KeyDataType *e,
-            const KeyType &key, CompareT comp)
-{
-    const KeyDataType *i = b;
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+const typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::KeyDataType*
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::lower_bound(
+    const KeyDataType* b, const KeyDataType* e, const KeyType& key, CompareT comp) {
+    const KeyDataType* i = b;
     for (; i != e; ++i) {
         if (!comp(i->_key, key))
             break;
@@ -133,23 +102,17 @@ lower_bound(const KeyDataType *b, const KeyDataType *e,
     return i;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-makeTree(EntryRef &ref,
-         const KeyDataType *array, uint32_t clusterSize)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::makeTree(
+    EntryRef& ref, const KeyDataType* array, uint32_t clusterSize) {
     LeafNodeTypeRefPair lPair(_allocator.allocLeafNode());
-    LeafNodeType *lNode = lPair.data;
+    LeafNodeType*       lNode = lPair.data;
     lNode->setValidSlots(clusterSize);
-    const KeyDataType *o = array;
+    const KeyDataType* o = array;
     for (uint32_t idx = 0; idx < clusterSize; ++idx, ++o) {
         lNode->update(idx, o->_key, o->getData());
     }
-    using Aggregator = BTreeAggregator<KeyT, DataT, AggrT,
-                                       TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS, AggrCalcT>;
+    using Aggregator = BTreeAggregator<KeyT, DataT, AggrT, TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS, AggrCalcT>;
     if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*lNode, _aggrCalc);
     }
@@ -160,16 +123,12 @@ makeTree(EntryRef &ref,
     ref = tPair.ref;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-makeArray(EntryRef &ref, EntryRef root, LeafNodeType *leafNode)
-{
-    uint32_t clusterSize = leafNode->validSlots();
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::makeArray(
+    EntryRef& ref, EntryRef root, LeafNodeType* leafNode) {
+    uint32_t           clusterSize = leafNode->validSlots();
     KeyDataTypeRefPair kPair(allocKeyData(clusterSize));
-    KeyDataType *kd = kPair.data;
+    KeyDataType*       kd = kPair.data;
     // Copy whole leaf node
     for (uint32_t idx = 0; idx < clusterSize; ++idx, ++kd) {
         kd->_key = leafNode->getKey(idx);
@@ -184,18 +143,9 @@ makeArray(EntryRef &ref, EntryRef root, LeafNodeType *leafNode)
     ref = kPair.ref;
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-uint32_t
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-getNewClusterSize(const KeyDataType *o,
-                  const KeyDataType *oe,
-                  AddIter a,
-                  AddIter ae,
-                  RemoveIter r,
-                  RemoveIter re,
-                  CompareT comp)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+uint32_t BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::getNewClusterSize(
+    const KeyDataType* o, const KeyDataType* oe, AddIter a, AddIter ae, RemoveIter r, RemoveIter re, CompareT comp) {
     uint32_t d = 0u;
     if (o == oe && a == ae)
         return 0u;
@@ -230,21 +180,10 @@ getNewClusterSize(const KeyDataType *o,
     return d;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-applyCluster(const KeyDataType *o,
-             const KeyDataType *oe,
-             KeyDataType *d,
-             const KeyDataType *de,
-             AddIter a,
-             AddIter ae,
-             RemoveIter r,
-             RemoveIter re,
-             CompareT comp)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::applyCluster(
+    const KeyDataType* o, const KeyDataType* oe, KeyDataType* d, const KeyDataType* de, AddIter a, AddIter ae,
+    RemoveIter r, RemoveIter re, CompareT comp) {
     while (a != ae || r != re) {
         if (r != re && (a == ae || comp(*r, a->_key))) {
             // remove
@@ -282,28 +221,17 @@ applyCluster(const KeyDataType *o,
         ++o;
     }
     assert(d == de);
-    (void) de;
+    (void)de;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-applyModifyTree(BTreeType *tree,
-                AddIter a,
-                AddIter ae,
-                RemoveIter r,
-                RemoveIter re,
-                CompareT comp)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::applyModifyTree(
+    BTreeType* tree, AddIter a, AddIter ae, RemoveIter r, RemoveIter re, CompareT comp) {
     if (a == ae && r == re)
         return;
     Iterator itr(BTreeNode::Ref(), _allocator);
     itr.lower_bound(tree->getRoot(),
-                    (a != ae && r != re) ? (comp(a->_key, *r) ? a->_key : *r) :
-                    ((a != ae) ? a->_key : *r),
-                    comp);
+                    (a != ae && r != re) ? (comp(a->_key, *r) ? a->_key : *r) : ((a != ae) ? a->_key : *r), comp);
     while (a != ae || r != re) {
         if (r != re && (a == ae || comp(*r, a->_key))) {
             // remove
@@ -333,20 +261,11 @@ applyModifyTree(BTreeType *tree,
     }
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-applyBuildTree(BTreeType *tree,
-               AddIter a,
-               AddIter ae,
-               RemoveIter r,
-               RemoveIter re,
-               CompareT comp)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::applyBuildTree(
+    BTreeType* tree, AddIter a, AddIter ae, RemoveIter r, RemoveIter re, CompareT comp) {
     Iterator itr = tree->begin(_allocator);
-    Builder &builder = _builder;
+    Builder& builder = _builder;
     builder.reuse();
     while (a != ae || r != re) {
         if (r != re && (a == ae || comp(*r, a->_key))) {
@@ -379,68 +298,48 @@ applyBuildTree(BTreeType *tree,
     tree->assign(builder, _allocator);
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-applyNewArray(EntryRef &ref,
-              AddIter aOrg,
-              AddIter ae)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::applyNewArray(
+    EntryRef& ref, AddIter aOrg, AddIter ae) {
     assert(!ref.valid());
     if (aOrg == ae) {
         // No new data
         return;
     }
-    size_t additionSize(ae - aOrg);
+    size_t   additionSize(ae - aOrg);
     uint32_t clusterSize = additionSize;
     assert(clusterSize <= clusterLimit);
     KeyDataTypeRefPair kPair(allocKeyData(clusterSize));
-    KeyDataType *kd = kPair.data;
-    AddIter a = aOrg;
-    for (;a != ae; ++a, ++kd) {
+    KeyDataType*       kd = kPair.data;
+    AddIter            a = aOrg;
+    for (; a != ae; ++a, ++kd) {
         kd->_key = a->_key;
         kd->setData(a->getData());
     }
     assert(kd == kPair.data + clusterSize);
     assert(a == ae);
     ref = kPair.ref;
- }
-    
+}
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-applyNewTree(EntryRef &ref,
-             AddIter a,
-             AddIter ae,
-             CompareT comp)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::applyNewTree(
+    EntryRef& ref, AddIter a, AddIter ae, CompareT comp) {
     assert(!ref.valid());
-    size_t additionSize(ae - a);
+    size_t           additionSize(ae - a);
     BTreeTypeRefPair tPair(allocBTree());
-    BTreeType *tree = tPair.data;
+    BTreeType*       tree = tPair.data;
     applyBuildTree(tree, a, ae, nullptr, nullptr, comp);
     assert(tree->size(_allocator) == additionSize);
-    (void) additionSize;
+    (void)additionSize;
     ref = tPair.ref;
 }
- 
-   
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-applyNew(EntryRef &ref,
-         AddIter a,
-         AddIter ae,
-         CompareT comp)
-{
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::applyNew(
+    EntryRef& ref, AddIter a, AddIter ae, CompareT comp) {
     // No old data
     assert(!ref.valid());
-    size_t additionSize(ae - a);
+    size_t   additionSize(ae - a);
     uint32_t clusterSize = additionSize;
     if (clusterSize <= clusterLimit) {
         applyNewArray(ref, a, ae);
@@ -449,28 +348,16 @@ applyNew(EntryRef &ref,
     }
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-bool
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-applyCluster(EntryRef &ref,
-             uint32_t clusterSize,
-             AddIter a,
-             AddIter ae,
-             RemoveIter r,
-             RemoveIter re,
-             CompareT comp)
-{
-    size_t additionSize(ae - a);
-    size_t removeSize(re - r);
-    uint32_t newSizeMin =
-        std::max(clusterSize,
-                 static_cast<uint32_t>(additionSize)) -
-        std::min(clusterSize, static_cast<uint32_t>(removeSize));
-    RefType iRef(ref);
-    const KeyDataType *ob = getKeyDataEntry(iRef, clusterSize);
-    const KeyDataType *oe = ob + clusterSize;
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+bool BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::applyCluster(
+    EntryRef& ref, uint32_t clusterSize, AddIter a, AddIter ae, RemoveIter r, RemoveIter re, CompareT comp) {
+    size_t   additionSize(ae - a);
+    size_t   removeSize(re - r);
+    uint32_t newSizeMin = std::max(clusterSize, static_cast<uint32_t>(additionSize)) -
+                          std::min(clusterSize, static_cast<uint32_t>(removeSize));
+    RefType            iRef(ref);
+    const KeyDataType* ob = getKeyDataEntry(iRef, clusterSize);
+    const KeyDataType* oe = ob + clusterSize;
     if (newSizeMin <= clusterLimit) {
         uint32_t newSize = getNewClusterSize(ob, oe, a, ae, r, re, comp);
         if (newSize == 0) {
@@ -480,8 +367,7 @@ applyCluster(EntryRef &ref,
         }
         if (newSize <= clusterLimit) {
             KeyDataTypeRefPair kPair(allocKeyData(newSize));
-            applyCluster(ob, oe, kPair.data, kPair.data + newSize,
-                         a, ae, r, re, comp);
+            applyCluster(ob, oe, kPair.data, kPair.data + newSize, a, ae, r, re, comp);
             _store.hold_entry(ref);
             ref = kPair.ref;
             return true;
@@ -498,45 +384,28 @@ namespace {
 // sub-library just for this function.
 // TODO should there be a special-casing for 0 here? Existing bitcompression code
 // does not have this either, but msbIdx et al is not defined when no bits are set.
-inline uint32_t asmlog2(uint64_t v) noexcept {
-    return vespalib::Optimized::msbIdx(v);
-}
+inline uint32_t asmlog2(uint64_t v) noexcept { return vespalib::Optimized::msbIdx(v); }
 
-}
+} // namespace
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-applyTree(BTreeType *tree,
-          AddIter a,
-          AddIter ae,
-          RemoveIter r,
-          RemoveIter re,
-          CompareT comp)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::applyTree(
+    BTreeType* tree, AddIter a, AddIter ae, RemoveIter r, RemoveIter re, CompareT comp) {
     // Old data was tree or has been converted to a tree
     uint32_t treeSize = tree->size(_allocator);
-    size_t additionSize(ae - a);
-    size_t removeSize(re - r);
+    size_t   additionSize(ae - a);
+    size_t   removeSize(re - r);
     uint64_t buildCost = treeSize * 2 + additionSize;
-    uint64_t modifyCost = (asmlog2(treeSize + additionSize) + 1) *
-                          (additionSize + removeSize);
+    uint64_t modifyCost = (asmlog2(treeSize + additionSize) + 1) * (additionSize + removeSize);
     if (modifyCost < buildCost)
         applyModifyTree(tree, a, ae, r, re, comp);
     else
         applyBuildTree(tree, a, ae, r, re, comp);
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-normalizeTree(EntryRef &ref,
-              BTreeType *tree,
-              bool wasArray)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::normalizeTree(
+    EntryRef& ref, BTreeType* tree, bool wasArray) {
     EntryRef root = tree->getRoot();
     if (!NodeAllocatorType::isValidRef(root)) {
         _store.hold_entry(ref);
@@ -545,36 +414,27 @@ normalizeTree(EntryRef &ref,
     }
     if (!_allocator.isLeafRef(root))
         return;
-    LeafNodeType *lNode = _allocator.mapLeafRef(root);
-    uint32_t treeSize = lNode->validSlots();
+    LeafNodeType* lNode = _allocator.mapLeafRef(root);
+    uint32_t      treeSize = lNode->validSlots();
     assert(treeSize > 0);
     if (treeSize > clusterLimit)
         return;
-    assert(!wasArray);  // Should never have used tree
-    (void) wasArray;
+    assert(!wasArray); // Should never have used tree
+    (void)wasArray;
     // Convert from tree to short array
     makeArray(ref, root, lNode);
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-apply(EntryRef &ref,
-      AddIter a,
-      AddIter ae,
-      RemoveIter r,
-      RemoveIter re,
-      CompareT comp)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::apply(
+    EntryRef& ref, AddIter a, AddIter ae, RemoveIter r, RemoveIter re, CompareT comp) {
     if (!ref.valid()) {
         // No old data
         applyNew(ref, a, ae, comp);
         return;
     }
-    RefType iRef(ref);
-    bool wasArray = false;
+    RefType  iRef(ref);
+    bool     wasArray = false;
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize != 0) {
         wasArray = true;
@@ -583,157 +443,120 @@ apply(EntryRef &ref,
         iRef = ref;
     }
     // Old data was tree or has been converted to a tree
-    BTreeType *tree = getWTreeEntry(iRef);
+    BTreeType* tree = getWTreeEntry(iRef);
     applyTree(tree, a, ae, r, re, comp);
     normalizeTree(ref, tree, wasArray);
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-clear(const EntryRef ref)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::clear(const EntryRef ref) {
     if (!ref.valid())
         return;
-    RefType iRef(ref);
+    RefType  iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize == 0) {
-        BTreeType *tree = getWTreeEntry(iRef);
+        BTreeType* tree = getWTreeEntry(iRef);
         tree->clear(_allocator);
     }
     _store.hold_entry(ref);
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-size_t
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-size(const EntryRef ref) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+size_t BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::size(const EntryRef ref) const {
     if (!ref.valid())
         return 0;
-    RefType iRef(ref);
+    RefType  iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize == 0) {
-        const BTreeType *tree = getTreeEntry(iRef);
+        const BTreeType* tree = getTreeEntry(iRef);
         return tree->size(_allocator);
     }
     return clusterSize;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-size_t
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-frozenSize(const EntryRef ref) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+size_t BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::frozenSize(const EntryRef ref) const {
     if (!ref.valid())
         return 0;
-    RefType iRef(ref);
+    RefType  iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize == 0) {
-        const BTreeType *tree = getTreeEntry(iRef);
+        const BTreeType* tree = getTreeEntry(iRef);
         return tree->frozenSize(_allocator);
     }
     return clusterSize;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-bool
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-isSmallArray(const EntryRef ref) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+bool BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::isSmallArray(const EntryRef ref) const {
     if (!ref.valid())
         return true;
-    RefType iRef(ref);
+    RefType  iRef(ref);
     uint32_t typeId(_store.getBufferMeta(iRef.bufferId()).getTypeId());
     return typeId < clusterLimit;
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-Iterator
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-begin(const EntryRef ref) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::Iterator
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::begin(const EntryRef ref) const {
     if (!ref.valid())
         return Iterator();
-    RefType iRef(ref);
+    RefType  iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize == 0) {
-        const BTreeType *tree = getTreeEntry(iRef);
+        const BTreeType* tree = getTreeEntry(iRef);
         return tree->begin(_allocator);
     }
-    const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
+    const KeyDataType* shortArray = getKeyDataEntry(iRef, clusterSize);
     return Iterator(shortArray, clusterSize, _allocator, _aggrCalc);
 }
 
-
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-ConstIterator
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-beginFrozen(const EntryRef ref) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::ConstIterator
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::beginFrozen(const EntryRef ref) const {
     if (!ref.valid())
         return ConstIterator();
-    RefType iRef(ref);
+    RefType  iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize == 0) {
-        const BTreeType *tree = getTreeEntry(iRef);
+        const BTreeType* tree = getTreeEntry(iRef);
         return tree->getFrozenView(_allocator).begin();
     }
-    const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
+    const KeyDataType* shortArray = getKeyDataEntry(iRef, clusterSize);
     return ConstIterator(shortArray, clusterSize, _allocator, _aggrCalc);
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-beginFrozen(const EntryRef ref, std::vector<ConstIterator> &where) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::beginFrozen(
+    const EntryRef ref, std::vector<ConstIterator>& where) const {
     if (!ref.valid()) {
         where.emplace_back();
         return;
     }
-    RefType iRef(ref);
+    RefType  iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize == 0) {
-        const BTreeType *tree = getTreeEntry(iRef);
+        const BTreeType* tree = getTreeEntry(iRef);
         tree->getFrozenView(_allocator).begin(where);
         return;
     }
-    const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
+    const KeyDataType* shortArray = getKeyDataEntry(iRef, clusterSize);
     where.emplace_back(shortArray, clusterSize, _allocator, _aggrCalc);
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-AggregatedType
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-getAggregated(const EntryRef ref) const
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::AggregatedType
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::getAggregated(const EntryRef ref) const {
     if (!ref.valid())
         return AggregatedType();
-    RefType iRef(ref);
+    RefType  iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize == 0) {
-        const BTreeType *tree = getTreeEntry(iRef);
+        const BTreeType* tree = getTreeEntry(iRef);
         return tree->getAggregated(_allocator);
     }
-    const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
-    AggregatedType a;
+    const KeyDataType* shortArray = getKeyDataEntry(iRef, clusterSize);
+    AggregatedType     a;
     for (uint32_t i = 0; i < clusterSize; ++i) {
         if constexpr (AggrCalcT::aggregate_over_values()) {
             _aggrCalc.add(a, _aggrCalc.getVal(shortArray[i].getData()));
@@ -744,63 +567,52 @@ getAggregated(const EntryRef ref) const
     return a;
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
 std::unique_ptr<vespalib::datastore::CompactingBuffers>
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-start_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
-{
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::start_compact_worst_btree_nodes(
+    const CompactionStrategy& compaction_strategy) {
     _builder.clear();
     return _allocator.start_compact_worst(compaction_strategy);
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-move_btree_nodes(const std::vector<EntryRef>& refs)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::move_btree_nodes(
+    const std::vector<EntryRef>& refs) {
     for (auto& ref : refs) {
         RefType iRef(ref);
         assert(iRef.valid());
         uint32_t typeId = getTypeId(iRef);
         assert(isBTree(typeId));
-        BTreeType *tree = getWTreeEntry(iRef);
+        BTreeType* tree = getWTreeEntry(iRef);
         tree->move_nodes(_allocator);
     }
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
 std::unique_ptr<vespalib::datastore::CompactingBuffers>
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
-{
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::start_compact_worst_buffers(
+    CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) {
     freeze();
     return _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT, typename AggrCalcT>
-void
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-move(std::vector<EntryRef> &refs)
-{
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::move(std::vector<EntryRef>& refs) {
     for (auto& ref : refs) {
         RefType iRef(ref);
         assert(iRef.valid());
         assert(_store.getCompacting(iRef));
         uint32_t clusterSize = getClusterSize(iRef);
         if (clusterSize == 0) {
-            BTreeType *tree = getWTreeEntry(iRef);
-            auto ref_and_ptr = allocBTreeCopy(*tree);
+            BTreeType* tree = getWTreeEntry(iRef);
+            auto       ref_and_ptr = allocBTreeCopy(*tree);
             tree->prepare_hold();
             ref = ref_and_ptr.ref;
         } else {
-            const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
+            const KeyDataType* shortArray = getKeyDataEntry(iRef, clusterSize);
             ref = allocKeyDataCopy(shortArray, clusterSize).ref;
         }
     }
 }
 
-}
+} // namespace vespalib::btree

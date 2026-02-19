@@ -3,13 +3,15 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
+#include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
 #include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
-#include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/test/time_bomb.h>
+
 #include <openssl/ssl.h>
+
 #include <filesystem>
 #include <fstream>
 
@@ -91,8 +93,7 @@ void write_file(std::string_view path, std::string_view data) {
     f.write(data.data(), data.size(), 0);
 }
 
-class AutoReloadingTlsCryptoEngineTest : public ::testing::Test
-{
+class AutoReloadingTlsCryptoEngineTest : public ::testing::Test {
 protected:
     AutoReloadingTlsCryptoEngineTest();
     ~AutoReloadingTlsCryptoEngineTest() override;
@@ -100,37 +101,28 @@ protected:
     static void TearDownTestSuite();
 };
 
-AutoReloadingTlsCryptoEngineTest::AutoReloadingTlsCryptoEngineTest()
-    : testing::Test()
-{
-}
+AutoReloadingTlsCryptoEngineTest::AutoReloadingTlsCryptoEngineTest() : testing::Test() {}
 
 AutoReloadingTlsCryptoEngineTest::~AutoReloadingTlsCryptoEngineTest() = default;
 
-void
-AutoReloadingTlsCryptoEngineTest::SetUpTestSuite()
-{
+void AutoReloadingTlsCryptoEngineTest::SetUpTestSuite() {
     std::ofstream test_config("test_config.json");
-    test_config << "{\n" <<
-        "  \"files\":{\n" <<
-        "    \"private-key\": \"" + TEST_PATH("test_key.pem") << "\",\n" <<
-        "    \"ca-certificates\": \"" + TEST_PATH("test_ca.pem") << "\",\n" <<
-        "    \"certificates\": \"test_cert.pem\"\n" <<
-        "  }\n" <<
-        "}" << std::endl;
+    test_config << "{\n"
+                << "  \"files\":{\n"
+                << "    \"private-key\": \"" + TEST_PATH("test_key.pem") << "\",\n"
+                << "    \"ca-certificates\": \"" + TEST_PATH("test_ca.pem") << "\",\n"
+                << "    \"certificates\": \"test_cert.pem\"\n"
+                << "  }\n"
+                << "}" << std::endl;
     test_config.close();
 }
 
-void
-AutoReloadingTlsCryptoEngineTest::TearDownTestSuite()
-{
-    std::filesystem::remove("test_config.json");
-}
+void AutoReloadingTlsCryptoEngineTest::TearDownTestSuite() { std::filesystem::remove("test_config.json"); }
 
 struct Fixture {
     std::unique_ptr<AutoReloadingTlsCryptoEngine> engine;
     explicit Fixture(AutoReloadingTlsCryptoEngine::TimeInterval reload_interval,
-                     AuthorizationMode mode = AuthorizationMode::Enforce) {
+                     AuthorizationMode                          mode = AuthorizationMode::Enforce) {
         write_file("test_cert.pem", cert1_pem);
         // Must be done after file has been written
         engine = std::make_unique<AutoReloadingTlsCryptoEngine>("test_config.json", mode, reload_interval);
@@ -152,16 +144,17 @@ struct Fixture {
     }
 };
 
-TEST_F(AutoReloadingTlsCryptoEngineTest, config_reloading_transitively_loads_updated_files)
-{
-    Fixture f1(50ms);
+TEST_F(AutoReloadingTlsCryptoEngineTest, config_reloading_transitively_loads_updated_files) {
+    Fixture  f1(50ms);
     TimeBomb f2(60);
 
     auto current_certs = f1.current_cert_chain();
     ASSERT_EQ(cert1_pem, current_certs);
 
     write_file("test_cert.pem.tmp", cert2_pem);
-    std::filesystem::rename(std::filesystem::path("test_cert.pem.tmp"), std::filesystem::path("test_cert.pem")); // We expect this to be an atomic rename under the hood
+    std::filesystem::rename(
+        std::filesystem::path("test_cert.pem.tmp"),
+        std::filesystem::path("test_cert.pem")); // We expect this to be an atomic rename under the hood
 
     current_certs = f1.current_cert_chain();
     while (current_certs != cert2_pem) {
@@ -171,23 +164,20 @@ TEST_F(AutoReloadingTlsCryptoEngineTest, config_reloading_transitively_loads_upd
     // If the config is never reloaded, test will go boom.
 }
 
-TEST_F(AutoReloadingTlsCryptoEngineTest, shutting_down_auto_reloading_engine_immediately_stops_background_thread)
-{
-    Fixture f1(600s);
+TEST_F(AutoReloadingTlsCryptoEngineTest, shutting_down_auto_reloading_engine_immediately_stops_background_thread) {
+    Fixture  f1(600s);
     TimeBomb f2(60);
     // This passes just from not having the TimeBomb blow up.
 }
 
-TEST_F(AutoReloadingTlsCryptoEngineTest, authorization_mode_is_propagated_to_engine)
-{
-    Fixture f1(50ms, AuthorizationMode::LogOnly);
+TEST_F(AutoReloadingTlsCryptoEngineTest, authorization_mode_is_propagated_to_engine) {
+    Fixture  f1(50ms, AuthorizationMode::LogOnly);
     TimeBomb f2(60);
     EXPECT_EQ(AuthorizationMode::LogOnly, f1.current_authorization_mode());
 }
 
-TEST_F(AutoReloadingTlsCryptoEngineTest, config_reload_failure_increments_failure_statistic)
-{
-    Fixture f1(50ms);
+TEST_F(AutoReloadingTlsCryptoEngineTest, config_reload_failure_increments_failure_statistic) {
+    Fixture  f1(50ms);
     TimeBomb f2(60);
 
     auto before = ConfigStatistics::get().snapshot();

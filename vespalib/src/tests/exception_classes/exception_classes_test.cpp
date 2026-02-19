@@ -10,7 +10,7 @@ TEST(ExceptionClassesTest, require_that_PortListenException_retains_relevant_inf
     try {
         error.throwSelf();
         ASSERT_TRUE(false);
-    } catch(PortListenException & e) {
+    } catch (PortListenException& e) {
         fprintf(stderr, "what: %s\n", e.what());
         EXPECT_EQ(80, e.get_port());
         EXPECT_EQ("HTTP", e.get_protocol());
@@ -19,12 +19,12 @@ TEST(ExceptionClassesTest, require_that_PortListenException_retains_relevant_inf
 }
 
 TEST(ExceptionClassesTest, require_that_PortListenException_with_cause_retains_relevant_information) {
-    Exception root("root");
+    Exception           root("root");
     PortListenException error(1337, "RPC", root, "details", VESPA_STRLOC, 0);
     try {
         error.throwSelf();
         ASSERT_TRUE(false);
-    } catch(PortListenException & e) {
+    } catch (PortListenException& e) {
         fprintf(stderr, "what: %s\n", e.what());
         EXPECT_EQ(1337, e.get_port());
         EXPECT_EQ("RPC", e.get_protocol());
@@ -35,12 +35,12 @@ TEST(ExceptionClassesTest, require_that_PortListenException_with_cause_retains_r
 }
 
 TEST(ExceptionClassesTest, test_that_OOMException_carries_message_forward) {
-    const char * M = "This is the simple message.";
-    bool caught(false);
+    const char* M = "This is the simple message.";
+    bool        caught(false);
     try {
         throw OOMException(M);
         ASSERT_TRUE(false);
-    } catch (OOMException & e) {
+    } catch (OOMException& e) {
         EXPECT_EQ(0, strcmp(M, e.what()));
         caught = true;
     }
@@ -51,17 +51,18 @@ TEST(ExceptionClassesTest, require_that_rethrow_if_unsafe_will_rethrow_unsafe_ex
     try {
         try {
             throw OOMException("my message");
-        } catch (const std::exception &e) {
+        } catch (const std::exception& e) {
             rethrow_if_unsafe(e);
             FAIL() << "should not be reached";
         }
-    } catch (const OOMException &) {}
+    } catch (const OOMException&) {
+    }
 }
 
 TEST(ExceptionClassesTest, require_that_rethrow_if_unsafe_will_not_rethrow_safe_exception) {
     try {
         throw IllegalArgumentException("my message");
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         rethrow_if_unsafe(e);
     }
 }

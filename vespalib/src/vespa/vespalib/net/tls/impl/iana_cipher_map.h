@@ -21,4 +21,4 @@ const char* iana_cipher_suite_to_openssl(std::string_view iana_name);
  */
 std::vector<std::string> modern_iana_cipher_suites();
 
-}
+} // namespace vespalib::net::tls

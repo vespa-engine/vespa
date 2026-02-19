@@ -16,4 +16,3 @@ struct SymbolInserter {
 };
 
 } // namespace vespalib::slime
-

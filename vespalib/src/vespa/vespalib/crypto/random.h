@@ -8,4 +8,4 @@ namespace vespalib::crypto {
 // Aborts the process if CSPRNG somehow fails.
 void random_buffer(unsigned char* buf, size_t len) noexcept;
 
-}
+} // namespace vespalib::crypto

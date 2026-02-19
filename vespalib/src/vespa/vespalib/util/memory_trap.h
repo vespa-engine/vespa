@@ -36,20 +36,22 @@ class MemoryRangeTrapper {
     size_t _buf_len;
     size_t _trap_offset;
     size_t _trap_len;
+
 public:
     MemoryRangeTrapper(char* trap_buf, size_t buf_len) noexcept;
     ~MemoryRangeTrapper();
 
-    MemoryRangeTrapper(const MemoryRangeTrapper&)     = delete;
+    MemoryRangeTrapper(const MemoryRangeTrapper&) = delete;
     MemoryRangeTrapper(MemoryRangeTrapper&&) noexcept = delete;
 
     // Exposed for testing only
-    char* buffer() const noexcept { return _trap_buf; }
+    char*  buffer() const noexcept { return _trap_buf; }
     size_t size() const noexcept { return _buf_len; }
 
     void check_and_release() noexcept;
 
     [[nodiscard]] static bool hw_trapping_enabled() noexcept;
+
 private:
     void rw_protect_buffer_if_possible();
     void unprotect_buffer_to_read_only();
@@ -63,17 +65,17 @@ private:
  *
  * Always takes up at least 8 KiB of space.
  */
-template <size_t Guard4KPages>
-class InlineMemoryTrap {
+template <size_t Guard4KPages> class InlineMemoryTrap {
     static_assert(Guard4KPages > 0);
     constexpr static size_t BufSize = 4096 * (Guard4KPages + 1);
-    char _trap_buf[BufSize];
-    MemoryRangeTrapper _trapper;
+    char                    _trap_buf[BufSize];
+    MemoryRangeTrapper      _trapper;
+
 public:
     InlineMemoryTrap() noexcept : _trap_buf(), _trapper(_trap_buf, BufSize) {}
     ~InlineMemoryTrap() = default;
 
-    InlineMemoryTrap(const InlineMemoryTrap&)     = delete;
+    InlineMemoryTrap(const InlineMemoryTrap&) = delete;
     InlineMemoryTrap(InlineMemoryTrap&&) noexcept = delete;
 
     // Exposed for testing only
@@ -85,17 +87,18 @@ public:
  * Useful for distributing traps across various allocation size-classes.
  */
 class HeapMemoryTrap {
-    char* _trap_buf;
+    char*              _trap_buf;
     MemoryRangeTrapper _trapper;
+
 public:
     explicit HeapMemoryTrap(size_t trap_4k_pages);
     ~HeapMemoryTrap();
 
-    HeapMemoryTrap(const HeapMemoryTrap&)     = delete;
+    HeapMemoryTrap(const HeapMemoryTrap&) = delete;
     HeapMemoryTrap(HeapMemoryTrap&&) noexcept = delete;
 
     // Exposed for testing only
     const MemoryRangeTrapper& trapper() const noexcept { return _trapper; }
 };
 
-}
+} // namespace vespalib

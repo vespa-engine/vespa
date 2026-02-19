@@ -2,10 +2,13 @@
 #pragma once
 
 #include "capability_set.h"
+
 #include <iosfwd>
 #include <string>
 
-namespace vespalib { class asciistream; }
+namespace vespalib {
+class asciistream;
+}
 
 namespace vespalib::net::tls {
 
@@ -26,6 +29,7 @@ class VerificationResult {
     bool          _authorized;
 
     VerificationResult(bool authorized, CapabilitySet granted_capabilities) noexcept;
+
 public:
     VerificationResult() noexcept; // Unauthorized by default
     VerificationResult(const VerificationResult&) noexcept;
@@ -35,13 +39,9 @@ public:
     ~VerificationResult();
 
     // Returns true iff the peer matched at least one policy or authorization is not enforced.
-    [[nodiscard]] bool success() const noexcept {
-        return _authorized;
-    }
+    [[nodiscard]] bool success() const noexcept { return _authorized; }
 
-    [[nodiscard]] const CapabilitySet& granted_capabilities() const noexcept {
-        return _granted_capabilities;
-    }
+    [[nodiscard]] const CapabilitySet& granted_capabilities() const noexcept { return _granted_capabilities; }
 
     void print(asciistream& os) const;
 
@@ -50,8 +50,8 @@ public:
     static VerificationResult make_not_authorized() noexcept;
 };
 
-asciistream& operator<<(asciistream&, const VerificationResult&);
+asciistream&  operator<<(asciistream&, const VerificationResult&);
 std::ostream& operator<<(std::ostream&, const VerificationResult&);
-std::string to_string(const VerificationResult&);
+std::string   to_string(const VerificationResult&);
 
-}
+} // namespace vespalib::net::tls

@@ -13,23 +13,28 @@ namespace vespalib {
  **/
 class UnwindMessage {
 private:
-    int _num_active;
+    int         _num_active;
     std::string _message;
+
 public:
-    UnwindMessage(const std::string &msg);
-    UnwindMessage(UnwindMessage &&rhs) noexcept ;
-    UnwindMessage(const UnwindMessage &) = delete;
-    UnwindMessage &operator=(const UnwindMessage &) = delete;
-    UnwindMessage &operator=(UnwindMessage &&) = delete;
+    UnwindMessage(const std::string& msg);
+    UnwindMessage(UnwindMessage&& rhs) noexcept;
+    UnwindMessage(const UnwindMessage&) = delete;
+    UnwindMessage& operator=(const UnwindMessage&) = delete;
+    UnwindMessage& operator=(UnwindMessage&&) = delete;
     ~UnwindMessage();
 };
 
-extern UnwindMessage unwind_msg(const char *fmt, ...) __attribute__ ((format (printf,1,2)));
+extern UnwindMessage unwind_msg(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 
 // make an unwind message with a hopefully unique name on the stack
 #define UNWIND_MSG(...) auto VESPA_CAT(unwindMessageOnLine, __LINE__) = unwind_msg(__VA_ARGS__)
 
 // make an unwind message quoting a piece of code and then perform that code
-#define UNWIND_DO(...) do { UNWIND_MSG("%s:%d: %s", __FILE__, __LINE__, VESPA_STRINGIZE(__VA_ARGS__)); __VA_ARGS__; } while(false)
+#define UNWIND_DO(...)                                                             \
+    do {                                                                           \
+        UNWIND_MSG("%s:%d: %s", __FILE__, __LINE__, VESPA_STRINGIZE(__VA_ARGS__)); \
+        __VA_ARGS__;                                                               \
+    } while (false)
 
-} // namespace
+} // namespace vespalib

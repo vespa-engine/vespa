@@ -10,8 +10,7 @@ namespace vespalib {
  * A gate is a countdown latch with an initial count of 1, indicating
  * that we are only waiting for a single operation to complete.
  **/
-class Gate : public CountDownLatch
-{
+class Gate : public CountDownLatch {
 public:
     /**
      * Sets the initial count to 1.

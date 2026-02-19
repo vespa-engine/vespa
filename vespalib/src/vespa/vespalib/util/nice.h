@@ -13,4 +13,4 @@ namespace vespalib {
 
 Runnable::init_fun_t be_nice(Runnable::init_fun_t init, double how_nice);
 
-}
+} // namespace vespalib

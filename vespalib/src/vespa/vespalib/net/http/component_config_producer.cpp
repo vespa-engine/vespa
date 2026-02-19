@@ -6,4 +6,4 @@ namespace vespalib {
 
 ComponentConfigProducer::Config::~Config() {}
 
-}
+} // namespace vespalib

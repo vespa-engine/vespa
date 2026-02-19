@@ -1,31 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "openssl_tls_context_impl.h"
+
 #include "iana_cipher_map.h"
 #include "openssl_crypto_codec_impl.h"
+
+#include <vespa/log/bufferedlogger.h>
 #include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/crypto/openssl_typedefs.h>
 #include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/util/casts.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <mutex>
-#include <vector>
-#include <memory>
-#include <stdexcept>
-#include <openssl/ssl.h>
+
+#include <openssl/asn1.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
-#include <openssl/x509v3.h>
-#include <openssl/asn1.h>
 #include <openssl/pem.h>
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
 
-#include <vespa/log/bufferedlogger.h>
+#include <memory>
+#include <mutex>
+#include <stdexcept>
+#include <vector>
 LOG_SETUP(".vespalib.net.tls.openssl_tls_context_impl");
 
 #if (OPENSSL_VERSION_NUMBER < 0x10000000L)
 // < 1.0 requires explicit thread ID callback support.
-#  error "Provided OpenSSL version is too darn old, need at least 1.0.0"
+#error "Provided OpenSSL version is too darn old, need at least 1.0.0"
 #endif
 
 using namespace vespalib::crypto;
@@ -41,7 +44,7 @@ std::vector<std::unique_ptr<std::mutex>> _g_mutexes;
 // Some words on OpenSSL legacy locking: OpenSSL does not implement locking
 // itself internally, deferring to user code callbacks that Do The Needful(tm).
 // The `n` parameter refers to the nth mutex, which is always < CRYPTO_num_locks().
-void openssl_locking_cb(int mode, int n, [[maybe_unused]] const char *file, [[maybe_unused]] int line) {
+void openssl_locking_cb(int mode, int n, [[maybe_unused]] const char* file, [[maybe_unused]] int line) {
     if (mode & CRYPTO_LOCK) {
         _g_mutexes[n]->lock();
     } else {
@@ -93,7 +96,7 @@ OpenSslLibraryResources::~OpenSslLibraryResources() {
 // TODO make global init instead..?
 void ensure_openssl_initialized_once() {
     static OpenSslLibraryResources openssl_resources;
-    (void) openssl_resources;
+    (void)openssl_resources;
 }
 
 BioPtr bio_from_string(std::string_view str) {
@@ -114,8 +117,7 @@ bool has_pem_eof_on_stack() {
     if (!err) {
         return false;
     }
-    return ((ERR_GET_LIB(err) == ERR_LIB_PEM)
-            && (ERR_GET_REASON(err) == PEM_R_NO_START_LINE));
+    return ((ERR_GET_LIB(err) == ERR_LIB_PEM) && (ERR_GET_REASON(err) == PEM_R_NO_START_LINE));
 }
 
 std::string ssl_error_from_stack() {
@@ -138,9 +140,7 @@ std::string ssl_error_from_stack() {
 // Neat!
 //
 // Bonus points for being non-const as well.
-constexpr inline void* empty_passphrase() {
-    return const_cast<void*>(static_cast<const void*>(""));
-}
+constexpr inline void* empty_passphrase() { return const_cast<void*>(static_cast<const void*>("")); }
 
 void verify_pem_ok_or_eof(::X509* x509) {
     // It's OK if we don't have an X509 cert returned iff we failed to find
@@ -148,8 +148,8 @@ void verify_pem_ok_or_eof(::X509* x509) {
     // cases where the PEM itself is malformed, since the X509 read routines
     // just return either nullptr or a cert object, making it hard to debug.
     if (!x509 && !has_pem_eof_on_stack()) {
-        throw CryptoException(make_string("Failed to add X509 certificate from PEM: %s",
-                                          ssl_error_from_stack().c_str()));
+        throw CryptoException(
+            make_string("Failed to add X509 certificate from PEM: %s", ssl_error_from_stack().c_str()));
     }
 }
 
@@ -190,17 +190,15 @@ SslCtxPtr new_tls_ctx_with_auto_init() {
 #endif
 }
 
-} // anon ns
+} // namespace
 
 OpenSslTlsContextImpl::OpenSslTlsContextImpl(
-        const TransportSecurityOptions& ts_opts,
-        std::shared_ptr<CertificateVerificationCallback> cert_verify_callback,
-        AuthorizationMode authz_mode)
+    const TransportSecurityOptions& ts_opts, std::shared_ptr<CertificateVerificationCallback> cert_verify_callback,
+    AuthorizationMode authz_mode)
     : _ctx(new_tls_ctx_with_auto_init()),
       _authorization_mode(authz_mode),
       _cert_verify_callback(std::move(cert_verify_callback)),
-      _redacted_transport_options(ts_opts.copy_without_private_key())
-{
+      _redacted_transport_options(ts_opts.copy_without_private_key()) {
     if (!_ctx) {
         throw CryptoException("Failed to create new TLS context");
     }
@@ -236,7 +234,7 @@ OpenSslTlsContextImpl::~OpenSslTlsContextImpl() {
 }
 
 void OpenSslTlsContextImpl::add_certificate_authorities(std::string_view ca_pem) {
-    auto bio = bio_from_string(ca_pem);
+    auto          bio = bio_from_string(ca_pem);
     ::X509_STORE* cert_store = ::SSL_CTX_get_cert_store(_ctx.get()); // Internal pointer, not owned by us.
     while (true) {
         auto ca_cert = read_untrusted_x509_from_bio(*bio);
@@ -275,7 +273,7 @@ void OpenSslTlsContextImpl::add_certificate_chain(std::string_view chain_pem) {
 }
 
 void OpenSslTlsContextImpl::use_private_key(std::string_view key_pem) {
-    auto bio = bio_from_string(key_pem);
+    auto       bio = bio_from_string(key_pem);
     EvpPkeyPtr key(::PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, empty_passphrase()));
     if (!key) {
         throw CryptoException("Failed to read PEM private key data");
@@ -294,7 +292,7 @@ void OpenSslTlsContextImpl::verify_private_key() {
 
 void OpenSslTlsContextImpl::enable_ephemeral_key_exchange() {
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-#  if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
     // Always enabled by default on higher versions.
     // Auto curve selection is preferred over using SSL_CTX_set_ecdh_tmp
     if (!::SSL_CTX_set_ecdh_auto(_ctx.get(), 1)) {
@@ -302,7 +300,7 @@ void OpenSslTlsContextImpl::enable_ephemeral_key_exchange() {
     }
     // New ECDH key per connection.
     SSL_CTX_set_options(_ctx.get(), SSL_OP_SINGLE_ECDH_USE);
-#  else
+#else
     // Set explicit P-256 curve used for ECDH purposes.
     EcKeyPtr ec_curve(::EC_KEY_new_by_curve_name(NID_X9_62_prime256v1));
     if (!ec_curve) {
@@ -311,7 +309,7 @@ void OpenSslTlsContextImpl::enable_ephemeral_key_exchange() {
     if (!::SSL_CTX_set_tmp_ecdh(_ctx.get(), ec_curve.get())) {
         throw CryptoException("SSL_CTX_set_tmp_ecdh");
     }
-#  endif
+#endif
 #endif
 }
 
@@ -337,16 +335,14 @@ namespace {
 // There's no good reason for entries to contain embedded nulls, aside from
 // trying to be sneaky. See Moxie Marlinspike's Blackhat USA 2009 presentation
 // for context.
-bool has_embedded_nulls(const char* data, size_t size) {
-    return (memchr(data, '\0', size) != nullptr);
-}
+bool has_embedded_nulls(const char* data, size_t size) { return (memchr(data, '\0', size) != nullptr); }
 
 // Normally there should only be 1 CN entry in a certificate, but it's possible
 // to specify multiple. We'll only report the last occurring one.
 bool fill_certificate_common_name(::X509* cert, PeerCredentials& creds) {
     // We're only after CN entries of the subject name
     ::X509_NAME* subj_name = ::X509_get_subject_name(cert); // _not_ owned by us, never nullptr
-    int pos = -1;
+    int          pos = -1;
     // X509_NAME_get_index_by_NID returns -1 if there are no further indices containing
     // an entry with the given NID _after_ pos. -1 must be passed as the initial pos value,
     // since index 0 might be valid.
@@ -359,7 +355,7 @@ bool fill_certificate_common_name(::X509* cert, PeerCredentials& creds) {
         ::ASN1_STRING* cn_asn1 = ::X509_NAME_ENTRY_get_data(entry);
         if ((cn_asn1 != nullptr) && (cn_asn1->data != nullptr) && (cn_asn1->length > 0)) {
             const auto* data = char_p_cast<char>(cn_asn1->data);
-            const auto size  = static_cast<size_t>(cn_asn1->length);
+            const auto  size = static_cast<size_t>(cn_asn1->length);
             if (has_embedded_nulls(data, size)) {
                 LOG(warning, "Got X509 peer certificate with embedded nulls in CN field");
                 return false;
@@ -371,18 +367,16 @@ bool fill_certificate_common_name(::X509* cert, PeerCredentials& creds) {
 }
 
 struct GeneralNamesDeleter {
-    void operator()(::GENERAL_NAMES* names) {
-        ::GENERAL_NAMES_free(names);
-    }
+    void operator()(::GENERAL_NAMES* names) { ::GENERAL_NAMES_free(names); }
 };
 
 // Returns empty string if unsupported type or bad content.
 std::string get_ia5_string(const ASN1_IA5STRING* ia5_str) {
     if ((ia5_str->type == V_ASN1_IA5STRING) && (ia5_str->data != nullptr) && (ia5_str->length > 0)) {
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
-        const char* data  = char_p_cast<char>(::ASN1_STRING_get0_data(ia5_str));
+        const char* data = char_p_cast<char>(::ASN1_STRING_get0_data(ia5_str));
 #else
-        const char* data  = char_p_cast<char>(::ASN1_STRING_data(ia5_str));
+        const char* data = char_p_cast<char>(::ASN1_STRING_data(ia5_str));
 #endif
         const auto length = static_cast<size_t>(::ASN1_STRING_length(ia5_str));
         if (has_embedded_nulls(data, length)) {
@@ -397,8 +391,8 @@ std::string get_ia5_string(const ASN1_IA5STRING* ia5_str) {
 using GeneralNamesPtr = std::unique_ptr<::GENERAL_NAMES, GeneralNamesDeleter>;
 
 bool fill_certificate_subject_alternate_names(::X509* cert, PeerCredentials& creds) {
-    GeneralNamesPtr san_names(static_cast<GENERAL_NAMES*>(
-            ::X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr)));
+    GeneralNamesPtr san_names(
+        static_cast<GENERAL_NAMES*>(::X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr)));
     if (san_names) {
         for (int i = 0; i < sk_GENERAL_NAME_num(san_names.get()); ++i) {
             auto* value = sk_GENERAL_NAME_value(san_names.get(), i);
@@ -421,7 +415,7 @@ bool fill_certificate_subject_alternate_names(::X509* cert, PeerCredentials& cre
     return true;
 }
 
-} // anon ns
+} // namespace
 
 // Note: we try to be as conservative as possible. If anything looks out of place, we fail
 // secure by denying the connection.
@@ -447,7 +441,7 @@ int OpenSslTlsContextImpl::verify_cb_wrapper(int preverified_ok, ::X509_STORE_CT
     auto* ssl = static_cast<::SSL*>(data);
     data = SSL_get_app_data(ssl);
     LOG_ASSERT(data != nullptr);
-    auto* codec_impl = static_cast<OpenSslCryptoCodecImpl*>(data);
+    auto*            codec_impl = static_cast<OpenSslCryptoCodecImpl*>(data);
     const ::SSL_CTX* ssl_ctx = ::SSL_get_SSL_CTX(ssl);
     LOG_ASSERT(ssl_ctx != nullptr);
     auto* self = static_cast<OpenSslTlsContextImpl*>(SSL_CTX_get_app_data(ssl_ctx));
@@ -460,7 +454,8 @@ int OpenSslTlsContextImpl::verify_cb_wrapper(int preverified_ok, ::X509_STORE_CT
     return 0;
 }
 
-bool OpenSslTlsContextImpl::verify_trusted_certificate(::X509_STORE_CTX* store_ctx, OpenSslCryptoCodecImpl& codec_impl) {
+bool OpenSslTlsContextImpl::verify_trusted_certificate(
+    ::X509_STORE_CTX* store_ctx, OpenSslCryptoCodecImpl& codec_impl) {
     const auto authz_mode = authorization_mode();
     // TODO consider if we want to fill in peer credentials even if authorization is disabled
     if (authz_mode == AuthorizationMode::Disable) {
@@ -483,8 +478,8 @@ bool OpenSslTlsContextImpl::verify_trusted_certificate(::X509_STORE_CTX* store_c
         if (!authz_result.success()) {
             // Buffer warnings on peer IP address to avoid log flooding.
             LOGBT(warning, codec_impl.peer_address().ip_address(),
-                  "Certificate verification of peer '%s' failed with %s",
-                  codec_impl.peer_address().spec().c_str(), creds.to_string().c_str());
+                  "Certificate verification of peer '%s' failed with %s", codec_impl.peer_address().spec().c_str(),
+                  creds.to_string().c_str());
             return (authz_mode != AuthorizationMode::Enforce);
         }
         // Store away credentials and role set for later use by requests that arrive over this connection.
@@ -506,13 +501,11 @@ void OpenSslTlsContextImpl::enforce_peer_certificate_verification() {
     ::SSL_CTX_set_verify(_ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_cb_wrapper);
 }
 
-void OpenSslTlsContextImpl::set_ssl_ctx_self_reference() {
-    SSL_CTX_set_app_data(_ctx.get(), this);
-}
+void OpenSslTlsContextImpl::set_ssl_ctx_self_reference() { SSL_CTX_set_app_data(_ctx.get(), this); }
 
 void OpenSslTlsContextImpl::set_accepted_cipher_suites(const std::vector<std::string>& ciphers) {
     std::string openssl_ciphers;
-    size_t bad_ciphers = 0;
+    size_t      bad_ciphers = 0;
     for (const auto& iana_cipher : ciphers) {
         auto our_cipher = iana_cipher_suite_to_openssl(iana_cipher);
         if (our_cipher) {
@@ -521,13 +514,16 @@ void OpenSslTlsContextImpl::set_accepted_cipher_suites(const std::vector<std::st
             }
             openssl_ciphers += our_cipher;
         } else {
-            LOG(warning, "Unsupported cipher: '%s' (bad name or unknown IANA -> OpenSSL mapping)", iana_cipher.c_str());
+            LOG(warning, "Unsupported cipher: '%s' (bad name or unknown IANA -> OpenSSL mapping)",
+                iana_cipher.c_str());
             ++bad_ciphers;
         }
     }
     if (bad_ciphers > 0) {
-        LOG(warning, "A total of %zu configured cipher names were not added to the set of allowed TLS ciphers. "
-                     "Vespa only supports TLS ciphers with forward secrecy and AEAD properties", bad_ciphers);
+        LOG(warning,
+            "A total of %zu configured cipher names were not added to the set of allowed TLS ciphers. "
+            "Vespa only supports TLS ciphers with forward secrecy and AEAD properties",
+            bad_ciphers);
     }
     if (openssl_ciphers.empty()) {
         throw CryptoException("Configured cipher suite does not contain any supported ciphers");
@@ -537,4 +533,4 @@ void OpenSslTlsContextImpl::set_accepted_cipher_suites(const std::vector<std::st
     }
 }
 
-}
+} // namespace vespalib::net::tls::impl

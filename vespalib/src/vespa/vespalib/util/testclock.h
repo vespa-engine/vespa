@@ -2,6 +2,7 @@
 #pragma once
 
 #include "time.h"
+
 #include <atomic>
 #include <memory>
 
@@ -13,19 +14,18 @@ class InvokeServiceImpl;
  * Self contained clock useable for testing that provides a backing for the vespalib::Clock interface.
  */
 
-class TestClock
-{
+class TestClock {
 private:
     std::unique_ptr<InvokeServiceImpl> _ticker;
+
 public:
     TestClock();
-    TestClock(const TestClock &) = delete;
-    TestClock & operator =(const TestClock &) = delete;
-    TestClock(TestClock &&) = delete;
-    TestClock & operator =(TestClock &&) = delete;
+    TestClock(const TestClock&) = delete;
+    TestClock& operator=(const TestClock&) = delete;
+    TestClock(TestClock&&) = delete;
+    TestClock& operator=(TestClock&&) = delete;
     ~TestClock();
-    const std::atomic<steady_time> & nowRef() const;
+    const std::atomic<steady_time>& nowRef() const;
 };
 
-}
-
+} // namespace vespalib

@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "prometheus_formatter.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <algorithm>
 #include <cmath>
 
@@ -67,67 +69,70 @@ void emit_sanitized_double(asciistream& out, double v) {
     }
 }
 
-} // anon ns
+} // namespace
 
 PrometheusFormatter::PrometheusFormatter(const vespalib::metrics::Snapshot& snapshot)
     : _snapshot(snapshot),
       // TODO timestamp should be a chrono unit, not seconds as a double (here converted to millis explicitly)
-      _timestamp_str(std::to_string(static_cast<uint64_t>(_snapshot.endTime() * 1000.0)))
-{
-}
+      _timestamp_str(std::to_string(static_cast<uint64_t>(_snapshot.endTime() * 1000.0))) {}
 
 PrometheusFormatter::~PrometheusFormatter() = default;
 
-void
-PrometheusFormatter::emit_counter(asciistream& out, const CounterSnapshot& cs) const {
+void PrometheusFormatter::emit_counter(asciistream& out, const CounterSnapshot& cs) const {
     emit_prometheus_name(out, cs.name());
     emit_point_as_labels(out, cs.point());
     out << ' ' << cs.count() << ' ' << _timestamp_str << '\n';
 }
 
-const char*
-PrometheusFormatter::sub_metric_type_str(SubMetric m) noexcept {
+const char* PrometheusFormatter::sub_metric_type_str(SubMetric m) noexcept {
     switch (m) {
-    case SubMetric::Count: return "count";
-    case SubMetric::Sum:   return "sum";
-    case SubMetric::Min:   return "min";
-    case SubMetric::Max:   return "max";
+    case SubMetric::Count:
+        return "count";
+    case SubMetric::Sum:
+        return "sum";
+    case SubMetric::Min:
+        return "min";
+    case SubMetric::Max:
+        return "max";
     }
     abort();
 }
 
-void
-PrometheusFormatter::emit_gauge(asciistream& out, const GaugeSnapshot& gs, SubMetric m) const {
+void PrometheusFormatter::emit_gauge(asciistream& out, const GaugeSnapshot& gs, SubMetric m) const {
     emit_prometheus_name(out, gs.name());
     out << '_' << sub_metric_type_str(m);
     emit_point_as_labels(out, gs.point());
     out << ' ';
     switch (m) {
-    case SubMetric::Count: out << gs.observedCount(); break;
-    case SubMetric::Sum:   emit_sanitized_double(out, gs.sumValue()); break;
-    case SubMetric::Min:   emit_sanitized_double(out, gs.minValue()); break;
-    case SubMetric::Max:   emit_sanitized_double(out, gs.maxValue()); break;
+    case SubMetric::Count:
+        out << gs.observedCount();
+        break;
+    case SubMetric::Sum:
+        emit_sanitized_double(out, gs.sumValue());
+        break;
+    case SubMetric::Min:
+        emit_sanitized_double(out, gs.minValue());
+        break;
+    case SubMetric::Max:
+        emit_sanitized_double(out, gs.maxValue());
+        break;
     }
     out << ' ' << _timestamp_str << '\n';
 }
 
-void
-PrometheusFormatter::emit_counters(vespalib::asciistream& out) const {
+void PrometheusFormatter::emit_counters(vespalib::asciistream& out) const {
     std::vector<const CounterSnapshot*> ordered_counters;
     ordered_counters.reserve(_snapshot.counters().size());
     for (const auto& cs : _snapshot.counters()) {
         ordered_counters.emplace_back(&cs); // We expect instances to be stable during processing.
     }
-    std::ranges::sort(ordered_counters, [](auto& lhs, auto& rhs) noexcept {
-        return lhs->name() < rhs->name();
-    });
+    std::ranges::sort(ordered_counters, [](auto& lhs, auto& rhs) noexcept { return lhs->name() < rhs->name(); });
     for (const auto* cs : ordered_counters) {
         emit_counter(out, *cs);
     }
 }
 
-void
-PrometheusFormatter::emit_gauges(vespalib::asciistream& out) const {
+void PrometheusFormatter::emit_gauges(vespalib::asciistream& out) const {
     std::vector<std::pair<const GaugeSnapshot*, SubMetric>> ordered_gauges;
     ordered_gauges.reserve(_snapshot.gauges().size() * NumSubMetrics);
     for (const auto& gs : _snapshot.gauges()) {
@@ -148,12 +153,11 @@ PrometheusFormatter::emit_gauges(vespalib::asciistream& out) const {
     }
 }
 
-std::string
-PrometheusFormatter::as_text_formatted() const {
+std::string PrometheusFormatter::as_text_formatted() const {
     asciistream out;
     emit_counters(out);
     emit_gauges(out);
     return out.str();
 }
 
-} // vespalib::metrics
+} // namespace vespalib::metrics

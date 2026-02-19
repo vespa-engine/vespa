@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 namespace vespalib::compress {
 
@@ -15,14 +15,14 @@ public:
      * @param destination Where to put the compressed number
      * @return number of bytes used.
      */
-    static size_t compressPositive(uint64_t n, void *destination);
+    static size_t compressPositive(uint64_t n, void* destination);
     /**
      * Will compress an integer to either 1,2 or 4 bytes
      * @param n Number to compress
      * @param destination Where to put the compressed number
      * @return number of bytes used.
      */
-    static size_t compress(int64_t n, void *destination);
+    static size_t compress(int64_t n, void* destination);
     /**
      * @param unsigned number to compute compressed size of in bytes.
      * @return Will return the number of bytes this positive number will require
@@ -32,7 +32,7 @@ public:
             return 1;
         } else if (n < (0x1 << 14)) {
             return 2;
-        } else if ( n < (0x1 << 30)) {
+        } else if (n < (0x1 << 30)) {
             return 4;
         } else {
             throw_too_big(n);
@@ -50,7 +50,7 @@ public:
             return 1;
         } else if (n < (0x1 << 13)) {
             return 2;
-        } else if ( n < (0x1 << 29)) {
+        } else if (n < (0x1 << 29)) {
             return 4;
         } else {
             throw_too_big(n);
@@ -61,21 +61,21 @@ public:
      * @param pointer to buffer. pointer is automatically advanced.
      * @return decompressed number
      */
-    static size_t decompress(int64_t & n, const void * srcv) {
-        const uint8_t * src = static_cast<const uint8_t *>(srcv);
-        const uint8_t c = src[0];
-        size_t numbytes;
+    static size_t decompress(int64_t& n, const void* srcv) {
+        const uint8_t* src = static_cast<const uint8_t*>(srcv);
+        const uint8_t  c = src[0];
+        size_t         numbytes;
         if (__builtin_expect(c & 0x40, false)) {
-           if (c & 0x20) {
-               n = ((c & 0x1f) << 24) + (src[1] << 16) + (src[2] << 8) + src[3];
-               numbytes = 4;
+            if (c & 0x20) {
+                n = ((c & 0x1f) << 24) + (src[1] << 16) + (src[2] << 8) + src[3];
+                numbytes = 4;
             } else {
-               n = ((c & 0x1f) << 8) + src[1];
-               numbytes = 2;
+                n = ((c & 0x1f) << 8) + src[1];
+                numbytes = 2;
             }
         } else {
-           n = c & 0x1f;
-           numbytes = 1;
+            n = c & 0x1f;
+            numbytes = 1;
         }
         if (c & 0x80) {
             n = -n;
@@ -87,21 +87,21 @@ public:
      * @param pointer to buffer. pointer is automatically advanced.
      * @return decompressed number
      */
-    static size_t decompressPositive(uint64_t & n, const void * srcv) {
-        const uint8_t * src = static_cast<const uint8_t *>(srcv);
-        const uint8_t c = src[0];
-        size_t numbytes;
+    static size_t decompressPositive(uint64_t& n, const void* srcv) {
+        const uint8_t* src = static_cast<const uint8_t*>(srcv);
+        const uint8_t  c = src[0];
+        size_t         numbytes;
         if (c & 0x80) {
-           if (c & 0x40) {
-               n = ((c & 0x3f) << 24) + (src[1] << 16) + (src[2] << 8) + src[3];
-               numbytes = 4;
-           } else {
-               n = ((c & 0x3f) << 8) + src[1];
-               numbytes = 2;
-           }
+            if (c & 0x40) {
+                n = ((c & 0x3f) << 24) + (src[1] << 16) + (src[2] << 8) + src[3];
+                numbytes = 4;
+            } else {
+                n = ((c & 0x3f) << 8) + src[1];
+                numbytes = 2;
+            }
         } else {
-           n = c & 0x3f;
-           numbytes = 1;
+            n = c & 0x3f;
+            numbytes = 1;
         }
         return numbytes;
     }
@@ -110,8 +110,8 @@ public:
         if (len == 0u) {
             return false;
         }
-        const uint8_t * src = static_cast<const uint8_t *>(srcv);
-        const uint8_t c = src[0];
+        const uint8_t* src = static_cast<const uint8_t*>(srcv);
+        const uint8_t  c = src[0];
         if ((c & 0x40) != 0) {
             return (((c & 0x20) != 0) ? (len >= 4u) : (len >= 2u));
         } else {
@@ -123,17 +123,18 @@ public:
         if (len == 0u) {
             return false;
         }
-        const uint8_t * src = static_cast<const uint8_t *>(srcv);
-        const uint8_t c = src[0];
+        const uint8_t* src = static_cast<const uint8_t*>(srcv);
+        const uint8_t  c = src[0];
         if ((c & 0x80) != 0) {
             return (((c & 0x40) != 0) ? (len >= 4u) : (len >= 2u));
         } else {
             return true;
         }
     }
+
 private:
-    [[ noreturn ]] static void throw_too_big(int64_t n);
-    [[ noreturn ]] static void throw_too_big(uint64_t n);
+    [[noreturn]] static void throw_too_big(int64_t n);
+    [[noreturn]] static void throw_too_big(uint64_t n);
 };
 
-}
+} // namespace vespalib::compress

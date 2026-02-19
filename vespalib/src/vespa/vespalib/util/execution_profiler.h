@@ -5,12 +5,15 @@
 #include "time.h"
 
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <functional>
 #include <string>
 
 namespace vespalib {
 
-namespace slime { struct Cursor; }
+namespace slime {
+struct Cursor;
+}
 
 /**
  * A simple single-threaded profiler used to measure where time is
@@ -30,23 +33,23 @@ public:
         virtual ~Impl() = default;
         virtual void track_start(TaskId task) = 0;
         virtual void track_complete() = 0;
-        virtual void report(slime::Cursor &obj, ReportContext &ctx) const = 0;
+        virtual void report(slime::Cursor& obj, ReportContext& ctx) const = 0;
     };
-    using NameMapper = std::function<std::string(const std::string &)>;
+    using NameMapper = std::function<std::string(const std::string&)>;
 
 private:
-    size_t _level;
-    size_t _max_depth;
-    std::vector<std::string> _names;
-    vespalib::hash_map<std::string,size_t> _name_map;
-    std::unique_ptr<Impl> _impl;
+    size_t                                  _level;
+    size_t                                  _max_depth;
+    std::vector<std::string>                _names;
+    vespalib::hash_map<std::string, size_t> _name_map;
+    std::unique_ptr<Impl>                   _impl;
 
 public:
     ExecutionProfiler(int32_t profile_depth);
     ~ExecutionProfiler();
-    TaskId resolve(const std::string &name);
-    const std::string &name_of(TaskId task) const { return _names[task]; }
-    void start(TaskId task) {
+    TaskId             resolve(const std::string& name);
+    const std::string& name_of(TaskId task) const { return _names[task]; }
+    void               start(TaskId task) {
         if (++_level <= _max_depth) {
             _impl->track_start(task);
         }
@@ -56,8 +59,9 @@ public:
             _impl->track_complete();
         }
     }
-    void report(slime::Cursor &obj, const NameMapper &name_mapper =
-                [](const std::string &name) noexcept { return name; }) const;
+    void report(
+        slime::Cursor&    obj,
+        const NameMapper& name_mapper = [](const std::string& name) noexcept { return name; }) const;
 };
 
-}
+} // namespace vespalib

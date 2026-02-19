@@ -5,30 +5,27 @@
 namespace vespalib {
 
 namespace {
-    std::vector<std::string> splitString(const std::string& source) {
-        std::vector<std::string> target;
-        std::string::size_type start = 0;
-        std::string::size_type stop = source.find(' ');
-        while (stop != std::string::npos) {
-            target.push_back(source.substr(start, stop - start));
-            start = stop + 1;
-            stop = source.find(' ', start);
-        }
-        target.push_back(source.substr(start));
-        return target;
+std::vector<std::string> splitString(const std::string& source) {
+    std::vector<std::string> target;
+    std::string::size_type   start = 0;
+    std::string::size_type   stop = source.find(' ');
+    while (stop != std::string::npos) {
+        target.push_back(source.substr(start, stop - start));
+        start = stop + 1;
+        stop = source.find(' ', start);
     }
-} // anonymous
+    target.push_back(source.substr(start));
+    return target;
+}
+} // namespace
 
-AppOptions::AppOptions(const std::string& optString)
-    : _argc(0), _argv(nullptr), _source()
-{
+AppOptions::AppOptions(const std::string& optString) : _argc(0), _argv(nullptr), _source() {
     _source = splitString(optString);
     _argc = _source.size();
     _argv = new const char*[_source.size()];
-    for (int i=0; i<_argc; ++i) {
-        if (_source[i].size() > 1
-            && _source[i][0] == _source[i][_source[i].size() - 1]
-            && (_source[i][0] == '\'' || _source[i][0] == '"'))
+    for (int i = 0; i < _argc; ++i) {
+        if (_source[i].size() > 1 && _source[i][0] == _source[i][_source[i].size() - 1] &&
+            (_source[i][0] == '\'' || _source[i][0] == '"'))
         {
             if (_source[i].size() == 2) {
                 _source[i] = "";
@@ -40,9 +37,6 @@ AppOptions::AppOptions(const std::string& optString)
     }
 }
 
-AppOptions::~AppOptions()
-{
-    delete[] _argv;
-}
+AppOptions::~AppOptions() { delete[] _argv; }
 
-} // vespalib
+} // namespace vespalib

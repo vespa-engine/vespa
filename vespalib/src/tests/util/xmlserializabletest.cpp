@@ -1,23 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
 namespace vespalib {
 
-TEST(XmlSerializableTest, test_normal_usage)
-{
+TEST(XmlSerializableTest, test_normal_usage) {
     std::ostringstream ost;
-    XmlOutputStream xos(ost);
+    XmlOutputStream    xos(ost);
     using namespace vespalib::xml;
-    xos << XmlTag("car")
-            << XmlTag("door")
-                << XmlAttribute("windowstate", "up")
-            << XmlEndTag()
-            << XmlTag("description")
-                << "This is a car description used to test"
-            << XmlEndTag()
-        << XmlEndTag();
+    xos << XmlTag("car") << XmlTag("door") << XmlAttribute("windowstate", "up") << XmlEndTag()
+        << XmlTag("description") << "This is a car description used to test" << XmlEndTag() << XmlEndTag();
     std::string expected =
         "<car>\n"
         "<door windowstate=\"up\"/>\n"
@@ -26,30 +19,16 @@ TEST(XmlSerializableTest, test_normal_usage)
     EXPECT_EQ(expected, ost.str());
 }
 
-TEST(XmlSerializableTest, test_escaping)
-{
+TEST(XmlSerializableTest, test_escaping) {
     std::ostringstream ost;
-    XmlOutputStream xos(ost);
+    XmlOutputStream    xos(ost);
     using namespace vespalib::xml;
-    xos << XmlTag("!#trash%-", XmlTagFlags::CONVERT_ILLEGAL_CHARACTERS)
-            << XmlTag("foo")
-                << XmlAttribute("bar", "<100%\" &\n>")
-            << XmlEndTag()
-            << XmlTag("escaped")
-                << XmlEscapedContent()
-                << XmlContentWrapper("<>&\"'% \r\n\t\f\0", 12)
-            << XmlEndTag()
-            << XmlTag("encoded")
-                << XmlBase64Content()
-                << XmlContentWrapper("<>&\"'% \t\f\0", 10)
-            << XmlEndTag()
-            << XmlTag("auto1")
-                << XmlContentWrapper("<>&\t\f\r\nfoo", 10)
-            << XmlEndTag()
-            << XmlTag("auto2")
-                << XmlContentWrapper("<>&\t\0\r\nfoo", 10)
-            << XmlEndTag()
-        << XmlEndTag();
+    xos << XmlTag("!#trash%-", XmlTagFlags::CONVERT_ILLEGAL_CHARACTERS) << XmlTag("foo")
+        << XmlAttribute("bar", "<100%\" &\n>") << XmlEndTag() << XmlTag("escaped") << XmlEscapedContent()
+        << XmlContentWrapper("<>&\"'% \r\n\t\f\0", 12) << XmlEndTag() << XmlTag("encoded") << XmlBase64Content()
+        << XmlContentWrapper("<>&\"'% \t\f\0", 10) << XmlEndTag() << XmlTag("auto1")
+        << XmlContentWrapper("<>&\t\f\r\nfoo", 10) << XmlEndTag() << XmlTag("auto2")
+        << XmlContentWrapper("<>&\t\0\r\nfoo", 10) << XmlEndTag() << XmlEndTag();
     std::string expected =
         "<__trash_->\n"
         "<foo bar=\"&lt;100%&quot; &amp;&#10;&gt;\"/>\n"
@@ -62,35 +41,24 @@ TEST(XmlSerializableTest, test_escaping)
 }
 
 namespace {
-    struct LookAndFeel : public XmlSerializable {
+struct LookAndFeel : public XmlSerializable {
 
-        LookAndFeel() {}
+    LookAndFeel() {}
 
-        void printXml(XmlOutputStream& out) const override {
-            using namespace vespalib::xml;
-            out << XmlAttribute("color", "blue")
-                << XmlTag("other")
-                    << XmlAttribute("count", 5)
-                    << XmlTag("something") << "foo" << XmlEndTag()
-                    << XmlTag("else") << "bar" << XmlEndTag()
-                << XmlEndTag();
-        }
-    };
-}
+    void printXml(XmlOutputStream& out) const override {
+        using namespace vespalib::xml;
+        out << XmlAttribute("color", "blue") << XmlTag("other") << XmlAttribute("count", 5) << XmlTag("something")
+            << "foo" << XmlEndTag() << XmlTag("else") << "bar" << XmlEndTag() << XmlEndTag();
+    }
+};
+} // namespace
 
-TEST(XmlSerializableTest, test_nesting)
-{
+TEST(XmlSerializableTest, test_nesting) {
     std::ostringstream ost;
-    XmlOutputStream xos(ost);
+    XmlOutputStream    xos(ost);
     using namespace vespalib::xml;
-    xos << XmlTag("car")
-            << XmlTag("door")
-                << LookAndFeel()
-            << XmlEndTag()
-            << XmlTag("description")
-                << "This is a car description used to test"
-            << XmlEndTag()
-        << XmlEndTag();
+    xos << XmlTag("car") << XmlTag("door") << LookAndFeel() << XmlEndTag() << XmlTag("description")
+        << "This is a car description used to test" << XmlEndTag() << XmlEndTag();
     std::string expected =
         "<car>\n"
         "<door color=\"blue\">\n"
@@ -104,21 +72,12 @@ TEST(XmlSerializableTest, test_nesting)
     EXPECT_EQ(expected, ost.str());
 }
 
-TEST(XmlSerializableTest, test_indent)
-{
+TEST(XmlSerializableTest, test_indent) {
     std::ostringstream ost;
-    XmlOutputStream xos(ost, "  ");
+    XmlOutputStream    xos(ost, "  ");
     using namespace vespalib::xml;
-    xos << XmlTag("foo")
-            << XmlTag("bar") << 2.14 << XmlEndTag()
-            << "Litt innhold"
-            << XmlTag("nytag")
-                << "Mer innhold"
-                << XmlTag("base")
-                    << XmlBase64Content() << "foobar"
-                << XmlEndTag()
-            << XmlEndTag()
-        << XmlEndTag();
+    xos << XmlTag("foo") << XmlTag("bar") << 2.14 << XmlEndTag() << "Litt innhold" << XmlTag("nytag") << "Mer innhold"
+        << XmlTag("base") << XmlBase64Content() << "foobar" << XmlEndTag() << XmlEndTag() << XmlEndTag();
     std::string expected =
         "<foo>\n"
         "  <bar>2.14</bar>\n"
@@ -131,4 +90,4 @@ TEST(XmlSerializableTest, test_indent)
     EXPECT_EQ(expected, ost.str());
 }
 
-} // vespalib
+} // namespace vespalib

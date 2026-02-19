@@ -4,18 +4,10 @@
 
 namespace vespalib {
 
-Barrier::Barrier(size_t n)
-  : _n(n),
-    _lock(),
-    _cond(),
-    _count(0),
-    _next(0)
-{}
+Barrier::Barrier(size_t n) : _n(n), _lock(), _cond(), _count(0), _next(0) {}
 Barrier::~Barrier() = default;
 
-bool
-Barrier::await()
-{
+bool Barrier::await() {
     std::unique_lock guard(_lock);
     if (_n == 0) {
         return false;
@@ -37,9 +29,7 @@ Barrier::await()
     return true;
 }
 
-void
-Barrier::destroy()
-{
+void Barrier::destroy() {
     std::lock_guard guard(_lock);
     _n = 0;
     _cond.notify_all();

@@ -3,10 +3,10 @@
 #pragma once
 
 #include "cursor.h"
+#include "inject.h"
+#include "inserter.h"
 #include "inspector.h"
 #include "type.h"
-#include "inserter.h"
-#include "inject.h"
 
 namespace vespalib {
 
@@ -22,20 +22,19 @@ namespace convenience {
 
 using ::vespalib::Slime;
 
-using ::vespalib::slime::Symbol;
 using ::vespalib::Memory;
 using ::vespalib::slime::Cursor;
 using ::vespalib::slime::Inspector;
+using ::vespalib::slime::Symbol;
 using ::vespalib::slime::Type;
 
-using ::vespalib::slime::Inserter;
-using ::vespalib::slime::SlimeInserter;
 using ::vespalib::slime::ArrayInserter;
+using ::vespalib::slime::inject;
+using ::vespalib::slime::Inserter;
 using ::vespalib::slime::ObjectInserter;
 using ::vespalib::slime::ObjectSymbolInserter;
-using ::vespalib::slime::inject;
+using ::vespalib::slime::SlimeInserter;
 
-} // namespace vespalib::slime::convenience
-} // namespace vespalib::slime
+} // namespace convenience
+} // namespace slime
 } // namespace vespalib
-

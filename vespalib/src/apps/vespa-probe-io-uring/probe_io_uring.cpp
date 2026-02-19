@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #ifdef VESPA_HAS_IO_URING
 
-#include <sys/utsname.h>
 #include <liburing.h>
 #include <liburing/io_uring.h>
+#include <sys/utsname.h>
 
 #include <string>
 #include <vector>
@@ -62,23 +63,21 @@ std::vector<std::string> op_names = {
     "IORING_OP_SOCKET",
     "IORING_OP_URING_CMD",
     "IORING_OP_SEND_ZC",
-    "IORING_OP_SENDMSG_ZC"
-};
+    "IORING_OP_SENDMSG_ZC"};
 
 int main() {
     fprintf(stderr, "Vespa was compiled with io_uring\n");
     utsname host_info;
     uname(&host_info);
     fprintf(stderr, "kernel version: %s\n", host_info.release);
-    io_uring_probe *probe = io_uring_get_probe();
+    io_uring_probe* probe = io_uring_get_probe();
     if (probe == nullptr) {
         fprintf(stderr, "io_uring probe failed!\n");
         return 1;
     }
     fprintf(stderr, "operation support: {\n");
     for (size_t i = 0; i < op_names.size(); ++i) {
-        fprintf(stderr, "  %s: %s\n", op_names[i].c_str(),
-                io_uring_opcode_supported(probe, i) ? "yes" : "no");
+        fprintf(stderr, "  %s: %s\n", op_names[i].c_str(), io_uring_opcode_supported(probe, i) ? "yes" : "no");
     }
     fprintf(stderr, "}\n");
     free(probe);

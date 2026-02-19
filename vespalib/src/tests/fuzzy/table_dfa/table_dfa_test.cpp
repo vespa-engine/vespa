@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/fuzzy/table_dfa.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/vespalib/fuzzy/table_dfa.hpp>
+
 #include <set>
 
 using namespace ::testing;
@@ -30,10 +32,10 @@ TEST(TableDfaTest, position_equality) {
 
 TEST(TableDfaTest, position_sort_order) {
     std::vector<Position> list;
-    list.emplace_back(0,1);
-    list.emplace_back(0,0);
-    list.emplace_back(1,0);
-    list.emplace_back(1,1);
+    list.emplace_back(0, 1);
+    list.emplace_back(0, 0);
+    list.emplace_back(1, 0);
+    list.emplace_back(1, 1);
     std::sort(list.begin(), list.end());
     EXPECT_EQ(list[0].index, 0);
     EXPECT_EQ(list[0].edits, 0);
@@ -53,11 +55,11 @@ TEST(TableDfaTest, position_subsumption) {
     Position pos4(1, 0);
     Position pos5(1, 1);
     Position pos6(1, 2);
-    
+
     Position pos7(2, 0);
     Position pos8(2, 1);
     Position pos9(2, 2);
-    
+
     EXPECT_FALSE(pos1.subsumes(pos1));
     EXPECT_TRUE(pos1.subsumes(pos2));
     EXPECT_TRUE(pos1.subsumes(pos3));
@@ -80,12 +82,12 @@ TEST(TableDfaTest, position_subsumption) {
 }
 
 TEST(TableDfaTest, position_materialization) {
-    EXPECT_EQ(Position(1,1).materialize(0).index, 0);
-    EXPECT_EQ(Position(1,1).materialize(1).index, 1);
-    EXPECT_EQ(Position(1,1).materialize(2).index, 2);
-    EXPECT_EQ(Position(1,1).materialize(0).edits, 2);
-    EXPECT_EQ(Position(1,1).materialize(1).edits, 1);
-    EXPECT_EQ(Position(1,1).materialize(2).edits, 2);
+    EXPECT_EQ(Position(1, 1).materialize(0).index, 0);
+    EXPECT_EQ(Position(1, 1).materialize(1).index, 1);
+    EXPECT_EQ(Position(1, 1).materialize(2).index, 2);
+    EXPECT_EQ(Position(1, 1).materialize(0).edits, 2);
+    EXPECT_EQ(Position(1, 1).materialize(1).edits, 1);
+    EXPECT_EQ(Position(1, 1).materialize(2).edits, 2);
 }
 
 TEST(TableDfaTest, position_to_string) {
@@ -98,28 +100,28 @@ TEST(TableDfaTest, position_to_string) {
 }
 
 TEST(TableDfaTest, state_creation_reorder) {
-    EXPECT_EQ(State::create<5>({{0,1},{2,0}}).to_string(), fmt("{2#0,0#1}"));
-    EXPECT_EQ(State::create<5>({{2,0},{0,0}}).to_string(), fmt("{0#0,2#0}"));
+    EXPECT_EQ(State::create<5>({{0, 1}, {2, 0}}).to_string(), fmt("{2#0,0#1}"));
+    EXPECT_EQ(State::create<5>({{2, 0}, {0, 0}}).to_string(), fmt("{0#0,2#0}"));
 }
 
 TEST(TableDfaTest, state_creation_duplicate_removal) {
-    EXPECT_EQ(State::create<5>({{0,0},{0,0},{2,1},{2,1}}).to_string(), fmt("{0#0,2#1}"));
+    EXPECT_EQ(State::create<5>({{0, 0}, {0, 0}, {2, 1}, {2, 1}}).to_string(), fmt("{0#0,2#1}"));
 }
 
 TEST(TableDfaTest, state_creation_edit_cutoff) {
-    EXPECT_EQ(State::create<2>({{0,0},{5,2},{10,3}}).to_string(), fmt("{0#0,5#2}"));
+    EXPECT_EQ(State::create<2>({{0, 0}, {5, 2}, {10, 3}}).to_string(), fmt("{0#0,5#2}"));
 }
 
 TEST(TableDfaTest, state_creation_subsumption_collapsing) {
-    EXPECT_EQ(State::create<2>({{0,0},{1,1}}).to_string(), fmt("{0#0}"));
-    EXPECT_EQ(State::create<2>({{0,1},{1,0}}).to_string(), fmt("{1#0}"));
-    EXPECT_EQ(State::create<2>({{0,0},{2,2}}).to_string(), fmt("{0#0}"));
-    EXPECT_EQ(State::create<2>({{0,2},{2,0}}).to_string(), fmt("{2#0}"));
+    EXPECT_EQ(State::create<2>({{0, 0}, {1, 1}}).to_string(), fmt("{0#0}"));
+    EXPECT_EQ(State::create<2>({{0, 1}, {1, 0}}).to_string(), fmt("{1#0}"));
+    EXPECT_EQ(State::create<2>({{0, 0}, {2, 2}}).to_string(), fmt("{0#0}"));
+    EXPECT_EQ(State::create<2>({{0, 2}, {2, 0}}).to_string(), fmt("{2#0}"));
 }
 
 TEST(TableDfaTest, state_normalization) {
-    auto state1 = State::create<2>({{2,1},{3,1}});
-    auto state2 = State::create<2>({{5,0},{3,1}});
+    auto state1 = State::create<2>({{2, 1}, {3, 1}});
+    auto state2 = State::create<2>({{5, 0}, {3, 1}});
     EXPECT_EQ(state1.to_string(), fmt("{2#1,3#1}"));
     EXPECT_EQ(state2.to_string(), fmt("{5#0,3#1}"));
     EXPECT_EQ(state1.normalize(), 2);
@@ -132,10 +134,10 @@ TEST(TableDfaTest, state_repo) {
     StateRepo repo;
     EXPECT_EQ(repo.state_to_idx(State::failed()), 0);
     EXPECT_EQ(repo.state_to_idx(State::start()), 1);
-    EXPECT_EQ(repo.state_to_idx(State::create<2>({{0,0},{1,0}})), 2);
-    EXPECT_EQ(repo.state_to_idx(State::create<2>({{0,0},{2,1}})), 3);
-    EXPECT_EQ(repo.state_to_idx(State::create<2>({{0,0},{1,0}})), 2);
-    EXPECT_EQ(repo.state_to_idx(State::create<2>({{0,0},{2,1}})), 3);
+    EXPECT_EQ(repo.state_to_idx(State::create<2>({{0, 0}, {1, 0}})), 2);
+    EXPECT_EQ(repo.state_to_idx(State::create<2>({{0, 0}, {2, 1}})), 3);
+    EXPECT_EQ(repo.state_to_idx(State::create<2>({{0, 0}, {1, 0}})), 2);
+    EXPECT_EQ(repo.state_to_idx(State::create<2>({{0, 0}, {2, 1}})), 3);
     EXPECT_EQ(repo.size(), 4);
     EXPECT_EQ(repo.idx_to_state(0).to_string(), fmt("{}"));
     EXPECT_EQ(repo.idx_to_state(1).to_string(), fmt("{0#0}"));
@@ -171,8 +173,7 @@ TEST(TableDfaTest, format_bits) {
     EXPECT_EQ(format_vector(expand_bits<2>(21), true), fmt("10101"));
 }
 
-template <uint8_t N>
-void list_states() {
+template <uint8_t N> void list_states() {
     auto repo = make_state_repo<N>();
     EXPECT_EQ(num_states<N>(), repo.size());
     fprintf(stderr, "max_edits: %u, number of states: %zu\n", N, repo.size());
@@ -184,14 +185,12 @@ void list_states() {
 TEST(TableDfaTest, list_states_for_max_edits_1) { list_states<1>(); }
 TEST(TableDfaTest, list_states_for_max_edits_2) { list_states<2>(); }
 
-template <uint8_t N>
-void list_edits() {
+template <uint8_t N> void list_edits() {
     auto repo = make_state_repo<N>();
-    fprintf(stderr,
-            "per state, listing the minimal number of edits needed\n"
-            "to reach offsets at and beyond its minimal boundary\n");
+    fprintf(stderr, "per state, listing the minimal number of edits needed\n"
+                    "to reach offsets at and beyond its minimal boundary\n");
     for (uint32_t i = 0; i < repo.size(); ++i) {
-        const State &state = repo.idx_to_state(i);
+        const State& state = repo.idx_to_state(i);
         fprintf(stderr, "%-23s : %s\n", state.to_string().c_str(),
                 format_vector(state.make_edit_vector<N>()).c_str());
     }
@@ -200,20 +199,18 @@ void list_edits() {
 TEST(TableDfaTest, list_edits_at_input_end_for_max_edits_1) { list_edits<1>(); }
 TEST(TableDfaTest, list_edits_at_input_end_for_max_edits_2) { list_edits<2>(); }
 
-template <uint8_t N>
-void list_transitions() {
+template <uint8_t N> void list_transitions() {
     auto repo = make_state_repo<N>();
     for (uint32_t idx = 0; idx < repo.size(); ++idx) {
-        const State &state = repo.idx_to_state(idx);
+        const State& state = repo.idx_to_state(idx);
         for (uint32_t i = 0; i < num_transitions<N>(); ++i) {
-            auto bits = expand_bits<N>(i);
-            State new_state = state.next<N>(bits);
+            auto     bits = expand_bits<N>(i);
+            State    new_state = state.next<N>(bits);
             uint32_t step = new_state.normalize();
             uint32_t new_idx = repo.state_to_idx(new_state);
             ASSERT_LT(new_idx, repo.size());
-            fprintf(stderr, "%u:%s,i --%s--> %u:%s,%s\n", idx, state.to_string().c_str(),
-                    format_vector(bits).c_str(), new_idx, new_state.to_string().c_str(),
-                    (step == 0) ? "i" : fmt("i+%u", step).c_str());
+            fprintf(stderr, "%u:%s,i --%s--> %u:%s,%s\n", idx, state.to_string().c_str(), format_vector(bits).c_str(),
+                    new_idx, new_state.to_string().c_str(), (step == 0) ? "i" : fmt("i+%u", step).c_str());
         }
     }
 }
@@ -225,8 +222,7 @@ TEST(TableDfaTest, list_transitions_for_max_edits_1) { list_transitions<1>(); }
 // with a minimal boundary that exceeds the boundary of the word
 // itself. Verifying this will enable us to not care about word size
 // while simulating the dfa.
-template <uint8_t N>
-void verify_word_end_boundary() {
+template <uint8_t N> void verify_word_end_boundary() {
     auto repo = make_state_repo<N>();
     using StateSet = std::set<uint32_t>;
     std::vector<StateSet> active(window_size<N>() + 1);
@@ -239,12 +235,13 @@ void verify_word_end_boundary() {
     uint32_t edge_shape = 0;
     for (uint32_t active_idx = 0; active_idx < active.size(); ++active_idx) {
         fprintf(stderr, "  edge shape: %s, max step: %zu, active_states: %zu\n",
-                format_vector(expand_bits<N>(edge_shape)).c_str(), active.size() - active_idx - 1, active[active_idx].size());
-        for (uint32_t idx: active[active_idx]) {
-            const State &state = repo.idx_to_state(idx);
+                format_vector(expand_bits<N>(edge_shape)).c_str(), active.size() - active_idx - 1,
+                active[active_idx].size());
+        for (uint32_t idx : active[active_idx]) {
+            const State& state = repo.idx_to_state(idx);
             for (uint32_t i = 0; i < num_transitions<N>(); ++i) {
                 if ((i & edge_shape) == 0) {
-                    State new_state = state.next<N>(expand_bits<N>(i));
+                    State    new_state = state.next<N>(expand_bits<N>(i));
                     uint32_t step = new_state.normalize();
                     uint32_t new_idx = repo.state_to_idx(new_state);
                     ASSERT_LT(new_idx, repo.size());
@@ -261,11 +258,11 @@ void verify_word_end_boundary() {
     while (!active.back().empty()) {
         fprintf(stderr, "  residue states after word end: %zu\n", active.back().size());
         StateSet residue;
-        for (uint32_t idx: active.back()) {
-            const State &state = repo.idx_to_state(idx);
-            State new_state = state.next<N>(expand_bits<N>(0));
-            uint32_t step = new_state.normalize();
-            uint32_t new_idx = repo.state_to_idx(new_state);
+        for (uint32_t idx : active.back()) {
+            const State& state = repo.idx_to_state(idx);
+            State        new_state = state.next<N>(expand_bits<N>(0));
+            uint32_t     step = new_state.normalize();
+            uint32_t     new_idx = repo.state_to_idx(new_state);
             ASSERT_LT(new_idx, repo.size());
             ASSERT_EQ(step, 0);
             if (new_idx != 0) {
@@ -276,16 +273,11 @@ void verify_word_end_boundary() {
     }
 }
 
-TEST(TableDfaTest, minimal_boundary_will_never_exceed_word_end_with_max_edits_1) {
-    verify_word_end_boundary<1>();
-}
+TEST(TableDfaTest, minimal_boundary_will_never_exceed_word_end_with_max_edits_1) { verify_word_end_boundary<1>(); }
 
-TEST(TableDfaTest, minimal_boundary_will_never_exceed_word_end_with_max_edits_2) {
-    verify_word_end_boundary<2>();
-}
+TEST(TableDfaTest, minimal_boundary_will_never_exceed_word_end_with_max_edits_2) { verify_word_end_boundary<2>(); }
 
-template <uint8_t N>
-void verify_inline_tfa() {
+template <uint8_t N> void verify_inline_tfa() {
     auto tfa = make_tfa<N>();
     fprintf(stderr, "verifying TFA for N = %u (byte size: %zu)\n", N, sizeof(*tfa));
     ASSERT_EQ(tfa->table.size(), num_states<N>());
@@ -303,16 +295,11 @@ void verify_inline_tfa() {
     }
 }
 
-TEST(TableDfaTest, verify_inline_tfa_with_max_edits_1) {
-    verify_inline_tfa<1>();
-}
+TEST(TableDfaTest, verify_inline_tfa_with_max_edits_1) { verify_inline_tfa<1>(); }
 
-TEST(TableDfaTest, verify_inline_tfa_with_max_edits_2) {
-    verify_inline_tfa<2>();
-}
+TEST(TableDfaTest, verify_inline_tfa_with_max_edits_2) { verify_inline_tfa<2>(); }
 
-template <uint8_t N>
-void dump_tfa_as_code() {
+template <uint8_t N> void dump_tfa_as_code() {
     auto tfa = make_tfa<N>();
     fprintf(stderr, "// start of auto-generated code for N = %u\n", N);
     fprintf(stderr, "template <> struct InlineTfa<%u> {\n", N);
@@ -344,45 +331,37 @@ void dump_tfa_as_code() {
     fprintf(stderr, "// end of auto-generated code for N = %u\n", N);
 }
 
-TEST(TableDfaTest, dump_tfa_with_max_edits_1_as_code) {
-    dump_tfa_as_code<1>();
-}
+TEST(TableDfaTest, dump_tfa_with_max_edits_1_as_code) { dump_tfa_as_code<1>(); }
 
-TEST(TableDfaTest, dump_tfa_with_max_edits_2_as_code) {
-    dump_tfa_as_code<2>();
-}
+TEST(TableDfaTest, dump_tfa_with_max_edits_2_as_code) { dump_tfa_as_code<2>(); }
 
-template <uint8_t N>
-void dump_tfa_graph() {
+template <uint8_t N> void dump_tfa_graph() {
     auto repo = make_state_repo<N>();
     fprintf(stderr, "digraph tfa {\n");
     for (uint32_t idx = 0; idx < repo.size(); ++idx) {
-        fprintf(stderr, "    %u [label=\"%s\"];\n", idx,
-                repo.idx_to_state(idx).to_string().c_str());
+        fprintf(stderr, "    %u [label=\"%s\"];\n", idx, repo.idx_to_state(idx).to_string().c_str());
     }
     // omit transitions from the failure state to itself
     for (uint32_t idx = 1; idx < repo.size(); ++idx) {
-        const State &state = repo.idx_to_state(idx);
+        const State& state = repo.idx_to_state(idx);
         for (uint32_t i = 0; i < num_transitions<N>(); ++i) {
-            auto bits = expand_bits<N>(i);
-            State new_state = state.next<N>(bits);
+            auto     bits = expand_bits<N>(i);
+            State    new_state = state.next<N>(bits);
             uint32_t step = new_state.normalize();
             uint32_t new_idx = repo.state_to_idx(new_state);
             ASSERT_LT(new_idx, repo.size());
             if (bits[0] && idx == new_idx && step == 1) {
                 // omit simple transitions to yourself
             } else {
-                fprintf(stderr, "    %u -> %u [label=\"%s,%u\"];\n", idx, new_idx,
-                        format_vector(bits, true).c_str(), step);
+                fprintf(stderr, "    %u -> %u [label=\"%s,%u\"];\n", idx, new_idx, format_vector(bits, true).c_str(),
+                        step);
             }
         }
     }
     fprintf(stderr, "}\n");
 }
 
-TEST(TableDfaTest, graphviz_for_tfa_with_max_edits_1) {
-    dump_tfa_graph<1>();
-}
+TEST(TableDfaTest, graphviz_for_tfa_with_max_edits_1) { dump_tfa_graph<1>(); }
 
 TEST(TableDfaTest, graphviz_for_food_with_max_edits_1) {
     auto dfa = LevenshteinDfa::build("food", 1, LevenshteinDfa::Casing::Cased, LevenshteinDfa::DfaType::Table);

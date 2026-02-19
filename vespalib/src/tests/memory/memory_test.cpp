@@ -5,24 +5,22 @@
 
 using namespace vespalib;
 
-class B
-{
+class B {
 public:
     virtual ~B() = default;
-    virtual B * clone() const { return new B(*this); }
+    virtual B* clone() const { return new B(*this); }
 };
 
-class A : public B
-{
+class A : public B {
 public:
     ~A() override = default;
-    A * clone() const override { return new A(*this); }
+    A* clone() const override { return new A(*this); }
 };
 
 TEST(MemoryTest, require_that_MallocAutoPtr_works_as_expected) {
     MallocAutoPtr a(malloc(30));
     EXPECT_TRUE(a.get() != nullptr);
-    void * tmp = a.get();
+    void*         tmp = a.get();
     MallocAutoPtr b(std::move(a));
     EXPECT_TRUE(tmp == b.get());
     EXPECT_TRUE(a.get() == nullptr);
@@ -50,7 +48,7 @@ TEST(MemoryTest, require_that_MallocPtr_works_as_expected) {
     EXPECT_TRUE(b.get() != nullptr);
     EXPECT_TRUE(a.get() != b.get());
     EXPECT_TRUE(memcmp(a.get(), b.get(), a.size()) == 0);
-    void * tmp = a.get();
+    void* tmp = a.get();
     a = b;
     EXPECT_TRUE(a.size() == 100);
     EXPECT_TRUE(a.get() != nullptr);
@@ -66,7 +64,7 @@ TEST(MemoryTest, require_that_MallocPtr_works_as_expected) {
     EXPECT_EQ(c.size(), 89u);
     c.realloc(0);
     EXPECT_EQ(c.size(), 0u);
-    EXPECT_TRUE(c == nullptr);    
+    EXPECT_TRUE(c == nullptr);
 }
 
 TEST(MemoryTest, require_that_CloneablePtr_works_as_expected) {
@@ -117,9 +115,9 @@ TEST(MemoryTest, require_that_CloneablePtr_bool_conversion_works_as_expected) {
 
 TEST(MemoryTest, require_that_VESPA_NELEMS_works_as_expected) {
     int a[3];
-    int b[4] = {0,1,2,3};
-    int c[4] = {0,1,2};
-    int d[] = {0,1,2,3,4};
+    int b[4] = {0, 1, 2, 3};
+    int c[4] = {0, 1, 2};
+    int d[] = {0, 1, 2, 3, 4};
     EXPECT_EQ(VESPA_NELEMS(a), 3u);
     EXPECT_EQ(VESPA_NELEMS(b), 4u);
     EXPECT_EQ(VESPA_NELEMS(c), 4u);
@@ -160,16 +158,16 @@ TEST(MemoryTest, require_that_memcmp_safe_works_as_expected) {
 
 TEST(MemoryTest, require_that_Unaligned_wrapper_works_as_expected) {
     struct Data {
-        char buf[sizeof(uint32_t) * 11]; // space for 10 unaligned values
-        void *get(size_t idx) { return buf + (idx * sizeof(uint32_t)) + 3; }
-        const void *cget(size_t idx) { return get(idx); }
+        char        buf[sizeof(uint32_t) * 11]; // space for 10 unaligned values
+        void*       get(size_t idx) { return buf + (idx * sizeof(uint32_t)) + 3; }
+        const void* cget(size_t idx) { return get(idx); }
         Data() { memset(buf, 0, sizeof(buf)); }
     };
     Data data;
     EXPECT_EQ(sizeof(Unaligned<uint32_t>), sizeof(uint32_t));
     EXPECT_EQ(alignof(Unaligned<uint32_t>), 1u);
-    Unaligned<uint32_t> *arr = Unaligned<uint32_t>::ptr(data.get(0));
-    const Unaligned<uint32_t> *carr = Unaligned<uint32_t>::ptr(data.cget(0));
+    Unaligned<uint32_t>*       arr = Unaligned<uint32_t>::ptr(data.get(0));
+    const Unaligned<uint32_t>* carr = Unaligned<uint32_t>::ptr(data.cget(0));
     Unaligned<uint32_t>::at(data.get(0)).write(123);
     Unaligned<uint32_t>::at(data.get(1)) = 456;
     arr[2] = 789;

@@ -2,6 +2,4 @@
 
 #include "value_factory.h"
 
-namespace vespalib::slime {
-
-} // namespace vespalib::slime
+namespace vespalib::slime {} // namespace vespalib::slime

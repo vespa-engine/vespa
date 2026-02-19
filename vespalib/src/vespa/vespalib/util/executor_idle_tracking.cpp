@@ -2,5 +2,4 @@
 
 #include "executor_idle_tracking.h"
 
-namespace vespa {
-}
+namespace vespa {}

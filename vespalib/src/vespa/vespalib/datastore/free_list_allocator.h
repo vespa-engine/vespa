@@ -11,8 +11,7 @@ namespace vespalib::datastore {
  * and uses free lists if available.
  */
 template <typename EntryT, typename RefT, typename ReclaimerT>
-class FreeListAllocator : public Allocator<EntryT, RefT>
-{
+class FreeListAllocator : public Allocator<EntryT, RefT> {
 public:
     using ParentType = Allocator<EntryT, RefT>;
     using HandleType = typename ParentType::HandleType;
@@ -23,15 +22,13 @@ private:
     using ParentType::_typeId;
 
 public:
-    FreeListAllocator(DataStoreBase &store, uint32_t typeId);
+    FreeListAllocator(DataStoreBase& store, uint32_t typeId);
 
-    template <typename ... Args>
-    HandleType alloc(Args && ... args);
+    template <typename... Args> HandleType alloc(Args&&... args);
 
-    HandleType allocArray(ConstArrayRef array);
-    HandleType allocArray();
-    template <typename BufferType>
-    HandleType alloc_dynamic_array(ConstArrayRef array);
+    HandleType                                allocArray(ConstArrayRef array);
+    HandleType                                allocArray();
+    template <typename BufferType> HandleType alloc_dynamic_array(ConstArrayRef array);
 };
 
-}
+} // namespace vespalib::datastore

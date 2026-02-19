@@ -8,8 +8,7 @@ LOG_SETUP("trace_test");
 
 using namespace vespalib;
 
-TEST(TraceTest, testEncodeDecode)
-{
+TEST(TraceTest, testEncodeDecode) {
     EXPECT_EQ("()", TraceNode::decode("").encode());
     EXPECT_EQ("()", TraceNode::decode("[xyz").encode());
     EXPECT_EQ("([xyz][])", TraceNode::decode("[xyz][]").encode());
@@ -94,8 +93,7 @@ TEST(TraceTest, testEncodeDecode)
     }
 }
 
-TEST(TraceTest, testReservedChars)
-{
+TEST(TraceTest, testReservedChars) {
     TraceNode t;
     t.addChild("abc(){}[]\\xyz");
     EXPECT_EQ("abc(){}[]\\xyz", t.getChild(0).getNote());
@@ -113,8 +111,7 @@ TEST(TraceTest, testReservedChars)
     }
 }
 
-TEST(TraceTest, testAdd)
-{
+TEST(TraceTest, testAdd) {
     TraceNode t1 = TraceNode::decode("([x])");
     TraceNode t2 = TraceNode::decode("([y])");
     TraceNode t3 = TraceNode::decode("([z])");
@@ -133,15 +130,13 @@ TEST(TraceTest, testAdd)
     EXPECT_EQ("([y]([y])([y]([y])))", t2.encode());
 }
 
-TEST(TraceTest, testStrict)
-{
+TEST(TraceTest, testStrict) {
     EXPECT_EQ("{}", TraceNode::decode("()").setStrict(false).encode());
     EXPECT_EQ("{[x]}", TraceNode::decode("([x])").setStrict(false).encode());
     EXPECT_EQ("{[x][y]}", TraceNode::decode("([x][y])").setStrict(false).encode());
 }
 
-TEST(TraceTest, testTraceLevel)
-{
+TEST(TraceTest, testTraceLevel) {
     Trace t;
     t.setLevel(4);
     EXPECT_EQ(4u, t.getLevel());
@@ -167,8 +162,7 @@ TEST(TraceTest, testTraceLevel)
     EXPECT_EQ(5u, t.getNumChildren());
 }
 
-TEST(TraceTest, testCompact)
-{
+TEST(TraceTest, testCompact) {
     EXPECT_EQ("()", TraceNode::decode("()").compact().encode());
     EXPECT_EQ("()", TraceNode::decode("(())").compact().encode());
     EXPECT_EQ("()", TraceNode::decode("(()())").compact().encode());
@@ -197,8 +191,7 @@ TEST(TraceTest, testCompact)
     EXPECT_EQ("({[a][b][c][d][e][f]})", TraceNode::decode("({({[a][b]})({[c][d]})({[e][f]})})").compact().encode());
 }
 
-TEST(TraceTest, testSort)
-{
+TEST(TraceTest, testSort) {
     EXPECT_EQ("([b][a][c])", TraceNode::decode("([b][a][c])").sort().encode());
     EXPECT_EQ("({[a][b][c]})", TraceNode::decode("({[b][a][c]})").sort().encode());
     EXPECT_EQ("(([c][a])([b]))", TraceNode::decode("(([c][a])([b]))").sort().encode());
@@ -207,8 +200,7 @@ TEST(TraceTest, testSort)
     EXPECT_EQ("({([b]){[a][c]}})", TraceNode::decode("({{[c][a]}([b])})").sort().encode());
 }
 
-TEST(TraceTest, testNormalize)
-{
+TEST(TraceTest, testNormalize) {
     TraceNode t1 = TraceNode::decode("({([a][b]{[x][y]([p][q])})([c][d])([e][f])})");
     TraceNode t2 = TraceNode::decode("({([a][b]{[y][x]([p][q])})([c][d])([e][f])})");
     TraceNode t3 = TraceNode::decode("({([a][b]{[y]([p][q])[x]})([c][d])([e][f])})");
@@ -229,14 +221,14 @@ TEST(TraceTest, testNormalize)
     EXPECT_TRUE(t1.compact().encode() != ty.compact().encode());
     EXPECT_TRUE(t1.compact().encode() != tz.compact().encode());
 
-    fprintf(stderr, "1: %s\n", + t1.normalize().encode().c_str());
-    fprintf(stderr, "2: %s\n", + t2.normalize().encode().c_str());
-    fprintf(stderr, "3: %s\n", + t3.normalize().encode().c_str());
-    fprintf(stderr, "4: %s\n", + t4.normalize().encode().c_str());
-    fprintf(stderr, "5: %s\n", + t5.normalize().encode().c_str());
-    fprintf(stderr, "x: %s\n", + tx.normalize().encode().c_str());
-    fprintf(stderr, "y: %s\n", + ty.normalize().encode().c_str());
-    fprintf(stderr, "z: %s\n", + tz.normalize().encode().c_str());
+    fprintf(stderr, "1: %s\n", +t1.normalize().encode().c_str());
+    fprintf(stderr, "2: %s\n", +t2.normalize().encode().c_str());
+    fprintf(stderr, "3: %s\n", +t3.normalize().encode().c_str());
+    fprintf(stderr, "4: %s\n", +t4.normalize().encode().c_str());
+    fprintf(stderr, "5: %s\n", +t5.normalize().encode().c_str());
+    fprintf(stderr, "x: %s\n", +tx.normalize().encode().c_str());
+    fprintf(stderr, "y: %s\n", +ty.normalize().encode().c_str());
+    fprintf(stderr, "z: %s\n", +tz.normalize().encode().c_str());
     EXPECT_TRUE(t1.normalize().encode() == t2.normalize().encode());
     EXPECT_TRUE(t1.normalize().encode() == t3.normalize().encode());
     EXPECT_TRUE(t1.normalize().encode() == t4.normalize().encode());
@@ -248,10 +240,9 @@ TEST(TraceTest, testNormalize)
     EXPECT_EQ("({([c][d])([e][f])([a][b]{[x][y]([p][q])})})", t1.normalize().encode());
 }
 
-TEST(TraceTest, testTraceDump)
-{
+TEST(TraceTest, testTraceDump) {
     {
-        Trace big;
+        Trace     big;
         TraceNode b1;
         TraceNode b2;
         for (int i = 0; i < 100; ++i) {
@@ -280,43 +271,44 @@ TEST(TraceTest, testTraceDump)
         EXPECT_EQ(std::string("...\n"), s1.toString(0));
         EXPECT_EQ(std::string("<trace>\n...\n"), s1.toString(1));
         EXPECT_EQ(std::string("<trace>\n"      // 8    8
-                                      "    <trace>\n"  // 12  20
-                                      "        test\n" // 13  33
-                                      "...\n"), s1.toString(33));
-        EXPECT_EQ(std::string("<trace>\n"      // 8   8
-                                      "    test\n"     // 9  17
-                                      "    test\n"     // 9  26
-                                      "...\n"), s2.toString(26));
-        EXPECT_EQ(std::string("<trace>\n"      // 8   8
-                                      "    test\n"     // 9  17
-                                      "    test\n"     // 9  26
-                                      "</trace>\n"), s2.toString(27));
+                              "    <trace>\n"  // 12  20
+                              "        test\n" // 13  33
+                              "...\n"),
+                  s1.toString(33));
+        EXPECT_EQ(std::string("<trace>\n"  // 8   8
+                              "    test\n" // 9  17
+                              "    test\n" // 9  26
+                              "...\n"),
+                  s2.toString(26));
+        EXPECT_EQ(std::string("<trace>\n"  // 8   8
+                              "    test\n" // 9  17
+                              "    test\n" // 9  26
+                              "</trace>\n"),
+                  s2.toString(27));
         EXPECT_EQ(s2.toString(27), s2.toString());
     }
 }
 
-struct EncoderVisitor : public TraceVisitor
-{
+struct EncoderVisitor : public TraceVisitor {
     std::string str;
-    void entering(const TraceNode & traceNode) override {
-        (void) traceNode;
+    void        entering(const TraceNode& traceNode) override {
+        (void)traceNode;
         str += "(";
     }
-    void visit(const TraceNode & traceNode) override {
+    void visit(const TraceNode& traceNode) override {
         if (traceNode.hasNote()) {
             str += "[";
             str += traceNode.getNote();
             str += "]";
         }
     }
-    void leaving(const TraceNode & traceNode) override {
-        (void) traceNode;
+    void leaving(const TraceNode& traceNode) override {
+        (void)traceNode;
         str += ")";
     }
 };
 
-TEST(TraceTest, testVisiting)
-{
+TEST(TraceTest, testVisiting) {
     TraceNode b1;
     TraceNode b2;
     for (int i = 0; i < 100; ++i) {
@@ -337,8 +329,7 @@ TEST(TraceTest, testVisiting)
 constexpr system_time zero;
 constexpr system_time as_ms(long ms) { return system_time(std::chrono::milliseconds(ms)); }
 
-TEST(TraceTest, testTimestamp)
-{
+TEST(TraceTest, testTimestamp) {
     TraceNode root;
     root.addChild("foo", as_ms(1234));
     root.addChild("bar");
@@ -347,8 +338,7 @@ TEST(TraceTest, testTimestamp)
     EXPECT_EQ(root.getChild(1).getTimestamp(), zero);
 }
 
-TEST(TraceTest, testConstruct)
-{
+TEST(TraceTest, testConstruct) {
     TraceNode leaf1("foo", as_ms(123));
     EXPECT_TRUE(leaf1.hasNote());
     EXPECT_EQ("foo", leaf1.getNote());

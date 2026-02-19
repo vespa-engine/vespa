@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "input_reader.h"
+
 #include "input.h"
 
 namespace vespalib {
 
-size_t
-InputReader::obtain_slow()
-{
+size_t InputReader::obtain_slow() {
     _data = _input.evict(_pos).obtain();
     _bytes_evicted += _pos;
     _pos = 0;
@@ -17,18 +16,14 @@ InputReader::obtain_slow()
     return size();
 }
 
-char
-InputReader::read_slow()
-{
+char InputReader::read_slow() {
     if (!failed()) {
         fail("input underflow");
     }
     return 0;
 }
 
-Memory
-InputReader::read_slow(size_t bytes)
-{
+Memory InputReader::read_slow(size_t bytes) {
     _space.clear();
     while ((_space.size() < bytes) && (obtain() > 0)) {
         size_t copy_now = std::min(size(), (bytes - _space.size()));
@@ -44,13 +39,9 @@ InputReader::read_slow(size_t bytes)
     return Memory();
 }
 
-InputReader::~InputReader()
-{
-    _input.evict(_pos);
-}
+InputReader::~InputReader() { _input.evict(_pos); }
 
-void
-InputReader::fail(const std::string &msg) {
+void InputReader::fail(const std::string& msg) {
     if (!failed()) {
         _error = msg;
         _input.evict(_pos);

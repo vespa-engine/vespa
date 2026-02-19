@@ -1,19 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "dimension.h"
+
 #include "name_repo.h"
 
 namespace vespalib::metrics {
 
-Dimension
-Dimension::from_name(const std::string& name)
-{
-    return NameRepo::instance.dimension(name);
-}
+Dimension Dimension::from_name(const std::string& name) { return NameRepo::instance.dimension(name); }
 
-const std::string&
-Dimension::as_name() const
-{
-    return NameRepo::instance.dimensionName(*this);
-}
+const std::string& Dimension::as_name() const { return NameRepo::instance.dimensionName(*this); }
 
 } // namespace vespalib::metrics

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "relative_frequency_sketch.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cstring>
@@ -19,8 +20,7 @@ RawRelativeFrequencySketch::RawRelativeFrequencySketch(size_t count)
     : _buf(alloc::Alloc::alloc_aligned(roundUp2inN(std::max(size_t(64U), count * 8)), 512)),
       _estimated_sample_count(0),
       _window_size((_buf.size() / 8) * 10),
-      _block_mask_bits(_buf.size() > 64 ? Optimized::msbIdx(_buf.size() / 64) : 0)
-{
+      _block_mask_bits(_buf.size() > 64 ? Optimized::msbIdx(_buf.size() / 64) : 0) {
     assert(_block_mask_bits <= 44); // Will always be the case in practice, but it's an invariant...
     memset(_buf.get(), 0, _buf.size());
 }
@@ -45,24 +45,23 @@ RawRelativeFrequencySketch::~RawRelativeFrequencySketch() = default;
  * Iff the estimated sample count reaches the window size threshold we implicitly divide all
  * recorded 4-bit counters in half.
  */
-template <bool ReturnMinCount>
-uint8_t RawRelativeFrequencySketch::add_by_hash_impl(uint64_t hash) noexcept {
+template <bool ReturnMinCount> uint8_t RawRelativeFrequencySketch::add_by_hash_impl(uint64_t hash) noexcept {
     const uint64_t block = hash & ((1ULL << _block_mask_bits) - 1);
     hash >>= _block_mask_bits;
-    assert(block*64 + 64 <= _buf.size());
-    auto* block_ptr = static_cast<uint8_t*>(_buf.get()) + (block * 64);
+    assert(block * 64 + 64 <= _buf.size());
+    auto*   block_ptr = static_cast<uint8_t*>(_buf.get()) + (block * 64);
     uint8_t new_counters[4];
     // The compiler will happily and easily unroll this loop.
     for (uint8_t i = 0; i < 4; ++i) {
-        uint8_t h = hash >> (i*5);
-        uint8_t* vp = block_ptr + (i * 16) + (h & 0xf); // row #i byte select
+        uint8_t       h = hash >> (i * 5);
+        uint8_t*      vp = block_ptr + (i * 16) + (h & 0xf); // row #i byte select
         const uint8_t v = *vp;
         h >>= 4;
         const uint8_t nib_shift = (h & 1) * 4; // High or low nibble shift factor (4 or 0)
-        const uint8_t nib_mask  = 0xf << nib_shift;
-        const uint8_t nib_old   = (v & nib_mask) >> nib_shift;
-        new_counters[i]         = nib_old < 15 ? nib_old + 1 : 15; // Saturated add
-        const uint8_t nib_rem   = v & ~nib_mask; // Untouched nibble that should be preserved
+        const uint8_t nib_mask = 0xf << nib_shift;
+        const uint8_t nib_old = (v & nib_mask) >> nib_shift;
+        new_counters[i] = nib_old < 15 ? nib_old + 1 : 15; // Saturated add
+        const uint8_t nib_rem = v & ~nib_mask;             // Untouched nibble that should be preserved
         *vp = (new_counters[i] << nib_shift) | nib_rem;
     }
     if (++_estimated_sample_count >= _window_size) [[unlikely]] {
@@ -70,16 +69,13 @@ uint8_t RawRelativeFrequencySketch::add_by_hash_impl(uint64_t hash) noexcept {
         _estimated_sample_count /= 2;
     }
     if constexpr (ReturnMinCount) {
-        return std::min(std::min(new_counters[0], new_counters[1]),
-                        std::min(new_counters[2], new_counters[3]));
+        return std::min(std::min(new_counters[0], new_counters[1]), std::min(new_counters[2], new_counters[3]));
     } else {
         return 0;
     }
 }
 
-void RawRelativeFrequencySketch::add_by_hash(uint64_t hash) noexcept {
-    (void)add_by_hash_impl<false>(hash);
-}
+void RawRelativeFrequencySketch::add_by_hash(uint64_t hash) noexcept { (void)add_by_hash_impl<false>(hash); }
 
 uint8_t RawRelativeFrequencySketch::add_and_count_by_hash(uint64_t hash) noexcept {
     return add_by_hash_impl<true>(hash);
@@ -99,9 +95,9 @@ uint8_t RawRelativeFrequencySketch::count_min_by_hash(uint64_t hash) const noexc
     const uint64_t block = hash & ((1ULL << _block_mask_bits) - 1);
     hash >>= _block_mask_bits;
     const uint8_t* block_ptr = static_cast<const uint8_t*>(_buf.get()) + (block * 64);
-    uint8_t cm[4];
+    uint8_t        cm[4];
     for (uint8_t i = 0; i < 4; ++i) {
-        uint8_t h = hash >> (i*5);
+        uint8_t        h = hash >> (i * 5);
         const uint8_t* vp = block_ptr + (i * 16) + (h & 0xf); // row #i byte select
         h >>= 4;
         const uint8_t nib_shift = (h & 1) * 4; // 4 or 0
@@ -111,8 +107,8 @@ uint8_t RawRelativeFrequencySketch::count_min_by_hash(uint64_t hash) const noexc
     return std::min(std::min(cm[0], cm[1]), std::min(cm[2], cm[3]));
 }
 
-std::strong_ordering
-RawRelativeFrequencySketch::estimate_relative_frequency_by_hash(uint64_t lhs_hash, uint64_t rhs_hash) const noexcept {
+std::strong_ordering RawRelativeFrequencySketch::estimate_relative_frequency_by_hash(
+    uint64_t lhs_hash, uint64_t rhs_hash) const noexcept {
     return count_min_by_hash(lhs_hash) <=> count_min_by_hash(rhs_hash);
 }
 
@@ -152,11 +148,11 @@ RawRelativeFrequencySketch::estimate_relative_frequency_by_hash(uint64_t lhs_has
  */
 void RawRelativeFrequencySketch::div_all_by_2() noexcept {
     const uint64_t n_blocks = _buf.size() / 64;
-    auto* block_ptr = static_cast<uint8_t*>(_buf.get());
+    auto*          block_ptr = static_cast<uint8_t*>(_buf.get());
     for (uint64_t i = 0; i < n_blocks; ++i) {
         for (uint32_t j = 0; j < 8; ++j) {
             uint64_t chunk;
-            static_assert(sizeof(chunk)*8 == 64);
+            static_assert(sizeof(chunk) * 8 == 64);
             // Compiler will optimize away memcpys (avoids aliasing).
             memcpy(&chunk, block_ptr + (8 * j), 8);
             chunk >>= 1;
@@ -167,4 +163,4 @@ void RawRelativeFrequencySketch::div_all_by_2() noexcept {
     }
 }
 
-} // vespalib
+} // namespace vespalib

@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "peer_credentials.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <ostream>
 
 namespace vespalib::net::tls {
@@ -19,9 +21,8 @@ std::ostream& operator<<(std::ostream& os, const PeerCredentials& creds) {
 }
 
 namespace {
-void emit_comma_separated_string_list(asciistream& os, std::string_view title,
-                                      const std::vector<std::string>& strings, bool prefix_comma)
-{
+void emit_comma_separated_string_list(
+    asciistream& os, std::string_view title, const std::vector<std::string>& strings, bool prefix_comma) {
     if (prefix_comma) {
         os << ", ";
     }
@@ -34,7 +35,7 @@ void emit_comma_separated_string_list(asciistream& os, std::string_view title,
     }
     os << ']';
 }
-}
+} // namespace
 
 std::string PeerCredentials::to_string() const {
     asciistream os;
@@ -55,4 +56,4 @@ std::string PeerCredentials::to_string() const {
     return os.str();
 }
 
-}
+} // namespace vespalib::net::tls

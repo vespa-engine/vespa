@@ -51,6 +51,4 @@ int getStackTraceFrames(void** framesOut, int maxFrames);
  */
 [[nodiscard]] size_t signal_safe_collect_stack_frames(void** frames_out, size_t frames_max);
 
-
-}
-
+} // namespace vespalib

@@ -1,20 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "unwind_message.h"
+
 #include <exception>
 
 namespace vespalib {
 
-UnwindMessage::UnwindMessage(const std::string &msg)
-    : _num_active(std::uncaught_exceptions()),
-      _message(msg)
-{
-}
+UnwindMessage::UnwindMessage(const std::string& msg) : _num_active(std::uncaught_exceptions()), _message(msg) {}
 
-UnwindMessage::UnwindMessage(UnwindMessage &&rhs) noexcept
-    : _num_active(std::uncaught_exceptions()),
-      _message(rhs._message)
-{
+UnwindMessage::UnwindMessage(UnwindMessage&& rhs) noexcept
+    : _num_active(std::uncaught_exceptions()), _message(rhs._message) {
     rhs._message.clear();
 }
 
@@ -24,8 +19,7 @@ UnwindMessage::~UnwindMessage() {
     }
 }
 
-UnwindMessage unwind_msg(const char *fmt, ...)
-{
+UnwindMessage unwind_msg(const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     std::string msg = make_string_va(fmt, ap);
@@ -33,4 +27,4 @@ UnwindMessage unwind_msg(const char *fmt, ...)
     return {msg};
 }
 
-} // namespace
+} // namespace vespalib

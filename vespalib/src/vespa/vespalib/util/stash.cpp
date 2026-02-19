@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stash.h"
+
 #include <algorithm>
 
 namespace vespalib {
@@ -8,20 +9,20 @@ namespace stash {
 
 namespace {
 
-Chunk *free_chunks(Chunk *chunk, Chunk *until = nullptr) {
+Chunk* free_chunks(Chunk* chunk, Chunk* until = nullptr) {
     while (chunk != until) {
-        void *mem = chunk;
+        void* mem = chunk;
         chunk = chunk->next;
         free(mem);
     }
     return until;
 }
 
-Chunk *keep_one(Chunk *chunk) {
+Chunk* keep_one(Chunk* chunk) {
     if (chunk != nullptr) {
-        Chunk *next = chunk->next;
+        Chunk* next = chunk->next;
         while (next != nullptr) {
-            void *mem = chunk;
+            void* mem = chunk;
             chunk = next;
             next = chunk->next;
             free(mem);
@@ -32,53 +33,41 @@ Chunk *keep_one(Chunk *chunk) {
     return nullptr;
 }
 
-Cleanup *run_cleanup(Cleanup *cleanup, Cleanup *until = nullptr) {
+Cleanup* run_cleanup(Cleanup* cleanup, Cleanup* until = nullptr) {
     while (cleanup != until) {
-        Cleanup *tmp = cleanup;
+        Cleanup* tmp = cleanup;
         cleanup = tmp->next;
         tmp->cleanup();
     }
     return until;
 }
 
-} // namespace vespalib::stash::<unnamed>
+} // namespace
 
-} // namespace vespalib::stash
+} // namespace stash
 
-char *
-Stash::do_alloc(size_t size)
-{
+char* Stash::do_alloc(size_t size) {
     if (is_small(size)) {
-        void *chunk_mem = malloc(_chunk_size);
+        void* chunk_mem = malloc(_chunk_size);
         _chunks = new (chunk_mem) stash::Chunk(_chunks);
         return _chunks->alloc(size, _chunk_size);
     } else {
         size_t allocate = sizeof(stash::DeleteMemory) + size;
-        char *mem = static_cast<char*>(malloc(allocate));
+        char*  mem = static_cast<char*>(malloc(allocate));
         _cleanup = new (mem) stash::DeleteMemory(allocate, _cleanup);
         return (mem + sizeof(stash::DeleteMemory));
     }
 }
 
 Stash::Stash(size_t chunk_size) noexcept
-    : _chunks(nullptr),
-      _cleanup(nullptr),
-      _chunk_size(std::max(size_t(128), chunk_size))
-{
-}
+    : _chunks(nullptr), _cleanup(nullptr), _chunk_size(std::max(size_t(128), chunk_size)) {}
 
-Stash::Stash(Stash &&rhs) noexcept
-    : _chunks(rhs._chunks),
-      _cleanup(rhs._cleanup),
-      _chunk_size(rhs._chunk_size)
-{
+Stash::Stash(Stash&& rhs) noexcept : _chunks(rhs._chunks), _cleanup(rhs._cleanup), _chunk_size(rhs._chunk_size) {
     rhs._chunks = nullptr;
     rhs._cleanup = nullptr;
 }
 
-Stash &
-Stash::operator=(Stash &&rhs) noexcept
-{
+Stash& Stash::operator=(Stash&& rhs) noexcept {
     stash::run_cleanup(_cleanup);
     stash::free_chunks(_chunks);
     _chunks = rhs._chunks;
@@ -89,22 +78,17 @@ Stash::operator=(Stash &&rhs) noexcept
     return *this;
 }
 
-Stash::~Stash()
-{
+Stash::~Stash() {
     stash::run_cleanup(_cleanup);
     stash::free_chunks(_chunks);
 }
 
-void
-Stash::clear()
-{
+void Stash::clear() {
     _cleanup = stash::run_cleanup(_cleanup);
     _chunks = stash::keep_one(_chunks);
 }
 
-void
-Stash::revert(const Mark &mark)
-{
+void Stash::revert(const Mark& mark) {
     _cleanup = stash::run_cleanup(_cleanup, mark._cleanup);
     _chunks = stash::free_chunks(_chunks, mark._chunk);
     if (_chunks != nullptr) {
@@ -112,22 +96,18 @@ Stash::revert(const Mark &mark)
     }
 }
 
-size_t
-Stash::count_used() const
-{
+size_t Stash::count_used() const {
     size_t used = 0;
-    for (stash::Chunk *chunk = _chunks; chunk != nullptr; chunk = chunk->next) {
+    for (stash::Chunk* chunk = _chunks; chunk != nullptr; chunk = chunk->next) {
         used += chunk->used;
     }
     return used;
 }
 
-MemoryUsage
-Stash::get_memory_usage() const
-{
+MemoryUsage Stash::get_memory_usage() const {
     size_t allocated = 0;
     size_t used = 0;
-    for (stash::Chunk *chunk = _chunks; chunk != nullptr; chunk = chunk->next) {
+    for (stash::Chunk* chunk = _chunks; chunk != nullptr; chunk = chunk->next) {
         allocated += _chunk_size;
         used += chunk->used;
     }

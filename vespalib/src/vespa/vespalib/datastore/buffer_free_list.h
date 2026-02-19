@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "entryref.h"
 #include "buffer_type.h"
+#include "entryref.h"
 
 namespace vespalib::datastore {
 
@@ -19,7 +19,7 @@ private:
     using EntryRefArray = std::vector<EntryRef>;
 
     std::atomic<EntryCount>& _dead_entries;
-    FreeList                *_free_list;
+    FreeList*                _free_list;
     EntryRefArray            _free_refs;
 
     void attach();
@@ -32,13 +32,13 @@ public:
     BufferFreeList(const BufferFreeList&) = delete;
     BufferFreeList& operator=(const BufferFreeList&) = delete;
     BufferFreeList& operator=(BufferFreeList&&) = delete;
-    void enable(FreeList& free_list) noexcept;
-    void disable() noexcept;
+    void            enable(FreeList& free_list) noexcept;
+    void            disable() noexcept;
 
-    bool enabled() const noexcept { return _free_list != nullptr; }
-    bool empty() const noexcept { return _free_refs.empty(); }
-    void push_entry(EntryRef ref);
+    bool     enabled() const noexcept { return _free_list != nullptr; }
+    bool     empty() const noexcept { return _free_refs.empty(); }
+    void     push_entry(EntryRef ref);
     EntryRef pop_entry() noexcept;
 };
 
-}
+} // namespace vespalib::datastore

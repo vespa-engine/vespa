@@ -6,37 +6,26 @@ namespace vespalib {
 
 VESPA_THREAD_STACK_TAG(unnamed_blocking_executor);
 
-bool
-BlockingThreadStackExecutor::acceptNewTask(unique_lock & guard, std::condition_variable & cond)
-{
+bool BlockingThreadStackExecutor::acceptNewTask(unique_lock& guard, std::condition_variable& cond) {
     while (!closed() && !isRoomForNewTask() && !owns_this_thread()) {
         cond.wait(guard);
     }
     return (!closed());
 }
 
-void
-BlockingThreadStackExecutor::wakeup(unique_lock &, std::condition_variable & cond)
-{
-    cond.notify_all();
-}
+void BlockingThreadStackExecutor::wakeup(unique_lock&, std::condition_variable& cond) { cond.notify_all(); }
 
 BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t taskLimit)
-    : ThreadStackExecutorBase(taskLimit, unnamed_blocking_executor)
-{
+    : ThreadStackExecutorBase(taskLimit, unnamed_blocking_executor) {
     start(threads);
 }
 
-BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t taskLimit,
-                                                         init_fun_t init_function)
-    : ThreadStackExecutorBase(taskLimit, std::move(init_function))
-{
+BlockingThreadStackExecutor::BlockingThreadStackExecutor(
+    uint32_t threads, uint32_t taskLimit, init_fun_t init_function)
+    : ThreadStackExecutorBase(taskLimit, std::move(init_function)) {
     start(threads);
 }
 
-BlockingThreadStackExecutor::~BlockingThreadStackExecutor()
-{
-    cleanup();
-}
+BlockingThreadStackExecutor::~BlockingThreadStackExecutor() { cleanup(); }
 
 } // namespace vespalib

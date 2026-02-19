@@ -9,16 +9,14 @@ namespace vespalib {
 /**
  * Simple utility running two runnables in order.
  **/
-class RunnablePair : public Runnable
-{
+class RunnablePair : public Runnable {
 private:
-    Runnable &_first;
-    Runnable &_second;
+    Runnable& _first;
+    Runnable& _second;
 
 public:
-    RunnablePair(Runnable &first, Runnable &second);
+    RunnablePair(Runnable& first, Runnable& second);
     void run() override;
 };
 
 } // namespace vespalib
-

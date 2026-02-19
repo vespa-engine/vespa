@@ -1,23 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/locale/c.h>
+
+#include <float.h>
+
 #include <cmath>
 #include <iomanip>
-#include <float.h>
 
 using namespace vespalib;
 
 namespace {
 
-template <typename T>
-void
-verifyBothWays(T value, const char * expected, const std::string& label)
-{
+template <typename T> void verifyBothWays(T value, const char* expected, const std::string& label) {
     SCOPED_TRACE(label);
     asciistream os;
     os << value;
@@ -41,11 +40,10 @@ verifyBothWays(T value, const char * expected, const std::string& label)
 }
 
 template <typename T>
-void
-verify(T first, T second, const char * firstResult, const char * secondResult, char delim, const std::string& label)
-{
+void verify(T first, T second, const char* firstResult, const char* secondResult, char delim,
+            const std::string& label) {
     SCOPED_TRACE(label);
-    asciistream os;
+    asciistream        os;
     std::ostringstream ss;
     os << first;
     ss << first;
@@ -61,13 +59,12 @@ verify(T first, T second, const char * firstResult, const char * secondResult, c
     EXPECT_EQ(strcmp(ss.str().c_str(), secondResult), 0);
 }
 
-}
+} // namespace
 
-TEST(AsciistreamTest, test_illegal_numbers)
-{
+TEST(AsciistreamTest, test_illegal_numbers) {
     {
         asciistream is("777777777777");
-        uint16_t s(0);
+        uint16_t    s(0);
         EXPECT_THROW(is >> s, IllegalArgumentException);
         EXPECT_EQ(12u, is.size());
         uint32_t i(0);
@@ -90,7 +87,7 @@ TEST(AsciistreamTest, test_illegal_numbers)
     }
     {
         asciistream is("-77");
-        uint16_t s(0);
+        uint16_t    s(0);
         EXPECT_THROW(is >> s, IllegalArgumentException);
         EXPECT_EQ(3u, is.size());
         uint32_t i(0);
@@ -103,7 +100,7 @@ TEST(AsciistreamTest, test_illegal_numbers)
         float f(0);
         EXPECT_THROW(is >> f, IllegalArgumentException);
         EXPECT_EQ(40u, is.size());
-       std::string_view tmp = is.view();
+        std::string_view tmp = is.view();
         is << "e" << tmp;
         EXPECT_EQ(81u, is.size());
         double d(0);
@@ -112,7 +109,7 @@ TEST(AsciistreamTest, test_illegal_numbers)
     }
     {
         asciistream is("a");
-        char c(' ');
+        char        c(' ');
         EXPECT_EQ(1u, is.size());
         is >> c;
         EXPECT_EQ('a', c);
@@ -145,12 +142,10 @@ TEST(AsciistreamTest, test_illegal_numbers)
             EXPECT_THROW(is >> l, IllegalArgumentException);
             EXPECT_TRUE(is.empty());
         }
-
     }
 }
 
-TEST(AsciistreamTest, test_copy_construct)
-{
+TEST(AsciistreamTest, test_copy_construct) {
     asciistream os;
     os << "test1";
     asciistream os2(os);
@@ -167,8 +162,7 @@ TEST(AsciistreamTest, test_copy_construct)
     EXPECT_TRUE(os3.view() == os2.view());
 }
 
-TEST(AsciistreamTest, test_move_is_well_defined)
-{
+TEST(AsciistreamTest, test_move_is_well_defined) {
     asciistream read_only("hello world");
     asciistream dest(std::move(read_only));
     EXPECT_EQ("hello world", dest.view());
@@ -183,9 +177,8 @@ TEST(AsciistreamTest, test_move_is_well_defined)
     EXPECT_EQ("a foo walks into a bar", dest.view());
 }
 
-TEST(AsciistreamTest, test_integer_manip)
-{
-    asciistream os;
+TEST(AsciistreamTest, test_integer_manip) {
+    asciistream        os;
     std::ostringstream ss;
     os << 10;
     ss << 10;
@@ -217,31 +210,29 @@ TEST(AsciistreamTest, test_integer_manip)
     EXPECT_EQ(os.size(), 19u);
     EXPECT_EQ(strcmp(os.c_str(), "10 10 a b 12 0b1010"), 0);
 
-    void *fooptr = reinterpret_cast<void*>(0x1badbadc0ffeeull);
+    void* fooptr = reinterpret_cast<void*>(0x1badbadc0ffeeull);
     // Also test that number base is restored OK after ptr print
     os << dec << ' ' << fooptr << ' ' << 1234;
     ss << std::dec << ' ' << fooptr << ' ' << 1234;
     EXPECT_EQ(std::string("10 10 a b 12 0b1010 0x1badbadc0ffee 1234"), os.view());
     EXPECT_EQ(std::string("10 10 a b 12 0x1badbadc0ffee 1234"), ss.str());
 
-    int i = 0;
-    const char *digits = "12345";
-    std::string ffs(digits, 4);
+    int                i = 0;
+    const char*        digits = "12345";
+    std::string        ffs(digits, 4);
     std::istringstream std_istr(ffs);
     std_istr >> i;
     EXPECT_EQ(1234, i);
 
     std::string_view firstfour(digits, 4);
-    asciistream istr(firstfour);
+    asciistream      istr(firstfour);
     istr >> i;
     EXPECT_EQ(1234, i);
 }
 
-
-TEST(AsciistreamTest, test_fill)
-{
+TEST(AsciistreamTest, test_fill) {
     {
-        asciistream os;
+        asciistream        os;
         std::ostringstream ss;
         os << 10 << ' ' << setfill('h') << 11;
         ss << 10 << ' ' << std::setfill('h') << 11;
@@ -263,7 +254,7 @@ TEST(AsciistreamTest, test_fill)
         EXPECT_EQ(strcmp(ss.str().c_str(), "10 11hh10 11hh10 11"), 0);
     }
     {
-        asciistream os;
+        asciistream        os;
         std::ostringstream ss;
         os << setfill('X') << setw(19) << 'a';
         ss << std::setfill('X') << std::setw(19) << 'a';
@@ -273,7 +264,7 @@ TEST(AsciistreamTest, test_fill)
         EXPECT_EQ(strcmp(ss.str().c_str(), "XXXXXXXXXXXXXXXXXXa"), 0);
     }
     {
-        asciistream os;
+        asciistream        os;
         std::ostringstream ss;
         os << setfill('X') << setw(19) << "a";
         ss << std::setfill('X') << std::setw(19) << "a";
@@ -283,8 +274,8 @@ TEST(AsciistreamTest, test_fill)
         EXPECT_EQ(strcmp(ss.str().c_str(), "XXXXXXXXXXXXXXXXXXa"), 0);
     }
     {
-        float f(8.9);
-        asciistream os;
+        float              f(8.9);
+        asciistream        os;
         std::ostringstream ss;
         os << setfill('X') << setw(19) << f;
         ss << std::setfill('X') << std::setw(19) << f;
@@ -294,8 +285,8 @@ TEST(AsciistreamTest, test_fill)
         EXPECT_EQ(strcmp(ss.str().c_str(), "XXXXXXXXXXXXXXXX8.9"), 0);
     }
     {
-        double f(8.9);
-        asciistream os;
+        double             f(8.9);
+        asciistream        os;
         std::ostringstream ss;
         os << setfill('X') << setw(19) << f;
         ss << std::setfill('X') << std::setw(19) << f;
@@ -304,11 +295,9 @@ TEST(AsciistreamTest, test_fill)
         EXPECT_EQ(strcmp(os.c_str(), "XXXXXXXXXXXXXXXX8.9"), 0);
         EXPECT_EQ(strcmp(ss.str().c_str(), "XXXXXXXXXXXXXXXX8.9"), 0);
     }
-
 }
 
-TEST(AsciistreamTest, test_string)
-{
+TEST(AsciistreamTest, test_string) {
 
     std::string ss("a");
     std::string vs("a");
@@ -348,8 +337,7 @@ TEST(AsciistreamTest, test_string)
     }
 }
 
-TEST(AsciistreamTest, test_create_from_file)
-{
+TEST(AsciistreamTest, test_create_from_file) {
     asciistream is(asciistream::createFromFile("non-existing.txt"));
     EXPECT_TRUE(is.eof());
 
@@ -372,11 +360,10 @@ TEST(AsciistreamTest, test_create_from_file)
 #endif
 }
 
-TEST(AsciistreamTest, test_write_then_read)
-{
+TEST(AsciistreamTest, test_write_then_read) {
     asciistream ios;
     ios << "3 words";
-    int n(0);
+    int         n(0);
     std::string v;
     ios >> n >> v;
     EXPECT_EQ(3, n);
@@ -384,8 +371,7 @@ TEST(AsciistreamTest, test_write_then_read)
     EXPECT_TRUE(ios.eof());
 }
 
-TEST(AsciistreamTest, test_get_line)
-{
+TEST(AsciistreamTest, test_get_line) {
     asciistream is = asciistream("line 1\nline 2\nline 3");
     std::string s;
     getline(is, s);
@@ -396,16 +382,17 @@ TEST(AsciistreamTest, test_get_line)
     EXPECT_EQ("line 3", s);
 }
 
-#define VERIFY_DOUBLE_SERIALIZATION(value, expected, format, precision) { \
-    asciistream mystream; \
-    mystream << format; \
-    if (precision > 0) mystream << asciistream::Precision(precision); \
-    mystream << value; \
-    EXPECT_EQ(expected, mystream.view()); \
-}
+#define VERIFY_DOUBLE_SERIALIZATION(value, expected, format, precision) \
+    {                                                                   \
+        asciistream mystream;                                           \
+        mystream << format;                                             \
+        if (precision > 0)                                              \
+            mystream << asciistream::Precision(precision);              \
+        mystream << value;                                              \
+        EXPECT_EQ(expected, mystream.view());                           \
+    }
 
-TEST(AsciistreamTest, test_double)
-{
+TEST(AsciistreamTest, test_double) {
     VERIFY_DOUBLE_SERIALIZATION(0.0, "0.000000", fixed, -1);
     VERIFY_DOUBLE_SERIALIZATION(0.0, "0.000000e+00", scientific, -1);
     VERIFY_DOUBLE_SERIALIZATION(0.0, "0", automatic, -1);
@@ -419,15 +406,30 @@ TEST(AsciistreamTest, test_double)
     VERIFY_DOUBLE_SERIALIZATION(0.0, "0", automatic, 16);
 
     double maxVal = std::numeric_limits<double>::max();
-    VERIFY_DOUBLE_SERIALIZATION(maxVal, "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.000000", fixed, -1);
+    VERIFY_DOUBLE_SERIALIZATION(
+        maxVal,
+        "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458"
+        "953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304"
+        "583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.000000",
+        fixed, -1);
     VERIFY_DOUBLE_SERIALIZATION(maxVal, "1.797693e+308", scientific, -1);
     VERIFY_DOUBLE_SERIALIZATION(maxVal, "1.79769e+308", automatic, -1);
 
-    VERIFY_DOUBLE_SERIALIZATION(maxVal, "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.0", fixed, 1);
+    VERIFY_DOUBLE_SERIALIZATION(
+        maxVal,
+        "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458"
+        "953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304"
+        "583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.0",
+        fixed, 1);
     VERIFY_DOUBLE_SERIALIZATION(maxVal, "1.8e+308", scientific, 1);
     VERIFY_DOUBLE_SERIALIZATION(maxVal, "2e+308", automatic, 1);
 
-    VERIFY_DOUBLE_SERIALIZATION(maxVal, "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.0000000000000000", fixed, 16);
+    VERIFY_DOUBLE_SERIALIZATION(maxVal,
+                                "179769313486231570814527423731704356798070567525844996598917476803157260780028538760"
+                                "589558632766878171540458953514382464234321326889464182768467546703537516986049910576"
+                                "551282076245490090389328944075868508455133942304583236903222948165808559332123348274"
+                                "797826204144723168738177180919299881250404026184124858368.0000000000000000",
+                                fixed, 16);
     VERIFY_DOUBLE_SERIALIZATION(maxVal, "1.7976931348623157e+308", scientific, 16)
     VERIFY_DOUBLE_SERIALIZATION(maxVal, "1.797693134862316e+308", automatic, 16);
 
@@ -488,9 +490,8 @@ TEST(AsciistreamTest, test_double)
     EXPECT_EQ(dv, 42.0);
 }
 
-TEST(AsciistreamTest, test_float)
-{
-    float f = 0;
+TEST(AsciistreamTest, test_float) {
+    float       f = 0;
     asciistream as("-5.490412E-39");
     as >> f;
     EXPECT_EQ(f, -5.490412E-39f);
@@ -508,7 +509,7 @@ TEST(AsciistreamTest, test_float)
     EXPECT_EQ(f, 42.0);
 
     errno = 0;
-    char *ep;
+    char* ep;
     f = locale::c::strtof_au("-5.490412E-39", &ep);
     EXPECT_EQ(f, -5.490412E-39f);
     EXPECT_EQ(errno, 0);
@@ -525,8 +526,7 @@ TEST(AsciistreamTest, test_float)
     EXPECT_EQ(*ep, 0);
 }
 
-TEST(AsciistreamTest, test_state_saver)
-{
+TEST(AsciistreamTest, test_state_saver) {
     asciistream as;
     as << vespalib::hex << vespalib::setfill('0');
     {
@@ -539,8 +539,7 @@ TEST(AsciistreamTest, test_state_saver)
     ASSERT_EQ('0', as.getFill());
 }
 
-TEST(AsciistreamTest, test_ascii_stream)
-{
+TEST(AsciistreamTest, test_ascii_stream) {
     verify("per", "paal", "per", "per paal", ' ', "string");
     verify<float>(7.89, -1.3, "7.89", "7.89 -1.3", ' ', "float");
     verify<double>(7.89, -1.3, "7.89", "7.89 -1.3", ' ', "double");
@@ -548,15 +547,16 @@ TEST(AsciistreamTest, test_ascii_stream)
     verify<char>(65, 66, "A", "A B", ' ', "char");
     verify<unsigned char>(65, 66, "A", "A B", ' ', "unsigned char");
     verify<signed char>(65, 66, "A", "A B", ' ', "signed char");
-//    verify<int8_t>(65, -1, "65", "65 -1", ' ', "int8_t");
+    //    verify<int8_t>(65, -1, "65", "65 -1", ' ', "int8_t");
     verify<int16_t>(0, -1, "0", "0 -1", ' ', "int16_t");
     verify<int16_t>(789, -1, "789", "789 -1", ' ', "int16_t again");
     verify<int32_t>(789, -1, "789", "789 -1", ' ', "int32_t");
     verify<int64_t>(789789789789789l, -1, "789789789789789", "789789789789789 -1", ' ', "int64_t");
-//    verify<uint8_t>(65, -1, "65", "65 255", ' ', "uint8_t");
+    //    verify<uint8_t>(65, -1, "65", "65 255", ' ', "uint8_t");
     verify<uint16_t>(789, -1, "789", "789 65535", ' ', "uint16_t");
     verify<uint32_t>(789, -1, "789", "789 4294967295", ' ', "uint32_t");
-    verify<uint64_t>(789789789789789l, -1, "789789789789789", "789789789789789 18446744073709551615", ' ', "uint64_t");
+    verify<uint64_t>(
+        789789789789789l, -1, "789789789789789", "789789789789789 18446744073709551615", ' ', "uint64_t");
 
     verifyBothWays<std::string>("7.89", "7.89", "std::string");
     verifyBothWays<float>(7.89, "7.89", "float");
@@ -575,37 +575,31 @@ TEST(AsciistreamTest, test_ascii_stream)
     verifyBothWays<uint64_t>(7, "7", "uint64_t");
 }
 
-
-template<typename T>
-void lexCastValid(T expect, std::string_view input) {
+template <typename T> void lexCastValid(T expect, std::string_view input) {
     SCOPED_TRACE(input);
     // fprintf(stderr, "lexical cast should pass: >>%.*s<<\n", (int)input.size(), input.data());
     T got = vespalib::lexical_cast<T>(input);
     EXPECT_EQ(expect, got);
 }
 
-template<typename T>
-void lexCastInvalid(std::string_view input) {
+template <typename T> void lexCastInvalid(std::string_view input) {
     SCOPED_TRACE(input);
     // fprintf(stderr, "lexical cast should fail: >>%.*s<<\n", (int)input.size(), input.data());
     EXPECT_THROW(vespalib::lexical_cast<T>(input), vespalib::Exception);
 }
 
-
 std::string_view fsv(float v) {
     static char buf[100];
-    auto res = std::to_chars(buf, buf+100, v);
+    auto        res = std::to_chars(buf, buf + 100, v);
     return std::string_view(buf, res.ptr);
 }
 std::string_view dsv(double v) {
     static char buf[100];
-    auto res = std::to_chars(buf, buf+100, v);
+    auto        res = std::to_chars(buf, buf + 100, v);
     return std::string_view(buf, res.ptr);
 }
 
-
-TEST(LexicalCastTest, test_valid_casts)
-{
+TEST(LexicalCastTest, test_valid_casts) {
     lexCastValid<int8_t>(0, "0");
     lexCastValid<int8_t>(7, "7");
     lexCastValid<int8_t>(11, "011");
@@ -641,7 +635,7 @@ TEST(LexicalCastTest, test_valid_casts)
     lexCastValid<int64_t>(0, "0");
     lexCastValid<int64_t>(-1, "-1");
     lexCastValid<int64_t>(9223372036854775807L, "9223372036854775807");
-    lexCastValid<int64_t>(-1L-9223372036854775807L, "-9223372036854775808");
+    lexCastValid<int64_t>(-1L - 9223372036854775807L, "-9223372036854775808");
 
     lexCastValid<uint64_t>(0, "0");
     lexCastValid<uint64_t>(9223372036854775808UL, "9223372036854775808");
@@ -687,8 +681,7 @@ TEST(LexicalCastTest, test_valid_casts)
     lexCastValid<double>(-infDbl, "-inf");
 }
 
-TEST(LexicalCastTest, test_invalid_casts)
-{
+TEST(LexicalCastTest, test_invalid_casts) {
     lexCastInvalid<int8_t>("-129");
     lexCastInvalid<int8_t>("128");
     lexCastInvalid<uint8_t>("-1");

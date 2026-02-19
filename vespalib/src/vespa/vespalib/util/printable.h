@@ -80,50 +80,41 @@ public:
      * @param indent This indentation should be printed AFTER each newline
      *               printed. (Not before output in first line)
      */
-    virtual void print(std::ostream& out,
-                       bool verbose = false,
-                       const std::string& indent = "") const = 0;
+    virtual void print(std::ostream& out, bool verbose = false, const std::string& indent = "") const = 0;
 
     /** Utility functions to get print() output as a string.  */
-    std::string toString(bool verbose = false,
-                         const std::string& indent = "") const;
-
+    std::string toString(bool verbose = false, const std::string& indent = "") const;
 };
 
 class AsciiPrintable : public Printable {
 public:
     ~AsciiPrintable() override = default;
 
-    enum PrintMode {
-        NORMAL,
-        VERBOSE
-    };
+    enum PrintMode { NORMAL, VERBOSE };
 
     class PrintProperties {
-        PrintMode _mode;
+        PrintMode   _mode;
         std::string _indent;
 
     public:
-        PrintProperties(PrintMode mode = NORMAL, std::string_view indent_ = "")
-            : _mode(mode), _indent(indent_) {}
+        PrintProperties(PrintMode mode = NORMAL, std::string_view indent_ = "") : _mode(mode), _indent(indent_) {}
 
-        PrintProperties indentedCopy() const
-            { return PrintProperties(_mode, _indent + "  "); }
-        bool verbose() const { return (_mode == VERBOSE); }
+        PrintProperties    indentedCopy() const { return PrintProperties(_mode, _indent + "  "); }
+        bool               verbose() const { return (_mode == VERBOSE); }
         const std::string& indent() const { return _indent; }
-        std::string indent(uint32_t extraLevels) const;
+        std::string        indent(uint32_t extraLevels) const;
     };
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void         print(std::ostream& out, bool verbose, const std::string& indent) const override;
     virtual void print(vespalib::asciistream&, const PrintProperties& = PrintProperties()) const = 0;
 
     std::string toString(const PrintProperties& = PrintProperties()) const;
 };
 
-std::ostream& operator<<(std::ostream& out, const Printable& p);
+std::ostream&          operator<<(std::ostream& out, const Printable& p);
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const AsciiPrintable& p);
 
-template<typename T>
-void print(const std::vector<T> & v, vespalib::asciistream& out, const AsciiPrintable::PrintProperties& p);
+template <typename T>
+void print(const std::vector<T>& v, vespalib::asciistream& out, const AsciiPrintable::PrintProperties& p);
 
-} // vespalib
+} // namespace vespalib

@@ -1,17 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/data/input_reader.h>
+#include <vespa/vespalib/data/memory_input.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/chunked_input.h>
 
 using namespace vespalib;
 using vespalib::test::ChunkedInput;
 
 TEST(InputReaderTest, input_reader_smoke_test) {
-    const char *data = "abc\n"
-                       "foo bar\n"
-                       "2 + 2 = 4\n";
-    MemoryInput memory_input(data);
+    const char* data =
+        "abc\n"
+        "foo bar\n"
+        "2 + 2 = 4\n";
+    MemoryInput  memory_input(data);
     ChunkedInput input(memory_input, 3);
     {
         InputReader src(input);
@@ -44,7 +45,7 @@ TEST(InputReaderTest, input_reader_smoke_test) {
 }
 
 TEST(InputReaderTest, require_that_not_reading_everything_leaves_the_input_in_appropriate_state) {
-    const char *data = "1234567890";
+    const char* data = "1234567890";
     MemoryInput input(data);
     {
         InputReader src(input);
@@ -56,7 +57,7 @@ TEST(InputReaderTest, require_that_not_reading_everything_leaves_the_input_in_ap
 }
 
 TEST(InputReaderTest, require_that_input_can_be_explicitly_failed_with_custom_message) {
-    const char *data = "1234567890";
+    const char* data = "1234567890";
     MemoryInput input(data);
     {
         InputReader src(input);
@@ -74,21 +75,21 @@ TEST(InputReaderTest, require_that_input_can_be_explicitly_failed_with_custom_me
 }
 
 TEST(InputReaderTest, require_that_reading_a_byte_sequence_crossing_the_end_of_input_fails) {
-    const char *data = "1234567890";
-    MemoryInput memory_input(data);
+    const char*  data = "1234567890";
+    MemoryInput  memory_input(data);
     ChunkedInput input(memory_input, 3);
     {
         InputReader src(input);
         EXPECT_EQ(src.read(15), Memory());
         EXPECT_TRUE(src.failed());
         EXPECT_EQ(src.get_error_message(), std::string("input underflow"));
-        EXPECT_EQ(src.get_offset(), 10u);        
+        EXPECT_EQ(src.get_offset(), 10u);
     }
 }
 
 TEST(InputReaderTest, expect_that_obtain_does_not_set_failure_state_on_input_reader) {
-    const char *data = "12345";
-    for (bool byte_first: {true, false}) {
+    const char* data = "12345";
+    for (bool byte_first : {true, false}) {
         MemoryInput input(data);
         InputReader src(input);
         EXPECT_EQ(src.obtain(), 5u);
@@ -113,10 +114,10 @@ TEST(InputReaderTest, expect_that_obtain_does_not_set_failure_state_on_input_rea
 }
 
 TEST(InputReaderTest, require_that_bytes_can_be_unread_when_appropriate) {
-    const char *data = "12345";
-    MemoryInput memory_input(data);
+    const char*  data = "12345";
+    MemoryInput  memory_input(data);
     ChunkedInput input(memory_input, 3);
-    InputReader src(input);
+    InputReader  src(input);
     EXPECT_TRUE(!src.try_unread());
     EXPECT_EQ(src.read(), '1');
     EXPECT_EQ(src.read(), '2');
@@ -139,10 +140,10 @@ TEST(InputReaderTest, require_that_bytes_can_be_unread_when_appropriate) {
 }
 
 TEST(InputReaderTest, require_that_try_read_finds_eof_without_failing_the_reader) {
-    const char *data = "12345";
-    MemoryInput memory_input(data);
+    const char*  data = "12345";
+    MemoryInput  memory_input(data);
     ChunkedInput input(memory_input, 3);
-    InputReader src(input);
+    InputReader  src(input);
     EXPECT_EQ(src.try_read(), '1');
     EXPECT_EQ(src.try_read(), '2');
     EXPECT_EQ(src.try_read(), '3');

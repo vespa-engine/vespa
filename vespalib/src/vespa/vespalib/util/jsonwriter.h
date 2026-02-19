@@ -17,48 +17,44 @@ class asciistream;
  */
 class JSONWriter {
 private:
-    enum State {
-        INIT = 0,
-        OBJECT,
-        ARRAY
-    };
-    asciistream         * _os;
-    std::vector<State>    _stack;
-    bool                  _comma;
-    bool                  _pretty;
-    uint32_t              _indent;
+    enum State { INIT = 0, OBJECT, ARRAY };
+    asciistream*       _os;
+    std::vector<State> _stack;
+    bool               _comma;
+    bool               _pretty;
+    uint32_t           _indent;
 
     void push(State next);
     void pop(State expected);
     void considerComma();
     void updateCommaState();
-    void quote(const char * str, size_t len);
+    void quote(const char* str, size_t len);
     void indent();
 
 public:
     JSONWriter();
-    JSONWriter(asciistream & output);
-    JSONWriter(const JSONWriter &) = delete;
-    JSONWriter & operator = (const JSONWriter &) = delete;
-    JSONWriter(JSONWriter &&) = default;
-    JSONWriter & operator = (JSONWriter &&) = default;
+    JSONWriter(asciistream& output);
+    JSONWriter(const JSONWriter&) = delete;
+    JSONWriter& operator=(const JSONWriter&) = delete;
+    JSONWriter(JSONWriter&&) = default;
+    JSONWriter& operator=(JSONWriter&&) = default;
     ~JSONWriter();
 
-    JSONWriter & setOutputStream(asciistream & output);
-    JSONWriter & clear();
-    JSONWriter & beginObject();
-    JSONWriter & endObject();
-    JSONWriter & beginArray();
-    JSONWriter & endArray();
-    JSONWriter & appendNull();
-    JSONWriter & appendKey(std::string_view str);
-    JSONWriter & appendBool(bool v);
-    JSONWriter & appendDouble(double v);
-    JSONWriter & appendFloat(float v);
-    JSONWriter & appendInt64(int64_t v);
-    JSONWriter & appendUInt64(uint64_t v);
-    JSONWriter & appendString(std::string_view str);
-    JSONWriter & appendJSON(std::string_view json);
+    JSONWriter& setOutputStream(asciistream& output);
+    JSONWriter& clear();
+    JSONWriter& beginObject();
+    JSONWriter& endObject();
+    JSONWriter& beginArray();
+    JSONWriter& endArray();
+    JSONWriter& appendNull();
+    JSONWriter& appendKey(std::string_view str);
+    JSONWriter& appendBool(bool v);
+    JSONWriter& appendDouble(double v);
+    JSONWriter& appendFloat(float v);
+    JSONWriter& appendInt64(int64_t v);
+    JSONWriter& appendUInt64(uint64_t v);
+    JSONWriter& appendString(std::string_view str);
+    JSONWriter& appendJSON(std::string_view json);
 
     void setPretty() { _pretty = true; };
 };
@@ -69,12 +65,12 @@ private:
 
 public:
     JSONStringer();
-    JSONStringer(JSONStringer &&) = default;
-    JSONStringer & operator = (JSONStringer &&) = default;
+    JSONStringer(JSONStringer&&) = default;
+    JSONStringer& operator=(JSONStringer&&) = default;
     ~JSONStringer();
-    JSONStringer & clear();
+    JSONStringer&    clear();
     std::string_view view() const;
-    std::string str() const;
+    std::string      str() const;
 };
 
-}
+} // namespace vespalib

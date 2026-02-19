@@ -3,27 +3,25 @@
 #pragma once
 
 #include "dynamic_array_buffer_type.h"
+
 #include <cassert>
 
 namespace vespalib::datastore {
 
 template <typename ElemT>
-DynamicArrayBufferType<ElemT>::DynamicArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept
-    : BufferTypeBase(calc_entry_size(array_size), dynamic_array_buffer_underflow_size, array_size, spec.min_entries_in_buffer, spec.max_entries_in_buffer, spec.num_entries_for_new_buffer, spec.allocGrowFactor),
-      _memory_allocator(std::move(memory_allocator))
-{
-}
+DynamicArrayBufferType<ElemT>::DynamicArrayBufferType(
+    uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept
+    : BufferTypeBase(calc_entry_size(array_size), dynamic_array_buffer_underflow_size, array_size,
+                     spec.min_entries_in_buffer, spec.max_entries_in_buffer, spec.num_entries_for_new_buffer,
+                     spec.allocGrowFactor),
+      _memory_allocator(std::move(memory_allocator)) {}
 
 template <typename ElemT>
 DynamicArrayBufferType<ElemT>::DynamicArrayBufferType(DynamicArrayBufferType&& rhs) noexcept = default;
 
-template <typename ElemT>
-DynamicArrayBufferType<ElemT>::~DynamicArrayBufferType() = default;
+template <typename ElemT> DynamicArrayBufferType<ElemT>::~DynamicArrayBufferType() = default;
 
-template <typename ElemT>
-size_t
-DynamicArrayBufferType<ElemT>::calc_entry_size(size_t array_size) noexcept
-{
+template <typename ElemT> size_t DynamicArrayBufferType<ElemT>::calc_entry_size(size_t array_size) noexcept {
     auto entry_size = EntryMinAligner::align(sizeof(ElemType) * array_size + sizeof(uint32_t));
     if (align_for_simd && entry_size >= 512) {
         entry_size = Aligner<64>::align(entry_size);
@@ -31,17 +29,11 @@ DynamicArrayBufferType<ElemT>::calc_entry_size(size_t array_size) noexcept
     return entry_size;
 }
 
-template <typename ElemT>
-size_t
-DynamicArrayBufferType<ElemT>::calc_array_size(size_t entry_size) noexcept
-{
+template <typename ElemT> size_t DynamicArrayBufferType<ElemT>::calc_array_size(size_t entry_size) noexcept {
     return (entry_size - sizeof(uint32_t)) / sizeof(ElemType);
 }
 
-template <typename ElemT>
-void
-DynamicArrayBufferType<ElemT>::destroy_entries(void* buffer, EntryCount num_entries)
-{
+template <typename ElemT> void DynamicArrayBufferType<ElemT>::destroy_entries(void* buffer, EntryCount num_entries) {
     uint32_t array_size = _arraySize;
     for (uint32_t entry_idx = 0; entry_idx < num_entries; ++entry_idx) {
         auto e = get_entry(buffer, entry_idx);
@@ -53,9 +45,7 @@ DynamicArrayBufferType<ElemT>::destroy_entries(void* buffer, EntryCount num_entr
 }
 
 template <typename ElemT>
-void
-DynamicArrayBufferType<ElemT>::fallback_copy(void* new_buffer, const void* old_buffer, EntryCount num_entries)
-{
+void DynamicArrayBufferType<ElemT>::fallback_copy(void* new_buffer, const void* old_buffer, EntryCount num_entries) {
     uint32_t array_size = _arraySize;
     for (uint32_t entry_idx = 0; entry_idx < num_entries; ++entry_idx) {
         auto d = get_entry(new_buffer, entry_idx);
@@ -70,10 +60,8 @@ DynamicArrayBufferType<ElemT>::fallback_copy(void* new_buffer, const void* old_b
 }
 
 template <typename ElemT>
-void
-DynamicArrayBufferType<ElemT>::initialize_reserved_entries(void* buffer, EntryCount reserved_entries)
-{
-    uint32_t array_size = _arraySize;
+void DynamicArrayBufferType<ElemT>::initialize_reserved_entries(void* buffer, EntryCount reserved_entries) {
+    uint32_t    array_size = _arraySize;
     const auto& empty = empty_entry();
     for (uint32_t entry_idx = 0; entry_idx < reserved_entries; ++entry_idx) {
         auto e = get_entry(buffer, entry_idx);
@@ -86,10 +74,8 @@ DynamicArrayBufferType<ElemT>::initialize_reserved_entries(void* buffer, EntryCo
 }
 
 template <typename ElemT>
-void
-DynamicArrayBufferType<ElemT>::clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext)
-{
-    uint32_t max_array_size = _arraySize;
+void DynamicArrayBufferType<ElemT>::clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext) {
+    uint32_t    max_array_size = _arraySize;
     const auto& empty = empty_entry();
     for (uint32_t entry_idx = 0; entry_idx < num_entries; ++entry_idx) {
         auto e = get_entry(buffer, offset + entry_idx);
@@ -102,10 +88,7 @@ DynamicArrayBufferType<ElemT>::clean_hold(void* buffer, size_t offset, EntryCoun
     }
 }
 
-template <typename ElemT>
-const ElemT&
-DynamicArrayBufferType<ElemT>::empty_entry() noexcept
-{
+template <typename ElemT> const ElemT& DynamicArrayBufferType<ElemT>::empty_entry() noexcept {
     // It's possible for ElemType to wrap e.g. an Alloc instance, which has a transitive
     // dependency on globally constructed allocator object(s). To avoid issues with global
     // construction order, initialize the sentinel on the first access.
@@ -114,17 +97,12 @@ DynamicArrayBufferType<ElemT>::empty_entry() noexcept
 }
 
 template <typename ElemT>
-const vespalib::alloc::MemoryAllocator*
-DynamicArrayBufferType<ElemT>::get_memory_allocator() const
-{
+const vespalib::alloc::MemoryAllocator* DynamicArrayBufferType<ElemT>::get_memory_allocator() const {
     return _memory_allocator.get();
 }
 
-template <typename ElemT>
-bool
-DynamicArrayBufferType<ElemT>::is_dynamic_array_buffer_type() const noexcept
-{
+template <typename ElemT> bool DynamicArrayBufferType<ElemT>::is_dynamic_array_buffer_type() const noexcept {
     return true;
 }
 
-}
+} // namespace vespalib::datastore

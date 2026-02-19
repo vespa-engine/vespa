@@ -22,11 +22,11 @@ struct SrcFixture {
         double_value.setDouble(20.0);
         string_value.setString("string");
         data_value.setData("data");
-        Cursor &arr = array_value.setArray();
+        Cursor& arr = array_value.setArray();
         arr.addLong(1);
         arr.addLong(2);
         arr.addLong(3);
-        Cursor &obj = object_value.setObject();
+        Cursor& obj = object_value.setObject();
         obj.setLong("a", 1);
         obj.setLong("b", 2);
         obj.setLong("c", 3);
@@ -50,8 +50,8 @@ struct DstFixture {
     ~DstFixture();
 };
 
-DstFixture::DstFixture() { }
-DstFixture::~DstFixture() { }
+DstFixture::DstFixture() {}
+DstFixture::~DstFixture() {}
 
 TEST(SlimeInjectTest, inject_into_slime) {
     SrcFixture f1;
@@ -126,7 +126,7 @@ TEST(SlimeInjectTest, inject_into_object) {
     EXPECT_EQ(f1.string_value.get().toString(), f2.slime1.get()["f"].toString());
     EXPECT_EQ(f1.data_value.get().toString(), f2.slime1.get()["g"].toString());
     EXPECT_EQ(f1.array_value.get().toString(), f2.slime1.get()["h"].toString());
-    EXPECT_EQ(f1.object_value.get(), f2.slime1.get()["i"]);    
+    EXPECT_EQ(f1.object_value.get(), f2.slime1.get()["i"]);
 }
 
 TEST(SlimeInjectTest, invalid_injection_is_ignored) {
@@ -145,12 +145,12 @@ TEST(SlimeInjectTest, invalid_injection_is_ignored) {
 TEST(SlimeInjectTest, recursive_array_inject) {
     Slime expect;
     {
-        Cursor &arr = expect.setArray();
+        Cursor& arr = expect.setArray();
         arr.addLong(1);
         arr.addLong(2);
         arr.addLong(3);
         {
-            Cursor &arr_cpy = arr.addArray();
+            Cursor& arr_cpy = arr.addArray();
             arr_cpy.addLong(1);
             arr_cpy.addLong(2);
             arr_cpy.addLong(3);
@@ -158,7 +158,7 @@ TEST(SlimeInjectTest, recursive_array_inject) {
     }
     Slime data;
     {
-        Cursor &arr = data.setArray();
+        Cursor& arr = data.setArray();
         arr.addLong(1);
         arr.addLong(2);
         arr.addLong(3);
@@ -170,12 +170,12 @@ TEST(SlimeInjectTest, recursive_array_inject) {
 TEST(SlimeInjectTest, recursive_object_inject) {
     Slime expect;
     {
-        Cursor &obj = expect.setObject();
+        Cursor& obj = expect.setObject();
         obj.setLong("a", 1);
         obj.setLong("b", 2);
         obj.setLong("c", 3);
         {
-            Cursor &obj_cpy = obj.setObject("d");
+            Cursor& obj_cpy = obj.setObject("d");
             obj_cpy.setLong("a", 1);
             obj_cpy.setLong("b", 2);
             obj_cpy.setLong("c", 3);
@@ -183,7 +183,7 @@ TEST(SlimeInjectTest, recursive_object_inject) {
     }
     Slime data;
     {
-        Cursor &obj = data.setObject();
+        Cursor& obj = data.setObject();
         obj.setLong("a", 1);
         obj.setLong("b", 2);
         obj.setLong("c", 3);

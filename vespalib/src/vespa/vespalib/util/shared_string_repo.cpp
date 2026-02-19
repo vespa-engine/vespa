@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "shared_string_repo.h"
+
 #include <vespa/vespalib/stllike/hash_fun.h>
-#include <charconv>
+
 #include <cassert>
+#include <charconv>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.shared_string_repo");
@@ -17,71 +19,50 @@ bool resolve_should_reclaim_flag() {
     return !no_reclaim;
 }
 
-}
+} // namespace
 
 const bool SharedStringRepo::should_reclaim = resolve_should_reclaim_flag();
 
-SharedStringRepo::Stats::Stats()
-    : active_entries(0),
-      total_entries(0),
-      max_part_usage(0),
-      memory_usage()
-{
-}
+SharedStringRepo::Stats::Stats() : active_entries(0), total_entries(0), max_part_usage(0), memory_usage() {}
 
-void
-SharedStringRepo::Stats::merge(const Stats &s)
-{
+void SharedStringRepo::Stats::merge(const Stats& s) {
     active_entries += s.active_entries;
     total_entries += s.total_entries;
     max_part_usage = std::max(max_part_usage, s.max_part_usage);
     memory_usage.merge(s.memory_usage);
 }
 
-size_t
-SharedStringRepo::Stats::part_limit()
-{
-    return PART_LIMIT;
-}
+size_t SharedStringRepo::Stats::part_limit() { return PART_LIMIT; }
 
-double
-SharedStringRepo::Stats::id_space_usage() const
-{
-    return (double(max_part_usage) / double(PART_LIMIT));
-}
+double SharedStringRepo::Stats::id_space_usage() const { return (double(max_part_usage) / double(PART_LIMIT)); }
 
 SharedStringRepo::Partition::~Partition() = default;
 
 SharedStringRepo::Partition::Partition()
-    : _lock(), _entries(), _free(Entry::npos), _hash(32, Hash(), Equal(_entries))
-{
+    : _lock(), _entries(), _free(Entry::npos), _hash(32, Hash(), Equal(_entries)) {
     make_entries(16);
 }
 
-SharedStringRepo::Partition::Entry::Entry(Entry &&) noexcept = default;
+SharedStringRepo::Partition::Entry::Entry(Entry&&) noexcept = default;
 SharedStringRepo::Partition::Entry::~Entry() = default;
 
-std::string
-SharedStringRepo::Partition::Entry::as_string() const {
+std::string SharedStringRepo::Partition::Entry::as_string() const {
     assert(!is_free());
     return _str;
 }
-void
-SharedStringRepo::Partition::Entry::add_ref() {
+void SharedStringRepo::Partition::Entry::add_ref() {
     assert(!is_free());
     ++_ref_cnt;
 }
-bool
-SharedStringRepo::Partition::Entry::sub_ref() {
+bool SharedStringRepo::Partition::Entry::sub_ref() {
     assert(!is_free());
     return (--_ref_cnt == 0);
 }
 
-uint32_t
-SharedStringRepo::Partition::resolve(const AltKey &alt_key) {
-    bool count_refs = should_reclaim;
+uint32_t SharedStringRepo::Partition::resolve(const AltKey& alt_key) {
+    bool            count_refs = should_reclaim;
     std::lock_guard guard(_lock);
-    auto pos = _hash.find(alt_key);
+    auto            pos = _hash.find(alt_key);
     if (pos != _hash.end()) {
         if (count_refs) {
             _entries[pos->idx].add_ref();
@@ -94,22 +75,19 @@ SharedStringRepo::Partition::resolve(const AltKey &alt_key) {
     }
 }
 
-std::string
-SharedStringRepo::Partition::as_string(uint32_t idx) const {
+std::string SharedStringRepo::Partition::as_string(uint32_t idx) const {
     std::lock_guard guard(_lock);
     return _entries[idx].as_string();
 }
 
-void
-SharedStringRepo::Partition::copy(uint32_t idx) {
+void SharedStringRepo::Partition::copy(uint32_t idx) {
     std::lock_guard guard(_lock);
     _entries[idx].add_ref();
 }
 
-void
-SharedStringRepo::Partition::reclaim(uint32_t idx) {
+void SharedStringRepo::Partition::reclaim(uint32_t idx) {
     std::lock_guard guard(_lock);
-    Entry &entry = _entries[idx];
+    Entry&          entry = _entries[idx];
     if (entry.sub_ref()) {
         _hash.erase(Key{idx, entry.hash()});
         entry.fini(_free);
@@ -117,22 +95,18 @@ SharedStringRepo::Partition::reclaim(uint32_t idx) {
     }
 }
 
-void
-SharedStringRepo::Partition::find_leaked_entries(size_t my_idx) const
-{
+void SharedStringRepo::Partition::find_leaked_entries(size_t my_idx) const {
     for (size_t i = 0; i < _entries.size(); ++i) {
         if (!_entries[i].is_free()) {
             size_t id = (((i << PART_BITS) | my_idx) + 1);
-            LOG(warning, "leaked string id: %zu (part: %zu/%d, string: '%s')\n",
-                id, my_idx, NUM_PARTS, std::string(_entries[i].view()).c_str());
+            LOG(warning, "leaked string id: %zu (part: %zu/%d, string: '%s')\n", id, my_idx, NUM_PARTS,
+                std::string(_entries[i].view()).c_str());
         }
     }
 }
 
-SharedStringRepo::Stats
-SharedStringRepo::Partition::stats() const
-{
-    Stats stats;
+SharedStringRepo::Stats SharedStringRepo::Partition::stats() const {
+    Stats           stats;
     std::lock_guard guard(_lock);
     stats.active_entries = _hash.size();
     stats.total_entries = _entries.size();
@@ -145,9 +119,7 @@ SharedStringRepo::Partition::stats() const
     return stats;
 }
 
-void
-SharedStringRepo::Partition::make_entries(size_t hint)
-{
+void SharedStringRepo::Partition::make_entries(size_t hint) {
     hint = std::max(hint, _entries.size() + 1);
     size_t want_mem = roundUp2inN(hint * sizeof(Entry));
     size_t want_entries = want_mem / sizeof(Entry);
@@ -160,8 +132,7 @@ SharedStringRepo::Partition::make_entries(size_t hint)
     }
 }
 
-uint32_t
-SharedStringRepo::Partition::make_entry(const AltKey &alt_key) {
+uint32_t SharedStringRepo::Partition::make_entry(const AltKey& alt_key) {
     if (__builtin_expect(_free == Entry::npos, false)) {
         make_entries(_entries.size() * 2);
     }
@@ -173,8 +144,7 @@ SharedStringRepo::Partition::make_entry(const AltKey &alt_key) {
 SharedStringRepo SharedStringRepo::_repo;
 
 SharedStringRepo::SharedStringRepo() = default;
-SharedStringRepo::~SharedStringRepo()
-{
+SharedStringRepo::~SharedStringRepo() {
     if (should_reclaim) {
         for (size_t p = 0; p < _partitions.size(); ++p) {
             _partitions[p].find_leaked_entries(p);
@@ -182,13 +152,11 @@ SharedStringRepo::~SharedStringRepo()
     }
 }
 
-SharedStringRepo::Stats
-SharedStringRepo::stats()
-{
+SharedStringRepo::Stats SharedStringRepo::stats() {
     Stats stats;
     stats.memory_usage.incAllocatedBytes(sizeof(SharedStringRepo));
     stats.memory_usage.incUsedBytes(sizeof(SharedStringRepo));
-    for (const auto &part: _repo._partitions) {
+    for (const auto& part : _repo._partitions) {
         stats.merge(part.stats());
     }
     return stats;
@@ -196,8 +164,7 @@ SharedStringRepo::stats()
 
 namespace {
 
-uint32_t
-try_make_direct_id(std::string_view str) noexcept {
+uint32_t try_make_direct_id(std::string_view str) noexcept {
     if ((str.size() > SharedStringRepo::FAST_DIGITS) || ((str.size() > 1) && (str[0] == '0'))) {
         return SharedStringRepo::ID_BIAS;
     } else if (str.empty()) {
@@ -215,8 +182,7 @@ try_make_direct_id(std::string_view str) noexcept {
     }
 }
 
-std::string
-string_from_direct_id(uint32_t id) {
+std::string string_from_direct_id(uint32_t id) {
     if (id == 0) {
         return {};
     } else {
@@ -226,10 +192,9 @@ string_from_direct_id(uint32_t id) {
     }
 }
 
-}
+} // namespace
 
-string_id
-SharedStringRepo::resolve(std::string_view str) {
+string_id SharedStringRepo::resolve(std::string_view str) {
     uint32_t direct_id = try_make_direct_id(str);
     if (direct_id >= ID_BIAS) {
         uint64_t full_hash = xxhash::xxh3_64(str.data(), str.size());
@@ -242,8 +207,7 @@ SharedStringRepo::resolve(std::string_view str) {
     }
 }
 
-std::string
-SharedStringRepo::as_string(string_id id) {
+std::string SharedStringRepo::as_string(string_id id) {
     if (id._id >= ID_BIAS) {
         uint32_t part = (id._id - ID_BIAS) & PART_MASK;
         uint32_t local_idx = (id._id - ID_BIAS) >> PART_BITS;
@@ -253,8 +217,7 @@ SharedStringRepo::as_string(string_id id) {
     }
 }
 
-string_id
-SharedStringRepo::copy(string_id id) {
+string_id SharedStringRepo::copy(string_id id) {
     if ((id._id >= ID_BIAS) && should_reclaim) {
         uint32_t part = (id._id - ID_BIAS) & PART_MASK;
         uint32_t local_idx = (id._id - ID_BIAS) >> PART_BITS;
@@ -263,8 +226,7 @@ SharedStringRepo::copy(string_id id) {
     return id;
 }
 
-void
-SharedStringRepo::reclaim(string_id id) {
+void SharedStringRepo::reclaim(string_id id) {
     if ((id._id >= ID_BIAS) && should_reclaim) {
         uint32_t part = (id._id - ID_BIAS) & PART_MASK;
         uint32_t local_idx = (id._id - ID_BIAS) >> PART_BITS;
@@ -272,36 +234,27 @@ SharedStringRepo::reclaim(string_id id) {
     }
 }
 
-SharedStringRepo::Handle
-SharedStringRepo::Handle::handle_from_number_slow(int64_t value) {
+SharedStringRepo::Handle SharedStringRepo::Handle::handle_from_number_slow(int64_t value) {
     char buf[24];
     auto res = std::to_chars(buf, buf + sizeof(buf), value, 10);
     return Handle(std::string_view(buf, res.ptr - buf));
 }
 
-SharedStringRepo::Handles::Handles()
-    : _handles()
-{
-}
+SharedStringRepo::Handles::Handles() : _handles() {}
 
-SharedStringRepo::Handles::Handles(Handles &&rhs) noexcept
-    : _handles(std::move(rhs._handles))
-{
+SharedStringRepo::Handles::Handles(Handles&& rhs) noexcept : _handles(std::move(rhs._handles)) {
     assert(rhs._handles.empty());
 }
 
-SharedStringRepo::Handles::~Handles()
-{
+SharedStringRepo::Handles::~Handles() {
     if (should_reclaim) {
-        for (string_id handle: _handles) {
+        for (string_id handle : _handles) {
             _repo.reclaim(handle);
         }
     }
 }
 
-void
-SharedStringRepo::Handles::clear()
-{
+void SharedStringRepo::Handles::clear() {
     if (should_reclaim) {
         for (string_id handle : _handles) {
             _repo.reclaim(handle);
@@ -310,4 +263,4 @@ SharedStringRepo::Handles::clear()
     _handles.clear();
 }
 
-}
+} // namespace vespalib

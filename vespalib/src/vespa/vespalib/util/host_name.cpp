@@ -1,17 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "host_name.h"
+
 #include <vespa/defaults.h>
 
 namespace vespalib {
 
 namespace {
 
-std::string make_host_name() {
-    return vespa::Defaults::vespaHostname();
-}
+std::string make_host_name() { return vespa::Defaults::vespaHostname(); }
 
-} // namespace vespalib::<unnamed>
+} // namespace
 
 const std::string HostName::_host_name = make_host_name();
 

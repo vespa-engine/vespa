@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "testbase.h"
+
 #include <vespa/vespalib/util/time.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -27,18 +29,16 @@ IMPLEMENT_BENCHMARK(ClockPROCESS_CPUTIME_ID, Benchmark);
 IMPLEMENT_BENCHMARK(ClockTHREAD_CPUTIME_ID, Benchmark);
 IMPLEMENT_BENCHMARK(CreateVespalibString, Benchmark);
 
-void Benchmark::run(const char *name, size_t numRuns, size_t concurrency)
-{
-    const Identifiable::RuntimeClass * cInfo = Identifiable::classFromName(name);
+void Benchmark::run(const char* name, size_t numRuns, size_t concurrency) {
+    const Identifiable::RuntimeClass* cInfo = Identifiable::classFromName(name);
     if (cInfo) {
-        std::unique_ptr<Benchmark> test(static_cast<Benchmark *>(cInfo->create()));
+        std::unique_ptr<Benchmark> test(static_cast<Benchmark*>(cInfo->create()));
         test->run(numRuns, concurrency);
     } else {
         LOG(warning, "Could not find any test with the name %s", name);
     }
 }
-void Benchmark::run(size_t numRuns, size_t concurrency)
-{
+void Benchmark::run(size_t numRuns, size_t concurrency) {
     LOG(info, "Starting benchmark %s with %ld threads and %ld rep", getClass().name(), concurrency, numRuns);
     for (size_t i(0); i < numRuns; i++) {
         onRun();
@@ -46,85 +46,66 @@ void Benchmark::run(size_t numRuns, size_t concurrency)
     LOG(info, "Stopping benchmark %s", getClass().name());
 }
 
-size_t ParamByReferenceVectorInt::callByReference(const Vector & values) const
-{
-    return values.size();
-}
+size_t ParamByReferenceVectorInt::callByReference(const Vector& values) const { return values.size(); }
 
-size_t ParamByReferenceVectorInt::onRun()
-{
+size_t ParamByReferenceVectorInt::onRun() {
     Vector values(1000);
     size_t sum(0);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         sum += callByReference(values);
     }
     return sum;
 }
 
-size_t ParamByValueVectorInt::callByValue(Vector values) const
-{
-    return values.size();
-}
+size_t ParamByValueVectorInt::callByValue(Vector values) const { return values.size(); }
 
-size_t ParamByValueVectorInt::onRun()
-{
+size_t ParamByValueVectorInt::onRun() {
     Vector values(1000);
     size_t sum(0);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         sum += callByValue(values);
     }
     return sum;
 }
 
-size_t ParamByReferenceVectorString::callByReference(const Vector & values) const
-{
-    return values.size();
-}
+size_t ParamByReferenceVectorString::callByReference(const Vector& values) const { return values.size(); }
 
-size_t ParamByReferenceVectorString::onRun()
-{
+size_t ParamByReferenceVectorString::onRun() {
     Vector values(1000, "This is a simple string copy test");
     size_t sum(0);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         sum += callByReference(values);
     }
     return sum;
 }
 
-size_t ParamByValueVectorString::callByValue(Vector values) const
-{
-    return values.size();
-}
+size_t ParamByValueVectorString::callByValue(Vector values) const { return values.size(); }
 
-size_t ParamByValueVectorString::onRun()
-{
+size_t ParamByValueVectorString::onRun() {
     Vector values(1000, "This is a simple string copy test");
     size_t sum(0);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         sum += callByValue(values);
     }
     return sum;
 }
 
-const ReturnByReferenceVectorString::Vector & ReturnByReferenceVectorString::returnByReference(Vector & param) const
-{
+const ReturnByReferenceVectorString::Vector& ReturnByReferenceVectorString::returnByReference(Vector& param) const {
     Vector values(1000, "return by value");
     param.swap(values);
     return param;
 }
 
-size_t ReturnByReferenceVectorString::onRun()
-{
+size_t ReturnByReferenceVectorString::onRun() {
     size_t sum(0);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         Vector values;
         sum += returnByReference(values).size();
     }
     return sum;
 }
 
-ReturnByValueVectorString::Vector ReturnByValueVectorString::returnByValue() const
-{
+ReturnByValueVectorString::Vector ReturnByValueVectorString::returnByValue() const {
     Vector values;
     if (rand() % 7) {
         Vector tmp(1000, "return by value");
@@ -136,17 +117,15 @@ ReturnByValueVectorString::Vector ReturnByValueVectorString::returnByValue() con
     return values;
 }
 
-size_t ReturnByValueVectorString::onRun()
-{
+size_t ReturnByValueVectorString::onRun() {
     size_t sum(0);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         sum += returnByValue().size();
     }
     return sum;
 }
 
-ReturnByValueMultiVectorString::Vector ReturnByValueMultiVectorString::returnByValue() const
-{
+ReturnByValueMultiVectorString::Vector ReturnByValueMultiVectorString::returnByValue() const {
     if (rand() % 7) {
         Vector values(1000, "return by value");
         return values;
@@ -156,124 +135,116 @@ ReturnByValueMultiVectorString::Vector ReturnByValueMultiVectorString::returnByV
     }
 }
 
-size_t ReturnByValueMultiVectorString::onRun()
-{
+size_t ReturnByValueMultiVectorString::onRun() {
     size_t sum(0);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         sum += returnByValue().size();
     }
     return sum;
 }
 
-size_t ClockSystem::onRun()
-{
+size_t ClockSystem::onRun() {
     vespalib::system_time start(vespalib::system_clock::now());
     vespalib::system_time end(start);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         end = vespalib::system_clock::now();
     }
     return std::chrono::duration_cast<std::chrono::nanoseconds>(start - end).count();
 }
 
-size_t ClockREALTIME::onRun()
-{
+size_t ClockREALTIME::onRun() {
     struct timespec ts;
-    int foo = clock_gettime(CLOCK_REALTIME, &ts);
+    int             foo = clock_gettime(CLOCK_REALTIME, &ts);
     assert(foo == 0);
-    (void) foo;
-    nanoseconds start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+    (void)foo;
+    nanoseconds start(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     nanoseconds end(start);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         clock_gettime(CLOCK_REALTIME, &ts);
-        end = nanoseconds(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+        end = nanoseconds(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     }
     return count_ns(start - end);
 }
 
-size_t ClockMONOTONIC::onRun()
-{
+size_t ClockMONOTONIC::onRun() {
     struct timespec ts;
-    int foo = clock_gettime(CLOCK_MONOTONIC, &ts);
+    int             foo = clock_gettime(CLOCK_MONOTONIC, &ts);
     assert(foo == 0);
-    (void) foo;
-    nanoseconds start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+    (void)foo;
+    nanoseconds start(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     nanoseconds end(start);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         clock_gettime(CLOCK_MONOTONIC, &ts);
-        end = nanoseconds(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+        end = nanoseconds(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     }
-    return count_ns(start - end);;
+    return count_ns(start - end);
+    ;
 }
 
-ClockMONOTONIC_RAW::ClockMONOTONIC_RAW()
-{
+ClockMONOTONIC_RAW::ClockMONOTONIC_RAW() {
 #ifndef CLOCK_MONOTONIC_RAW
     LOG(warning, "CLOCK_MONOTONIC_RAW is not defined, using CLOCK_MONOTONIC instead.");
 #endif
 }
 
 #ifndef CLOCK_MONOTONIC_RAW
-    #define CLOCK_MONOTONIC_RAW CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC_RAW CLOCK_MONOTONIC
 #endif
 
-size_t ClockMONOTONIC_RAW::onRun()
-{
+size_t ClockMONOTONIC_RAW::onRun() {
     struct timespec ts;
-    int foo = clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+    int             foo = clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     assert(foo == 0);
-    (void) foo;
-    nanoseconds start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+    (void)foo;
+    nanoseconds start(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     nanoseconds end(start);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-        end = nanoseconds(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+        end = nanoseconds(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     }
     return count_ns(start - end);
 }
 
-size_t ClockPROCESS_CPUTIME_ID::onRun()
-{
+size_t ClockPROCESS_CPUTIME_ID::onRun() {
     struct timespec ts;
-    int foo = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+    int             foo = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
     assert(foo == 0);
-    (void) foo;
-    nanoseconds start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+    (void)foo;
+    nanoseconds start(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     nanoseconds end(start);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-        end =nanoseconds(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+        end = nanoseconds(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     }
     return count_ns(start - end);
 }
 
-size_t ClockTHREAD_CPUTIME_ID::onRun()
-{
+size_t ClockTHREAD_CPUTIME_ID::onRun() {
     struct timespec ts;
-    int foo = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
+    int             foo = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
     assert(foo == 0);
-    (void) foo;
-    nanoseconds start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+    (void)foo;
+    nanoseconds start(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     nanoseconds end(start);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
-        end = nanoseconds(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+        end = nanoseconds(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     }
     return count_ns(start - end);
 }
 
-size_t CreateVespalibString::onRun()
-{
-    size_t sum(0);
-    const char * text1("Dette er en passe");
-    const char * text2(" kort streng som passer paa stacken");
-    char text[100];
+size_t CreateVespalibString::onRun() {
+    size_t      sum(0);
+    const char* text1("Dette er en passe");
+    const char* text2(" kort streng som passer paa stacken");
+    char        text[100];
     strcpy(text, text1);
     strcat(text, text2);
-    for (size_t i=0; i < 1000; i++) {
+    for (size_t i = 0; i < 1000; i++) {
         std::string s(text);
         sum += s.size();
     }
     return sum;
 }
 
-}
+} // namespace vespalib

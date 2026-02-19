@@ -4,15 +4,9 @@
 
 namespace vespalib {
 
-StateServer::StateServer(int port,
-                         const HealthProducer &hp,
-                         MetricsProducer &mp,
-                         ComponentConfigProducer &ccp,
-                         bool limit_endpoints)
-    : _api(hp, mp, ccp, limit_endpoints),
-      _server(port),
-      _tokens()
-{
+StateServer::StateServer(
+    int port, const HealthProducer& hp, MetricsProducer& mp, ComponentConfigProducer& ccp, bool limit_endpoints)
+    : _api(hp, mp, ccp, limit_endpoints), _server(port), _tokens() {
     _tokens.push_back(_server.repo().bind("/state/v1", _api));
     _tokens.push_back(_server.repo().bind("/metrics/total", _api));
 }

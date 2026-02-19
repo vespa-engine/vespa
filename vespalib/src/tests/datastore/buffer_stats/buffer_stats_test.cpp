@@ -6,8 +6,7 @@
 
 using namespace vespalib::datastore;
 
-TEST(BufferStatsTest, buffer_stats_to_memory_stats)
-{
+TEST(BufferStatsTest, buffer_stats_to_memory_stats) {
     InternalBufferStats buf;
     buf.set_alloc_entries(17);
     buf.pushed_back(7);
@@ -16,7 +15,7 @@ TEST(BufferStatsTest, buffer_stats_to_memory_stats)
     buf.inc_extra_used_bytes(13);
     buf.inc_extra_hold_bytes(11);
 
-    MemoryStats mem;
+    MemoryStats      mem;
     constexpr size_t es = 8;
     buf.add_to_mem_stats(es, mem);
 
@@ -31,4 +30,3 @@ TEST(BufferStatsTest, buffer_stats_to_memory_stats)
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

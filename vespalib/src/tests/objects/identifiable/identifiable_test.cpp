@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "namedobject.h"
+
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/objects/identifiable.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
+
+#include <vespa/vespalib/objects/identifiable.hpp>
 
 using namespace vespalib;
 
@@ -12,45 +14,39 @@ class IdentifiableTest : public ::testing::Test {
 protected:
     IdentifiableTest();
     ~IdentifiableTest() override;
-    template <typename T>
-    void testStream(const T & a);
-    template <typename T>
-    void testSerializer(const T & a);
+    template <typename T> void testStream(const T& a);
+    template <typename T> void testSerializer(const T& a);
 };
 
 IdentifiableTest::IdentifiableTest() = default;
 IdentifiableTest::~IdentifiableTest() = default;
 
-#define CID_Abstract  0x700000
-#define CID_A  0x700001
-#define CID_B  0x700002
-#define CID_C  0x700003
+#define CID_Abstract 0x700000
+#define CID_A 0x700001
+#define CID_B 0x700002
+#define CID_C 0x700003
 
-class Abstract : public Identifiable
-{
+class Abstract : public Identifiable {
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(Abstract);
     ~Abstract() override = default;
     virtual void someAbstractVirtualMethod() = 0;
 };
 
-class A : public Abstract
-{
+class A : public Abstract {
 public:
     DECLARE_IDENTIFIABLE(A);
-    A() { }
-    void someAbstractVirtualMethod() override { };
+    A() {}
+    void someAbstractVirtualMethod() override {};
 };
 
-class B : public A
-{
+class B : public A {
 public:
     DECLARE_IDENTIFIABLE(B);
-    B() { }
+    B() {}
 };
 
-class C : public Identifiable
-{
+class C : public Identifiable {
 private:
     int _value;
 
@@ -58,11 +54,11 @@ public:
     DECLARE_IDENTIFIABLE(C);
     C() : _value(0) {}
     C(int value) : _value(value) {}
-    C *clone() const { return new C(*this); }
-    virtual int cmp(const Identifiable &rhs) const {
+    C*          clone() const { return new C(*this); }
+    virtual int cmp(const Identifiable& rhs) const {
         int result(cmpClassId(rhs));
         if (result == 0) {
-            result = _value - static_cast<const C &>(rhs)._value;
+            result = _value - static_cast<const C&>(rhs)._value;
         }
         return result;
     }
@@ -73,29 +69,27 @@ IMPLEMENT_IDENTIFIABLE(A, Abstract);
 IMPLEMENT_IDENTIFIABLE(B, A);
 IMPLEMENT_IDENTIFIABLE(C, Identifiable);
 
-TEST_F(IdentifiableTest, test_named_object)
-{
-    NamedObject a("first"), b("second");;
-    nbostream os;
+TEST_F(IdentifiableTest, test_named_object) {
+    NamedObject a("first"), b("second");
+    ;
+    nbostream     os;
     NBOSerializer nos(os);
     nos << a << b;
-    EXPECT_EQ(27u,os.size());
+    EXPECT_EQ(27u, os.size());
     Identifiable::UP o1;
     o1 = Identifiable::create(nos);
     EXPECT_EQ(14u, os.size());
     ASSERT_TRUE(o1->inherits(NamedObject::classId));
     ASSERT_TRUE(o1->getClass().id() == NamedObject::classId);
-    EXPECT_TRUE(static_cast<const NamedObject &>(*o1).getName() == "first");
+    EXPECT_TRUE(static_cast<const NamedObject&>(*o1).getName() == "first");
     o1 = Identifiable::create(nos);
     EXPECT_EQ(0u, os.size());
     ASSERT_TRUE(o1->inherits(NamedObject::classId));
     ASSERT_TRUE(o1->getClass().id() == NamedObject::classId);
-    EXPECT_TRUE(static_cast<const NamedObject &>(*o1).getName() == "second");
+    EXPECT_TRUE(static_cast<const NamedObject&>(*o1).getName() == "second");
 }
 
-template <typename T>
-void IdentifiableTest::testStream(const T & a)
-{
+template <typename T> void IdentifiableTest::testStream(const T& a) {
     nbostream s;
     s << a;
     T b;
@@ -106,10 +100,8 @@ void IdentifiableTest::testStream(const T & a)
     EXPECT_TRUE(s.good());
 }
 
-template <typename T>
-void IdentifiableTest::testSerializer(const T & a)
-{
-    nbostream t;
+template <typename T> void IdentifiableTest::testSerializer(const T& a) {
+    nbostream     t;
     NBOSerializer s(t);
     s << a;
     T b;
@@ -119,8 +111,7 @@ void IdentifiableTest::testSerializer(const T & a)
     EXPECT_EQ(nbostream::ok, s.getStream().state());
 }
 
-TEST_F(IdentifiableTest, test_nbo_serializer)
-{
+TEST_F(IdentifiableTest, test_nbo_serializer) {
     testSerializer(true);
     testSerializer(false);
     testSerializer(static_cast<int8_t>('a'));
@@ -136,8 +127,7 @@ TEST_F(IdentifiableTest, test_nbo_serializer)
     testSerializer(std::string("abcdefgh"));
 }
 
-TEST_F(IdentifiableTest, test_nbo_stream)
-{
+TEST_F(IdentifiableTest, test_nbo_stream) {
     testStream(true);
     testStream(false);
     testStream('a');
@@ -165,7 +155,7 @@ TEST_F(IdentifiableTest, test_nbo_stream)
         nbostream s(8);
         EXPECT_EQ(0u, s.size());
         EXPECT_EQ(8u, s.capacity());
-        const char * prev = s.data();
+        const char* prev = s.data();
         s << "ABCD";
         EXPECT_EQ(8u, s.size());
         EXPECT_EQ(8u, s.capacity());
@@ -179,7 +169,7 @@ TEST_F(IdentifiableTest, test_nbo_stream)
         nbostream s(8);
         EXPECT_EQ(0u, s.size());
         EXPECT_EQ(8u, s.capacity());
-        const char * prev = s.data();
+        const char* prev = s.data();
         s << "ABCD";
         EXPECT_EQ(8u, s.size());
         EXPECT_EQ(8u, s.capacity());
@@ -209,7 +199,7 @@ TEST_F(IdentifiableTest, test_nbo_stream)
         try {
             s >> b;
             EXPECT_TRUE(false);
-        } catch (const IllegalStateException & e) {
+        } catch (const IllegalStateException& e) {
             EXPECT_EQ("Stream failed bufsize(1024), readp(8), writep(8)", e.getMessage());
         }
         EXPECT_EQ(0u, s.size());
@@ -221,34 +211,33 @@ TEST_F(IdentifiableTest, test_nbo_stream)
     }
 }
 
-TEST_F(IdentifiableTest, test_identifiable)
-{
+TEST_F(IdentifiableTest, test_identifiable) {
     A a;
     B b;
 
-    const Identifiable::RuntimeClass & rtcA = a.getClass();
+    const Identifiable::RuntimeClass& rtcA = a.getClass();
     EXPECT_EQ(rtcA.id(), static_cast<unsigned int>(A::classId));
     EXPECT_EQ(strcmp(rtcA.name(), "A"), 0);
 
-    const Identifiable::RuntimeClass & rtcB = b.getClass();
+    const Identifiable::RuntimeClass& rtcB = b.getClass();
     EXPECT_EQ(rtcB.id(), static_cast<unsigned int>(B::classId));
     EXPECT_EQ(strcmp(rtcB.name(), "B"), 0);
 
-    const Identifiable::RuntimeClass * rt(Identifiable::classFromId(0x1ab76245));
+    const Identifiable::RuntimeClass* rt(Identifiable::classFromId(0x1ab76245));
     ASSERT_TRUE(rt == nullptr);
     rt = Identifiable::classFromId(Abstract::classId);
     ASSERT_TRUE(rt != nullptr);
-    Identifiable * u = rt->create();
+    Identifiable* u = rt->create();
     ASSERT_TRUE(u == nullptr);
     rt = Identifiable::classFromId(A::classId);
     ASSERT_TRUE(rt != nullptr);
     rt = Identifiable::classFromId(B::classId);
     ASSERT_TRUE(rt != nullptr);
 
-    Identifiable * o = rt->create();
+    Identifiable* o = rt->create();
     ASSERT_TRUE(o != nullptr);
 
-    const Identifiable::RuntimeClass & rtc = o->getClass();
+    const Identifiable::RuntimeClass& rtc = o->getClass();
     ASSERT_TRUE(rtc.id() == B::classId);
     ASSERT_TRUE(strcmp(rtc.name(), "B") == 0);
     ASSERT_TRUE(o->inherits(B::classId));
@@ -256,7 +245,7 @@ TEST_F(IdentifiableTest, test_identifiable)
     ASSERT_TRUE(o->inherits(Abstract::classId));
     ASSERT_TRUE(o->inherits(Identifiable::classId));
     ASSERT_TRUE(o->getClass().id() == B::classId);
-    nbostream os;
+    nbostream     os;
     NBOSerializer nos(os);
     nos << *o;
     EXPECT_EQ(os.size(), 4u);
@@ -272,7 +261,7 @@ TEST_F(IdentifiableTest, test_identifiable)
     ASSERT_TRUE(rt != nullptr);
     o = rt->create();
     ASSERT_TRUE(o != nullptr);
-    const Identifiable::RuntimeClass & rtc2 = o->getClass();
+    const Identifiable::RuntimeClass& rtc2 = o->getClass();
     ASSERT_TRUE(rtc2.id() == B::classId);
     ASSERT_TRUE(strcmp(rtc2.name(), "B") == 0);
     ASSERT_TRUE(o->inherits(B::classId));
@@ -295,33 +284,31 @@ TEST_F(IdentifiableTest, test_identifiable)
     EXPECT_GT(c2.cmp(c1), 0);
 }
 
-TEST_F(IdentifiableTest, require_that_identifiable_cast_can_cast_pointers)
-{
+TEST_F(IdentifiableTest, require_that_identifiable_cast_can_cast_pointers) {
     A a;
     B b;
-    EXPECT_TRUE(Identifiable::cast<A *>(&a));
-    EXPECT_TRUE(Identifiable::cast<A *>(&b));
-    EXPECT_TRUE(!Identifiable::cast<B *>(&a));
-    EXPECT_TRUE(Identifiable::cast<B *>(&b));
-    EXPECT_TRUE(Identifiable::cast<Abstract *>(&a));
-    EXPECT_TRUE(Identifiable::cast<Abstract *>(&b));
+    EXPECT_TRUE(Identifiable::cast<A*>(&a));
+    EXPECT_TRUE(Identifiable::cast<A*>(&b));
+    EXPECT_TRUE(!Identifiable::cast<B*>(&a));
+    EXPECT_TRUE(Identifiable::cast<B*>(&b));
+    EXPECT_TRUE(Identifiable::cast<Abstract*>(&a));
+    EXPECT_TRUE(Identifiable::cast<Abstract*>(&b));
 }
 
-TEST_F(IdentifiableTest, require_that_identifiable_cast_can_cast_references)
-{
+TEST_F(IdentifiableTest, require_that_identifiable_cast_can_cast_references) {
     A a;
     B b;
     try {
         // These should not throw.
-        Identifiable::cast<A &>(a);
-        Identifiable::cast<A &>(b);
-        Identifiable::cast<B &>(b);
-        Identifiable::cast<Abstract &>(a);
-        Identifiable::cast<Abstract &>(b);
-    } catch (std::bad_cast &e) {
+        Identifiable::cast<A&>(a);
+        Identifiable::cast<A&>(b);
+        Identifiable::cast<B&>(b);
+        Identifiable::cast<Abstract&>(a);
+        Identifiable::cast<Abstract&>(b);
+    } catch (std::bad_cast& e) {
         FAIL() << e.what();
     }
-    EXPECT_THROW(Identifiable::cast<B &>(a), std::bad_cast);
+    EXPECT_THROW(Identifiable::cast<B&>(a), std::bad_cast);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

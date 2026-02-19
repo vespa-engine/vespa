@@ -7,18 +7,18 @@ namespace vespalib {
 
 class JsonStreamException : public Exception {
     std::string _reason;
+
 public:
-    JsonStreamException(std::string_view reason,
-                        std::string_view history,
-                        std::string_view location, int skipStack = 0);
+    JsonStreamException(
+        std::string_view reason, std::string_view history, std::string_view location, int skipStack = 0);
     VESPA_DEFINE_EXCEPTION_SPINE(JsonStreamException);
-    JsonStreamException(const JsonStreamException &);
-    JsonStreamException & operator = (const JsonStreamException &);
-    JsonStreamException(JsonStreamException &&) noexcept = default;
-    JsonStreamException & operator = (JsonStreamException &&) noexcept = default;
+    JsonStreamException(const JsonStreamException&);
+    JsonStreamException& operator=(const JsonStreamException&);
+    JsonStreamException(JsonStreamException&&) noexcept = default;
+    JsonStreamException& operator=(JsonStreamException&&) noexcept = default;
     ~JsonStreamException() override;
 
     std::string_view getReason() const noexcept { return _reason; }
 };
 
-}
+} // namespace vespalib

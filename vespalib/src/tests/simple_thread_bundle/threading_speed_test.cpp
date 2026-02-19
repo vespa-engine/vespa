@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/box.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/box.h>
+
 #include <thread>
 
 using namespace vespalib;
@@ -16,7 +17,7 @@ uint64_t doWork(uint64_t data) {
 }
 
 struct Worker : Runnable {
-    size_t iter;
+    size_t   iter;
     uint64_t input;
     uint64_t output;
     Worker() noexcept : iter(1), input(0), output(0) {}
@@ -34,18 +35,14 @@ struct Worker : Runnable {
 };
 
 TEST(ThreadingSpeedTest, estimate_cost_of_thread_bundle_fork_join) {
-    std::vector<SimpleThreadBundle::Strategy> strategy_value
-        = make_box(SimpleThreadBundle::USE_SIGNAL_LIST,
-                   SimpleThreadBundle::USE_SIGNAL_TREE,
-                   SimpleThreadBundle::USE_BROADCAST);
-    std::vector<std::string> strategy_name
-        = make_box(std::string("USE_SIGNAL_LIST"),
-                   std::string("USE_SIGNAL_TREE"),
-                   std::string("USE_BROADCAST"));
+    std::vector<SimpleThreadBundle::Strategy> strategy_value = make_box(
+        SimpleThreadBundle::USE_SIGNAL_LIST, SimpleThreadBundle::USE_SIGNAL_TREE, SimpleThreadBundle::USE_BROADCAST);
+    std::vector<std::string> strategy_name =
+        make_box(std::string("USE_SIGNAL_LIST"), std::string("USE_SIGNAL_TREE"), std::string("USE_BROADCAST"));
     for (size_t strategy = 0; strategy < strategy_value.size(); ++strategy) {
         for (size_t threads = 1; threads <= 16; ++threads) {
-            SimpleThreadBundle threadBundle(threads, strategy_value[strategy]);
-            std::vector<Worker> workers(threads);
+            SimpleThreadBundle     threadBundle(threads, strategy_value[strategy]);
+            std::vector<Worker>    workers(threads);
             std::vector<Runnable*> targets;
             for (size_t i = 0; i < threads; ++i) {
                 targets.push_back(&workers[i]);
@@ -69,8 +66,7 @@ TEST(ThreadingSpeedTest, estimate_cost_of_thread_bundle_fork_join) {
                     std::this_thread::sleep_for(10ms);
                 }
                 fprintf(stderr, "strategy: %s, threads: %zu, fork: %zu, iter: %zu, time: %g, unit: %g\n",
-                        strategy_name[strategy].c_str(), threads, fork, iter, minTime,
-                        minTime / (fork * iter));
+                        strategy_name[strategy].c_str(), threads, fork, iter, minTime, minTime / (fork * iter));
             }
         }
     }

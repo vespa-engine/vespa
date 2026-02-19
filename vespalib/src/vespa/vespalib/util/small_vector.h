@@ -4,6 +4,7 @@
 
 #include "alloc.h"
 #include "traits.h"
+
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
@@ -15,28 +16,25 @@ namespace vespalib {
 
 namespace small_vector {
 
-template <typename T>
-constexpr size_t select_N() {
+template <typename T> constexpr size_t select_N() {
     if constexpr (sizeof(T) <= 16) {
         return (48 / sizeof(T));
     } else {
-        static_assert(sizeof(T) <= 16,
-                      "auto-selecting N is only supported for small objects (16 bytes or less)");
+        static_assert(sizeof(T) <= 16, "auto-selecting N is only supported for small objects (16 bytes or less)");
         return 1;
     }
 }
 
-template <typename T, typename... Args>
-void create_at(T *ptr, Args &&...args) {
+template <typename T, typename... Args> void create_at(T* ptr, Args&&... args) {
     // https://en.cppreference.com/w/cpp/memory/construct_at
     ::new (const_cast<void*>(static_cast<const volatile void*>(ptr))) T(std::forward<Args>(args)...);
 }
 
-template <typename T>
-void move_objects(T *dst, T *src, uint32_t n) {
+template <typename T> void move_objects(T* dst, T* src, uint32_t n) {
     if constexpr (std::is_trivially_copyable_v<T>) {
-        // need to cast dst to void to avoid compiler warning caused by some trivially copyable objects not being copy assignable.
-        memcpy(static_cast<void *>(dst), src, n * sizeof(T));
+        // need to cast dst to void to avoid compiler warning caused by some trivially copyable objects not being copy
+        // assignable.
+        memcpy(static_cast<void*>(dst), src, n * sizeof(T));
     } else {
         for (size_t i = 0; i < n; ++i) {
             create_at(dst + i, std::move(src[i]));
@@ -44,8 +42,7 @@ void move_objects(T *dst, T *src, uint32_t n) {
     }
 }
 
-template <typename T>
-void copy_objects(T *dst, const T *src, uint32_t n) {
+template <typename T> void copy_objects(T* dst, const T* src, uint32_t n) {
     if constexpr (std::is_trivially_copyable_v<T>) {
         memcpy(dst, src, n * sizeof(T));
     } else {
@@ -55,26 +52,23 @@ void copy_objects(T *dst, const T *src, uint32_t n) {
     }
 }
 
-template <typename T, typename... Args>
-void create_objects(T *dst, uint32_t n, Args &&...args) {
+template <typename T, typename... Args> void create_objects(T* dst, uint32_t n, Args&&... args) {
     for (size_t i = 0; i < n; ++i) {
         create_at(dst + i, std::forward<Args>(args)...);
     }
 }
 
-template <typename T>
-void destroy_objects(T *src, uint32_t n) {
+template <typename T> void destroy_objects(T* src, uint32_t n) {
     if (!can_skip_destruction<T>) {
         std::destroy_n(src, n);
     }
 }
 
-template <typename T>
-std::pair<T*,size_t> alloc_objects(size_t wanted) {
+template <typename T> std::pair<T*, size_t> alloc_objects(size_t wanted) {
     size_t mem = roundUp2inN(wanted * sizeof(T));
     size_t entries = (mem / sizeof(T));
     mem = (entries * sizeof(T));
-    T *ptr = static_cast<T*>(malloc(mem));
+    T* ptr = static_cast<T*>(malloc(mem));
     assert(ptr != nullptr);
     return {ptr, entries};
 }
@@ -86,17 +80,15 @@ std::pair<T*,size_t> alloc_objects(size_t wanted) {
  * inside the object itself. Intended use is to contain lists of
  * simple objects/values that are small in both size and number.
  **/
-template <typename T, size_t N = small_vector::select_N<T>()>
-class SmallVector
-{
+template <typename T, size_t N = small_vector::select_N<T>()> class SmallVector {
 private:
-    T *_data;
+    T*       _data;
     uint32_t _size;
     uint32_t _capacity;
     alignas(T) char _space[sizeof(T) * N];
-    constexpr T *local() noexcept { return reinterpret_cast<T*>(_space); }
-    constexpr const T *local() const noexcept { return reinterpret_cast<const T*>(_space); }
-    void expand(size_t wanted) {
+    constexpr T*       local() noexcept { return reinterpret_cast<T*>(_space); }
+    constexpr const T* local() const noexcept { return reinterpret_cast<const T*>(_space); }
+    void               expand(size_t wanted) {
         auto [new_data, new_capacity] = small_vector::alloc_objects<T>(wanted);
         small_vector::move_objects(new_data, _data, _size);
         small_vector::destroy_objects(_data, _size);
@@ -107,55 +99,50 @@ private:
             free(old_data);
         }
     }
-    template <std::random_access_iterator InputIt>
-    void init(InputIt first, InputIt last) {
+    template <std::random_access_iterator InputIt> void init(InputIt first, InputIt last) {
         reserve(last - first);
         while (first != last) {
             small_vector::create_at((_data + _size++), *first++);
         }
     }
-    template <std::input_iterator InputIt>
-    void init(InputIt first, InputIt last) {
+    template <std::input_iterator InputIt> void init(InputIt first, InputIt last) {
         while (first != last) {
             emplace_back(*first++);
         }
     }
+
 public:
-    constexpr SmallVector() noexcept : _data(local()), _size(0), _capacity(N) {
-        static_assert(N > 0);
-    }
+    constexpr SmallVector() noexcept : _data(local()), _size(0), _capacity(N) { static_assert(N > 0); }
     SmallVector(size_t n) : SmallVector() {
         reserve(n);
         small_vector::create_objects(_data, n);
         _size = n;
     }
-    SmallVector(size_t n, const T &obj) : SmallVector() {
+    SmallVector(size_t n, const T& obj) : SmallVector() {
         reserve(n);
         small_vector::create_objects(_data, n, obj);
         _size = n;
     }
     SmallVector(std::initializer_list<T> list) : SmallVector() {
         reserve(list.size());
-        for (const T &value: list) {
+        for (const T& value : list) {
             small_vector::create_at((_data + _size++), value);
         }
     }
-    template <std::input_iterator InputIt>
-    SmallVector(InputIt first, InputIt last) : SmallVector()
-    {
+    template <std::input_iterator InputIt> SmallVector(InputIt first, InputIt last) : SmallVector() {
         init(first, last);
     }
-    SmallVector(SmallVector &&rhs) : SmallVector() {
+    SmallVector(SmallVector&& rhs) : SmallVector() {
         reserve(rhs._size);
         small_vector::move_objects(_data, rhs._data, rhs._size);
         _size = rhs._size;
     }
-    SmallVector(const SmallVector &rhs) : SmallVector() {
+    SmallVector(const SmallVector& rhs) : SmallVector() {
         reserve(rhs._size);
         small_vector::copy_objects(_data, rhs._data, rhs._size);
         _size = rhs._size;
     }
-    SmallVector &operator=(SmallVector &&rhs) {
+    SmallVector& operator=(SmallVector&& rhs) {
         assert(std::addressof(rhs) != this);
         clear();
         reserve(rhs._size);
@@ -163,7 +150,7 @@ public:
         _size = rhs._size;
         return *this;
     }
-    SmallVector &operator=(const SmallVector &rhs) {
+    SmallVector& operator=(const SmallVector& rhs) {
         assert(std::addressof(rhs) != this);
         clear();
         reserve(rhs._size);
@@ -177,22 +164,22 @@ public:
             free(_data);
         }
     }
-    operator std::span<const T> () const { return std::span<const T>(data(), size()); }
-    bool empty() const noexcept { return (_size == 0); }
+    operator std::span<const T>() const { return std::span<const T>(data(), size()); }
+    bool     empty() const noexcept { return (_size == 0); }
     uint32_t size() const noexcept { return _size; }
     uint32_t capacity() const noexcept { return _capacity; }
-    bool is_local() const noexcept { return (_data == local()); }
-    T *begin() noexcept { return _data; }
-    T *end() noexcept { return (_data + _size); }
-    const T *begin() const noexcept { return _data; }
-    const T *end() const noexcept { return (_data + _size); }
-    T &operator[](size_t idx) noexcept { return _data[idx]; }
-    const T &operator[](size_t idx) const noexcept { return _data[idx]; }
-    T *data() noexcept { return _data; }
-    const T *data() const noexcept { return _data; }
-    T &back() noexcept { return _data[_size - 1]; }
-    const T &back() const noexcept { return _data[_size - 1]; }
-    void clear() noexcept {
+    bool     is_local() const noexcept { return (_data == local()); }
+    T*       begin() noexcept { return _data; }
+    T*       end() noexcept { return (_data + _size); }
+    const T* begin() const noexcept { return _data; }
+    const T* end() const noexcept { return (_data + _size); }
+    T&       operator[](size_t idx) noexcept { return _data[idx]; }
+    const T& operator[](size_t idx) const noexcept { return _data[idx]; }
+    T*       data() noexcept { return _data; }
+    const T* data() const noexcept { return _data; }
+    T&       back() noexcept { return _data[_size - 1]; }
+    const T& back() const noexcept { return _data[_size - 1]; }
+    void     clear() noexcept {
         small_vector::destroy_objects(_data, _size);
         _size = 0;
     }
@@ -201,26 +188,22 @@ public:
             expand(wanted);
         }
     }
-    template <typename... Args>
-    void emplace_back(Args &&...args) {
+    template <typename... Args> void emplace_back(Args&&... args) {
         reserve(_size + 1);
         small_vector::create_at((_data + _size), std::forward<Args>(args)...);
         ++_size;
     }
-    template <typename... Args>
-    SmallVector &add(Args &&...args) {
+    template <typename... Args> SmallVector& add(Args&&... args) {
         emplace_back(std::forward<Args>(args)...);
         return *this;
     }
-    void push_back(const T &obj) { emplace_back(obj); }
-    void push_back(T &&obj) { emplace_back(std::move(obj)); }
+    void push_back(const T& obj) { emplace_back(obj); }
+    void push_back(T&& obj) { emplace_back(std::move(obj)); }
     void pop_back() { small_vector::destroy_objects(_data + --_size, 1); }
 };
 
 template <typename T, size_t N, size_t M>
-bool operator==(const SmallVector<T,N> &a,
-                const SmallVector<T,M> &b) noexcept
-{
+bool operator==(const SmallVector<T, N>& a, const SmallVector<T, M>& b) noexcept {
     if (a.size() != b.size()) {
         return false;
     }
@@ -232,4 +215,4 @@ bool operator==(const SmallVector<T,N> &a,
     return true;
 }
 
-} // namespace
+} // namespace vespalib

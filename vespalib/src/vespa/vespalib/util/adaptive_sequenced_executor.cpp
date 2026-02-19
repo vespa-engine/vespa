@@ -6,45 +6,24 @@ namespace vespalib {
 
 //-----------------------------------------------------------------------------
 
-AdaptiveSequencedExecutor::Strand::Strand() noexcept
-    : state(State::IDLE),
-      queue()
-{
-}
+AdaptiveSequencedExecutor::Strand::Strand() noexcept : state(State::IDLE), queue() {}
 
-AdaptiveSequencedExecutor::Strand::~Strand()
-{
-    assert(queue.empty());
-}
+AdaptiveSequencedExecutor::Strand::~Strand() { assert(queue.empty()); }
 
 //-----------------------------------------------------------------------------
 
-AdaptiveSequencedExecutor::Worker::Worker()
-    : cond(),
-      idleTracker(),
-      state(State::RUNNING),
-      strand(nullptr)
-{
-}
+AdaptiveSequencedExecutor::Worker::Worker() : cond(), idleTracker(), state(State::RUNNING), strand(nullptr) {}
 
-AdaptiveSequencedExecutor::Worker::~Worker()
-{
+AdaptiveSequencedExecutor::Worker::~Worker() {
     assert(state == State::DONE);
     assert(strand == nullptr);
 }
 
 //-----------------------------------------------------------------------------
 
-AdaptiveSequencedExecutor::Self::Self()
-    : cond(),
-      state(State::OPEN),
-      waiting_tasks(0),
-      pending_tasks(0)
-{
-}
+AdaptiveSequencedExecutor::Self::Self() : cond(), state(State::OPEN), waiting_tasks(0), pending_tasks(0) {}
 
-AdaptiveSequencedExecutor::Self::~Self()
-{
+AdaptiveSequencedExecutor::Self::~Self() {
     assert(state == State::CLOSED);
     assert(waiting_tasks == 0);
     assert(pending_tasks == 0);
@@ -52,37 +31,25 @@ AdaptiveSequencedExecutor::Self::~Self()
 
 //-----------------------------------------------------------------------------
 
-AdaptiveSequencedExecutor::ThreadTools::ThreadTools(AdaptiveSequencedExecutor &parent_in)
-    : parent(parent_in),
-      pool(),
-      allow_worker_exit()
-{
-}
+AdaptiveSequencedExecutor::ThreadTools::ThreadTools(AdaptiveSequencedExecutor& parent_in)
+    : parent(parent_in), pool(), allow_worker_exit() {}
 
-AdaptiveSequencedExecutor::ThreadTools::~ThreadTools()
-{
-}
+AdaptiveSequencedExecutor::ThreadTools::~ThreadTools() {}
 
-void
-AdaptiveSequencedExecutor::ThreadTools::start(size_t num_threads)
-{
+void AdaptiveSequencedExecutor::ThreadTools::start(size_t num_threads) {
     for (size_t i = 0; i < num_threads; ++i) {
-        pool.start([this](){ parent.worker_main(); });
+        pool.start([this]() { parent.worker_main(); });
     }
 }
 
-void
-AdaptiveSequencedExecutor::ThreadTools::close()
-{
+void AdaptiveSequencedExecutor::ThreadTools::close() {
     allow_worker_exit.countDown();
     pool.join();
 }
 
 //-----------------------------------------------------------------------------
 
-void
-AdaptiveSequencedExecutor::maybe_block_self(std::unique_lock<std::mutex> &lock)
-{
+void AdaptiveSequencedExecutor::maybe_block_self(std::unique_lock<std::mutex>& lock) {
     while (_self.state == Self::State::BLOCKED) {
         _self.cond.wait(lock);
     }
@@ -94,21 +61,17 @@ AdaptiveSequencedExecutor::maybe_block_self(std::unique_lock<std::mutex> &lock)
     }
 }
 
-void
-AdaptiveSequencedExecutor::maybe_unblock_self(const std::unique_lock<std::mutex> &)
-{
+void AdaptiveSequencedExecutor::maybe_unblock_self(const std::unique_lock<std::mutex>&) {
     if ((_self.state == Self::State::BLOCKED) && (_self.pending_tasks < _cfg.wakeup_limit)) {
         _self.state = Self::State::OPEN;
         _self.cond.notify_all();
     }
 }
 
-void
-AdaptiveSequencedExecutor::maybe_wake_worker(const std::unique_lock<std::mutex> &)
-{
+void AdaptiveSequencedExecutor::maybe_wake_worker(const std::unique_lock<std::mutex>&) {
     if ((_self.waiting_tasks > _cfg.max_waiting) && (!_worker_stack.empty())) {
         assert(!_wait_queue.empty());
-        Worker *worker = _worker_stack.back();
+        Worker* worker = _worker_stack.back();
         _worker_stack.popBack();
         assert(worker->state == Worker::State::BLOCKED);
         assert(worker->strand == nullptr);
@@ -124,9 +87,7 @@ AdaptiveSequencedExecutor::maybe_wake_worker(const std::unique_lock<std::mutex> 
     }
 }
 
-bool
-AdaptiveSequencedExecutor::obtain_strand(Worker &worker, std::unique_lock<std::mutex> &lock)
-{
+bool AdaptiveSequencedExecutor::obtain_strand(Worker& worker, std::unique_lock<std::mutex>& lock) {
     assert(worker.strand == nullptr);
     if (!_wait_queue.empty()) {
         worker.strand = _wait_queue.front();
@@ -151,9 +112,7 @@ AdaptiveSequencedExecutor::obtain_strand(Worker &worker, std::unique_lock<std::m
     return (worker.state == Worker::State::RUNNING);
 }
 
-bool
-AdaptiveSequencedExecutor::exchange_strand(Worker &worker, std::unique_lock<std::mutex> &lock)
-{
+bool AdaptiveSequencedExecutor::exchange_strand(Worker& worker, std::unique_lock<std::mutex>& lock) {
     if (worker.strand == nullptr) {
         return obtain_strand(worker, lock);
     }
@@ -172,11 +131,10 @@ AdaptiveSequencedExecutor::exchange_strand(Worker &worker, std::unique_lock<std:
     return true;
 }
 
-AdaptiveSequencedExecutor::TaggedTask
-AdaptiveSequencedExecutor::next_task(Worker &worker, std::optional<uint32_t> prev_token)
-{
+AdaptiveSequencedExecutor::TaggedTask AdaptiveSequencedExecutor::next_task(
+    Worker& worker, std::optional<uint32_t> prev_token) {
     TaggedTask task;
-    auto guard = std::unique_lock(_mutex);
+    auto       guard = std::unique_lock(_mutex);
     if (prev_token.has_value()) {
         _barrier.completeEvent(prev_token.value());
     }
@@ -196,10 +154,8 @@ AdaptiveSequencedExecutor::next_task(Worker &worker, std::optional<uint32_t> pre
     return task;
 }
 
-void
-AdaptiveSequencedExecutor::worker_main()
-{
-    Worker worker;
+void AdaptiveSequencedExecutor::worker_main() {
+    Worker                  worker;
     std::optional<uint32_t> prev_token = std::nullopt;
     while (TaggedTask my_task = next_task(worker, prev_token)) {
         my_task.task->run();
@@ -208,9 +164,8 @@ AdaptiveSequencedExecutor::worker_main()
     _thread_tools->allow_worker_exit.await();
 }
 
-AdaptiveSequencedExecutor::AdaptiveSequencedExecutor(size_t num_strands, size_t num_threads,
-                                                     size_t max_waiting, size_t max_pending,
-                                                     bool is_max_pending_hard)
+AdaptiveSequencedExecutor::AdaptiveSequencedExecutor(
+    size_t num_strands, size_t num_threads, size_t max_waiting, size_t max_pending, bool is_max_pending_hard)
     : ISequencedTaskExecutor(num_strands),
       _thread_tools(std::make_unique<ThreadTools>(*this)),
       _mutex(),
@@ -220,21 +175,19 @@ AdaptiveSequencedExecutor::AdaptiveSequencedExecutor(size_t num_strands, size_t 
       _self(),
       _stats(),
       _idleTracker(steady_clock::now()),
-      _cfg(num_threads, max_waiting, max_pending, is_max_pending_hard)
-{
+      _cfg(num_threads, max_waiting, max_pending, is_max_pending_hard) {
     _stats.queueSize.add(_self.pending_tasks);
     _thread_tools->start(num_threads);
 }
 
-AdaptiveSequencedExecutor::~AdaptiveSequencedExecutor()
-{
+AdaptiveSequencedExecutor::~AdaptiveSequencedExecutor() {
     sync_all();
     {
         auto guard = std::unique_lock(_mutex);
         assert(_self.state == Self::State::OPEN);
         _self.state = Self::State::CLOSED;
         while (!_worker_stack.empty()) {
-            Worker *worker = _worker_stack.back();
+            Worker* worker = _worker_stack.back();
             _worker_stack.popBack();
             assert(worker->state == Worker::State::BLOCKED);
             assert(worker->strand == nullptr);
@@ -248,17 +201,14 @@ AdaptiveSequencedExecutor::~AdaptiveSequencedExecutor()
     assert(_worker_stack.empty());
 }
 
-ISequencedTaskExecutor::ExecutorId
-AdaptiveSequencedExecutor::getExecutorId(uint64_t component) const {
+ISequencedTaskExecutor::ExecutorId AdaptiveSequencedExecutor::getExecutorId(uint64_t component) const {
     return ExecutorId(component % _strands.size());
 }
 
-void
-AdaptiveSequencedExecutor::executeTask(ExecutorId id, Task::UP task)
-{
+void AdaptiveSequencedExecutor::executeTask(ExecutorId id, Task::UP task) {
     assert(id.getId() < _strands.size());
-    Strand &strand = _strands[id.getId()];
-    auto guard = std::unique_lock(_mutex);
+    Strand& strand = _strands[id.getId()];
+    auto    guard = std::unique_lock(_mutex);
     assert(_self.state != Self::State::CLOSED);
     maybe_block_self(guard);
     strand.queue.push(TaggedTask(std::move(task), _barrier.startEvent()));
@@ -274,7 +224,7 @@ AdaptiveSequencedExecutor::executeTask(ExecutorId id, Task::UP task)
         } else {
             strand.state = Strand::State::ACTIVE;
             assert(_wait_queue.empty());
-            Worker *worker = _worker_stack.back();
+            Worker* worker = _worker_stack.back();
             _worker_stack.popBack();
             assert(worker->state == Worker::State::BLOCKED);
             assert(worker->strand == nullptr);
@@ -285,9 +235,7 @@ AdaptiveSequencedExecutor::executeTask(ExecutorId id, Task::UP task)
     }
 }
 
-void
-AdaptiveSequencedExecutor::sync_all()
-{
+void AdaptiveSequencedExecutor::sync_all() {
     BarrierCompletion barrierCompletion;
     {
         auto guard = std::lock_guard(_mutex);
@@ -298,20 +246,16 @@ AdaptiveSequencedExecutor::sync_all()
     barrierCompletion.gate.await();
 }
 
-void
-AdaptiveSequencedExecutor::setTaskLimit(uint32_t task_limit)
-{
-    auto guard = std::unique_lock(_mutex);   
+void AdaptiveSequencedExecutor::setTaskLimit(uint32_t task_limit) {
+    auto guard = std::unique_lock(_mutex);
     _cfg.set_max_pending(task_limit);
     maybe_unblock_self(guard);
 }
 
-ExecutorStats
-AdaptiveSequencedExecutor::getStats()
-{
-    auto guard = std::lock_guard(_mutex);
+ExecutorStats AdaptiveSequencedExecutor::getStats() {
+    auto          guard = std::lock_guard(_mutex);
     ExecutorStats stats = _stats;
-    steady_time now = steady_clock::now();
+    steady_time   now = steady_clock::now();
     for (size_t i(0); i < _worker_stack.size(); i++) {
         _idleTracker.was_idle(_worker_stack.access(i)->idleTracker.reset(now));
     }
@@ -321,11 +265,9 @@ AdaptiveSequencedExecutor::getStats()
     return stats;
 }
 
-AdaptiveSequencedExecutor::Config
-AdaptiveSequencedExecutor::get_config() const
-{
+AdaptiveSequencedExecutor::Config AdaptiveSequencedExecutor::get_config() const {
     auto guard = std::lock_guard(_mutex);
     return _cfg;
 }
 
-}
+} // namespace vespalib

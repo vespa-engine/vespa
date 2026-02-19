@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/time.h>
-#include <vespa/vespalib/util/require.h>
-#include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/locale/c.h>
-#include <thread>
+#include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/time.h>
+
 #include <cmath>
+#include <thread>
 
 using namespace vespalib;
 using namespace std::literals;
@@ -24,9 +25,9 @@ uint32_t doStuff(uint32_t input) {
 }
 
 struct CPUTask : public Executor::Task {
-    uint32_t taskSize;
-    uint32_t &result;
-    CPUTask(uint32_t size, uint32_t &res) : taskSize(size), result(res) {}
+    uint32_t  taskSize;
+    uint32_t& result;
+    CPUTask(uint32_t size, uint32_t& res) : taskSize(size), result(res) {}
     void run() override {
         uint32_t res = 0;
         for (uint32_t i = 0; i < taskSize; ++i) {
@@ -37,31 +38,28 @@ struct CPUTask : public Executor::Task {
 };
 
 struct SyncTask : public Executor::Task {
-    Gate &gate;
-    CountDownLatch &latch;
-    SyncTask(Gate &g, CountDownLatch &l) : gate(g), latch(l) {}
+    Gate&           gate;
+    CountDownLatch& latch;
+    SyncTask(Gate& g, CountDownLatch& l) : gate(g), latch(l) {}
     void run() override {
         latch.countDown();
         gate.await();
     }
 };
 
-class Test
-{
+class Test {
 private:
     uint32_t _result;
 
 public:
     Test() : _result(0) {}
     uint32_t calibrate(double ms);
-    void stress(Executor &executor, uint32_t taskSize, uint32_t numTasks);
-    void eat_value(uint32_t result) { _result += result; }
+    void     stress(Executor& executor, uint32_t taskSize, uint32_t numTasks);
+    void     eat_value(uint32_t result) { _result += result; }
 };
 
-uint32_t
-Test::calibrate(double wanted_ms)
-{
-    uint32_t n = 0;
+uint32_t Test::calibrate(double wanted_ms) {
+    uint32_t              n = 0;
     vespalib::steady_time t0;
     vespalib::steady_time t1;
     { // calibration of calibration loop
@@ -84,21 +82,20 @@ Test::calibrate(double wanted_ms)
         _result += result;
         t1 = vespalib::steady_clock::now();
     }
-    std::chrono::duration<double,std::milli> ms = t1 - t0;
-    double size = (double(n) / ms.count()) * wanted_ms;
-    return (uint32_t) std::round(size);
+    std::chrono::duration<double, std::milli> ms = t1 - t0;
+    double                                    size = (double(n) / ms.count()) * wanted_ms;
+    return (uint32_t)std::round(size);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc != 4) {
-        fprintf(stderr, "Usage: %s <threads> <ms per task> <tasks>\n",
-                argv[0]);
+        fprintf(stderr, "Usage: %s <threads> <ms per task> <tasks>\n", argv[0]);
         return 1;
     }
-    Test test;
-    uint32_t threads     = atoi(argv[1]);
+    Test     test;
+    uint32_t threads = atoi(argv[1]);
     double   ms_per_task = locale::c::strtod(argv[2], nullptr);
-    uint32_t tasks       = atoi(argv[3]);
+    uint32_t tasks = atoi(argv[3]);
     fprintf(stderr, "threads    : %u\n", threads);
     fprintf(stderr, "ms per task: %g\n", ms_per_task);
     fprintf(stderr, "tasks      : %u\n", tasks);
@@ -108,12 +105,10 @@ int main(int argc, char **argv) {
         fprintf(stderr, "calibrated task size: %u\n", taskSize);
         ThreadStackExecutor executor(threads, 5000 + threads);
         {
-            Gate gate;
+            Gate           gate;
             CountDownLatch latch(threads);
             for (uint32_t i = 0; i < threads; ++i) {
-                Executor::Task::UP res
-                    = executor.execute(Executor::Task::UP(
-                                               new SyncTask(gate, latch)));
+                Executor::Task::UP res = executor.execute(Executor::Task::UP(new SyncTask(gate, latch)));
                 REQUIRE(res.get() == nullptr);
             }
             latch.await();

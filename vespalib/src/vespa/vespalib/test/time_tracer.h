@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/stash.h>
+
 #include <atomic>
 #include <chrono>
 #include <map>
@@ -51,8 +52,7 @@ namespace vespalib::test {
  * global structure but will need to be extracted before they can be
  * analyzed.
  **/
-class TimeTracer
-{
+class TimeTracer {
 public:
     using time_point = std::chrono::steady_clock::time_point;
     static time_point now() { return std::chrono::steady_clock::now(); }
@@ -60,31 +60,31 @@ public:
     class Tag {
     private:
         uint32_t _id;
+
     public:
-        Tag(const std::string &name_in);
+        Tag(const std::string& name_in);
         ~Tag();
         uint32_t id() const { return _id; }
     };
 
     class Sample {
     private:
-        uint32_t _tag_id;
+        uint32_t   _tag_id;
         time_point _start;
+
     public:
-        Sample(const Tag &tag) noexcept : _tag_id(tag.id()), _start(now()) {}
+        Sample(const Tag& tag) noexcept : _tag_id(tag.id()), _start(now()) {}
         ~Sample() noexcept { thread_state().add_log_entry(_tag_id, _start, now()); }
     };
 
     struct Record {
-        uint32_t thread_id;
-        uint32_t tag_id;
+        uint32_t   thread_id;
+        uint32_t   tag_id;
         time_point start;
         time_point stop;
-        Record(uint32_t thread_id_in, uint32_t tag_id_in,
-               time_point start_in, time_point stop_in)
-            : thread_id(thread_id_in), tag_id(tag_id_in),
-              start(start_in), stop(stop_in) {}
-        double ms_duration() const;
+        Record(uint32_t thread_id_in, uint32_t tag_id_in, time_point start_in, time_point stop_in)
+            : thread_id(thread_id_in), tag_id(tag_id_in), start(start_in), stop(stop_in) {}
+        double      ms_duration() const;
         std::string tag_name() const;
     };
 
@@ -97,28 +97,29 @@ public:
         bool       _by_time;
         time_point _a;
         time_point _b;
+
     public:
-        bool keep(const Record &entry) const;
-        Extractor &&by_thread(uint32_t thread_id) &&;
-        Extractor &&by_tag(uint32_t tag_id) &&;
-        Extractor &&by_time(time_point a, time_point b) &&;
+        bool                keep(const Record& entry) const;
+        Extractor&&         by_thread(uint32_t thread_id) &&;
+        Extractor&&         by_tag(uint32_t tag_id) &&;
+        Extractor&&         by_time(time_point a, time_point b) &&;
         std::vector<Record> get() const;
         ~Extractor();
     };
 
 private:
     struct LogEntry {
-        uint32_t tag_id;
-        time_point start;
-        time_point stop;
-        const LogEntry *next;
-        LogEntry(uint32_t tag_id_in, time_point start_in, time_point stop_in, const LogEntry *next_in)
+        uint32_t        tag_id;
+        time_point      start;
+        time_point      stop;
+        const LogEntry* next;
+        LogEntry(uint32_t tag_id_in, time_point start_in, time_point stop_in, const LogEntry* next_in)
             : tag_id(tag_id_in), start(start_in), stop(stop_in), next(next_in) {}
     };
 
     struct Guard {
-        std::atomic_flag &lock;
-        explicit Guard(std::atomic_flag &lock_in) noexcept : lock(lock_in) {
+        std::atomic_flag& lock;
+        explicit Guard(std::atomic_flag& lock_in) noexcept : lock(lock_in) {
             while (__builtin_expect(lock.test_and_set(std::memory_order_acquire), false)) {
                 std::this_thread::yield();
             }
@@ -128,16 +129,16 @@ private:
 
     class ThreadState {
     private:
-        uint32_t _thread_id;
+        uint32_t                 _thread_id;
         mutable std::atomic_flag _lock = ATOMIC_FLAG_INIT;
-        vespalib::Stash _stash;
-        const LogEntry * _list;
+        vespalib::Stash          _stash;
+        const LogEntry*          _list;
+
     public:
         using UP = std::unique_ptr<ThreadState>;
-        ThreadState(uint32_t thread_id)
-            : _thread_id(thread_id), _stash(64 * 1024), _list(nullptr) {}
-        uint32_t thread_id() const { return _thread_id; }
-        const LogEntry *get_log_entries() const {
+        ThreadState(uint32_t thread_id) : _thread_id(thread_id), _stash(64 * 1024), _list(nullptr) {}
+        uint32_t        thread_id() const { return _thread_id; }
+        const LogEntry* get_log_entries() const {
             Guard guard(_lock);
             return _list;
         }
@@ -146,28 +147,28 @@ private:
             _list = &_stash.create<LogEntry>(tag_id, start, stop, _list);
         }
     };
-    static TimeTracer &master();
-    static thread_local ThreadState *_thread_state;
+    static TimeTracer&               master();
+    static thread_local ThreadState* _thread_state;
 
-    static void init_thread_state() noexcept;
-    static ThreadState &thread_state() noexcept {
+    static void         init_thread_state() noexcept;
+    static ThreadState& thread_state() noexcept {
         if (__builtin_expect((_thread_state == nullptr), false)) {
             init_thread_state();
         }
         return *_thread_state;
     }
 
-    std::mutex _lock;
-    std::vector<ThreadState::UP> _state_list;
+    std::mutex                      _lock;
+    std::vector<ThreadState::UP>    _state_list;
     std::map<std::string, uint32_t> _tags;
-    std::vector<std::string> _tag_names;
+    std::vector<std::string>        _tag_names;
 
     TimeTracer();
     ~TimeTracer();
-    uint32_t get_tag_id(const std::string &tag_name);
-    std::string get_tag_name(uint32_t tag_id);
-    ThreadState *create_thread_state();
-    std::vector<Record> extract_impl(const Extractor &extractor);
+    uint32_t            get_tag_id(const std::string& tag_name);
+    std::string         get_tag_name(uint32_t tag_id);
+    ThreadState*        create_thread_state();
+    std::vector<Record> extract_impl(const Extractor& extractor);
 
 public:
     static Extractor extract() { return Extractor(); }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "generationhandler.h"
+
 #include <atomic>
 #include <deque>
 #include <vector>
@@ -14,18 +15,14 @@ namespace vespalib {
  *
  * This class must be used in accordance with a GenerationHandler.
  */
-template <typename T, bool track_bytes_held, bool use_deque>
-class GenerationHoldList {
+template <typename T, bool track_bytes_held, bool use_deque> class GenerationHoldList {
 private:
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     struct ElemWithGen {
-        T elem;
+        T            elem;
         generation_t gen;
-        ElemWithGen(T elem_in, generation_t gen_in) noexcept
-            : elem(std::move(elem_in)),
-              gen(gen_in)
-        {}
+        ElemWithGen(T elem_in, generation_t gen_in) noexcept : elem(std::move(elem_in)), gen(gen_in) {}
         size_t byte_size() const noexcept {
             if constexpr (track_bytes_held) {
                 return elem->byte_size();
@@ -34,15 +31,15 @@ private:
         }
     };
 
-    struct NoopFunc { void operator()(const T&){} };
+    struct NoopFunc {
+        void operator()(const T&) {}
+    };
 
     using ElemList = std::vector<T>;
-    using ElemWithGenList = std::conditional_t<use_deque,
-            std::deque<ElemWithGen>,
-            std::vector<ElemWithGen>>;
+    using ElemWithGenList = std::conditional_t<use_deque, std::deque<ElemWithGen>, std::vector<ElemWithGen>>;
 
-    ElemList _phase_1_list;
-    ElemWithGenList _phase_2_list;
+    ElemList            _phase_1_list;
+    ElemWithGenList     _phase_2_list;
     std::atomic<size_t> _held_bytes;
 
     /**
@@ -50,8 +47,7 @@ private:
      */
     void assign_generation_internal(generation_t current_gen);
 
-    template<typename Func>
-    void reclaim_internal(generation_t oldest_used_gen, Func callback);
+    template <typename Func> void reclaim_internal(generation_t oldest_used_gen, Func callback);
 
 public:
     GenerationHoldList() noexcept;
@@ -76,16 +72,13 @@ public:
      * Reclaim all data elements where the assigned generation < oldest used generation.
      * The callback function is called for each data element reclaimed.
      **/
-    template<typename Func>
-    void reclaim(generation_t oldest_used_gen, Func callback) {
+    template <typename Func> void reclaim(generation_t oldest_used_gen, Func callback) {
         if (!_phase_2_list.empty() && (_phase_2_list.front().gen < oldest_used_gen)) {
             reclaim_internal(oldest_used_gen, callback);
         }
     }
 
-    void reclaim(generation_t oldest_used_gen) {
-        reclaim(oldest_used_gen, NoopFunc());
-    }
+    void reclaim(generation_t oldest_used_gen) { reclaim(oldest_used_gen, NoopFunc()); }
 
     /**
      * Reclaim all data elements from this hold list.
@@ -96,8 +89,7 @@ public:
      * Reclaim all data elements from this hold list.
      * The callback function is called for all data elements reclaimed.
      */
-    template<typename Func>
-    void reclaim_all(Func callback);
+    template <typename Func> void reclaim_all(Func callback);
 
     size_t get_held_bytes() const noexcept { return _held_bytes.load(std::memory_order_relaxed); }
 
@@ -105,4 +97,4 @@ public:
     static constexpr size_t sizeof_phase_2_list = sizeof(ElemWithGenList);
 };
 
-}
+} // namespace vespalib

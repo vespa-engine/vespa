@@ -2,14 +2,14 @@
 #pragma once
 
 #include "lrucache_map.h"
+
 #include <vespa/vespalib/stllike/hashtable.hpp>
+
 #include <cassert>
 
 namespace vespalib {
 
-template< typename P >
-typename lrucache_map<P>::insert_result
-lrucache_map<P>::insert(const K & key, const V & value) {
+template <typename P> typename lrucache_map<P>::insert_result lrucache_map<P>::insert(const K& key, const V& value) {
     insert_result res = insert(value_type(key, LV(value)));
     if (res.second) {
         onInsert(key);
@@ -17,9 +17,7 @@ lrucache_map<P>::insert(const K & key, const V & value) {
     return res;
 }
 
-template< typename P >
-typename lrucache_map<P>::insert_result
-lrucache_map<P>::insert(const K & key, V && value) {
+template <typename P> typename lrucache_map<P>::insert_result lrucache_map<P>::insert(const K& key, V&& value) {
     insert_result res = insert(value_type(key, LV(std::move(value))));
     if (res.second) {
         onInsert(key);
@@ -27,30 +25,18 @@ lrucache_map<P>::insert(const K & key, V && value) {
     return res;
 }
 
-template< typename P >
-bool
-lrucache_map<P>::removeOldest(const value_type & v) {
-    (void) v;
+template <typename P> bool lrucache_map<P>::removeOldest(const value_type& v) {
+    (void)v;
     return (size() > capacity());
 }
 
-template< typename P >
-void
-lrucache_map<P>::onRemove(const K & key) {
-    (void) key;
-}
+template <typename P> void lrucache_map<P>::onRemove(const K& key) { (void)key; }
 
-template< typename P >
-void
-lrucache_map<P>::onInsert(const K & key) {
-    (void) key;
-}
+template <typename P> void lrucache_map<P>::onInsert(const K& key) { (void)key; }
 
-template< typename P >
-uint32_t
-lrucache_map<P>::RecordMoves::movedTo(uint32_t from) {
+template <typename P> uint32_t lrucache_map<P>::RecordMoves::movedTo(uint32_t from) {
     for (size_t i(0); i < _lru._moved.size(); i++) {
-        const MoveRecord & mr(_lru._moved[i]);
+        const MoveRecord& mr(_lru._moved[i]);
         if (mr.first == from) {
             from = mr.second;
         }
@@ -58,28 +44,23 @@ lrucache_map<P>::RecordMoves::movedTo(uint32_t from) {
     return from;
 }
 
-template< typename P >
-lrucache_map<P>::RecordMoves::~RecordMoves() {
+template <typename P> lrucache_map<P>::RecordMoves::~RecordMoves() {
     _lru._moveRecordingEnabled = false;
     _lru._moved.clear();
 }
 
-template< typename P >
-lrucache_map<P>::lrucache_map(size_t maxElems) :
-    HashTable(0),
-    _maxElements(maxElems),
-    _head(LinkedValueBase::npos),
-    _tail(LinkedValueBase::npos),
-    _moveRecordingEnabled(false),
-    _moved()
-{ }
+template <typename P>
+lrucache_map<P>::lrucache_map(size_t maxElems)
+    : HashTable(0),
+      _maxElements(maxElems),
+      _head(LinkedValueBase::npos),
+      _tail(LinkedValueBase::npos),
+      _moveRecordingEnabled(false),
+      _moved() {}
 
-template< typename P >
-lrucache_map<P>::~lrucache_map() = default;
+template <typename P> lrucache_map<P>::~lrucache_map() = default;
 
-template< typename P >
-void
-lrucache_map<P>::swap(lrucache_map & rhs) {
+template <typename P> void lrucache_map<P>::swap(lrucache_map& rhs) {
     auto maxElements = rhs._maxElements.load(std::memory_order_relaxed);
     rhs._maxElements.store(_maxElements.load(std::memory_order_relaxed), std::memory_order_relaxed);
     _maxElements.store(maxElements, std::memory_order_relaxed);
@@ -88,14 +69,12 @@ lrucache_map<P>::swap(lrucache_map & rhs) {
     HashTable::swap(rhs);
 }
 
-template< typename P >
-void
-lrucache_map<P>::move(next_t from, next_t to) {
-    (void) from;
+template <typename P> void lrucache_map<P>::move(next_t from, next_t to) {
+    (void)from;
     if (_moveRecordingEnabled) {
         _moved.push_back(std::make_pair(from, to));
     }
-    value_type & moved = HashTable::getByInternalIndex(to);
+    value_type& moved = HashTable::getByInternalIndex(to);
     if (moved.second._prev != LinkedValueBase::npos) {
         HashTable::getByInternalIndex(moved.second._prev).second._next = to;
     } else {
@@ -108,20 +87,16 @@ lrucache_map<P>::move(next_t from, next_t to) {
     }
 }
 
-template <typename P>
-typename lrucache_map<P>::iterator
-lrucache_map<P>::iter_to_last() noexcept {
+template <typename P> typename lrucache_map<P>::iterator lrucache_map<P>::iter_to_last() noexcept {
     return iterator(this, _tail); // If _tail is npos, this is implicitly == end()
 }
 
-template< typename P >
-void
-lrucache_map<P>::erase(const K & key) {
+template <typename P> void lrucache_map<P>::erase(const K& key) {
     internal_iterator it = HashTable::find(key);
     if (it != HashTable::end()) {
         next_t h = HashTable::hash(key);
         onRemove(key);
-        LV & v = it->second;
+        LV& v = it->second;
         if (v._prev != LinkedValueBase::npos) {
             HashTable::getByInternalIndex(v._prev).second._next = v._next;
         } else {
@@ -136,25 +111,19 @@ lrucache_map<P>::erase(const K & key) {
     }
 }
 
-template< typename P >
-typename lrucache_map<P>::iterator
-lrucache_map<P>::erase(const iterator & it)
-{
+template <typename P> typename lrucache_map<P>::iterator lrucache_map<P>::erase(const iterator& it) {
     iterator next(it);
     if (it != end()) {
         RecordMoves moves(*this);
         next++;
-        const K & key(HashTable::getByInternalIndex(it._current).first);
+        const K& key(HashTable::getByInternalIndex(it._current).first);
         erase(key);
         next = iterator(this, moves.movedTo(next._current));
     }
     return next;
 }
 
-template< typename P >
-void
-lrucache_map<P>::verifyInternals()
-{
+template <typename P> void lrucache_map<P>::verifyInternals() {
     if (_head == LinkedValueBase::npos || _tail == LinkedValueBase::npos) {
         // If _either_ head or tail is invalid, they must both be.
         assert(_head == LinkedValueBase::npos);
@@ -168,7 +137,9 @@ lrucache_map<P>::verifyInternals()
         size_t i(0);
         size_t prev(LinkedValueBase::npos);
         size_t c(_head);
-        for(size_t m(size()); (c != LinkedValueBase::npos) && (i < m); c = HashTable::getByInternalIndex(c).second._next, i++) {
+        for (size_t m(size()); (c != LinkedValueBase::npos) && (i < m);
+             c = HashTable::getByInternalIndex(c).second._next, i++)
+        {
             assert((HashTable::getByInternalIndex(c).second._prev == prev));
             prev = c;
         }
@@ -179,7 +150,9 @@ lrucache_map<P>::verifyInternals()
         size_t i(0);
         size_t next(LinkedValueBase::npos);
         size_t c(_tail);
-        for(size_t m(size()); (c != LinkedValueBase::npos) && (i < m); c = HashTable::getByInternalIndex(c).second._prev, i++) {
+        for (size_t m(size()); (c != LinkedValueBase::npos) && (i < m);
+             c = HashTable::getByInternalIndex(c).second._prev, i++)
+        {
             assert((HashTable::getByInternalIndex(c).second._next == next));
             next = c;
         }
@@ -188,16 +161,13 @@ lrucache_map<P>::verifyInternals()
     }
 }
 
-template< typename P >
-void
-lrucache_map<P>::move(NodeStore && oldStore)
-{
+template <typename P> void lrucache_map<P>::move(NodeStore&& oldStore) {
     next_t curr(_tail);
     _tail = LinkedValueBase::npos;
     _head = LinkedValueBase::npos;
-    
+
     while (curr != LinkedValueBase::npos) {
-        value_type & v = oldStore[curr].getValue();
+        value_type& v = oldStore[curr].getValue();
         curr = v.second._prev;
         v.second._prev = LinkedValueBase::npos;
         v.second._next = LinkedValueBase::npos;
@@ -205,10 +175,7 @@ lrucache_map<P>::move(NodeStore && oldStore)
     }
 }
 
-template <typename P>
-template <bool PreserveHead>
-void
-lrucache_map<P>::trim_impl() {
+template <typename P> template <bool PreserveHead> void lrucache_map<P>::trim_impl() {
     while (_tail != LinkedValueBase::npos) {
         if (PreserveHead && (_head == _tail)) {
             break;
@@ -221,34 +188,28 @@ lrucache_map<P>::trim_impl() {
     }
 }
 
-template< typename P >
-void
-lrucache_map<P>::removeOld() {
+template <typename P> void lrucache_map<P>::removeOld() {
     trim_impl<true>(); // Don't remove the most recently inserted element
 }
 
-template <typename P>
-void
-lrucache_map<P>::trim() {
+template <typename P> void lrucache_map<P>::trim() {
     trim_impl<false>(); // Similar to removeOld(), but may go down to zero size.
 }
 
-template< typename P >
-void
-lrucache_map<P>::ref(const internal_iterator & it) {
+template <typename P> void lrucache_map<P>::ref(const internal_iterator& it) {
     uint32_t me(it.getInternalIndex());
     if (me != _head) {
-        LV & v = it->second;
-        LV & oldPrev = HashTable::getByInternalIndex(v._prev).second;
+        LV& v = it->second;
+        LV& oldPrev = HashTable::getByInternalIndex(v._prev).second;
         oldPrev._next = v._next;
         if (me != _tail) {
-            LV & oldNext = HashTable::getByInternalIndex(v._next).second;
+            LV& oldNext = HashTable::getByInternalIndex(v._next).second;
             oldNext._prev = v._prev;
         } else {
             // I am tail and I am not the only one.
             _tail = v._prev;
         }
-        LV & oldHead = HashTable::getByInternalIndex(_head).second;
+        LV& oldHead = HashTable::getByInternalIndex(_head).second;
         oldHead._prev = me;
         v._next = _head;
         v._prev = LinkedValueBase::npos;
@@ -256,12 +217,10 @@ lrucache_map<P>::ref(const internal_iterator & it) {
     }
 }
 
-template< typename P >
-typename lrucache_map<P>::insert_result
-lrucache_map<P>::insert(value_type && value) {
+template <typename P> typename lrucache_map<P>::insert_result lrucache_map<P>::insert(value_type&& value) {
     insert_result res = HashTable::insert_internal(std::forward<value_type>(value));
-    uint32_t next(_head);
-    if ( ! res.second) {
+    uint32_t      next(_head);
+    if (!res.second) {
         ref(res.first);
     } else {
         _head = res.first.getInternalIndex();
@@ -280,23 +239,15 @@ lrucache_map<P>::insert(value_type && value) {
     return res;
 }
 
-template< typename P >
-typename P::Value &
-lrucache_map<P>::operator [] (const K & key)
-{
+template <typename P> typename P::Value& lrucache_map<P>::operator[](const K& key) {
     return insert(key, V()).first->second._value;
 }
 
-template< typename P >
-bool
-lrucache_map<P>::hasKey(const K & key) const {
+template <typename P> bool lrucache_map<P>::hasKey(const K& key) const {
     return HashTable::find(key) != HashTable::end();
 }
 
-template< typename P >
-typename P::Value*
-lrucache_map<P>::find_and_ref(const K& key)
-{
+template <typename P> typename P::Value* lrucache_map<P>::find_and_ref(const K& key) {
     internal_iterator found = HashTable::find(key);
     if (found != HashTable::end()) {
         ref(found);
@@ -305,13 +256,10 @@ lrucache_map<P>::find_and_ref(const K& key)
     return nullptr;
 }
 
-template< typename P >
-typename P::Value*
-lrucache_map<P>::find_and_lazy_ref(const K& key)
-{
+template <typename P> typename P::Value* lrucache_map<P>::find_and_lazy_ref(const K& key) {
     internal_iterator found = HashTable::find(key);
     if (found != HashTable::end()) {
-        if (size()*2 > capacity()) {
+        if (size() * 2 > capacity()) {
             ref(found);
         }
         return &found->second._value;
@@ -319,9 +267,7 @@ lrucache_map<P>::find_and_lazy_ref(const K& key)
     return nullptr;
 }
 
-template <typename P>
-typename lrucache_map<P>::iterator
-lrucache_map<P>::find_no_ref(const K& key) {
+template <typename P> typename lrucache_map<P>::iterator lrucache_map<P>::find_no_ref(const K& key) {
     internal_iterator iter = HashTable::find(key);
     if (iter != HashTable::end()) {
         return iterator(this, iter.getInternalIndex());
@@ -329,5 +275,4 @@ lrucache_map<P>::find_no_ref(const K& key) {
     return end();
 }
 
-}
-
+} // namespace vespalib

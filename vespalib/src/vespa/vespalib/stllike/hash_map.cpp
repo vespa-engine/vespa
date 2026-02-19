@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hash_map.hpp"
+
 #include "hash_map_equal.hpp"
+
 #include <vespa/vespalib/util/array_equal.hpp>
 
-namespace vespalib {
-}
+namespace vespalib {}
 
 VESPALIB_HASH_MAP_INSTANTIATE(std::string, std::string);
 VESPALIB_HASH_MAP_INSTANTIATE(std::string, int);

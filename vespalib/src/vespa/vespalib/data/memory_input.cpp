@@ -4,15 +4,9 @@
 
 namespace vespalib {
 
-Memory
-MemoryInput::obtain()
-{
-    return Memory((_data.data + _pos), (_data.size - _pos));
-}
+Memory MemoryInput::obtain() { return Memory((_data.data + _pos), (_data.size - _pos)); }
 
-Input &
-MemoryInput::evict(size_t bytes)
-{
+Input& MemoryInput::evict(size_t bytes) {
     _pos += bytes;
     return *this;
 }

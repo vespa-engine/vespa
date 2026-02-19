@@ -1,26 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/ref_counted.h>
-#include <vespa/vespalib/util/gate.h>
-#include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/ref_counted.h>
+#include <vespa/vespalib/util/thread.h>
 
 using namespace vespalib;
 
 struct Base : enable_ref_counted {
     static std::atomic<int> ctor_cnt;
     static std::atomic<int> dtor_cnt;
-    int val;
-    Base(int val_in) : val(val_in) {
-        ctor_cnt.fetch_add(1, std::memory_order_relaxed);
-    }
+    int                     val;
+    Base(int val_in) : val(val_in) { ctor_cnt.fetch_add(1, std::memory_order_relaxed); }
     ~Base() override;
 };
 
-Base::~Base()
-{
-    dtor_cnt.fetch_add(1, std::memory_order_relaxed);
-}
+Base::~Base() { dtor_cnt.fetch_add(1, std::memory_order_relaxed); }
 
 std::atomic<int> Base::ctor_cnt = 0;
 std::atomic<int> Base::dtor_cnt = 0;
@@ -28,33 +23,24 @@ std::atomic<int> Base::dtor_cnt = 0;
 struct Leaf : Base {
     static std::atomic<int> ctor_cnt;
     static std::atomic<int> dtor_cnt;
-    Leaf(int val_in) : Base(val_in) {
-        ctor_cnt.fetch_add(1, std::memory_order_relaxed);
-    }
+    Leaf(int val_in) : Base(val_in) { ctor_cnt.fetch_add(1, std::memory_order_relaxed); }
     ~Leaf() override;
 };
 
-Leaf::~Leaf()
-{
-    dtor_cnt.fetch_add(1, std::memory_order_relaxed);
-}
+Leaf::~Leaf() { dtor_cnt.fetch_add(1, std::memory_order_relaxed); }
 
 std::atomic<int> Leaf::ctor_cnt = 0;
 std::atomic<int> Leaf::dtor_cnt = 0;
 
-void copy_assign_ref_counted_leaf_real(ref_counted<Leaf>& lhs, const ref_counted<Leaf> &rhs)
-{
-    lhs = rhs;
-}
+void copy_assign_ref_counted_leaf_real(ref_counted<Leaf>& lhs, const ref_counted<Leaf>& rhs) { lhs = rhs; }
 
-void (*copy_assign_ref_counted_leaf)(ref_counted<Leaf>& lhs, const ref_counted<Leaf> &rhs) = copy_assign_ref_counted_leaf_real;
+void (*copy_assign_ref_counted_leaf)(
+    ref_counted<Leaf>& lhs, const ref_counted<Leaf>& rhs) = copy_assign_ref_counted_leaf_real;
 
-void move_assign_ref_counted_leaf_real(ref_counted<Leaf>& lhs, ref_counted<Leaf>&& rhs)
-{
-    lhs = std::move(rhs);
-}
+void move_assign_ref_counted_leaf_real(ref_counted<Leaf>& lhs, ref_counted<Leaf>&& rhs) { lhs = std::move(rhs); }
 
-void (*move_assign_ref_counted_leaf)(ref_counted<Leaf>& lhs, ref_counted<Leaf>&& rhs) = move_assign_ref_counted_leaf_real;
+void (*move_assign_ref_counted_leaf)(
+    ref_counted<Leaf>& lhs, ref_counted<Leaf>&& rhs) = move_assign_ref_counted_leaf_real;
 
 // check that the expected number of objects have been created and
 // destroyed while this object was in scope.
@@ -66,9 +52,7 @@ struct CheckObjects {
     int old_leaf_ctor;
     int old_leaf_dtor;
     CheckObjects(int expect_base_in = 0, int expect_leaf_in = 0)
-      : expect_base(expect_base_in),
-        expect_leaf(expect_leaf_in)
-    {
+        : expect_base(expect_base_in), expect_leaf(expect_leaf_in) {
         old_base_ctor = Base::ctor_cnt.load(std::memory_order_relaxed);
         old_base_dtor = Base::dtor_cnt.load(std::memory_order_relaxed);
         old_leaf_ctor = Leaf::ctor_cnt.load(std::memory_order_relaxed);
@@ -87,20 +71,20 @@ struct CheckObjects {
 };
 
 TEST(RefCountedTest, create_empty_ref_counted) {
-    CheckObjects check;
+    CheckObjects      check;
     ref_counted<Base> empty;
     EXPECT_FALSE(empty);
 }
 
 TEST(RefCountedTest, make_ref_counted) {
     CheckObjects check(2, 1);
-    auto ref1 = make_ref_counted<Base>(10);
-    static_assert(std::same_as<decltype(ref1),ref_counted<Base>>);
+    auto         ref1 = make_ref_counted<Base>(10);
+    static_assert(std::same_as<decltype(ref1), ref_counted<Base>>);
     EXPECT_TRUE(ref1);
     EXPECT_EQ((*ref1).val, 10);
     EXPECT_EQ(ref1->val, 10);
     auto ref2 = make_ref_counted<Leaf>(20);
-    static_assert(std::same_as<decltype(ref2),ref_counted<Leaf>>);
+    static_assert(std::same_as<decltype(ref2), ref_counted<Leaf>>);
     EXPECT_TRUE(ref2);
     EXPECT_EQ((*ref2).val, 20);
     EXPECT_EQ(ref2->val, 20);
@@ -108,21 +92,21 @@ TEST(RefCountedTest, make_ref_counted) {
 
 TEST(RefCountedTest, ref_counted_from) {
     CheckObjects check(1, 1);
-    auto ref = make_ref_counted<Leaf>(10);
-    Leaf &leaf = *ref;
-    Base &base = leaf;
+    auto         ref = make_ref_counted<Leaf>(10);
+    Leaf&        leaf = *ref;
+    Base&        base = leaf;
     EXPECT_EQ(ref->count_refs(), 1);
     auto from_leaf = ref_counted_from(leaf);
-    static_assert(std::same_as<decltype(from_leaf),ref_counted<Leaf>>);
+    static_assert(std::same_as<decltype(from_leaf), ref_counted<Leaf>>);
     auto from_base = ref_counted_from(base);
-    static_assert(std::same_as<decltype(from_base),ref_counted<Base>>);
+    static_assert(std::same_as<decltype(from_base), ref_counted<Base>>);
     EXPECT_EQ(ref->count_refs(), 3);
     EXPECT_EQ(from_base->val, 10);
 }
 
 TEST(RefCountedTest, use_internal_api) {
     CheckObjects check(1);
-    Base *raw = new Base(20);
+    Base*        raw = new Base(20);
     EXPECT_EQ(raw->count_refs(), 1);
     ref_counted<Base> ref = ref_counted<Base>::internal_attach(raw);
     EXPECT_EQ(ref->count_refs(), 1);
@@ -138,7 +122,7 @@ TEST(RefCountedTest, use_internal_api) {
 
 TEST(RefCountedTest, use_multi_ref_internal_api) {
     CheckObjects check(1);
-    Base *raw = new Base(20);
+    Base*        raw = new Base(20);
     EXPECT_EQ(raw->count_refs(), 1);
     raw->internal_addref(9);
     EXPECT_EQ(raw->count_refs(), 10);
@@ -149,11 +133,11 @@ TEST(RefCountedTest, use_multi_ref_internal_api) {
 }
 
 TEST(RefCountedTest, move_ref_counted) {
-    for (bool has_src: {true, false}) {
-        for (bool has_dst: {true, false}) {
-            for (bool same: {true, false}) {
+    for (bool has_src : {true, false}) {
+        for (bool has_dst : {true, false}) {
+            for (bool same : {true, false}) {
                 if (same) {
-                    CheckObjects check(has_src + has_dst);
+                    CheckObjects      check(has_src + has_dst);
                     ref_counted<Base> src = has_src ? make_ref_counted<Base>(10) : ref_counted<Base>();
                     ref_counted<Base> dst = has_dst ? make_ref_counted<Base>(20) : ref_counted<Base>();
                     dst = std::move(src);
@@ -164,7 +148,7 @@ TEST(RefCountedTest, move_ref_counted) {
                         EXPECT_EQ(dst->count_refs(), 1);
                     }
                 } else {
-                    CheckObjects check(has_src + has_dst, has_src + has_dst);
+                    CheckObjects      check(has_src + has_dst, has_src + has_dst);
                     ref_counted<Leaf> src = has_src ? make_ref_counted<Leaf>(10) : ref_counted<Leaf>();
                     ref_counted<Base> dst = has_dst ? make_ref_counted<Leaf>(20) : ref_counted<Leaf>();
                     dst = std::move(src);
@@ -181,11 +165,11 @@ TEST(RefCountedTest, move_ref_counted) {
 }
 
 TEST(RefCountedTest, copy_ref_counted) {
-    for (bool has_src: {true, false}) {
-        for (bool has_dst: {true, false}) {
-            for (bool same: {true, false}) {
+    for (bool has_src : {true, false}) {
+        for (bool has_dst : {true, false}) {
+            for (bool same : {true, false}) {
                 if (same) {
-                    CheckObjects check(2);
+                    CheckObjects      check(2);
                     ref_counted<Base> empty;
                     ref_counted<Base> obj1 = make_ref_counted<Base>(10);
                     ref_counted<Base> obj2 = make_ref_counted<Base>(20);
@@ -199,7 +183,7 @@ TEST(RefCountedTest, copy_ref_counted) {
                         EXPECT_EQ(dst->count_refs(), 3);
                     }
                 } else {
-                    CheckObjects check(2, 2);
+                    CheckObjects      check(2, 2);
                     ref_counted<Leaf> empty;
                     ref_counted<Leaf> obj1 = make_ref_counted<Leaf>(10);
                     ref_counted<Leaf> obj2 = make_ref_counted<Leaf>(20);
@@ -222,7 +206,7 @@ struct Other : enable_ref_counted {};
 
 TEST(RefCountedTest, compile_errors_when_uncommented) {
     struct Foo {};
-    [[maybe_unused]] Foo foo;
+    [[maybe_unused]] Foo                foo;
     [[maybe_unused]] ref_counted<Other> other = make_ref_counted<Other>();
     // ref_counted<Foo> empty;
     // auto ref1 = make_ref_counted<Foo>();
@@ -240,8 +224,8 @@ TEST(RefCountedTest, self_assign) {
 
 TEST(RefCountedTest, reset) {
     CheckObjects check(1);
-    auto ref = make_ref_counted<Base>(10);
-    auto pre_cnt = Base::dtor_cnt.load(std::memory_order_relaxed);
+    auto         ref = make_ref_counted<Base>(10);
+    auto         pre_cnt = Base::dtor_cnt.load(std::memory_order_relaxed);
     EXPECT_TRUE(ref);
     ref.reset();
     EXPECT_FALSE(ref);
@@ -250,23 +234,22 @@ TEST(RefCountedTest, reset) {
 }
 
 TEST(RefCountedTest, with_threads) {
-    CheckObjects check(2,1);
-    ThreadPool pool;
-    Gate gate;
+    CheckObjects check(2, 1);
+    ThreadPool   pool;
+    Gate         gate;
     {
         auto a = make_ref_counted<Base>(10);
         auto b = make_ref_counted<Leaf>(20);
         for (int i = 0; i < 8; ++i) {
-            pool.start([&gate,a,b]()
-                       {
-                           gate.await();
-                           for (int j = 0; j < 100000; ++j) {
-                               auto c = a;
-                               auto d = b;
-                               EXPECT_EQ(c->val, 10);
-                               EXPECT_EQ(d->val, 20);
-                           }
-                       });
+            pool.start([&gate, a, b]() {
+                gate.await();
+                for (int j = 0; j < 100000; ++j) {
+                    auto c = a;
+                    auto d = b;
+                    EXPECT_EQ(c->val, 10);
+                    EXPECT_EQ(d->val, 20);
+                }
+            });
         }
     }
     gate.countDown();

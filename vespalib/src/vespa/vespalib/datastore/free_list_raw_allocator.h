@@ -13,9 +13,7 @@ namespace vespalib::datastore {
  * If free lists are enabled this allocator should only be used when
  * allocating the same number of elements each time (equal to cluster size).
  */
-template <typename EntryT, typename RefT>
-class FreeListRawAllocator : public RawAllocator<EntryT, RefT>
-{
+template <typename EntryT, typename RefT> class FreeListRawAllocator : public RawAllocator<EntryT, RefT> {
 public:
     using ParentType = RawAllocator<EntryT, RefT>;
     using HandleType = typename ParentType::HandleType;
@@ -25,11 +23,10 @@ private:
     using ParentType::_typeId;
 
 public:
-    FreeListRawAllocator(DataStoreBase &store, uint32_t typeId);
+    FreeListRawAllocator(DataStoreBase& store, uint32_t typeId);
 
-    HandleType alloc(size_t num_entries);
-    template <typename BufferType>
-    HandleType alloc_dynamic_array(size_t array_size);
+    HandleType                                alloc(size_t num_entries);
+    template <typename BufferType> HandleType alloc_dynamic_array(size_t array_size);
 };
 
-}
+} // namespace vespalib::datastore

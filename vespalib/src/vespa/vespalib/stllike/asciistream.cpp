@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "asciistream.h"
-#include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/fastos/file.h>
+#include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/locale/c.h>
-#include <vespa/fastos/file.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <cassert>
 #include <cctype>
 #include <charconv>
@@ -21,14 +23,13 @@ namespace vespalib {
 
 namespace {
 
-std::vector<std::string>
-getPrecisions(const char type) {
+std::vector<std::string> getPrecisions(const char type) {
     std::vector<std::string> result(VESPALIB_ASCIISTREAM_MAX_PRECISION + 1);
-    for (uint32_t i=0; i<result.size(); ++i) {
+    for (uint32_t i = 0; i < result.size(); ++i) {
         char buf[8];
-        int count = snprintf(buf, sizeof(buf), "%%.%u%c", i, type);
-        assert(size_t(count) < sizeof(buf));  // Assert no truncation.
-        (void) count;
+        int  count = snprintf(buf, sizeof(buf), "%%.%u%c", i, type);
+        assert(size_t(count) < sizeof(buf)); // Assert no truncation.
+        (void)count;
         result[i] = buf;
     }
     return result;
@@ -37,45 +38,41 @@ std::vector<std::string> fixedPrecisions = getPrecisions('f');
 std::vector<std::string> scientificPrecisions = getPrecisions('e');
 std::vector<std::string> autoPrecisions = getPrecisions('g');
 
-}
+} // namespace
 
-asciistream &
-asciistream::operator << (Precision v) {
+asciistream& asciistream::operator<<(Precision v) {
     assert(v.getPrecision() <= VESPALIB_ASCIISTREAM_MAX_PRECISION);
     _precision = v.getPrecision();
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (Precision v) {
+asciistream& asciistream::operator>>(Precision v) {
     assert(v.getPrecision() <= VESPALIB_ASCIISTREAM_MAX_PRECISION);
     _precision = v.getPrecision();
     return *this;
 }
 
-asciistream::asciistream() :
-    _rPos(0),
-    _wbuf(),
-    _rbuf(_wbuf.c_str(), _wbuf.size()),
-    _base(dec),
-    _floatSpec(automatic),
-    _floatModifier(defaultdotting),
-    _width(0),
-    _fill(' '),
-    _precision(6)
-{ }
+asciistream::asciistream()
+    : _rPos(0),
+      _wbuf(),
+      _rbuf(_wbuf.c_str(), _wbuf.size()),
+      _base(dec),
+      _floatSpec(automatic),
+      _floatModifier(defaultdotting),
+      _width(0),
+      _fill(' '),
+      _precision(6) {}
 
-asciistream::asciistream(std::string_view buf) :
-    _rPos(0),
-    _wbuf(),
-    _rbuf(buf),
-    _base(dec),
-    _floatSpec(automatic),
-    _floatModifier(defaultdotting),
-    _width(0),
-    _fill(' '),
-    _precision(6)
-{
+asciistream::asciistream(std::string_view buf)
+    : _rPos(0),
+      _wbuf(),
+      _rbuf(buf),
+      _base(dec),
+      _floatSpec(automatic),
+      _floatModifier(defaultdotting),
+      _width(0),
+      _fill(' '),
+      _precision(6) {
     if (buf[buf.size()] != '\0') {
         _wbuf = buf;
         _rbuf = _wbuf;
@@ -84,22 +81,18 @@ asciistream::asciistream(std::string_view buf) :
 
 asciistream::~asciistream() = default;
 
-asciistream::asciistream(const asciistream & rhs) :
-    _rPos(0),
-    _wbuf(rhs.view()),
-    _rbuf(_wbuf.c_str(), _wbuf.size()),
-    _base(rhs._base),
-    _floatSpec(rhs._floatSpec),
-    _floatModifier(rhs._floatModifier),
-    _width(rhs._width),
-    _fill(rhs._fill),
-    _precision(rhs._precision)
-{
-}
+asciistream::asciistream(const asciistream& rhs)
+    : _rPos(0),
+      _wbuf(rhs.view()),
+      _rbuf(_wbuf.c_str(), _wbuf.size()),
+      _base(rhs._base),
+      _floatSpec(rhs._floatSpec),
+      _floatModifier(rhs._floatModifier),
+      _width(rhs._width),
+      _fill(rhs._fill),
+      _precision(rhs._precision) {}
 
-asciistream &
-asciistream::operator = (const asciistream & rhs)
-{
+asciistream& asciistream::operator=(const asciistream& rhs) {
     if (this != &rhs) {
         asciistream newStream(rhs);
         swap(newStream);
@@ -107,24 +100,16 @@ asciistream::operator = (const asciistream & rhs)
     return *this;
 }
 
-asciistream::asciistream(asciistream && rhs) noexcept
-    : asciistream()
-{
-    swap(rhs);
-}
+asciistream::asciistream(asciistream&& rhs) noexcept : asciistream() { swap(rhs); }
 
-asciistream &
-asciistream::operator = (asciistream && rhs) noexcept
-{
+asciistream& asciistream::operator=(asciistream&& rhs) noexcept {
     if (this != &rhs) {
         swap(rhs);
     }
     return *this;
 }
 
-void
-asciistream::swap(asciistream & rhs) noexcept
-{
+void asciistream::swap(asciistream& rhs) noexcept {
     std::swap(_rPos, rhs._rPos);
     // If read-only, _wbuf is empty and _rbuf is set
     // If ever written to, _rbuf == _wbuf
@@ -149,49 +134,48 @@ asciistream::swap(asciistream & rhs) noexcept
 
 namespace {
 
-int getValue(double & val, const char *buf) __attribute__((noinline));
-int getValue(float & val, const char *buf) __attribute__((noinline));
-void throwInputError(int e, const char * t, const char * buf) __attribute__((noinline));
-void throwInputError(std::errc e, const char * t, const char * buf) __attribute__((noinline));
-void throwUnderflow(size_t pos) __attribute__((noinline));
-template <typename T>
-T strToInt(T & v, const char *begin, const char *end) __attribute__((noinline));
+int                     getValue(double& val, const char* buf) __attribute__((noinline));
+int                     getValue(float& val, const char* buf) __attribute__((noinline));
+void                    throwInputError(int e, const char* t, const char* buf) __attribute__((noinline));
+void                    throwInputError(std::errc e, const char* t, const char* buf) __attribute__((noinline));
+void                    throwUnderflow(size_t pos) __attribute__((noinline));
+template <typename T> T strToInt(T& v, const char* begin, const char* end) __attribute__((noinline));
 
-void
-throwInputError(int e, const char * t, const char * buf)
-{
+void throwInputError(int e, const char* t, const char* buf) {
     if (e == 0) {
-        throw IllegalArgumentException("Failed decoding a " + std::string(t) + " from '" + std::string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException(
+            "Failed decoding a " + std::string(t) + " from '" + std::string(buf) + "'.", VESPA_STRLOC);
     } else if (errno == ERANGE) {
-        throw IllegalArgumentException(std::string(t) + " value '" + std::string(buf) + "' is outside of range.", VESPA_STRLOC);
+        throw IllegalArgumentException(
+            std::string(t) + " value '" + std::string(buf) + "' is outside of range.", VESPA_STRLOC);
     } else if (errno == EINVAL) {
-        throw IllegalArgumentException("Illegal " + std::string(t) + " value '" + std::string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException(
+            "Illegal " + std::string(t) + " value '" + std::string(buf) + "'.", VESPA_STRLOC);
     } else {
-        throw IllegalArgumentException("Unknown error decoding an " + std::string(t) + " from '" + std::string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException(
+            "Unknown error decoding an " + std::string(t) + " from '" + std::string(buf) + "'.", VESPA_STRLOC);
     }
 }
 
-void
-throwInputError(std::errc e, const char * t, const char * buf) {
+void throwInputError(std::errc e, const char* t, const char* buf) {
     if (e == std::errc::invalid_argument) {
-        throw IllegalArgumentException("Illegal " + std::string(t) + " value '" + std::string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException(
+            "Illegal " + std::string(t) + " value '" + std::string(buf) + "'.", VESPA_STRLOC);
     } else if (e == std::errc::result_out_of_range) {
-        throw IllegalArgumentException(std::string(t) + " value '" + std::string(buf) + "' is outside of range.", VESPA_STRLOC);
+        throw IllegalArgumentException(
+            std::string(t) + " value '" + std::string(buf) + "' is outside of range.", VESPA_STRLOC);
     } else {
-        throw IllegalArgumentException("Unknown error decoding an " + std::string(t) + " from '" + std::string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException(
+            "Unknown error decoding an " + std::string(t) + " from '" + std::string(buf) + "'.", VESPA_STRLOC);
     }
 }
 
-void
-throwUnderflow(size_t pos)
-{
+void throwUnderflow(size_t pos) {
     throw IllegalArgumentException(make_string("buffer underflow at pos %ld.", pos), VESPA_STRLOC);
 }
 
-int
-getValue(double & val, const char *buf)
-{
-    char *ebuf;
+int getValue(double& val, const char* buf) {
+    char* ebuf;
     errno = 0;
     val = locale::c::strtod_au(buf, &ebuf);
     if ((errno != 0) || (buf == ebuf)) {
@@ -200,10 +184,8 @@ getValue(double & val, const char *buf)
     return ebuf - buf;
 }
 
-int
-getValue(float & val, const char *buf)
-{
-    char *ebuf;
+int getValue(float& val, const char* buf) {
+    char* ebuf;
     errno = 0;
     val = locale::c::strtof_au(buf, &ebuf);
     if ((errno != 0) || (buf == ebuf)) {
@@ -212,16 +194,14 @@ getValue(float & val, const char *buf)
     return ebuf - buf;
 }
 
-template <typename T>
-T
-strToInt(T & v, const char *begin, const char *end)
-{
-    const char * curr = begin;
-    for (;(curr < end) && std::isspace(static_cast<unsigned char>(*curr)); curr++);
+template <typename T> T strToInt(T& v, const char* begin, const char* end) {
+    const char* curr = begin;
+    for (; (curr < end) && std::isspace(static_cast<unsigned char>(*curr)); curr++)
+        ;
 
     std::from_chars_result err;
     if (((end - curr) > 2) && (curr[0] == '0') && ((curr[1] | 0x20) == 'x')) {
-        err = std::from_chars(curr+2, end, v, 16);
+        err = std::from_chars(curr + 2, end, v, 16);
     } else {
         err = std::from_chars(curr, end, v, 10);
     }
@@ -237,12 +217,11 @@ strToInt(T & v, const char *begin, const char *end)
     return err.ptr - begin;
 }
 
-}
+} // namespace
 
-asciistream &
-asciistream::operator >> (bool & v)
-{
-    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
+asciistream& asciistream::operator>>(bool& v) {
+    for (; (_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++)
+        ;
     if (_rPos < length()) {
         v = (_rbuf[_rPos++] != '0');
     } else {
@@ -251,10 +230,9 @@ asciistream::operator >> (bool & v)
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (char & v)
-{
-    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
+asciistream& asciistream::operator>>(char& v) {
+    for (; (_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++)
+        ;
     if (_rPos < length()) {
         v = _rbuf[_rPos++];
     } else {
@@ -263,10 +241,9 @@ asciistream::operator >> (char & v)
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (signed char & v)
-{
-    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
+asciistream& asciistream::operator>>(signed char& v) {
+    for (; (_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++)
+        ;
     if (_rPos < length()) {
         v = _rbuf[_rPos++];
     } else {
@@ -275,10 +252,9 @@ asciistream::operator >> (signed char & v)
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (unsigned char & v)
-{
-    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
+asciistream& asciistream::operator>>(unsigned char& v) {
+    for (; (_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++)
+        ;
     if (_rPos < length()) {
         v = _rbuf[_rPos++];
     } else {
@@ -287,107 +263,82 @@ asciistream::operator >> (unsigned char & v)
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (unsigned short & v)
-{
+asciistream& asciistream::operator>>(unsigned short& v) {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (unsigned int & v)
-{
+asciistream& asciistream::operator>>(unsigned int& v) {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (unsigned long & v)
-{
+asciistream& asciistream::operator>>(unsigned long& v) {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (unsigned long long & v)
-{
+asciistream& asciistream::operator>>(unsigned long long& v) {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (short & v)
-{
+asciistream& asciistream::operator>>(short& v) {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (int & v)
-{
+asciistream& asciistream::operator>>(int& v) {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (long & v)
-{
+asciistream& asciistream::operator>>(long& v) {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (long long & v)
-{
+asciistream& asciistream::operator>>(long long& v) {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (double & v)
-{
+asciistream& asciistream::operator>>(double& v) {
     double l(0);
     _rPos += getValue(l, &_rbuf[_rPos]);
     v = l;
     return *this;
 }
 
-asciistream &
-asciistream::operator >> (float & v)
-{
+asciistream& asciistream::operator>>(float& v) {
     float l(0);
     _rPos += getValue(l, &_rbuf[_rPos]);
     v = l;
     return *this;
 }
 
-void
-asciistream::eatWhite()
-{
-    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
+void asciistream::eatWhite() {
+    for (; (_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++)
+        ;
 }
 
-void asciistream::eatNonWhite()
-{
-    for (;(_rPos < length()) && !std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
+void asciistream::eatNonWhite() {
+    for (; (_rPos < length()) && !std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++)
+        ;
 }
 
-asciistream &
-asciistream::operator >> (std::string & v)
-{
+asciistream& asciistream::operator>>(std::string& v) {
     eatWhite();
     size_t start(_rPos);
     eatNonWhite();
-    v.assign(&_rbuf[start], _rPos-start);
+    v.assign(&_rbuf[start], _rPos - start);
     return *this;
 }
 
 namespace {
-const char * _C_char = "0123456789abcdefg";
+const char* _C_char = "0123456789abcdefg";
 
-char *
-prependInt(char * tmp, Base base)
-{
+char* prependInt(char* tmp, Base base) {
     if (base == bin) {
         tmp[1] = 'b';
         tmp[0] = '0';
@@ -396,9 +347,7 @@ prependInt(char * tmp, Base base)
     return tmp + 2;
 }
 
-char *
-prependSign(bool sign, char * tmp)
-{
+char* prependSign(bool sign, char* tmp) {
     if (sign) {
         tmp[0] = '-';
         return tmp;
@@ -406,26 +355,23 @@ prependSign(bool sign, char * tmp)
     return tmp + 1;
 }
 
-template <uint8_t base>
-uint8_t printInt(unsigned long long r, char * tmp, uint8_t i) __attribute__((noinline));
+template <uint8_t base> uint8_t printInt(unsigned long long r, char* tmp, uint8_t i) __attribute__((noinline));
 
-template <uint8_t base>
-uint8_t
-printInt(unsigned long long r, char * tmp, uint8_t i)
-{
-    for(; r; i--, r/=base) {
-        uint8_t d = r%base;
-        tmp[i-1] = (base <= 10) ? d + '0' : _C_char[d];
+template <uint8_t base> uint8_t printInt(unsigned long long r, char* tmp, uint8_t i) {
+    for (; r; i--, r /= base) {
+        uint8_t d = r % base;
+        tmp[i - 1] = (base <= 10) ? d + '0' : _C_char[d];
     }
     return i;
 }
 
-unsigned long long normalize(long long v, bool &negative) {
+unsigned long long normalize(long long v, bool& negative) {
     if (v < 0) {
         negative = true;
         if (v == std::numeric_limits<long long>::min()) {
             // according to UBSAN:
-            // negation of -9223372036854775808 cannot be represented in type 'long long int'; cast to an unsigned type to negate this value to itself
+            // negation of -9223372036854775808 cannot be represented in type 'long long int'; cast to an unsigned
+            // type to negate this value to itself
             return v;
         }
         return -v;
@@ -433,95 +379,89 @@ unsigned long long normalize(long long v, bool &negative) {
     return v;
 }
 
-}
+} // namespace
 
-
-asciistream &
-asciistream::operator << (long long v_in)
-{
-    char tmp[72];
+asciistream& asciistream::operator<<(long long v_in) {
+    char    tmp[72];
     uint8_t i(sizeof(tmp));
-    bool negative(false);
+    bool    negative(false);
     if (v_in == 0) {
         tmp[--i] = '0';
     } else {
         unsigned long long v = normalize(v_in, negative);
         switch (_base) {
-          case 2:
-            i = printInt<2>(v, tmp, i); break;
-          case 8:
-            i = printInt<8>(v, tmp, i); break;
-          case 10:
-            i = printInt<10>(v, tmp, i); break;
-          case 16:
-            i = printInt<16>(v, tmp, i); break;
-          default:
+        case 2:
+            i = printInt<2>(v, tmp, i);
+            break;
+        case 8:
+            i = printInt<8>(v, tmp, i);
+            break;
+        case 10:
+            i = printInt<10>(v, tmp, i);
+            break;
+        case 16:
+            i = printInt<16>(v, tmp, i);
+            break;
+        default:
             assert(!"unhandled number base");
         }
     }
-    const char *final = prependSign(negative, prependInt(tmp+i-2, _base)-1);
-    doFill(sizeof(tmp)-(final-tmp));
-    write(final, sizeof(tmp)-(final-tmp));
+    const char* final = prependSign(negative, prependInt(tmp + i - 2, _base) - 1);
+    doFill(sizeof(tmp) - (final - tmp));
+    write(final, sizeof(tmp) - (final - tmp));
     return *this;
 }
 
-void
-asciistream::doReallyFill(size_t currWidth)
-{
+void asciistream::doReallyFill(size_t currWidth) {
     for (; _width > currWidth; currWidth++) {
         write(&_fill, 1);
     }
 }
 
-asciistream &
-asciistream::operator << (unsigned long long v)
-{
-    char tmp[72];
+asciistream& asciistream::operator<<(unsigned long long v) {
+    char    tmp[72];
     uint8_t i(sizeof(tmp));
     if (v == 0) {
         tmp[--i] = '0';
     } else {
         switch (_base) {
-          case 2:
-            i = printInt<2>(v, tmp, i); break;
-          case 8:
-            i = printInt<8>(v, tmp, i); break;
-          case 10:
-            i = printInt<10>(v, tmp, i); break;
-          case 16:
-            i = printInt<16>(v, tmp, i); break;
-          default:
+        case 2:
+            i = printInt<2>(v, tmp, i);
+            break;
+        case 8:
+            i = printInt<8>(v, tmp, i);
+            break;
+        case 10:
+            i = printInt<10>(v, tmp, i);
+            break;
+        case 16:
+            i = printInt<16>(v, tmp, i);
+            break;
+        default:
             assert(!"unhandled number base");
         }
     }
-    const char *final = prependInt(tmp+i-2, _base);
-    doFill(sizeof(tmp)-(final-tmp));
-    write(final, sizeof(tmp)-(final-tmp));
+    const char* final = prependInt(tmp + i - 2, _base);
+    doFill(sizeof(tmp) - (final - tmp));
+    write(final, sizeof(tmp) - (final - tmp));
     return *this;
 }
 
 namespace {
 struct BaseStateSaver {
     asciistream& _stream;
-    Base _savedBase;
-    BaseStateSaver(asciistream& stream, Base base)
-        : _stream(stream), _savedBase(base) {}
-    ~BaseStateSaver() {
-        _stream << Base(_savedBase);
-    }
+    Base         _savedBase;
+    BaseStateSaver(asciistream& stream, Base base) : _stream(stream), _savedBase(base) {}
+    ~BaseStateSaver() { _stream << Base(_savedBase); }
 };
-}
+} // namespace
 
-asciistream &
-asciistream::operator<<(const void* p)
-{
+asciistream& asciistream::operator<<(const void* p) {
     BaseStateSaver saver(*this, _base);
     return *this << "0x" << hex << reinterpret_cast<uint64_t>(p);
 }
 
-asciistream &
-asciistream::operator << (float v)
-{
+asciistream& asciistream::operator<<(float v) {
     if (_floatSpec == fixed) {
         printFixed(v);
     } else {
@@ -530,9 +470,7 @@ asciistream::operator << (float v)
     return *this;
 }
 
-asciistream &
-asciistream::operator << (double v)
-{
+asciistream& asciistream::operator<<(double v) {
     if (_floatSpec == fixed) {
         printFixed(v);
     } else {
@@ -541,13 +479,11 @@ asciistream::operator << (double v)
     return *this;
 }
 
-template <typename T>
-void asciistream::printFixed(T v)
-{
-    char tmp[sizeof(T)*64]; // Double::max printed fixed takes 316 bytes with default
-                  // precision, a high precision adds even more.
-    const char *spec = fixedPrecisions[_precision].c_str();
-    int len = snprintf(tmp, sizeof(tmp), spec, v);
+template <typename T> void asciistream::printFixed(T v) {
+    char tmp[sizeof(T) * 64]; // Double::max printed fixed takes 316 bytes with default
+                              // precision, a high precision adds even more.
+    const char* spec = fixedPrecisions[_precision].c_str();
+    int         len = snprintf(tmp, sizeof(tmp), spec, v);
     assert(len < static_cast<int>(sizeof(tmp)));
     doFill(len);
     write(tmp, len);
@@ -555,28 +491,25 @@ void asciistream::printFixed(T v)
 
 namespace {
 bool hasDotOrIsScientific(const char* string, size_t len) {
-    for (size_t i=0; i<len; ++i) {
+    for (size_t i = 0; i < len; ++i) {
         switch (string[i]) {
-            case '.':
-            case ',':
-            case 'e':
-            case 'E':
-                return true;
-            default:
-                break;
+        case '.':
+        case ',':
+        case 'e':
+        case 'E':
+            return true;
+        default:
+            break;
         }
     }
     return false;
 }
-}
+} // namespace
 
-template <typename T>
-void asciistream::printScientific(T v)
-{
-    char tmp[sizeof(T)*8];
-    const char *spec = (((_floatSpec == scientific)
-                ? scientificPrecisions[_precision]
-                : autoPrecisions[_precision])).c_str();
+template <typename T> void asciistream::printScientific(T v) {
+    char        tmp[sizeof(T) * 8];
+    const char* spec =
+        (((_floatSpec == scientific) ? scientificPrecisions[_precision] : autoPrecisions[_precision])).c_str();
     int len = snprintf(tmp, sizeof(tmp), spec, v);
     assert(len < static_cast<int>(sizeof(tmp)));
     doFill(len);
@@ -586,9 +519,7 @@ void asciistream::printScientific(T v)
     }
 }
 
-void
-asciistream::write(const void * buf, size_t len)
-{
+void asciistream::write(const void* buf, size_t len) {
     if (_rPos > 0 && _rPos == length()) {
         clear();
     }
@@ -596,62 +527,59 @@ asciistream::write(const void * buf, size_t len)
         if (_wbuf.empty()) {
             _wbuf = _rbuf; // Read only to RW
         } else {
-            LOG_ABORT("should not be reached");  // Impossible
+            LOG_ABORT("should not be reached"); // Impossible
         }
     }
-    _wbuf.append(static_cast<const char *>(buf), len);
+    _wbuf.append(static_cast<const char*>(buf), len);
     _rbuf = _wbuf;
 }
 
-std::string
-asciistream::getline(char delim)
-{
-    std::string line;
+std::string asciistream::getline(char delim) {
+    std::string  line;
     const size_t start(_rPos);
     const size_t end(_rbuf.size());
-    for (; (_rPos < end) && (_rbuf[_rPos] != delim); _rPos++);
+    for (; (_rPos < end) && (_rbuf[_rPos] != delim); _rPos++)
+        ;
     if (_rPos > start) {
         line.assign(&_rbuf[start], _rPos - start);
     }
     if (_rPos < end) {
-        _rPos++;  // eat the terminating\n
+        _rPos++; // eat the terminating\n
     }
     return line;
 }
 
-asciistream
-asciistream::createFromFile(std::string_view fileName)
-{
+asciistream asciistream::createFromFile(std::string_view fileName) {
     FastOS_File file(std::string(fileName).c_str());
     asciistream is;
     if (file.OpenReadOnly()) {
         ssize_t sz = file.getSize();
         if (sz < 0) {
-            throw IoException("Failed getting size of  file " + std::string(fileName) + " : Error=" + getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
+            throw IoException(
+                "Failed getting size of  file " + std::string(fileName) + " : Error=" + getLastErrorString(),
+                IoException::UNSPECIFIED, VESPA_STRLOC);
         }
         if (sz == 0) {
             return is;
         }
         alloc::Alloc buf = alloc::Alloc::alloc(sz);
-        ssize_t actual = file.Read(buf.get(), sz);
+        ssize_t      actual = file.Read(buf.get(), sz);
         if (actual != sz) {
             asciistream e;
             e << "Failed reading " << sz << " bytes from file " << fileName;
             throw IoException(e.str() + " : Error=" + getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
-        is << std::string_view(static_cast<const char *>(buf.get()), sz);
+        is << std::string_view(static_cast<const char*>(buf.get()), sz);
     }
     return is;
 }
 
-asciistream
-asciistream::createFromDevice(std::string_view fileName)
-{
+asciistream asciistream::createFromDevice(std::string_view fileName) {
     FastOS_File file(std::string(fileName).c_str());
     asciistream is;
     if (file.OpenReadOnly()) {
         constexpr size_t SZ = 64_Ki;
-        auto buf = std::make_unique<char []>(SZ);
+        auto             buf = std::make_unique<char[]>(SZ);
         for (ssize_t actual = file.Read(buf.get(), SZ); actual > 0; actual = file.Read(buf.get(), SZ)) {
             is << std::string_view(buf.get(), actual);
         }
@@ -659,12 +587,9 @@ asciistream::createFromDevice(std::string_view fileName)
     return is;
 }
 
-ssize_t
-getline(asciistream & is, std::string & line, char delim)
-{
+ssize_t getline(asciistream& is, std::string& line, char delim) {
     line = is.getline(delim);
     return line.size();
 }
 
-
-}
+} // namespace vespalib

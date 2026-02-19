@@ -2,6 +2,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/regex/regex.h>
 #include <vespa/vespalib/util/regexp.h>
+
 #include <string>
 
 using namespace vespalib;
@@ -38,7 +39,7 @@ struct ExprFixture {
     std::vector<std::string> expressions;
     ExprFixture() {
         expressions.push_back(special);
-        for (char c: special) {
+        for (char c : special) {
             expressions.emplace_back(std::string(&c, 1));
         }
         expressions.emplace_back("abc");
@@ -48,7 +49,7 @@ struct ExprFixture {
 
 TEST(RegExTest, require_that_regexp_can_be_made_from_suffix_string) {
     ExprFixture f1;
-    for (const auto& str: f1.expressions) {
+    for (const auto& str : f1.expressions) {
         auto re = Regex::from_pattern(std::string(RegexpUtil::make_from_suffix(str)));
         ASSERT_TRUE(re.parsed_ok());
 
@@ -61,7 +62,7 @@ TEST(RegExTest, require_that_regexp_can_be_made_from_suffix_string) {
 
 TEST(RegExTest, require_that_regexp_can_be_made_from_substring_string) {
     ExprFixture f1;
-    for (const auto& str: f1.expressions) {
+    for (const auto& str : f1.expressions) {
         auto re = Regex::from_pattern(std::string(RegexpUtil::make_from_substring(str)));
         ASSERT_TRUE(re.parsed_ok());
 
@@ -74,7 +75,7 @@ TEST(RegExTest, require_that_regexp_can_be_made_from_substring_string) {
 
 TEST(RegExTest, full_match_requires_expression_to_match_entire_input_string) {
     std::string pattern = "[Aa][Bb][Cc]";
-    auto re = Regex::from_pattern(pattern);
+    auto        re = Regex::from_pattern(pattern);
     ASSERT_TRUE(re.parsed_ok());
 
     EXPECT_TRUE(re.full_match("abc"));
@@ -92,7 +93,7 @@ TEST(RegExTest, full_match_requires_expression_to_match_entire_input_string) {
 
 TEST(RegExTest, partial_match_requires_expression_to_match_substring_of_input_string) {
     std::string pattern = "[Aa][Bb][Cc]";
-    auto re = Regex::from_pattern(pattern);
+    auto        re = Regex::from_pattern(pattern);
     ASSERT_TRUE(re.parsed_ok());
 
     EXPECT_TRUE(re.partial_match("abc"));
@@ -154,32 +155,32 @@ TEST(RegExTest, that_default_constructed_regex_is_invalid) {
 
 TEST(RegExTest, can_extract_min_max_prefix_range_from_anchored_regex) {
     auto min_max = Regex::from_pattern("^.*").possible_anchored_match_prefix_range();
-    EXPECT_EQ(min_max.first,  "");
+    EXPECT_EQ(min_max.first, "");
     EXPECT_GE(min_max.second, "\xf4\x8f\xbf\xc0"); // Highest possible Unicode char (U+10FFFF) as UTF-8, plus 1
 
     min_max = Regex::from_pattern("^hello").possible_anchored_match_prefix_range();
-    EXPECT_EQ(min_max.first,  "hello");
+    EXPECT_EQ(min_max.first, "hello");
     EXPECT_EQ(min_max.second, "hello");
 
     min_max = Regex::from_pattern("^hello|^world").possible_anchored_match_prefix_range();
-    EXPECT_EQ(min_max.first,  "hello");
+    EXPECT_EQ(min_max.first, "hello");
     EXPECT_EQ(min_max.second, "world");
 
     min_max = Regex::from_pattern("(^hello|^world|^zoidberg)").possible_anchored_match_prefix_range();
-    EXPECT_EQ(min_max.first,  "hello");
+    EXPECT_EQ(min_max.first, "hello");
     EXPECT_EQ(min_max.second, "zoidberg");
 
     min_max = Regex::from_pattern("^hello (foo|bar|zoo)").possible_anchored_match_prefix_range();
-    EXPECT_EQ(min_max.first,  "hello bar");
+    EXPECT_EQ(min_max.first, "hello bar");
     EXPECT_EQ(min_max.second, "hello zoo");
 
     min_max = Regex::from_pattern("^(hello|world)+").possible_anchored_match_prefix_range();
-    EXPECT_EQ(min_max.first,  "hello");
+    EXPECT_EQ(min_max.first, "hello");
     EXPECT_EQ(min_max.second, "worldwp");
 
     // Bad regex; no range
     min_max = Regex::from_pattern("*hello").possible_anchored_match_prefix_range();
-    EXPECT_EQ(min_max.first,  "");
+    EXPECT_EQ(min_max.first, "");
     EXPECT_EQ(min_max.second, "");
 }
 

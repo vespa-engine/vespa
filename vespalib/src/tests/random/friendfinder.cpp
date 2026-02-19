@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/util/random.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/random.h>
+
 #include <cmath>
 #include <vector>
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     vespalib::RandomGen rnd(1);
 
     double logmean = std::log(1000.0);
@@ -30,9 +30,11 @@ int main(int argc, char **argv)
     while (!feof(stdin)) {
         ++person;
         std::vector<std::string> friends;
-        int32_t want = (uint32_t)std::exp(rnd.nextNormal(logmean, lstddev));
-        if (want < 17) want = (uint32_t)(std::exp(logmean)+0.99);
-        if (want < 1) want = 1;
+        int32_t                  want = (uint32_t)std::exp(rnd.nextNormal(logmean, lstddev));
+        if (want < 17)
+            want = (uint32_t)(std::exp(logmean) + 0.99);
+        if (want < 1)
+            want = 1;
 
         printf("me: %u friends:", person);
         while (want > 0) {
@@ -55,4 +57,3 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 }
-

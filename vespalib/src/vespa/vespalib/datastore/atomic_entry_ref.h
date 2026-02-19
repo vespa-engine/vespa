@@ -3,6 +3,7 @@
 #pragma once
 
 #include "entryref.h"
+
 #include <atomic>
 
 namespace vespalib::datastore {
@@ -31,20 +32,12 @@ public:
         return *this;
     }
 
-    void store_release(EntryRef ref) noexcept {
-        _ref.store(ref.ref(), std::memory_order_release);
-    }
-    void store_relaxed(EntryRef ref) noexcept {
-        _ref.store(ref.ref(), std::memory_order_relaxed);
-    }
-    EntryRef load_acquire() const noexcept {
-        return EntryRef(_ref.load(std::memory_order_acquire));
-    }
-    EntryRef load_relaxed() const noexcept {
-        return EntryRef(_ref.load(std::memory_order_relaxed));
-    }
+    void     store_release(EntryRef ref) noexcept { _ref.store(ref.ref(), std::memory_order_release); }
+    void     store_relaxed(EntryRef ref) noexcept { _ref.store(ref.ref(), std::memory_order_relaxed); }
+    EntryRef load_acquire() const noexcept { return EntryRef(_ref.load(std::memory_order_acquire)); }
+    EntryRef load_relaxed() const noexcept { return EntryRef(_ref.load(std::memory_order_relaxed)); }
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream& os, const AtomicEntryRef& ref);
 
-}
+} // namespace vespalib::datastore

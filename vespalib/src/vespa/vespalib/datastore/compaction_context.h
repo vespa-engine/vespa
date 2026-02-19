@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "i_compaction_context.h"
 #include "entry_ref_filter.h"
+#include "i_compaction_context.h"
 
 namespace vespalib::datastore {
 
@@ -15,9 +15,9 @@ struct ICompactable;
  */
 class CompactionContext : public ICompactionContext {
 private:
-    ICompactable& _store;
+    ICompactable&                                           _store;
     std::unique_ptr<vespalib::datastore::CompactingBuffers> _compacting_buffers;
-    EntryRefFilter _filter;
+    EntryRefFilter                                          _filter;
 
 public:
     CompactionContext(ICompactable& store, std::unique_ptr<CompactingBuffers> compacting_buffers);
@@ -25,4 +25,4 @@ public:
     void compact(std::span<AtomicEntryRef> refs) override;
 };
 
-}
+} // namespace vespalib::datastore
