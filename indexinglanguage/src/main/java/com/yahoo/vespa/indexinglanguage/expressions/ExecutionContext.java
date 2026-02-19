@@ -7,7 +7,7 @@ import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.detect.Detection;
+
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -113,13 +113,22 @@ public class ExecutionContext {
         if (assignedLanguage != Language.UNKNOWN) return assignedLanguage;
         if (detectedLanguage != Language.UNKNOWN) return detectedLanguage;
         if (linguistics == null) return Language.ENGLISH;
-
-        Detection detection = linguistics.getDetector().detect(String.valueOf(currentValue), null);
-        if (detection == null) return Language.ENGLISH;
-
-        detectedLanguage = detection.getLanguage();
-        if (detectedLanguage == Language.UNKNOWN) detectedLanguage = Language.ENGLISH;
+        detectedLanguage = detectLanguage(linguistics);
         return detectedLanguage;
+    }
+
+    // Caching the result as language detection is expensive
+    private Language detectLanguage(Linguistics linguistics) {
+        record DetectedLanguageCacheKey(String text) {}
+        var text = String.valueOf(currentValue);
+        var cacheKey = new DetectedLanguageCacheKey(text);
+        if (cache.get(cacheKey) instanceof Language cached) return cached;
+        var detection = linguistics.getDetector().detect(text, null);
+        if (detection == null) return Language.ENGLISH;
+        var language = detection.getLanguage();
+        if (language == Language.UNKNOWN) language = Language.ENGLISH;
+        cache.put(cacheKey, language);
+        return language;
     }
 
     public boolean isReindexingOperation() { return isReindexingOperation; }
