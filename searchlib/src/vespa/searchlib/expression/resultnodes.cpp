@@ -173,12 +173,10 @@ void PositiveInfinityResultNode::setMax() { }
 void    PositiveInfinityResultNode::add(const ResultNode & b) { (void) b; }
 void    PositiveInfinityResultNode::min(const ResultNode & b) { (void) b; }
 void    PositiveInfinityResultNode::max(const ResultNode & b) { (void) b; }
-int64_t PositiveInfinityResultNode::onGetInteger(size_t index) const {
-    (void) index;
-    return std::numeric_limits<int64_t>::infinity();
+int64_t PositiveInfinityResultNode::onGetInteger(size_t) const {
+    return std::numeric_limits<int64_t>::max();
 }
-double  PositiveInfinityResultNode::onGetFloat(size_t index)   const {
-    (void) index;
+double  PositiveInfinityResultNode::onGetFloat(size_t)   const {
     return std::numeric_limits<double>::infinity();
 }
 void    PositiveInfinityResultNode::set(const ResultNode & rhs) { (void) rhs; }
