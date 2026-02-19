@@ -13,7 +13,7 @@ https://github.com/vespa-engine/vespa.
 Installing on Vespa CentOS / RHEL 7:
   yum-config-manager --add-repo \
     https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-9/group_vespa-vespa-epel-9.repo
-  yum -y install epel-release centos-release-scl
+  yum -y install epel-release
   yum -y install vespa
 
 The above installation provides the follwing vespa-fbench executables:
