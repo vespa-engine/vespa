@@ -112,8 +112,8 @@ public class PendingRestartsMaintainer extends ConfigServerMaintainer {
         }
 
         restarter.accept(id, nodesToRestart);
-        log.info(Text.format("Scheduled restart of %d nodes after observing generation %d: %s",
-                nodesToRestart.size(), lowestGeneration, nodesToRestart.stream().sorted().collect(Collectors.joining(", "))));
+        log.info(Text.format("Scheduled restart of %d nodes of %s after observing generation %d: %s",
+                nodesToRestart.size(), id.toFullString(), lowestGeneration, nodesToRestart.stream().sorted().collect(Collectors.joining(", "))));
 
         return restarts.withoutPreviousGenerations(lowestGeneration);
     }
