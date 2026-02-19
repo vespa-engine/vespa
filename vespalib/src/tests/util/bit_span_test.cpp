@@ -6,6 +6,8 @@
 
 using vespalib::BitSpan;
 
+namespace {
+
 std::vector<int> list(std::vector<int> bits) { return bits; }
 std::vector<uint8_t> pack(std::vector<int> bits) {
     size_t cnt = 0;
@@ -40,6 +42,15 @@ std::vector<int> extract_with_loop(BitSpan span) {
     return result;
 }
 
+// shared test data, one int per bit
+auto my_bits = list({1, 1, 0, 0, 0, 1, 1, 1,
+                     0, 0, 1, 1, 1, 0, 0, 0,
+                     1, 1, 1, 1, 0, 0, 0, 0});
+// shared test data, bits packed into 3 bytes
+auto packed = pack(my_bits);
+
+} // namespace
+
 TEST(BitSpanTest, empty_span)
 {
     BitSpan span;
@@ -55,13 +66,6 @@ TEST(BitSpanTest, empty_span_with_offset)
     EXPECT_TRUE(span.empty());
     EXPECT_FALSE(span.begin() != span.end());
 }
-
-// shared test data, one int per bit
-auto my_bits = list({1, 1, 0, 0, 0, 1, 1, 1,
-                     0, 0, 1, 1, 1, 0, 0, 0,
-                     1, 1, 1, 1, 0, 0, 0, 0});
-// shared test data, bits packed into 3 bytes
-auto packed = pack(my_bits);
 
 TEST(BitSpanTest, span_with_all_the_bits)
 {

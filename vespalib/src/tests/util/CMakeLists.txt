@@ -6,6 +6,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     SOURCES
     gtest_runner.cpp
     bfloat16_test.cpp
+    bit_packer_test.cpp
     bit_span_test.cpp
     bits_test.cpp
     casts_test.cpp
