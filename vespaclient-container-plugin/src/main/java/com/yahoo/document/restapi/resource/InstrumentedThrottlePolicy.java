@@ -23,9 +23,18 @@ class InstrumentedThrottlePolicy extends DynamicThrottlePolicy {
     private final AtomicInteger previousMaxPending = new AtomicInteger(Integer.MIN_VALUE);
     private final Metric metric;
 
+    private static final String WINDOW_SIZE_ENV = "VESPA_MBUS_THROTTLE_WINDOW_SIZE";
+
     @Inject
     InstrumentedThrottlePolicy(Metric metric) {
         setResizeRate(2); // Increase the window size update rate by lowering resize rate...  ¯\_(ツ)_/¯
+        var windowSize = System.getenv(WINDOW_SIZE_ENV);
+        if (windowSize != null) {
+            int size = Integer.parseInt(windowSize);
+            setMinWindowSize(size);
+            setMaxWindowSize(size);
+            log.info("Fixed throttle window size set to %d from env var '%s'".formatted(size, WINDOW_SIZE_ENV));
+        }
         this.metric = metric;
     }
 
