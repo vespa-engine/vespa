@@ -35,7 +35,7 @@ class DiskMemUsageSampler {
     std::unique_ptr<vespalib::IDestructorCallback> _periodicHandle;
 
     void sampleAndReportUsage();
-    uint64_t sampleDiskUsage();
+    uint64_t sampleDiskUsage(const searchcorespi::common::ResourceUsage& resource_usage);
     vespalib::ProcessMemoryStats sampleMemoryUsage();
     searchcorespi::common::ResourceUsage sample_resource_usage();
     [[nodiscard]] bool timeToSampleAgain() const noexcept;

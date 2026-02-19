@@ -82,7 +82,7 @@ DiskMemUsageSampler::sampleAndReportUsage()
      * and a short period of allowed feed. The latter will be very rare as you are rarely feed blocked anyway.
      */
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
-    uint64_t diskUsage = sampleDiskUsage();
+    uint64_t diskUsage = sampleDiskUsage(resource_usage);
     uint64_t reserved_disk_space = _reserved_disk_space_provider.get_reserved_disk_space();
     _notifier.set_resource_usage(resource_usage, memoryStats, diskUsage, reserved_disk_space);
     _lastSampleTime = vespalib::steady_clock::now();
@@ -106,11 +106,11 @@ sampleDiskUsageOnFileSystem(const fs::path &path, const vespalib::HwInfo::Disk &
 }
 
 uint64_t
-DiskMemUsageSampler::sampleDiskUsage()
+DiskMemUsageSampler::sampleDiskUsage(const ResourceUsage& resource_usage)
 {
     const auto &disk = _notifier.getHwInfo().disk();
     return disk.shared()
-        ? DirectoryTraverse::get_tree_size(_path)
+        ? (resource_usage.disk() + resource_usage.transient().disk())
         : sampleDiskUsageOnFileSystem(_path, disk);
 }
 
