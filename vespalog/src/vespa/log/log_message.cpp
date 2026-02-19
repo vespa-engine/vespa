@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "log_message.h"
+
 #include "exceptions.h"
+
+#include <iostream>
 #include <locale>
 #include <sstream>
-#include <iostream>
 
 namespace ns_log {
 
@@ -12,17 +14,14 @@ namespace {
 
 std::locale clocale("C");
 
-[[noreturn]] void
-bad_tab(const char *tab_name, std::string_view log_line)
-{
+[[noreturn]] void bad_tab(const char* tab_name, std::string_view log_line) {
     std::ostringstream os;
     os << "Bad " << tab_name << " tab: " << log_line;
     throw BadLogLineException(os.str());
 }
 
-std::string_view::size_type
-find_tab(std::string_view log_line, const char *tab_name, std::string_view::size_type field_pos, bool allowEmpty)
-{
+std::string_view::size_type find_tab(
+    std::string_view log_line, const char* tab_name, std::string_view::size_type field_pos, bool allowEmpty) {
     auto tab_pos = log_line.find('\t', field_pos);
     if (tab_pos == std::string_view::npos || (tab_pos == field_pos && !allowEmpty)) {
         bad_tab(tab_name, log_line);
@@ -30,9 +29,7 @@ find_tab(std::string_view log_line, const char *tab_name, std::string_view::size
     return tab_pos;
 }
 
-int64_t
-parse_time_subfield(std::string time_subfield, const std::string &time_field)
-{
+int64_t parse_time_subfield(std::string time_subfield, const std::string& time_field) {
     std::istringstream subfield_stream(time_subfield);
     subfield_stream.imbue(clocale);
     int64_t result = 0;
@@ -45,10 +42,8 @@ parse_time_subfield(std::string time_subfield, const std::string &time_field)
     return result;
 }
 
-int64_t
-parse_time_field(std::string time_field)
-{
-    auto dotPos = time_field.find('.');
+int64_t parse_time_field(std::string time_field) {
+    auto    dotPos = time_field.find('.');
     int64_t log_time = parse_time_subfield(time_field.substr(0, dotPos), time_field) * 1000000000;
     if (dotPos != std::string::npos) {
         log_time += parse_time_subfield((time_field.substr(dotPos + 1) + "000000000").substr(0, 9), time_field);
@@ -56,18 +51,14 @@ parse_time_field(std::string time_field)
     return log_time;
 }
 
-struct PidFieldParser
-{
+struct PidFieldParser {
     int32_t _process_id;
     int32_t _thread_id;
 
     PidFieldParser(std::string pid_field);
 };
 
-PidFieldParser::PidFieldParser(std::string pid_field)
-    : _process_id(0),
-      _thread_id(0)
-{
+PidFieldParser::PidFieldParser(std::string pid_field) : _process_id(0), _thread_id(0) {
     std::istringstream pid_stream(pid_field);
     pid_stream.imbue(clocale);
     pid_stream >> _process_id;
@@ -87,7 +78,7 @@ PidFieldParser::PidFieldParser(std::string pid_field)
     }
 }
 
-}
+} // namespace
 
 LogMessage::LogMessage()
     : _time_nanos(0),
@@ -97,18 +88,11 @@ LogMessage::LogMessage()
       _service(),
       _component(),
       _level(Logger::LogLevel::NUM_LOGLEVELS),
-      _payload()
-{
-}
+      _payload() {}
 
-LogMessage::LogMessage(int64_t time_nanos_in,
-                       const std::string& hostname_in,
-                       int32_t process_id_in,
-                       int32_t thread_id_in,
-                       const std::string& service_in,
-                       const std::string& component_in,
-                       Logger::LogLevel level_in,
-                       const std::string& payload_in)
+LogMessage::LogMessage(int64_t time_nanos_in, const std::string& hostname_in, int32_t process_id_in,
+                       int32_t thread_id_in, const std::string& service_in, const std::string& component_in,
+                       Logger::LogLevel level_in, const std::string& payload_in)
     : _time_nanos(time_nanos_in),
       _hostname(hostname_in),
       _process_id(process_id_in),
@@ -116,21 +100,17 @@ LogMessage::LogMessage(int64_t time_nanos_in,
       _service(service_in),
       _component(component_in),
       _level(level_in),
-      _payload(payload_in)
-{
-}
+      _payload(payload_in) {}
 
-LogMessage::LogMessage(LogMessage &&) noexcept = default;
-LogMessage & LogMessage::operator=(LogMessage &&) noexcept = default;
+LogMessage::LogMessage(LogMessage&&) noexcept = default;
+LogMessage& LogMessage::operator=(LogMessage&&) noexcept = default;
 LogMessage::~LogMessage() = default;
 
-/* 
+/*
  * Parse log line to populate log message class. The parsing is based on
  * LegacyForwarder in logd.
  */
-void
-LogMessage::parse_log_line(std::string_view log_line)
-{
+void LogMessage::parse_log_line(std::string_view log_line) {
     // time
     auto tab_pos = find_tab(log_line, "1st", 0, false);
     _time_nanos = parse_time_field(std::string(log_line.substr(0, tab_pos)));
@@ -155,7 +135,7 @@ LogMessage::parse_log_line(std::string_view log_line)
     // component
     field_pos = tab_pos + 1;
     tab_pos = find_tab(log_line, "5th", field_pos, false);
-    _component = log_line.substr(field_pos, tab_pos -field_pos);
+    _component = log_line.substr(field_pos, tab_pos - field_pos);
 
     // level
     field_pos = tab_pos + 1;
@@ -165,4 +145,4 @@ LogMessage::parse_log_line(std::string_view log_line)
     _payload = log_line.substr(tab_pos + 1);
 }
 
-}
+} // namespace ns_log

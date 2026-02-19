@@ -1,57 +1,51 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <cstdlib>
-#include <cstring>
-#include <cctype>
-#include <cstdio>
-#include <cerrno>
-#include <memory>
-#include <unistd.h>
+#include "log.h"
+
 #include <sys/mman.h>
 #include <sys/types.h>
+#include <unistd.h>
 
-#include "log.h"
+#include <cctype>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <memory>
 LOG_SETUP_INDIRECT(".log.control", "$Id$");
 #undef LOG
 #define LOG LOG_INDIRECT
 
+#include "component.h"
 #include "control-file.h"
 #include "internal.h"
-#include "component.h"
 
 namespace ns_log {
 
-ControlFile::ControlFile(const char *file, Mode mode)
-    : _fileBacking(file,
-                   O_NOCTTY | (  (mode == READONLY) ? O_RDONLY
-                               : (mode == READWRITE) ? O_RDWR
-                               : (O_RDWR | O_CREAT))),
+ControlFile::ControlFile(const char* file, Mode mode)
+    : _fileBacking(file, O_NOCTTY | ((mode == READONLY)    ? O_RDONLY
+                                     : (mode == READWRITE) ? O_RDWR
+                                                           : (O_RDWR | O_CREAT))),
       _fileSize(0),
       _mode(mode),
       _fileName(file),
       _prefix(nullptr),
       _mapBase(nullptr),
       _mappedSize(0),
-      _firstComponent(nullptr)
-{
+      _firstComponent(nullptr) {
     _fileBacking.lock(mode != READONLY);
-    ensureHeader(); // Create the header if it doesn't exist
+    ensureHeader();  // Create the header if it doesn't exist
     ensureMapping(); // mmap the file
     _fileBacking.unlock();
 }
 
-ControlFile::~ControlFile()
-{
-    freeMapping();
-}
+ControlFile::~ControlFile() { freeMapping(); }
 
-void
-ControlFile::ensureHeader()
-{
+void ControlFile::ensureHeader() {
     // Make sure the file has a valid header. If it doesn't, or is
     // empty, truncate it and write a new fresh header.
     static const char fileHeader[] = "Vespa log control file version 1\n";
-    const int fd = _fileBacking.fd();
-    char buf[sizeof fileHeader];
+    const int         fd = _fileBacking.fd();
+    char              buf[sizeof fileHeader];
 
     int wantsLen = strlen(fileHeader);
     int len = read(fd, &buf, wantsLen);
@@ -76,42 +70,35 @@ ControlFile::ensureHeader()
         if (nbw != wantsLen) {
             perror("log::ControlFile write(B) failed");
         }
-
     }
 }
 
-void
-ControlFile::flush()
-{
+void ControlFile::flush() {
     if (_mapBase != nullptr) {
         if (msync(_mapBase, 0, MS_SYNC) != 0) {
-            LOG(warning, "msync of log control file failed: %s",
-                strerror(errno));
+            LOG(warning, "msync of log control file failed: %s", strerror(errno));
         }
     }
 }
 
-void
-ControlFile::ensureMapping()
-{
+void ControlFile::ensureMapping() {
     // If the file is not mmaped yet, first do a huge anonymous mmap
     // so that we never have to change the address, then mmap the
     // start of the file.
     if (!_mapBase) {
-        int prot = PROT_READ;
-        int flags = MAP_PRIVATE | MAP_ANON;
-        int fd = -1;
+        int    prot = PROT_READ;
+        int    flags = MAP_PRIVATE | MAP_ANON;
+        int    fd = -1;
         size_t length = pageAlign(_maxMapSize + 1);
 
-        void *addr = mmap(nullptr, length, prot, flags, fd, 0);
+        void* addr = mmap(nullptr, length, prot, flags, fd, 0);
         if (!addr) {
-            throwInvalid("Failed to get anonymous memory for control file: %s",
-                         strerror(errno));
+            throwInvalid("Failed to get anonymous memory for control file: %s", strerror(errno));
         }
-        _mapBase = static_cast<char *>(addr);
+        _mapBase = static_cast<char*>(addr);
         extendMapping();
 
-        char *s = strstr(_mapBase, "Prefix: ");
+        char* s = strstr(_mapBase, "Prefix: ");
         if (!s) {
             throwInvalid("Bad format of mapped file. bleh.");
         }
@@ -121,59 +108,50 @@ ControlFile::ensureMapping()
     }
 }
 
-void
-ControlFile::freeMapping()
-{
+void ControlFile::freeMapping() {
     // If the file is mmapped, release all resource used
     if (_mapBase && (munmap(_mapBase, pageAlign(_maxMapSize + 1)) < 0)) {
-        LOG(warning, "munmapping of loglevel settings failed: %s",
-            strerror(errno));
+        LOG(warning, "munmapping of loglevel settings failed: %s", strerror(errno));
     }
     _mapBase = nullptr;
 }
 
-unsigned int
-ControlFile::pageAlign(unsigned int len)
-{
+unsigned int ControlFile::pageAlign(unsigned int len) {
     static const int pageMask = getpagesize() - 1;
     return (len + pageMask) & ~pageMask;
 }
 
-char *
-ControlFile::nextNewline(char *addr)
-{
-    if (addr < _mapBase) return nullptr;
-    char *end = _mapBase + _fileSize;
+char* ControlFile::nextNewline(char* addr) {
+    if (addr < _mapBase)
+        return nullptr;
+    char* end = _mapBase + _fileSize;
     while (addr < end) {
-        if (*addr == '\n') return addr;
+        if (*addr == '\n')
+            return addr;
         ++addr;
     }
     return nullptr;
 }
 
-char *
-ControlFile::alignLevels(char *addr)
-{
+char* ControlFile::alignLevels(char* addr) {
     auto x = reinterpret_cast<unsigned long>(addr);
     x = (x + 3) & ~3;
-    return reinterpret_cast<char *>(x);
+    return reinterpret_cast<char*>(x);
 }
 
-bool
-ControlFile::extendMapping()
-{
+bool ControlFile::extendMapping() {
     int fileLen = _fileBacking.size();
 
     if (fileLen == -1) {
         _fileBacking.unlock();
-        LOG(error, "Cannot get file size of '%s': %s", _fileName.c_str(),
-            strerror(errno));
+        LOG(error, "Cannot get file size of '%s': %s", _fileName.c_str(), strerror(errno));
         return false;
     }
 
     if (fileLen >= _maxMapSize) {
         _fileBacking.unlock();
-        LOG(error, "Log control file is too big at %d bytes (max "
+        LOG(error,
+            "Log control file is too big at %d bytes (max "
             "size is %d). Ignoring it for further log components.",
             fileLen, _maxMapSize - 1);
         return false;
@@ -196,9 +174,7 @@ ControlFile::extendMapping()
     return true;
 }
 
-void
-ControlFile::setPrefix(const char *prefix)
-{
+void ControlFile::setPrefix(const char* prefix) {
     if (prefix && !hasPrefix() && _prefix) {
         char buf[_maxPrefix + 1];
         snprintf(buf, _maxPrefix + 1, "%.*s\n", _maxPrefix - 1, prefix);
@@ -207,10 +183,7 @@ ControlFile::setPrefix(const char *prefix)
     }
 }
 
-
-unsigned int *
-ControlFile::getLevels(const char *name)
-{
+unsigned int* ControlFile::getLevels(const char* name) {
     // these comments are all wrong...
 
     // See if there already is some info for name. If not,
@@ -224,8 +197,8 @@ ControlFile::getLevels(const char *name)
     // ### (if default level does not exist, create it?)
 
     _fileBacking.lock(_mode != READONLY);
-    static const char *padSpaces = "   "; // 3 spaces
-    char buf[2000];
+    static const char* padSpaces = "   "; // 3 spaces
+    char               buf[2000];
     if (strcmp(name, "") == 0) {
         name = "default";
     }
@@ -233,36 +206,36 @@ ControlFile::getLevels(const char *name)
     // be enough)
     snprintf(buf, sizeof buf - 200, "\n%s: ", name);
 
-    char *levels = strstr(_mapBase, buf);
+    char* levels = strstr(_mapBase, buf);
     if (levels) {
         _fileBacking.unlock();
-        char *addr = levels + strlen(buf);
+        char* addr = levels + strlen(buf);
         addr = alignLevels(addr);
-        return reinterpret_cast<unsigned int *>(addr);
+        return reinterpret_cast<unsigned int*>(addr);
     }
 
-    char *inheritLevels =  reinterpret_cast<char *>(defaultLevels());
-    const char *chop = strrchr(name, '.');
+    char*       inheritLevels = reinterpret_cast<char*>(defaultLevels());
+    const char* chop = strrchr(name, '.');
     if (chop != nullptr) {
         char shorterName[2000];
         strncpy(shorterName, name, chop - name);
-        shorterName[chop-name] = '\0';
-        unsigned int *inherit = getLevels(shorterName);
+        shorterName[chop - name] = '\0';
+        unsigned int* inherit = getLevels(shorterName);
         if (inherit != nullptr) {
-            inheritLevels =  reinterpret_cast<char *>(inherit);
+            inheritLevels = reinterpret_cast<char*>(inherit);
         }
     }
 
     //  Append whatever is in buf, excluding the initial newline, and
     //  up to 3 more spaces to get the entire file length to be aligned.
-    int oldFileLength = _fileBacking.size();
-    char *appendedString = buf + 1;
-    int newLength = oldFileLength + strlen(appendedString);
+    int          oldFileLength = _fileBacking.size();
+    char*        appendedString = buf + 1;
+    int          newLength = oldFileLength + strlen(appendedString);
     unsigned int padding = static_cast<unsigned int>(-newLength) & 3u;
     strcat(appendedString, &padSpaces[3 - padding]);
     int prefix_len = strlen(appendedString);
 
-    strncat(appendedString, inheritLevels, Logger::NUM_LOGLEVELS*sizeof(int));
+    strncat(appendedString, inheritLevels, Logger::NUM_LOGLEVELS * sizeof(int));
     strcat(appendedString, "\n");
 
     int len = strlen(appendedString);
@@ -272,9 +245,9 @@ ControlFile::getLevels(const char *name)
     close(fd);
     if (wlen != len) {
         _fileBacking.unlock();
-        LOG(error, "Writing to control file '%s' fails (%d/%d bytes): %s",
-            _fileName.c_str(), wlen, len, strerror(errno));
-        return reinterpret_cast<unsigned int *>(inheritLevels);
+        LOG(error, "Writing to control file '%s' fails (%d/%d bytes): %s", _fileName.c_str(), wlen, len,
+            strerror(errno));
+        return reinterpret_cast<unsigned int*>(inheritLevels);
     } else {
         _fileSize = _fileBacking.size();
     }
@@ -282,23 +255,22 @@ ControlFile::getLevels(const char *name)
     if (_fileSize > _mappedSize) {
         if (!extendMapping()) {
             _fileBacking.unlock(); // just for sure
-            LOG(error, "Failed to extend mapping of '%s', losing runtime "
-                "configurability of component '%s'", _fileName.c_str(), name);
+            LOG(error,
+                "Failed to extend mapping of '%s', losing runtime "
+                "configurability of component '%s'",
+                _fileName.c_str(), name);
             return defaultLevels();
         }
     }
-    char *baseAddr = _mapBase + oldFileLength + prefix_len;
+    char* baseAddr = _mapBase + oldFileLength + prefix_len;
     _fileBacking.unlock();
-    return reinterpret_cast<unsigned int *>(baseAddr);
+    return reinterpret_cast<unsigned int*>(baseAddr);
 }
 
-
-unsigned int *
-ControlFile::defaultLevels()
-{
+unsigned int* ControlFile::defaultLevels() {
     static unsigned int levels[Logger::NUM_LOGLEVELS + 1];
     if (levels[0] == 0) {
-        const char *env = getenv("VESPA_LOG_LEVEL");
+        const char* env = getenv("VESPA_LOG_LEVEL");
         if (!env) {
             env = "all -debug -spam";
         }
@@ -308,65 +280,50 @@ ControlFile::defaultLevels()
     return levels;
 }
 
-
-unsigned int
-ControlFile::findOnOffStatus(Logger::LogLevel level, const char *levelsString)
-{
-    const char *name = Logger::levelName(level);
-    if (hasWord(name, levelsString)
-        || (!hasNegWord(name, levelsString)
-            && hasWord("all", levelsString))) {
+unsigned int ControlFile::findOnOffStatus(Logger::LogLevel level, const char* levelsString) {
+    const char* name = Logger::levelName(level);
+    if (hasWord(name, levelsString) || (!hasNegWord(name, levelsString) && hasWord("all", levelsString))) {
         return CHARS_TO_UINT(' ', ' ', 'O', 'N');
     } else {
         return CHARS_TO_UINT(' ', 'O', 'F', 'F');
     }
 }
 
-void
-ControlFile::makeLogLevelArray(unsigned int *levels, unsigned int size,
-                               const char *env)
-{
+void ControlFile::makeLogLevelArray(unsigned int* levels, unsigned int size, const char* env) {
     int n;
-    for (n = 0; n < Logger::NUM_LOGLEVELS
-             && (n * sizeof levels[0] < size); ++n) {
+    for (n = 0; n < Logger::NUM_LOGLEVELS && (n * sizeof levels[0] < size); ++n) {
         levels[n] = findOnOffStatus(static_cast<Logger::LogLevel>(n), env);
     }
 }
 
-bool
-ControlFile::hasWord(const char *word, const char *haystack)
-{
-    int len = strlen(word);
-    const char *start = strstr(haystack, word);
-    const char *end = start + len;
+bool ControlFile::hasWord(const char* word, const char* haystack) {
+    int         len = strlen(word);
+    const char* start = strstr(haystack, word);
+    const char* end = start + len;
     if (!start) {
         return false;
     }
 
-    return ((start == haystack) || std::isspace(static_cast<unsigned char>(start[-1])))
-                    && (!*end || std::isspace(static_cast<unsigned char>(*end)));
+    return ((start == haystack) || std::isspace(static_cast<unsigned char>(start[-1]))) &&
+           (!*end || std::isspace(static_cast<unsigned char>(*end)));
 }
 
-bool
-ControlFile::hasNegWord(const char *word, const char *haystack)
-{
-    int len = strlen(word);
-    const char *start = strstr(haystack, word);
-    const char *end = start + len;
+bool ControlFile::hasNegWord(const char* word, const char* haystack) {
+    int         len = strlen(word);
+    const char* start = strstr(haystack, word);
+    const char* end = start + len;
     if (!start || start == haystack) {
         return false;
     }
     return start[-1] == '-' && (!*end || std::isspace(static_cast<unsigned char>(*end)));
 }
 
-void
-ControlFile::ensureComponent(const char *pattern)
-{
+void ControlFile::ensureComponent(const char* pattern) {
     // Make sure at least one entry exists matching a pattern, if not,
     // create it. Wildcard patterns cannot be created though!
     ComponentIterator iter(getComponentIterator());
-    bool wasSeen = false;
-    Component *c;
+    bool              wasSeen = false;
+    Component*        c;
     while ((c = iter.next()) != nullptr) {
         std::unique_ptr<Component> component(c);
         if (c->matches(pattern)) {
@@ -375,15 +332,13 @@ ControlFile::ensureComponent(const char *pattern)
         }
     }
     if (!wasSeen) {
-        (void) getLevels(pattern); // Creates it ((### ugly ###))
+        (void)getLevels(pattern); // Creates it ((### ugly ###))
     }
 }
 
-bool
-ControlFile::makeName(const char *service, char *buf, int bufLen)
-{
-    static const char *file = getenv("VESPA_LOG_CONTROL_FILE");
-    static const char *dir = getenv("VESPA_LOG_CONTROL_DIR");
+bool ControlFile::makeName(const char* service, char* buf, int bufLen) {
+    static const char* file = getenv("VESPA_LOG_CONTROL_FILE");
+    static const char* dir = getenv("VESPA_LOG_CONTROL_DIR");
 
     bool result;
 
@@ -408,28 +363,16 @@ ControlFile::makeName(const char *service, char *buf, int bufLen)
     return result;
 }
 
-
-
-ComponentIterator
-ControlFile::getComponentIterator()
-{
-    return { this };
-}
+ComponentIterator ControlFile::getComponentIterator() { return {this}; }
 
 ComponentIterator::ComponentIterator(const ComponentIterator& ci) = default;
 
-ComponentIterator::ComponentIterator(ControlFile *cf)
-    : _cf(cf),
-      _next(cf->_firstComponent)
-{
-}
+ComponentIterator::ComponentIterator(ControlFile* cf) : _cf(cf), _next(cf->_firstComponent) {}
 
-Component *
-ComponentIterator::next()
-{
-    Component *ret = nullptr;
+Component* ComponentIterator::next() {
+    Component* ret = nullptr;
     if (_next) {
-        char *nn = _cf->nextNewline(_next);
+        char* nn = _cf->nextNewline(_next);
         if (nn) {
             ret = new Component(_next);
             if (nn == ret->endPointer()) {

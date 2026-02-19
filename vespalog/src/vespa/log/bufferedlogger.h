@@ -80,97 +80,89 @@
 
 #define VESPA_LOG_LOGBUFFERSIZE 1000 // Max log entries cached.
 #define VESPA_LOG_LOGENTRYMAXAGE 300 // Max seconds an entry can be cached
-#define VESPA_LOG_COUNTAGEFACTOR   5 // How many seconds each count counts for
+#define VESPA_LOG_COUNTAGEFACTOR 5   // How many seconds each count counts for
 
-#include <vespa/log/log.h>
 #include <sstream>
 #include <string>
+
+#include <vespa/log/log.h>
 
 // Define LOG if using log buffer for regular LOG calls
 // If logger logs debug messages, bypass buffer.
 #ifdef VESPA_LOG_USELOGBUFFERFORREGULARLOG
-#define LOG(level, ...)                                            \
-    do {                                                           \
-        if (LOG_WOULD_LOG(level)) {                                \
-            if (LOG_WOULD_LOG(debug)) {                            \
-                ns_log_logger.doLog(ns_log::Logger::level,         \
-                             __FILE__, __LINE__, __VA_ARGS__);     \
-                ns_log::BufferedLogger::instance().trimCache();    \
-            } else {                                               \
-                ns_log::BufferedLogger::instance().doLog(ns_log_logger, \
-                        ns_log::Logger::level, __FILE__, __LINE__, \
-                        "", __VA_ARGS__);                          \
-            }                                                      \
-        }                                                          \
+#define LOG(level, ...)                                                                         \
+    do {                                                                                        \
+        if (LOG_WOULD_LOG(level)) {                                                             \
+            if (LOG_WOULD_LOG(debug)) {                                                         \
+                ns_log_logger.doLog(ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__);    \
+                ns_log::BufferedLogger::instance().trimCache();                                 \
+            } else {                                                                            \
+                ns_log::BufferedLogger::instance().doLog(                                       \
+                    ns_log_logger, ns_log::Logger::level, __FILE__, __LINE__, "", __VA_ARGS__); \
+            }                                                                                   \
+        }                                                                                       \
     } while (false)
 #endif
 
 // Define LOGBM macro for logging buffered, using the message itself as a
 // token. This is the same as LOG defined above if
 // VESPA_LOG_USELOGBUFFERFORREGULARLOG is defined.
-#define LOGBM(level, ...)                                          \
-    do {                                                           \
-        if (LOG_WOULD_LOG(level)) {                                \
-            if (LOG_WOULD_LOG(debug)) {                            \
-                ns_log_logger.doLog(ns_log::Logger::level,         \
-                             __FILE__, __LINE__, __VA_ARGS__);     \
-                ns_log::BufferedLogger::instance().trimCache();    \
-            } else {                                               \
-                ns_log::BufferedLogger::instance().doLog(ns_log_logger, \
-                        ns_log::Logger::level, __FILE__, __LINE__, \
-                        "", __VA_ARGS__);                          \
-            }                                                      \
-        }                                                          \
+#define LOGBM(level, ...)                                                                       \
+    do {                                                                                        \
+        if (LOG_WOULD_LOG(level)) {                                                             \
+            if (LOG_WOULD_LOG(debug)) {                                                         \
+                ns_log_logger.doLog(ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__);    \
+                ns_log::BufferedLogger::instance().trimCache();                                 \
+            } else {                                                                            \
+                ns_log::BufferedLogger::instance().doLog(                                       \
+                    ns_log_logger, ns_log::Logger::level, __FILE__, __LINE__, "", __VA_ARGS__); \
+            }                                                                                   \
+        }                                                                                       \
     } while (false)
 
 // Define LOGBP macro for logging buffered, using the call point as token.
 // (File/line of macro caller)
-#define LOGBP(level, ARGS...)                                      \
-    do {                                                           \
-        if (LOG_WOULD_LOG(level)) {                                \
-            if (LOG_WOULD_LOG(debug)) {                            \
-                ns_log_logger.doLog(ns_log::Logger::level,         \
-                             __FILE__, __LINE__, ##ARGS);          \
-                ns_log::BufferedLogger::instance().trimCache();    \
-            } else {                                               \
-                std::ostringstream ost123;                         \
-                ost123 << __FILE__ << ":" << __LINE__;             \
-                ns_log::BufferedLogger::instance().doLog(ns_log_logger, \
-                        ns_log::Logger::level,                     \
-                        __FILE__, __LINE__, ost123.str(), ##ARGS); \
-            }                                                      \
-        }                                                          \
+#define LOGBP(level, ARGS...)                                                                        \
+    do {                                                                                             \
+        if (LOG_WOULD_LOG(level)) {                                                                  \
+            if (LOG_WOULD_LOG(debug)) {                                                              \
+                ns_log_logger.doLog(ns_log::Logger::level, __FILE__, __LINE__, ##ARGS);              \
+                ns_log::BufferedLogger::instance().trimCache();                                      \
+            } else {                                                                                 \
+                std::ostringstream ost123;                                                           \
+                ost123 << __FILE__ << ":" << __LINE__;                                               \
+                ns_log::BufferedLogger::instance().doLog(                                            \
+                    ns_log_logger, ns_log::Logger::level, __FILE__, __LINE__, ost123.str(), ##ARGS); \
+            }                                                                                        \
+        }                                                                                            \
     } while (false)
 
 // Define LOGT calls for using the buffer specifically stating token
-#define LOGBT(level, token, ...)                                 \
-    do {                                                         \
-        if (LOG_WOULD_LOG(level)) {                              \
-            if (LOG_WOULD_LOG(debug)) {                          \
-                ns_log_logger.doLog(ns_log::Logger::level,       \
-                             __FILE__, __LINE__, __VA_ARGS__);   \
-                ns_log::BufferedLogger::instance().trimCache();  \
-            } else {                                             \
-                ns_log::BufferedLogger::instance().doLog(ns_log_logger, \
-                        ns_log::Logger::level,                   \
-                        __FILE__, __LINE__, token, __VA_ARGS__); \
-            }                                                    \
-        }                                                        \
+#define LOGBT(level, token, ...)                                                                   \
+    do {                                                                                           \
+        if (LOG_WOULD_LOG(level)) {                                                                \
+            if (LOG_WOULD_LOG(debug)) {                                                            \
+                ns_log_logger.doLog(ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__);       \
+                ns_log::BufferedLogger::instance().trimCache();                                    \
+            } else {                                                                               \
+                ns_log::BufferedLogger::instance().doLog(                                          \
+                    ns_log_logger, ns_log::Logger::level, __FILE__, __LINE__, token, __VA_ARGS__); \
+            }                                                                                      \
+        }                                                                                          \
     } while (false)
 
-#define LOGB_FLUSH() \
-    ns_log::BufferedLogger::instance().flush()
+#define LOGB_FLUSH() ns_log::BufferedLogger::instance().flush()
 
 namespace ns_log {
 
 class BackingBuffer;
 
 class BufferedLogger {
-    BackingBuffer *_backing;
+    BackingBuffer* _backing;
 
 public:
-    BufferedLogger(const BufferedLogger & buf) = delete;
-    BufferedLogger & operator = (const BufferedLogger & buf) = delete;
+    BufferedLogger(const BufferedLogger& buf) = delete;
+    BufferedLogger& operator=(const BufferedLogger& buf) = delete;
     BufferedLogger();
     ~BufferedLogger();
 
@@ -181,9 +173,8 @@ public:
     void setMaxEntryAge(uint64_t seconds);
     void setCountFactor(uint64_t seconds);
 
-    void doLog(Logger&, Logger::LogLevel level, const char *file, int line,
-               const std::string& token,
-               const char *fmt, ...) __attribute__((format(printf,7,8)));
+    void doLog(Logger&, Logger::LogLevel level, const char* file, int line, const std::string& token, const char* fmt,
+               ...) __attribute__((format(printf, 7, 8)));
 
     /** Empty buffer and write all log entries in it. */
     void flush();
@@ -197,5 +188,4 @@ public:
     static BufferedLogger& instance();
 };
 
-} // ns_log
-
+} // namespace ns_log

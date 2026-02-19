@@ -1,36 +1,32 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cstdlib>
 #include <chrono>
+#include <cstdlib>
 #include <string>
 
 namespace ns_log {
 
-[[noreturn]] void throwInvalid(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+[[noreturn]] void throwInvalid(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 
 class InvalidLogException {
 private:
     std::string _what;
 
 public:
-    InvalidLogException& operator = (const InvalidLogException&) = delete;
-    InvalidLogException(const InvalidLogException &x) = default;
-    explicit InvalidLogException(const char *s) : _what(s) {}
+    InvalidLogException& operator=(const InvalidLogException&) = delete;
+    InvalidLogException(const InvalidLogException& x) = default;
+    explicit InvalidLogException(const char* s) : _what(s) {}
     ~InvalidLogException() = default;
-    [[nodiscard]] const char *what() const { return _what.c_str(); }
+    [[nodiscard]] const char* what() const { return _what.c_str(); }
 };
 
 using system_time = std::chrono::system_clock::time_point;
 using duration = system_time::duration;
 
-constexpr int64_t
-count_s(duration d) noexcept {
-    return std::chrono::duration_cast<std::chrono::seconds>(d).count();
-}
+constexpr int64_t count_s(duration d) noexcept { return std::chrono::duration_cast<std::chrono::seconds>(d).count(); }
 
-constexpr int64_t
-count_us(duration d) noexcept {
+constexpr int64_t count_us(duration d) noexcept {
     return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 }
 

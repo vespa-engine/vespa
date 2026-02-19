@@ -4,17 +4,10 @@
 
 namespace ns_log {
 
-BadLogLineException::BadLogLineException(std::string message)
-    : _message(std::move(message))
-{
-}
+BadLogLineException::BadLogLineException(std::string message) : _message(std::move(message)) {}
 
 BadLogLineException::~BadLogLineException() = default;
 
-const char*
-BadLogLineException::what() const noexcept
-{
-    return _message.c_str();
-}
+const char* BadLogLineException::what() const noexcept { return _message.c_str(); }
 
-}
+} // namespace ns_log

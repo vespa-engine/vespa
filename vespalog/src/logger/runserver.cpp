@@ -1,24 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
-#include <fcntl.h>
-#include <cerrno>
-#include <unistd.h>
-#include <csignal>
-#include <poll.h>
-#include <sys/select.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/resource.h>
-#include <sys/file.h>
+#include "llreader.h"
 
 #include <vespa/defaults.h>
 #include <vespa/log/llparser.h>
-#include "llreader.h"
-#include <vespa/log/log.h>
-#include <chrono>
+
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/file.h>
+#include <sys/resource.h>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 #include <array>
+#include <cerrno>
+#include <chrono>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#include <vespa/log/log.h>
 
 LOG_SETUP("runserver");
 
@@ -41,9 +44,7 @@ namespace {
 
 using namespace std::chrono;
 
-time_t steady_time() {
-    return duration_cast<seconds>(steady_clock::now().time_since_epoch()).count();
-}
+time_t steady_time() { return duration_cast<seconds>(steady_clock::now().time_since_epoch()).count(); }
 
 bool whole_seconds(int cnt, int secs) {
     cnt %= (secs * 10);
@@ -52,17 +53,20 @@ bool whole_seconds(int cnt, int secs) {
 
 } // namespace
 
-class PidFile
-{
+class PidFile {
 private:
     std::string _pidfile;
-    int _fd;
+    int         _fd;
     PidFile(const PidFile&);
-    PidFile& operator= (const PidFile&);
+    PidFile& operator=(const PidFile&);
+
 public:
-    PidFile(const char *pidfile) : _pidfile(pidfile), _fd(-1) {}
-    ~PidFile() { if (_fd >= 0) close(_fd); }
-    int readPid();
+    PidFile(const char* pidfile) : _pidfile(pidfile), _fd(-1) {}
+    ~PidFile() {
+        if (_fd >= 0)
+            close(_fd);
+    }
+    int  readPid();
     void writePid();
     bool writeOpen();
     bool anotherRunning();
@@ -70,28 +74,25 @@ public:
     void cleanUp();
 };
 
-void
-PidFile::cleanUp()
-{
-    if (!anotherRunning()) remove(_pidfile.c_str());
-    if (_fd >= 0) close(_fd);
+void PidFile::cleanUp() {
+    if (!anotherRunning())
+        remove(_pidfile.c_str());
+    if (_fd >= 0)
+        close(_fd);
     _fd = -1;
 }
 
-bool
-PidFile::writeOpen()
-{
-    if (_fd >= 0) close(_fd);
+bool PidFile::writeOpen() {
+    if (_fd >= 0)
+        close(_fd);
     int flags = O_CREAT | O_WRONLY | O_NONBLOCK;
     _fd = open(_pidfile.c_str(), flags, 0644);
     if (_fd < 0) {
-        fprintf(stderr, "could not create pidfile %s: %s\n", _pidfile.c_str(),
-                strerror(errno));
+        fprintf(stderr, "could not create pidfile %s: %s\n", _pidfile.c_str(), strerror(errno));
         return false;
     }
     if (flock(_fd, LOCK_EX | LOCK_NB) != 0) {
-        fprintf(stderr, "could not lock pidfile %s: %s\n", _pidfile.c_str(),
-                strerror(errno));
+        fprintf(stderr, "could not lock pidfile %s: %s\n", _pidfile.c_str(), strerror(errno));
         close(_fd);
         _fd = -1;
         return false;
@@ -100,43 +101,37 @@ PidFile::writeOpen()
     return true;
 }
 
-void
-PidFile::writePid()
-{
-    if (_fd < 0) abort();
+void PidFile::writePid() {
+    if (_fd < 0)
+        abort();
     int didtruncate = ftruncate(_fd, (off_t)0);
     if (didtruncate != 0) {
-        fprintf(stderr, "could not truncate pid file %s: %s\n",
-                _pidfile.c_str(), strerror(errno));
+        fprintf(stderr, "could not truncate pid file %s: %s\n", _pidfile.c_str(), strerror(errno));
         std::_Exit(1);
     }
     char buf[100];
     snprintf(buf, sizeof(buf), "%d\n", getpid());
-    int l = strlen(buf);
+    int     l = strlen(buf);
     ssize_t didw = write(_fd, buf, l);
     if (didw != l) {
-        fprintf(stderr, "could not write pid to %s: %s\n",
-                _pidfile.c_str(), strerror(errno));
+        fprintf(stderr, "could not write pid to %s: %s\n", _pidfile.c_str(), strerror(errno));
         std::_Exit(1);
     }
     LOG(debug, "wrote '%s' to %s (fd %d)", buf, _pidfile.c_str(), _fd);
 }
 
-int
-PidFile::readPid()
-{
-    FILE *pf = fopen(_pidfile.c_str(), "r");
-    if (pf == nullptr) return 0;
+int PidFile::readPid() {
+    FILE* pf = fopen(_pidfile.c_str(), "r");
+    if (pf == nullptr)
+        return 0;
     char buf[100];
     strcpy(buf, "0");
-    char *fgetsres = fgets(buf, 100, pf);
+    char* fgetsres = fgets(buf, 100, pf);
     fclose(pf);
     return ((fgetsres != nullptr) ? atoi(buf) : 0);
 }
 
-bool
-PidFile::anotherRunning()
-{
+bool PidFile::anotherRunning() {
     int pid = readPid();
     if (pid < 1 || pid == getpid()) {
         // no valid pid, or my own pid
@@ -148,9 +143,7 @@ PidFile::anotherRunning()
     return (kill(pid, 0) == 0 || errno == EPERM);
 }
 
-bool
-PidFile::canStealLock()
-{
+bool PidFile::canStealLock() {
     int flags = O_WRONLY | O_NONBLOCK;
     int desc = open(_pidfile.c_str(), flags, 0644);
     if (desc < 0) {
@@ -167,8 +160,7 @@ PidFile::canStealLock()
 
 using namespace ns_log;
 
-int loop(const char *svc, char * const * run)
-{
+int loop(const char* svc, char* const* run) {
     int pstdout[2];
     int pstderr[2];
 
@@ -176,9 +168,7 @@ int loop(const char *svc, char * const * run)
         LOG(error, "pipe: %s", strerror(errno));
         std::_Exit(1);
     }
-    LOG(debug, "stdout pipe %d <- %d; stderr pipe %d <- %d",
-        pstdout[0], pstdout[1],
-        pstderr[0], pstderr[1]);
+    LOG(debug, "stdout pipe %d <- %d; stderr pipe %d <- %d", pstdout[0], pstdout[1], pstderr[0], pstderr[1]);
 
     pid_t child = fork();
 
@@ -202,7 +192,7 @@ int loop(const char *svc, char * const * run)
 
     LOG(debug, "started %s (pid %d)", run[0], (int)child);
     std::string torun = run[0];
-    for (char * const *arg = (run + 1); *arg != nullptr; ++arg) {
+    for (char* const* arg = (run + 1); *arg != nullptr; ++arg) {
         torun += " ";
         torun += *arg;
     }
@@ -234,11 +224,11 @@ int loop(const char *svc, char * const * run)
     InputBuf outReader(pstdout[0]);
     InputBuf errReader(pstderr[0]);
 
-    bool outeof = false;
-    bool erreof = false;
-    constexpr int stdout_idx = 0, stderr_idx = 1;
+    bool                  outeof = false;
+    bool                  erreof = false;
+    constexpr int         stdout_idx = 0, stderr_idx = 1;
     std::array<pollfd, 2> fds{};
-    int wstat = 0;
+    int                   wstat = 0;
 
     while (child || !outeof || !erreof) {
         // Entries with negative fds are entirely ignored by the kernel.
@@ -250,7 +240,7 @@ int loop(const char *svc, char * const * run)
         fds[stderr_idx].revents = 0;
 
         constexpr int poll_timeout_ms = 100;
-        int n = poll(fds.data(), fds.size(), poll_timeout_ms);
+        int           n = poll(fds.data(), fds.size(), poll_timeout_ms);
         if (n > 0) {
             constexpr short ev_mask = POLLIN | POLLERR | POLLHUP;
             if ((fds[stdout_idx].revents & ev_mask) != 0) {
@@ -285,12 +275,10 @@ int loop(const char *svc, char * const * run)
             int cpid = waitpid(child, &wstat, WNOHANG);
             if (cpid == child) {
                 if (WIFSTOPPED(wstat)) {
-                    LOG(info, "child %d stopped, waiting for it to continue",
-                        cpid);
+                    LOG(info, "child %d stopped, waiting for it to continue", cpid);
                 } else if (WIFEXITED(wstat)) {
                     // child terminated
-                    LOG(debug, "child %d exit status: %d", cpid,
-                        (int)WEXITSTATUS(wstat));
+                    LOG(debug, "child %d exit status: %d", cpid, (int)WEXITSTATUS(wstat));
                     EV_STOPPED(torun.c_str(), (int)child, (int)WEXITSTATUS(wstat));
                     child = 0;
                 } else if (WIFSIGNALED(wstat)) {
@@ -309,14 +297,12 @@ int loop(const char *svc, char * const * run)
                 LOG(error, "waitpid: %s", strerror(errno));
                 abort();
             } else if (cpid != 0) {
-                LOG(warning, "unexpected status %d for pid %d",
-                    wstat, cpid);
+                LOG(warning, "unexpected status %d for pid %d", wstat, cpid);
                 abort();
             }
         }
         if (unhandledsig && child != 0) {
-            LOG(debug, "got signal %d, sending to pid %d",
-                (int)lastsig, (int)child);
+            LOG(debug, "got signal %d, sending to pid %d", (int)lastsig, (int)child);
             char why[32];
             snprintf(why, sizeof(why), "got signal %d", (int)lastsig);
             EV_STOPPING(torun.c_str(), why);
@@ -329,23 +315,23 @@ int loop(const char *svc, char * const * run)
     return WEXITSTATUS(wstat);
 }
 
-int usage(char *prog, int es)
-{
-    fprintf(stderr, "Usage: %s\n"
+int usage(char* prog, int es) {
+    fprintf(stderr,
+            "Usage: %s\n"
             "       [-s service] [-r restartinterval] [-p pidfile]"
             " program [args ...]\n"
-            "or:    [-p pidfile] [-k killcmd] -S\n", prog);
+            "or:    [-p pidfile] [-k killcmd] -S\n",
+            prog);
     return es;
 }
 
-int main(int argc, char *argv[])
-{
-    bool doStop = false;
-    bool checkWouldRun = false;
-    int restart = 0;
-    const char *service = "runserver";
-    const char *pidfile = "vespa-runserver.pid"; // XXX bad default?
-    const char *killcmd = nullptr;
+int main(int argc, char* argv[]) {
+    bool        doStop = false;
+    bool        checkWouldRun = false;
+    int         restart = 0;
+    const char* service = "runserver";
+    const char* pidfile = "vespa-runserver.pid"; // XXX bad default?
+    const char* killcmd = nullptr;
 
     signal(SIGQUIT, SIG_IGN);
 
@@ -375,7 +361,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    const char *envROOT = getenv("ROOT");
+    const char* envROOT = getenv("ROOT");
     if (envROOT == nullptr || envROOT[0] == '\0') {
         envROOT = vespa::Defaults::vespaHome();
         setenv("ROOT", envROOT, 1);
@@ -398,18 +384,15 @@ int main(int argc, char *argv[])
         if (mypf.anotherRunning()) {
             int pid = mypf.readPid();
             if (killcmd != nullptr) {
-                fprintf(stdout, "%s was running with pid %d, running '%s' to stop it\n",
-                        service, pid, killcmd);
+                fprintf(stdout, "%s was running with pid %d, running '%s' to stop it\n", service, pid, killcmd);
                 if (system(killcmd) != 0) {
                     fprintf(stderr, "WARNING: stop command '%s' had some problem\n", killcmd);
                 }
                 fflush(stdout);
             } else {
-                fprintf(stdout, "%s was running with pid %d, sending SIGTERM\n",
-                    service, pid);
+                fprintf(stdout, "%s was running with pid %d, sending SIGTERM\n", service, pid);
                 if (kill(pid, SIGTERM) != 0) {
-                    fprintf(stderr, "could not signal %d: %s\n", pid,
-                            strerror(errno));
+                    fprintf(stderr, "could not signal %d: %s\n", pid, strerror(errno));
                     killpg(pid, SIGTERM);
                     return 1;
                 }
@@ -435,7 +418,7 @@ int main(int argc, char *argv[])
                     fflush(stdout);
                 }
                 if (killpg(pid, 0) == 0) {
-                    if (cnt%10 == 0) {
+                    if (cnt % 10 == 0) {
                         fprintf(stdout, ".");
                         fflush(stdout);
                     }
@@ -451,8 +434,7 @@ int main(int argc, char *argv[])
                 }
             }
         } else {
-            fprintf(stdout, "%s not running according to %s\n",
-                    service, pidfile);
+            fprintf(stdout, "%s not running according to %s\n", service, pidfile);
         }
         mypf.cleanUp();
         return 0;
@@ -503,10 +485,11 @@ int main(int argc, char *argv[])
             mypf.writePid();
             do {
                 time_t laststart = steady_time();
-                stat = loop(service, argv+optind);
+                stat = loop(service, argv + optind);
                 if (restart > 0 && !gotstopsig) {
                     int wt = restart + laststart - steady_time();
-                    if (wt < 0) wt = 0;
+                    if (wt < 0)
+                        wt = 0;
                     LOG(info, "will restart in %d seconds", wt);
                 }
                 while (!gotstopsig && steady_time() - laststart < restart) {

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bufferedlogger.h"
+
 #include "internal.h"
 
 #include <cassert>
@@ -25,8 +26,8 @@ duration global_countFactor = VESPA_LOG_COUNTAGEFACTOR * 1s;
 // if in the same logger, you should have full control. Overlapping
 // tokens if you want is a feature.
 struct EntryKey {
-    Logger* const _logger;
-    const std::string _token;
+    Logger* const        _logger;
+    const std::string    _token;
     std::strong_ordering operator<=>(const EntryKey& entry) const = default;
     ~EntryKey();
 };
@@ -35,24 +36,23 @@ EntryKey::~EntryKey() = default;
 
 struct PayLoad {
     Logger::LogLevel level;
-    std::string file;
-    int line;
-    std::string message;
-    system_time timestamp;
+    std::string      file;
+    int              line;
+    std::string      message;
+    system_time      timestamp;
 };
 
 /** Struct keeping information about log message. */
 struct Entry : EntryKey {
-    uint64_t sequenceId = 0;
-    uint32_t _count = 1;
+    uint64_t      sequenceId = 0;
+    uint32_t      _count = 1;
     const PayLoad payload;
 
-    Entry(const Entry &);
-    Entry & operator=(const Entry &);
-    Entry(Entry &&) noexcept;
-    Entry & operator=(Entry &&) noexcept;
-    Entry(Logger::LogLevel level, const char* file, int line,
-          const std::string& token, const std::string& message,
+    Entry(const Entry&);
+    Entry& operator=(const Entry&);
+    Entry(Entry&&) noexcept;
+    Entry& operator=(Entry&&) noexcept;
+    Entry(Logger::LogLevel level, const char* file, int line, const std::string& token, const std::string& message,
           system_time timestamp, Logger&);
     ~Entry();
 
@@ -61,52 +61,35 @@ struct Entry : EntryKey {
     std::string toString() const;
 
     std::string repeatedMessage() const {
-        auto time_since_epoch = payload.timestamp.time_since_epoch();
-        auto s = count_s(time_since_epoch);
-        auto us = count_us(time_since_epoch) % 1000000;
+        auto               time_since_epoch = payload.timestamp.time_since_epoch();
+        auto               s = count_s(time_since_epoch);
+        auto               us = count_us(time_since_epoch) % 1000000;
         std::ostringstream ost;
-        ost << payload.message << " (Repeated " << (_count - 1)
-            << " times since " << s << "."
-            << std::setw(6) << std::setfill('0') << us
-            << ")";
+        ost << payload.message << " (Repeated " << (_count - 1) << " times since " << s << "." << std::setw(6)
+            << std::setfill('0') << us << ")";
         return ost.str();
     }
 
-    void log(const Timer &timer, const std::string& msg) const {
-        _logger->doLogCore(timer,
-                           payload.level, payload.file.c_str(), payload.line,
-                           msg.c_str(), msg.size());
+    void log(const Timer& timer, const std::string& msg) const {
+        _logger->doLogCore(timer, payload.level, payload.file.c_str(), payload.line, msg.c_str(), msg.size());
     }
-
 };
 
-Entry::Entry(Logger::LogLevel level, const char* file, int line,
-             const std::string& token, const std::string& msg,
+Entry::Entry(Logger::LogLevel level, const char* file, int line, const std::string& token, const std::string& msg,
              system_time timestamp, Logger& l)
-  : EntryKey(&l, token),
-    _count(1),
-    payload(level, file, line, msg, timestamp)
-{
-}
+    : EntryKey(&l, token), _count(1), payload(level, file, line, msg, timestamp) {}
 
-Entry::Entry(const Entry &) = default;
+Entry::Entry(const Entry&) = default;
 Entry::~Entry() = default;
 
-std::string
-Entry::toString() const
-{
+std::string Entry::toString() const {
     std::ostringstream ost;
-    ost << "Entry(" << payload.level << ", " << payload.file << ":" << payload.line << ": "
-        << payload.message << " [" << _token << "], count " << _count
-        << ", timestamp " << count_us(payload.timestamp.time_since_epoch()) << ")";
+    ost << "Entry(" << payload.level << ", " << payload.file << ":" << payload.line << ": " << payload.message << " ["
+        << _token << "], count " << _count << ", timestamp " << count_us(payload.timestamp.time_since_epoch()) << ")";
     return ost.str();
 }
 
-system_time
-Entry::getAgeFactor() const
-{
-    return payload.timestamp + global_countFactor * _count;
-}
+system_time Entry::getAgeFactor() const { return payload.timestamp + global_countFactor * _count; }
 
 struct Cache {
     uint64_t _nextSequenceId = 1;
@@ -117,22 +100,24 @@ struct Cache {
         return place->second->second;
     }
     struct ByAgeCmp {
-        const EntryOrder &map;
-        bool operator() (uint64_t a, uint64_t b) const {
-            const auto & ea = deref(map.find(a));
-            const auto & eb = deref(map.find(b));
+        const EntryOrder& map;
+        bool              operator()(uint64_t a, uint64_t b) const {
+            const auto& ea = deref(map.find(a));
+            const auto& eb = deref(map.find(b));
             system_time ta = ea.getAgeFactor();
             system_time tb = eb.getAgeFactor();
-            if (ta < tb) return true;
-            if (tb < ta) return false;
+            if (ta < tb)
+                return true;
+            if (tb < ta)
+                return false;
             return a < b;
         }
     };
     using AgeOrder = std::set<uint64_t, ByAgeCmp>;
 
-    Entries _entry_map;
+    Entries    _entry_map;
     EntryOrder _entry_order;
-    AgeOrder _age_order;
+    AgeOrder   _age_order;
 
     Cache() : _entry_map(), _entry_order(), _age_order(ByAgeCmp(_entry_order)) {}
 
@@ -142,7 +127,7 @@ struct Cache {
     const Entry& getOrAdd(Entry& entry) {
         entry.sequenceId = _nextSequenceId;
         auto [iter, added] = _entry_map.try_emplace(entry, entry);
-        Entry &curEntry = iter->second;
+        Entry& curEntry = iter->second;
         if (added) {
             _entry_order[_nextSequenceId] = iter;
             _age_order.insert(_nextSequenceId);
@@ -150,7 +135,7 @@ struct Cache {
         } else {
             // In order to add one to count, we need to remove and re-insert in age order set.
             uint64_t oldId = curEntry.sequenceId;
-            auto it = _age_order.find(oldId);
+            auto     it = _age_order.find(oldId);
             assert(it != _age_order.end());
             _age_order.erase(it);
             curEntry._count++;
@@ -174,14 +159,17 @@ struct Cache {
 
     struct iterator {
         EntryOrder::iterator place;
-        const Entry& operator* () { return deref(place); }
-        iterator& operator++() { ++place; return *this; }
-        bool operator== (const iterator& other) { return place == other.place; }
-        bool operator!= (const iterator& other) { return place != other.place; }
+        const Entry&         operator*() { return deref(place); }
+        iterator&            operator++() {
+            ++place;
+            return *this;
+        }
+        bool operator==(const iterator& other) { return place == other.place; }
+        bool operator!=(const iterator& other) { return place != other.place; }
     };
 
     iterator begin() { return iterator(_entry_order.begin()); }
-    iterator end()   { return iterator(_entry_order.end()); }
+    iterator end() { return iterator(_entry_order.end()); }
 
     void clear() {
         _age_order.clear();
@@ -210,12 +198,13 @@ struct TimeStampWrapper : public Timer {
     system_time _timeStamp;
 };
 
-} // namespace <unnamed>
+} // namespace
 
 // implementation details for BufferedLogger
 class BackingBuffer {
-    BackingBuffer(const BackingBuffer & rhs);
-    BackingBuffer & operator = (const BackingBuffer & rhs);
+    BackingBuffer(const BackingBuffer& rhs);
+    BackingBuffer& operator=(const BackingBuffer& rhs);
+
 public:
     std::unique_ptr<Timer> _timer;
     /** Lock needed to access cache. */
@@ -257,85 +246,70 @@ public:
     BackingBuffer();
     ~BackingBuffer();
 
-    void logImpl(Logger& l, Logger::LogLevel level,
-                 const char *file, int line,
-                 const std::string& token,
+    void logImpl(Logger& l, Logger::LogLevel level, const char* file, int line, const std::string& token,
                  const std::string& message);
-
 };
 
 BackingBuffer::BackingBuffer()
-  : _timer(new Timer),
-    _mutex(),
-    _cache(),
-    _maxCacheSize(VESPA_LOG_LOGBUFFERSIZE),
-    _maxEntryAge(VESPA_LOG_LOGENTRYMAXAGE * 1000 * 1000)
-{
-}
+    : _timer(new Timer),
+      _mutex(),
+      _cache(),
+      _maxCacheSize(VESPA_LOG_LOGBUFFERSIZE),
+      _maxEntryAge(VESPA_LOG_LOGENTRYMAXAGE * 1000 * 1000) {}
 
 BackingBuffer::~BackingBuffer() = default;
 
-BufferedLogger::BufferedLogger()
-{
-    _backing = new BackingBuffer();
+BufferedLogger::BufferedLogger() { _backing = new BackingBuffer(); }
+
+BufferedLogger::~BufferedLogger() {
+    delete _backing;
+    _backing = nullptr;
 }
 
-BufferedLogger::~BufferedLogger()
-{
-    delete _backing; _backing = nullptr;
-}
-
-void BufferedLogger::doLog(Logger& l, Logger::LogLevel level,
-                           const char *file, int line,
-                           const std::string& mytoken, const char *fmt, ...)
-{
+void BufferedLogger::doLog(
+    Logger& l, Logger::LogLevel level, const char* file, int line, const std::string& mytoken, const char* fmt, ...) {
     std::string token(mytoken);
-    va_list args;
+    va_list     args;
     va_start(args, fmt);
 
-    const size_t sizeofPayload(4000);
+    const size_t      sizeofPayload(4000);
     std::vector<char> buffer(sizeofPayload);
     vsnprintf(&buffer[0], buffer.capacity(), fmt, args);
     std::string message(&buffer[0]);
     // Empty token means to use message itself as token
-    if (token.empty()) token = message;
+    if (token.empty())
+        token = message;
 
     _backing->logImpl(l, level, file, line, token, message);
 }
 
-void BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
-                            const char *file, int line,
-                            const std::string& token,
-                            const std::string& message)
-{
+void BackingBuffer::logImpl(Logger& l, Logger::LogLevel level, const char* file, int line, const std::string& token,
+                            const std::string& message) {
     Entry newEntry(level, file, line, token, message, _timer->getTimestamp(), l);
 
     std::lock_guard<std::mutex> guard(_mutex);
-    const Entry &entry = _cache.getOrAdd(newEntry);
+    const Entry&                entry = _cache.getOrAdd(newEntry);
     if (entry._count == 1) {
         // If entry didn't already exist, log it
         TimeStampWrapper wrapper(entry.payload.timestamp);
         entry.log(wrapper, message);
     }
     trimCache(entry.payload.timestamp);
-
 }
 
 void BackingBuffer::flush() {
     std::lock_guard<std::mutex> guard(_mutex);
-    for (const auto & entry : _cache) {
+    for (const auto& entry : _cache) {
         logIfRepeated(entry);
     }
     _cache.clear();
 }
 
-void BufferedLogger::flush() {
-    _backing->flush();
-}
+void BufferedLogger::flush() { _backing->flush(); }
 
 void BackingBuffer::trimCache(system_time currentTime) {
     std::vector<uint64_t> removeList;
-    for (const auto & entry : _cache) {
+    for (const auto& entry : _cache) {
         // Remove entries that have been in here too long.
         if (entry.payload.timestamp + _maxEntryAge < currentTime) {
             logIfRepeated(entry);
@@ -350,15 +324,13 @@ void BackingBuffer::trimCache(system_time currentTime) {
         _cache.remove(sequenceId);
     }
     while (_cache.size() > _maxCacheSize) {
-        const Entry& entry = _cache.oldestNonImmune(_maxCacheSize/2);
+        const Entry& entry = _cache.oldestNonImmune(_maxCacheSize / 2);
         logIfRepeated(entry);
         _cache.remove(entry.sequenceId);
     }
 }
 
-void BufferedLogger::trimCache() {
-    _backing->trimCache();
-}
+void BufferedLogger::trimCache() { _backing->trimCache(); }
 
 void BackingBuffer::logIfRepeated(const Entry& e) const {
     if (e._count > 1) {
@@ -371,34 +343,25 @@ std::string BackingBuffer::toString() {
     std::ostringstream ost;
     ost << "Cache content:\n";
     std::lock_guard<std::mutex> guard(_mutex);
-    for (const auto & entry : _cache) {
+    for (const auto& entry : _cache) {
         ost << "  " << entry.toString() << "\n";
     }
     return ost.str();
 }
 
+void BufferedLogger::setMaxCacheSize(uint32_t size) { _backing->_maxCacheSize = size; }
 
-void BufferedLogger::setMaxCacheSize(uint32_t size) {
-    _backing->_maxCacheSize = size;
-}
-
-void BufferedLogger::setMaxEntryAge(uint64_t seconds) {
-    _backing->_maxEntryAge = std::chrono::seconds(seconds);
-}
+void BufferedLogger::setMaxEntryAge(uint64_t seconds) { _backing->_maxEntryAge = std::chrono::seconds(seconds); }
 
 // only used for unit tests:
-void BufferedLogger::setCountFactor(uint64_t seconds) {
-    global_countFactor = std::chrono::seconds(seconds);
-}
+void BufferedLogger::setCountFactor(uint64_t seconds) { global_countFactor = std::chrono::seconds(seconds); }
 
 /** Set a fake timer to use for log messages. Used in unit testing. */
-void BufferedLogger::setTimer(std::unique_ptr<Timer> timer) {
-    _backing->_timer = std::move(timer);
-}
+void BufferedLogger::setTimer(std::unique_ptr<Timer> timer) { _backing->_timer = std::move(timer); }
 
 BufferedLogger& BufferedLogger::instance() {
     static BufferedLogger logger;
     return logger;
 }
 
-} // ns_log
+} // namespace ns_log
