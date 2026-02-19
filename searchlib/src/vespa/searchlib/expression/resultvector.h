@@ -357,6 +357,8 @@ public:
     DECLARE_RESULTNODE(BoolResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
+
+    std::string_view friendly_type_name() const noexcept override { return "array<bool>"; }
 };
 
 class Int8ResultNodeVector : public NumericResultNodeVectorT<Int8ResultNode>
@@ -366,6 +368,8 @@ public:
     DECLARE_RESULTNODE(Int8ResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
+
+    std::string_view friendly_type_name() const noexcept override { return "array<byte>"; }
 };
 
 class Int16ResultNodeVector : public NumericResultNodeVectorT<Int16ResultNode>
@@ -375,6 +379,8 @@ public:
     DECLARE_RESULTNODE(Int16ResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
+
+    std::string_view friendly_type_name() const noexcept override { return "array<short>"; }
 };
 
 class Int32ResultNodeVector : public NumericResultNodeVectorT<Int32ResultNode>
@@ -384,6 +390,8 @@ public:
     DECLARE_RESULTNODE(Int32ResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
+
+    std::string_view friendly_type_name() const noexcept override { return "array<int>"; }
 };
 
 class Int64ResultNodeVector : public NumericResultNodeVectorT<Int64ResultNode>
@@ -393,6 +401,8 @@ public:
     DECLARE_RESULTNODE(Int64ResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
+
+    std::string_view friendly_type_name() const noexcept override { return "array<long>"; }
 };
 
 using IntegerResultNodeVector = Int64ResultNodeVector;
@@ -402,6 +412,8 @@ class EnumResultNodeVector : public NumericResultNodeVectorT<EnumResultNode>
 public:
     EnumResultNodeVector() = default;
     DECLARE_RESULTNODE(EnumResultNodeVector);
+
+    std::string_view friendly_type_name() const noexcept override { return "array<string>"; }
 };
 
 class FloatResultNodeVector : public NumericResultNodeVectorT<FloatResultNode>
@@ -411,6 +423,8 @@ public:
     DECLARE_RESULTNODE(FloatResultNodeVector);
 
     const FloatBucketResultNode& getNullBucket() const override { return FloatBucketResultNode::getNull(); }
+
+    std::string_view friendly_type_name() const noexcept override { return "array<double>"; }
 };
 
 class StringResultNodeVector : public ResultNodeVectorT<StringResultNode, cmpT<ResultNode>, vespalib::Identity>
@@ -420,6 +434,8 @@ public:
     DECLARE_RESULTNODE(StringResultNodeVector);
 
     const StringBucketResultNode& getNullBucket() const override { return StringBucketResultNode::getNull(); }
+
+    std::string_view friendly_type_name() const noexcept override { return "array<string>"; }
 };
 
 class RawResultNodeVector : public ResultNodeVectorT<RawResultNode, cmpT<ResultNode>, vespalib::Identity>
@@ -429,6 +445,8 @@ public:
     DECLARE_RESULTNODE(RawResultNodeVector);
 
     const RawBucketResultNode& getNullBucket() const override { return RawBucketResultNode::getNull(); }
+
+    std::string_view friendly_type_name() const noexcept override { return "array<raw>"; }
 };
 
 class IntegerBucketResultNodeVector : public ResultNodeVectorT<IntegerBucketResultNode, contains<IntegerBucketResultNode, int64_t>, GetInteger >
@@ -436,6 +454,8 @@ class IntegerBucketResultNodeVector : public ResultNodeVectorT<IntegerBucketResu
 public:
     IntegerBucketResultNodeVector() = default;
     DECLARE_RESULTNODE(IntegerBucketResultNodeVector);
+
+    std::string_view friendly_type_name() const noexcept override { return "array<long_bucket>"; }
 };
 
 class FloatBucketResultNodeVector : public ResultNodeVectorT<FloatBucketResultNode, contains<FloatBucketResultNode, double>, GetFloat >
@@ -443,6 +463,8 @@ class FloatBucketResultNodeVector : public ResultNodeVectorT<FloatBucketResultNo
 public:
     FloatBucketResultNodeVector() = default;
     DECLARE_RESULTNODE(FloatBucketResultNodeVector);
+
+    std::string_view friendly_type_name() const noexcept override { return "array<double_bucket>"; }
 };
 
 class StringBucketResultNodeVector : public ResultNodeVectorT<StringBucketResultNode, contains<StringBucketResultNode, ResultNode::ConstBufferRef>, GetString >
@@ -450,6 +472,8 @@ class StringBucketResultNodeVector : public ResultNodeVectorT<StringBucketResult
 public:
     StringBucketResultNodeVector() = default;
     DECLARE_RESULTNODE(StringBucketResultNodeVector);
+
+    std::string_view friendly_type_name() const noexcept override { return "array<string_bucket>"; }
 };
 
 class RawBucketResultNodeVector : public ResultNodeVectorT<RawBucketResultNode, contains<RawBucketResultNode, ResultNode::ConstBufferRef>, GetString >
@@ -457,6 +481,8 @@ class RawBucketResultNodeVector : public ResultNodeVectorT<RawBucketResultNode, 
 public:
     RawBucketResultNodeVector() = default;
     DECLARE_RESULTNODE(RawBucketResultNodeVector);
+
+    std::string_view friendly_type_name() const noexcept override { return "array<raw_bucket>"; }
 };
 
 class GeneralResultNodeVector : public ResultNodeVector
@@ -482,6 +508,9 @@ private:
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
         return  index < _v.size() ? _v[index]->getString(buf) : ConstBufferRef(buf.data(), 0);
     }
+
+    std::string_view friendly_type_name() const noexcept override { return "array<object>"; }
+
     size_t hash() const override;
     size_t onSize() const override { return _v.size(); }
     std::vector<ResultNode::CP> _v;

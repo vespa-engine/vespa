@@ -5,6 +5,8 @@
 #include "serializer.h"
 #include <vespa/vespalib/util/buffer.h>
 
+#include <string_view>
+
 namespace search::expression {
 
 class BucketResultNode;
@@ -44,6 +46,11 @@ public:
     int64_t getInteger(size_t index) const { return onGetInteger(index); }
     double    getFloat(size_t index) const { return onGetFloat(index); }
     ConstBufferRef getString(size_t index, BufferRef buf) const { return onGetString(index, buf); }
+
+    /**
+     * Friendly type name that can be displayed to user.
+     */
+    [[nodiscard]] virtual std::string_view friendly_type_name() const noexcept = 0;
 
 private:
     virtual int64_t onGetInteger(size_t index) const = 0;

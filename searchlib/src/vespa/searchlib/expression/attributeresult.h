@@ -32,6 +32,7 @@ private:
         return get_raw();
     }
     int64_t onGetEnum(size_t index) const override { (void) index; return (static_cast<int64_t>(_attribute->getEnum(_docId))); }
+    std::string_view friendly_type_name() const noexcept override { return "<attribute_result>"; }
     void set(const search::expression::ResultNode&) override { }
     size_t hash() const override { return _docId; }
 
@@ -47,6 +48,9 @@ public:
         : AttributeResult(attribute, docId)
     { }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+
+private:
+    std::string_view friendly_type_name() const noexcept override { return "<long_attribute_result>"; }
 };
 
 class FloatAttributeResult : public AttributeResult {
@@ -57,6 +61,9 @@ public:
         : AttributeResult(attribute, docId)
     { }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+
+private:
+    std::string_view friendly_type_name() const noexcept override { return "<double_attribute_result>"; }
 };
 
 }

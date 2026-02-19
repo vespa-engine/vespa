@@ -24,7 +24,7 @@ const BoolResultNode* as_bool_result(const ResultNode* result) {
 bool IsTruePredicateNode::check(const ResultNode* result) const {
     if (!result->inherits(BoolResultNode::classId)) {
         throw vespalib::IllegalArgumentException(
-            std::format("istrue() requires boolean input, got {}", result->getClass().name()));
+            std::format("istrue() requires input to be type bool, got {}", result->friendly_type_name()));
     }
 
     return as_bool_result(result)->getBool();

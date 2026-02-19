@@ -193,6 +193,9 @@ public:
 private:
     void set(const ResultNode&) override;
     size_t hash() const override { return 0; }
+
+    std::string_view friendly_type_name() const noexcept override { return "<field_value>"; }
+
     const FieldValue * _fv;
 };
 
@@ -312,6 +315,9 @@ private:
     String2ResultNode * clone() const override { return new String2ResultNode(_s); }
     void set(const ResultNode&) override;
     size_t hash() const override { return 0; }
+
+    std::string_view friendly_type_name() const noexcept override { return "<string_adapter>"; }
+
     std::string _s;
 };
 
