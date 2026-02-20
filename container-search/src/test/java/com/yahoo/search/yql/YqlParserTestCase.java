@@ -1399,10 +1399,15 @@ public class YqlParserTestCase {
         parser.setUserQuery(createUserQuery());
         var query = parse("select * from sources * where field in (42, 22L, -7, @foonumeric)");
         assertNumericInItem("field", new long[]{-11, -7, 22, 24, 25, 26, 42}, query);
+
         parser.setUserQuery(createUserQuery());
         query = parse("select * from sources * where string in ('a','b', @foostring)");
         assertStringInItem("string", new String[]{"a","b","might","this", "work"}, query);
         parser.setUserQuery(null);
+
+        query = parse("select * from sources * where {ranked:false}string in ('a','b')");
+        assertFalse(query.getRoot().isRanked());
+
         assertParseFail("select * from sources * where field in (29.9, -7.4)",
                 new ClassCastException("Cannot cast java.lang.Double to java.lang.Long"));
         assertParseFail("select * from sources * where string in ('a', 25L)",
