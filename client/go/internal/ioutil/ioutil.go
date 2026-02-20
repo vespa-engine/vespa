@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -85,12 +86,37 @@ func ReaderToJSON(reader io.Reader) string {
 // StringToJSON returns string s as indented JSON.
 func StringToJSON(s string) string { return ReaderToJSON(strings.NewReader(s)) }
 
+// normalizeForJSON replaces non-finite float64 values (NaN, ±Inf) with their
+// string representations, since encoding/json does not support these values.
+func normalizeForJSON(v interface{}) interface{} {
+	switch val := v.(type) {
+	case float64:
+		if math.IsInf(val, -1) {
+			return "-Inf"
+		} else if math.IsInf(val, 1) {
+			return "Inf"
+		} else if math.IsNaN(val) {
+			return "NaN"
+		}
+	case map[string]interface{}:
+		for k, mv := range val {
+			val[k] = normalizeForJSON(mv)
+		}
+	case []interface{}:
+		for i, sv := range val {
+			val[i] = normalizeForJSON(sv)
+		}
+	}
+	return v
+}
+
 // CBORToJSON converts CBOR data to indented JSON string.
 func CBORToJSON(data []byte) (string, error) {
 	var v interface{}
 	if err := cborDecMode.Unmarshal(data, &v); err != nil {
 		return "", err
 	}
+	v = normalizeForJSON(v)
 	jsonBytes, err := json.MarshalIndent(v, "", "    ")
 	if err != nil {
 		return "", err
@@ -104,6 +130,7 @@ func CBORToJSONCompact(data []byte) (string, error) {
 	if err := cborDecMode.Unmarshal(data, &v); err != nil {
 		return "", err
 	}
+	v = normalizeForJSON(v)
 	jsonBytes, err := json.Marshal(v)
 	if err != nil {
 		return "", err
