@@ -322,7 +322,7 @@ public class VespaSerializerTestCase {
         SameElementItem single = new SameElementItem("bools");
         single.setElementFilter(List.of(42));
         single.addItem(new WordItem("true", ""));
-        assertEquals("bools contains ({elementFilter:42} sameElement(({implicitTransforms: false}\"true\")))",
+        assertEquals("bools contains ({elementFilter:[42]} sameElement(({implicitTransforms: false}\"true\")))",
                      VespaSerializer.serialize(single));
     }
 
