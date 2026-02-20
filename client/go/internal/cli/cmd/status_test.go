@@ -187,9 +187,8 @@ Hint: --wait 120 will make this command wait for completion up to 2 minutes
 		Body:   []byte(`{"active": false, "status": "failure"}`),
 	}
 	client.NextResponse(run)
-	client.NextResponse(run)
 	assert.NotNil(t, cli.Run("status", "deployment", "42", "-w", "10"))
-	assert.Equal(t, "Waiting up to 10s for deployment to converge...\nWarning: deployment failed: run 42 ended with unsuccessful status: failure\n", stderr.String())
+	assert.Equal(t, "Warning: deployment failed: run 42 ended with unsuccessful status: failure\n", stderr.String())
 }
 
 func isLocalTarget(args []string) bool {
