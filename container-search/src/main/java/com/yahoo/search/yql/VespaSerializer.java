@@ -683,6 +683,7 @@ public class VespaSerializer {
 
             boolean hasFilter = !item.getElementFilter().isEmpty();
             if (hasFilter) {
+                // NOTE(johsol): sameElement with annotation must be wrapped in parens
                 destination.append("({elementFilter:");
                 List<Integer> filter = item.getElementFilter();
                 if (filter.size() == 1) {
@@ -712,6 +713,7 @@ public class VespaSerializer {
                 destination.append(')');
             }
             if (hasFilter) {
+                // NOTE(johsol): sameElement with annotation must be wrapped in parens
                 destination.append(')');
             }
 
