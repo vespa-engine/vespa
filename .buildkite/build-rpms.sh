@@ -12,13 +12,11 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
+: "${VESPA_VERSION:?Environment variable VESPA_VERSION must be set (version to build)}"
+: "${LOCAL_RPM_REPO:?Environment variable LOCAL_RPM_REPO must be set (path to local RPM repo)}"
+
 echo "--- 📦 Building RPM packages"
 ulimit -c 0
-
-if [[ -z "${LOCAL_RPM_REPO:-}" ]]; then
-    echo "Error: LOCAL_RPM_REPO is not set. Please set it to the directory where RPMs should be stored."
-    exit 1
-fi
 
 echo "Creating source RPM..."
 make  -f .copr/Makefile srpm outdir="$WORKDIR"

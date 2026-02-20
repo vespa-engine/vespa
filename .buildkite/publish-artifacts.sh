@@ -12,6 +12,10 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
+: "${VESPA_VERSION:?Environment variable VESPA_VERSION must be set (version to build)}"
+: "${LOCAL_RPM_REPO:?Environment variable LOCAL_RPM_REPO must be set (path to local RPM repo)}"
+: "${LOCAL_MVN_REPO:?Environment variable LOCAL_MVN_REPO must be set (path to local Maven repo)}"
+
 echo "--- 📤 Publishing build artifacts"
 cd "$WORKDIR/artifacts/$ARCH"
 
