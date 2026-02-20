@@ -16,10 +16,10 @@ echo "--- 📤 Publishing build artifacts"
 cd "$WORKDIR/artifacts/$ARCH"
 
 echo "Creating archives..."
-tar -cf rpm-repo.tar rpms &
-tar -cf maven-repo.tar maven-repo
-cp -a rpms/vespa-config-model-fat-*.rpm .
+tar -cf maven-repo.tar "${LOCAL_MVN_REPO}" &
+tar -cf rpm-repo.tar "${LOCAL_RPM_REPO}" &
 wait
+cp -a "${LOCAL_RPM_REPO}"/vespa-config-model-fat-*.rpm .
 
 echo "Signing artifacts..."
 for FILE in *.tar *.rpm; do

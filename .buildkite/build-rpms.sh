@@ -15,6 +15,11 @@ fi
 echo "--- 📦 Building RPM packages"
 ulimit -c 0
 
+if [[ -z "${LOCAL_RPM_REPO:-}" ]]; then
+    echo "Error: LOCAL_RPM_REPO is not set. Please set it to the directory where RPMs should be stored."
+    exit 1
+fi
+
 echo "Creating source RPM..."
 make  -f .copr/Makefile srpm outdir="$WORKDIR"
 
@@ -26,5 +31,5 @@ rpmbuild --rebuild \
   --define "installdir $WORKDIR/vespa-install" "$WORKDIR"/vespa-"$VESPA_VERSION"-*.src.rpm
 
 echo "Moving RPMs and creating repository..."
-mv "$WORKDIR"/vespa-rpmbuild/RPMS/*/*.rpm "$WORKDIR/artifacts/$ARCH/rpms"
-createrepo "$WORKDIR/artifacts/$ARCH/rpms"
+mv "$WORKDIR"/vespa-rpmbuild/RPMS/*/*.rpm "$LOCAL_RPM_REPO"
+createrepo "$LOCAL_RPM_REPO"

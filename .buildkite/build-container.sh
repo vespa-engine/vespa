@@ -41,7 +41,7 @@ fi
 
 echo "Preparing RPMs for container build..."
 rm -rf "${WORKDIR}/docker-image/rpms"
-cp -a "${WORKDIR}/artifacts/$ARCH/rpms" "${WORKDIR}/docker-image/"
+cp -a "${LOCAL_RPM_REPO}" "${WORKDIR}/docker-image/"
 
 cd "${WORKDIR}/docker-image"
 SOURCE_GITREF=$(git rev-parse HEAD)
