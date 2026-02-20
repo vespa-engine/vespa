@@ -118,6 +118,24 @@ public class RpcSearchInvokerTest {
         }
     }
 
+    @Test
+    void contentShareIsUsedToSetKeepRankCount() throws IOException {
+        Query query = new Query();
+        query.getModel().getQueryTree().setRoot(new WordItem("ignored"));
+        query.getRanking().setTotalKeepRankCount(100);
+        query.prepare();
+
+        List<Holders> nodeHolders = queryGroup(query, List.of(1000, 1035, 0, 1, 13));
+        List<Integer> expected = List.of(49, 49, 20, 1, 1);
+
+        var requests = nodeHolders.stream().map(this::decompress).toList();
+        for (int i = 0; i < expected.size(); i++) {
+            var property = requests.get(i).getRankProperties(1);
+            assertEquals("vespa.hitcollector.arraysize", property.getName());
+            assertEquals(String.valueOf(expected.get(i)), property.getValues(0));
+        }
+    }
+
     private List<Holders> queryGroup(Query query, List<Integer> activeDocs) throws IOException {
         List<Node> nodes = new ArrayList<>();
         List<RpcSearchInvoker> nodeInvokers = new ArrayList<>();

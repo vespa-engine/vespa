@@ -15,8 +15,8 @@ import java.util.Objects;
  */
 public class SecondPhase implements Cloneable {
 
-    static final String rerankCountPropertyName = "vespa.hitcollector.heapsize";
-    static final String totalRerankCountPropertyName = "vespa.hitcollector.totalHeapsize";
+    static final String rerankCountProperty      = "vespa.hitcollector.heapsize";
+    static final String totalRerankCountProperty = "vespa.hitcollector.totalHeapsize";
 
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
@@ -71,9 +71,9 @@ public class SecondPhase implements Cloneable {
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
         if (rerankCount != null)
-            rankProperties.put(rerankCountPropertyName, rerankCount);
+            rankProperties.put(rerankCountProperty, rerankCount);
         if (totalRerankCount != null)
-            rankProperties.put(totalRerankCountPropertyName, totalRerankCount);
+            rankProperties.put(totalRerankCountProperty, totalRerankCount);
         if (rankScoreDropLimit != null)
             rankProperties.put("vespa.hitcollector.secondphase.rankscoredroplimit", String.valueOf(rankScoreDropLimit));
     }

@@ -94,14 +94,29 @@ public class RankProperties implements Cloneable {
 
     /** Returns an unmodifiable map of the properties of this for serialization purposes */
     public Map<String, List<Object>> asMap(SerializationContext context) {
-        List<Object> totalRerankCount = properties.get(SecondPhase.totalRerankCountPropertyName);
-        if (totalRerankCount != null && ! properties.containsKey(SecondPhase.rerankCountPropertyName)) {
-            Map<String, List<Object>> serializableProperties = new LinkedHashMap<>(properties);
-            serializableProperties.put(SecondPhase.rerankCountPropertyName,
-                                       List.of(context.contentShareOf((int)totalRerankCount.get(0))));
+        Map<String, List<Object>> serializableProperties = null;
+        serializableProperties = convertFromTotal(SecondPhase.rerankCountProperty,
+                                                  SecondPhase.totalRerankCountProperty,
+                                                  context, serializableProperties);
+        serializableProperties = convertFromTotal("vespa.hitcollector.arraysize",
+                                                  "vespa.hitcollector.totalArraysize",
+                                                  context, serializableProperties);
+        if (serializableProperties != null)
             return Collections.unmodifiableMap(serializableProperties);
+        else
+            return Collections.unmodifiableMap(properties);
+    }
+
+    private Map<String, List<Object>> convertFromTotal(String property, String totalProperty,
+                                                       SerializationContext context,
+                                                       Map<String, List<Object>> serializableProperties) {
+        List<Object> total = properties.get(totalProperty);
+        if (total != null && ! properties.containsKey(property)) {
+            if (serializableProperties == null)
+                serializableProperties = new LinkedHashMap<>(properties);
+            serializableProperties.put(property, List.of(context.contentShareOf((int)total.get(0))));
         }
-        return Collections.unmodifiableMap(properties);
+        return serializableProperties;
     }
 
     /** Encodes this in a binary internal representation and returns the number of property maps encoded (0 or 1) */
