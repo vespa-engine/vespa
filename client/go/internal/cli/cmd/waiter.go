@@ -115,7 +115,7 @@ func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) 
 	if err == nil {
 		return id, err
 	}
-	if errors.Is(err, vespa.ErrDeployment) {
+	if errors.Is(err, vespa.ErrDeployment) && w.Timeout == 0 {
 		return id, err
 	}
 	timeout := w.Timeout
