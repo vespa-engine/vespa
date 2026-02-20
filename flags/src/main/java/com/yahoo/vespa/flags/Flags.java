@@ -58,16 +58,18 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
+    // TODO(2026-02-20): Remove once this has rolled out, and the overrides have been removed.
     public static final UnboundLongFlag DELETE_IDLE_TENANT_SECONDS = defineLongFlag(
-            "delete-idle-tenant-seconds", -1,
+            "delete-idle-tenant-seconds", 604800,
             List.of("hakonhall"), "2026-02-03", "2026-04-03",
             "If >=0, then (A) the last deploy time is not updated on config server bootstrap, " +
             "and (B) an idle tenant will be deleted after this many seconds (default 604800 = 1 week).",
             "(A) takes effect on cfg bootstrap, (B) on next tick of TenantsMaintainer",
             TENANT_ID);
 
+    // TODO(2026-02-20): Remove once this has rolled out, and the overrides have been removed.
     public static final UnboundBooleanFlag SOFT_DELETE_TENANT = defineFeatureFlag(
-            "soft-delete-tenant", false,
+            "soft-delete-tenant", true,
             List.of("hakonhall"), "2026-01-20", "2026-04-20",
             "When deleting /config/v2/tenants/TENANT recursively - whether to give up (true) or retry (false) on NotEmptyException",
             "Takes effect immediately",
