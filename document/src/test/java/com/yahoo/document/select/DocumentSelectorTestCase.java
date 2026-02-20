@@ -148,6 +148,9 @@ public class DocumentSelectorTestCase {
         assertParse("music.expire > now() - 300");
         assertParse("now or now_search");
         assertParse("(music.expire / 1000) > (now() - 300)");
+        assertParse("myWeightedSet{key1} = 1");
+        assertParse("myWeightedSet{'single-quoted.key'} = 1");
+        assertParse("myWeightedSet{\"double-quoted.key\"} = 1");
     }
 
     @Test

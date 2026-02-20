@@ -82,16 +82,16 @@ TOKEN :
     <AND: "and"> |
     <OR: "or"> |
     <NOT: "not"> |
-    <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-","@","$","[","]","{","}"])*>
+    <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-","@","$","[","]","{","}","'","\""])*>
 }
 
 ExpressionNode expression() :
 {
-    ExpressionNode ret = new LiteralNode(true);
+    ExpressionNode value = new LiteralNode(true);
 }
 {
-    ( [ ret = logic() ] <EOF> )
-    { return ret; }
+    ( [ value = logic() ] <EOF> )
+    { return value; }
 }
 
 ExpressionNode logic() :
@@ -150,11 +150,11 @@ ExpressionNode arithmetic() :
 
 VariableNode variable() :
 {
-    VariableNode ret;
+    VariableNode value;
 }
 {
-    ( <DOLLAR> identifier() { ret = new VariableNode(token.image); } )
-    { return ret; }
+    ( <DOLLAR> identifier() { value = new VariableNode(token.image); } )
+    { return value; }
 }
 
 ExpressionNode attribute() :
@@ -180,26 +180,26 @@ ExpressionNode attribute() :
 
 ExpressionNode value() :
 {
-    ExpressionNode ret;
+    ExpressionNode value;
 }
 {
     ( LOOKAHEAD(2)
-      ( ret = id() |
-        ret = literal() |
-        ret = variable() |
-        ret = now() |
-        <LBRACE> ret = logic() <RBRACE> { ret = new EmbracedNode(ret); } ) |
-     ( ret = document() ) )
-    { return ret; }
+      ( value = id() |
+        value = literal() |
+        value = variable() |
+        value = now() |
+        <LBRACE> value = logic() <RBRACE> { value = new EmbracedNode(value); } ) |
+     ( value = document() ) )
+    { return value; }
 }
 
 DocumentNode document() :
 {
-    DocumentNode ret;
+    DocumentNode documentType;
 }
 {
-    ( identifier() { ret = new DocumentNode(token.image); } )
-    { return ret; }
+    ( identifier() { documentType = new DocumentNode(token.image); } )
+    { return documentType; }
 }
 
                                                                                                                                                                                                                                              
@@ -225,34 +225,34 @@ void identifier() : { }
 
 IdNode id() :
 {
-    IdNode ret = new IdNode();
+    IdNode id = new IdNode();
 }
 {
     ( <ID> [ LOOKAHEAD(2) <DOT>
-             ( <ID_SCHEME>     { ret.setField(token.image); } | 
-               <ID_TYPE>       { ret.setField(token.image); } |
-               <ID_NAMESPACE>  { ret.setField(token.image); } |
-               <ID_SPECIFIC>   { ret.setField(token.image); } |
-               <ID_USER>       { ret.setField(token.image); } | 
-               <ID_GROUP>      { ret.setField(token.image); } | 
-               <ID_BUCKET>     { ret.setField(token.image); } )
+             ( <ID_SCHEME>     { id.setField(token.image); } |
+               <ID_TYPE>       { id.setField(token.image); } |
+               <ID_NAMESPACE>  { id.setField(token.image); } |
+               <ID_SPECIFIC>   { id.setField(token.image); } |
+               <ID_USER>       { id.setField(token.image); } |
+               <ID_GROUP>      { id.setField(token.image); } |
+               <ID_BUCKET>     { id.setField(token.image); } )
               ] )
-    { return ret; }
+    { return id; }
 }
 
 LiteralNode literal() :
 {
     String sign = "";
-    Object ret = null;
+    Object value = null;
 }
 {
     ( ( [ <SUB>       { sign = "-"; } ]
-        ( <FLOAT>     { ret = Double.parseDouble(sign + token.image); } |
-          <INTEGER>   { ret = SelectParserUtils.decodeLong(sign + token.image); } ) ) |
-      ( <ADD> <FLOAT> { ret = Double.parseDouble(token.image); } ) |
-      ( <STRING>      { ret = SelectParserUtils.unquote(token.image); } ) |
-      ( <TRUE>        { ret = true; } ) |
-      ( <FALSE>       { ret = false; } ) |
-      ( <NULL>        { ret = null; } ) )
-    { return new LiteralNode(ret); }
+        ( <FLOAT>     { value = Double.parseDouble(sign + token.image); } |
+          <INTEGER>   { value = SelectParserUtils.decodeLong(sign + token.image); } ) ) |
+      ( <ADD> <FLOAT> { value = Double.parseDouble(token.image); } ) |
+      ( <STRING>      { value = SelectParserUtils.unquote(token.image); } ) |
+      ( <TRUE>        { value = true; } ) |
+      ( <FALSE>       { value = false; } ) |
+      ( <NULL>        { value = null; } ) )
+    { return new LiteralNode(value); }
 }
