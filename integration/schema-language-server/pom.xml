@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.yahoo.vespa</groupId>
@@ -12,6 +11,10 @@
     <artifactId>schema-language-server-parent</artifactId>
     <packaging>pom</packaging>
     <version>8-SNAPSHOT</version>
+    <properties>
+        <maven.install.skip>true</maven.install.skip>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
     <profiles>
         <!-- Build schema-language-server modules (language-server and lemminx-vespa).
              Disabled by default as these are only needed for IDE plugin development/deployment.
