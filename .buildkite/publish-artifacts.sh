@@ -16,9 +16,13 @@ echo "--- 📤 Publishing build artifacts"
 cd "$WORKDIR/artifacts/$ARCH"
 
 echo "Creating archives..."
-tar -cf maven-repo.tar "${LOCAL_MVN_REPO}" &
-tar -cf rpm-repo.tar "${LOCAL_RPM_REPO}" &
-wait
+tar -C "$(dirname "$LOCAL_MVN_REPO")" -cf maven-repo.tar "$(basename "$LOCAL_MVN_REPO")" &
+maven_tar_pid=$!
+tar -C "$(dirname "$LOCAL_RPM_REPO")" -cf rpm-repo.tar "$(basename "$LOCAL_RPM_REPO")" &
+rpm_tar_pid=$!
+wait "$maven_tar_pid"
+wait "$rpm_tar_pid"
+
 cp -a "${LOCAL_RPM_REPO}"/vespa-config-model-fat-*.rpm .
 
 echo "Signing artifacts..."
