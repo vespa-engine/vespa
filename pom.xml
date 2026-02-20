@@ -124,7 +124,6 @@
         <module>zookeeper-command-line-client</module>
         <module>zookeeper-common</module>
         <module>zookeeper-server</module>
-        <module>integration/schema-language-server</module>
     </modules>
 
     <profiles>
@@ -133,6 +132,12 @@
             <activation><jdk>[25,26)</jdk></activation>
             <modules>
                 <module>datasketches-java25</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>schema-language-server</id>
+            <modules>
+                <module>integration/schema-language-server</module>
             </modules>
         </profile>
     </profiles>

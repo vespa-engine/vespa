@@ -603,6 +603,16 @@
                 <vespaCompilerArgs.xlint>-Xlint:all,-this-escape</vespaCompilerArgs.xlint>
             </properties>
         </profile>
+        <!-- Build schema-language-server modules (language-server and lemminx-vespa).
+             Disabled by default as these are only needed for IDE plugin development/deployment.
+             Enable with -Pschema-language-server or activate in IntelliJ via
+             Maven tool window > Profiles > schema-language-server -->
+        <profile>
+            <id>schema-language-server</id>
+            <properties>
+                <schema-language-server.skip>false</schema-language-server.skip>
+            </properties>
+        </profile>
     </profiles>
 
     <dependencyManagement>
@@ -1481,6 +1491,7 @@
         <test.hide>true</test.hide>
         <ffm.args/>
 
+        <schema-language-server.skip>true</schema-language-server.skip>
         <vespaClients.jdk.releaseVersion>11</vespaClients.jdk.releaseVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

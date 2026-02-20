@@ -12,17 +12,8 @@
     <artifactId>schema-language-server-parent</artifactId>
     <packaging>pom</packaging>
     <version>8-SNAPSHOT</version>
-    <profiles>
-        <!-- Build schema-language-server modules (language-server and lemminx-vespa).
-             Disabled by default as these are only needed for IDE plugin development/deployment.
-             Enable with -Pschema-language-server or activate in IntelliJ via
-             Maven tool window > Profiles > schema-language-server -->
-        <profile>
-            <id>schema-language-server</id>
-            <modules>
-                <module>language-server</module>
-                <module>lemminx-vespa</module>
-            </modules>
-        </profile>
-    </profiles>
+    <modules>
+        <module>language-server</module>
+        <module>lemminx-vespa</module>
+    </modules>
 </project>
