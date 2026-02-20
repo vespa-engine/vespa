@@ -501,6 +501,36 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testArrayElementSyntacticSugar() {
+        // bools[1] = true
+        QueryTree queryTree = parse("select * from sources * where bools[1] = true");
+        SameElementItem sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals("bools", sameElem.getFieldName());
+        assertEquals(List.of(1), sameElem.getElementFilter());
+        assertEquals(1, sameElem.getItemCount());
+        assertTrue(sameElem.getItem(0) instanceof WordItem);
+        assertEquals("true", ((WordItem) sameElem.getItem(0)).getWord());
+
+        // bools[1] = false
+        queryTree = parse("select * from sources * where bools[1] = false");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(1), sameElem.getElementFilter());
+        assertEquals("false", ((WordItem) sameElem.getItem(0)).getWord());
+
+        // Index 0 (valid)
+        queryTree = parse("select * from sources * where bools[0] = true");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(0), sameElem.getElementFilter());
+
+        // Numeric value
+        queryTree = parse("select * from sources * where nums[0] = 42");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals("nums", sameElem.getFieldName());
+        assertEquals(List.of(0), sameElem.getElementFilter());
+        assertEquals("42", ((WordItem) sameElem.getItem(0)).getWord());
+    }
+
+    @Test
     void testPhrase() {
         assertParse("select foo from bar where baz contains phrase(\"a\", \"b\")",
                 "baz:\"a b\"");

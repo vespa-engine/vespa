@@ -375,6 +375,10 @@ public class YqlParser implements Parser {
     private Item convertExpression(OperatorNode<ExpressionOperator> ast, String currentField) {
         try {
             annotationStack.addFirst(ast);
+            // Syntactic sugar: field[indices] = value → field contains ({elementFilter:indices} sameElement("value"))
+            if (ast.getOperator() == ExpressionOperator.EQ && hasArrayElementAccess(ast)) {
+                return buildArrayElementEquals(ast);
+            }
             return switch (ast.getOperator()) {
                 case AND -> buildAnd(ast, currentField);
                 case OR -> buildOr(ast, currentField);
@@ -1412,6 +1416,55 @@ public class YqlParser implements Parser {
     private static boolean isIndexOnLeftHandSide(OperatorNode<ExpressionOperator> ast) {
         OperatorNode<?> node =  ast.getArgument(0, OperatorNode.class);
         return node.getOperator() == ExpressionOperator.READ_FIELD || node.getOperator() == ExpressionOperator.PROPREF;
+    }
+
+    /** Returns true if the EQ node has an INDEX operator on either side (array element access syntax). */
+    private static boolean hasArrayElementAccess(OperatorNode<ExpressionOperator> ast) {
+        OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
+        OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
+        return lhs.getOperator() == ExpressionOperator.INDEX || rhs.getOperator() == ExpressionOperator.INDEX;
+    }
+
+    /**
+     * Transforms field[index] = value into a SameElementItem with elementFilter.
+     * E.g., bools[1] = true → bools contains ({elementFilter:1} sameElement("true"))
+     */
+    private Item buildArrayElementEquals(OperatorNode<ExpressionOperator> ast) {
+        OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
+        OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
+
+        OperatorNode<ExpressionOperator> indexExpr, valueExpr;
+        if (lhs.getOperator() == ExpressionOperator.INDEX) {
+            indexExpr = lhs;
+            valueExpr = rhs;
+        } else {
+            indexExpr = rhs;
+            valueExpr = lhs;
+        }
+
+        String fieldName = getIndex(indexExpr.getArgument(0));
+        OperatorNode<ExpressionOperator> subscript = indexExpr.getArgument(1);
+        if (subscript.getOperator() != ExpressionOperator.LITERAL) {
+            throw new IllegalArgumentException("Array element index must be an integer literal, got " + subscript.getOperator());
+        }
+        int elementIndex = convertToIntForElementFilter(subscript.getArgument(0));
+        String value = getLiteralAsString(valueExpr);
+
+        SameElementItem sameElement = new SameElementItem(fieldName);
+        sameElement.setElementFilter(List.of(elementIndex));
+        sameElement.addItem(new WordItem(value, ""));
+        return sameElement;
+    }
+
+    /** Returns the string representation of a literal expression. */
+    private static String getLiteralAsString(OperatorNode<ExpressionOperator> expr) {
+        if (expr.getOperator() == ExpressionOperator.NEGATE) {
+            return "-" + getLiteralAsString(expr.getArgument(0));
+        }
+        if (expr.getOperator() != ExpressionOperator.LITERAL) {
+            throw new IllegalArgumentException("Expected literal value in array element access, got " + expr.getOperator());
+        }
+        return expr.getArgument(0).toString();
     }
 
     private CompositeItem buildAnd(OperatorNode<ExpressionOperator> ast, String currentField) {
