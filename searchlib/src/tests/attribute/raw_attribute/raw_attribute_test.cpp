@@ -18,6 +18,7 @@ using search::AddressSpaceComponents;
 using search::AddressSpaceUsage;
 using search::AttributeFactory;
 using search::AttributeVector;
+using search::CommitParam;
 using search::QueryTermSimple;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
@@ -75,6 +76,8 @@ sort_data(ISortBlobWriter& writer, uint32_t lid) {
 std::vector<char> empty;
 std::string hello("hello");
 std::span<const char> raw_hello(hello.c_str(), hello.size());
+std::string hello_again("hello again");
+std::span<const char> raw_hello_again(hello_again.c_str(), hello_again.size());
 
 std::filesystem::path attr_path("raw.dat");
 
@@ -144,11 +147,20 @@ RawAttributeTest::reset_attr(bool add_reserved)
 TEST_F(RawAttributeTest, can_set_and_clear_value)
 {
     EXPECT_TRUE(_attr->addDocs(10));
-    _attr->commit();
+    _attr->commit(CommitParam::UpdateStats::FORCE);
+    EXPECT_EQ(0, _raw->get_raw_bytes_stats());
     EXPECT_EQ(empty, get_raw(1));
     _raw->set_raw(1, raw_hello);
+    _attr->commit(CommitParam::UpdateStats::FORCE);
     EXPECT_EQ(as_vector(std::string_view(hello)), get_raw(1));
+    EXPECT_EQ(raw_hello.size(), _raw->get_raw_bytes_stats());
+    _raw->set_raw(1, raw_hello_again);
+    _attr->commit(CommitParam::UpdateStats::FORCE);
+    EXPECT_EQ(as_vector(std::string_view(hello_again)), get_raw(1));
+    EXPECT_EQ(raw_hello_again.size(), _raw->get_raw_bytes_stats());
     _attr->clearDoc(1);
+    _attr->commit(CommitParam::UpdateStats::FORCE);
+    EXPECT_EQ(0, _raw->get_raw_bytes_stats());
     EXPECT_EQ(empty, get_raw(1));
 }
 
@@ -230,9 +242,12 @@ TEST_F(RawAttributeTest, save_and_load)
     _raw->set_raw(1, raw_hello);
     _raw->set_raw(2, mini_test);
     _attr->setCreateSerialNum(20);
+    _attr->commit(CommitParam::UpdateStats::FORCE);
     EXPECT_EQ(0, _attr->size_on_disk());
     EXPECT_EQ(zero_flush_duration, _attr->last_flush_duration());
+    auto estimated_write_bytes = _attr->getEstimatedSaveByteSize();
     _attr->save();
+    EXPECT_EQ(std::filesystem::file_size(attr_path), estimated_write_bytes);
     auto saved_size_on_disk = _attr->size_on_disk();
     EXPECT_NE(0, saved_size_on_disk);
     EXPECT_NE(zero_flush_duration, _attr->last_flush_duration());
@@ -245,6 +260,8 @@ TEST_F(RawAttributeTest, save_and_load)
     EXPECT_EQ(20, _attr->getCreateSerialNum());
     EXPECT_EQ(as_vector("hello"sv), as_vector(_raw->get_raw(1)));
     EXPECT_EQ(mini_test, as_vector(_raw->get_raw(2)));
+    EXPECT_EQ(raw_hello.size() + mini_test.size(), _raw->get_raw_bytes_stats());
+    EXPECT_EQ(estimated_write_bytes, _attr->getEstimatedSaveByteSize());
     remove_saved_attr();
 }
 
