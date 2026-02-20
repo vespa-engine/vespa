@@ -111,10 +111,6 @@ setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IA
                 doc.remove(field);
                 break;
             }
-            if (values.empty()) {
-                doc.remove(field);
-                break;
-            }
             FieldValue::UP fv = field.getDataType().createFieldValue();
             if (fv &&  ! fv->isA(FieldValue::Type::WSET)) {
                 throw IllegalStateException("Field " + field.getName() + " does not contain a wset.", VESPA_STRLOC);
