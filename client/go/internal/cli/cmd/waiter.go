@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -112,6 +113,9 @@ func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) 
 	// Send probe request to determine if we need to wait at all
 	id, err := target.AwaitDeployment(wantedID, 0)
 	if err == nil {
+		return id, err
+	}
+	if errors.Is(err, vespa.ErrDeployment) {
 		return id, err
 	}
 	timeout := w.Timeout

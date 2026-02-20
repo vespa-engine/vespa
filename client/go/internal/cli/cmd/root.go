@@ -394,7 +394,11 @@ func (c *CLI) bindWaitFlag(cmd *cobra.Command, defaultSecs int, value *int) {
 }
 
 func (c *CLI) printErr(err error, hints ...string) {
-	fmt.Fprintln(c.Stderr, color.RedString("Error:"), err)
+	if msg, ok := strings.CutPrefix(err.Error(), "deployment failed: "); ok {
+		fmt.Fprintln(c.Stderr, color.RedString("Deployment failed:"), msg)
+	} else {
+		fmt.Fprintln(c.Stderr, color.RedString("Error:"), err)
+	}
 	for _, hint := range hints {
 		fmt.Fprintln(c.Stderr, color.CyanString("Hint:"), hint)
 	}
