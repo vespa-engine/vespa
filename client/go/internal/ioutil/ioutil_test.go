@@ -27,8 +27,8 @@ func TestCBORToJSONNonFiniteFloats(t *testing.T) {
 	// Verify the output is valid, parseable JSON
 	var parsed map[string]interface{}
 	assert.Nil(t, json.Unmarshal([]byte(got), &parsed))
-	assert.Equal(t, "-Inf", parsed["negInf"])
-	assert.Equal(t, "Inf", parsed["posInf"])
+	assert.Equal(t, "-Infinity", parsed["negInf"])
+	assert.Equal(t, "Infinity", parsed["posInf"])
 	assert.Equal(t, "NaN", parsed["nan"])
 	assert.Equal(t, 1.5, parsed["normal"])
 
@@ -36,7 +36,7 @@ func TestCBORToJSONNonFiniteFloats(t *testing.T) {
 	assert.Nil(t, err)
 	var parsedCompact map[string]interface{}
 	assert.Nil(t, json.Unmarshal([]byte(gotCompact), &parsedCompact))
-	assert.Equal(t, "-Inf", parsedCompact["negInf"])
+	assert.Equal(t, "-Infinity", parsedCompact["negInf"])
 }
 
 func TestPathExists(t *testing.T) {

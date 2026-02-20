@@ -92,9 +92,9 @@ func normalizeForJSON(v interface{}) interface{} {
 	switch val := v.(type) {
 	case float64:
 		if math.IsInf(val, -1) {
-			return "-Inf"
+			return "-Infinity"
 		} else if math.IsInf(val, 1) {
-			return "Inf"
+			return "Infinity"
 		} else if math.IsNaN(val) {
 			return "NaN"
 		}
