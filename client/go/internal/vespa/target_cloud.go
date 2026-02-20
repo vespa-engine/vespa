@@ -219,10 +219,7 @@ func (t *cloudTarget) CompatibleWith(clientVersion version.Version) error {
 }
 
 func (t *cloudTarget) logsURL() string {
-	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s/logs",
-		t.apiOptions.System.URL,
-		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
-		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region)
+	return t.apiOptions.System.LogsURL(t.deploymentOptions.Deployment).String()
 }
 
 func (t *cloudTarget) PrintLog(options LogOptions) error {
@@ -329,11 +326,8 @@ func (t *cloudTarget) printLog(response runResponse, last int64) int64 {
 }
 
 func (t *cloudTarget) discoverPrivateServices(timeout time.Duration) (map[string]*PrivateServiceInfo, error) {
-	deploymentURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s/private-services",
-		t.apiOptions.System.URL,
-		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
-		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region)
-	req, err := http.NewRequest("GET", deploymentURL, nil)
+	deploymentURL := t.apiOptions.System.PrivateServicesURL(t.deploymentOptions.Deployment)
+	req, err := http.NewRequest("GET", deploymentURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -360,10 +354,7 @@ func (t *cloudTarget) discoverPrivateServices(timeout time.Duration) (map[string
 }
 
 func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string][]clusterTarget, error) {
-	deploymentURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",
-		t.apiOptions.System.URL,
-		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
-		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region)
+	deploymentURL := t.apiOptions.System.DeploymentURL(t.deploymentOptions.Deployment)
 	req, err := http.NewRequest("GET", deploymentURL, nil)
 	if err != nil {
 		return nil, err
@@ -402,11 +393,11 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string][]clu
 }
 
 func (t *cloudTarget) tenantUrl(tenant string) string {
-	return fmt.Sprintf("%s/application/v4/tenant/%s", t.apiOptions.System.URL, tenant)
+	return t.apiOptions.System.TenantURL(tenant).String()
 }
 
 func (t *cloudTarget) applicationInstanceUrl(id ApplicationID) string {
-	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s", t.apiOptions.System.URL, id.Tenant, id.Application)
+	return t.apiOptions.System.ApplicationURL(id).String()
 }
 
 type CloudTenantResponse struct {
