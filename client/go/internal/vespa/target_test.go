@@ -227,6 +227,23 @@ func TestCloudTargetAwaitDeployment(t *testing.T) {
 	convergedID, err = target.AwaitDeployment(LatestDeployment, time.Second)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(1337), convergedID)
+
+	// Deployment fails with warning in log
+	logWriter.Reset()
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42?after=-1",
+		Status: 200,
+		Body: []byte(`{"active": false, "status": "deploymentFailed", "lastId": 1,
+                       "log": {"deployReal": [
+                           {"at": 1631707708431, "type": "info", "message": "Deploying platform version 7.465.17 and application version 1.0.2 ..."},
+                           {"at": 1631707708432, "type": "warning", "message": "Deployment failed: File in application package with unknown extension: schemas/doc.sd~"}
+                       ]},
+                       "steps": {"deployReal": {"status": "failed"}}}`),
+	})
+	_, err = target.AwaitDeployment(int64(42), time.Second)
+	assert.Equal(t, "deployment failed: File in application package with unknown extension: schemas/doc.sd~", err.Error())
+	assert.Contains(t, logWriter.String(), "Deploying platform version 7.465.17 and application version 1.0.2 ...")
+	assert.NotContains(t, logWriter.String(), "unknown extension")
 }
 
 func TestLog(t *testing.T) {

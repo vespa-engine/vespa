@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
@@ -58,7 +59,12 @@ type runResponse struct {
 	Active bool                    `json:"active"`
 	Status string                  `json:"status"`
 	Log    map[string][]logMessage `json:"log"`
+	Steps  map[string]stepStatus   `json:"steps"`
 	LastID int64                   `json:"lastId"`
+}
+
+type stepStatus struct {
+	Status string `json:"status"`
 }
 
 type jobResponse struct {
@@ -258,6 +264,7 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		return req
 	}
 	success := false
+	failureMsgs := make(map[string][]string)
 	jobSuccessFunc := func(status int, response []byte) (bool, error) {
 		if ok, err := isOK(status); !ok {
 			return ok, err
@@ -266,14 +273,29 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		if err := json.Unmarshal(response, &resp); err != nil {
 			return false, err
 		}
+		for step, msgs := range resp.Log {
+			for _, msg := range msgs {
+				if msg.Type == "warning" || msg.Type == "error" {
+					failureMsgs[step] = append(failureMsgs[step], msg.Message)
+				}
+			}
+		}
+		if !resp.Active && resp.Status != "success" {
+			failed := failedStep(resp.Steps)
+			if t.logOptions.Writer != nil {
+				t.printLog(resp, lastID, failed)
+			}
+			if msgs := failureMsgs[failed]; len(msgs) > 0 {
+				combined := strings.Join(msgs, "\n")
+				return false, fmt.Errorf("%w: %s", ErrDeployment, strings.TrimPrefix(combined, "Deployment failed: "))
+			}
+			return false, fmt.Errorf("%w: run %d ended with unsuccessful status: %s", ErrDeployment, runID, resp.Status)
+		}
 		if t.logOptions.Writer != nil {
-			lastID = t.printLog(resp, lastID)
+			lastID = t.printLog(resp, lastID, "")
 		}
 		if resp.Active {
 			return false, nil
-		}
-		if resp.Status != "success" {
-			return false, fmt.Errorf("%w: run %d ended with unsuccessful status: %s", ErrDeployment, runID, resp.Status)
 		}
 		success = true
 		return success, nil
@@ -288,13 +310,25 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 	return runID, nil
 }
 
-func (t *cloudTarget) printLog(response runResponse, last int64) int64 {
+func failedStep(steps map[string]stepStatus) string {
+	for name, s := range steps {
+		if s.Status == "failed" {
+			return name
+		}
+	}
+	return ""
+}
+
+func (t *cloudTarget) printLog(response runResponse, last int64, muteStep string) int64 {
 	if response.LastID == 0 {
 		return last
 	}
 	var msgs []logMessage
 	for step, stepMsgs := range response.Log {
 		for _, msg := range stepMsgs {
+			if step == muteStep && (msg.Type == "warning" || msg.Type == "error") {
+				continue
+			}
 			if (step == "copyVespaLogs" && LogLevel(msg.Type) > t.logOptions.Level) || LogLevel(msg.Type) == 3 {
 				continue
 			}
