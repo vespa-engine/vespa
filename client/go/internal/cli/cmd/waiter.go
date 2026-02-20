@@ -115,9 +115,6 @@ func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) 
 	if err == nil {
 		return id, err
 	}
-	if errors.Is(err, vespa.ErrDeployment) && w.Timeout == 0 {
-		return id, err
-	}
 	timeout := w.Timeout
 	if timeout > 0 {
 		w.cli.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for deployment to converge...")
@@ -125,6 +122,9 @@ func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) 
 		// If --wait is not explicitly given, we always wait a few seconds in Cloud to catch fast failures, e.g.
 		// invalid application package
 		timeout = 3 * time.Second
+	}
+	if errors.Is(err, vespa.ErrDeployment) {
+		return id, err
 	}
 	return target.AwaitDeployment(wantedID, timeout)
 }
