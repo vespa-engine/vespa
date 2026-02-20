@@ -255,7 +255,7 @@ func assertStatus(expectedTarget string, args []string, t *testing.T) {
 	assert.Equal(t, expectedTarget+"\n", stdout.String())
 }
 
-func TestStatusSkipServiceStatus(t *testing.T) {
+func TestStatusNoVerify(t *testing.T) {
 	client := &mock.HTTPClient{}
 	cli, stdout, _ := newTestCLI(t)
 	cli.httpClient = client
@@ -264,7 +264,7 @@ func TestStatusSkipServiceStatus(t *testing.T) {
 	mockServiceStatus(client, "foo")
 	// Note: No status.html response queued - verifying we don't call Wait()
 
-	assert.Nil(t, cli.Run("status", "--skip-service-status"))
+	assert.Nil(t, cli.Run("status", "--no-verify"))
 	// Should show endpoint without status check
 	assert.Equal(t, "Container foo at http://127.0.0.1:8080\n", stdout.String())
 	// Verify only the serviceconverge request was made (control plane), not status.html (data plane)
@@ -317,29 +317,29 @@ func TestStatusEndpointCommandPlainFormat(t *testing.T) {
 	assert.Contains(t, client.LastRequest.URL.Path, "/serviceconverge")
 }
 
-func TestStatusSkipServiceStatusNotAvailableOnSubcommands(t *testing.T) {
+func TestStatusNoVerifyNotAvailableOnSubcommands(t *testing.T) {
 	client := &mock.HTTPClient{}
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
 
-	// --skip-service-status should not be available on "status deploy"
-	err := cli.Run("status", "deploy", "--skip-service-status")
+	// --no-verify should not be available on "status deploy"
+	err := cli.Run("status", "deploy", "--no-verify")
 	assert.NotNil(t, err)
-	assert.Contains(t, stderr.String(), "unknown flag: --skip-service-status")
+	assert.Contains(t, stderr.String(), "unknown flag: --no-verify")
 
 	stderr.Reset()
 
-	// --skip-service-status should not be available on "status deployment"
-	err = cli.Run("status", "deployment", "--skip-service-status")
+	// --no-verify should not be available on "status deployment"
+	err = cli.Run("status", "deployment", "--no-verify")
 	assert.NotNil(t, err)
-	assert.Contains(t, stderr.String(), "unknown flag: --skip-service-status")
+	assert.Contains(t, stderr.String(), "unknown flag: --no-verify")
 
 	stderr.Reset()
 
-	// --skip-service-status should not be available on "status endpoint"
-	err = cli.Run("status", "endpoint", "--skip-service-status")
+	// --no-verify should not be available on "status endpoint"
+	err = cli.Run("status", "endpoint", "--no-verify")
 	assert.NotNil(t, err)
-	assert.Contains(t, stderr.String(), "unknown flag: --skip-service-status")
+	assert.Contains(t, stderr.String(), "unknown flag: --no-verify")
 }
 
 func TestStatusJSONFormat(t *testing.T) {
@@ -387,7 +387,7 @@ func TestStatusJSONFormatNotReady(t *testing.T) {
 	assert.NotEmpty(t, output["error"], "Should have error field when not ready")
 }
 
-func TestStatusJSONFormatSkipServiceStatus(t *testing.T) {
+func TestStatusJSONFormatNoVerify(t *testing.T) {
 	client := &mock.HTTPClient{}
 	cli, stdout, _ := newTestCLI(t)
 	cli.httpClient = client
@@ -396,7 +396,7 @@ func TestStatusJSONFormatSkipServiceStatus(t *testing.T) {
 	mockServiceStatus(client, "foo")
 	// Note: No status.html response queued - verifying we don't call Wait()
 
-	assert.Nil(t, cli.Run("status", "--format", "json", "--skip-service-status"))
+	assert.Nil(t, cli.Run("status", "--format", "json", "--no-verify"))
 
 	// Parse and verify JSON output
 	var output map[string]interface{}

@@ -20,9 +20,9 @@ import (
 
 func newStatusCmd(cli *CLI, forceSkip bool) *cobra.Command {
 	var (
-		waitSecs          int
-		format            string
-		skipServiceStatus = forceSkip
+		waitSecs int
+		format   string
+		noVerify = forceSkip
 	)
 	cmd := &cobra.Command{
 		Use: "status",
@@ -40,7 +40,7 @@ application.`,
 $ vespa status --cluster mycluster
 $ vespa status --cluster mycluster --wait 600
 $ vespa status --format plain --cluster mycluster
-$ vespa status --skip-service-status`,
+$ vespa status --no-verify`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
@@ -64,7 +64,7 @@ $ vespa status --skip-service-status`,
 					return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
 				}
 				for _, s := range services {
-					if !printServiceStatus(s, format, waiter, cli, skipServiceStatus) {
+					if !printServiceStatus(s, format, waiter, cli, noVerify) {
 						failingContainers = append(failingContainers, s)
 					}
 				}
@@ -73,7 +73,7 @@ $ vespa status --skip-service-status`,
 				if err != nil {
 					return err
 				}
-				if !printServiceStatus(s, format, waiter, cli, skipServiceStatus) {
+				if !printServiceStatus(s, format, waiter, cli, noVerify) {
 					failingContainers = append(failingContainers, s)
 				}
 			}
@@ -83,7 +83,7 @@ $ vespa status --skip-service-status`,
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable), 'plain' (cluster URL only), or 'json'")
 	if !forceSkip {
-		cmd.Flags().BoolVarP(&skipServiceStatus, "skip-service-status", "", false, "Skip checking service status (control plane only)")
+		cmd.Flags().BoolVarP(&noVerify, "no-verify", "", false, "Skip checking service status (control plane only)")
 	}
 	return cmd
 }
@@ -216,16 +216,16 @@ This command shows the current endpoints of a deployed Vespa application,
 discovered from the control plane, without contacting the data plane to check
 their status. This is useful when you only have control plane credentials.
 
-This is equivalent to: vespa status --skip-service-status`
+This is equivalent to: vespa status --no-verify`
 	cmd.Example = `$ vespa status endpoint
 $ vespa status endpoint --cluster mycluster
 $ vespa status endpoint --format plain`
 	return cmd
 }
 
-func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CLI, skipServiceStatus bool) bool {
+func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CLI, noVerify bool) bool {
 	var err error
-	if !skipServiceStatus {
+	if !noVerify {
 		err = s.Wait(waiter.Timeout)
 	}
 	var sb strings.Builder
@@ -234,7 +234,7 @@ func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CL
 		desc := s.Description()
 		desc = strings.ToUpper(string(desc[0])) + string(desc[1:])
 		sb.WriteString(fmt.Sprintf("%s at %s", desc, color.CyanString(s.BaseURL)))
-		if !skipServiceStatus {
+		if !noVerify {
 			sb.WriteString(" is ")
 			if err == nil {
 				sb.WriteString(color.GreenString("ready"))
@@ -283,7 +283,7 @@ func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CL
 		if s.ServiceName() != "" {
 			output["name"] = s.ServiceName()
 		}
-		if !skipServiceStatus {
+		if !noVerify {
 			output["ready"] = err == nil
 			if err != nil {
 				output["error"] = err.Error()
