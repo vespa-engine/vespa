@@ -12,6 +12,11 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
+if [[ -z "${LOCAL_RPM_REPO:-}" ]]; then
+    echo "Error: LOCAL_RPM_REPO is not set. Please set it to the directory where RPMs should be stored."
+    exit 1
+fi
+
 echo "--- 🔧 Setting up Vespa RPM repository"
 echo -e "[vespa-rpms-local]\nname=Local Vespa RPMs\nbaseurl=file://${LOCAL_RPM_REPO}\nenabled=1\ngpgcheck=0" > /etc/yum.repos.d/vespa-rpms-local.repo
 
