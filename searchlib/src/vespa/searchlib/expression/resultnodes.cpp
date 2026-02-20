@@ -6,11 +6,14 @@
 #include "enumresultnode.h"
 #include "nullresultnode.h"
 #include "positiveinfinityresultnode.h"
+
 #include <vespa/vespalib/locale/c.h>
-#include <cmath>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
+
+#include <cmath>
+#include <limits>
 #include <stdexcept>
 
 namespace search::expression {
@@ -170,8 +173,12 @@ void PositiveInfinityResultNode::setMax() { }
 void    PositiveInfinityResultNode::add(const ResultNode & b) { (void) b; }
 void    PositiveInfinityResultNode::min(const ResultNode & b) { (void) b; }
 void    PositiveInfinityResultNode::max(const ResultNode & b) { (void) b; }
-int64_t PositiveInfinityResultNode::onGetInteger(size_t index) const { (void) index; return 0; }
-double  PositiveInfinityResultNode::onGetFloat(size_t index)   const { (void) index; return 0.0; }
+int64_t PositiveInfinityResultNode::onGetInteger(size_t) const {
+    return std::numeric_limits<int64_t>::max();
+}
+double  PositiveInfinityResultNode::onGetFloat(size_t)   const {
+    return std::numeric_limits<double>::infinity();
+}
 void    PositiveInfinityResultNode::set(const ResultNode & rhs) { (void) rhs; }
 size_t  PositiveInfinityResultNode::hash() const { return 0; }
 ResultNode::ConstBufferRef PositiveInfinityResultNode::onGetString(size_t index, ResultNode::BufferRef buf) const { (void) index; return buf; }
