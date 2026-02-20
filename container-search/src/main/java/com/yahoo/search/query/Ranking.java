@@ -202,14 +202,14 @@ public class Ranking implements Cloneable {
     @Deprecated // TODO: Remove on Vespa 9
     public Integer getRerankCount() { return secondPhase.getRerankCount(); }
 
-    /** Sets the number of hits per node for which rank info will be kept in first åhase, or null if not set */
+    /** Sets the number of hits per node for which rank info will be kept in first phase, or null if not set */
     public void setKeepRankCount(int keepRankCount) { this.keepRankCount = keepRankCount; }
-    /** Returns the number of hits per node for which rank info will be kept in first åhase, or null if not set */
+    /** Returns the number of hits per node for which rank info will be kept in first phase, or null if not set */
     public Integer getKeepRankCount() { return keepRankCount; }
 
-    /** Sets the number of hits across all nodes for which rank info will be kept in first åhase, or null if not set */
+    /** Sets the number of hits across all nodes for which rank info will be kept in first phase, or null if not set */
     public void setTotalKeepRankCount(int totalKeepRankCount) { this.totalKeepRankCount = totalKeepRankCount; }
-    /** Returns the number of hits across all nodes for which rank info will be kept in first åhase, or null if not set */
+    /** Returns the number of hits across all nodes for which rank info will be kept in first phase, or null if not set */
     public Integer getTotalKeepRankCount() { return totalKeepRankCount; }
 
     /** Sets the rank-score-drop-limit that will be used, or null if not set */
