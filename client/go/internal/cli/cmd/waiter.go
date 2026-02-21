@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -121,6 +122,9 @@ func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) 
 		// If --wait is not explicitly given, we always wait a few seconds in Cloud to catch fast failures, e.g.
 		// invalid application package
 		timeout = 3 * time.Second
+	}
+	if errors.Is(err, vespa.ErrDeployment) {
+		return id, err
 	}
 	return target.AwaitDeployment(wantedID, timeout)
 }

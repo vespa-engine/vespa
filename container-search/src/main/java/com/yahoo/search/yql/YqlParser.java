@@ -175,6 +175,7 @@ public class YqlParser implements Parser {
     public static final String DISTANCE_THRESHOLD = "distanceThreshold";
     public static final String DOCUMENT_FREQUENCY = "documentFrequency";
     public static final String DOT_PRODUCT = "dotProduct";
+    public static final String ELEMENT_FILTER = "elementFilter";
     public static final String EQUIV = "equiv";
     public static final String FILTER = "filter";
     public static final String FREQUENCY = "frequency";
@@ -480,13 +481,13 @@ public class YqlParser implements Parser {
             throw new IllegalArgumentException("The in operator is not supported for fieldsets with a mix of integer and string fields. The fieldset " +
                         field + " has both");
         }
-        Item item = null;
+        Item item;
         if (stringField) {
             item = fillStringIn(ast, ast.getArgument(1), new StringInItem(field));
         } else {
             item = fillNumericIn(ast, ast.getArgument(1), new NumericInItem(field));
         }
-        return item;
+        return nonTaggableLeafStyleSettings(ast, item);
     }
 
     private ParsedDegree degreesFromArg(OperatorNode<ExpressionOperator> ast, boolean first) {
@@ -746,6 +747,8 @@ public class YqlParser implements Parser {
         assertHasFunctionName(ast, SAME_ELEMENT);
 
         SameElementItem sameElement = new SameElementItem(field);
+        extractSameElementAnnotations(ast, sameElement);
+
         // All terms below sameElement are relative to this.
         IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
         for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
@@ -755,6 +758,50 @@ public class YqlParser implements Parser {
         }
         swapIndexCreator(prev);
         return sameElement;
+    }
+
+    /** Extract custom annotations for same element */
+    private void extractSameElementAnnotations(OperatorNode<ExpressionOperator> ast, SameElementItem sameElement) {
+        Object elementFilterObj = getAnnotation(ast, ELEMENT_FILTER, Object.class, null, "element filter list");
+        if (elementFilterObj != null) {
+            List<Integer> filter = new ArrayList<>();
+            if (elementFilterObj instanceof List<?> list) {
+                for (Object val : list) {
+                    filter.add(convertToIntForElementFilter(val));
+                }
+            } else {
+                filter.add(convertToIntForElementFilter(elementFilterObj));
+            }
+            sameElement.setElementFilter(filter);
+        }
+    }
+
+    /** Element filter accepts Integer. Allows Long that is within Integer size. */
+    private int convertToIntForElementFilter(Object val) {
+        if (val == null) {
+            throw new IllegalArgumentException("elementFilter cannot contain null values");
+        }
+        if (val instanceof Integer intVal) {
+            if (intVal < 0) {
+                throw new IllegalArgumentException("elementFilter values must be non-negative, got: " + val);
+            }
+            return intVal;
+        } else if (val instanceof Long longVal) {
+            if (longVal > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException(
+                        "elementFilter values must fit in int32 range, got: " + longVal);
+            }
+            if (longVal < 0) {
+                throw new IllegalArgumentException("elementFilter values must be non-negative, got: " + val);
+            }
+            return longVal.intValue();
+        } else if (val instanceof Double || val instanceof Float) {
+            throw new IllegalArgumentException(
+                    "elementFilter values must be integers, not floating point numbers. Got: " + val);
+        } else {
+            throw new IllegalArgumentException(
+                    "elementFilter values must be integers, got: " + val.getClass().getSimpleName());
+        }
     }
 
     private void fillPhraseItem(CompositeItem phrase, String field, OperatorNode<ExpressionOperator> ast) {
@@ -1891,68 +1938,70 @@ public class YqlParser implements Parser {
         wordStyleSettings(ast, wordItem);
     }
 
-    private <T extends TaggableItem> T leafStyleSettings(OperatorNode<?> ast, T out) {
-        {
-            Map<?, ?> connectivity = getAnnotation(ast, CONNECTIVITY, Map.class, null, "connectivity settings");
-            if (connectivity != null) {
-                connectedItems.add(new ConnectedItem(out,
-                                                     getMapValue(CONNECTIVITY, connectivity, CONNECTION_ID,
-                                                                 Integer.class), getMapValue(CONNECTIVITY,
-                                                                                             connectivity,
-                                                                                             CONNECTION_WEIGHT,
-                                                                                             Number.class).doubleValue()));
-            }
-            Number significance = getAnnotation(ast, SIGNIFICANCE, Number.class, null, "term significance");
-            if (significance != null) {
-                out.setSignificance(significance.doubleValue());
-            }
-            Map < ?, ?> documentFrequency = getAnnotation(ast, DOCUMENT_FREQUENCY, Map.class, null, "document frequency");
-            if (documentFrequency != null) {
-                out.setDocumentFrequency(new DocumentFrequency(getLongMapValue(DOCUMENT_FREQUENCY, documentFrequency, FREQUENCY),
-                        getLongMapValue(DOCUMENT_FREQUENCY, documentFrequency, COUNT)));
-            }
-            Integer uniqueId = getAnnotation(ast, UNIQUE_ID, Integer.class, null, "term ID", false);
-            if (uniqueId != null) {
-                out.setUniqueID(uniqueId);
-                identifiedItems.put(uniqueId, out);
-            }
+    private <T extends Item> T nonTaggableLeafStyleSettings(OperatorNode<?> ast, T leaf) {
+        Map<?, ?> itemAnnotations = getAnnotation(ast, ANNOTATIONS,
+                                                  Map.class, Map.of(), "item annotation map");
+        for (Map.Entry<?, ?> entry : itemAnnotations.entrySet()) {
+            Preconditions.checkArgument(entry.getKey() instanceof String,
+                                        "Expected String annotation key, got %s.", entry.getKey().getClass());
+            Preconditions.checkArgument(entry.getValue() instanceof String,
+                                        "Expected String annotation value, got %s.", entry.getValue().getClass());
+            leaf.addAnnotation((String) entry.getKey(), entry.getValue());
         }
-        {
-            Item leaf = (Item) out;
-            Map<?, ?> itemAnnotations = getAnnotation(ast, ANNOTATIONS,
-                                                      Map.class, Map.of(), "item annotation map");
-            for (Map.Entry<?, ?> entry : itemAnnotations.entrySet()) {
-                Preconditions.checkArgument(entry.getKey() instanceof String,
-                                            "Expected String annotation key, got %s.", entry.getKey().getClass());
-                Preconditions.checkArgument(entry.getValue() instanceof String,
-                                            "Expected String annotation value, got %s.", entry.getValue().getClass());
-                leaf.addAnnotation((String) entry.getKey(), entry.getValue());
-            }
-            Boolean filter = getAnnotation(ast, FILTER, Boolean.class, null, FILTER_DESCRIPTION);
-            if (filter != null) {
-                leaf.setFilter(filter);
-            }
-            Boolean isRanked = getAnnotation(ast, RANKED, Boolean.class, null, RANKED_DESCRIPTION);
-            if (isRanked != null) {
-                leaf.setRanked(isRanked);
-            }
-            String label = getAnnotation(ast, LABEL, String.class, null, "item label");
-            if (label != null) {
-                leaf.setLabel(label);
-            }
-            Integer weight = getAnnotation(ast, WEIGHT, Integer.class, null, "term weight for ranking");
-            if (weight != null) {
-                leaf.setWeight(weight);
-            }
+        Boolean filter = getAnnotation(ast, FILTER, Boolean.class, null, FILTER_DESCRIPTION);
+        if (filter != null) {
+            leaf.setFilter(filter);
         }
-        if (out instanceof IntItem number) {
+        Boolean isRanked = getAnnotation(ast, RANKED, Boolean.class, null, RANKED_DESCRIPTION);
+        if (isRanked != null) {
+            leaf.setRanked(isRanked);
+        }
+        String label = getAnnotation(ast, LABEL, String.class, null, "item label");
+        if (label != null) {
+            leaf.setLabel(label);
+        }
+        Integer weight = getAnnotation(ast, WEIGHT, Integer.class, null, "term weight for ranking");
+        if (weight != null) {
+            leaf.setWeight(weight);
+        }
+        return leaf;
+    }
+
+    private <T extends TaggableItem> T leafStyleSettings(OperatorNode<?> ast, T leaf) {
+        nonTaggableLeafStyleSettings(ast, (Item)leaf);
+
+        Map<?, ?> connectivity = getAnnotation(ast, CONNECTIVITY, Map.class, null, "connectivity settings");
+        if (connectivity != null) {
+            connectedItems.add(new ConnectedItem(leaf,
+                                                 getMapValue(CONNECTIVITY, connectivity, CONNECTION_ID,
+                                                             Integer.class), getMapValue(CONNECTIVITY,
+                                                                                         connectivity,
+                                                                                         CONNECTION_WEIGHT,
+                                                                                         Number.class).doubleValue()));
+        }
+        Number significance = getAnnotation(ast, SIGNIFICANCE, Number.class, null, "term significance");
+        if (significance != null) {
+            leaf.setSignificance(significance.doubleValue());
+        }
+        Map < ?, ?> documentFrequency = getAnnotation(ast, DOCUMENT_FREQUENCY, Map.class, null, "document frequency");
+        if (documentFrequency != null) {
+            leaf.setDocumentFrequency(new DocumentFrequency(getLongMapValue(DOCUMENT_FREQUENCY, documentFrequency, FREQUENCY),
+                                                           getLongMapValue(DOCUMENT_FREQUENCY, documentFrequency, COUNT)));
+        }
+        Integer uniqueId = getAnnotation(ast, UNIQUE_ID, Integer.class, null, "term ID", false);
+        if (uniqueId != null) {
+            leaf.setUniqueID(uniqueId);
+            identifiedItems.put(uniqueId, leaf);
+        }
+
+        if (leaf instanceof IntItem number) {
             Integer hitLimit = getCappedRangeSearchParameter(ast);
             if (hitLimit != null) {
                 number.setHitLimit(hitLimit);
             }
         }
 
-        return out;
+        return leaf;
     }
 
     private Integer getCappedRangeSearchParameter(OperatorNode<?> ast) {

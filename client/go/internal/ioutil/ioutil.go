@@ -9,10 +9,27 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
+
+	"github.com/fxamacker/cbor/v2"
 )
+
+// cborDecMode is configured to decode maps with string keys for JSON compatibility.
+var cborDecMode cbor.DecMode
+
+func init() {
+	var err error
+	cborDecMode, err = cbor.DecOptions{
+		DefaultMapType: reflect.TypeOf(map[string]interface{}(nil)),
+	}.DecMode()
+	if err != nil {
+		panic("failed to initialize CBOR decoder mode: " + err.Error())
+	}
+}
 
 // Exists returns true if the given path exists.
 func Exists(path string) bool {
@@ -68,6 +85,58 @@ func ReaderToJSON(reader io.Reader) string {
 
 // StringToJSON returns string s as indented JSON.
 func StringToJSON(s string) string { return ReaderToJSON(strings.NewReader(s)) }
+
+// normalizeForJSON replaces non-finite float64 values (NaN, ±Inf) with their
+// string representations, since encoding/json does not support these values.
+func normalizeForJSON(v interface{}) interface{} {
+	switch val := v.(type) {
+	case float64:
+		if math.IsInf(val, -1) {
+			return "-Infinity"
+		} else if math.IsInf(val, 1) {
+			return "Infinity"
+		} else if math.IsNaN(val) {
+			return "NaN"
+		}
+	case map[string]interface{}:
+		for k, mv := range val {
+			val[k] = normalizeForJSON(mv)
+		}
+	case []interface{}:
+		for i, sv := range val {
+			val[i] = normalizeForJSON(sv)
+		}
+	}
+	return v
+}
+
+// CBORToJSON converts CBOR data to indented JSON string.
+func CBORToJSON(data []byte) (string, error) {
+	var v interface{}
+	if err := cborDecMode.Unmarshal(data, &v); err != nil {
+		return "", err
+	}
+	v = normalizeForJSON(v)
+	jsonBytes, err := json.MarshalIndent(v, "", "    ")
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
+// CBORToJSONCompact converts CBOR data to compact JSON string.
+func CBORToJSONCompact(data []byte) (string, error) {
+	var v interface{}
+	if err := cborDecMode.Unmarshal(data, &v); err != nil {
+		return "", err
+	}
+	v = normalizeForJSON(v)
+	jsonBytes, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
 
 // AtomicWriteFile atomically writes data to filename.
 func AtomicWriteFile(filename string, data []byte) error {

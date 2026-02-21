@@ -28,6 +28,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
+import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
@@ -210,7 +211,9 @@ public class ModelContextImpl implements ModelContext {
         private final double docprocHandlerThreadpool;
         private final boolean applyOnRestartForApplicationMetadataConfig;
         private final boolean scaleMetricsproxyHeapByNodeCount;
+        private final DoubleFlag autoscalerTargetWriteCpuPercentageFlag;
         private final IntFlag heapSizePercentageFlag;
+        private final double searchNodeReservedDiskSpaceFactor;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -258,6 +261,8 @@ public class ModelContextImpl implements ModelContext {
             this.docprocHandlerThreadpool = Flags.DOCPROC_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
             this.applyOnRestartForApplicationMetadataConfig = Flags.APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG.bindTo(source).with(appId).with(version).value();
             this.scaleMetricsproxyHeapByNodeCount = Flags.SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT.bindTo(source).with(appId).with(version).value();
+            this.autoscalerTargetWriteCpuPercentageFlag = Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE.bindTo(source).with(appId).with(version);
+            this.searchNodeReservedDiskSpaceFactor = Flags.SEARCHNODE_RESERVED_DISK_SPACE_FACTOR.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -307,6 +312,11 @@ public class ModelContextImpl implements ModelContext {
         @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
         @Override public boolean applyOnRestartForApplicationMetadataConfig() { return applyOnRestartForApplicationMetadataConfig; }
         @Override public boolean scaleMetricsproxyHeapByNodeCount() { return scaleMetricsproxyHeapByNodeCount; }
+        @Override public double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) {
+            return clusterId.map(id -> autoscalerTargetWriteCpuPercentageFlag.with(ClusterSpec.Id.from(id)).value())
+                            .orElseGet(autoscalerTargetWriteCpuPercentageFlag::value);
+        }
+        @Override public double searchNodeReservedDiskSpaceFactor() { return searchNodeReservedDiskSpaceFactor; }
     }
 
     public static class Properties implements ModelContext.Properties {

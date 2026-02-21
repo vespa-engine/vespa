@@ -42,6 +42,8 @@ public class VoyageAIEmbedderTest {
         assertEquals(1024, config.dimensions());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint());
         assertTrue(config.truncate());
+        assertEquals(16, config.batching().maxSize());
+        assertEquals(200, config.batching().maxDelayMillis());
     }
 
     @Test
@@ -61,6 +63,8 @@ public class VoyageAIEmbedderTest {
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint()); // Default endpoint
         assertEquals(3, config.maxRetries()); // Default retries
         assertTrue(config.truncate()); // Default truncate
+        assertEquals(0, config.batching().maxSize()); // Default batching
+        assertEquals(0, config.batching().maxDelayMillis()); // Default batching
     }
 
     @Test

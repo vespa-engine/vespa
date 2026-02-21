@@ -1522,6 +1522,8 @@
       "public java.lang.String getFieldName()",
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getIndexName()",
+      "public java.util.List getElementFilter()",
+      "public void setElementFilter(java.util.List)",
       "public int getNumWords()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
@@ -1592,19 +1594,15 @@
     ]
   },
   "com.yahoo.prelude.query.SerializationContext" : {
-    "superClass" : "java.lang.Record",
+    "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public",
-      "final",
-      "record"
+      "public"
     ],
     "methods" : [
       "public void <init>(double)",
-      "public final java.lang.String toString()",
-      "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)",
-      "public double contentShare()"
+      "public int contentShareOf(int)",
+      "public static com.yahoo.prelude.query.SerializationContext ignored()"
     ],
     "fields" : [ ]
   },
@@ -3294,6 +3292,20 @@
       "public java.lang.String getAttributeName()",
       "public com.yahoo.search.grouping.request.GroupingExpression getLookupArgument()",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.IsTruePredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression)",
+      "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
     ],
     "fields" : [ ]
   },
@@ -5801,6 +5813,8 @@
       "public java.lang.Integer getRerankCount()",
       "public void setKeepRankCount(int)",
       "public java.lang.Integer getKeepRankCount()",
+      "public void setTotalKeepRankCount(int)",
+      "public java.lang.Integer getTotalKeepRankCount()",
       "public void setRankScoreDropLimit(double)",
       "public java.lang.Double getRankScoreDropLimit()",
       "public com.yahoo.prelude.Location getLocation()",
@@ -5843,6 +5857,7 @@
       "public static final java.lang.String QUERYCACHE",
       "public static final java.lang.String RERANKCOUNT",
       "public static final java.lang.String KEEPRANKCOUNT",
+      "public static final java.lang.String TOTALKEEPRANKCOUNT",
       "public static final java.lang.String RANKSCOREDROPLIMIT",
       "public static final java.lang.String ELEMENT_GAP",
       "public static final java.lang.String FEATURES",
@@ -7550,6 +7565,7 @@
       "public void remove(java.lang.String)",
       "public boolean isEmpty()",
       "public java.util.Map asMap()",
+      "public java.util.Map asMap(com.yahoo.prelude.query.SerializationContext)",
       "public int encode(java.nio.ByteBuffer, boolean)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -7570,6 +7586,10 @@
     "methods" : [
       "public void <init>()",
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public void setRerankCount(int)",
+      "public java.lang.Integer getRerankCount()",
+      "public void setTotalRerankCount(int)",
+      "public java.lang.Integer getTotalRerankCount()",
       "public void setRankScoreDropLimit(double)",
       "public java.lang.Double getRankScoreDropLimit()",
       "public void prepare(com.yahoo.search.query.ranking.RankProperties)",

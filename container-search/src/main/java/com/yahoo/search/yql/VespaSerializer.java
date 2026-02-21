@@ -13,6 +13,7 @@ import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
 import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
 import static com.yahoo.search.yql.YqlParser.DISTANCE;
 import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
+import static com.yahoo.search.yql.YqlParser.ELEMENT_FILTER;
 import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
@@ -681,6 +682,19 @@ public class VespaSerializer {
         boolean serialize(StringBuilder destination, SameElementItem item, Boolean includeField) {
             serializeField(item, includeField, destination);
 
+            boolean hasFilter = !item.getElementFilter().isEmpty();
+            if (hasFilter) {
+                // NOTE(johsol): sameElement with annotation must be wrapped in parens
+                destination.append("({");
+                destination.append(ELEMENT_FILTER);
+                destination.append(":[");
+                List<Integer> filter = item.getElementFilter();
+                for (int i = 0; i < filter.size(); i++) {
+                    if (i > 0) destination.append(", ");
+                    destination.append(filter.get(i));
+                }
+                destination.append("]} ");
+            }
             destination.append(SAME_ELEMENT);
             if (item.getItemCount() == 1 && item.getItem(0) instanceof AndItem || item.getItem(0) instanceof OrItem) {
                 // serialize nested content without extra parenthesis
@@ -693,6 +707,10 @@ public class VespaSerializer {
                         destination.append(", ");
                     VespaSerializer.serialize(item.getItem(i), null, destination);
                 }
+                destination.append(')');
+            }
+            if (hasFilter) {
+                // NOTE(johsol): sameElement with annotation must be wrapped in parens
                 destination.append(')');
             }
 

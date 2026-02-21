@@ -100,7 +100,43 @@ public class RpcSearchInvokerTest {
         assertTotalTargetHitsAdjustment(List.of(49, 49, 20, 1, 1), List.of(1000, 1035, 0, 1, 13));
     }
 
-    private void assertTotalTargetHitsAdjustment(List<Integer> expected, List<Integer> activeDocs) throws IOException {
+    @Test
+    void contentShareIsUsedToSetSecondPhaseRerankCount() throws IOException {
+        Query query = new Query();
+        query.getModel().getQueryTree().setRoot(new WordItem("ignored"));
+        query.getRanking().getSecondPhase().setTotalRerankCount(100);
+        query.prepare();
+
+        List<Holders> nodeHolders = queryGroup(query, List.of(1000, 1035, 0, 1, 13));
+        List<Integer> expected = List.of(49, 49, 20, 1, 1);
+
+        var requests = nodeHolders.stream().map(this::decompress).toList();
+        for (int i = 0; i < expected.size(); i++) {
+            var property = requests.get(i).getRankProperties(1);
+            assertEquals("vespa.hitcollector.heapsize", property.getName());
+            assertEquals(String.valueOf(expected.get(i)), property.getValues(0));
+        }
+    }
+
+    @Test
+    void contentShareIsUsedToSetKeepRankCount() throws IOException {
+        Query query = new Query();
+        query.getModel().getQueryTree().setRoot(new WordItem("ignored"));
+        query.getRanking().setTotalKeepRankCount(100);
+        query.prepare();
+
+        List<Holders> nodeHolders = queryGroup(query, List.of(1000, 1035, 0, 1, 13));
+        List<Integer> expected = List.of(49, 49, 20, 1, 1);
+
+        var requests = nodeHolders.stream().map(this::decompress).toList();
+        for (int i = 0; i < expected.size(); i++) {
+            var property = requests.get(i).getRankProperties(1);
+            assertEquals("vespa.hitcollector.arraysize", property.getName());
+            assertEquals(String.valueOf(expected.get(i)), property.getValues(0));
+        }
+    }
+
+    private List<Holders> queryGroup(Query query, List<Integer> activeDocs) throws IOException {
         List<Node> nodes = new ArrayList<>();
         List<RpcSearchInvoker> nodeInvokers = new ArrayList<>();
         List<Holders> nodeHolders = new ArrayList<>();
@@ -117,6 +153,13 @@ public class RpcSearchInvokerTest {
         Group group = new Group(0, nodes);
         group.aggregateNodeValues();
 
+        try (InterleavedSearchInvoker invoker = createInterleavedSearchInvoker(group, nodeInvokers)) {
+            invoker.search(query, 1.0);
+        }
+        return nodeHolders;
+    }
+
+    private void assertTotalTargetHitsAdjustment(List<Integer> expected, List<Integer> activeDocs) throws IOException {
         Query query = new Query();
         var root = new OrItem();
 
@@ -132,9 +175,7 @@ public class RpcSearchInvokerTest {
 
         query.getModel().getQueryTree().setRoot(root);
 
-        try (InterleavedSearchInvoker invoker = createInterleavedSearchInvoker(group, nodeInvokers)) {
-            invoker.search(query, 1.0);
-        }
+        List<Holders> nodeHolders = queryGroup(query, activeDocs);
         var requests = nodeHolders.stream().map(this::decompress).toList();
         for (int i = 0; i < expected.size(); i++) {
             var or = requests.get(i).getQueryTree().getRoot().getItemOr();

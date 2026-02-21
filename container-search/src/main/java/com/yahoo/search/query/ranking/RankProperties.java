@@ -3,6 +3,7 @@ package com.yahoo.search.query.ranking;
 
 import com.yahoo.fs4.GetDocSumsPacket;
 import com.yahoo.fs4.MapEncoder;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.text.JSON;
 
@@ -90,6 +91,33 @@ public class RankProperties implements Cloneable {
 
     /** Returns a modifiable map of the properties of this */
     public Map<String, List<Object>> asMap() { return properties; }
+
+    /** Returns an unmodifiable map of the properties of this for serialization purposes */
+    public Map<String, List<Object>> asMap(SerializationContext context) {
+        Map<String, List<Object>> serializableProperties = null;
+        serializableProperties = convertFromTotal(SecondPhase.rerankCountProperty,
+                                                  SecondPhase.totalRerankCountProperty,
+                                                  context, serializableProperties);
+        serializableProperties = convertFromTotal("vespa.hitcollector.arraysize",
+                                                  "vespa.hitcollector.totalArraysize",
+                                                  context, serializableProperties);
+        if (serializableProperties != null)
+            return Collections.unmodifiableMap(serializableProperties);
+        else
+            return Collections.unmodifiableMap(properties);
+    }
+
+    private Map<String, List<Object>> convertFromTotal(String property, String totalProperty,
+                                                       SerializationContext context,
+                                                       Map<String, List<Object>> serializableProperties) {
+        List<Object> total = properties.get(totalProperty);
+        if (total != null && ! properties.containsKey(property)) {
+            if (serializableProperties == null)
+                serializableProperties = new LinkedHashMap<>(properties);
+            serializableProperties.put(property, List.of(context.contentShareOf((int)total.get(0))));
+        }
+        return serializableProperties;
+    }
 
     /** Encodes this in a binary internal representation and returns the number of property maps encoded (0 or 1) */
     public int encode(ByteBuffer buffer, boolean encodeQueryData) {

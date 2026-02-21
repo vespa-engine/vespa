@@ -20,7 +20,6 @@ import static com.yahoo.vespa.flags.Dimension.APPLICATION;
 import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CERTIFICATE_PROVIDER;
 import static com.yahoo.vespa.flags.Dimension.CLAVE;
-import static com.yahoo.vespa.flags.Dimension.CLOUD;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
@@ -30,7 +29,6 @@ import static com.yahoo.vespa.flags.Dimension.FLAVOR;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.Dimension.SYSTEM;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.Dimension.ZONE_ID;
@@ -677,6 +675,28 @@ public class PermanentFlags {
                     "Value 0 disables automatic backups.",
             "Takes effect on next maintainer run",
             CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
+
+    public static final UnboundBooleanFlag BACKUP_SINGLE_GROUP = defineFeatureFlag(
+            "backup-single-group", false,
+            "Whether to limit back up to a single group during automatic backup snapshots. " +
+            "Recommended only when node bucket distribution is near equivalent between groups.",
+            "Takes effect on next maintainer run",
+            CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
+
+    public static final UnboundListFlag<String> ALLOW_FLAVORS = defineListFlag(
+            "allow-flavors", List.of(), String.class,
+            "Flavors that that we will allow provisioning (flavors with lifecycle 'active' are allowed by default)" +
+                    ". Each string in the list is a glob, e.g. 'c4d-*' or 'c4d-high*'.",
+            "Takes effect immediately",
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
+    );
+
+    public static final UnboundListFlag<String> DENY_FLAVORS = defineListFlag(
+            "deny-flavors", List.of(), String.class,
+            "Flavors that that we will deny provisioning. Each string in the list is a glob, e.g. 'c4d-*' or 'c4d-high*'.",
+            "Takes effect immediately",
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
+    );
 
     private PermanentFlags() {}
 

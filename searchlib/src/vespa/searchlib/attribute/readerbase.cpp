@@ -33,7 +33,7 @@ ReaderBase::ReaderBase(AttributeVector &attr)
     : _datFile(attribute::LoadUtils::openDAT(attr)),
       _weightFile(attr.hasWeightedSetType() ?
                   attribute::LoadUtils::openWeight(attr) : std::unique_ptr<Fast_BufferedFile>()),
-      _idxFile(attr.hasMultiValue() ?
+      _idxFile(attr.needs_idx_file() ?
                attribute::LoadUtils::openIDX(attr) : std::unique_ptr<Fast_BufferedFile>()),
       _weightReader(_weightFile.valid() ? &_weightFile.file() : nullptr),
       _idxReader(_idxFile.valid() ? &_idxFile.file() : nullptr),
@@ -71,7 +71,7 @@ ReaderBase::ReaderBase(AttributeVector &attr)
         _enumerated = true;
     }
     _hasLoadData = hasData() &&
-                   (!attr.hasMultiValue() || hasIdx()) &&
+                   (!attr.needs_idx_file() || hasIdx()) &&
                    (!attr.hasWeightedSetType() || hasWeight());
     _flush_duration = common::FileHeaderContext::get_flush_duration(_datFile.header());
 }

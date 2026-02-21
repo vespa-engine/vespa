@@ -45,8 +45,10 @@ public class Ranking implements Cloneable {
     public static final String LIST_FEATURES = "listFeatures";
     public static final String FRESHNESS = "freshness";
     public static final String QUERYCACHE = "queryCache";
+
     public static final String RERANKCOUNT = "rerankCount";
     public static final String KEEPRANKCOUNT = "keepRankCount";
+    public static final String TOTALKEEPRANKCOUNT = "totalKeepRankCount";
     public static final String RANKSCOREDROPLIMIT = "rankScoreDropLimit";
     public static final String ELEMENT_GAP = "elementGap";
     public static final String FEATURES = "features";
@@ -79,8 +81,9 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(LIST_FEATURES, "string", RANKFEATURES.toString()));
         argumentType.addField(new FieldDescription(FRESHNESS, "string", "datetime"));
         argumentType.addField(new FieldDescription(QUERYCACHE, "boolean"));
-        argumentType.addField(new FieldDescription(RERANKCOUNT, "integer"));
+        argumentType.addField(new FieldDescription(RERANKCOUNT, "integer")); // TODO: Remove on Vespa 9
         argumentType.addField(new FieldDescription(KEEPRANKCOUNT, "integer"));
+        argumentType.addField(new FieldDescription(TOTALKEEPRANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(RANKSCOREDROPLIMIT, "double"));
         argumentType.addField(new FieldDescription(GlobalPhase.GLOBAL_PHASE, new QueryProfileFieldType(GlobalPhase.getArgumentType())));
         argumentType.addField(new FieldDescription(MatchPhase.MATCH_PHASE,  new QueryProfileFieldType(MatchPhase.getArgumentType()), "matchPhase"));
@@ -114,8 +117,8 @@ public class Ranking implements Cloneable {
 
     private boolean queryCache = false;
 
-    private Integer rerankCount = null;
     private Integer keepRankCount = null;
+    private Integer totalKeepRankCount = null;
     private Double rankScoreDropLimit = null;
 
     private RankProperties rankProperties = new RankProperties();
@@ -185,16 +188,29 @@ public class Ranking implements Cloneable {
     /**
      * Sets the number of hits for which the second-phase function will be evaluated.
      * When set, this overrides the setting in the rank profile.
+     *
+     * @deprecated use getSecondPhase().setRerankCount()
      */
-    public void setRerankCount(int rerankCount) { this.rerankCount = rerankCount; }
+    @Deprecated // TODO: Remove on Vespa 9
+    public void setRerankCount(int rerankCount) { secondPhase.setRerankCount(rerankCount); }
 
-    /** Returns the rerank-count that will be used, or null if not set */
-    public Integer getRerankCount() { return rerankCount; }
+    /**
+     * Returns the second-phase rerank-count that will be used, or null if not set.
+     *
+     * @deprecated use getSecondPhase().getRerankCount()
+     */
+    @Deprecated // TODO: Remove on Vespa 9
+    public Integer getRerankCount() { return secondPhase.getRerankCount(); }
 
-    /** Sets the keep-rank-count that will be used, or null if not set */
+    /** Sets the number of hits per node for which rank info will be kept in first phase, or null if not set */
     public void setKeepRankCount(int keepRankCount) { this.keepRankCount = keepRankCount; }
-    /** Returns the keep-rank-count that will be used, or null if not set */
+    /** Returns the number of hits per node for which rank info will be kept in first phase, or null if not set */
     public Integer getKeepRankCount() { return keepRankCount; }
+
+    /** Sets the number of hits across all nodes for which rank info will be kept in first phase, or null if not set */
+    public void setTotalKeepRankCount(int totalKeepRankCount) { this.totalKeepRankCount = totalKeepRankCount; }
+    /** Returns the number of hits across all nodes for which rank info will be kept in first phase, or null if not set */
+    public Integer getTotalKeepRankCount() { return totalKeepRankCount; }
 
     /** Sets the rank-score-drop-limit that will be used, or null if not set */
     public void setRankScoreDropLimit(double rankScoreDropLimit) { this.rankScoreDropLimit = rankScoreDropLimit; }
@@ -214,8 +230,7 @@ public class Ranking implements Cloneable {
 
     /** Sets the name of the rank profile to use. This cannot be set to null. */
     public void setProfile(String profile) {
-        if (profile==null) throw new NullPointerException("The ranking profile cannot be set to null");
-        this.profile = profile;
+        this.profile = Objects.requireNonNull(profile);
     }
 
     /**
@@ -311,10 +326,10 @@ public class Ranking implements Cloneable {
         matching.prepare(rankProperties);
         softTimeout.prepare(rankProperties);
         prepareNow(freshness);
-        if (rerankCount != null)
-            rankProperties.put("vespa.hitcollector.heapsize", rerankCount);
         if (keepRankCount != null)
             rankProperties.put("vespa.hitcollector.arraysize", keepRankCount);
+        if (totalKeepRankCount != null)
+            rankProperties.put("vespa.hitcollector.totalArraysize", totalKeepRankCount);
         if (rankScoreDropLimit != null)
             rankProperties.put("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit);
         for (Map.Entry<String, ElementGap> entry : elementGap.entrySet()) {
@@ -376,8 +391,8 @@ public class Ranking implements Cloneable {
         if ( ! Objects.equals(sorting, other.sorting)) return false;
         if ( ! Objects.equals(freshness, other.freshness)) return false;
         if ( ! Objects.equals(queryCache, other.queryCache)) return false;
-        if ( ! Objects.equals(rerankCount, other.rerankCount)) return false;
         if ( ! Objects.equals(keepRankCount, other.keepRankCount)) return false;
+        if ( ! Objects.equals(totalKeepRankCount, other.totalKeepRankCount)) return false;
         if ( ! Objects.equals(rankScoreDropLimit, other.rankScoreDropLimit)) return false;
         if ( ! Objects.equals(rankProperties, other.rankProperties)) return false;
         if ( ! Objects.equals(rankFeatures, other.rankFeatures)) return false;
@@ -394,7 +409,7 @@ public class Ranking implements Cloneable {
     @Override
     public int hashCode() {
         return Objects.hash(location, profile, sorting, listFeatures, freshness, queryCache,
-                            rerankCount, keepRankCount, rankScoreDropLimit, rankProperties,
+                            keepRankCount, totalKeepRankCount, rankScoreDropLimit, rankProperties,
                             rankFeatures, matchPhase, secondPhase, globalPhase, matching, softTimeout, significance, elementGap);
     }
 

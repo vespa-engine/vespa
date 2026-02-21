@@ -76,6 +76,9 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _global_filter_hits(),
       _global_filter_hit_ratio(),
       _lazy_filter(),
+      _lazy_filter_hits(),
+      _lazy_filter_hit_ratio(),
+      _low_hit_ratio(false),
       _doom(doom),
       _matching_phase(MatchingPhase::FIRST_PHASE),
       _nni_stats(),
@@ -153,12 +156,15 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
         if (_global_filter->is_active()) { // Both global filter and lazy filter
             use_filter = FallbackFilter::create(*_global_filter, *_lazy_filter);
         }
-        bool low_hit_ratio = (static_cast<double>(use_filter->count()) / _attr_tensor.get_num_docs()) < _hnsw_params.filter_first_upper_limit;
-        _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *use_filter, low_hit_ratio, _hnsw_params.filter_first_exploration,
+        _lazy_filter_hits = use_filter->count();
+        _lazy_filter_hit_ratio = static_cast<double>(_lazy_filter_hits.value()) / _attr_tensor.get_num_docs();
+        _low_hit_ratio = _lazy_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
+        _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *use_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
                                                         k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else if (_global_filter->is_active()) {
-        _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *_global_filter, _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit, _hnsw_params.filter_first_exploration,
+        _low_hit_ratio = _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
+        _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *_global_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
                                                         k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {
@@ -207,7 +213,12 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     visitor.visitBool("wanted_approximate", _approximate);
     visitor.visitBool("has_index", _attr_tensor.nearest_neighbor_index());
     visitor.visitString("algorithm", to_string(_algorithm));
+    if (_algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
+        visitor.visitBool("filter_first_heuristic_used", _low_hit_ratio);
+    }
     if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
+        visitor.visitInt("distances_computed", _nni_stats.distances_computed());
+        visitor.visitInt("nodes_visited", _nni_stats.nodes_visited());
         visitor.visitInt("top_k_hits", _found_hits.size());
     }
 
@@ -223,6 +234,17 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     }
     if (_global_filter_hit_ratio.has_value()) {
         visitor.visitFloat("hit_ratio", _global_filter_hit_ratio.value());
+    }
+    visitor.closeStruct();
+
+    visitor.openStruct("lazy_filter", "LazyFilter");
+    visitor.visitBool("set", static_cast<bool>(_lazy_filter));
+    visitor.visitBool("constructed", _lazy_filter && _lazy_filter->is_active());
+    if (_lazy_filter_hits.has_value()) {
+        visitor.visitInt("hits", _lazy_filter_hits.value());
+    }
+    if (_lazy_filter_hit_ratio.has_value()) {
+        visitor.visitFloat("hit_ratio", _lazy_filter_hit_ratio.value());
     }
     visitor.closeStruct();
 }

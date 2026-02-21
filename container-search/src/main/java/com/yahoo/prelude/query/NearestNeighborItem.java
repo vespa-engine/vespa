@@ -269,7 +269,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         if (targetHits != null) return targetHits;
         if (totalTargetHits == null)
             throw new IllegalStateException("targetHits or totalTargetHits must be set before this is serialized");
-        return (int)Math.ceil(totalTargetHits * context.contentShare());
+        return context.contentShareOf(totalTargetHits);
    }
 
 }

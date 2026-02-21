@@ -7,7 +7,7 @@ import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.detect.Detection;
+
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -111,14 +111,24 @@ public class ExecutionContext {
 
     public Language resolveLanguage(Linguistics linguistics) {
         if (assignedLanguage != Language.UNKNOWN) return assignedLanguage;
+        if (detectedLanguage != Language.UNKNOWN) return detectedLanguage;
         if (linguistics == null) return Language.ENGLISH;
-
-        Detection detection = linguistics.getDetector().detect(String.valueOf(currentValue), null);
-        if (detection == null) return Language.ENGLISH;
-
-        detectedLanguage = detection.getLanguage();
-        if (detectedLanguage == Language.UNKNOWN) detectedLanguage = Language.ENGLISH;
+        detectedLanguage = detectLanguage(linguistics);
         return detectedLanguage;
+    }
+
+    // Caching the result as language detection is expensive
+    private Language detectLanguage(Linguistics linguistics) {
+        record DetectedLanguageCacheKey(String text) {}
+        var text = String.valueOf(currentValue);
+        var cacheKey = new DetectedLanguageCacheKey(text);
+        if (cache.get(cacheKey) instanceof Language cached) return cached;
+        var detection = linguistics.getDetector().detect(text, null);
+        if (detection == null) return Language.ENGLISH;
+        var language = detection.getLanguage();
+        if (language == Language.UNKNOWN) language = Language.ENGLISH;
+        cache.put(cacheKey, language);
+        return language;
     }
 
     public boolean isReindexingOperation() { return isReindexingOperation; }
@@ -134,17 +144,14 @@ public class ExecutionContext {
      * Clears all state in this pertaining to the current indexing statement
      * Does not clear the cache.
      * Note that assignLanguage is not cleared; an indexing statement doing
-     * set_language should affect following statements.
+     * set_language should affect the following statements.
      */
     public ExecutionContext clear() {
         // We do not really want to clear variables here, but because
         // indexing statements are re-ordered letting them survive
         // will be even more confusing than clearing them.
         variables.clear();
-        // We should probably clear detectedLanguage, but
-        // it looks like the statements that use it will reset it
-        // using resolveLanguage anyway.
-        // TODO: detectedLanguage = Language.UNKNOWN;
+        detectedLanguage = Language.UNKNOWN;
         currentValue = null;
         // note: must not reset per-document or global values (like isReindexingOperation, deadline)
         return this;

@@ -6,54 +6,78 @@
 
 using vespalib::BitSpan;
 
+namespace {
+
+std::vector<int> extract_with_range(BitSpan span) {
+    std::vector<int> result;
+    for (bool bit: span) {
+        result.push_back(bit);
+    }
+    return result;
+}
+
+std::vector<int> extract_with_loop(BitSpan span) {
+    std::vector<int> result;
+    for (size_t i = 0; i < span.size(); ++i) {
+        result.push_back(span[i]);
+    }
+    return result;
+}
+
+// shared test data, one int per bit
+std::vector<int> my_bits = {1, 1, 0, 0, 0, 1, 1, 1,
+                            0, 0, 1, 1, 1, 0, 0, 0,
+                            1, 1, 1, 1, 0, 0, 0, 0};
+
+// shared test data, bits packed into 3 bytes (NOTE: LSB first)
+std::vector<std::byte> packed = {std::byte{0b11100011},
+                                 std::byte{0b00011100},
+                                 std::byte{0b00001111}};
+
+} // namespace
+
 TEST(BitSpanTest, empty_span)
 {
     BitSpan span;
     EXPECT_EQ(0u, span.size());
     EXPECT_TRUE(span.empty());
+    EXPECT_FALSE(span.begin() != span.end());
 }
 
-TEST(BitSpanTest, empty_span_with_data)
+TEST(BitSpanTest, empty_span_with_offset)
 {
-    char data[1] = {static_cast<char>(0xFF)};
-    BitSpan span(data, 0);
+    BitSpan span(nullptr, 100, 0);
+    EXPECT_EQ(0u, span.size());
     EXPECT_TRUE(span.empty());
     EXPECT_FALSE(span.begin() != span.end());
 }
 
-TEST(BitSpanTest, multi_byte)
+TEST(BitSpanTest, span_with_all_the_bits)
 {
-    // byte 0: 0b10100101 = 0xA5, byte 1: 0b00110011 = 0x33
-    char data[2] = {static_cast<char>(0xA5), static_cast<char>(0x33)};
-    BitSpan span(data, 16);
-    EXPECT_EQ(16u, span.size());
+    BitSpan span(packed.data(), 3 * 8);
     EXPECT_FALSE(span.empty());
-    std::vector<bool> expect = {1,0,1,0,0,1,0,1, 1,1,0,0,1,1,0,0};
-    ASSERT_EQ(span.size(), expect.size());
-    for (uint32_t i = 0; i < expect.size(); ++i) {
-        EXPECT_EQ(span[i], expect[i]) << "index " << i;
-    }
-    std::vector<bool> result;
-    for (bool v : span) {
-        result.push_back(v);
-    }
-    EXPECT_EQ(result, expect);
+    EXPECT_EQ(span.size(), 3 * 8);
+    std::vector<int> expected = my_bits;
+    EXPECT_EQ(extract_with_range(span), expected);
+    EXPECT_EQ(extract_with_loop(span), expected);
 }
 
-TEST(BitSpanTest, partial_span_across_byte_boundary)
+TEST(BitSpanTest, span_with_padding)
 {
-    char data[2] = {static_cast<char>(0xFF), static_cast<char>(0x01)};
-    BitSpan span(data, 10);
-    EXPECT_EQ(10u, span.size());
+    BitSpan span(packed.data(), 17);
     EXPECT_FALSE(span.empty());
-    std::vector<bool> expect = {1,1,1,1,1,1,1,1, 1,0};
-    ASSERT_EQ(span.size(), expect.size());
-    for (uint32_t i = 0; i < expect.size(); ++i) {
-        EXPECT_EQ(span[i], expect[i]) << "index " << i;
-    }
-    std::vector<bool> result;
-    for (bool v : span) {
-        result.push_back(v);
-    }
-    EXPECT_EQ(result, expect);
+    EXPECT_EQ(span.size(), 17);
+    std::vector<int> expected(my_bits.begin(), my_bits.begin() + 17);
+    EXPECT_EQ(extract_with_range(span), expected);
+    EXPECT_EQ(extract_with_loop(span), expected);
+}
+
+TEST(BitSpanTest, span_with_padding_and_offset)
+{
+    BitSpan span(packed.data(), 5, 11);
+    EXPECT_FALSE(span.empty());
+    EXPECT_EQ(span.size(), 11);
+    std::vector<int> expected(my_bits.begin() + 5, my_bits.begin() + (5 + 11));
+    EXPECT_EQ(extract_with_range(span), expected);
+    EXPECT_EQ(extract_with_loop(span), expected);
 }

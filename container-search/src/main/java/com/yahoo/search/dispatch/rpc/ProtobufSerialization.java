@@ -139,7 +139,7 @@ public class ProtobufSerialization {
             mergeToSearchRequestFromProfiling(query.getTrace().getProfiling(), builder);
         }
 
-        mergeToSearchRequestFromRanking(query.getRanking(), scratchPad, builder);
+        mergeToSearchRequestFromRanking(query.getRanking(), context, scratchPad, builder);
 
         return builder.build();
     }
@@ -155,7 +155,8 @@ public class ProtobufSerialization {
         return traceLevel;
     }
 
-    private static void mergeToSearchRequestFromRanking(Ranking ranking, GrowableByteBuffer scratchPad, SearchProtocol.SearchRequest.Builder builder) {
+    private static void mergeToSearchRequestFromRanking(Ranking ranking, SerializationContext context,
+                                                        GrowableByteBuffer scratchPad, SearchProtocol.SearchRequest.Builder builder) {
         builder.setRankProfile(ranking.getProfile());
 
         if (ranking.getQueryCache()) {
@@ -171,7 +172,7 @@ public class ProtobufSerialization {
         var featureMap = ranking.getFeatures().asMap();
         MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(scratchPad, featureMap, builder::addTensorFeatureOverrides);
-        mergeRankProperties(ranking, scratchPad, builder::addRankProperties, builder::addTensorRankProperties);
+        mergeRankProperties(ranking, context, scratchPad, builder::addRankProperties, builder::addTensorRankProperties);
     }
 
     private static void mergeToSearchRequestFromSorting(Sorting sorting, SearchProtocol.SearchRequest.Builder builder) {
@@ -251,14 +252,15 @@ public class ProtobufSerialization {
         return builder.build().toByteArray();
     }
 
-    private static void mergeQueryDataToDocsumRequest(Query query, GrowableByteBuffer scratchPad,
+    private static void mergeQueryDataToDocsumRequest(Query query,
+                                                      GrowableByteBuffer scratchPad,
                                                       SearchProtocol.DocsumRequest.Builder builder,
                                                       QrSearchersConfig qrSearchersConfig) {
         var ranking = query.getRanking();
         var featureMap = ranking.getFeatures().asMap();
 
         boolean sendProtobuf = qrSearchersConfig.sendProtobufQuerytree();
-        var context = new SerializationContext(1.0); // Not necessary to track content share for docsum requests
+        var context = SerializationContext.ignored(); // Not necessary to track content share for docsum requests
         try {
             isProtobufAlsoSerialized.set(sendProtobuf);
             builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree(), context, scratchPad));
@@ -274,7 +276,7 @@ public class ProtobufSerialization {
         if (query.getPresentation().getHighlight() != null) {
             MapConverter.convertStringMultiMap(query.getPresentation().getHighlight().getHighlightTerms(), builder::addHighlightTerms);
         }
-        mergeRankProperties(ranking, scratchPad, builder::addRankProperties, builder::addTensorRankProperties);
+        mergeRankProperties(ranking, context, scratchPad, builder::addRankProperties, builder::addTensorRankProperties);
     }
     static byte[] serializeResult(Result searchResult) {
         return convertFromResult(searchResult).toByteArray();
@@ -398,10 +400,11 @@ public class ProtobufSerialization {
     }
 
     private static void mergeRankProperties(Ranking ranking,
+                                            SerializationContext context,
                                             GrowableByteBuffer scratchPad,
                                             Consumer<StringProperty.Builder> stringProperties,
                                             Consumer<TensorProperty.Builder> tensorProperties) {
-        MapConverter.convertMultiMap(scratchPad, ranking.getProperties().asMap(), propB -> {
+        MapConverter.convertMultiMap(scratchPad, ranking.getProperties().asMap(context), propB -> {
             if (!GetDocSumsPacket.sessionIdKey.equals(propB.getName())) {
                 stringProperties.accept(propB);
             }

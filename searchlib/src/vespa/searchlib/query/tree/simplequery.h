@@ -57,8 +57,8 @@ struct SimplePhrase : Phrase {
 };
 
 struct SimpleSameElement : SameElement {
-    SimpleSameElement(std::string view, int32_t id, Weight weight)
-        : SameElement(std::move(view), id, weight) {}
+    SimpleSameElement(std::string view, int32_t id, Weight weight, std::vector<uint32_t> element_filter = std::vector<uint32_t>())
+        : SameElement(std::move(view), id, weight, std::move(element_filter)) {}
     ~SimpleSameElement() override;
 };
 struct SimpleWeightedSetTerm : WeightedSetTerm {

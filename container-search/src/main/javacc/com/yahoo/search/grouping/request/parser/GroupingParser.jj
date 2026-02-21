@@ -123,6 +123,7 @@ TOKEN :
     <GROUP: "group"> |
     <HINT: "hint"> |
     <HYPOT: "hypot"> |
+    <ISTRUE: "istrue"> |
     <KEEP: "keep"> |
     <LOG: "log"> |
     <LOG1P: "log1p"> |
@@ -980,7 +981,8 @@ FilterExpression filterPrimary(GroupingOperation grp) :
 {
     (( lbrace() f = filterExp(grp) rbrace() ) |
     ( f = regexPredicate(grp) )              |
-    ( f = rangePredicate(grp) ))
+    ( f = rangePredicate(grp) )              |
+    ( f = istruePredicate(grp) ))
     { return f; }
 }
 
@@ -1005,6 +1007,15 @@ RangePredicate rangePredicate(GroupingOperation grp) :
 {
     <RANGE> lbrace() lower = number() comma() upper = number() comma() exp = exp(grp) [ comma()  lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() ] rbrace()
     { return new RangePredicate(lower, upper, exp, lowerInclusive.getValue(), upperInclusive.getValue()); }
+}
+
+IsTruePredicate istruePredicate(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+{
+    <ISTRUE> lbrace() exp = exp(grp) rbrace()
+    { return new IsTruePredicate(exp); }
 }
 
 FilterExpression orPredicate(GroupingOperation grp) :
@@ -1147,6 +1158,7 @@ String identifier() :
         <HINT> |
         <HYPOT> |
         <IDENTIFIER> |
+        <ISTRUE> |
         <KEEP> |
         <LOG> |
         <LOG1P> |

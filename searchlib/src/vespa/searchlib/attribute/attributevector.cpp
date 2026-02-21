@@ -314,7 +314,7 @@ AttributeVector::hasLoadData() const {
     if (!exists(getBaseFileName() + ".dat")) {
         return false;
     }
-    if (hasMultiValue() && !exists(getBaseFileName() + ".idx")) {
+    if (needs_idx_file() && !exists(getBaseFileName() + ".idx")) {
         return false;
     }
     if (hasWeightedSetType() && !exists(getBaseFileName() + ".weight")) {
@@ -584,7 +584,7 @@ AttributeVector::getEstimatedSaveByteSize() const
     uint64_t udatFileSize = 0;
     size_t fixedWidth = getFixedWidth();
 
-    if (hasMultiValue()) {
+    if (needs_idx_file()) {
         idxFileSize = headerSize + sizeof(uint32_t) * (docIdLimit + 1);
     }
     if (hasWeightedSetType()) {

@@ -52,7 +52,7 @@ public class GlobalDocumentChangeValidatorTest {
                 "      <document type='music' mode='index' global='" +
                 isGlobal + "'/>" +
                 "    </documents>" +
-                "    <nodes count='1'/>" +
+                "    <nodes count='2'/>" +
                 "   </content>" +
                 "</services>";
     }

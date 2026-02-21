@@ -6,6 +6,7 @@ import ai.vespa.secret.Secrets;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.TimeoutException;
+import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Text;
@@ -17,10 +18,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.time.Duration;
-import java.util.Locale;
+import java.util.Base64;
 import java.util.concurrent.TimeUnit;
-import java.util.function.IntFunction;
 
 import static com.yahoo.text.Lowercase.toUpperCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -80,7 +82,9 @@ public class VoyageAIEmbedderTest {
         assertEquals("POST", request.getMethod());
         assertEquals("/v1/embeddings", request.getPath());
         assertTrue(request.getHeader("Authorization").startsWith("Bearer "));
-        assertTrue(request.getBody().readUtf8().contains("\"model\":\"voyage-3\""));
+        String body = request.getBody().readUtf8();
+        assertTrue(body.contains("\"model\":\"voyage-3\""));
+        assertTrue(body.contains("\"encoding_format\":\"base64\""));
     }
 
     @Test
@@ -358,11 +362,12 @@ public class VoyageAIEmbedderTest {
         assertEquals(1024, result.size());
         assertEquals(TensorType.Value.FLOAT, result.type().valueType());
 
-        // Verify request contains output_dtype=float and output_dimension=1024
+        // Verify request contains output_dtype=float, output_dimension=1024, encoding_format=base64
         RecordedRequest request = mockServer.takeRequest();
         String body = request.getBody().readUtf8();
         assertTrue(body.contains("\"output_dtype\":\"float\""));
         assertTrue(body.contains("\"output_dimension\":1024"));
+        assertTrue(body.contains("\"encoding_format\":\"base64\""));
     }
 
     @Test
@@ -520,6 +525,110 @@ public class VoyageAIEmbedderTest {
         assertTrue(body.contains("\"output_dtype\":\"float\""));
     }
 
+    @Test
+    public void testBatchEmbeddingNonContextualModel() throws Exception {
+        // Mock batch API response with 3 embeddings
+        String responseJson = createFloatBatchSuccessResponse(3, 1024);
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(responseJson));
+
+        embedder = createEmbedder();
+
+        // Test batch embedding
+        TensorType targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        Embedder.Context context = new Embedder.Context("test-embedder");
+        var texts = java.util.List.of("Hello, world!", "Second text", "Third text");
+        var results = embedder.embed(texts, context, targetType);
+
+        // Verify results
+        assertNotNull(results);
+        assertEquals(3, results.size());
+        for (var result : results) {
+            assertEquals(1024, result.size());
+            assertEquals(targetType, result.type());
+        }
+
+        // Verify only 1 API request was made (batch request)
+        assertEquals(1, mockServer.getRequestCount());
+
+        // Verify API request contains all inputs
+        RecordedRequest request = mockServer.takeRequest();
+        assertEquals("POST", request.getMethod());
+        String body = request.getBody().readUtf8();
+        assertTrue(body.contains("\"input\":[\"Hello, world!\",\"Second text\",\"Third text\"]"));
+        assertTrue(body.contains("\"model\":\"voyage-3\""));
+    }
+
+    @Test
+    public void testBatchingConfigDisabledByDefault() {
+        embedder = createEmbedder();
+        var batching = embedder.batchingConfig();
+        assertNotNull(batching);
+        assertEquals(Embedder.Batching.DISABLED, batching);
+    }
+
+    @Test
+    public void testBatchingConfigEnabled() {
+        var configBuilder = new VoyageAiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .endpoint(mockServer.url("/v1/embeddings").toString())
+                .model("voyage-3")
+                .dimensions(1024)
+                .timeout(5000);
+        configBuilder.batching.maxSize(16);
+        configBuilder.batching.maxDelayMillis(200);
+        embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
+
+        var batching = embedder.batchingConfig();
+        assertTrue(batching.isEnabled());
+        assertEquals(16, batching.maxSize());
+        assertEquals(Duration.ofMillis(200), batching.maxDelay());
+    }
+
+    @Test
+    public void testBase64FloatRoundTrip() {
+        float[] expected = {1.0f, -0.5f, 0.0f, Float.MAX_VALUE};
+        var buffer = ByteBuffer.allocate(expected.length * 4).order(ByteOrder.LITTLE_ENDIAN);
+        for (float v : expected) buffer.putFloat(v);
+        var base64 = Base64.getEncoder().encodeToString(buffer.array());
+
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createBase64Response(1, base64)));
+
+        embedder = createEmbedder(4, "float");
+        var targetType = TensorType.fromSpec("tensor<float>(x[4])");
+        var context = new Embedder.Context("test-embedder");
+        var result = (IndexedTensor) embedder.embed("test", context, targetType);
+
+        for (int i = 0; i < expected.length; i++) {
+            assertEquals(expected[i], result.getFloat(i), 0.0f, "Mismatch at index " + i);
+        }
+    }
+
+    @Test
+    public void testBase64Int8RoundTrip() {
+        byte[] expected = {0, 1, -1, 127, -128, 42};
+        var base64 = Base64.getEncoder().encodeToString(expected);
+
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createBase64Response(1, base64)));
+
+        embedder = createEmbedder(6, "int8");
+        var targetType = TensorType.fromSpec("tensor<int8>(x[6])");
+        var context = new Embedder.Context("test-embedder");
+        var result = (IndexedTensor) embedder.embed("test", context, targetType);
+
+        for (int i = 0; i < expected.length; i++) {
+            assertEquals(expected[i], (byte) result.getFloat(i), "Mismatch at index " + i);
+        }
+    }
+
     // ===== Helper Methods =====
 
     private VoyageAIEmbedder createEmbedder() {
@@ -547,25 +656,55 @@ public class VoyageAIEmbedderTest {
         };
     }
 
-    private static String createSuccessResponse(int dimensions, IntFunction<String> valueGenerator) {
-        var embedding = new StringBuilder("[");
+    private static String encodeFloatsToBase64(int dimensions, int batchOffset) {
+        var buffer = ByteBuffer.allocate(dimensions * 4).order(ByteOrder.LITTLE_ENDIAN);
         for (int i = 0; i < dimensions; i++) {
-            if (i > 0) embedding.append(",");
-            embedding.append(valueGenerator.apply(i));
+            buffer.putFloat((float) Math.sin((i + batchOffset) * 0.1));
         }
-        embedding.append("]");
-        return  Text.format("""
-                {
-                  "object": "list",
-                  "data": [{"object": "embedding", "embedding": %s, "index": 0}],
-                  "model": "voyage-3",
-                  "usage": {"total_tokens": 10}
-                }
-                """, embedding);
+        return Base64.getEncoder().encodeToString(buffer.array());
+    }
+
+    private static String encodeBytesToBase64(int dimensions) {
+        var bytes = new byte[dimensions];
+        for (int i = 0; i < dimensions; i++) {
+            bytes[i] = (byte) (i % 128);
+        }
+        return Base64.getEncoder().encodeToString(bytes);
     }
 
     private static String createSuccessResponse(int dimensions) { return createFloatSuccessResponse(dimensions); }
-    private static String createFloatSuccessResponse(int dimensions) { return createSuccessResponse(dimensions, i -> Text.format("%.6f", Math.sin(i * 0.1))); }
-    private static String createInt8SuccessResponse(int dimensions) { return createSuccessResponse(dimensions, i -> String.valueOf(i % 128)); }
+
+    private static String createFloatSuccessResponse(int dimensions) {
+        return createBase64Response(1, encodeFloatsToBase64(dimensions, 0));
+    }
+
+    private static String createFloatBatchSuccessResponse(int batchSize, int dimensions) {
+        var dataEntries = new StringBuilder();
+        for (int b = 0; b < batchSize; b++) {
+            if (b > 0) dataEntries.append(",");
+            dataEntries.append(Text.format("{\"object\":\"embedding\",\"embedding\":\"%s\",\"index\":%d}",
+                    encodeFloatsToBase64(dimensions, b * 1000), b));
+        }
+        return Text.format("""
+                {"object":"list","data":[%s],"model":"voyage-3","usage":{"total_tokens":%d}}
+                """, dataEntries, batchSize * 10);
+    }
+
+    private static String createInt8SuccessResponse(int dimensions) {
+        return createBase64Response(1, encodeBytesToBase64(dimensions));
+    }
+
     private static String createBinarySuccessResponse(int dimensions) { return createInt8SuccessResponse(dimensions); }
+
+    private static String createBase64Response(int batchSize, String... base64Embeddings) {
+        var dataEntries = new StringBuilder();
+        for (int b = 0; b < base64Embeddings.length; b++) {
+            if (b > 0) dataEntries.append(",");
+            dataEntries.append(Text.format("{\"object\":\"embedding\",\"embedding\":\"%s\",\"index\":%d}",
+                    base64Embeddings[b], b));
+        }
+        return Text.format("""
+                {"object":"list","data":[%s],"model":"voyage-3","usage":{"total_tokens":%d}}
+                """, dataEntries, batchSize * 10);
+    }
 }

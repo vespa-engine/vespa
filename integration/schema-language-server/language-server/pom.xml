@@ -68,6 +68,11 @@
       <artifactId>indexinglanguage</artifactId>
       <version>8-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-disc</artifactId>
+      <version>8-SNAPSHOT</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

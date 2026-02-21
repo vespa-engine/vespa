@@ -294,6 +294,7 @@ bool handle(const ItemSameElement& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_SAME_ELEMENT;
     _d.arity = item.children_size();
+    _d._element_filter = std::vector<uint32_t>(item.element_filter().cbegin(), item.element_filter().cend());
     return true;
 }
 

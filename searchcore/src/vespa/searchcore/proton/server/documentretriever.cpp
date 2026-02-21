@@ -8,7 +8,7 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcore/proton/attribute/document_field_retriever.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -29,10 +29,12 @@ using search::AttributeGuard;
 using search::DocumentIdT;
 using search::IAttributeManager;
 using search::IDocumentStore;
+using search::attribute::BasicType;
+using search::attribute::IMultiValueAttribute;
 using search::index::Schema;
 using storage::spi::Timestamp;
+using vespalib::Stash;
 using vespalib::geo::ZCurve;
-using search::attribute::BasicType;
 
 namespace proton {
 
@@ -169,8 +171,19 @@ zcurve_array_attribute_to_field_value(const document::Field& field,
                                       const search::attribute::IAttributeVector& attr,
                                       DocumentIdT lid)
 {
-    search::attribute::AttributeContent<int64_t> zc_elems;
-    zc_elems.fill(attr, lid);
+    auto* mva = attr.as_multi_value_attribute();
+    if (mva == nullptr) {
+        return {};
+    }
+    Stash stash;
+    auto* read_view = mva->make_read_view(IMultiValueAttribute::ArrayTag<int64_t>(), stash);
+    if (read_view == nullptr) {
+        return {};
+    }
+    auto zc_elems = read_view->get_values(lid);
+    if (zc_elems.empty()) {
+        return {};
+    }
     auto new_fv = field.createValue();
     auto& new_array_fv = dynamic_cast<document::ArrayFieldValue&>(*new_fv);
     new_array_fv.reserve(zc_elems.size());
@@ -186,15 +199,20 @@ fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::Po
     for (const auto & it : possiblePositionFields) {
         auto attr_guard = attr_manager.getAttribute(it.second);
         auto& attr = *attr_guard;
-        if (!attr->isUndefined(lid)) {
-            if (attr->hasArrayType()) {
-                doc.setFieldValue(*it.first, zcurve_array_attribute_to_field_value(*it.first, *attr, lid));
+        if (attr->hasArrayType()) {
+            auto fv = zcurve_array_attribute_to_field_value(*it.first, *attr, lid);
+            if (fv) {
+                doc.setFieldValue(*it.first, std::move(fv));
+            } else {
+                doc.remove(*it.first);
+            }
+        } else {
+            if (attr->isUndefined(lid)) {
+                doc.remove(*it.first); // Don't resurrect old values from the docstore.
             } else {
                 int64_t zcurve = attr->getInt(lid);
                 doc.setValue(*it.first, *positionFromZcurve(zcurve));
             }
-        } else {
-            doc.remove(*it.first); // Don't resurrect old values from the docstore.
         }
     }
 }

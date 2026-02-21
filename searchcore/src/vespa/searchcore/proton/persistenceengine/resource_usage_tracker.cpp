@@ -75,7 +75,7 @@ ResourceUsageTracker::notify_resource_usage(const ResourceUsageState& state)
     // before it eventually is reported to the cluster controller (to decide whether to block client feed).
     // This ensures that the transient resource usage is covered by the resource headroom on the content node,
     // instead of leading to feed blocked due to natural fluctuations.
-    _resource_usage = ResourceUsage(state.non_transient_disk_usage(),
+    _resource_usage = ResourceUsage(state.reported_disk_usage(),
                                     state.non_transient_memory_usage(),
                                     AttributeResourceUsage(attribute_usage.max_address_space_usage().getUsage().usage(),
                                                            name));

@@ -21,6 +21,7 @@ private:
     int64_t onGetInteger(size_t index) const override { (void) index; return 0; }
     double onGetFloat(size_t index)    const override { (void) index; return 0.0; }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override { (void) index; return buf; }
+    std::string_view friendly_type_name() const noexcept override { return "<hitlist>"; }
     size_t hash() const override { return 0; }
     void set(const ResultNode & rhs) override;
     void decode(const void * buf) override {

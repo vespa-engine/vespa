@@ -112,6 +112,7 @@ import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.Linguistics;
+import com.yahoo.metrics.simple.MetricReceiver;
 
 /**
  * @author Simon Thoresen Hult
@@ -123,6 +124,7 @@ public class IndexingParser {
     private Components<Chunker> chunkers;
     private Components<Embedder> embedders;
     private Components<FieldGenerator> generators;
+    private MetricReceiver metricReceiver = MetricReceiver.nullImplementation;
     private AnnotatorConfig globalAnnotatorConfig = new AnnotatorConfig();
 
     public IndexingParser(String str) {
@@ -151,6 +153,11 @@ public class IndexingParser {
 
     public IndexingParser setGenerators(Map<String, FieldGenerator> generators) {
         this.generators = new Components.Map<FieldGenerator>(generators, FieldGenerator.FailingFieldGenerator.factory());
+        return this;
+    }
+
+    public IndexingParser setMetricReceiver(MetricReceiver metricReceiver) {
+        this.metricReceiver = metricReceiver;
         return this;
     }
 
@@ -517,7 +524,7 @@ Expression embedExp() :
 }
 {
     <EMBED> [ LOOKAHEAD(2) embedderId = identifier() ] arguments = arguments()
-    { return new EmbedExpression(linguistics, embedders, embedderId, arguments); }
+    { return new EmbedExpression(linguistics, embedders, embedderId, arguments, metricReceiver); }
 }
 
 Expression generateExp() :

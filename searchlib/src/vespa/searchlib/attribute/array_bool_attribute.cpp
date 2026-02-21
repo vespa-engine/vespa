@@ -1,22 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "array_bool_attribute.h"
-#include "array_bool_attribute_saver.h"
 #include "address_space_components.h"
 #include "search_context.h"
 #include "single_raw_attribute_loader.h"
+#include "single_raw_attribute_saver.h"
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
-#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/vespalib/util/stash.h>
-#include <cassert>
 
 using vespalib::datastore::EntryRef;
 
 namespace search::attribute {
-
-using largeint_t = IAttributeVector::largeint_t;
 
 namespace {
 
@@ -118,9 +115,10 @@ public:
 } // anonymous namespace
 
 ArrayBoolAttribute::ArrayBoolAttribute(const std::string& name, const Config& config)
-    : AttributeVector(name, config),
+    : ArrayBoolAttributeAccess(name, config),
       _ref_vector(config.getGrowStrategy(), getGenerationHolder()),
-      _raw_store(get_memory_allocator(), RawBufferStore::array_store_max_type_id, RawBufferStore::array_store_grow_factor)
+      _raw_store(get_memory_allocator(), RawBufferStore::array_store_max_type_id, RawBufferStore::array_store_grow_factor),
+      _total_values(0)
 {
 }
 
@@ -155,7 +153,9 @@ ArrayBoolAttribute::set_bools(DocId docid, std::span<const int8_t> bools)
     updateUncommittedDocIdLimit(docid);
     auto& elem_ref = _ref_vector[docid];
     EntryRef old_ref(elem_ref.load_relaxed());
+    size_t old_count = old_ref.valid() ? decode_bools(_raw_store.get(old_ref)).size() : 0;
     elem_ref.store_release(ref);
+    _total_values += bools.size() - old_count;
     if (old_ref.valid()) {
         _raw_store.remove(old_ref);
     }
@@ -198,12 +198,12 @@ ArrayBoolAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
         return;
     }
     if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
-        this->updateSizes(_ref_vector.size(), _ref_vector.size());
+        this->updateSizes(_total_values, _total_values);
         return;
     }
     vespalib::MemoryUsage total = update_stat();
-    this->updateStatistics(_ref_vector.size(),
-                           _ref_vector.size(),
+    this->updateStatistics(_total_values,
+                           _total_values,
                            total.allocatedBytes(),
                            total.usedBytes(),
                            total.deadBytes(),
@@ -241,8 +241,10 @@ ArrayBoolAttribute::clearDoc(DocId docId)
     EntryRef old_ref(elem_ref.load_relaxed());
     elem_ref.store_relaxed(EntryRef());
     if (old_ref.valid()) {
+        uint32_t old_count = decode_bools(_raw_store.get(old_ref)).size();
+        _total_values -= old_count;
         _raw_store.remove(old_ref);
-        return 1u;
+        return old_count;
     }
     return 0u;
 }
@@ -259,131 +261,10 @@ ArrayBoolAttribute::onShrinkLidSpace()
     setNumDocs(committed_doc_id_limit);
 }
 
-uint32_t
-ArrayBoolAttribute::getValueCount(DocId doc) const
-{
-    return get_bools(doc).size();
-}
-
-largeint_t
-ArrayBoolAttribute::getInt(DocId doc) const
-{
-    auto bools = get_bools(doc);
-    return (bools.size() > 0 && bools[0]) ? 1 : 0;
-}
-
-double
-ArrayBoolAttribute::getFloat(DocId doc) const
-{
-    return static_cast<double>(getInt(doc));
-}
-
-std::span<const char>
-ArrayBoolAttribute::get_raw(DocId) const
-{
-    return {};
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, largeint_t* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = bools[i] ? 1 : 0;
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, double* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = bools[i] ? 1.0 : 0.0;
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, std::string* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = bools[i] ? "1" : "0";
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId, const char**, uint32_t) const
-{
-    return 0;
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId, EnumHandle*, uint32_t) const
-{
-    return 0;
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, WeightedInt* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = WeightedInt(bools[i] ? 1 : 0);
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, WeightedFloat* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = WeightedFloat(bools[i] ? 1.0 : 0.0);
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId doc, WeightedString* v, uint32_t sz) const
-{
-    auto bools = get_bools(doc);
-    uint32_t n = std::min(bools.size(), sz);
-    for (uint32_t i = 0; i < n; ++i) {
-        v[i] = WeightedString(bools[i] ? "1" : "0");
-    }
-    return bools.size();
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId, WeightedConstChar*, uint32_t) const
-{
-    return 0;
-}
-
-uint32_t
-ArrayBoolAttribute::get(DocId, WeightedEnum*, uint32_t) const
-{
-    return 0;
-}
-
 std::unique_ptr<attribute::SearchContext>
 ArrayBoolAttribute::getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams&) const
 {
     return std::make_unique<ArrayBoolSearchContext>(std::move(term), *this);
-}
-
-const IMultiValueAttribute*
-ArrayBoolAttribute::as_multi_value_attribute() const
-{
-    return this;
 }
 
 const IArrayBoolReadView*
@@ -396,7 +277,7 @@ std::unique_ptr<AttributeSaver>
 ArrayBoolAttribute::onInitSave(std::string_view fileName)
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
-    return std::make_unique<ArrayBoolAttributeSaver>
+    return std::make_unique<SingleRawAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),
          make_entry_ref_vector_snapshot(_ref_vector, getCommittedDocIdLimit()),
@@ -407,7 +288,19 @@ bool
 ArrayBoolAttribute::onLoad(vespalib::Executor* executor)
 {
     SingleRawAttributeLoader loader(*this, _ref_vector, _raw_store);
-    return loader.on_load(executor);
+    if (!loader.on_load(executor)) {
+        return false;
+    }
+    uint64_t total = 0;
+    uint32_t doc_id_limit = getCommittedDocIdLimit();
+    for (uint32_t docid = 0; docid < doc_id_limit; ++docid) {
+        EntryRef ref = _ref_vector.acquire_elem_ref(docid).load_acquire();
+        if (ref.valid()) {
+            total += decode_bools(_raw_store.get(ref)).size();
+        }
+    }
+    _total_values = total;
+    return true;
 }
 
 void
@@ -416,25 +309,19 @@ ArrayBoolAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
     usage.set(AddressSpaceComponents::raw_store, _raw_store.get_address_space_usage());
 }
 
-uint32_t
-ArrayBoolAttribute::getEnum(DocId) const
+uint64_t
+ArrayBoolAttribute::getTotalValueCount() const
 {
-    return std::numeric_limits<uint32_t>::max();
+    return _total_values;
 }
 
-bool
-ArrayBoolAttribute::is_sortable() const noexcept
+uint64_t
+ArrayBoolAttribute::getEstimatedSaveByteSize() const
 {
-    return false;
-}
-
-std::unique_ptr<attribute::ISortBlobWriter>
-ArrayBoolAttribute::make_sort_blob_writer(bool, const common::BlobConverter*,
-                                          common::sortspec::MissingPolicy,
-                                          std::string_view) const
-{
-    assert(false && "ArrayBoolAttribute is not sortable");
-    return {};
+    uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT;
+    uint64_t numDocs = getCommittedDocIdLimit();
+    uint64_t totalBits = _total_values;
+    return headerSize + (totalBits + 7) / 8 + numDocs * 5;
 }
 
 }

@@ -4,6 +4,7 @@
 #include "resource_usage_write_filter.h"
 #include "i_resource_usage_listener.h"
 #include <vespa/vespalib/util/hw_info.h>
+#include <algorithm>
 
 using searchcorespi::common::ResourceUsage;
 
@@ -32,11 +33,18 @@ ResourceUsageNotifier::recalcState(const Guard &guard, bool disk_mem_sample)
     double memoryUsed = getMemoryUsedRatio(guard);
     double diskUsed = getDiskUsedRatio(guard);
     double attribute_address_space_used = _attribute_usage.max_address_space_usage().getUsage().usage();
+    double transient_disk_usage = std::min(get_relative_transient_disk_usage(guard), diskUsed);
+    double non_transient_disk_usage = diskUsed - transient_disk_usage;
+    double transient_memory_usage = std::min(get_relative_transient_memory_usage(guard), memoryUsed);
+    double non_transient_memory_usage = memoryUsed - transient_memory_usage;
     ResourceUsageState usage(ResourceUsageWithLimit(diskUsed, _config._diskLimit),
                              ResourceUsageWithLimit(memoryUsed, _config._memoryLimit),
+                             non_transient_disk_usage,
+                             non_transient_memory_usage,
                              get_relative_reserved_disk_space(guard),
-                             get_relative_transient_disk_usage(guard),
-                             get_relative_transient_memory_usage(guard),
+                             _config._reserved_disk_space_factor,
+                             transient_disk_usage,
+                             transient_memory_usage,
                              ResourceUsageWithLimit(attribute_address_space_used,
                                                     _config._attribute_limit._address_space_limit),
                              _attribute_usage);

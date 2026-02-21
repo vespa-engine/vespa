@@ -49,6 +49,7 @@ import ai.vespa.schemals.parser.grouping.ast.INFIX_MOD;
 import ai.vespa.schemals.parser.grouping.ast.INFIX_MUL;
 import ai.vespa.schemals.parser.grouping.ast.INFIX_SUB;
 import ai.vespa.schemals.parser.grouping.ast.INTERPOLATEDLOOKUP;
+import ai.vespa.schemals.parser.grouping.ast.ISTRUE;
 import ai.vespa.schemals.parser.grouping.ast.LOG;
 import ai.vespa.schemals.parser.grouping.ast.LOG10;
 import ai.vespa.schemals.parser.grouping.ast.LOG1P;
@@ -114,6 +115,7 @@ import ai.vespa.schemals.parser.grouping.ast.ZCURVE;
 import ai.vespa.schemals.parser.grouping.ast.andFunction;
 import ai.vespa.schemals.parser.grouping.ast.andPredicate;
 import ai.vespa.schemals.parser.grouping.ast.identifierStr;
+import ai.vespa.schemals.parser.grouping.ast.istruePredicate;
 import ai.vespa.schemals.parser.grouping.ast.notPredicate;
 import ai.vespa.schemals.parser.grouping.ast.number;
 import ai.vespa.schemals.parser.grouping.ast.orFunction;
@@ -248,6 +250,7 @@ class VespaGroupingSemanticToken {
         put(new Pair<>(AND.class, andPredicate.class), logicalFilter);
         put(new Pair<>(OR.class, orPredicate.class), logicalFilter);
         put(new Pair<>(NOT.class, notPredicate.class), logicalFilter);
+        put(new Pair<>(ISTRUE.class, istruePredicate.class), logicalFilter);
 
         put(new Pair<>(AND.class, andFunction.class), simpleExpressions);
         put(new Pair<>(OR.class, orFunction.class), simpleExpressions);

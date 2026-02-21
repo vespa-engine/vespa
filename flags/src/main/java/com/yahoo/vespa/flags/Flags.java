@@ -58,16 +58,18 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
+    // TODO(2026-02-20): Remove once this has rolled out, and the overrides have been removed.
     public static final UnboundLongFlag DELETE_IDLE_TENANT_SECONDS = defineLongFlag(
-            "delete-idle-tenant-seconds", -1,
+            "delete-idle-tenant-seconds", 604800,
             List.of("hakonhall"), "2026-02-03", "2026-04-03",
             "If >=0, then (A) the last deploy time is not updated on config server bootstrap, " +
             "and (B) an idle tenant will be deleted after this many seconds (default 604800 = 1 week).",
             "(A) takes effect on cfg bootstrap, (B) on next tick of TenantsMaintainer",
             TENANT_ID);
 
+    // TODO(2026-02-20): Remove once this has rolled out, and the overrides have been removed.
     public static final UnboundBooleanFlag SOFT_DELETE_TENANT = defineFeatureFlag(
-            "soft-delete-tenant", false,
+            "soft-delete-tenant", true,
             List.of("hakonhall"), "2026-01-20", "2026-04-20",
             "When deleting /config/v2/tenants/TENANT recursively - whether to give up (true) or retry (false) on NotEmptyException",
             "Takes effect immediately",
@@ -199,6 +201,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundDoubleFlag AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE = defineDoubleFlag(
+            "autoscaler-target-write-cpu-percentage", 0.95,
+            List.of("hmusum"), "2026-02-15", "2026-08-15",
+            "Target write CPU percentage for autoscaler (e.g., 0.8 = 80%)",
+            "Takes effect on next autoscaler evaluation",
+            INSTANCE_ID, CLUSTER_ID);
+
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
             List.of("andreer"), "2023-08-21", "2026-03-01",
@@ -254,6 +263,13 @@ public class Flags {
             List.of("olaa"), "2024-04-03", "2026-05-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag USE_GRAFANA_ALLOY = defineFeatureFlag(
+            "use-grafana-alloy", false,
+            List.of("onur"), "2026-02-17", "2026-08-01",
+            "Whether to use Grafana Alloy instead of otelcol-contrib for telemetry collection",
+            "Takes effect on next host-admin tick",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
@@ -431,6 +447,16 @@ public class Flags {
             "Whether to use new code for deleting unused sessions on config server",
             "Takes effect at next run of config server maintainer SessionsMaintainer",
             HOSTNAME
+    );
+
+    public static final UnboundDoubleFlag SEARCHNODE_RESERVED_DISK_SPACE_FACTOR = defineDoubleFlag(
+            "searchnode-reserved-disk-space-factor", 0.0,
+            List.of("toregge"), "2026-01-17", "2026-10-16",
+            "How much of the calculated reserved disk space should be added to the used disk space when " +
+                    "reporting disk space usage. " +
+                    "0.0 means none at all, 1.0 means the all of the reserved disk space.",
+            "Takes effect at redeployment.",
+            INSTANCE_ID
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

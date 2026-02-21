@@ -309,7 +309,21 @@ public class VespaSerializerTestCase {
         sameElement.addItem(new WordItem("b", "f2"));
         assertEquals("ss:{f1:a f2:b}", sameElement.toString());
         assertEquals("ss contains sameElement(f1 contains ({implicitTransforms: false}\"a\"), f2 contains ({implicitTransforms: false}\"b\"))", VespaSerializer.serialize(sameElement));
+    }
 
+    @Test
+    void testSameElementWithElementFilter() {
+        SameElementItem sameElement = new SameElementItem("bools");
+        sameElement.setElementFilter(List.of(1, 2, 5));
+        sameElement.addItem(new WordItem("true", ""));
+        assertEquals("bools contains ({elementFilter:[1, 2, 5]} sameElement(({implicitTransforms: false}\"true\")))",
+                     VespaSerializer.serialize(sameElement));
+
+        SameElementItem single = new SameElementItem("bools");
+        single.setElementFilter(List.of(42));
+        single.addItem(new WordItem("true", ""));
+        assertEquals("bools contains ({elementFilter:[42]} sameElement(({implicitTransforms: false}\"true\")))",
+                     VespaSerializer.serialize(single));
     }
 
     @Test

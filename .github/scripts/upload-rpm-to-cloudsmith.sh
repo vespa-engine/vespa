@@ -23,7 +23,7 @@ fi
 
 RPM=$1
 OS_DISTRO=el
-RELEASEVER=8
+OS_VERSION=$2
 
 main() {
 
@@ -36,7 +36,7 @@ main() {
   if [[ -n $FID ]]; then
     curl -sSLf -X POST -H "Content-Type: application/json" \
       -H "X-Api-Key: ${CLOUDSMITH_API_TOKEN}" \
-      -d "{\"package_file\": \"$FID\", \"distribution\": \"$OS_DISTRO/$RELEASEVER\"}" \
+      -d "{\"package_file\": \"$FID\", \"distribution\": \"$OS_DISTRO/$OS_VERSION\"}" \
       https://api-prd.cloudsmith.io/v1/packages/vespa/open-source-rpms/upload/rpm/
   fi
 }
