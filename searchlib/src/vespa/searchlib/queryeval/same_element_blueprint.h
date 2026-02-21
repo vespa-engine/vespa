@@ -46,6 +46,8 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const std::string &field_name() const noexcept { return _field.getName(); }
     const FieldSpec& get_field() const noexcept { return _field; }
+
+    Blueprint::UP get_replacement() override;
 };
 
 }

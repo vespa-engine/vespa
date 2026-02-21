@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "array_bool_search.h"
 #include "same_element_blueprint.h"
+#include "array_bool_blueprint.h"
+#include "array_bool_search.h"
 #include "same_element_search.h"
 #include "field_spec.hpp"
 #include <vespa/searchcommon/attribute/i_search_context.h>
@@ -10,6 +11,10 @@
 #include <algorithm>
 #include <cassert>
 #include <map>
+#include <memory>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".searchlib.queryeval.samen");
 
 using search::fef::MatchData;
 using search::fef::TermFieldMatchData;
@@ -152,6 +157,27 @@ void
 SameElementBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     IntermediateBlueprint::visitMembers(visitor);
+}
+
+Blueprint::UP SameElementBlueprint::get_replacement() {
+    // If this blueprint is used for indexing into a bool array (and only that), replace it by an ArrayBoolBlueprint
+    auto& children = get_children();
+    if (children.size() == 1 && !_element_filter.empty()) {
+        const auto& only_child = children[0];
+        const attribute::ISearchContext* search_context = only_child->get_attribute_search_context();
+        if (search_context) {
+            const attribute::ArrayBoolSearchContext* array_bool_context = search_context->as_array_bool_search_context();
+            if (array_bool_context && array_bool_context->get_valid()) {
+
+                return std::make_unique<ArrayBoolBlueprint>(array_bool_context->get_attribute(),
+                                                            _element_filter,
+                                                            array_bool_context->get_want_true(),
+                                                            true);
+            }
+        }
+    }
+
+    return {};
 }
 
 }
