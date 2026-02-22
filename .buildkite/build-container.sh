@@ -40,8 +40,10 @@ else
 fi
 
 echo "Preparing RPMs for container build..."
-rm -rf "${WORKDIR}/docker-image/rpms"
-cp -a "${WORKDIR}/artifacts/$ARCH/rpms" "${WORKDIR}/docker-image/"
+# Ensure clean state for rpms directory
+rm -rf "${WORKDIR}/docker-image/rpms" && mkdir -p "${WORKDIR}/docker-image/rpms"
+# Note: Appending "./" ensures that the directory's contents are copied, rather than the directory itself.
+cp -a "${LOCAL_RPM_REPO}/." "${WORKDIR}/docker-image/rpms/"
 
 cd "${WORKDIR}/docker-image"
 SOURCE_GITREF=$(git rev-parse HEAD)

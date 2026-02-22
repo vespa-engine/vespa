@@ -12,8 +12,11 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
+: "${VESPA_VERSION:?Environment variable VESPA_VERSION must be set (version to build)}"
+: "${LOCAL_RPM_REPO:?Environment variable LOCAL_RPM_REPO must be set (path to local RPM repo)}"
+
 echo "--- 🔧 Setting up Vespa RPM repository"
-echo -e "[vespa-rpms-local]\nname=Local Vespa RPMs\nbaseurl=file://$(pwd)/artifacts/$ARCH/rpms\nenabled=1\ngpgcheck=0" > /etc/yum.repos.d/vespa-rpms-local.repo
+echo -e "[vespa-rpms-local]\nname=Local Vespa RPMs\nbaseurl=file://${LOCAL_RPM_REPO}\nenabled=1\ngpgcheck=0" > /etc/yum.repos.d/vespa-rpms-local.repo
 
 echo "Installing Vespa $VESPA_VERSION..."
 if ! rpm -q "vespa-$VESPA_VERSION"; then
