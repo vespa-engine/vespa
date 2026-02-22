@@ -181,7 +181,9 @@ public class MetricsProxyContainer extends Container implements
         int heapPerNode = adminCluster ? 1 : 2;
         int maxHeapSize = adminCluster ? 512 : 1024;
 
-        int calculatedHeap = baseHeapSize + (heapPerNode * nodeCount);
+        // Increase in steps to avoid changes to heap size with small changes in node count.
+        var step = nodeCount / 50;
+        int calculatedHeap = baseHeapSize + (step * heapPerNode * 50);
         return Math.min(calculatedHeap, maxHeapSize);
     }
 

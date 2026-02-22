@@ -184,7 +184,6 @@ public class MetricsProxyContainerTest {
     void heapSizeUsesBaseValuesWhenFlagDisabled() {
         // Test with default setup - should use base heap size when flag is off
         VespaModel model = getModel(hostedServicesWithContent(), self_hosted);
-        MetricsProxyContainer container = (MetricsProxyContainer) model.id2producer().get(CONTAINER_CONFIG_ID);
         QrStartConfig config = model.getConfig(QrStartConfig.class, CONTAINER_CONFIG_ID);
 
         // Should use base heap (320 MB) regardless of node count
@@ -194,15 +193,15 @@ public class MetricsProxyContainerTest {
 
     @Test
     void heapSizeScalesWithNumberOfNodesWhenFlagEnabled() {
-        // Test with default setup - heap should scale based on node count
+        // Test with 50 nodes - heap should scale in steps of 50 nodes to avoid changes with small node count changes
         VespaModel model = getModel(hostedServicesWithContent(), self_hosted, new DeployState.Builder(),
-                                    4, new TestProperties().setScaleMetricsproxyHeapByNodeCount(true));
+                                    50, new TestProperties().setScaleMetricsproxyHeapByNodeCount(true));
         int nodeCount = model.hostSystem().getHosts().size();
-        MetricsProxyContainer container = (MetricsProxyContainer) model.id2producer().get(CONTAINER_CONFIG_ID);
         QrStartConfig config = model.getConfig(QrStartConfig.class, CONTAINER_CONFIG_ID);
 
-        // Base heap (320) + (nodeCount * 2 MB per node)
-        int expectedHeap = 320 + (nodeCount * 2);
+        // Base heap (320) + (step * 2 MB per node * 50 nodes per step), where step = nodeCount / 50
+        int step = nodeCount / 50;
+        int expectedHeap = 320 + (step * 2 * 50);
         assertEquals(expectedHeap, config.jvm().heapsize());
         assertEquals(expectedHeap, config.jvm().minHeapsize());
     }
