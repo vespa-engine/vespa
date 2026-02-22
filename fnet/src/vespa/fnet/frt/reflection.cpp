@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "reflection.h"
-#include "values.h"
+
 #include "rpcrequest.h"
 #include "supervisor.h"
+#include "values.h"
 
-FRT_Method::FRT_Method(const char * name, const char * paramSpec, const char * returnSpec,
-                       FRT_METHOD_PT method, FRT_Invokable * handler)
+FRT_Method::FRT_Method(
+    const char* name, const char* paramSpec, const char* returnSpec, FRT_METHOD_PT method, FRT_Invokable* handler)
     : _hashNext(nullptr),
       _listNext(nullptr),
       _name(name),
@@ -15,59 +16,40 @@ FRT_Method::FRT_Method(const char * name, const char * paramSpec, const char * r
       _method(method),
       _handler(handler),
       _doc(),
-      _access_filter()
-{
-}
+      _access_filter() {}
 
 FRT_Method::~FRT_Method() = default;
 
-void
-FRT_Method::SetDocumentation(FRT_Values *values) {
+void FRT_Method::SetDocumentation(FRT_Values* values) {
     _doc.resize(values->GetLength());
 
     FNET_DataBuffer buf(&_doc[0], _doc.size());
     values->EncodeCopy(&buf);
 }
 
-void
-FRT_Method::GetDocumentation(FRT_Values *values) {
+void FRT_Method::GetDocumentation(FRT_Values* values) {
     FNET_DataBuffer buf(&_doc[0], _doc.size());
     buf.FreeToData(_doc.size());
     values->DecodeCopy(&buf, _doc.size());
 }
 
-FRT_ReflectionManager::FRT_ReflectionManager()
-    : _numMethods(0),
-      _methods(nullptr),
-      _methodHash()
-{
-    Reset();
-}
+FRT_ReflectionManager::FRT_ReflectionManager() : _numMethods(0), _methods(nullptr), _methodHash() { Reset(); }
 
-FRT_ReflectionManager::~FRT_ReflectionManager()
-{
-    Reset();
-}
+FRT_ReflectionManager::~FRT_ReflectionManager() { Reset(); }
 
-
-void
-FRT_ReflectionManager::Reset()
-{
+void FRT_ReflectionManager::Reset() {
     _numMethods = 0;
     while (_methods != nullptr) {
-        FRT_Method *method = _methods;
+        FRT_Method* method = _methods;
         _methods = method->GetNext();
-        delete(method);
+        delete (method);
     }
 
     for (uint32_t i = 0; i < METHOD_HASH_SIZE; i++)
         _methodHash[i] = nullptr;
 }
 
-
-void
-FRT_ReflectionManager::AddMethod(FRT_Method *method)
-{
+void FRT_ReflectionManager::AddMethod(FRT_Method* method) {
     uint32_t hash = HashStr(method->GetName(), METHOD_HASH_SIZE);
     method->_hashNext = _methodHash[hash];
     _methodHash[hash] = method;
@@ -76,30 +58,23 @@ FRT_ReflectionManager::AddMethod(FRT_Method *method)
     _numMethods++;
 }
 
-
-FRT_Method *
-FRT_ReflectionManager::LookupMethod(const char *name)
-{
+FRT_Method* FRT_ReflectionManager::LookupMethod(const char* name) {
     if (name == nullptr) {
         return nullptr;
     }
-    uint32_t hash = HashStr(name, METHOD_HASH_SIZE);
-    FRT_Method *ret = _methodHash[hash];
+    uint32_t    hash = HashStr(name, METHOD_HASH_SIZE);
+    FRT_Method* ret = _methodHash[hash];
     while (ret != nullptr && strcmp(name, ret->GetName()) != 0)
         ret = ret->_hashNext;
     return ret;
 }
 
-
-void
-FRT_ReflectionManager::DumpMethodList(FRT_Values *target)
-{
-    FRT_StringValue *names = target->AddStringArray(_numMethods);
-    FRT_StringValue *args  = target->AddStringArray(_numMethods);
-    FRT_StringValue *ret   = target->AddStringArray(_numMethods);
-    uint32_t         idx   = 0;
-    for (FRT_Method *method = _methods; method != nullptr;
-         method = method->GetNext(), idx++) {
+void FRT_ReflectionManager::DumpMethodList(FRT_Values* target) {
+    FRT_StringValue* names = target->AddStringArray(_numMethods);
+    FRT_StringValue* args = target->AddStringArray(_numMethods);
+    FRT_StringValue* ret = target->AddStringArray(_numMethods);
+    uint32_t         idx = 0;
+    for (FRT_Method* method = _methods; method != nullptr; method = method->GetNext(), idx++) {
         target->SetString(&names[idx], method->GetName());
         target->SetString(&args[idx], method->GetParamSpec());
         target->SetString(&ret[idx], method->GetReturnSpec());
@@ -109,9 +84,7 @@ FRT_ReflectionManager::DumpMethodList(FRT_Values *target)
 
 //------------------------------------------------------------------------
 
-void
-FRT_ReflectionBuilder::Flush()
-{
+void FRT_ReflectionBuilder::Flush() {
     if (_method == nullptr)
         return;
 
@@ -130,8 +103,7 @@ FRT_ReflectionBuilder::Flush()
     _req->Reset();
 }
 
-
-FRT_ReflectionBuilder::FRT_ReflectionBuilder(FRT_Supervisor *supervisor)
+FRT_ReflectionBuilder::FRT_ReflectionBuilder(FRT_Supervisor* supervisor)
     : _supervisor(supervisor),
       _lookup(supervisor->GetReflectionManager()),
       _method(nullptr),
@@ -145,40 +117,26 @@ FRT_ReflectionBuilder::FRT_ReflectionBuilder(FRT_Supervisor *supervisor)
       _arg_desc(nullptr),
       _ret_name(nullptr),
       _ret_desc(nullptr),
-      _access_filter()
-{
-}
+      _access_filter() {}
 
-
-FRT_ReflectionBuilder::~FRT_ReflectionBuilder()
-{
+FRT_ReflectionBuilder::~FRT_ReflectionBuilder() {
     Flush();
     _req->internal_subref();
 }
 
-
-void
-FRT_ReflectionBuilder::DefineMethod(const char    *name,
-                                    const char    *paramSpec,
-                                    const char    *returnSpec,
-                                    FRT_METHOD_PT  method,
-                                    FRT_Invokable *handler)
-{
+void FRT_ReflectionBuilder::DefineMethod(
+    const char* name, const char* paramSpec, const char* returnSpec, FRT_METHOD_PT method, FRT_Invokable* handler) {
     if (handler == nullptr)
         return;
 
     Flush();
-    _method = new FRT_Method(name,
-                             paramSpec,
-                             returnSpec,
-                             method,
-                             handler);
+    _method = new FRT_Method(name, paramSpec, returnSpec, method, handler);
     _lookup->AddMethod(_method);
 
-    _argCnt   = strlen(paramSpec);
-    _retCnt   = strlen(returnSpec);
-    _curArg   = 0;
-    _curRet   = 0;
+    _argCnt = strlen(paramSpec);
+    _retCnt = strlen(returnSpec);
+    _curArg = 0;
+    _curRet = 0;
     _values->AddString("???"); // method desc
     _values->AddString(paramSpec);
     _values->AddString(returnSpec);
@@ -189,20 +147,14 @@ FRT_ReflectionBuilder::DefineMethod(const char    *name,
     _access_filter.reset();
 }
 
-
-void
-FRT_ReflectionBuilder::MethodDesc(const char *desc)
-{
+void FRT_ReflectionBuilder::MethodDesc(const char* desc) {
     if (_method == nullptr)
         return;
 
     _values->SetString(&_values->GetValue(0)._string, desc);
 }
 
-
-void
-FRT_ReflectionBuilder::ParamDesc(const char *name, const char *desc)
-{
+void FRT_ReflectionBuilder::ParamDesc(const char* name, const char* desc) {
     if (_method == nullptr)
         return;
 
@@ -214,10 +166,7 @@ FRT_ReflectionBuilder::ParamDesc(const char *name, const char *desc)
     _curArg++;
 }
 
-
-void
-FRT_ReflectionBuilder::ReturnDesc(const char *name, const char *desc)
-{
+void FRT_ReflectionBuilder::ReturnDesc(const char* name, const char* desc) {
     if (_method == nullptr)
         return;
 
@@ -229,9 +178,7 @@ FRT_ReflectionBuilder::ReturnDesc(const char *name, const char *desc)
     _curRet++;
 }
 
-void
-FRT_ReflectionBuilder::RequestAccessFilter(std::unique_ptr<FRT_RequestAccessFilter> access_filter)
-{
+void FRT_ReflectionBuilder::RequestAccessFilter(std::unique_ptr<FRT_RequestAccessFilter> access_filter) {
     if (_method == nullptr) {
         return;
     }

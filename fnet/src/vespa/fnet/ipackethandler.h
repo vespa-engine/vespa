@@ -9,10 +9,8 @@ class FNET_Packet;
 /**
  * Interface implemented by objects that can handle packets.
  **/
-class FNET_IPacketHandler
-{
+class FNET_IPacketHandler {
 public:
-
     /**
      * This enum defines the possible values returned from the @ref
      * HandlePacket method. The @ref HandlePacket method is called on
@@ -25,12 +23,7 @@ public:
      * will be closed in both directions and may not be used by the
      * application.
      **/
-    enum HP_RetCode {
-        FNET_KEEP_CHANNEL  = 0,
-        FNET_CLOSE_CHANNEL = 1,
-        FNET_FREE_CHANNEL  = 2
-    };
-
+    enum HP_RetCode { FNET_KEEP_CHANNEL = 0, FNET_CLOSE_CHANNEL = 1, FNET_FREE_CHANNEL = 2 };
 
     /**
      * Destructor.  No cleanup needed for base class.
@@ -53,7 +46,5 @@ public:
      * @param packet the packet to handle.
      * @param context the application context for the packet.
      **/
-    virtual HP_RetCode HandlePacket(FNET_Packet *packet,
-                                    FNET_Context context) = 0;
+    virtual HP_RetCode HandlePacket(FNET_Packet* packet, FNET_Context context) = 0;
 };
-

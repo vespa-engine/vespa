@@ -6,8 +6,7 @@
  * Interface used when injecting code execution into the transport
  * thread.
  **/
-class FNET_IExecutable
-{
+class FNET_IExecutable {
 public:
     /**
      * Invoked by the transport thread as the only step to handle an
@@ -20,4 +19,3 @@ public:
      **/
     virtual ~FNET_IExecutable() = default;
 };
-

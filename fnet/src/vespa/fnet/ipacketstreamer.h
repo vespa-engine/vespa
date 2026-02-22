@@ -13,10 +13,8 @@ class FNET_Packet;
  * functionality of the packet streamer. It is recommended that it is
  * backed by a packet factory object.
  **/
-class FNET_IPacketStreamer
-{
+class FNET_IPacketStreamer {
 public:
-
     /**
      * Destructor.  No cleanup needed for base class.
      */
@@ -47,9 +45,8 @@ public:
      * @param chid where to store the packet chid
      * @param broken where to signal broken data
      **/
-    virtual bool GetPacketInfo(FNET_DataBuffer *src, uint32_t *plen,
-                               uint32_t *pcode, uint32_t *chid,
-                               bool *broken) = 0;
+    virtual bool GetPacketInfo(
+        FNET_DataBuffer* src, uint32_t* plen, uint32_t* pcode, uint32_t* chid, bool* broken) = 0;
 
     /**
      * This method is called to un-stream a packet from the given
@@ -69,8 +66,7 @@ public:
      * @param pcode packet code as reported by @ref GetPacketInfo
      * @param context application context for target channel
      **/
-    virtual FNET_Packet *Decode(FNET_DataBuffer *src, uint32_t plen,
-                                uint32_t pcode, FNET_Context context) = 0;
+    virtual FNET_Packet* Decode(FNET_DataBuffer* src, uint32_t plen, uint32_t pcode, FNET_Context context) = 0;
 
     /**
      * This method is called to stream a packet to the given databuffer.
@@ -79,7 +75,5 @@ public:
      * @param chid channel id for packet
      * @param dst the target buffer for streaming
      **/
-    virtual void Encode(FNET_Packet *packet, uint32_t chid,
-                        FNET_DataBuffer *dst) = 0;
+    virtual void Encode(FNET_Packet* packet, uint32_t chid, FNET_DataBuffer* dst) = 0;
 };
-

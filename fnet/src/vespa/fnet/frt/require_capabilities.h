@@ -2,7 +2,9 @@
 #pragma once
 
 #include "request_access_filter.h"
+
 #include <vespa/vespalib/net/tls/capability_set.h>
+
 #include <memory>
 
 /**
@@ -12,11 +14,10 @@
  */
 class FRT_RequireCapabilities final : public FRT_RequestAccessFilter {
     vespalib::net::tls::CapabilitySet _required_capabilities;
+
 public:
     explicit constexpr FRT_RequireCapabilities(vespalib::net::tls::CapabilitySet required_capabilities) noexcept
-        : _required_capabilities(required_capabilities)
-    {
-    }
+        : _required_capabilities(required_capabilities) {}
 
     bool allow(FRT_RPCRequest& req) const noexcept override;
 

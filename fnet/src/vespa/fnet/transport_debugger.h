@@ -3,8 +3,10 @@
 #pragma once
 
 #include "transport.h"
+
 #include <vespa/vespalib/util/rendezvous.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <memory>
 
 namespace fnet {
@@ -35,11 +37,10 @@ namespace fnet {
  * Take a look at the unit test for this class for an example of how
  * to use it.
  **/
-class TransportDebugger
-{
+class TransportDebugger {
 private:
-    struct Meet : vespalib::Rendezvous<bool,bool> {
-        Meet(size_t N) : vespalib::Rendezvous<bool,bool>(N) {}
+    struct Meet : vespalib::Rendezvous<bool, bool> {
+        Meet(size_t N) : vespalib::Rendezvous<bool, bool>(N) {}
         void mingle() override;
     };
     vespalib::steady_time _time;
@@ -49,13 +50,12 @@ public:
     TransportDebugger();
     ~TransportDebugger();
     vespalib::steady_time time() const { return _time; }
-    TimeTools::SP time_tools() {
+    TimeTools::SP         time_tools() {
         return TimeTools::make_debug(vespalib::duration::zero(), [this]() noexcept { return time(); });
     }
-    void attach(std::initializer_list<std::reference_wrapper<FNET_Transport> > list);
-    void step(vespalib::duration time_passed = 5ms);
-    template <typename Pred>
-    bool step_until(Pred pred, vespalib::duration time_limit = 120s) {
+    void                          attach(std::initializer_list<std::reference_wrapper<FNET_Transport>> list);
+    void                          step(vespalib::duration time_passed = 5ms);
+    template <typename Pred> bool step_until(Pred pred, vespalib::duration time_limit = 120s) {
         auto start = time();
         while (!pred() && ((time() - start) < time_limit)) {
             step();
@@ -65,4 +65,4 @@ public:
     void detach();
 };
 
-}
+} // namespace fnet
