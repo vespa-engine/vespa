@@ -11,41 +11,42 @@
 #pragma once
 
 #include "fieldvalue.h"
+
 #include <vespa/vespalib/stllike/hash_fun.h>
 
 namespace document {
 
-class NumericFieldValueBase : public FieldValue
-{
+class NumericFieldValueBase : public FieldValue {
 public:
     void printXml(XmlOutputStream& out) const override;
+
 protected:
     NumericFieldValueBase(Type type) : FieldValue(type) {}
 };
 
-template<typename Number>
-class NumericFieldValue : public NumericFieldValueBase {
+template <typename Number> class NumericFieldValue : public NumericFieldValueBase {
 protected:
-    explicit NumericFieldValue(Type type, Number value=0) : NumericFieldValueBase(type), _value(value) { }
+    explicit NumericFieldValue(Type type, Number value = 0) : NumericFieldValueBase(type), _value(value) {}
     Number _value;
+
 public:
     using value_type = Number;
 
     value_type getValue() const { return _value; }
-    void setValue(Number newValue) { _value = newValue; }
+    void       setValue(Number newValue) { _value = newValue; }
 
-    FieldValue& assign(const FieldValue&) override ;
-    int compare(const FieldValue& other) const override;
-    int fastCompare(const FieldValue& other) const override final;
+    FieldValue& assign(const FieldValue&) override;
+    int         compare(const FieldValue& other) const override;
+    int         fastCompare(const FieldValue& other) const override final;
 
     FieldValue& operator=(std::string_view) override;
     size_t hash() const override final { return vespalib::hash<Number>()(_value); }
 
-    char getAsByte() const override;
-    int32_t getAsInt() const override;
-    int64_t getAsLong() const override;
-    float getAsFloat() const override;
-    double getAsDouble() const override;
+    char        getAsByte() const override;
+    int32_t     getAsInt() const override;
+    int64_t     getAsLong() const override;
+    float       getAsFloat() const override;
+    double      getAsDouble() const override;
     std::string getAsString() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -58,5 +59,4 @@ extern template class NumericFieldValue<int16_t>;
 extern template class NumericFieldValue<int32_t>;
 extern template class NumericFieldValue<int64_t>;
 
-} // document
-
+} // namespace document

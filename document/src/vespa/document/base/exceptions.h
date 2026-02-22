@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <memory>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <cstdint>
+#include <memory>
 
 namespace document {
 
@@ -16,12 +17,9 @@ class DataType;
  *
  * \brief Exception used to report invalid datatype usage.
  */
-class InvalidDataTypeException : public vespalib::IllegalStateException
-{
+class InvalidDataTypeException : public vespalib::IllegalStateException {
 public:
-    InvalidDataTypeException(const DataType &actual,
-                             const DataType &wanted,
-                             const std::string & location);
+    InvalidDataTypeException(const DataType& actual, const DataType& wanted, const std::string& location);
     ~InvalidDataTypeException() override;
 
     const DataType& getActualDataType() const { return _actual; }
@@ -30,9 +28,8 @@ public:
     VESPA_DEFINE_EXCEPTION_SPINE(InvalidDataTypeException);
 
 private:
-    const DataType &_actual;
-    const DataType &_expected;
-
+    const DataType& _actual;
+    const DataType& _expected;
 };
 
 /**
@@ -41,13 +38,9 @@ private:
  *
  * \brief Exception used to report invalid datatype convertion.
  */
-class InvalidDataTypeConversionException
-    : public vespalib::IllegalStateException
-{
+class InvalidDataTypeConversionException : public vespalib::IllegalStateException {
 public:
-    InvalidDataTypeConversionException(const DataType &actual,
-                                       const DataType &wanted,
-                                       const std::string & location);
+    InvalidDataTypeConversionException(const DataType& actual, const DataType& wanted, const std::string& location);
     ~InvalidDataTypeConversionException() override;
 
     const DataType& getActualDataType() const { return _actual; }
@@ -56,9 +49,8 @@ public:
     VESPA_DEFINE_EXCEPTION_SPINE(InvalidDataTypeConversionException);
 
 private:
-    const DataType &_actual;
-    const DataType &_expected;
-
+    const DataType& _actual;
+    const DataType& _expected;
 };
 
 /**
@@ -67,17 +59,16 @@ private:
  *
  * \brief Exception used when a document type is not found.
  */
-class DocumentTypeNotFoundException : public vespalib::Exception
-{
+class DocumentTypeNotFoundException : public vespalib::Exception {
 private:
     std::string _type;
 
 public:
     DocumentTypeNotFoundException(std::string name, const std::string& location);
-    DocumentTypeNotFoundException(const DocumentTypeNotFoundException &);
-    DocumentTypeNotFoundException & operator = (const DocumentTypeNotFoundException &);
-    DocumentTypeNotFoundException(DocumentTypeNotFoundException &&) noexcept = default;
-    DocumentTypeNotFoundException & operator = (DocumentTypeNotFoundException &&) noexcept = default;
+    DocumentTypeNotFoundException(const DocumentTypeNotFoundException&);
+    DocumentTypeNotFoundException& operator=(const DocumentTypeNotFoundException&);
+    DocumentTypeNotFoundException(DocumentTypeNotFoundException&&) noexcept = default;
+    DocumentTypeNotFoundException& operator=(DocumentTypeNotFoundException&&) noexcept = default;
     ~DocumentTypeNotFoundException() override;
 
     const std::string& getDocumentTypeName() const { return _type; }
@@ -91,8 +82,7 @@ public:
  *
  * \brief Exception used when a data type is not found.
  */
-class DataTypeNotFoundException : public vespalib::Exception
-{
+class DataTypeNotFoundException : public vespalib::Exception {
 public:
     DataTypeNotFoundException(int id, const std::string& location);
     DataTypeNotFoundException(const std::string& name, const std::string& location);
@@ -107,8 +97,7 @@ public:
  *
  * \brief Exception used when an annotation type is not found.
  */
-class AnnotationTypeNotFoundException : public vespalib::Exception
-{
+class AnnotationTypeNotFoundException : public vespalib::Exception {
 public:
     AnnotationTypeNotFoundException(int id, const std::string& location);
     ~AnnotationTypeNotFoundException() override;
@@ -123,27 +112,26 @@ public:
  * \brief Typically thrown when accessing non-existing fields in structured
  *        datatypes.
  */
-class FieldNotFoundException : public vespalib::Exception
-{
+class FieldNotFoundException : public vespalib::Exception {
 private:
     std::string _fieldName;
-    int32_t _fieldId;
+    int32_t     _fieldId;
 
 public:
     FieldNotFoundException(std::string fieldName, const std::string& location);
     FieldNotFoundException(int32_t fieldId, int16_t serializationVersion, const std::string& location);
-    FieldNotFoundException(const FieldNotFoundException &);
-    FieldNotFoundException & operator = (const FieldNotFoundException &);
-    FieldNotFoundException(FieldNotFoundException &&) noexcept = default;
-    FieldNotFoundException & operator = (FieldNotFoundException &&) noexcept = default;
+    FieldNotFoundException(const FieldNotFoundException&);
+    FieldNotFoundException& operator=(const FieldNotFoundException&);
+    FieldNotFoundException(FieldNotFoundException&&) noexcept = default;
+    FieldNotFoundException& operator=(FieldNotFoundException&&) noexcept = default;
     ~FieldNotFoundException() override;
 
     const std::string& getFieldName() const { return _fieldName; }
-    int32_t getFieldId()              const { return _fieldId; };
+    int32_t            getFieldId() const { return _fieldId; };
 
     VESPA_DEFINE_EXCEPTION_SPINE(FieldNotFoundException);
 };
 
 VESPA_DEFINE_EXCEPTION(WrongTensorTypeException, vespalib::Exception);
 
-}
+} // namespace document

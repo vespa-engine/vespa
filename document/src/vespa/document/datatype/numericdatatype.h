@@ -23,6 +23,4 @@ public:
     bool isNumeric() const noexcept override { return true; }
 };
 
-}
-
-
+} // namespace document

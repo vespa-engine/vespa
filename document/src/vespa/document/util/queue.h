@@ -13,15 +13,15 @@ namespace document {
 /**
  * semaphore implementation with copy/assignment functionality.
  **/
-class Semaphore
-{
+class Semaphore {
 private:
-    int _count;
-    int _numWaiters;
-    std::mutex _lock;
+    int                     _count;
+    int                     _numWaiters;
+    std::mutex              _lock;
     std::condition_variable _cond;
+
 public:
-    Semaphore(int count=0) : _count(count), _numWaiters(0), _lock() { }
+    Semaphore(int count = 0) : _count(count), _numWaiters(0), _lock() {}
 
     ~Semaphore() {
         std::lock_guard guard(_lock);
@@ -29,7 +29,7 @@ public:
     }
 
     bool wait(int ms) {
-        bool gotSemaphore = false;
+        bool             gotSemaphore = false;
         std::unique_lock guard(_lock);
         if (_count == 0) {
             _numWaiters++;
@@ -69,21 +69,22 @@ public:
     }
 };
 
-
-template <typename T, typename Q=std::queue<T> >
-class QueueBase
-{
+template <typename T, typename Q = std::queue<T>> class QueueBase {
 public:
-    QueueBase() : _lock(), _count(0), _q()   { }
+    QueueBase() : _lock(), _count(0), _q() {}
     virtual ~QueueBase() = default;
-    size_t size()  const { return internal_size(); }
+    size_t size() const { return internal_size(); }
     bool   empty() const { return size() == 0; }
+
 protected:
     std::mutex          _lock;
     document::Semaphore _count;
     Q                   _q;
 
-    bool internal_push(const T& msg) { _q.push(msg); return true; }
+    bool internal_push(const T& msg) {
+        _q.push(msg);
+        return true;
+    }
     bool internal_pop(T& msg) {
         if (_q.empty()) {
             return false;
@@ -91,7 +92,7 @@ protected:
             msg = _q.front();
             _q.pop();
             return true;
-	}
+        }
     }
     size_t internal_size() const { return _q.size(); }
 };
@@ -101,13 +102,10 @@ protected:
  * the stl::queue template. Not in any way optimized. Supports simple push and
  * pop operations together with read of size and empty check.
  **/
-template <typename T, typename Q=std::queue<T> >
-class Queue : public QueueBase<T, Q>
-{
+template <typename T, typename Q = std::queue<T>> class Queue : public QueueBase<T, Q> {
 public:
-    Queue() : QueueBase<T,Q>() { }
-    bool push(const T& msg, int timeout=-1)
-    {
+    Queue() : QueueBase<T, Q>() {}
+    bool push(const T& msg, int timeout = -1) {
         (void)timeout;
         bool retval;
         {
@@ -117,12 +115,9 @@ public:
         this->_count.post();
         return retval;
     }
-    bool pop(T& msg, int timeout=-1)
-    {
-        bool retval((timeout == -1) ?
-                    this->_count.wait() :
-                    this->_count.wait(timeout));
-        if ( retval ) {
+    bool pop(T& msg, int timeout = -1) {
+        bool retval((timeout == -1) ? this->_count.wait() : this->_count.wait(timeout));
+        if (retval) {
             std::lock_guard guard(this->_lock);
             retval = this->internal_pop(msg);
         }
@@ -131,4 +126,3 @@ public:
 };
 
 } // namespace document
-

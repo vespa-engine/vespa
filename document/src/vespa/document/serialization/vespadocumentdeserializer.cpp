@@ -1,7 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "vespadocumentdeserializer.h"
+
 #include "annotationdeserializer.h"
+
+#include <vespa/document/base/exceptions.h>
+#include <vespa/document/base/idstringexception.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/boolfieldvalue.h>
@@ -13,52 +17,44 @@
 #include <vespa/document/fieldvalue/mapfieldvalue.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/fieldvalue/rawfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/shortfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/fieldvalue/referencefieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/util/bytebuffer.h>
+#include <vespa/document/util/serializableexceptions.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/compressor.h>
-#include <vespa/vespalib/data/databuffer.h>
-#include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/value_codec.h>
-#include <vespa/eval/eval/value.h>
-#include <vespa/document/util/serializableexceptions.h>
-#include <vespa/document/base/exceptions.h>
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/document/util/bytebuffer.h>
-#include <vespa/document/base/idstringexception.h>
-
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespadocumentdeserializer");
 
-using std::vector;
-using vespalib::Slime;
-using vespalib::asciistream;
-using vespalib::nbostream;
-using vespalib::Memory;
 using std::string_view;
-using vespalib::compression::CompressionConfig;
+using std::vector;
+using vespalib::asciistream;
 using vespalib::ConstBufferRef;
-using vespalib::make_string_short::fmt;
+using vespalib::Memory;
+using vespalib::nbostream;
+using vespalib::Slime;
+using vespalib::compression::CompressionConfig;
 using vespalib::eval::FastValueBuilderFactory;
+using vespalib::make_string_short::fmt;
 
 namespace document {
 
 namespace {
-template <typename Input>
-uint32_t readSize(Input &input) {
-        return getInt1_2_4Bytes(input);
-}
+template <typename Input> uint32_t readSize(Input& input) { return getInt1_2_4Bytes(input); }
 
-uint32_t
-getChunkCount(uint8_t contentCode)
-{
+uint32_t getChunkCount(uint8_t contentCode) {
     uint8_t chunks = 0;
     if (contentCode & 0x02) {
         ++chunks;
@@ -69,15 +65,14 @@ getChunkCount(uint8_t contentCode)
     return chunks;
 }
 
-}  // namespace
+} // namespace
 
-void
-VespaDocumentDeserializer::readDocument(Document &value) {
+void VespaDocumentDeserializer::readDocument(Document& value) {
     read(value.getId());
     uint8_t content_code = readValue<uint8_t>(_stream);
 
     LOG(spam, "content_code is %u", content_code);
-    const DocumentType *type = readDocType(value.getType());
+    const DocumentType* type = readDocType(value.getType());
     if (type) {
         Document::verifyIdAndType(value.getId(), type);
         value.setType(*type);
@@ -88,28 +83,23 @@ VespaDocumentDeserializer::readDocument(Document &value) {
     value.setRepo(_repo.getDocumentTypeRepo());
     value.getFields().setDocumentType(value.getType());
 
-    FixedTypeRepo repo(_repo.getDocumentTypeRepo(), value.getType());
+    FixedTypeRepo           repo(_repo.getDocumentTypeRepo(), value.getType());
     VarScope<FixedTypeRepo> repo_scope(_repo, repo);
-    uint32_t chunkCount = getChunkCount(content_code);
+    uint32_t                chunkCount = getChunkCount(content_code);
     for (uint32_t i = 0; i < chunkCount; ++i) {
         readStructNoReset(value.getFields());
     }
 }
 
-void
-VespaDocumentDeserializer::read(FieldValue &value) {
-    value.accept(*this);
-}
+void VespaDocumentDeserializer::read(FieldValue& value) { value.accept(*this); }
 
-const DocumentType*
-VespaDocumentDeserializer::readDocType(const DocumentType &guess)
-{
+const DocumentType* VespaDocumentDeserializer::readDocType(const DocumentType& guess) {
     string_view type_name = read_cstr(_stream);
 
-    readValue<uint16_t>(_stream);  // skip version
+    readValue<uint16_t>(_stream); // skip version
 
     if (guess.getName() != type_name) {
-        const DocumentType *type = _repo.getDocumentTypeRepo().getDocumentType(type_name);
+        const DocumentType* type = _repo.getDocumentTypeRepo().getDocumentType(type_name);
         if (!type) {
             throw DocumentTypeNotFoundException(std::string(type_name), VESPA_STRLOC);
         }
@@ -118,23 +108,20 @@ VespaDocumentDeserializer::readDocType(const DocumentType &guess)
     return nullptr;
 }
 
-void
-VespaDocumentDeserializer::read(DocumentId &value) {
+void VespaDocumentDeserializer::read(DocumentId& value) {
     string_view id = read_cstr(_stream);
     value.set(id);
 }
 
-void
-VespaDocumentDeserializer::read(DocumentType &value) {
-    const DocumentType *doc_type = readDocType(value);
+void VespaDocumentDeserializer::read(DocumentType& value) {
+    const DocumentType* doc_type = readDocType(value);
     if (doc_type) {
         value = *doc_type;
     }
 }
 
-void
-VespaDocumentDeserializer::read(Document &value) {
-    uint16_t version = readValue<uint16_t>(_stream);
+void VespaDocumentDeserializer::read(Document& value) {
+    uint16_t           version = readValue<uint16_t>(_stream);
     VarScope<uint16_t> version_scope(_version, version);
 
     if (version < 8 || version > 8) {
@@ -144,134 +131,115 @@ VespaDocumentDeserializer::read(Document &value) {
     }
 
     uint32_t data_size = readValue<uint32_t>(_stream);
-    size_t data_start_size = _stream.size();
+    size_t   data_start_size = _stream.size();
     readDocument(value);
 
     if (data_start_size - _stream.size() != data_size) {
         asciistream msg;
-        msg << "Length mismatch. Was "
-            << data_start_size - _stream.size()
-            << ", expected " << data_size << ".";
+        msg << "Length mismatch. Was " << data_start_size - _stream.size() << ", expected " << data_size << ".";
         throw DeserializeException(msg.str(), VESPA_STRLOC);
     }
-
 }
 
-void
-VespaDocumentDeserializer::read(AnnotationReferenceFieldValue &value) {
+void VespaDocumentDeserializer::read(AnnotationReferenceFieldValue& value) {
     value.setAnnotationIndex(getInt1_2_4Bytes(_stream));
 }
 
-void
-VespaDocumentDeserializer::read(ArrayFieldValue &value) {
+void VespaDocumentDeserializer::read(ArrayFieldValue& value) {
     uint32_t size = readSize(_stream);
     value.clear();
     value.resize(size);
     for (uint32_t i = 0; i < size; ++i) {
-        value[i].accept(*this);  // Double dispatch to call the correct read()
+        value[i].accept(*this); // Double dispatch to call the correct read()
     }
 }
 
-void
-VespaDocumentDeserializer::read(MapFieldValue &value) {
+void VespaDocumentDeserializer::read(MapFieldValue& value) {
     value.clear();
     uint32_t size = readSize(_stream);
     value.resize(size);
-    for (auto & pair : value) {
+    for (auto& pair : value) {
         pair.first->accept(*this);  // Double dispatch to call the correct read()
-        pair.second->accept(*this);  // Double dispatch to call the correct read()
+        pair.second->accept(*this); // Double dispatch to call the correct read()
     }
 }
 
 namespace {
-template <typename T> struct ValueType { using Type = typename T::Number; };
-template <> struct ValueType<BoolFieldValue> { using Type = bool; };
-template <> struct ValueType<ShortFieldValue> { using Type = uint16_t; };
-template <> struct ValueType<IntFieldValue> { using Type = uint32_t; };
-template <> struct ValueType<LongFieldValue> { using Type = uint64_t; };
-template <> struct ValueType<RawFieldValue> { using Type = std::string; };
+template <typename T> struct ValueType {
+    using Type = typename T::Number;
+};
+template <> struct ValueType<BoolFieldValue> {
+    using Type = bool;
+};
+template <> struct ValueType<ShortFieldValue> {
+    using Type = uint16_t;
+};
+template <> struct ValueType<IntFieldValue> {
+    using Type = uint32_t;
+};
+template <> struct ValueType<LongFieldValue> {
+    using Type = uint64_t;
+};
+template <> struct ValueType<RawFieldValue> {
+    using Type = std::string;
+};
 
-template <typename T>
-void readFieldValue(nbostream &input, T &value) {
+template <typename T> void readFieldValue(nbostream& input, T& value) {
     typename ValueType<T>::Type val;
     input >> val;
     value.setValue(val);
 }
 
-}  // namespace
+} // namespace
 
-void
-VespaDocumentDeserializer::read(BoolFieldValue &value) {
-    readFieldValue(_stream, value);
-}
+void VespaDocumentDeserializer::read(BoolFieldValue& value) { readFieldValue(_stream, value); }
 
-void
-VespaDocumentDeserializer::read(ByteFieldValue &value) {
-    readFieldValue(_stream, value);
-}
+void VespaDocumentDeserializer::read(ByteFieldValue& value) { readFieldValue(_stream, value); }
 
-void
-VespaDocumentDeserializer::read(DoubleFieldValue &value) {
-    readFieldValue(_stream, value);
-}
+void VespaDocumentDeserializer::read(DoubleFieldValue& value) { readFieldValue(_stream, value); }
 
-void
-VespaDocumentDeserializer::read(FloatFieldValue &value) {
-    readFieldValue(_stream, value);
-}
+void VespaDocumentDeserializer::read(FloatFieldValue& value) { readFieldValue(_stream, value); }
 
-void
-VespaDocumentDeserializer::read(IntFieldValue &value) {
-    readFieldValue(_stream, value);
-}
+void VespaDocumentDeserializer::read(IntFieldValue& value) { readFieldValue(_stream, value); }
 
-void
-VespaDocumentDeserializer::read(LongFieldValue &value) {
-    readFieldValue(_stream, value);
-}
+void VespaDocumentDeserializer::read(LongFieldValue& value) { readFieldValue(_stream, value); }
 
-void
-VespaDocumentDeserializer::read(PredicateFieldValue &value) {
-    uint32_t stored_size = readValue<uint32_t>(_stream);
-    Memory memory(_stream.peek(), _stream.size());
+void VespaDocumentDeserializer::read(PredicateFieldValue& value) {
+    uint32_t               stored_size = readValue<uint32_t>(_stream);
+    Memory                 memory(_stream.peek(), _stream.size());
     std::unique_ptr<Slime> slime(new Slime);
-    size_t size = vespalib::slime::BinaryFormat::decode(memory, *slime);
+    size_t                 size = vespalib::slime::BinaryFormat::decode(memory, *slime);
     if (size != stored_size) {
         throw DeserializeException("Specified slime size don't match actual "
-                                   "slime size.", VESPA_STRLOC);
+                                   "slime size.",
+                                   VESPA_STRLOC);
     }
     value = PredicateFieldValue(std::move(slime));
     _stream.adjustReadPos(size);
 }
 
 namespace {
-template <typename FV>
-void setValue(FV &field_value, string_view val, bool use_ref) {
+template <typename FV> void setValue(FV& field_value, string_view val, bool use_ref) {
     if (use_ref) {
         field_value.setValueRef(val);
     } else {
         field_value.setValue(val);
     }
 }
-}  // namespace
+} // namespace
 
-void
-VespaDocumentDeserializer::read(RawFieldValue &value) {
-    uint32_t size = readValue<uint32_t>(_stream);
+void VespaDocumentDeserializer::read(RawFieldValue& value) {
+    uint32_t    size = readValue<uint32_t>(_stream);
     string_view val(_stream.peek(), size);
     setValue(value, val, _stream.isLongLivedBuffer());
     _stream.adjustReadPos(size);
 }
 
-void
-VespaDocumentDeserializer::read(ShortFieldValue &value) {
-    readFieldValue(_stream, value);
-}
+void VespaDocumentDeserializer::read(ShortFieldValue& value) { readFieldValue(_stream, value); }
 
-void
-VespaDocumentDeserializer::read(StringFieldValue &value) {
+void VespaDocumentDeserializer::read(StringFieldValue& value) {
     uint8_t coding = readValue<uint8_t>(_stream);
-    size_t size = getInt1_4Bytes(_stream);
+    size_t  size = getInt1_4Bytes(_stream);
     if (size == 0) {
         throw DeserializeException("invalid zero string length", VESPA_STRLOC);
     }
@@ -280,7 +248,7 @@ VespaDocumentDeserializer::read(StringFieldValue &value) {
     setValue(value, val, _stream.isLongLivedBuffer());
     if (coding & 0x40) {
         uint32_t serializedAnnotationsSize = readValue<uint32_t>(_stream);
-        auto span_buf = vespalib::ConstBufferRef(_stream.peek(), serializedAnnotationsSize);
+        auto     span_buf = vespalib::ConstBufferRef(_stream.peek(), serializedAnnotationsSize);
         _stream.adjustReadPos(serializedAnnotationsSize); // Trigger any out-of-bounds before using buffer range.
         value.setSpanTrees(span_buf, _repo, _version, _stream.isLongLivedBuffer());
     } else {
@@ -292,10 +260,10 @@ namespace {
 
 using FieldInfo = SerializableArray::EntryMap;
 
-void readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info, size_t max_buffer_extent) __attribute__((noinline));
+void readFieldInfo(nbostream& input, SerializableArray::EntryMap& field_info, size_t max_buffer_extent)
+    __attribute__((noinline));
 
-void
-readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info, size_t max_buffer_extent) {
+void readFieldInfo(nbostream& input, SerializableArray::EntryMap& field_info, size_t max_buffer_extent) {
     size_t field_count = getInt1_4Bytes(input);
     field_info.reserve(field_count);
     uint32_t offset = 0;
@@ -304,30 +272,31 @@ readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info, size_t
         const uint32_t size = getInt2_4_8Bytes(input);
         if (size_t(offset) + size > max_buffer_extent) [[unlikely]] {
             throw DeserializeException(fmt("Field (id=%u, offset=%u, size=%u) extends beyond max buffer extent (%zu)",
-                                           id, offset, size, max_buffer_extent), VESPA_STRLOC);
+                                           id, offset, size, max_buffer_extent),
+                                       VESPA_STRLOC);
         }
         field_info.emplace_back(id, size, offset);
         offset += size;
     }
 }
 
-ByteBuffer
-deCompress(CompressionConfig::Type compression, uint32_t uncompressedLength, vespalib::ConstBufferRef compressed) __attribute__((noinline));
+ByteBuffer deCompress(CompressionConfig::Type compression, uint32_t uncompressedLength,
+                      vespalib::ConstBufferRef compressed) __attribute__((noinline));
 
-ByteBuffer
-deCompress(CompressionConfig::Type compression, uint32_t uncompressedLength, vespalib::ConstBufferRef compressed)
-{
+ByteBuffer deCompress(CompressionConfig::Type compression, uint32_t uncompressedLength,
+                      vespalib::ConstBufferRef compressed) {
     using vespalib::compression::decompress;
 
     assert(compressed.size() != 0);
 
-    ByteBuffer newSerialization(vespalib::alloc::Alloc::alloc(uncompressedLength), uncompressedLength);
+    ByteBuffer           newSerialization(vespalib::alloc::Alloc::alloc(uncompressedLength), uncompressedLength);
     vespalib::DataBuffer unCompressed(newSerialization.getBuffer(), newSerialization.getLength());
     unCompressed.clear();
     try {
-        decompress(compression, uncompressedLength, compressed,unCompressed,false);
-    } catch (const std::runtime_error & e) {
-        throw DeserializeException(fmt( "Document was compressed with code unknown code %d", compression), VESPA_STRLOC);
+        decompress(compression, uncompressedLength, compressed, unCompressed, false);
+    } catch (const std::runtime_error& e) {
+        throw DeserializeException(fmt("Document was compressed with code unknown code %d", compression),
+                                   VESPA_STRLOC);
     }
 
     if (unCompressed.getDataLen() != (size_t)uncompressedLength) {
@@ -340,52 +309,53 @@ deCompress(CompressionConfig::Type compression, uint32_t uncompressedLength, ves
     return newSerialization;
 }
 
-}  // namespace
+} // namespace
 
-void
-VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
+void VespaDocumentDeserializer::readStructNoReset(StructFieldValue& value) {
     size_t data_size = readValue<uint32_t>(_stream);
 
     const auto compression_type = CompressionConfig::Type(readValue<uint8_t>(_stream));
-    const bool is_compressed    = CompressionConfig::isCompressed(compression_type);
+    const bool is_compressed = CompressionConfig::isCompressed(compression_type);
 
     SerializableArray::EntryMap field_info;
-    size_t uncompressed_size = 0;
+    size_t                      uncompressed_size = 0;
     if (is_compressed) {
         uncompressed_size = getInt2_4_8Bytes(_stream);
     }
     if (is_compressed && (compression_type != CompressionConfig::LZ4)) [[unlikely]] {
-        throw DeserializeException(fmt("Unsupported compression type: %u", static_cast<uint8_t>(compression_type)), VESPA_STRLOC);
+        throw DeserializeException(fmt("Unsupported compression type: %u", static_cast<uint8_t>(compression_type)),
+                                   VESPA_STRLOC);
     }
     // Must read field info _prior_ to checking remaining stream size against
     // data_size, as the field info size is not counted as part of data_size.
     readFieldInfo(_stream, field_info, is_compressed ? uncompressed_size : data_size);
     if (data_size > _stream.size()) [[unlikely]] {
-        throw DeserializeException(fmt("Struct size (%zu) is greater than remaining buffer size (%zu)",
-                                       data_size, _stream.size()), VESPA_STRLOC);
+        throw DeserializeException(
+            fmt("Struct size (%zu) is greater than remaining buffer size (%zu)", data_size, _stream.size()),
+            VESPA_STRLOC);
     }
     if (data_size > 0) {
-        ByteBuffer buffer = is_compressed
-                            ? deCompress(compression_type, uncompressed_size, ConstBufferRef(_stream.peek(), data_size))
-                            : (_stream.isLongLivedBuffer()
-                                ? ByteBuffer(_stream.peek(), data_size)
-                                : ByteBuffer::copyBuffer(_stream.peek(), data_size));
+        ByteBuffer buffer =
+            is_compressed ? deCompress(compression_type, uncompressed_size, ConstBufferRef(_stream.peek(), data_size))
+                          : (_stream.isLongLivedBuffer() ? ByteBuffer(_stream.peek(), data_size)
+                                                         : ByteBuffer::copyBuffer(_stream.peek(), data_size));
         if (value.getFields().empty()) {
-            LOG(spam, "Lazy deserializing into %s with _version %u", value.getDataType()->getName().c_str(), _version);
+            LOG(spam, "Lazy deserializing into %s with _version %u", value.getDataType()->getName().c_str(),
+                _version);
             value.lazyDeserialize(_repo, _version, std::move(field_info), std::move(buffer));
         } else {
             LOG(debug, "Legacy dual header/body format. -> Merging.");
             StructFieldValue tmp(*value.getDataType());
             tmp.lazyDeserialize(_repo, _version, std::move(field_info), std::move(buffer));
-            for (const auto & entry : tmp) {
+            for (const auto& entry : tmp) {
                 try {
                     FieldValue::UP decoded = tmp.getValue(entry);
                     if (decoded) {
                         value.setValue(entry, std::move(decoded));
                     }
-                } catch (const vespalib::Exception & e) {
+                } catch (const vespalib::Exception& e) {
                     LOG(warning, "Failed decoding field '%s' in legacy bodyfield -> Skipping it: %s",
-                                 entry.getName().c_str(), e.what());
+                        entry.getName().c_str(), e.what());
                 }
             }
         }
@@ -393,48 +363,40 @@ VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
     }
 }
 
-void
-VespaDocumentDeserializer::read(StructFieldValue& value)
-{
+void VespaDocumentDeserializer::read(StructFieldValue& value) {
     value.reset();
     readStructNoReset(value);
 }
 
-void
-VespaDocumentDeserializer::read(WeightedSetFieldValue &value) {
+void VespaDocumentDeserializer::read(WeightedSetFieldValue& value) {
     value.clear();
-    readValue<uint32_t>(_stream);  // skip type id
+    readValue<uint32_t>(_stream); // skip type id
     uint32_t size = readValue<uint32_t>(_stream);
     value.reserve(size);
     for (uint32_t i = 0; i < size; ++i) {
-        readValue<uint32_t>(_stream);  // skip element size
+        readValue<uint32_t>(_stream); // skip element size
         FieldValue::UP child = value.createNested();
-        child->accept(*this);  // Double dispatch to call the correct read()
+        child->accept(*this); // Double dispatch to call the correct read()
         uint32_t weight = readValue<uint32_t>(_stream);
         value.push_back(std::move(child), weight);
     }
 }
 
-void
-VespaDocumentDeserializer::read(TensorFieldValue &value)
-{
-    value.assignDeserialized(readTensor());
-}
+void VespaDocumentDeserializer::read(TensorFieldValue& value) { value.assignDeserialized(readTensor()); }
 
-std::unique_ptr<vespalib::eval::Value>
-VespaDocumentDeserializer::readTensor()
-{
+std::unique_ptr<vespalib::eval::Value> VespaDocumentDeserializer::readTensor() {
     size_t length = _stream.getInt1_4Bytes();
     if (length > _stream.size()) {
-        throw DeserializeException(fmt("Stream failed size(%zu), needed(%zu) to deserialize tensor field value", _stream.size(), length),
-                                   VESPA_STRLOC);
+        throw DeserializeException(
+            fmt("Stream failed size(%zu), needed(%zu) to deserialize tensor field value", _stream.size(), length),
+            VESPA_STRLOC);
     }
     std::unique_ptr<vespalib::eval::Value> tensor;
     if (length != 0) {
         nbostream wrapStream(_stream.peek(), length);
         try {
             tensor = vespalib::eval::decode_value(wrapStream, FastValueBuilderFactory::get());
-        } catch (const vespalib::eval::DecodeValueException &e) {
+        } catch (const vespalib::eval::DecodeValueException& e) {
             throw DeserializeException("tensor value decode failed", e, VESPA_STRLOC);
         }
         if (wrapStream.size() != 0) {
@@ -445,8 +407,7 @@ VespaDocumentDeserializer::readTensor()
     return tensor;
 }
 
-void
-VespaDocumentDeserializer::read(ReferenceFieldValue& value) {
+void VespaDocumentDeserializer::read(ReferenceFieldValue& value) {
     const bool hasId(readValue<uint8_t>(_stream) == 1);
     if (hasId) {
         DocumentId id;
@@ -455,4 +416,4 @@ VespaDocumentDeserializer::read(ReferenceFieldValue& value) {
     }
 }
 
-}  // document
+} // namespace document

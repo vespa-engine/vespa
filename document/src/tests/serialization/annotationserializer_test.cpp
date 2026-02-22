@@ -1,24 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/spantree.h>
+#include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/annotationdeserializer.h>
 #include <vespa/document/serialization/annotationserializer.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/fastos/file.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/test/test_path.h>
-#include <vespa/fastos/file.h>
+
 #include <algorithm>
 #include <fstream>
 #include <optional>
-
 
 using std::fstream;
 using std::ostringstream;
@@ -31,18 +31,17 @@ namespace {
 
 template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
 
-void
-read_span_trees(const string &file_name, const FixedTypeRepo &repo, std::optional<StringFieldValue::SpanTrees>& span_trees)
-{
+void read_span_trees(const string& file_name, const FixedTypeRepo& repo,
+                     std::optional<StringFieldValue::SpanTrees>& span_trees) {
     FastOS_File file(file_name.c_str());
     ASSERT_TRUE(file.OpenReadOnlyExisting());
-    char buffer[1024];
+    char    buffer[1024];
     ssize_t size = file.Read(buffer, arraysize(buffer));
     ASSERT_TRUE(size != -1);
 
-    nbostream stream(buffer, size);
+    nbostream                 stream(buffer, size);
     VespaDocumentDeserializer deserializer(repo, stream, 8);
-    StringFieldValue value;
+    StringFieldValue          value;
     deserializer.read(value);
 
     EXPECT_EQ(0u, stream.size());
@@ -50,18 +49,17 @@ read_span_trees(const string &file_name, const FixedTypeRepo &repo, std::optiona
     span_trees = value.getSpanTrees();
 }
 
-}
+} // namespace
 
-TEST(AnnotationSerializerTest, require_that_simple_span_tree_is_deserialized)
-{
+TEST(AnnotationSerializerTest, require_that_simple_span_tree_is_deserialized) {
     DocumentTypeRepo type_repo(readDocumenttypesConfig(TEST_PATH("annotation.serialize.test.repo.cfg")));
-    FixedTypeRepo repo(type_repo, "annotation_serialize_test");
+    FixedTypeRepo    repo(type_repo, "annotation_serialize_test");
     std::optional<StringFieldValue::SpanTrees> span_trees;
     ASSERT_NO_FATAL_FAILURE(read_span_trees(TEST_PATH("test_data_serialized_simple"), repo, span_trees));
     auto span_tree = std::move(span_trees.value().front());
 
     EXPECT_EQ("html", span_tree->getName());
-    const SimpleSpanList *root = dynamic_cast<const SimpleSpanList *>(&span_tree->getRoot());
+    const SimpleSpanList* root = dynamic_cast<const SimpleSpanList*>(&span_tree->getRoot());
     ASSERT_TRUE(root);
     EXPECT_EQ(5u, root->size());
     SimpleSpanList::const_iterator it = root->begin();
@@ -74,16 +72,15 @@ TEST(AnnotationSerializerTest, require_that_simple_span_tree_is_deserialized)
 }
 
 struct AnnotationComparator {
-    vector<string> expect;
-    vector<string> actual;
-    template <typename ITR>
-    AnnotationComparator &addActual(ITR pos, ITR end) {
+    vector<string>                                expect;
+    vector<string>                                actual;
+    template <typename ITR> AnnotationComparator& addActual(ITR pos, ITR end) {
         for (; pos != end; ++pos) {
             actual.push_back(pos->toString());
         }
         return *this;
     }
-    AnnotationComparator &addExpected(const string &e) {
+    AnnotationComparator& addExpected(const string& e) {
         expect.push_back(e);
         return *this;
     }
@@ -98,23 +95,22 @@ struct AnnotationComparator {
     }
 };
 
-TEST(AnnotationSerializerTest, require_that_advanced_span_tree_is_deserialized)
-{
+TEST(AnnotationSerializerTest, require_that_advanced_span_tree_is_deserialized) {
     DocumentTypeRepo type_repo(readDocumenttypesConfig(TEST_PATH("annotation.serialize.test.repo.cfg")));
-    FixedTypeRepo repo(type_repo, "annotation_serialize_test");
+    FixedTypeRepo    repo(type_repo, "annotation_serialize_test");
     std::optional<StringFieldValue::SpanTrees> span_trees;
     ASSERT_NO_FATAL_FAILURE(read_span_trees(TEST_PATH("test_data_serialized_advanced"), repo, span_trees));
     auto span_tree = std::move(span_trees.value().front());
 
     EXPECT_EQ("html", span_tree->getName());
-    const SpanList *root = dynamic_cast<const SpanList *>(&span_tree->getRoot());
+    const SpanList* root = dynamic_cast<const SpanList*>(&span_tree->getRoot());
     ASSERT_TRUE(root);
     EXPECT_EQ(4u, root->size());
     SpanList::const_iterator it = root->begin();
-    EXPECT_EQ(Span(0, 6), *(static_cast<Span *>(*it++)));
-    AlternateSpanList *alt_list = dynamic_cast<AlternateSpanList *>(*it++);
-    EXPECT_EQ(Span(27, 9), *(static_cast<Span *>(*it++)));
-    EXPECT_EQ(Span(36, 8), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(0, 6), *(static_cast<Span*>(*it++)));
+    AlternateSpanList* alt_list = dynamic_cast<AlternateSpanList*>(*it++);
+    EXPECT_EQ(Span(27, 9), *(static_cast<Span*>(*it++)));
+    EXPECT_EQ(Span(36, 8), *(static_cast<Span*>(*it++)));
     EXPECT_TRUE(it == root->end());
 
     ASSERT_TRUE(alt_list);
@@ -123,15 +119,15 @@ TEST(AnnotationSerializerTest, require_that_advanced_span_tree_is_deserialized)
     EXPECT_EQ(0.1, alt_list->getProbability(1));
     EXPECT_EQ(4u, alt_list->getSubtree(0).size());
     it = alt_list->getSubtree(0).begin();
-    EXPECT_EQ(Span(6, 3), *(static_cast<Span *>(*it++)));
-    EXPECT_EQ(Span(9, 10), *(static_cast<Span *>(*it++)));
-    EXPECT_EQ(Span(19, 4), *(static_cast<Span *>(*it++)));
-    EXPECT_EQ(Span(23, 4), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(6, 3), *(static_cast<Span*>(*it++)));
+    EXPECT_EQ(Span(9, 10), *(static_cast<Span*>(*it++)));
+    EXPECT_EQ(Span(19, 4), *(static_cast<Span*>(*it++)));
+    EXPECT_EQ(Span(23, 4), *(static_cast<Span*>(*it++)));
     EXPECT_TRUE(it == alt_list->getSubtree(0).end());
     EXPECT_EQ(2u, alt_list->getSubtree(1).size());
     it = alt_list->getSubtree(1).begin();
-    EXPECT_EQ(Span(6, 13), *(static_cast<Span *>(*it++)));
-    EXPECT_EQ(Span(19, 8), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(6, 13), *(static_cast<Span*>(*it++)));
+    EXPECT_EQ(Span(19, 8), *(static_cast<Span*>(*it++)));
     EXPECT_TRUE(it == alt_list->getSubtree(1).end());
 
     EXPECT_EQ(12u, span_tree->numAnnotations());
@@ -201,22 +197,20 @@ TEST(AnnotationSerializerTest, require_that_advanced_span_tree_is_deserialized)
     comparator.compare();
 }
 
-TEST(AnnotationSerializerTest, require_that_span_tree_can_be_serialized)
-{
-    DocumentTypeRepo type_repo(
-            readDocumenttypesConfig(TEST_PATH("annotation.serialize.test.repo.cfg")));
-    FixedTypeRepo repo(type_repo, "annotation_serialize_test");
-    string file_name = TEST_PATH("test_data_serialized_advanced");
+TEST(AnnotationSerializerTest, require_that_span_tree_can_be_serialized) {
+    DocumentTypeRepo type_repo(readDocumenttypesConfig(TEST_PATH("annotation.serialize.test.repo.cfg")));
+    FixedTypeRepo    repo(type_repo, "annotation_serialize_test");
+    string           file_name = TEST_PATH("test_data_serialized_advanced");
 
     FastOS_File file(file_name.c_str());
     ASSERT_TRUE(file.OpenReadOnlyExisting());
-    char buffer[1024];
+    char    buffer[1024];
     ssize_t size = file.Read(buffer, arraysize(buffer));
     ASSERT_TRUE(size != -1);
 
-    nbostream stream(buffer, size);
+    nbostream                 stream(buffer, size);
     VespaDocumentDeserializer deserializer(repo, stream, 8);
-    StringFieldValue value;
+    StringFieldValue          value;
     deserializer.read(value);
 
     auto span_tree = std::move(value.getSpanTrees().front());
@@ -232,23 +226,22 @@ TEST(AnnotationSerializerTest, require_that_span_tree_can_be_serialized)
         if (buffer[i] != stream.peek()[i]) {
             ++diff_count;
         }
-        EXPECT_EQ((int) buffer[i], (int) stream.peek()[i]);
+        EXPECT_EQ((int)buffer[i], (int)stream.peek()[i]);
     }
     EXPECT_EQ(0, diff_count);
 }
 
-TEST(AnnotationSerializerTest, require_that_unknown_annotation_is_skipped)
-{
-    AnnotationType type(42, "my type");
-    Annotation annotation(type, FieldValue::UP(new StringFieldValue("foo")));
-    nbostream stream;
+TEST(AnnotationSerializerTest, require_that_unknown_annotation_is_skipped) {
+    AnnotationType       type(42, "my type");
+    Annotation           annotation(type, FieldValue::UP(new StringFieldValue("foo")));
+    nbostream            stream;
     AnnotationSerializer serializer(stream);
     serializer.write(annotation);
 
-    DocumentTypeRepo type_repo;  // Doesn't know any annotation types.
-    FixedTypeRepo repo(type_repo);
+    DocumentTypeRepo       type_repo; // Doesn't know any annotation types.
+    FixedTypeRepo          repo(type_repo);
     AnnotationDeserializer deserializer(repo, stream, 8);
-    Annotation a;
+    Annotation             a;
     deserializer.readAnnotation(a);
     EXPECT_FALSE(a.valid());
     EXPECT_EQ(0u, stream.size());

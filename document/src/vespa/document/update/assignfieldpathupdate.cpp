@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "assignfieldpathupdate.h"
+
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/select/variablemap.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <ostream>
 
 #include <vespa/log/log.h>
@@ -19,25 +21,15 @@ namespace document {
 using namespace fieldvalue;
 
 AssignFieldPathUpdate::AssignFieldPathUpdate()
-    : FieldPathUpdate(Assign),
-      _newValue(),
-      _expression(),
-      _removeIfZero(false),
-      _createMissingPath(false)
-{ }
+    : FieldPathUpdate(Assign), _newValue(), _expression(), _removeIfZero(false), _createMissingPath(false) {}
 
-
-AssignFieldPathUpdate::AssignFieldPathUpdate(
-        const DataType& type,
-        string_view fieldPath,
-        string_view whereClause,
-        std::unique_ptr<FieldValue> newValue)
+AssignFieldPathUpdate::AssignFieldPathUpdate(const DataType& type, string_view fieldPath, string_view whereClause,
+                                             std::unique_ptr<FieldValue> newValue)
     : FieldPathUpdate(Assign, fieldPath, whereClause),
       _newValue(std::move(newValue)),
       _expression(),
       _removeIfZero(false),
-      _createMissingPath(true)
-{
+      _createMissingPath(true) {
     checkCompatibility(*_newValue, type);
 }
 
@@ -46,11 +38,11 @@ AssignFieldPathUpdate::AssignFieldPathUpdate(string_view fieldPath, string_view 
       _newValue(),
       _expression(expression),
       _removeIfZero(false),
-      _createMissingPath(true)
-{
+      _createMissingPath(true) {
     if (_expression.empty()) {
         throw vespalib::IllegalArgumentException("Cannot create an arithmetic "
-                "assignment update with an empty expression", VESPA_STRLOC);
+                                                 "assignment update with an empty expression",
+                                                 VESPA_STRLOC);
     }
 }
 
@@ -58,64 +50,47 @@ AssignFieldPathUpdate::~AssignFieldPathUpdate() = default;
 
 namespace {
 
-class AssignValueIteratorHandler : public IteratorHandler
-{
+class AssignValueIteratorHandler : public IteratorHandler {
 public:
-    AssignValueIteratorHandler(const FieldValue& newValue,
-                               bool removeIfZero,
-                               bool createMissingPath_)
-            : _newValue(newValue), _removeIfZero(removeIfZero),
-              _createMissingPath(createMissingPath_)
-    {}
+    AssignValueIteratorHandler(const FieldValue& newValue, bool removeIfZero, bool createMissingPath_)
+        : _newValue(newValue), _removeIfZero(removeIfZero), _createMissingPath(createMissingPath_) {}
 
     ModificationStatus doModify(FieldValue& fv) override;
-    bool onComplex(const Content&) override { return false; }
-    bool createMissingPath() const override { return _createMissingPath; }
+    bool               onComplex(const Content&) override { return false; }
+    bool               createMissingPath() const override { return _createMissingPath; }
 
 private:
     const FieldValue& _newValue;
-    bool _removeIfZero;
-    bool _createMissingPath;
+    bool              _removeIfZero;
+    bool              _createMissingPath;
 };
 
-class AssignExpressionIteratorHandler : public IteratorHandler
-{
+class AssignExpressionIteratorHandler : public IteratorHandler {
 public:
-    AssignExpressionIteratorHandler(
-            const DocumentTypeRepo& repo,
-            Document& doc,
-            const std::string& expression,
-            bool removeIfZero,
-            bool createMissingPath_)
-            : _calc(repo, expression),
-              _doc(doc),
-              _removeIfZero(removeIfZero),
-              _createMissingPath(createMissingPath_)
-    {}
+    AssignExpressionIteratorHandler(const DocumentTypeRepo& repo, Document& doc, const std::string& expression,
+                                    bool removeIfZero, bool createMissingPath_)
+        : _calc(repo, expression), _doc(doc), _removeIfZero(removeIfZero), _createMissingPath(createMissingPath_) {}
 
     ModificationStatus doModify(FieldValue& fv) override;
-    bool onComplex(const Content&) override { return false; }
-    bool createMissingPath() const override { return _createMissingPath; }
+    bool               onComplex(const Content&) override { return false; }
+    bool               createMissingPath() const override { return _createMissingPath; }
 
 private:
     DocumentCalculator _calc;
-    Document& _doc;
-    bool _removeIfZero;
-    bool _createMissingPath;
+    Document&          _doc;
+    bool               _removeIfZero;
+    bool               _createMissingPath;
 };
 
-ModificationStatus
-AssignValueIteratorHandler::doModify(FieldValue& fv) {
+ModificationStatus AssignValueIteratorHandler::doModify(FieldValue& fv) {
     LOG(spam, "fv = %s", fv.toString().c_str());
     if (!(*fv.getDataType() == *_newValue.getDataType())) {
-        std::string err = vespalib::make_string(
-                "Trying to assign \"%s\" of type %s to an instance of type %s",
-                _newValue.toString().c_str(), _newValue.className(), fv.className());
+        std::string err = vespalib::make_string("Trying to assign \"%s\" of type %s to an instance of type %s",
+                                                _newValue.toString().c_str(), _newValue.className(), fv.className());
         throw vespalib::IllegalArgumentException(err, VESPA_STRLOC);
     }
-    if (_removeIfZero
-        && _newValue.isNumeric()
-        && static_cast<const NumericFieldValueBase&>(_newValue).getAsLong() == 0)
+    if (_removeIfZero && _newValue.isNumeric() &&
+        static_cast<const NumericFieldValueBase&>(_newValue).getAsLong() == 0)
     {
         return ModificationStatus::REMOVED;
     }
@@ -123,15 +98,12 @@ AssignValueIteratorHandler::doModify(FieldValue& fv) {
     return ModificationStatus::MODIFIED;
 }
 
-ModificationStatus
-AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
+ModificationStatus AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
     LOG(spam, "fv = %s", fv.toString().c_str());
     if (fv.isNumeric()) {
         std::unique_ptr<select::VariableMap> varHolder = std::make_unique<select::VariableMap>();
-        select::VariableMap & vars = *varHolder;
-        for (VariableMap::const_iterator i(getVariables().begin()),
-                 e(getVariables().end()); i != e; ++i)
-        {
+        select::VariableMap&                 vars = *varHolder;
+        for (VariableMap::const_iterator i(getVariables().begin()), e(getVariables().end()); i != e; ++i) {
             if (i->second.key.get() && i->second.key->isNumeric()) {
                 vars[i->first] = i->second.key->getAsDouble();
             } else {
@@ -155,42 +127,39 @@ AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
         }
     } else {
         throw vespalib::IllegalArgumentException(
-                vespalib::make_string("Trying to perform arithmetic on %s of type %s",
-                                      fv.toString().c_str(), fv.getDataType()->toString().c_str()),
-                VESPA_STRLOC);
+            vespalib::make_string("Trying to perform arithmetic on %s of type %s", fv.toString().c_str(),
+                                  fv.getDataType()->toString().c_str()),
+            VESPA_STRLOC);
     }
     return ModificationStatus::MODIFIED;
 }
 
-}
+} // namespace
 
-std::unique_ptr<IteratorHandler>
-AssignFieldPathUpdate::getIteratorHandler(Document& doc, const DocumentTypeRepo & repo) const
-{
+std::unique_ptr<IteratorHandler> AssignFieldPathUpdate::getIteratorHandler(Document&               doc,
+                                                                           const DocumentTypeRepo& repo) const {
     if (!_expression.empty()) {
-        return std::make_unique<AssignExpressionIteratorHandler>(repo, doc, _expression, _removeIfZero, _createMissingPath);
+        return std::make_unique<AssignExpressionIteratorHandler>(repo, doc, _expression, _removeIfZero,
+                                                                 _createMissingPath);
     } else {
         return std::make_unique<AssignValueIteratorHandler>(*_newValue, _removeIfZero, _createMissingPath);
     }
 }
 
-bool
-AssignFieldPathUpdate::operator==(const FieldPathUpdate& other) const
-{
-    if (!FieldPathUpdate::operator==(other)) return false;
-    const auto & assignOther = static_cast<const AssignFieldPathUpdate&>(other);
+bool AssignFieldPathUpdate::operator==(const FieldPathUpdate& other) const {
+    if (!FieldPathUpdate::operator==(other))
+        return false;
+    const auto& assignOther = static_cast<const AssignFieldPathUpdate&>(other);
     if (assignOther._newValue.get() && _newValue.get()) {
-        if (*assignOther._newValue != *_newValue) return false;
+        if (*assignOther._newValue != *_newValue)
+            return false;
     }
     // else: should always have at least 1 with non-empty expression
-    return (assignOther._expression == _expression)
-            && (assignOther._removeIfZero == _removeIfZero)
-            && (assignOther._createMissingPath == _createMissingPath);
+    return (assignOther._expression == _expression) && (assignOther._removeIfZero == _removeIfZero) &&
+           (assignOther._createMissingPath == _createMissingPath);
 }
 
-void
-AssignFieldPathUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
+void AssignFieldPathUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "AssignFieldPathUpdate(\n";
     FieldPathUpdate::print(out, verbose, indent + "  ");
     if (_newValue.get()) {
@@ -200,13 +169,11 @@ AssignFieldPathUpdate::print(std::ostream& out, bool verbose, const std::string&
         out << ",\n" << indent << "  " << "expression='" << _expression << "'";
     }
     out << ", removeIfZero=" << (_removeIfZero ? "yes" : "no")
-        << ", createMissingPath=" << (_createMissingPath ? "yes" : "no")
-        << "\n" << indent << ")";
+        << ", createMissingPath=" << (_createMissingPath ? "yes" : "no") << "\n"
+        << indent << ")";
 }
 
-void
-AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream)
-{
+void AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream) {
     FieldPathUpdate::deserialize(repo, type, stream);
 
     uint8_t flags = 0x00;
@@ -226,4 +193,4 @@ AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType&
     }
 }
 
-} // ns document
+} // namespace document

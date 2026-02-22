@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentcalculator.h"
+
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/select/compare.h>
 #include <vespa/document/select/parser.h>
@@ -10,19 +11,16 @@
 
 namespace document {
 
-DocumentCalculator::DocumentCalculator(const IDocumentTypeRepo& repo, const std::string & expression)
-{
+DocumentCalculator::DocumentCalculator(const IDocumentTypeRepo& repo, const std::string& expression) {
     BucketIdFactory factory;
-    select::Parser parser(repo, factory);
+    select::Parser  parser(repo, factory);
     _selectionNode = parser.parse(expression + " == 0");
 }
 
 DocumentCalculator::~DocumentCalculator() = default;
 
-double
-DocumentCalculator::evaluate(const Document& doc, std::unique_ptr<select::VariableMap> variables)
-{
-    select::Compare& compare(static_cast<select::Compare&>(*_selectionNode));
+double DocumentCalculator::evaluate(const Document& doc, std::unique_ptr<select::VariableMap> variables) {
+    select::Compare&         compare(static_cast<select::Compare&>(*_selectionNode));
     const select::ValueNode& left = compare.getLeft();
 
     select::Context context(doc);
@@ -32,10 +30,11 @@ DocumentCalculator::evaluate(const Document& doc, std::unique_ptr<select::Variab
     select::NumberValue* num = dynamic_cast<select::NumberValue*>(value.get());
 
     if (!num) {
-        throw vespalib::IllegalArgumentException("Expression could not be evaluated - some components of the expression may be missing");
+        throw vespalib::IllegalArgumentException(
+            "Expression could not be evaluated - some components of the expression may be missing");
     }
 
     return num->getCommonValue();
 }
 
-}
+} // namespace document

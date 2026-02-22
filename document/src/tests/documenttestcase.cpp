@@ -1,35 +1,37 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
-#include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/datatype/numericdatatype.h>
-#include <vespa/document/fieldvalue/iteratorhandler.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/longfieldvalue.h>
-#include <vespa/document/fieldvalue/floatfieldvalue.h>
-#include <vespa/document/fieldvalue/doublefieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/rawfieldvalue.h>
+#include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/bytefieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/doublefieldvalue.h>
+#include <vespa/document/fieldvalue/floatfieldvalue.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/document/fieldvalue/mapfieldvalue.h>
+#include <vespa/document/fieldvalue/rawfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
+
 #include <fcntl.h>
 #include <gmock/gmock.h>
+
 #include <filesystem>
 
 using vespalib::nbostream;
@@ -41,8 +43,7 @@ namespace document {
 
 using namespace fieldvalue;
 
-TEST(DocumentTest, testSizeOf)
-{
+TEST(DocumentTest, testSizeOf) {
     EXPECT_EQ(24u, sizeof(std::vector<char>));
     EXPECT_EQ(24u, sizeof(vespalib::alloc::Alloc));
     EXPECT_EQ(24u, sizeof(ByteBuffer));
@@ -57,27 +58,18 @@ TEST(DocumentTest, testSizeOf)
     EXPECT_EQ(56ul, sizeof(SerializableArray));
 }
 
-TEST(DocumentTest, testFieldPath)
-{
-    const std::string testValues[] = { "{}", "", "",
-                                       "{}r", "", "r",
-                                       "{{}}", "{", "}",
-                                       "{{}}r", "{", "}r",
-                                       "{\"{}\"}", "{}", "",
-                                       "{\"{}\"}r", "{}", "r",
-                                       "{\"{\\a}\"}r", "{a}", "r",
-                                       "{\"{\\\"}\"}r", "{\"}", "r",
-                                       "{\"{\\\\}\"}r", "{\\}", "r",
-                                       "{$x}", "$x", "",
-                                       "{$x}[$y]", "$x", "[$y]",
-                                       "{$x}.ss", "$x", ".ss",
-                                       "{\"\"}", "", ""
-                                     };
-    for (size_t i(0); i < sizeof(testValues)/sizeof(testValues[0]); i+=3) {
+TEST(DocumentTest, testFieldPath) {
+    const std::string testValues[] = {
+        "{}",           "",    "",   "{}r",           "",     "r",    "{{}}",          "{",    "}",
+        "{{}}r",        "{",   "}r", "{\"{}\"}",      "{}",   "",     "{\"{}\"}r",     "{}",   "r",
+        "{\"{\\a}\"}r", "{a}", "r",  "{\"{\\\"}\"}r", "{\"}", "r",    "{\"{\\\\}\"}r", "{\\}", "r",
+        "{$x}",         "$x",  "",   "{$x}[$y]",      "$x",   "[$y]", "{$x}.ss",       "$x",   ".ss",
+        "{\"\"}",       "",    ""};
+    for (size_t i(0); i < sizeof(testValues) / sizeof(testValues[0]); i += 3) {
         std::string_view tmp = testValues[i];
-        std::string key = FieldPathEntry::parseKey(tmp);
-        EXPECT_EQ(testValues[i+1], key);
-        EXPECT_EQ(testValues[i+2], std::string(tmp));
+        std::string      key = FieldPathEntry::parseKey(tmp);
+        EXPECT_EQ(testValues[i + 1], key);
+        EXPECT_EQ(testValues[i + 2], std::string(tmp));
     }
 }
 
@@ -85,38 +77,39 @@ class Handler : public fieldvalue::IteratorHandler {
 public:
     Handler();
     ~Handler() override;
-    const std::string & getResult() const { return _result; }
+    const std::string& getResult() const { return _result; }
+
 private:
     void onPrimitive(uint32_t, const Content&) override {
-        std::ostringstream os; os << "P-" << getArrayIndex();
+        std::ostringstream os;
+        os << "P-" << getArrayIndex();
         _result += os.str();
     }
-    void onCollectionStart(const Content&)     override { _result += '['; }
-    void onCollectionEnd(const Content&)       override { _result += ']'; }
-    void onStructStart(const Content&)         override {
-        std::ostringstream os; os << "<" << getArrayIndex() << ":";
+    void onCollectionStart(const Content&) override { _result += '['; }
+    void onCollectionEnd(const Content&) override { _result += ']'; }
+    void onStructStart(const Content&) override {
+        std::ostringstream os;
+        os << "<" << getArrayIndex() << ":";
         _result += os.str();
     }
-    void onStructEnd(const Content&)           override { _result += '>'; }
+    void        onStructEnd(const Content&) override { _result += '>'; }
     std::string _result;
 };
 
 Handler::Handler() = default;
 Handler::~Handler() = default;
 
-
-TEST(DocumentTest, testTraversing)
-{
-    Field primitive1("primitive1", 1, *DataType::INT);
-    Field primitive2("primitive2", 2, *DataType::INT);
+TEST(DocumentTest, testTraversing) {
+    Field          primitive1("primitive1", 1, *DataType::INT);
+    Field          primitive2("primitive2", 2, *DataType::INT);
     StructDataType struct1("struct1");
     struct1.addField(primitive1);
     struct1.addField(primitive2);
 
     ArrayDataType iarr(*DataType::INT);
     ArrayDataType sarr(struct1);
-    Field iarrF("iarray", 21, iarr);
-    Field sarrF("sarray", 22, sarr);
+    Field         iarrF("iarray", 21, iarr);
+    Field         sarrF("sarray", 22, sarr);
 
     StructDataType struct2("struct2");
     struct2.addField(primitive1);
@@ -148,7 +141,7 @@ TEST(DocumentTest, testTraversing)
     iarr1.add(IntFieldValue(11));
     iarr1.add(IntFieldValue(12));
     iarr1.add(IntFieldValue(13));
-    ArrayFieldValue sarr1(sarr);
+    ArrayFieldValue  sarr1(sarr);
     StructFieldValue l3s1(struct1);
     l3s1.setValue(primitive1, IntFieldValue(1));
     l3s1.setValue(primitive2, IntFieldValue(2));
@@ -160,11 +153,10 @@ TEST(DocumentTest, testTraversing)
     l1s1.setValue(s2, l2s1);
     doc->setValue(structl1s1, l1s1);
 
-    Handler fullTraverser;
+    Handler   fullTraverser;
     FieldPath empty;
     doc->iterateNested(empty.getFullRange(), fullTraverser);
-    EXPECT_EQ(fullTraverser.getResult(),
-                         std::string("<0:P-0<0:P-0<0:P-0P-0[P-0P-1P-2][<0:P-0P-0><1:P-1P-1>]>>>"));
+    EXPECT_EQ(fullTraverser.getResult(), std::string("<0:P-0<0:P-0<0:P-0P-0[P-0P-1P-2][<0:P-0P-0><1:P-1P-1>]>>>"));
 }
 
 class VariableIteratorHandler : public IteratorHandler {
@@ -173,7 +165,7 @@ public:
     ~VariableIteratorHandler() override;
     std::string retVal;
 
-    void onPrimitive(uint32_t, const Content & fv) override {
+    void onPrimitive(uint32_t, const Content& fv) override {
         for (VariableMap::iterator iter = getVariables().begin(); iter != getVariables().end(); iter++) {
             retVal += vespalib::make_string("%s: %s,", iter->first.c_str(), iter->second.toString().c_str());
         }
@@ -184,13 +176,12 @@ public:
 VariableIteratorHandler::VariableIteratorHandler() {}
 VariableIteratorHandler::~VariableIteratorHandler() {}
 
-TEST(DocumentTest, testVariables)
-{
+TEST(DocumentTest, testVariables) {
     ArrayDataType iarr(*DataType::INT);
-    ArrayDataType iiarr(static_cast<DataType &>(iarr));
-    ArrayDataType iiiarr(static_cast<DataType &>(iiarr));
+    ArrayDataType iiarr(static_cast<DataType&>(iarr));
+    ArrayDataType iiiarr(static_cast<DataType&>(iiarr));
 
-    Field iiiarrF("iiiarray", 1, iiiarr);
+    Field        iiiarrF("iiiarray", 1, iiiarr);
     DocumentType type("test");
     type.addField(iiiarrF);
 
@@ -212,42 +203,40 @@ TEST(DocumentTest, testVariables)
 
     {
         VariableIteratorHandler handler;
-        FieldPath path;
+        FieldPath               path;
         type.buildFieldPath(path, "iiiarray[$x][$y][$z]");
         doc->iterateNested(path.getFullRange(), handler);
 
-        std::string fasit =
-            "x: 0,y: 0,z: 0, - 1\n"
-            "x: 0,y: 0,z: 1, - 2\n"
-            "x: 0,y: 0,z: 2, - 3\n"
-            "x: 0,y: 1,z: 0, - 2\n"
-            "x: 0,y: 1,z: 1, - 4\n"
-            "x: 0,y: 1,z: 2, - 6\n"
-            "x: 0,y: 2,z: 0, - 3\n"
-            "x: 0,y: 2,z: 1, - 6\n"
-            "x: 0,y: 2,z: 2, - 9\n"
-            "x: 1,y: 0,z: 0, - 2\n"
-            "x: 1,y: 0,z: 1, - 4\n"
-            "x: 1,y: 0,z: 2, - 6\n"
-            "x: 1,y: 1,z: 0, - 4\n"
-            "x: 1,y: 1,z: 1, - 8\n"
-            "x: 1,y: 1,z: 2, - 12\n"
-            "x: 1,y: 2,z: 0, - 6\n"
-            "x: 1,y: 2,z: 1, - 12\n"
-            "x: 1,y: 2,z: 2, - 18\n"
-            "x: 2,y: 0,z: 0, - 3\n"
-            "x: 2,y: 0,z: 1, - 6\n"
-            "x: 2,y: 0,z: 2, - 9\n"
-            "x: 2,y: 1,z: 0, - 6\n"
-            "x: 2,y: 1,z: 1, - 12\n"
-            "x: 2,y: 1,z: 2, - 18\n"
-            "x: 2,y: 2,z: 0, - 9\n"
-            "x: 2,y: 2,z: 1, - 18\n"
-            "x: 2,y: 2,z: 2, - 27\n";
+        std::string fasit = "x: 0,y: 0,z: 0, - 1\n"
+                            "x: 0,y: 0,z: 1, - 2\n"
+                            "x: 0,y: 0,z: 2, - 3\n"
+                            "x: 0,y: 1,z: 0, - 2\n"
+                            "x: 0,y: 1,z: 1, - 4\n"
+                            "x: 0,y: 1,z: 2, - 6\n"
+                            "x: 0,y: 2,z: 0, - 3\n"
+                            "x: 0,y: 2,z: 1, - 6\n"
+                            "x: 0,y: 2,z: 2, - 9\n"
+                            "x: 1,y: 0,z: 0, - 2\n"
+                            "x: 1,y: 0,z: 1, - 4\n"
+                            "x: 1,y: 0,z: 2, - 6\n"
+                            "x: 1,y: 1,z: 0, - 4\n"
+                            "x: 1,y: 1,z: 1, - 8\n"
+                            "x: 1,y: 1,z: 2, - 12\n"
+                            "x: 1,y: 2,z: 0, - 6\n"
+                            "x: 1,y: 2,z: 1, - 12\n"
+                            "x: 1,y: 2,z: 2, - 18\n"
+                            "x: 2,y: 0,z: 0, - 3\n"
+                            "x: 2,y: 0,z: 1, - 6\n"
+                            "x: 2,y: 0,z: 2, - 9\n"
+                            "x: 2,y: 1,z: 0, - 6\n"
+                            "x: 2,y: 1,z: 1, - 12\n"
+                            "x: 2,y: 1,z: 2, - 18\n"
+                            "x: 2,y: 2,z: 0, - 9\n"
+                            "x: 2,y: 2,z: 1, - 18\n"
+                            "x: 2,y: 2,z: 2, - 27\n";
 
         EXPECT_EQ(fasit, handler.retVal);
     }
-
 }
 
 class ModifyIteratorHandler : public IteratorHandler {
@@ -262,27 +251,24 @@ public:
         return ModificationStatus::NOT_MODIFIED;
     };
 
-    bool onComplex(const Content&) override {
-        return false;
-    }
+    bool onComplex(const Content&) override { return false; }
 };
 
-TEST(DocumentTest, testModifyDocument)
-{
+TEST(DocumentTest, testModifyDocument) {
     // Create test document type and content
-    Field primitive1("primitive1", 1, *DataType::INT);
-    Field primitive2("primitive2", 2, *DataType::INT);
+    Field          primitive1("primitive1", 1, *DataType::INT);
+    Field          primitive2("primitive2", 2, *DataType::INT);
     StructDataType struct1("struct1");
     struct1.addField(primitive1);
     struct1.addField(primitive2);
 
     ArrayDataType iarr(*DataType::INT);
     ArrayDataType sarr(struct1);
-    Field iarrF("iarray", 21, iarr);
-    Field sarrF("sarray", 22, sarr);
+    Field         iarrF("iarray", 21, iarr);
+    Field         sarrF("sarray", 22, sarr);
 
     MapDataType smap(*DataType::STRING, *DataType::STRING);
-    Field smapF("smap", 23, smap);
+    Field       smapF("smap", 23, smap);
 
     StructDataType struct2("struct2");
     struct2.addField(primitive1);
@@ -293,13 +279,13 @@ TEST(DocumentTest, testModifyDocument)
     Field s2("ss", 12, struct2);
 
     MapDataType structmap(*DataType::STRING, struct2);
-    Field structmapF("structmap", 24, structmap);
+    Field       structmapF("structmap", 24, structmap);
 
     WeightedSetDataType wset(*DataType::STRING, false, false);
-    Field wsetF("wset", 25, wset);
+    Field               wsetF("wset", 25, wset);
 
     WeightedSetDataType structwset(struct2, false, false);
-    Field structwsetF("structwset", 26, structwset);
+    Field               structwsetF("structwset", 26, structwset);
 
     StructDataType struct3("struct3");
     struct3.addField(primitive1);
@@ -330,7 +316,7 @@ TEST(DocumentTest, testModifyDocument)
     iarr1.add(IntFieldValue(11));
     iarr1.add(IntFieldValue(12));
     iarr1.add(IntFieldValue(13));
-    ArrayFieldValue sarr1(sarr);
+    ArrayFieldValue  sarr1(sarr);
     StructFieldValue l3s1(struct1);
     l3s1.setValue(primitive1, IntFieldValue(1));
     l3s1.setValue(primitive2, IntFieldValue(2));
@@ -350,7 +336,7 @@ TEST(DocumentTest, testModifyDocument)
     l1s1.setValue(structmapF, structmap1);
 
     WeightedSetFieldValue wwset1(wset);
-    WSetHelper wset1(wwset1);
+    WSetHelper            wset1(wwset1);
     wset1.add("foo");
     wset1.add("bar");
     wset1.add("zoo");
@@ -376,34 +362,33 @@ TEST(DocumentTest, testModifyDocument)
     doc->print(std::cerr, true, "");
 }
 
-TEST(DocumentTest, testSimpleUsage)
-{
+TEST(DocumentTest, testSimpleUsage) {
     DocumentType::SP type(new DocumentType("test"));
-    Field intF("int", 1, *DataType::INT);
-    Field longF("long", 2, *DataType::LONG);
-    Field strF("content", 4, *DataType::STRING);
+    Field            intF("int", 1, *DataType::INT);
+    Field            longF("long", 2, *DataType::LONG);
+    Field            strF("content", 4, *DataType::STRING);
 
     type->addField(intF);
     type->addField(longF);
     type->addField(strF);
 
     DocumentTypeRepo repo(*type);
-    Document value(repo, *repo.getDocumentType("test"), DocumentId("id:ns:test::1"));
+    Document         value(repo, *repo.getDocumentType("test"), DocumentId("id:ns:test::1"));
 
-        // Initially empty
+    // Initially empty
     EXPECT_EQ(size_t(0), value.getSetFieldCount());
     EXPECT_TRUE(!value.hasValue(intF));
 
     value.setValue(intF, IntFieldValue(1));
 
-        // Not empty
+    // Not empty
     EXPECT_EQ(size_t(1), value.getSetFieldCount());
     EXPECT_TRUE(value.hasValue(intF));
 
-        // Adding some more
+    // Adding some more
     value.setValue(longF, LongFieldValue(2));
 
-        // Not empty
+    // Not empty
     EXPECT_EQ(size_t(2), value.getSetFieldCount());
     EXPECT_EQ(1, value.getValue(intF)->getAsInt());
     EXPECT_EQ(2, value.getValue(longF)->getAsInt());
@@ -411,24 +396,23 @@ TEST(DocumentTest, testSimpleUsage)
     // Serialize & equality
     nbostream buffer;
     value.serialize(buffer);
-    Document value2(repo, *repo.getDocumentType("test"),
-                    DocumentId("id::test:n=3:foo"));
+    Document value2(repo, *repo.getDocumentType("test"), DocumentId("id::test:n=3:foo"));
     EXPECT_TRUE(value != value2);
     value2.deserialize(repo, buffer);
     EXPECT_TRUE(value2.hasValue(intF));
     EXPECT_EQ(value, value2);
     EXPECT_EQ(DocumentId("id:ns:test::1"), value2.getId());
 
-        // Various ways of removing
+    // Various ways of removing
     {
-            // By value
+        // By value
         buffer.rp(0);
         value2.deserialize(repo, buffer);
         value2.remove(intF);
         EXPECT_TRUE(!value2.hasValue(intF));
         EXPECT_EQ(size_t(1), value2.getSetFieldCount());
 
-            // Clearing all
+        // Clearing all
         buffer.rp(0);
         value2.deserialize(repo, buffer);
         value2.clear();
@@ -436,28 +420,25 @@ TEST(DocumentTest, testSimpleUsage)
         EXPECT_EQ(size_t(0), value2.getSetFieldCount());
     }
 
-        // Updating
+    // Updating
     value2 = value;
     EXPECT_EQ(value, value2);
     value2.setValue(strF, StringFieldValue("foo"));
     EXPECT_TRUE(value2.hasValue(strF));
-    EXPECT_EQ(std::string("foo"),
-                         value2.getValue(strF)->getAsString());
+    EXPECT_EQ(std::string("foo"), value2.getValue(strF)->getAsString());
     EXPECT_TRUE(value != value2);
     value2.assign(value);
     EXPECT_EQ(value, value2);
     Document::UP valuePtr(value2.clone());
     EXPECT_EQ(value, *valuePtr);
 
-        // Iterating
+    // Iterating
     const Document& constVal(value);
-    for(Document::const_iterator it = constVal.begin();
-        it != constVal.end(); ++it)
-    {
+    for (Document::const_iterator it = constVal.begin(); it != constVal.end(); ++it) {
         constVal.getValue(it.field());
     }
 
-        // Comparison
+    // Comparison
     value2 = value;
     EXPECT_EQ(0, value.compare(value2));
     value2.remove(intF);
@@ -468,53 +449,47 @@ TEST(DocumentTest, testSimpleUsage)
     EXPECT_TRUE(value.compare(value2) < 0);
     EXPECT_TRUE(value2.compare(value) > 0);
 
-        // Output
-    EXPECT_EQ(
-            std::string("Document(id:ns:test::1, DocumentType(test))"),
-            value.toString(false));
-    EXPECT_EQ(
-            std::string(
-"  Document(id:ns:test::1\n"
-"    DocumentType(test, id -877171244)\n"
-"        : DocumentType(document) {\n"
-"      StructDataType(test.header, id 306916075) {\n"
-"        Field(content, id 4, PrimitiveDataType(String, id 2))\n"
-"        Field(int, id 1, NumericDataType(Int, id 0))\n"
-"        Field(long, id 2, NumericDataType(Long, id 4))\n"
-"      }\n"
-"    }\n"
-"    int: 1\n"
-"    long: 2\n"
-"  )"),
-            "  " + value.toString(true, "  "));
-    EXPECT_EQ(
-            std::string(
-                "<document documenttype=\"test\" documentid=\"id:ns:test::1\">\n"
-                "  <int>1</int>\n"
-                "  <long>2</long>\n"
-                "</document>"),
-            value.toXml("  "));
+    // Output
+    EXPECT_EQ(std::string("Document(id:ns:test::1, DocumentType(test))"), value.toString(false));
+    EXPECT_EQ(std::string("  Document(id:ns:test::1\n"
+                          "    DocumentType(test, id -877171244)\n"
+                          "        : DocumentType(document) {\n"
+                          "      StructDataType(test.header, id 306916075) {\n"
+                          "        Field(content, id 4, PrimitiveDataType(String, id 2))\n"
+                          "        Field(int, id 1, NumericDataType(Int, id 0))\n"
+                          "        Field(long, id 2, NumericDataType(Long, id 4))\n"
+                          "      }\n"
+                          "    }\n"
+                          "    int: 1\n"
+                          "    long: 2\n"
+                          "  )"),
+              "  " + value.toString(true, "  "));
+    EXPECT_EQ(std::string("<document documenttype=\"test\" documentid=\"id:ns:test::1\">\n"
+                          "  <int>1</int>\n"
+                          "  <long>2</long>\n"
+                          "</document>"),
+              value.toXml("  "));
 
-        // Failure situations.
+    // Failure situations.
 
-        // Fetch a field not existing in type
-        // (Would be nice if this failed, but whole idea to fetch by field
-        // objects is to improve performance.)
+    // Fetch a field not existing in type
+    // (Would be nice if this failed, but whole idea to fetch by field
+    // objects is to improve performance.)
     Field anotherIntF("int", 17, *DataType::INT);
     EXPECT_TRUE(!value.hasValue(anotherIntF));
     EXPECT_TRUE(!value.getValue(anotherIntF));
 
-        // Refuse to accept non-document types
-    try{
+    // Refuse to accept non-document types
+    try {
         StructDataType otherType("foo", 4);
-        auto doc = Document::make_without_repo(otherType, DocumentId("id:ns:foo::1"));
+        auto           doc = Document::make_without_repo(otherType, DocumentId("id:ns:foo::1"));
         FAIL() << "Didn't complain about non-document type";
     } catch (std::exception& e) {
         EXPECT_THAT(e.what(), HasSubstr("Cannot generate a document with non-document type"));
     }
 
-        // Refuse to set wrong types
-    try{
+    // Refuse to set wrong types
+    try {
         value2.setValue(intF, StringFieldValue("bar"));
         FAIL() << "Failed to check type equality in setValue";
     } catch (std::exception& e) {
@@ -522,20 +497,18 @@ TEST(DocumentTest, testSimpleUsage)
     }
 }
 
-void verifyJavaDocument(Document& doc)
-{
+void verifyJavaDocument(Document& doc) {
     IntFieldValue intVal;
     EXPECT_TRUE(doc.getValue(doc.getField("intfield"), intVal));
     EXPECT_EQ(5, intVal.getAsInt());
 
     FloatFieldValue floatVal;
     EXPECT_TRUE(doc.getValue(doc.getField("floatfield"), floatVal));
-    EXPECT_TRUE(floatVal.getAsFloat() == (float) -9.23);
+    EXPECT_TRUE(floatVal.getAsFloat() == (float)-9.23);
 
     StringFieldValue stringVal("");
     EXPECT_TRUE(doc.getValue(doc.getField("stringfield"), stringVal));
-    EXPECT_EQ(std::string("This is a string."),
-                         stringVal.getAsString());
+    EXPECT_EQ(std::string("This is a string."), stringVal.getAsString());
 
     LongFieldValue longVal;
     EXPECT_TRUE(doc.getValue(doc.getField("longfield"), longVal));
@@ -574,24 +547,23 @@ void verifyJavaDocument(Document& doc)
     EXPECT_EQ(StringFieldValue("bar2"), dynamic_cast<StringFieldValue&>(*map.get(StringFieldValue("foo2"))));
 }
 
-TEST(DocumentTest, testReadSerializedFile)
-{
+TEST(DocumentTest, testReadSerializedFile) {
     // Reads a file serialized from java
     const std::string file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
+    DocumentTypeRepo  repo(readDocumenttypesConfig(file_name));
 
     int fd = open(TEST_PATH("data/serializejava.dat").c_str(), O_RDONLY);
 
-    size_t len = lseek(fd,0,SEEK_END);
+    size_t                 len = lseek(fd, 0, SEEK_END);
     vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
-    lseek(fd,0,SEEK_SET);
+    lseek(fd, 0, SEEK_SET);
     if (read(fd, buf.get(), len) != (ssize_t)len) {
         throw vespalib::Exception("read failed");
     }
     close(fd);
 
     nbostream stream(buf.get(), len);
-    Document doc(repo, stream);
+    Document  doc(repo, stream);
     verifyJavaDocument(doc);
 
     nbostream buf2 = doc.serialize();
@@ -610,26 +582,22 @@ TEST(DocumentTest, testReadSerializedFile)
 }
 
 namespace {
-    struct TestDoc {
-        std::string _dataFile;
-        /**
-         * We may add or remove types as we create new versions. If we do so,
-         * we can use the created version to know what types we no longer
-         * should check, or what fields these old documents does not contain.
-         */
-        uint32_t _createdVersion;
+struct TestDoc {
+    std::string _dataFile;
+    /**
+     * We may add or remove types as we create new versions. If we do so,
+     * we can use the created version to know what types we no longer
+     * should check, or what fields these old documents does not contain.
+     */
+    uint32_t _createdVersion;
 
-        TestDoc(const std::string& dataFile, uint32_t version)
-            : _dataFile(dataFile),
-              _createdVersion(version)
-        {
-        }
-        ~TestDoc();
-    };
+    TestDoc(const std::string& dataFile, uint32_t version) : _dataFile(dataFile), _createdVersion(version) {}
+    ~TestDoc();
+};
 
-    TestDoc::~TestDoc() = default;
+TestDoc::~TestDoc() = default;
 
-}
+} // namespace
 
 /**
  * Tests serialization of all versions.
@@ -654,11 +622,10 @@ namespace {
  * file to ignore these field for old types.
  */
 
-TEST(DocumentTest,testReadSerializedAllVersions)
-{
-        // Create the datatype used for serialization test
+TEST(DocumentTest, testReadSerializedAllVersions) {
+    // Create the datatype used for serialization test
     NewConfigBuilder builder;
-    auto& doc1 = builder.document("serializetest", 1306012852);
+    auto&            doc1 = builder.document("serializetest", 1306012852);
     doc1.addField("floatfield", builder.floatTypeRef())
         .addField("stringfield", builder.stringTypeRef())
         .addField("longfield", builder.longTypeRef())
@@ -678,10 +645,10 @@ TEST(DocumentTest,testReadSerializedAllVersions)
 
     const DocumentType* docType(repo.getDocumentType("serializetest"));
     const DocumentType* docInDocType(repo.getDocumentType("docindoc"));
-    const DataType* arrayOfFloatDataType(repo.getDataType(*docType, "Array<Float>"));
-    const DataType* weightedSetDataType(repo.getDataType(*docType, "WeightedSet<String>"));
+    const DataType*     arrayOfFloatDataType(repo.getDataType(*docType, "Array<Float>"));
+    const DataType*     weightedSetDataType(repo.getDataType(*docType, "WeightedSet<String>"));
 
-        // Create a memory instance of document
+    // Create a memory instance of document
     {
         Document doc(repo, *docType, DocumentId("id:ns:serializetest::http://test.doc.id/"));
         doc.setValue("intfield", IntFieldValue::make(5));
@@ -707,8 +674,8 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         // you can copy this current to new test for new version)
         {
             nbostream buf = doc.serialize();
-            int fd = open(TEST_PATH("data/document-cpp-currentversion-uncompressed.dat").c_str(),
-                          O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            int       fd = open(TEST_PATH("data/document-cpp-currentversion-uncompressed.dat").c_str(),
+                                O_WRONLY | O_CREAT | O_TRUNC, 0644);
             EXPECT_TRUE(fd > 0);
             size_t len = write(fd, buf.peek(), buf.size());
             EXPECT_EQ(buf.size(), len);
@@ -721,24 +688,24 @@ TEST(DocumentTest,testReadSerializedAllVersions)
     std::vector<TestDoc> tests;
     tests.push_back(TestDoc(TEST_PATH("data/document-cpp-v8-uncompressed.dat"), 8));
     tests.push_back(TestDoc(jpath + "document-java-v8-uncompressed.dat", 8));
-    for (uint32_t i=0; i<tests.size(); ++i) {
-        int version = tests[i]._createdVersion;
+    for (uint32_t i = 0; i < tests.size(); ++i) {
+        int         version = tests[i]._createdVersion;
         std::string name = tests[i]._dataFile;
         std::cerr << name << std::endl;
         if (!std::filesystem::exists(std::filesystem::path(name))) {
             FAIL() << "File " << name << " does not exist.";
         }
-        int fd = open(tests[i]._dataFile.c_str(), O_RDONLY);
-        int len = lseek(fd,0,SEEK_END);
+        int                    fd = open(tests[i]._dataFile.c_str(), O_RDONLY);
+        int                    len = lseek(fd, 0, SEEK_END);
         vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
-        lseek(fd,0,SEEK_SET);
+        lseek(fd, 0, SEEK_SET);
         if (read(fd, buf.get(), len) != len) {
-                throw vespalib::Exception("read failed");
+            throw vespalib::Exception("read failed");
         }
         close(fd);
 
         nbostream stream(buf.get(), len);
-        Document doc(repo, stream);
+        Document  doc(repo, stream);
 
         IntFieldValue intVal;
         EXPECT_TRUE(doc.getValue(doc.getField("intfield"), intVal));
@@ -746,17 +713,15 @@ TEST(DocumentTest,testReadSerializedAllVersions)
 
         FloatFieldValue floatVal;
         EXPECT_TRUE(doc.getValue(doc.getField("floatfield"), floatVal));
-        EXPECT_TRUE(floatVal.getAsFloat() == (float) -9.23);
+        EXPECT_TRUE(floatVal.getAsFloat() == (float)-9.23);
 
         StringFieldValue stringVal("");
         EXPECT_TRUE(doc.getValue(doc.getField("stringfield"), stringVal));
-        EXPECT_EQ(std::string("This is a string."),
-                             stringVal.getAsString());
+        EXPECT_EQ(std::string("This is a string."), stringVal.getAsString());
 
         LongFieldValue longVal;
         EXPECT_TRUE(doc.getValue(doc.getField("longfield"), longVal));
-        EXPECT_EQ(static_cast<int64_t>(398420092938472983LL),
-                             longVal.getAsLong());
+        EXPECT_EQ(static_cast<int64_t>(398420092938472983LL), longVal.getAsLong());
 
         DoubleFieldValue doubleVal;
         EXPECT_TRUE(doc.getValue(doc.getField("doublefield"), doubleVal));
@@ -774,10 +739,8 @@ TEST(DocumentTest,testReadSerializedAllVersions)
             Document docInDoc;
             EXPECT_TRUE(doc.getValue(doc.getField("docfield"), docInDoc));
 
-            EXPECT_TRUE(docInDoc.getValue(
-                        docInDoc.getField("stringindocfield"), stringVal));
-            EXPECT_EQ(std::string("Elvis is dead"),
-                                 stringVal.getAsString());
+            EXPECT_TRUE(docInDoc.getValue(docInDoc.getField("stringindocfield"), stringVal));
+            EXPECT_EQ(std::string("Elvis is dead"), stringVal.getAsString());
         }
 
         ArrayFieldValue array(doc.getField("arrayoffloatfield").getDataType());
@@ -797,26 +760,24 @@ TEST(DocumentTest,testReadSerializedAllVersions)
     }
 }
 
-size_t getSerializedSize(const Document &doc) {
-    return doc.serialize().size();
-}
+size_t getSerializedSize(const Document& doc) { return doc.serialize().size(); }
 
-TEST(DocumentTest, testGenerateSerializedFile)
-{
+TEST(DocumentTest, testGenerateSerializedFile) {
     const std::string file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
-    Document doc(repo, *repo.getDocumentType("serializetest"), DocumentId("id:ns:serializetest::http://test.doc.id/"));
+    DocumentTypeRepo  repo(readDocumenttypesConfig(file_name));
+    Document          doc(repo, *repo.getDocumentType("serializetest"),
+                          DocumentId("id:ns:serializetest::http://test.doc.id/"));
 
     doc.setValue("intfield", IntFieldValue::make(5));
     doc.setValue("floatfield", FloatFieldValue::make(-9.23));
     doc.setValue("stringfield", StringFieldValue::make("This is a string."));
-    doc.setValue("longfield", LongFieldValue::make((int64_t) 398420092938472983ll));
+    doc.setValue("longfield", LongFieldValue::make((int64_t)398420092938472983ll));
     doc.setValue("doublefield", DoubleFieldValue::make(98374532.398820));
     doc.setValue("urifield", StringFieldValue::make("http://this.is.a.test/"));
     doc.setValue("bytefield", ByteFieldValue::make(-2));
     doc.setValue("rawfield", std::make_unique<RawFieldValue>("RAW DATA"));
 
-    const DocumentType *docindoc_type = repo.getDocumentType("docindoc");
+    const DocumentType* docindoc_type = repo.getDocumentType("docindoc");
     EXPECT_TRUE(docindoc_type);
     Document embedDoc(repo, *docindoc_type, DocumentId("id:ns:docindoc::http://embedded"));
 
@@ -840,8 +801,7 @@ TEST(DocumentTest, testGenerateSerializedFile)
     nbostream buf = doc.serialize();
 
     const std::string serializedDir = TEST_PATH("../test/document/");
-    int fd = open((serializedDir + "/serializecpp.dat").c_str(),
-                  O_WRONLY | O_TRUNC | O_CREAT, 0644);
+    int               fd = open((serializedDir + "/serializecpp.dat").c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, buf.peek(), buf.size()) != (ssize_t)buf.size()) {
         throw vespalib::Exception("write failed");
     }
@@ -849,40 +809,37 @@ TEST(DocumentTest, testGenerateSerializedFile)
 
     vespalib::nbostream hBuf;
     doc.serializeHeader(hBuf);
-    fd = open((serializedDir + "/serializecppsplit_header.dat").c_str(),
-              O_WRONLY | O_TRUNC | O_CREAT, 0644);
+    fd = open((serializedDir + "/serializecppsplit_header.dat").c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, hBuf.peek(), hBuf.size()) != (ssize_t)hBuf.size()) {
         throw vespalib::Exception("write failed");
     }
     close(fd);
 }
 
-TEST(DocumentTest, testBogusserialize)
-{
+TEST(DocumentTest, testBogusserialize) {
     TestDocRepo test_repo;
     try {
-        nbostream stream("aoifjweprjwoejr203r+2+4r823++!",100);
-        Document doc(test_repo.getTypeRepo(), stream);
+        nbostream stream("aoifjweprjwoejr203r+2+4r823++!", 100);
+        Document  doc(test_repo.getTypeRepo(), stream);
         FAIL() << "Failed to throw exception deserializing bogus data";
     } catch (DeserializeException& e) {
         EXPECT_THAT(e.what(), HasSubstr("Unrecognized serialization version"));
     }
 
     try {
-        nbostream stream("",0);
-        Document doc(test_repo.getTypeRepo(), stream);
+        nbostream stream("", 0);
+        Document  doc(test_repo.getTypeRepo(), stream);
         FAIL() << "Failed to throw exception deserializing empty buffer";
     } catch (DeserializeException& e) {
         EXPECT_THAT(e.what(), HasSubstr("Buffer out of bounds"));
     }
 }
 
-TEST(DocumentTest, testSliceSerialize)
-{
-        // Test that document doesn't need its own bytebuffer, such that we
-        // can serialize multiple documents after each other in the same
-        // bytebuffer.
-    TestDocMan testDocMan;
+TEST(DocumentTest, testSliceSerialize) {
+    // Test that document doesn't need its own bytebuffer, such that we
+    // can serialize multiple documents after each other in the same
+    // bytebuffer.
+    TestDocMan   testDocMan;
     Document::UP doc = testDocMan.createDocument();
     Document::UP doc2 = testDocMan.createDocument("Some other content", "id:ns:testdoctype1::anotherdoc");
 
@@ -906,15 +863,14 @@ TEST(DocumentTest, testSliceSerialize)
     EXPECT_EQ(*doc2, doc4);
 }
 
-TEST(DocumentTest, testUnknownEntries)
-{
+TEST(DocumentTest, testUnknownEntries) {
     // We should be able to deserialize a document with unknown values in it.
     DocumentType type1("test", 0);
     DocumentType type2("test", 0);
-    Field field1("int1", *DataType::INT);
-    Field field2("int2", *DataType::INT);
-    Field field3("int3", *DataType::INT);
-    Field field4("int4", *DataType::INT);
+    Field        field1("int1", *DataType::INT);
+    Field        field2("int2", *DataType::INT);
+    Field        field3("int3", *DataType::INT);
+    Field        field4("int4", *DataType::INT);
 
     type1.addField(field1);
     type1.addField(field2);
@@ -938,11 +894,11 @@ TEST(DocumentTest, testUnknownEntries)
     Document doc2;
     doc2.deserialize(repo, os);
 
-    EXPECT_EQ(std::string(
-        "<document documenttype=\"test\" documentid=\"id:ns:test::1\">\n"
-        "<int3>3</int3>\n"
-        "<int4>4</int4>\n"
-        "</document>"), doc2.toXml());
+    EXPECT_EQ(std::string("<document documenttype=\"test\" documentid=\"id:ns:test::1\">\n"
+                          "<int3>3</int3>\n"
+                          "<int4>4</int4>\n"
+                          "</document>"),
+              doc2.toXml());
 
     EXPECT_EQ(3, doc2.getValue(field3)->getAsInt());
     EXPECT_EQ(4, doc2.getValue(field4)->getAsInt());
@@ -959,10 +915,9 @@ TEST(DocumentTest, testUnknownEntries)
     EXPECT_EQ(size_t(2), doc2.getSetFieldCount());
 }
 
-TEST(DocumentTest, testAnnotationDeserialization)
-{
+TEST(DocumentTest, testAnnotationDeserialization) {
     NewConfigBuilder builder;
-    auto& dokk = builder.document("dokk", -1326249427);
+    auto&            dokk = builder.document("dokk", -1326249427);
     dokk.addField("age", builder.byteTypeRef())
         .addField("story", builder.stringTypeRef())
         .addField("date", builder.intTypeRef())
@@ -970,16 +925,16 @@ TEST(DocumentTest, testAnnotationDeserialization)
 
     // Create person annotation struct
     auto person_struct = dokk.createStruct("person")
-            .setId(443162583)
-            .addField("firstname", builder.stringTypeRef())
-            .addField("lastname", builder.stringTypeRef())
-            .addField("birthyear", builder.intTypeRef()).ref();
+                             .setId(443162583)
+                             .addField("firstname", builder.stringTypeRef())
+                             .addField("lastname", builder.stringTypeRef())
+                             .addField("birthyear", builder.intTypeRef())
+                             .ref();
 
     // Create relative annotation struct (references person annotation)
     // Note: AnnotationRef handling would need additional API support
-    auto relative_struct = dokk.createStruct("relative")
-            .setId(-236946034)
-            .addField("title", builder.stringTypeRef()).ref();
+    auto relative_struct =
+        dokk.createStruct("relative").setId(-236946034).addField("title", builder.stringTypeRef()).ref();
 
     // Register annotations
     dokk.annotationType(609952424, "person", person_struct)
@@ -992,45 +947,43 @@ TEST(DocumentTest, testAnnotationDeserialization)
 
     DocumentTypeRepo repo(builder.config());
 
-    int fd = open(TEST_PATH("data/serializejavawithannotations.dat").c_str(), O_RDONLY);
-    int len = lseek(fd,0,SEEK_END);
+    int                    fd = open(TEST_PATH("data/serializejavawithannotations.dat").c_str(), O_RDONLY);
+    int                    len = lseek(fd, 0, SEEK_END);
     vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
-    lseek(fd,0,SEEK_SET);
+    lseek(fd, 0, SEEK_SET);
     if (read(fd, buf.get(), len) != len) {
         throw vespalib::Exception("read failed");
     }
     close(fd);
 
-    nbostream stream1(buf.get(), len);
-    Document doc(repo, stream1);
+    nbostream        stream1(buf.get(), len);
+    Document         doc(repo, stream1);
     StringFieldValue strVal;
     EXPECT_TRUE(doc.getValue(doc.getField("story"), strVal));
 
-    vespalib::nbostream stream;
+    vespalib::nbostream     stream;
     VespaDocumentSerializer serializer(stream);
     serializer.write(strVal);
 
-    FixedTypeRepo fixedRepo(repo, doc.getType());
+    FixedTypeRepo             fixedRepo(repo, doc.getType());
     VespaDocumentDeserializer deserializer(fixedRepo, stream, 8);
-    StringFieldValue strVal2;
+    StringFieldValue          strVal2;
     deserializer.read(strVal2);
     EXPECT_EQ(strVal.toString(), strVal2.toString());
     EXPECT_EQ(strVal.toString(true), strVal2.toString(true));
 
-    EXPECT_EQ(std::string("help me help me i'm stuck inside a computer!"),
-                         strVal.getAsString());
+    EXPECT_EQ(std::string("help me help me i'm stuck inside a computer!"), strVal.getAsString());
     StringFieldValue::SpanTrees trees = strVal.getSpanTrees();
-    const SpanTree *span_tree = StringFieldValue::findTree(trees, "fruits");
+    const SpanTree*             span_tree = StringFieldValue::findTree(trees, "fruits");
     EXPECT_TRUE(span_tree);
     EXPECT_EQ(size_t(8), span_tree->numAnnotations());
     span_tree = StringFieldValue::findTree(trees, "ballooo");
     EXPECT_TRUE(span_tree);
     EXPECT_EQ(size_t(8), span_tree->numAnnotations());
 
-
     ByteFieldValue byteVal;
     EXPECT_TRUE(doc.getValue(doc.getField("age"), byteVal));
-    EXPECT_EQ( 123, byteVal.getAsInt());
+    EXPECT_EQ(123, byteVal.getAsInt());
 
     IntFieldValue intVal;
     EXPECT_TRUE(doc.getValue(doc.getField("date"), intVal));
@@ -1041,13 +994,12 @@ TEST(DocumentTest, testAnnotationDeserialization)
     EXPECT_EQ((int64_t)2384LL, longVal.getAsLong());
 }
 
-TEST(DocumentTest, testDeserializeMultiple)
-{
-    TestDocRepo testDocRepo;
+TEST(DocumentTest, testDeserializeMultiple) {
+    TestDocRepo             testDocRepo;
     const DocumentTypeRepo& repo(testDocRepo.getTypeRepo());
-    const DocumentType* docTypePtr(repo.getDocumentType("testdoctype1"));
+    const DocumentType*     docTypePtr(repo.getDocumentType("testdoctype1"));
     EXPECT_TRUE(docTypePtr != nullptr);
-    const DocumentType & docType = *docTypePtr;
+    const DocumentType& docType = *docTypePtr;
 
     StructFieldValue sv1(docType.getField("mystruct").getDataType());
 
@@ -1058,7 +1010,7 @@ TEST(DocumentTest, testDeserializeMultiple)
 
     StructFieldValue sv3(docType.getField("mystruct").getDataType());
 
-    vespalib::nbostream stream;
+    vespalib::nbostream     stream;
     VespaDocumentSerializer serializer(stream);
     serializer.write(sv1);
     serializer.write(sv2);
@@ -1074,4 +1026,4 @@ TEST(DocumentTest, testDeserializeMultiple)
     EXPECT_EQ(correct, sv3);
 }
 
-}
+} // namespace document

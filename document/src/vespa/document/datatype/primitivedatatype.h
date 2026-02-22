@@ -20,16 +20,15 @@
 namespace document {
 
 class PrimitiveDataType : public DataType {
-    void onBuildFieldPath(FieldPath & path, std::string_view remainFieldName) const override;
+    void onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const override;
+
 public:
     PrimitiveDataType(Type _type);
 
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    void                        print(std::ostream&, bool verbose, const std::string& indent) const override;
 
     bool isPrimitive() const noexcept override { return true; }
 };
 
-}
-
-
+} // namespace document

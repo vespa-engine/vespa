@@ -19,23 +19,17 @@ private:
 
 public:
     DocumentUpdateFlags() : _flags(0) {}
-    bool getCreateIfNonExistent() {
-        return (_flags & 1) != 0;
-    }
+    bool getCreateIfNonExistent() { return (_flags & 1) != 0; }
     void setCreateIfNonExistent(bool value) {
-        _flags &= ~1; // clear flag
+        _flags &= ~1;            // clear flag
         _flags |= value ? 1 : 0; // set flag
     }
-    int injectInto(int value) {
-        return extractValue(value) | (_flags << 28);
-    }
-    static DocumentUpdateFlags extractFlags(int combined) {
-        return DocumentUpdateFlags((uint8_t)(combined >> 28));
-    }
-    static int extractValue(int combined) {
+    int                        injectInto(int value) { return extractValue(value) | (_flags << 28); }
+    static DocumentUpdateFlags extractFlags(int combined) { return DocumentUpdateFlags((uint8_t)(combined >> 28)); }
+    static int                 extractValue(int combined) {
         int mask = ~(~0U << 28);
         return combined & mask;
     }
 };
 
-}
+} // namespace document

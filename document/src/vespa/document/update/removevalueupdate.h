@@ -6,6 +6,7 @@
 #pragma once
 
 #include "valueupdate.h"
+
 #include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace document {
@@ -16,6 +17,7 @@ class RemoveValueUpdate final : public ValueUpdate {
     ACCEPT_UPDATE_VISITOR;
     friend ValueUpdate;
     RemoveValueUpdate() : ValueUpdate(Remove), _key() {}
+
 public:
     /**
      * The default constructor requires initial values for all member variables.
@@ -23,8 +25,8 @@ public:
      * @param value The identifier of the field value to update.
      */
     explicit RemoveValueUpdate(std::unique_ptr<FieldValue> key);
-    RemoveValueUpdate(const RemoveValueUpdate &) = delete;
-    RemoveValueUpdate & operator=(const RemoveValueUpdate &) = delete;
+    RemoveValueUpdate(const RemoveValueUpdate&) = delete;
+    RemoveValueUpdate& operator=(const RemoveValueUpdate&) = delete;
     ~RemoveValueUpdate() override;
 
     bool operator==(const ValueUpdate& other) const override;
@@ -42,5 +44,4 @@ public:
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
 };
 
-}
-
+} // namespace document

@@ -1,25 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "structureddatatype.h"
+
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/fieldpath.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/document/base/exceptions.h>
 
 using vespalib::make_string;
 
 namespace document {
 
-StructuredDataType::StructuredDataType(std::string_view name)
-    : DataType(name, createId(name))
-{
-}
+StructuredDataType::StructuredDataType(std::string_view name) : DataType(name, createId(name)) {}
 
-StructuredDataType::StructuredDataType(std::string_view name, int dataTypeId)
-    : DataType(name, dataTypeId)
-{
-}
+StructuredDataType::StructuredDataType(std::string_view name, int dataTypeId) : DataType(name, dataTypeId) {}
 
-bool StructuredDataType::equals(const DataType &other) const noexcept {
+bool StructuredDataType::equals(const DataType& other) const noexcept {
     return DataType::equals(other) && other.isStructured();
 }
 
@@ -31,10 +26,9 @@ uint32_t crappyJavaStringHash(std::string_view value) {
     }
     return h;
 }
-}  // namespace
+} // namespace
 
-int32_t StructuredDataType::createId(std::string_view name)
-{
+int32_t StructuredDataType::createId(std::string_view name) {
     if (name == "document") {
         return 8;
     }
@@ -52,14 +46,12 @@ int32_t StructuredDataType::createId(std::string_view name)
         return rv;
     } else {
         vespalib::asciistream ost;
-        ost << name << ".0";  // Hardcode version 0 (version is not supported).
+        ost << name << ".0"; // Hardcode version 0 (version is not supported).
         return crappyJavaStringHash(ost.view());
     }
 }
 
-void
-StructuredDataType::onBuildFieldPath(FieldPath & path, std::string_view remainFieldName) const
-{
+void StructuredDataType::onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const {
     std::string_view currFieldName(remainFieldName);
     std::string_view subFieldName;
 
@@ -78,7 +70,7 @@ StructuredDataType::onBuildFieldPath(FieldPath & path, std::string_view remainFi
     // LOG(debug, "Field %s of datatype %s split into %s and %s",
     //     remainFieldName.c_str(), getName().c_str(), currFieldName.c_str(), subFieldName.c_str());
     if (hasField(currFieldName)) {
-        const document::Field &fp = getField(currFieldName);
+        const document::Field& fp = getField(currFieldName);
         fp.getDataType().buildFieldPath(path, subFieldName);
 
         path.insert(path.begin(), std::make_unique<FieldPathEntry>(fp));
@@ -90,4 +82,4 @@ StructuredDataType::onBuildFieldPath(FieldPath & path, std::string_view remainFi
     }
 }
 
-} // document
+} // namespace document

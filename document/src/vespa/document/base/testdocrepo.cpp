@@ -1,36 +1,36 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "testdocrepo.h"
+
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/newconfigbuilder.h>
+
 #include <vespa/config/print/fileconfigreader.hpp>
 
 using document::new_config_builder::NewConfigBuilder;
 
 namespace document {
 
-TestDocRepo::TestDocRepo()
-    : _cfg(getDefaultConfig()),
-      _repo(new DocumentTypeRepo(_cfg)) {
-}
+TestDocRepo::TestDocRepo() : _cfg(getDefaultConfig()), _repo(new DocumentTypeRepo(_cfg)) {}
 
 TestDocRepo::~TestDocRepo() = default;
 
 DocumenttypesConfig TestDocRepo::getDefaultConfig() {
-    const int type1_id = 238423572;
-    const int type2_id = 238424533;
-    const int type3_id = 1088783091;
-    const int mystruct_id = -2092985851;
+    const int        type1_id = 238423572;
+    const int        type2_id = 238424533;
+    const int        type3_id = 1088783091;
+    const int        mystruct_id = -2092985851;
     NewConfigBuilder builder;
 
     auto& doc1 = builder.document("testdoctype1", type1_id);
 
     // Create mystruct
     auto mystruct_ref = doc1.createStruct("mystruct")
-            .setId(mystruct_id)
-            .addField("key", builder.intTypeRef())
-            .addField("value", builder.stringTypeRef()).ref();
+                            .setId(mystruct_id)
+                            .addField("key", builder.intTypeRef())
+                            .addField("value", builder.stringTypeRef())
+                            .ref();
 
     // Create structarray (array of mystruct)
     auto structarray_ref = doc1.createArray(mystruct_ref).ref();
@@ -46,10 +46,8 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
         .addField("stringweightedset", doc1.createWset(builder.stringTypeRef()).ref())
         .addField("stringweightedset2", builder.tagTypeRef())
         .addField("byteweightedset", doc1.createWset(builder.byteTypeRef()).ref())
-        .addField("mymap", doc1.createMap(builder.intTypeRef(),
-                                          builder.stringTypeRef()).ref())
-        .addField("structarrmap", doc1.createMap(builder.stringTypeRef(),
-                                                 structarray_ref).ref())
+        .addField("mymap", doc1.createMap(builder.intTypeRef(), builder.stringTypeRef()).ref())
+        .addField("structarrmap", doc1.createMap(builder.stringTypeRef(), structarray_ref).ref())
         .addField("title", builder.stringTypeRef())
         .addField("byteval", builder.byteTypeRef());
 
@@ -70,29 +68,24 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
 
     // testdoctype2 inherits from testdoctype1
     auto& doc2 = builder.document("testdoctype2", type2_id);
-    doc2.addField("onlyinchild", builder.intTypeRef())
-        .inherit(doc1.idx());
+    doc2.addField("onlyinchild", builder.intTypeRef()).inherit(doc1.idx());
 
     // _test_doctype3_ inherits from testdoctype1
     auto& doc3 = builder.document("_test_doctype3_", type3_id);
-    doc3.addField("_only_in_child_", builder.intTypeRef())
-        .inherit(doc1.idx());
+    doc3.addField("_only_in_child_", builder.intTypeRef()).inherit(doc1.idx());
 
     return builder.config();
 }
 
-const DataType*
-TestDocRepo::getDocumentType(const std::string &t) const {
-    return _repo->getDocumentType(t);
-}
+const DataType* TestDocRepo::getDocumentType(const std::string& t) const { return _repo->getDocumentType(t); }
 
-DocumenttypesConfig readDocumenttypesConfig(const char *file_name) {
+DocumenttypesConfig readDocumenttypesConfig(const char* file_name) {
     ::config::FileConfigReader<DocumenttypesConfig> reader(file_name);
     return DocumenttypesConfig(*reader.read());
 }
 
-DocumenttypesConfig readDocumenttypesConfig(const std::string &file_name ) {
+DocumenttypesConfig readDocumenttypesConfig(const std::string& file_name) {
     return readDocumenttypesConfig(file_name.c_str());
 }
 
-}  // namespace document
+} // namespace document

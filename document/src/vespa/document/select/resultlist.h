@@ -2,8 +2,10 @@
 #pragma once
 
 #include "result.h"
-#include <vector>
+
 #include <vespa/document/fieldvalue/variablemap.h>
+
+#include <vector>
 
 namespace document::select {
 
@@ -17,10 +19,10 @@ public:
     using reverse_iterator = Results::reverse_iterator;
 
     ResultList();
-    ResultList(ResultList &&) noexcept;
-    ResultList & operator = (ResultList &&) noexcept;
-    ResultList(const ResultList &) = delete;
-    ResultList & operator = (const ResultList &) = delete;
+    ResultList(ResultList&&) noexcept;
+    ResultList& operator=(ResultList&&) noexcept;
+    ResultList(const ResultList&) = delete;
+    ResultList& operator=(const ResultList&) = delete;
     ~ResultList();
 
     /**
@@ -42,24 +44,19 @@ public:
 
     bool operator==(const ResultList& other) const;
 
-    const Results& getResults() const { return _results; }
-    const_iterator begin() const { return _results.begin(); }
-    const_iterator end() const { return _results.end(); }
+    const Results&   getResults() const { return _results; }
+    const_iterator   begin() const { return _results.begin(); }
+    const_iterator   end() const { return _results.end(); }
     reverse_iterator rbegin() { return _results.rbegin(); }
     reverse_iterator rend() { return _results.rend(); }
 
 private:
-    Results _results;
-    static bool combineVariables(VariableMap & combination, const VariableMap& output, const VariableMap& input);
+    Results     _results;
+    static bool combineVariables(VariableMap& combination, const VariableMap& output, const VariableMap& input);
 };
 
-inline bool operator==(const ResultList& list, const Result& other) {
-    return (list.combineResults() == other);
-}
+inline bool operator==(const ResultList& list, const Result& other) { return (list.combineResults() == other); }
 
-inline bool operator!=(const ResultList& list, const Result& other) {
-    return (list.combineResults() != other);
-}
+inline bool operator!=(const ResultList& list, const Result& other) { return (list.combineResults() != other); }
 
-}
-
+} // namespace document::select

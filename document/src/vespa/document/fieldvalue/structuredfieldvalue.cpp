@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "structuredfieldvalue.hpp"
-#include "iteratorhandler.h"
-#include "weightedsetfieldvalue.h"
+
 #include "arrayfieldvalue.h"
+#include "iteratorhandler.h"
 #include "structuredcache.h"
+#include "weightedsetfieldvalue.h"
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
@@ -16,49 +18,34 @@ namespace document {
 
 using namespace fieldvalue;
 
-StructuredFieldValue::Iterator::Iterator()
-    : _iterator(),
-      _field(nullptr)
-{
-}
+StructuredFieldValue::Iterator::Iterator() : _iterator(), _field(nullptr) {}
 
 StructuredFieldValue::Iterator::Iterator(const StructuredFieldValue& owner, const Field* first)
-    : _iterator(owner.getIterator(first).release()),
-      _field(_iterator->getNextField())
-{
-}
+    : _iterator(owner.getIterator(first).release()), _field(_iterator->getNextField()) {}
 
-void
-StructuredFieldValue::setFieldValue(const Field & field, const FieldValue & value)
-{
-    if (!field.getDataType().isValueType(value) &&
-        !value.getDataType()->isA(field.getDataType()))
-    {
-        throw IllegalArgumentException(
-                "Cannot assign value of type " + value.getDataType()->toString()
-                + "with value : '" + value.toString()
-                + "' to field " + field.getName() + " of type "
-                + field.getDataType().toString() + ".", VESPA_STRLOC);
+void StructuredFieldValue::setFieldValue(const Field& field, const FieldValue& value) {
+    if (!field.getDataType().isValueType(value) && !value.getDataType()->isA(field.getDataType())) {
+        throw IllegalArgumentException("Cannot assign value of type " + value.getDataType()->toString() +
+                                           "with value : '" + value.toString() + "' to field " + field.getName() +
+                                           " of type " + field.getDataType().toString() + ".",
+                                       VESPA_STRLOC);
     }
     setFieldValue(field, FieldValue::UP(value.clone()));
 }
 
-FieldValue::UP
-StructuredFieldValue::onGetNestedFieldValue(PathRange nested) const
-{
+FieldValue::UP StructuredFieldValue::onGetNestedFieldValue(PathRange nested) const {
     FieldValue::UP fv = getValue(nested.cur().getFieldRef());
     if (fv.get() != nullptr) {
         PathRange next = nested.next();
-        if ( ! next.atEnd() ) {
+        if (!next.atEnd()) {
             return fv->getNestedFieldValue(next);
         }
     }
     return fv;
 }
 
-void
-StructuredFieldValue::remove(const Field& field) {
-    StructuredCache * cache = getCache();
+void StructuredFieldValue::remove(const Field& field) {
+    StructuredCache* cache = getCache();
     if (cache) {
         cache->remove(field);
     } else {
@@ -66,9 +53,8 @@ StructuredFieldValue::remove(const Field& field) {
     }
 }
 
-void
-StructuredFieldValue::updateValue(const Field & field, FieldValue::UP value) const {
-    StructuredCache * cache = getCache();
+void StructuredFieldValue::updateValue(const Field& field, FieldValue::UP value) const {
+    StructuredCache* cache = getCache();
     if (cache) {
         cache->set(field, std::move(value), ModificationStatus::MODIFIED);
     } else {
@@ -76,17 +62,15 @@ StructuredFieldValue::updateValue(const Field & field, FieldValue::UP value) con
     }
 }
 
-void
-StructuredFieldValue::returnValue(const Field & field, FieldValue::UP value) const {
-    StructuredCache * cache = getCache();
+void StructuredFieldValue::returnValue(const Field& field, FieldValue::UP value) const {
+    StructuredCache* cache = getCache();
     if (cache) {
         cache->set(field, std::move(value), ModificationStatus::NOT_MODIFIED);
     }
 }
 
-FieldValue::UP
-StructuredFieldValue::getValue(const Field& field, FieldValue::UP container) const {
-    StructuredCache * cache = getCache();
+FieldValue::UP StructuredFieldValue::getValue(const Field& field, FieldValue::UP container) const {
+    StructuredCache* cache = getCache();
     if (cache) {
         auto found = cache->find(field);
         if (found == cache->end()) {
@@ -105,15 +89,13 @@ StructuredFieldValue::getValue(const Field& field, FieldValue::UP container) con
     return container;
 }
 
-ModificationStatus
-StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
-{
+ModificationStatus StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler& handler) const {
     IteratorHandler::StructScope autoScope(handler, *this);
 
-    if ( ! nested.atEnd()) {
-        const FieldPathEntry & fpe = nested.cur();
+    if (!nested.atEnd()) {
+        const FieldPathEntry& fpe = nested.cur();
         if (fpe.getType() == FieldPathEntry::STRUCT_FIELD) {
-            const Field & field = fpe.getFieldRef();
+            const Field&   field = fpe.getFieldRef();
             FieldValue::UP value = getValue(field, FieldValue::UP());
             LOG(spam, "fieldRef = %s", field.toString().c_str());
             LOG(spam, "fieldValueToSet = %s", value ? value->toString().c_str() : "<null>");
@@ -161,7 +143,7 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
                 }
             }
 
-            for (const Field * toRemove : fieldsToRemove){
+            for (const Field* toRemove : fieldsToRemove) {
                 const_cast<StructuredFieldValue&>(*this).remove(*toRemove);
             }
         }
@@ -170,8 +152,9 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
     }
 }
 
-template std::unique_ptr<MapFieldValue> StructuredFieldValue::getAs<MapFieldValue>(const Field &field) const;
-template std::unique_ptr<ArrayFieldValue> StructuredFieldValue::getAs<ArrayFieldValue>(const Field &field) const;
-template std::unique_ptr<WeightedSetFieldValue> StructuredFieldValue::getAs<WeightedSetFieldValue>(const Field &field) const;
+template std::unique_ptr<MapFieldValue>   StructuredFieldValue::getAs<MapFieldValue>(const Field& field) const;
+template std::unique_ptr<ArrayFieldValue> StructuredFieldValue::getAs<ArrayFieldValue>(const Field& field) const;
+template std::unique_ptr<WeightedSetFieldValue>
+StructuredFieldValue::getAs<WeightedSetFieldValue>(const Field& field) const;
 
-} // document
+} // namespace document

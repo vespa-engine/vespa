@@ -1,41 +1,38 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documenttype.h"
+
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/log/log.h>
+
 #include <ostream>
 #include <string>
 
+#include <vespa/log/log.h>
+
 LOG_SETUP(".document.datatype.document");
 
+using std::string_view;
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
-using std::string_view;
-
 
 namespace document {
 
 namespace {
-FieldCollection build_field_collection(const std::set<std::string> &fields,
-                                       const DocumentType &doc_type)
-{
+FieldCollection build_field_collection(const std::set<std::string>& fields, const DocumentType& doc_type) {
     Field::Set::Builder builder;
-    for (const auto & field_name : fields) {
+    for (const auto& field_name : fields) {
         if (doc_type.hasField(field_name)) {
             builder.add(&doc_type.getField(field_name));
         }
     }
     return {doc_type, builder.build()};
 }
-} // namespace <unnamed>
+} // namespace
 
-DocumentType::FieldSet::FieldSet(const std::string & name, Fields fields, const DocumentType & doc_type)
-    : _name(name),
-      _fields(fields),
-      _field_collection(build_field_collection(fields, doc_type))
-{}
+DocumentType::FieldSet::FieldSet(const std::string& name, Fields fields, const DocumentType& doc_type)
+    : _name(name), _fields(fields), _field_collection(build_field_collection(fields, doc_type)) {}
 
 DocumentType::FieldSet::~FieldSet() = default;
 
@@ -45,20 +42,14 @@ DocumentType::DocumentType(string_view name, int32_t id)
       _ownedFields(std::make_shared<StructDataType>(std::string(name) + ".header")),
       _fields(_ownedFields.get()),
       _fieldSets(),
-      _imported_field_names()
-{
+      _imported_field_names() {
     if (name != "document") {
         _inheritedTypes.push_back(DataType::DOCUMENT);
     }
 }
 
 DocumentType::DocumentType(string_view name, int32_t id, const StructDataType& fields)
-    : StructuredDataType(name, id),
-      _inheritedTypes(),
-      _fields(&fields),
-      _fieldSets(),
-      _imported_field_names()
-{
+    : StructuredDataType(name, id), _inheritedTypes(), _fields(&fields), _fieldSets(), _imported_field_names() {
     if (name != "document") {
         _inheritedTypes.push_back(DataType::DOCUMENT);
     }
@@ -70,82 +61,75 @@ DocumentType::DocumentType(string_view name)
       _ownedFields(std::make_shared<StructDataType>(std::string(name) + ".header")),
       _fields(_ownedFields.get()),
       _fieldSets(),
-      _imported_field_names()
-{
+      _imported_field_names() {
     if (name != "document") {
         _inheritedTypes.emplace_back(DataType::DOCUMENT);
     }
 }
 
 DocumentType::DocumentType(string_view name, const StructDataType& fields)
-    : StructuredDataType(name),
-      _inheritedTypes(),
-      _fields(&fields),
-      _fieldSets(),
-      _imported_field_names()
-{
+    : StructuredDataType(name), _inheritedTypes(), _fields(&fields), _fieldSets(), _imported_field_names() {
     if (name != "document") {
         _inheritedTypes.emplace_back(DataType::DOCUMENT);
     }
 }
 
-DocumentType & DocumentType::operator=(const DocumentType &) = default;
-DocumentType::DocumentType(const DocumentType &) = default;
+DocumentType& DocumentType::operator=(const DocumentType&) = default;
+DocumentType::DocumentType(const DocumentType&) = default;
 DocumentType::~DocumentType() = default;
 
-DocumentType &
-DocumentType::addFieldSet(const std::string & name, FieldSet::Fields fields)
-{
+DocumentType& DocumentType::addFieldSet(const std::string& name, FieldSet::Fields fields) {
     _fieldSets.emplace(name, FieldSet(name, std::move(fields), *this));
     return *this;
 }
 
-const DocumentType::FieldSet *
-DocumentType::getFieldSet(const std::string & name) const
-{
+const DocumentType::FieldSet* DocumentType::getFieldSet(const std::string& name) const {
     auto it = _fieldSets.find(name);
-    return (it != _fieldSets.end()) ? & it->second : nullptr;
+    return (it != _fieldSets.end()) ? &it->second : nullptr;
 }
 
-void
-DocumentType::addField(const Field& field)
-{
+void DocumentType::addField(const Field& field) {
     if (_fields->hasField(field.getName())) {
-        throw IllegalArgumentException( "A field already exists with name " + field.getName(), VESPA_STRLOC);
+        throw IllegalArgumentException("A field already exists with name " + field.getName(), VESPA_STRLOC);
     } else if (_fields->hasField(field)) {
-        throw IllegalArgumentException(make_string("A field already exists with id %i.", field.getId()), VESPA_STRLOC);
+        throw IllegalArgumentException(make_string("A field already exists with id %i.", field.getId()),
+                                       VESPA_STRLOC);
     } else if (!_ownedFields.get()) {
-        throw vespalib::IllegalStateException(make_string(
-                        "Cannot add field %s to a DocumentType that does not "
-                        "own its fields.", field.getName().data()), VESPA_STRLOC);
+        throw vespalib::IllegalStateException(make_string("Cannot add field %s to a DocumentType that does not "
+                                                          "own its fields.",
+                                                          field.getName().data()),
+                                              VESPA_STRLOC);
     }
     _ownedFields->addField(field);
 }
 
-void
-DocumentType::inherit(const DocumentType &docType) {
+void DocumentType::inherit(const DocumentType& docType) {
     if (docType.getName() == "document") {
         return;
     }
     if (docType.isA(*this)) {
-        throw IllegalArgumentException(
-                "Document type " + docType.toString() + " already inherits type "
-                + toString() + ". Cannot add cyclic dependencies.", VESPA_STRLOC);
+        throw IllegalArgumentException("Document type " + docType.toString() + " already inherits type " +
+                                           toString() + ". Cannot add cyclic dependencies.",
+                                       VESPA_STRLOC);
     }
     // If we already inherits this type, there is no point in adding it again.
     if (isA(docType)) {
         // If we already directly inherits it, complain
         for (const auto* inherited : _inheritedTypes) {
             if (inherited->equals(docType)) {
-                throw IllegalArgumentException(
-                        "DocumentType " + getName() + " already inherits "
-                        "document type " + docType.getName(), VESPA_STRLOC);
+                throw IllegalArgumentException("DocumentType " + getName() +
+                                                   " already inherits "
+                                                   "document type " +
+                                                   docType.getName(),
+                                               VESPA_STRLOC);
             }
         }
         // Indirectly already inheriting it is oki, as this can happen
         // due to inherited documents inheriting the same type.
-        LOG(info, "Document type %s inherits document type %s from multiple "
-                  "types.", getName().c_str(), docType.getName().c_str());
+        LOG(info,
+            "Document type %s inherits document type %s from multiple "
+            "types.",
+            getName().c_str(), docType.getName().c_str());
         return;
     }
     // Add non-conflicting types.
@@ -165,24 +149,19 @@ DocumentType::inherit(const DocumentType &docType) {
     _inheritedTypes.push_back(&docType);
 }
 
-bool
-DocumentType::isA(const DataType& other) const
-{
-    for (const DocumentType * docType : _inheritedTypes) {
-        if (docType->isA(other)) return true;
+bool DocumentType::isA(const DataType& other) const {
+    for (const DocumentType* docType : _inheritedTypes) {
+        if (docType->isA(other))
+            return true;
     }
     return equals(other);
 }
 
-FieldValue::UP
-DocumentType::createFieldValue() const
-{
+FieldValue::UP DocumentType::createFieldValue() const {
     return Document::make_without_repo(*this, DocumentId("id::" + getName() + "::"));
 }
 
-void
-DocumentType::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
+void DocumentType::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "DocumentType(" << getName();
     if (verbose) {
         out << ", id " << getId();
@@ -204,19 +183,23 @@ DocumentType::print(std::ostream& out, bool verbose, const std::string& indent) 
     }
 }
 
-bool
-DocumentType::equals(const DataType& other) const noexcept
-{
-    if (&other == this) return true;
-    if ( ! DataType::equals(other)) return false;
+bool DocumentType::equals(const DataType& other) const noexcept {
+    if (&other == this)
+        return true;
+    if (!DataType::equals(other))
+        return false;
     const auto* o(dynamic_cast<const DocumentType*>(&other));
-    if (o == nullptr) return false;
-    if ( ! _fields->equals(*o->_fields)) return false;
-    if (_inheritedTypes.size() != o->_inheritedTypes.size()) return false;
+    if (o == nullptr)
+        return false;
+    if (!_fields->equals(*o->_fields))
+        return false;
+    if (_inheritedTypes.size() != o->_inheritedTypes.size())
+        return false;
     auto it1 = _inheritedTypes.begin();
     auto it2 = o->_inheritedTypes.begin();
     while (it1 != _inheritedTypes.end()) {
-        if ( ! (*it1)->equals( **it2)) return false;
+        if (!(*it1)->equals(**it2))
+            return false;
         ++it1;
         ++it2;
     }
@@ -224,32 +207,16 @@ DocumentType::equals(const DataType& other) const noexcept
     return true;
 }
 
-const Field&
-DocumentType::getField(string_view name) const
-{
-    return _fields->getField(name);
-}
+const Field& DocumentType::getField(string_view name) const { return _fields->getField(name); }
 
-const Field&
-DocumentType::getField(int fieldId) const
-{
-    return _fields->getField(fieldId);
-}
+const Field& DocumentType::getField(int fieldId) const { return _fields->getField(fieldId); }
 
-Field::Set
-DocumentType::getFieldSet() const
-{
-    return _fields->getFieldSet();
-}
+Field::Set DocumentType::getFieldSet() const { return _fields->getFieldSet(); }
 
-bool
-DocumentType::has_imported_field_name(const std::string& name) const noexcept {
+bool DocumentType::has_imported_field_name(const std::string& name) const noexcept {
     return (_imported_field_names.find(name) != _imported_field_names.end());
 }
 
-void
-DocumentType::add_imported_field_name(const std::string& name) {
-    _imported_field_names.insert(name);
-}
+void DocumentType::add_imported_field_name(const std::string& name) { _imported_field_names.insert(name); }
 
-} // document
+} // namespace document

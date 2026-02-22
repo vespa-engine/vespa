@@ -25,17 +25,15 @@ public:
 
 private:
     Operator _operator; // The operator of the arithmetic operation.
-    double   _operand; // The operand of the arithmetic operation.
+    double   _operand;  // The operand of the arithmetic operation.
 
     // Used by ValueUpdate's static factory function
     // Private because it generates an invalid object.
     friend class ValueUpdate;
-    ArithmeticValueUpdate()
-        : ValueUpdate(Arithmetic),
-          _operator(MAX_NUM_OPERATORS),
-          _operand(0.0) {}
+    ArithmeticValueUpdate() : ValueUpdate(Arithmetic), _operator(MAX_NUM_OPERATORS), _operand(0.0) {}
 
     ACCEPT_UPDATE_VISITOR;
+
 public:
     using UP = std::unique_ptr<ArithmeticValueUpdate>;
 
@@ -45,18 +43,15 @@ public:
      * @param opt The operator of this arithmetic update.
      * @param opn The operand for the operation.
      */
-    ArithmeticValueUpdate(Operator opt, double opn)
-        : ValueUpdate(Arithmetic),
-          _operator(opt),
-          _operand(opn) {}
+    ArithmeticValueUpdate(Operator opt, double opn) : ValueUpdate(Arithmetic), _operator(opt), _operand(opn) {}
 
     ArithmeticValueUpdate(const ArithmeticValueUpdate& update) = delete;
-    ArithmeticValueUpdate &operator=(const ArithmeticValueUpdate &rhs) = delete;
+    ArithmeticValueUpdate& operator=(const ArithmeticValueUpdate& rhs) = delete;
 
     bool operator==(const ValueUpdate& other) const override;
 
     Operator getOperator() const { return _operator; }
-    double getOperand() const { return _operand; }
+    double   getOperand() const { return _operand; }
 
     /**
      * Apply the contained operation on the given double.
@@ -86,8 +81,7 @@ public:
     bool applyTo(FieldValue& value) const override;
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
 };
 
-} // document
-
+} // namespace document

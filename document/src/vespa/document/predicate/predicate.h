@@ -8,8 +8,10 @@
 
 namespace vespalib {
 class Slime;
-namespace slime { struct Inspector; }
-}  // namespace vespalib
+namespace slime {
+struct Inspector;
+}
+} // namespace vespalib
 
 namespace document {
 
@@ -35,7 +37,7 @@ struct Predicate {
     static const int TYPE_TRUE = 6;
     static const int TYPE_FALSE = 7;
 
-    static int compare(const vespalib::Slime &s1, const vespalib::Slime &s2);
+    static int compare(const vespalib::Slime& s1, const vespalib::Slime& s2);
 };
 
 struct PredicateNode {
@@ -46,39 +48,38 @@ struct PredicateNode {
 
 class FeatureBase : public PredicateNode {
     const std::string _key;
+
 public:
-    FeatureBase(const vespalib::slime::Inspector &inspector);
+    FeatureBase(const vespalib::slime::Inspector& inspector);
 
     std::string getKey() const { return _key; }
 };
-
 
 class FeatureSet : public FeatureBase {
     std::vector<std::string> _features;
 
 public:
-    FeatureSet(const vespalib::slime::Inspector &inspector);
+    FeatureSet(const vespalib::slime::Inspector& inspector);
     ~FeatureSet();
 
-    size_t getSize() const { return _features.size(); }
+    size_t      getSize() const { return _features.size(); }
     std::string operator[](size_t i) const { return _features[i]; }
 };
-
 
 class FeatureRange : public FeatureBase {
     const long _min;
     const long _max;
     const bool _has_min;
     const bool _has_max;
+
 public:
-    FeatureRange(const vespalib::slime::Inspector &inspector);
+    FeatureRange(const vespalib::slime::Inspector& inspector);
 
     long getMin() const { return _min; }
     long getMax() const { return _max; }
     bool hasMin() const { return _has_min; }
     bool hasMax() const { return _has_max; }
 };
-
 
 class Negation : public PredicateNode {
     PredicateNode::UP _child;
@@ -89,35 +90,29 @@ public:
     PredicateNode& getChild() const { return *_child; }
 };
 
-
 class IntermediatePredicateNode : public PredicateNode {
-    std::vector<PredicateNode *> _children;
+    std::vector<PredicateNode*> _children;
 
 public:
-    IntermediatePredicateNode(const std::vector<PredicateNode *> children)
-        : _children(children) {}
+    IntermediatePredicateNode(const std::vector<PredicateNode*> children) : _children(children) {}
     ~IntermediatePredicateNode() {
         for (size_t i = 0; i < _children.size(); ++i)
             delete _children[i];
     }
 
-    size_t getSize() const { return _children.size(); }
-    PredicateNode *operator[](size_t i) const { return _children[i]; }
+    size_t         getSize() const { return _children.size(); }
+    PredicateNode* operator[](size_t i) const { return _children[i]; }
 };
 
-
 struct Conjunction : IntermediatePredicateNode {
-    Conjunction(const std::vector<PredicateNode *> children)
-        : IntermediatePredicateNode(children) {}
+    Conjunction(const std::vector<PredicateNode*> children) : IntermediatePredicateNode(children) {}
 };
 
 struct Disjunction : IntermediatePredicateNode {
-    Disjunction(const std::vector<PredicateNode *> children)
-        : IntermediatePredicateNode(children) {}
+    Disjunction(const std::vector<PredicateNode*> children) : IntermediatePredicateNode(children) {}
 };
 
 struct TruePredicate : PredicateNode {};
 struct FalsePredicate : PredicateNode {};
 
-}  // namespace document
-
+} // namespace document

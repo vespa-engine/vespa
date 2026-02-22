@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "arithmeticvalueupdate.h"
+
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
+
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
@@ -13,34 +15,32 @@ using namespace vespalib::xml;
 namespace document {
 
 // Declare string representations for operator names.
-static const char * operatorName[]  = { "add", "div", "mul", "sub" };
-static const char * operatorNameC[] = { "Add", "Div", "Mul", "Sub" };
+static const char* operatorName[] = {"add", "div", "mul", "sub"};
+static const char* operatorNameC[] = {"Add", "Div", "Mul", "Sub"};
 
-bool
-ArithmeticValueUpdate::operator==(const ValueUpdate& other) const
-{
-    if (other.getType() != Arithmetic) return false;
+bool ArithmeticValueUpdate::operator==(const ValueUpdate& other) const {
+    if (other.getType() != Arithmetic)
+        return false;
     const ArithmeticValueUpdate& o(static_cast<const ArithmeticValueUpdate&>(other));
-    if (_operator != o._operator) return false;
-    if (_operand != o._operand) return false;
+    if (_operator != o._operator)
+        return false;
+    if (_operand != o._operand)
+        return false;
     return true;
 }
 
 // Ensure that this update is compatible with given field.
-void
-ArithmeticValueUpdate::checkCompatibility(const Field& field) const
-{
-    if ( ! field.getDataType().isNumeric()) {
-        throw IllegalArgumentException(vespalib::make_string(
-                "Can not perform arithmetic update on non-numeric field '%s'.",
-                field.getName().data()), VESPA_STRLOC);
+void ArithmeticValueUpdate::checkCompatibility(const Field& field) const {
+    if (!field.getDataType().isNumeric()) {
+        throw IllegalArgumentException(
+            vespalib::make_string("Can not perform arithmetic update on non-numeric field '%s'.",
+                                  field.getName().data()),
+            VESPA_STRLOC);
     }
 }
 
 // Apply this update.
-bool
-ArithmeticValueUpdate::applyTo(FieldValue& value) const
-{
+bool ArithmeticValueUpdate::applyTo(FieldValue& value) const {
     if (value.isA(FieldValue::Type::BYTE)) {
         ByteFieldValue& bValue = static_cast<ByteFieldValue&>(value);
         bValue.setValue((int)applyTo(static_cast<int64_t>(bValue.getAsInt())));
@@ -57,19 +57,17 @@ ArithmeticValueUpdate::applyTo(FieldValue& value) const
         LongFieldValue& lValue = static_cast<LongFieldValue&>(value);
         lValue.setValue(applyTo(lValue.getAsLong()));
     } else {
-        std::string err = vespalib::make_string(
-                "Unable to perform an arithmetic update on a \"%s\" field "
-                "value.", value.className());
+        std::string err = vespalib::make_string("Unable to perform an arithmetic update on a \"%s\" field "
+                                                "value.",
+                                                value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;
 }
 
 // Perform the contained operation on the given value.
-double
-ArithmeticValueUpdate::applyTo(double value) const
-{
-    switch(_operator) {
+double ArithmeticValueUpdate::applyTo(double value) const {
+    switch (_operator) {
     case Add:
         return value + _operand;
     case Div:
@@ -84,10 +82,8 @@ ArithmeticValueUpdate::applyTo(double value) const
 }
 
 // Perform the contained operation on the given value.
-long
-ArithmeticValueUpdate::applyTo(int64_t value) const
-{
-    switch(_operator) {
+long ArithmeticValueUpdate::applyTo(int64_t value) const {
+    switch (_operator) {
     case Add:
         return (long)(value + _operand);
     case Div:
@@ -102,34 +98,22 @@ ArithmeticValueUpdate::applyTo(int64_t value) const
 }
 
 // Perform the contained operation on the given value.
-std::string
-ArithmeticValueUpdate::applyTo(const std::string & value) const
-{
-    return value;
-}
+std::string ArithmeticValueUpdate::applyTo(const std::string& value) const { return value; }
 
 // Print this update as a human readable string.
-void
-ArithmeticValueUpdate::print(std::ostream& out, bool, const std::string& indent) const
-{
+void ArithmeticValueUpdate::print(std::ostream& out, bool, const std::string& indent) const {
     out << indent << "ArithmeticValueUpdate(" << operatorNameC[_operator] << " " << _operand << ")";
 }
 
-void
-ArithmeticValueUpdate::printXml(XmlOutputStream& xos) const
-{
-    xos << XmlTag(operatorName[_operator])
-        << XmlAttribute("by", _operand)
-        << XmlEndTag();
+void ArithmeticValueUpdate::printXml(XmlOutputStream& xos) const {
+    xos << XmlTag(operatorName[_operator]) << XmlAttribute("by", _operand) << XmlEndTag();
 }
 
 // Deserialize this update from the given buffer.
-void
-ArithmeticValueUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostream & stream)
-{
+void ArithmeticValueUpdate::deserialize(const DocumentTypeRepo&, const DataType&, nbostream& stream) {
     int32_t opt;
-    stream >> opt >>_operand;
+    stream >> opt >> _operand;
     _operator = static_cast<ArithmeticValueUpdate::Operator>(opt);
 }
 
-} // document
+} // namespace document

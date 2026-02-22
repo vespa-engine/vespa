@@ -17,24 +17,18 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 
-namespace
-{
+namespace {
 
 TensorDataType xSparseTensorDataType(ValueType::from_spec("tensor(x{})"));
 TensorDataType xySparseTensorDataType(ValueType::from_spec("tensor(x{},y{})"));
 
-vespalib::eval::Value::UP createTensor(const TensorSpec &spec) {
-    return SimpleValue::from_spec(spec);
+vespalib::eval::Value::UP createTensor(const TensorSpec& spec) { return SimpleValue::from_spec(spec); }
+
+std::unique_ptr<vespalib::eval::Value> makeSimpleTensor() {
+    return SimpleValue::from_spec(TensorSpec("tensor(x{},y{})").add({{"x", "4"}, {"y", "5"}}, 7));
 }
 
-std::unique_ptr<vespalib::eval::Value>
-makeSimpleTensor()
-{
-    return SimpleValue::from_spec(TensorSpec("tensor(x{},y{})").
-                                  add({{"x", "4"}, {"y", "5"}}, 7));
-}
-
-FieldValue::UP clone(FieldValue &fv) {
+FieldValue::UP clone(FieldValue& fv) {
     auto ret = FieldValue::UP(fv.clone());
     EXPECT_NE(ret.get(), &fv);
     EXPECT_EQ(*ret, fv);
@@ -42,17 +36,15 @@ FieldValue::UP clone(FieldValue &fv) {
     return ret;
 }
 
-}
+} // namespace
 
-TEST(TensorFieldValueTest, require_that_TensorFieldValue_can_be_assigned_tensors_and_cloned)
-{
+TEST(TensorFieldValueTest, require_that_TensorFieldValue_can_be_assigned_tensors_and_cloned) {
     TensorFieldValue noTensorValue(xySparseTensorDataType);
     TensorFieldValue emptyTensorValue(xySparseTensorDataType);
     TensorFieldValue twoCellsTwoDimsValue(xySparseTensorDataType);
     emptyTensorValue = createTensor(TensorSpec("tensor(x{},y{})"));
-    twoCellsTwoDimsValue = createTensor(TensorSpec("tensor(x{},y{})")
-                                        .add({{"x", ""}, {"y", "3"}}, 3)
-                                        .add({{"x", "4"}, {"y", "5"}}, 7));
+    twoCellsTwoDimsValue =
+        createTensor(TensorSpec("tensor(x{},y{})").add({{"x", ""}, {"y", "3"}}, 3).add({{"x", "4"}, {"y", "5"}}, 7));
     EXPECT_NE(noTensorValue, emptyTensorValue);
     EXPECT_NE(noTensorValue, twoCellsTwoDimsValue);
     EXPECT_NE(emptyTensorValue, noTensorValue);
@@ -69,46 +61,41 @@ TEST(TensorFieldValueTest, require_that_TensorFieldValue_can_be_assigned_tensors
     EXPECT_NE(*twoClone, *noneClone);
     EXPECT_NE(*twoClone, *emptyClone);
     TensorFieldValue twoCellsTwoDimsValue2(xySparseTensorDataType);
-    twoCellsTwoDimsValue2 = createTensor(TensorSpec("tensor(x{},y{})")
-                                         .add({{"x", ""}, {"y", "3"}}, 3)
-                                         .add({{"x", "4"}, {"y", "5"}}, 7));
+    twoCellsTwoDimsValue2 =
+        createTensor(TensorSpec("tensor(x{},y{})").add({{"x", ""}, {"y", "3"}}, 3).add({{"x", "4"}, {"y", "5"}}, 7));
     EXPECT_NE(*noneClone, twoCellsTwoDimsValue2);
     EXPECT_NE(*emptyClone, twoCellsTwoDimsValue2);
     EXPECT_EQ(*twoClone, twoCellsTwoDimsValue2);
 }
 
-TEST(TensorFieldValueTest, require_that_TensorFieldValue_toString_works)
-{
+TEST(TensorFieldValueTest, require_that_TensorFieldValue_toString_works) {
     TensorFieldValue tensorFieldValue(xSparseTensorDataType);
     EXPECT_EQ("{TensorFieldValue: null}", tensorFieldValue.toString());
     tensorFieldValue = createTensor(TensorSpec("tensor(x{})").add({{"x", "a"}}, 3));
     EXPECT_EQ("{TensorFieldValue: spec(tensor(x{})) {\n  [a]: 3\n}}", tensorFieldValue.toString());
 }
 
-TEST(TensorFieldValueTest, require_that_wrong_tensor_type_for_special_case_assign_throws_exception)
-{
+TEST(TensorFieldValueTest, require_that_wrong_tensor_type_for_special_case_assign_throws_exception) {
     TensorFieldValue tensorFieldValue(xSparseTensorDataType);
-    VESPA_EXPECT_EXCEPTION(tensorFieldValue = makeSimpleTensor(),
-                           document::WrongTensorTypeException,
-                           "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but other tensor type is 'tensor(x{},y{})'");
+    VESPA_EXPECT_EXCEPTION(
+        tensorFieldValue = makeSimpleTensor(), document::WrongTensorTypeException,
+        "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but other tensor type is 'tensor(x{},y{})'");
 }
 
-TEST(TensorFieldValueTest, require_that_wrong_tensor_type_for_copy_assign_throws_exception)
-{
+TEST(TensorFieldValueTest, require_that_wrong_tensor_type_for_copy_assign_throws_exception) {
     TensorFieldValue tensorFieldValue(xSparseTensorDataType);
     TensorFieldValue simpleTensorFieldValue(xySparseTensorDataType);
     simpleTensorFieldValue = makeSimpleTensor();
-    VESPA_EXPECT_EXCEPTION(tensorFieldValue = simpleTensorFieldValue,
-                           document::WrongTensorTypeException,
-                           "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but other tensor type is 'tensor(x{},y{})'");
+    VESPA_EXPECT_EXCEPTION(
+        tensorFieldValue = simpleTensorFieldValue, document::WrongTensorTypeException,
+        "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but other tensor type is 'tensor(x{},y{})'");
 }
 
-TEST(TensorFieldValueTest, require_that_wrong_tensor_type_for_assignDeserialized_throws_exception)
-{
+TEST(TensorFieldValueTest, require_that_wrong_tensor_type_for_assignDeserialized_throws_exception) {
     TensorFieldValue tensorFieldValue(xSparseTensorDataType);
-    VESPA_EXPECT_EXCEPTION(tensorFieldValue.assignDeserialized(makeSimpleTensor()),
-                           document::WrongTensorTypeException,
-                           "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but other tensor type is 'tensor(x{},y{})'");
+    VESPA_EXPECT_EXCEPTION(
+        tensorFieldValue.assignDeserialized(makeSimpleTensor()), document::WrongTensorTypeException,
+        "WrongTensorTypeException: Field tensor type is 'tensor(x{})' but other tensor type is 'tensor(x{},y{})'");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

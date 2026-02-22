@@ -3,11 +3,15 @@
 
 #include "node.h"
 #include "parsing_failed_exception.h"
+
 #include <vespa/document/bucket/bucketidfactory.h>
+
 #include <memory>
 #include <string>
 
-namespace document { class IDocumentTypeRepo; }
+namespace document {
+class IDocumentTypeRepo;
+}
 
 namespace document::select {
 
@@ -18,13 +22,12 @@ namespace document::select {
  * Thread safety: same as a std::vector
  */
 class Parser {
-    const IDocumentTypeRepo&_doc_type_repo;
-    const BucketIdFactory& _bucket_id_factory;
+    const IDocumentTypeRepo& _doc_type_repo;
+    const BucketIdFactory&   _bucket_id_factory;
+
 public:
     Parser(const IDocumentTypeRepo& repo, const BucketIdFactory& bucket_id_factory)
-        : _doc_type_repo(repo),
-          _bucket_id_factory(bucket_id_factory)
-    {}
+        : _doc_type_repo(repo), _bucket_id_factory(bucket_id_factory) {}
 
     /**
      * Returns a newly allocated AST root node representing the selection
@@ -37,5 +40,4 @@ public:
     std::unique_ptr<Node> parse(const std::string& str) const;
 };
 
-}
-
+} // namespace document::select

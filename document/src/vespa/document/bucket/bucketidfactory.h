@@ -15,6 +15,7 @@
 #pragma once
 
 #include <vespa/document/util/printable.h>
+
 #include <cstdint>
 
 namespace document {
@@ -22,8 +23,7 @@ namespace document {
 class BucketId;
 class DocumentId;
 
-class BucketIdFactory : public document::Printable
-{
+class BucketIdFactory : public document::Printable {
     uint16_t _locationBits;
     uint16_t _gidBits;
     uint16_t _countBits;
@@ -35,10 +35,10 @@ public:
     BucketIdFactory();
 
     BucketId getBucketId(const DocumentId&) const;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void     print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
 private:
     void initializeMasks();
 };
 
-} // document
+} // namespace document

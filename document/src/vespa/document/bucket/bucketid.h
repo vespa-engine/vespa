@@ -24,21 +24,22 @@
 #include <string>
 
 namespace vespalib {
-    class nbostream;
-    class asciistream;
-}
+class nbostream;
+class asciistream;
+} // namespace vespalib
 
 namespace document {
 
 extern const unsigned char reverseBitTable[256];
 
-namespace bucket { class BucketIdList; }
+namespace bucket {
+class BucketIdList;
+}
 
-class BucketId
-{
+class BucketId {
 public:
     struct hash {
-        uint64_t operator () (const BucketId& g) const noexcept;
+        uint64_t operator()(const BucketId& g) const noexcept;
     };
 
     /**
@@ -52,33 +53,27 @@ public:
     /** Create a bucket id with the given raw unchecked content. */
     constexpr explicit BucketId(Type id) noexcept : _id(id) {}
     /** Create a bucket id using a set of bits from a raw unchecked value. */
-    BucketId(uint32_t useBits, Type id) noexcept : _id(createUsedBits(useBits, id)) { }
+    BucketId(uint32_t useBits, Type id) noexcept : _id(createUsedBits(useBits, id)) {}
 
-    bool operator<(const BucketId& id) const noexcept {
-        return getId() < id.getId();
-    }
+    bool operator<(const BucketId& id) const noexcept { return getId() < id.getId(); }
     bool operator==(const BucketId& id) const noexcept { return getId() == id.getId(); }
     bool operator!=(const BucketId& id) const noexcept { return getId() != id.getId(); }
 
     std::string toString() const;
 
-    bool valid() const noexcept {
-        return validUsedBits(getUsedBits());
-    }
+    bool valid() const noexcept { return validUsedBits(getUsedBits()); }
 
     static bool validUsedBits(uint32_t usedBits) noexcept {
         return (usedBits >= minNumBits) && (usedBits <= maxNumBits);
     }
 
-    bool isSet() const noexcept {
-        return _id != 0u;
-    }
+    bool isSet() const noexcept { return _id != 0u; }
     /**
      * Create a bucket id that set all unused bits to zero. If you want to
      * verify that two different documents belong to the same bucket given some
      * level of bucket splitting, use this to ignore the unused bits.
      */
-    BucketId stripUnused() const noexcept { return BucketId(getUsedBits(), getId());    }
+    BucketId stripUnused() const noexcept { return BucketId(getUsedBits(), getId()); }
 
     /**
      * Checks whether the given bucket is contained within this bucket. That is,
@@ -87,14 +82,14 @@ public:
      */
     bool contains(const BucketId& id) const noexcept;
 
-// Functions exposing internals we want to make users independent of
+    // Functions exposing internals we want to make users independent of
 
-// private: Setting these private when trying to stop code from using it
+    // private: Setting these private when trying to stop code from using it
     /** Number of MSB bits used to count LSB bits used. */
     enum { CountBits = 6 };
 
     static constexpr uint32_t maxNumBits = (8 * sizeof(Type) - CountBits);
-    static constexpr uint32_t minNumBits = 1u;   // See comment above.
+    static constexpr uint32_t minNumBits = 1u; // See comment above.
 
     uint32_t getUsedBits() const noexcept { return _id >> maxNumBits; }
 
@@ -138,7 +133,7 @@ public:
         return retVal;
     }
 
-    static Type keyToBucketId(Type key) noexcept ;
+    static Type keyToBucketId(Type key) noexcept;
 
     /**
      * Reverses the bucket id bitwise, except the countbits part,
@@ -155,28 +150,23 @@ public:
      * Returns the value of the Nth bit, counted in the reverse order of the
      * bucket id.
      */
-    uint8_t getBit(uint32_t n) const noexcept {
-        return (_id & ((Type)1 << n)) == 0 ? 0 : 1;
-    }
+    uint8_t getBit(uint32_t n) const noexcept { return (_id & ((Type)1 << n)) == 0 ? 0 : 1; }
 
     static void initialize() noexcept;
+
 private:
-    static Type _usedMasks[maxNumBits+1];
-    static Type _stripMasks[maxNumBits+1];
+    static Type _usedMasks[maxNumBits + 1];
+    static Type _stripMasks[maxNumBits + 1];
 
     Type _id;
 
-    Type getUsedMask() const noexcept {
-        return _usedMasks[getUsedBits()];
-    }
+    Type getUsedMask() const noexcept { return _usedMasks[getUsedBits()]; }
 
-    Type getStripMask() const noexcept {
-        return _stripMasks[getUsedBits()];
-    }
+    Type getStripMask() const noexcept { return _stripMasks[getUsedBits()]; }
 
     static Type createUsedBits(uint32_t used, Type id) noexcept {
         uint32_t availBits = maxNumBits;
-        Type usedCount(used);
+        Type     usedCount(used);
         usedCount <<= availBits;
 
         id <<= CountBits;
@@ -192,6 +182,6 @@ private:
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream&, const BucketId&);
-std::ostream& operator<<(std::ostream&, const BucketId&);
+std::ostream&          operator<<(std::ostream&, const BucketId&);
 
-} // document
+} // namespace document

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "predicatefieldvalue.h"
+
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_printer.h>
@@ -14,69 +15,49 @@ using namespace vespalib::xml;
 
 namespace document {
 
-PredicateFieldValue::PredicateFieldValue()
-    : FieldValue(Type::PREDICATE),
-      _slime(std::make_unique<Slime>())
-{ }
+PredicateFieldValue::PredicateFieldValue() : FieldValue(Type::PREDICATE), _slime(std::make_unique<Slime>()) {}
 
-PredicateFieldValue::PredicateFieldValue(vespalib::Slime::UP s)
-    : FieldValue(Type::PREDICATE),
-      _slime(std::move(s))
-{ }
+PredicateFieldValue::PredicateFieldValue(vespalib::Slime::UP s) : FieldValue(Type::PREDICATE), _slime(std::move(s)) {}
 
-PredicateFieldValue::PredicateFieldValue(const PredicateFieldValue &rhs)
-    : FieldValue(rhs),
-      _slime(new Slime)
-{
+PredicateFieldValue::PredicateFieldValue(const PredicateFieldValue& rhs) : FieldValue(rhs), _slime(new Slime) {
     inject(rhs._slime->get(), SlimeInserter(*_slime));
 }
 
 PredicateFieldValue::~PredicateFieldValue() = default;
 
-FieldValue &
-PredicateFieldValue::assign(const FieldValue &rhs) {
+FieldValue& PredicateFieldValue::assign(const FieldValue& rhs) {
     if (rhs.isA(Type::PREDICATE)) {
-        operator=(static_cast<const PredicateFieldValue &>(rhs));
+        operator=(static_cast<const PredicateFieldValue&>(rhs));
     } else {
         _slime.reset();
     }
     return *this;
 }
 
-PredicateFieldValue &
-PredicateFieldValue::operator=(const PredicateFieldValue &rhs)
-{
+PredicateFieldValue& PredicateFieldValue::operator=(const PredicateFieldValue& rhs) {
     _slime = std::make_unique<Slime>();
     inject(rhs._slime->get(), SlimeInserter(*_slime));
     return *this;
 }
 
-int
-PredicateFieldValue::compare(const FieldValue&rhs) const {
+int PredicateFieldValue::compare(const FieldValue& rhs) const {
     int diff = FieldValue::compare(rhs);
-    if (diff != 0) return diff;
-    const PredicateFieldValue &o = static_cast<const PredicateFieldValue &>(rhs);
+    if (diff != 0)
+        return diff;
+    const PredicateFieldValue& o = static_cast<const PredicateFieldValue&>(rhs);
     return Predicate::compare(*_slime, *o._slime);
 }
 
-void
-PredicateFieldValue::printXml(XmlOutputStream& out) const {
+void PredicateFieldValue::printXml(XmlOutputStream& out) const {
     out << XmlContent(PredicatePrinter::print(*_slime));
 }
 
-void
-PredicateFieldValue::print(std::ostream& out, bool, const std::string&) const {
+void PredicateFieldValue::print(std::ostream& out, bool, const std::string&) const {
     out << PredicatePrinter::print(*_slime) << "\n";
 }
 
-const DataType *
-PredicateFieldValue::getDataType() const {
-    return DataType::PREDICATE;
-}
+const DataType* PredicateFieldValue::getDataType() const { return DataType::PREDICATE; }
 
-FieldValue *
-PredicateFieldValue::clone() const {
-    return new PredicateFieldValue(*this);
-}
+FieldValue* PredicateFieldValue::clone() const { return new PredicateFieldValue(*this); }
 
-}  // namespace document
+} // namespace document

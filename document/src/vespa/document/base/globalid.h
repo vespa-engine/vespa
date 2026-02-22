@@ -25,6 +25,7 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketid.h>
+
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -40,9 +41,7 @@ public:
 
     /** Hash function that can be used to put global ids in hash set/maps. */
     struct hash {
-        size_t operator () (const GlobalId & g) const {
-            return g._gid._bucketId._gid;
-        }
+        size_t operator()(const GlobalId& g) const { return g._gid._bucketId._gid; }
     };
 
 private:
@@ -53,7 +52,7 @@ private:
     union {
         unsigned char _buffer[LENGTH];
         BucketIdS     _bucketId;
-        uint32_t      _nums[LENGTH/sizeof(uint32_t)];
+        uint32_t      _nums[LENGTH / sizeof(uint32_t)];
     } _gid;
 
 public:
@@ -65,9 +64,9 @@ public:
      * given bucket.
      */
     struct BucketOrderCmp {
-        bool operator()(const GlobalId &lhs, const GlobalId &rhs) const {
-            const uint32_t * __restrict__ a = lhs._gid._nums;
-            const uint32_t * __restrict__ b = rhs._gid._nums;
+        bool operator()(const GlobalId& lhs, const GlobalId& rhs) const {
+            const uint32_t* __restrict__ a = lhs._gid._nums;
+            const uint32_t* __restrict__ b = rhs._gid._nums;
             if (a[0] != b[0]) {
                 return bitswap(a[0]) < bitswap(b[0]);
             }
@@ -83,14 +82,10 @@ public:
             return __builtin_bswap32(value);
         }
         // Return most significant 32 bits of gid key
-        static uint32_t gid_key32(const GlobalId &gid) {
-            return bitswap(gid._gid._nums[0]);
-        }
+        static uint32_t gid_key32(const GlobalId& gid) { return bitswap(gid._gid._nums[0]); }
 
-        //These 2 compare methods are exposed only for testing
-        static int compareRaw(unsigned char a, unsigned char b) {
-            return a - b;
-        }
+        // These 2 compare methods are exposed only for testing
+        static int compareRaw(unsigned char a, unsigned char b) { return a - b; }
         static int compare(unsigned char a, unsigned char b) {
             return compareRaw(document::reverseBitTable[a], document::reverseBitTable[b]);
         }
@@ -101,17 +96,15 @@ public:
      */
     GlobalId() noexcept { set("\0\0\0\0\0\0\0\0\0\0\0\0"); }
 
-
-
     /**
      * Constructs a new global id with initial content. This copies the first LENGTH bytes from the given
      * address into the internal buffer.
      *
      * @param gid The address to the data to copy.
      */
-    explicit GlobalId(const void *gid) noexcept { set(gid); }
+    explicit GlobalId(const void* gid) noexcept { set(gid); }
 
-    GlobalId(const GlobalId &rhs) noexcept = default;
+    GlobalId(const GlobalId& rhs) noexcept = default;
 
     /**
      * Implements the assignment operator.
@@ -119,7 +112,10 @@ public:
      * @param other The global id whose value to copy to this.
      * @return This.
      */
-    GlobalId& operator=(const GlobalId& other) noexcept { memcpy(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)); return *this; }
+    GlobalId& operator=(const GlobalId& other) noexcept {
+        memcpy(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer));
+        return *this;
+    }
 
     /**
      * Implements the equality operator.
@@ -127,7 +123,9 @@ public:
      * @param other The global id to compare to.
      * @return True if this equals the other, false otherwise.
      */
-    bool operator==(const GlobalId& other) const noexcept { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) == 0); }
+    bool operator==(const GlobalId& other) const noexcept {
+        return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) == 0);
+    }
 
     /**
      * Implements the inequality operator.
@@ -135,7 +133,9 @@ public:
      * @param other The global id to compare to.
      * @return True if this does NOT equal the other, false otherwise.
      */
-    bool operator!=(const GlobalId& other) const noexcept { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) != 0); }
+    bool operator!=(const GlobalId& other) const noexcept {
+        return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) != 0);
+    }
 
     /**
      * Implements the less-than operator. If you intend to map global ids in such a way that they can
@@ -145,19 +145,21 @@ public:
      * @param other The global id to compare to.
      * @return True if comparing the bits of this to the other yields a negative result.
      */
-    bool operator<(const GlobalId& other) const noexcept { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) < 0); }
+    bool operator<(const GlobalId& other) const noexcept {
+        return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) < 0);
+    }
 
     /**
      * Copies the first LENGTH bytes from the given address into the internal byte array.
      *
      * @param id The bytes to set.
      */
-    void set(const void *id) noexcept { memcpy(_gid._buffer, id, sizeof(_gid._buffer)); }
+    void set(const void* id) noexcept { memcpy(_gid._buffer, id, sizeof(_gid._buffer)); }
 
     /**
      * Returns the raw byte array that constitutes this global id.
      */
-    const unsigned char *get() const { return _gid._buffer; }
+    const unsigned char* get() const { return _gid._buffer; }
 
     /**
      * If a GID has been generated from a document ID with a location (n=, g=),
@@ -167,9 +169,7 @@ public:
      * deterministic in the sense that two identical document IDs will generate
      * the same returned value.
      */
-    uint32_t getLocationSpecificBits() const noexcept {
-        return _gid._bucketId._location;
-    }
+    uint32_t getLocationSpecificBits() const noexcept { return _gid._bucketId._location; }
 
     /**
      * Returns a string representation of this global id.
@@ -198,8 +198,7 @@ public:
     BucketId convertToBucketId() const {
         uint64_t location(_gid._bucketId._location);
         uint64_t gid(_gid._bucketId._gid);
-        return BucketId(58, (gid & 0xFFFFFFFF00000000ull)
-                            | (location & 0xFFFFFFFF));
+        return BucketId(58, (gid & 0xFFFFFFFF00000000ull) | (location & 0xFFFFFFFF));
     }
 
     /**
@@ -208,7 +207,7 @@ public:
      * @param bucket The bucket to check.
      * @return True, if this gid is contained in the bucket.
      */
-    bool containedInBucket(const BucketId &bucket) const;
+    bool containedInBucket(const BucketId& bucket) const;
 
     /**
      * Given a list of global identifiers sorted in bucket order (see {@link BucketOrderCmp}), this function
@@ -217,7 +216,7 @@ public:
      * @param bucket The bucket id whose lowest gid to find.
      * @return The first global id of the bucket.
      */
-    static GlobalId calculateFirstInBucket(const BucketId &bucket);
+    static GlobalId calculateFirstInBucket(const BucketId& bucket);
 
     /**
      * Given a list of global identifiers sorted in bucket order (see {@link BucketOrderCmp}), this function
@@ -226,11 +225,10 @@ public:
      * @param bucket The bucket id whose largest gid to find.
      * @return The last global id of the bucket.
      */
-    static GlobalId calculateLastInBucket(const BucketId &bucket);
+    static GlobalId calculateLastInBucket(const BucketId& bucket);
 };
 
-vespalib::asciistream & operator << (vespalib::asciistream & os, const GlobalId & gid);
-std::ostream& operator<<(std::ostream& out, const GlobalId& gid);
+vespalib::asciistream& operator<<(vespalib::asciistream& os, const GlobalId& gid);
+std::ostream&          operator<<(std::ostream& out, const GlobalId& gid);
 
-} // document
-
+} // namespace document

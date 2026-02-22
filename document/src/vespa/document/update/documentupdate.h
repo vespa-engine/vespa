@@ -25,8 +25,9 @@
  */
 #pragma once
 
-#include "fieldupdate.h"
 #include "fieldpathupdate.h"
+#include "fieldupdate.h"
+
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -40,8 +41,7 @@ class VespaDocumentSerializer;
  * path updates was added, and a new serialization format was
  * introduced while keeping the old one.
  */
-class DocumentUpdate
-{
+class DocumentUpdate {
 public:
     using UP = std::unique_ptr<DocumentUpdate>;
     using SP = std::shared_ptr<DocumentUpdate>;
@@ -52,8 +52,8 @@ public:
     /**
      * Create new style document update, possibly with field path updates.
      */
-    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
-    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
+    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream& stream);
+    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream&& stream);
 
     DocumentUpdate();
     /**
@@ -66,17 +66,17 @@ public:
      * @param type The document type that this update is applicable for.
      * @param id The identifier of the document that this update is created for.
      */
-    DocumentUpdate(const DocumentTypeRepo & repo, const DataType &type, const DocumentId& id);
+    DocumentUpdate(const DocumentTypeRepo& repo, const DataType& type, const DocumentId& id);
 
-    DocumentUpdate(const DocumentUpdate &) = delete;
-    DocumentUpdate & operator = (const DocumentUpdate &) = delete;
-    DocumentUpdate(DocumentUpdate &&) = delete;
-    DocumentUpdate & operator = (DocumentUpdate &&) = delete;
+    DocumentUpdate(const DocumentUpdate&) = delete;
+    DocumentUpdate& operator=(const DocumentUpdate&) = delete;
+    DocumentUpdate(DocumentUpdate&&) = delete;
+    DocumentUpdate& operator=(DocumentUpdate&&) = delete;
     ~DocumentUpdate();
 
     bool operator==(const DocumentUpdate&) const;
-    bool operator!=(const DocumentUpdate & rhs) const { return ! (*this == rhs); }
-	
+    bool operator!=(const DocumentUpdate& rhs) const { return !(*this == rhs); }
+
     const DocumentId& getId() const { return _documentId; }
 
     /**
@@ -87,14 +87,14 @@ public:
      */
     void applyTo(Document& doc) const;
 
-    DocumentUpdate& addUpdate(FieldUpdate && update);
+    DocumentUpdate& addUpdate(FieldUpdate&& update);
     DocumentUpdate& addFieldPathUpdate(std::unique_ptr<FieldPathUpdate> update);
 
     /** @return The list of updates. */
-    const FieldUpdateV & getUpdates() const;
+    const FieldUpdateV& getUpdates() const;
 
     /** @return The list of fieldpath updates. */
-    const FieldPathUpdateV & getFieldPathUpdates() const;
+    const FieldPathUpdateV& getFieldPathUpdates() const;
 
     void eagerDeserialize() const;
 
@@ -102,11 +102,9 @@ public:
     const DocumentType& getType() const noexcept;
 
     // Returns pointer to repo used for underlying update, or nullptr if default-constructed
-    const DocumentTypeRepo* getRepoPtr() const noexcept {
-        return _repo;
-    }
+    const DocumentTypeRepo* getRepoPtr() const noexcept { return _repo; }
 
-    void serializeHEAD(vespalib::nbostream &stream) const;
+    void serializeHEAD(vespalib::nbostream& stream) const;
 
     /**
      * Sets whether this update should create the document it updates if that document does not exist.
@@ -122,30 +120,31 @@ public:
     int serializeFlags(int size_) const;
 
     // Only used for debugging
-    void print(std::ostream& out, bool verbose, const std::string& indent) const;
-    void printXml(XmlOutputStream&) const;
+    void        print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void        printXml(XmlOutputStream&) const;
     std::string toXml(const std::string& indent) const;
+
 private:
     DocumentId              _documentId; // The ID of the document to update.
-    const DataType         *_type; // The type of document this update is for.
-    const DocumentTypeRepo *_repo;
+    const DataType*         _type;       // The type of document this update is for.
+    const DocumentTypeRepo* _repo;
     vespalib::nbostream     _backing;
     FieldUpdateV            _updates; // The list of field updates.
     FieldPathUpdateV        _fieldPathUpdates;
     bool                    _createIfNonExistent;
     bool                    _needHardReserialize;
 
-    int deserializeFlags(int sizeAndFlags);
-    void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
-    void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
-    void deserializeBody(const DocumentTypeRepo &repo, vespalib::nbostream &stream);
-    void lazyDeserialize(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    int  deserializeFlags(int sizeAndFlags);
+    void initHEAD(const DocumentTypeRepo& repo, vespalib::nbostream& stream);
+    void initHEAD(const DocumentTypeRepo& repo, vespalib::nbostream&& stream);
+    void deserializeBody(const DocumentTypeRepo& repo, vespalib::nbostream& stream);
+    void lazyDeserialize(const DocumentTypeRepo& repo, vespalib::nbostream& stream);
     void ensureDeserialized() const;
     void serializeHeader();
     void reserialize();
     friend VespaDocumentSerializer;
 };
 
-std::ostream &operator<<(std::ostream &out, const DocumentUpdate &update);
+std::ostream& operator<<(std::ostream& out, const DocumentUpdate& update);
 
-}
+} // namespace document

@@ -6,14 +6,18 @@
 */
 
 #include "bytebuffer.h"
+
 #include "bufferexceptions.h"
 #include "stringutil.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <sstream>
+
 #include <arpa/inet.h>
 
-using vespalib::alloc::Alloc;
+#include <sstream>
+
 using vespalib::make_string;
+using vespalib::alloc::Alloc;
 
 namespace document {
 
@@ -21,25 +25,20 @@ namespace {
 
 [[noreturn]] static void throwOutOfBounds(size_t want, size_t has) __attribute__((noinline));
 
-void throwOutOfBounds(size_t want, size_t has)
-{
-    throw BufferOutOfBoundsException(want, has, VESPA_STRLOC);
-}
+void throwOutOfBounds(size_t want, size_t has) { throw BufferOutOfBoundsException(want, has, VESPA_STRLOC); }
 
-}
+} // namespace
 
 #if defined(__i386__) || defined(__x86_64__) || defined(__AARCH64EL__)
 
-template<typename T>
-void
-ByteBuffer::getDoubleLongNetwork(T &val) {
-    //TODO: Change this if we move to big-endian hardware
+template <typename T> void ByteBuffer::getDoubleLongNetwork(T& val) {
+    // TODO: Change this if we move to big-endian hardware
     if (__builtin_expect(getRemaining() < (int)sizeof(T), 0)) {
         throwOutOfBounds(sizeof(T), getRemaining());
     }
 
-    auto * data = reinterpret_cast<unsigned char*>(&val);
-    for (int i=sizeof(T)-1; i>=0; --i) {
+    auto* data = reinterpret_cast<unsigned char*>(&val);
+    for (int i = sizeof(T) - 1; i >= 0; --i) {
         getByte(data[i]);
     }
 }
@@ -57,43 +56,27 @@ std::string BufferOutOfBoundsException::createMessage(size_t pos, size_t len) {
 }
 
 BufferOutOfBoundsException::BufferOutOfBoundsException(size_t pos, size_t len, const std::string& location)
-    : IoException(createMessage(pos, len), IoException::NO_SPACE, location, 1)
-{
-}
+    : IoException(createMessage(pos, len), IoException::NO_SPACE, location, 1) {}
 
 ByteBuffer::ByteBuffer(Alloc buffer, uint32_t len)
-  : _buffer(static_cast<const char *>(buffer.get())),
-    _len(len),
-    _pos(0),
-    _ownedBuffer(std::make_unique<Alloc>(std::move(buffer)))
-{
-}
-
-ByteBuffer::ByteBuffer(std::unique_ptr<Alloc> buffer, uint32_t len)
-    : _buffer(static_cast<const char *>(buffer->get())),
+    : _buffer(static_cast<const char*>(buffer.get())),
       _len(len),
       _pos(0),
-      _ownedBuffer(std::move(buffer))
-{
-}
+      _ownedBuffer(std::make_unique<Alloc>(std::move(buffer))) {}
 
-ByteBuffer::ByteBuffer(const ByteBuffer& rhs)
-    : _buffer(nullptr),
-      _len(rhs._len),
-      _pos(rhs._pos),
-      _ownedBuffer()
-{
+ByteBuffer::ByteBuffer(std::unique_ptr<Alloc> buffer, uint32_t len)
+    : _buffer(static_cast<const char*>(buffer->get())), _len(len), _pos(0), _ownedBuffer(std::move(buffer)) {}
+
+ByteBuffer::ByteBuffer(const ByteBuffer& rhs) : _buffer(nullptr), _len(rhs._len), _pos(rhs._pos), _ownedBuffer() {
     if (rhs._len > 0 && rhs._buffer) {
         auto buf = Alloc::alloc(rhs._len);
         memcpy(buf.get(), rhs._buffer, rhs._len);
-        _buffer = static_cast<const char *>(buf.get());
+        _buffer = static_cast<const char*>(buf.get());
         _ownedBuffer = std::make_unique<Alloc>(std::move(buf));
     }
 }
 
-ByteBuffer
-ByteBuffer::copyBuffer(const char* buffer, uint32_t len)
-{
+ByteBuffer ByteBuffer::copyBuffer(const char* buffer, uint32_t len) {
     if (buffer && len) {
         Alloc newBuf = Alloc::alloc(len);
         memcpy(newBuf.get(), buffer, len);
@@ -103,25 +86,24 @@ ByteBuffer::copyBuffer(const char* buffer, uint32_t len)
     }
 }
 
-void ByteBuffer::incPos(uint32_t pos)
-{
+void ByteBuffer::incPos(uint32_t pos) {
     if (_pos + pos > _len) {
         throwOutOfBounds(_pos + pos, _len);
     } else {
-        _pos+=pos;
+        _pos += pos;
     }
 }
 
-void ByteBuffer::getNumeric(uint8_t & v) {
+void ByteBuffer::getNumeric(uint8_t& v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        v = *reinterpret_cast<const uint8_t *>(getBufferAtPos());
+        v = *reinterpret_cast<const uint8_t*>(getBufferAtPos());
         incPosNoCheck(sizeof(v));
     }
 }
 
-void ByteBuffer::getNumericNetwork(int16_t & v) {
+void ByteBuffer::getNumericNetwork(int16_t& v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -132,7 +114,7 @@ void ByteBuffer::getNumericNetwork(int16_t & v) {
     }
 }
 
-void ByteBuffer::getNumericNetwork(int32_t & v) {
+void ByteBuffer::getNumericNetwork(int32_t& v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -152,21 +134,16 @@ void ByteBuffer::getNumeric(int64_t& v) {
     }
 }
 
-void ByteBuffer::getNumericNetwork(double & v) {
-    getDoubleLongNetwork(v);
-}
+void ByteBuffer::getNumericNetwork(double& v) { getDoubleLongNetwork(v); }
 
-void ByteBuffer::getNumericNetwork(int64_t & v) {
-    getDoubleLongNetwork(v);
-}
+void ByteBuffer::getNumericNetwork(int64_t& v) { getDoubleLongNetwork(v); }
 
-void ByteBuffer::getBytes(void *buffer, uint32_t count)
-{
-    const char *v = getBufferAtPos();
+void ByteBuffer::getBytes(void* buffer, uint32_t count) {
+    const char* v = getBufferAtPos();
     incPos(count);
     if (count > 0) {
         memcpy(buffer, v, count);
     }
 }
 
-} // document
+} // namespace document

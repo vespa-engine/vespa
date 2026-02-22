@@ -8,6 +8,7 @@
 #pragma once
 
 #include "numericfieldvalue.h"
+
 #include <vespa/document/datatype/datatype.h>
 
 namespace document {
@@ -17,19 +18,19 @@ public:
     using UP = std::unique_ptr<ShortFieldValue>;
     using Number = int16_t;
 
-    ShortFieldValue(Number value = 0)
-        : NumericFieldValue<Number>(Type::SHORT, value) {}
+    ShortFieldValue(Number value = 0) : NumericFieldValue<Number>(Type::SHORT, value) {}
     ~ShortFieldValue() override;
 
-    void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
-    void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
+    void accept(FieldValueVisitor& visitor) override { visitor.visit(*this); }
+    void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
 
-    const DataType *getDataType() const override { return DataType::SHORT; }
+    const DataType*  getDataType() const override { return DataType::SHORT; }
     ShortFieldValue* clone() const override { return new ShortFieldValue(*this); }
 
     using NumericFieldValue<Number>::operator=;
-    static std::unique_ptr<ShortFieldValue> make(int16_t value = 0) { return std::make_unique<ShortFieldValue>(value); }
+    static std::unique_ptr<ShortFieldValue> make(int16_t value = 0) {
+        return std::make_unique<ShortFieldValue>(value);
+    }
 };
 
-} // document
-
+} // namespace document

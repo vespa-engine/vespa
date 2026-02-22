@@ -10,14 +10,14 @@
 
 #pragma once
 
-#include <memory>
-#include <list>
 #include "node.h"
+
+#include <list>
+#include <memory>
 
 namespace document::select {
 
-class Branch : public Node
-{
+class Branch : public Node {
 public:
     explicit Branch(std::string_view name) : Node(name) {}
     Branch(std::string_view name, uint32_t max_depth) : Node(name, max_depth) {}
@@ -25,68 +25,60 @@ public:
     bool isLeafNode() const override { return false; }
 };
 
-class And : public Branch
-{
+class And : public Branch {
     std::unique_ptr<Node> _left;
     std::unique_ptr<Node> _right;
+
 public:
-    And(std::unique_ptr<Node> left, std::unique_ptr<Node> right,
-        const char* name = nullptr);
+    And(std::unique_ptr<Node> left, std::unique_ptr<Node> right, const char* name = nullptr);
 
     ResultList contains(const Context& context) const override {
         return (_left->contains(context) && _right->contains(context));
     }
     ResultList trace(const Context&, std::ostream& trace) const override;
-    void visit(Visitor &v) const override;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void       visit(Visitor& v) const override;
+    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const Node& getLeft() const { return *_left; }
     const Node& getRight() const { return *_right; }
 
-    Node::UP clone() const  override{
-        return wrapParens(new And(_left->clone(), _right->clone(), _name.c_str()));
-    }
+    Node::UP clone() const override { return wrapParens(new And(_left->clone(), _right->clone(), _name.c_str())); }
 };
 
-class Or : public Branch
-{
+class Or : public Branch {
     std::unique_ptr<Node> _left;
     std::unique_ptr<Node> _right;
-public:
-    Or(std::unique_ptr<Node> left, std::unique_ptr<Node> right,
-       const char* name = nullptr);
 
-    ResultList contains(const Context& context) const  override {
+public:
+    Or(std::unique_ptr<Node> left, std::unique_ptr<Node> right, const char* name = nullptr);
+
+    ResultList contains(const Context& context) const override {
         return (_left->contains(context) || _right->contains(context));
     }
     ResultList trace(const Context&, std::ostream& trace) const override;
-    void visit(Visitor &v) const override;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void       visit(Visitor& v) const override;
+    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const Node& getLeft() const { return *_left; }
     const Node& getRight() const { return *_right; }
 
-    Node::UP clone() const override {
-        return wrapParens(new Or(_left->clone(), _right->clone(), _name.c_str()));
-    }
+    Node::UP clone() const override { return wrapParens(new Or(_left->clone(), _right->clone(), _name.c_str())); }
 };
 
-class Not : public Branch
-{
+class Not : public Branch {
     std::unique_ptr<Node> _child;
+
 public:
     Not(std::unique_ptr<Node> child, const char* name = nullptr);
 
     ResultList contains(const Context& context) const override { return !_child->contains(context); }
     ResultList trace(const Context&, std::ostream& trace) const override;
-    void visit(Visitor &v) const override;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void       visit(Visitor& v) const override;
+    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const Node& getChild() const { return *_child; }
 
-    Node::UP clone() const override {
-        return wrapParens(new Not(_child->clone(), _name.c_str()));
-    }
+    Node::UP clone() const override { return wrapParens(new Not(_child->clone(), _name.c_str())); }
 };
 
-}
+} // namespace document::select

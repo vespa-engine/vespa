@@ -6,8 +6,7 @@
 using namespace document;
 using std::string;
 
-TEST(StringUtilTest, test_escape)
-{
+TEST(StringUtilTest, test_escape) {
     EXPECT_EQ(string("abz019ABZ"), StringUtil::escape("abz019ABZ"));
     EXPECT_EQ(string("\\t"), StringUtil::escape("\t"));
     EXPECT_EQ(string("\\n"), StringUtil::escape("\n"));
@@ -16,16 +15,13 @@ TEST(StringUtilTest, test_escape)
     EXPECT_EQ(string("\\f"), StringUtil::escape("\f"));
     EXPECT_EQ(string("\\\\"), StringUtil::escape("\\"));
     EXPECT_EQ(string("\\x05"), StringUtil::escape("\x05"));
-    EXPECT_EQ(string("\\tA\\ncombined\\r\\x055test"),
-              StringUtil::escape("\tA\ncombined\r\x05""5test"));
-    EXPECT_EQ(string("A\\x20space\\x20separated\\x20string"),
-              StringUtil::escape("A space separated string", ' '));
+    EXPECT_EQ(string("\\tA\\ncombined\\r\\x055test"), StringUtil::escape("\tA\ncombined\r\x05"
+                                                                         "5test"));
+    EXPECT_EQ(string("A\\x20space\\x20separated\\x20string"), StringUtil::escape("A space separated string", ' '));
 }
 
-TEST(StringUtilTest, test_unescape)
-{
-    EXPECT_EQ(string("abz019ABZ"),
-              StringUtil::unescape("abz019ABZ"));
+TEST(StringUtilTest, test_unescape) {
+    EXPECT_EQ(string("abz019ABZ"), StringUtil::unescape("abz019ABZ"));
     EXPECT_EQ(string("\t"), StringUtil::unescape("\\t"));
     EXPECT_EQ(string("\n"), StringUtil::unescape("\\n"));
     EXPECT_EQ(string("\r"), StringUtil::unescape("\\r"));
@@ -33,20 +29,19 @@ TEST(StringUtilTest, test_unescape)
     EXPECT_EQ(string("\f"), StringUtil::unescape("\\f"));
     EXPECT_EQ(string("\\"), StringUtil::unescape("\\\\"));
     EXPECT_EQ(string("\x05"), StringUtil::unescape("\\x05"));
-    EXPECT_EQ(string("\tA\ncombined\r\x05""5test"),
+    EXPECT_EQ(string("\tA\ncombined\r\x05"
+                     "5test"),
               StringUtil::unescape("\\tA\\ncombined\\r\\x055test"));
-    EXPECT_EQ(string("A space separated string"),
-              StringUtil::unescape("A\\x20space\\x20separated\\x20string"));
+    EXPECT_EQ(string("A space separated string"), StringUtil::unescape("A\\x20space\\x20separated\\x20string"));
 }
 
-TEST(StringUtilTest, test_printAsHex)
-{
+TEST(StringUtilTest, test_printAsHex) {
     std::vector<char> asciitable(256);
-    for (uint32_t i=0; i<256; ++i) asciitable[i] = i;
+    for (uint32_t i = 0; i < 256; ++i)
+        asciitable[i] = i;
     std::ostringstream ost;
     ost << "\n  ";
-    StringUtil::printAsHex(ost, &asciitable[0], asciitable.size(),
-                           16, true, "  ");
+    StringUtil::printAsHex(ost, &asciitable[0], asciitable.size(), 16, true, "  ");
     std::string expected("\n"
                          "    0: 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f\n"
                          "   16: 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f\n"
@@ -68,8 +63,7 @@ TEST(StringUtilTest, test_printAsHex)
 
     ost.str("");
     ost << "\n";
-    StringUtil::printAsHex(ost, &asciitable[0], asciitable.size(),
-                           15, false);
+    StringUtil::printAsHex(ost, &asciitable[0], asciitable.size(), 15, false);
     expected = "\n"
                "  0: 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e ...............\n"
                " 15: 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d ...............\n"

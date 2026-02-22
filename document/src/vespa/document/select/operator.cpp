@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "operator.h"
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <vespa/vespalib/regex/regex.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <cassert>
 #include <ostream>
 
@@ -14,9 +17,7 @@ namespace document::select {
 
 Operator::OperatorMap Operator::_operators;
 
-Operator::Operator(std::string_view name)
-    : _name(name)
-{
+Operator::Operator(std::string_view name) : _name(name) {
     OperatorMap::iterator it = _operators.find(name);
     if (it != _operators.end()) {
         LOG_ABORT("unknown operator, should not happen");
@@ -24,9 +25,7 @@ Operator::Operator(std::string_view name)
     _operators[_name] = this;
 }
 
-const Operator&
-Operator::get(std::string_view name)
-{
+const Operator& Operator::get(std::string_view name) {
     OperatorMap::iterator it = _operators.find(name);
     if (it == _operators.end()) {
         LOG_ABORT("unknown operator, should not happen");
@@ -34,68 +33,41 @@ Operator::get(std::string_view name)
     return *it->second;
 }
 
-void
-Operator::print(std::ostream& out, bool verbose,
-                const std::string& indent) const
-{
-    (void) verbose; (void) indent;
+void Operator::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    (void)verbose;
+    (void)indent;
     out << _name;
 }
 
-ResultList
-FunctionOperator::compare(const Value& a, const Value& b) const
-{
-    return (a.*_comparator)(b);
-}
+ResultList FunctionOperator::compare(const Value& a, const Value& b) const { return (a.*_comparator)(b); }
 
-ResultList
-FunctionOperator::trace(const Value& a, const Value& b,
-                        std::ostream& out) const
-{
+ResultList FunctionOperator::trace(const Value& a, const Value& b, std::ostream& out) const {
     ResultList result = (a.*_comparator)(b);
-    out << "Operator(" << getName() << ") - Result was "
-        << result << ".\n";
+    out << "Operator(" << getName() << ") - Result was " << result << ".\n";
     return result;
 }
 
-const FunctionOperator
-FunctionOperator::GT(">", &Value::operator>);
+const FunctionOperator FunctionOperator::GT(">", &Value::operator>);
 
-const FunctionOperator
-FunctionOperator::GEQ(">=", &Value::operator>=);
+const FunctionOperator FunctionOperator::GEQ(">=", &Value::operator>=);
 
-const FunctionOperator
-FunctionOperator::EQ("==", &Value::operator==);
+const FunctionOperator FunctionOperator::EQ("==", &Value::operator==);
 
-const FunctionOperator
-FunctionOperator::LEQ("<=", &Value::operator<=);
+const FunctionOperator FunctionOperator::LEQ("<=", &Value::operator<=);
 
-const FunctionOperator
-FunctionOperator::LT("<", &Value::operator<);
+const FunctionOperator FunctionOperator::LT("<", &Value::operator<);
 
-const FunctionOperator
-FunctionOperator::NE("!=", &Value::operator!=);
+const FunctionOperator FunctionOperator::NE("!=", &Value::operator!=);
 
-RegexOperator::RegexOperator(std::string_view name)
-    : Operator(name)
-{
-}
+RegexOperator::RegexOperator(std::string_view name) : Operator(name) {}
 
-ResultList
-RegexOperator::compare(const Value& a, const Value& b) const
-{
-    return a.regexCompare(b);
-}
+ResultList RegexOperator::compare(const Value& a, const Value& b) const { return a.regexCompare(b); }
 
-ResultList
-RegexOperator::trace(const Value& a, const Value& b, std::ostream& out) const
-{
+ResultList RegexOperator::trace(const Value& a, const Value& b, std::ostream& out) const {
     return a.regexTrace(b, out);
 }
 
-ResultList
-RegexOperator::compareImpl(const Value& a, const Value& b) const
-{
+ResultList RegexOperator::compareImpl(const Value& a, const Value& b) const {
     const auto* left(dynamic_cast<const StringValue*>(&a));
     const auto* right(dynamic_cast<const StringValue*>(&b));
     if (left == nullptr || right == nullptr) {
@@ -104,9 +76,7 @@ RegexOperator::compareImpl(const Value& a, const Value& b) const
     return match(left->getValue(), right->getValue());
 }
 
-ResultList
-RegexOperator::traceImpl(const Value& a, const Value& b, std::ostream& out) const
-{
+ResultList RegexOperator::traceImpl(const Value& a, const Value& b, std::ostream& out) const {
     const auto* left(dynamic_cast<const StringValue*>(&a));
     const auto* right(dynamic_cast<const StringValue*>(&b));
     if (left == nullptr) {
@@ -120,44 +90,30 @@ RegexOperator::traceImpl(const Value& a, const Value& b, std::ostream& out) cons
         return ResultList(Result::Invalid);
     }
     ResultList result = match(left->getValue(), right->getValue());
-    out << "Operator(" << getName() << ")(" << left->getValue() << ", "
-        << right->getValue() << ") - Result was " << result << "\n";
+    out << "Operator(" << getName() << ")(" << left->getValue() << ", " << right->getValue() << ") - Result was "
+        << result << "\n";
     return result;
 }
 
-ResultList
-RegexOperator::match(const std::string& val, std::string_view expr) const
-{
+ResultList RegexOperator::match(const std::string& val, std::string_view expr) const {
     if (expr.empty()) {
         return ResultList(Result::True); // Should we catch this in parsing?
     }
-    return ResultList(Result::get(
-            vespalib::Regex::partial_match(std::string_view(val.data(), val.size()),
-                                           std::string_view(expr.data(), expr.size()))));
+    return ResultList(Result::get(vespalib::Regex::partial_match(std::string_view(val.data(), val.size()),
+                                                                 std::string_view(expr.data(), expr.size()))));
 }
 
 const RegexOperator RegexOperator::REGEX("=~");
 
-GlobOperator::GlobOperator(std::string_view name)
-    : RegexOperator(name)
-{
-}
+GlobOperator::GlobOperator(std::string_view name) : RegexOperator(name) {}
 
-ResultList
-GlobOperator::compare(const Value& a, const Value& b) const
-{
-    return a.globCompare(b);
-}
+ResultList GlobOperator::compare(const Value& a, const Value& b) const { return a.globCompare(b); }
 
-ResultList
-GlobOperator::trace(const Value& a, const Value& b, std::ostream& out) const
-{
+ResultList GlobOperator::trace(const Value& a, const Value& b, std::ostream& out) const {
     return a.globTrace(b, out);
 }
 
-ResultList
-GlobOperator::compareImpl(const Value& a, const Value& b) const
-{
+ResultList GlobOperator::compareImpl(const Value& a, const Value& b) const {
     const auto* right(dynamic_cast<const StringValue*>(&b));
     // Fall back to operator== if it isn't string matching
     if (right == nullptr) {
@@ -171,9 +127,7 @@ GlobOperator::compareImpl(const Value& a, const Value& b) const
     return match(left->getValue(), regex);
 }
 
-ResultList
-GlobOperator::traceImpl(const Value& a, const Value& b, std::ostream& ost) const
-{
+ResultList GlobOperator::traceImpl(const Value& a, const Value& b, std::ostream& ost) const {
     const auto* right(dynamic_cast<const StringValue*>(&b));
     // Fall back to operator== if it isn't string matching
     if (right == nullptr) {
@@ -188,8 +142,8 @@ GlobOperator::traceImpl(const Value& a, const Value& b, std::ostream& ost) const
         return ResultList(Result::Invalid);
     }
     std::string regex(convertToRegex(right->getValue()));
-    ost << "Operator(" << getName() << ") - Converted glob expression '"
-        << right->getValue() << "' to regex '"  << regex << "'.\n";
+    ost << "Operator(" << getName() << ") - Converted glob expression '" << right->getValue() << "' to regex '"
+        << regex << "'.\n";
     return match(left->getValue(), regex);
 }
 
@@ -199,20 +153,19 @@ namespace {
 // _and including_ the character at `i`, i.e. the wildcard run length.
 size_t wildcard_run_length(size_t i, std::string_view str) {
     size_t n = 0;
-    for (; (i < str.size()) && (str[i] == '*'); ++n, ++i) {}
+    for (; (i < str.size()) && (str[i] == '*'); ++n, ++i) {
+    }
     return n;
 }
 
-}
+} // namespace
 
-std::string
-GlobOperator::convertToRegex(std::string_view globpattern)
-{
+std::string GlobOperator::convertToRegex(std::string_view globpattern) {
     if (globpattern.empty()) {
         return "^$"; // Empty glob can only match the empty string.
     }
     vespalib::asciistream ost;
-    size_t i = 0;
+    size_t                i = 0;
     if (globpattern[0] != '*') {
         ost << '^';
     } else {
@@ -220,10 +173,10 @@ GlobOperator::convertToRegex(std::string_view globpattern)
     }
     const size_t n = globpattern.size();
     for (; i < n; ++i) {
-        switch(globpattern[i]) {
+        switch (globpattern[i]) {
         case '*':
             i += wildcard_run_length(i, globpattern) - 1; // -1 since we always inc by 1 anyway.
-            if (i != (n - 1)) { // Don't emit trailing wildcard.
+            if (i != (n - 1)) {                           // Don't emit trailing wildcard.
                 ost << ".*";
             }
             break;
@@ -245,7 +198,8 @@ GlobOperator::convertToRegex(std::string_view globpattern)
             ost << '\\' << globpattern[i];
             break;
         // Are there other regex special chars we need to escape?
-        default: ost << globpattern[i];
+        default:
+            ost << globpattern[i];
         }
     }
     if (globpattern[n - 1] != '*') {
@@ -254,10 +208,8 @@ GlobOperator::convertToRegex(std::string_view globpattern)
     return ost.str();
 }
 
-bool
-GlobOperator::containsVariables(std::string_view expression)
-{
-    for (size_t i=0, n=expression.size(); i<n; ++i) {
+bool GlobOperator::containsVariables(std::string_view expression) {
+    for (size_t i = 0, n = expression.size(); i < n; ++i) {
         if (expression[i] == '*' || expression[i] == '?') {
             return true;
         }
@@ -267,4 +219,4 @@ GlobOperator::containsVariables(std::string_view expression)
 
 const GlobOperator GlobOperator::GLOB("=");
 
-}
+} // namespace document::select

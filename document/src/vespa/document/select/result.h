@@ -17,8 +17,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/document/util/printable.h>
+#include <vespa/vespalib/util/hdr_abort.h>
+
 #include <cstdint>
 
 namespace document::select {
@@ -42,7 +43,7 @@ public:
     const Result& operator||(const Result&) const;
     const Result& operator!() const;
 
-    static const Result& get(bool b) { return (b ? True : False); }
+    static const Result&      get(bool b) { return (b ? True : False); }
     static constexpr uint32_t enumRange = 3u;
 
     uint32_t toEnum() const {
@@ -55,7 +56,7 @@ public:
         HDR_ABORT("should not be reached");
     }
 
-    static const Result &fromEnum(uint32_t val) {
+    static const Result& fromEnum(uint32_t val) {
         if (val == 0u)
             return Result::Invalid;
         if (val == 1u)
@@ -69,4 +70,4 @@ private:
     Result();
 };
 
-}
+} // namespace document::select

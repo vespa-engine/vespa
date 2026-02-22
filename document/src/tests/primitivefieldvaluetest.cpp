@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <limits>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
@@ -8,14 +7,16 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <limits>
+
 using vespalib::nbostream;
 
 namespace document {
 
 namespace {
-template <typename T> void deserialize(nbostream &stream, T &value) {
-    uint16_t version = Document::getNewestSerializationVersion();
-    DocumentTypeRepo repo;
+template <typename T> void deserialize(nbostream& stream, T& value) {
+    uint16_t                  version = Document::getNewestSerializationVersion();
+    DocumentTypeRepo          repo;
     VespaDocumentDeserializer deserializer(repo, stream, version);
     deserializer.read(value);
 }
@@ -26,7 +27,7 @@ template <typename T> void deserialize(nbostream &stream, T &value) {
  * instance.
  */
 template <typename Type>
-void testCommon(const Type &smallest, const Type &medium1, const Type &medium2, const Type &largest) {
+void testCommon(const Type& smallest, const Type& medium1, const Type& medium2, const Type& largest) {
     try {
         // Less
         EXPECT_TRUE(!(smallest < smallest));
@@ -83,7 +84,7 @@ void testCommon(const Type &smallest, const Type &medium1, const Type &medium2, 
         // checking separately
 
         // Serialization
-        Type t;
+        Type      t;
         nbostream buf(smallest.serialize());
         deserialize(buf, t);
         EXPECT_EQ(smallest, t);
@@ -119,7 +120,7 @@ void testCommon(const Type &smallest, const Type &medium1, const Type &medium2, 
         EXPECT_EQ(largest, t);
 
         // Catch errors and say what type there were trouble with.
-    } catch (vespalib::Exception &e) {
+    } catch (vespalib::Exception& e) {
         std::cerr << "\nFailed for type " << *smallest.getDataType() << "\n";
         throw;
     }
@@ -146,7 +147,7 @@ template <typename Literal> void testLiteral() {
     // (literals have lazy deserialization so behaves diff then
     value = "foo";
     nbostream buf(value.serialize());
-    Literal value2("Other");
+    Literal   value2("Other");
     deserialize(buf, value2);
     buf = value2.serialize();
     deserialize(buf, value2);
@@ -181,7 +182,7 @@ TEST(PrimitiveFieldValueTest, testRaw) {
 
 namespace {
 
-template <typename Numeric> void testNumeric(const std::string &maxVal, bool floatingPoint) {
+template <typename Numeric> void testNumeric(const std::string& maxVal, bool floatingPoint) {
     using Number = typename Numeric::Number;
     Number maxValue(std::numeric_limits<Number>::max());
     // Test common fieldvalue stuff
@@ -319,35 +320,43 @@ TEST(PrimitiveFieldValueTest, testNumerics) {
     try {
         b1 = "-129";
         FAIL() << "Expected -129 to be invalid byte";
-    } catch (vespalib::Exception &e) {}
+    } catch (vespalib::Exception& e) {
+    }
     try {
         b1 = "256";
         FAIL() << "Expected 256 to be invalid byte";
-    } catch (vespalib::Exception &e) {}
+    } catch (vespalib::Exception& e) {
+    }
     try {
         s1 = "-32769";
         FAIL() << "Expected -32769 to be invalid short";
-    } catch (vespalib::Exception &e) {}
+    } catch (vespalib::Exception& e) {
+    }
     try {
         s1 = "65536";
         FAIL() << "Expected 65536 to be invalid short";
-    } catch (vespalib::Exception &e) {}
+    } catch (vespalib::Exception& e) {
+    }
     try {
         i1 = "-2147483649";
         FAIL() << "Expected -2147483649 to be invalid int";
-    } catch (vespalib::Exception &e) {}
+    } catch (vespalib::Exception& e) {
+    }
     try {
         i1 = "4294967296";
         FAIL() << "Expected 4294967296 to be invalid int";
-    } catch (vespalib::Exception &e) {}
+    } catch (vespalib::Exception& e) {
+    }
     try {
         l1 = "-9223372036854775809";
         FAIL() << "Expected -9223372036854775809 to be invalid long";
-    } catch (vespalib::Exception &e) {}
+    } catch (vespalib::Exception& e) {
+    }
     try {
         l1 = "18446744073709551616";
         FAIL() << "Expected 18446744073709551616 to be invalid long";
-    } catch (vespalib::Exception &e) {}
+    } catch (vespalib::Exception& e) {
+    }
 }
 
 } // namespace document

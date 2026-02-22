@@ -19,27 +19,28 @@
 
 #pragma once
 
-#include "idstring.h"
 #include "globalid.h"
+#include "idstring.h"
 
-namespace vespalib { class nbostream; }
+namespace vespalib {
+class nbostream;
+}
 
 namespace document {
 
 class DocumentType;
 
-class DocumentId
-{
+class DocumentId {
 public:
     using UP = std::unique_ptr<DocumentId>;
 
     DocumentId();
-    DocumentId(vespalib::nbostream & os);
-    DocumentId(DocumentId && rhs) noexcept = default;
-    DocumentId & operator = (DocumentId && rhs) noexcept = default;
-    DocumentId(const DocumentId & rhs);
-    DocumentId & operator = (const DocumentId & rhs);
-    ~DocumentId() noexcept ;
+    DocumentId(vespalib::nbostream& os);
+    DocumentId(DocumentId&& rhs) noexcept = default;
+    DocumentId& operator=(DocumentId&& rhs) noexcept = default;
+    DocumentId(const DocumentId& rhs);
+    DocumentId& operator=(const DocumentId& rhs);
+    ~DocumentId() noexcept;
     /**
      * Parse the given document identifier given as string, and create an
      * identifier object from it.
@@ -61,26 +62,28 @@ public:
     std::string toString() const;
 
     bool operator==(const DocumentId& other) const { return _id == other._id; }
-    bool operator!=(const DocumentId& other) const { return ! (_id == other._id); }
+    bool operator!=(const DocumentId& other) const { return !(_id == other._id); }
 
-    const IdString& getScheme() const { return _id; }
-    bool hasDocType() const { return _id.hasDocType(); }
+    const IdString&  getScheme() const { return _id; }
+    bool             hasDocType() const { return _id.hasDocType(); }
     std::string_view getDocType() const { return _id.getDocType(); }
 
     const GlobalId& getGlobalId() const {
-        if (!_globalId.first) { calculateGlobalId(); }
+        if (!_globalId.first) {
+            calculateGlobalId();
+        }
         return _globalId.second;
     }
 
     size_t getSerializedSize() const;
+
 private:
     mutable std::pair<bool, GlobalId> _globalId;
-    IdString _id;
+    IdString                          _id;
 
     void calculateGlobalId() const;
 };
 
-std::ostream & operator << (std::ostream & os, const DocumentId & id);
+std::ostream& operator<<(std::ostream& os, const DocumentId& id);
 
-} // document
-
+} // namespace document

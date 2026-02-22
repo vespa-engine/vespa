@@ -3,8 +3,9 @@
 #pragma once
 
 #include "fieldvalue.h"
-#include <vespa/document/datatype/referencedatatype.h>
+
 #include <vespa/document/base/documentid.h>
+#include <vespa/document/datatype/referencedatatype.h>
 
 namespace document {
 
@@ -26,45 +27,42 @@ class ReferenceFieldValue final : public FieldValue {
     const ReferenceDataType* _dataType;
     // TODO wrap in std::optional once available.
     DocumentId _documentId;
+
 public:
     // Empty constructor required for Identifiable.
     ReferenceFieldValue();
 
     explicit ReferenceFieldValue(const ReferenceDataType& dataType);
 
-    ReferenceFieldValue(const ReferenceDataType& dataType,
-                        const DocumentId& documentId);
+    ReferenceFieldValue(const ReferenceDataType& dataType, const DocumentId& documentId);
 
     ~ReferenceFieldValue() override;
 
     ReferenceFieldValue(const ReferenceFieldValue&) = default;
     ReferenceFieldValue& operator=(const ReferenceFieldValue&) = default;
 
-    bool hasValidDocumentId() const noexcept {
-        return _documentId.hasDocType();
-    }
+    bool hasValidDocumentId() const noexcept { return _documentId.hasDocType(); }
 
     // Returned value is only well-defined if hasValidDocumentId() == true.
-    const DocumentId& getDocumentId() const noexcept {
-        return _documentId;
-    }
+    const DocumentId& getDocumentId() const noexcept { return _documentId; }
 
     // Should only be called by deserializer code, as it will clear hasChanged.
     // `id` must be a valid document ID and cannot be empty.
     void setDeserializedDocumentId(const DocumentId& id);
 
-    const DataType* getDataType() const override { return _dataType; }
-    FieldValue& assign(const FieldValue&) override;
+    const DataType*      getDataType() const override { return _dataType; }
+    FieldValue&          assign(const FieldValue&) override;
     ReferenceFieldValue* clone() const override;
-    int compare(const FieldValue&) const override;
-    void printXml(XmlOutputStream&) const override { /* Not implemented */ }
-    void print(std::ostream&, bool, const std::string&) const override;
-    void accept(FieldValueVisitor&) override;
-    void accept(ConstFieldValueVisitor&) const override;
+    int                  compare(const FieldValue&) const override;
+    void                 printXml(XmlOutputStream&) const override { /* Not implemented */ }
+    void                 print(std::ostream&, bool, const std::string&) const override;
+    void                 accept(FieldValueVisitor&) override;
+    void                 accept(ConstFieldValueVisitor&) const override;
+
 private:
     // Throws vespalib::IllegalArgumentException if  doc type of `id` does not
     // match the name of `type`.
     static void requireIdOfMatchingType(const DocumentId& id, const DocumentType& type);
 };
 
-} // document
+} // namespace document

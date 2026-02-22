@@ -8,6 +8,7 @@
 #pragma once
 
 #include <vespa/document/util/printable.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -28,9 +29,8 @@ class ReferenceDataType;
 class TensorDataType;
 class WeightedSetDataType;
 
-class DataType : public Printable
-{
-    int _dataTypeId;
+class DataType : public Printable {
+    int         _dataTypeId;
     std::string _name;
 
 protected:
@@ -61,68 +61,68 @@ public:
      * here must also be applied there.
      */
     enum Type {
-        T_INT         =  0,
-        T_FLOAT       =  1,
-        T_STRING      =  2,
-        T_RAW         =  3,
-        T_LONG        =  4,
-        T_DOUBLE      =  5,
-        T_BOOL        =  6,
-        T_DOCUMENT    =  8, // Type of super document type Document.0 that all documents inherit.
+        T_INT = 0,
+        T_FLOAT = 1,
+        T_STRING = 2,
+        T_RAW = 3,
+        T_LONG = 4,
+        T_DOUBLE = 5,
+        T_BOOL = 6,
+        T_DOCUMENT = 8, // Type of super document type Document.0 that all documents inherit.
         // T_TIMESTAMP   =  9,  // Not used anymore, Id should probably not be reused
-        T_URI         = 10,
+        T_URI = 10,
         // T_EXACTSTRING = 11,  // Not used anymore, Id should probably not be reused
         // T_CONTENT     = 12,  // Not used anymore, Id should probably not be reused
         // T_CONTENTMETA = 13,  // Not used anymore, Id should probably not be reused
         // T_MAILADDRESS = 14,  // Not used anymore, Id should probably not be reused
         // T_TERMBOOST   = 15,  // Not used anymore, Id should probably not be reused
-        T_BYTE        = 16,
-        T_TAG         = 18,
-        T_SHORT       = 19,
-        T_PREDICATE   = 20,
-        T_TENSOR      = 21,
+        T_BYTE = 16,
+        T_TAG = 18,
+        T_SHORT = 19,
+        T_PREDICATE = 20,
+        T_TENSOR = 21,
         MAX
     };
 
-    static const DataType *const BYTE;
-    static const DataType *const SHORT;
-    static const DataType *const INT;
-    static const DataType *const LONG;
-    static const DataType *const FLOAT;
-    static const DataType *const DOUBLE;
-    static const DataType *const BOOL;
-    static const DataType *const STRING;
-    static const DataType *const RAW;
-    static const DocumentType *const DOCUMENT;
-    static const DataType *const TAG;
-    static const DataType *const URI;
-    static const DataType *const PREDICATE;
-    static const DataType *const TENSOR;
+    static const DataType* const     BYTE;
+    static const DataType* const     SHORT;
+    static const DataType* const     INT;
+    static const DataType* const     LONG;
+    static const DataType* const     FLOAT;
+    static const DataType* const     DOUBLE;
+    static const DataType* const     BOOL;
+    static const DataType* const     STRING;
+    static const DataType* const     RAW;
+    static const DocumentType* const DOCUMENT;
+    static const DataType* const     TAG;
+    static const DataType* const     URI;
+    static const DataType* const     PREDICATE;
+    static const DataType* const     TENSOR;
 
     /** Used by type manager to fetch default types to register. */
-    static std::vector<const DataType *> getDefaultDataTypes();
+    static std::vector<const DataType*> getDefaultDataTypes();
 
     const std::string& getName() const noexcept { return _name; }
-    int getId() const noexcept { return _dataTypeId; }
-    bool isValueType(const FieldValue & fv) const;
+    int                getId() const noexcept { return _dataTypeId; }
+    bool               isValueType(const FieldValue& fv) const;
 
     /**
      * Create a field value using this datatype.
      */
     virtual std::unique_ptr<FieldValue> createFieldValue() const = 0;
 
-    virtual bool isWeightedSet() const noexcept { return false; }
-    virtual bool isArray() const noexcept { return false; }
-    virtual bool isDocument() const noexcept { return false; }
-    virtual bool isTensor() const noexcept { return false; }
-    virtual bool isPrimitive() const noexcept { return false; }
-    virtual bool isNumeric() const noexcept { return false; }
-    virtual bool isStructured() const noexcept { return false; }
-    virtual const CollectionDataType * cast_collection() const noexcept { return nullptr; }
-    virtual const MapDataType * cast_map() const noexcept { return nullptr; }
-    virtual const ReferenceDataType * cast_reference() const noexcept { return nullptr; }
-    virtual const TensorDataType* cast_tensor() const noexcept { return nullptr; }
-    bool isMap() const { return cast_map() != nullptr; }
+    virtual bool                      isWeightedSet() const noexcept { return false; }
+    virtual bool                      isArray() const noexcept { return false; }
+    virtual bool                      isDocument() const noexcept { return false; }
+    virtual bool                      isTensor() const noexcept { return false; }
+    virtual bool                      isPrimitive() const noexcept { return false; }
+    virtual bool                      isNumeric() const noexcept { return false; }
+    virtual bool                      isStructured() const noexcept { return false; }
+    virtual const CollectionDataType* cast_collection() const noexcept { return nullptr; }
+    virtual const MapDataType*        cast_map() const noexcept { return nullptr; }
+    virtual const ReferenceDataType*  cast_reference() const noexcept { return nullptr; }
+    virtual const TensorDataType*     cast_tensor() const noexcept { return nullptr; }
+    bool                              isMap() const { return cast_map() != nullptr; }
 
     /**
      * Whether another datatype is a supertype of this one. Document types may
@@ -131,19 +131,11 @@ public:
      */
     virtual bool isA(const DataType& other) const { return equals(other); }
 
-    virtual bool equals(const DataType & other) const noexcept {
-        return _dataTypeId == other._dataTypeId;
-    }
+    virtual bool equals(const DataType& other) const noexcept { return _dataTypeId == other._dataTypeId; }
 
-    bool operator == (const DataType & other) const noexcept {
-        return equals(other);
-    }
-    int cmpId(const DataType& b) const {
-        return (_dataTypeId < b._dataTypeId)
-               ? -1
-               : (b._dataTypeId < _dataTypeId)
-                 ? 1
-                 : 0;
+    bool operator==(const DataType& other) const noexcept { return equals(other); }
+    int  cmpId(const DataType& b) const {
+        return (_dataTypeId < b._dataTypeId) ? -1 : (b._dataTypeId < _dataTypeId) ? 1 : 0;
     }
 
     /**
@@ -153,13 +145,13 @@ public:
      *                         MUST be null-terminated.
      * @return pointer to field path or null if an error occured
      */
-    void buildFieldPath(FieldPath & fieldPath, std::string_view remainFieldName) const;
+    void buildFieldPath(FieldPath& fieldPath, std::string_view remainFieldName) const;
 
     /** @throws FieldNotFoundException if field does not exist. */
     virtual const Field& getField(int fieldId) const;
+
 private:
-    virtual void onBuildFieldPath(FieldPath & fieldPath, std::string_view remainFieldName) const = 0;
+    virtual void onBuildFieldPath(FieldPath& fieldPath, std::string_view remainFieldName) const = 0;
 };
 
-} // document
-
+} // namespace document

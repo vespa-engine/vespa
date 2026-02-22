@@ -10,6 +10,7 @@
 #pragma once
 
 #include "structureddatatype.h"
+
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace document {
@@ -21,8 +22,8 @@ public:
 
     StructDataType(std::string_view name);
     StructDataType(std::string_view name, int32_t id);
-    StructDataType(const StructDataType & rhs); // TODO avoid using this
-    StructDataType & operator=(const StructDataType & rhs) = delete;
+    StructDataType(const StructDataType& rhs); // TODO avoid using this
+    StructDataType& operator=(const StructDataType& rhs) = delete;
     ~StructDataType();
 
     /**
@@ -43,8 +44,8 @@ public:
 
     // Implementation of StructuredDataType
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void print(std::ostream&, bool verbose, const std::string& indent) const override;
-    uint32_t getFieldCount() const noexcept override { return _idFieldMap.size(); }
+    void                        print(std::ostream&, bool verbose, const std::string& indent) const override;
+    uint32_t                    getFieldCount() const noexcept override { return _idFieldMap.size(); }
 
     const Field& getField(std::string_view name) const override;
 
@@ -56,21 +57,18 @@ public:
 
     bool hasField(std::string_view name) const noexcept override;
     bool hasField(int32_t fieldId) const noexcept override;
-    bool hasField(const Field& f) const noexcept {
-        return hasField(f.getId());
-    }
+    bool hasField(const Field& f) const noexcept { return hasField(f.getId()); }
 
     Field::Set getFieldSet() const override;
+
 private:
     using StringFieldMap = vespalib::hash_map<std::string, Field::SP>;
     using IntFieldMap = vespalib::hash_map<int32_t, Field::SP>;
-    StringFieldMap    _nameFieldMap;
-    IntFieldMap       _idFieldMap;
+    StringFieldMap _nameFieldMap;
+    IntFieldMap    _idFieldMap;
 
     /** @return "" if not conflicting. Error message otherwise. */
     std::string containsConflictingField(const Field& field) const;
 };
 
-}
-
-
+} // namespace document

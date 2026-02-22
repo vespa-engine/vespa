@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "bucketspace.h"
 #include "bucketid.h"
+#include "bucketspace.h"
+
 #include <cstdint>
 #include <string>
 
@@ -28,23 +29,24 @@ public:
     bool operator!=(const Bucket& other) const noexcept { return !(operator==(other)); }
 
     BucketSpace getBucketSpace() const noexcept { return _bucketSpace; }
-    BucketId getBucketId() const noexcept { return _bucketId; }
+    BucketId    getBucketId() const noexcept { return _bucketId; }
     std::string toString() const;
 
     struct hash {
-        size_t operator () (const Bucket& b) const noexcept {
+        size_t operator()(const Bucket& b) const noexcept {
             size_t hash1 = BucketId::hash()(b.getBucketId());
             size_t hash2 = BucketSpace::hash()(b.getBucketSpace());
             // Formula taken from std::hash_combine proposal
-            return hash1 ^ (hash2 + 0x9e3779b9 + (hash1<<6) + (hash1>>2));
+            return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
         }
     };
+
 private:
     BucketSpace _bucketSpace;
-    BucketId _bucketId;
+    BucketId    _bucketId;
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream&, const Bucket&);
-std::ostream& operator<<(std::ostream&, const Bucket&);
+std::ostream&          operator<<(std::ostream&, const Bucket&);
 
-}
+} // namespace document

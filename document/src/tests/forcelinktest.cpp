@@ -5,9 +5,6 @@
 
 namespace document {
 
-TEST(ForceLinkTest, testUsage)
-{
-    ForceLink link;
-}
+TEST(ForceLinkTest, testUsage) { ForceLink link; }
 
-} // document
+} // namespace document

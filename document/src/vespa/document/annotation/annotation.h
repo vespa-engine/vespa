@@ -9,38 +9,36 @@ namespace document {
 struct SpanNode;
 
 class Annotation {
-    const AnnotationType * _type;
-    const SpanNode *_node;
+    const AnnotationType*       _type;
+    const SpanNode*             _node;
     std::unique_ptr<FieldValue> _value;
 
 public:
     template <typename T>
-    Annotation(const AnnotationType & type, std::unique_ptr<T> value)
+    Annotation(const AnnotationType& type, std::unique_ptr<T> value)
         : _type(&type), _node(nullptr), _value(std::move(value)) {}
 
-    Annotation(const AnnotationType &annotation) : _type(&annotation), _node(nullptr), _value(nullptr) { }
-    Annotation() noexcept : _type(nullptr), _node(nullptr), _value(nullptr) { }
-    Annotation(const Annotation &) = delete;
-    Annotation & operator = (const Annotation &) = delete;
-    Annotation(Annotation &&) = default;
-    Annotation & operator = (Annotation &&) = delete;
+    Annotation(const AnnotationType& annotation) : _type(&annotation), _node(nullptr), _value(nullptr) {}
+    Annotation() noexcept : _type(nullptr), _node(nullptr), _value(nullptr) {}
+    Annotation(const Annotation&) = delete;
+    Annotation& operator=(const Annotation&) = delete;
+    Annotation(Annotation&&) = default;
+    Annotation& operator=(Annotation&&) = delete;
     ~Annotation();
 
-    void setType(const AnnotationType * v) { _type = v; }
-    void setSpanNode(const SpanNode &node) { _node = &node; }
-    template <typename T>
-    void setFieldValue(std::unique_ptr<T> value) { _value = std::move(value); }
-    bool operator==(const Annotation &a2) const;
+    void                       setType(const AnnotationType* v) { _type = v; }
+    void                       setSpanNode(const SpanNode& node) { _node = &node; }
+    template <typename T> void setFieldValue(std::unique_ptr<T> value) { _value = std::move(value); }
+    bool                       operator==(const Annotation& a2) const;
 
-    const SpanNode *getSpanNode() const { return _node; }
-    const AnnotationType &getType() const { return *_type; }
-    bool valid() const { return _type != nullptr; }
-    int32_t getTypeId() const { return _type->getId(); }
-    const FieldValue *getFieldValue() const { return _value.get(); }
-    std::string toString() const;
+    const SpanNode*       getSpanNode() const { return _node; }
+    const AnnotationType& getType() const { return *_type; }
+    bool                  valid() const { return _type != nullptr; }
+    int32_t               getTypeId() const { return _type->getId(); }
+    const FieldValue*     getFieldValue() const { return _value.get(); }
+    std::string           toString() const;
 };
 
-std::ostream & operator << (std::ostream & os, const Annotation & span);
+std::ostream& operator<<(std::ostream& os, const Annotation& span);
 
-}  // namespace document
-
+} // namespace document

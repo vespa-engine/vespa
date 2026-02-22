@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "gid_filter.h"
-#include "node.h"
-#include "visitor.h"
-#include "valuenodes.h"
-#include "compare.h"
+
 #include "branch.h"
+#include "compare.h"
+#include "node.h"
+#include "valuenodes.h"
+#include "visitor.h"
+
 #include <vespa/document/base/idstring.h>
 
 namespace document::select {
@@ -56,17 +58,12 @@ struct IdComparisonVisitor : NoOpVisitor {
         }
     }
 
-    void visitIntegerValueNode(const IntegerValueNode& node) override {
-        _int_literal_node = &node;
-    }
+    void visitIntegerValueNode(const IntegerValueNode& node) override { _int_literal_node = &node; }
 
-    void visitStringValueNode(const StringValueNode& node) override {
-        _string_literal_node = &node;
-    }
+    void visitStringValueNode(const StringValueNode& node) override { _string_literal_node = &node; }
 
     bool is_valid_location_sub_expression() const noexcept {
-        return ((_id_user_node && _int_literal_node)
-                || (_id_group_node && _string_literal_node));
+        return ((_id_user_node && _int_literal_node) || (_id_group_node && _string_literal_node));
     }
 };
 
@@ -76,8 +73,10 @@ struct IdComparisonVisitor : NoOpVisitor {
  */
 class LocationConstraintVisitor : public NoOpVisitor {
     GidFilter::OptionalLocation _location;
+
 public:
     GidFilter::OptionalLocation location() const noexcept { return _location; }
+
 private:
     void visitAndBranch(const And& node) override {
         node.getLeft().visit(*this);
@@ -107,22 +106,16 @@ private:
         extract_location_from_id_visitor(id_visitor);
     }
 
-    uint32_t truncate_location(int64_t full_location) const noexcept {
-        return static_cast<uint32_t>(full_location);
-    }
+    uint32_t truncate_location(int64_t full_location) const noexcept { return static_cast<uint32_t>(full_location); }
 
-    uint32_t location_from_integer_literal_node(
-            const IntegerValueNode& node) const
-    {
+    uint32_t location_from_integer_literal_node(const IntegerValueNode& node) const {
         Context ctx;
-        auto rhs = node.getValue(ctx);
-        auto full_location = static_cast<const IntegerValue&>(*rhs).getValue();
+        auto    rhs = node.getValue(ctx);
+        auto    full_location = static_cast<const IntegerValue&>(*rhs).getValue();
         return truncate_location(full_location);
     }
 
-    uint32_t location_from_string_literal_node(
-            const StringValueNode& node) const
-    {
+    uint32_t location_from_string_literal_node(const StringValueNode& node) const {
         auto full_location = IdString::makeLocation(node.getValue());
         return truncate_location(full_location);
     }
@@ -130,11 +123,9 @@ private:
     void extract_location_from_id_visitor(const IdComparisonVisitor& visitor) {
         uint32_t location;
         if (visitor._int_literal_node) {
-            location = location_from_integer_literal_node(
-                    *visitor._int_literal_node);
+            location = location_from_integer_literal_node(*visitor._int_literal_node);
         } else {
-            location = location_from_string_literal_node(
-                    *visitor._string_literal_node);
+            location = location_from_string_literal_node(*visitor._string_literal_node);
         }
         _location = GidFilter::OptionalLocation(location);
     }
@@ -146,11 +137,8 @@ GidFilter::OptionalLocation location_bits_from_selection(const Node& ast_root) {
     return visitor.location();
 }
 
-} // anon ns
+} // namespace
 
-GidFilter::GidFilter(const Node& ast_root)
-    : _required_gid_location(location_bits_from_selection(ast_root))
-{
-}
+GidFilter::GidFilter(const Node& ast_root) : _required_gid_location(location_bits_from_selection(ast_root)) {}
 
-}
+} // namespace document::select
