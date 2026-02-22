@@ -150,26 +150,13 @@ func deployServiceGet(url string, deployment DeploymentOptions, w io.Writer) err
 }
 
 func fetchFromController(deployment DeploymentOptions, path string) error {
-	var (
-		pkgURL *url.URL
-		err    error
-	)
-	switch deployment.Target.Deployment().Zone.Environment {
+	d := deployment.Target.Deployment()
+	var pkgURL *url.URL
+	switch d.Zone.Environment {
 	case "dev", "perf":
-		pkgURL, err = deployment.url(fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/job/%s/package",
-			deployment.Target.Deployment().Application.Tenant,
-			deployment.Target.Deployment().Application.Application,
-			deployment.Target.Deployment().Application.Instance,
-			deployment.Target.Deployment().Zone.Environment+"-"+deployment.Target.Deployment().Zone.Region,
-		))
+		pkgURL = d.System.JobPackageURL(d)
 	default:
-		pkgURL, err = deployment.url(fmt.Sprintf("/application/v4/tenant/%s/application/%s/package",
-			deployment.Target.Deployment().Application.Tenant,
-			deployment.Target.Deployment().Application.Application),
-		)
-	}
-	if err != nil {
-		return err
+		pkgURL = d.System.ApplicationPackageURL(d.Application)
 	}
 	tmpFile, err := os.CreateTemp("", "vespa")
 	if err != nil {

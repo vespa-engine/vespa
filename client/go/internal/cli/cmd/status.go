@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -17,10 +18,11 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
-func newStatusCmd(cli *CLI) *cobra.Command {
+func newStatusCmd(cli *CLI, forceSkip bool) *cobra.Command {
 	var (
 		waitSecs int
 		format   string
+		noVerify = forceSkip
 	)
 	cmd := &cobra.Command{
 		Use: "status",
@@ -37,7 +39,8 @@ application.`,
 		Example: `$ vespa status
 $ vespa status --cluster mycluster
 $ vespa status --cluster mycluster --wait 600
-$ vepsa status --format plain --cluster mycluster`,
+$ vespa status --format plain --cluster mycluster
+$ vespa status --no-verify`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
@@ -61,7 +64,7 @@ $ vepsa status --format plain --cluster mycluster`,
 					return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
 				}
 				for _, s := range services {
-					if !printServiceStatus(s, format, waiter, cli) {
+					if !printServiceStatus(s, format, waiter, cli, noVerify) {
 						failingContainers = append(failingContainers, s)
 					}
 				}
@@ -70,7 +73,7 @@ $ vepsa status --format plain --cluster mycluster`,
 				if err != nil {
 					return err
 				}
-				if !printServiceStatus(s, format, waiter, cli) {
+				if !printServiceStatus(s, format, waiter, cli, noVerify) {
 					failingContainers = append(failingContainers, s)
 				}
 			}
@@ -78,13 +81,16 @@ $ vepsa status --format plain --cluster mycluster`,
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
-	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (cluster URL only)")
+	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable), 'plain' (cluster URL only), or 'json'")
+	if !forceSkip {
+		cmd.Flags().BoolVarP(&noVerify, "no-verify", "", false, "Skip checking service status (control plane only)")
+	}
 	return cmd
 }
 
 func verifyFormat(format string) error {
 	switch format {
-	case "human", "plain":
+	case "human", "plain", "json":
 		return nil
 	default:
 		return fmt.Errorf("invalid format: %s", format)
@@ -131,14 +137,14 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !printServiceStatus(s, format, waiter, cli) {
+			if !printServiceStatus(s, format, waiter, cli, false) {
 				return failingServicesErr(s)
 			}
 			return nil
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
-	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable text) or 'plain' (cluster URL only)")
+	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable text), 'plain' (cluster URL only), or 'json'")
 	return cmd
 }
 
@@ -199,26 +205,101 @@ $ vespa status deployment -t local [session-id] --wait 600
 	return cmd
 }
 
-func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CLI) bool {
-	err := s.Wait(waiter.Timeout)
+func newStatusEndpointCmd(cli *CLI) *cobra.Command {
+	cmd := newStatusCmd(cli, true)
+	cmd.Use = "endpoint"
+	cmd.Aliases = nil
+	cmd.Short = "Show Vespa endpoints without checking their status"
+	cmd.Long = `Show Vespa endpoints without checking their status.
+
+This command shows the current endpoints of a deployed Vespa application,
+discovered from the control plane, without contacting the data plane to check
+their status. This is useful when you only have control plane credentials.
+
+This is equivalent to: vespa status --no-verify`
+	cmd.Example = `$ vespa status endpoint
+$ vespa status endpoint --cluster mycluster
+$ vespa status endpoint --format plain`
+	return cmd
+}
+
+func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CLI, noVerify bool) bool {
+	var err error
+	if !noVerify {
+		err = s.Wait(waiter.Timeout)
+	}
 	var sb strings.Builder
 	switch format {
 	case "human":
 		desc := s.Description()
 		desc = strings.ToUpper(string(desc[0])) + string(desc[1:])
-		sb.WriteString(fmt.Sprintf("%s at %s is ", desc, color.CyanString(s.BaseURL)))
-		if err == nil {
-			sb.WriteString(color.GreenString("ready"))
-		} else {
-			sb.WriteString(color.RedString("not ready"))
-			sb.WriteString(": ")
-			sb.WriteString(err.Error())
+		sb.WriteString(fmt.Sprintf("%s at %s", desc, color.CyanString(s.BaseURL)))
+		if !noVerify {
+			sb.WriteString(" is ")
+			if err == nil {
+				sb.WriteString(color.GreenString("ready"))
+			} else {
+				sb.WriteString(color.RedString("not ready"))
+				sb.WriteString(": ")
+				sb.WriteString(err.Error())
+			}
 		}
 		if s.AuthMethod != "" {
 			sb.WriteString(color.CyanString(fmt.Sprintf(" (%s)", s.AuthMethod)))
 		}
+		if s.PrivateService != nil {
+			sb.WriteString("\n")
+			sb.WriteString(fmt.Sprintf("  Private service: %s", s.PrivateService.ServiceID))
+			sb.WriteString("\n")
+			sb.WriteString(fmt.Sprintf("  Type: %s", s.PrivateService.Type))
+			if len(s.PrivateService.AllowedUrns) > 0 {
+				sb.WriteString("\n")
+				sb.WriteString("  Allowed URNs:")
+				for _, urn := range s.PrivateService.AllowedUrns {
+					sb.WriteString("\n")
+					sb.WriteString(fmt.Sprintf("    - %s: %s", urn.Type, urn.Urn))
+				}
+			}
+			if len(s.PrivateService.AuthMethods) > 0 {
+				sb.WriteString("\n")
+				sb.WriteString(fmt.Sprintf("  Auth methods: %s", strings.Join(s.PrivateService.AuthMethods, ", ")))
+			}
+			if len(s.PrivateService.Endpoints) > 0 {
+				sb.WriteString("\n")
+				sb.WriteString("  Endpoints:")
+				for _, endpoint := range s.PrivateService.Endpoints {
+					sb.WriteString("\n")
+					sb.WriteString(fmt.Sprintf("    - %s", endpoint))
+				}
+			}
+		}
 	case "plain":
 		sb.WriteString(s.BaseURL)
+	case "json":
+		output := map[string]interface{}{
+			"type": s.Type(),
+			"url":  s.BaseURL,
+		}
+		if s.ServiceName() != "" {
+			output["name"] = s.ServiceName()
+		}
+		if !noVerify {
+			output["ready"] = err == nil
+			if err != nil {
+				output["error"] = err.Error()
+			}
+		}
+		if s.AuthMethod != "" {
+			output["authMethod"] = s.AuthMethod
+		}
+		if s.PrivateService != nil {
+			output["privateService"] = s.PrivateService
+		}
+		jsonBytes, jsonErr := json.Marshal(output)
+		if jsonErr != nil {
+			panic("failed to marshal JSON: " + jsonErr.Error())
+		}
+		sb.Write(jsonBytes)
 	default:
 		panic("invalid format: " + format)
 	}
