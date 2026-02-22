@@ -1,0 +1,5 @@
+{
+  "ai.vespa.llm.clients.OnnxEncoderDecoder" : [
+    "ai.vespa.modelintegration.evaluator.OnnxRuntime"
+  ]
+}

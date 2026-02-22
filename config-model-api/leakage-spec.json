@@ -1,0 +1,154 @@
+{
+  "com.yahoo.config.application.api.ApplicationMetaData" : [
+    "com.yahoo.config.provision.ApplicationId",
+    "com.yahoo.slime.Slime"
+  ],
+  "com.yahoo.config.application.api.ApplicationPackage" : [
+    "com.yahoo.config.provision.AllocatedHosts",
+    "com.yahoo.config.provision.ApplicationId",
+    "com.yahoo.config.provision.Zone",
+    "com.yahoo.vespa.config.ConfigDefinitionKey"
+  ],
+  "com.yahoo.config.application.api.Bcp" : [
+    "com.yahoo.config.provision.RegionName"
+  ],
+  "com.yahoo.config.application.api.Bcp$Group" : [
+    "com.yahoo.config.provision.RegionName"
+  ],
+  "com.yahoo.config.application.api.Bcp$RegionMember" : [
+    "com.yahoo.config.provision.RegionName"
+  ],
+  "com.yahoo.config.application.api.DeploymentInstanceSpec" : [
+    "com.yahoo.config.provision.AthenzService",
+    "com.yahoo.config.provision.CloudAccount",
+    "com.yahoo.config.provision.CloudName",
+    "com.yahoo.config.provision.ClusterSpec$Id",
+    "com.yahoo.config.provision.Environment",
+    "com.yahoo.config.provision.InstanceName",
+    "com.yahoo.config.provision.RegionName",
+    "com.yahoo.config.provision.Tags",
+    "com.yahoo.config.provision.ZoneEndpoint",
+    "com.yahoo.config.provision.zone.ZoneId"
+  ],
+  "com.yahoo.config.application.api.DeploymentSpec" : [
+    "com.yahoo.config.provision.AthenzDomain",
+    "com.yahoo.config.provision.AthenzService",
+    "com.yahoo.config.provision.CloudAccount",
+    "com.yahoo.config.provision.CloudName",
+    "com.yahoo.config.provision.ClusterSpec$Id",
+    "com.yahoo.config.provision.Environment",
+    "com.yahoo.config.provision.InstanceName",
+    "com.yahoo.config.provision.RegionName",
+    "com.yahoo.config.provision.Tags",
+    "com.yahoo.config.provision.Zone",
+    "com.yahoo.config.provision.ZoneEndpoint",
+    "com.yahoo.config.provision.zone.ZoneId"
+  ],
+  "com.yahoo.config.application.api.DeploymentSpec$DeclaredTest" : [
+    "com.yahoo.config.provision.Environment",
+    "com.yahoo.config.provision.RegionName"
+  ],
+  "com.yahoo.config.application.api.DeploymentSpec$DeclaredZone" : [
+    "com.yahoo.config.provision.AthenzService",
+    "com.yahoo.config.provision.CloudAccount",
+    "com.yahoo.config.provision.CloudName",
+    "com.yahoo.config.provision.Environment",
+    "com.yahoo.config.provision.RegionName"
+  ],
+  "com.yahoo.config.application.api.DeploymentSpec$Delay" : [
+    "com.yahoo.config.provision.Environment",
+    "com.yahoo.config.provision.RegionName"
+  ],
+  "com.yahoo.config.application.api.DeploymentSpec$DevSpec" : [
+    "com.yahoo.config.provision.AthenzService",
+    "com.yahoo.config.provision.CloudAccount",
+    "com.yahoo.config.provision.CloudName",
+    "com.yahoo.config.provision.ClusterSpec$Id",
+    "com.yahoo.config.provision.Tags",
+    "com.yahoo.config.provision.ZoneEndpoint"
+  ],
+  "com.yahoo.config.application.api.DeploymentSpec$Step" : [
+    "com.yahoo.config.provision.Environment",
+    "com.yahoo.config.provision.RegionName"
+  ],
+  "com.yahoo.config.application.api.DeploymentSpec$Steps" : [
+    "com.yahoo.config.provision.Environment",
+    "com.yahoo.config.provision.RegionName"
+  ],
+  "com.yahoo.config.application.api.Endpoint" : [
+    "com.yahoo.config.provision.RegionName"
+  ],
+  "com.yahoo.config.application.api.Endpoint$Target" : [
+    "com.yahoo.config.provision.InstanceName",
+    "com.yahoo.config.provision.RegionName"
+  ],
+  "com.yahoo.config.application.api.UnparsedConfigDefinition" : [
+    "com.yahoo.vespa.config.ConfigDefinition"
+  ],
+  "com.yahoo.config.model.api.ApplicationInfo" : [
+    "com.yahoo.config.provision.ApplicationId"
+  ],
+  "com.yahoo.config.model.api.ConfigChangeAction" : [
+    "com.yahoo.config.provision.ClusterSpec$Id"
+  ],
+  "com.yahoo.config.model.api.ConfigDefinitionRepo" : [
+    "com.yahoo.vespa.config.ConfigDefinitionKey",
+    "com.yahoo.vespa.config.buildergen.ConfigDefinition"
+  ],
+  "com.yahoo.config.model.api.ConfigDefinitionStore" : [
+    "com.yahoo.vespa.config.ConfigDefinition",
+    "com.yahoo.vespa.config.ConfigDefinitionKey"
+  ],
+  "com.yahoo.config.model.api.HostProvisioner" : [
+    "com.yahoo.config.provision.Capacity",
+    "com.yahoo.config.provision.ClusterSpec",
+    "com.yahoo.config.provision.HostSpec",
+    "com.yahoo.config.provision.ProvisionLogger"
+  ],
+  "com.yahoo.config.model.api.Model" : [
+    "com.yahoo.config.provision.AllocatedHosts",
+    "com.yahoo.vespa.config.ConfigKey",
+    "com.yahoo.vespa.config.buildergen.ConfigDefinition"
+  ],
+  "com.yahoo.config.model.api.ModelContext" : [
+    "com.yahoo.config.provision.DockerImage"
+  ],
+  "com.yahoo.config.model.api.ModelContext$FeatureFlags" : [
+    "com.yahoo.config.provision.NodeResources$Architecture",
+    "com.yahoo.config.provision.SharedHosts"
+  ],
+  "com.yahoo.config.model.api.ModelContext$Properties" : [
+    "com.yahoo.config.provision.ApplicationId",
+    "com.yahoo.config.provision.AthenzDomain",
+    "com.yahoo.config.provision.CloudAccount",
+    "com.yahoo.config.provision.ClusterSpec$Id",
+    "com.yahoo.config.provision.ClusterSpec$Type",
+    "com.yahoo.config.provision.DataplaneToken",
+    "com.yahoo.config.provision.HostName"
+  ],
+  "com.yahoo.config.model.api.OnnxModelCost" : [
+    "com.yahoo.config.provision.ApplicationId",
+    "com.yahoo.config.provision.ClusterSpec$Id"
+  ],
+  "com.yahoo.config.model.api.OnnxModelCost$DisabledOnnxModelCost" : [
+    "com.yahoo.config.provision.ApplicationId",
+    "com.yahoo.config.provision.ClusterSpec$Id"
+  ],
+  "com.yahoo.config.model.api.Provisioned" : [
+    "com.yahoo.config.provision.Capacity",
+    "com.yahoo.config.provision.ClusterSpec",
+    "com.yahoo.config.provision.ClusterSpec$Id"
+  ],
+  "com.yahoo.config.model.api.Quota" : [
+    "com.yahoo.slime.Cursor",
+    "com.yahoo.slime.Inspector",
+    "com.yahoo.slime.Slime"
+  ],
+  "com.yahoo.config.model.api.SuperModel" : [
+    "com.yahoo.config.provision.ApplicationId",
+    "com.yahoo.config.provision.TenantName"
+  ],
+  "com.yahoo.config.model.api.SuperModelListener" : [
+    "com.yahoo.config.provision.ApplicationId"
+  ]
+}

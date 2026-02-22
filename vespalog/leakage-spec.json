@@ -1,0 +1,6 @@
+{
+  "com.yahoo.log.LogMessage" : [
+    "com.yahoo.log.event.Event",
+    "com.yahoo.log.event.MalformedEventException"
+  ]
+}

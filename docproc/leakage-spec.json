@@ -1,0 +1,8 @@
+{
+  "com.yahoo.docproc.DocumentProcessor" : [
+    "com.yahoo.collections.Pair"
+  ],
+  "com.yahoo.docproc.Processing" : [
+    "com.yahoo.docproc.impl.ProcessingAccess"
+  ]
+}

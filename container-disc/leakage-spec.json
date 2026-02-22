@@ -1,0 +1,128 @@
+{
+  "com.yahoo.component.chain.ChainedComponent" : [
+    "com.yahoo.component.chain.model.Chainable"
+  ],
+  "com.yahoo.component.chain.ChainsConfigurer" : [
+    "com.yahoo.component.chain.model.ChainsModel"
+  ],
+  "com.yahoo.container.handler.AccessLogRequestHandler" : [
+    "com.yahoo.container.logging.CircularArrayAccessLogKeeper"
+  ],
+  "com.yahoo.container.handler.Coverage" : [
+    "com.yahoo.container.logging.Coverage"
+  ],
+  "com.yahoo.container.handler.LogHandler" : [
+    "com.yahoo.container.core.LogHandlerConfig",
+    "com.yahoo.container.jdisc.utils.CapabilityRequiringRequestHandler",
+    "com.yahoo.security.tls.Capability"
+  ],
+  "com.yahoo.container.handler.VipStatus" : [
+    "com.yahoo.container.QrSearchersConfig",
+    "com.yahoo.container.core.VipStatusConfig",
+    "com.yahoo.container.jdisc.state.StateMonitor"
+  ],
+  "com.yahoo.container.handler.VipStatusHandler" : [
+    "com.yahoo.container.core.VipStatusConfig"
+  ],
+  "com.yahoo.container.jdisc.ClusterInfoProvider" : [
+    "com.yahoo.cloud.config.ClusterInfoConfig"
+  ],
+  "com.yahoo.container.jdisc.ConfiguredApplication" : [
+    "com.yahoo.container.di.config.SubscriberFactory",
+    "com.yahoo.jdisc.application.Application",
+    "com.yahoo.jdisc.application.ContainerActivator",
+    "com.yahoo.jdisc.application.OsgiFramework"
+  ],
+  "com.yahoo.container.jdisc.ContainerThreadFactory" : [
+    "com.yahoo.container.jdisc.metric.MetricConsumerProvider"
+  ],
+  "com.yahoo.container.jdisc.ContentChannelOutputStream" : [
+    "com.yahoo.io.WritableByteTransmitter"
+  ],
+  "com.yahoo.container.jdisc.DataplaneProxyConfigurator" : [
+    "com.yahoo.cloud.config.DataplaneProxyConfig",
+    "com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials"
+  ],
+  "com.yahoo.container.jdisc.DataplaneProxyService" : [
+    "com.yahoo.cloud.config.DataplaneProxyConfig",
+    "com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials"
+  ],
+  "com.yahoo.container.jdisc.DisableOsgiFramework" : [
+    "com.yahoo.jdisc.application.OsgiFramework"
+  ],
+  "com.yahoo.container.jdisc.DisabledConnectionLogProvider" : [
+    "com.yahoo.container.logging.ConnectionLog"
+  ],
+  "com.yahoo.container.jdisc.ExtendedResponse" : [
+    "com.yahoo.container.logging.HitCounts"
+  ],
+  "com.yahoo.container.jdisc.FilterBindingsProvider" : [
+    "com.yahoo.container.http.filter.FilterChainRepository",
+    "com.yahoo.jdisc.http.server.jetty.FilterBindings"
+  ],
+  "com.yahoo.container.jdisc.HttpRequest" : [
+    "com.yahoo.container.logging.AccessLogEntry"
+  ],
+  "com.yahoo.container.jdisc.HttpResponse" : [
+    "com.yahoo.container.logging.AccessLogEntry"
+  ],
+  "com.yahoo.container.jdisc.MetricConsumerFactory" : [
+    "com.yahoo.jdisc.application.MetricConsumer"
+  ],
+  "com.yahoo.container.jdisc.RequestHandlerTestDriver" : [
+    "com.yahoo.jdisc.test.TestDriver"
+  ],
+  "com.yahoo.container.jdisc.SystemInfoProvider" : [
+    "com.yahoo.cloud.config.ApplicationIdConfig",
+    "com.yahoo.cloud.config.ConfigserverConfig",
+    "com.yahoo.container.QrConfig"
+  ],
+  "com.yahoo.container.jdisc.ThreadedHttpRequestHandler" : [
+    "com.yahoo.container.handler.threadpool.ContainerThreadPool"
+  ],
+  "com.yahoo.container.jdisc.ThreadedRequestHandler" : [
+    "com.yahoo.container.core.HandlerMetricContextUtil"
+  ],
+  "com.yahoo.container.jdisc.VespaHeaders" : [
+    "com.yahoo.container.logging.HitCounts"
+  ],
+  "com.yahoo.container.jdisc.ZoneInfoProvider" : [
+    "com.yahoo.cloud.config.ApplicationIdConfig",
+    "com.yahoo.cloud.config.ConfigserverConfig"
+  ],
+  "com.yahoo.jdisc.http.filter.RequestFilterBase" : [
+    "com.yahoo.component.chain.model.Chainable"
+  ],
+  "com.yahoo.jdisc.http.filter.ResponseFilterBase" : [
+    "com.yahoo.component.chain.model.Chainable"
+  ],
+  "com.yahoo.jdisc.http.filter.SecurityRequestFilter" : [
+    "com.yahoo.component.chain.model.Chainable"
+  ],
+  "com.yahoo.jdisc.http.filter.SecurityResponseFilter" : [
+    "com.yahoo.component.chain.model.Chainable"
+  ],
+  "com.yahoo.metrics.simple.MetricManager" : [
+    "com.yahoo.metrics.ManagerConfig"
+  ],
+  "com.yahoo.metrics.simple.MetricReceiver" : [
+    "com.yahoo.concurrent.ThreadLocalDirectory"
+  ],
+  "com.yahoo.processing.handler.AbstractProcessingHandler" : [
+    "com.yahoo.container.core.ChainsConfig",
+    "com.yahoo.container.logging.AccessLog"
+  ],
+  "com.yahoo.processing.handler.ProcessingHandler" : [
+    "com.yahoo.container.core.ChainsConfig",
+    "com.yahoo.container.logging.AccessLog"
+  ],
+  "com.yahoo.processing.handler.ProcessingTestDriver" : [
+    "com.yahoo.container.logging.RequestLogHandler"
+  ],
+  "com.yahoo.processing.response.AbstractDataList$DrainOnGetFuture" : [
+    "com.yahoo.processing.impl.ProcessingFuture"
+  ],
+  "com.yahoo.processing.response.IncomingData$NullIncomingData$ImmediateFuture" : [
+    "com.yahoo.processing.impl.ProcessingFuture"
+  ]
+}

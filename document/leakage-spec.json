@@ -1,0 +1,53 @@
+{
+  "com.yahoo.document.CompressionConfig" : [
+    "com.yahoo.compress.CompressionType"
+  ],
+  "com.yahoo.document.DocumentCalculator" : [
+    "com.yahoo.document.select.parser.ParseException"
+  ],
+  "com.yahoo.document.DocumentTypeManager" : [
+    "com.yahoo.document.config.DocumentmanagerConfig",
+    "com.yahoo.io.GrowableByteBuffer"
+  ],
+  "com.yahoo.document.DocumentTypeManagerConfigurer" : [
+    "com.yahoo.config.subscription.ConfigSubscriber",
+    "com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber",
+    "com.yahoo.document.config.DocumentmanagerConfig"
+  ],
+  "com.yahoo.document.DocumentUpdate" : [
+    "com.yahoo.io.GrowableByteBuffer"
+  ],
+  "com.yahoo.document.datatypes.FieldValue" : [
+    "com.yahoo.io.GrowableByteBuffer"
+  ],
+  "com.yahoo.document.datatypes.StringFieldValue" : [
+    "com.yahoo.data.disclosure.DataSink",
+    "com.yahoo.data.disclosure.DataSource",
+    "com.yahoo.document.annotation.internal.SimpleIndexingAnnotations"
+  ],
+  "com.yahoo.document.fieldpathupdate.FieldPathUpdate" : [
+    "com.yahoo.document.select.DocumentSelector",
+    "com.yahoo.document.select.parser.ParseException"
+  ],
+  "com.yahoo.document.serialization.DocumentDeserializer" : [
+    "com.yahoo.io.GrowableByteBuffer"
+  ],
+  "com.yahoo.document.serialization.DocumentDeserializerFactory" : [
+    "com.yahoo.io.GrowableByteBuffer"
+  ],
+  "com.yahoo.document.serialization.DocumentSerializer" : [
+    "com.yahoo.io.GrowableByteBuffer"
+  ],
+  "com.yahoo.document.serialization.DocumentSerializerFactory" : [
+    "com.yahoo.io.GrowableByteBuffer"
+  ],
+  "com.yahoo.document.serialization.VespaDocumentDeserializerHead" : [
+    "com.yahoo.io.GrowableByteBuffer"
+  ],
+  "com.yahoo.document.serialization.VespaDocumentSerializerHead" : [
+    "com.yahoo.io.GrowableByteBuffer"
+  ],
+  "com.yahoo.document.update.FieldUpdate" : [
+    "com.yahoo.io.GrowableByteBuffer"
+  ]
+}
