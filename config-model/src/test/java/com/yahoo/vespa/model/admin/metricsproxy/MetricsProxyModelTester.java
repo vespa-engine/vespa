@@ -12,6 +12,7 @@ import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.test.VespaModelTester;
@@ -46,12 +47,14 @@ class MetricsProxyModelTester {
     }
 
     static VespaModel getModel(String servicesXml, TestMode testMode, DeployState.Builder builder) {
-        return getModel(servicesXml, testMode, builder, 4);
+        return getModel(servicesXml, testMode, builder, 4, new TestProperties());
     }
 
-    static VespaModel getModel(String servicesXml, TestMode testMode, DeployState.Builder builder, int hostCount) {
+    static VespaModel getModel(String servicesXml, TestMode testMode, DeployState.Builder builder,
+                               int hostCount, TestProperties testProperties) {
         var numberOfHosts = testMode == hosted ? hostCount : 1;
         var tester = new VespaModelTester();
+        tester.setModelProperties(testProperties);
         tester.addHosts(numberOfHosts);
         tester.setHosted(testMode == hosted);
         if (testMode == hosted) {

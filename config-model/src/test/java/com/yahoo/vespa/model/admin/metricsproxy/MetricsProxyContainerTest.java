@@ -36,7 +36,8 @@ public class MetricsProxyContainerTest {
     @Test
     void one_metrics_proxy_container_is_added_to_every_node() {
         int numberOfHosts = 7;
-        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted, new DeployState.Builder(), numberOfHosts);
+        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted,
+                                    new DeployState.Builder(), numberOfHosts, new TestProperties());
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         for (var host : model.hostSystem().getHosts()) {
@@ -52,7 +53,8 @@ public class MetricsProxyContainerTest {
     @Test
     void one_metrics_proxy_container_is_added_to_every_node_also_when_dedicated_CCC() {
         int numberOfHosts = 7;
-        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted, new DeployState.Builder(), numberOfHosts);
+        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted,
+                                    new DeployState.Builder(), numberOfHosts, new TestProperties());
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         for (var host : model.hostSystem().getHosts()) {
@@ -121,7 +123,8 @@ public class MetricsProxyContainerTest {
     @Test
     void hosted_application_propagates_node_dimensions() {
         String services = hostedServicesWithContent();
-        VespaModel hostedModel = getModel(services, hosted, new DeployState.Builder(), 5);
+        VespaModel hostedModel = getModel(services, hosted, new DeployState.Builder(),
+                                          5, new TestProperties());
         assertEquals(5, hostedModel.getHosts().size());
         String configId = hostedConfigIdForHost(hostedModel, 1);
 
@@ -135,7 +138,8 @@ public class MetricsProxyContainerTest {
     @Test
     void metrics_v2_handler_is_set_up_with_node_info_config() {
         String services = hostedServicesWithContent();
-        VespaModel hostedModel = getModel(services, hosted, new DeployState.Builder(), 5);
+        VespaModel hostedModel = getModel(services, hosted, new DeployState.Builder(),
+                                          5, new TestProperties());
 
         String configId = hostedConfigIdForHost(hostedModel, 1);
         var container = (MetricsProxyContainer) hostedModel.id2producer().get(configId);
@@ -190,10 +194,9 @@ public class MetricsProxyContainerTest {
 
     @Test
     void heapSizeScalesWithNumberOfNodesWhenFlagEnabled() {
-        var deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setScaleMetricsproxyHeapByNodeCount(true));
-
         // Test with default setup - heap should scale based on node count
-        VespaModel model = getModel(hostedServicesWithContent(), self_hosted, deployStateBuilder);
+        VespaModel model = getModel(hostedServicesWithContent(), self_hosted, new DeployState.Builder(),
+                                    4, new TestProperties().setScaleMetricsproxyHeapByNodeCount(true));
         int nodeCount = model.hostSystem().getHosts().size();
         MetricsProxyContainer container = (MetricsProxyContainer) model.id2producer().get(CONTAINER_CONFIG_ID);
         QrStartConfig config = model.getConfig(QrStartConfig.class, CONTAINER_CONFIG_ID);
