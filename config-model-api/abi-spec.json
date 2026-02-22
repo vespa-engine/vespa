@@ -1362,6 +1362,7 @@
       "public int searchCoreMaxOutstandingMoveOps()",
       "public double docprocHandlerThreadpool()",
       "public boolean applyOnRestartForApplicationMetadataConfig()",
+      "public boolean scaleMetricsproxyHeapByNodeCount()",
       "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
       "public double searchNodeReservedDiskSpaceFactor()"
     ],

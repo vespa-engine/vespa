@@ -210,6 +210,7 @@ public class ModelContextImpl implements ModelContext {
         private final int searchCoreMaxOutstandingMoveOps;
         private final double docprocHandlerThreadpool;
         private final boolean applyOnRestartForApplicationMetadataConfig;
+        private final boolean scaleMetricsproxyHeapByNodeCount;
         private final DoubleFlag autoscalerTargetWriteCpuPercentageFlag;
         private final IntFlag heapSizePercentageFlag;
         private final double searchNodeReservedDiskSpaceFactor;
@@ -259,6 +260,7 @@ public class ModelContextImpl implements ModelContext {
             this.searchCoreMaxOutstandingMoveOps = Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS.bindTo(source).with(appId).with(version).value();
             this.docprocHandlerThreadpool = Flags.DOCPROC_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
             this.applyOnRestartForApplicationMetadataConfig = Flags.APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG.bindTo(source).with(appId).with(version).value();
+            this.scaleMetricsproxyHeapByNodeCount = Flags.SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT.bindTo(source).with(appId).with(version).value();
             this.autoscalerTargetWriteCpuPercentageFlag = Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE.bindTo(source).with(appId).with(version);
             this.searchNodeReservedDiskSpaceFactor = Flags.SEARCHNODE_RESERVED_DISK_SPACE_FACTOR.bindTo(source).with(appId).with(version).value();
         }
@@ -309,6 +311,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
         @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
         @Override public boolean applyOnRestartForApplicationMetadataConfig() { return applyOnRestartForApplicationMetadataConfig; }
+        @Override public boolean scaleMetricsproxyHeapByNodeCount() { return scaleMetricsproxyHeapByNodeCount; }
         @Override public double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) {
             return clusterId.map(id -> autoscalerTargetWriteCpuPercentageFlag.with(ClusterSpec.Id.from(id)).value())
                             .orElseGet(autoscalerTargetWriteCpuPercentageFlag::value);
