@@ -162,6 +162,12 @@ public abstract class Target {
     public abstract boolean removeWatcher(TargetWatcher watcher);
 
     /**
+     * Synchronously close the underlying TCP socket. This is a no-op by default;
+     * subclasses backed by a real socket connection should override this.
+     */
+    public void closeSocket() {}
+
+    /**
      * Close this target. Note that the close operation is
      * asynchronous. If you need to wait for the target to become
      * invalid, use the {@link Transport#sync Transport.sync} method.

@@ -17,4 +17,6 @@ public interface Connection {
 
     String getAddress();
 
+    default void closeConnection() {}
+
 }

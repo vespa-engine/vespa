@@ -3,6 +3,7 @@ package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
+import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
@@ -39,6 +40,8 @@ public class FileReferenceDownloader {
     private static final Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
     private static final Set<CompressionType> defaultAcceptedCompressionTypes = Set.of(lz4, none, zstd);
 
+    private enum DownloadResult { SUCCESS, TIMEOUT, FAILURE }
+
     private final ExecutorService downloadExecutor =
             Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                          new DaemonThreadFactory("filereference downloader"));
@@ -49,17 +52,31 @@ public class FileReferenceDownloader {
     private final Optional<Duration> rpcTimeout; // Only used when overridden with env variable
     private final File downloadDirectory;
     private final AtomicBoolean shutDown = new AtomicBoolean(false);
+    private final int maxTimeoutsBeforeClose;
 
     FileReferenceDownloader(ConnectionPool connectionPool,
                             Downloads downloads,
                             Duration timeout,
                             Duration backoffInitialTime,
                             File downloadDirectory) {
+        this(connectionPool, downloads, timeout, backoffInitialTime, downloadDirectory,
+             Optional.ofNullable(System.getenv("VESPA_FILE_DOWNLOAD_MAX_TIMEOUTS_BEFORE_CLOSE"))
+                     .map(Integer::parseInt)
+                     .orElse(0));
+    }
+
+    FileReferenceDownloader(ConnectionPool connectionPool,
+                            Downloads downloads,
+                            Duration timeout,
+                            Duration backoffInitialTime,
+                            File downloadDirectory,
+                            int maxTimeoutsBeforeClose) {
         this.connectionPool = connectionPool;
         this.downloads = downloads;
         this.downloadTimeout = timeout;
         this.backoffInitialTime = backoffInitialTime;
         this.downloadDirectory = downloadDirectory;
+        this.maxTimeoutsBeforeClose = maxTimeoutsBeforeClose;
         // Undocumented on purpose, might change or be removed at any time
         var timeoutString = Optional.ofNullable(System.getenv("VESPA_FILE_DOWNLOAD_RPC_TIMEOUT"));
         this.rpcTimeout = timeoutString.map(t -> Duration.ofSeconds(Integer.parseInt(t)));
@@ -69,6 +86,7 @@ public class FileReferenceDownloader {
         Instant end = Instant.now().plus(downloadTimeout);
         FileReference fileReference = fileReferenceDownload.fileReference();
         int retryCount = 0;
+        int timeoutCount = 0;
         Connection connection = connectionPool.getCurrent();
         do {
             if (retryCount > 0)
@@ -81,8 +99,19 @@ public class FileReferenceDownloader {
             var timeout = rpcTimeout.orElse(Duration.between(Instant.now(), end));
             log.log(Level.FINE, "Wait until download of " + fileReference + " has started, retryCount " + retryCount +
                     ", timeout " + timeout + " (request from " + fileReferenceDownload.client() + ")");
-            if ( ! timeout.isNegative() && startDownloadRpc(fileReferenceDownload, retryCount, connection, timeout))
-                return;
+            if ( ! timeout.isNegative()) {
+                var result = startDownloadRpc(fileReferenceDownload, retryCount, connection, timeout);
+                if (result == DownloadResult.SUCCESS) return;
+                if (result == DownloadResult.TIMEOUT && maxTimeoutsBeforeClose > 0) {
+                    timeoutCount++;
+                    if (timeoutCount >= maxTimeoutsBeforeClose) {
+                        log.log(Level.INFO, "RPC request for " + fileReference + " timed out " + timeoutCount +
+                                " times, force-closing connection to " + connection.getAddress());
+                        connection.closeConnection();
+                        timeoutCount = 0;
+                    }
+                }
+            }
 
             retryCount++;
             // There might not be one connection that works for all file references (each file reference might
@@ -131,10 +160,13 @@ public class FileReferenceDownloader {
 
                     log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout + " from " + spec.host());
                     downloads.add(fileReferenceDownload);
-                    var downloading = startDownloadRpc(fileReferenceDownload, 1, connection, downloadTimeout);
+                    var result = startDownloadRpc(fileReferenceDownload, 1, connection, downloadTimeout);
+                    if (result == DownloadResult.TIMEOUT && maxTimeoutsBeforeClose > 0) {
+                        connection.closeConnection();
+                    }
                     // Need to explicitly remove from downloads if downloading has not started.
                     // If downloading *has* started FileReceiver will take care of that when download has completed or failed
-                    if ( ! downloading)
+                    if (result != DownloadResult.SUCCESS)
                         downloads.remove(fileReference);
                 });
         }
@@ -144,7 +176,7 @@ public class FileReferenceDownloader {
         downloads.remove(fileReference);
     }
 
-    private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount, Connection connection, Duration timeout) {
+    private DownloadResult startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount, Connection connection, Duration timeout) {
         Request request = createRequest(fileReferenceDownload);
         connection.invokeSync(request, timeout);
 
@@ -157,18 +189,18 @@ public class FileReferenceDownloader {
 
             if (errorCode == 0) {
                 log.log(Level.FINE, () -> "Found " + fileReference + " available at " + address);
-                return true;
+                return DownloadResult.SUCCESS;
             } else {
                 var error = FileApiErrorCodes.get(errorCode);
                 log.log(logLevel, "Downloading " + fileReference + " from " + address + " failed (" + error + ")");
-                return false;
+                return DownloadResult.FAILURE;
             }
         } else {
             log.log(logLevel, "Downloading " + fileReference + " from " + address +
                     " (client " + fileReferenceDownload.client() + ") failed:" +
                     " error code " + request.errorCode() + " (" + request.errorMessage() + ")." +
                     " (retry " + retryCount + ", rpc timeout " + timeout + ")");
-            return false;
+            return request.errorCode() == ErrorCode.TIMEOUT ? DownloadResult.TIMEOUT : DownloadResult.FAILURE;
         }
     }
 
