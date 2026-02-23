@@ -14,6 +14,9 @@ fi
 
 mydir=${0%/*}
 shlim=${mydir}/show-limits.sh
+
+: "${SOURCE_DIR:?Environment variable SOURCE_DIR must be set (path to source code)}"
+: "${NUM_CPP_THREADS:?Environment variable NUM_CPP_THREADS must be set (number of C++ threads)}"
 if [ -x "${shlim}" ]; then
     "${shlim}" || echo "failed: ${shlim}"
 fi

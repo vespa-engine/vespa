@@ -11,7 +11,8 @@ set -o pipefail
 if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
-
+: "${NUM_CPU_LIMIT:?Environment variable NUM_CPU_LIMIT must be set (CPU limit)}"
+: "${LOG_DIR:?Environment variable LOG_DIR must be set (log directory)}"
 echo "--- 🧪 Running C++ tests"
 PATH=/opt/vespa-deps/bin:$PATH
 

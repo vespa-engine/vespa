@@ -12,6 +12,8 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
+: "${SOURCE_DIR:?Environment variable SOURCE_DIR must be set (path to source code)}"
+
 echo "--- 🔧 Configuring CMake build"
 # shellcheck disable=1091
 source /etc/profile.d/enable-gcc-toolset.sh
