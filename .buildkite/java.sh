@@ -14,6 +14,10 @@ fi
 
 mydir=${0%/*}
 shlim=${mydir}/show-limits.sh
+
+: "${SOURCE_DIR:?Environment variable SOURCE_DIR must be set (path to source code)}"
+: "${VESPA_MAVEN_TARGET:?Environment variable VESPA_MAVEN_TARGET must be set (Maven target)}"
+: "${NUM_MVN_THREADS:?Environment variable NUM_MVN_THREADS must be set (Maven threads)}"
 if [ -x "${shlim}" ]; then
     "${shlim}" || echo "failed: ${shlim}"
 fi
