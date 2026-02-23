@@ -115,7 +115,7 @@ DocumenttypesConfig getDocTypesConfig() {
 const DocumentTypeRepo doc_repo(getDocTypesConfig());
 const FixedTypeRepo    repo(doc_repo, *doc_repo.getDocumentType(doc_type_id));
 
-template <typename T> T     newFieldValue(const T&) { return T(); }
+template <typename T> T newFieldValue(const T&) { return T(); }
 template <> ArrayFieldValue newFieldValue(const ArrayFieldValue& value) {
     return ArrayFieldValue(*value.getDataType());
 }
@@ -857,7 +857,7 @@ struct DeserializedTensorDoc {
     DeserializedTensorDoc();
     ~DeserializedTensorDoc();
 
-    void                         setup(const DocumentTypeRepo& docTypeRepo, const vespalib::nbostream& blob);
+    void setup(const DocumentTypeRepo& docTypeRepo, const vespalib::nbostream& blob);
     const vespalib::eval::Value* getTensor() const;
 };
 

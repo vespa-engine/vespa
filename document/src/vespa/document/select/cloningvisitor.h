@@ -68,7 +68,7 @@ public:
     void visitNullValueNode(const NullValueNode& expr) override;
     void visitInvalidValueNode(const InvalidValueNode& expr) override;
 
-    std::unique_ptr<Node>&      getNode() { return _node; }
+    std::unique_ptr<Node>& getNode() { return _node; }
     std::unique_ptr<ValueNode>& getValueNode() { return _valueNode; }
 
     void setNodeParentheses(int priority);

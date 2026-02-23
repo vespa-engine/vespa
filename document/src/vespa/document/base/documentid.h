@@ -64,8 +64,8 @@ public:
     bool operator==(const DocumentId& other) const { return _id == other._id; }
     bool operator!=(const DocumentId& other) const { return !(_id == other._id); }
 
-    const IdString&  getScheme() const { return _id; }
-    bool             hasDocType() const { return _id.hasDocType(); }
+    const IdString& getScheme() const { return _id; }
+    bool hasDocType() const { return _id.hasDocType(); }
     std::string_view getDocType() const { return _id.getDocType(); }
 
     const GlobalId& getGlobalId() const {

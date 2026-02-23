@@ -33,8 +33,8 @@ public:
     virtual bool hasField(int32_t fieldId) const noexcept = 0;
 
     virtual Field::Set getFieldSet() const = 0;
-    bool               isStructured() const noexcept override { return true; }
-    bool               equals(const DataType& type) const noexcept override;
+    bool isStructured() const noexcept override { return true; }
+    bool equals(const DataType& type) const noexcept override;
 
     static int32_t createId(std::string_view name);
 };

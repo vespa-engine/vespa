@@ -62,7 +62,7 @@ public:
     FeatureSet(const vespalib::slime::Inspector& inspector);
     ~FeatureSet();
 
-    size_t      getSize() const { return _features.size(); }
+    size_t getSize() const { return _features.size(); }
     std::string operator[](size_t i) const { return _features[i]; }
 };
 
@@ -100,7 +100,7 @@ public:
             delete _children[i];
     }
 
-    size_t         getSize() const { return _children.size(); }
+    size_t getSize() const { return _children.size(); }
     PredicateNode* operator[](size_t i) const { return _children[i]; }
 };
 

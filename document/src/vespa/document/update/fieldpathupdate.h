@@ -36,10 +36,10 @@ public:
     virtual ~FieldPathUpdate();
 
     FieldPathUpdateType type() const noexcept { return _type; }
-    void                applyTo(Document& doc) const;
+    void applyTo(Document& doc) const;
 
     virtual bool operator==(const FieldPathUpdate& other) const;
-    bool         operator!=(const FieldPathUpdate& other) const { return !(*this == other); }
+    bool operator!=(const FieldPathUpdate& other) const { return !(*this == other); }
 
     const std::string& getOriginalFieldPath() const { return _originalFieldPath; }
     const std::string& getOriginalWhereClause() const { return _originalWhereClause; }
@@ -53,7 +53,7 @@ public:
 
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
 
-    virtual void    accept(UpdateVisitor& visitor) const = 0;
+    virtual void accept(UpdateVisitor& visitor) const = 0;
     virtual uint8_t getSerializedType() const = 0;
 
     /** Deserializes and creates a new FieldPathUpdate instance.

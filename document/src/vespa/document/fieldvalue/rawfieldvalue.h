@@ -28,8 +28,8 @@ public:
     void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
 
     RawFieldValue* clone() const override { return new RawFieldValue(*this); }
-    void           printXml(XmlOutputStream& out) const override;
-    void           print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void printXml(XmlOutputStream& out) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     RawFieldValue& operator=(const string& value) {
         setValue(value);

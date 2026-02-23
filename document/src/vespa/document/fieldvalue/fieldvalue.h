@@ -82,7 +82,7 @@ public:
     /** Get the datatype describing what can be stored in this fieldvalue. */
     virtual const DataType* getDataType() const = 0;
 
-    void                serialize(vespalib::nbostream& stream) const;
+    void serialize(vespalib::nbostream& stream) const;
     vespalib::nbostream serialize() const;
 
     /**
@@ -103,12 +103,12 @@ public:
     virtual FieldValue* clone() const = 0;
 
     // Utility methods to be able to compare values easily
-    bool           operator>(const FieldValue& v) const { return (compare(v) > 0); }
-    bool           operator>=(const FieldValue& v) const { return (compare(v) >= 0); }
-    bool           operator==(const FieldValue& v) const { return (compare(v) == 0); }
-    bool           operator<=(const FieldValue& v) const { return (compare(v) <= 0); }
-    bool           operator<(const FieldValue& v) const { return (compare(v) < 0); }
-    bool           operator!=(const FieldValue& v) const { return (compare(v) != 0); }
+    bool operator>(const FieldValue& v) const { return (compare(v) > 0); }
+    bool operator>=(const FieldValue& v) const { return (compare(v) >= 0); }
+    bool operator==(const FieldValue& v) const { return (compare(v) == 0); }
+    bool operator<=(const FieldValue& v) const { return (compare(v) <= 0); }
+    bool operator<(const FieldValue& v) const { return (compare(v) < 0); }
+    bool operator!=(const FieldValue& v) const { return (compare(v) != 0); }
     virtual size_t hash() const;
 
     /** Override toXml from XmlSerializable to add start/stop tags. */
@@ -180,7 +180,7 @@ public:
 
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
     /** Utility function to get this output as a string.  */
-    std::string  toString(bool verbose = false, const std::string& indent = "") const;
+    std::string toString(bool verbose = false, const std::string& indent = "") const;
     virtual void printXml(XmlOutputStream& out) const = 0;
 
     // Utility functions to set commonly used value types.
@@ -195,7 +195,7 @@ public:
         return (_type == Type::BYTE) || (_type == Type::SHORT) || (_type == Type::INT) || (_type == Type::LONG) ||
                (_type == Type::FLOAT) || (_type == Type::DOUBLE);
     }
-    bool        isFixedSizeSingleValue() const noexcept { return (_type == Type::BOOL) || isNumeric(); }
+    bool isFixedSizeSingleValue() const noexcept { return (_type == Type::BOOL) || isNumeric(); }
     const char* className() const noexcept;
 
 protected:
@@ -203,7 +203,7 @@ protected:
     FieldValue(const FieldValue&) = default;
     FieldValue& operator=(const FieldValue&) = default;
     FieldValue(FieldValue&&) noexcept = default;
-    FieldValue&                                  operator=(FieldValue&&) noexcept = default;
+    FieldValue& operator=(FieldValue&&) noexcept = default;
     static std::unique_ptr<vespalib::IArrayBase> createArray(const DataType& baseType);
 
 private:
@@ -211,7 +211,7 @@ private:
                                                  fieldvalue::IteratorHandler& handler) const {
         return iterateNested(PathRange(start, end), handler);
     }
-    virtual FieldValue::UP                 onGetNestedFieldValue(PathRange nested) const;
+    virtual FieldValue::UP onGetNestedFieldValue(PathRange nested) const;
     virtual fieldvalue::ModificationStatus onIterateNested(PathRange                    nested,
                                                            fieldvalue::IteratorHandler& handler) const;
 

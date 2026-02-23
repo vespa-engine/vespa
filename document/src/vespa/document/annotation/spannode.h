@@ -13,7 +13,7 @@ struct SpanNode {
 
     virtual ~SpanNode() = default;
 
-    std::string  toString() const;
+    std::string toString() const;
     virtual void accept(SpanTreeVisitor& visitor) const = 0;
 };
 

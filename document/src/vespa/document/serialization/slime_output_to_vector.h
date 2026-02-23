@@ -30,7 +30,7 @@ public:
     }
 
     const char* data() const { return &_buf[0]; }
-    size_t      size() const { return _size; }
+    size_t size() const { return _size; }
 };
 
 } // namespace document

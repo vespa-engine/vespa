@@ -59,27 +59,27 @@ public:
 
     void read(FieldValue& value);
 
-    void                                   read(DocumentId& value);
-    void                                   read(DocumentType& value);
-    void                                   read(Document& value);
-    void                                   read(AnnotationReferenceFieldValue& value);
-    void                                   read(ArrayFieldValue& value);
-    void                                   read(MapFieldValue& value);
-    void                                   read(BoolFieldValue& value);
-    void                                   read(ByteFieldValue& value);
-    void                                   read(DoubleFieldValue& value);
-    void                                   read(FloatFieldValue& value);
-    void                                   read(IntFieldValue& value);
-    void                                   read(LongFieldValue& value);
-    void                                   read(PredicateFieldValue& value);
-    void                                   read(RawFieldValue& value);
-    void                                   read(ShortFieldValue& value);
-    void                                   read(StringFieldValue& value);
-    void                                   read(StructFieldValue& value);
-    void                                   readStructNoReset(StructFieldValue& value);
-    void                                   read(WeightedSetFieldValue& value);
-    void                                   read(TensorFieldValue& value);
+    void read(DocumentId& value);
+    void read(DocumentType& value);
+    void read(Document& value);
+    void read(AnnotationReferenceFieldValue& value);
+    void read(ArrayFieldValue& value);
+    void read(MapFieldValue& value);
+    void read(BoolFieldValue& value);
+    void read(ByteFieldValue& value);
+    void read(DoubleFieldValue& value);
+    void read(FloatFieldValue& value);
+    void read(IntFieldValue& value);
+    void read(LongFieldValue& value);
+    void read(PredicateFieldValue& value);
+    void read(RawFieldValue& value);
+    void read(ShortFieldValue& value);
+    void read(StringFieldValue& value);
+    void read(StructFieldValue& value);
+    void readStructNoReset(StructFieldValue& value);
+    void read(WeightedSetFieldValue& value);
+    void read(TensorFieldValue& value);
     std::unique_ptr<vespalib::eval::Value> readTensor();
-    void                                   read(ReferenceFieldValue& value);
+    void read(ReferenceFieldValue& value);
 };
 } // namespace document

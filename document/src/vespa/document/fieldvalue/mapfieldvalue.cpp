@@ -40,8 +40,8 @@ const MapDataType* verifyMapType(const DataType& type) {
 
 struct Hasher {
     Hasher(const MapFieldValue::IArray* keys) : _keys(keys) {}
-    uint32_t                     operator()(uint32_t index) const { return (*_keys)[index].hash(); }
-    uint32_t                     operator()(const FieldValue& fv) const { return fv.hash(); }
+    uint32_t operator()(uint32_t index) const { return (*_keys)[index].hash(); }
+    uint32_t operator()(const FieldValue& fv) const { return fv.hash(); }
     const MapFieldValue::IArray* _keys;
 };
 

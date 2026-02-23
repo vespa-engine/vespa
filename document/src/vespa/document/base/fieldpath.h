@@ -48,12 +48,12 @@ public:
     */
     FieldPathEntry(const DataType& dataType, std::string_view variableName);
 
-    Type               getType() const { return _type; }
+    Type getType() const { return _type; }
     const std::string& getName() const { return _name; }
 
     const DataType& getDataType() const;
 
-    bool         hasField() const { return _field.valid(); }
+    bool hasField() const { return _field.valid(); }
     const Field& getFieldRef() const { return _field; }
 
     uint32_t getIndex() const { return _lookupIndex; }
@@ -62,8 +62,8 @@ public:
 
     const std::string& getVariableName() const { return _variableName; }
 
-    FieldValue*                 getFieldValueToSetPtr() const { return _fillInVal.get(); }
-    FieldValue&                 getFieldValueToSet() const { return *_fillInVal; }
+    FieldValue* getFieldValueToSetPtr() const { return _fillInVal.get(); }
+    FieldValue& getFieldValueToSet() const { return *_fillInVal; }
     std::unique_ptr<FieldValue> stealFieldValueToSet() const;
     /**
      * Parses a string of the format {["]escaped string["]} to its unescaped value.
@@ -73,7 +73,7 @@ public:
     static std::string parseKey(std::string_view& key);
 
 private:
-    void                                setFillValue(const DataType& dataType);
+    void setFillValue(const DataType& dataType);
     Type                                _type;
     std::string                         _name;
     Field                               _field;
@@ -105,20 +105,20 @@ public:
     ~FieldPath();
 
     iterator insert(iterator pos, std::unique_ptr<FieldPathEntry> entry);
-    void     push_back(std::unique_ptr<FieldPathEntry> entry);
+    void push_back(std::unique_ptr<FieldPathEntry> entry);
 
-    iterator               begin() { return _path.begin(); }
-    iterator               end() { return _path.end(); }
-    const_iterator         begin() const { return _path.begin(); }
-    const_iterator         end() const { return _path.end(); }
-    reverse_iterator       rbegin() { return _path.rbegin(); }
-    reverse_iterator       rend() { return _path.rend(); }
+    iterator begin() { return _path.begin(); }
+    iterator end() { return _path.end(); }
+    const_iterator begin() const { return _path.begin(); }
+    const_iterator end() const { return _path.end(); }
+    reverse_iterator rbegin() { return _path.rbegin(); }
+    reverse_iterator rend() { return _path.rend(); }
     const_reverse_iterator rbegin() const { return _path.rbegin(); }
     const_reverse_iterator rend() const { return _path.rend(); }
 
-    FieldPathEntry&       front() { return *_path.front(); }
+    FieldPathEntry& front() { return *_path.front(); }
     const FieldPathEntry& front() const { return *_path.front(); }
-    FieldPathEntry&       back() { return *_path.back(); }
+    FieldPathEntry& back() { return *_path.back(); }
     const FieldPathEntry& back() const { return *_path.back(); }
 
     void pop_back();
@@ -126,8 +126,8 @@ public:
     void reserve(size_t sz);
 
     Container::size_type size() const { return _path.size(); }
-    bool                 empty() const { return _path.empty(); }
-    FieldPathEntry&      operator[](Container::size_type i) { return *_path[i]; }
+    bool empty() const { return _path.empty(); }
+    FieldPathEntry& operator[](Container::size_type i) { return *_path[i]; }
 
     const FieldPathEntry& operator[](Container::size_type i) const { return *_path[i]; }
 
@@ -135,8 +135,8 @@ public:
     public:
         Range() : _begin(), _end() {}
         Range(IT begin_, IT end_) : _begin(begin_), _end(end_) {}
-        Range                 next() const { return Range(_begin + 1, _end); }
-        bool                  atEnd() const { return _begin == _end; }
+        Range next() const { return Range(_begin + 1, _end); }
+        bool atEnd() const { return _begin == _end; }
         const FieldPathEntry& cur() { return **_begin; }
 
     private:

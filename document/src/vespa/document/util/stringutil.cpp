@@ -31,7 +31,7 @@ char toHex(uint32_t val) { return (val < 10 ? '0' + val : 'a' + (val - 10)); }
 class ReplacementCharacters {
 public:
     ReplacementCharacters();
-    static int  needEscape(unsigned char c) { return _needEscape[c]; }
+    static int needEscape(unsigned char c) { return _needEscape[c]; }
     static char getChar1(unsigned char c) { return _replacement1[c]; }
     static char getChar2(unsigned char c) { return _replacement2[c]; }
 

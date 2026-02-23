@@ -4,7 +4,13 @@ IndentWidth: 4
 DerivePointerAlignment: false
 PointerAlignment: Left
 ReferenceAlignment: Pointer
-AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignFunctionDeclarations: false
+  AlignFunctionPointers: false
 AlignEscapedNewlines: LeftWithLastLine
 PackConstructorInitializers: NextLine
 BreakBeforeBraces: Custom

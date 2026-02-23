@@ -23,7 +23,7 @@ public:
     Context(const DocumentUpdate& docUpdate);
     virtual ~Context();
 
-    void                   setVariableMap(std::unique_ptr<VariableMap> map);
+    void setVariableMap(std::unique_ptr<VariableMap> map);
     std::unique_ptr<Value> getValue(const std::string& value) const;
 
     const Document*       _doc;

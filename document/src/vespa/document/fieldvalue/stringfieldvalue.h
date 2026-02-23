@@ -34,21 +34,21 @@ public:
 
     FieldValue& assign(const FieldValue&) override;
 
-    void              accept(FieldValueVisitor& visitor) override { visitor.visit(*this); }
-    void              accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
+    void accept(FieldValueVisitor& visitor) override { visitor.visit(*this); }
+    void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
     StringFieldValue* clone() const override { return new StringFieldValue(*this); }
-    int               compare(const FieldValue& other) const override;
-    void              print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void              setSpanTrees(vespalib::ConstBufferRef serialized, const FixedTypeRepo& repo, uint8_t version,
-                                   bool isSerializedDataLongLived);
-    void              setSpanTrees(const SpanTrees& trees, const FixedTypeRepo& repo);
-    SpanTrees         getSpanTrees() const;
+    int compare(const FieldValue& other) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void setSpanTrees(vespalib::ConstBufferRef serialized, const FixedTypeRepo& repo, uint8_t version,
+                      bool isSerializedDataLongLived);
+    void setSpanTrees(const SpanTrees& trees, const FixedTypeRepo& repo);
+    SpanTrees getSpanTrees() const;
     vespalib::ConstBufferRef getSerializedAnnotations() const {
         return _annotationData ? _annotationData->getSerializedAnnotations() : vespalib::ConstBufferRef();
     }
-    bool                   hasSpanTrees() const { return _annotationData ? _annotationData->hasSpanTrees() : false; }
+    bool hasSpanTrees() const { return _annotationData ? _annotationData->hasSpanTrees() : false; }
     static const SpanTree* findTree(const SpanTrees& trees, std::string_view name);
-    void                   clearSpanTrees() {
+    void clearSpanTrees() {
         if (_annotationData) {
             doClearSpanTrees();
         }
@@ -72,8 +72,8 @@ private:
         VESPA_DLL_LOCAL AnnotationData(vespalib::ConstBufferRef serialized, const FixedTypeRepo& repo,
                                        uint8_t version, bool isSerializedDataLongLived);
 
-        [[nodiscard]] bool                      hasSpanTrees() const { return _serialized.size() > 0u; }
-        [[nodiscard]] vespalib::ConstBufferRef  getSerializedAnnotations() const { return _serialized; }
+        [[nodiscard]] bool hasSpanTrees() const { return _serialized.size() > 0u; }
+        [[nodiscard]] vespalib::ConstBufferRef getSerializedAnnotations() const { return _serialized; }
         [[nodiscard]] VESPA_DLL_LOCAL SpanTrees getSpanTrees() const;
 
     private:
@@ -83,8 +83,8 @@ private:
         const DocumentType&      _docType;
         uint8_t                  _version;
     };
-    VESPA_DLL_LOCAL AnnotationData::UP copyAnnotationData() const;
-    AnnotationData::UP                 _annotationData;
+    VESPA_DLL_LOCAL    AnnotationData::UP copyAnnotationData() const;
+    AnnotationData::UP _annotationData;
 };
 
 } // namespace document

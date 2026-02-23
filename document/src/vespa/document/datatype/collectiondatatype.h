@@ -25,8 +25,8 @@ public:
     CollectionDataType& operator=(const CollectionDataType&) = delete;
     ~CollectionDataType() override;
 
-    bool                      equals(const DataType&) const noexcept override;
-    const DataType&           getNestedType() const noexcept { return *_nestedType; }
+    bool equals(const DataType&) const noexcept override;
+    const DataType& getNestedType() const noexcept { return *_nestedType; }
     const CollectionDataType* cast_collection() const noexcept override { return this; }
 };
 

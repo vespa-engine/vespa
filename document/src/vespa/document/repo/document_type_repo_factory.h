@@ -40,7 +40,7 @@ public:
      * pointer to a const repo.  The repo should be considered immutable.
      */
     static std::shared_ptr<const DocumentTypeRepo> make(const DocumenttypesConfig& config);
-    static bool                                    empty();
+    static bool empty();
 };
 
 } // namespace document

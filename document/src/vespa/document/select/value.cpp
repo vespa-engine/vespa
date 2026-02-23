@@ -171,44 +171,44 @@ ArrayValue::ArrayValue(std::vector<VariableValue> values) : Value(Type::Array), 
 ArrayValue::~ArrayValue() = default;
 
 struct ArrayValue::EqualsComparator {
-    bool       operator()(std::size_t lhs, std::size_t rhs) const { return lhs == rhs; }
+    bool operator()(std::size_t lhs, std::size_t rhs) const { return lhs == rhs; }
     ResultList operator()(const Value& lhs, const Value& rhs) const { return lhs == rhs; }
 };
 
 struct ArrayValue::NotEqualsComparator {
-    bool       operator()(std::size_t lhs, std::size_t rhs) const { return lhs != rhs; }
+    bool operator()(std::size_t lhs, std::size_t rhs) const { return lhs != rhs; }
     ResultList operator()(const Value& lhs, const Value& rhs) const { return lhs != rhs; }
 };
 
 struct ArrayValue::LessThanComparator {
-    bool       operator()(std::size_t lhs, std::size_t rhs) const { return lhs < rhs; }
+    bool operator()(std::size_t lhs, std::size_t rhs) const { return lhs < rhs; }
     ResultList operator()(const Value& lhs, const Value& rhs) const { return lhs < rhs; }
 };
 
 struct ArrayValue::GreaterThanComparator {
-    bool       operator()(std::size_t lhs, std::size_t rhs) const { return lhs > rhs; }
+    bool operator()(std::size_t lhs, std::size_t rhs) const { return lhs > rhs; }
     ResultList operator()(const Value& lhs, const Value& rhs) const { return lhs > rhs; }
 };
 
 struct ArrayValue::LessThanOrEqualsComparator {
-    bool       operator()(std::size_t lhs, std::size_t rhs) const { return lhs <= rhs; }
+    bool operator()(std::size_t lhs, std::size_t rhs) const { return lhs <= rhs; }
     ResultList operator()(const Value& lhs, const Value& rhs) const { return lhs <= rhs; }
 };
 
 struct ArrayValue::GreaterThanOrEqualsComparator {
-    bool       operator()(std::size_t lhs, std::size_t rhs) const { return lhs >= rhs; }
+    bool operator()(std::size_t lhs, std::size_t rhs) const { return lhs >= rhs; }
     ResultList operator()(const Value& lhs, const Value& rhs) const { return lhs >= rhs; }
 };
 
 struct ArrayValue::GlobComparator {
-    bool       operator()(std::size_t lhs, std::size_t rhs) const { return lhs == rhs; }
+    bool operator()(std::size_t lhs, std::size_t rhs) const { return lhs == rhs; }
     ResultList operator()(const Value& lhs, const Value& rhs) const {
         return GlobOperator::GLOB.compareImpl(lhs, rhs);
     }
 };
 
 struct ArrayValue::RegexComparator {
-    bool       operator()(std::size_t lhs, std::size_t rhs) const { return lhs == rhs; }
+    bool operator()(std::size_t lhs, std::size_t rhs) const { return lhs == rhs; }
     ResultList operator()(const Value& lhs, const Value& rhs) const {
         return RegexOperator::REGEX.compareImpl(lhs, rhs);
     }

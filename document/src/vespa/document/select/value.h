@@ -66,7 +66,7 @@ public:
 
     ResultList operator<(const Value&) const override;
     ResultList operator==(const Value&) const override;
-    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 class NullValue : public Value {
@@ -78,7 +78,7 @@ public:
     ResultList operator>(const Value&) const override;
     ResultList operator>=(const Value&) const override;
     ResultList operator<=(const Value&) const override;
-    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 class StringValue : public Value {
@@ -88,9 +88,9 @@ public:
     StringValue(std::string_view val);
 
     const std::string& getValue() const { return _value; }
-    ResultList         operator<(const Value& value) const override;
-    ResultList         operator==(const Value& value) const override;
-    void               print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    ResultList operator<(const Value& value) const override;
+    ResultList operator==(const Value& value) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 class IntegerValue;
@@ -104,10 +104,10 @@ public:
 
     virtual CommonValueType getCommonValue() const = 0;
 
-    ResultList         operator<(const Value& value) const override = 0;
+    ResultList operator<(const Value& value) const override = 0;
     virtual ResultList operator>(const IntegerValue& value) const = 0;
     virtual ResultList operator>(const FloatValue& value) const = 0;
-    ResultList         operator==(const Value& value) const override = 0;
+    ResultList operator==(const Value& value) const override = 0;
     virtual ResultList operator==(const IntegerValue& value) const = 0;
     virtual ResultList operator==(const FloatValue& value) const = 0;
 };
@@ -118,7 +118,7 @@ public:
 
     IntegerValue(ValueType value, bool isBucketValue);
 
-    ValueType       getValue() const { return _value; }
+    ValueType getValue() const { return _value; }
     CommonValueType getCommonValue() const override { return _value; }
 
     ResultList operator<(const Value& value) const override;
@@ -128,7 +128,7 @@ public:
     ResultList operator>(const FloatValue& value) const override;
     ResultList operator==(const IntegerValue& value) const override;
     ResultList operator==(const FloatValue& value) const override;
-    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
 private:
     ValueType _value;
@@ -140,7 +140,7 @@ public:
 
     FloatValue(ValueType val);
 
-    ValueType       getValue() const { return _value; }
+    ValueType getValue() const { return _value; }
     CommonValueType getCommonValue() const override { return _value; }
 
     ResultList operator<(const Value& value) const override;
@@ -150,7 +150,7 @@ public:
     ResultList operator>(const FloatValue& value) const override;
     ResultList operator==(const IntegerValue& value) const override;
     ResultList operator==(const FloatValue& value) const override;
-    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
 private:
     ValueType _value;
@@ -197,7 +197,7 @@ public:
     ResultList operator!=(const Value& value) const override;
     ResultList operator>=(const Value& value) const override;
     ResultList operator<=(const Value& value) const override;
-    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     ResultList globCompare(const Value& value) const override;
     ResultList regexCompare(const Value& value) const override;
@@ -229,7 +229,7 @@ public:
 
     ResultList operator<(const Value& value) const override;
     ResultList operator==(const Value& value) const override;
-    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
 private:
     ValueMap _values;
@@ -246,7 +246,7 @@ public:
     ResultList operator<(const Value&) const override;
     ResultList operator==(const Value&) const override;
     ResultList operator!=(const Value&) const override;
-    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // namespace document::select

@@ -33,20 +33,20 @@ public:
     using value_type = Number;
 
     value_type getValue() const { return _value; }
-    void       setValue(Number newValue) { _value = newValue; }
+    void setValue(Number newValue) { _value = newValue; }
 
     FieldValue& assign(const FieldValue&) override;
-    int         compare(const FieldValue& other) const override;
-    int         fastCompare(const FieldValue& other) const override final;
+    int compare(const FieldValue& other) const override;
+    int fastCompare(const FieldValue& other) const override final;
 
     FieldValue& operator=(std::string_view) override;
     size_t hash() const override final { return vespalib::hash<Number>()(_value); }
 
-    char        getAsByte() const override;
-    int32_t     getAsInt() const override;
-    int64_t     getAsLong() const override;
-    float       getAsFloat() const override;
-    double      getAsDouble() const override;
+    char getAsByte() const override;
+    int32_t getAsInt() const override;
+    int64_t getAsLong() const override;
+    float getAsFloat() const override;
+    double getAsDouble() const override;
     std::string getAsString() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

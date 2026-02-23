@@ -17,9 +17,9 @@ public:
     static const std::string FIELD_Y;
 
     static const StructDataType& getInstance();
-    static std::string           getZCurveFieldName(const std::string& name);
-    static std::string_view      cutZCurveFieldName(std::string_view name);
-    static bool                  isZCurveFieldName(std::string_view name);
+    static std::string getZCurveFieldName(const std::string& name);
+    static std::string_view cutZCurveFieldName(std::string_view name);
+    static bool isZCurveFieldName(std::string_view name);
 };
 
 } // namespace document

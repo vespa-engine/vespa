@@ -229,6 +229,6 @@ public:
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream& os, const GlobalId& gid);
-std::ostream&          operator<<(std::ostream& out, const GlobalId& gid);
+std::ostream& operator<<(std::ostream& out, const GlobalId& gid);
 
 } // namespace document

@@ -39,8 +39,8 @@ public:
 
     ResultList contains(const Context& context) const override;
     ResultList trace(const Context& context, std::ostream& trace) const override;
-    void       print(std::ostream&, bool verbose, const std::string& indent) const override;
-    void       visit(Visitor& v) const override;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& v) const override;
 
     const Operator& getOperator() const { return _operator; }
 

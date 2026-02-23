@@ -18,13 +18,13 @@ namespace document {
 class FieldSetTest : public ::testing::Test {
 
 protected:
-    static std::string  stringifyFields(const Document& doc);
-    static std::string  doCopyFields(const Document& src, const DocumentTypeRepo& docRepo,
-                                     const std::string& fieldSetStr, Document* dest = nullptr);
-    static std::string  doCopyDocument(const Document& src, const DocumentTypeRepo& docRepo,
-                                       const std::string& fieldSetStr);
-    static std::string  doStripFields(const Document& doc, const DocumentTypeRepo& docRepo,
+    static std::string stringifyFields(const Document& doc);
+    static std::string doCopyFields(const Document& src, const DocumentTypeRepo& docRepo,
+                                    const std::string& fieldSetStr, Document* dest = nullptr);
+    static std::string doCopyDocument(const Document& src, const DocumentTypeRepo& docRepo,
                                       const std::string& fieldSetStr);
+    static std::string doStripFields(const Document& doc, const DocumentTypeRepo& docRepo,
+                                     const std::string& fieldSetStr);
     static Document::UP createTestDocument(const TestDocMan& testDocMan);
 };
 

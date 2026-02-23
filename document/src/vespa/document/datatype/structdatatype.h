@@ -44,8 +44,8 @@ public:
 
     // Implementation of StructuredDataType
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void                        print(std::ostream&, bool verbose, const std::string& indent) const override;
-    uint32_t                    getFieldCount() const noexcept override { return _idFieldMap.size(); }
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    uint32_t getFieldCount() const noexcept override { return _idFieldMap.size(); }
 
     const Field& getField(std::string_view name) const override;
 

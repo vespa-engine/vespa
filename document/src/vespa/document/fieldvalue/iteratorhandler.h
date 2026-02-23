@@ -63,19 +63,19 @@ public:
        field path.
        @return Return true if you want to recurse into the members.
     */
-    bool                      handleComplex(const FieldValue& fv);
-    void                      handleCollectionStart(const FieldValue& fv);
-    void                      handleCollectionEnd(const FieldValue& fv);
-    void                      handleStructStart(const FieldValue& fv);
-    void                      handleStructEnd(const FieldValue& fv);
-    void                      setWeight(int weight) { _weight = weight; }
-    uint32_t                  getArrayIndex() const { return _arrayIndexStack.back(); }
-    void                      setArrayIndex(uint32_t index) { _arrayIndexStack.back() = index; }
-    ModificationStatus        modify(FieldValue& fv) { return doModify(fv); }
-    fieldvalue::VariableMap&  getVariables() { return _variables; }
+    bool handleComplex(const FieldValue& fv);
+    void handleCollectionStart(const FieldValue& fv);
+    void handleCollectionEnd(const FieldValue& fv);
+    void handleStructStart(const FieldValue& fv);
+    void handleStructEnd(const FieldValue& fv);
+    void setWeight(int weight) { _weight = weight; }
+    uint32_t getArrayIndex() const { return _arrayIndexStack.back(); }
+    void setArrayIndex(uint32_t index) { _arrayIndexStack.back() = index; }
+    ModificationStatus modify(FieldValue& fv) { return doModify(fv); }
+    fieldvalue::VariableMap& getVariables() { return _variables; }
     fieldvalue::VariableMap&& stealVariables() { return std::move(_variables); }
-    void                      setVariables(fieldvalue::VariableMap vars) { _variables = std::move(vars); }
-    virtual bool              createMissingPath() const { return false; }
+    void setVariables(fieldvalue::VariableMap vars) { _variables = std::move(vars); }
+    virtual bool createMissingPath() const { return false; }
 
 private:
     virtual bool onComplex(const Content& fv) {
@@ -83,11 +83,11 @@ private:
         return true;
     }
 
-    virtual void               onPrimitive(uint32_t fid, const Content& fv);
-    virtual void               onCollectionStart(const Content& fv) { (void)fv; }
-    virtual void               onCollectionEnd(const Content& fv) { (void)fv; }
-    virtual void               onStructStart(const Content& fv) { (void)fv; }
-    virtual void               onStructEnd(const Content& fv) { (void)fv; }
+    virtual void onPrimitive(uint32_t fid, const Content& fv);
+    virtual void onCollectionStart(const Content& fv) { (void)fv; }
+    virtual void onCollectionEnd(const Content& fv) { (void)fv; }
+    virtual void onStructStart(const Content& fv) { (void)fv; }
+    virtual void onStructEnd(const Content& fv) { (void)fv; }
     virtual ModificationStatus doModify(FieldValue&) { return ModificationStatus::NOT_MODIFIED; };
 
     // Scratchpad to store pass on weight.

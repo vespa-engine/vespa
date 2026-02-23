@@ -29,7 +29,7 @@ public:
     bool operator!=(const Bucket& other) const noexcept { return !(operator==(other)); }
 
     BucketSpace getBucketSpace() const noexcept { return _bucketSpace; }
-    BucketId    getBucketId() const noexcept { return _bucketId; }
+    BucketId getBucketId() const noexcept { return _bucketId; }
     std::string toString() const;
 
     struct hash {
@@ -47,6 +47,6 @@ private:
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream&, const Bucket&);
-std::ostream&          operator<<(std::ostream&, const Bucket&);
+std::ostream& operator<<(std::ostream&, const Bucket&);
 
 } // namespace document

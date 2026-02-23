@@ -27,12 +27,12 @@ public:
     std::unique_ptr<SpanNode> readSpanNode();
     // returns 0 if the annotation type is unknown.
     std::unique_ptr<AlternateSpanList> readAlternateSpanList();
-    void                               readAnnotation(Annotation& annotation);
+    void readAnnotation(Annotation& annotation);
 
 private:
-    std::unique_ptr<SpanList>       readSpanList();
+    std::unique_ptr<SpanList> readSpanList();
     std::unique_ptr<SimpleSpanList> readSimpleSpanList();
-    void                            readSpan(Span& span) {
+    void readSpan(Span& span) {
         span.from(getInt1_2_4Bytes(_stream));
         span.length(getInt1_2_4Bytes(_stream));
     }

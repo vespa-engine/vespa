@@ -41,12 +41,12 @@ public:
         Entry(uint32_t i, uint32_t sz, uint32_t off) : _id(i), _sz(sz), _data(off) {}
         Entry(uint32_t i, uint32_t sz, const char* buf) : _id(i), _sz(sz | BUFFER_MASK), _data(buf) {}
 
-        int32_t  id() const { return _id; }
+        int32_t id() const { return _id; }
         uint32_t size() const { return _sz & ~BUFFER_MASK; }
-        bool     hasBuffer() const { return (_sz & BUFFER_MASK); }
-        bool     operator<(const Entry& e) const { return cmp(e) < 0; }
-        int      cmp(const Entry& e) const { return _id - e._id; }
-        void     setBuffer(const char* buffer) {
+        bool hasBuffer() const { return (_sz & BUFFER_MASK); }
+        bool operator<(const Entry& e) const { return cmp(e) < 0; }
+        int cmp(const Entry& e) const { return _id - e._id; }
+        void setBuffer(const char* buffer) {
             _data._buffer = buffer;
             _sz |= BUFFER_MASK;
         }

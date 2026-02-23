@@ -17,10 +17,10 @@ public:
     AnnotationReferenceDataType(const AnnotationReferenceDataType&) = delete;
     AnnotationReferenceDataType& operator=(const AnnotationReferenceDataType&) = delete;
     ~AnnotationReferenceDataType() override;
-    const AnnotationType&       getAnnotationType() const;
-    void                        print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    const AnnotationType& getAnnotationType() const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void                        onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const override;
+    void onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const override;
 };
 
 } // namespace document

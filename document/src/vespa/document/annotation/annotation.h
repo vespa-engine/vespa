@@ -26,17 +26,17 @@ public:
     Annotation& operator=(Annotation&&) = delete;
     ~Annotation();
 
-    void                       setType(const AnnotationType* v) { _type = v; }
-    void                       setSpanNode(const SpanNode& node) { _node = &node; }
+    void setType(const AnnotationType* v) { _type = v; }
+    void setSpanNode(const SpanNode& node) { _node = &node; }
     template <typename T> void setFieldValue(std::unique_ptr<T> value) { _value = std::move(value); }
-    bool                       operator==(const Annotation& a2) const;
+    bool operator==(const Annotation& a2) const;
 
-    const SpanNode*       getSpanNode() const { return _node; }
+    const SpanNode* getSpanNode() const { return _node; }
     const AnnotationType& getType() const { return *_type; }
-    bool                  valid() const { return _type != nullptr; }
-    int32_t               getTypeId() const { return _type->getId(); }
-    const FieldValue*     getFieldValue() const { return _value.get(); }
-    std::string           toString() const;
+    bool valid() const { return _type != nullptr; }
+    int32_t getTypeId() const { return _type->getId(); }
+    const FieldValue* getFieldValue() const { return _value.get(); }
+    std::string toString() const;
 };
 
 std::ostream& operator<<(std::ostream& os, const Annotation& span);

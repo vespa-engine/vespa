@@ -36,8 +36,8 @@ public:
         return (_left->contains(context) && _right->contains(context));
     }
     ResultList trace(const Context&, std::ostream& trace) const override;
-    void       visit(Visitor& v) const override;
-    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& v) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const Node& getLeft() const { return *_left; }
     const Node& getRight() const { return *_right; }
@@ -56,8 +56,8 @@ public:
         return (_left->contains(context) || _right->contains(context));
     }
     ResultList trace(const Context&, std::ostream& trace) const override;
-    void       visit(Visitor& v) const override;
-    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& v) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const Node& getLeft() const { return *_left; }
     const Node& getRight() const { return *_right; }
@@ -73,8 +73,8 @@ public:
 
     ResultList contains(const Context& context) const override { return !_child->contains(context); }
     ResultList trace(const Context&, std::ostream& trace) const override;
-    void       visit(Visitor& v) const override;
-    void       print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& v) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const Node& getChild() const { return *_child; }
 

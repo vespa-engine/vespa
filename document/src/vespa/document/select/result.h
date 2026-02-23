@@ -43,7 +43,7 @@ public:
     const Result& operator||(const Result&) const;
     const Result& operator!() const;
 
-    static const Result&      get(bool b) { return (b ? True : False); }
+    static const Result& get(bool b) { return (b ? True : False); }
     static constexpr uint32_t enumRange = 3u;
 
     uint32_t toEnum() const {

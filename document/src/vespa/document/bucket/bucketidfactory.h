@@ -35,7 +35,7 @@ public:
     BucketIdFactory();
 
     BucketId getBucketId(const DocumentId&) const;
-    void     print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
 private:
     void initializeMasks();

@@ -85,7 +85,7 @@ class BoolValueNode : public IntegerValueNode {
 public:
     explicit BoolValueNode(bool value) : IntegerValueNode(value, false) {}
 
-    [[nodiscard]] bool        bool_value() const noexcept { return bool(getValue()); }
+    [[nodiscard]] bool bool_value() const noexcept { return bool(getValue()); }
     [[nodiscard]] const char* bool_value_str() const noexcept { return bool_value() ? "true" : "false"; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -119,8 +119,8 @@ public:
     const std::string& getVariableName() const { return _value; }
 
     std::unique_ptr<Value> getValue(const Context& context) const override;
-    void                   print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void                   visit(Visitor& visitor) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override { return wrapParens(std::make_unique<VariableValueNode>(_value)); }
 };
@@ -161,8 +161,8 @@ public:
 
     std::unique_ptr<Value> getValue(const Context& context) const override;
     std::unique_ptr<Value> traceValue(const Context& context, std::ostream& out) const override;
-    void                   print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void                   visit(Visitor& visitor) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
         return wrapParens(std::make_unique<FieldValueNode>(_doctype, _fieldExpression));
@@ -192,11 +192,11 @@ public:
     FieldExprNode& operator=(FieldExprNode&&) = default;
     ~FieldExprNode() override;
 
-    std::unique_ptr<FieldValueNode>    convert_to_field_value() const;
+    std::unique_ptr<FieldValueNode> convert_to_field_value() const;
     std::unique_ptr<FunctionValueNode> convert_to_function_call() const;
 
 private:
-    void               build_mangled_expression(std::string& dest) const;
+    void build_mangled_expression(std::string& dest) const;
     const std::string& resolve_doctype() const;
 
     // These are not used, can just return dummy values.
@@ -271,7 +271,7 @@ public:
 
     FunctionValueNode(std::string_view name, std::unique_ptr<ValueNode> src);
 
-    Function           getFunction() const { return _function; }
+    Function getFunction() const { return _function; }
     const std::string& getFunctionName() const { return _funcname; }
 
     std::unique_ptr<Value> getValue(const Context& context) const override {
@@ -306,7 +306,7 @@ public:
 
     ArithmeticValueNode(std::unique_ptr<ValueNode> left, std::string_view op, std::unique_ptr<ValueNode> right);
 
-    Operator    getOperator() const { return _operator; }
+    Operator getOperator() const { return _operator; }
     const char* getOperatorName() const;
 
     std::unique_ptr<Value> getValue(const Context& context) const override {

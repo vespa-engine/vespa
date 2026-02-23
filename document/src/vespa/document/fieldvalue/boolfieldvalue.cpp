@@ -42,11 +42,11 @@ const DataType* BoolFieldValue::getDataType() const { return DataType::BOOL; }
 
 FieldValue* BoolFieldValue::clone() const { return new BoolFieldValue(*this); }
 
-char        BoolFieldValue::getAsByte() const { return _value ? 1 : 0; }
-int32_t     BoolFieldValue::getAsInt() const { return _value ? 1 : 0; }
-int64_t     BoolFieldValue::getAsLong() const { return _value ? 1 : 0; }
-float       BoolFieldValue::getAsFloat() const { return _value ? 1 : 0; }
-double      BoolFieldValue::getAsDouble() const { return _value ? 1 : 0; }
+char BoolFieldValue::getAsByte() const { return _value ? 1 : 0; }
+int32_t BoolFieldValue::getAsInt() const { return _value ? 1 : 0; }
+int64_t BoolFieldValue::getAsLong() const { return _value ? 1 : 0; }
+float BoolFieldValue::getAsFloat() const { return _value ? 1 : 0; }
+double BoolFieldValue::getAsDouble() const { return _value ? 1 : 0; }
 std::string BoolFieldValue::getAsString() const { return _value ? "true" : "false"; }
 
 BoolFieldValue& BoolFieldValue::operator=(std::string_view v) {

@@ -65,12 +65,12 @@ class BuilderHelper {
 private:
     int                        _idx = 10000;
     DocumenttypesConfigBuilder _config;
-    static int                 hashId(const string& name) {
+    static int hashId(const string& name) {
         StructDataType tmp(name);
         return tmp.getId();
     }
     vector<int> _idxOfBuiltins;
-    void        addPrimitive(BDocType& doc, const string& name, DataType::Type t) {
+    void addPrimitive(BDocType& doc, const string& name, DataType::Type t) {
         BPrimitiveT pt;
         pt.idx = ++_idx;
         pt.name = name;
@@ -96,7 +96,7 @@ public:
         return d;
     }
     BStructField& addField(BDocType& doc, const string& name) { return addField(doc.structtype[0], name); }
-    BStructT&     addStruct(BDocType& doc, const string& name) {
+    BStructT& addStruct(BDocType& doc, const string& name) {
         doc.structtype.reserve(100);
         auto& st = doc.structtype.emplace_back();
         st.idx = ++_idx;

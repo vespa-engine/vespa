@@ -54,16 +54,16 @@ public:
         _value = _backing;
     }
     size_t hash() const override final { return vespalib::hashValue(_value.data(), _value.size()); }
-    void   setValue(const char* val, size_t size) { setValue(string_view(val, size)); }
+    void setValue(const char* val, size_t size) { setValue(string_view(val, size)); }
 
     int compare(const FieldValue& other) const override;
     int fastCompare(const FieldValue& other) const override final;
 
-    std::string                    getAsString() const override;
+    std::string getAsString() const override;
     std::pair<const char*, size_t> getAsRaw() const override;
 
-    void        printXml(XmlOutputStream& out) const override;
-    void        print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void printXml(XmlOutputStream& out) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     FieldValue& assign(const FieldValue&) override;
 
     FieldValue& operator=(std::string_view) override;

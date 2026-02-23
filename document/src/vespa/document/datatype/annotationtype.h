@@ -26,8 +26,8 @@ public:
     void setDataType(const DataType& type) { _type = &type; }
 
     const std::string& getName() const { return _name; }
-    int                getId() const { return _id; }
-    const DataType*    getDataType() const { return _type; }
+    int getId() const { return _id; }
+    const DataType* getDataType() const { return _type; }
     bool operator==(const AnnotationType& a2) const { return (getId() == a2.getId()) && (getName() == a2.getName()); }
     bool operator!=(const AnnotationType& a2) const { return !(*this == a2); }
     std::string toString() const;

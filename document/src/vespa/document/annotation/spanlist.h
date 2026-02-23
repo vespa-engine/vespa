@@ -25,7 +25,7 @@ public:
     }
 
     size_t size() const { return _span_vector.size(); }
-    void   reserve(size_t sz) { _span_vector.reserve(sz); }
+    void reserve(size_t sz) { _span_vector.reserve(sz); }
 
     const_iterator begin() const { return _span_vector.begin(); }
     const_iterator end() const { return _span_vector.end(); }
@@ -44,8 +44,8 @@ public:
     SimpleSpanList(size_t sz);
     ~SimpleSpanList();
 
-    size_t      size() const { return _span_vector.size(); }
-    Span&       operator[](size_t index) { return _span_vector[index]; }
+    size_t size() const { return _span_vector.size(); }
+    Span& operator[](size_t index) { return _span_vector[index]; }
     const Span& operator[](size_t index) const { return _span_vector[index]; }
 
     const_iterator begin() const { return _span_vector.begin(); }

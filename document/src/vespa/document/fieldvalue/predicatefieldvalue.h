@@ -27,7 +27,7 @@ public:
     void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
 
     FieldValue* clone() const override;
-    int         compare(const FieldValue& rhs) const override;
+    int compare(const FieldValue& rhs) const override;
 
     void printXml(XmlOutputStream& out) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

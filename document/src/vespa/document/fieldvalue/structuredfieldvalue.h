@@ -38,15 +38,15 @@ class StructuredFieldValue : public FieldValue {
      * Will use container as inplace is present.
      */
     VESPA_DLL_LOCAL FieldValue::UP getValue(const Field& field, FieldValue::UP container) const;
-    VESPA_DLL_LOCAL void           updateValue(const Field& field, FieldValue::UP value) const;
-    VESPA_DLL_LOCAL void           returnValue(const Field& field, FieldValue::UP value) const;
-    virtual StructuredCache*       getCache() const { return nullptr; }
+    VESPA_DLL_LOCAL void updateValue(const Field& field, FieldValue::UP value) const;
+    VESPA_DLL_LOCAL void returnValue(const Field& field, FieldValue::UP value) const;
+    virtual StructuredCache* getCache() const { return nullptr; }
 
 protected:
     StructuredFieldValue(Type type, const DataType& dataType) : FieldValue(type), _type(&dataType) {}
 
     /** Called from Document when deserializing alters type. */
-    virtual void    setType(const DataType& type) { _type = &type; }
+    virtual void setType(const DataType& type) { _type = &type; }
     const DataType& getType() const { return *_type; }
 
     struct StructuredIterator {
@@ -67,7 +67,7 @@ protected:
 
         const Field& field() const { return *_field; }
         const Field& operator*() const { return field(); }
-        Iterator&    operator++() {
+        Iterator& operator++() {
             _field = _iterator->getNextField();
             return *this;
         }
@@ -89,8 +89,8 @@ protected:
 
     // As overloading doesn't work with polymorphy, have protected functions
     // doing the functionality, such that we can make utility functions here
-    virtual bool           hasFieldValue(const Field&) const = 0;
-    virtual void           removeFieldValue(const Field&) = 0;
+    virtual bool hasFieldValue(const Field&) const = 0;
+    virtual void removeFieldValue(const Field&) = 0;
     virtual FieldValue::UP getFieldValue(const Field&) const = 0;
     /**
      * Fetches the value of the field and return true if present.
@@ -99,14 +99,14 @@ protected:
      */
     virtual bool getFieldValue(const Field& field, FieldValue& value) const = 0;
     virtual void setFieldValue(const Field&, FieldValue::UP value) = 0;
-    void         setFieldValue(const Field& field, const FieldValue& value);
+    void setFieldValue(const Field& field, const FieldValue& value);
 
     fieldvalue::ModificationStatus onIterateNested(PathRange                    nested,
                                                    fieldvalue::IteratorHandler& handler) const override;
 
 public:
     StructuredFieldValue* clone() const override = 0;
-    const DataType*       getDataType() const override { return _type; }
+    const DataType* getDataType() const override { return _type; }
 
     /** Wrapper for DataType's hasField() function. */
     virtual bool hasField(std::string_view name) const = 0;

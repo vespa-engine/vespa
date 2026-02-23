@@ -57,13 +57,13 @@ public:
         private:
             std::vector<CPtr> _vector;
         };
-        bool        contains(const Field& field) const;
-        bool        contains(const Set& field) const;
-        size_t      size() const { return _fields.size(); }
-        bool        empty() const { return _fields.empty(); }
+        bool contains(const Field& field) const;
+        bool contains(const Set& field) const;
+        size_t size() const { return _fields.size(); }
+        bool empty() const { return _fields.empty(); }
         const CPtr* begin() const { return _fields.data(); }
         const CPtr* end() const { return begin() + _fields.size(); }
-        static Set  emptySet() { return Builder().build(); }
+        static Set emptySet() { return Builder().build(); }
 
     private:
         explicit Set(std::vector<CPtr> fields);
@@ -103,14 +103,14 @@ public:
 
     const DataType& getDataType() const { return *_dataType; }
 
-    int                getId() const noexcept { return _fieldId; }
+    int getId() const noexcept { return _fieldId; }
     const std::string& getName() const noexcept { return _name; }
 
     std::string toString(bool verbose = false) const;
-    bool        contains(const FieldSet& fields) const override;
-    Type        getType() const override { return Type::FIELD; }
-    bool        valid() const noexcept { return _fieldId != 0; }
-    uint32_t    hash() const noexcept { return getId(); }
+    bool contains(const FieldSet& fields) const override;
+    Type getType() const override { return Type::FIELD; }
+    bool valid() const noexcept { return _fieldId != 0; }
+    uint32_t hash() const noexcept { return getId(); }
 
 private:
     int calculateIdV7();

@@ -31,7 +31,7 @@ public:
 
     bool operator==(const ValueUpdate& other) const override;
 
-    bool              hasValue() const { return bool(_value); }
+    bool hasValue() const { return bool(_value); }
     const FieldValue& getValue() const { return *_value; }
 
     AssignValueUpdate& setValue(const FieldValue* value) {

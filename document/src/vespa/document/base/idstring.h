@@ -28,12 +28,12 @@ public:
     IdString();
 
     [[nodiscard]] std::string_view getNamespace() const { return getComponent(0); }
-    [[nodiscard]] bool             hasDocType() const { return size(1) != 0; }
+    [[nodiscard]] bool hasDocType() const { return size(1) != 0; }
     [[nodiscard]] std::string_view getDocType() const { return getComponent(1); }
-    [[nodiscard]] LocationType     getLocation() const { return _location; }
-    [[nodiscard]] bool             hasNumber() const { return _has_number; }
-    [[nodiscard]] uint64_t         getNumber() const { return _location; }
-    [[nodiscard]] bool             hasGroup() const { return _groupOffset != 0; }
+    [[nodiscard]] LocationType getLocation() const { return _location; }
+    [[nodiscard]] bool hasNumber() const { return _has_number; }
+    [[nodiscard]] uint64_t getNumber() const { return _location; }
+    [[nodiscard]] bool hasGroup() const { return _groupOffset != 0; }
     [[nodiscard]] std::string_view getGroup() const {
         return {getRawId().c_str() + _groupOffset, size_t(offset(3) - _groupOffset - 1)};
     }
@@ -59,8 +59,8 @@ private:
     public:
         Offsets() noexcept = default;
         VESPA_DLL_LOCAL uint16_t compute(std::string_view id);
-        uint16_t                 operator[](size_t i) const { return _offsets[i]; }
-        static const Offsets     DefaultID;
+        uint16_t operator[](size_t i) const { return _offsets[i]; }
+        static const Offsets DefaultID;
 
     private:
         static constexpr uint32_t MAX_COMPONENTS = 4;

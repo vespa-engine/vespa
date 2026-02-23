@@ -27,7 +27,7 @@ public:
 
     constexpr Type getId() const noexcept { return _id; }
     constexpr bool valid() const noexcept { return (_id != 0); }
-    std::string    toString() const;
+    std::string toString() const;
 
     struct hash {
         size_t operator()(const BucketSpace& bs) const noexcept { return std::hash<Type>()(bs.getId()); }
@@ -44,6 +44,6 @@ private:
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream&, const BucketSpace&);
-std::ostream&          operator<<(std::ostream&, const BucketSpace&);
+std::ostream& operator<<(std::ostream&, const BucketSpace&);
 
 } // namespace document

@@ -32,14 +32,14 @@ public:
     TensorRemoveUpdate(const TensorRemoveUpdate& rhs) = delete;
     TensorRemoveUpdate& operator=(const TensorRemoveUpdate& rhs) = delete;
     ~TensorRemoveUpdate() override;
-    const TensorFieldValue&                getTensor() const { return *_tensor; }
+    const TensorFieldValue& getTensor() const { return *_tensor; }
     std::unique_ptr<vespalib::eval::Value> applyTo(const vespalib::eval::Value& tensor) const;
     std::unique_ptr<Value> apply_to(const Value& tensor, const ValueBuilderFactory& factory) const override;
-    bool                   operator==(const ValueUpdate& other) const override;
-    void                   checkCompatibility(const Field& field) const override;
-    bool                   applyTo(FieldValue& value) const override;
-    void                   printXml(XmlOutputStream& xos) const override;
-    void                   print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    bool operator==(const ValueUpdate& other) const override;
+    void checkCompatibility(const Field& field) const override;
+    bool applyTo(FieldValue& value) const override;
+    void printXml(XmlOutputStream& xos) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream) override;
 };
 

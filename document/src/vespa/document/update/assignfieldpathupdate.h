@@ -22,13 +22,13 @@ public:
     AssignFieldPathUpdate(string_view fieldPath, string_view whereClause, string_view expression);
     ~AssignFieldPathUpdate();
 
-    void               setRemoveIfZero(bool removeIfZero) { _removeIfZero = removeIfZero; }
-    bool               getRemoveIfZero() const { return _removeIfZero; }
-    void               setCreateMissingPath(bool createMissingPath) { _createMissingPath = createMissingPath; }
-    bool               getCreateMissingPath() const { return _createMissingPath; }
+    void setRemoveIfZero(bool removeIfZero) { _removeIfZero = removeIfZero; }
+    bool getRemoveIfZero() const { return _removeIfZero; }
+    void setCreateMissingPath(bool createMissingPath) { _createMissingPath = createMissingPath; }
+    bool getCreateMissingPath() const { return _createMissingPath; }
     const std::string& getExpression() const { return _expression; }
-    bool               hasValue() const { return bool(_newValue); }
-    const FieldValue&  getValue() const { return *_newValue; }
+    bool hasValue() const { return bool(_newValue); }
+    const FieldValue& getValue() const { return *_newValue; }
 
     bool operator==(const FieldPathUpdate& other) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -37,7 +37,7 @@ public:
 
 private:
     uint8_t getSerializedType() const override { return AssignMagic; }
-    void    deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream) override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream) override;
 
     std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document&               doc,
                                                                     const DocumentTypeRepo& repo) const override;

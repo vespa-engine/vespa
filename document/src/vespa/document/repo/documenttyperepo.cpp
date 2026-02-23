@@ -69,8 +69,8 @@ public:
     Repo() noexcept;
     ~Repo();
 
-    void                                  inherit(const Repo& parent) __attribute__((noinline));
-    bool                                  addDataType(const DataType& type) __attribute__((noinline));
+    void inherit(const Repo& parent) __attribute__((noinline));
+    bool addDataType(const DataType& type) __attribute__((noinline));
     template <typename T> const DataType* addDataType(unique_ptr<T> type) __attribute__((noinline));
 
     const DataType& addTensorType(const string& spec) __attribute__((noinline));
@@ -161,9 +161,9 @@ class AnnotationTypeRepo {
 public:
     ~AnnotationTypeRepo() {}
 
-    void            inherit(const AnnotationTypeRepo& parent);
+    void inherit(const AnnotationTypeRepo& parent);
     AnnotationType* addAnnotationType(AnnotationType::UP annotation_type);
-    void            setAnnotationDataType(int32_t id, const DataType& datatype);
+    void setAnnotationDataType(int32_t id, const DataType& datatype);
 
     const AnnotationType* lookup(int32_t id) const;
 };

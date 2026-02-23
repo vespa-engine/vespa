@@ -62,7 +62,7 @@ public:
 
     virtual ~ValueUpdate() = default;
     virtual bool operator==(const ValueUpdate&) const = 0;
-    bool         operator!=(const ValueUpdate& rhs) const { return !(*this == rhs); }
+    bool operator!=(const ValueUpdate& rhs) const { return !(*this == rhs); }
 
     /**
      * Recursively checks the compatibility of this value update as
@@ -89,7 +89,7 @@ public:
 
     /** @return The operation type. */
     ValueUpdateType getType() const noexcept { return _type; }
-    const char*     className() const noexcept;
+    const char* className() const noexcept;
     /**
      * Visit this fieldvalue for double dispatch.
      */
@@ -103,7 +103,7 @@ protected:
 
 private:
     static std::unique_ptr<ValueUpdate> create(ValueUpdateType type);
-    ValueUpdateType                     _type;
+    ValueUpdateType _type;
 };
 
 std::ostream& operator<<(std::ostream& out, const ValueUpdate& p);

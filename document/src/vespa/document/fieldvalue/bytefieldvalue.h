@@ -20,8 +20,8 @@ public:
     ByteFieldValue(Number value = 0) : NumericFieldValue<Number>(Type::BYTE, value) {}
     ~ByteFieldValue() override;
 
-    void            accept(FieldValueVisitor& visitor) override { visitor.visit(*this); }
-    void            accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
+    void accept(FieldValueVisitor& visitor) override { visitor.visit(*this); }
+    void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
     const DataType* getDataType() const override { return DataType::BYTE; }
     ByteFieldValue* clone() const override { return new ByteFieldValue(*this); }
 

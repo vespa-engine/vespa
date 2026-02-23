@@ -152,7 +152,7 @@ ModificationStatus StructuredFieldValue::onIterateNested(PathRange nested, Itera
     }
 }
 
-template std::unique_ptr<MapFieldValue>   StructuredFieldValue::getAs<MapFieldValue>(const Field& field) const;
+template std::unique_ptr<MapFieldValue> StructuredFieldValue::getAs<MapFieldValue>(const Field& field) const;
 template std::unique_ptr<ArrayFieldValue> StructuredFieldValue::getAs<ArrayFieldValue>(const Field& field) const;
 template std::unique_ptr<WeightedSetFieldValue>
 StructuredFieldValue::getAs<WeightedSetFieldValue>(const Field& field) const;

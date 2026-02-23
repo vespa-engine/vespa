@@ -120,8 +120,8 @@ public:
     int serializeFlags(int size_) const;
 
     // Only used for debugging
-    void        print(std::ostream& out, bool verbose, const std::string& indent) const;
-    void        printXml(XmlOutputStream&) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void printXml(XmlOutputStream&) const;
     std::string toXml(const std::string& indent) const;
 
 private:
@@ -134,7 +134,7 @@ private:
     bool                    _createIfNonExistent;
     bool                    _needHardReserialize;
 
-    int  deserializeFlags(int sizeAndFlags);
+    int deserializeFlags(int sizeAndFlags);
     void initHEAD(const DocumentTypeRepo& repo, vespalib::nbostream& stream);
     void initHEAD(const DocumentTypeRepo& repo, vespalib::nbostream&& stream);
     void deserializeBody(const DocumentTypeRepo& repo, vespalib::nbostream& stream);

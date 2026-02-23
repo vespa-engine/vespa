@@ -35,8 +35,8 @@ class AddIteratorHandler : public fieldvalue::IteratorHandler {
 public:
     AddIteratorHandler(const ArrayFieldValue& values) : _values(values) {}
     fieldvalue::ModificationStatus doModify(FieldValue& fv) override;
-    bool                           createMissingPath() const override { return true; }
-    bool                           onComplex(const fieldvalue::IteratorHandler::Content&) override { return false; }
+    bool createMissingPath() const override { return true; }
+    bool onComplex(const fieldvalue::IteratorHandler::Content&) override { return false; }
 
 private:
     const ArrayFieldValue& _values;

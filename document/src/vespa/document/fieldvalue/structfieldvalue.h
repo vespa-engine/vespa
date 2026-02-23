@@ -42,32 +42,32 @@ public:
     StructFieldValue& operator=(StructFieldValue&& rhs) noexcept = default;
     ~StructFieldValue() noexcept override;
 
-    void                     setRepo(const DocumentTypeRepo& repo) { _repo = &repo; }
-    const DocumentTypeRepo*  getRepo() const { return _repo; }
-    void                     setDocumentType(const DocumentType& docType) { _doc_type = &docType; }
+    void setRepo(const DocumentTypeRepo& repo) { _repo = &repo; }
+    const DocumentTypeRepo* getRepo() const { return _repo; }
+    void setDocumentType(const DocumentType& docType) { _doc_type = &docType; }
     const SerializableArray& getFields() const { return _fields; }
 
     void lazyDeserialize(const FixedTypeRepo& repo, uint16_t version, SerializableArray::EntryMap&& fields,
                          ByteBuffer buffer);
 
     // returns false if the field could not be serialized.
-    bool     serializeField(int raw_field_id, uint16_t version, FieldValueWriter& writer) const;
+    bool serializeField(int raw_field_id, uint16_t version, FieldValueWriter& writer) const;
     uint16_t getVersion() const { return _version; }
 
     // raw_ids may contain ids for elements not in the struct's datatype.
     std::vector<int> getRawFieldIds() const;
-    void             getRawFieldIds(std::vector<int>& raw_ids, const FieldSet& fieldSet) const;
+    void getRawFieldIds(std::vector<int>& raw_ids, const FieldSet& fieldSet) const;
 
     void accept(FieldValueVisitor& visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
 
-    bool         hasField(std::string_view name) const override;
+    bool hasField(std::string_view name) const override;
     const Field& getField(std::string_view name) const override;
-    void         clear() override;
+    void clear() override;
 
     // FieldValue implementation.
-    FieldValue&       assign(const FieldValue&) override;
-    int               compare(const FieldValue& other) const override;
+    FieldValue& assign(const FieldValue&) override;
+    int compare(const FieldValue& other) const override;
     StructFieldValue* clone() const override { return new StructFieldValue(*this); }
 
     void printXml(XmlOutputStream& out) const override;
@@ -89,13 +89,13 @@ public:
     void reset();
 
 private:
-    void            setFieldValue(const Field&, FieldValue::UP value) override;
-    FieldValue::UP  getFieldValue(const Field&) const override;
-    bool            getFieldValue(const Field&, FieldValue&) const override;
-    bool            hasFieldValue(const Field&) const override;
-    void            removeFieldValue(const Field&) override;
+    void setFieldValue(const Field&, FieldValue::UP value) override;
+    FieldValue::UP getFieldValue(const Field&) const override;
+    bool getFieldValue(const Field&, FieldValue&) const override;
+    bool hasFieldValue(const Field&) const override;
+    void removeFieldValue(const Field&) override;
     VESPA_DLL_LOCAL vespalib::ConstBufferRef getRawField(uint32_t id) const;
-    VESPA_DLL_LOCAL const StructDataType&    getStructType() const;
+    VESPA_DLL_LOCAL const StructDataType& getStructType() const;
 
     struct FieldIterator;
 

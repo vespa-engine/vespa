@@ -106,7 +106,7 @@ public:
      *     simplification, i.e. '***foo***' -> /foo/ and '***' -> //
      */
     static std::string convertToRegex(std::string_view globpattern);
-    static bool        containsVariables(std::string_view expression);
+    static bool containsVariables(std::string_view expression);
 
     static const GlobOperator GLOB;
 

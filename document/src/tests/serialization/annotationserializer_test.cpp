@@ -72,8 +72,8 @@ TEST(AnnotationSerializerTest, require_that_simple_span_tree_is_deserialized) {
 }
 
 struct AnnotationComparator {
-    vector<string>                                expect;
-    vector<string>                                actual;
+    vector<string> expect;
+    vector<string> actual;
     template <typename ITR> AnnotationComparator& addActual(ITR pos, ITR end) {
         for (; pos != end; ++pos) {
             actual.push_back(pos->toString());

@@ -184,7 +184,7 @@ namespace {
 class FieldValueFactory : public ComplexArrayT<FieldValue>::Factory {
 public:
     explicit FieldValueFactory(const DataType& dataType) noexcept : _dataType(&dataType) {}
-    FieldValue*        create() override { return _dataType->createFieldValue().release(); }
+    FieldValue* create() override { return _dataType->createFieldValue().release(); }
     FieldValueFactory* clone() const override { return new FieldValueFactory(*this); }
 
 private:

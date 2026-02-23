@@ -32,17 +32,17 @@ public:
 
     void make_empty_if_not_existing();
 
-    void                         accept(FieldValueVisitor& visitor) override;
-    void                         accept(ConstFieldValueVisitor& visitor) const override;
-    const DataType*              getDataType() const override;
-    const TensorDataType&        get_tensor_data_type() const { return _dataType; }
-    TensorFieldValue*            clone() const override;
-    void                         print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void                         printXml(XmlOutputStream& out) const override;
-    FieldValue&                  assign(const FieldValue& value) override;
+    void accept(FieldValueVisitor& visitor) override;
+    void accept(ConstFieldValueVisitor& visitor) const override;
+    const DataType* getDataType() const override;
+    const TensorDataType& get_tensor_data_type() const { return _dataType; }
+    TensorFieldValue* clone() const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void printXml(XmlOutputStream& out) const override;
+    FieldValue& assign(const FieldValue& value) override;
     const vespalib::eval::Value* getAsTensorPtr() const { return _tensor.get(); }
-    void                         assignDeserialized(std::unique_ptr<vespalib::eval::Value> rhs);
-    int                          compare(const FieldValue& other) const override;
+    void assignDeserialized(std::unique_ptr<vespalib::eval::Value> rhs);
+    int compare(const FieldValue& other) const override;
 };
 
 } // namespace document

@@ -29,19 +29,19 @@ public:
     size_t annotate(const SpanNode& node, Annotation&& annotation_);
     size_t annotate(const SpanNode& node, const AnnotationType& annotation_type);
 
-    Annotation&       annotation(size_t index) { return _annotations[index]; }
+    Annotation& annotation(size_t index) { return _annotations[index]; }
     const Annotation& annotation(size_t index) const { return _annotations[index]; }
 
     void accept(SpanTreeVisitor& visitor) const;
 
     const std::string& getName() const { return _name; }
-    const SpanNode&    getRoot() const { return *_root; }
-    size_t             numAnnotations() const { return _annotations.size(); }
-    void               reserveAnnotations(size_t sz) { _annotations.resize(sz); }
-    const_iterator     begin() const { return _annotations.begin(); }
-    const_iterator     end() const { return _annotations.end(); }
-    int                compare(const SpanTree& other) const;
-    std::string        toString() const;
+    const SpanNode& getRoot() const { return *_root; }
+    size_t numAnnotations() const { return _annotations.size(); }
+    void reserveAnnotations(size_t sz) { _annotations.resize(sz); }
+    const_iterator begin() const { return _annotations.begin(); }
+    const_iterator end() const { return _annotations.end(); }
+    int compare(const SpanTree& other) const;
+    std::string toString() const;
 };
 
 } // namespace document

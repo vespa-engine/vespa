@@ -26,11 +26,11 @@ public:
     const DataType& getValueType() const noexcept { return *_valueType; }
 
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void                        print(std::ostream&, bool verbose, const std::string& indent) const override;
-    bool                        equals(const DataType& other) const noexcept override;
-    const MapDataType*          cast_map() const noexcept override { return this; }
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    bool equals(const DataType& other) const noexcept override;
+    const MapDataType* cast_map() const noexcept override { return this; }
 
-    void        onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const override;
+    void onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const override;
     static void buildFieldPathImpl(FieldPath& path, const DataType& dataType, std::string_view remainFieldName,
                                    const DataType& keyType, const DataType& valueType);
 };

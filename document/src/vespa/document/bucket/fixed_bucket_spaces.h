@@ -18,8 +18,8 @@ VESPA_DEFINE_EXCEPTION(UnknownBucketSpaceException, vespalib::IllegalArgumentExc
 struct FixedBucketSpaces {
     static constexpr BucketSpace default_space() { return BucketSpace(1); };
     static constexpr BucketSpace global_space() { return BucketSpace(2); }
-    static const std::string&    default_space_name() { return to_string(default_space()); }
-    static const std::string&    global_space_name() { return to_string(global_space()); }
+    static const std::string& default_space_name() { return to_string(default_space()); }
+    static const std::string& global_space_name() { return to_string(global_space()); }
 
     // Post-condition: returned space has valid() == true iff name
     // is either "default" or "global".

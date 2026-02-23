@@ -185,15 +185,15 @@ class IteratorHandler : public fieldvalue::IteratorHandler {
 public:
     IteratorHandler();
     ~IteratorHandler() override;
-    bool                                   hasSingleValue() const;
-    std::unique_ptr<Value>                 stealSingleValue() &&;
+    bool hasSingleValue() const;
+    std::unique_ptr<Value> stealSingleValue() &&;
     std::vector<ArrayValue::VariableValue> stealValues() &&;
 
 private:
     std::unique_ptr<Value>                 _firstValue;
     std::vector<ArrayValue::VariableValue> _values;
 
-    void                   onPrimitive(uint32_t fid, const Content& fv) override;
+    void onPrimitive(uint32_t fid, const Content& fv) override;
     std::unique_ptr<Value> getInternalValue(const FieldValue& fval) const;
 };
 

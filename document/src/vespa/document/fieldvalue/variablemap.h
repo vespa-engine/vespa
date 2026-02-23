@@ -25,7 +25,7 @@ public:
     ~IndexValue();
 
     std::string toString() const;
-    bool        operator==(const IndexValue& other) const;
+    bool operator==(const IndexValue& other) const;
 
     int                         index; // For array
     std::unique_ptr<FieldValue> key;   // For map/wset

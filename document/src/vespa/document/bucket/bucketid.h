@@ -182,6 +182,6 @@ private:
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream&, const BucketId&);
-std::ostream&          operator<<(std::ostream&, const BucketId&);
+std::ostream& operator<<(std::ostream&, const BucketId&);
 
 } // namespace document

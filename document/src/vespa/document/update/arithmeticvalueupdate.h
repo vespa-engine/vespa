@@ -51,7 +51,7 @@ public:
     bool operator==(const ValueUpdate& other) const override;
 
     Operator getOperator() const { return _operator; }
-    double   getOperand() const { return _operand; }
+    double getOperand() const { return _operand; }
 
     /**
      * Apply the contained operation on the given double.

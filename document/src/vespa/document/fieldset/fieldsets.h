@@ -59,8 +59,8 @@ public:
     Type getType() const override { return Type::SET; }
 
     const DocumentType& getDocumentType() const { return *_docType; }
-    const Field::Set&   getFields() const { return _set; }
-    uint64_t            hash() const { return _hash; }
+    const Field::Set& getFields() const { return _set; }
+    uint64_t hash() const { return _hash; }
 
 private:
     Field::Set          _set;

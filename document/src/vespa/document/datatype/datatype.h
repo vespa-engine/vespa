@@ -103,26 +103,26 @@ public:
     static std::vector<const DataType*> getDefaultDataTypes();
 
     const std::string& getName() const noexcept { return _name; }
-    int                getId() const noexcept { return _dataTypeId; }
-    bool               isValueType(const FieldValue& fv) const;
+    int getId() const noexcept { return _dataTypeId; }
+    bool isValueType(const FieldValue& fv) const;
 
     /**
      * Create a field value using this datatype.
      */
     virtual std::unique_ptr<FieldValue> createFieldValue() const = 0;
 
-    virtual bool                      isWeightedSet() const noexcept { return false; }
-    virtual bool                      isArray() const noexcept { return false; }
-    virtual bool                      isDocument() const noexcept { return false; }
-    virtual bool                      isTensor() const noexcept { return false; }
-    virtual bool                      isPrimitive() const noexcept { return false; }
-    virtual bool                      isNumeric() const noexcept { return false; }
-    virtual bool                      isStructured() const noexcept { return false; }
+    virtual bool isWeightedSet() const noexcept { return false; }
+    virtual bool isArray() const noexcept { return false; }
+    virtual bool isDocument() const noexcept { return false; }
+    virtual bool isTensor() const noexcept { return false; }
+    virtual bool isPrimitive() const noexcept { return false; }
+    virtual bool isNumeric() const noexcept { return false; }
+    virtual bool isStructured() const noexcept { return false; }
     virtual const CollectionDataType* cast_collection() const noexcept { return nullptr; }
-    virtual const MapDataType*        cast_map() const noexcept { return nullptr; }
-    virtual const ReferenceDataType*  cast_reference() const noexcept { return nullptr; }
-    virtual const TensorDataType*     cast_tensor() const noexcept { return nullptr; }
-    bool                              isMap() const { return cast_map() != nullptr; }
+    virtual const MapDataType* cast_map() const noexcept { return nullptr; }
+    virtual const ReferenceDataType* cast_reference() const noexcept { return nullptr; }
+    virtual const TensorDataType* cast_tensor() const noexcept { return nullptr; }
+    bool isMap() const { return cast_map() != nullptr; }
 
     /**
      * Whether another datatype is a supertype of this one. Document types may
@@ -134,7 +134,7 @@ public:
     virtual bool equals(const DataType& other) const noexcept { return _dataTypeId == other._dataTypeId; }
 
     bool operator==(const DataType& other) const noexcept { return equals(other); }
-    int  cmpId(const DataType& b) const {
+    int cmpId(const DataType& b) const {
         return (_dataTypeId < b._dataTypeId) ? -1 : (b._dataTypeId < _dataTypeId) ? 1 : 0;
     }
 

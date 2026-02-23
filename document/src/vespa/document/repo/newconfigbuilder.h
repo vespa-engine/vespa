@@ -109,7 +109,7 @@ private:
 public:
     NewWset& removeIfZero();
     NewWset& createIfNonExistent();
-    TypeRef  ref();
+    TypeRef ref();
 };
 
 /**
@@ -186,13 +186,13 @@ public:
 
     // Type factory methods (create types owned by this doctype)
     NewStruct createStruct(const std::string& name);
-    NewArray  createArray(TypeRef element_type);
-    NewWset   createWset(TypeRef element_type);
-    NewMap    createMap(TypeRef key_type, TypeRef value_type);
-    TypeRef   registerStruct(NewStruct&& s);
-    TypeRef   registerArray(NewArray&& a);
-    TypeRef   registerWset(NewWset&& w);
-    TypeRef   registerMap(NewMap&& m);
+    NewArray createArray(TypeRef element_type);
+    NewWset createWset(TypeRef element_type);
+    NewMap createMap(TypeRef key_type, TypeRef value_type);
+    TypeRef registerStruct(NewStruct&& s);
+    TypeRef registerArray(NewArray&& a);
+    TypeRef registerWset(NewWset&& w);
+    TypeRef registerMap(NewMap&& m);
 
     // Inheritance
     NewDocTypeRep& inherit(int32_t parent_idx);
@@ -201,9 +201,9 @@ public:
     // Annotations
     NewDocTypeRep& annotationType(int32_t id, const std::string& name);
     NewDocTypeRep& annotationType(int32_t id, const std::string& name, TypeRef datatype);
-    TypeRef        createAnnotationType(int32_t id, const std::string& name);
-    TypeRef        createAnnotationType(int32_t id, const std::string& name, TypeRef datatype);
-    TypeRef        createAnnotationReference(TypeRef annotation_type_idx);
+    TypeRef createAnnotationType(int32_t id, const std::string& name);
+    TypeRef createAnnotationType(int32_t id, const std::string& name, TypeRef datatype);
+    TypeRef createAnnotationReference(TypeRef annotation_type_idx);
 
     // Document references
     TypeRef referenceType(int32_t target_doctype_idx);
@@ -297,9 +297,9 @@ public:
 
     // Factory methods for types (automatically registered with given doctype)
     NewStruct createStruct(const std::string& name, int32_t doctype_idx);
-    NewArray  createArray(TypeRef element_type, int32_t doctype_idx);
-    NewWset   createWset(TypeRef element_type, int32_t doctype_idx);
-    NewMap    createMap(TypeRef key_type, TypeRef value_type, int32_t doctype_idx);
+    NewArray createArray(TypeRef element_type, int32_t doctype_idx);
+    NewWset createWset(TypeRef element_type, int32_t doctype_idx);
+    NewMap createMap(TypeRef key_type, TypeRef value_type, int32_t doctype_idx);
 };
 
 } // namespace document::new_config_builder

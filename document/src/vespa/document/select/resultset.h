@@ -53,13 +53,13 @@ public:
     // calculcate set of results emitted by document selection not operator.
     [[nodiscard]] ResultSet calcNot() const { return _preCalc._nots[_val]; }
 
-    void        clear() { _val = 0; }
-    void        fill() { _val = illegalMask() - 1; }
+    void clear() { _val = 0; }
+    void fill() { _val = illegalMask() - 1; }
     static void preCalc();
 
 private:
     // precalc helper methods
-    void               pcnext() noexcept { ++_val; }
+    void pcnext() noexcept { ++_val; }
     [[nodiscard]] bool pcvalid() const noexcept { return _val < illegalMask(); }
 };
 

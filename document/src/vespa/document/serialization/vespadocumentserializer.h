@@ -51,15 +51,15 @@ public:
     void write(const TensorFieldValue& value);
     void write(const ReferenceFieldValue& value);
 
-    void            writeHEAD(const DocumentUpdate& value);
-    void            write(const FieldUpdate& value);
-    void            write(const ValueUpdate& value);
+    void writeHEAD(const DocumentUpdate& value);
+    void write(const FieldUpdate& value);
+    void write(const ValueUpdate& value);
     static uint16_t getCurrentVersion() { return serialize_version; }
 
 private:
     static constexpr int serialize_version = 8;
-    void                 writeUnchanged(const SerializableArray& val);
-    void                 write(const FieldPathUpdate& value);
+    void writeUnchanged(const SerializableArray& val);
+    void write(const FieldPathUpdate& value);
 
     void write(const RemoveValueUpdate& value);
     void write(const AddValueUpdate& value);

@@ -20,7 +20,7 @@ public:
     void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
 
     FieldValue* clone() const override;
-    int         compare(const FieldValue& rhs) const override;
+    int compare(const FieldValue& rhs) const override;
 
     void printXml(XmlOutputStream& out) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -32,11 +32,11 @@ public:
 
     FieldValue& assign(const FieldValue& rhs) override;
 
-    char        getAsByte() const override;
-    int32_t     getAsInt() const override;
-    int64_t     getAsLong() const override;
-    float       getAsFloat() const override;
-    double      getAsDouble() const override;
+    char getAsByte() const override;
+    int32_t getAsInt() const override;
+    int64_t getAsLong() const override;
+    float getAsFloat() const override;
+    double getAsDouble() const override;
     std::string getAsString() const override;
 
     BoolFieldValue& operator=(std::string_view) override;

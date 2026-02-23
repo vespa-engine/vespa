@@ -48,8 +48,8 @@ public:
 
     virtual ResultList contains(const Context&) const = 0;
     virtual ResultList trace(const Context&, std::ostream& trace) const = 0;
-    virtual bool       isLeafNode() const { return true; }
-    virtual void       visit(Visitor&) const = 0;
+    virtual bool isLeafNode() const { return true; }
+    virtual void visit(Visitor&) const = 0;
 
     virtual Node::UP clone() const = 0;
 

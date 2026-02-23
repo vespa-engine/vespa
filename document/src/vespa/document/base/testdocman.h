@@ -39,9 +39,9 @@ public:
 
     void setTypeRepo(const std::shared_ptr<const DocumentTypeRepo>& repo);
 
-    const DocumentTypeRepo&                 getTypeRepo() const { return *_repo; }
+    const DocumentTypeRepo& getTypeRepo() const { return *_repo; }
     std::shared_ptr<const DocumentTypeRepo> getTypeRepoSP() const { return _repo; }
-    const DocumenttypesConfig*              getTypeConfig() const { return _typeCfg; }
+    const DocumenttypesConfig* getTypeConfig() const { return _typeCfg; }
 
     /** Create test document. */
     std::unique_ptr<Document> createDocument(const std::string& content = "This is the contents of "
@@ -59,7 +59,7 @@ public:
     /** Create random document of given type from given seed. */
     std::unique_ptr<Document> createRandomDocument(const std::string& type, int seed = 0,
                                                    int maxContentSize = 0x80) const;
-    static std::string        generateRandomContent(uint32_t size);
+    static std::string generateRandomContent(uint32_t size);
 };
 
 } // namespace document

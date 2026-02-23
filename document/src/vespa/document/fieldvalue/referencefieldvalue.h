@@ -50,14 +50,14 @@ public:
     // `id` must be a valid document ID and cannot be empty.
     void setDeserializedDocumentId(const DocumentId& id);
 
-    const DataType*      getDataType() const override { return _dataType; }
-    FieldValue&          assign(const FieldValue&) override;
+    const DataType* getDataType() const override { return _dataType; }
+    FieldValue& assign(const FieldValue&) override;
     ReferenceFieldValue* clone() const override;
-    int                  compare(const FieldValue&) const override;
-    void                 printXml(XmlOutputStream&) const override { /* Not implemented */ }
-    void                 print(std::ostream&, bool, const std::string&) const override;
-    void                 accept(FieldValueVisitor&) override;
-    void                 accept(ConstFieldValueVisitor&) const override;
+    int compare(const FieldValue&) const override;
+    void printXml(XmlOutputStream&) const override { /* Not implemented */ }
+    void print(std::ostream&, bool, const std::string&) const override;
+    void accept(FieldValueVisitor&) override;
+    void accept(ConstFieldValueVisitor&) const override;
 
 private:
     // Throws vespalib::IllegalArgumentException if  doc type of `id` does not

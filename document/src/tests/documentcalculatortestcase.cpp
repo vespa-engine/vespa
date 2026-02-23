@@ -16,7 +16,7 @@ namespace document {
 
 class DocumentCalculatorTest : public ::testing::Test {
 public:
-    TestDocRepo             _testRepo;
+    TestDocRepo _testRepo;
     const DocumentTypeRepo& getRepo() { return _testRepo.getTypeRepo(); }
 };
 

@@ -26,10 +26,10 @@ private:
     std::shared_ptr<const MapDataType> _map_type;
     WeightedFieldValueMap              _map;
 
-    void                           verifyKey(const FieldValue& key);
-    bool                           addValue(const FieldValue& fval) override { return add(fval, 1); }
-    bool                           containsValue(const FieldValue& val) const override;
-    bool                           removeValue(const FieldValue& val) override;
+    void verifyKey(const FieldValue& key);
+    bool addValue(const FieldValue& fval) override { return add(fval, 1); }
+    bool containsValue(const FieldValue& val) const override;
+    bool removeValue(const FieldValue& val) override;
     fieldvalue::ModificationStatus onIterateNested(PathRange                    nested,
                                                    fieldvalue::IteratorHandler& handler) const override;
 
@@ -61,36 +61,36 @@ public:
      * Add an item to the weighted set, but do not erase the item if the
      * weight is zero and removeIfZero is set in the weighted set's type.
      */
-    bool    addIgnoreZeroWeight(const FieldValue&, int32_t weight = 1);
-    void    push_back(FieldValue::UP, int32_t weight);
-    void    increment(const FieldValue& fval, int val = 1);
-    void    decrement(const FieldValue& fval, int val = 1) { increment(fval, -1 * val); }
+    bool addIgnoreZeroWeight(const FieldValue&, int32_t weight = 1);
+    void push_back(FieldValue::UP, int32_t weight);
+    void increment(const FieldValue& fval, int val = 1);
+    void decrement(const FieldValue& fval, int val = 1) { increment(fval, -1 * val); }
     int32_t get(const FieldValue&, int32_t defaultValue = 0) const;
 
-    bool   isEmpty() const override { return _map.isEmpty(); }
+    bool isEmpty() const override { return _map.isEmpty(); }
     size_t size() const override { return _map.size(); }
-    void   clear() override { _map.clear(); }
-    void   reserve(size_t sz) { _map.reserve(sz); }
-    void   resize(size_t sz) { _map.resize(sz); }
+    void clear() override { _map.clear(); }
+    void reserve(size_t sz) { _map.reserve(sz); }
+    void resize(size_t sz) { _map.resize(sz); }
 
-    FieldValue&            assign(const FieldValue&) override;
+    FieldValue& assign(const FieldValue&) override;
     WeightedSetFieldValue* clone() const override { return new WeightedSetFieldValue(*this); }
-    int                    compare(const FieldValue&) const override;
-    void                   printXml(XmlOutputStream& out) const override;
-    void                   print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    int compare(const FieldValue&) const override;
+    void printXml(XmlOutputStream& out) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     // Implements iterating through internal content.
     using const_iterator = WeightedFieldValueMap::const_iterator;
     using iterator = WeightedFieldValueMap::iterator;
 
     const_iterator begin() const { return _map.begin(); }
-    iterator       begin() { return _map.begin(); }
+    iterator begin() { return _map.begin(); }
 
     const_iterator end() const { return _map.end(); }
-    iterator       end() { return _map.end(); }
+    iterator end() { return _map.end(); }
 
     const_iterator find(const FieldValue& fv) const;
-    iterator       find(const FieldValue& fv);
+    iterator find(const FieldValue& fv);
 };
 
 } // namespace document

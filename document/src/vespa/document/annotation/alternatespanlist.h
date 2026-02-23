@@ -34,14 +34,14 @@ public:
     void setSubtree(size_t index, std::unique_ptr<SpanList> subtree);
     void setProbability(size_t index, double probability);
 
-    size_t    getNumSubtrees() const { return _subtrees.size(); }
+    size_t getNumSubtrees() const { return _subtrees.size(); }
     SpanList& getSubtree(size_t index) const;
-    double    getProbability(size_t index) const;
+    double getProbability(size_t index) const;
 
-    size_t         size() const { return _subtrees.size(); }
+    size_t size() const { return _subtrees.size(); }
     const_iterator begin() const { return _subtrees.begin(); }
     const_iterator end() const { return _subtrees.end(); }
-    void           accept(SpanTreeVisitor& visitor) const override;
+    void accept(SpanTreeVisitor& visitor) const override;
 };
 
 } // namespace document

@@ -30,7 +30,7 @@ public:
     PredicateSlimeBuilder& or_node(SlimeUP s1, SlimeUP s2);
     PredicateSlimeBuilder& true_predicate();
     PredicateSlimeBuilder& false_predicate();
-    SlimeUP                build();
+    SlimeUP build();
 
     // for converting builders to slime objects in initializer lists.
     operator SlimeUP() { return build(); }

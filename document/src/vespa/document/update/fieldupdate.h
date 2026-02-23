@@ -53,20 +53,20 @@ public:
      * @param update A pointer to the value update to add to this.
      * @return A pointer to this.
      */
-    FieldUpdate&  addUpdate(std::unique_ptr<ValueUpdate> update) &;
+    FieldUpdate& addUpdate(std::unique_ptr<ValueUpdate> update) &;
     FieldUpdate&& addUpdate(std::unique_ptr<ValueUpdate> update) &&;
 
     const ValueUpdate& operator[](int index) const { return *_updates[index]; }
-    ValueUpdate&       operator[](int index) { return *_updates[index]; }
-    size_t             size() const { return _updates.size(); }
+    ValueUpdate& operator[](int index) { return *_updates[index]; }
+    size_t size() const { return _updates.size(); }
 
     /** @return The non-modifieable list of value updates to perform. */
     const ValueUpdates& getUpdates() const { return _updates; }
 
     const Field& getField() const { return _field; }
-    void         applyTo(Document& doc) const;
-    void         print(std::ostream& out, bool verbose, const std::string& indent) const;
-    void         printXml(XmlOutputStream&) const;
+    void applyTo(Document& doc) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void printXml(XmlOutputStream&) const;
 
     /**
      * Deserializes the given stream into an instance of an update object.

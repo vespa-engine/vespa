@@ -20,7 +20,7 @@ public:
     int32_t from() const { return _from; }
     int32_t length() const { return _length; }
     int32_t to() const { return _from + _length; }
-    Span&   from(int32_t from_pos) {
+    Span& from(int32_t from_pos) {
         _from = from_pos;
         return *this;
     }

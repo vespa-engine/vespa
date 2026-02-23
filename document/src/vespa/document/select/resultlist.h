@@ -44,14 +44,14 @@ public:
 
     bool operator==(const ResultList& other) const;
 
-    const Results&   getResults() const { return _results; }
-    const_iterator   begin() const { return _results.begin(); }
-    const_iterator   end() const { return _results.end(); }
+    const Results& getResults() const { return _results; }
+    const_iterator begin() const { return _results.begin(); }
+    const_iterator end() const { return _results.end(); }
     reverse_iterator rbegin() { return _results.rbegin(); }
     reverse_iterator rend() { return _results.rend(); }
 
 private:
-    Results     _results;
+    Results _results;
     static bool combineVariables(VariableMap& combination, const VariableMap& output, const VariableMap& input);
 };
 

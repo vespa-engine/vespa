@@ -48,16 +48,16 @@ public:
     TensorModifyUpdate& operator=(const TensorModifyUpdate& rhs) = delete;
     ~TensorModifyUpdate() override;
 
-    bool                                   operator==(const ValueUpdate& other) const override;
-    Operation                              getOperation() const { return _operation; }
-    const TensorFieldValue&                getTensor() const { return *_tensor; }
-    const std::optional<double>&           get_default_cell_value() const { return _default_cell_value; }
-    void                                   checkCompatibility(const Field& field) const override;
+    bool operator==(const ValueUpdate& other) const override;
+    Operation getOperation() const { return _operation; }
+    const TensorFieldValue& getTensor() const { return *_tensor; }
+    const std::optional<double>& get_default_cell_value() const { return _default_cell_value; }
+    void checkCompatibility(const Field& field) const override;
     std::unique_ptr<vespalib::eval::Value> applyTo(const vespalib::eval::Value& tensor) const;
     std::unique_ptr<Value> apply_to(const Value& tensor, const ValueBuilderFactory& factory) const override;
-    bool                   applyTo(FieldValue& value) const override;
-    void                   printXml(XmlOutputStream& xos) const override;
-    void                   print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    bool applyTo(FieldValue& value) const override;
+    void printXml(XmlOutputStream& xos) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream) override;
 };
 

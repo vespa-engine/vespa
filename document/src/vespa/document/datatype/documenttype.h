@@ -36,8 +36,8 @@ public:
         FieldSet& operator=(const FieldSet&) = default;
         FieldSet& operator=(FieldSet&&) noexcept = default;
 
-        const std::string&     getName() const noexcept { return _name; }
-        const Fields&          getFields() const noexcept { return _fields; }
+        const std::string& getName() const noexcept { return _name; }
+        const Fields& getFields() const noexcept { return _fields; }
         const FieldCollection& asCollection() const { return _field_collection; }
 
     private:
@@ -88,21 +88,21 @@ public:
 
     // Implementation of StructuredDataType
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void                        print(std::ostream&, bool verbose, const std::string& indent) const override;
-    bool                        equals(const DataType& type) const noexcept override;
-    uint32_t                    getFieldCount() const noexcept override { return _fields->getFieldCount(); }
-    const Field&                getField(std::string_view name) const override;
-    const Field&                getField(int fieldId) const override;
-    bool       hasField(std::string_view name) const noexcept override { return _fields->hasField(name); }
-    bool       hasField(int fieldId) const noexcept override { return _fields->hasField(fieldId); }
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    bool equals(const DataType& type) const noexcept override;
+    uint32_t getFieldCount() const noexcept override { return _fields->getFieldCount(); }
+    const Field& getField(std::string_view name) const override;
+    const Field& getField(int fieldId) const override;
+    bool hasField(std::string_view name) const noexcept override { return _fields->hasField(name); }
+    bool hasField(int fieldId) const noexcept override { return _fields->hasField(fieldId); }
     Field::Set getFieldSet() const override;
 
-    DocumentType&      addFieldSet(const std::string& name, FieldSet::Fields fields);
-    const FieldSet*    getFieldSet(const std::string& name) const;
+    DocumentType& addFieldSet(const std::string& name, FieldSet::Fields fields);
+    const FieldSet* getFieldSet(const std::string& name) const;
     const FieldSetMap& getFieldSets() const { return _fieldSets; }
 
     const ImportedFieldNames& imported_field_names() const noexcept { return _imported_field_names; }
-    bool                      has_imported_field_name(const std::string& name) const noexcept;
+    bool has_imported_field_name(const std::string& name) const noexcept;
     // Ideally the type would be immutable, but this is how it's built today.
     void add_imported_field_name(const std::string& name);
 };

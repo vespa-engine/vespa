@@ -92,7 +92,7 @@ private:
         os << "<" << getArrayIndex() << ":";
         _result += os.str();
     }
-    void        onStructEnd(const Content&) override { _result += '>'; }
+    void onStructEnd(const Content&) override { _result += '>'; }
     std::string _result;
 };
 

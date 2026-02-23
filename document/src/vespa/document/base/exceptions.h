@@ -127,7 +127,7 @@ public:
     ~FieldNotFoundException() override;
 
     const std::string& getFieldName() const { return _fieldName; }
-    int32_t            getFieldId() const { return _fieldId; };
+    int32_t getFieldId() const { return _fieldId; };
 
     VESPA_DEFINE_EXCEPTION_SPINE(FieldNotFoundException);
 };

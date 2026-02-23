@@ -11,7 +11,7 @@ namespace document::select::simple {
 class Parser {
 public:
     virtual ~Parser() = default;
-    virtual bool     parse(std::string_view s) = 0;
+    virtual bool parse(std::string_view s) = 0;
     std::string_view getRemaining() const { return _remaining; }
 
 protected:
@@ -37,7 +37,7 @@ private:
 class ValueResult {
 public:
     // TODO Dirty, should force use of std::move
-    ValueNode::UP    stealValue() { return std::move(_value); }
+    ValueNode::UP stealValue() { return std::move(_value); }
     const ValueNode& getValue() const { return *_value; }
 
 protected:
@@ -50,9 +50,9 @@ private:
 class IdSpecParser : public Parser, public ValueResult {
 public:
     explicit IdSpecParser(const BucketIdFactory& bucketIdFactory) noexcept : _bucketIdFactory(bucketIdFactory) {}
-    bool               parse(std::string_view s) override;
+    bool parse(std::string_view s) override;
     const IdValueNode& getId() const { return static_cast<const IdValueNode&>(getValue()); }
-    bool               isUserSpec() const { return getId().getType() == IdValueNode::USER; }
+    bool isUserSpec() const { return getId().getType() == IdValueNode::USER; }
 
 private:
     const BucketIdFactory& _bucketIdFactory;
@@ -60,7 +60,7 @@ private:
 
 class OperatorParser : public Parser {
 public:
-    bool            parse(std::string_view s) override;
+    bool parse(std::string_view s) override;
     const Operator* getOperator() const { return _operator; }
 
 private:

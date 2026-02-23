@@ -24,11 +24,11 @@ public:
     static int32_t makeInternalId(const std::string& targetDocType);
 
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void                        print(std::ostream&, bool verbose, const std::string& indent) const override;
-    void                        onBuildFieldPath(FieldPath& path, std::string_view remainingFieldName) const override;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    void onBuildFieldPath(FieldPath& path, std::string_view remainingFieldName) const override;
 
     const ReferenceDataType* cast_reference() const noexcept override { return this; }
-    bool                     equals(const DataType& type) const noexcept override;
+    bool equals(const DataType& type) const noexcept override;
 };
 
 } // namespace document

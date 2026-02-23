@@ -40,16 +40,16 @@ private:
     // Utility method to avoid constant explicit casting
     const MapDataType& getMapType() const { return *_type; }
 
-    void   verifyKey(const FieldValue& key) const __attribute__((noinline));
-    void   verifyValue(const FieldValue& value) const __attribute__((noinline));
+    void verifyKey(const FieldValue& key) const __attribute__((noinline));
+    void verifyValue(const FieldValue& value) const __attribute__((noinline));
     size_t nextPresent(size_t index) const {
         for (; index < _present.size() && !_present[index]; ++index)
             ;
         return index;
     }
     VESPA_DLL_LOCAL HashMapUP buildLookupMap() const __attribute__((noinline));
-    VESPA_DLL_LOCAL void      ensureLookupMap() const;
-    VESPA_DLL_LOCAL ssize_t   findIndex(const FieldValue& fv) const;
+    VESPA_DLL_LOCAL void ensureLookupMap() const;
+    VESPA_DLL_LOCAL ssize_t findIndex(const FieldValue& fv) const;
 
 public:
     using UP = std::unique_ptr<MapFieldValue>;
@@ -58,8 +58,8 @@ public:
 
     public:
         iterator(MapFieldValue& map, size_t index) : _map(&map), _index(index) {}
-        bool      operator==(const iterator& rhs) const { return _map == rhs._map && _index == rhs._index; }
-        bool      operator!=(const iterator& rhs) const { return _map != rhs._map || _index != rhs._index; }
+        bool operator==(const iterator& rhs) const { return _map == rhs._map && _index == rhs._index; }
+        bool operator!=(const iterator& rhs) const { return _map != rhs._map || _index != rhs._index; }
         iterator& operator++() {
             _index = _map->nextPresent(_index + 1);
             return *this;
@@ -117,7 +117,7 @@ public:
 
     MapFieldValue(const MapFieldValue& rhs);
     MapFieldValue& operator=(const MapFieldValue& rhs);
-    void           swap(MapFieldValue& rhs);
+    void swap(MapFieldValue& rhs);
 
     void accept(FieldValueVisitor& visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
@@ -138,35 +138,35 @@ public:
     void push_back(const FieldValue& key, const FieldValue& value);
 
     FieldValue::UP get(const FieldValue& key) const;
-    bool           erase(const FieldValue& key);
-    bool           contains(const FieldValue& key) const;
+    bool erase(const FieldValue& key);
+    bool contains(const FieldValue& key) const;
 
     // CollectionFieldValue methods kept for compatability's sake
-    bool   isEmpty() const { return _count == 0; }
+    bool isEmpty() const { return _count == 0; }
     size_t size() const { return _count; }
-    void   clear();
-    void   reserve(size_t sz);
-    void   resize(size_t sz);
+    void clear();
+    void reserve(size_t sz);
+    void resize(size_t sz);
 
     fieldvalue::ModificationStatus iterateNestedImpl(PathRange nested, fieldvalue::IteratorHandler& handler,
                                                      const FieldValue& complexFieldValue) const;
 
     // FieldValue implementation
-    FieldValue&     assign(const FieldValue&) override;
-    MapFieldValue*  clone() const override { return new MapFieldValue(*this); }
-    int             compare(const FieldValue&) const override;
-    void            print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    FieldValue& assign(const FieldValue&) override;
+    MapFieldValue* clone() const override { return new MapFieldValue(*this); }
+    int compare(const FieldValue&) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     const DataType* getDataType() const override;
-    void            printXml(XmlOutputStream& out) const override;
+    void printXml(XmlOutputStream& out) const override;
 
     const_iterator begin() const { return const_iterator(*this, nextPresent(0)); }
-    iterator       begin() { return iterator(*this, nextPresent(0)); }
+    iterator begin() { return iterator(*this, nextPresent(0)); }
 
     const_iterator end() const { return const_iterator(*this, _present.size()); }
-    iterator       end() { return iterator(*this, _present.size()); }
+    iterator end() { return iterator(*this, _present.size()); }
 
     const_iterator find(const FieldValue& fv) const;
-    iterator       find(const FieldValue& fv);
+    iterator find(const FieldValue& fv);
 
     bool has_no_erased_keys() const { return (_keys->size() == _count) && (_values->size() == _count); }
 

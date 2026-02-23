@@ -27,11 +27,11 @@ public:
 
     int32_t getAnnotationIndex() const { return _annotation_index; }
 
-    int                            compare(const FieldValue& other) const override;
-    void                           print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    int compare(const FieldValue& other) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     AnnotationReferenceFieldValue* clone() const override;
-    const DataType*                getDataType() const override { return _type; }
-    void                           printXml(XmlOutputStream& out) const override;
+    const DataType* getDataType() const override { return _type; }
+    void printXml(XmlOutputStream& out) const override;
 };
 
 } // namespace document

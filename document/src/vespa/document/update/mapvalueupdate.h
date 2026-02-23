@@ -37,10 +37,10 @@ public:
     bool operator==(const ValueUpdate& other) const override;
 
     const FieldValue& getKey() const { return *_key; }
-    FieldValue&       getKey() { return *_key; }
+    FieldValue& getKey() { return *_key; }
 
     const ValueUpdate& getUpdate() const { return *_update; }
-    ValueUpdate&       getUpdate() { return *_update; }
+    ValueUpdate& getUpdate() { return *_update; }
 
     /**
      * Sets the update to apply to the value update of this.

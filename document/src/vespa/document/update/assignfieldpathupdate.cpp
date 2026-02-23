@@ -56,8 +56,8 @@ public:
         : _newValue(newValue), _removeIfZero(removeIfZero), _createMissingPath(createMissingPath_) {}
 
     ModificationStatus doModify(FieldValue& fv) override;
-    bool               onComplex(const Content&) override { return false; }
-    bool               createMissingPath() const override { return _createMissingPath; }
+    bool onComplex(const Content&) override { return false; }
+    bool createMissingPath() const override { return _createMissingPath; }
 
 private:
     const FieldValue& _newValue;
@@ -72,8 +72,8 @@ public:
         : _calc(repo, expression), _doc(doc), _removeIfZero(removeIfZero), _createMissingPath(createMissingPath_) {}
 
     ModificationStatus doModify(FieldValue& fv) override;
-    bool               onComplex(const Content&) override { return false; }
-    bool               createMissingPath() const override { return _createMissingPath; }
+    bool onComplex(const Content&) override { return false; }
+    bool createMissingPath() const override { return _createMissingPath; }
 
 private:
     DocumentCalculator _calc;

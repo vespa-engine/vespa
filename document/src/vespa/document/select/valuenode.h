@@ -39,8 +39,8 @@ public:
     bool hadParentheses() const { return _parentheses; }
 
     virtual std::unique_ptr<Value> getValue(const Context& context) const = 0;
-    virtual void                   visit(Visitor&) const = 0;
-    virtual ValueNode::UP          clone() const = 0;
+    virtual void visit(Visitor&) const = 0;
+    virtual ValueNode::UP clone() const = 0;
     virtual std::unique_ptr<Value> traceValue(const Context& context, std::ostream& out) const;
 
 private:

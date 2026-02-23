@@ -41,9 +41,9 @@ public:
     bool isWeightedSet() const noexcept override { return true; }
 
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    void                        print(std::ostream&, bool verbose, const std::string& indent) const override;
-    bool                        equals(const DataType& other) const noexcept override;
-    void                        onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const override;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    bool equals(const DataType& other) const noexcept override;
+    void onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const override;
 };
 
 } // namespace document

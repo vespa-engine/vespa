@@ -25,7 +25,7 @@ protected:
     virtual bool addValue(const FieldValue&) = 0;
     virtual bool containsValue(const FieldValue&) const = 0;
     virtual bool removeValue(const FieldValue&) = 0;
-    void         verifyType(const CollectionFieldValue& other) const;
+    void verifyType(const CollectionFieldValue& other) const;
 
 public:
     CollectionFieldValue(Type type, const DataType& dataType) : FieldValue(type), _type(&dataType) {}
@@ -52,9 +52,9 @@ public:
     /** @return True if element was found and removed. False if not found. */
     bool remove(const FieldValue& val) { return removeValue(val); }
 
-    virtual bool   isEmpty() const = 0;
+    virtual bool isEmpty() const = 0;
     virtual size_t size() const = 0;
-    virtual void   clear() = 0;
+    virtual void clear() = 0;
 };
 
 } // namespace document

@@ -21,10 +21,10 @@ public:
     FieldSet::SP getFieldSet(std::string_view fieldSetString) const;
 
     static FieldSet::SP parse(const DocumentTypeRepo& repo, std::string_view fieldSetString);
-    static std::string  serialize(const FieldSet& fs);
+    static std::string serialize(const FieldSet& fs);
 
 private:
-    void                                          configureDocumentType(const DocumentType& documentType);
+    void configureDocumentType(const DocumentType& documentType);
     const DocumentTypeRepo&                       _doumentTyperepo;
     vespalib::hash_map<std::string, FieldSet::SP> _configuredFieldSets;
 };
