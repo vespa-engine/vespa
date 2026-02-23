@@ -68,6 +68,8 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _diversityMinGroups(1),
       _diversityCutoffFactor(10.0),
       _diversityCutoffStrategy("loose"),
+      _ann_timeout_enabled(false),
+      _ann_timeout_factor(0.5),
       _softTimeoutEnabled(false),
       _softTimeoutTailCost(0.1),
       _global_filter_lower_limit(0.0),
@@ -129,6 +131,8 @@ RankSetup::configure()
     setEstimateLimit(hitcollector::EstimateLimit::lookup(_indexEnv.getProperties()));
     set_first_phase_rank_score_drop_limit(hitcollector::FirstPhaseRankScoreDropLimit::lookup(_indexEnv.getProperties()));
     set_second_phase_rank_score_drop_limit(hitcollector::SecondPhaseRankScoreDropLimit::lookup(_indexEnv.getProperties()));
+    set_ann_timeout_enabled(anntimeout::Enabled::lookup(_indexEnv.getProperties()));
+    set_ann_timeout_factor(anntimeout::Factor::lookup(_indexEnv.getProperties()));
     setSoftTimeoutEnabled(softtimeout::Enabled::lookup(_indexEnv.getProperties()));
     setSoftTimeoutTailCost(softtimeout::TailCost::lookup(_indexEnv.getProperties()));
     set_global_filter_lower_limit(matching::GlobalFilterLowerLimit::lookup(_indexEnv.getProperties()));

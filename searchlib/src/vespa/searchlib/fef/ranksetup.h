@@ -77,6 +77,8 @@ private:
     uint32_t                 _diversityMinGroups;
     double                   _diversityCutoffFactor;
     std::string         _diversityCutoffStrategy;
+    bool                     _ann_timeout_enabled;
+    double                   _ann_timeout_factor;
     bool                     _softTimeoutEnabled;
     double                   _softTimeoutTailCost;
     double                   _global_filter_lower_limit;
@@ -401,6 +403,10 @@ public:
      **/
     void setIgnoreDefaultRankFeatures(bool flag) { _ignoreDefaultRankFeatures = flag; }
 
+    void set_ann_timeout_enabled(bool v) { _ann_timeout_enabled = v; }
+    bool get_ann_timeout_enabled() const { return _ann_timeout_enabled; }
+    void set_ann_timeout_factor(double v) { _ann_timeout_factor = v; }
+    double get_ann_timeout_factor() const { return _ann_timeout_factor; }
     void setSoftTimeoutEnabled(bool v) { _softTimeoutEnabled = v; }
     bool getSoftTimeoutEnabled() const { return _softTimeoutEnabled; }
     void setSoftTimeoutTailCost(double v) { _softTimeoutTailCost = v; }

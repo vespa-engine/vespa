@@ -602,6 +602,35 @@ bool SortBlueprintsByCost::check(const Properties &props, bool fallback) {
 
 } // namespace matching
 
+namespace anntimeout {
+
+const std::string Enabled::NAME("vespa.anntimeout.enable");
+const bool Enabled::DEFAULT_VALUE(false);
+
+bool Enabled::lookup(const Properties &props) {
+    return lookupBool(props, NAME, DEFAULT_VALUE);
+}
+
+bool Enabled::lookup(const Properties &props, bool defaultValue) {
+    return lookupBool(props, NAME, defaultValue);
+}
+
+const std::string Factor::NAME("vespa.anntimeout.factor");
+const double Factor::DEFAULT_VALUE(0.5);
+
+double Factor::lookup(const Properties &props) {
+    return lookupDouble(props, NAME, DEFAULT_VALUE);
+}
+double Factor::lookup(const Properties &props, double defaultValue) {
+    return lookupDouble(props, NAME, defaultValue);
+}
+
+bool Factor::isPresent(const Properties &props) {
+    return props.lookup(NAME).found();
+}
+
+}
+
 namespace softtimeout {
 
 const std::string Enabled::NAME("vespa.softtimeout.enable");

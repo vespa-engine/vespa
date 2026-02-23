@@ -468,6 +468,32 @@ namespace matching {
     };
 }
 
+namespace anntimeout {
+/**
+ * Enables or disables the ANN timeout.
+ * Default is off.
+ */
+struct Enabled {
+    static const std::string NAME;
+    static const bool DEFAULT_VALUE;
+    static bool lookup(const Properties &props);
+    static bool lookup(const Properties &props, bool defaultValue);
+};
+
+/**
+ * This can be controlled in the query to override the factor.
+ * The backend starts off with a value of 0.5.
+ * This is the same value as the soft timeout.
+ */
+struct Factor {
+    static const std::string NAME;
+    static const double DEFAULT_VALUE;
+    static double lookup(const Properties &props);
+    static double lookup(const Properties &props, double defaultValue);
+    static bool isPresent(const Properties &props);
+};
+}
+
 namespace softtimeout {
     /**
      * Enables or disables the soft timeout.
