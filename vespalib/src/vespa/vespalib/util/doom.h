@@ -10,11 +10,15 @@ namespace vespalib {
 class Doom {
 public:
     Doom(const std::atomic<steady_time> & now_ref, steady_time doom) noexcept
-        : Doom(now_ref, doom, doom, false)
+        : Doom(now_ref, doom, doom, doom, false, false)
     {}
     Doom(const std::atomic<steady_time> & now_ref, steady_time softDoom,
          steady_time hardDoom, bool explicitSoftDoom) noexcept;
 
+    Doom(const std::atomic<steady_time> & now_ref, steady_time hnswDoom, steady_time softDoom,
+         steady_time hardDoom, bool explicitSoftDoom, bool explicit_hnsw_doom) noexcept;
+
+    bool hnsw_doom() const noexcept { return (getTimeNS() > _hnswDoom); }
     bool soft_doom() const noexcept { return (getTimeNS() > _softDoom); }
     bool hard_doom() const noexcept { return (getTimeNS() > _hardDoom); }
     duration soft_left() const noexcept { return _softDoom - getTimeNS(); }
@@ -26,9 +30,11 @@ private:
         return vespalib::steady_time(_now.load(std::memory_order_relaxed));
     }
     const std::atomic<steady_time> & _now;
+    steady_time    _hnswDoom;
     steady_time    _softDoom;
     steady_time    _hardDoom;
     bool           _isExplicitSoftDoom;
+    bool           _is_explicit_hnsw_doom;
 };
 
 }

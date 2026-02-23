@@ -157,13 +157,23 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                         ? softtimeout::Factor::lookup(rankProperties, _stats.softDoomFactor())
                         : _stats.softDoomFactor())
                     : 0.95;
-    vespalib::duration safeLeft = std::chrono::duration_cast<vespalib::duration>(request.getTimeLeft() * factor);
+    auto time_left = request.getTimeLeft();
+    vespalib::duration safeLeft = std::chrono::duration_cast<vespalib::duration>(time_left * factor);
     vespalib::steady_time safeDoom(_now_ref.load(std::memory_order_relaxed) + safeLeft);
     if (softTimeoutEnabled) {
         LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, userSupplied=%d, softTimeout=%" PRId64,
                    _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));
     }
-    vespalib::Doom doom(_now_ref, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
+    bool hnsw_has_factor_override = false;
+    bool hnsw_timeout_enabled = false;
+    double hnsw_factor = std::min(0.0, factor);
+    vespalib::duration hnsw_left = std::chrono::duration_cast<vespalib::duration>(time_left * hnsw_factor);
+    vespalib::steady_time hnsw_doom(_now_ref.load(std::memory_order_relaxed) + hnsw_left);
+    if (hnsw_timeout_enabled) {
+        LOG(debug, "ANN-timeout used factor=%1.3f, userSupplied=%d, softTimeout=%" PRId64,
+                   hnsw_factor, hnsw_has_factor_override, vespalib::count_ns(hnsw_left));
+    }
+    vespalib::Doom doom(_now_ref, hnsw_doom, safeDoom, request.getTimeOfDoom(), hasFactorOverride, hnsw_has_factor_override);
     const auto& queryTree = request.getSerializedQueryTree();
     return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext,
                                                request.trace(), queryTree, request.location,
