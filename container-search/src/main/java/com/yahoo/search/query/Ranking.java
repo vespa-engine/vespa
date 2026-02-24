@@ -8,6 +8,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
+import com.yahoo.search.query.ranking.ANNTimeout;
 import com.yahoo.search.query.ranking.ElementGap;
 import com.yahoo.search.query.ranking.GlobalPhase;
 import com.yahoo.search.query.ranking.MatchPhase;
@@ -63,6 +64,8 @@ public class Ranking implements Cloneable {
     @Deprecated // TODO: Remove on Vespa 9
     public static final String SIGNIFICANCE = "significance";
     @Deprecated // TODO: Remove on Vespa 9
+    public static final String ANNTIMEOUT = "anntimeout";
+    @Deprecated // TODO: Remove on Vespa 9
     public static final String SOFTTIMEOUT = "softtimeout";
     @Deprecated // TODO: Remove on Vespa 9
     public static final String MATCHING = "matching";
@@ -85,6 +88,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(GlobalPhase.GLOBAL_PHASE, new QueryProfileFieldType(GlobalPhase.getArgumentType())));
         argumentType.addField(new FieldDescription(MatchPhase.MATCH_PHASE,  new QueryProfileFieldType(MatchPhase.getArgumentType()), "matchPhase"));
         argumentType.addField(new FieldDescription(SecondPhase.SECOND_PHASE, new QueryProfileFieldType(SecondPhase.getArgumentType())));
+        argumentType.addField(new FieldDescription(ANNTimeout.ANNTIMEOUT, new QueryProfileFieldType(ANNTimeout.getArgumentType())));
         argumentType.addField(new FieldDescription(SoftTimeout.SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
         argumentType.addField(new FieldDescription(Matching.MATCHING, new QueryProfileFieldType(Matching.getArgumentType())));
         argumentType.addField(new FieldDescription(Significance.SIGNIFICANCE, new QueryProfileFieldType(Significance.getArgumentType())));
@@ -129,6 +133,8 @@ public class Ranking implements Cloneable {
     private GlobalPhase globalPhase = new GlobalPhase();
 
     private Matching matching = new Matching();
+
+    private ANNTimeout annTimeout = new ANNTimeout();
 
     private SoftTimeout softTimeout = new SoftTimeout();
 
@@ -252,6 +258,9 @@ public class Ranking implements Cloneable {
     /** Returns the matching settings of this. This is never null. */
     public Matching getMatching() { return matching; }
 
+    /** Returns the ann-timeout settings of this. This is never null. */
+    public ANNTimeout getANNTimeout() { return annTimeout; }
+
     /** Returns the soft timeout settings of this. This is never null. */
     public SoftTimeout getSoftTimeout() { return softTimeout; }
 
@@ -309,6 +318,7 @@ public class Ranking implements Cloneable {
         matchPhase.prepare(rankProperties);
         secondPhase.prepare(rankProperties);
         matching.prepare(rankProperties);
+        annTimeout.prepare(rankProperties);
         softTimeout.prepare(rankProperties);
         prepareNow(freshness);
         if (rerankCount != null)
@@ -350,6 +360,7 @@ public class Ranking implements Cloneable {
             if (this.secondPhase != null) clone.secondPhase = this.secondPhase.clone();
             if (this.globalPhase != null) clone.globalPhase = this.globalPhase.clone();
             if (this.matching != null) clone.matching = this.matching.clone();
+            if (this.annTimeout != null) clone.annTimeout = this.annTimeout.clone();
             if (this.softTimeout != null) clone.softTimeout = this.softTimeout.clone();
             if (this.significance != null) clone.significance = this.significance.clone();
             if (this.elementGap != null) clone.elementGap = new HashMap<>(this.elementGap);
@@ -385,6 +396,7 @@ public class Ranking implements Cloneable {
         if ( ! Objects.equals(secondPhase, other.secondPhase)) return false;
         if ( ! Objects.equals(globalPhase, other.globalPhase)) return false;
         if ( ! Objects.equals(matching, other.matching)) return false;
+        if ( ! Objects.equals(annTimeout, other.annTimeout)) return false;
         if ( ! Objects.equals(softTimeout, other.softTimeout)) return false;
         if ( ! Objects.equals(significance, other.significance)) return false;
         if ( ! Objects.equals(elementGap, other.elementGap)) return false;
@@ -395,7 +407,8 @@ public class Ranking implements Cloneable {
     public int hashCode() {
         return Objects.hash(location, profile, sorting, listFeatures, freshness, queryCache,
                             rerankCount, keepRankCount, rankScoreDropLimit, rankProperties,
-                            rankFeatures, matchPhase, secondPhase, globalPhase, matching, softTimeout, significance, elementGap);
+                            rankFeatures, matchPhase, secondPhase, globalPhase, matching,
+                            annTimeout, softTimeout, significance, elementGap);
     }
 
 }

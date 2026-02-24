@@ -20,6 +20,7 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profiling.Profiling;
 import com.yahoo.search.query.profiling.ProfilingParams;
+import com.yahoo.search.query.ranking.ANNTimeout;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.GlobalPhase;
 import com.yahoo.search.query.ranking.MatchPhase;
@@ -136,6 +137,8 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Ranking.RANKING, GlobalPhase.GLOBAL_PHASE, Ranking.RANKSCOREDROPLIMIT),
                 GetterSetter.of(query -> query.getRanking().getGlobalPhase().getRankScoreDropLimit(),
                         (query, value) -> query.getRanking().getGlobalPhase().setRankScoreDropLimit(asDouble(value, null))));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, ANNTimeout.ANNTIMEOUT, ANNTimeout.ENABLE), GetterSetter.of(query -> query.getRanking().getANNTimeout().getEnable(), (query, value) -> query.getRanking().getANNTimeout().setEnable(asBoolean(value, false))));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, ANNTimeout.ANNTIMEOUT, ANNTimeout.FACTOR), GetterSetter.of(query -> query.getRanking().getANNTimeout().getFactor(), (query, value) -> query.getRanking().getANNTimeout().setFactor(asDouble(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, SoftTimeout.SOFTTIMEOUT, SoftTimeout.ENABLE), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getEnable(), (query, value) -> query.getRanking().getSoftTimeout().setEnable(asBoolean(value, true))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, SoftTimeout.SOFTTIMEOUT, SoftTimeout.FACTOR), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getFactor(), (query, value) -> query.getRanking().getSoftTimeout().setFactor(asDouble(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, SoftTimeout.SOFTTIMEOUT, SoftTimeout.TAILCOST), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getTailcost(), (query, value) -> query.getRanking().getSoftTimeout().setTailcost(asDouble(value, null))));

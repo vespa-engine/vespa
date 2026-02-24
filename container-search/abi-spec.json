@@ -5832,6 +5832,7 @@
       "public com.yahoo.search.query.ranking.SecondPhase getSecondPhase()",
       "public com.yahoo.search.query.ranking.GlobalPhase getGlobalPhase()",
       "public com.yahoo.search.query.ranking.Matching getMatching()",
+      "public com.yahoo.search.query.ranking.ANNTimeout getANNTimeout()",
       "public com.yahoo.search.query.ranking.SoftTimeout getSoftTimeout()",
       "public com.yahoo.search.query.ranking.Significance getSignificance()",
       "public com.yahoo.search.query.ranking.ElementGap getElementGapForField(java.lang.String)",
@@ -5868,6 +5869,7 @@
       "public static final java.lang.String GLOBAL_PHASE",
       "public static final java.lang.String DIVERSITY",
       "public static final java.lang.String SIGNIFICANCE",
+      "public static final java.lang.String ANNTIMEOUT",
       "public static final java.lang.String SOFTTIMEOUT",
       "public static final java.lang.String MATCHING"
     ]
@@ -7326,6 +7328,34 @@
       "public java.lang.String getPathPrefix()"
     ],
     "fields" : [ ]
+  },
+  "com.yahoo.search.query.ranking.ANNTimeout" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "java.lang.Cloneable"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public void setEnable(boolean)",
+      "public java.lang.Boolean getEnable()",
+      "public void setFactor(double)",
+      "public java.lang.Double getFactor()",
+      "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
+      "public com.yahoo.search.query.ranking.ANNTimeout clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [
+      "public static final java.lang.String ANNTIMEOUT",
+      "public static final java.lang.String ENABLE",
+      "public static final java.lang.String FACTOR",
+      "public static final com.yahoo.processing.request.CompoundName enableProperty"
+    ]
   },
   "com.yahoo.search.query.ranking.Diversity$CutoffStrategy" : {
     "superClass" : "java.lang.Enum",
