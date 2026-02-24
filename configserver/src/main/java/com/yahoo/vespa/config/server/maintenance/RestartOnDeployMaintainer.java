@@ -149,7 +149,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
 
         if (minObservedGeneration.isPresent()) {
             readyGeneration = minObservedGeneration.getAsLong();
-            log.fine(Text.format(
+            log.fine(() -> Text.format(
                     "Ready generation of %s is set to min observed generation %d", id.toFullString(), readyGeneration));
         } else {
             // If all services have applyOnRestart set to {@code true},
