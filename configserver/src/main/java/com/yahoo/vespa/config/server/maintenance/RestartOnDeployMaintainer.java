@@ -123,7 +123,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
             return restarts;
         }
 
-        log.info(() -> Text.format(
+        log.fine(() -> Text.format(
                 "Pending restarts of %s: %s",
                 id.toFullString(),
                 restarts.generationsForRestarts().entrySet().stream()
@@ -133,7 +133,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
         Map<String, List<ServiceConfigState>> statesByHostname = serviceConfigStateFetcher.apply(restarts.hostnames());
 
         if (statesByHostname.isEmpty()) {
-            log.info(() -> Text.format("No services states of %s are fetched.", id.toFullString()));
+            log.fine(() -> Text.format("No services states of %s are fetched.", id.toFullString()));
         }
 
         // Minimum observed config generation for all services without applyOnRestart across all pending restart nodes.
@@ -149,7 +149,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
 
         if (minObservedGeneration.isPresent()) {
             readyGeneration = minObservedGeneration.getAsLong();
-            log.info(Text.format(
+            log.fine(Text.format(
                     "Ready generation of %s is set to min observed generation %d", id.toFullString(), readyGeneration));
         } else {
             // If all services have applyOnRestart set to {@code true},
@@ -166,7 +166,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
             }
 
             readyGeneration = maxRestartGeneration.getAsLong();
-            log.info(() -> Text.format(
+            log.fine(() -> Text.format(
                     "Ready generation of %s is set to max pending restart generation %d",
                     id.toFullString(), readyGeneration));
         }
