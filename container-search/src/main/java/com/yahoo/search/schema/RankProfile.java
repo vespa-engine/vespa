@@ -15,26 +15,12 @@ import java.util.Objects;
  */
 public class RankProfile {
 
-    public record InputType(TensorType tensorType, boolean declaredString) {
-        public String toString() {
-            return declaredString ? "string" : tensorType.toString();
-        }
-        public static InputType fromSpec(String spec) {
-            if ("string".equals(spec)) {
-                return new InputType(TensorType.empty, true);
-            }
-            if ("double".equals(spec)) {
-                return new InputType(TensorType.empty, false);
-            }
-            return new InputType(TensorType.fromSpec(spec), false);
-        }
-    }
-
     private final String name;
     private final boolean hasSummaryFeatures;
     private final boolean hasRankFeatures;
     private final boolean useSignificanceModel;
     private final Map<String, InputType> inputs;
+    private final SecondPhase secondPhase;
 
     // Assigned when this is added to a schema
     private Schema schema = null;
@@ -45,6 +31,7 @@ public class RankProfile {
         this.hasRankFeatures = builder.hasRankFeatures;
         this.useSignificanceModel = builder.useSignificanceModel;
         this.inputs = Collections.unmodifiableMap(builder.inputs);
+        this.secondPhase = builder.secondPhase;
     }
 
     public String name() { return name; }
@@ -71,6 +58,9 @@ public class RankProfile {
     /** Returns the inputs explicitly declared in this rank profile. */
     public Map<String, InputType> inputs() { return inputs; }
 
+    /** Returns information about the second phase reranking of this. */
+    public SecondPhase secondPhase() { return secondPhase; }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
@@ -80,12 +70,13 @@ public class RankProfile {
         if ( other.hasRankFeatures != this.hasRankFeatures) return false;
         if ( other.useSignificanceModel != this.useSignificanceModel) return false;
         if ( ! other.inputs.equals(this.inputs)) return false;
+        if ( ! other.secondPhase.equals(this.secondPhase)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputs);
+        return Objects.hash(name, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputs, secondPhase);
     }
 
     @Override
@@ -100,6 +91,7 @@ public class RankProfile {
         private boolean hasRankFeatures = true;
         private boolean useSignificanceModel = false;
         private final Map<String, InputType> inputs = new LinkedHashMap<>();
+        private SecondPhase secondPhase = new SecondPhase.Builder().build();
 
         public Builder(String name) {
             this.name = Objects.requireNonNull(name);
@@ -122,8 +114,32 @@ public class RankProfile {
 
         public Builder setUseSignificanceModel(boolean use) { this.useSignificanceModel = use; return this; }
 
+        public Builder setSecondPhase(SecondPhase secondPhase) {
+            this.secondPhase = Objects.requireNonNull(secondPhase);
+            return this;
+        }
+
         public RankProfile build() {
             return new RankProfile(this);
+        }
+
+    }
+
+    public record InputType(TensorType tensorType, boolean declaredString) {
+
+        @Override
+        public String toString() {
+            return declaredString ? "string" : tensorType.toString();
+        }
+
+        public static InputType fromSpec(String spec) {
+            if ("string".equals(spec)) {
+                return new InputType(TensorType.empty, true);
+            }
+            if ("double".equals(spec)) {
+                return new InputType(TensorType.empty, false);
+            }
+            return new InputType(TensorType.fromSpec(spec), false);
         }
 
     }

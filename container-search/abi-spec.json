@@ -7599,6 +7599,8 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String rerankCountProperty",
+      "public static final java.lang.String totalRerankCountProperty",
       "public static final java.lang.String SECOND_PHASE"
     ]
   },
@@ -9143,6 +9145,7 @@
       "public com.yahoo.search.schema.RankProfile$Builder setHasRankFeatures(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder addInput(java.lang.String, com.yahoo.search.schema.RankProfile$InputType)",
       "public com.yahoo.search.schema.RankProfile$Builder setUseSignificanceModel(boolean)",
+      "public com.yahoo.search.schema.RankProfile$Builder setSecondPhase(com.yahoo.search.schema.SecondPhase)",
       "public com.yahoo.search.schema.RankProfile build()"
     ],
     "fields" : [ ]
@@ -9179,6 +9182,7 @@
       "public boolean hasRankFeatures()",
       "public boolean useSignificanceModel()",
       "public java.util.Map inputs()",
+      "public com.yahoo.search.schema.SecondPhase secondPhase()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -9229,6 +9233,7 @@
     "methods" : [
       "public boolean isStreaming()",
       "public java.util.Collection schemas()",
+      "public java.util.Optional schema(java.lang.String)",
       "public java.util.Optional fieldInfo(java.lang.String)",
       "public com.yahoo.search.schema.RankProfile$InputType rankProfileInput(java.lang.String, java.lang.String)"
     ],
@@ -9243,14 +9248,44 @@
     "methods" : [
       "public void <init>(com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
       "public void <init>(java.util.List, java.util.List)",
-      "public static com.yahoo.search.schema.SchemaInfo createStub(com.yahoo.search.query.parser.ParserEnvironment$ParserSettings)",
       "public java.util.Map schemas()",
       "public java.util.Map clusters()",
       "public com.yahoo.search.query.parser.ParserEnvironment$ParserSettings parserSettings()",
       "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
       "public static com.yahoo.search.schema.SchemaInfo empty()",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public static com.yahoo.search.schema.SchemaInfo createStub(com.yahoo.search.query.parser.ParserEnvironment$ParserSettings)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.SecondPhase$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.schema.SecondPhase$Builder setRerankCount(int)",
+      "public com.yahoo.search.schema.SecondPhase$Builder setTotalRerankCount(int)",
+      "public com.yahoo.search.schema.SecondPhase build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.SecondPhase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.schema.SecondPhase$Builder)",
+      "public java.util.OptionalInt rerankCount()",
+      "public java.util.OptionalInt totalRerankCount()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
     ],
     "fields" : [ ]
   },

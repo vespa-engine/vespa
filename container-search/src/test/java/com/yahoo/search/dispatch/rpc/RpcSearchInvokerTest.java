@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.concurrent.Timer;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.prelude.cluster.ClusterSearcher;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.prelude.query.NearestNeighborItem;
@@ -20,12 +21,17 @@ import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
+import com.yahoo.search.schema.SecondPhase;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -91,31 +97,57 @@ public class RpcSearchInvokerTest {
     @Test
     void contentShareIsUsedToSetTargetHits() throws IOException {
         // Total target is distributed proportional to content share (by active document count)
-        assertTotalTargetHitsAdjustment(List.of(46, 55), List.of(1000, 1200));
+        assertAdjustedTotalTargetHits(List.of(46, 55), List.of(1000, 1200));
 
         // Small differences (<5%) do not justify reserialization and so get the same value
-        assertTotalTargetHitsAdjustment(List.of(50, 50), List.of(1000, 1035));
+        assertAdjustedTotalTargetHits(List.of(50, 50), List.of(1000, 1035));
 
         // Nodes with 0 documents get default content share: 1/nodes
-        assertTotalTargetHitsAdjustment(List.of(49, 49, 20, 1, 1), List.of(1000, 1035, 0, 1, 13));
+        assertAdjustedTotalTargetHits(List.of(49, 49, 20, 1, 1), List.of(1000, 1035, 0, 1, 13));
     }
 
     @Test
     void contentShareIsUsedToSetSecondPhaseRerankCount() throws IOException {
-        Query query = new Query();
-        query.getModel().getQueryTree().setRoot(new WordItem("ignored"));
+        // total rerank count in query is applied
+        var query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().getSecondPhase().setTotalRerankCount(100);
-        query.prepare();
+        assertAdjustedSecondPhaseRerankCount(query,
+                                             1,
+                                             schemaInfo(OptionalInt.empty(), OptionalInt.empty()));
 
-        List<Holders> nodeHolders = queryGroup(query, List.of(1000, 1035, 0, 1, 13));
-        List<Integer> expected = List.of(49, 49, 20, 1, 1);
+        // total rerank count in schema is applied
+        query = new Query("?query=ignored&ranking=myProfile");
+        assertAdjustedSecondPhaseRerankCount(query,
+                                             1, // Schema info is used when not set in query
+                                             schemaInfo(OptionalInt.empty(), OptionalInt.of(100)));
 
-        var requests = nodeHolders.stream().map(this::decompress).toList();
-        for (int i = 0; i < expected.size(); i++) {
-            var property = requests.get(i).getRankProperties(1);
-            assertEquals("vespa.hitcollector.heapsize", property.getName());
-            assertEquals(String.valueOf(expected.get(i)), property.getValues(0));
-        }
+        // total rerank count in query overrides schema
+        query = new Query("?query=ignored&ranking=myProfile");
+        query.getRanking().getSecondPhase().setTotalRerankCount(200);
+        assertAdjustedSecondPhaseRerankCount(query,
+                                             2,
+                                             schemaInfo(OptionalInt.empty(), OptionalInt.of(100)));
+
+        // rerank count in query overrides total rerank count in schema
+        query = new Query("?query=ignored&ranking=myProfile");
+        query.getRanking().getSecondPhase().setRerankCount(200);
+        assertFlatSecondPhaseRerankCount(query,
+                                         200,
+                                         schemaInfo(OptionalInt.empty(), OptionalInt.of(100)));
+
+        // rerank count in query overrides schema
+        query = new Query("?query=ignored&ranking=myProfile");
+        query.getRanking().getSecondPhase().setRerankCount(200);
+        assertFlatSecondPhaseRerankCount(query,
+                                         200,
+                                         schemaInfo(OptionalInt.of(100), OptionalInt.empty()));
+
+        // total rerank count in query overrides rerank count in schema
+        query = new Query("?query=ignored&ranking=myProfile");
+        query.getRanking().getSecondPhase().setTotalRerankCount(200);
+        assertAdjustedSecondPhaseRerankCount(query,
+                                             2,
+                                             schemaInfo(OptionalInt.of(100), OptionalInt.empty()));
     }
 
     @Test
@@ -123,20 +155,25 @@ public class RpcSearchInvokerTest {
         Query query = new Query();
         query.getModel().getQueryTree().setRoot(new WordItem("ignored"));
         query.getRanking().setTotalKeepRankCount(100);
-        query.prepare();
 
-        List<Holders> nodeHolders = queryGroup(query, List.of(1000, 1035, 0, 1, 13));
+        List<Holders> nodeHolders = queryGroup(query,
+                                               schemaInfo(OptionalInt.empty(), OptionalInt.empty()),
+                                               List.of(1000, 1035, 0, 1, 13));
         List<Integer> expected = List.of(49, 49, 20, 1, 1);
 
         var requests = nodeHolders.stream().map(this::decompress).toList();
-        for (int i = 0; i < expected.size(); i++) {
-            var property = requests.get(i).getRankProperties(1);
-            assertEquals("vespa.hitcollector.arraysize", property.getName());
-            assertEquals(String.valueOf(expected.get(i)), property.getValues(0));
-        }
+        for (int i = 0; i < expected.size(); i++)
+            assertProperty("vespa.hitcollector.arraysize", expected.get(i), requests.get(i));
     }
 
-    private List<Holders> queryGroup(Query query, List<Integer> activeDocs) throws IOException {
+    private List<Holders> queryGroup(Query query,
+                                     SchemaInfo schemaInfo,
+                                     List<Integer> activeDocs) throws IOException {
+        // Necessary query preparation, in the order it will happen:
+        query.prepare();
+        query.getModel().getRestrict().add("mySchema");
+        ClusterSearcher.transferRerankCounts(query, schemaInfo);
+
         List<Node> nodes = new ArrayList<>();
         List<RpcSearchInvoker> nodeInvokers = new ArrayList<>();
         List<Holders> nodeHolders = new ArrayList<>();
@@ -159,7 +196,32 @@ public class RpcSearchInvokerTest {
         return nodeHolders;
     }
 
-    private void assertTotalTargetHitsAdjustment(List<Integer> expected, List<Integer> activeDocs) throws IOException {
+    private void assertAdjustedSecondPhaseRerankCount(Query query, int multiplier, SchemaInfo schemaInfo) throws IOException {
+        List<Holders> nodeHolders = queryGroup(query, schemaInfo, List.of(1000, 1035, 0, 1, 13));
+        List<Integer> expected = List.of(49 * multiplier, 49 * multiplier, 20 * multiplier, 1, 1 * multiplier);
+        var requests = nodeHolders.stream().map(this::decompress).toList();
+        for (int i = 0; i < expected.size(); i++)
+            assertProperty("vespa.hitcollector.heapsize", expected.get(i), requests.get(i));
+    }
+
+    private void assertFlatSecondPhaseRerankCount(Query query, int value, SchemaInfo schemaInfo) throws IOException {
+        List<Holders> nodeHolders = queryGroup(query, schemaInfo, List.of(1000, 1035, 0, 1, 13));
+        var requests = nodeHolders.stream().map(this::decompress).toList();
+        for (int i = 0; i < 5; i++)
+            assertProperty("vespa.hitcollector.heapsize", value, requests.get(i));
+    }
+
+    private void assertProperty(String name, int value, SearchProtocol.SearchRequest request) {
+        for (int i = 0; i < request.getRankPropertiesCount(); i++) {
+            var property = request.getRankProperties(i);
+            if ( ! property.getName().equals(name)) continue;
+            assertEquals(String.valueOf(value), property.getValues(0));
+            return;
+        }
+        fail("Property '" + name + "' is not present");
+    }
+
+    private void assertAdjustedTotalTargetHits(List<Integer> expected, List<Integer> activeDocs) throws IOException {
         Query query = new Query();
         var root = new OrItem();
 
@@ -175,7 +237,9 @@ public class RpcSearchInvokerTest {
 
         query.getModel().getQueryTree().setRoot(root);
 
-        List<Holders> nodeHolders = queryGroup(query, activeDocs);
+        List<Holders> nodeHolders = queryGroup(query,
+                                               schemaInfo(OptionalInt.empty(), OptionalInt.empty()),
+                                               activeDocs);
         var requests = nodeHolders.stream().map(this::decompress).toList();
         for (int i = 0; i < expected.size(); i++) {
             var or = requests.get(i).getQueryTree().getRoot().getItemOr();
@@ -184,6 +248,16 @@ public class RpcSearchInvokerTest {
             assertEquals(expected.get(i), or.getChildren(1).getItemNearestNeighbor().getTargetNumHits(),
                          "NearestNeighbor in node " + i);
         }
+    }
+
+    private SchemaInfo schemaInfo(OptionalInt rerankCount, OptionalInt totalRerankCount) {
+        var secondPhase = new SecondPhase.Builder();
+        rerankCount.ifPresent(secondPhase::setRerankCount);
+        totalRerankCount.ifPresent(secondPhase::setTotalRerankCount);
+        var schema = new Schema.Builder("mySchema")
+                               .add(new RankProfile.Builder("myProfile").setSecondPhase(secondPhase.build())
+                               .build());
+        return new SchemaInfo(List.of(schema.build()), List.of());
     }
 
     private InterleavedSearchInvoker createInterleavedSearchInvoker(Group group, List<RpcSearchInvoker> nodeInvokers) {

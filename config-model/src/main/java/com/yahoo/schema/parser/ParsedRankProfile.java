@@ -47,7 +47,8 @@ public class ParsedRankProfile extends ParsedBlock {
     private Integer minHitsPerThread = null;
     private Integer numSearchPartitions = null;
     private Integer numThreadsPerSearch = null;
-    private Integer reRankCount = null;
+    private Integer rerankCount = null;
+    private Integer totalRerankCount = null;
     private MatchPhaseSettings matchPhase = null;
     private DiversitySettings diversity = null;
     private String firstPhaseExpression     = null;
@@ -107,7 +108,8 @@ public class ParsedRankProfile extends ParsedBlock {
     Optional<Integer> getMinHitsPerThread() { return Optional.ofNullable(this.minHitsPerThread); }
     Optional<Integer> getNumSearchPartitions() { return Optional.ofNullable(this.numSearchPartitions); }
     Optional<Integer> getNumThreadsPerSearch() { return Optional.ofNullable(this.numThreadsPerSearch); }
-    Optional<Integer> getReRankCount() { return Optional.ofNullable(this.reRankCount); }
+    Optional<Integer> getRerankCount() { return Optional.ofNullable(this.rerankCount); }
+    Optional<Integer> getTotalRerankCount() { return Optional.ofNullable(this.totalRerankCount); }
     Optional<MatchPhaseSettings> getMatchPhase() { return Optional.ofNullable(this.matchPhase); }
     Optional<DiversitySettings> getDiversity() { return Optional.ofNullable(this.diversity); }
     Optional<String> getFirstPhaseExpression() { return Optional.ofNullable(this.firstPhaseExpression); }
@@ -261,8 +263,13 @@ public class ParsedRankProfile extends ParsedBlock {
     }
 
     public void setRerankCount(int count) {
-        verifyThat(reRankCount == null, "already has rerank-count");
-        this.reRankCount = count;
+        verifyThat(rerankCount == null, "already has rerank-count");
+        this.rerankCount = count;
+    }
+
+    public void setTotalRerankCount(int count) {
+        verifyThat(totalRerankCount == null, "already has total-rerank-count");
+        this.totalRerankCount = count;
     }
 
     public void setSecondPhaseRanking(String expression) {

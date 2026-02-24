@@ -85,7 +85,8 @@ public class ParsedRankingConverter {
         parsed.getMinHitsPerThread().ifPresent(profile::setMinHitsPerThread);
         parsed.getNumSearchPartitions().ifPresent(profile::setNumSearchPartitions);
         parsed.getNumThreadsPerSearch().ifPresent(profile::setNumThreadsPerSearch);
-        parsed.getReRankCount().ifPresent(profile::setRerankCount);
+        parsed.getRerankCount().ifPresent(profile::setRerankCount);
+        parsed.getTotalRerankCount().ifPresent(profile::setTotalRerankCount);
 
         parsed.getMatchPhase().ifPresent(profile::setMatchPhase);
         parsed.getDiversity().ifPresent(profile::setDiversity);

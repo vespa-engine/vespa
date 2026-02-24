@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Information about a schema.
@@ -193,6 +194,8 @@ public final class SchemaInfo extends Derived {
                     .hasRankFeatures(rankProfile.hasRankFeatures())
                     .significance(new SchemaInfoConfig.Schema.Rankprofile.Significance.Builder()
                                           .useModel(rankProfile.useSignificanceModel()));
+            rankProfile.getRerankCount().ifPresent(rankProfileConfig::rerankCount);
+            rankProfile.getTotalRerankCount().ifPresent(rankProfileConfig::totalRerankCount);
             for (var input : rankProfile.inputs().entrySet()) {
                 var inputConfig = new SchemaInfoConfig.Schema.Rankprofile.Input.Builder();
                 inputConfig.name(input.getKey().toString());
@@ -232,6 +235,8 @@ public final class SchemaInfo extends Derived {
         private final String name;
         private final boolean hasSummaryFeatures;
         private final boolean hasRankFeatures;
+        private final Optional<Integer> rerankCount;
+        private final Optional<Integer> totalRerankCount;
         private final boolean useSignificanceModel;
         private final Map<Reference, RankProfile.Input> inputs;
 
@@ -240,12 +245,22 @@ public final class SchemaInfo extends Derived {
             this.hasSummaryFeatures =  ! profile.getSummaryFeatures().isEmpty();
             this.hasRankFeatures =  ! profile.getRankFeatures().isEmpty();
             this.inputs = profile.inputs();
+            this.rerankCount = profile.getRerankCount();
+            this.totalRerankCount = profile.getTotalRerankCount();
             useSignificanceModel = profile.useSignificanceModel();
+            validate();
+        }
+
+        private void validate() {
+            if (rerankCount.isPresent() && totalRerankCount.isPresent())
+                throw new IllegalArgumentException();
         }
 
         public String name() { return name; }
         public boolean hasSummaryFeatures() { return hasSummaryFeatures; }
         public boolean hasRankFeatures() { return hasRankFeatures; }
+        public Optional<Integer> getRerankCount() { return rerankCount; }
+        public Optional<Integer> getTotalRerankCount() { return totalRerankCount; }
         public boolean useSignificanceModel() { return useSignificanceModel; }
         public Map<Reference, RankProfile.Input> inputs() { return inputs; }
 

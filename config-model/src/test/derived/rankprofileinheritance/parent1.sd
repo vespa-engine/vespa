@@ -26,7 +26,12 @@ schema parent1 {
 
     match-features {
       function1b
-    }      
+    }
+
+    second-phase {
+      total-rerank-count: 201
+    }
+
   }
 
 }

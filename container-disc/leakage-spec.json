@@ -39,14 +39,6 @@
   "com.yahoo.container.jdisc.ContentChannelOutputStream" : [
     "com.yahoo.io.WritableByteTransmitter"
   ],
-  "com.yahoo.container.jdisc.DataplaneProxyConfigurator" : [
-    "com.yahoo.cloud.config.DataplaneProxyConfig",
-    "com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials"
-  ],
-  "com.yahoo.container.jdisc.DataplaneProxyService" : [
-    "com.yahoo.cloud.config.DataplaneProxyConfig",
-    "com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials"
-  ],
   "com.yahoo.container.jdisc.DisableOsgiFramework" : [
     "com.yahoo.jdisc.application.OsgiFramework",
     "org.osgi.framework.Bundle",

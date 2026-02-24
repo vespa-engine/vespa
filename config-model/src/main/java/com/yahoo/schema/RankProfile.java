@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -89,8 +90,11 @@ public class RankProfile implements Cloneable {
     /** The ranking expression to be used for global-phase */
     private RankingExpressionFunction globalPhaseRanking = null;
 
-    /** Number of hits to be reranked in second phase, -1 means use default */
-    private int rerankCount = -1;
+    /** Number of hits to be reranked in second phase */
+    private Optional<Integer> rerankCount = Optional.empty();
+
+    /** Number of hits to be reranked in second phase across all nodes, */
+    private Optional<Integer> totalRerankCount = Optional.empty();
 
     /** Number of hits to be reranked in global-phase, -1 means use default */
     private int globalPhaseRerankCount = -1;
@@ -763,11 +767,18 @@ public class RankProfile implements Cloneable {
         rankProperties.computeIfAbsent(rankProperty.getName(), (String key) -> new ArrayList<>(1)).add(rankProperty);
     }
 
-    public void setRerankCount(int rerankCount) { this.rerankCount = rerankCount; }
+    public void setRerankCount(int rerankCount) { this.rerankCount = Optional.of(rerankCount); }
 
-    public int getRerankCount() {
-        if (rerankCount >= 0) return rerankCount;
-        return uniquelyInherited(RankProfile::getRerankCount, c -> c >= 0, "rerank-count").orElse(-1);
+    public void setTotalRerankCount(int totalRerankCount) { this.totalRerankCount = Optional.of(totalRerankCount); }
+
+    public Optional<Integer> getRerankCount() {
+        if (rerankCount.isPresent()) return rerankCount;
+        return uniquelyInherited(RankProfile::getRerankCount, Optional::isPresent, "rerank-count").orElse(Optional.empty());
+    }
+
+    public Optional<Integer> getTotalRerankCount() {
+        if (totalRerankCount.isPresent()) return totalRerankCount;
+        return uniquelyInherited(RankProfile::getTotalRerankCount, Optional::isPresent, "total-rerank-count").orElse(Optional.empty());
     }
 
     public void setGlobalPhaseRerankCount(int count) { this.globalPhaseRerankCount = count; }
@@ -1018,9 +1029,7 @@ public class RankProfile implements Cloneable {
         addRankProperty(prefix + ".attribute", op.attribute);
         addRankProperty(prefix + ".operation", op.operation);
     }
-    public void addMutateOperation(MutateOperation.Phase phase, String attribute, String operation) {
-        addMutateOperation(new MutateOperation(phase, attribute, operation));
-    }
+
     public List<MutateOperation> getMutateOperations() { return mutateOperations; }
 
     public RankingExpressionFunction findFunction(String name) {
@@ -1916,5 +1925,9 @@ public class RankProfile implements Cloneable {
         }
     }
 
+    private OptionalInt asOptionalInt(Optional<Integer> v) {
+        if (v.isEmpty()) return OptionalInt.empty();
+        return OptionalInt.of(v.get());
+    }
 
 }

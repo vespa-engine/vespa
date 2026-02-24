@@ -163,7 +163,7 @@ public class RawRankProfile {
         private final boolean ignoreDefaultRankFeatures;
         private final RankProfile.MatchPhaseSettings matchPhaseSettings;
         private final RankProfile.DiversitySettings diversitySettings;
-        private final int rerankCount;
+        private final Optional<Integer> rerankCount;
         private final int keepRankCount;
         private final int numThreadsPerSearch;
         private final int minHitsPerThread;
@@ -551,9 +551,7 @@ public class RawRankProfile {
                 properties.add(new Pair<>("vespa.matchphase.diversity.cutoff.factor", String.valueOf(diversitySettings.getCutoffFactor())));
                 properties.add(new Pair<>("vespa.matchphase.diversity.cutoff.strategy", String.valueOf(diversitySettings.getCutoffStrategy())));
             }
-            if (rerankCount > -1) {
-                properties.add(new Pair<>("vespa.hitcollector.heapsize", rerankCount + ""));
-            }
+            rerankCount.ifPresent(count -> properties.add(new Pair<>("vespa.hitcollector.heapsize", count + "")));
             if (keepRankCount > -1) {
                 properties.add(new Pair<>("vespa.hitcollector.arraysize", keepRankCount + ""));
             }

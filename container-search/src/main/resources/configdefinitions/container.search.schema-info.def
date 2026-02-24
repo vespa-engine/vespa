@@ -29,6 +29,10 @@ schema[].summaryclass[].fields[].dynamic bool default=false
 schema[].rankprofile[].name string
 schema[].rankprofile[].hasSummaryFeatures bool default=true
 schema[].rankprofile[].hasRankFeatures bool default=true
+# The second-phase rerank count per node, or -1 to use the default
+schema[].rankprofile[].rerankCount int default=-1
+# The second-phase rerank count across all nodes, or -1 to use rerankCount
+schema[].rankprofile[].totalRerankCount int default=-1
 schema[].rankprofile[].significance.useModel bool default=false
 # The name of an input (query rank feature) accepted by this profile
 schema[].rankprofile[].input[].name string

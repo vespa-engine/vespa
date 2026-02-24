@@ -165,6 +165,7 @@ WORD = \w+
   "constants"                { return CONSTANTS; }
   "second-phase"             { return SECOND_PHASE; }
   "rerank-count"             { return RERANK_COUNT; }
+  "total-rerank-count"       { return TOTAL_RERANK_COUNT; }
   "rank-features"            { return RANK_FEATURES; }
 
   "weight"                   { return WEIGHT; }

@@ -3,6 +3,7 @@ package com.yahoo.schema;
 
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.document.Stemming;
@@ -883,6 +884,52 @@ public class SchemaTestCase {
             assertEquals("In rank-profile 'inner1': Inner profile 'inner1' must inherit 'outer'",
                          Exceptions.toMessageString(e));
         }
+    }
+
+    @Test
+    void testSecondPhaseRerankCount() throws Exception {
+        String schema =
+                """
+                schema doc {
+                    document doc {
+                    }
+                    rank-profile test {
+                        second-phase {
+                            rerank-count: 43
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+        var schemaInfoConfigBuilder = new SchemaInfoConfig.Builder();
+        derived.getSchemaInfo().getConfig(schemaInfoConfigBuilder);
+        var schemaInfoConfig = schemaInfoConfigBuilder.build().toString();
+        assertTrue(schemaInfoConfig.contains("rerankCount 43"));
+    }
+
+    @Test
+    void testSecondPhaseTotalRerankCount() throws Exception {
+        String schema =
+                """
+                schema doc {
+                    document doc {
+                    }
+                    rank-profile test {
+                        second-phase {
+                            total-rerank-count: 213
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+        var schemaInfoConfigBuilder = new SchemaInfoConfig.Builder();
+        derived.getSchemaInfo().getConfig(schemaInfoConfigBuilder);
+        var schemaInfoConfig = schemaInfoConfigBuilder.build().toString();
+        assertTrue(schemaInfoConfig.contains("totalRerankCount 213"));
     }
 
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {

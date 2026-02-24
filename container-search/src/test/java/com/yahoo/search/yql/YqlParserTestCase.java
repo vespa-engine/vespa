@@ -485,19 +485,41 @@ public class YqlParserTestCase {
     void testSameElementWithInvalidElementFilter() {
         // Test negative number
         assertParseFail("select * from sources * where myfield contains ({elementFilter:-1} sameElement(name contains 'John'))",
-                new IllegalArgumentException("elementFilter values must be non-negative, got: -1"));
+                new IllegalArgumentException("element id must be non-negative, got: -1"));
 
         // Test negative in array
         assertParseFail("select * from sources * where myfield contains ({elementFilter:[1,-2,3]} sameElement(name contains 'John'))",
-                new IllegalArgumentException("elementFilter values must be non-negative, got: -2"));
+                new IllegalArgumentException("element id must be non-negative, got: -2"));
 
         // Test floating point number
         assertParseFail("select * from sources * where myfield contains ({elementFilter:1.5} sameElement(name contains 'John'))",
-                new IllegalArgumentException("elementFilter values must be integers, not floating point numbers. Got: 1.5"));
+                new IllegalArgumentException("element id must be integer, not floating point number. Got: 1.5"));
 
         // Test floating point in array
         assertParseFail("select * from sources * where myfield contains ({elementFilter:[1,2.5,3]} sameElement(name contains 'John'))",
-                new IllegalArgumentException("elementFilter values must be integers, not floating point numbers. Got: 2.5"));
+                new IllegalArgumentException("element id must be integer, not floating point number. Got: 2.5"));
+    }
+
+    @Test
+    void testIndexedAccessRewritesToSameElement() {
+        // ints[1] = 2 should rewrite to ints contains ({elementFilter:[1]}sameElement(2))
+        QueryTree qt = parse("select * from sources * where strings[1] = \"foo\"");
+        SameElementItem se = (SameElementItem) qt.getRoot();
+        assertEquals("strings", se.getFieldName());
+        assertEquals(List.of(1), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
+
+        qt = parse("select * from sources * where ints[1] = 2");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals("ints", se.getFieldName());
+        assertEquals(List.of(1), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
+
+        qt = parse("select * from sources * where bools[0] = true");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals("bools", se.getFieldName());
+        assertEquals(List.of(0), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
     }
 
     @Test
