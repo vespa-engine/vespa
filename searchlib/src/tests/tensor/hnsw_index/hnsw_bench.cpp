@@ -11,6 +11,7 @@
 #include <vespa/searchlib/tensor/hnsw_index_saver.h>
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
 #include <vespa/searchlib/tensor/subspace_type.h>
+#include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/vespalib/util/alloc.h>
@@ -30,6 +31,7 @@
 #include <iostream>
 #include <ranges>
 #include <span>
+#include <unistd.h>
 #include <xxhash.h>
 
 #include <vespa/log/log.h>
@@ -54,6 +56,10 @@ ABSL_FLAG(bool,        prefetch_tensors,     false, "Whether to explicitly prefe
 ABSL_FLAG(uint32_t,    query_count,          1000, "How many queries to run against the index");
 ABSL_FLAG(uint32_t,    report_batch_size,    100'000, "Reported feed progress ever N vectors fed");
 
+// These are placeholders for common Google Benchmark flags that we just want to ignore and forward
+ABSL_FLAG(double,      benchmark_min_warmup_time, 0, "Fwd to Google Benchmark");
+ABSL_FLAG(std::string, benchmark_filter, "", "Fwd to Google Benchmark");
+
 using search::attribute::DistanceMetric;
 using search::tensor::EmptySubspace;
 using search::tensor::HnswIndex;
@@ -64,6 +70,7 @@ using search::tensor::InvLogLevelGenerator;
 using search::tensor::NearestNeighborIndex;
 using search::tensor::SubspaceType;
 using search::tensor::VectorBundle;
+using search::queryeval::GlobalFilter;
 using vespalib::GenerationHandler;
 using vespalib::MemoryUsage;
 using vespalib::Timer;
@@ -304,6 +311,50 @@ DatasetDocVectorStore::~DatasetDocVectorStore() = default;
     return {2*m, m, ef, 10, true}; // TODO more configurable stuff
 }
 
+class SimulatedFilter final : public GlobalFilter {
+    double   _pass_ratio;
+    uint32_t _total_docs;
+    uint32_t _passing_docs;
+    uint32_t _hash_limit;
+
+    constexpr static uint32_t hash32(uint32_t h) noexcept {
+        // This is the public domain Murmurhash3 avalanche routine from
+        // https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp
+        h ^= h >> 16;
+        h *= 0x85ebca6bUL;
+        h ^= h >> 13;
+        h *= 0xc2b2ae35UL;
+        h ^= h >> 16;
+        return h;
+    }
+public:
+    SimulatedFilter(uint32_t total_docs, double pass_ratio) noexcept
+        : _pass_ratio(std::clamp(pass_ratio, 0.0, 1.0)),
+          _total_docs(total_docs),
+          _passing_docs(_total_docs * _pass_ratio),
+          _hash_limit(UINT32_MAX * _pass_ratio)
+    {}
+
+    ~SimulatedFilter() override = default;
+
+    bool is_active() const override {
+        return true;
+    }
+    uint32_t size() const override {
+        return _total_docs;
+    }
+    uint32_t count() const override {
+        return _passing_docs;
+    }
+    bool check(uint32_t doc_id) const override {
+        // Decorrelate doc ID order with whether the filter is passed
+        const uint32_t hashed_doc_id = hash32(doc_id);
+        // Assuming reasonably uniformly hash output, passing this check is linearly
+        // proportional with the desired filter hit rate.
+        return hashed_doc_id < _hash_limit;
+    }
+};
+
 class BenchmarkIndex {
 public:
     using IndexType = HnswIndex<HnswIndexType::SINGLE>;
@@ -405,14 +456,30 @@ public:
         _index->reclaim_memory(_gen_handler.get_oldest_used_generation());
     }
 
-    void fill_top_k_hits(const TypedCells& qv, std::vector<uint32_t>& top_k_out) {
-        const uint32_t k = absl::GetFlag(FLAGS_top_k); // TODO move out
+    void fill_top_k_hits(const TypedCells& qv, const uint32_t k, std::vector<uint32_t>& top_k_out, const bool prefetch_tensors) const {
+        assert(k > 0);
         const uint32_t explore_k = absl::GetFlag(FLAGS_explore_k); // TODO move out
-        const bool prefetch_tensors = absl::GetFlag(FLAGS_prefetch_tensors); // TODO move out
         double exploration_slack = 0.0; // TODO configurable
         auto df = _index->distance_function_factory().for_query_vector(qv);
         NearestNeighborIndex::Stats stats;
-        auto hits = _index->find_top_k(stats, k, *df, explore_k, exploration_slack, prefetch_tensors, _doom->get_doom(), 10000.0);
+        auto hits = _index->find_top_k(stats, k, *df, explore_k, exploration_slack, prefetch_tensors, _doom->get_doom(), 1000000.0);
+        top_k_out.clear();
+        for (const auto& hit : hits) {
+            top_k_out.emplace_back(hit.docid);
+        }
+    }
+
+    void fill_top_k_hits_with_filter(const TypedCells& qv, const uint32_t k, std::vector<uint32_t>& top_k_out,
+                                     const GlobalFilter& filter, const bool low_hit_ratio,
+                                     const bool prefetch_tensors) const {
+        assert(k > 0);
+        const uint32_t explore_k = absl::GetFlag(FLAGS_explore_k); // TODO move out
+        double exploration = 0.3; // TODO configurable
+        double exploration_slack = 0.0; // TODO configurable
+        auto df = _index->distance_function_factory().for_query_vector(qv);
+        NearestNeighborIndex::Stats stats;
+        auto hits = _index->find_top_k_with_filter(stats, k, *df, filter, low_hit_ratio, exploration, explore_k,
+                                                   exploration_slack, prefetch_tensors, _doom->get_doom(), 1000000.0);
         top_k_out.clear();
         for (const auto& hit : hits) {
             top_k_out.emplace_back(hit.docid);
@@ -616,12 +683,7 @@ void load_index(BenchmarkIndex& index, const std::string& id, const fs::path& sa
     return absl::GetFlag(FLAGS_explore_neighbors);
 }
 
-int main(int argc, char** argv) {
-    benchmark::MaybeReenterWithoutASLR(argc, argv);
-    absl::SetProgramUsageMessage("A simple HNSW benchmarking tool for testing large indexes");
-    absl::ParseCommandLine(argc, argv);
-    benchmark::Initialize(&argc, argv); // note: `--help` is intercepted by absl flags
-
+[[nodiscard]] std::shared_ptr<const BenchmarkIndex> internal_init_index() {
     try {
         const auto dataset_files       = dataset_files_from_flags();
         const auto wanted_vector_count = absl::GetFlag(FLAGS_vector_count);
@@ -636,7 +698,7 @@ int main(int argc, char** argv) {
         const std::string index_id = std::format("{:016x}_{}d_{}v_{}m_{}ef", hash_file_names(dataset_files),
                                                  ds._dimensions, ds._vector_count, m, ef);
 
-        auto index = std::make_unique<BenchmarkIndex>(std::move(ds), hnsw_config, distance_metric);
+        auto index = std::make_shared<BenchmarkIndex>(std::move(ds), hnsw_config, distance_metric);
 
         if (maybe_index_dir && index_is_saved_in_dir(index_id, *maybe_index_dir)) {
             Timer load_timer;
@@ -668,8 +730,7 @@ int main(int argc, char** argv) {
             if (should_check_symmetry) {
                 std::println(std::cerr, "Checking graph symmetry");
                 if (!index->check_symmetry()) {
-                    std::println(std::cerr, "HNSW graph symmetry is broken post-inserts!");
-                    return 1;
+                    throw std::logic_error("HNSW graph symmetry is broken post-inserts!");
                 }
                 std::println(std::cerr, "Graph symmetry check OK");
             }
@@ -680,24 +741,86 @@ int main(int argc, char** argv) {
             }
         }
         std::println(std::cerr, "Graph memory usage: {}", index->memory_usage().toString());
-        // TODO move to explicit benchmark part
-        const uint32_t n_queries = absl::GetFlag(FLAGS_query_count);
-        if (n_queries > 0) {
-            std::println(std::cerr, "Running {} queries using dataset as query vectors", n_queries);
-            std::vector<uint32_t> hits;
-            Timer query_timer;
-            for (uint32_t i = 0; i < n_queries; ++i) {
-                const uint32_t doc_id = (i % index->dataset_vector_count()) + 1;
-                index->fill_top_k_hits(index->vector_store().get_vector(doc_id, 0), hits);
-                benchmark::DoNotOptimize(hits.data());
-                benchmark::ClobberMemory();
-            }
-            const auto qd = std::chrono::duration<double>(query_timer.elapsed());
-            std::println(std::cerr, "Ran {} queries in {} ({}/query)", n_queries, qd,
-                         std::chrono::duration<double, std::milli>(qd / n_queries));
-        }
+        return index;
     } catch (std::exception& e) {
         std::println(std::cerr, "Error: {}", e.what());
-        return 1;
+        std::quick_exit(1);
     }
+    return {}; // unreachable
+}
+
+[[nodiscard]] std::shared_ptr<const BenchmarkIndex> global_index() {
+    static const std::shared_ptr<const BenchmarkIndex> index = internal_init_index();
+    return index;
+}
+
+void benchmark_top_k(benchmark::State& state, bool prefetch_tensors) {
+    const auto index = global_index();
+    std::vector<uint32_t> hits;
+    const uint32_t k = state.range(0);
+    hits.reserve(k);
+    std::minstd_rand prng;
+    prng.seed(0x243F6A88 * (state.thread_index() + 1)); // pi hex digits
+    std::uniform_int_distribution<uint32_t> dist(1, index->dataset_vector_count()); // closed interval
+    for (auto _ : state) {
+        const uint32_t doc_id = dist(prng);
+        index->fill_top_k_hits(index->vector_store().get_vector(doc_id, 0), k, hits, prefetch_tensors);
+        benchmark::DoNotOptimize(hits.data());
+        benchmark::ClobberMemory();
+    }
+}
+
+void benchmark_top_k_with_filter(benchmark::State& state, double filter_pass_ratio, bool low_hit_ratio, bool prefetch_tensors) {
+    // TODO dedupe with unfiltered top-k
+    const auto index = global_index();
+    std::vector<uint32_t> hits;
+    const uint32_t k = state.range(0);
+    hits.reserve(k);
+    const SimulatedFilter filter(index->dataset_vector_count(), filter_pass_ratio);
+    std::minstd_rand prng;
+    prng.seed(0x243F6A88 * (state.thread_index() + 1)); // pi hex digits
+    std::uniform_int_distribution<uint32_t> dist(1, index->dataset_vector_count()); // closed interval
+    for (auto _ : state) {
+        const uint32_t doc_id = dist(prng);
+        index->fill_top_k_hits_with_filter(index->vector_store().get_vector(doc_id, 0), k, hits, filter, low_hit_ratio, prefetch_tensors);
+        benchmark::DoNotOptimize(hits.data());
+        benchmark::ClobberMemory();
+    }
+}
+
+int main(int argc, char** argv) {
+    benchmark::MaybeReenterWithoutASLR(argc, argv);
+    absl::SetProgramUsageMessage("A simple HNSW benchmarking tool for testing large indexes");
+    absl::ParseCommandLine(argc, argv);
+
+    std::println(std::cerr, "Running with PID {}", getpid()); // For `perf record` conveniences
+
+    // Ensure index is fully loaded prior to use by benchmark kernels
+    (void)global_index();
+
+    // TODO also make it possible to run with explicit k, query count etc (mostly for perf purposes).
+
+    for (const bool prefetch_tensors : {false, true}) {
+        auto* bench = benchmark::RegisterBenchmark(
+            std::format("Top-k/prefetch={}", prefetch_tensors),
+            [prefetch_tensors](auto& state) {
+                benchmark_top_k(state, prefetch_tensors);
+            });
+        bench->RangeMultiplier(10)->Range(1, 1000)->Unit(benchmark::kMillisecond);
+
+        for (double filter_pass_ratio : {1.0, 0.95, 0.9, 0.75, 0.5, 0.25, 0.1, 0.01}) {
+            // TODO low hit ratio param as distinct dimension? Must be true to force filter
+            bench = benchmark::RegisterBenchmark(
+                std::format("Filtered top-k/pass ratio={}/prefetch={}", filter_pass_ratio, prefetch_tensors),
+                [filter_pass_ratio, prefetch_tensors](auto& state) {
+                    benchmark_top_k_with_filter(state, filter_pass_ratio, true, prefetch_tensors);
+                });
+            bench->RangeMultiplier(10)->Range(1, 1000)->Unit(benchmark::kMillisecond);
+        }
+    }
+
+    benchmark::Initialize(&argc, argv); // note: `--help` is intercepted by absl flags
+    benchmark::RunSpecifiedBenchmarks();
+
+    benchmark::Shutdown();
 }
