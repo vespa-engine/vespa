@@ -4,11 +4,7 @@
 #include "resultvector.h"
 #include "enumattributeresult.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
-#include <vespa/searchcommon/attribute/multi_value_read_view_traits.h>
-#include <vespa/vespalib/util/stash.h>
 #include <cassert>
-#include <format>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.expression.attributenode");
@@ -16,104 +12,67 @@ LOG_SETUP(".searchlib.expression.attributenode");
 namespace search::expression {
 
 using namespace vespalib;
-using search::attribute::ArrayReadViewType_t;
-using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
-using search::attribute::IMultiValueAttribute;
-using vespalib::Stash;
-using vespalib::datastore::AtomicEntryRef;
+using search::attribute::BasicType;
 
 IMPLEMENT_EXPRESSIONNODE(AttributeNode, FunctionNode);
 
-template <typename V, typename T>
+template <typename V>
 class AttributeNode::IntegerHandler : public AttributeNode::Handler
 {
 public:
-    IntegerHandler(ResultNode & result, const IAttributeVector & attribute) noexcept
+    IntegerHandler(ResultNode & result) noexcept
         : Handler(),
           _vector(((V &)result).getVector()),
-          _stash(),
-          _read_view(nullptr)
-    {
-        auto* mva = attribute.as_multi_value_attribute();
-        if (mva != nullptr) {
-            _read_view = mva->make_read_view(IMultiValueAttribute::ArrayTag<T>(), _stash);
-        }
-    }
+          _wVector()
+    { }
     void handle(const AttributeResult & r) override;
 private:
-    using ReadView = ArrayReadViewType_t<T>;
-    typename V::Vector& _vector;
-    Stash               _stash;
-    const ReadView*     _read_view;
+    typename V::Vector & _vector;
+    std::vector<search::attribute::IAttributeVector::WeightedInt> _wVector;
 };
 
-template <typename T>
 class AttributeNode::FloatHandler : public AttributeNode::Handler
 {
 public:
-    FloatHandler(ResultNode & result, const IAttributeVector& attribute) noexcept
+    FloatHandler(ResultNode & result) noexcept
         : Handler(),
           _vector(((FloatResultNodeVector &)result).getVector()),
-          _stash(),
-          _read_view(nullptr)
-    {
-        auto* mva = attribute.as_multi_value_attribute();
-        if (mva != nullptr) {
-            _read_view = mva->make_read_view(IMultiValueAttribute::ArrayTag<T>(), _stash);
-        }
-    }
+          _wVector()
+    { }
     void handle(const AttributeResult & r) override;
 private:
-    using ReadView = ArrayReadViewType_t<T>;
-    FloatResultNodeVector::Vector& _vector;
-    Stash                          _stash;
-    const ReadView*                _read_view;
+    FloatResultNodeVector::Vector & _vector;
+    std::vector<search::attribute::IAttributeVector::WeightedFloat> _wVector;
 };
 
 class AttributeNode::StringHandler : public AttributeNode::Handler
 {
 public:
-    StringHandler(ResultNode & result, const IAttributeVector& attribute) noexcept
+    StringHandler(ResultNode & result) noexcept
         : Handler(),
           _vector(((StringResultNodeVector &)result).getVector()),
-          _stash(),
-          _read_view(nullptr)
-    {
-        auto* mva = attribute.as_multi_value_attribute();
-        if (mva != nullptr) {
-            _read_view = mva->make_read_view(IMultiValueAttribute::ArrayTag<const char*>(), _stash);
-        }
-    }
+          _wVector()
+    { }
     void handle(const AttributeResult & r) override;
 private:
-    using ReadView = ArrayReadViewType_t<const char*>;
-    StringResultNodeVector::Vector& _vector;
-    Stash                           _stash;
-    const ReadView*                 _read_view;
+    StringResultNodeVector::Vector & _vector;
+    std::vector<search::attribute::IAttributeVector::WeightedConstChar> _wVector;
 };
 
 class AttributeNode::EnumHandler : public AttributeNode::Handler
 {
 public:
-    EnumHandler(ResultNode & result, const IAttributeVector& attribute) noexcept
+    EnumHandler(ResultNode & result) noexcept
         : Handler(),
           _vector(((EnumResultNodeVector &)result).getVector()),
-          _stash(),
-          _read_view(nullptr)
-    {
-        auto* mva = attribute.as_multi_value_attribute();
-        if (mva != nullptr) {
-            _read_view = mva->make_read_view(IMultiValueAttribute::ArrayTag<AtomicEntryRef>(), _stash);
-        }
-    }
+          _wVector()
+    { }
     void handle(const AttributeResult & r) override;
 private:
-    using ReadView = ArrayReadViewType_t<AtomicEntryRef>;
-    EnumResultNodeVector::Vector& _vector;
-    Stash                         _stash;
-    const ReadView*               _read_view;
+    EnumResultNodeVector::Vector &_vector;
+    std::vector<search::attribute::IAttributeVector::WeightedEnum> _wVector;
 };
 
 namespace {
@@ -138,9 +97,9 @@ createSingle() {
 
 template<typename T, typename H>
 std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<AttributeNode::Handler>>
-createMulti(const IAttributeVector & attribute) {
+createMulti() {
     auto result = std::make_unique<T>();
-    auto handler = std::make_unique<H>(*result, attribute);
+    auto handler = std::make_unique<H>(*result);
     return { std::move(result), std::move(handler)};
 }
 
@@ -216,41 +175,28 @@ AttributeNode::operator = (const AttributeNode & attr)
 }
 
 std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<AttributeNode::Handler>>
-AttributeNode::createResultHandler(bool preserveAccurateTypes, const IAttributeVector& attribute) const {
+AttributeNode::createResultHandler(bool preserveAccurateTypes, const attribute::IAttributeVector & attribute) const {
     BasicType::Type basicType = attribute.getBasicType();
     if (attribute.isIntegerType()) {
         if (_hasMultiValue) {
             if (basicType == BasicType::BOOL) {
-                return createMulti<BoolResultNodeVector, IntegerHandler<BoolResultNodeVector, bool>>(attribute);
+                return createMulti<BoolResultNodeVector, IntegerHandler<BoolResultNodeVector>>();
             } else if (preserveAccurateTypes) {
                 switch (basicType) {
                     case BasicType::INT8:
-                        return createMulti<Int8ResultNodeVector, IntegerHandler<Int8ResultNodeVector, int8_t>>(attribute);
+                        return createMulti<Int8ResultNodeVector, IntegerHandler<Int8ResultNodeVector>>();
                     case BasicType::INT16:
-                        return createMulti<Int16ResultNodeVector, IntegerHandler<Int16ResultNodeVector, int16_t>>(attribute);
+                        return createMulti<Int16ResultNodeVector, IntegerHandler<Int16ResultNodeVector>>();
                     case BasicType::INT32:
-                        return createMulti<Int32ResultNodeVector, IntegerHandler<Int32ResultNodeVector, int32_t>>(attribute);
+                        return createMulti<Int32ResultNodeVector, IntegerHandler<Int32ResultNodeVector>>();
                     case BasicType::INT64:
-                        return createMulti<Int64ResultNodeVector, IntegerHandler<Int64ResultNodeVector, int64_t>>(attribute);
+                        return createMulti<Int64ResultNodeVector, IntegerHandler<Int64ResultNodeVector>>();
                     default:
-                        ;
+                        throw std::runtime_error("This is no valid integer attribute " + attribute.getName());
                 }
             } else {
-                switch (basicType) {
-                    case BasicType::INT8:
-                        return createMulti<IntegerResultNodeVector, IntegerHandler<Int8ResultNodeVector, int8_t>>(attribute);
-                    case BasicType::INT16:
-                        return createMulti<IntegerResultNodeVector, IntegerHandler<Int16ResultNodeVector, int16_t>>(attribute);
-                    case BasicType::INT32:
-                        return createMulti<IntegerResultNodeVector, IntegerHandler<Int32ResultNodeVector, int32_t>>(attribute);
-                    case BasicType::INT64:
-                        return createMulti<IntegerResultNodeVector, IntegerHandler<Int64ResultNodeVector, int64_t>>(attribute);
-                    default:
-                        ;
-                }
+                return createMulti<IntegerResultNodeVector, IntegerHandler<IntegerResultNodeVector>>();
             }
-            throw std::runtime_error(std::format("'{}' is not a valid integer attribute for attribute node",
-                                                 attribute.getName()));
         } else {
             if (basicType == BasicType::BOOL) {
                 return createSingle<BoolResultNode>();
@@ -265,32 +211,21 @@ AttributeNode::createResultHandler(bool preserveAccurateTypes, const IAttributeV
                     case BasicType::INT64:
                         return createSingle<Int64ResultNode>();
                     default:
-                        throw std::runtime_error(std::format("'{}' is not a valid integer attribute for attribute node",
-                                                             attribute.getName()));
+                        throw std::runtime_error("This is no valid integer attribute " + attribute.getName());
                 }
             } else {
                 return createSingle<Int64ResultNode>();
             }
         }
     } else if (attribute.isFloatingPointType()) {
-        if (_hasMultiValue) {
-            switch (basicType) {
-                case BasicType::FLOAT:
-                    return createMulti<FloatResultNodeVector, FloatHandler<float>>(attribute);
-                case BasicType::DOUBLE:
-                    return createMulti<FloatResultNodeVector, FloatHandler<double>>(attribute);
-                default:
-                    throw std::runtime_error(std::format("'{}' is not a valid float attribute for attribute node",
-                                                         attribute.getName()));
-            }
-        } else {
-            return createSingle<FloatResultNode>();
-        }
+        return (_hasMultiValue)
+                ? createMulti<FloatResultNodeVector, FloatHandler>()
+                : createSingle<FloatResultNode>();
     } else if (attribute.isStringType()) {
         if (_hasMultiValue) {
             return (_useEnumOptimization)
-                    ? createMulti<EnumResultNodeVector, EnumHandler>(attribute)
-                    : createMulti<StringResultNodeVector, StringHandler>(attribute);
+                    ? createMulti<EnumResultNodeVector, EnumHandler>()
+                    : createMulti<StringResultNodeVector, StringHandler>();
         } else {
             return (_useEnumOptimization)
                     ? createSingle<EnumResultNode>()
@@ -298,16 +233,14 @@ AttributeNode::createResultHandler(bool preserveAccurateTypes, const IAttributeV
         }
     } else if (attribute.is_raw_type()) {
         if (_hasMultiValue) {
-            throw std::runtime_error(std::format("Does not support multivalue raw attribute vector '{}'"
-                                                 " for attribute node",
-                                                 attribute.getName()));
+            throw std::runtime_error(make_string("Does not support multivalue raw attribute vector '%s'",
+                                                 attribute.getName().c_str()));
         } else {
             return createSingle<RawResultNode>();
         }
     } else {
-        throw std::runtime_error(std::format("Can not deduce correct resultclass for attribute vector '{}'"
-                                             " for attribute node",
-                                             attribute.getName()));
+        throw std::runtime_error(make_string("Can not deduce correct resultclass for attribute vector '%s'",
+                                             attribute.getName().c_str()));
     }
 }
 
@@ -330,53 +263,52 @@ AttributeNode::onPrepare(bool preserveAccurateTypes)
     }
 }
 
-template <typename V, typename T>
+template <typename V>
 void
-AttributeNode::IntegerHandler<V, T>::handle(const AttributeResult & r)
+AttributeNode::IntegerHandler<V>::handle(const AttributeResult & r)
 {
-    if (_read_view != nullptr) {
-        auto values = _read_view->get_values(r.getDocId());
-        _vector.resize(values.size());
-        for(size_t i(0); i < values.size(); i++) {
-            _vector[i] = values[i];
-        }
+    size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
+    _vector.resize(numValues);
+    _wVector.resize(numValues);
+    r.getAttribute()->get(r.getDocId(), _wVector.data(), _wVector.size());
+    for(size_t i(0); i < numValues; i++) {
+        _vector[i] = _wVector[i].getValue();
     }
 }
 
-template <typename T>
 void
-AttributeNode::FloatHandler<T>::handle(const AttributeResult & r)
+AttributeNode::FloatHandler::handle(const AttributeResult & r)
 {
-    if (_read_view != nullptr) {
-        auto values = _read_view->get_values(r.getDocId());
-        _vector.resize(values.size());
-        for(size_t i(0); i < values.size(); i++) {
-            _vector[i] = values[i];
-        }
+    size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
+    _vector.resize(numValues);
+    _wVector.resize(numValues);
+    r.getAttribute()->get(r.getDocId(), _wVector.data(), _wVector.size());
+    for(size_t i(0); i < numValues; i++) {
+        _vector[i] = _wVector[i].getValue();
     }
 }
 
 void
 AttributeNode::StringHandler::handle(const AttributeResult & r)
 {
-    if (_read_view != nullptr) {
-        auto values = _read_view->get_values(r.getDocId());
-        _vector.resize(values.size());
-        for(size_t i(0); i < values.size(); i++) {
-            _vector[i] = values[i];
-        }
+    size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
+    _vector.resize(numValues);
+    _wVector.resize(numValues);
+    r.getAttribute()->get(r.getDocId(), _wVector.data(), _wVector.size());
+    for(size_t i(0); i < numValues; i++) {
+        _vector[i] = _wVector[i].getValue();
     }
 }
 
 void
 AttributeNode::EnumHandler::handle(const AttributeResult & r)
 {
-    if (_read_view != nullptr) {
-        auto values = _read_view->get_values(r.getDocId());
-        _vector.resize(values.size());
-        for(size_t i(0); i < values.size(); i++) {
-            _vector[i] = values[i].load_relaxed().ref();
-        }
+    size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
+    _vector.resize(numValues);
+    _wVector.resize(numValues);
+    r.getAttribute()->get(r.getDocId(), _wVector.data(), _wVector.size());
+    for(size_t i(0); i < numValues; i++) {
+        _vector[i] = _wVector[i].getValue();
     }
 }
 
@@ -428,8 +360,7 @@ AttributeNode::wireAttributes(const IAttributeContext & attrCtx)
             attribute = attrCtx.getAttribute(_attributeName);
         }
         if (attribute == nullptr) {
-            throw std::runtime_error(std::format("Failed locating attribute vector '{}' for attribute node",
-                                                 _attributeName));
+            throw std::runtime_error(make_string("Failed locating attribute vector '%s'", _attributeName.c_str()));
         }
         _hasMultiValue = attribute->hasMultiValue();
         _scratchResult = createResult(attribute);
