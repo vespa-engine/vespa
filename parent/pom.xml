@@ -338,17 +338,9 @@
                     </configuration>
                     <executions>
                         <execution>
-                            <id>abicheck</id>
                             <phase>package</phase>
                             <goals>
                                 <goal>abicheck</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>leakagecheck</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>leakagecheck</goal>
                             </goals>
                         </execution>
                     </executions>

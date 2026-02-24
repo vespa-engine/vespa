@@ -1,5 +1,0 @@
-{
-  "com.yahoo.vespa.curator.api.VespaCurator" : [
-    "com.yahoo.concurrent.UncheckedTimeoutException"
-  ]
-}

@@ -1,7 +1,0 @@
-{
-  "com.yahoo.search.predicate.PredicateIndexBuilder$PredicateIndexStats" : [
-    "com.yahoo.search.predicate.index.PredicateIntervalStore$Builder",
-    "com.yahoo.search.predicate.index.SimpleIndex$Builder",
-    "com.yahoo.search.predicate.index.conjunction.ConjunctionIndexBuilder"
-  ]
-}
