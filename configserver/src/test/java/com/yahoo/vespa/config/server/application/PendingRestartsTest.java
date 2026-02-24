@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 public class PendingRestartsTest {
 
     @Test
-    public void testWithoutPreviousGeneration() {
+    public void testWithoutPreviousGenerations() {
         // Setup: Create pending restarts with multiple generations
         PendingRestarts restarts = PendingRestarts.empty()
                 .withRestarts(0, Set.of("host1", "host2"))
@@ -23,7 +23,7 @@ public class PendingRestartsTest {
                 .withRestarts(2, Set.of("host2", "host4"));
 
         // Remove host1 and host2 from generations <= 1
-        PendingRestarts result = restarts.withoutPreviousGeneration(1, Set.of("host1", "host2"));
+        PendingRestarts result = restarts.withoutPreviousGenerations(1, Set.of("host1", "host2"));
 
         // Verify results
         Map<Long, Set<String>> generations = result.generationsForRestarts();
