@@ -167,7 +167,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String jvmGCOptions = null;
 
     private volatile boolean deferChangesUntilRestart = false;
-    private boolean applyOnRestartForApplicationMetadataConfigEnabled = false;
+    private final boolean applyOnRestartForApplicationMetadataConfigEnabled;
     private boolean clientsLegacyMode;
     private List<Client> clients = List.of();
 
@@ -178,7 +178,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         this.zooKeeperLocalhostAffinity = zooKeeperLocalhostAffinity;
         this.compressionType = "zstd";
-
+        applyOnRestartForApplicationMetadataConfigEnabled = deployState.featureFlags().applyOnRestartForApplicationMetadataConfig();
+        
         componentGroup = new ComponentGroup<>(this, "component");
 
         addCommonVespaBundles();
@@ -307,7 +308,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void prepare(DeployState deployState) {
         applicationMetaData = deployState.getApplicationPackage().getMetaData();
-        applyOnRestartForApplicationMetadataConfigEnabled = deployState.featureFlags().applyOnRestartForApplicationMetadataConfig();
         doPrepare(deployState);
     }
 

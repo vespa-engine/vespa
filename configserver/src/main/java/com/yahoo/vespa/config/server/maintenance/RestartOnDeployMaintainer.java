@@ -66,7 +66,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                 // Controls whether to use this maintainer for a specific instance with the feature flag.
                 // Alternatively, the older PendingRestartsMaintainer will be used.
                 boolean shouldWaitForApplyOnRestart = waitForApplyOnRestart
-                        .with(INSTANCE_ID, id.serializedForm())
+                        .with(id)
                         .value();
 
                 if (shouldWaitForApplyOnRestart) {
