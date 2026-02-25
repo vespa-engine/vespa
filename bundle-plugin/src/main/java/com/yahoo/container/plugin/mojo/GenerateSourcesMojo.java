@@ -12,7 +12,6 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -52,7 +51,6 @@ public class GenerateSourcesMojo extends AbstractMojo {
     protected MavenSession session;
 
     @Inject
-    @Requirement
     private BuildPluginManager pluginManager;
 
     @Parameter
