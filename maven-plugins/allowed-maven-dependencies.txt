@@ -9,12 +9,11 @@ com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
 com.google.guava:failureaccess:${failureaccess.vespa.version}
 com.google.guava:guava:${guava.vespa.version}
-com.google.inject:guice:${guice.vespa.version}
+com.google.inject:guice:5.1.0:classes
 com.google.j2objc:j2objc-annotations:${j2objc-annotations.vespa.version}
 commons-codec:commons-codec:${commons-codec.vespa.version}
 commons-io:commons-io:${commons-io.vespa.version}
 io.airlift:aircompressor:${aircompressor.vespa.version}
-jakarta.inject:jakarta.inject-api:${jakarta.inject.vespa.version}
 javax.inject:javax.inject:${javax.inject.vespa.version}
 junit:junit:${junit4.vespa.version}
 net.bytebuddy:byte-buddy-agent:${byte-buddy.vespa.version}
@@ -52,7 +51,7 @@ org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
 org.codehaus.plexus:plexus-cipher:2.0
 org.codehaus.plexus:plexus-classworlds:${plexus-classworlds.vespa.version}
-org.codehaus.plexus:plexus-component-annotations:2.1.0
+org.codehaus.plexus:plexus-component-annotations:2.2.0
 org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
 org.codehaus.plexus:plexus-io:${plexus-io.vespa.version}
 org.codehaus.plexus:plexus-sec-dispatcher:2.0

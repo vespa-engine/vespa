@@ -180,7 +180,6 @@ org.eclipse.jetty:jetty-jmx:${jetty.vespa.version}
 org.eclipse.jetty:jetty-server:${jetty.vespa.version}
 org.eclipse.jetty:jetty-util:${jetty.client.vespa.version}
 org.eclipse.jetty:jetty-util:${jetty.vespa.version}
-org.eclipse.sisu:org.eclipse.sisu.inject:${eclipse-sisu.vespa.version}
 org.eclipse.sisu:org.eclipse.sisu.plexus:${eclipse-sisu.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
 org.hamcrest:hamcrest:${hamcrest.vespa.version}
