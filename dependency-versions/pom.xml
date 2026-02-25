@@ -142,12 +142,12 @@
         <org.json.vespa.version>20240303</org.json.vespa.version>
         <at.yawk.lz4.vespa.version>1.10.1</at.yawk.lz4.vespa.version>
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
-        <plexus-archiver.vespa.version>4.10.0</plexus-archiver.vespa.version>
-        <plexus-interpolation.vespa.version>1.27</plexus-interpolation.vespa.version>
-        <plexus-io.vespa.version>3.5.0</plexus-io.vespa.version>
-        <plexus-utils.vespa.version>4.0.1</plexus-utils.vespa.version>
-        <plexus-xml.vespa.version>4.0.4</plexus-xml.vespa.version>
-        <plexus-classworlds.vespa.version>2.8.0</plexus-classworlds.vespa.version>
+        <plexus-archiver.vespa.version>4.11.0</plexus-archiver.vespa.version>
+        <plexus-interpolation.vespa.version>1.29</plexus-interpolation.vespa.version>
+        <plexus-io.vespa.version>3.6.0</plexus-io.vespa.version>
+        <plexus-utils.vespa.version>4.0.2</plexus-utils.vespa.version>
+        <plexus-xml.vespa.version>4.1.1</plexus-xml.vespa.version>
+        <plexus-classworlds.vespa.version>2.9.0</plexus-classworlds.vespa.version>
         <proto-google-common-protos.vespa.version>2.51.0</proto-google-common-protos.vespa.version>
         <protobuf.vespa.version>3.25.5</protobuf.vespa.version>
         <questdb.vespa.version>7.4.2</questdb.vespa.version>
