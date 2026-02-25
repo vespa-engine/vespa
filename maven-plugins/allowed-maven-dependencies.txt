@@ -13,7 +13,6 @@ com.google.inject:guice:${guice.vespa.version}
 com.google.j2objc:j2objc-annotations:${j2objc-annotations.vespa.version}
 commons-codec:commons-codec:${commons-codec.vespa.version}
 commons-io:commons-io:${commons-io.vespa.version}
-io.airlift:aircompressor:${aircompressor.vespa.version}
 jakarta.inject:jakarta.inject-api:${jakarta.inject.vespa.version}
 javax.inject:javax.inject:${javax.inject.vespa.version}
 junit:junit:${junit4.vespa.version}
@@ -34,6 +33,7 @@ org.apache.maven.resolver:maven-resolver-spi:${maven-resolver.vespa.version}
 org.apache.maven.resolver:maven-resolver-util:${maven-resolver.vespa.version}
 org.apache.maven.shared:maven-dependency-tree:${maven-dependency-tree.vespa.version}
 org.apache.maven.shared:maven-shared-utils:${maven-shared-utils.vespa.version}
+org.apache.maven:maven-api-annotations:${maven-api.vespa.version}
 org.apache.maven:maven-api-meta:${maven-xml-impl.vespa.version}
 org.apache.maven:maven-api-xml:${maven-xml-impl.vespa.version}
 org.apache.maven:maven-archiver:${maven-archiver.vespa.version}
@@ -47,6 +47,7 @@ org.apache.maven:maven-repository-metadata:${maven-core.vespa.version}
 org.apache.maven:maven-resolver-provider:${maven-core.vespa.version}
 org.apache.maven:maven-settings-builder:${maven-core.vespa.version}
 org.apache.maven:maven-settings:${maven-core.vespa.version}
+org.apache.maven:maven-xml:${maven-api.vespa.version}
 org.apache.maven:maven-xml-impl:${maven-xml-impl.vespa.version}
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
@@ -77,6 +78,6 @@ org.ow2.asm:asm-commons:${asm.vespa.version}
 org.ow2.asm:asm-tree:${asm.vespa.version}
 org.ow2.asm:asm:${asm.vespa.version}
 org.slf4j:slf4j-api:${slf4j.vespa.version}
-org.tukaani:xz:1.9
+org.tukaani:xz:1.11
 org.twdata.maven:mojo-executor:${mojo-executor.vespa.version}
 org.vafer:jdependency:${vafer.jdependency.vespa.version}

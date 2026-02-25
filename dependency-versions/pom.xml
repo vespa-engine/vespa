@@ -123,6 +123,7 @@
         <luben.zstd.vespa.version>1.5.6-4</luben.zstd.vespa.version>
         <lucene.vespa.version>9.11.1</lucene.vespa.version>
         <maven-archiver.vespa.version>3.6.2</maven-archiver.vespa.version>
+        <maven-api.vespa.version>4.0.0-rc-5</maven-api.vespa.version>
         <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
         <maven-xml-impl.vespa.version>4.0.0-beta-3</maven-xml-impl.vespa.version>
         <mcp-sdk.vespa.version>0.11.2</mcp-sdk.vespa.version>
