@@ -35,7 +35,7 @@ org.apache.maven.shared:maven-dependency-tree:${maven-dependency-tree.vespa.vers
 org.apache.maven.shared:maven-shared-utils:${maven-shared-utils.vespa.version}
 org.apache.maven:maven-api-annotations:${maven-api.vespa.version}
 org.apache.maven:maven-api-meta:${maven-xml-impl.vespa.version}
-org.apache.maven:maven-api-xml:${maven-xml-impl.vespa.version}
+org.apache.maven:maven-api-xml:${maven-api.vespa.version}
 org.apache.maven:maven-archiver:${maven-archiver.vespa.version}
 org.apache.maven:maven-artifact:${maven-core.vespa.version}
 org.apache.maven:maven-builder-support:${maven-core.vespa.version}
