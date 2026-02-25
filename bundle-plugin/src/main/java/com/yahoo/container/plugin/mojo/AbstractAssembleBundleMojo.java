@@ -12,6 +12,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
+import org.codehaus.plexus.components.io.resources.PlexusIoFileResourceCollection;
 
 import java.io.File;
 import java.nio.channels.Channels;
@@ -38,7 +39,9 @@ abstract class AbstractAssembleBundleMojo extends AbstractMojo {
 
     void addDirectory(JarArchiver jarArchiver, Path directory) {
         if (java.nio.file.Files.isDirectory(directory)) {
-            jarArchiver.addDirectory(directory.toFile());
+            PlexusIoFileResourceCollection resources = new PlexusIoFileResourceCollection();
+            resources.setBaseDir(directory.toFile());
+            jarArchiver.addResources(resources);
         }
     }
 
