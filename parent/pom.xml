@@ -301,6 +301,9 @@
                     <groupId>io.github.tulipcc</groupId>
                     <artifactId>tulipcc-maven-plugin</artifactId>
                     <version>5.0.0</version>
+                    <configuration>
+                        <jdkVersion>17</jdkVersion>
+                    </configuration>
                     <executions>
                         <execution>
                             <phase>generate-sources</phase>
@@ -309,6 +312,19 @@
                             </goals>
                         </execution>
                     </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.reporting</groupId>
+                            <artifactId>maven-reporting-impl</artifactId>
+                            <version>3.2.0</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>dom4j</groupId>
+                                    <artifactId>dom4j</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>io.github.ascopes</groupId>
