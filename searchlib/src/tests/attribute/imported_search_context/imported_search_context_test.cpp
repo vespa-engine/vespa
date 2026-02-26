@@ -48,7 +48,7 @@ struct Fixture : ImportedAttributeFixture {
     }
 
     SimpleResult search(SearchIterator& iter) {
-        return SimpleResult().searchStrict(iter, get_imported_attr()->getNumDocs());
+        return SimpleResult().search(iter, get_imported_attr()->getNumDocs());
     }
 };
 
@@ -62,7 +62,7 @@ bool is_hit_with_weight(Iterator& iter, TermFieldMatchData& match, DocId lid, in
         return false;
     }
     iter.unpack(lid);
-    EXPECT_EQ(lid, match.getDocId()) << (failed = true, "");
+    EXPECT_TRUE(match.has_ranking_data(lid)) << (failed = true, "");
     if (failed) {
         return false;
     }
@@ -80,7 +80,7 @@ bool is_strict_hit_with_weight(Iterator& iter, TermFieldMatchData& match,
         return false;
     }
     iter.unpack(expected_lid);
-    EXPECT_EQ(expected_lid, match.getDocId())  << (failed = true, "");
+    EXPECT_TRUE(match.has_ranking_data(expected_lid))  << (failed = true, "");
     if (failed) {
         return false;
     }
@@ -587,7 +587,7 @@ void test_search_cache(bool increase_child_lidspace, FilterConfig filter_config)
     EXPECT_FALSE(iter->seek(1));
     EXPECT_TRUE(iter->seek(3));
     iter->unpack(3);
-    EXPECT_EQ(3, match.getDocId());
+    EXPECT_TRUE(match.has_ranking_data(3));
     if (filter_config == FilterConfig::ExplicitlyEnabled) {
         EXPECT_EQ(1, match.getWeight());
     } else {

@@ -45,7 +45,7 @@ struct MyWandSpec : public WandSpec
     SimpleResult search() {
         SearchIterator::UP search(create());
         SimpleResult hits;
-        hits.search(*search);
+        hits.search(*search, docid_limit);
         return hits;
     }
 };
@@ -67,7 +67,7 @@ struct SimpleWandFixture {
         spec.leaf(LeafSpec("foo").doc(1).doc(2).doc(3).doc(4).doc(5).doc(6));
         spec.leaf(LeafSpec("bar").doc(1).doc(3).doc(5));
         SearchIterator::UP search(spec.create());
-        hits.search(*search);
+        hits.search(*search, docid_limit);
     }
     ~SimpleWandFixture();
 };
@@ -84,7 +84,7 @@ struct AdvancedWandFixture {
         spec.leaf(LeafSpec("4").doc(4).doc(14).doc(114));
         spec.leaf(LeafSpec("5").doc(5).doc(15).doc(115));
         SearchIterator::UP search(spec.create());
-        hits.search(*search);
+        hits.search(*search, docid_limit);
     }
     ~AdvancedWandFixture();
 };
@@ -146,7 +146,7 @@ TEST(WeakAndTest, require_that_initial_docid_for_subsearches_are_taken_into_acco
     wand::MatchParams match_params(scores, wand::StopWordStrategy::none(), wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, docid_limit);
     auto search = std::make_unique<TrackedSearch>("WAND", history, WeakAndSearch::create(terms, match_params, 2, true, false));
     SimpleResult hits;
-    hits.search(*search);
+    hits.search(*search, docid_limit);
     EXPECT_EQ(SimpleResult().addHit(10), hits);
     EXPECT_EQ(History().seek("WAND", 1).step("WAND", 10).unpack("WAND", 10).unpack("bar", 10)
               .seek("WAND", 11).seek("bar", 11).step("bar", search::endDocId).step("WAND", search::endDocId),

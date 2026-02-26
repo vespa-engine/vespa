@@ -111,12 +111,14 @@ public class NearItem extends CompositeItem {
         if (!super.equals(object)) return false;
         NearItem other = (NearItem) object; // Ensured by superclass
         if (this.distance != other.distance) return false;
+        if (this.numNegativeItems != other.numNegativeItems) return false;
+        if (this.exclusionDistance != other.exclusionDistance) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), distance);
+        return Objects.hash(super.hashCode(), distance, numNegativeItems, exclusionDistance);
     }
 
     @Override

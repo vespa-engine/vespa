@@ -683,17 +683,26 @@ public class PermanentFlags {
             "Takes effect on next maintainer run",
             CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
 
+    public static final UnboundBooleanFlag IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP = defineFeatureFlag(
+            "ignore-connectivity-checks-at-startup", false,
+            "Ignore connectivity checks in config-sentinel at startup. " +
+                    "Normally the sentinel checks that a sufficient fraction of cluster nodes can reach each other before starting services. " +
+                    "When this flag is set, services are started immediately regardless of connectivity check results.",
+            "Takes effect on next host restart",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     public static final UnboundListFlag<String> ALLOW_FLAVORS = defineListFlag(
             "allow-flavors", List.of(), String.class,
             "Flavors that that we will allow provisioning (flavors with lifecycle 'active' are allowed by default)" +
-                    ". Each string in the list is a glob, e.g. 'c4d-*' or 'c4d-high*'.",
+                    ". Each string in the list is a regexp, e.g. 'c4d-.*' or 'c4d-high.*'.",
             "Takes effect immediately",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
     );
 
     public static final UnboundListFlag<String> DENY_FLAVORS = defineListFlag(
             "deny-flavors", List.of(), String.class,
-            "Flavors that that we will deny provisioning. Each string in the list is a glob, e.g. 'c4d-*' or 'c4d-high*'.",
+            "Flavors that that we will deny provisioning (flavors with lifecycle 'new' and 'retired' are disallowed by default)" +
+                    ". Each string in the list is a regexp, e.g. 'c4d-.*' or 'c4d-high.*'.",
             "Takes effect immediately",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
     );

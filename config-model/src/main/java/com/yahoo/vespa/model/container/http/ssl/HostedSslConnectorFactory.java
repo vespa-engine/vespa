@@ -28,6 +28,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private final SslClientAuth clientAuth;
     private final List<String> tlsCiphersOverride;
     private final boolean proxyProtocolEnabled;
+    private final boolean tokenEndpoint;
     private final Duration endpointConnectionTtl;
     private final List<String> remoteAddressHeaders;
     private final List<String> remotePortHeaders;
@@ -42,6 +43,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         this.clientAuth = builder.clientAuth;
         this.tlsCiphersOverride = List.copyOf(builder.tlsCiphersOverride);
         this.proxyProtocolEnabled = builder.proxyProtocolEnabled;
+        this.tokenEndpoint = builder.tokenEndpoint;
         this.endpointConnectionTtl = builder.endpointConnectionTtl;
         this.remoteAddressHeaders = List.copyOf(builder.remoteAddressHeaders);
         this.remotePortHeaders = List.copyOf(builder.remotePortHeaders);
@@ -92,7 +94,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         connectorBuilder
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
                                        .enabled(proxyProtocolEnabled))
-                .idleTimeout(Duration.ofSeconds(30).toSeconds())
+                .idleTimeout(tokenEndpoint ? Duration.ofMinutes(5).toSeconds() : Duration.ofSeconds(30).toSeconds())
                 .maxConnectionLife(endpointConnectionTtl != null ? endpointConnectionTtl.toSeconds() : 0)
                 .accessLog(new ConnectorConfig.AccessLog.Builder()
                                    .remoteAddressHeaders(remoteAddressHeaders)

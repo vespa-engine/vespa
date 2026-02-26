@@ -177,9 +177,11 @@ schema rankexpression {
   rank-profile macros {
     first-phase {
       expression: match + fieldMatch(title) + myfeature
+      total-keep-rank-count: 2345
     }
     second-phase {
       expression: fourtimessum(match,rankBoost)
+      total-rerank-count: 2001
     }
     function fourtimessum(var1, var2) {
       expression: 4*(var1+var2)

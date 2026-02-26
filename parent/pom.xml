@@ -338,9 +338,17 @@
                     </configuration>
                     <executions>
                         <execution>
+                            <id>abicheck</id>
                             <phase>package</phase>
                             <goals>
                                 <goal>abicheck</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>leakagecheck</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>leakagecheck</goal>
                             </goals>
                         </execution>
                     </executions>
@@ -1068,6 +1076,11 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-xml-impl</artifactId>
                 <version>${maven-xml-impl.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-api-xml</artifactId>
+                <version>${maven-api.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.enforcer</groupId>

@@ -28,7 +28,7 @@ RawScoreExecutor::execute(uint32_t docId)
     feature_t output = 0.0;
     for (auto handle : _handles) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(handle);
-        if (tfmd->getDocId() == docId) {
+        if (tfmd->has_ranking_data(docId)) {
             output += tfmd->getRawScore();
         }
     }

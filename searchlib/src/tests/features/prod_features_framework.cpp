@@ -133,10 +133,10 @@ TEST_F(ProdFeaturesTest, test_framework)
     }
     { // check that data is cleared
         MatchDataBuilder mdb(queryEnv, *data);
-        EXPECT_EQ(mdb.getTermFieldMatchData(0, 0)->getDocId(), TermFieldMatchData::invalidId());
-        EXPECT_EQ(mdb.getTermFieldMatchData(0, 1)->getDocId(), TermFieldMatchData::invalidId());
-        EXPECT_EQ(mdb.getTermFieldMatchData(0, 2)->getDocId(), TermFieldMatchData::invalidId());
-        EXPECT_EQ(mdb.getTermFieldMatchData(1, 1)->getDocId(), TermFieldMatchData::invalidId());
+        EXPECT_TRUE(mdb.getTermFieldMatchData(0, 0)->has_invalid_docid());
+        EXPECT_TRUE(mdb.getTermFieldMatchData(0, 1)->has_invalid_docid());
+        EXPECT_TRUE(mdb.getTermFieldMatchData(0, 2)->has_invalid_docid());
+        EXPECT_TRUE(mdb.getTermFieldMatchData(1, 1)->has_invalid_docid());
 
         // test illegal things
         ASSERT_TRUE(!mdb.addOccurence("foo", 1, 10)); // invalid term/field combination

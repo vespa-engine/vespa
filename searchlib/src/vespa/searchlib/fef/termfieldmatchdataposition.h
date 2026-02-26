@@ -47,17 +47,13 @@ public:
 class TermFieldMatchDataPosition : public TermFieldMatchDataPositionKey
 {
 private:
-    int32_t _elementWeight;
-    uint32_t _elementLen;
-    double   _matchExactness; // or possibly _matchWeight
+    int32_t  _elementWeight  = 1;
+    uint32_t _elementLen     = SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH;
+    float    _matchExactness = 1.0; // or possibly _matchWeight
+    uint32_t _matchLength    = 1;
 
 public:
-    TermFieldMatchDataPosition()
-        : TermFieldMatchDataPositionKey(),
-          _elementWeight(1),
-          _elementLen(SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH),
-          _matchExactness(1.0)
-    { }
+    TermFieldMatchDataPosition() : TermFieldMatchDataPositionKey() {}
 
     const TermFieldMatchDataPositionKey &key() const {
         return *this;
@@ -87,7 +83,8 @@ public:
 
     int32_t getElementWeight() const { return _elementWeight; }
     uint32_t getElementLen() const { return _elementLen; }
-    double getMatchExactness() const { return _matchExactness; }
+    float getMatchExactness() const { return _matchExactness; }
+    uint32_t getMatchLength() const { return _matchExactness; }
 
     void setElementWeight(int32_t elementWeight) {
         _elementWeight = elementWeight;
@@ -97,6 +94,10 @@ public:
     }
     TermFieldMatchDataPosition& setMatchExactness(double exactness) {
         _matchExactness = exactness;
+        return *this;
+    }
+    TermFieldMatchDataPosition& setMatchLength(uint32_t length) {
+        _matchLength = length;
         return *this;
     }
 };

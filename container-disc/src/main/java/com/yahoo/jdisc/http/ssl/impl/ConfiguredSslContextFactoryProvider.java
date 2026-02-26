@@ -110,7 +110,7 @@ public class ConfiguredSslContextFactoryProvider implements SslProvider {
     private static boolean hasBoth(String a, String b) { return !a.isBlank() && !b.isBlank(); }
     private static boolean hasNeither(String a, String b) { return a.isBlank() && b.isBlank(); }
 
-    Optional<String> getCaCertificates(ConnectorConfig.Ssl sslConfig) {
+    protected Optional<String> getCaCertificates(ConnectorConfig.Ssl sslConfig) {
         var sb = new StringBuilder();
         if (sslConfig.caCertificateFile().isBlank() && sslConfig.caCertificate().isBlank()) return Optional.empty();
         if (!sslConfig.caCertificate().isBlank()) {

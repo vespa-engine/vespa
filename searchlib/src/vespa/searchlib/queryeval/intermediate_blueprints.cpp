@@ -207,10 +207,10 @@ AndNotBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 AndNotBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    if (_elementwise) {
+    if (_elementwise && constraint == FilterConstraint::UPPER_BOUND) {
         return create_first_child_filter(get_children(), constraint);
     }
-    return create_andnot_filter(get_children(), strict(), constraint);
+    return create_andnot_filter(get_children(), constraint);
 }
 
 std::shared_ptr<GlobalFilter>
@@ -321,7 +321,7 @@ AndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 AndBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_and_filter(get_children(), strict(), constraint);
+    return create_and_filter(get_children(), constraint);
 }
 
 std::shared_ptr<GlobalFilter>
@@ -438,7 +438,7 @@ OrBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 OrBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_or_filter(get_children(), strict(), constraint);
+    return create_or_filter(get_children(), constraint);
 }
 
 AnyFlow
@@ -575,7 +575,7 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 WeakAndBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_atmost_or_filter(get_children(), strict(), constraint);
+    return create_atmost_or_filter(get_children(), constraint);
 }
 
 void
@@ -671,7 +671,7 @@ NearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     size_t positive_count = sat_sub(get_children().size(), _num_negative_terms);
     if (positive_count > 0) {
-        return create_atmost_and_filter(std::span(get_children().data(), positive_count), strict(), constraint);
+        return create_atmost_and_filter(std::span(get_children().data(), positive_count), constraint);
     }
     return std::make_unique<EmptySearch>();
 }
@@ -745,7 +745,7 @@ ONearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     size_t positive_count = sat_sub(get_children().size(), _num_negative_terms);
     if (positive_count > 0) {
-        return create_atmost_and_filter(std::span(get_children().data(), positive_count), strict(), constraint);
+        return create_atmost_and_filter(std::span(get_children().data(), positive_count), constraint);
     }
     return std::make_unique<EmptySearch>();
 }
@@ -907,7 +907,7 @@ SourceBlenderBlueprint::createIntermediateSearch(MultiSearch::Children sub_searc
 SearchIterator::UP
 SourceBlenderBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_atmost_or_filter(get_children(), strict(), constraint);
+    return create_atmost_or_filter(get_children(), constraint);
 }
 
 bool

@@ -101,7 +101,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
         createCertificate(certFile);
         buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem);
 
-        var configId = "container/component/com.yahoo.container.jdisc.DataplaneProxyConfigurator";
+        var configId = "container/component/com.yahoo.vespa.cloud.tenant.dataplane.DataplaneProxyConfigurator";
         var cfg = root.getConfig(DataplaneProxyConfig.class, configId);
         assertEquals(8443, cfg.mtlsPort());
         assertEquals(8444, cfg.tokenPort());
@@ -114,7 +114,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
         createCertificate(certFile);
         buildModel(Set.of(tokenEndpoint, mtlsEndpoint), List.of(), clusterElem);
 
-        var configId = "container/component/com.yahoo.container.jdisc.DataplaneProxyConfigurator";
+        var configId = "container/component/com.yahoo.vespa.cloud.tenant.dataplane.DataplaneProxyConfigurator";
         var cfg = root.getConfig(DataplaneProxyConfig.class, configId);
         assertNotNull(cfg);
         assertEquals(8443, cfg.mtlsPort());

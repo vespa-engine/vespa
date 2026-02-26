@@ -40,7 +40,7 @@ TermFieldMdExecutor::execute(uint32_t docId)
         const TermFieldMatchData &tfmd = *_md->resolveTermField(_terms[i].first);
         int32_t termWeight = _terms[i].second.percent();
 
-        if (tfmd.getDocId() == docId) {
+        if (tfmd.has_ranking_data(docId)) {
             ++termsmatched;
             score += tfmd.getWeight();
             occs += (tfmd.end() - tfmd.begin());

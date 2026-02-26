@@ -65,7 +65,7 @@ NativeAttributeMatchExecutorMulti::execute(uint32_t docId)
     feature_t score = 0;
     for (size_t i = 0; i < _queryTermData.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_queryTermData[i].tfh);
-        if (tfmd->getDocId() == docId) {
+        if (tfmd->has_ranking_data(docId)) {
             score += calculateScore(_queryTermData[i], *tfmd);
         }
     }
@@ -82,7 +82,7 @@ void
 NativeAttributeMatchExecutorSingle::execute(uint32_t docId)
 {
     const TermFieldMatchData &tfmd = *_md->resolveTermField(_queryTermData.tfh);
-    outputs().set_number(0, (tfmd.getDocId() == docId)
+    outputs().set_number(0, tfmd.has_ranking_data(docId)
                          ? calculateScore(_queryTermData, tfmd)
                          : 0);
 }

@@ -40,7 +40,7 @@ TEST(PhraseSplitterTest, test_copy_term_field_match_data)
 
     PhraseSplitter::copyTermFieldMatchData(dst, src, 2);
 
-    EXPECT_EQ(dst.getDocId(), 1u);
+    EXPECT_TRUE(dst.has_ranking_data(1));
     {
         TermFieldMatchData::PositionsIterator itr = dst.begin();
         EXPECT_EQ(itr->getPosition(), 7u);

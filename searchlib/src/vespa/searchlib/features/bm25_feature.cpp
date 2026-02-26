@@ -60,7 +60,7 @@ Bm25Executor::execute(uint32_t doc_id)
 {
     feature_t score = 0;
     for (const auto& term : _terms) {
-        if (term.tfmd->getDocId() == doc_id) {
+        if (term.tfmd->has_ranking_data(doc_id)) {
             auto raw_num_occs = term.tfmd->getNumOccs();
             if (raw_num_occs == 0) {
                 // Interleaved features are missing. Assume 1 occurrence and average field length.

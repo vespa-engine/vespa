@@ -140,6 +140,7 @@ void Connectivity::configure(const SentinelConfig::Connectivity& config, const M
     _config = config;
     LOG(config, "connectivity.maxBadCount = %d", _config.maxBadCount);
     LOG(config, "connectivity.minOkPercent = %d", _config.minOkPercent);
+    LOG(config, "connectivity.ignore = %s", _config.ignore ? "true" : "false");
     _checkSpecs = specsFrom(model);
 }
 
@@ -202,6 +203,10 @@ bool Connectivity::Accumulator::enoughOk(const SentinelConfig::Connectivity& con
         LOG(warning, "Only %zu of %zu nodes are up and OK, %.1f%% (min is %d%%)", _numOk, _numHandled, pct,
             config.minOkPercent);
         enough = false;
+    }
+    if (config.ignore && !enough) {
+        LOG(warning, "Connectivity checks ignored, proceeding with service startup anyway");
+        enough = true;
     }
     if (_numOk == _numHandled) {
         LOG(info, "All connectivity checks OK, proceeding with service startup");

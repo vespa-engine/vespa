@@ -53,7 +53,7 @@ public class PendingRestarts {
     /**
      * Returns a new {@link PendingRestarts} without the given {@code hostnames} for generations up to and including {@code generation}.
      */
-    public PendingRestarts withoutPreviousGeneration(long generation, Set<String> hostnames) {
+    public PendingRestarts withoutPreviousGenerations(long generation, Set<String> hostnames) {
         Map<Long, Set<String>> newRestarts = new LinkedHashMap<>();
         generationsForRestarts.forEach((restartGen, restartHosts) -> {
             Set<String> remainingHosts = new LinkedHashSet<>(restartHosts);

@@ -33,7 +33,7 @@ TEST(TermMatchDataMergerTest, merge_empty_input)
     uint32_t docid = 5;
     in.reset(docid);
     merger.merge(docid);
-    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_TRUE(out.has_ranking_data(docid));
     EXPECT_TRUE(out.begin() == out.end());
 }
 
@@ -70,7 +70,7 @@ TEST(TermMatchDataMergerTest, merge_simple)
 
     merger.merge(docid);
 
-    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_TRUE(out.has_ranking_data(docid));
     EXPECT_EQ(8u, out.end() - out.begin());
 
     EXPECT_EQ( 5u, out.begin()[0].getPosition());
@@ -101,7 +101,7 @@ TEST(TermMatchDataMergerTest, merge_simple)
 
     merger.merge(docid);
 
-    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_TRUE(out.has_ranking_data(docid));
     EXPECT_EQ(3u, out.end() - out.begin());
 
     EXPECT_EQ( 5u, out.begin()[0].getPosition());
@@ -113,7 +113,7 @@ TEST(TermMatchDataMergerTest, merge_simple)
     docid = 15;
 
     merger.merge(docid);
-    EXPECT_NE(docid, out.getDocId());
+    EXPECT_FALSE(out.has_data(docid));
 }
 
 TEST(TermMatchDataMergerTest, merge_multiple_fields)
@@ -156,9 +156,9 @@ TEST(TermMatchDataMergerTest, merge_multiple_fields)
 
     merger.merge(docid);
 
-    EXPECT_EQ(docid, out1.getDocId());
-    EXPECT_EQ(docid, out2.getDocId());
-    EXPECT_NE(docid, out3.getDocId());
+    EXPECT_TRUE(out1.has_ranking_data(docid));
+    EXPECT_TRUE(out2.has_ranking_data(docid));
+    EXPECT_FALSE(out3.has_data(docid));
 
     EXPECT_EQ(2u, out1.end() - out1.begin());
     EXPECT_EQ(3u, out2.end() - out2.begin());
@@ -206,7 +206,7 @@ TEST(TermMatchDataMergerTest, merge_duplicates)
 
     merger.merge(docid);
 
-    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_TRUE(out.has_ranking_data(docid));
     EXPECT_EQ(5u, out.end() - out.begin());
 
     EXPECT_EQ( 3u, out.begin()[0].getPosition());
@@ -241,7 +241,7 @@ TEST(TermMatchDataMergerTest, merge_max_element_length)
     b.appendPosition(make_pos(2));
     merger.merge(docid);
 
-    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_TRUE(out.has_ranking_data(docid));
     EXPECT_EQ(1000u, out.getIterator().getFieldLength());
 }
 
@@ -279,7 +279,7 @@ TEST_F(TermMatchDataMergerTest2, merge_no_normal_features)
     b.appendPosition(make_pos(3));
 
     merger.merge(docid);
-    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_TRUE(out.has_ranking_data(docid));
     EXPECT_EQ(0u, out.size());
 }
 
@@ -299,7 +299,7 @@ TEST_F(TermMatchDataMergerTest2, merge_interleaved_features)
     b.setFieldLength(35);
 
     merger.merge(docid);
-    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_TRUE(out.has_ranking_data(docid));
     EXPECT_EQ(2u, out.getNumOccs());
     EXPECT_EQ(35u, out.getFieldLength());
 }
@@ -322,7 +322,7 @@ TEST_F(TermMatchDataMergerTest2, merge_interleaved_features_with_detected_duplic
     b.appendPosition(make_pos(5));
 
     merger.merge(docid);
-    EXPECT_EQ(docid, out.getDocId());
+    EXPECT_TRUE(out.has_ranking_data(docid));
     EXPECT_EQ(1u, out.end() - out.begin());
     EXPECT_EQ( 5u, out.begin()[0].getPosition());
     EXPECT_EQ(1.5, out.begin()[0].getMatchExactness());

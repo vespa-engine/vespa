@@ -207,6 +207,7 @@ public class ModelContextImpl implements ModelContext {
         private final int maxDocumentOperationRequestSizeMib;
         private final Sidecars sidecarsForTest;
         private final boolean useTriton;
+        private final boolean ignoreConnectivityChecksAtStartup;
         private final int searchCoreMaxOutstandingMoveOps;
         private final double docprocHandlerThreadpool;
         private final boolean applyOnRestartForApplicationMetadataConfig;
@@ -257,6 +258,7 @@ public class ModelContextImpl implements ModelContext {
             this.maxDocumentOperationRequestSizeMib = Flags.MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB.bindTo(source).with(appId).with(version).value();
             this.sidecarsForTest = Flags.SIDECARS_FOR_TEST.bindTo(source).with(appId).with(version).value();
             this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
+            this.ignoreConnectivityChecksAtStartup = PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP.bindTo(source).with(appId).value();
             this.searchCoreMaxOutstandingMoveOps = Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS.bindTo(source).with(appId).with(version).value();
             this.docprocHandlerThreadpool = Flags.DOCPROC_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
             this.applyOnRestartForApplicationMetadataConfig = Flags.APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG.bindTo(source).with(appId).with(version).value();
@@ -308,6 +310,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxDocumentOperationRequestSizeMib() { return maxDocumentOperationRequestSizeMib; }
         @Override public Object sidecarsForTest() { return sidecarsForTest; }
         @Override public boolean useTriton() { return useTriton; }
+        @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
         @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
         @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
         @Override public boolean applyOnRestartForApplicationMetadataConfig() { return applyOnRestartForApplicationMetadataConfig; }

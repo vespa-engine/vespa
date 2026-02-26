@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.TermType;
@@ -14,6 +15,7 @@ import com.yahoo.prelude.semantics.engine.EvaluationException;
 import com.yahoo.prelude.semantics.engine.Match;
 import com.yahoo.prelude.semantics.engine.ReferencedMatches;
 import com.yahoo.prelude.semantics.engine.RuleEvaluation;
+import com.yahoo.search.query.QueryTree;
 
 /**
  * A term produced by a production rule which takes its actual term value
@@ -29,7 +31,7 @@ public class ReferenceTermProduction extends TermProduction {
     /**
      * Creates a new produced reference term
      *
-     * @param reference the label of the condition this should take it's value from
+     * @param reference the label of the condition this should take its value from
      */
     public ReferenceTermProduction(String reference, boolean produceAll) {
         super();
@@ -124,10 +126,17 @@ public class ReferenceTermProduction extends TermProduction {
     }
 
     private void produce(RuleEvaluation e, Match match, List<Item> items, int offset) {
-        if (replacing)
+        if (replacing) {
             insertMatch(e, match, items, offset);
-        else
+        }
+        else if (shouldInsertAtMatch(match)) {
+            // Add to the match's parent when it's a nested composite (handles WeakAnd correctly)
+            insertMatch(e, match, items, offset);
+        }
+        else {
+            // Use root-level combining for other cases
             e.addItems(items, getTermType());
+        }
     }
 
     @Override

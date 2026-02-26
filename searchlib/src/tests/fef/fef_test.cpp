@@ -47,7 +47,7 @@ TEST(FefTest, test_layout)
     {
         TermFieldMatchData tmd;
         EXPECT_EQ(IllegalFieldId, tmd.getFieldId());
-        EXPECT_EQ(TermFieldMatchData::invalidId(), tmd.getDocId());
+        EXPECT_TRUE(tmd.has_invalid_docid());
     }
     MatchDataLayout mdl;
     EXPECT_EQ(mdl.allocTermField(0), 0u);
@@ -137,10 +137,10 @@ TEST(FefTest, term_field_match_data_filter_elements_normal)
     filter_elems(tfmd, docid3, {2, 3});
     EXPECT_EQ(elems({3}), get_elems(tfmd, docid3));
     EXPECT_EQ(1, tfmd.getNumOccs());
-    EXPECT_EQ(docid3, tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_ranking_data(docid3));
     filter_elems(tfmd, docid3, {1, 2});
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
-    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_invalid_docid());
 }
 
 TEST(FefTest, term_field_match_data_filter_elements_future_match_data)
@@ -150,7 +150,7 @@ TEST(FefTest, term_field_match_data_filter_elements_future_match_data)
     set_elems(tfmd, docid3, {1, 3});
     filter_elems(tfmd, docid2, {});
     EXPECT_EQ(elems({1, 3}), get_elems(tfmd, docid3));
-    EXPECT_EQ(docid3, tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_ranking_data(docid3));
 }
 
 TEST(FefTest, term_field_match_data_filter_elements_past_match_data)
@@ -160,7 +160,7 @@ TEST(FefTest, term_field_match_data_filter_elements_past_match_data)
     set_elems(tfmd, docid3, {1, 3});
     filter_elems(tfmd, docid4, {1, 2, 3});
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
-    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_invalid_docid());
 }
 
 TEST(FefTest, term_field_match_data_filter_elements_empty_filter)
@@ -169,17 +169,17 @@ TEST(FefTest, term_field_match_data_filter_elements_empty_filter)
     set_elems(tfmd, docid3, {1, 3});
     filter_elems(tfmd, docid3, {});
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
-    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_invalid_docid());
 }
 
 TEST(FefTest, term_field_match_data_filter_elements_empty_match_data)
 {
     TermFieldMatchData tfmd;
     set_elems(tfmd, docid3, {});
-    EXPECT_EQ(docid3, tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_ranking_data(docid3));
     filter_elems(tfmd, docid3, {1, 2, 3}); // Clear empty (before and after filtering) match data
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
-    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_invalid_docid());
 }
 
 TEST(FefTest, verify_size_of_essential_fef_classes) {

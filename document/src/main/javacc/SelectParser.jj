@@ -47,8 +47,8 @@ TOKEN :
 
 TOKEN :
 {
-    <LBRACE: "("> |
-    <RBRACE: ")"> |
+    <LPAREN: "("> |
+    <RPAREN: ")"> |
     <ADD: "+"> |
     <SUB: "-"> |
     <MUL: "*"> |
@@ -65,8 +65,9 @@ TOKEN :
     <GT: ">"> |
     <LT: "<"> |
     <DOLLAR: "$"> |
-    <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
-             ("'" (~["'"] | "\\'")* "'")> |
+    <STRING: (<DQ_STRING> | <SQ_STRING>)>             |
+        <#DQ_STRING: ("\"" (~["\""] | "\\\"")* "\"")> |
+        <#SQ_STRING: ("'"  (~["'"]  | "\\'" )* "'")>  |
     <ID: "id"> |
     <ID_SCHEME: "scheme"> |
     <ID_TYPE: "type"> |
@@ -82,7 +83,17 @@ TOKEN :
     <AND: "and"> |
     <OR: "or"> |
     <NOT: "not"> |
-    <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-","@","$","[","]","{","}"])*>
+    <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_"])*> |
+      /* FIXME this is a syntactic hack to "flatten" fieldpath map and array lookups into a single token
+       * rather than match these structurally in the parser itself. This is due to the way fieldpaths
+       * are handled in the legacy AST (i.e. as strings, not structures), and this must be changed first
+       * before we can fix this.
+       * Backend field path expression parsing only supports double quoted strings, so make this a
+       * constraint here as well to fail early and fast.
+       */
+    <FP_MAP_LOOKUP:   "{" ((<DOLLAR>)? <IDENTIFIER> | <DIGITS> | <DQ_STRING>) "}"> |
+    <FP_ARRAY_LOOKUP: "[" ((<DOLLAR> <IDENTIFIER>)  | <DIGITS>) "]">               |
+        <#DIGITS: (["0"-"9"])+> // Not the same as <DECIMAL> which doesn't allow leading 0 (and thus not simply "0")
 }
 
 ExpressionNode expression() :
@@ -119,7 +130,7 @@ ExpressionNode negation() :
 
 NowNode now() : { }
 {
-    ( <NOW> <LBRACE> <RBRACE> )
+    ( <NOW> <LPAREN> <RPAREN> )
     { return new NowNode(); }
 }
 
@@ -159,14 +170,15 @@ VariableNode variable() :
 
 ExpressionNode attribute() :
 {
+    String fp;
     ExpressionNode value;
     AttributeNode.Item item;
     List items = new ArrayList();
 }
 {
-    ( value = value() ( <DOT> identifier()  { item = new AttributeNode.Item(token.image); }
-                        [ <LBRACE> <RBRACE> { item.setType(AttributeNode.Item.FUNCTION); } ]
-                                            { items.add(item); } )* )
+    ( value = value() ( <DOT> fp = verbatimFieldPath() { item = new AttributeNode.Item(fp); }
+                        [ <LPAREN> <RPAREN>            { item.setType(AttributeNode.Item.FUNCTION); } ]
+                                                       { items.add(item); } )* )
     {
         if ( ! items.isEmpty()) // A value followed by dotted access/method call
             return new AttributeNode(value, items);
@@ -188,7 +200,7 @@ ExpressionNode value() :
         ret = literal() |
         ret = variable() |
         ret = now() |
-        <LBRACE> ret = logic() <RBRACE> { ret = new EmbracedNode(ret); } ) |
+        <LPAREN> ret = logic() <RPAREN> { ret = new EmbracedNode(ret); } ) |
      ( ret = document() ) )
     { return ret; }
 }
@@ -221,7 +233,30 @@ void identifier() : { }
        <OR> |
        // <NOT> |  Causes a choice conflict, but it is not such a good name anyway ...
        <IDENTIFIER> )
-}  
+}
+
+/*
+ * FIXME this is a horrible leftover of post-parsed fieldpath processing that
+ * exposes what would normally be structural AST nodes as the raw string
+ * representation of the subexpression that spans the fieldpath. I.e. we mangle
+ * logically distinct expression pieces together as one identifier.
+ */
+String verbatimFieldPath() :
+{
+    String fp;
+}
+{
+    // We optimize for the common case where there's only a single token whose
+    // image can be returned verbatim, i.e. the String += operator realloc is fine
+    // when this is not the case.
+    ( identifier()                              { fp  = token.image; }
+      ( ( <FP_MAP_LOOKUP> | <FP_ARRAY_LOOKUP> ) { fp += token.image; }
+      )*
+    )
+    { return fp; }
+}
+
+
 
 IdNode id() :
 {

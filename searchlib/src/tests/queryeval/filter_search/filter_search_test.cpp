@@ -244,12 +244,11 @@ struct NoFlow {
 // algorithm. Satisfies the FilterFactory concept.
 template <typename Flow>
 struct Combine {
-    using factory_fun = std::function<std::unique_ptr<SearchIterator>(const Blueprint::Children &, bool, Constraint)>;
+    using factory_fun = std::function<std::unique_ptr<SearchIterator>(const Blueprint::Children &, Constraint)>;
     factory_fun fun;
-    bool strict;
     Blueprint::Children list;
     Combine(factory_fun fun_in, const Children &child_list)
-      : fun(fun_in), strict(false), list()
+      : fun(fun_in), list()
     {
         child_list.apply(*this);
     }
@@ -258,7 +257,6 @@ struct Combine {
         list.push_back(std::move(child));
     }
     void basic_plan(InFlow in_flow, uint32_t my_docid_limit) {
-        strict = in_flow.strict();
         Flow flow(in_flow);
         for (auto &child: list) {
             child->basic_plan(InFlow(flow.strict(), flow.flow()), my_docid_limit);
@@ -266,7 +264,7 @@ struct Combine {
         }
     }
     auto createFilterSearch(Constraint constraint) const {
-        return fun(list, strict, constraint);
+        return fun(list, constraint);
     }
 };
 template <typename Flow>
@@ -492,11 +490,7 @@ void verify(Blueprint &&blueprint, bool strict, Constraint constraint, const Exp
         break;
     }
     SimpleResult actual;
-    if (strict) {
-        actual.searchStrict(*filter, docid_limit);
-    } else {
-        actual.search(*filter, docid_limit);
-    }
+    actual.search(*filter, docid_limit);
     EXPECT_EQ(actual, expect.docs);
 }
 
@@ -535,9 +529,8 @@ TEST(FilterSearchTest, custom_leaf) {
 }
 
 TEST(FilterSearchTest, default_filter) {
-    auto adapter = [](const auto &ignore_children, bool ignore_strict, Constraint constraint) {
+    auto adapter = [](const auto &ignore_children, Constraint constraint) {
                        (void) ignore_children;
-                       (void) ignore_strict;
                        return Blueprint::create_default_filter(constraint);
                    };
     verify(Combine<NoFlow>(adapter, Children()), Expect::full(), Expect::empty());
@@ -615,8 +608,7 @@ TEST(FilterSearchTest, rank_filter) {
     auto child_list1 = Children().hits({1,2,3}).empty().full();
     auto child_list2 = Children().empty().hits({1,2,3}).full();
     auto child_list3 = Children().full().hits({1,2,3}).empty();
-    auto adapter = [](const auto &children, bool ignore_strict, Constraint constraint) {
-                       (void) ignore_strict;
+    auto adapter = [](const auto &children, Constraint constraint) {
                        return Blueprint::create_first_child_filter(children, constraint);
                    };
     verify(Combine<RankFlow>(adapter, child_list1), Expect::hits({1,2,3}));
@@ -728,14 +720,12 @@ TEST(FilterSearchTest, first_or_child_can_be_partially_pruned) {
            Expect::hits({3, 5, 10, 11}).child_count(2));
 }
 
-TEST(FilterSearchTest, first_and_child_can_only_be_partially_pruned_when_nonstrict) {
+TEST(FilterSearchTest, first_and_child_can_be_pruned) {
     auto child_list = Children()
         .full().check(true, true)
         .hits({1, 2, 3}).check(false, true)
         .hits({2, 3, 4}).check(false, true);
-    verify(Combine<AndFlow>(Blueprint::create_and_filter, child_list), true,
-           Expect::hits({2, 3}).child_count(3));
-    verify(Combine<AndFlow>(Blueprint::create_and_filter, child_list), false,
+    verify(Combine<AndFlow>(Blueprint::create_and_filter, child_list),
            Expect::hits({2, 3}).child_count(2));
 }
 

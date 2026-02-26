@@ -42,7 +42,7 @@ ReverseProximityExecutor::execute(uint32_t docId)
     search::fef::FieldPositionsIterator itA, itB;
     const fef::TermFieldMatchData &matchA = *_md->resolveTermField(_termA);
     const fef::TermFieldMatchData &matchB = *_md->resolveTermField(_termB);
-    if (matchA.getDocId() == docId && matchB.getDocId() == docId) {
+    if (matchA.has_ranking_data(docId) && matchB.has_ranking_data(docId)) {
         itA = matchA.getIterator();
         itB = matchB.getIterator();
         if (itA.valid() && itB.valid()) {

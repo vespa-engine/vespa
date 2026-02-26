@@ -227,7 +227,7 @@ TEST(SimplePhraseTest, requireThatPhrasesAreUnpacked) {
                 ASSERT_TRUE(search->seek(doc_match));
                 search->unpack(doc_match);
 
-                EXPECT_EQ(doc_match, test.tmd().getDocId());
+                EXPECT_TRUE(test.tmd().has_ranking_data(doc_match));
                 if (unpack_normal_features) {
                     EXPECT_EQ(2, std::distance(test.tmd().begin(), test.tmd().end()));
                     EXPECT_EQ(1u, test.tmd().begin()->getPosition());
@@ -245,7 +245,7 @@ TEST(SimplePhraseTest, requireThatPhrasesAreUnpacked) {
                 // Repeated unpack should not do anything
                 test.writable_term_field_match_data().reset(doc_no_match);
                 search->unpack(doc_match);
-                EXPECT_EQ(doc_no_match, test.tmd().getDocId());
+                EXPECT_TRUE(test.tmd().has_ranking_data(doc_no_match));
             }
         }
     }

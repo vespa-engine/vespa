@@ -36,13 +36,15 @@ import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.container.jdisc.DataplaneProxyService;
+
+
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig.Builder;
-import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
+
+
 import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.path.Path;
@@ -738,8 +740,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         int tokenPort = getTokenDataplanePort(state, cluster).orElseThrow();
 
         // Set up component to generate proxy cert if token support is enabled
-        cluster.addSimpleComponent(DataplaneProxyCredentials.class);
-        cluster.addSimpleComponent(DataplaneProxyService.class);
+        cluster.addSimpleComponent("com.yahoo.vespa.cloud.tenant.dataplane.DataplaneProxyCredentials", null, "cloud-tenant");
+        cluster.addSimpleComponent("com.yahoo.vespa.cloud.tenant.dataplane.DataplaneProxyService", null, "cloud-tenant");
         var dataplaneProxy = new DataplaneProxy(
                 getMtlsDataplanePort(state, cluster),
                 tokenPort,

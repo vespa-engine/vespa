@@ -50,7 +50,7 @@ public class PendingRestartsMaintainer extends ConfigServerMaintainer {
             ApplicationCuratorDatabase database = tenant.getApplicationRepo().database();
             for (ApplicationId id : database.activeApplications()) {
                 boolean shouldWaitForApplyOnRestart = waitForApplyOnRestart
-                        .with(INSTANCE_ID, id.serializedForm())
+                        .with(id)
                         .value();
 
                 if (!shouldWaitForApplyOnRestart) {

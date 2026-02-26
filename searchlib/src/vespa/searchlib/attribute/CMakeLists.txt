@@ -4,6 +4,7 @@ vespa_add_library(searchlib_attribute OBJECT
     address_space_components.cpp
     array_bool_attribute.cpp
     array_bool_attribute_access.cpp
+    array_bool_ext_attribute.cpp
     address_space_usage.cpp
     array_iterator.cpp
     attribute.cpp

@@ -250,15 +250,15 @@ struct OrSetup {
                 match = true;
                 if (unpacked) {
                     if (!match_data[i]->isNotNeeded()) {
-                        EXPECT_EQ(match_data[i]->getDocId(), docid) << "unpack was needed";
+                        EXPECT_TRUE(match_data[i]->has_ranking_data(docid)) << "unpack was needed";
                     } else if (check_skipped_unpack) {
-                        EXPECT_NE(match_data[i]->getDocId(), docid) << "unpack was not needed";
+                        EXPECT_FALSE(match_data[i]->has_data(docid)) << "unpack was not needed";
                     }
                 } else {
-                    EXPECT_NE(match_data[i]->getDocId(), docid) << "document was not unpacked";
+                    EXPECT_FALSE(match_data[i]->has_data(docid)) << "document was not unpacked";
                 }
             } else {
-                EXPECT_NE(match_data[i]->getDocId(), docid) << "document was not a match";
+                EXPECT_FALSE(match_data[i]->has_data(docid)) << "document was not a match";
             }
         }
         EXPECT_TRUE(match);

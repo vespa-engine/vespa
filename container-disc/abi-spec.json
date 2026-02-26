@@ -625,66 +625,6 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.DataplaneProxyConfigurator" : {
-    "superClass" : "com.yahoo.component.AbstractComponent",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(com.yahoo.cloud.config.DataplaneProxyConfig, com.yahoo.container.jdisc.DataplaneProxyService, com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials)",
-      "public void deconstruct()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.container.jdisc.DataplaneProxyService$NginxProxyCommands" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [
-      "com.yahoo.container.jdisc.DataplaneProxyService$ProxyCommands"
-    ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public void start(java.nio.file.Path)",
-      "public void stop(java.nio.file.Path)",
-      "public void reload(java.nio.file.Path)",
-      "public boolean isRunning()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.container.jdisc.DataplaneProxyService$ProxyCommands" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods" : [
-      "public abstract void start(java.nio.file.Path)",
-      "public abstract void stop(java.nio.file.Path)",
-      "public abstract void reload(java.nio.file.Path)",
-      "public abstract boolean isRunning()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.container.jdisc.DataplaneProxyService" : {
-    "superClass" : "com.yahoo.component.AbstractComponent",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "final"
-    ],
-    "methods" : [
-      "public void <init>(ai.vespa.cloud.SystemInfo)",
-      "public void <init>()",
-      "public void reconfigure(com.yahoo.cloud.config.DataplaneProxyConfig, com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials)",
-      "public void deconstruct()"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.container.jdisc.DisableOsgiFramework" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [

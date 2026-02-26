@@ -19,9 +19,11 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.query.ParameterParser;
+import com.yahoo.search.query.ranking.SecondPhase;
 import com.yahoo.search.ranking.GlobalPhaseRanker;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.schema.Cluster;
+import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.streamingvisitors.StreamingBackend;
@@ -35,6 +37,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -107,16 +111,17 @@ public class ClusterSearcher extends Searcher {
         }
     }
 
-    private static ClusterParams makeClusterParams(String searchclusterName, DocumentdbInfoConfig documentDbConfig, SchemaInfo schemaInfo, QrSearchersConfig qrSearchersConfig)
-    {
+    private static ClusterParams makeClusterParams(String searchclusterName,
+                                                   DocumentdbInfoConfig documentDbConfig,
+                                                   SchemaInfo schemaInfo,
+                                                   QrSearchersConfig qrSearchersConfig) {
         return new ClusterParams(searchclusterName, UUID.randomUUID().toString(),
                                  null, documentDbConfig, schemaInfo, qrSearchersConfig);
     }
 
     private static IndexedBackend searchDispatch(ClusterParams clusterParams,
                                                  String searchClusterName,
-                                                 ComponentRegistry<Dispatcher> dispatchers)
-    {
+                                                 ComponentRegistry<Dispatcher> dispatchers) {
         ComponentId dispatcherComponentId = new ComponentId("dispatcher." + searchClusterName);
         Dispatcher dispatcher = dispatchers.getComponent(dispatcherComponentId);
         if (dispatcher == null)
@@ -126,8 +131,7 @@ public class ClusterSearcher extends Searcher {
 
     private static StreamingBackend streamingCluster(ClusterParams clusterParams,
                                                      ClusterConfig clusterConfig,
-                                                     VespaDocumentAccess access)
-    {
+                                                     VespaDocumentAccess access) {
         return new StreamingBackend(clusterParams, clusterConfig.configid(),
                                     access, clusterConfig.storageRoute());
     }
@@ -224,33 +228,75 @@ public class ClusterSearcher extends Searcher {
         }
     }
 
-    private Result perSchemaSearch(String schema, Query query) {
+    // TODO: Make this a search chain
+    private Result perSchemaSearch(String schemaName, Query query) {
         if (query.getModel().getRestrict().size() != 1) {
             throw new IllegalStateException("perSchemaSearch must always be called with 1 schema, got: " +
                                             query.getModel().getRestrict());
         }
-        int rerankCount = globalPhaseRanker != null ? globalPhaseRanker.getRerankCount(query, schema) : 0;
+
+        // Searcher 1
+        var schema = schemaInfo.newSession(query).schema(schemaName);
+        transferKeepRankCounts(query, schema);
+        transferRerankCounts(query, schema);
+
+        // Searcher 2
+        int rerankCount = globalPhaseRanker != null ? globalPhaseRanker.getRerankCount(query, schemaName) : 0;
         boolean useGlobalPhase = rerankCount > 0;
         final int wantOffset = query.getOffset();
         final int wantHits = query.getHits();
         if (useGlobalPhase) {
-            var error = globalPhaseRanker.validateNoSorting(query, schema).orElse(null);
+            var error = globalPhaseRanker.validateNoSorting(query, schemaName).orElse(null);
             if (error != null) return new Result(query, error);
             int useHits = Math.max(wantOffset + wantHits, rerankCount);
             query.setOffset(0);
             query.setHits(useHits);
         }
-        Result result = schema2Searcher.get(schema).search(schema, query);
+        Result result = schema2Searcher.get(schemaName).search(schemaName, query);
         if (useGlobalPhase) {
             if (query.getTrace().isTraceable(3)) {
                 query.trace("Use global-phase from [" + schema + "] to re-rank " + rerankCount + " hits", 3);
             }
-            globalPhaseRanker.rerankHits(query, result, schema);
+            globalPhaseRanker.rerankHits(query, result, schemaName);
             result.hits().trim(wantOffset, wantHits);
             query.setOffset(wantOffset);
             query.setHits(wantHits);
         }
         return result;
+    }
+
+    // Transfer second-phase rerankCount/totalRerankCount
+    public static void transferRerankCounts(Query query, Optional<Schema> schema) {
+        OptionalInt rerankCount = asOptional(query.getRanking().getSecondPhase().getRerankCount());
+        OptionalInt totalRerankCount = asOptional(query.getRanking().getSecondPhase().getTotalRerankCount());
+        if (rerankCount.isEmpty() && totalRerankCount.isEmpty() && schema.isPresent()) { // fall back to rank profile defaults
+            var profile = schema.get().rankProfiles().get(query.getRanking().getProfile());
+            if (profile != null) {
+                rerankCount = profile.secondPhase().rerankCount();
+                totalRerankCount = profile.secondPhase().totalRerankCount();
+            }
+        }
+        rerankCount.ifPresent(count -> query.getRanking().getProperties().put(SecondPhase.rerankCountProperty, count));
+        totalRerankCount.ifPresent(count -> query.getRanking().getProperties().put(SecondPhase.totalRerankCountProperty, count));
+    }
+
+    // Transfer first-phase keepRankCount/totalKeepRankCount
+    public static void transferKeepRankCounts(Query query, Optional<Schema> schema) {
+        OptionalInt keepRankCount = asOptional(query.getRanking().getKeepRankCount());
+        OptionalInt totalKeepRankCount = asOptional(query.getRanking().getTotalKeepRankCount());
+        if (keepRankCount.isEmpty() && totalKeepRankCount.isEmpty() && schema.isPresent()) { // fall back to rank profile defaults
+            var profile = schema.get().rankProfiles().get(query.getRanking().getProfile());
+            if (profile != null) {
+                keepRankCount = profile.keepRankCount();
+                totalKeepRankCount = profile.totalKeepRankCount();
+            }
+        }
+        keepRankCount.ifPresent(count -> query.getRanking().getProperties().put("vespa.hitcollector.arraysize", count));
+        totalKeepRankCount.ifPresent(count -> query.getRanking().getProperties().put("vespa.hitcollector.totalArraysize", count));
+    }
+
+    private static OptionalInt asOptional(Integer nullable) {
+        return nullable == null ? OptionalInt.empty() : OptionalInt.of(nullable);
     }
 
     private static void processResult(Query query, FutureTask<Result> task, Result mergedResult) {

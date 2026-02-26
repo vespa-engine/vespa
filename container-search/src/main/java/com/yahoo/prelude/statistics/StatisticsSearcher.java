@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.yahoo.container.protect.Error.BACKEND_COMMUNICATION_ERROR;
@@ -224,9 +223,7 @@ public class StatisticsSearcher extends Searcher {
 
         incrQueryCount(metricContext);
         logQuery(query);
-        // Timestamp when request was initially processed by Jetty
-        long startMs = Optional.ofNullable(query.getHttpRequest())
-                .map(r -> r.creationTime(TimeUnit.MILLISECONDS)).orElseGet(System::currentTimeMillis);
+        long startMs = executionStartTime(query);
         qps(metricContext);
         metric.set(QUERY_TIMEOUT_METRIC, query.getTimeout(), metricContext);
         Result result;
@@ -238,14 +235,16 @@ public class StatisticsSearcher extends Searcher {
             throw e;
         }
 
-        long endMs = System.currentTimeMillis();
-        long latencyMs = endMs - startMs;
-        if (latencyMs >= 0) {
-            addLatency(latencyMs, metricContext);
-        } else {
-            getLogger().log(Level.WARNING,
-                            "Apparently negative latency measure, start: " + startMs
-                            + ", end: " + endMs + ", for query: " + query + ". Could be caused by NTP adjustments.");
+        if (startMs > 0) {
+            long endMs = System.currentTimeMillis();
+            long latencyMs = endMs - startMs;
+            if (latencyMs >= 0) {
+                addLatency(latencyMs, metricContext);
+            } else {
+                getLogger().log(Level.WARNING,
+                                "Apparently negative latency measure, start: " + startMs
+                                + ", end: " + endMs + ", for query: " + query + ". Could be caused by NTP adjustments.");
+            }
         }
         if (result.hits().getError() != null) {
             incrErrorCount(result, metricContext);
@@ -408,6 +407,11 @@ public class StatisticsSearcher extends Searcher {
 
     private void addItemCountMetric(Query query, Metric.Context context) {
         metric.set(QUERY_ITEM_COUNT, query.getModel().getQueryTree().treeSize(), context);
+    }
+
+    private static long executionStartTime(Query query) {
+        var startTime = query.getHttpRequest().context().get("search.handlerStartTime");
+        return startTime != null ? (long) startTime : 0;
     }
 
 }

@@ -81,7 +81,7 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
                     tmd = match_data.resolveTermField(tfd->getHandle());
                     tmd->setFieldId(field_id);
                     // reset field match data, but only once per docId
-                    if (tmd->getDocId() != docid) {
+                    if (!tmd->has_data(docid)) {
                         tmd->reset(docid);
                     }
                 }

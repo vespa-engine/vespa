@@ -126,7 +126,7 @@ SameElementBlueprint::create_same_element_search(MatchData& md, TermFieldMatchDa
 SearchIterator::UP
 SameElementBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_atmost_and_filter(get_children(), strict(), constraint);
+    return create_atmost_and_filter(get_children(), constraint);
 }
 
 void

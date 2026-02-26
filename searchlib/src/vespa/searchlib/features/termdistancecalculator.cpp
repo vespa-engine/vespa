@@ -18,7 +18,7 @@ TermDistanceCalculator::run(const QueryTerm &termX, const QueryTerm &termY, Elem
 {
     const TermFieldMatchData *tmdX = match.resolveTermField(termX.fieldHandle());
     const TermFieldMatchData *tmdY = match.resolveTermField(termY.fieldHandle());
-    if (tmdX->getDocId() != docId || tmdY->getDocId() != docId) {
+    if (!tmdX->has_ranking_data(docId) || !tmdY->has_ranking_data(docId)) {
         return;
     }
     findBest(tmdX, tmdY, element_gap, termX.termData()->getPhraseLength(), r.forwardDist, r.forwardTermPos);

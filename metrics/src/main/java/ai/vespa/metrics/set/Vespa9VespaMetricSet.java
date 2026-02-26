@@ -172,6 +172,8 @@ public class Vespa9VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate());
 
+        addMetric(metrics, ContainerMetrics.JDISC_RENDER_LATENCY, EnumSet.of(max, count, sum));
+
         addMetric(metrics, ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count, max));
 
         // Embedders

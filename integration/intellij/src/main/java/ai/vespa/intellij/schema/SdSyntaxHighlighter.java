@@ -156,8 +156,10 @@ public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
         constants.add(SdTypes.MIN_HITS_PER_THREAD);
         constants.add(SdTypes.NUM_SEARCH_PARTITIONS);
         constants.add(SdTypes.KEEP_RANK_COUNT);
+        constants.add(SdTypes.TOTAL_KEEP_RANK_COUNT);
         constants.add(SdTypes.RANK_SCORE_DROP_LIMIT);
         constants.add(SdTypes.RERANK_COUNT);
+        constants.add(SdTypes.TOTAL_RERANK_COUNT);
         constants.add(SdTypes.TEXT);
         constants.add(SdTypes.EXACT);
         constants.add(SdTypes.EXACT_TERMINATOR);

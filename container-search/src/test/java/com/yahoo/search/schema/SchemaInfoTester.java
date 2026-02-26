@@ -67,6 +67,12 @@ public class SchemaInfoTester {
                             .add(new RankProfile.Builder("inconsistent")
                                          .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
                                          .build())
+                            .add(new RankProfile.Builder("withRerankCount")
+                                         .setSecondPhase(new SecondPhase.Builder().setRerankCount(201).build())
+                                         .build())
+                            .add(new RankProfile.Builder("withTotalRerankCount")
+                                         .setSecondPhase(new SecondPhase.Builder().setTotalRerankCount(2001).build())
+                                         .build())
                             .add(new DocumentSummary.Builder("testSummary")
                                          .add(new DocumentSummary.Field("field1", "string"))
                                          .add(new DocumentSummary.Field("field2", "integer"))
@@ -111,6 +117,17 @@ public class SchemaInfoTester {
                                                                  .index(false).attribute(true).bitPacked(false));
 
         schemaA.rankprofile(rankProfileCommon);
+
+        var rankProfileWithRerankCount = new SchemaInfoConfig.Schema.Rankprofile.Builder();
+        rankProfileWithRerankCount.name("withRerankCount");
+        rankProfileWithRerankCount.rerankCount(201);
+        schemaA.rankprofile(rankProfileWithRerankCount);
+
+        var rankProfileWithTotalRerankCount = new SchemaInfoConfig.Schema.Rankprofile.Builder();
+        rankProfileWithTotalRerankCount.name("withTotalRerankCount");
+        rankProfileWithTotalRerankCount.totalRerankCount(2001);
+        schemaA.rankprofile(rankProfileWithTotalRerankCount);
+
         var rankProfileInconsistentA = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileInconsistentA.name("inconsistent");
         rankProfileInconsistentA.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));

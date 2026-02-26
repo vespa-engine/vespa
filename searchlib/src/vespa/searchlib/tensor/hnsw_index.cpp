@@ -413,6 +413,7 @@ HnswIndex<type>::search_layer_helper(Stats &stats, const BoundDistanceFunction &
               neighbor_subspace(neighbor_subspace_in) {}
     };
     std::vector<NeighborLinkMeta> neighbor_link_metas;
+    neighbor_link_metas.reserve(max_links_for_level(level));
 
     while (!candidates.empty()) {
         auto cand = candidates.top();

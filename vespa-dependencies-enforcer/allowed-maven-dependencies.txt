@@ -180,7 +180,6 @@ org.eclipse.jetty:jetty-jmx:${jetty.vespa.version}
 org.eclipse.jetty:jetty-server:${jetty.vespa.version}
 org.eclipse.jetty:jetty-util:${jetty.client.vespa.version}
 org.eclipse.jetty:jetty-util:${jetty.vespa.version}
-org.eclipse.sisu:org.eclipse.sisu.inject:${eclipse-sisu.vespa.version}
 org.eclipse.sisu:org.eclipse.sisu.plexus:${eclipse-sisu.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
 org.hamcrest:hamcrest:${hamcrest.vespa.version}
@@ -226,7 +225,7 @@ org.slf4j:slf4j-jdk14:${slf4j.vespa.version}
 org.slf4j:slf4j-simple:${slf4j.vespa.version}
 org.testcontainers:junit-jupiter:${testcontainers.vespa.version}
 org.testcontainers:testcontainers:${testcontainers.vespa.version}
-org.tukaani:xz:1.9
+org.tukaani:xz:1.11
 org.wiremock:wiremock-standalone:${wiremock.vespa.version}
 org.xerial.snappy:snappy-java:${snappy.vespa.version}
 org.yaml:snakeyaml:${snakeyaml.vespa.version}

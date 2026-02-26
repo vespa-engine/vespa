@@ -4,15 +4,10 @@ package com.yahoo.container.core;
 import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
-import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.jdisc.application.UriPattern;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Common HTTP request handler metrics code.
@@ -22,8 +17,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class HandlerMetricContextUtil {
 
-    private record MetricContextKey(
-            String handlerBinding, String handlerClassName, String endpoint, int port) {}
+    private static final String HANDLER_START_TIME_ATTRIBUTE = HandlerMetricContextUtil.class.getName() + ".startTime";
+
+    private record MetricContextKey(String handlerClassName, int port) {}
 
     private final ConcurrentHashMap<MetricContextKey, Metric.Context> metricContexts = new ConcurrentHashMap<>();
     private final Metric metric;
@@ -34,12 +30,15 @@ public class HandlerMetricContextUtil {
         this.handlerClassName = handlerClassName;
     }
 
-    public  void onHandle(Request request) {
+    public void onHandle(Request request) {
+        request.context().put(HANDLER_START_TIME_ATTRIBUTE, System.currentTimeMillis());
         metric.add(ContainerMetrics.HANDLED_REQUESTS.baseName(), 1, contextFor(request));
     }
 
     public void onHandled(Request request) {
-        metric.set(ContainerMetrics.HANDLED_LATENCY.baseName(), request.timeElapsed(TimeUnit.MILLISECONDS), contextFor(request));
+        var startTime = (Long) request.context().get(HANDLER_START_TIME_ATTRIBUTE);
+        long latencyMs = startTime != null ? System.currentTimeMillis() - startTime : 0;
+        metric.set(ContainerMetrics.HANDLED_LATENCY.baseName(), latencyMs, contextFor(request));
     }
 
     public void onUnhandledException(Request request) {
@@ -48,27 +47,13 @@ public class HandlerMetricContextUtil {
 
     private Metric.Context contextFor(Request request) {
         return metricContexts.computeIfAbsent(
-                new MetricContextKey(
-                        handlerBinding(request).orElse(null),
-                        handlerClassName,
-                        request.headers().containsKey("Host") ? request.headers().get("Host").get(0) : null,
-                        request.getUri().getPort()),
+                new MetricContextKey(handlerClassName, request.getUri().getPort()),
                 key -> {
                     Map<String, String> dimensions = new HashMap<>();
-                    if (key.handlerBinding != null) dimensions.put("handler", key.handlerBinding);
                     dimensions.put("handler-name", key.handlerClassName);
-                    if (key.endpoint != null) dimensions.put("endpoint", key.endpoint);
                     dimensions.put("port", String.valueOf(key.port));
                     return metric.createContext(dimensions);
                 }
         );
-    }
-
-    private static Optional<String> handlerBinding(Request request) {
-        BindingMatch<?> match = request.getBindingMatch();
-        if (match == null) return Optional.empty();
-        UriPattern matched = match.matched();
-        if (matched == null) return Optional.empty();
-        return Optional.ofNullable(matched.toString());
     }
 }

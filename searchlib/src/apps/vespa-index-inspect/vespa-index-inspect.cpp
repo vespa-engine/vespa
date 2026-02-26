@@ -593,8 +593,9 @@ ShowPostingListSubApp::showPostingList()
             sb->unpack(docId);
             for (uint32_t field = 0; field < numFields; ++field) {
                 const TermFieldMatchData &md = *tfmda[field];
-                if (md.getDocId() != docId)
+                if (!md.has_ranking_data(docId)) {
                     continue;
+                }
                 std::cout << " field = " << fieldNames[field] << '\n';
                 FieldPositionsIterator fpi = md.getIterator();
                 uint32_t lastElement = static_cast<uint32_t>(-1);

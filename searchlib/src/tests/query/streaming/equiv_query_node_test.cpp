@@ -178,7 +178,7 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
     tfmd1->setNeedInterleavedFeatures(true);
     IndexEnvironment ie;
     eqn.unpack_match_data(2, td, *md, ie, ElementIds::select_all());
-    EXPECT_EQ(2, tfmd0->getDocId());
+    EXPECT_TRUE(tfmd0->has_ranking_data(2));
     EXPECT_EQ(3, tfmd0->getNumOccs());
     EXPECT_EQ(3, tfmd0->end() - tfmd0->begin());
     auto itr = tfmd0->begin();
@@ -188,7 +188,7 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
     ++itr;
     assert_tfmd_pos("tmfd0[2]", *itr, elem1, pos3, weight1, field0_element1_len);
     EXPECT_EQ(field0_len, tfmd0->getFieldLength());
-    EXPECT_EQ(2, tfmd1->getDocId());
+    EXPECT_TRUE(tfmd1->has_ranking_data(2));
     EXPECT_EQ(1, tfmd1->getNumOccs());
     EXPECT_EQ(1, tfmd1->end() - tfmd1->begin());
     itr = tfmd1->begin();

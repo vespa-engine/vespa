@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.rule;
 
+import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.TermType;
 import com.yahoo.prelude.semantics.engine.Match;
 import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 import com.yahoo.protect.Validator;
+import com.yahoo.search.query.QueryTree;
 
 import java.util.List;
 
@@ -93,5 +95,17 @@ public abstract class TermProduction extends Production {
     }
 
     protected abstract String toInnerTermString();
+
+    /**
+     * Returns true if we should insert at the match position rather than adding to root.
+     * This is the case when the match's parent is a nested composite (not directly under QueryTree).
+     */
+    protected boolean shouldInsertAtMatch(Match match) {
+        if (getTermType() != TermType.DEFAULT) return false;
+        CompositeItem parent = match.getParent();
+        if (parent == null) return false;
+        CompositeItem grandparent = parent.getParent();
+        return grandparent != null && !(grandparent instanceof QueryTree);
+    }
 
 }

@@ -49,7 +49,7 @@ JaroWinklerDistanceExecutor::execute(uint32_t docId)
         const search::fef::TermFieldHandle &handle = _termFieldHandles[term];
         if (handle != search::fef::IllegalHandle) {
             const search::fef::TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
-            if (tfmd.getDocId() == docId) {
+            if (tfmd.has_ranking_data(docId)) {
                 it = tfmd.getIterator();
             }
         }

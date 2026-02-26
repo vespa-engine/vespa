@@ -93,7 +93,8 @@ public class Processing {
                 PagedAttributeValidator::new,
                 // These should be last:
                 IndexingValidation::new,
-                IndexingValues::new);
+                IndexingValues::new,
+                RankProfileValidator::new);
     }
 
     /** Processors of rank profiles only (those who tolerate and do something useful when the search field is null) */

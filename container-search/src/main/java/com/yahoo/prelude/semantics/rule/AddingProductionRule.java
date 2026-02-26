@@ -10,6 +10,7 @@ public class AddingProductionRule extends ProductionRule {
 
     protected String getSymbol() { return "+>"; }
 
+    @Override
     public void setProduction(ProductionList productionList) {
         super.setProduction(productionList);
         productionList.setReplacing(false);

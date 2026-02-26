@@ -303,7 +303,7 @@ TEST_F(SameElementQueryNodeTest, test_same_element_evaluate)
     tfmd0->setNeedInterleavedFeatures(true);
     IndexEnvironment ie;
     sameElem->unpack_match_data(2, td, *md, ie, ElementIds::select_all());
-    EXPECT_EQ(2, tfmd0->getDocId());
+    EXPECT_TRUE(tfmd0->has_ranking_data(2));
     EXPECT_EQ(0, tfmd0->getNumOccs());
     EXPECT_EQ(0, tfmd0->end() - tfmd0->begin());
 }

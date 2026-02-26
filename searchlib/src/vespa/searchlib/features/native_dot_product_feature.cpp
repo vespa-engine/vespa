@@ -44,7 +44,7 @@ NativeDotProductExecutor::execute(uint32_t docId)
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _pairs.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_pairs[i].first);
-        if (tfmd->getDocId() == docId) {
+        if (tfmd->has_ranking_data(docId)) {
             output += (tfmd->getWeight() * (int32_t)_pairs[i].second.percent());
         }
     }

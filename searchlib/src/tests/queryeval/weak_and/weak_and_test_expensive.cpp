@@ -45,7 +45,7 @@ TEST(WeakAndExpensiveTest, require_that_mod_search_works) {
     Stats stats;
     auto search = std::make_unique<ModSearch>(stats, 3, 8, 3, nullptr);
     SimpleResult hits;
-    hits.search(*search);
+    hits.search(*search, 100);
     EXPECT_EQ(SimpleResult().addHit(3).addHit(6), hits);
 }
 

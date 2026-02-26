@@ -110,7 +110,7 @@ TextSimilarityExecutor::execute(uint32_t docId)
 {
     for (size_t i = 0; i < _handles.size(); ++i) {
         const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == docId) {
+        if (tfmd->has_ranking_data(docId)) {
             Item item(i, tfmd->begin(), tfmd->end());
             if (item.pos != item.end) {
                 _queue.push(item);

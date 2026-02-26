@@ -31,7 +31,7 @@ IndexFieldInfoExecutor::execute(uint32_t docId)
     outputs().set_number(1, _isFilter);
     outputs().set_number(2, 1.0f); // searched
     const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_fieldHandle);
-    if (tfmd->getDocId() == docId) {
+    if (tfmd->has_ranking_data(docId)) {
         outputs().set_number(3, 1.0f); // hit
     } else {
         outputs().set_number(3, 0.0f); // no hit
@@ -80,7 +80,7 @@ AttrFieldInfoExecutor::execute(uint32_t docId)
     outputs().set_number(1, 0.0); // not filter
     outputs().set_number(2, 1.0f); // searched
     const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_fieldHandle);
-    if (tfmd->getDocId() == docId) {
+    if (tfmd->has_ranking_data(docId)) {
         outputs().set_number(3, 1.0f); // hit
         outputs().set_number(4, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // len
         outputs().set_number(5, 0.0f); // first

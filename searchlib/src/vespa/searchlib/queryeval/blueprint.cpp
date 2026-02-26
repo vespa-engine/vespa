@@ -255,15 +255,15 @@ template <typename Op> bool should_short_circuit(Trinary);
 template <> bool should_short_circuit<AndSearch>(Trinary matches_any) { return (matches_any == Trinary::False); }
 template <> bool should_short_circuit<OrSearch>(Trinary matches_any) { return (matches_any == Trinary::True); }
 
-template <typename Op> bool should_prune(Trinary, bool, bool);
-template <> bool should_prune<AndSearch>(Trinary matches_any, bool strict, bool first_child) {
-    return (matches_any == Trinary::True) && !(strict && first_child);
+template <typename Op> bool should_prune(Trinary);
+template <> bool should_prune<AndSearch>(Trinary matches_any) {
+    return (matches_any == Trinary::True);
 }
-template <> bool should_prune<OrSearch>(Trinary matches_any, bool, bool) { return (matches_any == Trinary::False); }
+template <> bool should_prune<OrSearch>(Trinary matches_any) { return (matches_any == Trinary::False); }
 
 template <typename Op>
 std::unique_ptr<SearchIterator>
-create_op_filter(std::span<const Blueprint::UP> children, bool strict, Blueprint::FilterConstraint constraint)
+create_op_filter(std::span<const Blueprint::UP> children, Blueprint::FilterConstraint constraint)
 {
     REQUIRE( ! children.empty());
     MultiSearch::Children list;
@@ -275,7 +275,7 @@ create_op_filter(std::span<const Blueprint::UP> children, bool strict, Blueprint
         if (should_short_circuit<Op>(matches_any)) {
             return filter;
         }
-        if (should_prune<Op>(matches_any, strict, list.empty())) {
+        if (should_prune<Op>(matches_any)) {
             spare = std::move(filter);
         } else {
             list.push_back(std::move(filter));
@@ -289,45 +289,45 @@ create_op_filter(std::span<const Blueprint::UP> children, bool strict, Blueprint
         return std::move(list[0]);
     }
     UnpackInfo unpack_info;
-    return Op::create(std::move(list), strict, unpack_info);
+    return Op::create(std::move(list), false, unpack_info);
 }
 
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_and_filter(std::span<const UP> children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_and_filter(std::span<const UP> children, Blueprint::FilterConstraint constraint)
 {
-    return create_op_filter<AndSearch>(children, strict, constraint);
+    return create_op_filter<AndSearch>(children, constraint);
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_or_filter(std::span<const UP> children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_or_filter(std::span<const UP> children, Blueprint::FilterConstraint constraint)
 {
-    return create_op_filter<OrSearch>(children, strict, constraint);
+    return create_op_filter<OrSearch>(children, constraint);
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_atmost_and_filter(std::span<const UP> children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_atmost_and_filter(std::span<const UP> children, Blueprint::FilterConstraint constraint)
 {
     if (constraint == FilterConstraint::UPPER_BOUND) {
-        return create_and_filter(children, strict, constraint);
+        return create_and_filter(children, constraint);
     } else {
         return std::make_unique<EmptySearch>();
     }
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_atmost_or_filter(std::span<const UP> children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_atmost_or_filter(std::span<const UP> children, Blueprint::FilterConstraint constraint)
 {
     if (constraint == FilterConstraint::UPPER_BOUND) {
-        return create_or_filter(children, strict, constraint);
+        return create_or_filter(children, constraint);
     } else {
         return std::make_unique<EmptySearch>();
     }
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_andnot_filter(std::span<const UP> children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_andnot_filter(std::span<const UP> children, Blueprint::FilterConstraint constraint)
 {
     REQUIRE( ! children.empty() );
     MultiSearch::Children list;
@@ -353,7 +353,7 @@ Blueprint::create_andnot_filter(std::span<const UP> children, bool strict, Bluep
     if (list.size() == 1) {
         return std::move(list[0]);
     }
-    return AndNotSearch::create(std::move(list), strict);
+    return AndNotSearch::create(std::move(list), false);
 }
 
 std::unique_ptr<SearchIterator>

@@ -31,12 +31,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
-
 /**
- * Maintainer that triggers restart of nodes with pending restarts.
- * The maintainer also updates pending restart nodes in ZooKeeper.
- * The node restart is usually needed for services with config changes that are applied on restart.
+ * Maintainer that triggers restart of pending restart nodes stored in ZooKeeper.
+ * Implements restart conditions to ensure that services converge to the same config generation before restart.
+ * Removes restarted nodes from ZooKeeper.
  * This is an experimental replacement for {@link PendingRestartsMaintainer}, enabled by
  * {@link Flags#WAIT_FOR_APPLY_ON_RESTART} feature flag.
  *
@@ -65,9 +63,8 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
             for (ApplicationId id : database.activeApplications()) {
                 // Controls whether to use this maintainer for a specific instance with the feature flag.
                 // Alternatively, the older PendingRestartsMaintainer will be used.
-                boolean shouldWaitForApplyOnRestart = waitForApplyOnRestart
-                        .with(INSTANCE_ID, id.serializedForm())
-                        .value();
+                boolean shouldWaitForApplyOnRestart =
+                        waitForApplyOnRestart.with(id).value();
 
                 if (shouldWaitForApplyOnRestart) {
                     applicationRepository
@@ -126,66 +123,73 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
             return restarts;
         }
 
+        log.fine(() -> Text.format(
+                "Pending restarts of %s: %s",
+                id.toFullString(),
+                restarts.generationsForRestarts().entrySet().stream()
+                        .map(entry -> Text.format("%d -> [%s]", entry.getKey(), String.join(", ", entry.getValue())))
+                        .collect(Collectors.joining(", "))));
+
         Map<String, List<ServiceConfigState>> statesByHostname = serviceConfigStateFetcher.apply(restarts.hostnames());
 
+        if (statesByHostname.isEmpty()) {
+            log.fine(() -> Text.format("No services states of %s are fetched.", id.toFullString()));
+        }
+
         // Minimum observed config generation for all services without applyOnRestart across all pending restart nodes.
-        // Services with applyOnRestart are excluded because they are waiting for restart to apply a new
-        // config.
-        OptionalLong minStateGeneration = statesByHostname.values().stream()
+        // Services with applyOnRestart set to {@code true} are excluded because they are waiting for restart to apply a
+        // new config and report a new config generation.
+        OptionalLong minObservedGeneration = statesByHostname.values().stream()
                 .flatMap(List::stream)
-                .filter(state -> state.applyOnRestart().isEmpty())
+                .filter(state -> !state.applyOnRestart().orElse(false))
                 .mapToLong(ServiceConfigState::currentGeneration)
                 .min();
 
-        // This will be used as a fallback if minStateGeneration is empty.
-        OptionalLong maxRestartGeneration = restarts.generationsForRestarts().keySet().stream()
-                .mapToLong(Long::longValue)
-                .max();
+        long readyGeneration;
 
-        // Should be present, otherwise there is nothing to restart.
-        if (maxRestartGeneration.isEmpty()) {
-            return restarts;
+        if (minObservedGeneration.isPresent()) {
+            readyGeneration = minObservedGeneration.getAsLong();
+            log.fine(() -> Text.format(
+                    "Ready generation of %s is set to min observed generation %d", id.toFullString(), readyGeneration));
+        } else {
+            // If all services have applyOnRestart set to {@code true},
+            // nothing is holding us back from restarting with the maximum restart generation.
+            // This assumes that services will get the latest config after restart.
+            // There is no guarantee for that, but it is the best we can do.
+            OptionalLong maxRestartGeneration = restarts.generationsForRestarts().keySet().stream()
+                    .mapToLong(Long::longValue)
+                    .max();
+
+            // Should be present, otherwise there is nothing to restart.
+            if (maxRestartGeneration.isEmpty()) {
+                return restarts;
+            }
+
+            readyGeneration = maxRestartGeneration.getAsLong();
+            log.fine(() -> Text.format(
+                    "Ready generation of %s is set to max pending restart generation %d",
+                    id.toFullString(), readyGeneration));
         }
-
-        // If all services have applyOnRestart set,
-        // nothing is holding us back from restarting with the maximum restart generation.
-        // This assumes that services will get the latest config after restart.
-        // There is no guarantee for that, but it is the best we can do.
-        long readyGeneration = minStateGeneration.orElse(maxRestartGeneration.getAsLong());
 
         // Select nodes with restart generations that are less or equal to the ready generation.
         // Nodes that only have greater restart generations need to wait
         // until services without applyOnRestart (if any) reach the ready generation.
         Set<String> nodesToRestart = restarts.restartsReadyAt(readyGeneration);
 
-        // For each node, check if all it's services with (non-empty) applyOnRestart
-        // either reached the ready generation or have applyOnRestart set true.
-        // If not, it means that the service hasn't received a new config that requires a restart yet.
-        nodesToRestart = nodesToRestart.stream()
-                .filter(hostname -> {
-                    List<ServiceConfigState> states = statesByHostname.get(hostname);
-                    return states == null
-                            || states.stream()
-                                    .filter(state -> state.applyOnRestart().isPresent())
-                                    .allMatch(state -> state.currentGeneration() >= readyGeneration
-                                            || state.applyOnRestart().get());
-                })
-                .collect(Collectors.toSet());
-
         if (nodesToRestart.isEmpty()) {
-            log.info(Text.format(
+            log.info(() -> Text.format(
                     "No nodes of %s are ready for restart at generation %d.", id.toFullString(), readyGeneration));
             return restarts;
         }
 
         restarter.accept(id, nodesToRestart);
-        log.info(Text.format(
+        log.info(() -> Text.format(
                 "Scheduled restart of %d nodes of %s at generation %d: %s",
                 nodesToRestart.size(),
                 id.toFullString(),
                 readyGeneration,
                 nodesToRestart.stream().sorted().collect(Collectors.joining(", "))));
 
-        return restarts.withoutPreviousGeneration(readyGeneration, nodesToRestart);
+        return restarts.withoutPreviousGenerations(readyGeneration);
     }
 }

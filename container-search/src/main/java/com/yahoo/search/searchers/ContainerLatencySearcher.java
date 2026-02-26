@@ -4,7 +4,6 @@ package com.yahoo.search.searchers;
 import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.metrics.simple.Gauge;
-import com.yahoo.metrics.simple.Point;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -27,11 +26,20 @@ public class ContainerLatencySearcher extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
-        Point dims = latencyGauge.builder()
-                .set("chain", execution.chain().getId().stringValue())
-                .build();
-        latencyGauge.sample(query.getDurationTime(), dims);
+        long latency = executionLatency(query);
+        if (latency > 0) {
+            var dims = latencyGauge.builder()
+                    .set("chain", execution.chain().getId().stringValue())
+                    .build();
+            latencyGauge.sample(latency, dims);
+        }
         return execution.search(query);
+    }
+
+    private static long executionLatency(Query query) {
+        var startTime = query.getHttpRequest().context().get("search.handlerStartTime");
+        if (startTime == null) return 0;
+        return System.currentTimeMillis() - ((long) startTime);
     }
 
 }

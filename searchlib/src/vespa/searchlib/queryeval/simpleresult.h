@@ -59,17 +59,7 @@ public:
     /**
      * Fill this result with all the hits returned by the given search
      * object. Old hits will be removed from this result before doing
-     * the search. Assumes strict toplevel search object located at start
-     *
-     * @param sb search object
-     **/
-    SimpleResult &search(SearchIterator &sb);
-    SimpleResult &searchStrict(SearchIterator &sb, uint32_t docIdLimit);
-
-    /**
-     * Fill this result with all the hits returned by the given search
-     * object. Old hits will be removed from this result before doing
-     * the search. Assumes non-strict toplevel search object.
+     * the search.
      *
      * @param sb search object
      * @param docIdLimit the end of the docId range for this search iterator

@@ -249,7 +249,7 @@ verifyResult(const FakeResult &expect,
         exp_simple.addHit(search->getDocId());
         actual.doc(search->getDocId());
         search->unpack(search->getDocId());
-        EXPECT_EQ(search->getDocId(), tmd.getDocId());
+        EXPECT_TRUE(tmd.has_ranking_data(search->getDocId()));
         FieldPositionsIterator p = tmd.getIterator();
         actual.len(p.getFieldLength());
         for (; p.valid(); p.next()) {

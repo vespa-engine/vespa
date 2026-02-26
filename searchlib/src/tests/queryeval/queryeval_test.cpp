@@ -232,18 +232,18 @@ TEST(QueryEvalTest, test_and) {
     EXPECT_TRUE(dynamic_cast<const AndSearch *>(and_ab.get()) != nullptr);
     EXPECT_EQ(4u, dynamic_cast<AndSearch &>(*and_ab).estimate());
     SimpleResult res;
-    res.search(*and_ab);
+    res.search(*and_ab, 1000);
     SimpleResult expect;
     expect.addHit(5).addHit(30);
     EXPECT_EQ(res, expect);
 
     SearchIterator::UP filter_ab = and_b->createFilterSearch(upper_bound);
     SimpleResult filter_res;
-    filter_res.search(*filter_ab);
+    filter_res.search(*filter_ab, 1000);
     EXPECT_EQ(res, expect);
     std::string dump = filter_ab->asString();
     expect_match(dump, "upper");
-    expect_match(dump, "AndSearchStrict.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
+    expect_match(dump, "AndSearchNoStrict.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
     and_b->basic_plan(false, 1000);
     and_b->fetchPostings(ExecuteInfo::FULL);
     filter_ab = and_b->createFilterSearch(lower_bound);
@@ -269,18 +269,18 @@ TEST(QueryEvalTest, test_or)
         SearchIterator::UP or_ab = or_b->createSearch(*md);
 
         SimpleResult res;
-        res.search(*or_ab);
+        res.search(*or_ab, 1000);
         SimpleResult expect;
         expect.addHit(5).addHit(10).addHit(17).addHit(30);
         EXPECT_EQ(res, expect);
 
         SearchIterator::UP filter_ab = or_b->createFilterSearch(upper_bound);
         SimpleResult filter_res;
-        filter_res.search(*filter_ab);
+        filter_res.search(*filter_ab, 1000);
         EXPECT_EQ(res, expect);
         std::string dump = filter_ab->asString();
         expect_match(dump, "upper");
-        expect_match(dump, "StrictHeapOrSearch.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
+        expect_match(dump, "OrLikeSearch.false.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
         or_b->basic_plan(false, 1000);
         or_b->fetchPostings(ExecuteInfo::FULL);
         filter_ab = or_b->createFilterSearch(lower_bound);
@@ -413,14 +413,14 @@ TEST(QueryEvalTest, test_andnot)
         SearchIterator::UP andnot_ab = andnot_b->createSearch(*md);
 
         SimpleResult res;
-        res.search(*andnot_ab);
+        res.search(*andnot_ab, 1000);
         SimpleResult expect;
         expect.addHit(10);
         EXPECT_EQ(res, expect);
 
         SearchIterator::UP filter_ab = andnot_b->createFilterSearch(upper_bound);
         SimpleResult filter_res;
-        filter_res.search(*filter_ab);
+        filter_res.search(*filter_ab, 1000);
         EXPECT_EQ(res, expect);
         std::string dump = filter_ab->asString();
         expect_match(dump, "upper");
@@ -447,7 +447,7 @@ TEST(QueryEvalTest, test_andnot)
         SearchIterator::UP andnot_ab = andnot_b->createSearch(*md);
 
         SimpleResult res;
-        res.search(*andnot_ab);
+        res.search(*andnot_ab, 1000);
         SimpleResult expect;
         expect.addHit(1).addHit(10);
 
@@ -474,7 +474,7 @@ TEST(QueryEvalTest, test_andnot)
         SearchIterator::UP and_cab = and_b->createSearch(*md);
 
         SimpleResult res;
-        res.search(*and_cab);
+        res.search(*and_cab, 1000);
         SimpleResult expect;
         expect.addHit(1).addHit(10);
 
@@ -501,7 +501,7 @@ TEST(QueryEvalTest, test_rank)
         SearchIterator::UP rank_ab = rank_b->createSearch(*md);
 
         SimpleResult res;
-        res.search(*rank_ab);
+        res.search(*rank_ab, 1000);
         SimpleResult expect;
         expect.addHit(5).addHit(10).addHit(16).addHit(30);
 

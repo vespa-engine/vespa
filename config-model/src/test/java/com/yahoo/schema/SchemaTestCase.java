@@ -3,6 +3,7 @@ package com.yahoo.schema;
 
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.document.Stemming;
@@ -883,6 +884,60 @@ public class SchemaTestCase {
             assertEquals("In rank-profile 'inner1': Inner profile 'inner1' must inherit 'outer'",
                          Exceptions.toMessageString(e));
         }
+    }
+
+    @Test
+    void testRankSettingsToSchemaInfo() throws Exception {
+        String schema =
+                """
+                schema doc {
+                    document doc {
+                    }
+                    rank-profile test {
+                        first-phase {
+                            keep-rank-count: 1234
+                        }
+                        second-phase {
+                            rerank-count: 43
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+        var schemaInfoConfigBuilder = new SchemaInfoConfig.Builder();
+        derived.getSchemaInfo().getConfig(schemaInfoConfigBuilder);
+        var schemaInfoConfig = schemaInfoConfigBuilder.build().toString();
+        assertTrue(schemaInfoConfig.contains("rerankCount 43"));
+        assertTrue(schemaInfoConfig.contains("keepRankCount 1234"));
+    }
+
+    @Test
+    void testTotalRankSettingsToSchemaInfo() throws Exception {
+        String schema =
+                """
+                schema doc {
+                    document doc {
+                    }
+                    rank-profile test {
+                        first-phase {
+                            total-keep-rank-count: 2345
+                        }
+                        second-phase {
+                            total-rerank-count: 213
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+        var schemaInfoConfigBuilder = new SchemaInfoConfig.Builder();
+        derived.getSchemaInfo().getConfig(schemaInfoConfigBuilder);
+        var schemaInfoConfig = schemaInfoConfigBuilder.build().toString();
+        assertTrue(schemaInfoConfig.contains("totalRerankCount 213"));
+        assertTrue(schemaInfoConfig.contains("totalKeepRankCount 2345"));
     }
 
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {

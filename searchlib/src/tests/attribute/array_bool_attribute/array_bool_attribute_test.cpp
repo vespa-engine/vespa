@@ -4,6 +4,7 @@
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
+#include <vespa/searchlib/attribute/array_bool_ext_attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/search_context.h>
 #include <vespa/searchlib/query/query_term_simple.h>
@@ -16,6 +17,7 @@ using search::AddressSpaceComponents;
 using search::AddressSpaceUsage;
 using search::AttributeFactory;
 using search::AttributeVector;
+using DocId = search::AttributeVector::DocId;
 using search::QueryTermSimple;
 using search::attribute::ArrayBoolAttribute;
 using search::attribute::BasicType;
@@ -24,8 +26,6 @@ using search::attribute::Config;
 using search::attribute::IArrayBoolReadView;
 using search::attribute::IMultiValueAttribute;
 using search::attribute::SearchContextParams;
-
-using IntVec = std::vector<AttributeVector::largeint_t>;
 
 std::vector<bool> to_vec(vespalib::BitSpan span) {
     std::vector<bool> vec;
@@ -122,10 +122,8 @@ TEST_F(ArrayBoolAttributeTest, set_bools_replaces_previous_values)
 
     EXPECT_EQ(2u, _attr->getValueCount(1));
 
-    IntVec expected = {0, 1};
-    IntVec buf(expected.size());
-    EXPECT_EQ(expected.size(), _attr->get(1, buf.data(), buf.size()));
-    EXPECT_EQ(expected, buf);
+    std::vector<bool> expected = {0, 1};
+    EXPECT_EQ(to_vec(_bool_attr->get_bools(1)), expected);
 }
 
 TEST_F(ArrayBoolAttributeTest, clear_doc)
@@ -172,11 +170,10 @@ TEST_F(ArrayBoolAttributeTest, various_bool_counts)
     EXPECT_EQ(100u, _attr->getValueCount(7));
 
     // Verify large count values
-    IntVec buf(100);
-    uint32_t count = _attr->get(7, buf.data(), buf.size());
-    EXPECT_EQ(100u, count);
+    auto bools = to_vec(_bool_attr->get_bools(7));
+    EXPECT_EQ(100u, bools.size());
     for (int i = 0; i < 100; ++i) {
-        EXPECT_EQ((i % 3 == 0) ? 1 : 0, buf[i]) << "index " << i;
+        EXPECT_EQ((i % 3 == 0) ? 1 : 0, bools[i]) << "index " << i;
     }
 }
 
@@ -305,30 +302,24 @@ TEST_F(ArrayBoolAttributeTest, save_and_load)
 
     // Verify doc 1
     EXPECT_EQ(3u, _attr->getValueCount(1));
-    IntVec expected1 = {1, 0, 1};
-    IntVec buf1(expected1.size());
-    EXPECT_EQ(expected1.size(), _attr->get(1, buf1.data(), buf1.size()));
-    EXPECT_EQ(expected1, buf1);
+    std::vector<bool> expected1 = {1, 0, 1};
+    EXPECT_EQ(to_vec(_bool_attr->get_bools(1)), expected1);
 
     // Verify doc 2
     EXPECT_EQ(9u, _attr->getValueCount(2));
-    IntVec expected2 = {0, 1, 1, 0, 1, 0, 1, 0, 1};
-    IntVec buf2(expected2.size());
-    EXPECT_EQ(expected2.size(), _attr->get(2, buf2.data(), buf2.size()));
-    EXPECT_EQ(expected2, buf2);
+    std::vector<bool> expected2 = {0, 1, 1, 0, 1, 0, 1, 0, 1};
+    EXPECT_EQ(to_vec(_bool_attr->get_bools(2)), expected2);
 
     // Verify doc 3 empty
     EXPECT_EQ(0u, _attr->getValueCount(3));
 
     // Verify doc 4 (100 bools)
     EXPECT_EQ(100u, _attr->getValueCount(4));
-    IntVec expected4(100);
+    auto bools4 = to_vec(_bool_attr->get_bools(4));
+    EXPECT_EQ(100u, bools4.size());
     for (int i = 0; i < 100; ++i) {
-        expected4[i] = (i % 2 == 0) ? 1 : 0;
+        EXPECT_EQ((i % 2 == 0) ? 1 : 0, bools4[i]) << "index " << i;
     }
-    IntVec buf4(expected4.size());
-    EXPECT_EQ(expected4.size(), _attr->get(4, buf4.data(), buf4.size()));
-    EXPECT_EQ(expected4, buf4);
 
     remove_saved_attr();
 }
@@ -352,8 +343,8 @@ TEST_F(ArrayBoolAttributeTest, get_array_values)
     _attr->commit();
 
     // Full buffer
-    IntVec expected_int = {1, 0, 1, 1, 0};
-    IntVec buf_int(expected_int.size());
+    std::vector<AttributeVector::largeint_t> expected_int = {1, 0, 1, 1, 0};
+    std::vector<AttributeVector::largeint_t> buf_int(expected_int.size());
     EXPECT_EQ(expected_int.size(), _attr->get(1, buf_int.data(), buf_int.size()));
     EXPECT_EQ(expected_int, buf_int);
 
@@ -396,8 +387,8 @@ TEST_F(ArrayBoolAttributeTest, get_array_values)
     EXPECT_EQ(0u, _attr->get(1, webuf, 5));
 
     // Undersized buffer: fills up to sz, returns total count
-    IntVec partial_int = {1, 0};
-    IntVec pbuf_int(partial_int.size());
+    std::vector<AttributeVector::largeint_t> partial_int = {1, 0};
+    std::vector<AttributeVector::largeint_t> pbuf_int(partial_int.size());
     EXPECT_EQ(5u, _attr->get(1, pbuf_int.data(), pbuf_int.size()));
     EXPECT_EQ(partial_int, pbuf_int);
 
@@ -574,6 +565,61 @@ TEST_F(ArrayBoolAttributeTest, estimated_save_byte_size)
     // 4096 + (8+7)/8 + 6*5 = 4096 + 1 + 30 = 4127 (with 1 reserved doc, 5 added = 6 docs)
     uint64_t expected = 4096 + (8 + 7) / 8 + 6 * 5;
     EXPECT_EQ(expected, estimate);
+}
+
+class ArrayBoolExtAttributeTest : public ::testing::Test
+{
+protected:
+    using ArrayBoolExtAttribute = search::attribute::ArrayBoolExtAttribute;
+    std::shared_ptr<ArrayBoolExtAttribute> _attr;
+    std::map<DocId,std::vector<bool>> _added;
+
+    ArrayBoolExtAttributeTest()
+        : _attr(std::make_shared<ArrayBoolExtAttribute>("ext_array_bool"))
+    {}
+
+    void add(std::vector<bool> values) {
+        DocId docid;
+        _attr->addDoc(docid);
+        auto* ext = _attr->getExtendInterface();
+        for (bool v : values) {
+            ext->add(int64_t(v ? 1 : 0));
+        }
+        ASSERT_TRUE(_added.find(docid) == _added.end());
+        _added[docid] = values;
+    }
+};
+
+TEST_F(ArrayBoolExtAttributeTest, build_and_verify)
+{
+    std::vector<bool> empty;
+    std::vector<bool> many_vals;
+    for (int i = 0; i < 100; ++i) {
+        many_vals.push_back(((i % 11 == 0) || (i % 7 == 0)) ? true : false);
+    }
+    add(empty);
+    add({1, 1, 0, 1, 0, 1, 1});
+    add(many_vals);
+    add({1, 1, 0, 1, 1, 0, 0, 0, 1});
+    add(empty);
+    add({1, 0, 1, 1, 0, 0, 1, 1});
+
+    vespalib::Stash stash;
+    auto* mv_attr = _attr->as_multi_value_attribute();
+    ASSERT_NE(nullptr, mv_attr);
+    auto* read_view = mv_attr->make_read_view(IMultiValueAttribute::ArrayBoolTag(), stash);
+    ASSERT_NE(nullptr, read_view);
+
+    std::optional<DocId> max_id;
+    for (const auto& [docid, expected] : _added) {
+        if (!max_id.has_value() || docid > max_id.value()) {
+            max_id = docid;
+        }
+        EXPECT_EQ(expected, to_vec(_attr->get_bools(docid)));
+        EXPECT_EQ(expected, to_vec(read_view->get_values(docid)));
+    }
+    EXPECT_EQ(empty, to_vec(_attr->get_bools(max_id.value() + 1)));
+    EXPECT_EQ(empty, to_vec(read_view->get_values(max_id.value() + 1)));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

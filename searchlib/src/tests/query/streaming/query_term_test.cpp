@@ -148,13 +148,12 @@ QueryTermTest::test_unpack_match_data_for_term_node(bool interleaved_features, b
 {
     ASSERT_NO_FATAL_FAILURE(build_query(filter));
     _tfmd->setNeedInterleavedFeatures(interleaved_features);
-    auto invalid_id = TermFieldMatchData::invalidId();
-    EXPECT_EQ(invalid_id, _tfmd->getDocId());
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
     _node->unpack_match_data(1, *_md, _index_env, ElementIds::select_all());
-    EXPECT_EQ(invalid_id, _tfmd->getDocId());
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
     ASSERT_NO_FATAL_FAILURE(populate_term());
     _node->unpack_match_data(2, *_md, _index_env, ElementIds::select_all());
-    EXPECT_EQ(2, _tfmd->getDocId());
+    EXPECT_TRUE(_tfmd->has_ranking_data(2));
     if (interleaved_features && !filter) {
         EXPECT_EQ(mock_num_occs, _tfmd->getNumOccs());
         EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
@@ -165,7 +164,7 @@ QueryTermTest::test_unpack_match_data_for_term_node(bool interleaved_features, b
     EXPECT_EQ(filter ? 0 : mock_num_occs, _tfmd->size());
     _node->reset();
     _node->unpack_match_data(3, *_md, _index_env, ElementIds::select_all());
-    EXPECT_EQ(2, _tfmd->getDocId());
+    EXPECT_TRUE(_tfmd->has_ranking_data(2));
 }
 
 TEST_F(QueryTermTest, unpack_normal_match_data_for_term_node)
@@ -195,28 +194,28 @@ TEST_F(QueryTermTest, unpack_match_data_with_element_filter)
     ASSERT_NO_FATAL_FAILURE(populate_term());
     constexpr uint32_t docid = 2;
     _node->unpack_match_data(docid, *_md, _index_env, ElementIds::select_all());
-    EXPECT_EQ(docid, _tfmd->getDocId());
+    EXPECT_TRUE(_tfmd->has_ranking_data(docid));
     EXPECT_EQ(mock_num_occs, _tfmd->getNumOccs());
     EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
     EXPECT_EQ(mock_num_occs, _tfmd->size());
     EXPECT_EQ(make_vec({0, 3, 7, 10}), extract_element_ids(docid));
     reset_tfmd();
     _node->unpack_match_data(docid, *_md, _index_env, ElementIds(make_vec({0, 2, 3, 8, 10, 12})));
-    EXPECT_EQ(docid, _tfmd->getDocId());
+    EXPECT_TRUE(_tfmd->has_ranking_data(docid));
     EXPECT_EQ(3, _tfmd->getNumOccs());
     EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
     EXPECT_EQ(3, _tfmd->size());
     EXPECT_EQ(make_vec({0, 3, 10}), extract_element_ids(docid));
     reset_tfmd();
     _node->unpack_match_data(docid, *_md, _index_env, ElementIds(make_vec({3})));
-    EXPECT_EQ(docid, _tfmd->getDocId());
+    EXPECT_TRUE(_tfmd->has_ranking_data(docid));
     EXPECT_EQ(1, _tfmd->getNumOccs());
     EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
     EXPECT_EQ(1, _tfmd->size());
     EXPECT_EQ(make_vec({3}), extract_element_ids(docid));
     reset_tfmd();
     _node->unpack_match_data(docid, *_md, _index_env, ElementIds(make_vec({4})));
-    EXPECT_EQ(TermFieldMatchData::invalidId(), _tfmd->getDocId());
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
     EXPECT_EQ(0, _tfmd->getNumOccs());
     EXPECT_EQ(0, _tfmd->getFieldLength());
     EXPECT_EQ(0, _tfmd->size());

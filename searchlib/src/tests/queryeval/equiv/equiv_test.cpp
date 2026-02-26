@@ -75,7 +75,7 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
         {
             TermFieldMatchData &data = *md->resolveTermField(1);
             EXPECT_EQ(1u, data.getFieldId());
-            EXPECT_EQ(5u, data.getDocId());
+            EXPECT_TRUE(data.has_ranking_data(5u));
             FieldPositionsIterator itr = data.getIterator();
             if (unpack_normal_features) {
                 EXPECT_EQ(1u, itr.size());
@@ -95,7 +95,7 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
         {
             TermFieldMatchData &data = *md->resolveTermField(2);
             EXPECT_EQ(2u, data.getFieldId());
-            EXPECT_EQ(5u, data.getDocId());
+            EXPECT_TRUE(data.has_ranking_data(5u));
             FieldPositionsIterator itr = data.getIterator();
             if (unpack_normal_features) {
                 EXPECT_EQ(2u, itr.size());
@@ -124,11 +124,11 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
     EXPECT_EQ(10u, search->getDocId());
     { // test doc 10 results
         search->unpack(10u);
-        EXPECT_EQ(5u, md->resolveTermField(1)->getDocId()); // no match
+        EXPECT_TRUE(md->resolveTermField(1)->has_ranking_data(5u)); // no match
         {
             TermFieldMatchData &data = *md->resolveTermField(2);
             EXPECT_EQ(2u, data.getFieldId());
-            EXPECT_EQ(10u, data.getDocId());
+            EXPECT_TRUE(data.has_ranking_data(10u));
             FieldPositionsIterator itr = data.getIterator();
             if (unpack_normal_features) {
                 EXPECT_EQ(1u, itr.size());

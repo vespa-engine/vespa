@@ -22,7 +22,7 @@ public class CloudSslProvider extends SslProvider {
 
     public CloudSslProvider(String servername, String privateKey, String certificate, String caCertificatePath,
                             String caCertificate, ClientAuth.Enum clientAuthentication, boolean enableTokenSupport) {
-        super("cloud-ssl-provider@", servername, componentClass(enableTokenSupport), null);
+        super("cloud-ssl-provider@", servername, componentClass(enableTokenSupport), bundleName(enableTokenSupport));
         this.privateKey = privateKey;
         this.certificate = certificate;
         this.caCertificatePath = caCertificatePath;
@@ -32,8 +32,12 @@ public class CloudSslProvider extends SslProvider {
 
     private static String componentClass(boolean enableTokenSupport) {
         return enableTokenSupport
-                ? "com.yahoo.jdisc.http.ssl.impl.CloudTokenSslContextProvider"
+                ? "com.yahoo.vespa.cloud.tenant.dataplane.CloudTokenSslContextProvider"
                 : "com.yahoo.jdisc.http.ssl.impl.ConfiguredSslContextFactoryProvider";
+    }
+
+    private static String bundleName(boolean enableTokenSupport) {
+        return enableTokenSupport ? "cloud-tenant" : null;
     }
 
     @Override

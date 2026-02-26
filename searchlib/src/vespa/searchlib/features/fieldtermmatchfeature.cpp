@@ -39,7 +39,7 @@ FieldTermMatchExecutor::execute(uint32_t docId)
     uint32_t occurrences = 0;
     double sumExactness = 0;
     int64_t weight = 0;
-    if (tfmd.getDocId() == docId) {
+    if (tfmd.has_ranking_data(docId)) {
         search::fef::FieldPositionsIterator it = tfmd.getIterator();
         if (it.valid()) {
             lastPosition = 0;

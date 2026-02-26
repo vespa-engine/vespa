@@ -98,7 +98,7 @@ TermEditDistanceExecutor::execute(uint32_t docId)
             search::fef::TermFieldHandle handle = _fieldHandles[query - 1];
             if (handle != search::fef::IllegalHandle) {
                 const fef::TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
-                if (tfmd.getDocId() == docId) {
+                if (tfmd.has_ranking_data(docId)) {
                     it = tfmd.getIterator(); // this is now valid
                     while (it.valid() && it.getPosition() < fieldBegin) {
                         it.next(); // forward to window

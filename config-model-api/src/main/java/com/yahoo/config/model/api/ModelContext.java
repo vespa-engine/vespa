@@ -114,6 +114,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"glebashnik"}) default int maxDocumentOperationRequestSizeMib() { return 2048; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean useTriton() { return false; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean ignoreConnectivityChecksAtStartup() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
         @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default boolean applyOnRestartForApplicationMetadataConfig() { return false; }

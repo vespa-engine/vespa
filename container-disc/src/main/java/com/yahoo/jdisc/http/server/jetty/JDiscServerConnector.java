@@ -4,7 +4,6 @@ package com.yahoo.jdisc.http.server.jetty;
 import ai.vespa.sampling.ProbabilisticSampleRate;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Request;
@@ -20,10 +19,8 @@ import java.util.Map;
  */
 class JDiscServerConnector extends ServerConnector {
 
-    record MetricContextKey(String method, String protocol) {}
-
     // Keep a cache of metric contexts to avoid creating new contexts for each request. Metric context creation is expensive.
-    private final Map<MetricContextKey, Metric.Context> requestMetricContexts;
+    private final Map<String, Metric.Context> requestMetricContexts;
 
     public static final String REQUEST_ATTRIBUTE = JDiscServerConnector.class.getName();
     private final Metric.Context connectorMetricCtx;
@@ -43,7 +40,7 @@ class JDiscServerConnector extends ServerConnector {
         this.connectorName = config.name();
         this.listenPort = config.listenPort();
         this.connectorMetricCtx = metric.createContext(createConnectorDimensions(listenPort, connectorName, 0));
-        this.requestMetricContexts = createRequestMetricContexts(metric, listenPort, connectorName);
+        this.requestMetricContexts = createRequestMetricContexts(metric, listenPort);
 
         this.statistics = new ConnectionStatistics();
         setAcceptedTcpNoDelay(config.tcpNoDelay());
@@ -80,11 +77,10 @@ class JDiscServerConnector extends ServerConnector {
 
     Metric.Context createRequestMetricContext(Request request) {
         var method = request.getMethod();
-        var protocol = request.getConnectionMetaData().getProtocol();
-        var requestMetricCtx = requestMetricContexts.get(new MetricContextKey(method, protocol));
+        var requestMetricCtx = requestMetricContexts.get(method);
         if (requestMetricCtx != null) return requestMetricCtx;
         // Fallback if request metric context is not available
-        return createRequestMetricContext(metric, listenPort, connectorName, method, protocol);
+        return createRequestMetricContext(metric, listenPort, method);
     }
 
     ConnectorConfig connectorConfig() {
@@ -102,23 +98,17 @@ class JDiscServerConnector extends ServerConnector {
         return props;
     }
 
-    static Metric.Context createRequestMetricContext(
-            Metric metric, int listenPort, String connectorName, String method, String protocol) {
-        var dimensions = createConnectorDimensions(listenPort, connectorName, 2);
+    static Metric.Context createRequestMetricContext(Metric metric, int listenPort, String method) {
+        Map<String, Object> dimensions = new HashMap<>(2);
+        dimensions.put(MetricDefinitions.PORT_DIMENSION, listenPort);
         dimensions.put(MetricDefinitions.METHOD_DIMENSION, method);
-        dimensions.put(MetricDefinitions.PROTOCOL_DIMENSION, protocol);
         return metric.createContext(dimensions);
     }
 
-    private static Map<MetricContextKey, Metric.Context> createRequestMetricContexts(
-            Metric metric, int listenPort, String connectorName) {
-        var requestMetricContexts = new HashMap<MetricContextKey, Metric.Context>();
+    private static Map<String, Metric.Context> createRequestMetricContexts(Metric metric, int listenPort) {
+        var requestMetricContexts = new HashMap<String, Metric.Context>();
         for (var method : RequestUtils.SUPPORTED_METHODS) {
-            for (var protocol : HttpVersion.values()) {
-                requestMetricContexts.put(
-                        new MetricContextKey(method, protocol.asString()),
-                        createRequestMetricContext(metric, listenPort, connectorName, method, protocol.asString()));
-            }
+            requestMetricContexts.put(method, createRequestMetricContext(metric, listenPort, method));
         }
         return requestMetricContexts;
     }

@@ -53,7 +53,7 @@ MatchesExecutor::execute(uint32_t docId) {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == docId) {
+        if (tfmd->has_ranking_data(docId)) {
             output = 1;
             break;
         }

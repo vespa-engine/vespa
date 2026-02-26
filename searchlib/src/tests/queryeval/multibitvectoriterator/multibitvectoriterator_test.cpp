@@ -222,15 +222,15 @@ void
 verifySelectiveUnpack(SearchIterator & s, const TermFieldMatchData * tfmd)
 {
     s.seek(1);
-    EXPECT_EQ(0u, tfmd[0].getDocId());
-    EXPECT_EQ(0u, tfmd[1].getDocId());
-    EXPECT_EQ(0u, tfmd[2].getDocId());
-    EXPECT_EQ(0u, tfmd[3].getDocId());
+    EXPECT_TRUE(tfmd[0].has_ranking_data(0u));
+    EXPECT_TRUE(tfmd[1].has_ranking_data(0u));
+    EXPECT_TRUE(tfmd[2].has_ranking_data(0u));
+    EXPECT_TRUE(tfmd[3].has_ranking_data(0u));
     s.unpack(1);
-    EXPECT_EQ(0u, tfmd[0].getDocId());
-    EXPECT_EQ(1u, tfmd[1].getDocId());
-    EXPECT_EQ(1u, tfmd[2].getDocId());
-    EXPECT_EQ(0u, tfmd[3].getDocId());
+    EXPECT_TRUE(tfmd[0].has_ranking_data(0u));
+    EXPECT_TRUE(tfmd[1].has_ranking_data(1u));
+    EXPECT_TRUE(tfmd[2].has_ranking_data(1u));
+    EXPECT_TRUE(tfmd[3].has_ranking_data(0u));
 }
 
 template<typename T>
@@ -270,12 +270,12 @@ void verifyOrUnpack(SearchIterator & s, TermFieldMatchData tfmd[3]) {
     s.initFullRange();
     s.seek(1);
     for (size_t i = 0; i < 3; i++) {
-        EXPECT_EQ(0u, tfmd[i].getDocId());
+        EXPECT_TRUE(tfmd[i].has_ranking_data(0u));
     }
     s.unpack(1);
-    EXPECT_EQ(0u, tfmd[0].getDocId());
-    EXPECT_EQ(1u, tfmd[1].getDocId());
-    EXPECT_EQ(0u, tfmd[2].getDocId());
+    EXPECT_TRUE(tfmd[0].has_ranking_data(0u));
+    EXPECT_TRUE(tfmd[1].has_ranking_data(1u));
+    EXPECT_TRUE(tfmd[2].has_ranking_data(0u));
 }
 
 TEST_F(MultiBitVectorIteratorTest, test_unpack_of_Or)

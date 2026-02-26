@@ -335,6 +335,7 @@ TOKEN :
 | < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
 | < RANK_PROPERTIES: "rank-properties" >
 | < RERANK_COUNT: "rerank-count" >
+| < TOTAL_RERANK_COUNT: "total-rerank-count" >
 | < NUM_THREADS_PER_SEARCH: "num-threads-per-search" >
 | < MIN_HITS_PER_THREAD: "min-hits-per-thread" >
 | < NUM_SEARCH_PARTITIONS: "num-search-partitions" >
@@ -347,6 +348,7 @@ TOKEN :
 | < PREFETCH_TENSORS: "prefetch-tensors" >
 | < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
+| < TOTAL_KEEP_RANK_COUNT: "total-keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
 | < CONSTANTS: "constants" >
 | < FILE: "file" >
@@ -2036,11 +2038,13 @@ void firstPhaseItem(ParsedRankProfile profile) :
 {
     String expression;
     int keepRankCount;
+    int totalKeepRankCount;
     double dropLimit;
 }
 {
     ( expression = expression()                               { profile.setFirstPhaseRanking(expression); }
     | (<KEEP_RANK_COUNT> <COLON> keepRankCount = integer())     { profile.setKeepRankCount(keepRankCount); }
+    | (<TOTAL_KEEP_RANK_COUNT> <COLON> totalKeepRankCount = integer()) { profile.setTotalKeepRankCount(totalKeepRankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
     )
 }
@@ -2064,11 +2068,13 @@ void secondPhaseItem(ParsedRankProfile profile) :
 {
     String expression;
     int rerankCount;
+    int totalRerankCount;
     double dropLimit;
 }
 {
     ( expression = expression()                       { profile.setSecondPhaseRanking(expression); }
     | (<RERANK_COUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
+    | (<TOTAL_RERANK_COUNT> <COLON> totalRerankCount = integer()) { profile.setTotalRerankCount(totalRerankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setSecondPhaseRankScoreDropLimit(dropLimit); }
     )
 }
@@ -2961,6 +2967,8 @@ String identifierWithDash() :
     | <SUMMARY_TO>
     | <TARGET_HITS_MAX_ADJUSTMENT_FACTOR>
     | <TERMWISE_LIMIT>
+    | <TOTAL_KEEP_RANK_COUNT>
+    | <TOTAL_RERANK_COUNT>
     | <UPPER_BOUND>
     | <USE_MODEL>
     ) { return token.image; }

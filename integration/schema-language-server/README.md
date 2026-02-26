@@ -60,9 +60,7 @@ The CongoCC Maven plugin generates Java classes from the parsers and places them
 The language server needs a client to start it. Therefore running and testing the language server happens through an editor with an extension or a plugin. The language server is primary developed for VSCode, but it can run on other editors as well. This guide is for running the extension in a development environment. In the `clients` folder are the different extensions and plugins for the supported editors.
 
 ### Build the langauge server
-- Make sure Vespa java classes are built. Run `mvn install` in the root of this repository to build Vespa
-- If there have been changes outside the `clients` folder, these needs to be rebuilt.
-    - Use the command `mvn -pl :schema-language-server install` from the root of this repository to build the language server
+- Use `mvn install -pl :schema-language-server -Pschema-language-server -amd` in the project root to build the language server
 
 ### Visual Studio Code (VSCode)
 - Open the folder `./clients/vscode` in a new VSCode window.

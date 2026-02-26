@@ -375,6 +375,7 @@ public class YqlParser implements Parser {
     private Item convertExpression(OperatorNode<ExpressionOperator> ast, String currentField) {
         try {
             annotationStack.addFirst(ast);
+            ast = rewriteIndexedAccess(ast);
             return switch (ast.getOperator()) {
                 case AND -> buildAnd(ast, currentField);
                 case OR -> buildOr(ast, currentField);
@@ -407,6 +408,52 @@ public class YqlParser implements Parser {
         } finally {
             annotationStack.removeFirst();
         }
+    }
+
+    /**
+     * Recognizes and rewrites from:
+     *      field[index] = value`
+     * to:
+     *      field contains ({elementFilter:[index]}sameElement(value))
+     * <p>
+     * Expected input: EQ( INDEX ( field_name, number ), value )
+     */
+    private OperatorNode<ExpressionOperator> rewriteIndexedAccess(OperatorNode<ExpressionOperator> ast) {
+        if (ast.getOperator() != ExpressionOperator.EQ) {
+            return ast;
+        }
+
+        OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
+        OperatorNode<ExpressionOperator> value = ast.getArgument(1);
+        if (lhs.getOperator() != ExpressionOperator.INDEX) {
+            return ast;
+        }
+
+        OperatorNode<ExpressionOperator> field = lhs.getArgument(0);
+        OperatorNode<ExpressionOperator> index = lhs.getArgument(1);
+        if (index.getOperator() != ExpressionOperator.LITERAL) {
+            throw newUnexpectedArgumentException(index, ExpressionOperator.LITERAL);
+        }
+
+        // TODO(johsol): Remove conversion to string when sameElement supports other values than strings.
+        value = toLiteralString(value);
+        int elementIndex = convertToElementId(index.getArgument(0));
+        OperatorNode<ExpressionOperator> sameElement = OperatorNode.create(
+                ast.getLocation(),
+                ExpressionOperator.CALL,
+                List.of(SAME_ELEMENT),
+                List.of(value));
+        sameElement.putAnnotation(ELEMENT_FILTER, List.of(elementIndex));
+
+        return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, sameElement);
+    }
+
+    // TODO(johsol): Remove conversion to string when sameElement supports other values than strings.
+    private static OperatorNode<ExpressionOperator> toLiteralString(OperatorNode<ExpressionOperator> ast) {
+        if (ast.getOperator() == ExpressionOperator.LITERAL && !(ast.getArgument(0) instanceof String)) {
+            return OperatorNode.create(ast.getLocation(), ExpressionOperator.LITERAL, ast.getArgument(0).toString());
+        }
+        return ast;
     }
 
     private Item buildFunctionCallOrCompositeLeaf(OperatorNode<ExpressionOperator> ast, String currentField) {
@@ -767,40 +814,40 @@ public class YqlParser implements Parser {
             List<Integer> filter = new ArrayList<>();
             if (elementFilterObj instanceof List<?> list) {
                 for (Object val : list) {
-                    filter.add(convertToIntForElementFilter(val));
+                    filter.add(convertToElementId(val));
                 }
             } else {
-                filter.add(convertToIntForElementFilter(elementFilterObj));
+                filter.add(convertToElementId(elementFilterObj));
             }
             sameElement.setElementFilter(filter);
         }
     }
 
     /** Element filter accepts Integer. Allows Long that is within Integer size. */
-    private int convertToIntForElementFilter(Object val) {
+    private int convertToElementId(Object val) {
         if (val == null) {
-            throw new IllegalArgumentException("elementFilter cannot contain null values");
+            throw new IllegalArgumentException("element id cannot be null");
         }
         if (val instanceof Integer intVal) {
             if (intVal < 0) {
-                throw new IllegalArgumentException("elementFilter values must be non-negative, got: " + val);
+                throw new IllegalArgumentException("element id must be non-negative, got: " + val);
             }
             return intVal;
         } else if (val instanceof Long longVal) {
             if (longVal > Integer.MAX_VALUE) {
                 throw new IllegalArgumentException(
-                        "elementFilter values must fit in int32 range, got: " + longVal);
+                        "element id must fit in int32 range, got: " + longVal);
             }
             if (longVal < 0) {
-                throw new IllegalArgumentException("elementFilter values must be non-negative, got: " + val);
+                throw new IllegalArgumentException("element id must be non-negative, got: " + val);
             }
             return longVal.intValue();
         } else if (val instanceof Double || val instanceof Float) {
             throw new IllegalArgumentException(
-                    "elementFilter values must be integers, not floating point numbers. Got: " + val);
+                    "element id must be integer, not floating point number. Got: " + val);
         } else {
             throw new IllegalArgumentException(
-                    "elementFilter values must be integers, got: " + val.getClass().getSimpleName());
+                    "element id must be integer, got: " + val.getClass().getSimpleName());
         }
     }
 

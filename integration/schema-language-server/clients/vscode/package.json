@@ -87,18 +87,18 @@
     "publish": "npm run compile && npm run changenotes && node out/publish.js"
   },
   "devDependencies": {
-    "@types/hasbin": "^1.2.2",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "^20.19.9",
-    "@types/vscode": "^1.72.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "@vscode/test-cli": "^0.0.9",
-    "@vscode/test-electron": "^2.4.0",
-    "@vscode/vsce": "^3.0.0",
-    "esbuild": "^0.25.0",
-    "eslint": "^9.0.0",
-    "typescript": "^5.4.5"
+    "@types/hasbin": "1.2.2",
+    "@types/mocha": "10.0.6",
+    "@types/node": "20.19.9",
+    "@types/vscode": "1.90.0",
+    "@typescript-eslint/eslint-plugin": "8.56.0",
+    "@typescript-eslint/parser": "8.56.0",
+    "@vscode/test-cli": "0.0.9",
+    "@vscode/test-electron": "2.4.0",
+    "@vscode/vsce": "3.7.1",
+    "esbuild": "0.25.0",
+    "eslint": "9.39.2",
+    "typescript": "5.4.5"
   },
   "dependencies": {
     "hasbin": "^1.2.3",

@@ -1359,6 +1359,7 @@
       "public int maxDocumentOperationRequestSizeMib()",
       "public java.lang.Object sidecarsForTest()",
       "public boolean useTriton()",
+      "public boolean ignoreConnectivityChecksAtStartup()",
       "public int searchCoreMaxOutstandingMoveOps()",
       "public double docprocHandlerThreadpool()",
       "public boolean applyOnRestartForApplicationMetadataConfig()",

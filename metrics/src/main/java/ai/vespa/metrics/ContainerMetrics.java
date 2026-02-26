@@ -86,7 +86,7 @@ public enum ContainerMetrics implements VespaMetrics {
     SERVER_BYTES_SENT("serverBytesSent", Unit.BYTE, "The number of bytes sent from the server"),
 
     HANDLED_REQUESTS("handled.requests", Unit.OPERATION, "The number of requests handled per metrics snapshot"),
-    HANDLED_LATENCY("handled.latency", Unit.MILLISECOND, "The time used for requests during this metrics snapshot"),
+    HANDLED_LATENCY("handled.latency", Unit.MILLISECOND, "The time used for handling requests, excluding HTTP layer and rendering"),
     
     HTTPAPI_LATENCY("httpapi_latency", Unit.MILLISECOND, "Duration for requests to the HTTP document APIs"),
     HTTPAPI_PENDING("httpapi_pending", Unit.OPERATION, "Document operations pending execution"),
@@ -131,7 +131,7 @@ public enum ContainerMetrics implements VespaMetrics {
     FEED_HTTP_REQUESTS("feed.http-requests", Unit.OPERATION, "Feed HTTP requests"),
     QUERIES("queries", Unit.OPERATION, "Query volume"),
     QUERY_CONTAINER_LATENCY("query_container_latency", Unit.MILLISECOND, "The query execution time consumed in the container"),
-    QUERY_LATENCY("query_latency", Unit.MILLISECOND, "The overall query latency as seen by the container"),
+    QUERY_LATENCY("query_latency", Unit.MILLISECOND, "The overall query latency as observed by the container cluster, excluding HTTP layer and rendering"),
     QUERY_TIMEOUT("query_timeout", Unit.MILLISECOND, "The amount of time allowed for query execution, from the client"),
     FAILED_QUERIES("failed_queries", Unit.OPERATION, "The number of failed queries"),
     DEGRADED_QUERIES("degraded_queries", Unit.OPERATION, "The number of degraded queries, e.g. due to some content nodes not responding in time"),

@@ -82,7 +82,7 @@ TEST_F(FakeSearchableTest, require_that_term_search_works) {
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
                 EXPECT_EQ(1u, data.getFieldId());
-                EXPECT_EQ(5u, data.getDocId());
+                EXPECT_TRUE(data.has_ranking_data(5u));
                 FieldPositionsIterator itr = data.getIterator();
                 EXPECT_EQ(2u, itr.size());
                 ASSERT_TRUE(itr.valid());
@@ -139,7 +139,7 @@ TEST_F(FakeSearchableTest, require_that_phrase_search_works) {
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
                 EXPECT_EQ(1u, data.getFieldId());
-                EXPECT_EQ(5u, data.getDocId());
+                EXPECT_TRUE(data.has_ranking_data(5u));
                 FieldPositionsIterator itr = data.getIterator();
                 EXPECT_EQ(1u, itr.size());
                 ASSERT_TRUE(itr.valid());
@@ -193,7 +193,7 @@ TEST_F(FakeSearchableTest, require_that_weigheted_set_search_works) {
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
                 EXPECT_EQ(1u, data.getFieldId());
-                EXPECT_EQ(3u, data.getDocId());
+                EXPECT_TRUE(data.has_ranking_data(3u));
                 FieldPositionsIterator itr = data.getIterator();
                 EXPECT_EQ(2u, itr.size());
                 ASSERT_TRUE(itr.valid());
@@ -216,7 +216,7 @@ TEST_F(FakeSearchableTest, require_that_weigheted_set_search_works) {
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
                 EXPECT_EQ(1u, data.getFieldId());
-                EXPECT_EQ(9u, data.getDocId());
+                EXPECT_TRUE(data.has_ranking_data(9u));
                 FieldPositionsIterator itr = data.getIterator();
                 EXPECT_EQ(1u, itr.size());
                 ASSERT_TRUE(itr.valid());
@@ -267,7 +267,7 @@ TEST_F(FakeSearchableTest, require_that_multi_field_search_works) {
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
                 EXPECT_EQ(1u, data.getFieldId());
-                EXPECT_EQ(5u, data.getDocId());
+                EXPECT_TRUE(data.has_ranking_data(5u));
                 FieldPositionsIterator itr = data.getIterator();
                 EXPECT_EQ(1u, itr.size());
                 ASSERT_TRUE(itr.valid());
@@ -278,7 +278,7 @@ TEST_F(FakeSearchableTest, require_that_multi_field_search_works) {
             {
                 TermFieldMatchData &data = *md->resolveTermField(2);
                 EXPECT_EQ(2u, data.getFieldId());
-                EXPECT_EQ(5u, data.getDocId());
+                EXPECT_TRUE(data.has_ranking_data(5u));
                 FieldPositionsIterator itr = data.getIterator();
                 EXPECT_EQ(1u, itr.size());
                 ASSERT_TRUE(itr.valid());
@@ -299,12 +299,12 @@ TEST_F(FakeSearchableTest, require_that_multi_field_search_works) {
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
                 EXPECT_EQ(1u, data.getFieldId());
-                EXPECT_NE(10u, data.getDocId());
+                EXPECT_FALSE(data.has_data(10u));
             }
             {
                 TermFieldMatchData &data = *md->resolveTermField(2);
                 EXPECT_EQ(2u, data.getFieldId());
-                EXPECT_EQ(10u, data.getDocId());
+                EXPECT_TRUE(data.has_ranking_data(10u));
                 FieldPositionsIterator itr = data.getIterator();
                 EXPECT_EQ(1u, itr.size());
                 ASSERT_TRUE(itr.valid());
@@ -368,7 +368,7 @@ TEST_F(FakeSearchableTest, require_that_match_data_is_compressed_for_attributes)
     {
         TermFieldMatchData &data = *md->resolveTermField(1);
         EXPECT_EQ(1u, data.getFieldId());
-        EXPECT_EQ(5u, data.getDocId());
+        EXPECT_TRUE(data.has_ranking_data(5u));
         FieldPositionsIterator itr = data.getIterator();
         EXPECT_EQ(1u, itr.size());
         ASSERT_TRUE(itr.valid());
@@ -429,14 +429,14 @@ TEST_F(FakeSearchableTest, require_that_repeated_unpack_for_same_docid_is_ignore
 
     EXPECT_TRUE(search->seek(docid));
     auto& tfmd = *md->resolveTermField(handle);
-    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_invalid_docid());
     EXPECT_EQ(0u, tfmd.size());
     search->unpack(docid);
-    EXPECT_EQ(docid, tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_ranking_data(docid));
     EXPECT_EQ(2u, tfmd.size());
     tfmd.reset(another_docid);
     search->unpack(docid);
-    EXPECT_EQ(another_docid, tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_ranking_data(another_docid));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

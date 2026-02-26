@@ -122,7 +122,7 @@ SearchIterator::UP EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDat
 SearchIterator::UP
 EquivBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_or_filter(_terms, strict(), constraint);
+    return create_or_filter(_terms, constraint);
 }
 
 void

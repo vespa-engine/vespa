@@ -32,12 +32,24 @@ class SchemaInfoConfigurer {
         }
 
         for (var profileConfig : schemaInfoConfig.rankprofile()) {
-            RankProfile.Builder profileBuilder = new RankProfile.Builder(profileConfig.name())
+            var profileBuilder = new RankProfile.Builder(profileConfig.name())
                     .setHasSummaryFeatures(profileConfig.hasSummaryFeatures())
                     .setHasRankFeatures(profileConfig.hasRankFeatures())
                     .setUseSignificanceModel(profileConfig.significance().useModel());
+            if (profileConfig.keepRankCount() >= 0)
+                profileBuilder.setKeepRankCount(profileConfig.keepRankCount());
+            if (profileConfig.totalKeepRankCount() >= 0)
+                profileBuilder.setTotalKeepRankCount(profileConfig.totalKeepRankCount());
             for (var inputConfig : profileConfig.input())
                 profileBuilder.addInput(inputConfig.name(), RankProfile.InputType.fromSpec(inputConfig.type()));
+
+            var secondPhaseBuilder = new SecondPhase.Builder();
+            if (profileConfig.rerankCount() >= 0)
+                secondPhaseBuilder.setRerankCount(profileConfig.rerankCount());
+            if (profileConfig.totalRerankCount() >= 0)
+                secondPhaseBuilder.setTotalRerankCount(profileConfig.totalRerankCount());
+            profileBuilder.setSecondPhase(secondPhaseBuilder.build());
+
             schemaBuilder.add(profileBuilder.build());
         }
 

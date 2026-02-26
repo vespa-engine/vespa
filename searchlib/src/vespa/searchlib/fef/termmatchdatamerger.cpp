@@ -50,7 +50,7 @@ TermMatchDataMerger::merge(uint32_t docid,
     uint16_t field_length = 0u;
     for (size_t i = 0; i < in.size(); ++i) {
         const TermFieldMatchData *md = in[i].matchData;
-        if (md->getDocId() == docid) {
+        if (md->has_data(docid)) {
             if (needs_normal_features) {
                 for (const TermFieldMatchDataPosition &iter : *md) {
                     double exactness = in[i].exactness * iter.getMatchExactness();

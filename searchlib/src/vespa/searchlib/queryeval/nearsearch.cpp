@@ -206,7 +206,7 @@ public:
     bool setup(const TermFieldMatchDataArray &input, size_t num_positive_terms, uint32_t docid) {
         for (size_t i = num_positive_terms; i < input.size(); ++i) {
             const search::fef::TermFieldMatchData *term = input[i];
-            if (term->getDocId() == docid && term->begin() != term->end()) {
+            if (term->has_data(docid) && term->begin() != term->end()) {
                 _queue.push({term->begin(), term->end()});
             }
         }
@@ -307,7 +307,7 @@ NearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
     uint32_t num_positive_terms = inputs().size() - num_negative_terms();
     for (uint32_t i = 0; i < num_positive_terms; ++i) {
         const search::fef::TermFieldMatchData *term = inputs()[i];
-        if (term->getDocId() != docId || term->begin() == term->end()) {
+        if (!term->has_data(docId) || term->begin() == term->end()) {
             LOG(debug, "No occurrences found for term %d.", i);
             return;
         }
@@ -383,7 +383,7 @@ ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filt
     PositionsIteratorList pos;
     for (uint32_t i = 0; i < numTerms; ++i) {
         const search::fef::TermFieldMatchData *term = inputs()[i];
-        if (term->getDocId() != docId || term->begin() == term->end()) {
+        if (!term->has_data(docId) || term->begin() == term->end()) {
             LOG(debug, "No occurrences found for term %d.", i);
             return;
         }
