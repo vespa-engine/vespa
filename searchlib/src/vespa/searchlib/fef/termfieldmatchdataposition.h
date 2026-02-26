@@ -84,7 +84,7 @@ public:
     int32_t getElementWeight() const { return _elementWeight; }
     uint32_t getElementLen() const { return _elementLen; }
     float getMatchExactness() const { return _matchExactness; }
-    uint32_t getMatchLength() const { return _matchExactness; }
+    uint32_t getMatchLength() const { return _matchLength; }
 
     void setElementWeight(int32_t elementWeight) {
         _elementWeight = elementWeight;
