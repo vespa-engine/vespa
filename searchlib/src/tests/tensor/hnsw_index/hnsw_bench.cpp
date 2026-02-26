@@ -19,6 +19,7 @@
 #include <vespa/vespalib/util/fake_doom.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
 #include <absl/flags/flag.h>
@@ -42,23 +43,25 @@ ABSL_FLAG(std::vector<std::string>, dataset_files, {},
 ABSL_FLAG(std::optional<uint32_t>, vector_count, std::nullopt,
           "Number of dataset vectors to ingest. If not specified, will ingest all available dataset vectors.");
 
-ABSL_FLAG(std::string, data_type,            "int8", "Vector data type (int8, bfloat16, float, double)");
-ABSL_FLAG(std::string, distance_metric,      "euclidean", "Vector distance metric (TODO)");
-ABSL_FLAG(uint32_t,    max_links,            16, "HNSW max links per node (`m` parameter)");
-ABSL_FLAG(uint32_t,    explore_neighbors,    200, "Additional neighbors to explore during insert (`ef` parameter)");
-ABSL_FLAG(std::string, index_dir,            "", "Directory for saving and loading HNSW indexes");
-ABSL_FLAG(bool,        check_symmetry,       false, "Verify HNSW graph symmetry after feeding has completed");
-ABSL_FLAG(bool,        save_index,           false, "Save HNSW index after ingest");
-ABSL_FLAG(uint32_t,    load_commit_interval, 256, "Commit HNSW graph every N vectors loaded");
-ABSL_FLAG(uint32_t,    top_k,                10, "How many top hits to find during searches");
-ABSL_FLAG(uint32_t,    explore_k,            10, "How many additional hits to explore during searches");
-ABSL_FLAG(bool,        prefetch_tensors,     false, "Whether to explicitly prefetch tensor memory during searches");
-ABSL_FLAG(uint32_t,    query_count,          1000, "How many queries to run against the index");
-ABSL_FLAG(uint32_t,    report_batch_size,    100'000, "Reported feed progress ever N vectors fed");
+ABSL_FLAG(std::string, data_type,             "int8",  "Vector data type (int8, bfloat16, float, double)");
+ABSL_FLAG(std::string, distance_metric,       "euclidean", "Vector distance metric (TODO)");
+ABSL_FLAG(uint32_t,    max_links,             16,      "HNSW max links per node (`m` parameter)");
+ABSL_FLAG(uint32_t,    explore_neighbors,     200,     "Additional neighbors to explore during insert (`ef` parameter)");
+ABSL_FLAG(std::string, index_dir,             "",      "Directory for saving and loading HNSW indexes");
+ABSL_FLAG(bool,        check_symmetry,        false,   "Verify HNSW graph symmetry after feeding has completed");
+ABSL_FLAG(bool,        save_index,            false,   "Save HNSW index after ingest");
+ABSL_FLAG(uint32_t,    load_commit_interval,  256,     "Commit HNSW graph every N vectors loaded");
+ABSL_FLAG(uint32_t,    top_k,                 10,      "How many top hits to find during searches");
+ABSL_FLAG(uint32_t,    explore_k,             10,      "How many additional hits to explore during searches");
+ABSL_FLAG(bool,        indirect_vector_store, false,   "If true, vectors are read via an RCU vector indirection");
+ABSL_FLAG(bool,        prefetch_tensors,      false,   "Whether to explicitly prefetch tensor memory during searches");
+ABSL_FLAG(uint32_t,    query_count,           1000,    "How many queries to run against the index");
+ABSL_FLAG(uint32_t,    report_batch_size,     100'000, "Reported feed progress ever N vectors fed");
 
 // These are placeholders for common Google Benchmark flags that we just want to ignore and forward
-ABSL_FLAG(double,      benchmark_min_warmup_time, 0, "Fwd to Google Benchmark");
-ABSL_FLAG(std::string, benchmark_filter, "", "Fwd to Google Benchmark");
+ABSL_FLAG(double,      benchmark_min_warmup_time, 0,  "Fwd to Google Benchmark");
+ABSL_FLAG(std::string, benchmark_min_time,        "", "Fwd to Google Benchmark"); // e.g. "10s"
+ABSL_FLAG(std::string, benchmark_filter,          "", "Fwd to Google Benchmark");
 
 using search::attribute::DistanceMetric;
 using search::tensor::EmptySubspace;
@@ -75,6 +78,7 @@ using vespalib::GenerationHandler;
 using vespalib::MemoryUsage;
 using vespalib::Timer;
 using vespalib::alloc::Alloc;
+using vespalib::datastore::EntryRef;
 using vespalib::eval::CellType;
 using vespalib::eval::CellTypeUtils;
 using vespalib::eval::TypedCells;
@@ -100,10 +104,9 @@ struct Dataset {
     ~Dataset();
 
     // TODO move to dataset?
-    uint32_t doc_id_to_internal_index(uint32_t doc_id) const noexcept {
+    [[nodiscard]] uint32_t doc_id_to_internal_index(uint32_t doc_id) const noexcept {
+        assert(doc_id > 0 && doc_id <= _vector_count);
         // Doc ID 0 is an invalid doc ID sentinel, so we offset down by one.
-        assert(doc_id > 0);
-        assert(doc_id <= _vector_count);
         return doc_id - 1;
     }
 
@@ -243,7 +246,9 @@ Dataset load_dataset_from_files(const std::vector<fs::path>& files,
     if (bytes_read_total != total_buffer_size) {
         throw std::runtime_error(std::format("Unexpected number of bytes read"));
     }
-    std::println(std::cerr, "Done loading dataset in {}", std::chrono::duration<double>(load_timer.elapsed()));
+    const double elapsed_s = std::chrono::duration<double>(load_timer.elapsed()).count();
+    const double bytes_per_sec = bytes_read_total / elapsed_s;
+    std::println(std::cerr, "Done loading dataset in {}s ({:.2f} MiB/s)", elapsed_s, bytes_per_sec / 1_Mi);
     return {std::move(dataset_buf), vector_count, dimensions, data_type};
 }
 
@@ -253,7 +258,7 @@ class DatasetDocVectorStore : public search::tensor::DocVectorAccess {
     SubspaceType  _subspace_type;
     EmptySubspace _empty_subspace;
 public:
-    explicit DatasetDocVectorStore(Dataset dataset) noexcept;
+    explicit DatasetDocVectorStore(Dataset dataset);
     ~DatasetDocVectorStore() override;
 
     [[nodiscard]] uint32_t vector_count() const noexcept {
@@ -262,7 +267,6 @@ public:
     [[nodiscard]] const SubspaceType& subspace_type() const noexcept {
         return _subspace_type;
     }
-
     TypedCells get_vector(uint32_t doc_id, uint32_t subspace) const noexcept override {
         auto bundle = get_vectors(doc_id);
         if (subspace < bundle.subspaces()) {
@@ -270,28 +274,72 @@ public:
         }
         return _empty_subspace.cells();
     }
-    VectorBundle get_vectors(uint32_t doc_id) const noexcept override {
-        const auto ref = _dataset.raw_vector_view(doc_id);
+    [[nodiscard]] std::span<const char> raw_vector_view(uint32_t doc_id) const noexcept {
+        return _dataset.raw_vector_view(doc_id);
+    }
+    [[nodiscard]] VectorBundle vectors_from_dataset(uint32_t doc_id) const noexcept {
+        const auto ref = raw_vector_view(doc_id);
         assert((ref.size() % _subspace_type.size()) == 0);
         uint32_t subspaces = ref.size() / _subspace_type.size();
         return {ref.data(), subspaces, _subspace_type};
     }
-
+    VectorBundle get_vectors(uint32_t doc_id) const noexcept override {
+        return vectors_from_dataset(doc_id);
+    }
     void prefetch_vector(uint32_t doc_id) const noexcept override {
-        const auto ref = _dataset.raw_vector_view(doc_id);
+        const auto ref = raw_vector_view(doc_id);
         for (size_t offset = 0; offset < ref.size(); offset += 64) {
             __builtin_prefetch(ref.data() + offset);
         }
     }
 };
 
-DatasetDocVectorStore::DatasetDocVectorStore(Dataset dataset) noexcept
+DatasetDocVectorStore::DatasetDocVectorStore(Dataset dataset)
     : _dataset(std::move(dataset)),
       _subspace_type(ValueType::make_type(_dataset._cell_type, {{"dims", _dataset._dimensions}})), // TODO multiple subspaces
       _empty_subspace(_subspace_type)
 {}
 
 DatasetDocVectorStore::~DatasetDocVectorStore() = default;
+
+class RcuIndirectDatasetDocVectorStore : public DatasetDocVectorStore {
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
+    using RefVector      = vespalib::RcuVector<AtomicEntryRef>;
+
+    RefVector _ref_vector;
+public:
+    RcuIndirectDatasetDocVectorStore(Dataset dataset);
+    ~RcuIndirectDatasetDocVectorStore() override;
+
+    VectorBundle get_vectors(uint32_t doc_id) const noexcept override {
+        const auto indirect_ref = _ref_vector.acquire_elem_ref(doc_id).load_acquire();
+        return vectors_from_dataset(indirect_ref.ref()); // actually 1-1
+    }
+    void prefetch_docid(const uint32_t doc_id) const noexcept override {
+        _ref_vector.prefetch_elem_ref(doc_id);
+    }
+    void prefetch_vector(uint32_t doc_id) const noexcept override {
+        const auto indirect_ref = _ref_vector.acquire_elem_ref(doc_id).load_acquire();
+        const auto ref = raw_vector_view(indirect_ref.ref());
+        for (size_t offset = 0; offset < ref.size(); offset += 64) {
+            __builtin_prefetch(ref.data() + offset);
+        }
+    }
+};
+
+RcuIndirectDatasetDocVectorStore::RcuIndirectDatasetDocVectorStore(Dataset dataset)
+    : DatasetDocVectorStore(std::move(dataset)),
+      _ref_vector(vespalib::GrowStrategy(vector_count() + 1, 0.5, 0, vector_count() + 1))
+{
+    assert(_ref_vector.capacity() >= vector_count() + 1);
+    _ref_vector.push_back(AtomicEntryRef{});
+    // RCU vector indexes are always 1-1 with their underlying elem refs
+    for (uint32_t i = 1; i <= vector_count(); ++i) {
+        _ref_vector.push_back(AtomicEntryRef(EntryRef(i)));
+    }
+}
+
+RcuIndirectDatasetDocVectorStore::~RcuIndirectDatasetDocVectorStore() = default;
 
 /*
  * TODO
@@ -355,6 +403,10 @@ public:
     }
 };
 
+[[nodiscard]] bool use_indirect_vector_store() noexcept {
+    return absl::GetFlag(FLAGS_indirect_vector_store);
+}
+
 class BenchmarkIndex {
 public:
     using IndexType = HnswIndex<HnswIndexType::SINGLE>;
@@ -377,7 +429,9 @@ public:
         : _cell_type(dataset._cell_type),
           _distance_metric(distance_metric),
           _hnsw_config(config),
-          _vector_store(std::make_unique<DatasetDocVectorStore>(std::move(dataset))),
+          _vector_store(use_indirect_vector_store()
+                        ? std::make_unique<RcuIndirectDatasetDocVectorStore>(std::move(dataset))
+                        : std::make_unique<DatasetDocVectorStore>(std::move(dataset))),
           _index(std::make_unique<IndexType>(*_vector_store,
                                              search::tensor::make_distance_function_factory(_distance_metric, _cell_type),
                                              std::make_unique<InvLogLevelGenerator>(_hnsw_config.max_links_on_inserts()),
@@ -754,13 +808,18 @@ void load_index(BenchmarkIndex& index, const std::string& id, const fs::path& sa
     return index;
 }
 
+[[nodiscard]] std::minstd_rand make_thread_prng(size_t thread_idx) {
+    std::minstd_rand prng;
+    prng.seed(0x243F6A88 * (thread_idx + 1)); // pi hex digits
+    return prng;
+}
+
 void benchmark_top_k(benchmark::State& state, bool prefetch_tensors) {
     const auto index = global_index();
     std::vector<uint32_t> hits;
     const uint32_t k = state.range(0);
     hits.reserve(k);
-    std::minstd_rand prng;
-    prng.seed(0x243F6A88 * (state.thread_index() + 1)); // pi hex digits
+    thread_local auto prng = make_thread_prng(state.thread_index());
     std::uniform_int_distribution<uint32_t> dist(1, index->dataset_vector_count()); // closed interval
     for (auto _ : state) {
         const uint32_t doc_id = dist(prng);
@@ -777,8 +836,7 @@ void benchmark_top_k_with_filter(benchmark::State& state, double filter_pass_rat
     const uint32_t k = state.range(0);
     hits.reserve(k);
     const SimulatedFilter filter(index->dataset_vector_count(), filter_pass_ratio);
-    std::minstd_rand prng;
-    prng.seed(0x243F6A88 * (state.thread_index() + 1)); // pi hex digits
+    thread_local auto prng = make_thread_prng(state.thread_index());
     std::uniform_int_distribution<uint32_t> dist(1, index->dataset_vector_count()); // closed interval
     for (auto _ : state) {
         const uint32_t doc_id = dist(prng);
