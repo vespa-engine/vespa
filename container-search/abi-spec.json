@@ -5847,6 +5847,8 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String keepRankCountProperty",
+      "public static final java.lang.String totalKeepRankCountProperty",
       "public static final com.yahoo.processing.request.CompoundName RANKFEATURES",
       "public static final java.lang.String RANKING",
       "public static final java.lang.String LOCATION",
@@ -7438,8 +7440,10 @@
       "public void setAscending(boolean)",
       "public boolean getAscending()",
       "public void setMaxHits(long)",
+      "public void setTotalMaxHits(long)",
       "public void setMaxFilterCoverage(double)",
       "public java.lang.Long getMaxHits()",
+      "public java.lang.Long getTotalMaxHits()",
       "public java.lang.Double getMaxFilterCoverage()",
       "public com.yahoo.search.query.ranking.Diversity getDiversity()",
       "public void setDiversity(com.yahoo.search.query.ranking.Diversity)",
@@ -7450,10 +7454,13 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String maxHitsProperty",
+      "public static final java.lang.String totalMaxHitsProperty",
       "public static final java.lang.String MATCH_PHASE",
       "public static final java.lang.String ATTRIBUTE",
       "public static final java.lang.String ASCENDING",
       "public static final java.lang.String MAX_HITS",
+      "public static final java.lang.String TOTAL_MAX_HITS",
       "public static final java.lang.String MAX_FILTER_COVERAGE"
     ]
   },
@@ -9133,6 +9140,36 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.schema.MatchPhase$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.schema.MatchPhase$Builder setMaxHits(long)",
+      "public com.yahoo.search.schema.MatchPhase$Builder setTotalMaxHits(long)",
+      "public com.yahoo.search.schema.MatchPhase build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.MatchPhase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.schema.MatchPhase$Builder)",
+      "public java.util.OptionalLong maxHits()",
+      "public java.util.OptionalLong totalMaxHits()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.schema.RankProfile$Builder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -9147,6 +9184,7 @@
       "public com.yahoo.search.schema.RankProfile$Builder setUseSignificanceModel(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder setKeepRankCount(int)",
       "public com.yahoo.search.schema.RankProfile$Builder setTotalKeepRankCount(int)",
+      "public com.yahoo.search.schema.RankProfile$Builder setMatchPhase(com.yahoo.search.schema.MatchPhase)",
       "public com.yahoo.search.schema.RankProfile$Builder setSecondPhase(com.yahoo.search.schema.SecondPhase)",
       "public com.yahoo.search.schema.RankProfile build()"
     ],
@@ -9186,6 +9224,7 @@
       "public java.util.Map inputs()",
       "public java.util.OptionalInt keepRankCount()",
       "public java.util.OptionalInt totalKeepRankCount()",
+      "public com.yahoo.search.schema.MatchPhase matchPhase()",
       "public com.yahoo.search.schema.SecondPhase secondPhase()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",

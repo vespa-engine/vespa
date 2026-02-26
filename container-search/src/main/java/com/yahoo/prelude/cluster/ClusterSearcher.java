@@ -19,6 +19,8 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.query.ParameterParser;
+import com.yahoo.search.query.Ranking;
+import com.yahoo.search.query.ranking.MatchPhase;
 import com.yahoo.search.query.ranking.SecondPhase;
 import com.yahoo.search.ranking.GlobalPhaseRanker;
 import com.yahoo.search.result.ErrorMessage;
@@ -39,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -239,6 +242,7 @@ public class ClusterSearcher extends Searcher {
         var schema = schemaInfo.newSession(query).schema(schemaName);
         transferKeepRankCounts(query, schema);
         transferRerankCounts(query, schema);
+        transferMatchPhaseMaxHits(query, schema);
 
         // Searcher 2
         int rerankCount = globalPhaseRanker != null ? globalPhaseRanker.getRerankCount(query, schemaName) : 0;
@@ -291,12 +295,31 @@ public class ClusterSearcher extends Searcher {
                 totalKeepRankCount = profile.totalKeepRankCount();
             }
         }
-        keepRankCount.ifPresent(count -> query.getRanking().getProperties().put("vespa.hitcollector.arraysize", count));
-        totalKeepRankCount.ifPresent(count -> query.getRanking().getProperties().put("vespa.hitcollector.totalArraysize", count));
+        keepRankCount.ifPresent(count -> query.getRanking().getProperties().put(Ranking.keepRankCountProperty, count));
+        totalKeepRankCount.ifPresent(count -> query.getRanking().getProperties().put(Ranking.totalKeepRankCountProperty, count));
+    }
+
+    // Transfer first-phase keepRankCount/totalKeepRankCount
+    public static void transferMatchPhaseMaxHits(Query query, Optional<Schema> schema) {
+        OptionalLong maxHits = asOptional(query.getRanking().getMatchPhase().getMaxHits());
+        OptionalLong totalMaxHits = asOptional(query.getRanking().getMatchPhase().getTotalMaxHits());
+        if (maxHits.isEmpty() && totalMaxHits.isEmpty() && schema.isPresent()) { // fall back to rank profile defaults
+            var profile = schema.get().rankProfiles().get(query.getRanking().getProfile());
+            if (profile != null) {
+                maxHits = profile.matchPhase().maxHits();
+                totalMaxHits = profile.matchPhase().totalMaxHits();
+            }
+        }
+        maxHits.ifPresent(count -> query.getRanking().getProperties().put(MatchPhase.maxHitsProperty, count));
+        totalMaxHits.ifPresent(count -> query.getRanking().getProperties().put(MatchPhase.totalMaxHitsProperty, count));
     }
 
     private static OptionalInt asOptional(Integer nullable) {
         return nullable == null ? OptionalInt.empty() : OptionalInt.of(nullable);
+    }
+
+    private static OptionalLong asOptional(Long nullable) {
+        return nullable == null ? OptionalLong.empty() : OptionalLong.of(nullable);
     }
 
     private static void processResult(Query query, FutureTask<Result> task, Result mergedResult) {

@@ -29,6 +29,10 @@ schema[].summaryclass[].fields[].dynamic bool default=false
 schema[].rankprofile[].name string
 schema[].rankprofile[].hasSummaryFeatures bool default=true
 schema[].rankprofile[].hasRankFeatures bool default=true
+# The match-phase max hits per node, or -1 to use the default
+schema[].rankprofile[].matchPhaseMaxHits long default=-1
+# The match-phase max hits across all nodes, or -1 to use matchPhaseMaxHits
+schema[].rankprofile[].totalMatchPhaseMaxHits long default=-1
 # The first-phase keep rank count per node, or -1 to use the default
 schema[].rankprofile[].keepRankCount int default=-1
 # The first-phase keep rank count across all nodes, or -1 to use keepRankCount
