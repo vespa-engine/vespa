@@ -83,6 +83,12 @@ func (s System) SubmitURL(deployment Deployment) string {
 	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/submit", s.URL, deployment.Application.Tenant, deployment.Application.Application)
 }
 
+// BuildStatusURL returns the API URL for the build status of a submitted production build.
+func (s System) BuildStatusURL(deployment Deployment, build int64) string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/build-status/%d",
+		s.URL, deployment.Application.Tenant, deployment.Application.Application, build)
+}
+
 // DeploymentURL returns the API URL of given deployment.
 func (s System) DeploymentURL(deployment Deployment) string {
 	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",

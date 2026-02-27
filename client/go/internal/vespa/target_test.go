@@ -3,6 +3,8 @@ package vespa
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -418,6 +420,144 @@ func TestCloudTargetPrivateServicesError(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(services))
 	assert.Nil(t, services[0].PrivateService, "Should not have private service info when endpoint fails")
+}
+
+func TestAwaitBuild(t *testing.T) {
+	target, client := createCloudTarget(t, io.Discard)
+	buildStatusURI := "/application/v4/tenant/t1/application/a1/build-status/42"
+
+	// Deployed successfully
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"deployed": true, "status": "success", "jobs": []}`),
+	})
+	skipped, err := AwaitBuild(target, 42, time.Second, nil)
+	assert.Nil(t, err)
+	assert.False(t, skipped)
+
+	// Skipped due to no changes
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"skipReason": "no changes detected"}`),
+	})
+	skipped, err = AwaitBuild(target, 42, time.Second, nil)
+	assert.Nil(t, err)
+	assert.True(t, skipped)
+
+	// Build cancelled
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"status": "cancelled"}`),
+	})
+	_, err = AwaitBuild(target, 42, time.Second, nil)
+	require.NotNil(t, err)
+	assert.True(t, errors.Is(err, ErrDeployment))
+	assert.Contains(t, err.Error(), "cancelled")
+
+	// Production job failure
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"jobs": [{"jobName": "production-aws-us-east-1c", "runStatus": "failure", "runId": 0, "instance": "default"}]}`),
+	})
+	_, err = AwaitBuild(target, 42, time.Second, nil)
+	require.NotNil(t, err)
+	assert.True(t, errors.Is(err, ErrDeployment))
+	assert.Contains(t, err.Error(), "production-aws-us-east-1c")
+
+	// Test job failure (system-test job name)
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"jobs": [{"jobName": "system-test.aws-us-east-1c", "runStatus": "failure", "runId": 0, "instance": "i1"}]}`),
+	})
+	_, err = AwaitBuild(target, 42, time.Second, nil)
+	require.NotNil(t, err)
+	assert.True(t, errors.Is(err, ErrDeployment))
+	assert.Contains(t, err.Error(), "system-test.aws-us-east-1c")
+
+	// Timeout
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"deployed": false, "status": "running"}`),
+	})
+	_, err = AwaitBuild(target, 42, time.Millisecond, nil)
+	assert.True(t, errors.Is(err, ErrWaitTimeout))
+}
+
+func TestStreamBuildJobLogs(t *testing.T) {
+	target, client := createCloudTarget(t, io.Discard)
+	job := buildStatusJob{JobName: "production-aws-us-east-1c", RunID: 100, Instance: "i1"}
+	runURI := "/application/v4/tenant/t1/application/a1/instance/i1/job/production-aws-us-east-1c/run/100?after=-1"
+
+	// Happy path: log is written and job succeeds
+	var buf bytes.Buffer
+	client.NextResponse(mock.HTTPResponse{
+		URI:    runURI,
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "success", "lastId": 10, "log": {"step": [{"at": 1631707708431, "type": "info", "message": "Deploying"}]}}`),
+	})
+	err := streamBuildJobLogs(target, job, time.Second, &buf, 0)
+	assert.Nil(t, err)
+	assert.Contains(t, buf.String(), "[production-aws-us-east-1c]")
+	assert.Contains(t, buf.String(), "Deploying")
+
+	// Job failure is reported as ErrDeployment
+	client.NextResponse(mock.HTTPResponse{
+		URI:    runURI,
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "error", "lastId": 5}`),
+	})
+	err = streamBuildJobLogs(target, job, time.Second, io.Discard, 0)
+	require.NotNil(t, err)
+	assert.True(t, errors.Is(err, ErrDeployment))
+	assert.Contains(t, err.Error(), "production-aws-us-east-1c")
+}
+
+func TestPrintBuildJobLog(t *testing.T) {
+	// Empty response (LastID == 0): returns last unchanged, no output
+	var buf bytes.Buffer
+	last := printBuildJobLog(runResponse{}, 10, &buf, "[job] ")
+	assert.Equal(t, int64(10), last)
+	assert.Empty(t, buf.String())
+
+	// Messages sorted by timestamp and formatted with prefix
+	resp := runResponse{
+		LastID: 7,
+		Log: map[string][]logMessage{
+			"step": {
+				{At: 1631707708432, Type: "warning", Message: "second"},
+				{At: 1631707708431, Type: "info", Message: "first"},
+			},
+		},
+	}
+	last = printBuildJobLog(resp, -1, &buf, "[job] ")
+	assert.Equal(t, int64(7), last)
+	tm1 := time.Unix(1631707708, 431000)
+	tm2 := time.Unix(1631707708, 432000)
+	expected := fmt.Sprintf("[job] [%s] %-7s %s\n[job] [%s] %-7s %s\n",
+		tm1.Format("15:04:05"), "info", "first",
+		tm2.Format("15:04:05"), "warning", "second")
+	assert.Equal(t, expected, buf.String())
+
+	// Debug messages are filtered out
+	buf.Reset()
+	resp = runResponse{
+		LastID: 8,
+		Log: map[string][]logMessage{
+			"step": {
+				{At: 1631707708431, Type: "debug", Message: "should be filtered"},
+				{At: 1631707708432, Type: "info", Message: "visible"},
+			},
+		},
+	}
+	printBuildJobLog(resp, -1, &buf, "")
+	assert.NotContains(t, buf.String(), "should be filtered")
+	assert.Contains(t, buf.String(), "visible")
 }
 
 func createCloudTarget(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPClient) {

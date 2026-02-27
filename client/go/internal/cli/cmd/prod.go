@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -110,6 +111,7 @@ type prodDeployOptions struct {
 	description string
 	authorEmail string
 	sourceURL   string
+	waitSecs    int
 }
 
 func newProdDeployCmd(cli *CLI) *cobra.Command {
@@ -167,13 +169,23 @@ $ vespa prod deploy`,
 				AuthorEmail: options.authorEmail,
 				SourceURL:   options.sourceURL,
 			}
-			build, err := vespa.Submit(deployment, submission)
+			build, err := vespa.Submit(deployment, submission, options.waitSecs)
 			if err != nil {
 				return fmt.Errorf("could not deploy application: %w", err)
-			} else {
-				cli.printSuccess(fmt.Sprintf("Deployed '%s' with build number %s", color.CyanString(pkg.Path), color.CyanString(strconv.FormatInt(build, 10))))
-				log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
-					deployment.Target.Deployment().System.ConsoleURL, deployment.Target.Deployment().Application.Tenant, deployment.Target.Deployment().Application.Application)))
+			}
+			cli.printSuccess(fmt.Sprintf("Deployed '%s' with build number %s", color.CyanString(pkg.Path), color.CyanString(strconv.FormatInt(build, 10))))
+			log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
+				deployment.Target.Deployment().System.ConsoleURL, deployment.Target.Deployment().Application.Tenant, deployment.Target.Deployment().Application.Application)))
+			if options.waitSecs > 0 {
+				skipped, err := vespa.AwaitBuild(target, build, time.Duration(options.waitSecs)*time.Second, cli.Stderr)
+				if err != nil {
+					return err
+				}
+				if skipped {
+					cli.printSuccess(fmt.Sprintf("Build %d completed", build))
+				} else {
+					cli.printSuccess(fmt.Sprintf("Build %d deployed to production", build))
+				}
 			}
 			return nil
 		},
@@ -184,6 +196,7 @@ $ vespa prod deploy`,
 	cmd.Flags().StringVarP(&options.description, "description", "", "", "Description of the source code being deployed. For example a git commit message")
 	cmd.Flags().StringVarP(&options.authorEmail, "author-email", "", "", "Email of the author of the commit being deployed")
 	cmd.Flags().StringVarP(&options.sourceURL, "source-url", "", "", "URL which points to the source code being deployed. For example the build job running the submission")
+	cli.bindWaitFlag(cmd, 0, &options.waitSecs)
 	return cmd
 }
 

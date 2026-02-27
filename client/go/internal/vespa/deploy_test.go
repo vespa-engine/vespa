@@ -83,7 +83,7 @@ func TestSubmit(t *testing.T) {
 		ApplicationPackage: ApplicationPackage{Path: appDir},
 	}
 	httpClient.NextResponseString(200, `{"build": 42}`)
-	build, err := Submit(opts, Submission{})
+	build, err := Submit(opts, Submission{}, 0)
 	require.Nil(t, err)
 	require.Equal(t, int64(42), build)
 	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))
@@ -102,7 +102,7 @@ func TestSubmit(t *testing.T) {
 		Description: "broken garbage",
 		AuthorEmail: "foo@example.com",
 		SourceURL:   "https://github.com/foo/repo",
-	})
+	}, 0)
 	require.Nil(t, err)
 	require.Equal(t, int64(43), build)
 	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))
