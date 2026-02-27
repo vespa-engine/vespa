@@ -23,6 +23,7 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.IllegalInputException;
@@ -783,6 +784,44 @@ public class SelectTestCase {
     void testEquals() {
         assertParse("{\"equals\": [\"public\",true]}", "public:true");
         assertParse("{\"equals\": [\"public\",5]}", "public:5");
+        // Object syntax without index
+        assertParse("{\"equals\": {\"field\": \"public\", \"value\": true}}", "public:true");
+        assertParse("{\"equals\": {\"field\": \"public\", \"value\": 5}}", "public:5");
+    }
+
+    @Test
+    void testEqualsWithArrayIndex() {
+        // Boolean value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 2, \"value\": true }}",
+                    "my_arr:{true}");
+        var boolTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 2, \"value\": true }}");
+        var boolSameElement = assertInstanceOf(SameElementItem.class, boolTree.getRoot());
+        assertEquals("my_arr", boolSameElement.getFieldName());
+        assertEquals(List.of(2), boolSameElement.getElementFilter());
+        assertEquals(1, boolSameElement.getItemCount());
+
+        // Integer value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}",
+                    "my_arr:{42}");
+        var intTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}");
+        var intSameElement = assertInstanceOf(SameElementItem.class, intTree.getRoot());
+        assertEquals(List.of(0), intSameElement.getElementFilter());
+
+        // String value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 1, \"value\": \"hello\" }}",
+                    "my_arr:{hello}");
+    }
+
+    @Test
+    void testEqualsWithArrayIndexErrors() {
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 2 }}",
+                new IllegalArgumentException("Expected 'equals' object to contain 'field', 'index', and 'value', but got {\"field\":\"my_arr\",\"index\":2}"));
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": -1, \"value\": true }}",
+                new IllegalArgumentException("element id must be non-negative, got: -1"));
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 3000000000, \"value\": true }}",
+                new IllegalArgumentException("element id must fit in int32 range, got: 3000000000"));
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 1.5, \"value\": true }}",
+                new IllegalArgumentException("element id must be integer, not floating point number. Got: 1.5"));
     }
 
     @Test

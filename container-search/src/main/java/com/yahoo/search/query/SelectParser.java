@@ -63,6 +63,7 @@ import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserFactory;
 import com.yahoo.search.yql.VespaGroupingStep;
+import com.yahoo.search.yql.YqlParser;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
@@ -674,7 +675,11 @@ public class SelectParser implements Parser {
 
 
     private Item buildEquals(String key, Inspector value) {
-        Map<Integer, Inspector> children = childMap(value);
+        if (value.type() == OBJECT && value.field("index").valid()) {
+            return buildSameElementWithElementFilter(value);
+        }
+
+        Map<Integer, Inspector> children = equalsChildMap(value);
         if ( children.size() != 2)
             throw new IllegalArgumentException("The value of 'equals' should be an array containing a field name and " +
                                                "a value, but was " + value);
@@ -689,6 +694,68 @@ public class SelectParser implements Parser {
                     throw new IllegalArgumentException("The second array element under 'equals' should be a boolean " +
                                                        "or int value but was " + children.get(1));
         };
+    }
+
+    /** Builds child map for equals operator from object or array. */
+    private Map<Integer, Inspector> equalsChildMap(Inspector value) {
+        if (value.type() == OBJECT) {
+            var params = extractEqualsFieldAndValue(value, false);
+            return Map.of(0, params.field, 1, params.value);
+        } else {
+            return childMap(value);
+        }
+    }
+
+    record EqualsParams(Inspector field, Inspector value, Optional<Inspector> index) {}
+
+    /** Extracts and validates 'field' and 'value' from an equals object. */
+    private EqualsParams extractEqualsFieldAndValue(Inspector value, boolean requireIndex) {
+        Inspector fieldInspector = value.field("field");
+        Inspector valueInspector = value.field("value");
+        Inspector indexInspector = value.field("index");
+
+        if (!fieldInspector.valid() || !valueInspector.valid() || (requireIndex && !indexInspector.valid())) {
+            throw new IllegalArgumentException(
+                    "Expected 'equals' object to contain 'field'" + (requireIndex ? ", 'index'" : "") +
+                            ", and 'value', but got " + value);
+        }
+
+        if (fieldInspector.type() != STRING) {
+            throw new IllegalArgumentException("'field' in 'equals' should be a string but was " + fieldInspector.type());
+        }
+
+        return new EqualsParams(fieldInspector, valueInspector, Optional.ofNullable(indexInspector));
+    }
+
+    /** Builds sameElement accessing a specific index in an array. */
+    private Item buildSameElementWithElementFilter(Inspector value) {
+        EqualsParams params = extractEqualsFieldAndValue(value, true);
+        Inspector indexInspector = params.index.orElseThrow();
+        Inspector valueInspector = params.value;
+
+        if (indexInspector.type() != LONG) {
+            throw new IllegalArgumentException("'index' in 'equals' should be an integer but was " +
+                                               indexInspector.type());
+        }
+
+        String field = params.field.asString();
+        Object indexObj = indexInspector.asLong();
+        int elementIndex = YqlParser.convertToElementId(indexObj);
+
+        // TODO(johsol): Remove conversion to string when sameElement supports other values than strings.
+        String stringValue = switch (valueInspector.type()) {
+            case BOOL -> String.valueOf(valueInspector.asBool());
+            case LONG -> String.valueOf(valueInspector.asLong());
+            case DOUBLE -> String.valueOf(valueInspector.asDouble());
+            case STRING -> valueInspector.asString();
+            default -> throw new IllegalArgumentException("'value' in 'equals' should be a boolean, integer, double, " +
+                                                          "or string but was " + valueInspector.type());
+        };
+
+        SameElementItem sameElement = new SameElementItem(field);
+        sameElement.setElementFilter(List.of(elementIndex));
+        sameElement.addItem(new WordItem(stringValue, ""));
+        return sameElement;
     }
 
     private Item buildIn(String key, Inspector value) {
