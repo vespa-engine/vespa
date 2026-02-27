@@ -69,6 +69,10 @@ protected:
      */
     virtual bool match(uint32_t docId) = 0;
 
+    /*
+     * Near search iterators unpack match data for terms below the (o)near operator. But the operator or another
+     * operator above (e.g. and, sameElement) might not be a match for the query.
+     */
     virtual void hide_positive_terms_from_ranking() = 0;
 
     /**

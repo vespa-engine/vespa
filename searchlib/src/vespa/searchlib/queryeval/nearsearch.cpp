@@ -55,7 +55,8 @@ void
 NearSearchBase::MatcherBase::hide_positive_terms_from_ranking()
 {
     uint32_t size = _inputs.size();
-    for (uint32_t i = 0; i + _num_negative_terms < size; ++i) {
+    uint32_t num_positive_terms = size - _num_negative_terms;
+    for (uint32_t i = 0; i < num_positive_terms; ++i) {
         _inputs[i]->set_hidden_from_ranking();
     }
 }
@@ -160,6 +161,10 @@ NearSearchBase::doSeek(uint32_t docId)
         seekNext(docId);
     }
     if (foundHit || _strict) {
+        /*
+         * Match data has been unpacked, but (o)near operator or another operator above (e.g. and, sameElement) might
+         * not be a match for the query.
+         */
         hide_positive_terms_from_ranking();
     }
 }
