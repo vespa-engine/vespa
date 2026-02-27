@@ -446,11 +446,11 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 		return false, err
 	}
 	var (
-		mu          sync.Mutex
-		wg          sync.WaitGroup
+		mutex			sync.Mutex
+		waitGroup		sync.WaitGroup
 		trackedJobs = make(map[string]bool)
-		jobErrors   []error
-		isSkipped   bool
+		jobErrors   	[]error
+		isSkipped		bool
 	)
 	retryInterval := 2 * time.Second
 	statusFunc := func(status int, response []byte) (bool, error) {
@@ -469,39 +469,36 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 			return false, fmt.Errorf("%w: build %d was cancelled", ErrDeployment, buildID)
 		}
 		for _, job := range resp.Jobs {
-			job := job
 			if job.RunStatus == "failure" || job.RunStatus == "error" || job.RunStatus == "aborted" {
 				return false, fmt.Errorf("%w: %s failed with status %s", ErrDeployment, job.JobName, job.RunStatus)
 			}
 			if logWriter != nil && job.RunID > 0 {
-				mu.Lock()
+				mutex.Lock()
 				if !trackedJobs[job.JobName] {
 					trackedJobs[job.JobName] = true
-					mu.Unlock()
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
+					mutex.Unlock()
+					waitGroup.Go(func() {
 						if err := streamBuildJobLogs(target, job, timeout, logWriter, retryInterval); err != nil && !errors.Is(err, ErrWaitTimeout) {
-							mu.Lock()
+							mutex.Lock()
 							jobErrors = append(jobErrors, err)
-							mu.Unlock()
+							mutex.Unlock()
 						}
-					}()
+					})
 				} else {
-					mu.Unlock()
+					mutex.Unlock()
 				}
 			}
 		}
 		return resp.Deployed, nil
 	}
 	_, mainErr := deployRequest(target, statusFunc, func() *http.Request { return req }, timeout, retryInterval)
-	wg.Wait()
+	waitGroup.Wait()
 	if mainErr != nil {
 		return false, mainErr
 	}
-	mu.Lock()
+	mutex.Lock()
 	errs := jobErrors
-	mu.Unlock()
+	mutex.Unlock()
 	if len(errs) > 0 {
 		return false, errs[0]
 	}
