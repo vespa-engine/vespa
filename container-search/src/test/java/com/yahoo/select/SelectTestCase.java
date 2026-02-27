@@ -825,7 +825,7 @@ public class SelectTestCase {
         assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 3000000000, \"value\": true }}",
                 new IllegalArgumentException("element id must fit in int32 range, got: 3000000000"));
         assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 1.5, \"value\": true }}",
-                new IllegalArgumentException("element id must be integer, not floating point number. Got: 1.5"));
+                new IllegalArgumentException("'index' in 'equals' should be an integer but was DOUBLE"));
     }
 
     @Test
