@@ -52,6 +52,7 @@ protected:
                 }
             }
         }
+        void hide_positive_terms_from_ranking();
     };
 
     /**
@@ -67,6 +68,8 @@ protected:
      * @return True if the document matches.
      */
     virtual bool match(uint32_t docId) = 0;
+
+    virtual void hide_positive_terms_from_ranking() = 0;
 
     /**
      * Performs seek() on all child terms until a match is found. This method calls setDocId() to signal the
@@ -114,6 +117,7 @@ private:
 
     std::vector<Matcher> _matchers;
     bool match(uint32_t docId) override;
+    void hide_positive_terms_from_ranking() override;
 
 public:
     /**
@@ -173,6 +177,7 @@ private:
 
     std::vector<Matcher> _matchers;
     bool match(uint32_t docId) override;
+    void hide_positive_terms_from_ranking() override;
 
 public:
     /**
