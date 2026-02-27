@@ -818,7 +818,7 @@ public class SelectTestCase {
     @Test
     void testEqualsWithArrayIndexErrors() {
         assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 2 }}",
-                new IllegalArgumentException("Expected 'equals' object to contain 'field', 'index', and 'value', but got {\"field\":\"my_arr\",\"index\":2}"));
+                new IllegalArgumentException("Expected 'value' in 'equals' but is missing."));
         assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": -1, \"value\": true }}",
                 new IllegalArgumentException("element id must be non-negative, got: -1"));
         assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 3000000000, \"value\": true }}",

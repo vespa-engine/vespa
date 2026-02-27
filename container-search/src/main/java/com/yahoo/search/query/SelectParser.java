@@ -690,11 +690,11 @@ public class SelectParser implements Parser {
         }
 
         String field = params.field.asString();
-        return switch (value.type()) {
-            case BOOL -> new BoolItem(value.asBool(), field);
-            case LONG -> new IntItem(value.asLong(), field);
+        return switch (params.value.type()) {
+            case BOOL -> new BoolItem(params.value.asBool(), field);
+            case LONG -> new IntItem(params.value.asLong(), field);
             default -> throw new IllegalArgumentException("'value' in 'equals' should be a boolean or integer, but " +
-                    "was " + value.type());
+                    "was " + params.value.type());
         };
     }
 
@@ -745,7 +745,7 @@ public class SelectParser implements Parser {
                                                           "or string but was " + value.type());
         };
 
-        SameElementItem sameElement = new SameElementItem(params.field.toString());
+        SameElementItem sameElement = new SameElementItem(params.field.asString());
         sameElement.setElementFilter(List.of(elementIndex));
         sameElement.addItem(valueItem);
         return sameElement;
