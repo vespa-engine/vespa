@@ -784,7 +784,6 @@ public class SelectTestCase {
     void testEquals() {
         assertParse("{\"equals\": [\"public\",true]}", "public:true");
         assertParse("{\"equals\": [\"public\",5]}", "public:5");
-        // Object syntax without index
         assertParse("{\"equals\": {\"field\": \"public\", \"value\": true}}", "public:true");
         assertParse("{\"equals\": {\"field\": \"public\", \"value\": 5}}", "public:5");
     }
