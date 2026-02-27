@@ -810,6 +810,10 @@ public class SelectTestCase {
         // String value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 1, \"value\": \"hello\" }}",
                     "my_arr:{hello}");
+
+        // Double value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 3.14 }}",
+                    "my_arr:{3.14}");
     }
 
     @Test
