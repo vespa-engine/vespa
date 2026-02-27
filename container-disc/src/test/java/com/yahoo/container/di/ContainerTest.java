@@ -11,13 +11,17 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent;
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException;
 import com.yahoo.container.di.config.Subscriber;
+import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -410,6 +414,104 @@ public class ContainerTest extends ContainerTestBase {
 
     private ComponentTakingConfig createComponentTakingConfig(ComponentGraph componentGraph) {
         return componentGraph.getInstance(ComponentTakingConfig.class);
+    }
+
+    @Test
+    void stale_config_keys_from_failed_construction_do_not_block_recovery() throws Exception {
+        // Gen 1: ComponentTakingConfig (needs TestConfig) — succeeds
+        writeBootstrapConfigs("componentTakingConfig", ComponentTakingConfig.class);
+        dirConfigSource.writeConfig("test", "stringVal \"initial\"");
+
+        var banningFactory = new BanningSubscriberFactory(dirConfigSource.configSource());
+        Container container = new Container(banningFactory,
+                                            new com.yahoo.container.Container(),
+                                            dirConfigSource.configId(),
+                                            new TestDeconstructor(osgi),
+                                            osgi);
+
+        ComponentGraph gen1Graph = getNewComponentGraph(container);
+        assertEquals(1, gen1Graph.generation());
+        assertNotNull(gen1Graph.getInstance(ComponentTakingConfig.class));
+
+        // Gen 2: ComponentThrowingExceptionInConstructor — constructComponents fails, currentGraph stays at gen 1
+        writeBootstrapConfigs("thrower", ComponentThrowingExceptionInConstructor.class);
+        container.reloadConfig(2);
+        assertNewComponentGraphFails(container, gen1Graph, ComponentConstructorException.class);
+        assertEquals(1, gen1Graph.generation());
+
+        // Ban the TestConfig key — simulates config server no longer having this config
+        banningFactory.banKeys(Set.of(new ConfigKey<>(TestConfig.class, dirConfigSource.configId())));
+
+        // Gen 3: SimpleComponent (no config) — should recover if configKeys are correct
+        writeBootstrapConfigs("simpleComponent", SimpleComponent.class);
+        container.reloadConfig(3);
+
+        ExecutorService exec = Executors.newFixedThreadPool(1);
+        Future<ComponentGraph> future = exec.submit(() -> getNewComponentGraph(container, gen1Graph));
+        try {
+            ComponentGraph gen3Graph = future.get(5, TimeUnit.SECONDS);
+            assertEquals(3, gen3Graph.generation());
+            assertNotNull(gen3Graph.getInstance(SimpleComponent.class));
+            container.shutdownConfigRetriever();
+            container.shutdown(gen3Graph);
+        } catch (ExecutionException e) {
+            container.shutdownConfigRetriever();
+            fail("Stale config keys from failed generation caused error: " + e.getCause().getMessage() +
+                 ". The old graph's configKeys were used to subscribe after a failed constructComponents, " +
+                 "but those keys no longer exist in the config server.");
+        } finally {
+            exec.shutdownNow();
+        }
+    }
+
+    /**
+     * A SubscriberFactory that wraps CloudSubscriberFactory and can ban specific config keys.
+     * After banKeys() is called, any newly-created Subscriber whose key set intersects the
+     * banned set will throw IllegalArgumentException from waitNextGeneration(), simulating
+     * the config server rejecting subscriptions to non-existent config keys.
+     */
+    private static class BanningSubscriberFactory implements SubscriberFactory {
+        private final CloudSubscriberFactory delegate;
+        private volatile Set<ConfigKey<?>> bannedKeys = Set.of();
+
+        BanningSubscriberFactory(ConfigSource configSource) {
+            this.delegate = new CloudSubscriberFactory(configSource);
+        }
+
+        void banKeys(Set<ConfigKey<?>> keys) {
+            this.bannedKeys = Set.copyOf(keys);
+        }
+
+        @Override
+        public Subscriber getSubscriber(Set<? extends ConfigKey<?>> configKeys, String name) {
+            Subscriber sub = delegate.getSubscriber(configKeys, name);
+            if (bannedKeys.isEmpty() || Collections.disjoint(configKeys, bannedKeys)) {
+                return sub;
+            }
+            Set<ConfigKey<?>> offending = new HashSet<>(configKeys);
+            offending.retainAll(bannedKeys);
+            return new Subscriber() {
+                @Override public long waitNextGeneration(boolean isInitializing) {
+                    throw new IllegalArgumentException(
+                            "Config server does not have keys: " + offending);
+                }
+                @Override public long generation() { return sub.generation(); }
+                @Override public boolean configChanged() { return sub.configChanged(); }
+                @Override public Map<ConfigKey<ConfigInstance>, ConfigInstance> config() { return sub.config(); }
+                @Override public void close() { sub.close(); }
+                @Override public boolean applyOnRestart() { return sub.applyOnRestart(); }
+            };
+        }
+
+        @Override
+        public void reloadActiveSubscribers(long generation) {
+            delegate.reloadActiveSubscribers(generation);
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
     }
 
     /**
