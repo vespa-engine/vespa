@@ -47,7 +47,7 @@ cd "${WORKDIR}/docker-image"
 SOURCE_GITREF=$(git rev-parse HEAD)
 
 select_dockerfile() {
-    wanted="Dockefile.${VESPA_BUILDOS_LABEL}"
+    wanted="Dockerfile.${VESPA_BUILDOS_LABEL}"
     if [ -f "${wanted}" ]; then
         echo "${wanted}"
     else
