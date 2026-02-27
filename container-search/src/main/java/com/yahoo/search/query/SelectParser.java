@@ -67,6 +67,7 @@ import com.yahoo.search.yql.YqlParser;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 import java.nio.charset.StandardCharsets;
@@ -673,88 +674,80 @@ public class SelectParser implements Parser {
         return hitLimit[0];
     }
 
-
+    /**
+     * Equals operator.
+     * <p>
+     * Short form: { "equals": [field, value] }
+     * Long form:  { "equals": { "field": field, "value": value } }
+     * <p>
+     * Optional argument: "index". Then it is turned into sameElement with array access.
+     */
     private Item buildEquals(String key, Inspector value) {
-        if (value.type() == OBJECT && value.field("index").valid()) {
-            return buildSameElementWithElementFilter(value);
-        }
-
-        Map<Integer, Inspector> children = equalsChildMap(value);
-        if ( children.size() != 2)
-            throw new IllegalArgumentException("The value of 'equals' should be an array containing a field name and " +
-                                               "a value, but was " + value);
-        if ( children.get(0).type() != STRING)
-            throw new IllegalArgumentException("The first array element under 'equals' should be a field name string " +
-                                               "but was " + children.get(0));
-        String field = children.get(0).asString();
-        return switch (children.get(1).type()) {
-            case BOOL -> new BoolItem(children.get(1).asBool(), field);
-            case LONG -> new IntItem(children.get(1).asLong(), field);
-            default ->
-                    throw new IllegalArgumentException("The second array element under 'equals' should be a boolean " +
-                                                       "or int value but was " + children.get(1));
-        };
-    }
-
-    /** Builds child map for equals operator from object or array. */
-    private Map<Integer, Inspector> equalsChildMap(Inspector value) {
-        if (value.type() == OBJECT) {
-            var params = extractEqualsFieldAndValue(value, false);
-            return Map.of(0, params.field, 1, params.value);
-        } else {
-            return childMap(value);
-        }
-    }
-
-    record EqualsParams(Inspector field, Inspector value, Optional<Inspector> index) {}
-
-    /** Extracts and validates 'field' and 'value' from an equals object. */
-    private EqualsParams extractEqualsFieldAndValue(Inspector value, boolean requireIndex) {
-        Inspector fieldInspector = value.field("field");
-        Inspector valueInspector = value.field("value");
-        Inspector indexInspector = value.field("index");
-
-        if (!fieldInspector.valid() || !valueInspector.valid() || (requireIndex && !indexInspector.valid())) {
-            throw new IllegalArgumentException(
-                    "Expected 'equals' object to contain 'field'" + (requireIndex ? ", 'index'" : "") +
-                            ", and 'value', but got " + value);
-        }
-
-        if (fieldInspector.type() != STRING) {
-            throw new IllegalArgumentException("'field' in 'equals' should be a string but was " + fieldInspector.type());
-        }
-
-        return new EqualsParams(fieldInspector, valueInspector, Optional.ofNullable(indexInspector));
-    }
-
-    /** Builds sameElement accessing a specific index in an array. */
-    private Item buildSameElementWithElementFilter(Inspector value) {
-        EqualsParams params = extractEqualsFieldAndValue(value, true);
-        Inspector indexInspector = params.index.orElseThrow();
-        Inspector valueInspector = params.value;
-
-        if (indexInspector.type() != LONG) {
-            throw new IllegalArgumentException("'index' in 'equals' should be an integer but was " +
-                                               indexInspector.type());
+        var params = extractEqualsParams(value);
+        params.validateTypes();
+        if (params.index.valid()) {
+            return buildSameElementWithElementFilter(params);
         }
 
         String field = params.field.asString();
-        Object indexObj = indexInspector.asLong();
-        int elementIndex = YqlParser.convertToElementId(indexObj);
+        return switch (value.type()) {
+            case BOOL -> new BoolItem(value.asBool(), field);
+            case LONG -> new IntItem(value.asLong(), field);
+            default -> throw new IllegalArgumentException("'value' in 'equals' should be a boolean or integer, but " +
+                    "was " + value.type());
+        };
+    }
 
-        // TODO(johsol): Remove conversion to string when sameElement supports other values than strings.
-        String stringValue = switch (valueInspector.type()) {
-            case BOOL -> String.valueOf(valueInspector.asBool());
-            case LONG -> String.valueOf(valueInspector.asLong());
-            case DOUBLE -> String.valueOf(valueInspector.asDouble());
-            case STRING -> valueInspector.asString();
+    /** Holds and validates equals operator parameters. */
+    record EqualsParams(Inspector field, Inspector value, Inspector index) {
+        void validateTypes() {
+            if (!field.valid()) {
+                throw new IllegalArgumentException("Expected 'field' in 'equals' but is missing.");
+            }
+
+            if (!value.valid()) {
+                throw new IllegalArgumentException("Expected 'value' in 'equals' but is missing.");
+            }
+
+            if (field.type() != STRING) {
+                throw new IllegalArgumentException("'field' in 'equals' should be a string but was " + field.type());
+            }
+
+            if (index.valid() && (index.type() != LONG)) {
+                throw new IllegalArgumentException("'index' in 'equals' should be an integer but was " + index.type());
+            }
+        }
+    }
+
+    /** Extracts equals operator parameters from object and array form. */
+    private EqualsParams extractEqualsParams(Inspector value) {
+        if (value.type() == OBJECT) {
+            return new EqualsParams(value.field("field"), value.field("value"), value.field("index"));
+        } else {
+            if (value.entries() != 2) {
+                throw new IllegalArgumentException("The value of 'equals' should be an array containing a field name" +
+                        " and a value, but was " + value);
+            }
+            return new EqualsParams(value.entry(0), value.entry(1), value.entry(2));
+        }
+    }
+
+    /** Builds sameElement accessing a specific index in an array. */
+    private Item buildSameElementWithElementFilter(EqualsParams params) {
+        int elementIndex = YqlParser.convertToElementId(params.index.asLong());
+        var value = params.value;
+        Item valueItem = switch (value.type()) {
+            case BOOL -> new BoolItem(value.asBool(), "");
+            case LONG -> new IntItem(value.asLong(), "");
+            case DOUBLE -> new IntItem(new Limit(value.asDouble(), true), new Limit(value.asDouble(), true), "");
+            case STRING -> new WordItem(value.asString(), "");
             default -> throw new IllegalArgumentException("'value' in 'equals' should be a boolean, integer, double, " +
-                                                          "or string but was " + valueInspector.type());
+                                                          "or string but was " + value.type());
         };
 
-        SameElementItem sameElement = new SameElementItem(field);
+        SameElementItem sameElement = new SameElementItem(params.field.toString());
         sameElement.setElementFilter(List.of(elementIndex));
-        sameElement.addItem(new WordItem(stringValue, ""));
+        sameElement.addItem(valueItem);
         return sameElement;
     }
 
