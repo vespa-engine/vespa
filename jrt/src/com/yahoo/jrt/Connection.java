@@ -178,6 +178,8 @@ class Connection extends Target {
         try {
             socket.channel().configureBlocking(false);
             socket.channel().socket().setTcpNoDelay(tcpNoDelay);
+            socket.channel().socket().setKeepAlive(true);
+            socket.channel().socket().setSoLinger(true, 0);
             selectionKey = socket.channel().register(selector,
                     SelectionKey.OP_READ | SelectionKey.OP_WRITE,
                     this);
