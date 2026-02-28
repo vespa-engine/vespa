@@ -397,6 +397,10 @@ class Connection extends Target {
         return ((socket != null) && (socket.channel() != null));
     }
 
+    SocketChannel socketChannel() {
+        return hasSocket() ? socket.channel() : null;
+    }
+
     public void closeSocket() {
         if (hasSocket()) {
             try {
