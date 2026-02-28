@@ -294,6 +294,7 @@ TOKEN :
 | < ORDER: "order" >
 | < MAX_FILTER_COVERAGE: "max-filter-coverage" >
 | < MAX_HITS: "max-hits" >
+| < TOTAL_MAX_HITS: "total-max-hits" >
 | < FIRST_PHASE: "first-phase" >
 | < SECOND_PHASE: "second-phase" >
 | < GLOBAL_PHASE: "global-phase" >
@@ -1957,17 +1958,19 @@ void matchPhase(ParsedRankProfile profile) :
 
 void matchPhaseItem(ParsedRankProfile profile, MatchPhaseSettings settings) :
 {
-    String str;
-    int num;
+    String string;
+    int count;
+    int totalCount;
     double multiplier;
     double coverage;
 }
 {
-    ( <ATTRIBUTE> <COLON> str = identifier() { settings.setAttribute(str); }
+    ( <ATTRIBUTE> <COLON> string = identifier() { settings.setAttribute(string); }
       | diversityDeprecated(profile)
       | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); }
                           | <DESCENDING> { settings.setAscending(false); } )
-      | <MAX_HITS> <COLON> num = integer() { settings.setMaxHits(num); }
+      | <MAX_HITS> <COLON> count = integer() { settings.setMaxHits(count); }
+      | <TOTAL_MAX_HITS> <COLON> totalCount = integer() { settings.setTotalMaxHits(totalCount); }
       | <MAX_FILTER_COVERAGE> <COLON> coverage = floatValue() { settings.setMaxFilterCoverage(coverage); }
       | <EVALUATION_POINT> <COLON> multiplier = floatValue() { settings.setEvaluationPoint(multiplier); }
       | <PRE_POST_FILTER_TIPPING_POINT> <COLON> multiplier = floatValue() { settings.setPrePostFilterTippingPoint(multiplier); }
@@ -2967,6 +2970,7 @@ String identifierWithDash() :
     | <SUMMARY_TO>
     | <TARGET_HITS_MAX_ADJUSTMENT_FACTOR>
     | <TERMWISE_LIMIT>
+    | <TOTAL_MAX_HITS>
     | <TOTAL_KEEP_RANK_COUNT>
     | <TOTAL_RERANK_COUNT>
     | <UPPER_BOUND>
