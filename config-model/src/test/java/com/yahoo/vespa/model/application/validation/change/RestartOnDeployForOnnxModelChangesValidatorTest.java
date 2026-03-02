@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.OnnxModelOptions;
@@ -54,6 +55,10 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         assertEquals(1, result.size());
         assertTrue(result.get(0).validationId().isEmpty());
         assertEquals("Onnx model 'https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx' has changed (estimated cost), need to restart services in container cluster 'cluster1'", result.get(0).getMessage());
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     @Test
@@ -72,6 +77,10 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
         assertStartsWith("Onnx model 'https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx' has changed (model hash)", result);
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     @Test
@@ -81,6 +90,10 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
         assertStartsWith("Onnx model 'https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx' has changed (model option(s))", result);
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     @Test
@@ -92,6 +105,10 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         assertStartsWith("Onnx model set has changed from [https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx] " +
                                  "to [https://data.vespa-cloud.com/onnx_models/e5-small-v2/model.onnx",
                          result);
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
