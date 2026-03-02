@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.application;
 
 import org.junit.Test;
 
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,5 +40,21 @@ public class PendingRestartsTest {
         // Generation 2 should be unchanged (above threshold)
         assertTrue("Generation 2 should exist", generations.containsKey(2L));
         assertEquals("Generation 2 should be unchanged", Set.of("host2", "host4"), generations.get(2L));
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("generationsForRestarts=", PendingRestarts.empty().toString());
+
+        Map<Long, Set<String>> generations = new LinkedHashMap<>();
+        Set<String> hosts1 = new LinkedHashSet<>();
+        hosts1.add("host1");
+        hosts1.add("host2");
+        generations.put(10L, hosts1);
+        generations.put(20L, Set.of("host3"));
+
+        PendingRestarts restarts = new PendingRestarts(generations);
+
+        assertEquals("generationsForRestarts=10 -> [host1, host2], 20 -> [host3]", restarts.toString());
     }
 }
