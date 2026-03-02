@@ -149,6 +149,15 @@ public class Container {
                 // Continues loop
 
             } else if (snapshot instanceof ComponentsConfigs) {
+                if (leastGeneration > graph.generation()) {
+                    // Recovery after failed construction with empty config keys:
+                    // ComponentsConfigs only has bootstrap keys, need to rebuild graph
+                    // to discover actual component config keys for next iteration.
+                    throwIfPlatformBundlesChanged(snapshot);
+                    installApplicationBundles(snapshot.configs());
+                    graph = createComponentGraph(snapshot.configs(), getComponentsGeneration(), fallbackInjector);
+                    continue;
+                }
                 break;
             }
         }
