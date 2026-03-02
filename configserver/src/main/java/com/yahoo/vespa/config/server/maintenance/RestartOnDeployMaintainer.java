@@ -86,7 +86,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                                     log.log(
                                             Level.INFO,
                                             Text.format(
-                                                    "Failed to update pending restarts for %s: %s",
+                                                    "Failed to update pending restarts of %s: %s",
                                                     id.toFullString(), Exceptions.toMessageString(e)));
                                     failures.incrementAndGet();
                                 }
@@ -123,23 +123,22 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
             return restarts;
         }
 
-        log.fine(() -> Text.format(
-                "Pending restarts of %s: %s",
-                id.toFullString(),
-                restarts.generationsForRestarts().entrySet().stream()
-                        .map(entry -> Text.format("%d -> [%s]", entry.getKey(), String.join(", ", entry.getValue())))
-                        .collect(Collectors.joining(", "))));
+        log.fine(() -> Text.format("Pending restarts of %s: %s", id.toFullString(), restarts.toString()));
 
-        Map<String, List<ServiceConfigState>> statesByHostname = serviceConfigStateFetcher.apply(restarts.hostnames());
+        Map<String, List<ServiceConfigState>> configStates = serviceConfigStateFetcher.apply(restarts.hostnames());
 
-        if (statesByHostname.isEmpty()) {
-            log.fine(() -> Text.format("No services states of %s are fetched.", id.toFullString()));
+        if (configStates.isEmpty()) {
+            log.fine(() -> Text.format("No service config states of %s are fetched.", id.toFullString()));
+        } else {
+            log.fine(() -> Text.format(
+                    "Fetched service config states of %s for %s: %s",
+                    id.toFullString(), String.join(", ", restarts.hostnames()), configStatesToString(configStates)));
         }
 
         // Minimum observed config generation for all services without applyOnRestart across all pending restart nodes.
         // Services with applyOnRestart set to {@code true} are excluded because they are waiting for restart to apply a
         // new config and report a new config generation.
-        OptionalLong minObservedGeneration = statesByHostname.values().stream()
+        OptionalLong minObservedGeneration = configStates.values().stream()
                 .flatMap(List::stream)
                 .filter(state -> !state.applyOnRestart().orElse(false))
                 .mapToLong(ServiceConfigState::currentGeneration)
@@ -191,5 +190,22 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                 nodesToRestart.stream().sorted().collect(Collectors.joining(", "))));
 
         return restarts.withoutPreviousGenerations(readyGeneration);
+    }
+
+    static String configStatesToString(Map<String, List<ServiceConfigState>> statesByHostname) {
+        return statesByHostname.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> Text.format(
+                        "%s -> [%s]",
+                        entry.getKey(),
+                        entry.getValue().stream()
+                                .map(state -> Text.format(
+                                        "{currentGeneration=%d, applyOnRestart=%s}",
+                                        state.currentGeneration(),
+                                        state.applyOnRestart()
+                                                .map(Object::toString)
+                                                .orElse("empty")))
+                                .collect(Collectors.joining(", "))))
+                .collect(Collectors.joining(", "));
     }
 }
