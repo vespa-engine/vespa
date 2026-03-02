@@ -123,10 +123,10 @@ public:
     void write(MonitorGuard guard, FileId destinationFileId, uint32_t lid, ConstBufferRef data);
 
     /**
-     * This will spinn through the data and verify the content of both
+     * This will spin through the data and verify the contents of both
      * the '.dat' and the '.idx' files.
      *
-     * @param reportOnly If set inconsitencies will be written to 'stderr'.
+     * @param reportOnly If set, inconsistencies will be written to 'stderr'.
      */
     void verify(bool reportOnly) const;
 

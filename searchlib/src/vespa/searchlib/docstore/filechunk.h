@@ -132,7 +132,7 @@ public:
      * Get a metric for unorder of data in the file relative to when
      * the data is ordered.
      *
-     * Consider a two-dimentional matrix, with rows of chunks
+     * Consider a two-dimensional matrix, with rows of chunks
      * containing buckets and columns of buckets present in chunks.
      * Each matrix element contains '1' if the bucket is present in
      * the chunk or '0' if the bucket is not present in the chunk.
@@ -155,8 +155,8 @@ public:
     }
     void addNumBuckets(size_t numBucketsInChunk);
 
-    FileId getFileId() const { return _fileId; }
-    NameId       getNameId() const { return _nameId; }
+    FileId   getFileId() const { return _fileId; }
+    NameId   getNameId() const { return _nameId; }
     uint32_t getNumLids() const { return _numLids; }
     size_t   getErasedCount() const { return _erasedCount.load(std::memory_order_relaxed); }
     size_t   getAddedBytes() const { return _addedBytes.load(std::memory_order_relaxed); }
@@ -176,13 +176,13 @@ public:
      */
     void enableRead();
     // This should never be done to something that is used. Backing
-    // Files are removed and everythings dies.
+    // files are removed and everything dies.
     void erase();
     /**
-     * This will spinn through the data and verify the content of both
+     * This will spin through the data and verify the contents of both
      * the '.dat' and the '.idx' files.
      *
-     * @param reportOnly If set inconsitencies will be written to 'stderr'.
+     * @param reportOnly If set, inconsistencies will be written to 'stderr'.
      */
     void verify(bool reportOnly) const;
 
@@ -193,7 +193,7 @@ public:
     virtual DataStoreFileChunkStats getStats() const;
 
     /**
-     * Read header and return number of bytes it consist of.
+     * Read header and return number of bytes it consists of.
      */
     static uint64_t readIdxHeader(FastOS_FileInterface &idxFile, uint32_t &docIdLimit);
     static uint64_t readDataHeader(FileRandRead &idxFile);
@@ -216,7 +216,7 @@ private:
     using File = std::unique_ptr<FileRandRead>;
     const FileId           _fileId;
     const NameId           _nameId;
-    const std::string _name;
+    const std::string      _name;
     std::atomic<size_t>    _erasedCount;
     std::atomic<size_t>    _erasedBytes;
     std::atomic<size_t>    _diskFootprint;
@@ -256,8 +256,8 @@ protected:
     const IBucketizer    * _bucketizer;
     std::atomic<size_t>    _addedBytes;
     TuneFileSummary        _tune;
-    std::string       _dataFileName;
-    std::string       _idxFileName;
+    std::string            _dataFileName;
+    std::string            _idxFileName;
     ChunkInfoVector        _chunkInfo;
     std::atomic<uint64_t>  _lastPersistedSerialNum;
     uint32_t               _dataHeaderLen;
