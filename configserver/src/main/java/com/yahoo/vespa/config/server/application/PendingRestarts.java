@@ -86,13 +86,17 @@ public class PendingRestarts {
         generationsForRestarts.forEach((g, hostnames) -> { if (generation >= g) ready.addAll(hostnames); });
         return ready;
     }
-
+    
     @Override
     public String toString() {
         return Text.format(
-                "generationsForRestarts=%s",
+                "generationsForRestarts={%s}",
                 generationsForRestarts().entrySet().stream()
-                        .map(entry -> Text.format("%d -> [%s]", entry.getKey(), String.join(", ", entry.getValue())))
+                        .sorted(Map.Entry.comparingByKey())
+                        .map(entry -> Text.format(
+                                "%d -> [%s]",
+                                entry.getKey(),
+                                entry.getValue().stream().sorted().collect(Collectors.joining(", "))))
                         .collect(Collectors.joining(", ")));
     }
 }

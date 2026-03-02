@@ -86,7 +86,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                                     log.log(
                                             Level.INFO,
                                             Text.format(
-                                                    "Failed to update pending restarts for %s: %s",
+                                                    "Failed to update pending restarts of %s: %s",
                                                     id.toFullString(), Exceptions.toMessageString(e)));
                                     failures.incrementAndGet();
                                 }
@@ -123,17 +123,16 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
             return restarts;
         }
 
-        log.fine(() -> Text.format(
-                "Pending restarts of %s: %s",
-                id.toFullString(),
-                restarts.toString()));
+        log.fine(() -> Text.format("Pending restarts of %s: %s", id.toFullString(), restarts.toString()));
 
         Map<String, List<ServiceConfigState>> configStates = serviceConfigStateFetcher.apply(restarts.hostnames());
 
         if (configStates.isEmpty()) {
-            log.fine(() -> Text.format("No services states of %s are fetched.", id.toFullString()));
+            log.fine(() -> Text.format("No service config states of %s are fetched.", id.toFullString()));
         } else {
-            log.fine(() -> configStatesToString(configStates));
+            log.fine(() -> Text.format(
+                    "Fetched service config states of %s for %s: %s",
+                    id.toFullString(), String.join(", ", restarts.hostnames()), configStatesToString(configStates)));
         }
 
         // Minimum observed config generation for all services without applyOnRestart across all pending restart nodes.
@@ -192,9 +191,10 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
 
         return restarts.withoutPreviousGenerations(readyGeneration);
     }
-    
+
     static String configStatesToString(Map<String, List<ServiceConfigState>> statesByHostname) {
         return statesByHostname.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
                 .map(entry -> Text.format(
                         "%s -> [%s]",
                         entry.getKey(),

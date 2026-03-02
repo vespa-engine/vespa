@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.PendingRestarts;
 import org.junit.jupiter.api.Test;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -168,16 +167,18 @@ class RestartOnDeployMaintainerTest {
     void test_statesByHostnameToString() {
         assertEquals("", configStatesToString(Map.of()));
 
-        Map<String, List<ServiceConfigState>> states = new LinkedHashMap<>();
-        states.put("host1", List.of(
-                new ServiceConfigState(10, Optional.of(true)),
-                new ServiceConfigState(11, Optional.of(false))));
-        states.put("host2", List.of(
-                new ServiceConfigState(20, Optional.empty()),
-                new ServiceConfigState(21, Optional.of(true))));
-
         assertEquals(
-                "host1 -> [{currentGeneration=10, applyOnRestart=true}, {currentGeneration=11, applyOnRestart=false}], host2 -> [{currentGeneration=20, applyOnRestart=empty}, {currentGeneration=21, applyOnRestart=true}]",
-                configStatesToString(states));
+                "host1 -> [{currentGeneration=10, applyOnRestart=true}, {currentGeneration=11, applyOnRestart=false}],"
+                        + " host2 -> [{currentGeneration=20, applyOnRestart=empty}, {currentGeneration=21,"
+                        + " applyOnRestart=true}]",
+                configStatesToString(Map.of(
+                        "host1",
+                                List.of(
+                                        new ServiceConfigState(10, Optional.of(true)),
+                                        new ServiceConfigState(11, Optional.of(false))),
+                        "host2",
+                                List.of(
+                                        new ServiceConfigState(20, Optional.empty()),
+                                        new ServiceConfigState(21, Optional.of(true))))));
     }
 }
