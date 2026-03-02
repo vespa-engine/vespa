@@ -235,7 +235,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
     }
 
     private static GzipHandler newGzipHandler(Handler handler) {
-        var h = new GzipHandler(new org.eclipse.jetty.server.handler.gzip.GzipRequestCleanupHandler(handler));
+        var h = new GzipHandler(handler);
         h.setInflateBufferSize(8 * 1024);
         h.setIncludedMethods("GET", "POST", "PUT", "PATCH");
         return h;
