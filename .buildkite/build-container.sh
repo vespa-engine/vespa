@@ -55,6 +55,14 @@ select_dockerfile() {
     fi
 }
 
+echo "--- Getting maven from wrapper directory"
+mvnwrap=$(echo "$HOME"/.m2/wrapper/dists/apache-maven-*/*)
+if [ -f "${mvnwrap}/bin/mvn" ]; then
+    mkdir -p share/maven
+    cp -R "${mvnwrap}/." "share/maven/."
+    ls -l "$(pwd)/share/maven/bin/mvn"
+fi
+
 echo "--- Building Vespa preview container"
 GHCR_PREVIEW_TAG=ghcr.io/vespa-engine/vespa-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
 echo "Building container with tag: ${GHCR_PREVIEW_TAG}"
