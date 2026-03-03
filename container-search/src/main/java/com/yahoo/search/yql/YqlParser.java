@@ -824,7 +824,7 @@ public class YqlParser implements Parser {
     }
 
     /** Element filter accepts Integer. Allows Long that is within Integer size. */
-    private int convertToElementId(Object val) {
+    public static int convertToElementId(Object val) {
         if (val == null) {
             throw new IllegalArgumentException("element id cannot be null");
         }
