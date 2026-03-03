@@ -59,7 +59,7 @@ echo "--- Getting maven from wrapper directory"
 mvnwrap=$(echo "$HOME"/.m2/wrapper/dists/apache-maven-*/*)
 if [ -f "${mvnwrap}/bin/mvn" ]; then
     mkdir -p share/maven
-    cp -R "${mvnwrap}/." "share/maven/."
+    cp -a "${mvnwrap}/." "share/maven/."
     ls -l "$(pwd)/share/maven/bin/mvn"
 fi
 
