@@ -163,7 +163,11 @@ Summary: Vespa - The open big data serving engine - base
 Requires: java-17-amazon-corretto-devel
 Requires: java-17-amazon-corretto
 %else
+%if 0%{?el8} 
+Requires: java-%{_vespa_java_version}-openjdk-devel = 1:17.0.18.0.8
+%else
 Requires: java-%{_vespa_java_version}-openjdk-devel
+%endif
 %endif
 Requires(pre): shadow-utils
 
