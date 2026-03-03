@@ -84,7 +84,7 @@ getArrayType(const DataType &fieldType)
     case DataType::Type::T_BYTE:
         return &arrayTypeByte;
     case DataType::Type::T_BOOL:
-        return &arrayTypeByte;
+        return &arrayTypeBool;
     case DataType::Type::T_SHORT:
         return &arrayTypeShort;
     case DataType::Type::T_INT:

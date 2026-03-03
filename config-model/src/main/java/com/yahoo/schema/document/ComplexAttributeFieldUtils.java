@@ -96,7 +96,8 @@ public class ComplexAttributeFieldUtils {
     }
 
     public static boolean isPrimitiveType(DataType dataType) {
-        return dataType.equals(DataType.BYTE) ||
+        return dataType.equals(DataType.BOOL) ||
+                dataType.equals(DataType.BYTE) ||
                 dataType.equals(DataType.INT) ||
                 dataType.equals(DataType.LONG) ||
                 dataType.equals(DataType.FLOAT) ||
