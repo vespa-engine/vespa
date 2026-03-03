@@ -154,14 +154,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    // Do not use. Removing
-    public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
-            "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2026-03-01",
-            "Whether an OpenTelemetry collector should be enabled",
-            "Takes effect at next tick",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
-
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
             List.of("vekterli"), "2022-11-03", "2026-05-01",
@@ -230,13 +222,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
-            "search-handler-threadpool", 10,
-            List.of("bjorncs"), "2023-10-01", "2026-03-01",
-            "Adjust search handler threadpool size",
-            "Takes effect at redeployment",
-            APPLICATION);
-
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
             List.of("johsol"), "2025-10-17", "2026-03-01",
@@ -286,13 +271,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
-            "monitoring-jwt", true,
-            List.of("olaa"), "2024-07-05", "2026-05-01",
-            "Whether a monitoring JWT should be issued by the controller",
-            "Takes effect immediately",
-            TENANT_ID, CONSOLE_USER_EMAIL);
-
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
             List.of("olaa"), "2024-10-22", "2026-05-01",
@@ -319,13 +297,6 @@ public class Flags {
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
-
-    public static final UnboundIntFlag DOCUMENT_V1_QUEUE_SIZE = defineIntFlag(
-            "document-v1-queue-size", -1,
-            List.of("bjorncs"), "2025-01-14", "2026-03-01",
-            "Size of the document v1 queue. Use -1 for default as determined by 'document-operation-executor.def'",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
             "max-content-node-maintenance-op-concurrency", -1,
