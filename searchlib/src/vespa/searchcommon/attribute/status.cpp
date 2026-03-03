@@ -17,6 +17,7 @@ Status::Status()
       _unused               (0),
       _onHold               (0),
       _onHoldMax            (0),
+      _used_minus_dead_and_onhold(0),
       _lastSyncToken        (0),
       _updates              (0),
       _nonIdempotentUpdates (0),
@@ -34,6 +35,7 @@ Status::Status(const Status& rhs)
       _unused(load_relaxed(rhs._unused)),
       _onHold(load_relaxed(rhs._onHold)),
       _onHoldMax(load_relaxed(rhs._onHoldMax)),
+      _used_minus_dead_and_onhold(load_relaxed(rhs._used_minus_dead_and_onhold)),
       _lastSyncToken(rhs.getLastSyncToken()),
       _updates(rhs._updates),
       _nonIdempotentUpdates(rhs._nonIdempotentUpdates),
@@ -53,6 +55,7 @@ Status::operator=(const Status& rhs)
     store_relaxed(_unused,          load_relaxed(rhs._unused));
     store_relaxed(_onHold,          load_relaxed(rhs._onHold));
     store_relaxed(_onHoldMax,       load_relaxed(rhs._onHoldMax));
+    store_relaxed(_used_minus_dead_and_onhold, load_relaxed(rhs._used_minus_dead_and_onhold));
     setLastSyncToken(rhs.getLastSyncToken());
     _updates = rhs._updates;
     _nonIdempotentUpdates = rhs._nonIdempotentUpdates;
@@ -80,6 +83,7 @@ Status::updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t a
     store_relaxed(_dead,            dead);
     store_relaxed(_unused,          allocated - used);
     store_relaxed(_onHold,          onHold);
+    store_relaxed(_used_minus_dead_and_onhold, used - dead - onHold);
     store_relaxed(_onHoldMax,       std::max(load_relaxed(_onHoldMax), onHold));
 }
 

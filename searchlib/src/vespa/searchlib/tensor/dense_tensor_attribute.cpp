@@ -10,6 +10,7 @@ DenseTensorAttribute::DenseTensorAttribute(std::string_view baseFileName, const 
     : TensorAttribute(baseFileName, cfg, _denseTensorStore, index_factory),
       _denseTensorStore(cfg.tensorType(), get_memory_allocator())
 {
+    setup_memory_usage_empty();
 }
 
 

@@ -822,8 +822,9 @@ public:
           prepare_set_tensor_cnt(0),
           complete_set_tensor_cnt(0),
           clear_doc_cnt(0),
-          exp_tensor()
-    {}
+          exp_tensor() {
+        setup_memory_usage_empty();
+    }
     uint32_t clearDoc(DocId docid) override {
         ++clear_doc_cnt;
         return DenseTensorAttribute::clearDoc(docid);

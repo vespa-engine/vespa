@@ -33,6 +33,7 @@
 #include <vespa/vespalib/net/http/state_explorer.h>
 #include <vespa/fastos/file.h>
 #include <filesystem>
+#include <gmock/gmock.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -65,6 +66,9 @@ using search::tensor::PrepareResult;
 using search::tensor::SerializedFastValueAttribute;
 using search::tensor::TensorAttribute;
 using search::tensor::VectorBundle;
+using testing::AllOf;
+using testing::Le;
+using testing::Ge;
 using vespalib::SharedStringRepo;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::eval::FastValueBuilderFactory;
@@ -1668,5 +1672,74 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
 auto test_values = ::testing::Values(1u, 2u);
 
 INSTANTIATE_TEST_SUITE_P(MixedTensors, MixedTensorAttributeTest, test_values, testing::PrintToStringParamName());
+
+
+class SparseTensorAttributeTest : public ::testing::Test {
+protected:
+    static std::filesystem::path _test_dir;
+    SparseTensorAttributeTest();
+    ~SparseTensorAttributeTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
+
+std::filesystem::path SparseTensorAttributeTest::_test_dir("sparse");
+
+SparseTensorAttributeTest::SparseTensorAttributeTest()
+    : ::testing::Test()
+{
+
+}
+SparseTensorAttributeTest::~SparseTensorAttributeTest() = default;
+
+void
+SparseTensorAttributeTest::SetUpTestSuite()
+{
+    std::filesystem::remove_all(_test_dir);
+    std::filesystem::create_directory(_test_dir);
+}
+
+void
+SparseTensorAttributeTest::TearDownTestSuite()
+{
+    std::filesystem::remove_all(_test_dir);
+}
+
+TEST_F(SparseTensorAttributeTest, size_on_disk_factor_is_calculated_and_used)
+{
+    search::attribute::Config cfg(search::attribute::BasicType::TENSOR, search::attribute::CollectionType::SINGLE);
+    cfg.setTensorType(ValueType::from_spec(sparseSpec));
+    auto real_attr = std::make_shared<SerializedFastValueAttribute>("tensor", cfg);
+    AttributeVector& attr = *real_attr;
+    attr.commit(CommitParam::UpdateStats::FORCE);
+    auto initial_memory_usage = attr.getStatus().get_used_minus_dead_and_onhold();
+    EXPECT_NE(0, initial_memory_usage);
+    attr.addReservedDoc();
+    auto tensor_spec = TensorSpec(sparseSpec)
+                       .add({{"x", "long-label-that-uses-some-more-disk-space"}, {"y", "two"}}, 11.0);
+    auto tensor = createTensor(tensor_spec);
+    uint64_t dynamic_memory_usage = 0;
+    while (dynamic_memory_usage < 40_Ki) {
+        uint32_t docid = 0;
+        attr.addDoc(docid);
+        ASSERT_NE(0, docid);
+        real_attr->setTensor(docid, *tensor);;
+        attr.commit(CommitParam::UpdateStats::FORCE);
+        dynamic_memory_usage = attr.getStatus().get_used_minus_dead_and_onhold() - initial_memory_usage;
+    }
+    EXPECT_LT(10, attr.getCommittedDocIdLimit());
+    EXPECT_THAT(attr.getEstimatedSaveByteSize(), AllOf(Ge(40_Ki), Le(50_Ki)));
+    attr.save((_test_dir / "tensor").string());
+    auto size_on_disk = attr.size_on_disk();
+    EXPECT_LT(60_Ki, size_on_disk);
+    EXPECT_THAT(attr.getEstimatedSaveByteSize(), AllOf(Ge(size_on_disk - 4_Ki), Le(size_on_disk + 4_Ki)));
+    auto real_attr2 = std::make_shared<SerializedFastValueAttribute>((_test_dir / "tensor").string(), cfg);
+    AttributeVector& attr2 = *real_attr2;
+    EXPECT_TRUE(attr2.load());
+    EXPECT_EQ(size_on_disk, attr2.size_on_disk());
+    EXPECT_THAT(attr2.getEstimatedSaveByteSize(), AllOf(Ge(size_on_disk - 4_Ki), Le(size_on_disk + 4_Ki)));
+    EXPECT_EQ(dynamic_memory_usage, attr2.getStatus().get_used_minus_dead_and_onhold() - initial_memory_usage);
+    EXPECT_NEAR(attr.getEstimatedSaveByteSize(), attr2.getEstimatedSaveByteSize(), 0.0);
+}
 
 GTEST_MAIN_RUN_ALL_TESTS()
