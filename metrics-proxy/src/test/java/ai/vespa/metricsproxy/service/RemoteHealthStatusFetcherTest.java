@@ -2,6 +2,7 @@ package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.HealthMetric;
 import ai.vespa.metricsproxy.metric.model.StatusCode;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -14,7 +15,32 @@ import static org.junit.Assert.assertTrue;
 
 public class RemoteHealthStatusFetcherTest {
 
+  private static final String HEALTH_PATH = "/state/v1/health";
+
   private final RemoteHealthStatusFetcher fetcher = new RemoteHealthStatusFetcher(null, 0);
+
+  @BeforeClass
+  public static void setup() {
+    HttpMetricFetcher.CONNECTION_TIMEOUT = 60000;
+  }
+
+  @Test
+  public void testNon200ResponseReturnsUnknownWithoutParsingBody() throws IOException {
+    MockHttpServer httpServer = new MockHttpServer("{\"status\": {\"code\": \"UP\"}}", HEALTH_PATH);
+    try {
+      httpServer.setResponse("<html><body>Service not available</body></html>");
+      httpServer.setStatusCode(503);
+
+      VespaService service = VespaService.create("service1", "id", httpServer.port());
+      RemoteHealthStatusFetcher healthFetcher = new RemoteHealthStatusFetcher(service, httpServer.port());
+      HealthMetric result = healthFetcher.getHealth(1);
+
+      assertEquals(StatusCode.UNKNOWN, result.getStatus());
+      assertTrue(result.getMessage().contains("503"));
+    } finally {
+      httpServer.close();
+    }
+  }
 
   @Test
   public void testParseValidJson() {
