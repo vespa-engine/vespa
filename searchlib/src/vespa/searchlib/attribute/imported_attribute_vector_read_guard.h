@@ -90,6 +90,7 @@ public:
     const IWeightedSetReadView<const char*>* make_read_view(WeightedSetTag<const char*> tag, vespalib::Stash& stash) const override;
     const IArrayEnumReadView* make_read_view(ArrayEnumTag tag, vespalib::Stash& stash) const override;
     const IWeightedSetEnumReadView* make_read_view(WeightedSetEnumTag tag, vespalib::Stash& stash) const override;
+    const IArrayBoolReadView* make_read_view(ArrayBoolTag tag, vespalib::Stash& stash) const override;
 private:
     class SortBlobWriter;
     using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
