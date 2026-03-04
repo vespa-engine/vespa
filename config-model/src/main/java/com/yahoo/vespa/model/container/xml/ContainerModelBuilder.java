@@ -339,6 +339,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addSecrets(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {
         if ( ! deployState.isHosted() || ! cluster.getZone().system().isPublicCloudLike())
             return;
+        cluster.addComponent(new CloudAsmSecrets(deployState.getProperties().ztsUrl(),
+                                                 deployState.getProperties().tenantSecretDomain(),
+                                                 deployState.zone().system(),
+                                                 deployState.getProperties().applicationId().tenant(),
+                                                 deployState.getProperties().tenantVaults()));
         Element secretsElement = XML.getChild(spec, "secrets");
         if (secretsElement != null) {
             CloudSecrets secretsConfig = new CloudSecrets();
@@ -349,11 +354,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 secretsConfig.addSecret(key, name, vault);
             }
             cluster.setTenantSecretsConfig(secretsConfig);
-            cluster.addComponent(new CloudAsmSecrets(deployState.getProperties().ztsUrl(),
-                                                     deployState.getProperties().tenantSecretDomain(),
-                                                     deployState.zone().system(),
-                                                     deployState.getProperties().applicationId().tenant(),
-                                                     deployState.getProperties().tenantVaults()));
         }
     }
 
