@@ -739,6 +739,12 @@ AttributeVector::get_initial_alloc()
 }
 
 void
+AttributeVector::set_size_on_disk(uint64_t value) noexcept
+{
+    _size_on_disk.store(value, std::memory_order_release);
+}
+
+void
 AttributeVector::set_size_on_disk(const IAttributeSaveTarget& target)
 {
     auto save_target_size_on_disk = target.size_on_disk();

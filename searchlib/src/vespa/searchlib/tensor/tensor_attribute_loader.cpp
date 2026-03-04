@@ -374,8 +374,6 @@ TensorAttributeLoader::on_load(vespalib::Executor* executor)
     _attr.commit();
     _attr.getStatus().setNumDocs(docid_limit);
     _attr.setCommittedDocIdLimit(docid_limit);
-    _attr.set_size_on_disk(reader.size_on_disk() + get_index_size_on_disk());
-    _attr.set_last_flush_duration(reader.flush_duration());
     if (_index != nullptr) {
         bool use_index_file = false;
         if (has_index_file(_attr)) {
@@ -393,6 +391,10 @@ TensorAttributeLoader::on_load(vespalib::Executor* executor)
             build_index(executor, docid_limit);
         }
     }
+    _attr.commit(CommitParam::UpdateStats::FORCE);
+    _attr.set_memory_usage_at_save_start(_attr.getStatus().get_used_minus_dead_and_onhold());
+    _attr.set_size_on_disk(reader.size_on_disk() + get_index_size_on_disk());
+    _attr.set_last_flush_duration(reader.flush_duration());
     return true;
 }
 
