@@ -4,6 +4,7 @@
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/attribute/multi_value_traits.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/array_bool_attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
@@ -448,6 +449,42 @@ auto test_values = ::testing::Values(TestParam(BasicType::Type::INT8),
                                      TestParam(BasicType::Type::STRING));
 
 INSTANTIATE_TEST_SUITE_P(ReadView, MultiValueReadViewTest, test_values,testing::PrintToStringParamName());
+
+TEST(BoolArrayImportedReadViewTest, test_imported_bool_array)
+{
+    auto gid_to_lid_mapper_factory = std::make_shared<MyGidToLidMapperFactory>();
+    auto reference_attribute = create_reference_attribute("ref", gid_to_lid_mapper_factory);
+    Config config(BasicType::BOOL, CollectionType::ARRAY);
+    auto attr = std::make_shared<ArrayBoolAttribute>("bool_attr", config);
+    attr->addReservedDoc();
+    uint32_t doc_id = 0;
+    EXPECT_TRUE(attr->addDoc(doc_id));
+    EXPECT_EQ(1u, doc_id);
+    EXPECT_TRUE(attr->addDoc(doc_id));
+    EXPECT_EQ(2u, doc_id);
+    const int8_t bools[] = {1, 0, 1};
+    attr->set_bools(doc_id, bools);
+    attr->commit();
+    auto imported_attr = ImportedAttributeVectorFactory::create("imported_bool",
+                                                                reference_attribute,
+                                                                std::make_shared<MockDocumentMetaStoreContext>(),
+                                                                attr,
+                                                                std::make_shared<MockDocumentMetaStoreContext>(),
+                                                                false);
+    auto guard = imported_attr->makeReadGuard(false);
+    auto& ia = **guard;
+    vespalib::Stash stash;
+    auto mv_attr = ia.as_multi_value_attribute();
+    ASSERT_NE(nullptr, mv_attr);
+    auto read_view = mv_attr->make_read_view(IMultiValueAttribute::ArrayBoolTag(), stash);
+    ASSERT_NE(nullptr, read_view);
+    EXPECT_TRUE(read_view->get_values(4).empty());
+    auto values = read_view->get_values(11);
+    ASSERT_EQ(3u, values.size());
+    EXPECT_TRUE(values[0]);
+    EXPECT_FALSE(values[1]);
+    EXPECT_TRUE(values[2]);
+}
 
 }
 
