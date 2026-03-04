@@ -51,7 +51,6 @@ public class Container {
     private final Osgi osgi;
 
     private final ConfigRetriever retriever;
-    private final com.yahoo.container.Container vespaContainer;
     private List<String> platformBundles;  // Used to verify that platform bundles don't change.
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
@@ -62,7 +61,6 @@ public class Container {
                      ComponentDeconstructor destructor,
                      Osgi osgi) {
         this.subscriberFactory = subscriberFactory;
-        this.vespaContainer = vespaContainer;
         this.destructor = destructor;
         this.osgi = osgi;
 
@@ -70,7 +68,7 @@ public class Container {
         platformBundlesConfigKey = new ConfigKey<>(PlatformBundlesConfig.class, configId);
         componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
         var bootstrapKeys = Set.of(applicationBundlesConfigKey, platformBundlesConfigKey, componentsConfigKey);
-        this.retriever = new ConfigRetriever(bootstrapKeys, subscriberFactory);
+        this.retriever = new ConfigRetriever(bootstrapKeys, subscriberFactory, vespaContainer);
     }
 
     // TODO: try to simplify by returning the result even when the graph failed, instead of throwing here.
@@ -121,7 +119,6 @@ public class Container {
         ConfigSnapshot snapshot;
         while (true) {
             snapshot = retriever.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
-            updateApplyOnRestart();
 
             if (log.isLoggable(FINE))
                 log.log(FINE, Text.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
@@ -310,14 +307,7 @@ public class Container {
 
         return key.getConfigClass().cast(inst);
     }
-
-    /**
-     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
-     */
-    public void updateApplyOnRestart() {
-        vespaContainer.setApplyOnRestart(retriever.applyOnRestart());
-    }
-
+    
     private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {
         return BundleInstantiationSpecification.fromStrings(config.id(), config.classId(), config.bundle());
     }
