@@ -102,7 +102,7 @@ public:
      * It uses the result from the prepare step to do the modifying changes.
      */
     virtual void complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor, std::unique_ptr<PrepareResult> prepare_result);
-    void set_memory_usage_at_save_start(uint64_t memory_usage) noexcept { _memory_usage_at_save_start = memory_usage; }
+    void set_memory_usage_at_save_start(uint64_t memory_usage) noexcept;
     void set_size_on_disk(uint64_t value) noexcept override;
     uint64_t getEstimatedSaveByteSize() const override;
 };

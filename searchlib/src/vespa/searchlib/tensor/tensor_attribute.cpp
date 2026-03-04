@@ -470,6 +470,12 @@ TensorAttribute::setup_memory_usage_empty()
 }
 
 void
+TensorAttribute::set_memory_usage_at_save_start(uint64_t memory_usage) noexcept
+{
+    _memory_usage_at_save_start = std::max(memory_usage, _memory_usage_empty);
+}
+
+void
 TensorAttribute::set_size_on_disk(uint64_t value) noexcept
 {
     AttributeVector::set_size_on_disk(value);
@@ -480,7 +486,7 @@ TensorAttribute::set_size_on_disk(uint64_t value) noexcept
         size_on_disk_factor = static_cast<double>(value - headerSize) / dynamic_memory_usage;
     }
     auto clamped_size_on_disk_factor = std::clamp<double>(size_on_disk_factor, 0.1, 10.0);
-    _size_on_disk_factor.store(clamped_size_on_disk_factor, std::memory_order_release);
+    _size_on_disk_factor.store(clamped_size_on_disk_factor, std::memory_order_relaxed);
 }
 
 uint64_t
@@ -489,7 +495,12 @@ TensorAttribute::getEstimatedSaveByteSize() const
     const Status &status = getStatus();
     uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT;
     uint64_t dynamic_memory_usage = std::max(status.get_used_minus_dead_and_onhold() - _memory_usage_empty, 4_Ki);
-    double size_on_disk_factor = _size_on_disk_factor.load(std::memory_order_acquire);;
+    double size_on_disk_factor = _size_on_disk_factor.load(std::memory_order_relaxed);
+    /*
+     * A tensor label is stored in memory as a vespalib::string_id (4 bytes long) that references an entry in a
+     * shared string repo. The serialized format on disk contains the full tensor label string. Thus, tensors with
+     * long tensor labels will use more space on disk than in memory.
+     */
     double estimate = size_on_disk_factor * dynamic_memory_usage + headerSize;
     return estimate;
 }

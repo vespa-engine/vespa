@@ -1735,11 +1735,11 @@ TEST_F(SparseTensorAttributeTest, size_on_disk_factor_is_calculated_and_used)
     EXPECT_THAT(attr.getEstimatedSaveByteSize(), AllOf(Ge(size_on_disk - 4_Ki), Le(size_on_disk + 4_Ki)));
     auto real_attr2 = std::make_shared<SerializedFastValueAttribute>((_test_dir / "tensor").string(), cfg);
     AttributeVector& attr2 = *real_attr2;
-    EXPECT_TRUE(attr2.load());
+    ASSERT_TRUE(attr2.load());
     EXPECT_EQ(size_on_disk, attr2.size_on_disk());
     EXPECT_THAT(attr2.getEstimatedSaveByteSize(), AllOf(Ge(size_on_disk - 4_Ki), Le(size_on_disk + 4_Ki)));
     EXPECT_EQ(dynamic_memory_usage, attr2.getStatus().get_used_minus_dead_and_onhold() - initial_memory_usage);
-    EXPECT_NEAR(attr.getEstimatedSaveByteSize(), attr2.getEstimatedSaveByteSize(), 0.0);
+    EXPECT_EQ(attr.getEstimatedSaveByteSize(), attr2.getEstimatedSaveByteSize());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
