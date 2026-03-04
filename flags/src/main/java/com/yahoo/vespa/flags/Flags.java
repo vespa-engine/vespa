@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.custom.CustomerOtelExportParameters;
 import com.yahoo.vespa.flags.custom.Sidecars;
 
 import java.time.Instant;
@@ -248,6 +249,16 @@ public class Flags {
             List.of("onur"), "2026-02-17", "2026-08-01",
             "Whether to use Grafana Alloy instead of otelcol-contrib for telemetry collection",
             "Takes effect on next host-admin tick",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundJacksonFlag<CustomerOtelExportParameters> CUSTOMER_OTEL_EXPORT = defineJacksonFlag(
+            "customer-otel-export", new CustomerOtelExportParameters(null, null), CustomerOtelExportParameters.class,
+            List.of("onur"), "2026-03-02", "2027-01-01",
+            "Export telemetry to a customer-owned OTel endpoint in addition to the internal otel-gateway. " +
+            "metrics and logs are independently optional. " +
+            "logs.logFileNames is a list of log file enum names (e.g. CONTAINER_VESPA_LOGS, VAR_LOG_MESSAGES).",
+            "Takes effect on next host-admin tick",
+            __ -> true,
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
