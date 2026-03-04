@@ -18,6 +18,7 @@
 LOG_SETUP("nearsearch_test");
 
 using search::fef::ElementGap;
+using search::fef::TermFieldHandle;
 using search::queryeval::IElementGapInspector;
 using search::queryeval::NearSearchBase;
 using search::queryeval::test::MockElementGapInspector;
@@ -54,7 +55,7 @@ public:
     }
 
     search::queryeval::Blueprint::UP
-    make_blueprint(uint32_t fieldId, search::fef::TermFieldHandle handle) const
+    make_blueprint(uint32_t fieldId, TermFieldHandle handle) const
     {
         return search::queryeval::Blueprint::UP(
                 new search::queryeval::FakeBlueprint(
@@ -352,9 +353,13 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
     }
     search::queryeval::Blueprint::UP bp(near_b);
     search::fef::MatchDataLayout layout;
+    std::vector<TermFieldHandle> positive_handles;
     for (uint32_t i = 0; i < query.getNumTerms(); ++i) {
         uint32_t fieldId = 0;
-        layout.allocTermField(fieldId);
+        auto handle = layout.allocTermField(fieldId);
+        if (i + query.getNumNegativeTerms() < query.getNumTerms()) {
+            positive_handles.emplace_back(handle);
+        }
         near_b->addChild(query.getTerm(i).make_blueprint(fieldId, i));
     }
     bp->setDocIdLimit(1000);
@@ -377,6 +382,16 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
                     near->get_element_ids(docId, act_element_ids);
                 }
                 EXPECT_EQ(act_element_ids, exp_element_ids.value());
+            }
+            for (auto handle : positive_handles) {
+                auto* tfmd = md->resolveTermField(handle);
+                EXPECT_TRUE(tfmd->has_data(docId));
+                EXPECT_FALSE(tfmd->has_ranking_data(docId));
+            }
+            near->unpack(docId);
+            for (auto handle : positive_handles) {
+                auto* tfmd = md->resolveTermField(handle);
+                EXPECT_TRUE(tfmd->has_ranking_data(docId));
             }
         } else {
             FAIL() << "Document " << docId << " matched unexpectedly.";

@@ -56,7 +56,7 @@
 
         <!-- Dependencies used internally in Vespa, not visible for users, or only visible in test classpath -->
 
-        <aircompressor.vespa.version>0.27</aircompressor.vespa.version>
+        <aircompressor.vespa.version>2.0.3</aircompressor.vespa.version>
         <airline.vespa.version>0.9</airline.vespa.version>
         <antlr.vespa.version>3.5.3</antlr.vespa.version>
         <antlr4.vespa.version>4.13.2</antlr4.vespa.version>
@@ -68,7 +68,7 @@
         <asm.vespa.version>9.9</asm.vespa.version>
         <assertj.vespa.version>3.27.7</assertj.vespa.version>
 
-        <bouncycastle.vespa.version>1.78.1</bouncycastle.vespa.version>
+        <bouncycastle.vespa.version>1.83</bouncycastle.vespa.version>
         <byte-buddy.vespa.version>1.17.6</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
         <commons-beanutils.vespa.version>1.9.4</commons-beanutils.vespa.version>
@@ -108,7 +108,7 @@
         <io-perfmark.vespa.version>0.27.0</io-perfmark.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
         <jaxb.runtime.vespa.version>4.0.5</jaxb.runtime.vespa.version>
-        <jetty.vespa.version>12.0.30</jetty.vespa.version>
+        <jetty.vespa.version>12.0.32</jetty.vespa.version>
         <jetty.client.vespa.version>12.0.22</jetty.client.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jieba.vespa.version>1.0.2</jieba.vespa.version>

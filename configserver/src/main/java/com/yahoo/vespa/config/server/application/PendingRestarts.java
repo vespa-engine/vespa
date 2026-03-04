@@ -1,10 +1,13 @@
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.text.Text;
+
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
@@ -82,5 +85,18 @@ public class PendingRestarts {
         LinkedHashSet<String> ready = new LinkedHashSet<>();
         generationsForRestarts.forEach((g, hostnames) -> { if (generation >= g) ready.addAll(hostnames); });
         return ready;
+    }
+    
+    @Override
+    public String toString() {
+        return Text.format(
+                "generationsForRestarts={%s}",
+                generationsForRestarts().entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .map(entry -> Text.format(
+                                "%d -> [%s]",
+                                entry.getKey(),
+                                entry.getValue().stream().sorted().collect(Collectors.joining(", "))))
+                        .collect(Collectors.joining(", ")));
     }
 }

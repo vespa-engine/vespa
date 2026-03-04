@@ -51,6 +51,16 @@ calc_window_end_pos(const TermFieldMatchDataPosition& pos, uint32_t window, Elem
 
 } // namespace search::queryeval::<unnamed>
 
+void
+NearSearchBase::MatcherBase::hide_positive_terms_from_ranking()
+{
+    uint32_t size = _inputs.size();
+    uint32_t num_positive_terms = size - _num_negative_terms;
+    for (uint32_t i = 0; i < num_positive_terms; ++i) {
+        _inputs[i]->set_hidden_from_ranking();
+    }
+}
+
 NearSearchBase::NearSearchBase(Children terms,
                                const TermFieldMatchDataArray &data,
                                uint32_t window,
@@ -149,6 +159,13 @@ NearSearchBase::doSeek(uint32_t docId)
     } else if (_strict) {
         LOG(debug, "Document %d does not match, seeking next.", docId);
         seekNext(docId);
+    }
+    if (foundHit || _strict) {
+        /*
+         * Match data has been unpacked, but (o)near operator or another operator above (e.g. and, sameElement) might
+         * not be a match for the query.
+         */
+        hide_positive_terms_from_ranking();
     }
 }
 
@@ -351,6 +368,14 @@ NearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids)
     match_result.maybe_sort_element_ids();
 }
 
+void
+NearSearch::hide_positive_terms_from_ranking()
+{
+    for (auto& matcher : _matchers) {
+        matcher.hide_positive_terms_from_ranking();
+    }
+}
+
 ONearSearch::ONearSearch(Children terms,
                          const TermFieldMatchDataArray &data,
                          uint32_t window,
@@ -493,6 +518,14 @@ ONearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids)
         matcher.match(docId, match_result);
     }
     match_result.maybe_sort_element_ids();
+}
+
+void
+ONearSearch::hide_positive_terms_from_ranking()
+{
+    for (auto& matcher : _matchers) {
+        matcher.hide_positive_terms_from_ranking();
+    }
 }
 
 }

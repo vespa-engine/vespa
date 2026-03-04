@@ -587,7 +587,7 @@ FileChunk::isIdxFileEmpty(const std::string & name)
         } else if ( idxFile.getSize() == 0u) {
             return true;
         } else {
-            throw SummaryException("Failed opening idx file for memorymapping", idxFile, VESPA_STRLOC);
+            throw SummaryException("Failed opening idx file for memory-mapping", idxFile, VESPA_STRLOC);
         }
     } else {
         throw SummaryException("Failed opening idx file readonly ", idxFile, VESPA_STRLOC);
