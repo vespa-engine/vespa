@@ -406,7 +406,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag USE_EXPERIMENTAL_DELETE_SESSIONS_CODE = defineFeatureFlag(
-            "use-experimental-delete-sessions-code", false,
+            "use-experimental-delete-sessions-code", true,
             List.of("hmusum"), "2026-02-11", "2026-04-01",
             "Whether to use new code for deleting unused sessions on config server",
             "Takes effect at next run of config server maintainer SessionsMaintainer",
