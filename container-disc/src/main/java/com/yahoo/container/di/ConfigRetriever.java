@@ -35,7 +35,9 @@ public final class ConfigRetriever {
     private Subscriber componentSubscriber;
     private int componentSubscriberIndex;
 
-    public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys, SubscriberFactory subscriberFactory) {
+    private final com.yahoo.container.Container vespaContainer;
+
+    public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys, SubscriberFactory subscriberFactory, com.yahoo.container.Container vespaContainer) {
         this.bootstrapKeys = bootstrapKeys;
         this.componentSubscriberKeys = new HashSet<>();
         this.subscriberFactory = subscriberFactory;
@@ -44,6 +46,7 @@ public final class ConfigRetriever {
         }
         this.bootstrapSubscriber = this.subscriberFactory.getSubscriber(bootstrapKeys, "bootstrap");
         this.componentSubscriber = this.subscriberFactory.getSubscriber(componentSubscriberKeys, "component_" + ++componentSubscriberIndex);
+        this.vespaContainer = vespaContainer;
     }
 
     public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
@@ -51,6 +54,8 @@ public final class ConfigRetriever {
         // Loop until we get config.
         while (true) {
             Optional<ConfigSnapshot> maybeSnapshot = getConfigsOnce(componentConfigKeys, leastGeneration, isInitializing);
+            updateApplyOnRestart();
+            
             if (maybeSnapshot.isPresent()) {
                 var configSnapshot = maybeSnapshot.get();
                 resetComponentSubscriberIfBootstrap(configSnapshot);
@@ -169,11 +174,12 @@ public final class ConfigRetriever {
     }
 
     /**
-     * @see Subscriber#applyOnRestart() 
+     * @see Subscriber#applyOnRestart()
      */
-    public boolean applyOnRestart() {
-        return bootstrapSubscriber.applyOnRestart() || componentSubscriber.applyOnRestart();
+    private void updateApplyOnRestart() {
+        vespaContainer.setApplyOnRestart(bootstrapSubscriber.applyOnRestart() || componentSubscriber.applyOnRestart());
     }
+
 
     public static class ConfigSnapshot {
         private final Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs;
