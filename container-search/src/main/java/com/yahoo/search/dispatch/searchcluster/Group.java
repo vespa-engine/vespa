@@ -78,7 +78,7 @@ public class Group {
         activeDocuments = activeDocs;
         targetActiveDocuments = workingNodes.stream().mapToLong(Node::getTargetActiveDocuments).sum();
         int numWorkingNodes = workingNodes.size();
-        if (numWorkingNodes > 0) {
+        if (numWorkingNodes > 1) {
             long average = activeDocs / numWorkingNodes;
             long skew = workingNodes.stream().mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
             boolean balanced = skew <= activeDocs * maxContentSkew;
