@@ -51,6 +51,13 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag GCP_ENCLAVE_V2 = defineFeatureFlag(
+            "gcp-enclave-v2", false,
+            List.of("hakonhall"), "2026-03-05", "2026-05-05",
+            "Whether to enable v2 of Vespa Cloud Enclave in GCP",
+            "Takes effect on the next host-admin tick.",
+            CLOUD_ACCOUNT);
+
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
             List.of("hakonhall"), "2025-03-19", "2026-04-10",
