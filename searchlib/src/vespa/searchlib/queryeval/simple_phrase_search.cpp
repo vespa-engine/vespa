@@ -22,6 +22,7 @@ class PhraseMatcher {
     vector<TermFieldMatchData::PositionsIterator> &_iterators;
     uint32_t _element_id;
     uint32_t _position;
+    const uint32_t _phraseLength; // currently all children of phrase must be 1-word terms
 
     TermFieldMatchData::PositionsIterator &iterator(uint32_t word_index) {
         return _iterators[word_index];
@@ -84,7 +85,8 @@ public:
           _eval_order(eval_order),
           _iterators(iterators),
           _element_id(0),
-          _position(0)
+          _position(0),
+          _phraseLength(tmds.size())
     {
         for (size_t i = 0; i < _tmds.size(); ++i) {
             _iterators[i] = _tmds[i]->begin();
@@ -122,7 +124,9 @@ public:
             while (iterator(_eval_order[0]) != end(_eval_order[0])) {
                 if (match()) {
                     if (needs_normal_features) {
-                        tmd.appendPosition(*iterator(0));
+                        fef::TermFieldMatchDataPosition pos = *iterator(0);
+                        pos.setMatchLength(_phraseLength);
+                        tmd.appendPosition(pos);
                     }
                     ++num_occs;
                 }
