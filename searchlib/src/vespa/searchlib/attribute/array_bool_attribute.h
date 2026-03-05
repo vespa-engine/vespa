@@ -113,6 +113,10 @@ public:
     }
 
     const ArrayBoolSearchContext* as_array_bool_search_context() const override { return this; }
+
+    const ArrayBoolAttribute& get_attribute() const { return _attr; }
+    bool get_want_true() const { return _want_true; }
+    bool get_valid() const { return _valid; }
 };
 
 }
