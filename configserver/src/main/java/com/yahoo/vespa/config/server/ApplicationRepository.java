@@ -683,7 +683,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Set<String> getFileReferencesInUse() {
         Set<String> fileReferencesInUse = new HashSet<>();
         for (var applicationId : listApplications()) {
-            Application app = getApplication(applicationId);
+            Application app;
+            try {
+                 app = getApplication(applicationId);
+            } catch (NotFoundException e) {
+                continue; // Just skip if not found
+            }
             fileReferencesInUse.addAll(app.getModel().fileReferences().stream()
                                           .map(FileReference::value)
                                           .collect(Collectors.toSet()));
