@@ -127,9 +127,9 @@ TEST(AttrTest, testArrayAt) {
         et.select(treeConf, treeConf);
         EXPECT_TRUE(et.getResult()->getClass().inherits(FloatResultNode::classId));
 
-        EXPECT_TRUE(et.execute(0, HitRank(0.0)));
+        ASSERT_NO_THROW(et.execute(0, HitRank(0.0)));
         EXPECT_EQ(et.getResult()->getFloat(), f1.doc0attr[i]);
-        EXPECT_TRUE(et.execute(1, HitRank(0.0)));
+        ASSERT_NO_THROW(et.execute(1, HitRank(0.0)));
         EXPECT_EQ(et.getResult()->getFloat(), f1.doc1attr[i]);
     }
 }
@@ -146,9 +146,9 @@ TEST(AttrTest, testArrayAtInt) {
         et.select(treeConf, treeConf);
         EXPECT_TRUE(et.getResult()->getClass().inherits(IntegerResultNode::classId));
 
-        EXPECT_TRUE(et.execute(0, HitRank(0.0)));
+        ASSERT_NO_THROW(et.execute(0, HitRank(0.0)));
         EXPECT_EQ(et.getResult()->getInteger(), f1.doc0attr[i]);
-        EXPECT_TRUE(et.execute(1, HitRank(0.0)));
+        ASSERT_NO_THROW(et.execute(1, HitRank(0.0)));
         EXPECT_EQ(static_cast<double>(et.getResult()->getInteger()), f1.doc1attr[i]);
     }
 }
@@ -164,10 +164,10 @@ TEST(AttrTest, testArrayAtString) {
     char mem[64];
     ResultNode::BufferRef buf(&mem, sizeof(mem));
 
-    EXPECT_TRUE(et.execute(0, HitRank(0.0)));
+    ASSERT_NO_THROW(et.execute(0, HitRank(0.0)));
     EXPECT_EQ(et.getResult()->getString(buf).c_str(), std::string("333"));
 
-    EXPECT_TRUE(et.execute(1, HitRank(0.0)));
+    ASSERT_NO_THROW(et.execute(1, HitRank(0.0)));
     EXPECT_EQ(et.getResult()->getString(buf).c_str(), std::string("4444"));
 }
 
@@ -190,9 +190,9 @@ TEST(AttrTest, testArrayAtBelowRange) {
     ArrayAtExpressionFixture f1(-1);
     EXPECT_TRUE(f1.et.getResult()->getClass().inherits(FloatResultNode::classId));
 
-    EXPECT_TRUE(f1.et.execute(0, HitRank(0.0)));
+    ASSERT_NO_THROW(f1.et.execute(0, HitRank(0.0)));
     EXPECT_EQ(f1.et.getResult()->getFloat(), f1.doc0attr[0]);
-    EXPECT_TRUE(f1.et.execute(1, HitRank(0.0)));
+    ASSERT_NO_THROW(f1.et.execute(1, HitRank(0.0)));
     EXPECT_EQ(f1.et.getResult()->getFloat(), f1.doc1attr[0]);
 }
 
@@ -200,9 +200,9 @@ TEST(AttrTest, testArrayAtAboveRange) {
     ArrayAtExpressionFixture f1(17);
     EXPECT_TRUE(f1.et.getResult()->getClass().inherits(FloatResultNode::classId));
 
-    EXPECT_TRUE(f1.et.execute(0, HitRank(0.0)));
+    ASSERT_NO_THROW(f1.et.execute(0, HitRank(0.0)));
     EXPECT_EQ(f1.et.getResult()->getFloat(), f1.doc0attr[10]);
-    EXPECT_TRUE(f1.et.execute(1, HitRank(0.0)));
+    ASSERT_NO_THROW(f1.et.execute(1, HitRank(0.0)));
     EXPECT_EQ(f1.et.getResult()->getFloat(), f1.doc1attr[10]);
 }
 
@@ -214,10 +214,10 @@ TEST(AttrTest, testInterpolatedLookup) {
 
     EXPECT_TRUE(et.getResult()->getClass().inherits(FloatResultNode::classId));
 
-    EXPECT_TRUE(et.execute(0, HitRank(0.0)));
+    ASSERT_NO_THROW(et.execute(0, HitRank(0.0)));
     EXPECT_EQ(et.getResult()->getFloat(), 2.0);
 
-    EXPECT_TRUE(et.execute(1, HitRank(0.0)));
+    ASSERT_NO_THROW(et.execute(1, HitRank(0.0)));
     EXPECT_EQ(et.getResult()->getFloat(), 2.053082175617388);
 }
 
@@ -246,38 +246,38 @@ TEST(AttrTest, testWithRelevance) {
         double r = i-1;
         r *= 0.1;
         SCOPED_TRACE(vespalib::make_string("i=%d", i).c_str());
-        EXPECT_TRUE(et.execute(0, HitRank(r)));
+        ASSERT_NO_THROW(et.execute(0, HitRank(r)));
         EXPECT_EQ(et.getResult()->getFloat(), expect0[i]);
-        EXPECT_TRUE(et.execute(1, HitRank(r)));
+        ASSERT_NO_THROW(et.execute(1, HitRank(r)));
     }
 
-    EXPECT_TRUE(et.execute(0, HitRank(f1.doc0attr[2])));
+    ASSERT_NO_THROW(et.execute(0, HitRank(f1.doc0attr[2])));
     EXPECT_EQ(et.getResult()->getFloat(), 2.0);
 
     // docid 1
-    EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[0] - 0.001)));
+    ASSERT_NO_THROW(et.execute(1, HitRank(f1.doc1attr[0] - 0.001)));
     EXPECT_EQ(et.getResult()->getFloat(), 0.0);
-    EXPECT_TRUE(et.execute(0, HitRank(0)));
+    ASSERT_NO_THROW(et.execute(0, HitRank(0)));
 
-    EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[0])));
+    ASSERT_NO_THROW(et.execute(1, HitRank(f1.doc1attr[0])));
     EXPECT_EQ(et.getResult()->getFloat(), 0.0);
-    EXPECT_TRUE(et.execute(0, HitRank(0)));
+    ASSERT_NO_THROW(et.execute(0, HitRank(0)));
 
-    EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[2])));
+    ASSERT_NO_THROW(et.execute(1, HitRank(f1.doc1attr[2])));
     EXPECT_EQ(et.getResult()->getFloat(), 2.0);
-    EXPECT_TRUE(et.execute(0, HitRank(0)));
+    ASSERT_NO_THROW(et.execute(0, HitRank(0)));
                 
-    EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[4])));
+    ASSERT_NO_THROW(et.execute(1, HitRank(f1.doc1attr[4])));
     EXPECT_EQ(et.getResult()->getFloat(), 4.0);
-    EXPECT_TRUE(et.execute(0, HitRank(0)));
+    ASSERT_NO_THROW(et.execute(0, HitRank(0)));
 
-    EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[10])));
+    ASSERT_NO_THROW(et.execute(1, HitRank(f1.doc1attr[10])));
     EXPECT_EQ(et.getResult()->getFloat(), 10.0);
-    EXPECT_TRUE(et.execute(0, HitRank(0)));
+    ASSERT_NO_THROW(et.execute(0, HitRank(0)));
 
-    EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[10] + 0.01)));
+    ASSERT_NO_THROW(et.execute(1, HitRank(f1.doc1attr[10] + 0.01)));
     EXPECT_EQ(et.getResult()->getFloat(), 10.0);
-    EXPECT_TRUE(et.execute(0, HitRank(0)));
+    ASSERT_NO_THROW(et.execute(0, HitRank(0)));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

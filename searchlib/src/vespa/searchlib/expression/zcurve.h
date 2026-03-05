@@ -49,7 +49,7 @@ private:
         IntegerResultNodeVector & _result;
     };
 
-    bool onExecute() const override;
+    void onExecute() const override;
     void onPrepareResult() override;
     Dimension _dim;
     std::unique_ptr<Handler> _handler;

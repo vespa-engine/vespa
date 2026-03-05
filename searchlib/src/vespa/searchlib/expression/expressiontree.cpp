@@ -127,21 +127,20 @@ ExpressionTree::swap(ExpressionTree & e)
 
 ExpressionTree::~ExpressionTree() = default;
 
-bool
+void
 ExpressionTree::execute(const document::Document & doc, HitRank rank) const
 {
     std::for_each(_documentAccessorNodes.cbegin(), _documentAccessorNodes.cend(), [&doc](DocumentAccessorNode * node) { node->setDoc(doc); });
     std::for_each(_relevanceNodes.cbegin(), _relevanceNodes.cend(), [rank](RelevanceNode * node) { node->setRelevance(rank); });
-    return _root->execute();
+    _root->execute();
 }
 
-bool
+void
 ExpressionTree::execute(DocId docId, HitRank rank) const
 {
     std::for_each(_attributeNodes.cbegin(), _attributeNodes.cend(), [docId](AttributeNode * node) { node->setDocId(docId); });
     std::for_each(_relevanceNodes.cbegin(), _relevanceNodes.cend(), [rank](RelevanceNode * node) { node->setRelevance(rank); });
-
-    return _root->execute();
+    _root->execute();
 }
 
 void

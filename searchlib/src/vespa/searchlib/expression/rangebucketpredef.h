@@ -13,7 +13,7 @@ class RangeBucketPreDefFunctionNode : public UnaryFunctionNode
 {
 private:
     void onPrepareResult() override;
-    bool onExecute() const override;
+    void onExecute() const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
     class Handler {

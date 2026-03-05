@@ -27,7 +27,7 @@ public:
     ExpressionNodeVector & expressionNodeVector() { return _args; }
 protected:
     virtual bool onCalculate(const ExpressionNodeVector & args, ResultNode & result) const;
-    bool onExecute() const override;
+    void onExecute() const override;
     void onPrepare(bool preserveAccurateTypes) override;
     size_t getNumArgs() const { return _args.size(); }
     const ExpressionNode & getArg(size_t n) const { return *_args[n]; }

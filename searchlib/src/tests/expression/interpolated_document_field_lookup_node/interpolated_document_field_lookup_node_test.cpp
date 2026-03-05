@@ -69,7 +69,7 @@ Fixture::setup_node(double lookup_value)
 double
 Fixture::evaluate()
 {
-    EXPECT_TRUE(_node->execute());
+    EXPECT_NO_THROW(_node->execute());
     return _node->getResult()->getFloat();
 }
 

@@ -44,14 +44,13 @@ ArrayAtLookup::ArrayAtLookup(const ArrayAtLookup &rhs)
     setCurrentIndex(&_currentIndex);
 }
 
-bool
+void
 ArrayAtLookup::onExecute() const
 {
     _indexExpression->execute();
     int64_t idx = _indexExpression->getResult()->getInteger();
     _currentIndex.set(idx);
     AttributeNode::onExecute();
-    return true;
 }
 
 Serializer &
