@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "same_element_blueprint.h"
+#include "array_bool_search.h"
 #include "same_element_search.h"
 #include "field_spec.hpp"
+#include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
@@ -110,6 +112,23 @@ SameElementBlueprint::create_same_element_search(MatchData& md, TermFieldMatchDa
     auto& children = get_children();
     sub_searches.reserve(children.size());
     for (const auto & child : children) {
+        if (!_element_filter.empty()) {
+            const attribute::ISearchContext* search_context = child->get_attribute_search_context();
+            if (search_context) {
+                const attribute::ArrayBoolSearchContext* array_bool_context = search_context->as_array_bool_search_context();
+                const auto& state = child->getState();
+                if (state.numFields() == 1 && array_bool_context && array_bool_context->get_valid()) {
+
+                    sub_searches.push_back(ArrayBoolSearch::create(array_bool_context->get_attribute(),
+                                                                   _element_filter,
+                                                                   array_bool_context->get_want_true(),
+                                                                   child->strict(),
+                                                                   state.field(0).resolve(md)));
+                    continue;
+                }
+            }
+        }
+
         sub_searches.push_back(child->createSearch(md));
     }
     std::vector<TermFieldMatchData*> descendants_index_tfmd;
