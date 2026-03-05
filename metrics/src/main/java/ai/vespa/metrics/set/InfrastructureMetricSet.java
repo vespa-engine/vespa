@@ -222,6 +222,13 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.ATLASSIAN_ASSETS.max());
         addMetric(metrics, ControllerMetrics.ATLASSIAN_SERVICEDESK_CUSTOMERS.max());
 
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_LEASED_CONCURRENCY.last());
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_AVAILABLE_CONCURRENCY.last());
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_MAX_CONCURRENCY.last());
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_PENDING_CONCURRENCY_ACQUIRES.last());
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_CONCURRENCY_ACQUIRE_DURATION.max());
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_OPEN_STREAMS.last());
+
         return metrics;
     }
 

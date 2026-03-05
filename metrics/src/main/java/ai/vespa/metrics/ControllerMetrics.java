@@ -83,7 +83,14 @@ public enum ControllerMetrics implements VespaMetrics {
 
     MAIL_SENT("mail.sent", Unit.OPERATION, "Mail sent"),
     MAIL_FAILED("mail.failed", Unit.OPERATION, "Mail delivery failed"),
-    MAIL_THROTTLED("mail.throttled", Unit.OPERATION, "Mail delivery throttled");
+    MAIL_THROTTLED("mail.throttled", Unit.OPERATION, "Mail delivery throttled"),
+
+    AWS_S3_POOL_LEASED_CONCURRENCY("aws.s3.pool.leased_concurrency", Unit.CONNECTION, "Controller: S3 connection pool leased connections"),
+    AWS_S3_POOL_AVAILABLE_CONCURRENCY("aws.s3.pool.available_concurrency", Unit.CONNECTION, "Controller: S3 connection pool available connections"),
+    AWS_S3_POOL_MAX_CONCURRENCY("aws.s3.pool.max_concurrency", Unit.CONNECTION, "Controller: S3 connection pool max connections"),
+    AWS_S3_POOL_PENDING_CONCURRENCY_ACQUIRES("aws.s3.pool.pending_concurrency_acquires", Unit.CONNECTION, "Controller: S3 connection pool pending acquire requests"),
+    AWS_S3_POOL_CONCURRENCY_ACQUIRE_DURATION("aws.s3.pool.concurrency_acquire_duration", Unit.MILLISECOND, "Controller: S3 connection pool acquire duration"),
+    AWS_S3_POOL_OPEN_STREAMS("aws.s3.pool.open_streams", Unit.CONNECTION, "Controller: S3 open response streams not yet closed");
 
 
     private final String name;
