@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClusterCapacityTest {
 
@@ -53,11 +54,11 @@ public class ClusterCapacityTest {
 
     @Test
     void serialization3() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", "aws:123", null);
+        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", null, null);
         var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
-                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"admin","cloudAccount":"aws:123"}""",
+                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"admin"}""",
                      json);
 
         ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
@@ -70,7 +71,6 @@ public class ClusterCapacityTest {
         assertEquals("remote", deserialized.storageType());
         assertEquals("arm64", deserialized.architecture());
         assertEquals("admin", deserialized.clusterType());
-        assertEquals(Optional.of("aws:123"), deserialized.cloudAccount());
     }
 
     @Test
@@ -94,6 +94,12 @@ public class ClusterCapacityTest {
         assertEquals("admin", deserialized.clusterType());
         assertEquals(Optional.of("aws:123"), deserialized.cloudAccount());
         assertEquals(Optional.of("mytenant"), deserialized.tenant());
+    }
+
+    @Test
+    void both_cloud_account_and_tenant_must_be_specified() {
+        assertThrows(IllegalArgumentException.class, () -> new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", "aws:123", null));
+        assertThrows(IllegalArgumentException.class, () -> new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", null, "mytenant"));
     }
 
     @Test

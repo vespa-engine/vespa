@@ -59,6 +59,7 @@ public class ClusterCapacity {
         this.clusterType = clusterType == null ? null : validateEnum("clusterType", validClusterTypes, clusterType);
         this.cloudAccount = Optional.ofNullable(cloudAccount);
         this.tenant = Optional.ofNullable(tenant);
+        validate(this.tenant, this.cloudAccount);
     }
 
     /** Returns a new ClusterCapacity equal to {@code this}, but with the given count. */
@@ -132,6 +133,13 @@ public class ClusterCapacity {
     @Override
     public int hashCode() {
         return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType, cloudAccount, tenant);
+    }
+
+    private static void validate(Optional<String> tenant, Optional<String> cloudAccount) {
+        if (tenant.isPresent() && cloudAccount.isEmpty()
+                || tenant.isEmpty() && cloudAccount.isPresent()) {
+            throw new IllegalArgumentException("tenant and cloudAccount must both be present or both be empty");
+        }
     }
 
 }
