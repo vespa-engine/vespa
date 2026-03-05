@@ -161,6 +161,64 @@ std::unique_ptr<SearchIterator> ArrayBoolSearchBuilder::create_search(const std:
     return ArrayBoolSearch::create(*_bool_attr, element_filter, want_true, strict, _tmd.tfmd);
 }
 
+/**
+ * SameElementArrayBoolSearchBuilder is a convenience class to get a SameElementSearch with an ArrayBoolSearch
+ */
+class SameElementArrayBoolSearchBuilder : public  SearchBuilder {
+    TestMatchData       _child_tmd;
+
+public:
+    SameElementArrayBoolSearchBuilder(ArrayBoolAttribute* bool_attr);
+    ~SameElementArrayBoolSearchBuilder() override;
+    std::unique_ptr<SearchIterator> create_search(const std::vector<uint32_t>& element_filter, bool want_true, bool strict) const override;
+};
+
+SameElementArrayBoolSearchBuilder::SameElementArrayBoolSearchBuilder(ArrayBoolAttribute* bool_attr)
+    : SearchBuilder(bool_attr) {
+}
+
+SameElementArrayBoolSearchBuilder::~SameElementArrayBoolSearchBuilder() = default;
+
+std::unique_ptr<SearchIterator> SameElementArrayBoolSearchBuilder::create_search(const std::vector<uint32_t>& element_filter, bool want_true, bool strict) const {
+    std::vector<std::unique_ptr<SearchIterator>> ab_search;
+    ab_search.emplace_back(ArrayBoolSearch::create(*_bool_attr, element_filter, want_true, strict, _child_tmd.tfmd));
+    std::vector<TermFieldMatchData*> children_tfmd;
+    children_tfmd.push_back(_child_tmd.tfmd);
+    return std::make_unique<SameElementSearch>(*(_tmd.tfmd), children_tfmd, std::move(ab_search), strict, element_filter);
+}
+
+/**
+ * SameElementGenericSearchBuilder is a convenience class to get a SameElementSearch with a generic search iterator
+ */
+class SameElementGenericSearchBuilder : public SearchBuilder {
+    std::unique_ptr<SearchContext> _ctx_true;
+    std::unique_ptr<SearchContext> _ctx_false;
+    TestMatchData                  _child_tmd;
+
+public:
+    SameElementGenericSearchBuilder(ArrayBoolAttribute* bool_attr);
+    ~SameElementGenericSearchBuilder() override;
+    std::unique_ptr<SearchIterator> create_search(const std::vector<uint32_t>& element_filter, bool want_true, bool strict) const override;
+};
+
+SameElementGenericSearchBuilder::SameElementGenericSearchBuilder(ArrayBoolAttribute* bool_attr)
+    : SearchBuilder(bool_attr),
+      _ctx_true(_bool_attr->getSearch(std::make_unique<QueryTermSimple>("true", QueryTermSimple::Type::WORD), SearchContextParams())),
+      _ctx_false(_bool_attr->getSearch(std::make_unique<QueryTermSimple>("false", QueryTermSimple::Type::WORD), SearchContextParams())) {
+}
+
+SameElementGenericSearchBuilder::~SameElementGenericSearchBuilder() = default;
+
+std::unique_ptr<SearchIterator> SameElementGenericSearchBuilder::create_search(const std::vector<uint32_t>& element_filter, bool want_true, bool strict) const {
+    std::vector<std::unique_ptr<SearchIterator>> ctx_search;
+    ctx_search.emplace_back(want_true ? _ctx_true->createIterator(_child_tmd.tfmd, strict) : _ctx_false->createIterator(_child_tmd.tfmd, strict));
+    std::vector<TermFieldMatchData*> children_tfmd;
+    children_tfmd.push_back(_child_tmd.tfmd);
+    return std::make_unique<SameElementSearch>(*(_tmd.tfmd), children_tfmd, std::move(ctx_search), strict, element_filter);
+}
+
+
+
 }
 
 /**
@@ -201,8 +259,7 @@ void ArrayBoolSearchTest<B>::add_docs() {
     _test_attribute.attr->commit();
 }
 
-// Only the ArrayBoolSearchBuilder for now
-using Builders = ::testing::Types<ArrayBoolSearchBuilder>;
+using Builders = ::testing::Types<ArrayBoolSearchBuilder, SameElementArrayBoolSearchBuilder, SameElementGenericSearchBuilder>;
 TYPED_TEST_SUITE(ArrayBoolSearchTest, Builders);
 
 /***********************************************************************************************************************
