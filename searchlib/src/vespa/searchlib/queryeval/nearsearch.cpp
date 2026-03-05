@@ -32,9 +32,9 @@ void setup_fields(uint32_t window, const IElementGapInspector& element_gap_inspe
     for (size_t i = 0; i < in.size(); ++i) {
         ++fields[in[i]->getFieldId()];
     }
-    for (auto [field, cnt]: fields) {
+    for (auto [field, cnt] : fields) {
         if (cnt == terms) {
-            matchers.push_back(T(window, element_gap_inspector.get_element_gap(field), field, in, num_negative_terms, exclusion_distance));
+            matchers.emplace_back(window, element_gap_inspector.get_element_gap(field), field, in, num_negative_terms, exclusion_distance);
         }
     }
 }
