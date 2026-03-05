@@ -232,14 +232,13 @@ MultiArgFunctionNode::onExecute() const
     calculate(_args, updateResult());
 }
 
-bool
+void
 MultiArgFunctionNode::onCalculate(const ExpressionNodeVector & args, ResultNode & result) const
 {
     result.set(*args[0]->getResult());
     for (size_t i(1), m(args.size()); i < m; i++) {
         executeIterative(*args[i]->getResult(), result);
     }
-    return true;
 }
 
 void

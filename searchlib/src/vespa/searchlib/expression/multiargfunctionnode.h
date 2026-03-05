@@ -26,7 +26,7 @@ public:
     void reset() override { _args.clear(); FunctionNode::reset(); }
     ExpressionNodeVector & expressionNodeVector() { return _args; }
 protected:
-    virtual bool onCalculate(const ExpressionNodeVector & args, ResultNode & result) const;
+    virtual void onCalculate(const ExpressionNodeVector & args, ResultNode & result) const;
     void onExecute() const override;
     void onPrepare(bool preserveAccurateTypes) override;
     size_t getNumArgs() const { return _args.size(); }
@@ -34,7 +34,7 @@ protected:
     ExpressionNode &       getArg(size_t n)       { return *_args[n]; }
 private:
     void selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation) override;
-    bool calculate(const ExpressionNodeVector & args, ResultNode & result) const { return onCalculate(args, result); }
+    void calculate(const ExpressionNodeVector & args, ResultNode & result) const { onCalculate(args, result); }
     void prepareResult() { onPrepareResult(); }
     virtual void onPrepareResult();
     ExpressionNodeVector _args;
