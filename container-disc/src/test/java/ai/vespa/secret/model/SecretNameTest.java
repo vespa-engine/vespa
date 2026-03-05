@@ -2,7 +2,9 @@ package ai.vespa.secret.model;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -22,6 +24,15 @@ public class SecretNameTest {
 
         for (char c : "+/$ {}[]()!\"@#?\\'".toCharArray())
             assertThrows(IllegalArgumentException.class, () -> SecretName.of("foo" + c + "bar"));
+    }
+
+    @Test
+    void testIsValid() {
+        assertTrue(SecretName.isValid("foo-bar"));
+        assertTrue(SecretName.isValid("my.secret_name-1"));
+        assertFalse(SecretName.isValid("dev/aws_access_key_id"));
+        assertFalse(SecretName.isValid(""));
+        assertFalse(SecretName.isValid("foo bar"));
     }
 
 }
