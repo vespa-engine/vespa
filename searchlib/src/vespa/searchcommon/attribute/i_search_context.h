@@ -17,6 +17,8 @@ namespace search { class QueryTermUCS4; }
 
 namespace search::attribute {
 
+class ArrayBoolSearchContext;
+
 class ISearchContext {
 public:
     using UP = std::unique_ptr<ISearchContext>;
@@ -88,6 +90,8 @@ public:
     // Get element ids. Might call unpack. Assumes element_ids is cleared by caller.
     virtual void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) const;
     virtual void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) const;
+
+    virtual const ArrayBoolSearchContext* as_array_bool_search_context() const { return nullptr; }
 };
 
 }

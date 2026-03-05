@@ -111,6 +111,8 @@ public:
     uint32_t get_committed_docid_limit() const noexcept override {
         return _attr.getCommittedDocIdLimit();
     }
+
+    const ArrayBoolSearchContext* as_array_bool_search_context() const override { return this; }
 };
 
 }
