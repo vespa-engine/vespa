@@ -34,7 +34,6 @@ public class ClusterCapacity {
     private final String architecture;
     private final String clusterType;
     private final Optional<String> cloudAccount;
-    private final Optional<String> tenant;
 
     @JsonCreator
     public ClusterCapacity(@JsonProperty("count") Integer count,
@@ -46,8 +45,7 @@ public class ClusterCapacity {
                            @JsonProperty("storageType") String storageType,
                            @JsonProperty("architecture") String architecture,
                            @JsonProperty("clusterType") String clusterType,
-                           @JsonProperty("cloudAccount") String cloudAccount,
-                           @JsonProperty("tenant") String tenant) {
+                           @JsonProperty("cloudAccount") String cloudAccount) {
         this.count = count == null ? 1 : (int) requireNonNegative("count", count);
         this.vcpu = vcpu == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("vcpu", vcpu));
         this.memoryGb = memoryGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("memoryGb", memoryGb));
@@ -58,14 +56,12 @@ public class ClusterCapacity {
         this.architecture = validateEnum("architecture", validArchitectures, architecture == null ? "x86_64" : architecture);
         this.clusterType = clusterType == null ? null : validateEnum("clusterType", validClusterTypes, clusterType);
         this.cloudAccount = Optional.ofNullable(cloudAccount);
-        this.tenant = Optional.ofNullable(tenant);
-        validate(this.tenant, this.cloudAccount);
     }
 
     /** Returns a new ClusterCapacity equal to {@code this}, but with the given count. */
     public ClusterCapacity withCount(int count) {
         return new ClusterCapacity(count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull(),
-                                   diskSpeed, storageType, architecture, clusterType, cloudAccountOrNull(), tenantOrNull());
+                                   diskSpeed, storageType, architecture, clusterType, cloudAccountOrNull());
     }
 
     @JsonGetter("count") public int count() { return count; }
@@ -86,14 +82,12 @@ public class ClusterCapacity {
     @JsonGetter("architecture") public String architecture() { return architecture; }
     @JsonGetter("clusterType") public String clusterType() { return clusterType; }
     @JsonGetter("cloudAccount") public String cloudAccountOrNull() { return cloudAccount.orElse(null); }
-    @JsonGetter("tenant") public String tenantOrNull() { return tenant.orElse(null); }
 
     @JsonIgnore public Double vcpu() { return vcpu.orElse(0.0); }
     @JsonIgnore public Double memoryGb() { return memoryGb.orElse(0.0); }
     @JsonIgnore public Double diskGb() { return diskGb.orElse(0.0); }
     @JsonIgnore public double bandwidthGbps() { return bandwidthGbps.orElse(1.0); }
     @JsonIgnore public Optional<String> cloudAccount() { return cloudAccount; }
-    @JsonIgnore public Optional<String> tenant() { return tenant; }
 
     @Override
     public String toString() {
@@ -108,7 +102,6 @@ public class ClusterCapacity {
                ", architecture=" + architecture +
                ", clusterType=" + clusterType +
                (cloudAccount.isPresent() ? ", cloudAccount=" + cloudAccount : "") +
-               (tenant.isPresent() ? ", tenant=" + tenant : "") +
                '}';
     }
 
@@ -126,20 +119,12 @@ public class ClusterCapacity {
                 storageType.equals(that.storageType) &&
                 architecture.equals(that.architecture) &&
                 clusterType.equals(that.clusterType) &&
-                cloudAccount.equals(that.cloudAccount) &&
-                tenant.equals(that.tenant);
+                cloudAccount.equals(that.cloudAccount);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType, cloudAccount, tenant);
-    }
-
-    private static void validate(Optional<String> tenant, Optional<String> cloudAccount) {
-        if (tenant.isPresent() && cloudAccount.isEmpty()
-                || tenant.isEmpty() && cloudAccount.isPresent()) {
-            throw new IllegalArgumentException("tenant and cloudAccount must both be present or both be empty");
-        }
+        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType, cloudAccount);
     }
 
 }
