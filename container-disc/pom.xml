@@ -498,7 +498,7 @@
                 bcutil-jdk18on-${bouncycastle.vespa.version}.jar, <!-- Used by security-utils -->
                 <!-- END Bundles needed to retrieve config, or used by container-disc -->
 
-                jackson-annotations-${jackson-annotations.vespa.version}.jar,
+                jackson-annotations-${jackson2.vespa.version}.jar,
                 jackson-core-${jackson2.vespa.version}.jar,
                 jackson-databind-${jackson-databind.vespa.version}.jar,
                 jackson-datatype-jdk8-${jackson2.vespa.version}.jar,

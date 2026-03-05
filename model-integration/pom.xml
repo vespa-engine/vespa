@@ -264,7 +264,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>${jackson-annotations.vespa.version}</version>
+      <version>${jackson2.vespa.version}</version>
       <scope>provided</scope>
     </dependency>
     <!-- OkHttp for VoyageAI embedder HTTP client -->
