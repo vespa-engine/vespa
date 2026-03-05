@@ -467,9 +467,30 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_multi_element_iterator_can_unpack_m
  * Element id tests
  **********************************************************************************************************************/
 
+void get_element_ids(SearchIterator& search, uint32_t docid, std::vector<uint32_t>& element_ids) {
+    if (auto se = dynamic_cast<SameElementSearch*>(&search)) {
+        se->find_matching_elements(docid, element_ids);
+    } else {
+        search.get_element_ids(docid, element_ids);
+    }
+}
+
+void and_element_ids_into(SearchIterator& search, uint32_t docid, std::vector<uint32_t>& element_ids) {
+    if (auto se = dynamic_cast<SameElementSearch*>(&search)) {
+        std::vector<uint32_t> temp;
+        se->find_matching_elements(docid, temp);
+        std::vector<uint32_t> intersection;
+        std::set_intersection(element_ids.begin(), element_ids.end(), temp.begin(), temp.end(),
+                              std::back_inserter(intersection));
+        std::swap(intersection, element_ids);
+    } else {
+        search.and_element_ids_into(docid, element_ids);
+    }
+}
+
 void verify_element_ids(SearchIterator& search, uint32_t docid, const std::vector<uint32_t>& element_ids) {
     std::vector<uint32_t> temp_element_ids;
-    search.get_element_ids(docid, temp_element_ids);
+    get_element_ids(search, docid, temp_element_ids);
 
     ASSERT_EQ(element_ids.size(), temp_element_ids.size());
     EXPECT_TRUE(std::equal(element_ids.begin(), element_ids.begin() + element_ids.size(), temp_element_ids.begin()));
@@ -483,7 +504,7 @@ void verify_element_ids(SearchIterator& search, uint32_t docid, const std::vecto
         // Let searcher compute the intersection
         temp_element_ids.clear();
         temp_element_ids.insert(temp_element_ids.end(), subset.begin(), subset.end());
-        search.and_element_ids_into(docid, temp_element_ids);
+        and_element_ids_into(search, docid, temp_element_ids);
 
         ASSERT_EQ(intersection.size(), temp_element_ids.size());
         EXPECT_TRUE(std::equal(intersection.begin(), intersection.begin() + intersection.size(), temp_element_ids.begin()));
