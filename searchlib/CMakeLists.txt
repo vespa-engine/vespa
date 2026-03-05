@@ -202,6 +202,7 @@ vespa_define_module(
     src/tests/query
     src/tests/query/streaming
     src/tests/queryeval
+    src/tests/queryeval/array_bool
     src/tests/queryeval/blueprint
     src/tests/queryeval/dot_product
     src/tests/queryeval/equiv
