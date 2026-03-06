@@ -476,7 +476,12 @@ void ArrayBoolSearchTest<B>::add_docs() {
     _test_attribute.attr->commit();
 }
 
-using Builders = ::testing::Types<ArrayBoolSearchBuilder, SameElementArrayBoolSearchBuilder, SameElementMultiArrayBoolSearchBuilder, SameElementGenericSearchBuilder, SameElementBlueprintSearchBuilder>;
+using Builders = ::testing::Types<ArrayBoolSearchBuilder,
+                                  SameElementArrayBoolSearchBuilder,
+                                  SameElementMultiArrayBoolSearchBuilder,
+                                  SameElementGenericSearchBuilder,
+                                  SameElementBlueprintSearchBuilder,
+                                  SameElementBlueprintReplacementSearchBuilder>;
 TYPED_TEST_SUITE(ArrayBoolSearchTest, Builders);
 
 /***********************************************************************************************************************
