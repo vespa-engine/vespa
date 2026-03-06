@@ -64,6 +64,9 @@ using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
 
 namespace {
+/***********************************************************************************************************************
+ * Helper functions
+ **********************************************************************************************************************/
 // Generate all subsets of a given vector
 // Used to generate element filters
 std::list<std::vector<uint32_t>> all_subsets(const std::vector<uint32_t>& nums) {
@@ -88,6 +91,10 @@ std::list<std::vector<uint32_t>> all_non_empty_subsets(const std::vector<uint32_
     subsets.pop_front();
     return subsets;
 }
+
+/***********************************************************************************************************************
+ * Helper classes
+ **********************************************************************************************************************/
 
 /**
  * TestAttribute is a convenience class to get an ArrayBoolAttribute
@@ -153,6 +160,10 @@ TestMatchData::TestMatchData()
 }
 
 TestMatchData::~TestMatchData() = default;
+
+/***********************************************************************************************************************
+ * Builder classes
+ **********************************************************************************************************************/
 
 /**
  * Base class for convenience classes to get iterators
@@ -420,6 +431,10 @@ std::unique_ptr<SearchIterator> ArrayBoolBlueprintSearchBuilder::create_search(b
 
 }
 
+/***********************************************************************************************************************
+ * Blueprint tests
+ **********************************************************************************************************************/
+
 TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_creates_array_bool_search) {
     TestAttribute test_attribute;
     test_attribute.attr->addDocs(5);
@@ -466,6 +481,10 @@ TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_replacement_create
         }
     }
 }
+
+/***********************************************************************************************************************
+ * Setup for typed test
+ **********************************************************************************************************************/
 
 /**
  * Test fixture
