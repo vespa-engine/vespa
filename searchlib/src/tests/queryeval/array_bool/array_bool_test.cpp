@@ -243,7 +243,7 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_non_strict_iterator_can_seek_and_un
     EXPECT_FALSE(search->seek(6));
     EXPECT_FALSE(search->seek(1000));
 
-    // An iterator must not necessarily update the docid if we do not have a match
+    // A non-strict iterator must not necessarily update the docid if we do not have a match
     //EXPECT_TRUE(search->isAtEnd());
 }
 
@@ -281,7 +281,7 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_non_strict_iterator_can_seek_and_un
     EXPECT_FALSE(search->seek(6));
     EXPECT_FALSE(search->seek(1000));
 
-    // An iterator must not necessarily update the docid if we do not have a match
+    // A non-strict iterator must not necessarily update the docid if we do not have a match
     //EXPECT_TRUE(search->isAtEnd());
 }
 
