@@ -329,6 +329,7 @@ public:
 };
 
 class SameElementBlueprintSearchBuilder : public SearchBuilder {
+protected:
     MyAttributeManager                    _manager;
     AttributeContext                      _attribute_context;
     FakeRequestContext                    _request_context;
@@ -364,6 +365,32 @@ std::unique_ptr<SearchIterator> SameElementBlueprintSearchBuilder::create_search
     return _blueprint->createSearchImpl(*_tmd.md);
 }
 
+/**
+ * SameElementBlueprintReplacementSearchBuilder is a convenience class to get whatever the replacement for SameElementBlueprint constructs
+ */
+class SameElementBlueprintReplacementSearchBuilder : public SameElementBlueprintSearchBuilder {
+    std::unique_ptr<Blueprint> _replacement;
+
+public:
+    SameElementBlueprintReplacementSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true);
+    ~SameElementBlueprintReplacementSearchBuilder() override;
+    std::unique_ptr<SearchIterator> create_search(bool strict) const override;
+};
+
+SameElementBlueprintReplacementSearchBuilder::SameElementBlueprintReplacementSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true)
+    : SameElementBlueprintSearchBuilder(bool_attr, std::move(attribute_vector), element_filter, want_true),
+      _replacement(_blueprint->get_replacement()) {
+    assert(_replacement);
+}
+
+SameElementBlueprintReplacementSearchBuilder::~SameElementBlueprintReplacementSearchBuilder() = default;
+
+std::unique_ptr<SearchIterator> SameElementBlueprintReplacementSearchBuilder::create_search(bool strict) const {
+    search::queryeval::InFlow flow(strict);
+    _replacement->basic_plan(flow, _attribute_vector->getCommittedDocIdLimit());
+    return _replacement->createSearch(*_tmd.md);
+}
+
 }
 
 TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_creates_array_bool_search) {
@@ -383,6 +410,27 @@ TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_creates_array_bool
             ASSERT_EQ(children.size(), 1);
             auto only_child = children[0].get();
             auto abs = dynamic_cast<ArrayBoolSearch*>(only_child);
+            ASSERT_TRUE(abs);
+            EXPECT_EQ(abs->want_true(), want_true);
+            EXPECT_TRUE(abs->is_strict() == (strict ? vespalib::Trinary::True : vespalib::Trinary::False));
+            EXPECT_TRUE(std::equal(element_filter.begin(), element_filter.begin() + element_filter.size(), abs->get_element_filter().begin()));
+            EXPECT_EQ(test_attribute.bool_attr, &abs->get_attribute());
+        }
+    }
+}
+
+TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_replacement_creates_array_bool_search) {
+    TestAttribute test_attribute;
+    test_attribute.attr->addDocs(5);
+    test_attribute.attr->commit();
+
+    for (bool want_true : {false, true}) {
+        for (bool strict : {false, true}) {
+            std::vector<uint32_t> element_filter({1, 2, 3});
+            SameElementBlueprintReplacementSearchBuilder builder(test_attribute.bool_attr, test_attribute.attr, element_filter, want_true);
+            auto search = builder.create_search(strict);
+
+            auto abs = dynamic_cast<ArrayBoolSearch*>(search.get());
             ASSERT_TRUE(abs);
             EXPECT_EQ(abs->want_true(), want_true);
             EXPECT_TRUE(abs->is_strict() == (strict ? vespalib::Trinary::True : vespalib::Trinary::False));
