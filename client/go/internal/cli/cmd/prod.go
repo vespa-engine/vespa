@@ -169,7 +169,7 @@ $ vespa prod deploy`,
 				AuthorEmail: options.authorEmail,
 				SourceURL:   options.sourceURL,
 			}
-			build, err := vespa.Submit(deployment, submission, options.waitSecs)
+			build, err := vespa.Submit(deployment, submission)
 			if err != nil {
 				return fmt.Errorf("could not deploy application: %w", err)
 			}
@@ -196,7 +196,7 @@ $ vespa prod deploy`,
 	cmd.Flags().StringVarP(&options.description, "description", "", "", "Description of the source code being deployed. For example a git commit message")
 	cmd.Flags().StringVarP(&options.authorEmail, "author-email", "", "", "Email of the author of the commit being deployed")
 	cmd.Flags().StringVarP(&options.sourceURL, "source-url", "", "", "URL which points to the source code being deployed. For example the build job running the submission")
-	cli.bindWaitFlag(cmd, 0, &options.waitSecs)
+	cmd.Flags().IntVarP(&options.waitSecs, "wait", "", 0, "Seconds to wait for the build to complete before returning (0 to return immediately)")
 	return cmd
 }
 

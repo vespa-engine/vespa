@@ -392,7 +392,7 @@ func copyToPart(dst *multipart.Writer, src io.Reader, fieldname, filename string
 	return nil
 }
 
-func Submit(opts DeploymentOptions, submission Submission, waitSecs int) (int64, error) {
+func Submit(opts DeploymentOptions, submission Submission) (int64, error) {
 	if !opts.Target.IsCloud() {
 		return 0, fmt.Errorf("%s: deploy is unsupported by %s target", opts, opts.Target.Type())
 	}

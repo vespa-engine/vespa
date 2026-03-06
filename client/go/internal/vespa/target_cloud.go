@@ -391,10 +391,21 @@ func printBuildJobLog(response runResponse, last int64, writer io.Writer, prefix
 	}
 	sort.Slice(msgs, func(i, j int) bool { return msgs[i].At < msgs[j].At })
 	for _, msg := range msgs {
-		tm := time.Unix(msg.At/1000, (msg.At%1000)*1000)
+		tm := time.UnixMilli(msg.At)
 		fmt.Fprintf(writer, "%s[%s] %-7s %s\n", prefix, tm.Format("15:04:05"), msg.Type, msg.Message)
 	}
 	return response.LastID
+}
+
+type syncWriter struct {
+	mu sync.Mutex
+	w  io.Writer
+}
+
+func (s *syncWriter) Write(p []byte) (n int, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.w.Write(p)
 }
 
 func streamBuildJobLogs(target Target, job buildStatusJob, timeout time.Duration, writer io.Writer, retryInterval time.Duration) error {
@@ -445,6 +456,10 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 	if err != nil {
 		return false, err
 	}
+	var sw io.Writer
+	if logWriter != nil {
+		sw = &syncWriter{w: logWriter}
+	}
 	var (
 		mutex			sync.Mutex
 		waitGroup		sync.WaitGroup
@@ -472,13 +487,13 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 			if job.RunStatus == "failure" || job.RunStatus == "error" || job.RunStatus == "aborted" {
 				return false, fmt.Errorf("%w: %s failed with status %s", ErrDeployment, job.JobName, job.RunStatus)
 			}
-			if logWriter != nil && job.RunID > 0 {
+			if sw != nil && job.RunID > 0 {
 				mutex.Lock()
 				if !trackedJobs[job.JobName] {
 					trackedJobs[job.JobName] = true
 					mutex.Unlock()
 					waitGroup.Go(func() {
-						if err := streamBuildJobLogs(target, job, timeout, logWriter, retryInterval); err != nil && !errors.Is(err, ErrWaitTimeout) {
+						if err := streamBuildJobLogs(target, job, timeout, sw, retryInterval); err != nil && !errors.Is(err, ErrWaitTimeout) {
 							mutex.Lock()
 							jobErrors = append(jobErrors, err)
 							mutex.Unlock()
