@@ -538,8 +538,7 @@ void verify_same_strict_iterator_behavior(SearchIterator& it1, TermFieldMatchDat
         EXPECT_EQ(docid, it2.seekNext(old_docid + 1));
 
     }
-    // An iterator must not necessarily update the docid if we do not have a match
-    //EXPECT_EQ(it1.isAtEnd(), it2.isAtEnd());
+    EXPECT_EQ(it1.isAtEnd(), it2.isAtEnd());
 }
 
 void verify_same_iterator_behavior(SearchIterator& it1, TermFieldMatchData* tfmd1, SearchIterator& it2, TermFieldMatchData* tfmd2, uint32_t begin_id, uint32_t end_id, bool strict) {
