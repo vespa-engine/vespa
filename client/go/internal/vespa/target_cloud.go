@@ -439,6 +439,9 @@ func streamBuildJobLogs(target Target, job buildStatusJob, timeout time.Duration
 // and streaming per-job run logs. Returns skipped=true if the build was skipped due to no
 // changes. logWriter may be nil to suppress log output.
 func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter io.Writer) (skipped bool, _ error) {
+	if !target.IsCloud() {
+		return false, fmt.Errorf("AwaitBuild is only supported for cloud targets")
+	}
 	d := target.Deployment()
 	buildStatusURL := d.System.BuildStatusURL(d, buildID)
 	req, err := http.NewRequest("GET", buildStatusURL, nil)
