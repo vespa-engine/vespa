@@ -366,6 +366,32 @@ std::unique_ptr<SearchIterator> SameElementBlueprintSearchBuilder::create_search
 
 }
 
+TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_creates_array_bool_search) {
+    TestAttribute test_attribute;
+    test_attribute.attr->addDocs(5);
+    test_attribute.attr->commit();
+
+    for (bool want_true : {false, true}) {
+        for (bool strict : {false, true}) {
+            std::vector<uint32_t> element_filter({1, 2, 3});
+            SameElementBlueprintSearchBuilder builder(test_attribute.bool_attr, test_attribute.attr, element_filter, want_true);
+            auto search = builder.create_search(strict);
+
+            auto se = dynamic_cast<SameElementSearch*>(search.get());
+            ASSERT_TRUE(se);
+            const auto& children = se->children();
+            ASSERT_EQ(children.size(), 1);
+            auto only_child = children[0].get();
+            auto abs = dynamic_cast<ArrayBoolSearch*>(only_child);
+            ASSERT_TRUE(abs);
+            EXPECT_EQ(abs->want_true(), want_true);
+            EXPECT_TRUE(abs->is_strict() == (strict ? vespalib::Trinary::True : vespalib::Trinary::False));
+            EXPECT_TRUE(std::equal(element_filter.begin(), element_filter.begin() + element_filter.size(), abs->get_element_filter().begin()));
+            EXPECT_EQ(test_attribute.bool_attr, &abs->get_attribute());
+        }
+    }
+}
+
 /**
  * Test fixture
  **/
