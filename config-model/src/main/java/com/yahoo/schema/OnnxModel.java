@@ -163,7 +163,7 @@ public class OnnxModel extends DistributableResource implements Cloneable {
     }
 
     public void setGpuDevice(int deviceNumber, boolean required) {
-        if (deviceNumber >= 0) {
+        if (deviceNumber >= -1) {
             onnxModelOptions = onnxModelOptions.withGpuDevice(new OnnxModelOptions.GpuDevice(deviceNumber, required));
         }
     }
