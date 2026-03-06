@@ -123,11 +123,14 @@ struct TestMatchData {
     std::unique_ptr<MatchDataLayout> mdl;
     FieldSpec                        field_spec;
     FieldSpec                        field_spec2;
+    FieldSpec                        field_spec3;
     TermFieldHandle                  handle;
     TermFieldHandle                  handle2;
+    TermFieldHandle                  handle3;
     std::unique_ptr<MatchData>       md;
     TermFieldMatchData*              tfmd;
     TermFieldMatchData*              tfmd2;
+    TermFieldMatchData*              tfmd3;
 
     TestMatchData();
     ~TestMatchData();
@@ -137,11 +140,14 @@ TestMatchData::TestMatchData()
     : mdl(std::make_unique<MatchDataLayout>()),
       field_spec("foo", 0, mdl->allocTermField(0)),
       field_spec2("bar", 1, mdl->allocTermField(1)),
+      field_spec3("baz", 2, mdl->allocTermField(2)),
       handle(field_spec.getHandle()),
       handle2(field_spec2.getHandle()),
+      handle3(field_spec3.getHandle()),
       md(mdl->createMatchData()),
       tfmd(md->resolveTermField(handle)),
-      tfmd2(md->resolveTermField(handle2)) {
+      tfmd2(md->resolveTermField(handle2)),
+      tfmd3(md->resolveTermField(handle3)) {
 }
 
 TestMatchData::~TestMatchData() = default;
@@ -219,6 +225,32 @@ std::unique_ptr<SearchIterator> SameElementArrayBoolSearchBuilder::create_search
     ab_search.emplace_back(ArrayBoolSearch::create(*_bool_attr, _element_filter, _want_true, strict, _tmd.tfmd2));
     std::vector<TermFieldMatchData*> children_tfmd;
     children_tfmd.push_back(_tmd.tfmd2);
+    return std::make_unique<SameElementSearch>(*(_tmd.tfmd), children_tfmd, std::move(ab_search), strict, _element_filter);
+}
+
+/**
+ * SameElementMultiArrayBoolSearchBuilder is a convenience class to get a SameElementSearch with two ArrayBoolSearches
+ */
+class SameElementMultiArrayBoolSearchBuilder : public  SearchBuilder {
+public:
+    SameElementMultiArrayBoolSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true);
+    ~SameElementMultiArrayBoolSearchBuilder() override;
+    std::unique_ptr<SearchIterator> create_search(bool strict) const override;
+};
+
+SameElementMultiArrayBoolSearchBuilder::SameElementMultiArrayBoolSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true)
+    : SearchBuilder(bool_attr, std::move(attribute_vector), element_filter, want_true) {
+}
+
+SameElementMultiArrayBoolSearchBuilder::~SameElementMultiArrayBoolSearchBuilder() = default;
+
+std::unique_ptr<SearchIterator> SameElementMultiArrayBoolSearchBuilder::create_search(bool strict) const {
+    std::vector<std::unique_ptr<SearchIterator>> ab_search;
+    ab_search.emplace_back(ArrayBoolSearch::create(*_bool_attr, _element_filter, _want_true, strict, _tmd.tfmd2));
+    ab_search.emplace_back(ArrayBoolSearch::create(*_bool_attr, _element_filter, _want_true, strict, _tmd.tfmd3));
+    std::vector<TermFieldMatchData*> children_tfmd;
+    children_tfmd.push_back(_tmd.tfmd2);
+    children_tfmd.push_back(_tmd.tfmd3);
     return std::make_unique<SameElementSearch>(*(_tmd.tfmd), children_tfmd, std::move(ab_search), strict, _element_filter);
 }
 
@@ -370,7 +402,7 @@ void ArrayBoolSearchTest<B>::add_docs() {
     _test_attribute.attr->commit();
 }
 
-using Builders = ::testing::Types<ArrayBoolSearchBuilder, SameElementArrayBoolSearchBuilder, SameElementGenericSearchBuilder, SameElementBlueprintSearchBuilder>;
+using Builders = ::testing::Types<ArrayBoolSearchBuilder, SameElementArrayBoolSearchBuilder, SameElementMultiArrayBoolSearchBuilder, SameElementGenericSearchBuilder, SameElementBlueprintSearchBuilder>;
 TYPED_TEST_SUITE(ArrayBoolSearchTest, Builders);
 
 /***********************************************************************************************************************
