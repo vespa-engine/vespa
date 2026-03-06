@@ -161,7 +161,7 @@ public class PermanentFlags {
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask), or some node-agent " +
                     "functionality (see NodeAgentTask), that should be skipped",
             "Takes effect on next host admin tick",
-            HOSTNAME, NODE_TYPE, CLAVE);
+            HOSTNAME, NODE_TYPE, CLAVE, CLOUD_ACCOUNT);
 
     public static final UnboundStringFlag DOCKER_IMAGE_REPO = defineStringFlag(
             "docker-image-repo", "",
