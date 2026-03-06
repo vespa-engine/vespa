@@ -335,6 +335,33 @@ public class FieldCollapsingSearcherTestCase {
         assertEquals(1, r.getTotalHitCount());
     }
 
+    @Test
+    void testCollapsingWithMultipleFieldsBug() {
+        // Set up
+        Map<Searcher, Searcher> chained = new HashMap<>();
+        FieldCollapsingSearcher collapse = new FieldCollapsingSearcher();
+        DocumentSourceSearcher docsource = new DocumentSourceSearcher();
+        chained.put(collapse, docsource);
+
+        Query q = new Query("?query=test_collapse");
+        Result r = new Result(q);
+        r.hits().add(createHit("http://acme.org/a.html", 10, 1, 0));
+        r.hits().add(createHit("http://acme.org/b.html", 9, 0, 0));
+        r.hits().add(createHit("http://acme.org/c.html", 8, 0, 1));
+        r.hits().add(createHit("http://acme.org/d.html", 7, 1, 0));
+        r.setTotalHitCount(4);
+        docsource.addResult(q, r);
+
+        // Test collapsing, starting with amid
+        q = new Query("?query=test_collapse&collapsesize=1&collapsefield=amid,bmid");
+        r = doSearch(collapse, q, 0, 4, chained);
+
+        assertEquals(2, r.getHitCount());
+        assertEquals(1, docsource.getQueryCount());
+        assertHit("http://acme.org/a.html", 10, 1, 0, r.hits().get(0));
+        assertHit("http://acme.org/c.html", 8, 0, 1, r.hits().get(1));
+    }
+
     /**
      * Tests that using different collapse sizes for different fields works
      */
