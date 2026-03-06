@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const SECRET_STORE_DEV_ALIAS = "SANDBOX"
+const secretStoreDevAlias = "SANDBOX"
 
 type vaultAccessRule struct {
 	Application string   `json:"application"`
@@ -40,10 +40,14 @@ func (t *cloudTarget) csrfToken() (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode/100 != 2 {
+		return "", fmt.Errorf("CSRF endpoint returned %d: %s", resp.StatusCode, body)
+	}
 	var result struct {
 		Token string `json:"token"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.Unmarshal(body, &result); err != nil {
 		return "", err
 	}
 	return result.Token, nil
@@ -70,6 +74,9 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 	}
 	defer resp.Body.Close()
 	getRawBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode/100 != 2 {
+		return fmt.Errorf("could not get vault access rules for %q: server returned %d: %s", vaultName, resp.StatusCode, getRawBody)
+	}
 	var vaultResp vaultResponse
 	if err := json.Unmarshal(getRawBody, &vaultResp); err != nil {
 		return fmt.Errorf("could not parse vault access rules for %q: %w", vaultName, err)
@@ -79,7 +86,7 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 	for _, rule := range vaultResp.Rules {
 		if rule.Application == appID {
 			for _, ctx := range rule.Contexts {
-				if ctx == SECRET_STORE_DEV_ALIAS {
+				if ctx == secretStoreDevAlias {
 					return nil
 				}
 			}
@@ -89,7 +96,7 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 	// Build new rule with no context restriction (grants access to all environments)
 	newRule := vaultAccessRule{
 		Application: appID,
-		Contexts:    []string{SECRET_STORE_DEV_ALIAS},
+		Contexts:    []string{secretStoreDevAlias},
 		ID:          len(vaultResp.Rules),
 	}
 	updatedRules := vaultResponse{Rules: append(vaultResp.Rules, newRule)}
@@ -98,7 +105,10 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 		return err
 	}
 
-	csrfToken, _ := t.csrfToken()
+	csrfToken, err := t.csrfToken()
+	if err != nil {
+		return fmt.Errorf("could not fetch CSRF token: %w", err)
+	}
 
 	// PUT updated rules
 	putReq, err := http.NewRequest("PUT", vaultURL, bytes.NewReader(body))
@@ -119,22 +129,10 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 	}
 	defer putResp.Body.Close()
 	putRawBody, _ := io.ReadAll(putResp.Body)
-	var putVaultResp vaultResponse
-	if err := json.Unmarshal(putRawBody, &putVaultResp); err != nil {
-		return fmt.Errorf("could not parse vault PUT response for %q: %w", vaultName, err)
+	if putResp.StatusCode/100 != 2 {
+		return fmt.Errorf("could not set vault access rule for %q: server returned %d: %s", vaultName, putResp.StatusCode, putRawBody)
 	}
-
-	// Verify the new rule is present in response
-	for _, rule := range putVaultResp.Rules {
-		if rule.Application == appID {
-			for _, ctx := range rule.Contexts {
-				if ctx == SECRET_STORE_DEV_ALIAS {
-					return nil
-				}
-			}
-		}
-	}
-	return fmt.Errorf("vault access rule for %q was not confirmed in response", vaultName)
+	return nil
 }
 
 func (t *cloudTarget) ensureVaultAccessForDev(vaultNames []string) error {
@@ -151,7 +149,7 @@ func (t *cloudTarget) ensureVaultAccessForDev(vaultNames []string) error {
 // Errors are non-fatal warnings for the caller.
 func EnsureVaultAccessForDev(target Target, vaultNames []string) error {
 	ct, ok := target.(*cloudTarget)
-	if !ok || len(vaultNames) == 0 {
+	if !ok || len(vaultNames) == 0 || ct.deploymentOptions.Deployment.Zone.Environment != "dev" {
 		return nil
 	}
 	return ct.ensureVaultAccessForDev(vaultNames)
