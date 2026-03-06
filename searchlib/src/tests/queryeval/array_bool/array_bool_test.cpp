@@ -360,7 +360,7 @@ SameElementBlueprintSearchBuilder::~SameElementBlueprintSearchBuilder() = defaul
 
 std::unique_ptr<SearchIterator> SameElementBlueprintSearchBuilder::create_search(bool strict) const {
     search::queryeval::InFlow flow(strict);
-    static_cast<search::queryeval::IntermediateBlueprint&>(*_blueprint).sort(flow); // Method is hidden
+    _blueprint->basic_plan(flow, _attribute_vector->getCommittedDocIdLimit());
     return _blueprint->createSearchImpl(*_tmd.md);
 }
 
