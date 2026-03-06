@@ -17,6 +17,7 @@
 #include <vespa/searchlib/attribute/search_context.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/queryeval/array_bool_blueprint.h>
 #include <vespa/searchlib/queryeval/array_bool_search.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
@@ -49,6 +50,7 @@ using search::attribute::IAttributeFunctor;
 using search::attribute::ReadableAttributeVector;
 using search::attribute::SearchContext;
 using search::attribute::SearchContextParams;
+using search::queryeval::ArrayBoolBlueprint;
 using search::queryeval::ArrayBoolSearch;
 using search::queryeval::Blueprint;
 using search::queryeval::FakeRequestContext;
@@ -391,6 +393,31 @@ std::unique_ptr<SearchIterator> SameElementBlueprintReplacementSearchBuilder::cr
     return _replacement->createSearch(*_tmd.md);
 }
 
+/**
+ * ArrayBoolBlueprintSearchBuilder is a convenience class to get whatever ArrayBoolBlueprint constructs
+ */
+class ArrayBoolBlueprintSearchBuilder : public SearchBuilder {
+    std::unique_ptr<ArrayBoolBlueprint>   _blueprint;
+
+public:
+    ArrayBoolBlueprintSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true);
+    ~ArrayBoolBlueprintSearchBuilder() override;
+    std::unique_ptr<SearchIterator> create_search(bool strict) const override;
+};
+
+ArrayBoolBlueprintSearchBuilder::ArrayBoolBlueprintSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true)
+    : SearchBuilder(bool_attr, std::move(attribute_vector), element_filter, want_true) {
+    _blueprint = std::make_unique<ArrayBoolBlueprint>(_tmd.field_spec, *_bool_attr, _element_filter, _want_true);
+}
+
+ArrayBoolBlueprintSearchBuilder::~ArrayBoolBlueprintSearchBuilder() = default;
+
+std::unique_ptr<SearchIterator> ArrayBoolBlueprintSearchBuilder::create_search(bool strict) const {
+    search::queryeval::InFlow flow(strict);
+    _blueprint->basic_plan(flow, _attribute_vector->getCommittedDocIdLimit());
+    return _blueprint->createSearchImpl(*_tmd.md);
+}
+
 }
 
 TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_creates_array_bool_search) {
@@ -477,6 +504,7 @@ void ArrayBoolSearchTest<B>::add_docs() {
 }
 
 using Builders = ::testing::Types<ArrayBoolSearchBuilder,
+                                  ArrayBoolBlueprintSearchBuilder,
                                   SameElementArrayBoolSearchBuilder,
                                   SameElementMultiArrayBoolSearchBuilder,
                                   SameElementGenericSearchBuilder,
