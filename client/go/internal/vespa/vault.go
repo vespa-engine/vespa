@@ -119,14 +119,13 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 	}
 	defer putResp.Body.Close()
 	putRawBody, _ := io.ReadAll(putResp.Body)
-	fmt.Printf("[vault DEBUG] PUT %s -> status=%d body=%s\n", vaultURL, putResp.StatusCode, putRawBody)
 	var putVaultResp vaultResponse
 	if err := json.Unmarshal(putRawBody, &putVaultResp); err != nil {
 		return fmt.Errorf("could not parse vault PUT response for %q: %w", vaultName, err)
 	}
 
 	// Verify the new rule is present in response
-	for _, rule := range vaultResp.Rules {
+	for _, rule := range putVaultResp.Rules {
 		if rule.Application == appID {
 			for _, ctx := range rule.Contexts {
 				if ctx == SECRET_STORE_DEV_ALIAS {
