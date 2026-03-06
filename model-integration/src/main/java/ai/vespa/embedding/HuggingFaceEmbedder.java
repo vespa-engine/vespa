@@ -214,7 +214,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     }
 
     private Tensor binaryQuantization(HuggingFaceEmbedder.HFEmbeddingResult embeddingResult, TensorType targetType) {
-        long outputDimensions = embeddingResult.output().shape()[2];
+        long[] shape = embeddingResult.output().shape();
+        long outputDimensions = shape[shape.length - 1];
         long targetDimensions = targetType.dimensions().get(0).size().get();
         //🪆 flexibility - packing only the first 8*targetDimension float values from the model output
         long targetUnpackagedDimensions = 8 * targetDimensions;
