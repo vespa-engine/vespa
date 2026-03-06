@@ -460,15 +460,15 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 		return false, err
 	}
 	var sw io.Writer
-	if logWriter != nil {
+	{
 		sw = &syncWriter{w: logWriter}
 	}
 	var (
-		mutex			sync.Mutex
-		waitGroup		sync.WaitGroup
+		mutex       sync.Mutex
+		waitGroup   sync.WaitGroup
 		trackedJobs = make(map[string]bool)
-		jobErrors   	[]error
-		isSkipped		bool
+		jobErrors   []error
+		isSkipped   bool
 	)
 	retryInterval := 2 * time.Second
 	statusFunc := func(status int, response []byte) (bool, error) {
@@ -510,10 +510,10 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 		return resp.Deployed, nil
 	}
 	_, mainErr := deployRequest(target, statusFunc, func() *http.Request { return req }, timeout, retryInterval)
-	waitGroup.Wait()
 	if mainErr != nil {
 		return false, mainErr
 	}
+	waitGroup.Wait()
 	mutex.Lock()
 	errs := jobErrors
 	mutex.Unlock()
