@@ -9,6 +9,7 @@
 namespace search::queryeval {
 
 class IElementGapInspector;
+class MatchSpan;
 
 /**
  * The near search base implements the common logic of the near and o-near search.
@@ -32,19 +33,24 @@ protected:
         TermFieldMatchDataArray _inputs;
         uint32_t                _num_negative_terms;
         uint32_t                _exclusion_distance;
+        uint32_t                _field_id;
     protected:
         uint32_t window() const noexcept { return _window; }
         search::fef::ElementGap get_element_gap() const noexcept { return _element_gap; }
         const TermFieldMatchDataArray &inputs() const { return _inputs; }
         uint32_t num_negative_terms() const noexcept { return _num_negative_terms; }
         uint32_t exclusion_distance() const noexcept { return _exclusion_distance; }
+        uint32_t field_id() const noexcept { return _field_id; }
     public:
-        MatcherBase(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in, uint32_t num_negative_terms, uint32_t exclusion_distance)
+        MatcherBase(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId,
+                    const TermFieldMatchDataArray &in, uint32_t num_negative_terms, uint32_t exclusion_distance,
+                    uint32_t field_id)
             : _window(win),
               _element_gap(element_gap),
               _inputs(),
               _num_negative_terms(num_negative_terms),
-              _exclusion_distance(exclusion_distance)
+              _exclusion_distance(exclusion_distance),
+              _field_id(field_id)
         {
             for (size_t i = 0; i < in.size(); ++i) {
                 if (in[i]->getFieldId() == fieldId) {
@@ -103,6 +109,7 @@ public:
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void doSeek(uint32_t docId) override;
+    virtual void get_match_spans(uint32_t docid, std::vector<MatchSpan>& match_spans) = 0;
 };
 
 /**
@@ -113,8 +120,9 @@ class NearSearch : public NearSearchBase
 private:
     struct Matcher : public NearSearchBase::MatcherBase
     {
-        Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in, uint32_t num_negative_terms, uint32_t exclusion_distance)
-            : MatcherBase(win, element_gap, fieldId, in, num_negative_terms, exclusion_distance) {}
+        Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in,
+                uint32_t num_negative_terms, uint32_t exclusion_distance, uint32_t field_id)
+            : MatcherBase(win, element_gap, fieldId, in, num_negative_terms, exclusion_distance, field_id) {}
         template <typename MatchResult>
         void match(uint32_t docId, MatchResult& result);
     };
@@ -160,6 +168,7 @@ public:
 
     ~NearSearch() override;
     void get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids) override;
+    void get_match_spans(uint32_t docid, std::vector<MatchSpan>& match_spans) override;
 };
 
 /**
@@ -171,8 +180,9 @@ class ONearSearch : public NearSearchBase
 private:
     struct Matcher : public NearSearchBase::MatcherBase
     {
-        Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in, uint32_t num_negative_terms, uint32_t exclusion_distance)
-            : MatcherBase(win, element_gap, fieldId, in, num_negative_terms, exclusion_distance) {}
+        Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in,
+                uint32_t num_negative_terms, uint32_t exclusion_distance, uint32_t field_id)
+            : MatcherBase(win, element_gap, fieldId, in, num_negative_terms, exclusion_distance, field_id) {}
         template <typename MatchResult, typename WindowFilter>
         void match_impl(uint32_t docId, MatchResult& match_result, WindowFilter&& window_filter);
         template <typename MatchResult>
@@ -221,6 +231,7 @@ public:
     ~ONearSearch() override;
 
     void get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids) override;
+    void get_match_spans(uint32_t docid, std::vector<MatchSpan>& match_spans) override;
 };
 
 }

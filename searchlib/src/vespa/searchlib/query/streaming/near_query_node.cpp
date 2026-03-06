@@ -5,8 +5,10 @@
 #include <vespa/searchlib/queryeval/near_search_utils.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
+using search::queryeval::MatchSpan;
 using search::queryeval::near_search_utils::BoolMatchResult;
 using search::queryeval::near_search_utils::ElementIdMatchResult;
+using search::queryeval::near_search_utils::SpanMatchResult;
 using vespalib::PriorityQueue;
 
 namespace search::streaming {
@@ -46,7 +48,11 @@ NearQueryNode::evaluate_helper(MatchResult& match_result) const
         auto last_allowed = calc_window_end_pos(*front);
         if (!(last_allowed < max_pos.key())) {
             if (filter.check_window(*front, max_pos)) {
-                match_result.register_match(front.get_field_element().second);
+                if constexpr (MatchResult::collect_spans) {
+                    match_result.register_match(MatchSpan(*front, max_pos));
+                } else {
+                    match_result.register_match(front.get_field_element().second);
+                }
                 if constexpr (MatchResult::shortcut_return) {
                     return;
                 }
@@ -85,6 +91,14 @@ NearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
     ElementIdMatchResult match_result(element_ids);;
     evaluate_helper(match_result);
     match_result.maybe_sort_element_ids();
+}
+
+void
+NearQueryNode::get_match_spans(std::vector<MatchSpan>& match_spans)
+{
+    // Retrieve the matching spans
+    SpanMatchResult match_result(match_spans);;
+    evaluate_helper(match_result);
 }
 
 void
