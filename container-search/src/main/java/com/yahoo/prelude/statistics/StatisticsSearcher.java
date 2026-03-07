@@ -17,7 +17,6 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.search.searchchain.PhaseNames;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,18 +40,16 @@ import static com.yahoo.container.protect.Error.UNSPECIFIED;
 
 
 /**
- * <p>A searcher to gather statistics such as queries completed and query latency.  There
+ * A searcher to gather statistics such as queries completed and query latency.  There
  * may be more than 1 StatisticsSearcher in the Searcher chain, each identified by a
- * Searcher ID.  The statistics accumulated by all StatisticsSearchers are stored
- * in the singleton StatisticsManager object. </p>
- * <p>
- * TODO: Fix events to handle more than one of these searchers properly.
+ * Searcher ID. The statistics accumulated by all StatisticsSearchers are stored
+ * in the singleton StatisticsManager object.
  *
  * @author Gene Meyers
  * @author Steinar Knutsen
  * @author bergum
  */
-@Before(PhaseNames.RAW_QUERY)
+@Before("*")
 public class StatisticsSearcher extends Searcher {
 
     private static final CompoundName IGNORE_QUERY = CompoundName.from("metrics.ignore");
@@ -89,39 +86,6 @@ public class StatisticsSearcher extends Searcher {
     private final Map<String, Map<String, Metric.Context>> relevanceContexts = new CopyOnWriteHashMap<>();
     private final java.util.Timer scheduler = new java.util.Timer(true);
 
-    private class PeakQpsReporter extends java.util.TimerTask {
-        private long prevMaxQPSTime = System.currentTimeMillis();
-        private long queriesForQPS = 0;
-        private Metric.Context metricContext = null;
-        public void setContext(Metric.Context metricContext) {
-            if (this.metricContext == null) {
-                synchronized(this) {
-                    this.metricContext = metricContext;
-                }
-            }
-        }
-        @Override
-        public void run() {
-            long now = System.currentTimeMillis();
-            synchronized (this) {
-                if (metricContext == null) return;
-                flushPeakQps(now);
-            }
-        }
-        private void flushPeakQps(long now) {
-            double ms = (double) (now - prevMaxQPSTime);
-            final double value = ((double)queriesForQPS) / (ms / 1000.0);
-            metric.set(PEAK_QPS_METRIC, value, metricContext);
-            prevMaxQPSTime = now;
-            queriesForQPS = 0;
-        }
-        void countQuery() {
-            synchronized (this) {
-                ++queriesForQPS;
-            }
-        }
-    }
-
     public StatisticsSearcher(Metric metric, MetricReceiver metricReceiver) {
         this.peakQpsReporter = new PeakQpsReporter();
         this.metric = metric;
@@ -132,6 +96,71 @@ public class StatisticsSearcher extends Searcher {
         metricReceiver.declareGauge(TOTALHITS_PER_QUERY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
 
         scheduler.schedule(peakQpsReporter, 1000, 1000);
+    }
+
+    /**
+     * Generate statistics for the query passing through this Searcher
+     * 1) Add 1 to total query count
+     * 2) Add response time to total response time (time from entry to return)
+     * 3) .....
+     */
+    @Override
+    public Result search(Query query, Execution execution) {
+        if (query.properties().getBoolean(IGNORE_QUERY,false)) return execution.search(query);
+
+        Metric.Context metricContext = getChainMetricContext(execution.chain().getId().stringValue());
+        increaseQueryCount(metricContext);
+        logQuery(query);
+        long startMs = executionStartTime(query);
+        qps(metricContext);
+        metric.set(QUERY_TIMEOUT_METRIC, query.getTimeout(), metricContext);
+
+        Result result;
+        try {
+            result = execution.search(query);
+        } catch (Exception e) {
+            increaseErrorCount(null, metricContext);
+            throw e;
+        }
+
+        if (startMs > 0) {
+            long endMs = System.currentTimeMillis();
+            long latencyMs = endMs - startMs;
+            if (latencyMs >= 0) {
+                addLatency(latencyMs, metricContext);
+            } else {
+                getLogger().log(Level.WARNING,
+                                "Apparently negative latency measure, start: " + startMs
+                                + ", end: " + endMs + ", for query: " + query + ". Could be caused by NTP adjustments.");
+            }
+        }
+        if (result.hits().getError() != null) {
+            increaseErrorCount(result, metricContext);
+            incrementStatePageOnlyErrors(result);
+        }
+        Coverage queryCoverage = result.getCoverage(false);
+        if (queryCoverage != null) {
+            if (queryCoverage.isDegraded()) {
+                var degradedContext = getDegradedMetricContext(execution.chain().getId().stringValue(), queryCoverage);
+                metric.add(DEGRADED_QUERIES_METRIC, 1, degradedContext);
+            }
+            metric.add(DOCS_COVERED_METRIC, queryCoverage.getDocs(), metricContext);
+            metric.add(DOCS_TOTAL_METRIC, queryCoverage.getActive(), metricContext);
+            metric.add(DOCS_TARGET_TOTAL_METRIC, queryCoverage.getTargetActive(), metricContext);
+        }
+        int hitCount = result.getConcreteHitCount();
+        metric.set(HITS_PER_QUERY_METRIC, (double) hitCount, metricContext);
+
+        long totalHitCount = result.getTotalHitCount();
+        metric.set(TOTALHITS_PER_QUERY_METRIC, (double) totalHitCount, metricContext);
+        metric.set(QUERY_HIT_OFFSET_METRIC, (double) (query.getHits() + query.getOffset()), metricContext);
+        if (hitCount == 0) {
+            metric.add(EMPTY_RESULTS_METRIC, 1, metricContext);
+        }
+
+        addRelevanceMetrics(query, execution, result);
+        addItemCountMetric(query, metricContext);
+        return result;
     }
 
     @Override
@@ -207,77 +236,6 @@ public class StatisticsSearcher extends Searcher {
         return metricContext;
     }
 
-    /**
-     * Generate statistics for the query passing through this Searcher
-     * 1) Add 1 to total query count
-     * 2) Add response time to total response time (time from entry to return)
-     * 3) .....
-     */
-    @Override
-    public Result search(Query query, Execution execution) {
-        if (query.properties().getBoolean(IGNORE_QUERY,false)) {
-            return execution.search(query);
-        }
-
-        Metric.Context metricContext = getChainMetricContext(execution.chain().getId().stringValue());
-
-        incrQueryCount(metricContext);
-        logQuery(query);
-        long startMs = executionStartTime(query);
-        qps(metricContext);
-        metric.set(QUERY_TIMEOUT_METRIC, query.getTimeout(), metricContext);
-        Result result;
-        //handle exceptions thrown below in searchers
-        try {
-            result = execution.search(query); // Pass on down the chain
-        } catch (Exception e) {
-            incrErrorCount(null, metricContext);
-            throw e;
-        }
-
-        if (startMs > 0) {
-            long endMs = System.currentTimeMillis();
-            long latencyMs = endMs - startMs;
-            if (latencyMs >= 0) {
-                addLatency(latencyMs, metricContext);
-            } else {
-                getLogger().log(Level.WARNING,
-                                "Apparently negative latency measure, start: " + startMs
-                                + ", end: " + endMs + ", for query: " + query + ". Could be caused by NTP adjustments.");
-            }
-        }
-        if (result.hits().getError() != null) {
-            incrErrorCount(result, metricContext);
-            incrementStatePageOnlyErrors(result);
-        }
-        Coverage queryCoverage = result.getCoverage(false);
-        if (queryCoverage != null) {
-            if (queryCoverage.isDegraded()) {
-                Metric.Context degradedContext = getDegradedMetricContext(execution.chain().getId().stringValue(), queryCoverage);
-                metric.add(DEGRADED_QUERIES_METRIC, 1, degradedContext);
-            }
-            metric.add(DOCS_COVERED_METRIC, queryCoverage.getDocs(), metricContext);
-            metric.add(DOCS_TOTAL_METRIC, queryCoverage.getActive(), metricContext);
-            metric.add(DOCS_TARGET_TOTAL_METRIC, queryCoverage.getTargetActive(), metricContext);
-        }
-        int hitCount = result.getConcreteHitCount();
-        metric.set(HITS_PER_QUERY_METRIC, (double) hitCount, metricContext);
-
-        long totalHitCount = result.getTotalHitCount();
-        metric.set(TOTALHITS_PER_QUERY_METRIC, (double) totalHitCount, metricContext);
-        metric.set(QUERY_HIT_OFFSET_METRIC, (double) (query.getHits() + query.getOffset()), metricContext);
-        if (hitCount == 0) {
-            metric.add(EMPTY_RESULTS_METRIC, 1, metricContext);
-        }
-
-        addRelevanceMetrics(query, execution, result);
-
-        addItemCountMetric(query, metricContext);
-
-        return result;
-    }
-
-
     private void logQuery(com.yahoo.search.Query query) {
         // Don't parse the query if it's not necessary for the logging Query.toString triggers parsing
         if (getLogger().isLoggable(Level.FINER)) {
@@ -291,11 +249,11 @@ public class StatisticsSearcher extends Searcher {
         metric.set(MAX_QUERY_LATENCY_METRIC, (double) latencyMs, metricContext);
     }
 
-    private void incrQueryCount(Metric.Context metricContext) {
+    private void increaseQueryCount(Metric.Context metricContext) {
         metric.add(QUERIES_METRIC, 1, metricContext);
     }
 
-    private void incrErrorCount(Result result, Metric.Context metricContext) {
+    private void increaseErrorCount(Result result, Metric.Context metricContext) {
         metric.add(FAILED_QUERIES_METRIC, 1, metricContext);
 
         if (result == null) // the chain threw an exception
@@ -412,6 +370,45 @@ public class StatisticsSearcher extends Searcher {
     private static long executionStartTime(Query query) {
         var startTime = query.getHttpRequest().context().get("search.handlerStartTime");
         return startTime != null ? (long) startTime : 0;
+    }
+
+    private class PeakQpsReporter extends java.util.TimerTask {
+
+        private long prevMaxQPSTime = System.currentTimeMillis();
+        private long queriesForQPS = 0;
+        private Metric.Context metricContext = null;
+
+        public void setContext(Metric.Context metricContext) {
+            if (this.metricContext == null) {
+                synchronized(this) {
+                    this.metricContext = metricContext;
+                }
+            }
+        }
+
+        @Override
+        public void run() {
+            long now = System.currentTimeMillis();
+            synchronized (this) {
+                if (metricContext == null) return;
+                flushPeakQps(now);
+            }
+        }
+
+        private void flushPeakQps(long now) {
+            double ms = (double) (now - prevMaxQPSTime);
+            final double value = ((double)queriesForQPS) / (ms / 1000.0);
+            metric.set(PEAK_QPS_METRIC, value, metricContext);
+            prevMaxQPSTime = now;
+            queriesForQPS = 0;
+        }
+
+        void countQuery() {
+            synchronized (this) {
+                ++queriesForQPS;
+            }
+        }
+
     }
 
 }
