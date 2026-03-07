@@ -118,6 +118,7 @@ public class StatisticsSearcher extends Searcher {
         Result result;
         try {
             result = execution.search(query);
+            execution.fill(result); // Ensure the fill phase is included in latency measurements
         } catch (Exception e) {
             increaseErrorCount(null, metricContext);
             throw e;
