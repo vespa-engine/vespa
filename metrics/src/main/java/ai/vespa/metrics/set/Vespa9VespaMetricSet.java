@@ -108,6 +108,7 @@ public class Vespa9VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.count());
         addMetric(metrics, ContainerMetrics.HANDLED_LATENCY, EnumSet.of(sum, count, max));
+        addMetric(metrics, ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY, EnumSet.of(max, sum, count, ninety_five_percentile, ninety_nine_percentile));
 
         addMetric(metrics, ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS, EnumSet.of(max, average));
         addMetric(metrics, ContainerMetrics.SERVER_NUM_CONNECTIONS, EnumSet.of(max, average));
