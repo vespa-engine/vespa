@@ -89,6 +89,10 @@ public class DeploymentSpecXmlReader {
     private static final String endpointTag = "endpoint";
     private static final String notificationsTag = "notifications";
 
+    private static final String backupTag = "backup";
+    private static final String frequencyAttribute = "frequency";
+    private static final String granularityAttribute = "granularity";
+
     private static final String idAttribute = "id";
     private static final String athenzServiceAttribute = "athenz-service";
     private static final String athenzDomainAttribute = "athenz-domain";
@@ -223,6 +227,7 @@ public class DeploymentSpecXmlReader {
         readEndpoints(instanceElement, Optional.of(instanceNameString), steps, endpoints, zoneEndpoints);
         Bcp bcp = complete(readBcp(instanceElement, Optional.of(instanceNameString), steps, endpoints, zoneEndpoints).orElse(defaultBcp), steps);
         validateEndpoints(endpoints);
+        Optional<DeploymentSpec.BackupConfig> backupConfig = readBackupConfig(instanceElement);
 
         // Build and return instances with these values
         Instant now = clock.instant();
@@ -244,6 +249,7 @@ public class DeploymentSpecXmlReader {
                                                              endpoints,
                                                              zoneEndpoints,
                                                              bcp,
+                                                             backupConfig,
                                                              now))
                      .toList();
     }
@@ -886,6 +892,43 @@ public class DeploymentSpecXmlReader {
                      .map(element -> XML.getChild(element, siblingName))
                      .filter(Objects::nonNull)
                      .findFirst();
+    }
+
+    private Optional<DeploymentSpec.BackupConfig> readBackupConfig(Element parent) {
+        Element backupElement = XML.getChild(parent, backupTag);
+        if (backupElement == null) return Optional.empty();
+
+        String frequencySpec = requireStringAttribute(frequencyAttribute, backupElement);
+        Duration frequency = parseBackupFrequency(frequencySpec);
+        if (validate && frequency.compareTo(Duration.ofHours(1)) < 0)
+            illegal("Backup frequency must be at least 1 hour, got '" + frequencySpec + "'");
+
+        DeploymentSpec.BackupConfig.Granularity granularity =
+                stringAttribute(granularityAttribute, backupElement)
+                        .map(s -> switch (s) {
+                            case "cluster" -> DeploymentSpec.BackupConfig.Granularity.cluster;
+                            case "group"   -> DeploymentSpec.BackupConfig.Granularity.group;
+                            default -> throw new IllegalArgumentException(
+                                    "Illegal backup granularity '" + s + "': must be 'cluster' or 'group'");
+                        })
+                        .orElse(DeploymentSpec.BackupConfig.Granularity.cluster);
+
+        return Optional.of(new DeploymentSpec.BackupConfig(frequency, granularity));
+    }
+
+    private static Duration parseBackupFrequency(String s) {
+        if (s == null || s.isBlank())
+            throw new IllegalArgumentException("Backup frequency must not be blank");
+        s = s.trim().toLowerCase(java.util.Locale.ROOT);
+        String suffix = s.substring(s.length() - 1);
+        if (!suffix.equals("h") && !suffix.equals("d"))
+            throw new IllegalArgumentException("Illegal backup frequency '" + s + "': must be an integer followed by 'h' (hours) or 'd' (days)");
+        try {
+            int n = Integer.parseInt(s.substring(0, s.length() - 1));
+            return suffix.equals("h") ? Duration.ofHours(n) : Duration.ofDays(n);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Illegal backup frequency '" + s + "': must be an integer followed by 'h' (hours) or 'd' (days)");
+        }
     }
 
     /**

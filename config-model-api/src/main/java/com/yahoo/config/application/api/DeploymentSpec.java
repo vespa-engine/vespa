@@ -806,6 +806,16 @@ public final class DeploymentSpec {
 
     }
 
+    /** Configuration for automatic cluster backups */
+    public record BackupConfig(Duration frequency, Granularity granularity) {
+
+        public enum Granularity { cluster, group }
+
+        /** Returns true if backups should cover only a single replica group (cheaper, faster) */
+        public boolean singleGroup() { return granularity == Granularity.group; }
+
+    }
+
     public static class DevSpec {
 
         public static final DevSpec empty = new DevSpec(Optional.empty(), Optional.empty(), Optional.empty(), Tags.empty(), Map.of());

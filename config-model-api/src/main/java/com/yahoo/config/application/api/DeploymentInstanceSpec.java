@@ -64,6 +64,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final List<Endpoint> endpoints;
     private final Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints;
     private final Bcp bcp;
+    private final Optional<DeploymentSpec.BackupConfig> backupConfig;
 
     public DeploymentInstanceSpec(InstanceName name,
                                   Tags tags,
@@ -81,6 +82,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   List<Endpoint> endpoints,
                                   Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints,
                                   Bcp bcp,
+                                  Optional<DeploymentSpec.BackupConfig> backupConfig,
                                   Instant now) {
         super(steps);
         this.name = Objects.requireNonNull(name);
@@ -106,6 +108,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         for (var entry : zoneEndpoints.entrySet()) zoneEndpointsCopy.put(entry.getKey(), Collections.unmodifiableMap(new HashMap<>(entry.getValue())));
         this.zoneEndpoints = Collections.unmodifiableMap(zoneEndpointsCopy);
         this.bcp = Objects.requireNonNull(bcp);
+        this.backupConfig = Objects.requireNonNull(backupConfig);
         validateZones(new HashSet<>(), new HashSet<>(), this);
         validateEndpoints(this.endpoints);
         validateChangeBlockers(changeBlockers, now);
@@ -282,6 +285,9 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     /** Returns the BCP spec of this instance, or BcpSpec.empty() if none. */
     public Bcp bcp() { return bcp; }
+
+    /** Returns the backup configuration for this instance, if any. */
+    public Optional<DeploymentSpec.BackupConfig> backupConfig() { return backupConfig; }
 
     /** Returns whether this instance deploys to the given zone, either implicitly or explicitly */
     public boolean deploysTo(Environment environment, RegionName region) {

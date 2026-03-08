@@ -1925,6 +1925,95 @@ public class DeploymentSpecTest {
         assertInvalid(deploymentSpec, errorMessagePart, new ManualClock());
     }
 
+    @Test
+    public void backup_config_cluster_granularity() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "  <instance id='default'>" +
+                "    <backup frequency='7d' granularity='cluster' />" +
+                "    <prod><region>us-east-1</region></prod>" +
+                "  </instance>" +
+                "</deployment>");
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        var cfg = spec.requireInstance("default").backupConfig();
+        assertTrue(cfg.isPresent());
+        assertEquals(Duration.ofDays(7), cfg.get().frequency());
+        assertEquals(DeploymentSpec.BackupConfig.Granularity.cluster, cfg.get().granularity());
+        assertFalse(cfg.get().singleGroup());
+    }
+
+    @Test
+    public void backup_config_group_granularity() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "  <instance id='default'>" +
+                "    <backup frequency='24h' granularity='group' />" +
+                "    <prod><region>us-east-1</region></prod>" +
+                "  </instance>" +
+                "</deployment>");
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        var cfg = spec.requireInstance("default").backupConfig();
+        assertTrue(cfg.isPresent());
+        assertEquals(Duration.ofHours(24), cfg.get().frequency());
+        assertEquals(DeploymentSpec.BackupConfig.Granularity.group, cfg.get().granularity());
+        assertTrue(cfg.get().singleGroup());
+    }
+
+    @Test
+    public void backup_config_default_granularity() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "  <instance id='default'>" +
+                "    <backup frequency='1d' />" +
+                "    <prod><region>us-east-1</region></prod>" +
+                "  </instance>" +
+                "</deployment>");
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        var cfg = spec.requireInstance("default").backupConfig();
+        assertTrue(cfg.isPresent());
+        assertEquals(DeploymentSpec.BackupConfig.Granularity.cluster, cfg.get().granularity());
+    }
+
+    @Test
+    public void backup_config_absent_when_not_specified() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "  <instance id='default'>" +
+                "    <prod><region>us-east-1</region></prod>" +
+                "  </instance>" +
+                "</deployment>");
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertTrue(spec.requireInstance("default").backupConfig().isEmpty());
+    }
+
+    @Test
+    public void backup_config_invalid_frequency() {
+        try {
+            DeploymentSpec.fromXml(
+                    "<deployment version='1.0'>" +
+                    "  <instance id='default'>" +
+                    "    <backup frequency='badvalue' />" +
+                    "    <prod><region>us-east-1</region></prod>" +
+                    "  </instance>" +
+                    "</deployment>");
+            fail("Expected exception for invalid frequency");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("badvalue"));
+        }
+    }
+
+    @Test
+    public void backup_config_frequency_too_low() {
+        assertInvalid(
+                "<deployment version='1.0'>" +
+                "  <instance id='default'>" +
+                "    <backup frequency='0h' />" +
+                "    <prod><region>us-east-1</region></prod>" +
+                "  </instance>" +
+                "</deployment>",
+                "at least 1 hour");
+    }
+
     private static void assertInvalid(String deploymentSpec, String errorMessagePart, Clock clock) {
         if (errorMessagePart.isEmpty()) throw new IllegalArgumentException("Message part must be non-empty");
         try {
