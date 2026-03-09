@@ -120,6 +120,7 @@ TOKEN :
     <FILTER: "filter"> |
     <FIXEDWIDTH: "fixedwidth"> |
     <FLOOR: "floor"> |
+    <GEO_DISTANCE: "geo_distance"> |
     <GROUP: "group"> |
     <HINT: "hint"> |
     <HYPOT: "hypot"> |
@@ -184,6 +185,8 @@ TOKEN :
     <X: "x"> |
     <XOR: "xor"> |
     <XORBIT: "xorbit"> |
+    <KM: "km"> |
+    <MILES: "miles"> |
     <Y: "y"> |
     <ZCURVE: "zcurve"> |
     <IDENTIFIER: ["A"-"Z","a"-"z"](["A"-"Z","a"-"z","0"-"9","_","@"])*>
@@ -384,6 +387,7 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = divFunction(grp)              |
                    exp = docIdNsSpecificValue()        |
                    exp = fixedWidthFunction(grp)       |
+                   exp = geoDistanceFunction(grp)      |
                    exp = mathFunction(grp)             |
                    exp = maxExpression(grp)            |
                    exp = md5Function(grp)              |
@@ -601,6 +605,20 @@ FixedWidthFunction fixedWidthFunction(GroupingOperation grp) :
 {
     ( <FIXEDWIDTH> lbrace() exp = exp(grp) comma() num = number() rbrace() )
     { return new FixedWidthFunction(exp, num); }
+}
+
+GeoDistanceFunction geoDistanceFunction(GroupingOperation grp) :
+{
+    AttributeFunction pos;
+    GroupingExpression lat, lon;
+    String unit;
+}
+{
+    ( <GEO_DISTANCE> lbrace() pos = attributeFunction() comma()
+                              lat = exp(grp) comma()
+                              lon = exp(grp) rbrace()
+      <DOT> ( <KM> { unit = "km"; } | <MILES> { unit = "miles"; } ) )
+    { return new GeoDistanceFunction(pos, lat, lon, unit); }
 }
 
 GroupingExpression maxExpression(GroupingOperation grp) :
@@ -1154,18 +1172,21 @@ String identifier() :
         <FILTER> |
         <FIXEDWIDTH> |
         <FLOOR> |
+        <GEO_DISTANCE> |
         <GROUP> |
         <HINT> |
         <HYPOT> |
         <IDENTIFIER> |
         <ISTRUE> |
         <KEEP> |
+        <KM> |
         <LOG> |
         <LOG1P> |
         <LOG10> |
         <MATH> |
         <MAX> |
         <MD5> |
+        <MILES> |
         <MIN> |
         <MOD> |
         <MUL> |

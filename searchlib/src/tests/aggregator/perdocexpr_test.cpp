@@ -1,19 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/base/testdocman.h>
+#include <vespa/document/fieldvalue/bytefieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/objects/objectdumper.h>
-#include <vespa/document/base/testdocman.h>
-#include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/vespalib/util/md5.h>
-#include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
+#include <vespa/searchlib/expression/geo_distance_function_node.h>
+#include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
+#include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/md5.h>
 #include <cctype>
 #include <cmath>
 #include <iomanip>
@@ -1690,6 +1691,60 @@ TEST(PerDocExprTest, testIntegerTypes) {
     EXPECT_EQ(AttributeNode(*AttributeGuard(std::make_shared<MultiInt64ExtAttribute>("test")))
               .prepare(true).getResult()->getClass().id(),
               uint32_t(Int64ResultNodeVector::classId));
+}
+
+TEST(PerDocExprTest, testGeoDistance) {
+    // Doc 0: TRD (63.45, 10.92), Doc 1: OSL (60.20, 11.08), Doc 2: JFK (40.64, -73.78)
+    auto posAttr = std::make_shared<SingleInt64ExtAttribute>("pos");
+    DocId docId = 0;
+    posAttr->addDoc(docId); // doc 0: TRD
+    posAttr->add(vespalib::geo::ZCurve::encode(10920000, 63450000));
+    posAttr->addDoc(docId); // doc 1: OSL
+    posAttr->add(vespalib::geo::ZCurve::encode(11080000, 60200000));
+    posAttr->addDoc(docId); // doc 2: JFK
+    posAttr->add(vespalib::geo::ZCurve::encode(-73780000, 40640000));
+    AttributeGuard guard(posAttr);
+
+    using Unit = GeoDistanceFunctionNode::Unit;
+
+    auto make_tree = [&](double lat, double lon, Unit unit) {
+        GeoDistanceFunctionNode func(unit);
+        func.appendArg(MU<AttributeNode>(*guard))
+            .appendArg(MU<ConstantNode>(MU<FloatResultNode>(lat)))
+            .appendArg(MU<ConstantNode>(MU<FloatResultNode>(lon)));
+        ExpressionTree tree(func);
+        ExpressionTree::Configure conf;
+        tree.select(conf, conf);
+        return tree;
+    };
+
+    // Query from OSL (60.20, 11.08) to doc 0 TRD (63.45, 10.92) ~361 km
+    {
+        auto tree = make_tree(60.20, 11.08, Unit::KM);
+        ASSERT_TRUE(tree.execute(0, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 361.0, 5.0);
+    }
+
+    // Same point: query OSL -> doc 1 OSL, should be ~0
+    {
+        auto tree = make_tree(60.20, 11.08, Unit::KM);
+        ASSERT_TRUE(tree.execute(1, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 0.0, 1.0);
+    }
+
+    // SFO (37.61, -122.38) -> doc 2 JFK (40.64, -73.78) ~4139 km
+    {
+        auto tree = make_tree(37.61, -122.38, Unit::KM);
+        ASSERT_TRUE(tree.execute(2, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 4139.0, 50.0);
+    }
+
+    // OSL -> TRD in miles (~224 miles)
+    {
+        auto tree = make_tree(60.20, 11.08, Unit::MILES);
+        ASSERT_TRUE(tree.execute(0, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 224.0, 5.0);
+    }
 }
 
 TEST(PerDocExprTest, testStreamingAll) {

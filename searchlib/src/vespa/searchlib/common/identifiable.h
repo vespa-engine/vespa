@@ -188,3 +188,4 @@
 
 #define CID_search_aggregation_QuantileAggregationResult    SEARCHLIB_CID(179)
 #define CID_search_expression_IsTruePredicateNode           SEARCHLIB_CID(180)
+#define CID_search_expression_GeoDistanceFunctionNode       SEARCHLIB_CID(181)
