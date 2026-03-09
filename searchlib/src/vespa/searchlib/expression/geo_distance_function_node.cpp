@@ -64,8 +64,6 @@ void GeoDistanceFunctionNode::onExecute() const {
 
     auto& result = static_cast<FloatResultNode&>(updateResult());
     result.set(distance);
-
-    return true;
 }
 
 Serializer& GeoDistanceFunctionNode::onSerialize(Serializer& os) const {

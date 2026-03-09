@@ -1727,28 +1727,28 @@ TEST(PerDocExprTest, testGeoDistance) {
     // Query from OSL (60.20, 11.08) to doc 0 TRD (63.45, 10.92) ~361 km
     {
         auto tree = make_tree(60.20, 11.08, Unit::KM);
-        ASSERT_TRUE(tree.execute(0, 0));
+        ASSERT_NO_THROW(tree.execute(0, 0));
         EXPECT_NEAR(tree.getResult()->getFloat(), 361.0, 5.0);
     }
 
     // Same point: query OSL -> doc 1 OSL, should be ~0
     {
         auto tree = make_tree(60.20, 11.08, Unit::KM);
-        ASSERT_TRUE(tree.execute(1, 0));
+        ASSERT_NO_THROW(tree.execute(1, 0));
         EXPECT_NEAR(tree.getResult()->getFloat(), 0.0, 1.0);
     }
 
     // SFO (37.61, -122.38) -> doc 2 JFK (40.64, -73.78) ~4139 km
     {
         auto tree = make_tree(37.61, -122.38, Unit::KM);
-        ASSERT_TRUE(tree.execute(2, 0));
+        ASSERT_NO_THROW(tree.execute(2, 0));
         EXPECT_NEAR(tree.getResult()->getFloat(), 4139.0, 50.0);
     }
 
     // OSL -> TRD in miles (~224 miles)
     {
         auto tree = make_tree(60.20, 11.08, Unit::MILES);
-        ASSERT_TRUE(tree.execute(0, 0));
+        ASSERT_NO_THROW(tree.execute(0, 0));
         EXPECT_NEAR(tree.getResult()->getFloat(), 224.0, 5.0);
     }
 }
