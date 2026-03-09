@@ -408,6 +408,7 @@ std::unique_ptr<SearchIterator> SameElementBlueprintReplacementSearchBuilder::cr
  * ArrayBoolBlueprintSearchBuilder is a convenience class to get whatever ArrayBoolBlueprint constructs
  */
 class ArrayBoolBlueprintSearchBuilder : public SearchBuilder {
+protected:
     std::unique_ptr<ArrayBoolBlueprint>   _blueprint;
 
 public:
@@ -427,6 +428,30 @@ std::unique_ptr<SearchIterator> ArrayBoolBlueprintSearchBuilder::create_search(b
     search::queryeval::InFlow flow(strict);
     _blueprint->basic_plan(flow, _attribute_vector->getCommittedDocIdLimit());
     return _blueprint->createSearchImpl(*_tmd.md);
+}
+
+/**
+ * ArrayBoolBlueprintFilterSearchBuilder is a convenience class to get whatever filter iterator ArrayBoolBlueprint constructs
+ */
+class ArrayBoolBlueprintFilterSearchBuilder : public ArrayBoolBlueprintSearchBuilder {
+
+public:
+    ArrayBoolBlueprintFilterSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true);
+    ~ArrayBoolBlueprintFilterSearchBuilder() override;
+    std::unique_ptr<SearchIterator> create_search(bool strict) const override;
+};
+
+ArrayBoolBlueprintFilterSearchBuilder::ArrayBoolBlueprintFilterSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true)
+    : ArrayBoolBlueprintSearchBuilder(bool_attr, std::move(attribute_vector), element_filter, want_true) {
+}
+
+ArrayBoolBlueprintFilterSearchBuilder::~ArrayBoolBlueprintFilterSearchBuilder() = default;
+
+std::unique_ptr<SearchIterator> ArrayBoolBlueprintFilterSearchBuilder::create_search(bool strict) const {
+    search::queryeval::InFlow flow(strict);
+    _blueprint->basic_plan(flow, _attribute_vector->getCommittedDocIdLimit());
+    // Should yield an exact iterator in this case, not just an upper bound
+    return _blueprint->createFilterSearchImpl(Blueprint::FilterConstraint::UPPER_BOUND);
 }
 
 }
@@ -1026,7 +1051,15 @@ template<typename B>
 VerifierTest<B>::~VerifierTest() = default;
 
 
-TYPED_TEST_SUITE(VerifierTest, Builders);
+using NonUnpackingBuilders = ::testing::Types<ArrayBoolSearchBuilder,
+                                              ArrayBoolBlueprintSearchBuilder,
+                                              ArrayBoolBlueprintFilterSearchBuilder,
+                                              SameElementArrayBoolSearchBuilder,
+                                              SameElementMultiArrayBoolSearchBuilder,
+                                              SameElementGenericSearchBuilder,
+                                              SameElementBlueprintSearchBuilder,
+                                              SameElementBlueprintReplacementSearchBuilder>;
+TYPED_TEST_SUITE(VerifierTest, NonUnpackingBuilders);
 
 TYPED_TEST(VerifierTest, verify_iterator_multiple_elements) {
     for (const auto& element_filter: all_non_empty_subsets({0, 1, 2, 3, 4})) {
