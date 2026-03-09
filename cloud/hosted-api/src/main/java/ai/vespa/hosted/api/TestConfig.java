@@ -60,12 +60,18 @@ public class TestConfig {
      * Parses the given test config JSON and returns a new config instance.
      *
      * If the given JSON has a "localEndpoints" element, a config object with default values
-     * is returned, using {@link #fromEndpointsOnly}. Otherwise, all config attributes are parsed.
+     * is returned, using {@link #fromLocalConfig}. An optional {@code application} field may
+     * be specified alongside {@code localEndpoints} to override the default application ID.
+     * Otherwise, all config attributes are parsed.
      */
     public static TestConfig fromJson(byte[] jsonBytes) {
         Inspector config = SlimeUtils.jsonToSlime(jsonBytes).get();
-        if (config.field("localEndpoints").valid())
-            return TestConfig.fromEndpointsOnly(toClusterMap(config.field("localEndpoints")));
+        if (config.field("localEndpoints").valid()) {
+            ApplicationId application = config.field("application").valid()
+                    ? ApplicationId.fromSerializedForm(config.field("application").asString())
+                    : ApplicationId.defaultId();
+            return TestConfig.fromLocalConfig(toClusterMap(config.field("localEndpoints")), application);
+        }
 
         ApplicationId application = ApplicationId.fromSerializedForm(config.field("application").asString());
         ZoneId zone = ZoneId.from(config.field("zone").asString());
@@ -94,11 +100,12 @@ public class TestConfig {
     }
 
     /**
-     * Returns a TestConfig with default values for everything except the endpoints.
+     * Returns a TestConfig for local testing, with default values for everything except endpoints and application.
      * @param endpoints the endpoint for each of the containers specified in services.xml, by container id
+     * @param application the application ID, used e.g. to select which tests to run
      */
-    public static TestConfig fromEndpointsOnly(Map<String, URI> endpoints) {
-        return new TestConfig(ApplicationId.defaultId(),
+    public static TestConfig fromLocalConfig(Map<String, URI> endpoints, ApplicationId application) {
+        return new TestConfig(application,
                               ZoneId.defaultId(),
                               SystemName.dev,
                               false,
