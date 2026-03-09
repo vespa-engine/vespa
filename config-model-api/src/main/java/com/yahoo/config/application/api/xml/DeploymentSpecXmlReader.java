@@ -80,6 +80,7 @@ public class DeploymentSpecXmlReader {
     private static final String devTag = "dev";
     private static final String upgradeTag = "upgrade";
     private static final String blockChangeTag = "block-change";
+    private static final String backupTag = "backup";
     private static final String prodTag = "prod";
     private static final String regionTag = "region";
     private static final String delayTag = "delay";
@@ -208,6 +209,7 @@ public class DeploymentSpecXmlReader {
         int maxRisk = getWithFallback(instanceElement, parentTag, upgradeTag, "max-risk", Integer::parseInt, 0);
         int maxIdleHours = getWithFallback(instanceElement, parentTag, upgradeTag, "max-idle-hours", Integer::parseInt, 8);
         List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceElement, parentTag);
+        Optional<DeploymentSpec.BackupSpec> backup = readBackup(instanceElement);
         Optional<AthenzService> athenzService = mostSpecificAttribute(instanceElement, athenzServiceAttribute).map(AthenzService::from);
         Map<CloudName, CloudAccount> cloudAccounts = readCloudAccounts(instanceElement);
         Optional<Duration> hostTTL = readHostTTL(instanceElement);
@@ -244,6 +246,7 @@ public class DeploymentSpecXmlReader {
                                                              endpoints,
                                                              zoneEndpoints,
                                                              bcp,
+                                                             backup,
                                                              now))
                      .toList();
     }
@@ -637,8 +640,13 @@ public class DeploymentSpecXmlReader {
     private void validateTagOrder(Element root) {
         List<String> tags = XML.getChildren(root).stream().map(Element::getTagName).toList();
         for (int i = 0; i < tags.size(); i++) {
-            if (tags.get(i).equals(blockChangeTag)) {
-                String constraint = "<block-change> must be placed after <test> and <staging> and before <prod>";
+
+            // Extra constraints for block change and backup
+            var blockChange = tags.get(i).equals(blockChangeTag);
+            var backupSpec = tags.get(i).equals(backupTag);
+            if (blockChange || backupSpec) {
+                String constraint = "<%s> must be placed after <test> and <staging> and before <prod>"
+                        .formatted(blockChange ? blockChangeTag : backupTag);
                 if (containsAfter(i, testTag, tags)) illegal(constraint);
                 if (containsAfter(i, stagingTag, tags)) illegal(constraint);
                 if (containsBefore(i, prodTag, tags)) illegal(constraint);
@@ -752,6 +760,37 @@ public class DeploymentSpecXmlReader {
 
         return new DeploymentSpec.ChangeBlocker(blockRevisions, blockVersions,
                                                 TimeWindow.from(daySpec, hourSpec, zoneSpec, dateStart, dateEnd));
+    }
+
+    private Optional<DeploymentSpec.BackupSpec> readBackup(Element instanceElement) {
+        Element backupElement = XML.getChild(instanceElement, backupTag);
+        if (backupElement == null) return Optional.empty();
+
+        Duration frequency = parseBackupFrequency(requireStringAttribute("frequency", backupElement));
+        if (validate && frequency.compareTo(Duration.ofHours(1)) < 0) illegal("backup frequency must be at least 1h");
+
+        DeploymentSpec.BackupSpec.Granularity granularity =
+                stringAttribute("granularity", backupElement)
+                        .map(g -> switch (g) {
+                            case "cluster" -> DeploymentSpec.BackupSpec.Granularity.cluster;
+                            case "group"   -> DeploymentSpec.BackupSpec.Granularity.group;
+                            default -> throw new IllegalArgumentException(
+                                    "Invalid backup granularity '" + g + "': must be 'cluster' or 'group'");
+                        })
+                        .orElse(DeploymentSpec.BackupSpec.Granularity.cluster);
+        return Optional.of(new DeploymentSpec.BackupSpec(frequency, granularity));
+    }
+
+    private static Duration parseBackupFrequency(String value) {
+        if(!value.endsWith("h") && !value.endsWith("d"))
+            illegal("backup frequency must have a unit suffix of either 'd' or 'h'");
+        var hourUnit = value.endsWith("h");
+        try {
+            long number = Long.parseLong(value.substring(0, value.length() - 1));
+            return hourUnit ? Duration.ofHours(number) : Duration.ofDays(number);
+        } catch (NumberFormatException e) {
+            throw illegal("invalid backup frequency '" + value + "': must be a positive integer followed by 'h' or 'd'");
+        }
     }
 
     /** Returns true if the given value is "true", or if it is missing */
