@@ -415,6 +415,7 @@ public:
     ArrayBoolBlueprintSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true);
     ~ArrayBoolBlueprintSearchBuilder() override;
     std::unique_ptr<SearchIterator> create_search(bool strict) const override;
+    const ArrayBoolBlueprint& get_blueprint() const;
 };
 
 ArrayBoolBlueprintSearchBuilder::ArrayBoolBlueprintSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true)
@@ -423,6 +424,10 @@ ArrayBoolBlueprintSearchBuilder::ArrayBoolBlueprintSearchBuilder(ArrayBoolAttrib
 }
 
 ArrayBoolBlueprintSearchBuilder::~ArrayBoolBlueprintSearchBuilder() = default;
+
+const ArrayBoolBlueprint& ArrayBoolBlueprintSearchBuilder::get_blueprint() const {
+    return *_blueprint;
+}
 
 std::unique_ptr<SearchIterator> ArrayBoolBlueprintSearchBuilder::create_search(bool strict) const {
     search::queryeval::InFlow flow(strict);
@@ -504,6 +509,36 @@ TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_replacement_create
             EXPECT_TRUE(std::equal(element_filter.begin(), element_filter.begin() + element_filter.size(), abs->get_element_filter().begin()));
             EXPECT_EQ(test_attribute.bool_attr, &abs->get_attribute());
         }
+    }
+}
+
+TEST(ArrayBoolSearchTest, require_that_blueprint_hit_estimate_yields_correct_number_of_documents) {
+    TestAttribute test_attribute;
+    test_attribute.attr->addDocs(5);
+    test_attribute.attr->commit();
+    {
+        ArrayBoolBlueprintSearchBuilder builder(test_attribute.bool_attr, test_attribute.attr, {0}, true);
+        auto hit_estimate = builder.get_blueprint().getState().estimate();
+        EXPECT_EQ(hit_estimate.estHits, 5 + 1);
+        EXPECT_EQ(hit_estimate.empty, false);
+    }
+
+    // Empty with reserved document id
+    test_attribute.reset(true);
+    {
+        ArrayBoolBlueprintSearchBuilder builder(test_attribute.bool_attr, test_attribute.attr, {0}, true);
+        auto hit_estimate = builder.get_blueprint().getState().estimate();
+        EXPECT_EQ(hit_estimate.estHits, 0 + 1);
+        EXPECT_EQ(hit_estimate.empty, false);
+    }
+
+    // Empty without reserved document id
+    test_attribute.reset(false);
+    {
+        ArrayBoolBlueprintSearchBuilder builder(test_attribute.bool_attr, test_attribute.attr, {0}, true);
+        auto hit_estimate = builder.get_blueprint().getState().estimate();
+        EXPECT_EQ(hit_estimate.estHits, 0);
+        EXPECT_EQ(hit_estimate.empty, true);
     }
 }
 
