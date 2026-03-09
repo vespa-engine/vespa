@@ -42,6 +42,10 @@ public:
     bool check_array(uint32_t docid) const;
     void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 
+    bool want_true() const { return _want_true; }
+    const std::vector<uint32_t>& get_element_filter() const { return _element_filter; }
+    const ArrayBoolAttribute& get_attribute() const { return _attr; }
+
     /**
      * Create an ArrayBoolSearch.
      *
