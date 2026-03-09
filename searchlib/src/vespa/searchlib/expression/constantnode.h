@@ -18,7 +18,7 @@ public:
     const ResultNode * getResult() const override { return _result.get(); }
 private:
     void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
-    bool onExecute() const override { return true; }
+    void onExecute() const override { }
     ResultNode::CP _result;
 };
 

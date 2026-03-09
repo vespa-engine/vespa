@@ -59,8 +59,8 @@ public:
     ExpressionTree & operator = (const ExpressionTree & rhs);
     ExpressionTree & operator = (ExpressionTree &&) noexcept = default;
 
-    bool execute(DocId docId, HitRank rank) const;
-    bool execute(const document::Document & doc, HitRank rank) const;
+    void execute(DocId docId, HitRank rank) const;
+    void execute(const document::Document & doc, HitRank rank) const;
     const ExpressionNode * getRoot() const { return _root.get(); }
     ExpressionNode * getRoot() { return _root.get(); }
     void changeRoot(ExpressionNode::UP root) { _root = std::move(root); }
@@ -71,7 +71,7 @@ public:
 private:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) override;
-    bool onExecute() const override { return _root->execute(); }
+    void onExecute() const override { _root->execute(); }
     void onPrepare(bool preserveAccurateTypes) override;
 
     using AttributeNodeList = std::vector<AttributeNode *>;

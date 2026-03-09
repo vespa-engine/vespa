@@ -26,12 +26,11 @@ AggregationRefNode & AggregationRefNode::operator = (const AggregationRefNode & 
     return *this;
 }
 
-bool AggregationRefNode::onExecute() const
+void AggregationRefNode::onExecute() const
 {
     if (_expressionNode != nullptr) {
-        return _expressionNode->execute();
+        _expressionNode->execute();
     }
-    return false;
 }
 
 void AggregationRefNode::locateExpression(ExpressionNodeArray & exprVec) const

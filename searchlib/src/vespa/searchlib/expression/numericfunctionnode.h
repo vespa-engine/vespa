@@ -166,7 +166,7 @@ private:
         StringResultNode _initial;
     };
 
-    bool onCalculate(const ExpressionNodeVector & args, ResultNode & result) const override;
+    void onCalculate(const ExpressionNodeVector & args, ResultNode & result) const override;
     std::unique_ptr<Handler> _handler;
 };
 

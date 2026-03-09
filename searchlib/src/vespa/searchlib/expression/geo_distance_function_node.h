@@ -31,7 +31,7 @@ public:
 
 private:
     void onPrepareResult() override;
-    bool onExecute() const override;
+    void onExecute() const override;
     vespalib::Serializer& onSerialize(vespalib::Serializer& os) const override;
     vespalib::Deserializer& onDeserialize(vespalib::Deserializer& is) override;
 };

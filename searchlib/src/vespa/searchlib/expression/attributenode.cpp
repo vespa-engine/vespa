@@ -388,7 +388,7 @@ AttributeNode::setDocId(DocId docId) {
     }
 }
 
-bool
+void
 AttributeNode::onExecute() const
 {
     if (_handler) {
@@ -414,7 +414,6 @@ AttributeNode::onExecute() const
     } else {
         updateResult().set(*_scratchResult);
     }
-    return true;
 }
 
 void

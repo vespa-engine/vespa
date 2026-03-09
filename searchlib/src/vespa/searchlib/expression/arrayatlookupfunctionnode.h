@@ -22,7 +22,7 @@ public:
     ArrayAtLookup(const search::attribute::IAttributeVector &attr, ExpressionNode::UP indexArg);
     ArrayAtLookup(const ArrayAtLookup &rhs);
     ArrayAtLookup & operator= (const ArrayAtLookup &rhs);
-    bool onExecute() const override;
+    void onExecute() const override;
     void visitMembers(vespalib::ObjectVisitor & visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation) override;
 private:

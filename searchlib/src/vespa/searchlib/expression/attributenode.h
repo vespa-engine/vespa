@@ -89,7 +89,7 @@ protected:
         _scratchResult = std::move(result);
     }
     virtual void cleanup();
-    bool onExecute() const override;
+    void onExecute() const override;
     std::string                  _attributeName;
 };
 

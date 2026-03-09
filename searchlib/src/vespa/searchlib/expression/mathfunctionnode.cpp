@@ -31,7 +31,7 @@ void MathFunctionNode::onPrepareResult()
     setResultType(std::unique_ptr<ResultNode>(new FloatResultNode()));
 }
 
-bool MathFunctionNode::onExecute() const
+void MathFunctionNode::onExecute() const
 {
     getArg(0).execute();
     double result(0.0);
@@ -59,7 +59,6 @@ bool MathFunctionNode::onExecute() const
     case FLOOR: result = std::floor(getArg(0).getResult()->getFloat()); break;
     }
     static_cast<FloatResultNode &>(updateResult()).set(result);
-    return true;
 }
 
 }

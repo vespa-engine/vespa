@@ -71,7 +71,7 @@ protected:
     AggregationResult();
 private:
     void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
-    bool onExecute() const override { return true; }
+    void onExecute() const override { }
 
     void prepare() { if (getExpression() != nullptr) { prepare(getExpression()->getResult(), false); } }
     void prepare(const ResultNode * result, bool useForInit) { if (result) { onPrepare(*result, useForInit); } }

@@ -14,7 +14,7 @@ public:
 private:
     void onPrepare(bool preserveAccurateTypes) override;
     void onPrepareResult() override;
-    bool onExecute() const override;
+    void onExecute() const override;
 };
 
 }
