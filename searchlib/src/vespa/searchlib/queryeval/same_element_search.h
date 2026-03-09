@@ -51,6 +51,8 @@ public:
     // initRange must be called before use.
     // doSeek/doUnpack must not be called.
     void find_matching_elements(uint32_t docid, std::vector<uint32_t> &dst);
+
+    Trinary is_strict() const override { return _strict ? Trinary::True : Trinary::False; };
 };
 
 }
