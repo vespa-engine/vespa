@@ -718,8 +718,11 @@ void FieldSplitterVisitor::replicateTermForField<ProtonPhrase>(ProtonPhrase &nod
     copyState(node, replica);
     copyProtonTermDataForField(node, replica, field_idx);
 
-    // Process children normally - they won't have fields
+    // Phrase children don't have fields - clear _force_field_id so they pass through as-is
+    uint32_t saved_field_id = _force_field_id;
+    _force_field_id = search::fef::IllegalFieldId;
     visitNodes(node.getChildren());
+    _force_field_id = saved_field_id;
 }
 
 template <>
