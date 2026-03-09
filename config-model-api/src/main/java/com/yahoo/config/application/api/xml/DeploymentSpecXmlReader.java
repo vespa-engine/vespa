@@ -209,7 +209,7 @@ public class DeploymentSpecXmlReader {
         int maxRisk = getWithFallback(instanceElement, parentTag, upgradeTag, "max-risk", Integer::parseInt, 0);
         int maxIdleHours = getWithFallback(instanceElement, parentTag, upgradeTag, "max-idle-hours", Integer::parseInt, 8);
         List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceElement, parentTag);
-        Optional<DeploymentSpec.BackupSpec> backup = readBackup(instanceElement, parentTag);
+        Optional<DeploymentSpec.BackupSpec> backup = readBackup(instanceElement);
         Optional<AthenzService> athenzService = mostSpecificAttribute(instanceElement, athenzServiceAttribute).map(AthenzService::from);
         Map<CloudName, CloudAccount> cloudAccounts = readCloudAccounts(instanceElement);
         Optional<Duration> hostTTL = readHostTTL(instanceElement);
@@ -762,13 +762,13 @@ public class DeploymentSpecXmlReader {
                                                 TimeWindow.from(daySpec, hourSpec, zoneSpec, dateStart, dateEnd));
     }
 
-    private Optional<DeploymentSpec.BackupSpec> readBackup(Element instanceElement, Element parentTag) {
+    private Optional<DeploymentSpec.BackupSpec> readBackup(Element instanceElement) {
         Element backupElement = XML.getChild(instanceElement, backupTag);
-        if (backupElement == null && parentTag != instanceElement)
-            backupElement = XML.getChild(parentTag, backupTag);
         if (backupElement == null) return Optional.empty();
 
         Duration frequency = parseBackupFrequency(requireStringAttribute("frequency", backupElement));
+        if (validate && frequency.compareTo(Duration.ofHours(1)) < 0) illegal("backup frequency must be at least 1h");
+
         DeploymentSpec.BackupSpec.Granularity granularity =
                 stringAttribute("granularity", backupElement)
                         .map(g -> switch (g) {
