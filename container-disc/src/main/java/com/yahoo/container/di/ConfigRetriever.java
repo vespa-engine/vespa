@@ -177,7 +177,10 @@ public final class ConfigRetriever {
      * @see Subscriber#applyOnRestart()
      */
     private void updateApplyOnRestart() {
-        vespaContainer.setApplyOnRestart(bootstrapSubscriber.applyOnRestart() || componentSubscriber.applyOnRestart());
+        if (!vespaContainer.applyOnRestart()) { // Keep it `true` until restart.
+            vespaContainer.setApplyOnRestart(
+                    bootstrapSubscriber.applyOnRestart() || componentSubscriber.applyOnRestart());
+        }
     }
 
 
