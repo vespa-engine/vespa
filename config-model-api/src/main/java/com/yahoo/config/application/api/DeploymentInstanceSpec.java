@@ -64,6 +64,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final List<Endpoint> endpoints;
     private final Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints;
     private final Bcp bcp;
+    private final Optional<DeploymentSpec.BackupSpec> backup;
 
     public DeploymentInstanceSpec(InstanceName name,
                                   Tags tags,
@@ -81,6 +82,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   List<Endpoint> endpoints,
                                   Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints,
                                   Bcp bcp,
+                                  Optional<DeploymentSpec.BackupSpec> backup,
                                   Instant now) {
         super(steps);
         this.name = Objects.requireNonNull(name);
@@ -106,6 +108,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         for (var entry : zoneEndpoints.entrySet()) zoneEndpointsCopy.put(entry.getKey(), Collections.unmodifiableMap(new HashMap<>(entry.getValue())));
         this.zoneEndpoints = Collections.unmodifiableMap(zoneEndpointsCopy);
         this.bcp = Objects.requireNonNull(bcp);
+        this.backup = Objects.requireNonNull(backup);
         validateZones(new HashSet<>(), new HashSet<>(), this);
         validateEndpoints(this.endpoints);
         validateChangeBlockers(changeBlockers, now);
@@ -283,6 +286,9 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** Returns the BCP spec of this instance, or BcpSpec.empty() if none. */
     public Bcp bcp() { return bcp; }
 
+    /** Returns the backup configuration for this instance, if any. */
+    public Optional<DeploymentSpec.BackupSpec> backup() { return backup; }
+
     /** Returns whether this instance deploys to the given zone, either implicitly or explicitly */
     public boolean deploysTo(Environment environment, RegionName region) {
         return zones().stream().anyMatch(zone -> zone.concerns(environment, Optional.ofNullable(region)));
@@ -322,12 +328,13 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                endpoints.equals(other.endpoints) &&
                zoneEndpoints.equals(other.zoneEndpoints) &&
                bcp.equals(other.bcp) &&
+               backup.equals(other.backup) &&
                tags.equals(other.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(upgradePolicy, revisionTarget, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints, zoneEndpoints, bcp, tags);
+        return Objects.hash(upgradePolicy, revisionTarget, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints, zoneEndpoints, bcp, backup, tags);
     }
 
     int deployableHashCode() {

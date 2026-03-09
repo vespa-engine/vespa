@@ -741,6 +741,42 @@ public final class DeploymentSpec {
         simultaneous
     }
 
+    /** Configures automatic backups for an instance's content clusters. */
+    public static class BackupSpec {
+
+        public enum Granularity { cluster, group }
+
+        private final Duration frequency;
+        private final Granularity granularity;
+
+        public BackupSpec(Duration frequency, Granularity granularity) {
+            this.frequency = Objects.requireNonNull(frequency);
+            this.granularity = Objects.requireNonNull(granularity);
+            if (frequency.isNegative() || frequency.isZero())
+                illegal("Backup frequency must be positive, got " + frequency);
+        }
+
+        public Duration frequency() { return frequency; }
+        public Granularity granularity() { return granularity; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            BackupSpec other = (BackupSpec) o;
+            return frequency.equals(other.frequency) && granularity == other.granularity;
+        }
+
+        @Override
+        public int hashCode() { return Objects.hash(frequency, granularity); }
+
+        @Override
+        public String toString() {
+            return "backup with frequency " + frequency + " and granularity " + granularity;
+        }
+
+    }
+
     /** A blocking of changes in a given time window */
     public static class ChangeBlocker {
         
