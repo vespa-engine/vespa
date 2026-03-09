@@ -137,7 +137,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
 
         // Minimum observed config generation for all services without applyOnRestart across all pending restart nodes.
         // Services with applyOnRestart set to {@code true} are excluded because they are waiting for restart to apply a
-        // new config and report a new config generation.
+        // new config, while still reporting the old config.
         OptionalLong minObservedGeneration = configStates.values().stream()
                 .flatMap(List::stream)
                 .filter(state -> !state.applyOnRestart().orElse(false))
