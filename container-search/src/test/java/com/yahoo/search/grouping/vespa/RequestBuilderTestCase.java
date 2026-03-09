@@ -186,6 +186,8 @@ public class RequestBuilderTestCase {
         assertLayout("all(group(math.tanh(a)) each(output(count())))", "[[{ Math, result = [Count] }]]");
         assertLayout("all(group(zcurve.x(a)) each(output(count())))", "[[{ ZCurve, result = [Count] }]]");
         assertLayout("all(group(zcurve.y(a)) each(output(count())))", "[[{ ZCurve, result = [Count] }]]");
+        assertLayout("all(group(geo_distance(attribute(a), 1.0, 2.0).km) each(output(count())))", "[[{ GeoDistance, result = [Count] }]]");
+        assertLayout("all(group(geo_distance(attribute(a), 1.0, 2.0).miles) each(output(count())))", "[[{ GeoDistance, result = [Count] }]]");
         assertLayout("all(group(time.dayofmonth(a)) each(output(count())))", "[[{ TimeStamp, result = [Count] }]]");
         assertLayout("all(group(time.dayofweek(a)) each(output(count())))", "[[{ TimeStamp, result = [Count] }]]");
         assertLayout("all(group(time.dayofyear(a)) each(output(count())))", "[[{ TimeStamp, result = [Count] }]]");

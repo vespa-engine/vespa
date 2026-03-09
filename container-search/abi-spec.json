@@ -3135,6 +3135,21 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.GeoDistanceFunction" : {
+    "superClass" : "com.yahoo.search.grouping.request.FunctionNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.AttributeFunction, com.yahoo.search.grouping.request.GroupingExpression, com.yahoo.search.grouping.request.GroupingExpression, java.lang.String)",
+      "public java.lang.String getUnit()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.GeoDistanceFunction copy()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.GroupingExpression" : {
     "superClass" : "com.yahoo.search.grouping.request.GroupingNode",
     "interfaces" : [ ],
