@@ -13,7 +13,6 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
@@ -207,7 +206,6 @@ public class SessionsMaintainerTest {
 
     @Test
     public void testDeletingSessionWithStatusDelete() {
-        flagSource.withBooleanFlag(Flags.USE_EXPERIMENTAL_DELETE_SESSIONS_CODE.id(), true);
         tester = createTester(flagSource);
         tester.deployApp(testApp, prepareParams()); // session 2 (numbering starts at 2)
 

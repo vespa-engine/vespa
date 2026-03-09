@@ -423,14 +423,6 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE
     );
 
-    public static final UnboundBooleanFlag USE_EXPERIMENTAL_DELETE_SESSIONS_CODE = defineFeatureFlag(
-            "use-experimental-delete-sessions-code", true,
-            List.of("hmusum"), "2026-02-11", "2026-04-01",
-            "Whether to use new code for deleting unused sessions on config server",
-            "Takes effect at next run of config server maintainer SessionsMaintainer",
-            HOSTNAME
-    );
-
     public static final UnboundDoubleFlag SEARCHNODE_RESERVED_DISK_SPACE_FACTOR = defineDoubleFlag(
             "searchnode-reserved-disk-space-factor", 0.0,
             List.of("toregge"), "2026-01-17", "2026-10-16",
