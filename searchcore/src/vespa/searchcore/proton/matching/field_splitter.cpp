@@ -137,10 +137,16 @@ genericAddSimpleTerm<ProtonNodeTypes::RegExpTerm>(ProtonBuilder& builder,
  *
  * Special handling:
  * - Phrase nodes: Children won't have fields, so they are visited as-is
- * - SameElement nodes: Children are forced to use the same field as the SameElement
+ * - SameElement nodes have three variants:
+ *   a) Single field: pass through as-is, children are visited normally
+ *   b) Multiple fields, all children have the same field set as the SameElement:
+ *      split into OR of per-field SameElements, forcing each child to use that field
+ *   c) Multiple fields, children have different/mixed fields:
+ *      split into OR of per-field SameElements, but children are visited normally
+ *      without forcing, so each child handles its own field splitting independently
  * - Equiv nodes: Gathers children by field, creating one Equiv per field
  * - Multi-term nodes: WeightedSet, DotProduct, WandTerm, InTerm, WordAlternatives
- * - Forced field mode: When inside a SameElement, children must use the SameElement's field
+ * - Forced field mode: When inside a SameElement (variant b), children must use the SameElement's field
  *
  * State:
  * - _builder: QueryBuilder for constructing the transformed tree
@@ -213,7 +219,7 @@ private:
         return replica;
     }
 
-    // Helper to create a non-split SameElement (pass-through)
+    // Helper for SameElement variant (a): single field, pass through without splitting
     void handleWithoutSplit(ProtonSameElement &node) {
         auto &replica = createSameElementReplica(node);
         // Copy ProtonTermData state - should have exactly one field when not splitting
@@ -223,13 +229,24 @@ private:
         visitNodes(node.getChildren());
     }
 
-    // Helper to split SameElement across multiple fields
-    // Children are forced to use each specific field via splitAndVisitChildrenForField
+    // Helper for SameElement variant (b): multiple fields, all children have the same field set.
+    // Creates OR of per-field SameElements, forcing each child to use the specific field.
     void splitSameElementByFields(ProtonSameElement &node, const std::set<uint32_t> &fields) {
         _builder.addOr(fields.size());
         for (uint32_t field_id : fields) {
             createSameElementReplica(node);
             splitAndVisitChildrenForField(node.getChildren(), field_id);
+        }
+    }
+
+    // Helper for SameElement variant (c): multiple fields, children have different/mixed fields.
+    // Creates OR of per-field SameElements, but children are visited without forcing,
+    // so each child independently handles its own field splitting.
+    void splitSameElementByFieldsNoForce(ProtonSameElement &node, const std::set<uint32_t> &fields) {
+        _builder.addOr(fields.size());
+        for ([[maybe_unused]] uint32_t field_id : fields) {
+            createSameElementReplica(node);
+            visitNodes(node.getChildren());
         }
     }
 
@@ -573,29 +590,23 @@ public:
         splitTerm(node);
     }
 
-    // Helper to determine if SameElement can be split by fields
-    bool canSplitSameElement(ProtonSameElement &node) const {
-        // Can split if:
-        // 1. SameElement has multiple fields
-        // 2. All children have the same set of fields as the SameElement
-        if (node.numFields() <= 1) {
-            return false;
-        }
-        return allChildrenHaveSameFields(node.getChildren(), getFieldIds(node));
-    }
-
     void visit(ProtonSameElement &node) override {
-        if (!canSplitSameElement(node)) {
-            LOG(debug, "SameElement not split: has %zu field(s), children have incompatible fields",
-                node.numFields());
+        if (node.numFields() <= 1) {
+            // Single field - just pass through
+            LOG(debug, "SameElement pass-through: has %zu field(s)", node.numFields());
             handleWithoutSplit(node);
             return;
         }
-
-        // All children have the same multiple fields as SameElement - split like Phrase
         auto fields = getFieldIds(node);
-        LOG(debug, "Splitting SameElement across %zu fields", fields.size());
-        splitSameElementByFields(node, fields);
+        if (allChildrenHaveSameFields(node.getChildren(), fields)) {
+            // Multiple fields, all children have same set - split with forced children
+            LOG(debug, "Splitting SameElement across %zu fields (forcing children)", fields.size());
+            splitSameElementByFields(node, fields);
+        } else {
+            // Multiple fields, children have something different - split without forcing
+            LOG(debug, "Splitting SameElement across %zu fields (not forcing children)", fields.size());
+            splitSameElementByFieldsNoForce(node, fields);
+        }
     }
 
     // Terms that need splitting
