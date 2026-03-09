@@ -56,16 +56,10 @@ public class FileDownloader implements AutoCloseable {
                           File downloadDirectory,
                           Duration timeout,
                           Duration backoffInitialTime) {
-        this.connectionPool = connectionPool;
-        this.supervisor = supervisor;
-        this.downloadDirectory = downloadDirectory;
-        this.timeout = timeout;
-        // Needed to receive RPC receiveFile* calls from server after starting download of file reference
-        new FileReceiver(supervisor, downloads, downloadDirectory);
-        this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout,
-                                                                    backoffInitialTime, downloadDirectory);
-        if (forceDownload)
-            log.log(Level.INFO, "Force download of file references (download even if file reference exists on disk)");
+        this(connectionPool, supervisor, downloadDirectory, timeout, backoffInitialTime,
+             Optional.ofNullable(System.getenv("VESPA_FILE_DOWNLOAD_MAX_TIMEOUTS_BEFORE_CLOSE"))
+                     .map(Integer::parseInt)
+                     .orElse(0));
     }
 
     public FileDownloader(ConnectionPool connectionPool,
@@ -81,8 +75,8 @@ public class FileDownloader implements AutoCloseable {
         // Needed to receive RPC receiveFile* calls from server after starting download of file reference
         new FileReceiver(supervisor, downloads, downloadDirectory);
         this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout,
-                                                                    backoffInitialTime, downloadDirectory,
-                                                                    maxTimeoutsBeforeClose);
+                                                                   backoffInitialTime, downloadDirectory,
+                                                                   maxTimeoutsBeforeClose);
         if (forceDownload)
             log.log(Level.INFO, "Force download of file references (download even if file reference exists on disk)");
     }

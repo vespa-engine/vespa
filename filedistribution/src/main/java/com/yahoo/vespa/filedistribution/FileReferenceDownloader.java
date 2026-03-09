@@ -58,17 +58,6 @@ public class FileReferenceDownloader {
                             Downloads downloads,
                             Duration timeout,
                             Duration backoffInitialTime,
-                            File downloadDirectory) {
-        this(connectionPool, downloads, timeout, backoffInitialTime, downloadDirectory,
-             Optional.ofNullable(System.getenv("VESPA_FILE_DOWNLOAD_MAX_TIMEOUTS_BEFORE_CLOSE"))
-                     .map(Integer::parseInt)
-                     .orElse(0));
-    }
-
-    FileReferenceDownloader(ConnectionPool connectionPool,
-                            Downloads downloads,
-                            Duration timeout,
-                            Duration backoffInitialTime,
                             File downloadDirectory,
                             int maxTimeoutsBeforeClose) {
         this.connectionPool = connectionPool;
