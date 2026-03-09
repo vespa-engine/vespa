@@ -10,6 +10,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/fake_index.h>
+#include <vespa/searchlib/queryeval/match_span.h>
 #include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -26,6 +27,8 @@ using search::query::Node;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
 using search::query::Weight;
+using search::queryeval::MatchSpan;
+using search::queryeval::MatchSpanPos;
 using search::queryeval::test::MockElementGapInspector;
 using search::streaming::NearQueryNode;
 using search::streaming::ONearQueryNode;
@@ -110,6 +113,8 @@ protected:
     bool evaluate_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
     WrappedQuery make_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
     std::vector<uint32_t> get_element_ids(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
+    static MatchSpan match_span(uint32_t field_id, uint32_t first_elem, uint32_t first_pos, uint32_t last_elem,
+                                uint32_t last_pos);
 
     // Visual test support
     struct NearSpec {
@@ -136,8 +141,13 @@ protected:
             return *this;
         }
 
+        void verify_common(const search::queryeval::FakeIndex& index, uint32_t docid,
+                           std::optional<std::vector<uint32_t>> expected_elements,
+                           std::optional<std::vector<MatchSpan>> expected_match_spans);
         void verify(const search::queryeval::FakeIndex& index, uint32_t docid,
                    const std::vector<uint32_t>& expected_elements);
+        void verify_spans(const search::queryeval::FakeIndex& index, uint32_t docid,
+                          const std::vector<MatchSpan>& expected_match_spans);
     };
 
     NearSpec near(const std::string& terms, uint32_t window) {
@@ -258,9 +268,17 @@ NearTest::get_element_ids(QueryTweak query_tweak, uint32_t distance, const std::
     return result;
 }
 
+MatchSpan
+NearTest::match_span(uint32_t field_id, uint32_t first_elem, uint32_t first_pos, uint32_t last_elem,
+                     uint32_t last_pos)
+{
+    return MatchSpan(field_id, MatchSpanPos(first_elem, first_pos), MatchSpanPos(last_elem, last_pos));
+}
+
 void
-NearTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t docid,
-                          const std::vector<uint32_t>& expected_elements)
+NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uint32_t docid,
+                                  std::optional<std::vector<uint32_t>> expected_elements,
+                                  std::optional<std::vector<MatchSpan>> expected_match_spans)
 {
     MockElementGapInspector element_gap_inspector(_test->_element_gap_setting.value_or(std::nullopt));
 
@@ -306,11 +324,32 @@ NearTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t d
         near_node->addChild(std::move(term));
     }
 
-    // Get actual element IDs
-    std::vector<uint32_t> actual_elements;
-    root->get_element_ids(actual_elements);
+    if (expected_elements.has_value()) {
+        // Get actual element IDs
+        std::vector<uint32_t> actual_elements;
+        root->get_element_ids(actual_elements);
 
-    EXPECT_EQ(expected_elements, actual_elements);
+        EXPECT_EQ(expected_elements.value(), actual_elements);
+    }
+    if (expected_match_spans.has_value()) {
+        std::vector<MatchSpan> act_match_spans;
+        near_node->get_match_spans(act_match_spans);
+        EXPECT_EQ(expected_match_spans.value(), act_match_spans);
+    }
+}
+
+void
+NearTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t docid,
+                           const std::vector<uint32_t>& expected_elements)
+{
+    verify_common(index, docid, expected_elements, std::nullopt);
+}
+
+void
+NearTest::NearSpec::verify_spans(const search::queryeval::FakeIndex& index, uint32_t docid,
+                                 const std::vector<MatchSpan>& expected_match_spans)
+{
+    verify_common(index, docid, std::nullopt, expected_match_spans);
 }
 
 TEST_P(NearTest, test_empty_near)
@@ -462,8 +501,28 @@ TEST_P(NearTest, basic_visual_test)
 
     if (GetParam().ordered()) {
         near("ABC", 4).verify(docs, 69, {1});
+        near("ABC", 4).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 6)});
+        _element_gap_setting.emplace(1);
+        near("CA", 6).verify_spans(docs, 69, {match_span(0, 1, 6, 2, 2)});
     } else {
         near("ABC", 4).verify(docs, 69, {1, 2});
+        near("ABC", 4).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 6), match_span(0, 2, 2, 2, 6)});
+    }
+}
+
+TEST_P(NearTest, merged_match_spans)
+{
+    auto docs = index().doc(69)
+        .elem(1, "..A.B.A.B.")
+        .elem(2, "A.B.");
+    if (GetParam().ordered()) {
+        near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
+        _element_gap_setting.emplace(0);
+        near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
+    } else {
+        near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 8), match_span(0, 2, 0, 2, 2)});
+        _element_gap_setting.emplace(0);
+        near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 2, 2)});
     }
 }
 

@@ -14,6 +14,7 @@ LOG_SETUP(".nearsearch");
 using search::queryeval::IElementGapInspector;
 using search::queryeval::near_search_utils::BoolMatchResult;
 using search::queryeval::near_search_utils::ElementIdMatchResult;
+using search::queryeval::near_search_utils::SpanMatchResult;
 
 namespace search::queryeval {
 
@@ -34,7 +35,8 @@ void setup_fields(uint32_t window, const IElementGapInspector& element_gap_inspe
     }
     for (auto [field, cnt] : fields) {
         if (cnt == terms) {
-            matchers.emplace_back(window, element_gap_inspector.get_element_gap(field), field, in, num_negative_terms, exclusion_distance);
+            matchers.emplace_back(window, element_gap_inspector.get_element_gap(field), field, in, num_negative_terms,
+                                  exclusion_distance, field);
         }
     }
 }
@@ -264,11 +266,13 @@ struct Iterators
     vespalib::PriorityQueue<PosIter> _queue;
     TermFieldMatchDataPosition       _maxOcc;
     ElementGap                       _element_gap;
+    uint32_t                         _field_id;
 
-    Iterators(ElementGap element_gap)
+    Iterators(ElementGap element_gap, uint32_t field_id)
         : _queue(),
           _maxOcc(),
-          _element_gap(element_gap)
+          _element_gap(element_gap),
+          _field_id(field_id)
     {
     }
     void update(const TermFieldMatchDataPosition& occ)
@@ -294,7 +298,11 @@ struct Iterators
 
             if (!(lastAllowed < _maxOcc)) {
                 if (filter.check_window(*front.curPos, _maxOcc)) {
-                    match_result.register_match(front.curPos->getElementId());
+                    if constexpr (MatchResult::collect_spans) {
+                        match_result.register_match(MatchSpan(_field_id, *front.curPos, _maxOcc));
+                    } else {
+                        match_result.register_match(front.curPos->getElementId());
+                    }
                     if constexpr (MatchResult::shortcut_return) {
                         return;
                     }
@@ -320,7 +328,7 @@ template <typename MatchResult>
 void
 NearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
 {
-    Iterators pos(get_element_gap());
+    Iterators pos(get_element_gap(), field_id());
     uint32_t num_positive_terms = inputs().size() - num_negative_terms();
     for (uint32_t i = 0; i < num_positive_terms; ++i) {
         const search::fef::TermFieldMatchData *term = inputs()[i];
@@ -366,6 +374,17 @@ NearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids)
         matcher.match(docId, match_result);
     }
     match_result.maybe_sort_element_ids();
+}
+
+void
+NearSearch::get_match_spans(uint32_t docid, std::vector<MatchSpan>& match_spans)
+{
+    // Retrieve spans that matched
+    assert(match_spans.empty());
+    SpanMatchResult match_result(match_spans);
+    for (auto& matcher : _matchers) {
+        matcher.match(docid, match_result);
+    }
 }
 
 void
@@ -418,7 +437,11 @@ ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filt
     if (numTerms < 2) {
         for ( ; pos[0] != inputs()[0]->end(); ++pos[0]) {
             if (filter.check_window(*pos[0], *pos[0])) {
-                match_result.register_match(pos[0]->getElementId());
+                if constexpr (MatchResult::collect_spans) {
+                    match_result.register_match(MatchSpan(field_id(), *pos[0], *pos[0]));
+                } else {
+                    match_result.register_match(pos[0]->getElementId());
+                }
                 if constexpr (MatchResult::shortcut_return) {
                     return;
                 }
@@ -463,7 +486,11 @@ ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filt
                 if (filter.check_window(*pos[0], *pos[i])) {
                     LOG(debug, "ONEAR match found for document %d.", docId);
                     // OK for all terms
-                    match_result.register_match(firstTermPos.getElementId());
+                    if constexpr (MatchResult::collect_spans) {
+                        match_result.register_match(MatchSpan(field_id(), *pos[0], *pos[i]));
+                    } else {
+                        match_result.register_match(pos[0]->getElementId());
+                    }
                     if constexpr (MatchResult::shortcut_return) {
                         return;
                     }
@@ -518,6 +545,17 @@ ONearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids)
         matcher.match(docId, match_result);
     }
     match_result.maybe_sort_element_ids();
+}
+
+void
+ONearSearch::get_match_spans(uint32_t docid, std::vector<MatchSpan>& match_spans)
+{
+    // Retrieve spans that matched
+    assert(match_spans.empty());
+    SpanMatchResult match_result(match_spans);
+    for (auto& matcher : _matchers) {
+        matcher.match(docid, match_result);
+    }
 }
 
 void
