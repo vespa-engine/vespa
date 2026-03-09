@@ -13,7 +13,7 @@ namespace search::queryeval::near_search_utils {
 class BoolMatchResult {
     bool _is_match;
 public:
-    BoolMatchResult()
+    BoolMatchResult() noexcept
         : _is_match(false)
     { }
     void register_match(uint32_t element_id) noexcept {
@@ -32,7 +32,7 @@ class ElementIdMatchResult {
     std::vector<uint32_t>& _element_ids;
     bool                   _need_sort;
 public:
-    ElementIdMatchResult(std::vector<uint32_t>& element_ids)
+    explicit ElementIdMatchResult(std::vector<uint32_t>& element_ids) noexcept
         : _element_ids(element_ids),
           _need_sort(false)
     {
@@ -55,7 +55,7 @@ public:
 class SpanMatchResult {
     std::vector<MatchSpan>& _match_spans;
 public:
-    SpanMatchResult(std::vector<MatchSpan>& match_spans)
+    explicit SpanMatchResult(std::vector<MatchSpan>& match_spans) noexcept
         : _match_spans(match_spans)
     {
     }

@@ -17,31 +17,23 @@ class MatchSpanPos {
     uint32_t _pos;
 
 public:
-    explicit MatchSpanPos(uint32_t element_id_, uint32_t pos_)
+    MatchSpanPos(uint32_t element_id_, uint32_t pos_) noexcept
         : _element_id(element_id_),
           _pos(pos_)
     {
     }
-    explicit MatchSpanPos(const fef::TermFieldMatchDataPosition& tfmd_pos, bool last)
+    MatchSpanPos(const fef::TermFieldMatchDataPosition& tfmd_pos, bool last) noexcept
         : _element_id(tfmd_pos.getElementId()),
           _pos(tfmd_pos.getPosition() + (last ? (tfmd_pos.getMatchLength() - 1) : 0))
     {
     }
-    explicit MatchSpanPos(const streaming::Hit& hit)
+    explicit MatchSpanPos(const streaming::Hit& hit) noexcept
         : _element_id(hit.element_id()),
           _pos(hit.position()) {
     }
-    bool operator<(const MatchSpanPos& rhs) const {
-        if (_element_id != rhs._element_id) {
-            return _element_id < rhs._element_id;
-        } else {
-            return _pos < rhs._pos;
-        }
-    }
-
     uint32_t element_id() const noexcept { return _element_id; }
     uint32_t pos() const noexcept { return _pos; }
-    auto operator<=>(const MatchSpanPos& rhs) const = default;
+    auto operator<=>(const MatchSpanPos& rhs) const noexcept = default;
 };
 
 /*
@@ -53,34 +45,34 @@ class MatchSpan {
     MatchSpanPos _last;
 
 public:
-    explicit MatchSpan(uint32_t field_id_, const MatchSpanPos& first_, const MatchSpanPos& last_)
+    MatchSpan(uint32_t field_id_, const MatchSpanPos& first_, const MatchSpanPos& last_) noexcept
         : _field_id(field_id_),
           _first(first_),
           _last(last_)
     {
     }
 
-    explicit MatchSpan(uint32_t field_id_, const fef::TermFieldMatchDataPosition& first_,
-                      const fef::TermFieldMatchDataPosition& last_)
+    MatchSpan(uint32_t field_id_, const fef::TermFieldMatchDataPosition& first_,
+              const fef::TermFieldMatchDataPosition &last_) noexcept
         : _field_id(field_id_),
           _first(first_, false),
           _last(last_, true)
     {
     }
 
-    explicit MatchSpan(const streaming::Hit& first_, const streaming::Hit& last_)
+    MatchSpan(const streaming::Hit& first_, const streaming::Hit& last_) noexcept
         : _field_id(first_.field_id()),
           _first(first_),
           _last(last_)
     {
     }
 
-    void merge_spans(const MatchSpan& rhs) { _last = rhs._last; }
+    void merge_spans(const MatchSpan& rhs) noexcept { _last = rhs._last; }
 
     uint32_t field_id() const noexcept { return _field_id; }
     const MatchSpanPos& first() const noexcept { return _first; }
     const MatchSpanPos& last() const noexcept { return _last; }
-    auto operator<=>(const MatchSpan& rhs) const = default;
+    auto operator<=>(const MatchSpan& rhs) const noexcept = default;
 };
 
 std::ostream& operator<<(std::ostream& os, const MatchSpanPos& match_span_pos);

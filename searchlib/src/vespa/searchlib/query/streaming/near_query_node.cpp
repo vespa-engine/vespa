@@ -97,7 +97,7 @@ void
 NearQueryNode::get_match_spans(std::vector<MatchSpan>& match_spans)
 {
     // Retrieve the matching spans
-    SpanMatchResult match_result(match_spans);;
+    SpanMatchResult match_result(match_spans);
     evaluate_helper(match_result);
 }
 

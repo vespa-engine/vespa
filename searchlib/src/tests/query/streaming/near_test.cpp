@@ -270,7 +270,7 @@ NearTest::get_element_ids(QueryTweak query_tweak, uint32_t distance, const std::
 
 MatchSpan
 NearTest::match_span(uint32_t field_id, uint32_t first_elem, uint32_t first_pos, uint32_t last_elem,
-                            uint32_t last_pos)
+                     uint32_t last_pos)
 {
     return MatchSpan(field_id, MatchSpanPos(first_elem, first_pos), MatchSpanPos(last_elem, last_pos));
 }

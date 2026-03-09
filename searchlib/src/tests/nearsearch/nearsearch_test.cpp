@@ -361,7 +361,6 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
                                  std::optional<std::vector<uint32_t>> and_element_ids,
                                  std::optional<std::vector<MatchSpan>> exp_match_spans, const std::string &label)
 {
-    (void) exp_match_spans;
     SCOPED_TRACE(vespalib::make_string("%s - %u", label.c_str(), matchId));
     search::queryeval::IntermediateBlueprint *near_b = nullptr;
     if (query.isOrdered()) {
@@ -479,6 +478,7 @@ TEST_F(NearSearchTest, with_visual_setup)
     onear("ABC", 4).verify(docs, 69, {1});
     near("ABC", 4).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 6), match_span(0, 2, 2, 2,6)});
     onear("ABC", 4).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 6)});
+    onear("ABC", 5).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 6), match_span(0, 3, 2, 3, 7)});
     onear("CA", 6).element_gap(1).verify_spans(docs, 69, {match_span(0, 1, 6, 2, 2)});
 }
 
@@ -490,6 +490,7 @@ TEST_F(NearSearchTest, merged_match_spans)
     near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 8), match_span(0, 2, 0, 2, 2)});
     near("AB", 2).element_gap(0).verify_spans(docs, 69, {match_span(0, 1, 2, 2, 2)});
     onear("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
+    // Test with element gap 0 instead of infinity
     onear("AB", 2).element_gap(0).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
 }
 
