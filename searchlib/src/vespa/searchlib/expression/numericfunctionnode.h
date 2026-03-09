@@ -13,7 +13,7 @@ public:
     NumericFunctionNode();
     NumericFunctionNode(const NumericFunctionNode & rhs);
     NumericFunctionNode & operator = (const NumericFunctionNode & rhs);
-    ~NumericFunctionNode();
+    ~NumericFunctionNode() override;
     void reset() override { _handler.reset(); MultiArgFunctionNode::reset(); }
 protected:
     void onPrepare(bool preserveAccurateTypes) override;

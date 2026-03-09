@@ -18,7 +18,7 @@ public:
     ZCurveFunctionNode(ExpressionNode::UP arg, Dimension dim) : UnaryFunctionNode(std::move(arg)), _dim(dim) { }
     ZCurveFunctionNode(const ZCurveFunctionNode & rhs);
     ZCurveFunctionNode & operator = (const ZCurveFunctionNode & rhs);
-    ~ZCurveFunctionNode();
+    ~ZCurveFunctionNode() override;
     Dimension getDim() const { return _dim; }
 private:
     class Handler {
