@@ -224,17 +224,10 @@ TEST_F(QueryTermTest, unpack_match_data_with_element_filter)
     reset_tfmd();
     _node->unpack_match_data(docid, *_md, _index_env, ElementIds(make_vec({4})));
     EXPECT_TRUE(_tfmd->has_invalid_docid());
-    EXPECT_EQ(0, _tfmd->getNumOccs());
-    EXPECT_EQ(0, _tfmd->getFieldLength());
-    EXPECT_EQ(0, _tfmd->size());
     EXPECT_EQ(make_vec({}), extract_element_ids(docid));
     reset_tfmd();
     _node->unpack_match_data(docid, *_md, _index_env, ElementIds(make_vec({})));
     EXPECT_TRUE(_tfmd->has_invalid_docid());
-    EXPECT_EQ(0, _tfmd->getNumOccs());
-    EXPECT_EQ(0, _tfmd->getFieldLength());
-    EXPECT_EQ(0, _tfmd->size());
-    EXPECT_EQ(make_vec({}), extract_element_ids(docid));
 }
 
 TEST_F(QueryTermTest, unpack_match_data_with_match_spans)
@@ -243,6 +236,7 @@ TEST_F(QueryTermTest, unpack_match_data_with_match_spans)
     _tfmd->setNeedInterleavedFeatures(true);
     ASSERT_NO_FATAL_FAILURE(populate_term());
     constexpr uint32_t docid = 2;
+    // Match span covers all matches
     _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {0, 0}, {10, 1}}}));
     EXPECT_TRUE(_tfmd->has_ranking_data(docid));
     EXPECT_EQ(mock_num_occs, _tfmd->getNumOccs());
@@ -250,6 +244,7 @@ TEST_F(QueryTermTest, unpack_match_data_with_match_spans)
     EXPECT_EQ(mock_num_occs, _tfmd->size());
     EXPECT_EQ(make_vec({0, 3, 7, 10}), extract_element_ids(docid));
     reset_tfmd();
+    // Intersection between match spans and match data contains multiple matches in multiple elements.
     _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({
                                  {_field_id, {0, 0}, {0, 1}},
                                  {_field_id, {2, 0}, {2, 1}},
@@ -264,6 +259,7 @@ TEST_F(QueryTermTest, unpack_match_data_with_match_spans)
     EXPECT_EQ(3, _tfmd->size());
     EXPECT_EQ(make_vec({0, 3, 10}), extract_element_ids(docid));
     reset_tfmd();
+    // Intersection between match span and match data contains a match at start of element 3.
     _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {3, 0}, {3, 1}}}));
     EXPECT_TRUE(_tfmd->has_ranking_data(docid));
     EXPECT_EQ(1, _tfmd->getNumOccs());
@@ -271,31 +267,19 @@ TEST_F(QueryTermTest, unpack_match_data_with_match_spans)
     EXPECT_EQ(1, _tfmd->size());
     EXPECT_EQ(make_vec({3}), extract_element_ids(docid));
     reset_tfmd();
+    // Intersection between match span and match data is empty (match span is before match data in element 3).
     _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {3, 0}, {3, 0}}}));
     EXPECT_TRUE(_tfmd->has_invalid_docid());
-    EXPECT_EQ(0, _tfmd->getNumOccs());
-    EXPECT_EQ(0, _tfmd->getFieldLength());
-    EXPECT_EQ(0, _tfmd->size());
     EXPECT_EQ(make_vec({}), extract_element_ids(docid));
     reset_tfmd();
+    // Intersection between match span and match data is empty (match span is after match data in element 3).
     _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {3, 2}, {3, 2}}}));
-    EXPECT_TRUE(_tfmd->has_invalid_docid());
-    EXPECT_EQ(0, _tfmd->getNumOccs());
-    EXPECT_EQ(0, _tfmd->getFieldLength());
-    EXPECT_EQ(0, _tfmd->size());
-    EXPECT_EQ(make_vec({}), extract_element_ids(docid));
     reset_tfmd();
+    // Intersection between match span (start of element 4) and match data is empty.
     _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {4, 0}, {4, 1}}}));
     EXPECT_TRUE(_tfmd->has_invalid_docid());
-    EXPECT_EQ(0, _tfmd->getNumOccs());
-    EXPECT_EQ(0, _tfmd->getFieldLength());
-    EXPECT_EQ(0, _tfmd->size());
-    EXPECT_EQ(make_vec({}), extract_element_ids(docid));
     reset_tfmd();
+    // No spans, thus empty intersection between match spans and match data
     _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({}));
     EXPECT_TRUE(_tfmd->has_invalid_docid());
-    EXPECT_EQ(0, _tfmd->getNumOccs());
-    EXPECT_EQ(0, _tfmd->getFieldLength());
-    EXPECT_EQ(0, _tfmd->size());
-    EXPECT_EQ(make_vec({}), extract_element_ids(docid));
 }

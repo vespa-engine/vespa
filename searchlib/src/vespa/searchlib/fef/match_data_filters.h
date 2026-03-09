@@ -55,6 +55,7 @@ public:
     {
     }
 
+    // Match span contains field id, no iterator rewinding required.
     void new_field() noexcept { }
 
     bool is_filtered(const streaming::Hit& hit) noexcept {
