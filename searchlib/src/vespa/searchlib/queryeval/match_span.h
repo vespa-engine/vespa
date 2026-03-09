@@ -69,6 +69,20 @@ public:
 
     void merge_spans(const MatchSpan& rhs) noexcept { _last = rhs._last; }
 
+    bool is_before(const streaming::Hit& hit) const noexcept {
+        if (_field_id != hit.field_id()) {
+            return _field_id < hit.field_id();
+        }
+        return _last < MatchSpanPos(hit);
+    }
+
+    bool is_after(const streaming::Hit& hit) const noexcept {
+        if (_field_id != hit.field_id()) {
+            return _field_id > hit.field_id();
+        }
+        return _first > MatchSpanPos(hit);
+    }
+
     uint32_t field_id() const noexcept { return _field_id; }
     const MatchSpanPos& first() const noexcept { return _first; }
     const MatchSpanPos& last() const noexcept { return _last; }
