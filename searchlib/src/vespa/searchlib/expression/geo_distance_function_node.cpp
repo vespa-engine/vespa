@@ -39,13 +39,11 @@ GeoDistanceFunctionNode& GeoDistanceFunctionNode::operator=(const GeoDistanceFun
 
 void GeoDistanceFunctionNode::onPrepareResult() { setResultType(std::make_unique<FloatResultNode>()); }
 
-bool GeoDistanceFunctionNode::onExecute() const {
+void GeoDistanceFunctionNode::onExecute() const {
     assert(getNumArgs() == 3 && "Expect 3 arguments: position attribute, lat, lon");
 
     for (size_t i = 0; i < 3; i++) {
-        if (!getArg(i).execute()) {
-            return false;
-        }
+        getArg(i).execute();
     }
 
     int64_t zcurve = getArg(0).getResult()->getInteger();
