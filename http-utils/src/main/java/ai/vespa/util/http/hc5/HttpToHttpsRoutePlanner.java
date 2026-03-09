@@ -22,7 +22,8 @@ class HttpToHttpsRoutePlanner implements HttpRoutePlanner {
         if ( ! target.getSchemeName().equals("http") && ! target.getSchemeName().equals("https"))
             throw new IllegalArgumentException("Scheme must be 'http' or 'https' when using HttpToHttpsRoutePlanner, was '" + target.getSchemeName() + "'");
 
-        if (HttpClientContext.adapt(context).getRequestConfig().getProxy() != null)
+        var requestConfig = HttpClientContext.adapt(context).getRequestConfig();
+        if (requestConfig != null && requestConfig.getProxy() != null)
             throw new IllegalArgumentException("Proxies are not supported with HttpToHttpsRoutePlanner");
 
         int port = DefaultSchemePortResolver.INSTANCE.resolve(target);
