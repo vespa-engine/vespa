@@ -1086,15 +1086,16 @@ template<typename B>
 VerifierTest<B>::~VerifierTest() = default;
 
 
-using NonUnpackingBuilders = ::testing::Types<ArrayBoolSearchBuilder,
-                                              ArrayBoolBlueprintSearchBuilder,
-                                              ArrayBoolBlueprintFilterSearchBuilder,
-                                              SameElementArrayBoolSearchBuilder,
-                                              SameElementMultiArrayBoolSearchBuilder,
-                                              SameElementGenericSearchBuilder,
-                                              SameElementBlueprintSearchBuilder,
-                                              SameElementBlueprintReplacementSearchBuilder>;
-TYPED_TEST_SUITE(VerifierTest, NonUnpackingBuilders);
+// All builders, including the one producing a filter iterator, which does not support unpacking
+using AllBuilders = ::testing::Types<ArrayBoolSearchBuilder,
+                                     ArrayBoolBlueprintSearchBuilder,
+                                     ArrayBoolBlueprintFilterSearchBuilder,
+                                     SameElementArrayBoolSearchBuilder,
+                                     SameElementMultiArrayBoolSearchBuilder,
+                                     SameElementGenericSearchBuilder,
+                                     SameElementBlueprintSearchBuilder,
+                                     SameElementBlueprintReplacementSearchBuilder>;
+TYPED_TEST_SUITE(VerifierTest, AllBuilders);
 
 TYPED_TEST(VerifierTest, verify_iterator_multiple_elements) {
     for (const auto& element_filter: all_non_empty_subsets({0, 1, 2, 3, 4})) {
