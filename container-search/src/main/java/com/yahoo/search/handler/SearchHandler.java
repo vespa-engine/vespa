@@ -33,6 +33,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.context.QueryContext;
+import com.yahoo.search.query.properties.IllegalAssignmentException;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.properties.DefaultProperties;
@@ -182,7 +183,7 @@ public class SearchHandler extends LoggingRequestHandler {
         try {
             try {
                 return handleBody(request);
-            } catch (IllegalInputException e) {
+            } catch (IllegalInputException | IllegalAssignmentException e) {
                 return illegalQueryResponse(request, e);
             } catch (RuntimeException e) { // Make sure we generate a valid response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
