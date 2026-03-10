@@ -22,7 +22,7 @@ public class SearchChain extends Chain<Searcher<?>> {
         return new FederationOptions().setUseByDefault(true);
     }
 
-    //A list of documents types that this search chain provides results for, empty if unknown
+    /** A list of documents types that this search chain provides results for, empty if unknown. */
     public List<String> getDocumentTypes() {
         return List.of();
     }

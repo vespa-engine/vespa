@@ -51,8 +51,8 @@ class RestartOnDeployMaintainerTest {
                 Map.of(),
                 triggerPendingRestarts(
                                 hosts -> Map.of(
-                                        "a", List.of(new ServiceConfigState(1, Optional.empty())),
-                                        "b", List.of(new ServiceConfigState(1, Optional.empty()))),
+                                        "a", List.of(new ServiceConfigState("service1", 1, Optional.empty())),
+                                        "b", List.of(new ServiceConfigState("service2", 1, Optional.empty()))),
                                 (id, hosts) -> {
                                     assertEquals(ApplicationId.defaultId(), id);
                                     assertEquals(Set.of("a", "b"), hosts);
@@ -69,8 +69,8 @@ class RestartOnDeployMaintainerTest {
                 Map.of(),
                 triggerPendingRestarts(
                                 hosts -> Map.of(
-                                        "a", List.of(new ServiceConfigState(0, Optional.of(true))),
-                                        "b", List.of(new ServiceConfigState(0, Optional.of(true)))),
+                                        "a", List.of(new ServiceConfigState("service1", 0, Optional.of(true))),
+                                        "b", List.of(new ServiceConfigState("service2", 0, Optional.of(true)))),
                                 (id, hosts) -> {
                                     assertEquals(ApplicationId.defaultId(), id);
                                     assertEquals(Set.of("a", "b"), hosts);
@@ -87,8 +87,8 @@ class RestartOnDeployMaintainerTest {
                 Map.of(1L, Set.of("a", "b")),
                 triggerPendingRestarts(
                                 hosts -> Map.of(
-                                        "a", List.of(new ServiceConfigState(0, Optional.of(false))),
-                                        "b", List.of(new ServiceConfigState(0, Optional.of(false)))),
+                                        "a", List.of(new ServiceConfigState("service1", 0, Optional.of(false))),
+                                        "b", List.of(new ServiceConfigState("service2", 0, Optional.of(false)))),
                                 (id, hosts) -> {
                                     fail("Should not be called");
                                 },
@@ -104,8 +104,8 @@ class RestartOnDeployMaintainerTest {
                 Map.of(),
                 triggerPendingRestarts(
                                 hosts -> Map.of(
-                                        "a", List.of(new ServiceConfigState(1, Optional.of(false))),
-                                        "b", List.of(new ServiceConfigState(1, Optional.of(false)))),
+                                        "a", List.of(new ServiceConfigState("service1", 1, Optional.of(false))),
+                                        "b", List.of(new ServiceConfigState("service2", 1, Optional.of(false)))),
                                 (id, hosts) -> {
                                     assertEquals(ApplicationId.defaultId(), id);
                                     assertEquals(Set.of("a", "b"), hosts);
@@ -124,12 +124,12 @@ class RestartOnDeployMaintainerTest {
                                 hosts -> Map.of(
                                         "a",
                                         List.of(
-                                                new ServiceConfigState(0, Optional.empty()),
-                                                new ServiceConfigState(0, Optional.of(true))),
+                                                new ServiceConfigState("service1", 0, Optional.empty()),
+                                                new ServiceConfigState("service2", 0, Optional.of(true))),
                                         "b",
                                         List.of(
-                                                new ServiceConfigState(0, Optional.empty()),
-                                                new ServiceConfigState(0, Optional.of(true)))),
+                                                new ServiceConfigState("service3", 0, Optional.empty()),
+                                                new ServiceConfigState("service4", 0, Optional.of(true)))),
                                 (id, hosts) -> {
                                     fail("Should not be called");
                                 },
@@ -147,12 +147,12 @@ class RestartOnDeployMaintainerTest {
                                 hosts -> Map.of(
                                         "a",
                                                 List.of(
-                                                        new ServiceConfigState(2, Optional.empty()),
-                                                        new ServiceConfigState(1, Optional.of(true))),
+                                                        new ServiceConfigState("service1", 2, Optional.empty()),
+                                                        new ServiceConfigState("service2", 1, Optional.of(true))),
                                         "b",
                                                 List.of(
-                                                        new ServiceConfigState(1, Optional.empty()),
-                                                        new ServiceConfigState(1, Optional.of(true)))),
+                                                        new ServiceConfigState("service3", 1, Optional.empty()),
+                                                        new ServiceConfigState("service4", 1, Optional.of(true)))),
                                 (id, hosts) -> {
                                     assertEquals(ApplicationId.defaultId(), id);
                                     assertEquals(Set.of("a", "b"), hosts);
@@ -171,18 +171,19 @@ class RestartOnDeployMaintainerTest {
         assertEquals("", configStatesToString(Map.of()));
 
         assertEquals(
-                "host1 -> [{currentGeneration=10, applyOnRestart=true}, {currentGeneration=11, applyOnRestart=false}],"
-                        + " host2 -> [{currentGeneration=20, applyOnRestart=empty}, {currentGeneration=21,"
+                "host1 -> [{serviceName=service1, currentGeneration=10, applyOnRestart=true}, {serviceName=service2,"
+                        + " currentGeneration=11, applyOnRestart=false}], host2 -> [{serviceName=service3,"
+                        + " currentGeneration=20, applyOnRestart=empty}, {serviceName=service4, currentGeneration=21,"
                         + " applyOnRestart=true}]",
                 configStatesToString(Map.of(
                         "host1",
                                 List.of(
-                                        new ServiceConfigState(10, Optional.of(true)),
-                                        new ServiceConfigState(11, Optional.of(false))),
+                                        new ServiceConfigState("service1", 10, Optional.of(true)),
+                                        new ServiceConfigState("service2", 11, Optional.of(false))),
                         "host2",
                                 List.of(
-                                        new ServiceConfigState(20, Optional.empty()),
-                                        new ServiceConfigState(21, Optional.of(true))))));
+                                        new ServiceConfigState("service3", 20, Optional.empty()),
+                                        new ServiceConfigState("service4", 21, Optional.of(true))))));
     }
 
     @Test

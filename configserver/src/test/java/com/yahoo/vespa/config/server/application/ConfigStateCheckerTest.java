@@ -103,6 +103,7 @@ public class ConfigStateCheckerTest {
         ServiceInfo serviceInfo1 = entries.get(0).getKey();
         ServiceConfigState state1 = entries.get(0).getValue();
         assertEquals("127.0.0.1", serviceInfo1.getHostName());
+        assertEquals(serviceInfo1.getServiceName(), state1.serviceName());
         assertEquals(4, state1.currentGeneration());
         assertTrue(state1.applyOnRestart().isPresent());
         assertFalse(state1.applyOnRestart().get());
@@ -111,6 +112,7 @@ public class ConfigStateCheckerTest {
         ServiceInfo serviceInfo2 = entries.get(1).getKey();
         ServiceConfigState state2 = entries.get(1).getValue();
         assertEquals("127.0.0.1", serviceInfo2.getHostName());
+        assertEquals(serviceInfo2.getServiceName(), state2.serviceName());
         assertEquals(3, state2.currentGeneration());
         assertTrue(state2.applyOnRestart().isEmpty());
 

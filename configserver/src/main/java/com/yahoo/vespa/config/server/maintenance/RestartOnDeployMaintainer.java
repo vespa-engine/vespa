@@ -272,7 +272,8 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                         entry.getKey(),
                         entry.getValue().stream()
                                 .map(state -> Text.format(
-                                        "{currentGeneration=%d, applyOnRestart=%s}",
+                                        "{serviceName=%s, currentGeneration=%d, applyOnRestart=%s}",
+                                        state.serviceName(),
                                         state.currentGeneration(),
                                         state.applyOnRestart()
                                                 .map(Object::toString)

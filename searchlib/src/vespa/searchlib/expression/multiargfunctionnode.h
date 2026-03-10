@@ -17,7 +17,7 @@ public:
     MultiArgFunctionNode & operator = (const MultiArgFunctionNode &);
     MultiArgFunctionNode(MultiArgFunctionNode &&) noexcept = default;
     MultiArgFunctionNode & operator = (MultiArgFunctionNode &&) noexcept = default;
-    ~MultiArgFunctionNode();
+    ~MultiArgFunctionNode() override;
     MultiArgFunctionNode & appendArg(ExpressionNode::UP arg) { return addArg(std::move(arg)); }
     MultiArgFunctionNode & addArg(ExpressionNode::UP arg) {
         _args.emplace_back(arg.release());
