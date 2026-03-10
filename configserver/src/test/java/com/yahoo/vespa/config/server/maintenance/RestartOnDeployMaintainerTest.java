@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
+import com.yahoo.config.model.api.ApplicationClusterInfo;
 import com.yahoo.config.model.api.ServiceConfigState;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.PendingRestarts;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.maintenance.RestartOnDeployMaintainer.configStatesToString;
+import static com.yahoo.vespa.config.server.maintenance.RestartOnDeployMaintainer.servicesToString;
 import static com.yahoo.vespa.config.server.maintenance.RestartOnDeployMaintainer.triggerPendingRestarts;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -180,5 +183,37 @@ class RestartOnDeployMaintainerTest {
                                 List.of(
                                         new ServiceConfigState(20, Optional.empty()),
                                         new ServiceConfigState(21, Optional.of(true))))));
+    }
+
+    @Test
+    void test_servicesToString() {
+        assertEquals("[]", servicesToString(List.of()));
+
+        // Note: The actual format includes stream processing, so this tests the expected output structure
+        List<ServiceInfo> services = List.of(
+                MockServiceInfo.create("service1", "container", "host1"),
+                MockServiceInfo.create("service2", "searchnode", "host2")
+        );
+
+        String result = servicesToString(services);
+        // Verify it contains the expected service information
+        assertEquals(true, result.contains("service1"));
+        assertEquals(true, result.contains("container"));
+        assertEquals(true, result.contains("host1"));
+        assertEquals(true, result.contains("service2"));
+        assertEquals(true, result.contains("searchnode"));
+        assertEquals(true, result.contains("host2"));
+    }
+
+    // Simple mock for testing servicesToString
+    private static class MockServiceInfo extends ServiceInfo {
+        static MockServiceInfo create(String name, String type, String hostname) {
+            return new MockServiceInfo(name, type, Set.of(), Map.of(), "", hostname);
+        }
+
+        private MockServiceInfo(String serviceName, String serviceType, Set portInfos, Map properties,
+                                String configId, String hostName) {
+            super(serviceName, serviceType, portInfos, properties, configId, hostName);
+        }
     }
 }
