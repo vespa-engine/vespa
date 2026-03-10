@@ -6,6 +6,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.container.di.componentgraph.core.Keys;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.HashSet;
@@ -55,12 +56,17 @@ public final class ConfigRetriever {
         while (true) {
             Optional<ConfigSnapshot> maybeSnapshot = getConfigsOnce(componentConfigKeys, leastGeneration, isInitializing);
             updateApplyOnRestart();
-            
+
             if (maybeSnapshot.isPresent()) {
                 var configSnapshot = maybeSnapshot.get();
+                log.fine(() -> Text.format("getConfigs: Returning snapshot type=%s, gen=%d",
+                                           configSnapshot.getClass().getSimpleName(),
+                                           configSnapshot instanceof BootstrapConfigs ?
+                                               bootstrapSubscriber.generation() : componentSubscriber.generation()));
                 resetComponentSubscriberIfBootstrap(configSnapshot);
                 return configSnapshot;
             }
+            log.fine(() -> "getConfigs: No snapshot available, continuing loop");
         }
     }
 
@@ -139,12 +145,16 @@ public final class ConfigRetriever {
 
     private void resetComponentSubscriberIfBootstrap(ConfigSnapshot configSnapshot) {
         if (configSnapshot instanceof BootstrapConfigs) {
+            log.fine(() -> Text.format("resetComponentSubscriberIfBootstrap: Resetting component subscriber (bootstrap gen=%d, applyOnRestart=%b)",
+                                       bootstrapSubscriber.generation(), bootstrapSubscriber.applyOnRestart()));
             setupComponentSubscriber(Set.of());
         }
     }
 
     private void setupComponentSubscriber(Set<ConfigKey<? extends ConfigInstance>> keys) {
         if (! componentSubscriberKeys.equals(keys)) {
+            log.fine(() -> Text.format("setupComponentSubscriber: Creating NEW component subscriber (old applyOnRestart=%b, gen=%d)",
+                                       componentSubscriber.applyOnRestart(), componentSubscriber.generation()));
             componentSubscriber.close();
             log.log(FINE, () -> "Closed " + componentSubscriber);
             componentSubscriberKeys = keys;
@@ -177,12 +187,17 @@ public final class ConfigRetriever {
      * @see Subscriber#applyOnRestart()
      */
     private void updateApplyOnRestart() {
-        if (!vespaContainer.applyOnRestart()) { // Keep it `true` until restart.
-            vespaContainer.setApplyOnRestart(
-                    bootstrapSubscriber.applyOnRestart() || componentSubscriber.applyOnRestart());
+        boolean containerApplyOnRestart = vespaContainer.applyOnRestart();
+        boolean bootstrapApplyOnRestart = bootstrapSubscriber.applyOnRestart();
+        boolean componentApplyOnRestart = componentSubscriber.applyOnRestart();
+        log.fine(() -> Text.format(
+                "updateApplyOnRestart: container=%b, bootstrap=%b, component=%b",
+                containerApplyOnRestart, bootstrapApplyOnRestart, componentApplyOnRestart));
+
+        if (!containerApplyOnRestart) { // Keep it `true` until restart.
+            vespaContainer.setApplyOnRestart(bootstrapApplyOnRestart || componentApplyOnRestart);
         }
     }
-
 
     public static class ConfigSnapshot {
         private final Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs;
