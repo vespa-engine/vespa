@@ -16,7 +16,7 @@ public:
 
     MathFunctionNode() { }
 private:
-    bool onExecute() const override;
+    void onExecute() const override;
     void onPrepareResult() override;
     Function _function;
 };

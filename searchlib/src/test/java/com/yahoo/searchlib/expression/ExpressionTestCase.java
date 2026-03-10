@@ -153,6 +153,20 @@ public class ExpressionTestCase {
     }
 
     @Test
+    public void testGeoDistanceFunctionNode() {
+        assertMultiArgFunctionNode(
+                new GeoDistanceFunctionNode(new AttributeNode("pos"),
+                        new ConstantNode(new FloatResultNode(63.0)),
+                        new ConstantNode(new FloatResultNode(10.0)),
+                        GeoDistanceFunctionNode.Unit.KM));
+        assertMultiArgFunctionNode(
+                new GeoDistanceFunctionNode(new AttributeNode("location"),
+                        new ConstantNode(new FloatResultNode(63.0)),
+                        new ConstantNode(new FloatResultNode(10.0)),
+                        GeoDistanceFunctionNode.Unit.MILES));
+    }
+
+    @Test
     public void testTimeStampFunctionNode() {
         assertMultiArgFunctionNode(new TimeStampFunctionNode(new AttributeNode("testattribute"), TimeStampFunctionNode.TimePart.Hour, true));
         assertEquals(new TimeStampFunctionNode(new AttributeNode("testattribute"), TimeStampFunctionNode.TimePart.Hour, true),

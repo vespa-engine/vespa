@@ -33,7 +33,7 @@ unsigned hour(timestamp); [0-23]
 unsigned minute(timestamp);[0-59]
 unsigned second(timestamp);[0-59]
 */
-    bool onExecute() const override;
+    void onExecute() const override;
     void onPrepareResult() override;
 private:
     class Handler {

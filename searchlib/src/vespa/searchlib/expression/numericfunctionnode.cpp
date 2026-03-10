@@ -58,15 +58,13 @@ void NumericFunctionNode::onPrepare(bool preserveAccurateTypes)
     }
 }
 
-bool NumericFunctionNode::onCalculate(const ExpressionNodeVector & args, ResultNode & result) const
+void NumericFunctionNode::onCalculate(const ExpressionNodeVector & args, ResultNode & result) const
 {
-    bool retval(true);
     (void) result;
     _handler->handleFirst(*args[0]->getResult());
     for (size_t i(1), m(args.size()); i < m; i++) {
         _handler->handle(*args[i]->getResult());
     }
-    return retval;
 }
 
 template <typename T>

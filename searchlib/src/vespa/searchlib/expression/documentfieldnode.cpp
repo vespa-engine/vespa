@@ -223,7 +223,7 @@ void DocumentFieldNode::onDoc(const Document & doc)
     _needExecute = true;
 }
 
-bool
+void
 DocumentFieldNode::onExecute() const
 {
     if (_needExecute) {
@@ -243,7 +243,6 @@ DocumentFieldNode::onExecute() const
             _value->set(_keepAliveForIndexLookups->get(idx));
         }
     }
-    return true;
 }
 
 DefaultValue DocumentFieldNode::SingleHandler::_defaultValue;

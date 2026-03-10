@@ -18,6 +18,7 @@ import com.yahoo.searchlib.expression.FixedWidthBucketFunctionNode;
 import com.yahoo.searchlib.expression.FloatBucketResultNode;
 import com.yahoo.searchlib.expression.FloatBucketResultNodeVector;
 import com.yahoo.searchlib.expression.FloatResultNode;
+import com.yahoo.searchlib.expression.GeoDistanceFunctionNode;
 import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNodeVector;
@@ -180,6 +181,14 @@ public class GroupingSerializationTest {
             t.assertMatch(new RangeBucketPreDefFunctionNode().addArg(new AttributeNode("foo")));
             t.assertMatch(new DebugWaitFunctionNode(new ConstantNode(new IntegerResultNode(5)),
                     3.3, false));
+            t.assertMatch(new GeoDistanceFunctionNode(new AttributeNode("pos"),
+                    new ConstantNode(new FloatResultNode(63.0)),
+                    new ConstantNode(new FloatResultNode(10.0)),
+                    GeoDistanceFunctionNode.Unit.KM));
+            t.assertMatch(new GeoDistanceFunctionNode(new AttributeNode("pos"),
+                    new ConstantNode(new FloatResultNode(63.0)),
+                    new ConstantNode(new FloatResultNode(10.0)),
+                    GeoDistanceFunctionNode.Unit.MILES));
         }
 
     }

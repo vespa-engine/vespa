@@ -56,4 +56,13 @@ public class TestConfigTest {
                      config.deployments().get(ZoneId.defaultId()));
     }
 
+    @Test
+    public void testLocalEndpointsWithApplicationId() throws IOException {
+        TestConfig config = TestConfig.fromJson(Files.readAllBytes(Paths.get("src/test/resources/local-endpoints-with-appid-config.json")));
+        assertEquals(ApplicationId.from("my-tenant", "my-app", "my-instance"),
+                     config.application());
+        assertEquals(Map.of("default", URI.create("https://localhost:8080/")),
+                     config.deployments().get(ZoneId.defaultId()));
+    }
+
 }

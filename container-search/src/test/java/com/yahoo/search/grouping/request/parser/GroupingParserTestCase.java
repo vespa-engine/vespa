@@ -97,12 +97,14 @@ public class GroupingParserTestCase {
                 "group",
                 "hint",
                 "hypot",
+                "km",
                 "log",
                 "log1p",
                 "log10",
                 "math",
                 "max",
                 "md5",
+                "miles",
                 "min",
                 "mod",
                 "mul",
@@ -662,6 +664,21 @@ public class GroupingParserTestCase {
         assertAll("quantiles with many number",
                 () -> assertParse("all(group(foo) each(output(quantiles([0.5, 0.9], bar))))"),
                 () -> assertParse("all(group(foo) each(output(quantiles([0.5, 0.9, 0.99], bar))))"));
+    }
+
+    @Test
+    void testGeoDistance() {
+        assertParse("all(group(geo_distance(attribute(pos), 70.1, 10.5).km))");
+        assertParse("all(group(geo_distance(attribute(pos), 70.1, 10.5).miles))");
+        assertParse("all(group(foo) each(output(max(geo_distance(attribute(pos), 37.7749, -122.4194).km))))");
+        assertParse("all(group(foo) each(output(min(geo_distance(attribute(pos), 37.7749, -122.4194).miles))))");
+
+        assertIllegalArgument("all(group(geo_distance(attribute(pos), 70.1, 10.5).meters))",
+                "Encountered \" <IDENTIFIER> \"meters\"");
+        assertIllegalArgument("all(group(geo_distance(attribute(pos), 70.1, 10.5)))",
+                "Encountered \" \")\" \")\"");
+        assertIllegalArgument("all(group(geo_distance(70.1, 10.5, attribute(pos)).km))",
+                "Encountered \" <FLOAT>");
     }
 
     // --------------------------------------------------------------------------------

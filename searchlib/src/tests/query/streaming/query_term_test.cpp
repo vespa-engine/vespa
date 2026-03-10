@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/common/serialized_query_tree.h>
+#include <vespa/searchlib/fef/match_data_filters.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
@@ -26,6 +26,7 @@ using search::query::QueryBuilder;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
 using search::queryeval::ElementIdExtractor;
+using search::queryeval::MatchSpan;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
 using search::streaming::QueryTermData;
@@ -65,6 +66,7 @@ protected:
     void populate_term();
     void reset_tfmd() { _tfmd->resetOnlyDocId(TermFieldMatchData::invalidId()); }
     std::vector<uint32_t> extract_element_ids(uint32_t docid);
+    static std::vector<MatchSpan> make_match_spans(const std::vector<MatchSpan> match_spans_in);
     void test_unpack_match_data_for_term_node(bool interleaved_features, bool filter);
 };
 
@@ -143,6 +145,12 @@ QueryTermTest::extract_element_ids(uint32_t docid)
     return element_ids;
 }
 
+std::vector<MatchSpan>
+QueryTermTest::make_match_spans(std::vector<MatchSpan> match_spans)
+{
+    return match_spans;
+}
+
 void
 QueryTermTest::test_unpack_match_data_for_term_node(bool interleaved_features, bool filter)
 {
@@ -216,8 +224,62 @@ TEST_F(QueryTermTest, unpack_match_data_with_element_filter)
     reset_tfmd();
     _node->unpack_match_data(docid, *_md, _index_env, ElementIds(make_vec({4})));
     EXPECT_TRUE(_tfmd->has_invalid_docid());
-    EXPECT_EQ(0, _tfmd->getNumOccs());
-    EXPECT_EQ(0, _tfmd->getFieldLength());
-    EXPECT_EQ(0, _tfmd->size());
     EXPECT_EQ(make_vec({}), extract_element_ids(docid));
+    reset_tfmd();
+    _node->unpack_match_data(docid, *_md, _index_env, ElementIds(make_vec({})));
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
+}
+
+TEST_F(QueryTermTest, unpack_match_data_with_match_spans)
+{
+    ASSERT_NO_FATAL_FAILURE(build_query(false));
+    _tfmd->setNeedInterleavedFeatures(true);
+    ASSERT_NO_FATAL_FAILURE(populate_term());
+    constexpr uint32_t docid = 2;
+    // Match span covers all matches
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {0, 0}, {10, 1}}}));
+    EXPECT_TRUE(_tfmd->has_ranking_data(docid));
+    EXPECT_EQ(mock_num_occs, _tfmd->getNumOccs());
+    EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
+    EXPECT_EQ(mock_num_occs, _tfmd->size());
+    EXPECT_EQ(make_vec({0, 3, 7, 10}), extract_element_ids(docid));
+    reset_tfmd();
+    // Intersection between match spans and match data contains multiple matches in multiple elements.
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({
+                                 {_field_id, {0, 0}, {0, 1}},
+                                 {_field_id, {2, 0}, {2, 1}},
+                                 {_field_id, {3, 0}, {3, 1}},
+                                 {_field_id, {8, 0}, {8, 1}},
+                                 {_field_id, {10, 0}, {10, 1}},
+                                 {_field_id, {12, 0}, {12, 1}}
+                             }));
+    EXPECT_TRUE(_tfmd->has_ranking_data(docid));
+    EXPECT_EQ(3, _tfmd->getNumOccs());
+    EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
+    EXPECT_EQ(3, _tfmd->size());
+    EXPECT_EQ(make_vec({0, 3, 10}), extract_element_ids(docid));
+    reset_tfmd();
+    // Intersection between match span and match data contains a match at start of element 3.
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {3, 0}, {3, 1}}}));
+    EXPECT_TRUE(_tfmd->has_ranking_data(docid));
+    EXPECT_EQ(1, _tfmd->getNumOccs());
+    EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
+    EXPECT_EQ(1, _tfmd->size());
+    EXPECT_EQ(make_vec({3}), extract_element_ids(docid));
+    reset_tfmd();
+    // Intersection between match span and match data is empty (match span is before match data in element 3).
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {3, 0}, {3, 0}}}));
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
+    EXPECT_EQ(make_vec({}), extract_element_ids(docid));
+    reset_tfmd();
+    // Intersection between match span and match data is empty (match span is after match data in element 3).
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {3, 2}, {3, 2}}}));
+    reset_tfmd();
+    // Intersection between match span (start of element 4) and match data is empty.
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {4, 0}, {4, 1}}}));
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
+    reset_tfmd();
+    // No spans, thus empty intersection between match spans and match data
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({}));
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
 }

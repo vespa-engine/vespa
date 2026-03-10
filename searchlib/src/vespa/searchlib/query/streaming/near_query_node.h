@@ -7,6 +7,8 @@
 #include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/vespalib/util/priority_queue.h>
 
+namespace search::queryeval { class MatchSpan; }
+
 namespace search::streaming {
 
 /**
@@ -91,6 +93,7 @@ public:
     ~NearQueryNode() override;
     bool evaluate() override;
     void get_element_ids(std::vector<uint32_t>& element_ids) override;
+    virtual void get_match_spans(std::vector<search::queryeval::MatchSpan>& match_spans);
     void distance(size_t dist)       { _distance = dist; }
     size_t distance()          const { return _distance; }
     void num_negative_terms(uint32_t value) { _num_negative_terms = value; }

@@ -47,11 +47,10 @@ int32_t ZCurveFunctionNode::Handler::getXorY(uint64_t z) const
     return (_dim==X) ? x : y;
 }
 
-bool ZCurveFunctionNode::onExecute() const
+void ZCurveFunctionNode::onExecute() const
 {
     getArg().execute();
     _handler->handle(*getArg().getResult());
-    return true;
 }
 
 void ZCurveFunctionNode::SingleValueHandler::handle(const ResultNode & arg)

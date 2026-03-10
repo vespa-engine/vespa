@@ -48,13 +48,12 @@ RangeBucketPreDefFunctionNode::onPrepareResult()
     }
 }
 
-bool
+void
 RangeBucketPreDefFunctionNode::onExecute() const
 {
     getArg().execute();
     const ResultNode * result = _handler->handle(*getArg().getResult());
     _result = result ? result : _nullResult;
-    return true;
 }
 
 const ResultNode * RangeBucketPreDefFunctionNode::SingleValueHandler::handle(const ResultNode & arg)

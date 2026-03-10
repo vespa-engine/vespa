@@ -36,6 +36,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     iterators.cpp
     lazy_filter.cpp
     leaf_blueprints.cpp
+    match_span.cpp
     matching_elements_search.cpp
     monitoring_dump_iterator.cpp
     monitoring_search_iterator.cpp

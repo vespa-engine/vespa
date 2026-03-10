@@ -1,49 +1,50 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchlib_expression OBJECT
     SOURCES
-    filter_predicate_node.cpp
+    aggregationrefnode.cpp
+    and_predicate_node.cpp
+    arrayatlookupfunctionnode.cpp
+    arrayoperationnode.cpp
     attribute_map_lookup_node.cpp
     attributenode.cpp
     attributeresult.cpp
-    current_index_setup.cpp
-    enumattributeresult.cpp
-    perdocexpression.cpp
-    expressiontree.cpp
-    timestamp.cpp
     bucketresultnode.cpp
-    integerbucketresultnode.cpp
-    floatbucketresultnode.cpp
-    stringbucketresultnode.cpp
-    rawbucketresultnode.cpp
-    fixedwidthbucketfunctionnode.cpp
-    rangebucketpredef.cpp
-    resultvector.cpp
     catserializer.cpp
-    strcatserializer.cpp
-    documentfieldnode.cpp
-    zcurve.cpp
+    current_index_setup.cpp
     debugwaitfunctionnode.cpp
-    mathfunctionnode.cpp
-    numericfunctionnode.cpp
-    resultnode.cpp
+    documentfieldnode.cpp
+    enumattributeresult.cpp
+    expressiontree.cpp
+    filter_predicate_node.cpp
+    fixedwidthbucketfunctionnode.cpp
+    floatbucketresultnode.cpp
+    floatresultnode.cpp
+    functionnodes.cpp
+    geo_distance_function_node.cpp
+    integerbucketresultnode.cpp
+    integerresultnode.cpp
     interpolated_document_field_lookup_node.cpp
     interpolatedlookupfunctionnode.cpp
-    functionnodes.cpp
-    resultnodes.cpp
-    arrayatlookupfunctionnode.cpp
-    arrayoperationnode.cpp
-    aggregationrefnode.cpp
-    simple_interpolate.cpp
-    stringresultnode.cpp
-    rawresultnode.cpp
-    floatresultnode.cpp
-    integerresultnode.cpp
-    range_predicate_node.cpp
-    regex_predicate_node.cpp
     istrue_predicate_node.cpp
-    not_predicate_node.cpp
+    mathfunctionnode.cpp
     multi_arg_predicate_node.cpp
+    not_predicate_node.cpp
+    numericfunctionnode.cpp
     or_predicate_node.cpp
-    and_predicate_node.cpp
+    perdocexpression.cpp
+    range_predicate_node.cpp
+    rangebucketpredef.cpp
+    rawbucketresultnode.cpp
+    rawresultnode.cpp
+    regex_predicate_node.cpp
+    resultnode.cpp
+    resultnodes.cpp
+    resultvector.cpp
+    simple_interpolate.cpp
+    strcatserializer.cpp
+    stringbucketresultnode.cpp
+    stringresultnode.cpp
+    timestamp.cpp
+    zcurve.cpp
     DEPENDS
 )

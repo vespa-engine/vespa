@@ -18,6 +18,7 @@ using search::fef::ITermFieldData;
 using search::fef::MatchData;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
+using search::queryeval::MatchSpan;
 
 namespace {
 
@@ -150,12 +151,33 @@ QueryTerm::unpack_match_data(uint32_t docid, MatchData& match_data, const IIndex
 }
 
 void
+QueryTerm::unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
+                             std::span<const MatchSpan> match_spans)
+{
+    if (evaluate() && isRanked()) {
+        auto& qtd = static_cast<QueryTermData&>(getQueryItem());
+        const ITermData& td = qtd.getTermData();
+        unpack_match_data(docid, td, match_data, index_env, match_spans);
+    }
+}
+
+void
 QueryTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data,
                              const IIndexEnvironment& index_env, ElementIds element_ids)
 {
     HitList list;
-    const HitList & hit_list = evaluateHits(list);
+    const HitList& hit_list = evaluateHits(list);
     unpack_match_data_helper(docid, td, match_data, hit_list, *this, is_filter(), index_env, element_ids);
+}
+
+void
+QueryTerm::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                             const fef::IIndexEnvironment& index_env, std::span<const MatchSpan> match_spans)
+{
+    HitList list;
+    const HitList& hit_list = evaluateHits(list);
+    unpack_filtered_match_data(docid, td, match_data, hit_list, *this, is_filter(), index_env,
+                               fef::MatchSpanMatchDataFilter(match_spans));
 }
 
 NearestNeighborQueryNode*

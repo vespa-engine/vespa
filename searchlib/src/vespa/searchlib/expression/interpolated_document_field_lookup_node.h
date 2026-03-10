@@ -24,7 +24,7 @@ public:
     void selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) override;
 private:
     void onPrepare(bool preserveAccurateTypes) override;
-    bool onExecute() const override;
+    void onExecute() const override;
     vespalib::IdentifiablePtr<ExpressionNode>  _lookup_expression;
     mutable std::vector<double>                _values;
     mutable FloatResultNode                    _float_result;

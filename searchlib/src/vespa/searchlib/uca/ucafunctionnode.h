@@ -20,7 +20,7 @@ public:
     UcaFunctionNode(const UcaFunctionNode & rhs);
     UcaFunctionNode & operator = (const UcaFunctionNode & rhs);
 private:
-    bool onExecute() const override;
+    void onExecute() const override;
     void onPrepareResult() override;
     class Handler {
     public:

@@ -214,6 +214,13 @@ public class CidrBlockTest {
     public void networkPrefixTranslation() {
         assertNpt("123.45.67.89", "10.0.0.0/8", "10.45.67.89");
         assertNpt("2603:1030:20e:26::5c", "fd00::/64", "fd00::5c");
+        assertNpt("2600:1f16:f34:5300:ccc6:1703:b7c2:369d", "fd00::/64", "fd00::ccc6:1703:b7c2:369d");
+        assertNpt("2600:1f16:f34:5300:ccc6:1703:b7c2:369d", "fd00::/48", "fd00::5300:ccc6:1703:b7c2:369d");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void networkPrefixTranslate_rejects_ip_version_mismatch() {
+        CidrBlock.fromString("10.0.0.0/8").networkPrefixTranslate(InetAddresses.forString("::1"));
     }
 
     private void assertNpt(String ip, String cidr, String expectedNptIp) {

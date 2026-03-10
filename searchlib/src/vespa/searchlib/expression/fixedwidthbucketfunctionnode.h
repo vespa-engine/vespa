@@ -48,7 +48,7 @@ public:
     };
 private:
     void onPrepareResult() override;
-    bool onExecute() const override;
+    void onExecute() const override;
 
     NumericResultNode::CP _width;
     BucketHandler::CP     _bucketHandler;

@@ -13,7 +13,7 @@ public:
     SortFunctionNode() { }
     SortFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)) { }
 private:
-    bool onExecute() const override;
+    void onExecute() const override;
 };
 
 }

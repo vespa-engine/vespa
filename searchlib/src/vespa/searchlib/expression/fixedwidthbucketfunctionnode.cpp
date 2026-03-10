@@ -102,12 +102,11 @@ FixedWidthBucketFunctionNode::onPrepareResult()
     }
 }
 
-bool
+void
 FixedWidthBucketFunctionNode::onExecute() const
 {
     getArg().execute();
     _bucketHandler->update(updateResult(), *getArg().getResult());
-    return true;
 }
 
 vespalib::Serializer &
