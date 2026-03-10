@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "termfieldmatchdata.h"
+#include "match_data_filters.h"
+#include <algorithm>
 #include <limits>
 #include <cassert>
 
@@ -155,7 +157,7 @@ TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosi
 }
 
 void
-TermFieldMatchData::finish_filter_elements()
+TermFieldMatchData::finish_filter_match_data()
 {
     if (_sz == 0) {
         resetOnlyDocId(invalidId());
@@ -164,38 +166,49 @@ TermFieldMatchData::finish_filter_elements()
     }
 }
 
+template <typename MatchDataFilter>
 void
-TermFieldMatchData::filter_elements(uint32_t docid, std::span<const uint32_t> element_ids)
+TermFieldMatchData::filter_match_data(uint32_t docid, MatchDataFilter match_data_filter)
 {
     if (docid < getDocId()) {
         return; // Don't touch future match data
     }
-    if (element_ids.empty() || _sz == 0 || docid != getDocId()) {
+    if (_sz == 0 || docid != getDocId()) {
         resetOnlyDocId(invalidId()); // Clear past or empty match data
         return;
     }
-    auto el_itr = element_ids.begin();
+    match_data_filter.new_field();
     auto pos = begin();
     auto pose = end();
     auto wpos = mutable_begin();
     for (; pos != pose; ++pos) {
-        while (*el_itr < pos->getElementId()) {
-            ++el_itr;
-            if (el_itr == element_ids.end()) {
-                _sz = wpos - begin();
-                finish_filter_elements();
-                return;
-            }
+        if (match_data_filter.is_filtered(*pos)) {
+            continue;
         }
-        if (*el_itr == pos->getElementId()) {
-            if (wpos != pos) {
-                *wpos = *pos;
-            }
-            ++wpos;
+        if (wpos != pos) {
+            *wpos = *pos;
         }
+        ++wpos;
     }
     _sz = wpos - begin();
-    finish_filter_elements();
+    finish_filter_match_data();
+}
+
+void
+TermFieldMatchData::filter_elements(uint32_t docid, std::span<const uint32_t> element_ids)
+{
+    filter_match_data(docid, ElementIdMatchDataFilter(element_ids));
+}
+
+void
+TermFieldMatchData::filter_match_spans(uint32_t docid, std::span<const queryeval::MatchSpan> match_spans)
+{
+    // Use subspan of match_spans that covers current field
+    auto compare_lower = [](const auto& span, uint32_t field_id) noexcept { return span.field_id() < field_id; };
+    auto compare_upper = [](uint32_t field_id, const auto& span) noexcept { return span.field_id() > field_id; };
+    auto begin_span = std::lower_bound(match_spans.begin(), match_spans.end(), getFieldId(), compare_lower);
+    auto end_span = std::upper_bound(begin_span, match_spans.end(), getFieldId(), compare_upper);
+    filter_match_data(docid, MatchSpanMatchDataFilter({begin_span, end_span}));
 }
 
 }

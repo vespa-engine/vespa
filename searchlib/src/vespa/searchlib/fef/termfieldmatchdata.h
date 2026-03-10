@@ -9,6 +9,8 @@
 #include <limits>
 #include <span>
 
+namespace search::queryeval { class MatchSpan; }
+
 namespace search::fef {
 
 class TermMatchDataMerger;
@@ -70,7 +72,9 @@ private:
 
     Features  _data;
 
-    void finish_filter_elements();
+    void finish_filter_match_data();
+    template <typename MatchDataFilter>
+    void filter_match_data(uint32_t docid, MatchDataFilter match_data_filter);
 public:
     PositionsIterator begin() const { return allocated() ? getMultiple() : getFixed(); }
     PositionsIterator end() const { return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed()+1; }
@@ -316,6 +320,8 @@ public:
     bool is_hidden_from_ranking() const noexcept { return (_flags & HIDDEN_FROM_RANKING) != 0; }
 
     void filter_elements(uint32_t docid, std::span<const uint32_t> element_ids);
+
+    void filter_match_spans(uint32_t docid, std::span<const queryeval::MatchSpan> match_spans);
 
     /**
      * Special docId value indicating that no data has been saved yet.
