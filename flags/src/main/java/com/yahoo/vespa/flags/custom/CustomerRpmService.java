@@ -140,13 +140,16 @@ public class CustomerRpmService {
             unit.equals(other.unit) &&
             memoryLimitMib.equals(other.memoryLimitMib) &&
             packageName().equals(other.packageName()) &&
+            packageVersion().equals(other.packageVersion()) &&
+            packageRelease().equals(other.packageRelease()) &&
             repositories().equals(other.repositories()) &&
-            cpuLimitCores().equals(other.cpuLimitCores());
+            cpuLimitCores().equals(other.cpuLimitCores()) &&
+            disabled() == other.disabled();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(unitName(), packageName(), memoryLimitMib(), cpuLimitCores(), repositories(), disabled());
+        return Objects.hash(unitName(), packageName(), packageVersion(), packageRelease(), memoryLimitMib(), cpuLimitCores(), repositories(), disabled());
     }
 
     @Override
