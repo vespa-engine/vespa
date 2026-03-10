@@ -9,6 +9,7 @@ import ai.vespa.metrics.ContainerMetrics;
  * @author bjorncs
  */
 class MetricDefinitions {
+
     static final String NAME_DIMENSION = "serverName";
     static final String PORT_DIMENSION = "serverPort";
     static final String METHOD_DIMENSION = "httpMethod";
@@ -39,9 +40,8 @@ class MetricDefinitions {
     static final String NUM_SUCCESSFUL_WRITES = ContainerMetrics.SERVER_NUM_SUCCESSFUL_RESPONSE_WRITES.baseName();
     static final String NUM_FAILED_WRITES = ContainerMetrics.SERVER_NUM_FAILED_RESPONSE_WRITES.baseName();
 
-    static final String TOTAL_SUCCESSFUL_LATENCY = ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY.baseName();
-    static final String TOTAL_FAILED_LATENCY = ContainerMetrics.SERVER_TOTAL_FAILED_RESPONSE_LATENCY.baseName();
-    static final String TIME_TO_FIRST_BYTE = ContainerMetrics.SERVER_TIME_TO_FIRST_BYTE.baseName();
+    static final String LATENCY = ContainerMetrics.JDISC_HTTP_LATENCY.baseName();
+    static final String TIME_TO_FIRST_BYTE = ContainerMetrics.JDISC_HTTP_TIME_TO_FIRST_BYTE.baseName();
 
     static final String RESPONSES_1XX = ContainerMetrics.HTTP_STATUS_1XX.baseName();
     static final String RESPONSES_2XX = ContainerMetrics.HTTP_STATUS_2XX.baseName();
@@ -76,4 +76,5 @@ class MetricDefinitions {
     static final String FILTERING_RESPONSE_UNHANDLED = ContainerMetrics.JDISC_HTTP_FILTERING_RESPONSE_UNHANDLED.baseName();
 
     private MetricDefinitions() {}
+
 }

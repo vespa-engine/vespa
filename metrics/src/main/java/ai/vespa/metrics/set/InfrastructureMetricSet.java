@@ -147,7 +147,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ContainerMetrics.MEM_HEAP_USED.average());
         addMetric(metrics, ContainerMetrics.SERVER_NUM_REQUESTS.count());
         addMetric(metrics, ContainerMetrics.SERVER_STARTED_MILLIS.max());
-        addMetric(metrics, ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY.max());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_LATENCY.max());
 
         return metrics;
     }
