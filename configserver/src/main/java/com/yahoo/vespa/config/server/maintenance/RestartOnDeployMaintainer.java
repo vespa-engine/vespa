@@ -2,6 +2,8 @@
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.api.annotations.Beta;
+import com.yahoo.config.model.api.ApplicationClusterInfo;
+import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceConfigState;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
@@ -31,6 +33,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
+
 /**
  * Maintainer that triggers restart of pending restart nodes stored in ZooKeeper.
  * Implements restart conditions to ensure that services converge to the same config generation before restart.
@@ -42,6 +49,14 @@ import java.util.stream.Collectors;
  */
 @Beta
 public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
+    private static final Set<String> serviceTypesToCheck = Set.of(
+            CONTAINER.serviceName,
+            LOGSERVER_CONTAINER.serviceName,
+            CLUSTERCONTROLLER_CONTAINER.serviceName,
+            METRICS_PROXY_CONTAINER.serviceName,
+            "searchnode",
+            "storagenode",
+            "distributor");
 
     private final Clock clock;
     private final BooleanFlag waitForApplyOnRestart;
@@ -76,8 +91,8 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                                     applicationRepository.modifyPendingRestarts(
                                             id,
                                             restarts -> triggerPendingRestarts(
-                                                    restartingHosts -> getConfigServiceStatesByHostname(
-                                                            application, restartingHosts),
+                                                    restartingHosts ->
+                                                            fetchConfigServiceStates(application, restartingHosts),
                                                     this::restart,
                                                     id,
                                                     restarts,
@@ -97,11 +112,70 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
         return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
 
-    private Map<String, List<ServiceConfigState>> getConfigServiceStatesByHostname(
-            Application application, Set<String> hostnames) {
+    static List<ServiceInfo> filterServicesToCheck(
+            String appId,
+            List<ApplicationClusterInfo> clusters,
+            List<ServiceInfo> services,
+            Set<String> hostnames,
+            Logger log) {
+        log.fine(() -> Text.format("Services of %s to check: %s", appId, servicesToString(services)));
+
+        List<ServiceInfo> servicesWithTypeToCheck = services.stream()
+                .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
+                .toList();
+        log.fine(() ->
+                Text.format("Services of %s with type to check: %s", appId, servicesToString(servicesWithTypeToCheck)));
+
+        List<ServiceInfo> servicesWithHostnamesToCheck = servicesWithTypeToCheck.stream()
+                .filter(service -> hostnames.contains(service.getHostName()))
+                .toList();
+        log.fine(() -> Text.format(
+                "Services of %s with hostnames [%s] to check: %s",
+                appId, String.join(", ", hostnames), servicesToString(servicesWithHostnamesToCheck)));
+
+        Set<ApplicationClusterInfo> clustersToExclude = clusters.stream()
+                .filter(ApplicationClusterInfo::getDeferChangesUntilRestart)
+                .collect(Collectors.toSet());
+
+        String clustersToExcludeString =
+                clustersToExclude.stream().map(ApplicationClusterInfo::name).collect(Collectors.joining(", "));
+
+        log.fine(() -> Text.format("Cluster of %s with deferChangesUntilRestart: %s", appId, clustersToExcludeString));
+
+        List<ServiceInfo> servicesInClustersToCheck = servicesWithHostnamesToCheck.stream()
+                .filter(service -> clustersToExclude.stream()
+                        .noneMatch(cluster -> cluster.name()
+                                .equals(service.getProperty("clustername").orElse(""))))
+                .toList();
+        log.fine(() -> Text.format(
+                "Services of %s in clusters without deferChangesUntilRestart to check: %s",
+                appId, servicesToString(servicesInClustersToCheck)));
+
+        List<ServiceInfo> servicesWithStatePort = servicesInClustersToCheck.stream()
+                .filter(service -> service.getPorts().stream()
+                        .filter(port -> port.getTags().contains("state"))
+                        .map(PortInfo::getPort)
+                        .findFirst()
+                        .isPresent())
+                .toList();
+        log.fine(() -> Text.format(
+                "Services of %s with state port to check: %s", appId, servicesToString(servicesWithStatePort)));
+
+        return servicesWithStatePort;
+    }
+
+    Map<String, List<ServiceConfigState>> fetchConfigServiceStates(Application application, Set<String> hostnames) {
+        List<ApplicationClusterInfo> clusters =
+                application.getModel().applicationClusterInfo().stream().toList();
+        List<ServiceInfo> services = application.getModel().getHosts().stream()
+                .flatMap(host -> host.getServices().stream())
+                .toList();
+        List<ServiceInfo> servicesToCheck =
+                filterServicesToCheck(application.getId().toFullString(), clusters, services, hostnames, log);
+
         Map<ServiceInfo, ServiceConfigState> stateByService = applicationRepository
                 .configStateChecker()
-                .getServiceConfigStates(application, Duration.ofSeconds(10), hostnames);
+                .getServiceConfigStates(servicesToCheck, Duration.ofSeconds(10));
 
         return stateByService.entrySet().stream()
                 .collect(Collectors.groupingBy(
@@ -208,5 +282,15 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                                                 .orElse("empty")))
                                 .collect(Collectors.joining(", "))))
                 .collect(Collectors.joining(", "));
+    }
+
+    static String servicesToString(List<ServiceInfo> services) {
+        return Text.format(
+                "[%s]",
+                services.stream()
+                        .map(service -> Text.format(
+                                "{name=%s, type=%s, host=%s}",
+                                service.getServiceName(), service.getServiceType(), service.getHostName()))
+                        .collect(Collectors.joining(", ")));
     }
 }

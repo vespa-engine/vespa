@@ -34,7 +34,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,10 +43,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static java.util.logging.Level.FINE;
 
 /**
@@ -56,38 +51,13 @@ import static java.util.logging.Level.FINE;
 public class ConfigStateChecker extends AbstractComponent {
     private static final Logger log = Logger.getLogger(ConfigStateChecker.class.getName());
 
-    private static final Set<String> serviceTypesToCheck = Set.of(
-            CONTAINER.serviceName,
-            LOGSERVER_CONTAINER.serviceName,
-            CLUSTERCONTROLLER_CONTAINER.serviceName,
-            METRICS_PROXY_CONTAINER.serviceName,
-            "searchnode",
-            "storagenode",
-            "distributor");
-
     private final ExecutorService responseHandlerExecutor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("config-state-checker-response-handler-"));
 
     /**
-     * Fetches config states of all services in {@code application} with {@code hostnames}.
-     */
-    public Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(
-            Application application, Duration timeoutPerService, Set<String> hostnames) {
-        List<ServiceInfo> servicesToCheck = application.getModel().getHosts().stream()
-                .flatMap(host -> host.getServices().stream()
-                        .filter(service -> hostnames.contains(host.getHostname())
-                                && serviceTypesToCheck.contains(service.getServiceType())
-                                && getStatePort(service).isPresent()))
-                .toList();
-
-        log.log(FINE, () -> "Services to check for config state: " + servicesToCheck);
-        return getServiceConfigStates(servicesToCheck, timeoutPerService);
-    }
-
-    /**
      * Fetch service config states for a list of services (in parallel).
      */
-    private Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(List<ServiceInfo> services, Duration timeout) {
+    public Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(List<ServiceInfo> services, Duration timeout) {
         try (CloseableHttpAsyncClient client = createHttpClient()) {
             client.start();
             List<CompletableFuture<Void>> inprogressRequests = new ArrayList<>();
