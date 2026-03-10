@@ -111,38 +111,36 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
         }
         return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
-    
-    List<ServiceInfo> getServicesToCheck(Application application, Set<String> hostnames) {
-        Set<ApplicationClusterInfo> clustersToExclude = application.getModel().applicationClusterInfo().stream()
+
+    static List<ServiceInfo> filterServicesToCheck(
+            String appId,
+            List<ApplicationClusterInfo> clusters,
+            List<ServiceInfo> services,
+            Set<String> hostnames,
+            Logger log) {
+        log.fine(() -> Text.format("Services of %s to check: %s", appId, servicesToString(services)));
+
+        List<ServiceInfo> servicesWithTypeToCheck = services.stream()
+                .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
+                .toList();
+        log.fine(() ->
+                Text.format("Services of %s with type to check: %s", appId, servicesToString(servicesWithTypeToCheck)));
+
+        List<ServiceInfo> servicesWithHostnamesToCheck = servicesWithTypeToCheck.stream()
+                .filter(service -> hostnames.contains(service.getHostName()))
+                .toList();
+        log.fine(() -> Text.format(
+                "Services of %s with hostnames [%s] to check: %s",
+                appId, String.join(", ", hostnames), servicesToString(servicesWithHostnamesToCheck)));
+
+        Set<ApplicationClusterInfo> clustersToExclude = clusters.stream()
                 .filter(ApplicationClusterInfo::getDeferChangesUntilRestart)
                 .collect(Collectors.toSet());
 
         String clustersToExcludeString =
                 clustersToExclude.stream().map(ApplicationClusterInfo::name).collect(Collectors.joining(", "));
 
-        log.fine(() -> Text.format(
-                "Excluded clusters of %s with deferChangesUntilRestart: %s",
-                application.getId().toFullString(), clustersToExcludeString));
-
-        List<ServiceInfo> allServices = application.getModel().getHosts().stream()
-                .flatMap(host -> host.getServices().stream())
-                .toList();
-        log.fine(() -> Text.format(
-                "All services of %s: %s", application.getId().toFullString(), servicesToString(allServices)));
-
-        List<ServiceInfo> servicesWithTypeToCheck = allServices.stream()
-                .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
-                .toList();
-        log.fine(() -> Text.format(
-                "Services of %s with type to check: %s",
-                application.getId().toFullString(), servicesToString(servicesWithTypeToCheck)));
-
-        List<ServiceInfo> servicesWithHostnamesToCheck = servicesWithTypeToCheck.stream()
-                .filter(service -> hostnames.contains(service.getHostName()))
-                .toList();
-        log.fine(() -> Text.format(
-                "Services of %s with hostnames to check: %s",
-                application.getId().toFullString(), servicesToString(servicesWithHostnamesToCheck)));
+        log.fine(() -> Text.format("Cluster of %s with deferChangesUntilRestart: %s", appId, clustersToExcludeString));
 
         List<ServiceInfo> servicesInClustersToCheck = servicesWithHostnamesToCheck.stream()
                 .filter(service -> clustersToExclude.stream()
@@ -151,7 +149,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                 .toList();
         log.fine(() -> Text.format(
                 "Services of %s in clusters without deferChangesUntilRestart to check: %s",
-                application.getId().toFullString(), servicesToString(servicesInClustersToCheck)));
+                appId, servicesToString(servicesInClustersToCheck)));
 
         List<ServiceInfo> servicesWithStatePort = servicesInClustersToCheck.stream()
                 .filter(service -> service.getPorts().stream()
@@ -161,16 +159,20 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                         .isPresent())
                 .toList();
         log.fine(() -> Text.format(
-                "Services of %s with state port to check: %s",
-                application.getId().toFullString(), servicesToString(servicesWithStatePort)));
-        
+                "Services of %s with state port to check: %s", appId, servicesToString(servicesWithStatePort)));
+
         return servicesWithStatePort;
     }
 
-    Map<String, List<ServiceConfigState>> fetchConfigServiceStates(
-            Application application, Set<String> hostnames) {
-        List<ServiceInfo> servicesToCheck = getServicesToCheck(application, hostnames);
-        
+    Map<String, List<ServiceConfigState>> fetchConfigServiceStates(Application application, Set<String> hostnames) {
+        List<ApplicationClusterInfo> clusters =
+                application.getModel().applicationClusterInfo().stream().toList();
+        List<ServiceInfo> services = application.getModel().getHosts().stream()
+                .flatMap(host -> host.getServices().stream())
+                .toList();
+        List<ServiceInfo> servicesToCheck =
+                filterServicesToCheck(application.getId().toFullString(), clusters, services, hostnames, log);
+
         Map<ServiceInfo, ServiceConfigState> stateByService = applicationRepository
                 .configStateChecker()
                 .getServiceConfigStates(servicesToCheck, Duration.ofSeconds(10));
@@ -285,8 +287,10 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
     static String servicesToString(List<ServiceInfo> services) {
         return Text.format(
                 "[%s]",
-                services.stream().map(service -> Text.format(
-                        "{name=%s, type=%s, host=%s}",
-                        service.getServiceName(), service.getServiceType(), service.getHostName())));
+                services.stream()
+                        .map(service -> Text.format(
+                                "{name=%s, type=%s, host=%s}",
+                                service.getServiceName(), service.getServiceType(), service.getHostName()))
+                        .collect(Collectors.joining(", ")));
     }
 }
