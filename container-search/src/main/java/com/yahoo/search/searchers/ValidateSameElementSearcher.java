@@ -69,6 +69,16 @@ public class ValidateSameElementSearcher extends Searcher {
                 inSameElement = false;
         }
 
+
+            /** Returns an error message if it is invalid, null if valid. */
+        private String valid(SameElementItem sameItem) {
+            for (Item child : sameItem.items()) {
+                if ( ! isValidSameItemChild(child))
+                    return "SameElementItem cannot contain '" + child + "'";
+            }
+            return null;
+        }
+
         private boolean isValidSameItemChild(Item child) {
             if ( ! (child instanceof CompositeItem)) return true;
             if (child instanceof AndItem) return true;

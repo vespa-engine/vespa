@@ -9,11 +9,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Responsible for metric reporting for JDisc http request handler support.
- *
  * @author Tony Vaagenes
  */
 class RequestMetricReporter {
-
     private final Metric metric;
     private final Context context;
 
@@ -50,13 +48,17 @@ class RequestMetricReporter {
 
     void successfulResponse() {
         setTimeToFirstByteFirstTime();
+
         long requestLatency = getRequestLatency();
+
         metric.set(MetricDefinitions.TOTAL_SUCCESSFUL_LATENCY, requestLatency, context);
+
         metric.add(MetricDefinitions.NUM_SUCCESSFUL_RESPONSES, 1, context);
     }
 
     void failedResponse() {
         setTimeToFirstByteFirstTime();
+
         metric.set(MetricDefinitions.TOTAL_FAILED_LATENCY, getRequestLatency(), context);
         metric.add(MetricDefinitions.NUM_FAILED_RESPONSES, 1, context);
     }
@@ -80,5 +82,4 @@ class RequestMetricReporter {
     void contentSize(long size) {
         metric.set(MetricDefinitions.CONTENT_SIZE, size, context);
     }
-
 }
