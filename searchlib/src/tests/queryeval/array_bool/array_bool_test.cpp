@@ -179,7 +179,7 @@ protected:
 public:
     SearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true);
     virtual ~SearchBuilder();
-    TermFieldMatchData* tfmd() const;
+    virtual TermFieldMatchData* tfmd() const;
     virtual std::unique_ptr<SearchIterator> create_search(bool strict) const = 0;
 };
 
@@ -350,12 +350,12 @@ protected:
     std::unique_ptr<SameElementBlueprint> _blueprint;
 
 public:
-    SameElementBlueprintSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true);
+    SameElementBlueprintSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true, bool expose_match_data_for_same_element = true);
     ~SameElementBlueprintSearchBuilder() override;
     std::unique_ptr<SearchIterator> create_search(bool strict) const override;
 };
 
-SameElementBlueprintSearchBuilder::SameElementBlueprintSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true)
+SameElementBlueprintSearchBuilder::SameElementBlueprintSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true, bool expose_match_data_for_same_element)
     : SearchBuilder(bool_attr, std::move(attribute_vector), element_filter, want_true),
         _manager(_attribute_vector),
         _attribute_context(_manager),
@@ -366,7 +366,7 @@ SameElementBlueprintSearchBuilder::SameElementBlueprintSearchBuilder(ArrayBoolAt
     std::vector<TermFieldHandle> descendant_handles;
     descendant_handles.push_back(_tmd.handle2);
 
-    _blueprint = std::make_unique<SameElementBlueprint>(_tmd.field_spec, descendant_handles, false, element_filter);
+    _blueprint = std::make_unique<SameElementBlueprint>(_tmd.field_spec, descendant_handles, false, element_filter, expose_match_data_for_same_element);
     _blueprint->addChild(std::move(child_blueprint));
 }
 
@@ -385,13 +385,13 @@ class SameElementBlueprintReplacementSearchBuilder : public SameElementBlueprint
     std::unique_ptr<Blueprint> _replacement;
 
 public:
-    SameElementBlueprintReplacementSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true);
+    SameElementBlueprintReplacementSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true, bool expose_match_data_for_same_element = true);
     ~SameElementBlueprintReplacementSearchBuilder() override;
     std::unique_ptr<SearchIterator> create_search(bool strict) const override;
 };
 
-SameElementBlueprintReplacementSearchBuilder::SameElementBlueprintReplacementSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true)
-    : SameElementBlueprintSearchBuilder(bool_attr, std::move(attribute_vector), element_filter, want_true),
+SameElementBlueprintReplacementSearchBuilder::SameElementBlueprintReplacementSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true, bool expose_match_data_for_same_element)
+    : SameElementBlueprintSearchBuilder(bool_attr, std::move(attribute_vector), element_filter, want_true, expose_match_data_for_same_element),
       _replacement(_blueprint->get_replacement()) {
     assert(_replacement);
 }
@@ -402,6 +402,27 @@ std::unique_ptr<SearchIterator> SameElementBlueprintReplacementSearchBuilder::cr
     search::queryeval::InFlow flow(strict);
     _replacement->basic_plan(flow, _attribute_vector->getCommittedDocIdLimit());
     return _replacement->createSearch(*_tmd.md);
+}
+
+/**
+ * UnexposingSameElementBlueprintReplacementSearchBuilder is a convenience class to get whatever the replacement for SameElementBlueprint constructs
+ * when the SameElementBlueprint is instructed to not expose its match data
+ */
+class UnexposingSameElementBlueprintReplacementSearchBuilder : public SameElementBlueprintReplacementSearchBuilder {
+public:
+    UnexposingSameElementBlueprintReplacementSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true);
+    ~UnexposingSameElementBlueprintReplacementSearchBuilder() override;
+    TermFieldMatchData* tfmd() const override;
+};
+
+UnexposingSameElementBlueprintReplacementSearchBuilder::UnexposingSameElementBlueprintReplacementSearchBuilder(ArrayBoolAttribute* bool_attr, std::shared_ptr<AttributeVector> attribute_vector, const std::vector<uint32_t>& element_filter, bool want_true)
+    : SameElementBlueprintReplacementSearchBuilder(bool_attr, std::move(attribute_vector), element_filter, want_true, false) { // Do not expose match data of SameElementBlueprint but of children
+}
+
+UnexposingSameElementBlueprintReplacementSearchBuilder::~UnexposingSameElementBlueprintReplacementSearchBuilder() = default;
+
+TermFieldMatchData* UnexposingSameElementBlueprintReplacementSearchBuilder::tfmd() const {
+    return _tmd.tfmd2; // This is the match data that should be exposed by replacement
 }
 
 /**
@@ -588,7 +609,8 @@ using Builders = ::testing::Types<ArrayBoolSearchBuilder,
                                   SameElementMultiArrayBoolSearchBuilder,
                                   SameElementGenericSearchBuilder,
                                   SameElementBlueprintSearchBuilder,
-                                  SameElementBlueprintReplacementSearchBuilder>;
+                                  SameElementBlueprintReplacementSearchBuilder,
+                                  UnexposingSameElementBlueprintReplacementSearchBuilder>;
 TYPED_TEST_SUITE(ArrayBoolSearchTest, Builders);
 
 /***********************************************************************************************************************
@@ -1094,7 +1116,8 @@ using AllBuilders = ::testing::Types<ArrayBoolSearchBuilder,
                                      SameElementMultiArrayBoolSearchBuilder,
                                      SameElementGenericSearchBuilder,
                                      SameElementBlueprintSearchBuilder,
-                                     SameElementBlueprintReplacementSearchBuilder>;
+                                     SameElementBlueprintReplacementSearchBuilder,
+                                     UnexposingSameElementBlueprintReplacementSearchBuilder>;
 TYPED_TEST_SUITE(VerifierTest, AllBuilders);
 
 TYPED_TEST(VerifierTest, verify_iterator_multiple_elements) {
