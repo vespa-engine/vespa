@@ -1784,10 +1784,11 @@
       "record"
     ],
     "methods" : [
-      "public void <init>(long, java.util.Optional)",
+      "public void <init>(java.lang.String, long, java.util.Optional)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
+      "public java.lang.String serviceName()",
       "public long currentGeneration()",
       "public java.util.Optional applyOnRestart()"
     ],
