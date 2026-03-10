@@ -14,7 +14,6 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
@@ -58,7 +57,7 @@ public class ClusterDeploymentMetricsRetriever {
     private static final CloseableHttpClient httpClient =
             VespaHttpClientBuilder.custom()
                     .connectTimeout(Timeout.ofSeconds(10))
-                    .connectionManagerFactory(registry -> new PoolingHttpClientConnectionManager(registry, null, null, TimeValue.ofMinutes(1)))
+                    .timeToLive(TimeValue.ofMinutes(1))
                     .apacheBuilder()
                     .setDefaultRequestConfig(
                             RequestConfig.custom()
