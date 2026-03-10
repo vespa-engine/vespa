@@ -202,7 +202,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
 
         @Override
         public ContentChannel handleResponse(Response response) {
-            if (tryHasResponded()) throw new IllegalStateException("Response already handled");
+            if ( tryHasResponded()) throw new IllegalStateException("Response already handled");
             if (getRequestType().isPresent() && response.getRequestType() == null)
                 response.setRequestType(getRequestType().get());
             ContentChannel cc = responseHandler.handleResponse(response);
