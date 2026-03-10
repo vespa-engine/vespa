@@ -14,7 +14,6 @@ import com.yahoo.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -188,7 +187,39 @@ public class LanguageModelFieldGeneratorTest {
         var result1 = generator.generate(StringPrompt.from("world"), context);
         assertEquals("bye world bye world", result1.toString());
     }
-    
+
+    @Test
+    public void testGenerateWithResponseJsonSchema() {
+        var languageModel = new CaptureCompleteArgsLanguageModel();
+        Map<String, LanguageModel> languageModels = Map.of("languageModel", languageModel);
+
+        var customSchema = """
+            {
+              "type": "object",
+              "properties": {
+                "doc.text": {
+                  "type": "string",
+                  "enum": ["electronics", "clothing"]
+                }
+              },
+              "required": ["doc.text"],
+              "additionalProperties": false
+            }
+            """;
+        var config = new LanguageModelFieldGeneratorConfig.Builder()
+                .providerId("languageModel")
+                .responseJsonSchema(customSchema)
+                .build();
+        var generator = createGenerator(config, languageModels);
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
+        generator.generate(StringPrompt.from("hello"), context);
+
+        // Verify the schema was passed to the language model
+        assertEquals(
+                customSchema,
+                languageModel.lastCompleteParams.get(InferenceParameters.OPTION_JSON_SCHEMA).orElseThrow());
+    }
+
     @Test
     public void testGenerateWithLocalLLM() {
         var localLLMPath = "src/test/models/llm/tinyllm.gguf";
@@ -340,6 +371,25 @@ public class LanguageModelFieldGeneratorTest {
         public List<Completion> complete(Prompt prompt, InferenceParameters params) {
             var invalidJson = "{doc.text:: test347ukdrjfhds";
             return List.of(Completion.from(invalidJson));
+        }
+
+        @Override
+        public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
+                                                                        InferenceParameters params,
+                                                                        Consumer<Completion> consumer) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class CaptureCompleteArgsLanguageModel implements LanguageModel {
+        public Prompt lastCompletePrompt;
+        public InferenceParameters lastCompleteParams;
+
+        @Override
+        public List<Completion> complete(Prompt prompt, InferenceParameters params) {
+            this.lastCompletePrompt = prompt;
+            this.lastCompleteParams = params;
+            return List.of(Completion.from(""));
         }
 
         @Override
