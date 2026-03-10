@@ -8,8 +8,8 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Text;
 import org.eclipse.jetty.http.HttpVersion;
 
-import static com.yahoo.test.JunitCompat.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +34,7 @@ public class MetricAggregatingRequestLogTest {
     @Test
     void latency_is_recorded() {
         testRequest("http", 200, "GET");
-        assertTrue("Latency metric is recorded", metric.metrics().containsKey(MetricDefinitions.LATENCY));
+        assertTrue(metric.metrics().containsKey(MetricDefinitions.LATENCY));
         var metricSnapshot = metric.metrics().get(MetricDefinitions.LATENCY);
         assertEquals(1, metricSnapshot.size());
         var latencySample = metricSnapshot.entrySet().iterator().next();
