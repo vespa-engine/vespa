@@ -21,12 +21,14 @@ namespace search::queryeval {
 SameElementBlueprint::SameElementBlueprint(const FieldSpec &field,
                                            const std::vector<search::fef::TermFieldHandle>& descendants_index_handles,
                                            bool expensive,
-                                           std::vector<uint32_t> element_filter)
+                                           std::vector<uint32_t> element_filter,
+                                           bool expose_match_data_for_same_element)
     : IntermediateBlueprint(),
       _field(field),
       _descendants_index_handles(descendants_index_handles),
       _expensive(expensive),
-      _element_filter(std::move(element_filter))
+      _element_filter(std::move(element_filter)),
+      _expose_match_data_for_same_element(expose_match_data_for_same_element)
 {
 }
 
@@ -167,7 +169,7 @@ Blueprint::UP SameElementBlueprint::get_replacement() {
             const attribute::ArrayBoolSearchContext* array_bool_context = search_context->as_array_bool_search_context();
             if (state.numFields() == 1 && array_bool_context && array_bool_context->get_valid()) {
 
-                return std::make_unique<ArrayBoolBlueprint>(_field,
+                return std::make_unique<ArrayBoolBlueprint>(_expose_match_data_for_same_element ? _field : state.field(0),
                                                             array_bool_context->get_attribute(),
                                                             _element_filter,
                                                             array_bool_context->get_want_true());
