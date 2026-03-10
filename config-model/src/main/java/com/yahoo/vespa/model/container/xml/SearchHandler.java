@@ -7,6 +7,7 @@ import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.component.BindingPattern;
+import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
@@ -22,7 +23,7 @@ import static com.yahoo.container.bundle.BundleInstantiationSpecification.fromSe
  *
  * @author bjorncs
  */
-class SearchHandler extends ProcessingHandler<SearchChains> {
+class SearchHandler extends ProcessingHandler<SearchChains> implements Handler.DataPlaneHandler {
 
     static final Class<?> SEARCH_HANDLER = com.yahoo.search.handler.SearchHandler.class;
     static final Class<?> EXECUTION_FACTORY = com.yahoo.search.searchchain.ExecutionFactory.class;
