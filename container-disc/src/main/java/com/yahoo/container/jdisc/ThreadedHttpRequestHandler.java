@@ -40,8 +40,6 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
     /** Logger for subclasses */
     protected final Logger log;
 
-
-
     public ThreadedHttpRequestHandler(Executor executor) {
         this(executor, null);
     }
