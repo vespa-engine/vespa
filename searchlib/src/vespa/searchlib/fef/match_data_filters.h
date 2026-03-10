@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchcommon/common/element_ids.h>
 #include <vespa/searchlib/queryeval/match_span.h>
+#include <span>
 
 namespace search::fef {
 
@@ -21,10 +21,10 @@ public:
  * Filter for match data that only passes specified elements.
  */
 class ElementIdMatchDataFilter {
-    common::ElementIds           _element_ids;
-    common::ElementIds::iterator _element_ids_it;
+    const std::span<const uint32_t>     _element_ids;
+    std::span<const uint32_t>::iterator _element_ids_it;
 public:
-    explicit ElementIdMatchDataFilter(common::ElementIds element_ids) noexcept
+    explicit ElementIdMatchDataFilter(std::span<const uint32_t> element_ids) noexcept
         : _element_ids(element_ids),
           _element_ids_it()
     {
@@ -39,6 +39,13 @@ public:
             ++_element_ids_it;
         }
         return (_element_ids_it == _element_ids.end() || *_element_ids_it != hit.element_id());
+    }
+
+    bool is_filtered(const TermFieldMatchDataPosition& pos) noexcept {
+        while (_element_ids_it != _element_ids.end() && *_element_ids_it < pos.getElementId()) {
+            ++_element_ids_it;
+        }
+        return (_element_ids_it == _element_ids.end() || *_element_ids_it != pos.getElementId());
     }
 };
 
@@ -63,6 +70,13 @@ public:
             ++_match_spans_it;
         }
         return (_match_spans_it == _match_spans.end() || _match_spans_it->is_after(hit));
+    }
+
+    bool is_filtered(const TermFieldMatchDataPosition& pos) noexcept {
+        while (_match_spans_it != _match_spans.end() && _match_spans_it->is_before(pos)) {
+            ++_match_spans_it;
+        }
+        return (_match_spans_it == _match_spans.end() || _match_spans_it->is_after(pos));
     }
 };
 
