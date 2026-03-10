@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import static com.yahoo.language.huggingface.ModelInfo.PaddingStrategy.DO_NOT_PAD;
 import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGEST_FIRST;
 
 @Beta
@@ -110,11 +111,11 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         prependQuery = embedderConfig.prependQuery();
         prependDocument = embedderConfig.prependDocument();
         var tokenizerPath = modelHelper.getModelPathResolvingIfNecessary(embedderConfig.tokenizerPathReference());
+        var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
                 .addDefaultModel(tokenizerPath)
-                .setPadding(false);
-        var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
+                .setPadding(info.padding() != DO_NOT_PAD);
         log.fine(() -> Text.format("'%s' has info '%s'", tokenizerPath, info));
         if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
             // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
