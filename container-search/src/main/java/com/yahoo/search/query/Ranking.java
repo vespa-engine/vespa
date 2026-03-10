@@ -31,6 +31,12 @@ import java.util.Objects;
  */
 public class Ranking implements Cloneable {
 
+    /** For internal use only. */
+    public static final String keepRankCountProperty = "vespa.hitcollector.arraysize";
+
+    /** For internal use only. */
+    public static final String totalKeepRankCountProperty = "vespa.hitcollector.totalArraysize";
+
     /** An alias for listing features */
     public static final CompoundName RANKFEATURES = CompoundName.from("rankfeatures");
 
@@ -326,10 +332,6 @@ public class Ranking implements Cloneable {
         matching.prepare(rankProperties);
         softTimeout.prepare(rankProperties);
         prepareNow(freshness);
-        if (keepRankCount != null)
-            rankProperties.put("vespa.hitcollector.arraysize", keepRankCount);
-        if (totalKeepRankCount != null)
-            rankProperties.put("vespa.hitcollector.totalArraysize", totalKeepRankCount);
         if (rankScoreDropLimit != null)
             rankProperties.put("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit);
         for (Map.Entry<String, ElementGap> entry : elementGap.entrySet()) {

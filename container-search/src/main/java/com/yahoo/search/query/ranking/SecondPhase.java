@@ -16,7 +16,7 @@ import java.util.Objects;
 public class SecondPhase implements Cloneable {
 
     /** For internal use only. */
-    public static final String rerankCountProperty      = "vespa.hitcollector.heapsize";
+    public static final String rerankCountProperty = "vespa.hitcollector.heapsize";
 
     /** For internal use only. */
     public static final String totalRerankCountProperty = "vespa.hitcollector.totalHeapsize";

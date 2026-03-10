@@ -5,6 +5,7 @@ schema parent1 {
 
     field field1 type int {
       indexing: attribute
+      attribute: fast-search
     }
 
   }
@@ -26,6 +27,11 @@ schema parent1 {
 
     match-features {
       function1b
+    }
+
+    match-phase {
+      attribute: field1
+      total-max-hits: 9000
     }
 
     first-phase {

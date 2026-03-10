@@ -59,7 +59,7 @@ public class DiversityTestCase {
         assertEquals(74, diversity.getMinGroups());
         assertEquals(17.3, diversity.getCutoffFactor(), 1e-16);
         assertEquals(Diversity.CutoffStrategy.strict, diversity.getCutoffStrategy());
-        assertEquals(120, matchPhase.getMaxHits());
+        assertEquals(120, matchPhase.getMaxHits().get());
         assertEquals("a", matchPhase.getAttribute());
         assertEquals(0.065, matchPhase.getMaxFilterCoverage(), 1e-16);
     }

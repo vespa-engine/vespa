@@ -23,6 +23,7 @@ public class RankProfile {
     private final OptionalInt keepRankCount;
     private final OptionalInt totalKeepRankCount;
     private final Map<String, InputType> inputs;
+    private final MatchPhase  matchPhase;
     private final SecondPhase secondPhase;
 
     // Assigned when this is added to a schema
@@ -36,6 +37,7 @@ public class RankProfile {
         this.inputs = Collections.unmodifiableMap(builder.inputs);
         this.keepRankCount = builder.keepRankCount;
         this.totalKeepRankCount = builder.totalKeepRankCount;
+        this.matchPhase = builder.matchPhase;
         this.secondPhase = builder.secondPhase;
     }
 
@@ -69,6 +71,9 @@ public class RankProfile {
     /** Returns the number of hits to keep rank data for in first phase across all nodes, or empty to use keepRankCount. */
     public OptionalInt totalKeepRankCount() { return totalKeepRankCount; }
 
+    /** Returns information about the match phase ranking of this. */
+    public MatchPhase matchPhase() { return matchPhase; }
+
     /** Returns information about the second phase reranking of this. */
     public SecondPhase secondPhase() { return secondPhase; }
 
@@ -83,13 +88,14 @@ public class RankProfile {
         if ( ! other.inputs.equals(this.inputs)) return false;
         if ( ! other.keepRankCount.equals(this.keepRankCount)) return false;
         if ( ! other.totalKeepRankCount.equals(this.totalKeepRankCount)) return false;
+        if ( ! other.matchPhase.equals(this.matchPhase)) return false;
         if ( ! other.secondPhase.equals(this.secondPhase)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputs, keepRankCount, totalKeepRankCount, secondPhase);
+        return Objects.hash(name, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputs, keepRankCount, totalKeepRankCount, matchPhase, secondPhase);
     }
 
     @Override
@@ -125,6 +131,7 @@ public class RankProfile {
         private final Map<String, InputType> inputs = new LinkedHashMap<>();
         private OptionalInt keepRankCount = OptionalInt.empty();
         private OptionalInt totalKeepRankCount = OptionalInt.empty();
+        private MatchPhase matchPhase = new MatchPhase.Builder().build();
         private SecondPhase secondPhase = new SecondPhase.Builder().build();
 
         public Builder(String name) {
@@ -155,6 +162,11 @@ public class RankProfile {
 
         public Builder setTotalKeepRankCount(int totalKeepRankCount) {
             this.totalKeepRankCount = OptionalInt.of(totalKeepRankCount);
+            return this;
+        }
+
+        public Builder setMatchPhase(MatchPhase matchPhase) {
+            this.matchPhase = Objects.requireNonNull(matchPhase);
             return this;
         }
 
