@@ -214,8 +214,10 @@ private:
     // Helper to create SameElement replica with common properties
     ProtonSameElement& createSameElementReplica(ProtonSameElement &node) {
         auto &replica = _builder.addSameElement(node.getChildren().size(), node.getView(),
-                                               node.getId(), node.getWeight());
+                                               node.getId(), node.getWeight(),
+                                               node.get_element_filter());
         replica.set_expensive(node.is_expensive());
+        replica.expose_match_data_for_same_element = node.expose_match_data_for_same_element;
         return replica;
     }
 
@@ -403,7 +405,8 @@ public:
     }
 
     void visit(ProtonAndNot &node) override {
-        _builder.addAndNot(node.getChildren().size());
+        auto &replica = static_cast<ProtonAndNot&>(_builder.addAndNot(node.getChildren().size()));
+        replica.elementwise = node.elementwise;
         visitNodes(node.getChildren());
     }
 
@@ -480,7 +483,7 @@ public:
         }
     }
 
-    // Helper to build field-to-children mapping for Equiv nodes
+    // Helper to build field-to-children mapping for nodes that group children by field
     std::map<uint32_t, std::vector<size_t>> buildFieldToChildrenMap(const std::vector<Node *> &children) {
         std::map<uint32_t, std::vector<size_t>> field_to_children;
         for (size_t child_idx = 0; child_idx < children.size(); ++child_idx) {
