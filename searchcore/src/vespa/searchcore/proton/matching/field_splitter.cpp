@@ -118,8 +118,7 @@ genericAddSimpleTerm<ProtonNodeTypes::RegExpTerm>(ProtonBuilder& builder, const 
  *   b) Multiple fields, all children have the same field set as the SameElement:
  *      split into OR of per-field SameElements, forcing each child to use that field
  *   c) Multiple fields, children have different/mixed fields:
- *      split into OR of per-field SameElements, but children are visited normally
- *      without forcing, so each child handles its own field splitting independently
+ *      not handled.
  * - Equiv nodes: Gathers children by field, creating one Equiv per field
  * - Multi-term nodes: WeightedSet, DotProduct, WandTerm, InTerm, WordAlternatives
  * - Forced field mode: When inside a SameElement (variant b), children must use the SameElement's field
@@ -206,22 +205,14 @@ private:
 
     // Helper for SameElement variant (b): multiple fields, all children have the same field set.
     // Creates OR of per-field SameElements, forcing each child to use the specific field.
-    void splitSameElementByFields(ProtonSameElement& node, const std::set<uint32_t>& fields) {
-        _builder.addOr(fields.size());
-        for (uint32_t field_id : fields) {
-            createSameElementReplica(node);
-            splitAndVisitChildrenForField(node.getChildren(), field_id);
-        }
-    }
-
-    // Helper for SameElement variant (c): multiple fields, children have different/mixed fields.
-    // Creates OR of per-field SameElements, but children are visited without forcing,
-    // so each child independently handles its own field splitting.
-    void splitSameElementByFieldsNoForce(ProtonSameElement& node, const std::set<uint32_t>& fields) {
-        _builder.addOr(fields.size());
-        for ([[maybe_unused]] uint32_t field_id : fields) {
-            createSameElementReplica(node);
-            visitNodes(node.getChildren());
+    void splitSameElementByFields(ProtonSameElement& node) {
+        // Normal case: split across all fields
+        size_t num_fields = node.numFields();
+        _builder.addOr(num_fields);
+        for (size_t i = 0; i < num_fields; ++i) {
+            auto& replica = createSameElementReplica(node);
+            copyProtonTermDataForField(node, replica, i);
+            splitAndVisitChildrenForField(node.getChildren(), node.field(i).getFieldId());
         }
     }
 
@@ -585,11 +576,12 @@ public:
         if (allChildrenHaveSameFields(node.getChildren(), fields)) {
             // Multiple fields, all children have same set - split with forced children
             LOG(debug, "Splitting SameElement across %zu fields (forcing children)", fields.size());
-            splitSameElementByFields(node, fields);
+            splitSameElementByFields(node);
         } else {
             // Multiple fields, children have something different - split without forcing
-            LOG(debug, "Splitting SameElement across %zu fields (not forcing children)", fields.size());
-            splitSameElementByFieldsNoForce(node, fields);
+            LOG(error, "Invalid multi-field SameElement across %zu fields", fields.size());
+            handleWithoutSplit(node);
+            return;
         }
     }
 
