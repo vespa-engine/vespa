@@ -51,6 +51,8 @@ SameElementSearch::check_element_match(uint32_t docid)
 void
 SameElementSearch::hide_descendants_match_data()
 {
+    // This iterator or an iterator above might not be a match for the query. Hide match data from ranking until
+    // doUnpack() has been called.
     for (auto* tfmd : _descendants_index_tfmd) {
         tfmd->set_hidden_from_ranking();
     }
