@@ -84,9 +84,6 @@ protected:
      */
     virtual void hide_positive_terms_from_ranking() = 0;
 
-    /*
-     * Filter positive terms using match span.
-     */
     virtual void filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans) = 0;
 
     /**

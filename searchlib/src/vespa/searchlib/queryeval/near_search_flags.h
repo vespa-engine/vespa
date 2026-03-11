@@ -12,6 +12,7 @@ class NearSearchFlags
     static bool _filter_terms;
 
 public:
+    // Only used by unit tests to test behavior with and without filtering.
     class FilterTermsTweak {
         bool _old_filter_terms;
     public:
@@ -19,7 +20,7 @@ public:
         ~FilterTermsTweak();
     };
 
-    static bool filter_terms() noexcept { return _filter_terms; }
+    [[nodiscard]] static bool filter_terms() noexcept { return _filter_terms; }
 };
 
 }

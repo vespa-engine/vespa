@@ -17,6 +17,7 @@
 #include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <format>
 #include <ostream>
 #include <tuple>
 
@@ -331,7 +332,7 @@ NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uin
     IndexEnvironment index_env;
     auto& fields = index_env.getFields();
     for (uint32_t field_id = 0; field_id <= max_field_id; ++field_id) {
-        fields.emplace_back(FieldType::INDEX, CollectionType::SINGLE, "field" + std::to_string(field_id), field_id);
+        fields.emplace_back(FieldType::INDEX, CollectionType::SINGLE, std::format("field{}", field_id), field_id);
     }
 
     for (char ch : all_terms) {

@@ -191,7 +191,7 @@ protected:
         void verify_spans(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
                           const std::vector<MatchSpan>& expected_match_spans);
         void verify_occs(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
-                                       const std::vector<uint32_t> &expected_occs);
+                         const std::vector<uint32_t> &expected_occs);
     };
 
     NearSpec near(const std::string& terms, uint32_t window) {
@@ -486,7 +486,7 @@ NearSearchTest::NearSpec::verify_spans(const search::queryeval::FakeIndex& index
 
 void
 NearSearchTest::NearSpec::verify_occs(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
-                                       const std::vector<uint32_t> &expected_occs)
+                                      const std::vector<uint32_t> &expected_occs)
 {
     verify_common(index, expected_docid, std::nullopt, std::nullopt, expected_occs);
 }
