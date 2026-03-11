@@ -114,6 +114,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -127,6 +128,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -264,12 +266,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
+            var sidecarImages = loadSidecarImages();
+            var image = sidecarImages.getProperty("triton");
+            
+            if (image == null || image.isBlank()) {
+                throw new IllegalStateException("Triton sidecar image is not configured in sidecar-images.properties");
+            }
 
-            // Hardcoded values for changes to be reviewed and tested
             var spec = SidecarSpec.builder()
                     .id(0)
                     .name("triton")
-                    .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.12-py3"))
+                    .image(DockerImage.fromString(image))
                     .minCpu(1) // Must have at least one CPU
                     .hasGpu(hasGpu)
                     .volumeMounts(List.of("/models"))
@@ -281,6 +288,22 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         return sidecars;
+    }
+
+    private Properties loadSidecarImages() {
+        var props = new Properties();
+        
+        try (InputStream inputStream = getClass().getResourceAsStream("/sidecar-images.properties")) {
+            if (inputStream == null) {
+                throw new IllegalStateException("sidecar-images.properties not found");
+            }
+            
+            props.load(inputStream);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load sidecar-images.properties", e);
+        }
+        
+        return props;
     }
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
