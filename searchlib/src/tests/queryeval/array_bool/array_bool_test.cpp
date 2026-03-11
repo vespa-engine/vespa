@@ -816,17 +816,22 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_multi_element_iterator_can_unpack_m
 
 /***********************************************************************************************************************
  * Element id tests
+ * Check that get_element_ids() and and_element_ids_into() work correctly
  **********************************************************************************************************************/
 
-void get_element_ids(SearchIterator& search, uint32_t docid, std::vector<uint32_t>& element_ids) {
+std::vector<uint32_t> get_element_ids(SearchIterator& search, uint32_t docid) {
+    std::vector<uint32_t> element_ids;
+    // Special treatment of SameElementSearch as it does not implement get_element_ids
     if (auto se = dynamic_cast<SameElementSearch*>(&search)) {
         se->find_matching_elements(docid, element_ids);
     } else {
         search.get_element_ids(docid, element_ids);
     }
+    return element_ids;
 }
 
 void and_element_ids_into(SearchIterator& search, uint32_t docid, std::vector<uint32_t>& element_ids) {
+    // Special treatment of SameElementSearch as it does not implement and_element_ids_into
     if (auto se = dynamic_cast<SameElementSearch*>(&search)) {
         std::vector<uint32_t> temp;
         se->find_matching_elements(docid, temp);
@@ -839,92 +844,57 @@ void and_element_ids_into(SearchIterator& search, uint32_t docid, std::vector<ui
     }
 }
 
-void verify_element_ids(SearchIterator& search, uint32_t docid, const std::vector<uint32_t>& element_ids) {
-    std::vector<uint32_t> temp_element_ids;
-    get_element_ids(search, docid, temp_element_ids);
+// Check that the elements obtained by get_element_ids and and and_element_ids_into are these in element_ids
+void verify_element_ids_for_docid(SearchIterator& search, uint32_t docid, const std::vector<uint32_t>& expected_ids) {
+    // Start with get_element_ids of iterator
+    std::vector<uint32_t> element_ids = get_element_ids(search, docid);
 
-    ASSERT_EQ(element_ids.size(), temp_element_ids.size());
-    EXPECT_TRUE(std::equal(element_ids.begin(), element_ids.begin() + element_ids.size(), temp_element_ids.begin()));
+    ASSERT_EQ(element_ids.size(), expected_ids.size());
+    EXPECT_TRUE(std::equal(element_ids.begin(), element_ids.begin() + element_ids.size(), expected_ids.begin()));
 
     for (const auto& subset : all_subsets({0, 1, 2, 3, 4, 5})) {
         // Compute intersection of element_id and subset as reference
         std::vector<uint32_t> intersection;
-        std::set_intersection(element_ids.begin(), element_ids.end(), subset.begin(), subset.end(),
+        std::set_intersection(expected_ids.begin(), expected_ids.end(), subset.begin(), subset.end(),
                               std::back_inserter(intersection));
 
-        // Let searcher compute the intersection
-        temp_element_ids.clear();
-        temp_element_ids.insert(temp_element_ids.end(), subset.begin(), subset.end());
-        and_element_ids_into(search, docid, temp_element_ids);
+        // Use and_element_ids_into of search iterator
+        element_ids.clear();
+        element_ids.insert(element_ids.end(), subset.begin(), subset.end());
+        and_element_ids_into(search, docid, element_ids);
 
-        ASSERT_EQ(intersection.size(), temp_element_ids.size());
-        EXPECT_TRUE(std::equal(intersection.begin(), intersection.begin() + intersection.size(), temp_element_ids.begin()));
+        ASSERT_EQ(element_ids.size(), intersection.size());
+        EXPECT_TRUE(std::equal(element_ids.begin(), element_ids.begin() + element_ids.size(), intersection.begin()));
+    }
+}
+
+template<typename B>
+void verify_element_ids(TestAttribute &test_attr, const std::vector<uint32_t>& element_filter, bool want_true, const std::vector<std::vector<uint32_t>>& element_ids) {
+    for (bool strict : {false, true}) {
+        B builder(test_attr.bool_attr, test_attr.attr, element_filter, want_true);
+        auto search = builder.create_search(strict);
+
+        search->initRange(1, test_attr.attr->getCommittedDocIdLimit());
+        for (uint32_t docid = 1; docid <= element_ids.size(); ++docid) {
+            verify_element_ids_for_docid(*search, docid, element_ids[docid-1]);
+        }
     }
 }
 
 TYPED_TEST(ArrayBoolSearchTest, require_that_single_element_iterator_can_get_element_ids) {
-    std::vector<uint32_t> element_filter({1});
-    for (bool strict : {false, true}) {
-        TypeParam builder(this->_test_attribute.bool_attr, this->_test_attribute.attr, element_filter, true);
-        auto search = builder.create_search(strict);
-
-        search->initRange(1, 1000);
-        // Matches doc 1 and 4
-        verify_element_ids(*search, 1u, {1});
-        verify_element_ids(*search, 2u, {});
-        verify_element_ids(*search, 3u, {});
-        verify_element_ids(*search, 4u, {1});
-        verify_element_ids(*search, 5u, {});
-        verify_element_ids(*search, 6u, {});
-    }
-
-    std::vector<uint32_t> element_filter2({2});
-    for (bool strict : {false, true}) {
-        TypeParam builder(this->_test_attribute.bool_attr, this->_test_attribute.attr, element_filter2, false);
-        auto search = builder.create_search(strict);
-
-        search->initRange(1, 1000);
-        // Matches doc 1 and 2
-        verify_element_ids(*search, 1u, {2});
-        verify_element_ids(*search, 2u, {2});
-        verify_element_ids(*search, 3u, {});
-        verify_element_ids(*search, 4u, {});
-        verify_element_ids(*search, 5u, {});
-        verify_element_ids(*search, 6u, {});
-    }
+    // True at position 1 matches doc 1 and 4
+    verify_element_ids<TypeParam>(this->_test_attribute, {1}, true, {{1}, {}, {}, {1}, {}, {}});
+    // False at position 2 matches doc 1 and 2
+    verify_element_ids<TypeParam>(this->_test_attribute, {2}, false, {{2}, {2}, {}, {}, {}, {}});
 }
 
 TYPED_TEST(ArrayBoolSearchTest, require_that_multi_element_iterator_can_get_element_ids) {
-    std::vector<uint32_t> element_filter({1, 2});
-    for (bool strict : {false, true}) {
-        TypeParam builder(this->_test_attribute.bool_attr, this->_test_attribute.attr, element_filter, true);
-        auto search = builder.create_search(strict);
-
-        search->initRange(1, 1000);
-        // Matches doc 1 and 4
-        verify_element_ids(*search, 1u, {1});
-        verify_element_ids(*search, 2u, {});
-        verify_element_ids(*search, 3u, {});
-        verify_element_ids(*search, 4u, {1, 2});
-        verify_element_ids(*search, 5u, {});
-        verify_element_ids(*search, 6u, {});
-    }
-
-    std::vector<uint32_t> element_filter2({0, 2});
-    for (bool strict : {false, true}) {
-        TypeParam builder(this->_test_attribute.bool_attr, this->_test_attribute.attr, element_filter2, false);
-        auto search = builder.create_search(strict);
-
-        search->initRange(1, 1000);
-        // Matches doc 1 and 2
-        verify_element_ids(*search, 1u, {0, 2});
-        verify_element_ids(*search, 2u, {0, 2});
-        verify_element_ids(*search, 3u, {});
-        verify_element_ids(*search, 4u, {});
-        verify_element_ids(*search, 5u, {});
-        verify_element_ids(*search, 6u, {});
-    }
+    // True at position 1 or 2 matches doc 1 and 4
+    verify_element_ids<TypeParam>(this->_test_attribute, {1, 2}, true, {{1}, {}, {}, {1, 2}, {}, {}});
+    // False at position 0 or 2 matches doc 1 and 2
+    verify_element_ids<TypeParam>(this->_test_attribute, {0, 2}, false, {{0, 2}, {0, 2}, {}, {}, {}, {}});
 }
+
 /***********************************************************************************************************************
  * Comparison of ArrayBoolSearch to generic iterator obtained from search context
  **********************************************************************************************************************/
