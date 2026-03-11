@@ -30,6 +30,7 @@ import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.Jetty;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.SocketAddressResolver;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
@@ -46,8 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -73,12 +73,16 @@ class JettyCluster implements Cluster {
     private static final Duration IDLE_TIMEOUT = Duration.ofMinutes(15);
 
     private final List<EndpointClient> clients;  // one per connection per endpoint
-    private final ExecutorService executor;       // shared across all HttpClients
+    private final QueuedThreadPool executor;      // shared across all HttpClients
     private final Compression compression;
 
     JettyCluster(FeedClientBuilderImpl b) throws IOException {
-        int threads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 32), 8);
-        this.executor = Executors.newFixedThreadPool(threads);
+        int selectorThreads = b.connectionsPerEndpoint * b.endpoints.size();
+        int workerThreads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 64), 8);
+        QueuedThreadPool pool = new QueuedThreadPool(workerThreads + selectorThreads);
+        pool.setName("feedclient");
+        this.executor = pool;
+        try { pool.start(); } catch (Exception e) { throw new IOException(e); }
         List<EndpointClient> list = new ArrayList<>();
         for (URI endpoint : b.endpoints)
             for (int i = 0; i < b.connectionsPerEndpoint; i++)
@@ -162,11 +166,12 @@ class JettyCluster implements Cluster {
                 if (failure == null) failure = e; else failure.addSuppressed(e);
             }
         }
-        executor.shutdown();
+        try { executor.stop(); }
+        catch (Exception e) { if (failure == null) failure = e; else failure.addSuppressed(e); }
         if (failure != null) throw new RuntimeException(failure);
     }
 
-    private static HttpClient createHttpClient(FeedClientBuilderImpl b, ExecutorService sharedExecutor) throws IOException {
+    private static HttpClient createHttpClient(FeedClientBuilderImpl b, Executor sharedExecutor) throws IOException {
         SslContextFactory.Client clientSslCtxFactory = new SslContextFactory.Client();
         clientSslCtxFactory.setSslContext(b.constructSslContext());
         if (b.hostnameVerifier != null) {
