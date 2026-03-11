@@ -138,7 +138,6 @@ class FieldSplitterVisitor : public search::query::CustomTypeVisitor<ProtonNodeT
 private:
     ProtonBuilder _builder;
     uint32_t      _force_field_id = search::fef::IllegalFieldId;
-    std::string   _field_name_prefix;
     bool          _has_error = false;
 
     // ===== Node Traversal Helpers =====
@@ -156,16 +155,6 @@ private:
         _force_field_id = field_id;
         visitNodes(nodes);
         _force_field_id = saved_field_id;
-    }
-
-    // Check if a child field name should be included when splitting by a parent field name prefix.
-    // Matches exact equality (e.g. "mymap") or dot-separated sub-field (e.g. "mymap.key").
-    bool fieldNameMatchesPrefix(const std::string& field_name) const {
-        if (_field_name_prefix.empty()) return true;
-        if (field_name == _field_name_prefix) return true;
-        return field_name.size() > _field_name_prefix.size() &&
-               field_name[_field_name_prefix.size()] == '.' &&
-               field_name.compare(0, _field_name_prefix.size(), _field_name_prefix) == 0;
     }
 
     // ===== Field Analysis Helpers =====
@@ -226,18 +215,13 @@ private:
     }
 
     // Helper for SameElement variant (c): multiple fields, children have different/mixed fields.
-    // Creates OR of per-field SameElements. For each replica, children are visited with a
-    // field-name prefix filter so only child fields whose names start with the parent field name
-    // (exact match or "parent." prefix) are included in that replica.
-    void splitSameElementByFieldsWithPrefix(ProtonSameElement& node) {
-        size_t num_fields = node.numFields();
-        _builder.addOr(num_fields);
-        for (size_t fi = 0; fi < num_fields; ++fi) {
+    // Creates OR of per-field SameElements, but children are visited without forcing,
+    // so each child independently handles its own field splitting.
+    void splitSameElementByFieldsNoForce(ProtonSameElement& node, const std::set<uint32_t>& fields) {
+        _builder.addOr(fields.size());
+        for ([[maybe_unused]] uint32_t field_id : fields) {
             createSameElementReplica(node);
-            std::string saved_prefix = _field_name_prefix;
-            _field_name_prefix = node.field(fi).getName();
             visitNodes(node.getChildren());
-            _field_name_prefix = saved_prefix;
         }
     }
 
@@ -376,21 +360,16 @@ private:
             return;
         }
 
-        // Collect fields to include (filtered by prefix when inside a SameElement with mixed children)
-        std::vector<size_t> matching_indices;
-        for (size_t i = 0; i < node.numFields(); ++i) {
-            if (fieldNameMatchesPrefix(node.field(i).getName())) {
-                matching_indices.push_back(i);
-            }
-        }
+        // Normal case: split across all fields
+        size_t num_fields = node.numFields();
 
-        if (matching_indices.size() <= 1) {
-            // No splitting needed - replicate using first matching field (or field 0 as fallback)
-            replicateTermForField(node, matching_indices.empty() ? 0 : matching_indices[0]);
+        if (num_fields <= 1) {
+            // No splitting needed - just replicate the node as-is
+            replicateTermForField(node, 0);
         } else {
-            // Multiple matching fields - create OR with one term per field
-            _builder.addOr(matching_indices.size());
-            for (size_t i : matching_indices) {
+            // Multiple fields - create OR with one term per field
+            _builder.addOr(num_fields);
+            for (size_t i = 0; i < num_fields; ++i) {
                 replicateTermForField(node, i);
             }
         }
@@ -608,9 +587,9 @@ public:
             LOG(debug, "Splitting SameElement across %zu fields (forcing children)", fields.size());
             splitSameElementByFields(node, fields);
         } else {
-            // Multiple fields, children have different/mixed fields - split using field name prefix filter
-            LOG(debug, "Splitting SameElement across %zu fields (prefix-filtering children)", fields.size());
-            splitSameElementByFieldsWithPrefix(node);
+            // Multiple fields, children have something different - split without forcing
+            LOG(debug, "Splitting SameElement across %zu fields (not forcing children)", fields.size());
+            splitSameElementByFieldsNoForce(node, fields);
         }
     }
 
@@ -696,14 +675,11 @@ template <> void FieldSplitterVisitor::replicateTermForField<ProtonPhrase>(Proto
     copyState(node, replica);
     copyProtonTermDataForField(node, replica, field_idx);
 
-    // Phrase children don't have fields - clear _force_field_id and _field_name_prefix so they pass through as-is
+    // Phrase children don't have fields - clear _force_field_id so they pass through as-is
     uint32_t saved_field_id = _force_field_id;
-    std::string saved_prefix = _field_name_prefix;
     _force_field_id = search::fef::IllegalFieldId;
-    _field_name_prefix.clear();
     visitNodes(node.getChildren());
     _force_field_id = saved_field_id;
-    _field_name_prefix = saved_prefix;
 }
 
 template <>
@@ -762,10 +738,10 @@ template <> void FieldSplitterVisitor::replicateTermForField<ProtonWandTerm>(Pro
 } // namespace
 
 Node::UP FieldSplitter::split_terms(Node::UP root) {
-    if (LOG_WOULD_LOG(info)) {
+    if (LOG_WOULD_LOG(debug)) {
         search::query::QueryToProtobuf converter;
         auto                           proto_tree = converter.serialize(*root);
-        LOG(error, "field splitting input tree:\n%s", search::common::protobuf_message_to_json(proto_tree).c_str());
+        LOG(debug, "field splitting input tree:\n%s", search::common::protobuf_message_to_json(proto_tree).c_str());
     }
     FieldSplitterVisitor visitor;
     root->accept(visitor);
@@ -775,10 +751,10 @@ Node::UP FieldSplitter::split_terms(Node::UP root) {
         LOG(debug, "field splitting failed, returning original tree");
         return root;
     }
-    if (LOG_WOULD_LOG(info)) {
+    if (LOG_WOULD_LOG(debug)) {
         search::query::QueryToProtobuf converter;
         auto                           proto_tree = converter.serialize(*result);
-        LOG(error, "field splitting completed, result tree:\n%s",
+        LOG(debug, "field splitting completed, result tree:\n%s",
             search::common::protobuf_message_to_json(proto_tree).c_str());
     }
     return result;
