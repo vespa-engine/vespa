@@ -49,4 +49,4 @@ struct FieldSplitter {
     static Node::UP split_terms(Node::UP node);
 };
 
-}
+} // namespace proton::matching
