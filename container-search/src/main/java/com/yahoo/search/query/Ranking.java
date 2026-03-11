@@ -52,10 +52,13 @@ public class Ranking implements Cloneable {
     public static final String FRESHNESS = "freshness";
     public static final String QUERYCACHE = "queryCache";
 
-    public static final String RERANKCOUNT = "rerankCount";
     public static final String KEEPRANKCOUNT = "keepRankCount";
     public static final String TOTALKEEPRANKCOUNT = "totalKeepRankCount";
+
+    @Deprecated // TODO: Remove on Vespa 9
+    public static final String RERANKCOUNT = "rerankCount";
     public static final String RANKSCOREDROPLIMIT = "rankScoreDropLimit";
+
     public static final String ELEMENT_GAP = "elementGap";
     public static final String FEATURES = "features";
     public static final String PROPERTIES = "properties";
@@ -87,7 +90,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(LIST_FEATURES, "string", RANKFEATURES.toString()));
         argumentType.addField(new FieldDescription(FRESHNESS, "string", "datetime"));
         argumentType.addField(new FieldDescription(QUERYCACHE, "boolean"));
-        argumentType.addField(new FieldDescription(RERANKCOUNT, "integer")); // TODO: Remove on Vespa 9
+        argumentType.addField(new FieldDescription(SecondPhase.RERANK_COUNT, "integer")); // TODO: Remove on Vespa 9
         argumentType.addField(new FieldDescription(KEEPRANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(TOTALKEEPRANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(RANKSCOREDROPLIMIT, "double"));

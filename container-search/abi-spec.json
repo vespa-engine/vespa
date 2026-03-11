@@ -5872,9 +5872,9 @@
       "public static final java.lang.String LIST_FEATURES",
       "public static final java.lang.String FRESHNESS",
       "public static final java.lang.String QUERYCACHE",
-      "public static final java.lang.String RERANKCOUNT",
       "public static final java.lang.String KEEPRANKCOUNT",
       "public static final java.lang.String TOTALKEEPRANKCOUNT",
+      "public static final java.lang.String RERANKCOUNT",
       "public static final java.lang.String RANKSCOREDROPLIMIT",
       "public static final java.lang.String ELEMENT_GAP",
       "public static final java.lang.String FEATURES",
@@ -7436,7 +7436,9 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
-      "public static final java.lang.String GLOBAL_PHASE"
+      "public static final java.lang.String GLOBAL_PHASE",
+      "public static final java.lang.String RERANK_COUNT",
+      "public static final java.lang.String RANK_SCORE_DROP_LIMIT"
     ]
   },
   "com.yahoo.search.query.ranking.MatchPhase" : {
@@ -7623,7 +7625,10 @@
     "fields" : [
       "public static final java.lang.String rerankCountProperty",
       "public static final java.lang.String totalRerankCountProperty",
-      "public static final java.lang.String SECOND_PHASE"
+      "public static final java.lang.String SECOND_PHASE",
+      "public static final java.lang.String RERANK_COUNT",
+      "public static final java.lang.String TOTAL_RERANK_COUNT",
+      "public static final java.lang.String RANK_SCORE_DROP_LIMIT"
     ]
   },
   "com.yahoo.search.query.ranking.Significance" : {
