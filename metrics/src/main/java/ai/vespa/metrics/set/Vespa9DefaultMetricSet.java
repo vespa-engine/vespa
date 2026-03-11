@@ -61,7 +61,7 @@ public class Vespa9DefaultMetricSet {
                 .metric(ContainerMetrics.MEM_HEAP_FREE.average())
                 .metric(ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile))
                 .metric(ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count))
-                .metric(ContainerMetrics.HANDLED_LATENCY, EnumSet.of(sum, count, max))
+                .metric(ContainerMetrics.HANDLED_LATENCY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile))
                 .metric(ContainerMetrics.CPU.baseName())
                 .metric(ContainerMetrics.JDISC_THREAD_POOL_SIZE.max())
                 .metric(ContainerMetrics.JDISC_THREAD_POOL_ACTIVE_THREADS, EnumSet.of(sum, count, min, max))
