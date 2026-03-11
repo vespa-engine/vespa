@@ -21,14 +21,14 @@ namespace search::queryeval {
 SameElementBlueprint::SameElementBlueprint(const FieldSpec &field,
                                            const std::vector<search::fef::TermFieldHandle>& descendants_index_handles,
                                            bool expensive,
-                                           std::vector<uint32_t> element_filter,
-                                           bool expose_match_data_for_same_element)
+                                           bool expose_match_data_for_same_element,
+                                           std::vector<uint32_t> element_filter)
     : IntermediateBlueprint(),
       _field(field),
       _descendants_index_handles(descendants_index_handles),
       _expensive(expensive),
-      _element_filter(std::move(element_filter)),
-      _expose_match_data_for_same_element(expose_match_data_for_same_element)
+      _expose_match_data_for_same_element(expose_match_data_for_same_element),
+      _element_filter(std::move(element_filter))
 {
 }
 

@@ -115,7 +115,7 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(QueryTweak query_tweak, Mat
         bp_children.emplace_back(std::move(bp_tweak));
     }
     auto result = std::make_unique<SameElementBlueprint>(make_field_spec(mdl), descendants_index_handles,
-                                                         false, std::move(element_filter));
+                                                         false, true, std::move(element_filter));
     for (auto& fake : bp_children) {
         result->addChild(std::move(fake));
     }

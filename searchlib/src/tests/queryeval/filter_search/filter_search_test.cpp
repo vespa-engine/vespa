@@ -406,7 +406,7 @@ struct SameElementAdapter {
     void make_blueprint() const {
         if (!blueprint) {
             std::vector<TermFieldHandle> descendants_index_handles;
-            blueprint = std::make_unique<SameElementBlueprint>(field, descendants_index_handles, false);
+            blueprint = std::make_unique<SameElementBlueprint>(field, descendants_index_handles, false, true);
             for (auto& child : children) {
                 blueprint->addChild(std::move(child));
             }
