@@ -2,7 +2,6 @@
 package com.yahoo.search.handler;
 
 import com.yahoo.processing.IllegalInputException;
-import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.CborFormat;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
