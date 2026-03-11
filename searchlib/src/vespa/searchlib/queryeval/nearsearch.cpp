@@ -2,6 +2,7 @@
 
 #include "nearsearch.h"
 #include "i_element_gap_inspector.h"
+#include "near_search_flags.h"
 #include "near_search_utils.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/priority_queue.h>
@@ -63,6 +64,16 @@ NearSearchBase::MatcherBase::hide_positive_terms_from_ranking()
     }
 }
 
+void
+NearSearchBase::MatcherBase::filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans)
+{
+    uint32_t size = _inputs.size();
+    uint32_t num_positive_terms = size - _num_negative_terms;
+    for (uint32_t i = 0; i < num_positive_terms; ++i) {
+        _inputs[i]->filter_match_spans(docid, match_spans);
+    }
+}
+
 NearSearchBase::NearSearchBase(Children terms,
                                const TermFieldMatchDataArray &data,
                                uint32_t window,
@@ -74,11 +85,15 @@ NearSearchBase::NearSearchBase(Children terms,
       _window(window),
       _num_negative_terms(num_negative_terms),
       _exclusion_distance(exclusion_distance),
-      _strict(strict)
+      _strict(strict),
+      _match_spans(),
+      _unpacked_docid(beginId())
 {
     // we need at least one positive term
     assert(getChildren().size() > _num_negative_terms);
 }
+
+NearSearchBase::~NearSearchBase() = default;
 
 void
 NearSearchBase::visitMembers(vespalib::ObjectVisitor &visitor) const
@@ -169,6 +184,25 @@ NearSearchBase::doSeek(uint32_t docId)
          */
         hide_positive_terms_from_ranking();
     }
+}
+
+void
+NearSearchBase::doUnpack(uint32_t docid)
+{
+    MultiSearch::doUnpack(docid);
+    if (NearSearchFlags::filter_terms() && docid != _unpacked_docid) {
+        _match_spans.clear();
+        get_match_spans(docid, _match_spans);
+        filter_positive_terms(docid, _match_spans);
+    }
+    _unpacked_docid = docid;
+}
+
+void
+NearSearchBase::initRange(uint32_t begin, uint32_t end)
+{
+    MultiSearch::initRange(begin, end);
+    _unpacked_docid = beginId();
 }
 
 NearSearch::NearSearch(Children terms,
@@ -353,7 +387,7 @@ bool
 NearSearch::match(uint32_t docId)
 {
     // Retrieve position iterators for each term.
-    doUnpack(docId);
+    MultiSearch::doUnpack(docId);
     BoolMatchResult match_result;
     for (size_t i = 0; i < _matchers.size(); ++i) {
         _matchers[i].match(docId, match_result);
@@ -392,6 +426,14 @@ NearSearch::hide_positive_terms_from_ranking()
 {
     for (auto& matcher : _matchers) {
         matcher.hide_positive_terms_from_ranking();
+    }
+}
+
+void
+NearSearch::filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans)
+{
+    for (auto& matcher : _matchers) {
+        matcher.filter_positive_terms(docid, match_spans);
     }
 }
 
@@ -524,7 +566,7 @@ bool
 ONearSearch::match(uint32_t docId)
 {
     // Retrieve position iterators for each term.
-    doUnpack(docId);
+    MultiSearch::doUnpack(docId);
     BoolMatchResult match_result;
     for (auto& matcher : _matchers) {
         matcher.match(docId, match_result);
@@ -563,6 +605,14 @@ ONearSearch::hide_positive_terms_from_ranking()
 {
     for (auto& matcher : _matchers) {
         matcher.hide_positive_terms_from_ranking();
+    }
+}
+
+void
+ONearSearch::filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans)
+{
+    for (auto& matcher : _matchers) {
+        matcher.filter_positive_terms(docid, match_spans);
     }
 }
 
