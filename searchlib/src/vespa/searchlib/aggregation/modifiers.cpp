@@ -2,13 +2,16 @@
 
 #include "modifiers.h"
 #include "grouping.h"
-#include <vespa/searchlib/expression/multiargfunctionnode.h>
+#include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/interpolated_document_field_lookup_node.h>
 #include <vespa/searchlib/expression/interpolatedlookupfunctionnode.h>
-#include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/expression/multiargfunctionnode.h>
+#include <vespa/searchlib/expression/position_document_field_node.h>
 
+using document::PositionDataType;
 using namespace search::expression;
 
 namespace search::aggregation {
@@ -56,7 +59,12 @@ Attribute2DocumentAccessor::getReplacementNode(const AttributeNode &attributeNod
         auto& interpolated_lookup = static_cast<const InterpolatedLookup&>(attributeNode);
         return std::make_unique<InterpolatedDocumentFieldLookupNode>(interpolated_lookup.getAttributeName(), interpolated_lookup.clone_lookup_expression());
     }
-    return std::make_unique<DocumentFieldNode>(attributeNode.getAttributeName());
+    const auto& name = attributeNode.getAttributeName();
+    if (PositionDataType::isZCurveFieldName(name)) {
+        auto field_name = std::string(PositionDataType::cutZCurveFieldName(name));
+        return std::make_unique<PositionDocumentFieldNode>(field_name);
+    }
+    return std::make_unique<DocumentFieldNode>(name);
 }
 
 std::unique_ptr<ExpressionNode>
