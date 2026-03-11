@@ -213,6 +213,7 @@ SimplePhraseSearch::doStrictSeek(uint32_t doc_id) {
 
 void
 SimplePhraseSearch::doUnpack(uint32_t doc_id) {
+    _tmd.clear_hidden_from_ranking();
     if (_unpacked_docid == doc_id) {
         return;
     }
