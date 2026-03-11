@@ -27,6 +27,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.ParentHostUnavailableException;
+import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -79,6 +80,7 @@ import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.response.SearchNodeMetricsResponse;
 import com.yahoo.vespa.config.server.metrics.DeploymentMetricsRetriever;
 import com.yahoo.vespa.config.server.metrics.SearchNodeMetricsRetriever;
+import com.yahoo.vespa.config.server.provision.DeploymentConfigStoreProvider;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -150,6 +152,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public final TenantRepository tenantRepository;
     private final Optional<Provisioner> hostProvisioner;
+    private final Optional<DeploymentConfigStore> deploymentConfigStore;
     private final Optional<InfraDeployer> infraDeployer;
     private final ConfigConvergenceChecker convergeChecker;
     private final ConfigStateChecker configStateChecker;
@@ -169,6 +172,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
                                  HostProvisionerProvider hostProvisionerProvider,
+                                 DeploymentConfigStoreProvider deploymentConfigStoreProvider,
                                  InfraDeployerProvider infraDeployerProvider,
                                  ConfigConvergenceChecker configConvergenceChecker,
                                  ConfigStateChecker configStateChecker,
@@ -180,8 +184,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  FlagSource flagSource) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
+             deploymentConfigStoreProvider.getStore(),
              infraDeployerProvider.getInfraDeployer(),
-             configConvergenceChecker, 
+             configConvergenceChecker,
              configStateChecker,
              httpProxy,
              EndpointsChecker.of(healthCheckers.getHealthChecker()),
@@ -198,6 +203,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private ApplicationRepository(TenantRepository tenantRepository,
                                   Optional<Provisioner> hostProvisioner,
+                                  Optional<DeploymentConfigStore> deploymentConfigStore,
                                   Optional<InfraDeployer> infraDeployer,
                                   ConfigConvergenceChecker configConvergenceChecker,
                                   ConfigStateChecker configStateChecker,
@@ -214,6 +220,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   FlagSource flagSource) {
         this.tenantRepository = Objects.requireNonNull(tenantRepository);
         this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
+        this.deploymentConfigStore = Objects.requireNonNull(deploymentConfigStore);
         this.infraDeployer = Objects.requireNonNull(infraDeployer);
         this.convergeChecker = Objects.requireNonNull(configConvergenceChecker);
         this.configStateChecker = Objects.requireNonNull(configStateChecker);
@@ -245,6 +252,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
         private ConfigStateChecker configStateChecker = new ConfigStateChecker();
         private Map<String, List<Token>> activeTokens = Map.of();
+        private Optional<DeploymentConfigStore> deploymentConfigStore = Optional.empty();
 
         public Builder withTenantRepository(TenantRepository tenantRepository) {
             this.tenantRepository = tenantRepository;
@@ -311,9 +319,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             return this;
         }
 
+        public Builder withDeploymentConfigStore(Optional<DeploymentConfigStore> deploymentConfigStore) {
+            this.deploymentConfigStore = deploymentConfigStore;
+            return this;
+        }
+
         public ApplicationRepository build() {
             return new ApplicationRepository(tenantRepository,
                                              tenantRepository.hostProvisionerProvider().getHostProvisioner(),
+                                             deploymentConfigStore,
                                              InfraDeployerProvider.empty().getInfraDeployer(),
                                              configConvergenceChecker,
                                              configStateChecker,
@@ -356,7 +370,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Deployment prepare(long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
         Tenant tenant = getTenant(prepareParams.getApplicationId());
         Session session = validateThatLocalSessionIsNotActive(tenant, sessionId);
-        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, tenant, prepareParams, logger, clock);
+        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, deploymentConfigStore, tenant, prepareParams, logger, clock);
         deployment.prepare();
         logConfigChangeActions(deployment.configChangeActions(), logger);
         log.log(Level.INFO, TenantRepository.logPre(prepareParams.getApplicationId()) + "Session " + sessionId + " prepared successfully. ");
@@ -458,7 +472,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         DeployLogger logger = new SilentDeployLogger();
         Session newSession = sessionRepository.createSessionFromExisting(activeSession.get(), true, timeoutBudget, logger);
 
-        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, logger, timeout, clock,
+        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, deploymentConfigStore, tenant, logger, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
     }
 
@@ -514,7 +528,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   boolean force) {
         DeployLogger logger = new SilentDeployLogger();
         Session session = getLocalSession(tenant, sessionId);
-        Deployment deployment = Deployment.prepared(session, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
+        Deployment deployment = Deployment.prepared(session, this, hostProvisioner, deploymentConfigStore, tenant, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
         return sessionRepository(tenant).read(session).applicationId();
     }
