@@ -266,17 +266,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
-            var sidecarImages = loadSidecarImages();
-            var image = sidecarImages.getProperty("triton");
-            
-            if (image == null || image.isBlank()) {
+            var sidecarImages = readSidecarImages();
+            var image = sidecarImages.get("triton");
+
+            if (image == null) {
                 throw new IllegalStateException("Triton sidecar image is not configured in sidecar-images.properties");
             }
 
             var spec = SidecarSpec.builder()
                     .id(0)
                     .name("triton")
-                    .image(DockerImage.fromString(image))
+                    .image(image)
                     .minCpu(1) // Must have at least one CPU
                     .hasGpu(hasGpu)
                     .volumeMounts(List.of("/models"))
@@ -290,20 +290,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return sidecars;
     }
 
-    private Properties loadSidecarImages() {
+    static Map<String, DockerImage> readSidecarImages() {
         var props = new Properties();
-        
-        try (InputStream inputStream = getClass().getResourceAsStream("/sidecar-images.properties")) {
+
+        try (InputStream inputStream = ContainerModelBuilder.class.getResourceAsStream("/sidecar-images.properties")) {
             if (inputStream == null) {
                 throw new IllegalStateException("sidecar-images.properties not found");
             }
-            
+
             props.load(inputStream);
         } catch (IOException e) {
             throw new RuntimeException("Failed to load sidecar-images.properties", e);
         }
-        
-        return props;
+
+        return props.entrySet().stream()
+                .collect(Collectors.toMap(
+                        e -> e.getKey().toString(),
+                        e -> DockerImage.fromString(e.getValue().toString())
+                ));
     }
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {

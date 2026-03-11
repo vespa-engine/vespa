@@ -19,6 +19,7 @@ import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
@@ -864,6 +865,15 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         var exception = assertThrows(IllegalArgumentException.class, () -> createModel(myRoot, clusterElem));
         assertThat(exception.getMessage(), containsString("Inference memory cannot exceed available node memory (16.00 GiB), got: 32Gb"));
+    }
+
+    @Test
+    void test_readSidecarImages() {
+        Map<String, DockerImage> sidecarImages = ContainerModelBuilder.readSidecarImages();
+        assertNotNull(sidecarImages, "Sidecar images map should be loaded");
+
+        DockerImage tritonImage = sidecarImages.get("triton");
+        assertNotNull(tritonImage, "Triton image should be defined");
     }
 
 }
