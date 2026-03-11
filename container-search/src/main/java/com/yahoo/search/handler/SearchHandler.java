@@ -551,7 +551,7 @@ public class SearchHandler extends LoggingRequestHandler {
     /** Parse properties POSTed as a JSON or CBOR payload, if any */
     private BodyMaps parseRequestBody(HttpRequest request) {
         if (request.getMethod() != com.yahoo.jdisc.http.HttpRequest.Method.POST)
-            return new BodyMaps(new HashMap<>(request.propertyMap()), null);
+            return new BodyMaps(new HashMap<>(), null);
 
         String mediaType = getMediaType(request);
         if (JSON_CONTENT_TYPE.equals(mediaType)) {
@@ -560,7 +560,7 @@ public class SearchHandler extends LoggingRequestHandler {
             var cbor = new Cbor2Maps(request.getData());
             return new BodyMaps(cbor.stringMap(), cbor.inspectorMap());
         } else {
-            return new BodyMaps(new HashMap<>(request.propertyMap()), null);
+            return new BodyMaps(new HashMap<>(), null);
         }
     }
 
