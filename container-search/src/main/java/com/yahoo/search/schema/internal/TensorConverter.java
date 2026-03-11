@@ -5,8 +5,10 @@ import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.InvocationContext;
 import com.yahoo.processing.request.Properties;
+import com.yahoo.slime.Inspector;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.text.Text;
 
 import java.time.Instant;
@@ -51,6 +53,7 @@ public class TensorConverter {
     private Tensor toTensor(TensorType type, Object value, Embedder.Context context, Map<String, String> contextValues,
                             Properties properties) {
         if (value instanceof Tensor) return (Tensor)value;
+        if (value instanceof Inspector inspector) return JsonFormat.decode(type, inspector);
         if (value instanceof String && isEmbed((String)value)) return embed((String)value, type, context, contextValues, properties);
         if (value instanceof String) return Tensor.from(type, (String)value);
         return null;

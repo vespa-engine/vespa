@@ -10,18 +10,16 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.yahoo.processing.IllegalInputException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Parser that consumes json or cbor and creates a single level key value map by dotting nested objects.
+ * Parser that consumes json and creates a single level key value map by dotting nested objects.
  * This is specially tailored for the query input coming as post body.
  * It does the cheapest possible parsing delaying number parsing to where it is needed and avoids dreaded toString()
  * of complicated json object trees.
@@ -30,25 +28,26 @@ import java.util.Map;
  */
 class Json2SingleLevelMap {
 
+    /** Returns true for input tensor fields (input.*) that carry structured tensor data */
+    static boolean isInputField(String fieldName) {
+        return fieldName.startsWith("input.");
+    }
+
+    /** Returns true for object fields that should be kept as structured values, not dot-flattened */
+    static boolean isStructuredField(String fieldName) {
+        return isInputField(fieldName) || fieldName.equals("select.where") || fieldName.equals("select.grouping");
+    }
+
     private static final ObjectMapper jsonMapper = createJsonMapper();
-    private static final ObjectMapper cborMapper = createCborMapper();
 
     private final byte [] buf;
 
     private final JsonParser parser;
     Json2SingleLevelMap(InputStream data) {
-        this(data, jsonMapper, true);
-    }
-
-    static Json2SingleLevelMap ofCbor(InputStream data) {
-        return new Json2SingleLevelMap(data, cborMapper, false);
-    }
-
-    private Json2SingleLevelMap(InputStream data, ObjectMapper mapper, boolean retainRawBytes) {
         try {
             byte[] raw = data.readAllBytes();
-            buf = retainRawBytes ? raw : null;
-            parser = mapper.createParser(raw);
+            buf = raw;
+            parser = jsonMapper.createParser(raw);
         } catch (IOException e) {
             throw new RuntimeException("Problem reading POSTed data", e);
         }
@@ -60,12 +59,6 @@ class Json2SingleLevelMap {
                 // allow newline/tab inside JSON strings, mainly for large YQL/grouping statements:
                 .configure(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS, true)
                 .configure(JsonReadFeature.ALLOW_SINGLE_QUOTES, true));
-    }
-
-    private static ObjectMapper createCborMapper() {
-        CBORFactory factory = new CBORFactory();
-        factory.setStreamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build());
-        return new ObjectMapper(factory);
     }
 
     Map<String, String> parse() {
@@ -95,10 +88,10 @@ class Json2SingleLevelMap {
                 (token == JsonToken.VALUE_NULL)) {
                 map.put(fieldName, parser.getText());
             } else if (token == JsonToken.START_ARRAY) {
-                map.put(fieldName, skipChildren(parser, buf));
+                map.put(fieldName, skipChildren(parser));
             } else if (token == JsonToken.START_OBJECT) {
-                if (fieldName.startsWith("input.") || fieldName.equals("select.where") || fieldName.equals("select.grouping")) {
-                    map.put(fieldName, skipChildren(parser, buf));
+                if (isStructuredField(fieldName)) {
+                    map.put(fieldName, skipChildren(parser));
                 } else {
                     parse(map, fieldName + ".");
                 }
@@ -109,23 +102,12 @@ class Json2SingleLevelMap {
     }
 
     /** Skips the current structured value (array or object) and returns its content as a JSON string. */
-    private String skipChildren(JsonParser parser, byte [] input) throws IOException {
-        if (input != null) {
-            // JSON fast path: extract raw bytes directly from the input buffer
-            JsonLocation start = parser.currentLocation();
-            parser.skipChildren();
-            JsonLocation end = parser.currentLocation();
-            int offset = (int)start.getByteOffset() - 1;
-            return new String(input, offset, (int)(end.getByteOffset() - offset), StandardCharsets.UTF_8);
-        } else {
-            // CBOR (or other binary format): transcode the subtree to a JSON string.
-            // copyCurrentStructure leaves the parser at the END token, matching skipChildren() behavior.
-            StringWriter writer = new StringWriter();
-            try (var gen = jsonMapper.getFactory().createGenerator(writer)) {
-                gen.copyCurrentStructure(parser);
-            }
-            return writer.toString();
-        }
+    private String skipChildren(JsonParser parser) throws IOException {
+        JsonLocation start = parser.currentLocation();
+        parser.skipChildren();
+        JsonLocation end = parser.currentLocation();
+        int offset = (int)start.getByteOffset() - 1;
+        return new String(buf, offset, (int)(end.getByteOffset() - offset), StandardCharsets.UTF_8);
     }
 
 }

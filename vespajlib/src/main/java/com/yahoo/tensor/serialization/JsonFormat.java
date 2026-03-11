@@ -286,9 +286,13 @@ public class JsonFormat {
     /** Deserializes the given tensor from JSON format */
     // NOTE: This must be kept in sync with com.yahoo.document.json.readers.TensorReader in the document module
     public static Tensor decode(TensorType type, byte[] jsonTensorValue) {
-        Tensor.Builder builder = Tensor.Builder.of(type);
         Inspector root = new JsonDecoder().decode(new Slime(), jsonTensorValue).get();
+        return decode(type, root);
+    }
 
+    /** Deserializes the given tensor from a Slime Inspector (e.g. decoded from CBOR or JSON) */
+    public static Tensor decode(TensorType type, Inspector root) {
+        Tensor.Builder builder = Tensor.Builder.of(type);
         if (root.field("cells").valid() && ! primitiveContent(root.field("cells")))
             decodeCells(root.field("cells"), builder);
         else if (root.field("values").valid() && ! builder.type().hasMappedDimensions())

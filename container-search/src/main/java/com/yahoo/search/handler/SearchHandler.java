@@ -51,6 +51,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -228,7 +229,10 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private HttpSearchResponse handleBody(HttpRequest request) {
         long executionStart = System.currentTimeMillis();
-        Map<String, String> requestMap = requestMapFromRequest(request);
+        var bodyMaps = parseRequestBody(request);
+        Map<String, String> requestMap = bodyMaps.stringMap();
+        requestMap.putAll(request.propertyMap());
+        validateRequestMap(requestMap);
 
         // Get query profile
         String queryProfileName = requestMap.getOrDefault("queryProfile", null);
@@ -242,6 +246,13 @@ public class SearchHandler extends LoggingRequestHandler {
                                          .setSchemaInfo(executionFactory.schemaInfo())
                                          .build();
         query.getHttpRequest().context().put("search.handlerStartTime", executionStart);
+
+        // Set structured tensor input values directly (CBOR path only, avoids string conversion)
+        if (bodyMaps.inspectorMap() != null) {
+            for (var entry : bodyMaps.inspectorMap().entrySet()) {
+                query.properties().set(CompoundName.from(entry.getKey()), entry.getValue(), requestMap);
+            }
+        }
 
         // If format not explicitly set, use Accept header to determine response format
         if (!requestMap.containsKey("format") && !requestMap.containsKey("presentation.format")) {
@@ -535,31 +546,29 @@ public class SearchHandler extends LoggingRequestHandler {
         }
     }
 
-    /** Add properties POSTed as a JSON or CBOR payload, if any, to the request map */
-    private Map<String, String> requestMapFromRequest(HttpRequest request) {
+    private record BodyMaps(Map<String, String> stringMap, Map<String, Inspector> inspectorMap) { }
+
+    /** Parse properties POSTed as a JSON or CBOR payload, if any */
+    private BodyMaps parseRequestBody(HttpRequest request) {
         if (request.getMethod() != com.yahoo.jdisc.http.HttpRequest.Method.POST)
-            return request.propertyMap();
+            return new BodyMaps(new HashMap<>(request.propertyMap()), null);
 
         String mediaType = getMediaType(request);
-        Json2SingleLevelMap bodyParser;
-        if (JSON_CONTENT_TYPE.equals(mediaType))
-            bodyParser = new Json2SingleLevelMap(request.getData());
-        else if (CBOR_CONTENT_TYPE.equals(mediaType))
-            bodyParser = Json2SingleLevelMap.ofCbor(request.getData());
-        else
-            return request.propertyMap();
+        if (JSON_CONTENT_TYPE.equals(mediaType)) {
+            return new BodyMaps(new Json2SingleLevelMap(request.getData()).parse(), null);
+        } else if (CBOR_CONTENT_TYPE.equals(mediaType)) {
+            var cbor = new Cbor2Maps(request.getData());
+            return new BodyMaps(cbor.stringMap(), cbor.inspectorMap());
+        } else {
+            return new BodyMaps(new HashMap<>(request.propertyMap()), null);
+        }
+    }
 
-        Map<String, String> requestMap = bodyParser.parse();
-
-        // Add fields from JSON to the request map
-        requestMap.putAll(request.propertyMap());
-
+    private static void validateRequestMap(Map<String, String> requestMap) {
         if (requestMap.containsKey("yql") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
             throw new IllegalInputException("Illegal query: Query contains both yql and select parameter");
         if (requestMap.containsKey("query") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
             throw new IllegalInputException("Illegal query: Query contains both query and select parameter");
-
-        return requestMap;
     }
 
     @Deprecated // TODO: Remove on Vespa 9

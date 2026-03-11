@@ -634,9 +634,13 @@ public class JSONSearchHandlerTestCase {
                          }
                        }
                        """;
-        Map<String, String> map = Json2SingleLevelMap.ofCbor(new ByteArrayInputStream(jsonToCbor(json))).parse();
-        assertEquals("{\"Tablet Keyboard Cases\":42.5}", map.get("input.query(q_category)"));
-        assertEquals("[1,2.5,3]", map.get("input.query(q_vector)"));
+        var cbor = new Cbor2Maps(new ByteArrayInputStream(jsonToCbor(json)));
+        // Structured input.* values are in inspectorMap as Inspector objects
+        assertTrue(cbor.stringMap().isEmpty());
+        assertNotNull(cbor.inspectorMap().get("input.query(q_category)"));
+        assertNotNull(cbor.inspectorMap().get("input.query(q_vector)"));
+        assertEquals("{\"Tablet Keyboard Cases\":42.5}", SlimeUtils.toJson(cbor.inspectorMap().get("input.query(q_category)")));
+        assertEquals("[1,2.5,3]", SlimeUtils.toJson(cbor.inspectorMap().get("input.query(q_vector)")));
     }
 
     @Test
@@ -651,12 +655,12 @@ public class JSONSearchHandlerTestCase {
         select.set("grouping", grouping);
         json.set("select", select);
 
-        Map<String, String> map = Json2SingleLevelMap.ofCbor(new ByteArrayInputStream(cborMapper.writeValueAsBytes(json))).parse();
+        var cbor = new Cbor2Maps(new ByteArrayInputStream(cborMapper.writeValueAsBytes(json)));
 
-        JsonNode processedWhere = jsonMapper.readTree(map.get("select.where"));
+        JsonNode processedWhere = jsonMapper.readTree(cbor.stringMap().get("select.where"));
         JsonTestHelper.assertJsonEquals(where.toString(), processedWhere.toString());
 
-        JsonNode processedGrouping = jsonMapper.readTree(map.get("select.grouping"));
+        JsonNode processedGrouping = jsonMapper.readTree(cbor.stringMap().get("select.grouping"));
         JsonTestHelper.assertJsonEquals(grouping.toString(), processedGrouping.toString());
     }
 
@@ -704,10 +708,11 @@ public class JSONSearchHandlerTestCase {
         presentation.put("format", "json");
         json.set("presentation", presentation);
 
-        Map<String, String> cborMap = Json2SingleLevelMap.ofCbor(new ByteArrayInputStream(cborMapper.writeValueAsBytes(json))).parse();
+        var cbor = new Cbor2Maps(new ByteArrayInputStream(cborMapper.writeValueAsBytes(json)));
         Map<String, String> jsonMap = new Json2SingleLevelMap(new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8))).parse();
 
-        assertEquals(jsonMap, cborMap);
+        assertEquals(jsonMap, cbor.stringMap());
+        assertTrue(cbor.inspectorMap().isEmpty());
     }
 
     @Test
@@ -718,6 +723,62 @@ public class JSONSearchHandlerTestCase {
         String response = responseHandler.readAll();
         assertEquals(400, responseHandler.getStatus());
         assertTrue(response.contains("errors"));
+    }
+
+    @Test
+    void testCbor2MapsScalarInputInStringMap() throws IOException {
+        String json = """
+                       { "query": "test", "hits": 5, "ranking.profile": "default" }
+                       """;
+        var cbor = new Cbor2Maps(new ByteArrayInputStream(jsonToCbor(json)));
+        assertEquals("test", cbor.stringMap().get("query"));
+        assertEquals("5", cbor.stringMap().get("hits"));
+        assertEquals("default", cbor.stringMap().get("ranking.profile"));
+        assertTrue(cbor.inspectorMap().isEmpty());
+    }
+
+    @Test
+    void testCbor2MapsNestedDotFlattening() throws IOException {
+        String json = """
+                       { "ranking": { "profile": "my_profile", "features": { "x": 1.5 } } }
+                       """;
+        var cbor = new Cbor2Maps(new ByteArrayInputStream(jsonToCbor(json)));
+        assertEquals("my_profile", cbor.stringMap().get("ranking.profile"));
+        assertEquals("1.5", cbor.stringMap().get("ranking.features.x"));
+        assertTrue(cbor.inspectorMap().isEmpty());
+    }
+
+    @Test
+    void testCbor2MapsInputScalarInStringMap() throws IOException {
+        // Scalar input.* values stay as strings (not structured, so no Inspector needed)
+        String json = """
+                       { "input": { "query(myFeature)": 42 } }
+                       """;
+        var cbor = new Cbor2Maps(new ByteArrayInputStream(jsonToCbor(json)));
+        assertEquals("42", cbor.stringMap().get("input.query(myFeature)"));
+        assertTrue(cbor.inspectorMap().isEmpty());
+    }
+
+    @Test
+    void testCbor2MapsMixedInputValues() throws IOException {
+        String json = """
+                       {
+                         "yql": "select * from sources * where true",
+                         "input": {
+                             "query(scalar)": 7,
+                             "query(vector)": [1.0, 2.0, 3.0],
+                             "query(map)": { "a": 1.0 }
+                         }
+                       }
+                       """;
+        var cbor = new Cbor2Maps(new ByteArrayInputStream(jsonToCbor(json)));
+        // Scalar in stringMap
+        assertEquals("select * from sources * where true", cbor.stringMap().get("yql"));
+        assertEquals("7", cbor.stringMap().get("input.query(scalar)"));
+        // Structured in inspectorMap
+        assertNotNull(cbor.inspectorMap().get("input.query(vector)"));
+        assertNotNull(cbor.inspectorMap().get("input.query(map)"));
+        assertEquals(2, cbor.inspectorMap().size());
     }
 
     private static File newFolder(File root, String... subDirs) throws IOException {
