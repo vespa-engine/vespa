@@ -40,7 +40,7 @@ void verify_md_elements(MatchData& md, const std::string& label, uint32_t docid,
     for (uint32_t i = 0; i < exp.size(); ++i) {
         act.emplace_back();
         auto& tfmd = *md.resolveTermField(i);
-        if (tfmd.has_data(docid)) {
+        if (tfmd.has_ranking_data(docid)) {
             ElementIdExtractor::get_element_ids(tfmd, docid, act.back().emplace());
         }
     }
@@ -250,13 +250,13 @@ TEST(SameElementTest, require_that_and_below_same_element_works)
     md->soft_reset();
     search->initRange(1, 1000);
     EXPECT_TRUE(search->seek(3));
-    verify_md_elements(*md, "before unpack", 3, { hit({7, 12}), hit({7, 12}) });
+    verify_md_elements(*md, "before unpack", 3, { nohit(), nohit() });
     search->unpack(3);
     verify_md_elements(*md, "after unpack", 3, { hit({7, 12}), hit({7, 12}) });
     EXPECT_FALSE(search->seek(7));
     verify_md_elements(*md, "before unpack", 7, { nohit(), nohit() });
     EXPECT_TRUE(search->seek(9));
-    verify_md_elements(*md, "before unpack", 9, { hit({9}), hit({9}) });
+    verify_md_elements(*md, "before unpack", 9, { nohit(), nohit() });
     search->unpack(9);
     verify_md_elements(*md, "after unpack", 9, { hit({9}), hit({9}) });
 }

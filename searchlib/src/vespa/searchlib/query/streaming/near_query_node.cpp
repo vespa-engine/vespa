@@ -2,10 +2,12 @@
 
 #include "near_query_node.h"
 #include "hit_iterator_pack.h"
+#include <vespa/searchlib/queryeval/near_search_flags.h>
 #include <vespa/searchlib/queryeval/near_search_utils.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
 using search::queryeval::MatchSpan;
+using search::queryeval::NearSearchFlags;
 using search::queryeval::near_search_utils::BoolMatchResult;
 using search::queryeval::near_search_utils::ElementIdMatchResult;
 using search::queryeval::near_search_utils::SpanMatchResult;
@@ -99,6 +101,26 @@ NearQueryNode::get_match_spans(std::vector<MatchSpan>& match_spans)
     // Retrieve the matching spans
     SpanMatchResult match_result(match_spans);
     evaluate_helper(match_result);
+}
+
+void
+NearQueryNode::unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
+                                 search::common::ElementIds element_ids)
+{
+    if (evaluate()) {
+        if (NearSearchFlags::filter_terms()) {
+            _match_spans.clear();
+            get_match_spans(_match_spans);
+            // TODO: Filter match spans based on element_ids
+            for (const auto& node : getChildren()) {
+                node->unpack_match_data(docid, match_data, index_env, _match_spans);
+            }
+        } else {
+            for (const auto& node : getChildren()) {
+                node->unpack_match_data(docid, match_data, index_env, element_ids);
+            }
+        }
+    }
 }
 
 void

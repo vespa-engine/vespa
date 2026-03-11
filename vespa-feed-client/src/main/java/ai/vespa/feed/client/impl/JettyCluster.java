@@ -7,7 +7,6 @@ import ai.vespa.feed.client.HttpResponse;
 import org.eclipse.jetty.client.Authentication;
 import org.eclipse.jetty.client.BufferingResponseListener;
 import org.eclipse.jetty.client.BytesRequestContent;
-import org.eclipse.jetty.client.Destination;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.MultiplexConnectionPool;
@@ -28,13 +27,12 @@ import org.eclipse.jetty.http2.client.HTTP2Client;
 import org.eclipse.jetty.http2.client.transport.ClientConnectionFactoryOverHTTP2;
 import org.eclipse.jetty.io.ClientConnectionFactory;
 import org.eclipse.jetty.io.ClientConnector;
-import org.eclipse.jetty.util.ConcurrentPool;
 import org.eclipse.jetty.util.Jetty;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.SocketAddressResolver;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,11 +41,13 @@ import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -72,22 +72,31 @@ class JettyCluster implements Cluster {
     // Socket timeout must be longer than the longest feasible response timeout
     private static final Duration IDLE_TIMEOUT = Duration.ofMinutes(15);
 
-    private final HttpClient client;
-    private final List<Endpoint> endpoints;
+    private final List<EndpointClient> clients;  // one per connection per endpoint
+    private final QueuedThreadPool executor;      // shared across all HttpClients
     private final Compression compression;
 
     JettyCluster(FeedClientBuilderImpl b) throws IOException {
-        this.client = createHttpClient(b);
-        this.endpoints = b.endpoints.stream().map(Endpoint::new).collect(Collectors.toList());
+        int selectorThreads = b.connectionsPerEndpoint * b.endpoints.size();
+        int workerThreads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 64), 8);
+        QueuedThreadPool pool = new QueuedThreadPool(workerThreads + selectorThreads);
+        pool.setName("feedclient");
+        this.executor = pool;
+        try { pool.start(); } catch (Exception e) { throw new IOException(e); }
+        List<EndpointClient> list = new ArrayList<>();
+        for (URI endpoint : b.endpoints)
+            for (int i = 0; i < b.connectionsPerEndpoint; i++)
+                list.add(new EndpointClient(endpoint, createHttpClient(b, executor)));
+        this.clients = List.copyOf(list);
         this.compression = b.compression;
     }
 
     @Override
     public void dispatch(HttpRequest req, CompletableFuture<HttpResponse> vessel) {
-        client.getExecutor().execute(() -> {
-            Endpoint endpoint = findLeastBusyEndpoint(endpoints);
+        executor.execute(() -> {
+            EndpointClient client = findLeastBusyEndpoint(clients);
             try {
-                endpoint.inflight.incrementAndGet();
+                client.inflight.incrementAndGet();
                 long reqTimeoutMillis = req.timeLeft().toMillis();
                 if (reqTimeoutMillis <= 0) {
                     log.log(Level.FINE, () ->
@@ -96,7 +105,7 @@ class JettyCluster implements Cluster {
                     vessel.completeExceptionally(new TimeoutException("operation timed out after '" + req.timeout() + "'"));
                     return;
                 }
-                Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.pathAndQuery()))
+                Request jettyReq = client.httpClient.newRequest(URI.create(client.uri + req.pathAndQuery()))
                         .version(HttpVersion.HTTP_2)
                         .method(HttpMethod.fromString(req.method()))
                         .headers(hs -> req.headers().forEach((k, v) -> hs.add(k, v.get())))
@@ -128,7 +137,7 @@ class JettyCluster implements Cluster {
                                         req, System.identityHashCode(vessel),
                                         result.isFailed()
                                                 ? result.getFailure().toString() : result.getResponse().getStatus()));
-                        endpoint.inflight.decrementAndGet();
+                        client.inflight.decrementAndGet();
                         if (result.isFailed()) {
                             if (result.getFailure() instanceof RetryableRequestException)
                                 // Request can be safely retried as it was cancelled locally
@@ -142,7 +151,7 @@ class JettyCluster implements Cluster {
                 });
             } catch (Throwable t) {
                 log.log(t instanceof Exception ? Level.FINE : Level.WARNING, "Failed to dispatch request: " + req, t.getMessage());
-                endpoint.inflight.decrementAndGet();
+                client.inflight.decrementAndGet();
                 vessel.completeExceptionally(t);
             }
         });
@@ -150,12 +159,19 @@ class JettyCluster implements Cluster {
 
     @Override
     public void close() {
-        try {
-            client.stop();
-        } catch (Exception e) { throw new RuntimeException(e); }
+        Exception failure = null;
+        for (EndpointClient c : clients) {
+            try { c.httpClient.stop(); }
+            catch (Exception e) {
+                if (failure == null) failure = e; else failure.addSuppressed(e);
+            }
+        }
+        try { executor.stop(); }
+        catch (Exception e) { if (failure == null) failure = e; else failure.addSuppressed(e); }
+        if (failure != null) throw new RuntimeException(failure);
     }
 
-    private static HttpClient createHttpClient(FeedClientBuilderImpl b) throws IOException {
+    private static HttpClient createHttpClient(FeedClientBuilderImpl b, Executor sharedExecutor) throws IOException {
         SslContextFactory.Client clientSslCtxFactory = new SslContextFactory.Client();
         clientSslCtxFactory.setSslContext(b.constructSslContext());
         if (b.hostnameVerifier != null) {
@@ -164,13 +180,10 @@ class JettyCluster implements Cluster {
             clientSslCtxFactory.setEndpointIdentificationAlgorithm(null);
         }
         ClientConnector connector = new ClientConnector();
-        int threads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 32), 8);
-        connector.setExecutor(new QueuedThreadPool(threads));
+        connector.setExecutor(sharedExecutor);
         connector.setSslContextFactory(clientSslCtxFactory);
         connector.setIdleTimeout(IDLE_TIMEOUT);
-        boolean secureProxy = b.proxy != null && b.proxy.getScheme().equals("https");
-        // Increase connect timeout for secure HTTP/2 proxy
-        connector.setConnectTimeout(Duration.ofSeconds(secureProxy ? 120 : 30));
+        connector.setConnectTimeout(Duration.ofSeconds(30));
         HTTP2Client h2Client = new HTTP2Client(connector);
         h2Client.setMaxConcurrentPushedStreams(b.maxStreamsPerConnection);
         // Set the HTTP/2 flow control windows very large to cause TCP congestion instead of HTTP/2 flow control congestion.
@@ -181,9 +194,12 @@ class JettyCluster implements Cluster {
         ClientConnectionFactory.Info h1 = HttpClientConnectionFactory.HTTP11;
         ClientConnectionFactory.Info http2 = new ClientConnectionFactoryOverHTTP2.HTTP2(h2Client);
         HttpClientTransportDynamic transport = new HttpClientTransportDynamic(connector, http2, h1);
-        int connectionsPerEndpoint = b.connectionsPerEndpoint;
-        transport.setConnectionPoolFactory(dest ->
-                new MaxMultiplexConnectionPool(dest, connectionsPerEndpoint, secureProxy, b.connectionTtl));
+        int maxStreams = b.maxStreamsPerConnection;
+        transport.setConnectionPoolFactory(dest -> {
+            MultiplexConnectionPool pool = new MultiplexConnectionPool(dest, 1, maxStreams);
+            pool.setMaxDuration(b.connectionTtl.toMillis());
+            return pool;
+        });
         HttpClient httpClient = new HttpClient(transport);
         httpClient.setMaxRequestsQueuedPerDestination(Integer.MAX_VALUE);
         httpClient.setFollowRedirects(false);
@@ -212,8 +228,7 @@ class JettyCluster implements Cluster {
             }
             proxySslCtxFactory.setSslContext(b.constructProxySslContext());
             try { proxySslCtxFactory.start(); } catch (Exception e) { throw new IOException(e); }
-            httpClient.getProxyConfiguration().addProxy(
-                    new HttpProxy(address, proxySslCtxFactory, new Origin.Protocol(List.of("h2"), false)));
+            httpClient.getProxyConfiguration().addProxy(new HttpProxy(address, proxySslCtxFactory));
             URI proxyUri = URI.create(endpointUri(b.proxy));
             httpClient.getAuthenticationStore().addAuthenticationResult(new Authentication.Result() {
                 @Override public URI getURI() { return proxyUri; }
@@ -222,9 +237,7 @@ class JettyCluster implements Cluster {
                 }
             });
         } else {
-            // Assume insecure proxy uses HTTP/1.1
-            httpClient.getProxyConfiguration().addProxy(
-                    new HttpProxy(address, false, new Origin.Protocol(List.of("http/1.1"), false)));
+            httpClient.getProxyConfiguration().addProxy(new HttpProxy(address, false));
             // Bug in Jetty cause authentication result to be ignored for HTTP/1.1 CONNECT requests
             httpClient.getRequestListeners().addHeadersListener(new Request.Listener() {
                 @Override
@@ -236,14 +249,14 @@ class JettyCluster implements Cluster {
         }
     }
 
-    private static Endpoint findLeastBusyEndpoint(List<Endpoint> endpoints) {
-        Endpoint leastBusy = endpoints.get(0);
+    private static EndpointClient findLeastBusyEndpoint(List<EndpointClient> clients) {
+        EndpointClient leastBusy = clients.get(0);
         int minInflight = leastBusy.inflight.get();
-        for (int i = 1; i < endpoints.size(); i++) {
-            Endpoint endpoint = endpoints.get(i);
-            int inflight = endpoint.inflight.get();
+        for (int i = 1; i < clients.size(); i++) {
+            EndpointClient client = clients.get(i);
+            int inflight = client.inflight.get();
             if (inflight < minInflight) {
-                leastBusy = endpoint;
+                leastBusy = client;
                 minInflight = inflight;
             }
         }
@@ -269,10 +282,14 @@ class JettyCluster implements Cluster {
         @Override public String contentType() { return response.getHeaders().get(HttpHeader.CONTENT_TYPE); }
     }
 
-    private static class Endpoint {
+    private static class EndpointClient {
+        final HttpClient httpClient;
         final AtomicInteger inflight = new AtomicInteger();
         final String uri;
-        Endpoint(URI uri) { this.uri = endpointUri(uri); }
+        EndpointClient(URI endpoint, HttpClient httpClient) {
+            this.uri = endpointUri(endpoint);
+            this.httpClient = httpClient;
+        }
     }
 
     private static class Ipv4PreferringResolver extends AbstractLifeCycle implements SocketAddressResolver {
@@ -306,28 +323,6 @@ class JettyCluster implements Cluster {
                     getPromise().succeeded(ipv4Addresses);
                 }
             });
-        }
-    }
-
-    private static class MaxMultiplexConnectionPool extends MultiplexConnectionPool {
-        static final int MAX_MULTIPLEX = 512;
-        final int maxConnections;
-
-        MaxMultiplexConnectionPool(Destination dest, int maxConnections, boolean secureProxy, Duration ttl) {
-            super(dest, () -> new ConcurrentPool<>(
-                    ConcurrentPool.StrategyType.RANDOM, maxConnections, newMaxMultiplexer(MAX_MULTIPLEX)), MAX_MULTIPLEX);
-            this.maxConnections = maxConnections;
-            if (secureProxy) setMaxDuration(Duration.ofMinutes(1).toMillis());
-            else {
-                setMaximizeConnections(true);
-                setMaxDuration(ttl.toMillis());
-            }
-        }
-
-        @Override
-        protected void doStart() throws Exception {
-            super.doStart();
-            preCreateConnections(maxConnections);
         }
     }
 }

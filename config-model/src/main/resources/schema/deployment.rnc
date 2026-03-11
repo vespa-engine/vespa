@@ -23,6 +23,7 @@ StepExceptInstance =
     Delay* &
     ParallelInstances* &
     Upgrade? &
+    Backup? &
     BlockChange* &
     Notifications? &
     Endpoints? &
@@ -73,6 +74,11 @@ Upgrade = element upgrade {
     attribute max-risk { xsd:long }? &
     attribute max-idle-hours { xsd:long }? &
     attribute rollout { xsd:string }?
+}
+
+Backup = element backup {
+    attribute frequency { xsd:string } &
+    attribute granularity { xsd:string }?
 }
 
 BlockChange = element block-change {

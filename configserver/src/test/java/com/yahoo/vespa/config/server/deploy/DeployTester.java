@@ -18,6 +18,7 @@ import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -282,6 +283,7 @@ public class DeployTester {
         private List<ModelFactory> modelFactories;
         private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
         private FlagSource flagSource = new InMemoryFlagSource();
+        private DeploymentConfigStore deploymentConfigStore;
 
         public Builder(TemporaryFolder temporaryFolder) {
             this.temporaryFolder = temporaryFolder;
@@ -323,6 +325,7 @@ public class DeployTester {
                     .withClock(clock)
                     .withConfigConvergenceChecker(configConvergenceChecker)
                     .withFlagSource(flagSource)
+                    .withDeploymentConfigStore(Optional.ofNullable(deploymentConfigStore))
                     .build();
 
             return new DeployTester(clock, tenantRepository, applicationRepository);
@@ -383,6 +386,11 @@ public class DeployTester {
 
         public Builder flagSource(FlagSource flagSource) {
             this.flagSource = flagSource;
+            return this;
+        }
+
+        public Builder deploymentConfigStore(com.yahoo.config.provision.DeploymentConfigStore deploymentConfigStore) {
+            this.deploymentConfigStore = deploymentConfigStore;
             return this;
         }
 
