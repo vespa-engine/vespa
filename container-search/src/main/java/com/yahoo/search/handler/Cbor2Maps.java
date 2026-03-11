@@ -21,7 +21,7 @@ import java.util.Map;
  * while structured {@code input.*} values (arrays, objects) are kept as Slime {@link Inspector}
  * objects to avoid expensive CBOR → string → double round-trips for tensor data.
  *
- * @author arnej
+ * @author andreer
  */
 class Cbor2Maps {
 
