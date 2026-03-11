@@ -49,6 +49,16 @@ SameElementSearch::check_element_match(uint32_t docid)
 }
 
 void
+SameElementSearch::hide_descendants_match_data()
+{
+    // This iterator or an iterator above might not be a match for the query. Hide match data from ranking until
+    // doUnpack() has been called.
+    for (auto* tfmd : _descendants_index_tfmd) {
+        tfmd->set_hidden_from_ranking();
+    }
+}
+
+void
 SameElementSearch::filter_descendants_match_data(uint32_t docid, std::span<const uint32_t> element_ids)
 {
     for (auto* tfmd : _descendants_index_tfmd) {
@@ -87,22 +97,22 @@ void
 SameElementSearch::doSeek(uint32_t docid) {
     bool docid_match = check_docid_match(docid);
     if (docid_match && check_element_match(docid)) {
-        filter_descendants_match_data(docid, _matchingElements);
+        hide_descendants_match_data();
         setDocId(docid);
     } else if (_strict) {
         docid = std::max(docid + 1, _children[0]->getDocId());
         while (!isAtEnd(docid)) {
             if (check_docid_match(docid) && check_element_match(docid)) {
-                filter_descendants_match_data(docid, _matchingElements);
+                hide_descendants_match_data();
                 setDocId(docid);
                 return;
             }
             docid = std::max(docid + 1, _children[0]->getDocId());
         }
-        filter_descendants_match_data(docid, std::span<uint32_t>());
+        hide_descendants_match_data();
         setAtEnd();
     } else if (docid_match) {
-        filter_descendants_match_data(docid, std::span<uint32_t>());
+        hide_descendants_match_data();
     }
 }
 
