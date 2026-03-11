@@ -538,7 +538,7 @@ public class SearchHandler extends LoggingRequestHandler {
         try {
             var acceptMatcher = new AcceptHeaderMatcher(acceptHeader);
             var preferred = acceptMatcher.preferredExactMediaTypes(CBOR_CONTENT_TYPE, JSON_CONTENT_TYPE);
-            if (!preferred.isEmpty() && CBOR_CONTENT_TYPE.equals(preferred.get(0))) {
+            if (!preferred.isEmpty() && CBOR_CONTENT_TYPE.equals(preferred.getFirst())) {
                 query.getPresentation().setFormat("cbor");
             }
         } catch (IllegalArgumentException e) {
