@@ -41,7 +41,7 @@ export VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX ?= -dev-only
 
 .DEFAULT_GOAL := pr
 
-main: build-rpms cpp-test quick-start-guide publish-container publish-artifacts
+main: build-rpms cpp quick-start-guide publish-container publish-artifacts cpp-test
 pr: build-rpms cpp-test basic-search-test
 
 check:
@@ -65,7 +65,7 @@ cpp: bootstrap-cmake
 cpp-test: cpp
 	@$(TOP)/execute.sh $@
 
-install: cpp java cpp-test
+install: cpp java
 	@$(TOP)/execute.sh $@
 
 build-rpms: install
