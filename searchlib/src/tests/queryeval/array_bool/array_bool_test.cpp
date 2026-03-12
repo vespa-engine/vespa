@@ -103,27 +103,23 @@ struct TestAttribute {
     std::shared_ptr<AttributeVector> attr;
     ArrayBoolAttribute*              bool_attr;
 
-    TestAttribute();
+    TestAttribute()
+        : attr(),
+          bool_attr(nullptr) {
+        reset(true);
+    }
     ~TestAttribute();
-    void reset(bool add_reserved);
+    void reset(bool add_reserved) {
+        Config cfg(BasicType::BOOL, CollectionType::ARRAY);
+        attr = AttributeFactory::createAttribute("array_bool", cfg);
+        bool_attr = &dynamic_cast<ArrayBoolAttribute&>(*attr);
+        if (add_reserved) {
+            attr->addReservedDoc();
+        }
+    }
 };
 
-TestAttribute::TestAttribute()
-    : attr(),
-      bool_attr(nullptr) {
-    reset(true);
-}
-
 TestAttribute::~TestAttribute() = default;
-
-void TestAttribute::reset(bool add_reserved) {
-    Config cfg(BasicType::BOOL, CollectionType::ARRAY);
-    attr = AttributeFactory::createAttribute("array_bool", cfg);
-    bool_attr = &dynamic_cast<ArrayBoolAttribute&>(*attr);
-    if (add_reserved) {
-        attr->addReservedDoc();
-    }
-}
 
 /**
  * TestMatchData is a convenience class to get TermFieldMatchData
@@ -141,23 +137,22 @@ struct TestMatchData {
     TermFieldMatchData*              tfmd2;
     TermFieldMatchData*              tfmd3;
 
-    TestMatchData();
+    TestMatchData()
+        : mdl(std::make_unique<MatchDataLayout>()),
+          field_spec("foo", 0, mdl->allocTermField(0)),
+          field_spec2("bar", 1, mdl->allocTermField(1)),
+          field_spec3("baz", 2, mdl->allocTermField(2)),
+          handle(field_spec.getHandle()),
+          handle2(field_spec2.getHandle()),
+          handle3(field_spec3.getHandle()),
+          md(mdl->createMatchData()),
+          tfmd(md->resolveTermField(handle)),
+          tfmd2(md->resolveTermField(handle2)),
+          tfmd3(md->resolveTermField(handle3)) {
+    }
+
     ~TestMatchData();
 };
-
-TestMatchData::TestMatchData()
-    : mdl(std::make_unique<MatchDataLayout>()),
-      field_spec("foo", 0, mdl->allocTermField(0)),
-      field_spec2("bar", 1, mdl->allocTermField(1)),
-      field_spec3("baz", 2, mdl->allocTermField(2)),
-      handle(field_spec.getHandle()),
-      handle2(field_spec2.getHandle()),
-      handle3(field_spec3.getHandle()),
-      md(mdl->createMatchData()),
-      tfmd(md->resolveTermField(handle)),
-      tfmd2(md->resolveTermField(handle2)),
-      tfmd3(md->resolveTermField(handle3)) {
-}
 
 TestMatchData::~TestMatchData() = default;
 
