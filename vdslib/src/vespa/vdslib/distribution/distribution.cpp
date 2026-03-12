@@ -19,28 +19,11 @@ LOG_SETUP(".vdslib.distribution");
 
 namespace storage::lib {
 
-namespace {
-
-std::vector<uint32_t>
-getDistributionBitMasks() {
-    std::vector<uint32_t> masks;
-    masks.resize(32 + 1);
-    uint32_t mask = 0;
-    for (uint32_t i=0; i<=32; ++i) {
-        masks[i] = mask;
-        mask = (mask << 1) | 1;
-    }
-    return masks;
-}
-
-}
-
 VESPA_IMPLEMENT_EXCEPTION(NoDistributorsAvailableException, vespalib::Exception);
 VESPA_IMPLEMENT_EXCEPTION(TooFewBucketBitsInUseException, vespalib::Exception);
 
 Distribution::Distribution()
-    : _distributionBitMasks(getDistributionBitMasks()),
-      _nodeGraph(),
+    : _nodeGraph(),
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
@@ -58,8 +41,7 @@ Distribution::Distribution()
 }
 
 Distribution::Distribution(const Distribution& d)
-    : _distributionBitMasks(getDistributionBitMasks()),
-      _nodeGraph(),
+    : _nodeGraph(),
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
@@ -96,8 +78,7 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig&
 }
 
 Distribution::Distribution(const vespa::config::content::StorDistributionConfig& config, bool is_global)
-    : _distributionBitMasks(getDistributionBitMasks()),
-      _nodeGraph(),
+    : _nodeGraph(),
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
@@ -114,8 +95,7 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig&
 }
 
 Distribution::Distribution(const std::string& serialized)
-    : _distributionBitMasks(getDistributionBitMasks()),
-      _nodeGraph(),
+    : _nodeGraph(),
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
@@ -202,7 +182,7 @@ uint32_t
 Distribution::getGroupSeed(const document::BucketId& bucket, const ClusterState& clusterState, const Group& group) const
 {
     uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-            & _distributionBitMasks[clusterState.getDistributionBitCount()]);
+                  & distribution_bit_mask(clusterState.getDistributionBitCount()));
     seed ^= group.getDistributionHash();
     return seed;
 }
@@ -211,7 +191,7 @@ uint32_t
 Distribution::getDistributorSeed(const document::BucketId& bucket, const ClusterState& state) const
 {
     uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-            & _distributionBitMasks[state.getDistributionBitCount()]);
+                  & distribution_bit_mask(state.getDistributionBitCount()));
     return seed;
 }
 
@@ -219,11 +199,11 @@ uint32_t
 Distribution::getStorageSeed(const document::BucketId& bucket, const ClusterState& state) const
 {
     uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-            & _distributionBitMasks[state.getDistributionBitCount()]);
+                  & distribution_bit_mask(state.getDistributionBitCount()));
 
     if (bucket.getUsedBits() > 33) {
         int usedBits = bucket.getUsedBits() - 1;
-        seed ^= (_distributionBitMasks[usedBits - 32]
+        seed ^= (distribution_bit_mask(usedBits - 32)
                  & (bucket.getRawId() >> 32)) << 6;
     }
     return seed;
