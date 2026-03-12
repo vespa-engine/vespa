@@ -1076,8 +1076,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addContainers(List.of(container));
     }
 
-    private static String buildJvmGCOptions(ConfigModelContext context, String jvmGCOptions) {
-        return new JvmGcOptions(context.getDeployState(), jvmGCOptions).build();
+    private static String buildJvmGCOptions(ConfigModelContext context, ApplicationContainerCluster cluster, String jvmGCOptions) {
+        return new JvmGcOptions(context.getDeployState(), cluster.getName(), jvmGCOptions).build();
     }
 
     private static String getJvmOptions(Element nodesElement,
@@ -1116,7 +1116,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         " See https://docs.vespa.ai/en/reference/services/container.html#jvm");
             }
 
-            cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
+            cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, jvmGCOptions));
         }
 
         if (applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME)))
@@ -1131,7 +1131,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         applyNodesTagJvmArgs(nodes, getJvmOptions(nodesElement, context.getDeployState(), false));
         applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
         String jvmGCOptions = extractAttribute(jvmElement, VespaDomBuilder.GC_OPTIONS);
-        cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
+        cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, jvmGCOptions));
     }
 
     /**
@@ -1145,7 +1145,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         if (nodesElement == null) {
             cluster.addContainers(allocateWithoutNodesTag(cluster, context));
-            cluster.setJvmGCOptions(buildJvmGCOptions(context, null));
+            cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, null));
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
 
@@ -1594,19 +1594,22 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         private static final Pattern invalidCMSPattern = Pattern.compile("-XX:[+-]\\w*CMS[a-zA-z0-9=]+");
 
         private final DeployState deployState;
+        private final String clusterName;
         private final String jvmGcOptions;
         private final DeployLogger logger;
         private final boolean isHosted;
 
-        public JvmGcOptions(DeployState deployState, String jvmGcOptions) {
+        public JvmGcOptions(DeployState deployState, String clusterName, String jvmGcOptions) {
             this.deployState = deployState;
+            this.clusterName = clusterName;
             this.jvmGcOptions = jvmGcOptions;
             this.logger = deployState.getDeployLogger();
             this.isHosted = deployState.isHosted();
         }
 
         private String build() {
-            String options = deployState.getProperties().jvmGCOptions();
+            String options = deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.container),
+                                                                     Optional.of(ClusterSpec.Id.from(clusterName)));
             if (jvmGcOptions != null) {
                 options = jvmGcOptions;
                 String[] optionList = options.split(" ");
