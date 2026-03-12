@@ -110,6 +110,16 @@ func normalizeForJSON(v interface{}) interface{} {
 	return v
 }
 
+// encodeJSON encodes v as JSON into buf without Go's default HTML escaping of <, >, and &.
+func encodeJSON(buf *bytes.Buffer, v interface{}, indent bool) error {
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(false)
+	if indent {
+		enc.SetIndent("", "    ")
+	}
+	return enc.Encode(v)
+}
+
 // CBORToJSON converts CBOR data to indented JSON string.
 func CBORToJSON(data []byte) (string, error) {
 	var v interface{}
@@ -117,11 +127,11 @@ func CBORToJSON(data []byte) (string, error) {
 		return "", err
 	}
 	v = normalizeForJSON(v)
-	jsonBytes, err := json.MarshalIndent(v, "", "    ")
-	if err != nil {
+	var buf bytes.Buffer
+	if err := encodeJSON(&buf, v, true); err != nil {
 		return "", err
 	}
-	return string(jsonBytes), nil
+	return strings.TrimSuffix(buf.String(), "\n"), nil
 }
 
 // CBORToJSONCompact converts CBOR data to compact JSON string.
@@ -131,11 +141,11 @@ func CBORToJSONCompact(data []byte) (string, error) {
 		return "", err
 	}
 	v = normalizeForJSON(v)
-	jsonBytes, err := json.Marshal(v)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := encodeJSON(&buf, v, false); err != nil {
 		return "", err
 	}
-	return string(jsonBytes), nil
+	return strings.TrimSuffix(buf.String(), "\n"), nil
 }
 
 // AtomicWriteFile atomically writes data to filename.

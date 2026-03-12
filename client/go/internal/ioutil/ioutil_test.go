@@ -39,6 +39,22 @@ func TestCBORToJSONNonFiniteFloats(t *testing.T) {
 	assert.Equal(t, "-Infinity", parsedCompact["negInf"])
 }
 
+func TestCBORToJSONNoHTMLEscaping(t *testing.T) {
+	input := map[string]interface{}{
+		"type": "tensor<int8>(x[128])",
+	}
+	data, err := cbor.Marshal(input)
+	assert.Nil(t, err)
+
+	got, err := CBORToJSON(data)
+	assert.Nil(t, err)
+	assert.Contains(t, got, `tensor<int8>(x[128])`)
+
+	gotCompact, err := CBORToJSONCompact(data)
+	assert.Nil(t, err)
+	assert.Contains(t, gotCompact, `tensor<int8>(x[128])`)
+}
+
 func TestPathExists(t *testing.T) {
 	assert.Equal(t, true, Exists("ioutil.go"))
 	assert.Equal(t, false, Exists("nosuchthing.go"))
