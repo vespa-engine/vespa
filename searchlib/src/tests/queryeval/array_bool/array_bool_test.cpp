@@ -757,60 +757,37 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_strict_iterator_seeks_to_next_hit_a
  * Unpacking tests
  **********************************************************************************************************************/
 
-void verify_unpacking(SearchIterator& search, uint32_t docid, uint32_t /*matches*/, TermFieldMatchData* tfmd) {
-    EXPECT_TRUE(search.seek(docid));
-    EXPECT_EQ(search.getDocId(), docid);
-    search.unpack(docid);
-    EXPECT_EQ(tfmd->getDocId(), docid);
-    EXPECT_EQ(tfmd->getWeight(), 1); // Weight is not the number of matches for now
+template<typename B>
+void verify_unpacking(TestAttribute& test_attr, const std::vector<uint32_t>& element_filter, bool want_true, const std::vector<uint32_t>& docids) {
+    for (bool strict : {false, true}) {
+        B builder(test_attr.bool_attr, test_attr.attr, element_filter, want_true);
+        auto search = builder.create_search(strict);
+
+        search->initRange(1, test_attr.attr->getCommittedDocIdLimit());
+        for (uint32_t docid : docids) {
+            EXPECT_TRUE(search->seek(docid));
+            EXPECT_EQ(search->getDocId(), docid);
+            search->unpack(docid);
+            EXPECT_EQ(builder.tfmd()->getDocId(), docid);
+            EXPECT_EQ(builder.tfmd()->getWeight(), 1); // Weight is not the number of matches, just 1
+        }
+    }
 }
 
 TYPED_TEST(ArrayBoolSearchTest, require_that_single_element_iterator_can_unpack_matching_docid) {
-    std::vector<uint32_t> element_filter({1});
-    for (bool strict : {false, true}) {
-        TypeParam builder(this->_test_attribute.bool_attr, this->_test_attribute.attr, element_filter, true);
-        auto search = builder.create_search(strict);
+    // Matches doc 1 and 4
+    verify_unpacking<TypeParam>(this->_test_attribute, {1}, true, {1, 4});
 
-        search->initRange(1, 1000);
-        // Matches doc 1 and 4
-        verify_unpacking(*search, 1u, 1u, builder.tfmd());
-        verify_unpacking(*search, 4u, 1u, builder.tfmd());
-    }
-
-    std::vector<uint32_t> element_filter2({2});
-    for (bool strict : {false, true}) {
-        TypeParam builder(this->_test_attribute.bool_attr, this->_test_attribute.attr, element_filter2, false);
-        auto search = builder.create_search(strict);
-
-        search->initRange(1, 1000);
-        // Matches doc 1 and 2
-        verify_unpacking(*search, 1u, 1u, builder.tfmd());
-        verify_unpacking(*search, 2u, 1u, builder.tfmd());
-    }
+    // Matches doc 1 and 2
+    verify_unpacking<TypeParam>(this->_test_attribute, {2}, false, {1, 2});
 }
 
 TYPED_TEST(ArrayBoolSearchTest, require_that_multi_element_iterator_can_unpack_matching_docid) {
-    std::vector<uint32_t> element_filter({1, 2});
-    for (bool strict : {false, true}) {
-        TypeParam builder(this->_test_attribute.bool_attr, this->_test_attribute.attr, element_filter, true);
-        auto search = builder.create_search(strict);
+    // Matches doc 1 and 4
+    verify_unpacking<TypeParam>(this->_test_attribute, {1, 2}, true, {1, 4});
 
-        search->initRange(1, 1000);
-        // Matches doc 1 and 4
-        verify_unpacking(*search, 1u, 1u, builder.tfmd());
-        verify_unpacking(*search, 4u, 2u, builder.tfmd());
-    }
-
-    std::vector<uint32_t> element_filter2({0, 2});
-    for (bool strict : {false, true}) {
-        TypeParam builder(this->_test_attribute.bool_attr, this->_test_attribute.attr, element_filter2, false);
-        auto search = builder.create_search(strict);
-
-        search->initRange(1, 1000);
-        // Matches doc 1 and 2
-        verify_unpacking(*search, 1u, 2u, builder.tfmd());
-        verify_unpacking(*search, 2u, 2u, builder.tfmd());
-    }
+    // Matches doc 1 and 2
+    verify_unpacking<TypeParam>(this->_test_attribute, {0, 2}, false, {1, 2});
 }
 
 
