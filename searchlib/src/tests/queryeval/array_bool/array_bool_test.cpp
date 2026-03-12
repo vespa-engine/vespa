@@ -366,7 +366,7 @@ SameElementBlueprintSearchBuilder::SameElementBlueprintSearchBuilder(ArrayBoolAt
     std::vector<TermFieldHandle> descendant_handles;
     descendant_handles.push_back(_tmd.handle2);
 
-    _blueprint = std::make_unique<SameElementBlueprint>(_tmd.field_spec, descendant_handles, false, element_filter, expose_match_data_for_same_element);
+    _blueprint = std::make_unique<SameElementBlueprint>(_tmd.field_spec, descendant_handles, false, expose_match_data_for_same_element, element_filter);
     _blueprint->addChild(std::move(child_blueprint));
 }
 

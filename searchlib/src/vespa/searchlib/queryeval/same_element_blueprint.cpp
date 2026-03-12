@@ -12,6 +12,7 @@
 #include <cassert>
 #include <map>
 #include <memory>
+#include <sstream>
 
 using search::fef::MatchData;
 using search::fef::TermFieldMatchData;
@@ -21,14 +22,14 @@ namespace search::queryeval {
 SameElementBlueprint::SameElementBlueprint(const FieldSpec &field,
                                            const std::vector<search::fef::TermFieldHandle>& descendants_index_handles,
                                            bool expensive,
-                                           std::vector<uint32_t> element_filter,
-                                           bool expose_match_data_for_same_element)
+                                           bool expose_match_data_for_same_element,
+                                           std::vector<uint32_t> element_filter)
     : IntermediateBlueprint(),
       _field(field),
       _descendants_index_handles(descendants_index_handles),
       _expensive(expensive),
-      _element_filter(std::move(element_filter)),
-      _expose_match_data_for_same_element(expose_match_data_for_same_element)
+      _expose_match_data_for_same_element(expose_match_data_for_same_element),
+      _element_filter(std::move(element_filter))
 {
 }
 
@@ -156,6 +157,18 @@ void
 SameElementBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     IntermediateBlueprint::visitMembers(visitor);
+    std::stringstream ss;
+    ss << "[";
+    bool first = true;
+    for (uint32_t element : _element_filter) {
+        if (!first) {
+            ss << ",";
+        }
+        first = false;
+        ss << element;
+    }
+    ss << "]";
+    visitor.visitString("element_filter", ss.str());
 }
 
 Blueprint::UP SameElementBlueprint::get_replacement() {
