@@ -11,6 +11,8 @@
 namespace vespalib {
 namespace stash {
 
+constexpr size_t align = 8;
+
 struct Cleanup {
     Cleanup * const next;
     explicit Cleanup(Cleanup *next_in) noexcept : next(next_in) {}
@@ -56,8 +58,8 @@ struct Chunk {
     explicit Chunk(Chunk *next_in) noexcept : next(next_in), used(sizeof(Chunk)) {}
     void clear() noexcept { used = sizeof(Chunk); }
     char *alloc(size_t size, size_t chunk_size) noexcept {
-        size_t aligned_size = ((size + (sizeof(char *) - 1))
-                              & ~(sizeof(char *) - 1));
+        static_assert(align != 0 && (align & (align - 1)) == 0);
+        size_t aligned_size = (size + (align - 1)) & ~(align - 1);
         if (used + aligned_size > chunk_size) {
             return nullptr;
         }
@@ -78,7 +80,7 @@ struct Chunk {
  * vespalib::can_skip_destruction concept are not destructed. This
  * will save both time and space.
  *
- * The minimal chunk size of a stash is 4k. Any object larger than 1/4
+ * The default chunk size of a stash is 4k. Any object larger than 1/4
  * of the chunk size will be allocated separately.
  **/
 class Stash
@@ -157,10 +159,12 @@ public:
 
     template <typename T, typename ... Args>
     T &create(Args && ... args) {
+        static_assert(stash::align % alignof(T) == 0);
         if (can_skip_destruction<T>) {
             return *(new (alloc(sizeof(T))) T(std::forward<Args>(args)...));
         }
         using DeleteHook = stash::DestructObject<T>;
+        static_assert(sizeof(DeleteHook) % stash::align == 0);
         char *mem = alloc(sizeof(DeleteHook) + sizeof(T));
         T *ret = new (mem + sizeof(DeleteHook)) T(std::forward<Args>(args)...);
         _cleanup = new (mem) DeleteHook(_cleanup);
@@ -169,10 +173,12 @@ public:
 
     template <typename T, typename ... Args>
     std::span<T> create_array(size_t size, Args && ... args) {
+        static_assert(stash::align % alignof(T) == 0);
         if (can_skip_destruction<T>) {
             return std::span<T>(init_array<T, Args...>(alloc(size * sizeof(T)), size, std::forward<Args>(args)...), size);
         }
         using DeleteHook = stash::DestructArray<T>;
+        static_assert(sizeof(DeleteHook) % stash::align == 0);
         char *mem = alloc(sizeof(DeleteHook) + (size * sizeof(T)));
         T *ret = init_array<T, Args...>(mem + sizeof(DeleteHook), size, std::forward<Args>(args)...);
         _cleanup = new (mem) DeleteHook(_cleanup, size);
@@ -181,6 +187,7 @@ public:
 
     template <typename T>
     std::span<T> create_uninitialized_array(size_t size) {
+        static_assert(stash::align % alignof(T) == 0);
         static_assert(std::is_trivially_copyable_v<T>);
         static_assert(can_skip_destruction<T>);
         return std::span<T>(reinterpret_cast<T*>(alloc(size * sizeof(T))), size);
@@ -188,10 +195,12 @@ public:
 
     template <typename T>
     std::span<T> copy_array(std::span<const T> src) {
+        static_assert(stash::align % alignof(T) == 0);
         if (can_skip_destruction<T>) {
             return std::span<T>(copy_elements<T>(alloc(src.size() * sizeof(T)), src), src.size());
         }
         using DeleteHook = stash::DestructArray<T>;
+        static_assert(sizeof(DeleteHook) % stash::align == 0);
         char *mem = alloc(sizeof(DeleteHook) + (src.size() * sizeof(T)));
         T *ret = copy_elements<T>(mem + sizeof(DeleteHook), src);
         _cleanup = new (mem) DeleteHook(_cleanup, src.size());

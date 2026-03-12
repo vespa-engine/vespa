@@ -5,6 +5,7 @@
 #include "queryterm.hpp"
 
 using search::common::ElementIds;
+using search::fef::MatchSpanMatchDataFilter;
 
 namespace search::streaming {
 
@@ -86,9 +87,20 @@ PhraseQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef
                                    const fef::IIndexEnvironment& index_env, ElementIds element_ids)
 {
     HitList list;
-    const HitList & hit_list = evaluateHits(list);
+    const HitList& hit_list = evaluateHits(list);
     unpack_match_data_helper(docid, td, match_data, hit_list, *get_terms().front(), is_filter(), index_env,
                              element_ids);
+}
+
+void
+PhraseQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                   const fef::IIndexEnvironment& index_env,
+                                   std::span<const queryeval::MatchSpan> match_spans)
+{
+    HitList list;
+    const HitList& hit_list = evaluateHits(list);
+    unpack_filtered_match_data(docid, td, match_data, hit_list, *get_terms().front(), is_filter(), index_env,
+                               MatchSpanMatchDataFilter(match_spans));
 }
 
 }

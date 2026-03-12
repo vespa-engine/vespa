@@ -16,7 +16,7 @@ import java.util.Objects;
 public class SecondPhase implements Cloneable {
 
     /** For internal use only. */
-    public static final String rerankCountProperty      = "vespa.hitcollector.heapsize";
+    public static final String rerankCountProperty = "vespa.hitcollector.heapsize";
 
     /** For internal use only. */
     public static final String totalRerankCountProperty = "vespa.hitcollector.totalHeapsize";
@@ -25,13 +25,17 @@ public class SecondPhase implements Cloneable {
     private static final QueryProfileType argumentType;
 
     public static final String SECOND_PHASE = "secondPhase";
+    public static final String RERANK_COUNT = "rerankCount";
+    public static final String TOTAL_RERANK_COUNT = "totalRerankCount";
+    public static final String RANK_SCORE_DROP_LIMIT = "rankScoreDropLimit";
 
     static {
         argumentType = new QueryProfileType(SECOND_PHASE);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
-        argumentType.addField(new FieldDescription(Ranking.RANKSCOREDROPLIMIT, FieldType.doubleType));
-        argumentType.addField(new FieldDescription(Ranking.RERANKCOUNT, FieldType.integerType));
+        argumentType.addField(new FieldDescription(RERANK_COUNT, FieldType.integerType));
+        argumentType.addField(new FieldDescription(TOTAL_RERANK_COUNT, FieldType.integerType));
+        argumentType.addField(new FieldDescription(RANK_SCORE_DROP_LIMIT, FieldType.doubleType));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }

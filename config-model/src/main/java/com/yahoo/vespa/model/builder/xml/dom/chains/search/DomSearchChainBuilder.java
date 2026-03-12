@@ -16,7 +16,6 @@ import java.util.Map;
 
 /**
  * Builds a Search chain from xml.
- *
  * @author Tony Vaagenes
  */
 public class DomSearchChainBuilder extends DomChainBuilderBase<Searcher<?>, SearchChain> {

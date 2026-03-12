@@ -1,18 +1,26 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ApplicationClusterInfo;
+import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceConfigState;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.PendingRestarts;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.maintenance.RestartOnDeployMaintainer.configStatesToString;
+import static com.yahoo.vespa.config.server.maintenance.RestartOnDeployMaintainer.filterServicesToCheck;
+import static com.yahoo.vespa.config.server.maintenance.RestartOnDeployMaintainer.servicesToString;
 import static com.yahoo.vespa.config.server.maintenance.RestartOnDeployMaintainer.triggerPendingRestarts;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -181,5 +189,130 @@ class RestartOnDeployMaintainerTest {
                                 List.of(
                                         new ServiceConfigState("service3", 20, Optional.empty()),
                                         new ServiceConfigState("service4", 21, Optional.of(true))))));
+    }
+
+    @Test
+    void test_servicesToString() {
+        assertEquals("[]", servicesToString(List.of()));
+
+        List<ServiceInfo> services = List.of(
+                MockServiceInfo.create("service1", "container", "host1"),
+                MockServiceInfo.create("service2", "searchnode", "host2"));
+
+        assertEquals(
+                "[{name=service1, type=container, host=host1}, {name=service2, type=searchnode, host=host2}]",
+                servicesToString(services));
+    }
+
+    @Test
+    void test_filterServicesToCheck_filters_by_service_type() {
+        List<ServiceInfo> services = List.of(
+                createService("container1", "container", "host1", 8080, "state", "cluster1"),
+                createService("searchnode1", "searchnode", "host1", 8081, "state", "cluster1"),
+                createService("unknown1", "unknown-type", "host1", 8082, "state", "cluster1"));
+
+        List<ServiceInfo> filtered = filterServicesToCheck("app1", List.of(), services, Set.of("host1"), log);
+
+        Set<String> serviceTypes =
+                filtered.stream().map(ServiceInfo::getServiceType).collect(Collectors.toSet());
+        assertEquals(Set.of("container", "searchnode"), serviceTypes);
+    }
+
+    @Test
+    void test_filterServicesToCheck_filters_by_hostname() {
+        ServiceInfo service1 = createService("container1", "container", "host1", 8080, "state", "cluster1");
+        ServiceInfo service2 = createService("container2", "container", "host2", 8080, "state", "cluster1");
+
+        List<ServiceInfo> filtered = filterServicesToCheck("app1", List.of(), List.of(service1, service2), Set.of("host1"), log);
+
+        assertEquals(List.of(service1), filtered);
+    }
+
+    @Test
+    void test_filterServicesToCheck_filters_by_state_port() {
+        ServiceInfo serviceWithState = createService("container1", "container", "host1", 8080, "state", "cluster1");
+        ServiceInfo serviceWithoutState = createService("container2", "container", "host1", 8081, "http", "cluster1");
+
+        List<ServiceInfo> filtered = filterServicesToCheck("app1", List.of(), List.of(serviceWithState, serviceWithoutState), Set.of("host1"), log);
+
+        assertEquals(List.of(serviceWithState), filtered);
+    }
+
+    @Test
+    void test_filterServicesToCheck_excludes_defer_changes_clusters() {
+        MockApplicationClusterInfo deferCluster = new MockApplicationClusterInfo("deferCluster", true);
+        MockApplicationClusterInfo normalCluster = new MockApplicationClusterInfo("normalCluster", false);
+
+        ServiceInfo deferredService = createService("container1", "container", "host1", 8080, "state", "deferCluster");
+        ServiceInfo normalService = createService("container2", "container", "host1", 8081, "state", "normalCluster");
+
+        List<ServiceInfo> filtered = filterServicesToCheck(
+                "app1", List.of(deferCluster, normalCluster), List.of(deferredService, normalService), Set.of("host1"), log);
+
+        assertEquals(List.of(normalService), filtered);
+    }
+
+    @Test
+    void test_filterServicesToCheck_all_filters_combined() {
+        MockApplicationClusterInfo deferCluster = new MockApplicationClusterInfo("deferCluster", true);
+        MockApplicationClusterInfo normalCluster = new MockApplicationClusterInfo("normalCluster", false);
+
+        ServiceInfo passesAll = createService("container1", "container", "host1", 8080, "state", "normalCluster");
+        ServiceInfo wrongHost = createService("container2", "container", "host2", 8080, "state", "normalCluster");
+        ServiceInfo wrongType = createService("unknown1", "unknown", "host1", 8080, "state", "normalCluster");
+        ServiceInfo noStatePort = createService("container3", "container", "host1", 8080, "http", "normalCluster");
+        ServiceInfo deferredCluster = createService("container4", "container", "host1", 8080, "state", "deferCluster");
+
+        List<ServiceInfo> filtered = filterServicesToCheck(
+                "app1", List.of(deferCluster, normalCluster),
+                List.of(passesAll, wrongHost, wrongType, noStatePort, deferredCluster), Set.of("host1"), log);
+
+        assertEquals(List.of(passesAll), filtered);
+    }
+
+    // Helper methods
+    private ServiceInfo createService(
+            String name, String type, String hostname, int port, String portTag, String clusterName) {
+        PortInfo portInfo = new PortInfo(port, Set.of(portTag));
+        Map<String, String> properties = new HashMap<>();
+        properties.put("clustername", clusterName);
+        properties.put("clustertype", "container");
+        return new ServiceInfo(name, type, Set.of(portInfo), properties, "", hostname);
+    }
+
+    // Simple mock for testing servicesToString
+    private static class MockServiceInfo extends ServiceInfo {
+        static MockServiceInfo create(String name, String type, String hostname) {
+            return new MockServiceInfo(name, type, Set.<PortInfo>of(), Map.<String, String>of(), "", hostname);
+        }
+
+        private MockServiceInfo(
+                String serviceName,
+                String serviceType,
+                Set<PortInfo> portInfos,
+                Map<String, String> properties,
+                String configId,
+                String hostName) {
+            super(serviceName, serviceType, portInfos, properties, configId, hostName);
+        }
+    }
+
+    private record MockApplicationClusterInfo(String clusterName, boolean deferChangesUntilRestart)
+            implements ApplicationClusterInfo {
+
+        @Override
+        public List<ApplicationClusterEndpoint> endpoints() {
+            return List.of();
+        }
+
+        @Override
+        public boolean getDeferChangesUntilRestart() {
+            return deferChangesUntilRestart;
+        }
+
+        @Override
+        public String name() {
+            return clusterName;
+        }
     }
 }

@@ -43,6 +43,13 @@ class SchemaInfoConfigurer {
             for (var inputConfig : profileConfig.input())
                 profileBuilder.addInput(inputConfig.name(), RankProfile.InputType.fromSpec(inputConfig.type()));
 
+            var matchPhaseBuilder = new MatchPhase.Builder();
+            if (profileConfig.matchPhaseMaxHits() >= 0)
+                matchPhaseBuilder.setMaxHits(profileConfig.matchPhaseMaxHits());
+            if (profileConfig.totalMatchPhaseMaxHits() >= 0)
+                matchPhaseBuilder.setTotalMaxHits(profileConfig.totalMatchPhaseMaxHits());
+            profileBuilder.setMatchPhase(matchPhaseBuilder.build());
+
             var secondPhaseBuilder = new SecondPhase.Builder();
             if (profileConfig.rerankCount() >= 0)
                 secondPhaseBuilder.setRerankCount(profileConfig.rerankCount());

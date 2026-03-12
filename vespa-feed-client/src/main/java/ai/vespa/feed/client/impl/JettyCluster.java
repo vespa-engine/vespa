@@ -30,6 +30,7 @@ import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.Jetty;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.SocketAddressResolver;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
@@ -46,8 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -73,12 +73,16 @@ class JettyCluster implements Cluster {
     private static final Duration IDLE_TIMEOUT = Duration.ofMinutes(15);
 
     private final List<EndpointClient> clients;  // one per connection per endpoint
-    private final ExecutorService executor;       // shared across all HttpClients
+    private final QueuedThreadPool executor;      // shared across all HttpClients
     private final Compression compression;
 
     JettyCluster(FeedClientBuilderImpl b) throws IOException {
-        int threads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 32), 8);
-        this.executor = Executors.newFixedThreadPool(threads);
+        int selectorThreads = b.connectionsPerEndpoint * b.endpoints.size();
+        int workerThreads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 64), 8);
+        QueuedThreadPool pool = new QueuedThreadPool(workerThreads + selectorThreads);
+        pool.setName("feedclient");
+        this.executor = pool;
+        try { pool.start(); } catch (Exception e) { throw new IOException(e); }
         List<EndpointClient> list = new ArrayList<>();
         for (URI endpoint : b.endpoints)
             for (int i = 0; i < b.connectionsPerEndpoint; i++)
@@ -91,8 +95,10 @@ class JettyCluster implements Cluster {
     public void dispatch(HttpRequest req, CompletableFuture<HttpResponse> vessel) {
         executor.execute(() -> {
             EndpointClient client = findLeastBusyEndpoint(clients);
+            client.inflight.incrementAndGet();
+            // Decrement inflight when vessel completes for any reason (normal, exception, or safety timeout)
+            vessel.whenComplete((__, ___) -> client.inflight.decrementAndGet());
             try {
-                client.inflight.incrementAndGet();
                 long reqTimeoutMillis = req.timeLeft().toMillis();
                 if (reqTimeoutMillis <= 0) {
                     log.log(Level.FINE, () ->
@@ -133,7 +139,6 @@ class JettyCluster implements Cluster {
                                         req, System.identityHashCode(vessel),
                                         result.isFailed()
                                                 ? result.getFailure().toString() : result.getResponse().getStatus()));
-                        client.inflight.decrementAndGet();
                         if (result.isFailed()) {
                             if (result.getFailure() instanceof RetryableRequestException)
                                 // Request can be safely retried as it was cancelled locally
@@ -145,9 +150,13 @@ class JettyCluster implements Cluster {
                         else vessel.complete(new JettyResponse(result.getResponse(), getContent()));
                     }
                 });
+                // Safety net: Jetty 12.0.33 may fail to invoke the response listener callback when a connection
+                // fails during a race between channel acquisition and HTTP/2 stream creation.
+                // The internal request timeout safety net (CyclicTimeouts) may also be destroyed prematurely.
+                // Ensure the vessel always completes within a bounded time.
+                vessel.orTimeout(reqTimeoutMillis + 5_000, MILLISECONDS);
             } catch (Throwable t) {
                 log.log(t instanceof Exception ? Level.FINE : Level.WARNING, "Failed to dispatch request: " + req, t.getMessage());
-                client.inflight.decrementAndGet();
                 vessel.completeExceptionally(t);
             }
         });
@@ -162,11 +171,12 @@ class JettyCluster implements Cluster {
                 if (failure == null) failure = e; else failure.addSuppressed(e);
             }
         }
-        executor.shutdown();
+        try { executor.stop(); }
+        catch (Exception e) { if (failure == null) failure = e; else failure.addSuppressed(e); }
         if (failure != null) throw new RuntimeException(failure);
     }
 
-    private static HttpClient createHttpClient(FeedClientBuilderImpl b, ExecutorService sharedExecutor) throws IOException {
+    private static HttpClient createHttpClient(FeedClientBuilderImpl b, Executor sharedExecutor) throws IOException {
         SslContextFactory.Client clientSslCtxFactory = new SslContextFactory.Client();
         clientSslCtxFactory.setSslContext(b.constructSslContext());
         if (b.hostnameVerifier != null) {
