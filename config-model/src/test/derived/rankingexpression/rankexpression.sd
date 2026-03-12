@@ -5,6 +5,7 @@ schema rankexpression {
 
     field nrtgmp type double {
       indexing: attribute
+      attribute: fast-search
     }
 
     field glmpfw type double {
@@ -74,6 +75,10 @@ schema rankexpression {
   }
 
   rank-profile default {
+      match-phase {
+        attribute: nrtgmp
+        max-hits: 4001
+      }
       first-phase {
         expression: classicRank
         keep-rank-count: 20
@@ -175,6 +180,10 @@ schema rankexpression {
   }
 
   rank-profile macros {
+    match-phase {
+      attribute: nrtgmp
+      max-hits: 8002
+    }
     first-phase {
       expression: match + fieldMatch(title) + myfeature
       total-keep-rank-count: 2345

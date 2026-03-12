@@ -19,6 +19,7 @@ import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
@@ -187,6 +188,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         String servicesXml = """
                              <services version='1.0'>
                                <container id='C-1' version='1.0'>
+                                 <http>
+                                   <server id='server' port='8080' />
+                                 </http>
                                  <nodes count='1' />
                                </container>
                              </services>
@@ -198,6 +202,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                                           new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                                                   .modelHostProvisioner(new InMemoryProvisioner(4, false))
                                                   .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
+                                                  .endpoints(Set.of(new ContainerEndpoint("C-1", ApplicationClusterEndpoint.Scope.zone, List.of("c-1.example.com"))))
                                                   .properties(new TestProperties().setHostedVespa(true))
                                                   .build()))
                              .getMessage());
@@ -214,9 +219,15 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         String servicesXml = """
                              <services version='1.0'>
                                <container id='c-1' version='1.0'>
+                                 <http>
+                                   <server id='server1' port='8080' />
+                                 </http>
                                  <nodes count='1' />
                                </container>
                                <container id='c_1' version='1.0'>
+                                 <http>
+                                   <server id='server2' port='8080' />
+                                 </http>
                                  <nodes count='1' />
                                </container>
                              </services>
@@ -228,6 +239,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                                           new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                                                   .modelHostProvisioner(new InMemoryProvisioner(4, false))
                                                   .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
+                                                  .endpoints(Set.of(new ContainerEndpoint("c-1", ApplicationClusterEndpoint.Scope.zone, List.of("c-1.example.com")),
+                                                                    new ContainerEndpoint("c_1", ApplicationClusterEndpoint.Scope.zone, List.of("c-1-alt.example.com"))))
                                                   .properties(new TestProperties().setHostedVespa(true))
                                                   .build()))
                              .getMessage());
@@ -864,6 +877,15 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         var exception = assertThrows(IllegalArgumentException.class, () -> createModel(myRoot, clusterElem));
         assertThat(exception.getMessage(), containsString("Inference memory cannot exceed available node memory (16.00 GiB), got: 32Gb"));
+    }
+
+    @Test
+    void test_readSidecarImages() {
+        Map<String, DockerImage> sidecarImages = ContainerModelBuilder.readSidecarImages();
+        assertNotNull(sidecarImages, "Sidecar images map should be loaded");
+
+        DockerImage tritonImage = sidecarImages.get("triton");
+        assertNotNull(tritonImage, "Triton image should be defined");
     }
 
 }

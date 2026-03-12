@@ -1,0 +1,8 @@
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<deployment version='1.0'>
+  <backup frequency='24h' granularity='cluster' />
+  <block-change revision='true' version='false' days='mon,tue' hours='8-10' time-zone='UTC' />
+  <prod>
+    <region>us-north-1</region>
+  </prod>
+</deployment>

@@ -892,8 +892,16 @@ public class SchemaTestCase {
                 """
                 schema doc {
                     document doc {
+                        field test type int {
+                            indexing: attribute
+                            attribute: fast-search
+                        }
                     }
                     rank-profile test {
+                        match-phase {
+                            attribute: test
+                            max-hits: 456
+                        }
                         first-phase {
                             keep-rank-count: 1234
                         }
@@ -911,6 +919,7 @@ public class SchemaTestCase {
         var schemaInfoConfig = schemaInfoConfigBuilder.build().toString();
         assertTrue(schemaInfoConfig.contains("rerankCount 43"));
         assertTrue(schemaInfoConfig.contains("keepRankCount 1234"));
+        assertTrue(schemaInfoConfig.contains("matchPhaseMaxHits 456"));
     }
 
     @Test
@@ -919,8 +928,16 @@ public class SchemaTestCase {
                 """
                 schema doc {
                     document doc {
+                        field test type int {
+                            indexing: attribute
+                            attribute: fast-search
+                        }
                     }
                     rank-profile test {
+                        match-phase {
+                            attribute: test
+                            total-max-hits: 4567
+                        }
                         first-phase {
                             total-keep-rank-count: 2345
                         }
@@ -938,6 +955,7 @@ public class SchemaTestCase {
         var schemaInfoConfig = schemaInfoConfigBuilder.build().toString();
         assertTrue(schemaInfoConfig.contains("totalRerankCount 213"));
         assertTrue(schemaInfoConfig.contains("totalKeepRankCount 2345"));
+        assertTrue(schemaInfoConfig.contains("totalMatchPhaseMaxHits 4567"));
     }
 
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {

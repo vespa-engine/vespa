@@ -23,17 +23,11 @@ public class Http extends TreeConfigProducer<AnyConfigProducer> implements Serve
     private final FilterChains filterChains;
     private final List<FilterBinding> bindings = new CopyOnWriteArrayList<>();
     private volatile JettyHttpServer httpServer;
-    private volatile AccessControl accessControl;
     private volatile Boolean strictFiltering;
 
     public Http(FilterChains chains) {
         super("http");
         this.filterChains = chains;
-    }
-
-    public void setAccessControl(AccessControl accessControl) {
-            if (this.accessControl != null) throw new IllegalStateException("Access control already assigned");
-            this.accessControl = accessControl;
     }
 
     public FilterChains getFilterChains() {
@@ -67,10 +61,6 @@ public class Http extends TreeConfigProducer<AnyConfigProducer> implements Serve
 
     public List<FilterBinding> getBindings() {
         return bindings;
-    }
-
-    public Optional<AccessControl> getAccessControl() {
-        return Optional.ofNullable(accessControl);
     }
 
     public void setStrictFiltering(boolean enabled) { this.strictFiltering = enabled; }

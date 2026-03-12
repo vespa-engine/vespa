@@ -4,6 +4,7 @@ package com.yahoo.search.query.ranking;
 import com.yahoo.fs4.GetDocSumsPacket;
 import com.yahoo.fs4.MapEncoder;
 import com.yahoo.prelude.query.SerializationContext;
+import com.yahoo.search.query.Ranking;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.text.JSON;
 
@@ -98,8 +99,11 @@ public class RankProperties implements Cloneable {
         serializableProperties = convertFromTotal(SecondPhase.rerankCountProperty,
                                                   SecondPhase.totalRerankCountProperty,
                                                   context, serializableProperties);
-        serializableProperties = convertFromTotal("vespa.hitcollector.arraysize",
-                                                  "vespa.hitcollector.totalArraysize",
+        serializableProperties = convertFromTotal(Ranking.keepRankCountProperty,
+                                                  Ranking.totalKeepRankCountProperty,
+                                                  context, serializableProperties);
+        serializableProperties = convertFromTotal(MatchPhase.maxHitsProperty,
+                                                  MatchPhase.totalMaxHitsProperty,
                                                   context, serializableProperties);
         if (serializableProperties != null)
             return Collections.unmodifiableMap(serializableProperties);
@@ -114,7 +118,7 @@ public class RankProperties implements Cloneable {
         if (total != null && ! properties.containsKey(property)) {
             if (serializableProperties == null)
                 serializableProperties = new LinkedHashMap<>(properties);
-            serializableProperties.put(property, List.of(context.contentShareOf((int)total.get(0))));
+            serializableProperties.put(property, List.of(context.contentShareOf(((Number)total.get(0)).intValue())));
         }
         return serializableProperties;
     }

@@ -25,7 +25,6 @@ public class Handler extends Component<Component<?, ?>, ComponentModel> {
 
     private final Set<BindingPattern> serverBindings = new LinkedHashSet<>();
     private final List<BindingPattern> clientBindings = new ArrayList<>();
-
     public final boolean hasCustomThreadPool;
 
     public Handler(ComponentModel model) {
@@ -71,6 +70,8 @@ public class Handler extends Component<Component<?, ?>, ComponentModel> {
         return Collections.unmodifiableList(clientBindings);
     }
 
+    /** Marker interface for handlers that serve data plane traffic. */
+    public interface DataPlaneHandler {}
 
     /**
      * The default threadpool for all handlers, except those that declare their own, e.g. SearchHandler.

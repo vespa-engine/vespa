@@ -19,13 +19,15 @@ public class GlobalPhase implements Cloneable {
     private static final QueryProfileType argumentType;
 
     public static final String GLOBAL_PHASE = "globalPhase";
+    public static final String RERANK_COUNT = "rerankCount";
+    public static final String RANK_SCORE_DROP_LIMIT = "rankScoreDropLimit";
 
     static {
         argumentType = new QueryProfileType(GLOBAL_PHASE);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
-        argumentType.addField(new FieldDescription(Ranking.RERANKCOUNT, FieldType.integerType));
-        argumentType.addField(new FieldDescription(Ranking.RANKSCOREDROPLIMIT, FieldType.doubleType));
+        argumentType.addField(new FieldDescription(RERANK_COUNT, FieldType.integerType));
+        argumentType.addField(new FieldDescription(RANK_SCORE_DROP_LIMIT, FieldType.doubleType));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }

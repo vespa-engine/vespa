@@ -75,13 +75,12 @@ public class FlagDbFile implements FlagRepository, FlagSource {
 
             FlagData existingFlagData = currentFlagData.get(data.id());
             if (existingFlagData == null) {
-                logger.log(Level.INFO, "New flag " + data.id() + ": " + data.serializeToJson());
+                logger.log(Level.INFO, "New flag " + data.id());
                 modified = true;
 
                 // Could also consider testing with FlagData::equals, but that would be too fragile?
             } else if (!Objects.equals(data.serializeToJson(), existingFlagData.serializeToJson())){
-                logger.log(Level.INFO, "Updating flag " + data.id() + " from " +
-                        existingFlagData.serializeToJson() + " to " + data.serializeToJson());
+                logger.log(Level.INFO, "Updating flag " + data.id());
                 modified = true;
             }
         }

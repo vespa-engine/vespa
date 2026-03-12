@@ -34,7 +34,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,10 +43,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static java.util.logging.Level.FINE;
 
 /**
@@ -56,38 +51,13 @@ import static java.util.logging.Level.FINE;
 public class ConfigStateChecker extends AbstractComponent {
     private static final Logger log = Logger.getLogger(ConfigStateChecker.class.getName());
 
-    private static final Set<String> serviceTypesToCheck = Set.of(
-            CONTAINER.serviceName,
-            LOGSERVER_CONTAINER.serviceName,
-            CLUSTERCONTROLLER_CONTAINER.serviceName,
-            METRICS_PROXY_CONTAINER.serviceName,
-            "searchnode",
-            "storagenode",
-            "distributor");
-
     private final ExecutorService responseHandlerExecutor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("config-state-checker-response-handler-"));
 
     /**
-     * Fetches config states of all services in {@code application} with {@code hostnames}.
-     */
-    public Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(
-            Application application, Duration timeoutPerService, Set<String> hostnames) {
-        List<ServiceInfo> servicesToCheck = application.getModel().getHosts().stream()
-                .flatMap(host -> host.getServices().stream()
-                        .filter(service -> hostnames.contains(host.getHostname())
-                                && serviceTypesToCheck.contains(service.getServiceType())
-                                && getStatePort(service).isPresent()))
-                .toList();
-
-        log.log(FINE, () -> "Services to check for config state: " + servicesToCheck);
-        return getServiceConfigStates(servicesToCheck, timeoutPerService);
-    }
-
-    /**
      * Fetch service config states for a list of services (in parallel).
      */
-    private Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(List<ServiceInfo> services, Duration timeout) {
+    public Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(List<ServiceInfo> services, Duration timeout) {
         try (CloseableHttpAsyncClient client = createHttpClient()) {
             client.start();
             List<CompletableFuture<Void>> inprogressRequests = new ArrayList<>();
@@ -96,7 +66,8 @@ public class ConfigStateChecker extends AbstractComponent {
                 int statePort = getStatePort(service).orElse(0);
                 if (statePort <= 0) continue;
                 URI uri = URI.create("http://" + service.getHostName() + ":" + statePort);
-                CompletableFuture<Void> inprogressRequest = getServiceConfigState(client, uri, timeout)
+                String serviceName = service.getServiceName();
+                CompletableFuture<Void> inprogressRequest = getServiceConfigState(client, uri, serviceName, timeout)
                         .handle((result, error) -> {
                             if (result != null) {
                                 temporaryResult.put(service, result);
@@ -107,7 +78,10 @@ public class ConfigStateChecker extends AbstractComponent {
                                         () -> Text.format(
                                                 "Failed to retrieve service config state for '%s': %s",
                                                 service, error.getMessage()));
-                                temporaryResult.put(service, new ServiceConfigState(-1L, Optional.empty()));
+                                temporaryResult.put(service, new ServiceConfigState(
+                                        serviceName,
+                                        -1L,
+                                        Optional.empty()));
                             }
                             return null;
                         });
@@ -126,7 +100,7 @@ public class ConfigStateChecker extends AbstractComponent {
      * Get service generation of service at given URL
      */
     private CompletableFuture<ServiceConfigState> getServiceConfigState(
-            CloseableHttpAsyncClient client, URI serviceUrl, Duration timeout) {
+            CloseableHttpAsyncClient client, URI serviceUrl, String serviceName, Duration timeout) {
         SimpleHttpRequest request =
                 SimpleRequestBuilder.get(createApiUri(serviceUrl)).build();
         request.setConfig(createRequestConfig(timeout));
@@ -151,7 +125,9 @@ public class ConfigStateChecker extends AbstractComponent {
         });
 
         // Don't do JSON parsing in http client's thread.
-        return responsePromise.thenApplyAsync(ConfigStateChecker::handleResponse, responseHandlerExecutor);
+        return responsePromise.thenApplyAsync(
+                response -> handleResponse(response, serviceName),
+                responseHandlerExecutor);
     }
 
     @Override
@@ -164,12 +140,12 @@ public class ConfigStateChecker extends AbstractComponent {
         }
     }
 
-    static ServiceConfigState handleResponse(SimpleHttpResponse response) throws UncheckedIOException {
+    static ServiceConfigState handleResponse(SimpleHttpResponse response, String serviceName) throws UncheckedIOException {
         try {
             int statusCode = response.getCode();
             if (statusCode != HttpStatus.SC_OK) throw new IOException("Expected status code 200, got " + statusCode);
             if (response.getBody() == null) throw new IOException("Response has no content");
-            return serviceConfigStateFromJson(Jackson.mapper().readTree(response.getBodyText()));
+            return serviceConfigStateFromJson(Jackson.mapper().readTree(response.getBodyText()), serviceName);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -182,13 +158,16 @@ public class ConfigStateChecker extends AbstractComponent {
                 .findFirst();
     }
 
-    private static ServiceConfigState serviceConfigStateFromJson(JsonNode state) {
+    private static ServiceConfigState serviceConfigStateFromJson(JsonNode state, String serviceName) {
         JsonNode configNode = state.get("config");
         long generation = configNode.get("generation").asLong(-1);
         Optional<Boolean> applyOnRestart = configNode.has("applyOnRestart")
                 ? Optional.of(configNode.get("applyOnRestart").asBoolean())
                 : Optional.empty();
-        return new ServiceConfigState(generation, applyOnRestart);
+        return new ServiceConfigState(
+                serviceName,
+                generation,
+                applyOnRestart);
     }
 
     private static Map<ServiceInfo, ServiceConfigState> createMapOrderedByServiceList(

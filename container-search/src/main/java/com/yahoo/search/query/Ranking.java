@@ -31,6 +31,12 @@ import java.util.Objects;
  */
 public class Ranking implements Cloneable {
 
+    /** For internal use only. */
+    public static final String keepRankCountProperty = "vespa.hitcollector.arraysize";
+
+    /** For internal use only. */
+    public static final String totalKeepRankCountProperty = "vespa.hitcollector.totalArraysize";
+
     /** An alias for listing features */
     public static final CompoundName RANKFEATURES = CompoundName.from("rankfeatures");
 
@@ -46,10 +52,13 @@ public class Ranking implements Cloneable {
     public static final String FRESHNESS = "freshness";
     public static final String QUERYCACHE = "queryCache";
 
-    public static final String RERANKCOUNT = "rerankCount";
     public static final String KEEPRANKCOUNT = "keepRankCount";
     public static final String TOTALKEEPRANKCOUNT = "totalKeepRankCount";
+
+    @Deprecated // TODO: Remove on Vespa 9
+    public static final String RERANKCOUNT = "rerankCount";
     public static final String RANKSCOREDROPLIMIT = "rankScoreDropLimit";
+
     public static final String ELEMENT_GAP = "elementGap";
     public static final String FEATURES = "features";
     public static final String PROPERTIES = "properties";
@@ -81,7 +90,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(LIST_FEATURES, "string", RANKFEATURES.toString()));
         argumentType.addField(new FieldDescription(FRESHNESS, "string", "datetime"));
         argumentType.addField(new FieldDescription(QUERYCACHE, "boolean"));
-        argumentType.addField(new FieldDescription(RERANKCOUNT, "integer")); // TODO: Remove on Vespa 9
+        argumentType.addField(new FieldDescription(SecondPhase.RERANK_COUNT, "integer")); // TODO: Remove on Vespa 9
         argumentType.addField(new FieldDescription(KEEPRANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(TOTALKEEPRANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(RANKSCOREDROPLIMIT, "double"));
@@ -326,10 +335,6 @@ public class Ranking implements Cloneable {
         matching.prepare(rankProperties);
         softTimeout.prepare(rankProperties);
         prepareNow(freshness);
-        if (keepRankCount != null)
-            rankProperties.put("vespa.hitcollector.arraysize", keepRankCount);
-        if (totalKeepRankCount != null)
-            rankProperties.put("vespa.hitcollector.totalArraysize", totalKeepRankCount);
         if (rankScoreDropLimit != null)
             rankProperties.put("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit);
         for (Map.Entry<String, ElementGap> entry : elementGap.entrySet()) {

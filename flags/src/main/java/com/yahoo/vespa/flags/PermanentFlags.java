@@ -218,7 +218,7 @@ public class PermanentFlags {
             HOSTNAME, NODE_TYPE, TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
 
     public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
-            "zookeeper-server-version", "3.9.4",
+            "zookeeper-server-version", "3.9.5",
             "ZooKeeper server version, a jar file zookeeper-server-<ZOOKEEPER_SERVER_VERSION>-jar-with-dependencies.jar must exist",
             "Takes effect on restart of Docker container",
             NODE_TYPE, INSTANCE_ID, HOSTNAME);
@@ -327,12 +327,6 @@ public class PermanentFlags {
     public static final UnboundIntFlag DELAY_HOST_SECURITY_AGENT_START_MINUTES = defineIntFlag(
             "delay-host-security-agent-start-minutes", 5,
             "The number of minutes (from host admin start) to delay the start of the host security agent",
-            "Takes effect on next host-admin tick",
-            NODE_TYPE);
-
-    public static final UnboundStringFlag HOST_SECURITY_AGENT_VERSION = defineStringFlag(
-            "host-security-agent-version", "",
-            "Upgrades/downgrades the host security agent to the specified version, does nothing if empty. Only effective in public systems.",
             "Takes effect on next host-admin tick",
             NODE_TYPE);
 

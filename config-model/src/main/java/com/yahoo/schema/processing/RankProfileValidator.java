@@ -27,12 +27,16 @@ public class RankProfileValidator extends Processor {
     }
 
     private void validate(RankProfile profile) {
+        if (profile.getMatchPhase() != null &&
+            profile.getMatchPhase().getMaxHits().isPresent() && profile.getMatchPhase().getTotalMaxHits().isPresent())
+            throw new IllegalArgumentException("In " + schema + ", " + profile + ": Cannot set or inherit both " +
+                                               "match-phase max-hits and total-max-hits");
         if (profile.getRerankCount().isPresent() && profile.getTotalRerankCount().isPresent())
             throw new IllegalArgumentException("In " + schema + ", " + profile + ": Cannot set or inherit both " +
-                                               "rerank-count and total-rerank-count");
+                                               "second-phase rerank-count and total-rerank-count");
         if (profile.getKeepRankCount().isPresent() && profile.getTotalKeepRankCount().isPresent())
             throw new IllegalArgumentException("In " + schema + ", " + profile + ": Cannot set or inherit both " +
-                                               "keep-rank-count and total-keep-rank-count");
+                                               "first-phase keep-rank-count and total-keep-rank-count");
     }
 
 }

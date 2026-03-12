@@ -54,6 +54,7 @@ Stash::do_alloc(size_t size)
         return _chunks->alloc(size, _chunk_size);
     } else {
         size_t allocate = sizeof(stash::DeleteMemory) + size;
+        static_assert(sizeof(stash::DeleteMemory) % stash::align == 0);
         char *mem = static_cast<char*>(malloc(allocate));
         _cleanup = new (mem) stash::DeleteMemory(allocate, _cleanup);
         return (mem + sizeof(stash::DeleteMemory));

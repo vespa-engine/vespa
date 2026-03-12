@@ -88,12 +88,14 @@ public class ConfigStateCheckerTest {
                 .willReturn(okJson("{\"config\":{\"generation\":3}}")));
         wireMock3.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":5}}")));
 
-        // Query only services on 127.0.0.1 (should return 2 services, localhost not included)
-        Set<String> hostnames = Set.of("127.0.0.1");
+        // Get all services
+        List<ServiceInfo> servicesToCheck = application.getModel().getHosts().stream()
+                .flatMap(host -> host.getServices().stream())
+                .toList();
         Map<ServiceInfo, ServiceConfigState> response =
-                checker.getServiceConfigStates(application, clientTimeout, hostnames);
+                checker.getServiceConfigStates(servicesToCheck, clientTimeout);
 
-        assertEquals(2, response.size());
+        assertEquals(3, response.size());
 
         List<Map.Entry<ServiceInfo, ServiceConfigState>> entries = List.copyOf(response.entrySet());
 
@@ -101,6 +103,7 @@ public class ConfigStateCheckerTest {
         ServiceInfo serviceInfo1 = entries.get(0).getKey();
         ServiceConfigState state1 = entries.get(0).getValue();
         assertEquals("127.0.0.1", serviceInfo1.getHostName());
+        assertEquals(serviceInfo1.getServiceName(), state1.serviceName());
         assertEquals(4, state1.currentGeneration());
         assertTrue(state1.applyOnRestart().isPresent());
         assertFalse(state1.applyOnRestart().get());
@@ -109,8 +112,16 @@ public class ConfigStateCheckerTest {
         ServiceInfo serviceInfo2 = entries.get(1).getKey();
         ServiceConfigState state2 = entries.get(1).getValue();
         assertEquals("127.0.0.1", serviceInfo2.getHostName());
+        assertEquals(serviceInfo2.getServiceName(), state2.serviceName());
         assertEquals(3, state2.currentGeneration());
         assertTrue(state2.applyOnRestart().isEmpty());
+
+        // Third service (localhost)
+        ServiceInfo serviceInfo3 = entries.get(2).getKey();
+        ServiceConfigState state3 = entries.get(2).getValue();
+        assertEquals("localhost", serviceInfo3.getHostName());
+        assertEquals(5, state3.currentGeneration());
+        assertTrue(state3.applyOnRestart().isEmpty());
     }
 
     @Test
@@ -121,9 +132,11 @@ public class ConfigStateCheckerTest {
                                 (int) clientTimeout.plus(Duration.ofSeconds(1)).toMillis())
                         .withBody("response too slow")));
 
-        Set<String> hostnames = Set.of(service1.getHost());
+        List<ServiceInfo> servicesToCheck = application.getModel().getHosts().stream()
+                .flatMap(host -> host.getServices().stream())
+                .toList();
         Map<ServiceInfo, ServiceConfigState> response =
-                checker.getServiceConfigStates(application, Duration.ofMillis(1), hostnames);
+                checker.getServiceConfigStates(servicesToCheck, Duration.ofMillis(1));
 
         assertEquals(1, response.size());
         ServiceConfigState state = response.values().iterator().next();
@@ -134,13 +147,11 @@ public class ConfigStateCheckerTest {
     }
 
     @Test
-    public void test_getServiceConfigStates_unknown_host() {
-        // No stub configured, so the service will not be reachable
-        Set<String> hostnames = Set.of("unknown");
+    public void test_getServiceConfigStates_empty_list() {
+        List<ServiceInfo> servicesToCheck = List.of();
         Map<ServiceInfo, ServiceConfigState> response =
-                checker.getServiceConfigStates(application, clientTimeout, hostnames);
+                checker.getServiceConfigStates(servicesToCheck, clientTimeout);
 
-        // Should return empty map since the hostname doesn't match any service in the application
         assertEquals(0, response.size());
     }
 

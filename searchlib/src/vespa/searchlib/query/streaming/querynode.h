@@ -12,6 +12,8 @@ class MatchData;
 
 }
 
+namespace search::queryeval { class MatchSpan; }
+
 namespace search::streaming {
 
 class QueryTerm;
@@ -43,6 +45,8 @@ public:
   virtual void get_element_ids(std::vector<uint32_t>& element_ids) = 0;
   virtual void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
                                  search::common::ElementIds element_ids) = 0;
+  virtual void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
+                                 std::span<const queryeval::MatchSpan> match_spans) = 0;
   /// Clears all the hitlists so the query tree can be reused.
   virtual void reset() = 0;
   /// Gives you all leafs of this tree.
