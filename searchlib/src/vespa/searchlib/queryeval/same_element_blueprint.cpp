@@ -12,6 +12,7 @@
 #include <cassert>
 #include <map>
 #include <memory>
+#include <sstream>
 
 using search::fef::MatchData;
 using search::fef::TermFieldMatchData;
@@ -156,6 +157,18 @@ void
 SameElementBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     IntermediateBlueprint::visitMembers(visitor);
+    std::stringstream ss;
+    ss << "[";
+    bool first = true;
+    for (uint32_t element : _element_filter) {
+        if (!first) {
+            ss << ",";
+        }
+        first = false;
+        ss << element;
+    }
+    ss << "]";
+    visitor.visitString("element_filter", ss.str());
 }
 
 Blueprint::UP SameElementBlueprint::get_replacement() {
