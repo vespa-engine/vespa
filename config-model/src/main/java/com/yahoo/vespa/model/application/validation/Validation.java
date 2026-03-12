@@ -8,10 +8,13 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.change.CertificateRemovalChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentTypeRemovalValidator;
+import com.yahoo.vespa.model.application.validation.change.DataplaneProxyChangeValidator;
+import com.yahoo.vespa.model.application.validation.change.DataplaneTokenRemovalValidator;
 import com.yahoo.vespa.model.application.validation.change.GlobalDocumentChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
@@ -42,12 +45,12 @@ import java.util.logging.Level;
  */
 public class Validation {
 
-    private final List<ValidatorRegistry> additionalValidatorRegistry;
+    private final List<Validator> additionalValidators;
 
     public Validation() { this(List.of()); }
 
     /** Create instance taking additional validators (e.g., for cloud applications) */
-    public Validation(List<ValidatorRegistry> additionalValidatorRegistry) { this.additionalValidatorRegistry = additionalValidatorRegistry; }
+    public Validation(List<Validator> additionalValidators) { this.additionalValidators = additionalValidators; }
 
     /**
      * Validates the model supplied, and if there already exists a model for the application validates changes
@@ -64,10 +67,8 @@ public class Validation {
 
         validateModel(validationParameters, execution);
 
-        for (ValidatorRegistry validators : additionalValidatorRegistry) {
-            for (Validator validator : validators.validators()) {
-                validator.validate(execution);
-            }
+        for (Validator validator : additionalValidators) {
+            validator.validate(execution);
         }
 
         if (deployState.getProperties().isFirstTimeDeployment()) {
@@ -104,9 +105,13 @@ public class Validation {
         new ValidationOverridesValidator().validate(execution);
         new ConstantValidator().validate(execution);
         new SecretStoreValidator().validate(execution);
+        new AccessControlFilterValidator().validate(execution);
         new QuotaValidator().validate(execution);
         new UriBindingsValidator().validate(execution);
+        new CloudDataPlaneFilterValidator().validate(execution);
+        new AccessControlFilterExcludeValidator().validate(execution);
         new CloudUserFilterValidator().validate(execution);
+        new CloudHttpConnectorValidator().validate(execution);
         new UrlConfigValidator().validate(execution);
         new JvmHeapSizeValidator().validate(execution);
         new InfrastructureDeploymentValidator().validate(execution);
@@ -123,7 +128,7 @@ public class Validation {
         new MinimumNodeCountValidator().validate((Context) execution);
     }
 
-    private void validateChanges(Execution execution) {
+    private static void validateChanges(Execution execution) {
         new IndexingModeChangeValidator().validate(execution);
         new GlobalDocumentChangeValidator().validate(execution);
         new IndexedSearchClusterChangeValidator().validate(execution);
@@ -135,17 +140,15 @@ public class Validation {
         new ResourcesReductionValidator().validate(execution);
         new ContainerRestartValidator().validate(execution);
         new NodeResourceChangeValidator().validate(execution);
+        new CertificateRemovalChangeValidator().validate(execution);
         new RedundancyValidator().validate(execution);
         new MinimumNodeCountValidator().validate(execution);
         new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
         new RestartOnDeployForLocalLLMValidator().validate(execution);
         new RestartOnDeployForTritonOnnxRuntimeValidator().validate(execution);
+        new DataplaneTokenRemovalValidator().validate(execution);
+        new DataplaneProxyChangeValidator().validate(execution);
         new RestartOnDeployForSidecarValidator().validate(execution);
-        for (ValidatorRegistry validators : additionalValidatorRegistry) {
-            for (var validator : validators.changeValidators()) {
-                validator.validate(execution);
-            }
-        }
     }
 
     public interface Context {

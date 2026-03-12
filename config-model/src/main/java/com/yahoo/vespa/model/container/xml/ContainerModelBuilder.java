@@ -2,8 +2,12 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
+import com.yahoo.component.chain.dependencies.Dependencies;
+import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.config.application.Xml;
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -15,7 +19,6 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
-import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
@@ -24,6 +27,7 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
@@ -31,14 +35,24 @@ import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
+
+
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.FileConnectionLog;
+import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig;
+import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig.Builder;
+
+
 import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.path.Path;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.derived.FileDistributedOnnxModels;
 import com.yahoo.schema.derived.RankProfileList;
 import com.yahoo.search.rendering.RendererRegistry;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.Text;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
@@ -62,6 +76,7 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.ContainerThreadpool;
+import com.yahoo.vespa.model.container.DataplaneProxy;
 import com.yahoo.vespa.model.container.DefaultThreadpoolProvider;
 import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.PlatformBundles;
@@ -78,9 +93,17 @@ import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
+import com.yahoo.vespa.model.container.http.AccessControl;
+import com.yahoo.vespa.model.container.http.Client;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
+import com.yahoo.vespa.model.container.http.Filter;
+import com.yahoo.vespa.model.container.http.FilterBinding;
+import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
+import com.yahoo.vespa.model.container.http.HttpFilterChain;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
+import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
+import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory.SslClientAuth;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
@@ -92,22 +115,29 @@ import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.yahoo.vespa.model.container.ContainerCluster.VIP_HANDLER_BINDING;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -195,13 +225,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addProcessing(deployState, spec, cluster, context);
         addSearch(deployState, spec, cluster, context);
         addDocproc(deployState, spec, cluster);
-        addDocumentApi(deployState, spec, cluster);  // NOTE: Must be done after addSearch
+        addDocumentApi(deployState, spec, cluster, context);  // NOTE: Must be done after addSearch
         addDefaultThreadpool(deployState, spec, cluster);
 
         cluster.addDefaultHandlersExceptStatus();
         addStatusHandlers(cluster, context.getDeployState().isHosted());
         addUserHandlers(deployState, cluster, spec, context);
 
+        addClients(deployState, spec, cluster);
         addHttp(deployState, spec, cluster, context);
 
         addNodes(cluster, spec, context);
@@ -529,12 +560,302 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     protected void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
         Element httpElement = XML.getChild(spec, "http");
         if (httpElement != null) {
-            cluster.setHttp(buildHttp(deployState, cluster, httpElement));
+            cluster.setHttp(buildHttp(deployState, cluster, httpElement, context));
+        }
+        if (isHostedTenantApplication(context)) {
+            addHostedImplicitHttpIfNotPresent(deployState, cluster);
+            addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
+            addDefaultConnectorHostedFilterBinding(cluster);
+            addCloudMtlsConnector(deployState, cluster);
+            addCloudDataPlaneFilter(deployState, cluster);
+            addCloudTokenSupport(deployState, cluster);
         }
     }
 
-    private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
-        Http http = new HttpBuilder(Set.of()).build(deployState, cluster, httpElement);
+    private static void addCloudDataPlaneFilter(DeployState deployState, ApplicationContainerCluster cluster) {
+        if (!deployState.isHosted() || !deployState.zone().system().isPublicCloudLike()) return;
+
+        var dataplanePort = getMtlsDataplanePort(deployState, cluster);
+        // Setup secure filter chain
+        var secureChain = new HttpFilterChain("cloud-data-plane-secure", HttpFilterChain.Type.SYSTEM);
+        secureChain.addInnerComponent(new CloudDataPlaneFilter(cluster, deployState));
+        cluster.getHttp().getFilterChains().add(secureChain);
+        // Set cloud data plane filter as default request filter chain for data plane connector
+        cluster.getHttp().getHttpServer().orElseThrow().getConnectorFactories().stream()
+                .filter(c -> c.getListenPort() == dataplanePort).findAny().orElseThrow()
+                .setDefaultRequestFilterChain(secureChain.getComponentId());
+
+        // Setup insecure filter chain
+        var insecureChain = new HttpFilterChain("cloud-data-plane-insecure", HttpFilterChain.Type.SYSTEM);
+        insecureChain.addInnerComponent(new Filter(
+                new ChainedComponentModel(
+                        new BundleInstantiationSpecification(
+                                new ComponentSpecification("com.yahoo.jdisc.http.filter.security.misc.NoopFilter"),
+                                null, new ComponentSpecification("container-disc")),
+                        Dependencies.emptyDependencies())));
+        cluster.getHttp().getFilterChains().add(insecureChain);
+        var insecureChainComponentSpec = new ComponentSpecification(insecureChain.getComponentId().toString());
+        FilterBinding insecureBinding =
+                FilterBinding.create(FilterBinding.Type.REQUEST, insecureChainComponentSpec, VIP_HANDLER_BINDING);
+        cluster.getHttp().getBindings().add(insecureBinding);
+        // Set insecure filter as default request filter chain for default connector
+        cluster.getHttp().getHttpServer().orElseThrow().getConnectorFactories().stream()
+                .filter(c -> c.getListenPort() == Defaults.getDefaults().vespaWebServicePort()).findAny().orElseThrow()
+                .setDefaultRequestFilterChain(insecureChain.getComponentId());
+
+    }
+
+    protected void addClients(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
+        if (!deployState.isHosted() || !deployState.zone().system().isPublicCloudLike()) return;
+
+        List<Client> clients;
+        Element clientsElement = XML.getChild(spec, "clients");
+        boolean legacyMode = false;
+        if (clientsElement == null) {
+            clients = List.of(new Client(
+                    "default", List.of(), getCertificates(app.getFile(Path.fromString("security/clients.pem"))), List.of()));
+            legacyMode = true;
+        } else {
+            clients = XML.getChildren(clientsElement, "client").stream()
+                    .flatMap(elem -> getClient(elem, deployState).stream())
+                    .toList();
+            boolean atLeastOneClientWithCertificate = clients.stream().anyMatch(client -> !client.certificates().isEmpty());
+            if (!atLeastOneClientWithCertificate)
+                throw new IllegalArgumentException("At least one client must require a certificate");
+
+            List<String> duplicates = clients.stream().collect(Collectors.groupingBy(Client::id))
+                    .entrySet().stream().filter(entry -> entry.getValue().size() > 1)
+                    .map(Map.Entry::getKey).sorted().toList();
+            if (! duplicates.isEmpty()) {
+                throw new IllegalArgumentException("Duplicate client ids: " + duplicates);
+            }
+        }
+
+        List<X509Certificate> operatorAndTesterCertificates = deployState.getProperties().operatorCertificates();
+        if(!operatorAndTesterCertificates.isEmpty())
+            clients = Stream.concat(clients.stream(), Stream.of(Client.internalClient(operatorAndTesterCertificates))).toList();
+        cluster.setClients(legacyMode, clients);
+    }
+
+    private Optional<Client> getClient(Element clientElement, DeployState state) {
+        String clientId = XML.attribute("id", clientElement).orElseThrow();
+        if (clientId.startsWith("_"))
+            throw new IllegalArgumentException(Text.format("Invalid client id '%s', id cannot start with '_'", clientId));
+        var permissions = XML.attribute("permissions", clientElement)
+                .map(Client.Permission::fromCommaSeparatedString).orElse(Set.of());
+
+        var certificates = XML.getChildren(clientElement, "certificate").stream()
+                .flatMap(certElem -> {
+                    var file = app.getFile(Path.fromString(certElem.getAttribute("file")));
+                    if (!file.exists()) {
+                        throw new IllegalArgumentException(Text.format("Certificate file '%s' for client '%s' does not exist", file.getPath().getRelative(), clientId));
+                    }
+                    return getCertificates(file).stream();
+                })
+                .toList();
+        // A client cannot use both tokens and certificates
+        if (!certificates.isEmpty()) return Optional.of(new Client(clientId, permissions, certificates, List.of()));
+
+        var knownTokens = state.getProperties().dataplaneTokens().stream()
+                .collect(Collectors.toMap(DataplaneToken::tokenId, Function.identity()));
+
+        var referencedTokens = XML.getChildren(clientElement, "token").stream()
+                .map(elem -> {
+                    var tokenId = elem.getAttribute("id");
+                    var token = knownTokens.get(tokenId);
+                    if (token == null)
+                        deployLogger.logApplicationPackage(
+                                WARNING, Text.format("Token '%s' for client '%s' does not exist", tokenId, clientId));
+                    return token;
+                })
+                .filter(token -> {
+                    if (token == null) return false;
+                    boolean empty = token.versions().isEmpty();
+                    if (empty)
+                        deployLogger.logApplicationPackage(
+                                WARNING, Text.format("Token '%s' for client '%s' has no active versions", token.tokenId(), clientId));
+                    return !empty;
+                })
+                .toList();
+
+        // Don't include 'client' that refers to token without versions
+        if (referencedTokens.isEmpty()) {
+            deployLogger.log(Level.INFO, Text.format("Skipping client '%s' as it does not refer to any activate tokens", clientId));
+            return Optional.empty();
+        }
+
+        return Optional.of(new Client(clientId, permissions, List.of(), referencedTokens));
+    }
+
+    private List<X509Certificate> getCertificates(ApplicationFile file) {
+        if (!file.exists()) return List.of();
+        try {
+            Reader reader = file.createReader();
+            String certPem = IOUtils.readAll(reader);
+            reader.close();
+            List<X509Certificate> x509Certificates;
+            try {
+                x509Certificates = X509CertificateUtils.certificateListFromPem(certPem);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(Text.format("File %s contains an invalid certificate", file.getPath().getRelative()), e);
+            }
+            if (x509Certificates.isEmpty()) {
+                throw new IllegalArgumentException(Text.format("File %s does not contain any certificates.", file.getPath().getRelative()));
+            }
+            return x509Certificates;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void addDefaultConnectorHostedFilterBinding(ApplicationContainerCluster cluster) {
+        cluster.getHttp().getAccessControl()
+                .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));
+    }
+
+    private void addCloudMtlsConnector(DeployState state, ApplicationContainerCluster cluster) {
+        JettyHttpServer server = cluster.getHttp().getHttpServer().get();
+        String serverName = server.getComponentId().getName();
+
+        // If the deployment contains certificate/private key reference, setup TLS port
+        var builder = HostedSslConnectorFactory.builder(serverName, getMtlsDataplanePort(state, cluster))
+                .proxyProtocol(state.zone().cloud().useProxyProtocol() || enableTokenSupport(state, cluster))
+                .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
+                .endpointConnectionTtl(state.getProperties().endpointConnectionTtl())
+                .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
+                .httpComplianceViolations(state.getProperties().jdiscHttpComplianceViolations());
+        var endpointCert = state.endpointCertificateSecrets().orElse(null);
+        if (endpointCert != null) {
+            builder.endpointCertificate(endpointCert);
+            Set<String> mtlsEndpointNames = state.getEndpoints().stream()
+                    .filter(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.mtls)
+                    .flatMap(endpoint -> endpoint.names().stream())
+                    .collect(Collectors.toSet());
+            builder.knownServerNames(mtlsEndpointNames);
+            boolean isPublic = state.zone().system().isPublicCloudLike();
+            List<X509Certificate> clientCertificates = getClientCertificates(cluster);
+            if (isPublic) {
+                if (clientCertificates.isEmpty())
+                    throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
+                                                               "see: https://docs.vespa.ai/en/security/guide.html#data-plane");
+                builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
+                        .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
+            } else {
+                builder.tlsCaCertificatesPath("/opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem");
+                var needAuth = cluster.getHttp().getAccessControl()
+                        .map(accessControl -> accessControl.clientAuthentication)
+                        .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
+                        .orElse(false);
+                builder.clientAuth(needAuth ? SslClientAuth.NEED : SslClientAuth.WANT);
+            }
+        } else {
+            builder.clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
+        }
+        var connectorFactory = builder.build();
+        cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
+        server.addConnector(connectorFactory);
+    }
+
+    private void addCloudTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
+        var server = cluster.getHttp().getHttpServer().get();
+        if (!enableTokenSupport(state, cluster)) return;
+        Set<String> tokenEndpoints = tokenEndpoints(state, cluster).stream()
+                .map(ContainerEndpoint::names)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+        var endpointCert = state.endpointCertificateSecrets().orElseThrow();
+        int tokenPort = getTokenDataplanePort(state, cluster).orElseThrow();
+
+        // Set up component to generate proxy cert if token support is enabled
+        cluster.addSimpleComponent("com.yahoo.vespa.cloud.tenant.dataplane.DataplaneProxyCredentials", null, "cloud-tenant");
+        cluster.addSimpleComponent("com.yahoo.vespa.cloud.tenant.dataplane.DataplaneProxyService", null, "cloud-tenant");
+        var dataplaneProxy = new DataplaneProxy(
+                getMtlsDataplanePort(state, cluster),
+                tokenPort,
+                endpointCert.certificate(),
+                endpointCert.key(),
+                tokenEndpoints);
+        cluster.addComponent(dataplaneProxy);
+
+        // Setup dedicated connector
+        var connector = HostedSslConnectorFactory.builder(server.getComponentId().getName()+"-token", tokenPort)
+                .tokenEndpoint(true)
+                .proxyProtocol(false)
+                .endpointCertificate(endpointCert)
+                .remoteAddressHeader("X-Forwarded-For")
+                .remotePortHeader("X-Forwarded-Port")
+                .clientAuth(SslClientAuth.NEED)
+                .knownServerNames(tokenEndpoints)
+                .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
+                .httpComplianceViolations(state.getProperties().jdiscHttpComplianceViolations())
+                .build();
+        server.addConnector(connector);
+
+        // Setup token filter chain
+        var tokenChain = new HttpFilterChain("cloud-token-data-plane-secure", HttpFilterChain.Type.SYSTEM);
+        var tokenFilter = new CloudTokenDataPlaneFilter(cluster, state);
+        tokenChain.addInnerComponent(tokenFilter);
+        cluster.getHttp().getFilterChains().add(tokenChain);
+
+        // Set as default filter for token port
+        cluster.getHttp().getHttpServer().orElseThrow().getConnectorFactories().stream()
+                .filter(c -> c.getListenPort() == tokenPort).findAny().orElseThrow()
+                .setDefaultRequestFilterChain(tokenChain.getComponentId());
+
+        // Set up handler that tells what fingerprints are known to the container
+        class CloudTokenDataPlaneHandler extends Handler implements CloudTokenDataPlaneFilterConfig.Producer {
+            CloudTokenDataPlaneHandler() {
+                super(new ComponentModel("com.yahoo.jdisc.http.filter.security.cloud.CloudTokenDataPlaneHandler", null, "cloud-tenant", null));
+                addServerBindings(SystemBindingPattern.fromHttpPortAndPath(Defaults.getDefaults().vespaWebServicePort(), "/data-plane-tokens/v1"));
+            }
+            @Override public void getConfig(Builder builder) { tokenFilter.getConfig(builder); }
+        }
+        cluster.addComponent(new CloudTokenDataPlaneHandler());
+    }
+
+    // Returns the client certificates of the clients defined for an application cluster
+    private List<X509Certificate> getClientCertificates(ApplicationContainerCluster cluster) {
+        return cluster.getClients()
+                .stream()
+                .map(Client::certificates)
+                .flatMap(Collection::stream)
+                .toList();
+    }
+
+    private static boolean isHostedTenantApplication(ConfigModelContext context) {
+        return context.getDeployState().isHostedTenantApplication(context.getApplicationType());
+    }
+
+    private static void addHostedImplicitHttpIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {
+        if (cluster.getHttp() == null) {
+            cluster.setHttp(new Http(new FilterChains(cluster)));
+        }
+        JettyHttpServer httpServer = cluster.getHttp().getHttpServer().orElse(null);
+        if (httpServer == null) {
+            httpServer = new JettyHttpServer("DefaultHttpServer", cluster, deployState);
+            cluster.getHttp().setHttpServer(httpServer);
+        }
+        int defaultPort = Defaults.getDefaults().vespaWebServicePort();
+        boolean defaultConnectorPresent = httpServer.getConnectorFactories().stream().anyMatch(connector -> connector.getListenPort() == defaultPort);
+        if (!defaultConnectorPresent) {
+            httpServer.addConnector(new ConnectorFactory.Builder("SearchServer", defaultPort).build());
+        }
+    }
+
+    private void addHostedImplicitAccessControlIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {
+        Http http = cluster.getHttp();
+        if (http.getAccessControl().isPresent()) return; // access control added explicitly
+        AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
+        if (tenantDomain == null) return; // tenant domain not present, cannot add access control. this should eventually be a failure.
+        new AccessControl.Builder(tenantDomain.value())
+                .setHandlers(cluster)
+                .clientAuthentication(AccessControl.ClientAuthentication.need)
+                .build()
+                .configureHttpFilterChains(http);
+    }
+
+    private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement, ConfigModelContext context) {
+        Http http = new HttpBuilder(portBindingOverride(deployState, context, cluster)).build(deployState, cluster, httpElement);
 
         if (networking == Networking.disable)
             http.removeAllServers();
@@ -542,8 +863,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return http;
     }
 
-    private void addDocumentApi(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        cluster.setDocumentApi(buildDocumentApi(deployState, cluster, spec));
+    private void addDocumentApi(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
+        cluster.setDocumentApi(buildDocumentApi(deployState, cluster, spec, context));
     }
 
     private void addDocproc(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
@@ -731,8 +1052,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addUserHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         for (Element component: XML.getChildren(spec, "handler")) {
-            var handler = new DomHandlerBuilder(cluster, Set.of()).build(deployState, cluster, component);
-            cluster.addComponent(handler);
+            cluster.addComponent(
+                    new DomHandlerBuilder(cluster, portBindingOverride(deployState, context, cluster)).build(deployState, cluster, component));
         }
     }
 
@@ -1013,6 +1334,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addSearchHandler(DeployState deployState, ApplicationContainerCluster cluster, Element searchElement, ConfigModelContext context) {
         var bindingPatterns = SearchHandler.defaultBindings();
+        if (isHostedTenantApplication(context)) {
+            bindingPatterns = SearchHandler.bindingPattern(getDataplanePorts(deployState, cluster));
+        }
         SearchHandler searchHandler = new SearchHandler(deployState, cluster,
                                                         serverBindings(deployState, context, cluster, searchElement, bindingPatterns),
                                                         searchElement);
@@ -1027,27 +1351,43 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (bindings.isEmpty())
             return List.copyOf(defaultBindings);
 
-        return toBindingList(bindings);
+        return toBindingList(deployState, context, cluster, bindings);
     }
 
-    private List<BindingPattern> toBindingList(List<Element> bindingElements) {
+    private List<BindingPattern> toBindingList(DeployState deployState, ConfigModelContext context, ApplicationContainerCluster cluster, List<Element> bindingElements) {
         List<BindingPattern> result = new ArrayList<>();
+        var portOverride = isHostedTenantApplication(context) ? getDataplanePorts(deployState, cluster) : Set.<Integer>of();
         for (Element element: bindingElements) {
             String text = element.getTextContent().trim();
             if (!text.isEmpty())
-                result.add(UserBindingPattern.fromPattern(text));
+                result.addAll(userBindingPattern(text, portOverride));
         }
+
         return result;
     }
+    private static Collection<UserBindingPattern> userBindingPattern(String path, Set<Integer> portBindingOverride) {
+        UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
+        if (portBindingOverride.isEmpty()) return Set.of(bindingPattern);
+        return portBindingOverride.stream()
+                .map(bindingPattern::withOverriddenPort)
+                .toList();
+    }
 
-    private ContainerDocumentApi buildDocumentApi(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
+
+    private ContainerDocumentApi buildDocumentApi(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         Element documentApiElement = XML.getChild(spec, "document-api");
         if (documentApiElement == null) return ContainerDocumentApi.createDummyApi(cluster);
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
         return new ContainerDocumentApi(deployState, cluster, documentApiOptions,
-                                        "true".equals(XML.getValue(ignoreUndefinedFields)), Set.of());
+                                        "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride(deployState, context, cluster));
+    }
+
+    private Set<Integer> portBindingOverride(DeployState deployState, ConfigModelContext context, ApplicationContainerCluster cluster) {
+        return isHostedTenantApplication(context)
+                ? getDataplanePorts(deployState, cluster)
+                : Set.of();
     }
 
     private ContainerDocproc buildDocproc(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
@@ -1301,4 +1641,30 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     }
 
+    private static Set<Integer> getDataplanePorts(DeployState ds, ApplicationContainerCluster cluster) {
+        var tokenPort = getTokenDataplanePort(ds, cluster);
+        var mtlsPort = getMtlsDataplanePort(ds, cluster);
+        return tokenPort.isPresent() ? Set.of(mtlsPort, tokenPort.getAsInt()) : Set.of(mtlsPort);
+    }
+
+    private static int getMtlsDataplanePort(DeployState ds, ApplicationContainerCluster cluster) {
+        return enableTokenSupport(ds, cluster) ? 8443 : 4443;
+    }
+
+    private static OptionalInt getTokenDataplanePort(DeployState ds, ApplicationContainerCluster cluster) {
+        return enableTokenSupport(ds, cluster) ? OptionalInt.of(8444) : OptionalInt.empty();
+    }
+
+    private static Set<ContainerEndpoint> tokenEndpoints(DeployState deployState, ApplicationContainerCluster cluster) {
+        return deployState.getEndpoints().stream()
+                .filter(endpoint ->
+                        endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token &&
+                        endpoint.clusterId().equals(cluster.getName()))
+                .collect(Collectors.toSet());
+    }
+
+    private static boolean enableTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
+        Set<ContainerEndpoint> tokenEndpoints = tokenEndpoints(state, cluster);
+        return state.isHosted() && state.zone().system().isPublicCloudLike() && ! tokenEndpoints.isEmpty();
+    }
 }
