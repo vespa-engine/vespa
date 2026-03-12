@@ -11,7 +11,6 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/readable_attribute_vector.h>
 #include <vespa/searchlib/attribute/search_context.h>
@@ -26,6 +25,7 @@
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/searchlib/queryeval/same_element_search.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <algorithm>
@@ -50,6 +50,7 @@ using search::attribute::IAttributeFunctor;
 using search::attribute::ReadableAttributeVector;
 using search::attribute::SearchContext;
 using search::attribute::SearchContextParams;
+using search::attribute::test::MockAttributeManager;
 using search::queryeval::ArrayBoolBlueprint;
 using search::queryeval::ArrayBoolSearch;
 using search::queryeval::Blueprint;
@@ -102,19 +103,22 @@ std::list<std::vector<uint32_t>> all_non_empty_subsets(const std::vector<uint32_
 struct TestAttribute {
     std::shared_ptr<AttributeVector> attr;
     ArrayBoolAttribute*              bool_attr;
+    MockAttributeManager             manager;
 
     TestAttribute()
         : attr(),
-          bool_attr(nullptr) {
+          bool_attr(nullptr),
+          manager() {
         reset(true);
     }
     ~TestAttribute();
-    void reset(bool add_reserved) {
+    void reset(bool add_to_manager) {
         Config cfg(BasicType::BOOL, CollectionType::ARRAY);
         attr = AttributeFactory::createAttribute("array_bool", cfg);
         bool_attr = &dynamic_cast<ArrayBoolAttribute&>(*attr);
-        if (add_reserved) {
-            attr->addReservedDoc();
+        if (add_to_manager) {
+            // The manager adds the reserved doc id
+            manager.addAttribute("bar", attr);
         }
     }
 };
@@ -269,55 +273,9 @@ SameElementGenericSearchBuilder::~SameElementGenericSearchBuilder() = default;
 
 /**
  * SameElementBlueprintSearchBuilder is a convenience class to get a SameElementSearch with whatever a SameElementBlueprint constructs
- * But first, we need an Attribute Manager
  */
-class MyAttributeManager : public IAttributeManager {
-    AttributeVector::SP _attribute_vector;
-
-public:
-    MyAttributeManager(MyAttributeManager && rhs) :
-        IAttributeManager(),
-        _attribute_vector(std::move(rhs._attribute_vector))
-    {
-    }
-
-    MyAttributeManager(AttributeVector::SP attr)
-        : _attribute_vector(std::move(attr))
-    {
-    }
-
-    AttributeGuard::UP getAttribute(std::string_view) const override {
-        return std::make_unique<AttributeGuard>(_attribute_vector);
-    }
-
-    std::unique_ptr<AttributeReadGuard>
-    getAttributeReadGuard(std::string_view, bool stableEnumGuard) const override {
-        if (_attribute_vector) {
-            return _attribute_vector->makeReadGuard(stableEnumGuard);
-        } else {
-            return std::unique_ptr<AttributeReadGuard>();
-        }
-    }
-    void getAttributeList(std::vector<AttributeGuard> &) const override {
-        assert(!"Not implemented");
-    }
-    IAttributeContext::UP createContext() const override {
-        assert(!"Not implemented");
-        return IAttributeContext::UP();
-    }
-
-    void asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override {
-        assert(!"Not implemented");
-    }
-
-    std::shared_ptr<ReadableAttributeVector> readable_attribute_vector(std::string_view) const override {
-        return _attribute_vector;
-    }
-};
-
 class SameElementBlueprintSearchBuilder : public SearchBuilder {
 protected:
-    MyAttributeManager                    _manager;
     AttributeContext                      _attribute_context;
     FakeRequestContext                    _request_context;
     AttributeBlueprintFactory             _factory;
@@ -326,10 +284,9 @@ protected:
 public:
     SameElementBlueprintSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true, bool expose_match_data_for_same_element = true)
         : SearchBuilder(tattr, element_filter, want_true),
-            _manager(_tattr.attr),
-            _attribute_context(_manager),
+            _attribute_context(tattr.manager),
             _request_context(&_attribute_context) {
-        search::query::SimpleStringTerm term(want_true ? "true" : "false", "bar", 1, search::query::Weight(0));
+        search::query::SimpleStringTerm term(want_true ? "true" : "false", _tmd.field_spec2.getName(), _tmd.field_spec2.getFieldId(), search::query::Weight(0));
         std::unique_ptr<Blueprint> child_blueprint = _factory.createBlueprint(_request_context, _tmd.field_spec2, term, *_tmd.mdl);
 
         std::vector<TermFieldHandle> descendant_handles;
