@@ -1,0 +1,70 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model.application.validation.change;
+
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.provision.DataplaneToken;
+import com.yahoo.text.Text;
+import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
+import com.yahoo.vespa.model.container.http.Client;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+/**
+ * Check that data-plan token is not removed from a cluster without a validation override.
+ * Based on {@link CertificateRemovalChangeValidator}.
+ * @author hmusum
+ */
+public class DataplaneTokenRemovalValidator implements ChangeValidator {
+
+    private static final Logger logger = Logger.getLogger(DataplaneTokenRemovalValidator.class.getName());
+
+    @Override
+    public void validate(ChangeContext context) {
+        // Skip for tester applications
+        if (context.previousModel().applicationPackage().getApplicationId().instance().isTester()) return;
+
+        context.previousModel().getContainerClusters()
+                .forEach((clusterId, currentCluster) -> {
+                    if(context.model().getContainerClusters().containsKey(clusterId))
+                        validateClients(clusterId,
+                                        currentCluster.getClients(),
+                                        context.model().getContainerClusters().get(clusterId).getClients(),
+                                        context::invalid);
+                });
+    }
+
+    void validateClients(String clusterId, List<Client> current, List<Client> next, BiConsumer<ValidationId, String> reporter) {
+        List<String> currentTokenIds = current.stream()
+                                              .filter(client -> !client.internal())
+                                              .map(Client::tokens)
+                                              .flatMap(Collection::stream)
+                                              .map(DataplaneToken::tokenId)
+                                              .toList();
+        List<String> nextTokenIds = next.stream()
+                                        .filter(client -> !client.internal())
+                                        .map(Client::tokens)
+                                        .flatMap(Collection::stream)
+                                        .map(DataplaneToken::tokenId)
+                                        .toList();
+
+        logger.log(Level.FINE, Text.format("Tokens for cluster %s: Current: [%s], Next: [%s]", clusterId,
+                           currentTokenIds.stream().collect(Collectors.joining(", ")),
+                           nextTokenIds.stream().collect(Collectors.joining(", "))));
+
+        List<String> missingTokens = currentTokenIds.stream()
+                                                          .filter(token -> !nextTokenIds.contains(token))
+                                                          .toList();
+        if (!missingTokens.isEmpty()) {
+            reporter.accept(ValidationId.dataPlaneTokenEndpointRemoval,
+                            "Data plane token(s) from cluster '" + clusterId + "' is removed " +
+                            "(removed tokens: " + missingTokens.stream().toList() + ") " +
+                            "This can cause client connection issues.");
+        }
+    }
+
+}
