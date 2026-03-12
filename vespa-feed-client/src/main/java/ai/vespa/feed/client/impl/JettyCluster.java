@@ -95,8 +95,10 @@ class JettyCluster implements Cluster {
     public void dispatch(HttpRequest req, CompletableFuture<HttpResponse> vessel) {
         executor.execute(() -> {
             EndpointClient client = findLeastBusyEndpoint(clients);
+            client.inflight.incrementAndGet();
+            // Decrement inflight when vessel completes for any reason (normal, exception, or safety timeout)
+            vessel.whenComplete((__, ___) -> client.inflight.decrementAndGet());
             try {
-                client.inflight.incrementAndGet();
                 long reqTimeoutMillis = req.timeLeft().toMillis();
                 if (reqTimeoutMillis <= 0) {
                     log.log(Level.FINE, () ->
@@ -137,7 +139,6 @@ class JettyCluster implements Cluster {
                                         req, System.identityHashCode(vessel),
                                         result.isFailed()
                                                 ? result.getFailure().toString() : result.getResponse().getStatus()));
-                        client.inflight.decrementAndGet();
                         if (result.isFailed()) {
                             if (result.getFailure() instanceof RetryableRequestException)
                                 // Request can be safely retried as it was cancelled locally
@@ -149,9 +150,13 @@ class JettyCluster implements Cluster {
                         else vessel.complete(new JettyResponse(result.getResponse(), getContent()));
                     }
                 });
+                // Safety net: Jetty 12.0.33 may fail to invoke the response listener callback when a connection
+                // fails during a race between channel acquisition and HTTP/2 stream creation.
+                // The internal request timeout safety net (CyclicTimeouts) may also be destroyed prematurely.
+                // Ensure the vessel always completes within a bounded time.
+                vessel.orTimeout(reqTimeoutMillis + 5_000, MILLISECONDS);
             } catch (Throwable t) {
                 log.log(t instanceof Exception ? Level.FINE : Level.WARNING, "Failed to dispatch request: " + req, t.getMessage());
-                client.inflight.decrementAndGet();
                 vessel.completeExceptionally(t);
             }
         });
