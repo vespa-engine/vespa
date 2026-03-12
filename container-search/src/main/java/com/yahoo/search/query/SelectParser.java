@@ -204,10 +204,13 @@ public class SelectParser implements Parser {
     }
 
     private QueryTree buildTree() {
-        Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getWhereString()).get();
-        if (inspector.field("error_message").valid()) {
-            throw new IllegalInputException("Illegal query: " + inspector.field("error_message").asString() +
-                                            " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
+        Inspector inspector = this.query.getSelect().getWhereInspector();
+        if (inspector == null) {
+            inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getWhereString()).get();
+            if (inspector.field("error_message").valid()) {
+                throw new IllegalInputException("Illegal query: " + inspector.field("error_message").asString() +
+                                                " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
+            }
         }
 
         try {
@@ -244,28 +247,24 @@ public class SelectParser implements Parser {
         return item[0];
     }
 
-    public List<VespaGroupingStep> getGroupingSteps(String grouping){
-        List<VespaGroupingStep> groupingSteps = new ArrayList<>();
-        List<String> groupingOperations = toGroupingRequests(grouping);
-        for (String groupingString : groupingOperations) {
-            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingString);
-            VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
-            groupingSteps.add(groupingStep);
-        }
-        return groupingSteps;
-    }
-
-    /** Translates a list of grouping requests on JSON form to a list in the grouping language form */
-    private List<String> toGroupingRequests(String groupingJson) {
+    public List<VespaGroupingStep> getGroupingSteps(String groupingJson) {
         Inspector inspector = SlimeUtils.jsonToSlime(groupingJson).get();
         if (inspector.field("error_message").valid()) {
             throw new IllegalInputException("Illegal query: " + inspector.field("error_message").asString() +
                                             " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
         }
+        return getGroupingSteps(inspector);
+    }
 
+    List<VespaGroupingStep> getGroupingSteps(Inspector groupingInspector) {
         List<String> operations = new ArrayList<>();
-        inspector.traverse((ArrayTraverser) (__, item) -> operations.add(toGroupingRequest(item)));
-        return operations;
+        groupingInspector.traverse((ArrayTraverser) (__, item) -> operations.add(toGroupingRequest(item)));
+
+        List<VespaGroupingStep> groupingSteps = new ArrayList<>();
+        for (String groupingString : operations) {
+            groupingSteps.add(new VespaGroupingStep(GroupingOperation.fromString(groupingString)));
+        }
+        return groupingSteps;
     }
 
     private String toGroupingRequest(Inspector groupingJson) {

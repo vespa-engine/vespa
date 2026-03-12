@@ -44,14 +44,11 @@ import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.statistics.ElapsedTime;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -229,10 +226,10 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private HttpSearchResponse handleBody(HttpRequest request) {
         long executionStart = System.currentTimeMillis();
-        var bodyMaps = parseRequestBody(request);
-        Map<String, String> requestMap = bodyMaps.stringMap();
+        var parsed = parseRequestBody(request);
+        Map<String, String> requestMap = parsed.stringMap();
         requestMap.putAll(request.propertyMap());
-        validateRequestMap(requestMap);
+        validateRequestMap(requestMap, parsed.inspectorMap());
 
         // Get query profile
         String queryProfileName = requestMap.getOrDefault("queryProfile", null);
@@ -247,11 +244,9 @@ public class SearchHandler extends LoggingRequestHandler {
                                          .build();
         query.getHttpRequest().context().put("search.handlerStartTime", executionStart);
 
-        // Set structured tensor input values directly (CBOR path only, avoids string conversion)
-        if (bodyMaps.inspectorMap() != null) {
-            for (var entry : bodyMaps.inspectorMap().entrySet()) {
-                query.properties().set(CompoundName.from(entry.getKey()), entry.getValue(), requestMap);
-            }
+        // Set structured values directly as Inspector (avoids string round-trip for tensors, select, etc.)
+        for (var entry : parsed.inspectorMap().entrySet()) {
+            query.properties().set(CompoundName.from(entry.getKey()), entry.getValue(), requestMap);
         }
 
         // If format not explicitly set, use Accept header to determine response format
@@ -538,7 +533,7 @@ public class SearchHandler extends LoggingRequestHandler {
         try {
             var acceptMatcher = new AcceptHeaderMatcher(acceptHeader);
             var preferred = acceptMatcher.preferredExactMediaTypes(CBOR_CONTENT_TYPE, JSON_CONTENT_TYPE);
-            if (!preferred.isEmpty() && CBOR_CONTENT_TYPE.equals(preferred.getFirst())) {
+            if (!preferred.isEmpty() && CBOR_CONTENT_TYPE.equals(preferred.get(0))) {
                 query.getPresentation().setFormat("cbor");
             }
         } catch (IllegalArgumentException e) {
@@ -546,38 +541,49 @@ public class SearchHandler extends LoggingRequestHandler {
         }
     }
 
-    private record BodyMaps(Map<String, String> stringMap, Map<String, Inspector> inspectorMap) { }
-
     /** Parse properties POSTed as a JSON or CBOR payload, if any */
-    private BodyMaps parseRequestBody(HttpRequest request) {
+    private RequestBodyParser parseRequestBody(HttpRequest request) {
         if (request.getMethod() != com.yahoo.jdisc.http.HttpRequest.Method.POST)
-            return new BodyMaps(new HashMap<>(), null);
+            return RequestBodyParser.empty();
 
         String mediaType = getMediaType(request);
-        if (JSON_CONTENT_TYPE.equals(mediaType)) {
-            return new BodyMaps(new Json2SingleLevelMap(request.getData()).parse(), null);
-        } else if (CBOR_CONTENT_TYPE.equals(mediaType)) {
-            var cbor = new Cbor2Maps(request.getData());
-            return new BodyMaps(cbor.stringMap(), cbor.inspectorMap());
-        } else {
-            return new BodyMaps(new HashMap<>(), null);
-        }
+        if (JSON_CONTENT_TYPE.equals(mediaType))
+            return RequestBodyParser.parseJson(request.getData());
+        else if (CBOR_CONTENT_TYPE.equals(mediaType))
+            return RequestBodyParser.parseCbor(request.getData());
+        else
+            return RequestBodyParser.empty();
     }
 
-    private static void validateRequestMap(Map<String, String> requestMap) {
-        if (requestMap.containsKey("yql") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
+    private static void validateRequestMap(Map<String, String> requestMap, Map<String, Inspector> inspectorMap) {
+        boolean hasSelect = requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")
+                            || inspectorMap.containsKey("select.where") || inspectorMap.containsKey("select.grouping");
+        if (hasSelect && requestMap.containsKey("yql"))
             throw new IllegalInputException("Illegal query: Query contains both yql and select parameter");
-        if (requestMap.containsKey("query") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
+        if (hasSelect && requestMap.containsKey("query"))
             throw new IllegalInputException("Illegal query: Query contains both query and select parameter");
     }
 
     @Deprecated // TODO: Remove on Vespa 9
     public void createRequestMapping(Inspector inspector, Map<String, String> map, String parent) {
-        try {
-            new Json2SingleLevelMap(new ByteArrayInputStream(inspector.toString().getBytes(StandardCharsets.UTF_8))).parse(map, parent);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed creating request mapping for parent '" + parent + "'", e);
-        }
+        inspector.traverse((com.yahoo.slime.ObjectTraverser) (key, value) -> {
+            String qualifiedKey = parent + key;
+            switch (value.type()) {
+                case STRING -> map.put(qualifiedKey, value.asString());
+                case LONG -> map.put(qualifiedKey, Long.toString(value.asLong()));
+                case DOUBLE -> map.put(qualifiedKey, Double.toString(value.asDouble()));
+                case BOOL -> map.put(qualifiedKey, Boolean.toString(value.asBool()));
+                case NIX -> map.put(qualifiedKey, "null");
+                case ARRAY -> map.put(qualifiedKey, SlimeUtils.toJson(value));
+                case OBJECT -> {
+                    if (qualifiedKey.startsWith("input.") || qualifiedKey.equals("select.where") || qualifiedKey.equals("select.grouping"))
+                        map.put(qualifiedKey, SlimeUtils.toJson(value));
+                    else
+                        createRequestMapping(value, map, qualifiedKey + ".");
+                }
+                default -> map.put(qualifiedKey, SlimeUtils.toJson(value));
+            }
+        });
     }
 
     @Override

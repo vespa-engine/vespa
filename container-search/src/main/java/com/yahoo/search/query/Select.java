@@ -8,6 +8,7 @@ import com.yahoo.search.query.parser.ParserFactory;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.yql.VespaGroupingStep;
+import com.yahoo.slime.Inspector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,8 @@ public class Select implements Cloneable {
     private String where;
     private String grouping;
     private String groupingExpressionString;
+    private Inspector whereInspector;
+    private Inspector groupingInspector;
 
     static {
         argumentType = new QueryProfileType(SELECT);
@@ -70,34 +73,54 @@ public class Select implements Cloneable {
         return copy;
     }
 
+    /** Sets the where clause as a JSON string. */
+    public void setWhereString(String where) { setWhere(where); }
+
     /**
      * Sets the document selection criterion of the query.
      *
-     * @param where the documents to select as a JSON string on the format specified in
-     *        <a href="https://docs.vespa.ai/en/reference/querying/json-query-language.html">the select reference doc</a>
+     * @param value the where clause, either a JSON string or a pre-parsed {@link Inspector}
      */
-    public void setWhereString(String where) {
-        this.where = where;
+    public void setWhere(Object value) {
+        if (value instanceof Inspector inspector) {
+            this.whereInspector = inspector;
+            this.where = "";
+        } else {
+            this.whereInspector = null;
+            this.where = value == null ? "" : value.toString();
+        }
         parent.getModel().setType(SELECT);
-
-        // This replaces the current query
         parent.getModel().clearQueryTree();
     }
 
     /** Returns the where clause string previously assigned, or an empty string if none */
     public String getWhereString() { return where; }
 
+    /** Returns the pre-parsed where Inspector, or null if set as string */
+    Inspector getWhereInspector() { return whereInspector; }
+
+    /** Sets the grouping as a JSON string. */
+    public void setGroupingString(String grouping) { setGrouping(grouping); }
+
     /**
      * Sets the grouping operation of the query.
      *
-     * @param grouping the grouping to perform as a JSON string on the format specified in
-     *        <a href="https://docs.vespa.ai/en/reference/querying/json-query-language.html">the select reference doc</a>
+     * @param value the grouping, either a JSON string or a pre-parsed {@link Inspector}
      */
-    public void setGroupingString(String grouping) {
+    public void setGrouping(Object value) {
         groupingRequests.clear();
-        this.grouping = grouping;
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
-        for (VespaGroupingStep step : parser.getGroupingSteps(grouping)) {
+        List<VespaGroupingStep> steps;
+        if (value instanceof Inspector inspector) {
+            this.groupingInspector = inspector;
+            this.grouping = "";
+            steps = parser.getGroupingSteps(inspector);
+        } else {
+            this.groupingInspector = null;
+            this.grouping = value == null ? "" : value.toString();
+            steps = parser.getGroupingSteps(this.grouping);
+        }
+        for (VespaGroupingStep step : steps) {
             GroupingRequest.newInstance(parent)
                     .setRootOperation(step.getOperation())
                     .continuations().addAll(step.continuations());
