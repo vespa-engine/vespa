@@ -7,7 +7,6 @@
 #include "flow_tuning.h"
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <sstream>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.queryeval.array_bool_blueprint");
@@ -44,18 +43,7 @@ std::unique_ptr<SearchIterator> ArrayBoolBlueprint::createFilterSearchImpl(Filte
 
 void ArrayBoolBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const {
     SimpleLeafBlueprint::visitMembers(visitor);
-    std::stringstream ss;
-    ss << "[";
-    bool first = true;
-    for (uint32_t element : _element_filter) {
-        if (!first) {
-            ss << ",";
-        }
-        first = false;
-        ss << element;
-    }
-    ss << "]";
-    visitor.visitString("element_filter", ss.str());
+    visitor.visitInt("element_filter.size", _element_filter.size());
     visitor.visitBool("want_true", _want_true);
 }
 
