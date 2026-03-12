@@ -13,6 +13,7 @@ import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.DebugWaitFunctionNode;
 import com.yahoo.searchlib.expression.DivideFunctionNode;
 import com.yahoo.searchlib.expression.DocumentFieldNode;
+import com.yahoo.searchlib.expression.PositionDocumentFieldNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FixedWidthBucketFunctionNode;
 import com.yahoo.searchlib.expression.FloatBucketResultNode;
@@ -189,6 +190,7 @@ public class GroupingSerializationTest {
                     new ConstantNode(new FloatResultNode(63.0)),
                     new ConstantNode(new FloatResultNode(10.0)),
                     GeoDistanceFunctionNode.Unit.MILES));
+            t.assertMatch(new PositionDocumentFieldNode("mypos"));
         }
 
     }

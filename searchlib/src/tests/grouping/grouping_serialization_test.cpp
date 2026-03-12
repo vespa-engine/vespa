@@ -9,6 +9,7 @@
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
+#include <vespa/searchlib/expression/position_document_field_node.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
@@ -219,6 +220,7 @@ TEST(GroupingSerializationTest, testFunctionNodes) {
                 .addArg(MU<AttributeNode>("pos"))
                 .addArg(MU<ConstantNode>(MU<FloatResultNode>(63.0)))
                 .addArg(MU<ConstantNode>(MU<FloatResultNode>(10.0))));
+    f.checkObject(PositionDocumentFieldNode("mypos"));
 }
 
 TEST(GroupingSerializationTest, testAggregatorResults) {
