@@ -16,6 +16,7 @@ import static java.util.logging.Level.WARNING;
  * This includes the limits used by the cluster controller and the content nodes (proton).
  *
  * @author Geir Storli
+ * @author hmusum
  */
 public class ClusterResourceLimits {
 
@@ -109,9 +110,9 @@ public class ClusterResourceLimits {
             deriveClusterControllerLimit(ctrlBuilder.getMemoryLimit(), nodeBuilder.getMemoryLimit(), ctrlBuilder::setMemoryLimit);
             deriveClusterControllerLimit(ctrlBuilder.getAddressSpaceLimit(), nodeBuilder.getAddressSpaceLimit(), ctrlBuilder::setAddressSpaceLimit);
 
-            deriveContentNodeLimit(nodeBuilder.getDiskLimit(), ctrlBuilder.getDiskLimit(), 0.6, nodeBuilder::setDiskLimit);
-            deriveContentNodeLimit(nodeBuilder.getMemoryLimit(), ctrlBuilder.getMemoryLimit(), 0.5, nodeBuilder::setMemoryLimit);
-            deriveContentNodeLimit(nodeBuilder.getAddressSpaceLimit(), ctrlBuilder.getAddressSpaceLimit(), 0.5, nodeBuilder::setAddressSpaceLimit);
+            deriveContentNodeLimit(nodeBuilder.getDiskLimit(), ctrlBuilder.getDiskLimit(), nodeBuilder::setDiskLimit);
+            deriveContentNodeLimit(nodeBuilder.getMemoryLimit(), ctrlBuilder.getMemoryLimit(), nodeBuilder::setMemoryLimit);
+            deriveContentNodeLimit(nodeBuilder.getAddressSpaceLimit(), ctrlBuilder.getAddressSpaceLimit(), nodeBuilder::setAddressSpaceLimit);
         }
 
         private void considerSettingDefaultClusterControllerLimit(Optional<Double> clusterControllerLimit,
@@ -135,15 +136,18 @@ public class ClusterResourceLimits {
 
         private void deriveContentNodeLimit(Optional<Double> contentNodeLimit,
                                             Optional<Double> clusterControllerLimit,
-                                            double scaleFactor,
                                             Consumer<Double> setter) {
             if (contentNodeLimit.isEmpty()) {
                 clusterControllerLimit.ifPresent(limit ->
-                        setter.accept(calcContentNodeLimit(limit, scaleFactor)));
+                        setter.accept(calcContentNodeLimit(limit)));
             }
         }
 
-        private double calcContentNodeLimit(double clusterControllerLimit, double scaleFactor) {
+        private double calcContentNodeLimit(double clusterControllerLimit) {
+            // Scale factor used to calculate limit for content node based on limit for
+            // cluster controller. 0.5 will give a content node limit that is halfway between
+            // cluster controller limit and 1.0 (e.g. 0.8 => 0.9)
+            double scaleFactor = 0.5;
             return clusterControllerLimit + ((1.0 - clusterControllerLimit) * scaleFactor);
         }
 

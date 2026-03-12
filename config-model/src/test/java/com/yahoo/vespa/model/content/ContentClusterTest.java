@@ -1668,7 +1668,7 @@ public class ContentClusterTest extends ContentBaseTest {
         // Resource limits for content cluster should be changed based on new values above
         var protonConfigBuilder = new ProtonConfig.Builder();
         model.getConfig(protonConfigBuilder, "foo/search/cluster.foo");
-        assertEquals(0.864, protonConfigBuilder.build().writefilter().disklimit(), 0.001);
+        assertEquals(0.83, protonConfigBuilder.build().writefilter().disklimit(), 0.001);
         assertEquals(0.875, protonConfigBuilder.build().writefilter().memorylimit(), 0.001);
 
         // Resource limits for content nodes should be changed based on new values above
@@ -1677,7 +1677,7 @@ public class ContentClusterTest extends ContentBaseTest {
         contentCluster.getSearch().getSearchNodes().get(0).getConfig(protonConfigBuilder2);
         var config2 = protonConfigBuilder2.build();
         assertEquals(0, config2.distributionkey());
-        assertEquals(0.864, config2.writefilter().disklimit(), 0.001);
+        assertEquals(0.83, config2.writefilter().disklimit(), 0.001);
         assertEquals(0.875, config2.writefilter().memorylimit(), 0.001);
     }
 
