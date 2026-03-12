@@ -6,9 +6,10 @@ import java.util.Optional;
 /**
  * Represents service response from /state/v1/config collected by configserver from services.
  *
+ * @param serviceName
  * @param currentGeneration is a config generation currently used by the service.
- * @param applyOnRestart indicates that a service received a new config and is waiting to apply it on restart. 
+ * @param applyOnRestart indicates that a service received a new config and is waiting to apply it on restart.
  *                       Empty if a service does not support apply on restart.
  * @author glebashnik
  */
-public record ServiceConfigState(long currentGeneration, Optional<Boolean> applyOnRestart) {}
+public record ServiceConfigState(String serviceName, long currentGeneration, Optional<Boolean> applyOnRestart) {}

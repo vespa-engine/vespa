@@ -36,12 +36,14 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
 
     private final LanguageModelFieldGeneratorConfig config;
     private final String promptTemplate;
-    
+    private final String responseJsonSchema;
+
     @Inject
     public LanguageModelFieldGenerator(LanguageModelFieldGeneratorConfig config, ComponentRegistry<LanguageModel> languageModels) {
         this.languageModel = LanguageModelUtils.findLanguageModel(config.providerId(), languageModels, logger);
         this.config = config;
         this.promptTemplate = loadPromptTemplate(config);
+        this.responseJsonSchema = config.responseJsonSchema().isEmpty() ? null : config.responseJsonSchema();
     }
 
     private String loadPromptTemplate(LanguageModelFieldGeneratorConfig config) {
@@ -79,7 +81,9 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
         String jsonSchema = null;
         
         if (config.responseFormatType() == LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
-            jsonSchema = FieldGeneratorUtils.generateJsonSchemaForField(destination, targetType);
+            jsonSchema = (responseJsonSchema != null)
+                    ? responseJsonSchema
+                    : FieldGeneratorUtils.generateJsonSchemaForField(destination, targetType);
             options.put(InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema);
         }
         

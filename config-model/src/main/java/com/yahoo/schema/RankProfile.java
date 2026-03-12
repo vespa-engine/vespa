@@ -1690,32 +1690,33 @@ public class RankProfile implements Cloneable {
 
         private String attribute = null;
         private boolean ascending = false;
-        private int maxHits = 0; // try to get this many hits before degrading the match phase
+        private Optional<Long> maxHits = Optional.empty(); // try to get this many hits on each node before degrading the match phase
+        private Optional<Long> totalMaxHits = Optional.empty(); // try to get this many hits across all nodes before degrading the match phase
         private double maxFilterCoverage = 0.2; // Max coverage of original corpus that will trigger the filter.
         private double evaluationPoint = 0.20;
         private double prePostFilterTippingPoint = 1.0;
 
         public void setAscending(boolean value) { ascending = value; }
         public void setAttribute(String value) { attribute = value; }
-        public void setMaxHits(int value) { maxHits = value; }
+        public void setMaxHits(long value) { maxHits = Optional.of(value); }
+        public void setTotalMaxHits(long value) { totalMaxHits = Optional.of(value); }
         public void setMaxFilterCoverage(double value) { maxFilterCoverage = value; }
         public void setEvaluationPoint(double evaluationPoint) { this.evaluationPoint = evaluationPoint; }
         public void setPrePostFilterTippingPoint(double prePostFilterTippingPoint) { this.prePostFilterTippingPoint = prePostFilterTippingPoint; }
 
         public boolean                getAscending() { return ascending; }
         public String                 getAttribute() { return attribute; }
-        public int                      getMaxHits() { return maxHits; }
+        public Optional<Long>        getMaxHits() { return maxHits; }
+        public Optional<Long>   getTotalMaxHits() { return totalMaxHits; }
         public double         getMaxFilterCoverage() { return maxFilterCoverage; }
         public double           getEvaluationPoint() { return evaluationPoint; }
         public double getPrePostFilterTippingPoint() { return prePostFilterTippingPoint; }
 
         public void checkValid() {
-            if (attribute == null) {
-                throw new IllegalArgumentException("match-phase did not set any attribute");
-            }
-            if (! (maxHits > 0)) {
-                throw new IllegalArgumentException("match-phase did not set max-hits > 0");
-            }
+            if (attribute == null)
+                throw new IllegalArgumentException("match-phase must specify an attribute");
+            if (maxHits.isEmpty() && totalMaxHits.isEmpty())
+                throw new IllegalArgumentException("match-phase must contain max-hits or total-max-hits");
         }
 
     }
@@ -1933,11 +1934,6 @@ public class RankProfile implements Cloneable {
                 throw new IllegalArgumentException("Cannot use " + normalizer.original() + " from " + where + ", only valid in global-phase expression");
             }
         }
-    }
-
-    private OptionalInt asOptionalInt(Optional<Integer> v) {
-        if (v.isEmpty()) return OptionalInt.empty();
-        return OptionalInt.of(v.get());
     }
 
 }

@@ -3,13 +3,13 @@
 
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include "match_span.h"
 #include "multisearch.h"
 #include <optional>
 
 namespace search::queryeval {
 
 class IElementGapInspector;
-class MatchSpan;
 
 /**
  * The near search base implements the common logic of the near and o-near search.
@@ -22,6 +22,8 @@ protected:
     uint32_t _num_negative_terms;
     uint32_t _exclusion_distance;
     bool     _strict;
+    std::vector<MatchSpan> _match_spans;
+    uint32_t               _unpacked_docid;
 
     using TermFieldMatchDataArray = search::fef::TermFieldMatchDataArray;
 
@@ -59,6 +61,7 @@ protected:
             }
         }
         void hide_positive_terms_from_ranking();
+        void filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans);
     };
 
     /**
@@ -81,6 +84,8 @@ protected:
      */
     virtual void hide_positive_terms_from_ranking() = 0;
 
+    virtual void filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans) = 0;
+
     /**
      * Performs seek() on all child terms until a match is found. This method calls setDocId() to signal the
      * document found.
@@ -88,6 +93,9 @@ protected:
      * @param docId The document id from which to start seeking.
      */
     void seekNext(uint32_t docId);
+
+    void doUnpack(uint32_t docid) override;
+    void initRange(uint32_t begin, uint32_t end) override;
 
 public:
     /**
@@ -106,6 +114,7 @@ public:
                    uint32_t num_negative_terms,
                    uint32_t exclusion_distance,
                    bool strict);
+    ~NearSearchBase() override;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void doSeek(uint32_t docId) override;
@@ -130,6 +139,7 @@ private:
     std::vector<Matcher> _matchers;
     bool match(uint32_t docId) override;
     void hide_positive_terms_from_ranking() override;
+    void filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans) override;;
 
 public:
     /**
@@ -192,6 +202,7 @@ private:
     std::vector<Matcher> _matchers;
     bool match(uint32_t docId) override;
     void hide_positive_terms_from_ranking() override;
+    void filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans) override;
 
 public:
     /**

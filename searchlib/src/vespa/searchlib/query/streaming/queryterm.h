@@ -112,9 +112,17 @@ public:
     virtual const SameElementQueryNode* as_same_element_query_node() const noexcept;
     void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
                            search::common::ElementIds element_ids) override;
+    void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
+                           std::span<const queryeval::MatchSpan> match_spans) override;
     virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
                                    const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids);
+    virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                   const fef::IIndexEnvironment& index_env, std::span<const queryeval::MatchSpan> match_spans);
 protected:
+    template <typename HitListType, typename MatchDataFilter>
+    static void unpack_filtered_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                          const HitListType& hit_list, const QueryTerm& fl_term, bool term_filter,
+                                          const fef::IIndexEnvironment& index_env, MatchDataFilter match_data_filter);
     template <typename HitListType>
     static void unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
                                          const HitListType& hit_list, const QueryTerm& fl_term, bool term_filter,

@@ -34,7 +34,7 @@ private:
     bool check(const ResultNode* result) const;
 public:
     RegexPredicateNode() noexcept;
-    ~RegexPredicateNode();
+    ~RegexPredicateNode() override;
     RegexPredicateNode* clone() const override { return new RegexPredicateNode(*this); }
 
     // for unit testing::
