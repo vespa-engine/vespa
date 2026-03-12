@@ -20,29 +20,19 @@ namespace search::queryeval {
  * as it does the same things but faster.
  */
 class ArrayBoolSearch : public SearchIterator {
+protected:
     using ArrayBoolAttribute = search::attribute::ArrayBoolAttribute;
 
     const ArrayBoolAttribute&    _attr;
     const std::vector<uint32_t>& _element_filter;
-    bool                         _want_true;
-    bool                         _strict;
     fef::TermFieldMatchData*     _tfmd;
 
-public:
-    // Use the create(...) method instead.
     ArrayBoolSearch(const ArrayBoolAttribute& attr,
                     const std::vector<uint32_t>& element_filter,
-                    bool want_true,
-                    bool strict,
                     fef::TermFieldMatchData* tfmd);
-    void doSeek(uint32_t docid) override;
-    void doUnpack(uint32_t docid) override;
-    Trinary is_strict() const override;
 
-    bool check_array(uint32_t docid) const;
-    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
-
-    bool want_true() const { return _want_true; }
+public:
+    virtual bool get_want_true() const = 0;
     const std::vector<uint32_t>& get_element_filter() const { return _element_filter; }
     const ArrayBoolAttribute& get_attribute() const { return _attr; }
 

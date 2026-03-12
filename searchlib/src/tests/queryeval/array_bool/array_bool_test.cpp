@@ -504,7 +504,7 @@ TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_creates_array_bool
             auto only_child = children[0].get();
             auto abs = dynamic_cast<ArrayBoolSearch*>(only_child);
             ASSERT_TRUE(abs);
-            EXPECT_EQ(abs->want_true(), want_true);
+            EXPECT_EQ(abs->get_want_true(), want_true);
             EXPECT_TRUE(abs->is_strict() == (strict ? vespalib::Trinary::True : vespalib::Trinary::False));
             EXPECT_TRUE(std::equal(element_filter.begin(), element_filter.begin() + element_filter.size(), abs->get_element_filter().begin()));
             EXPECT_EQ(test_attribute.bool_attr, &abs->get_attribute());
@@ -525,7 +525,7 @@ TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_replacement_create
 
             auto abs = dynamic_cast<ArrayBoolSearch*>(search.get());
             ASSERT_TRUE(abs);
-            EXPECT_EQ(abs->want_true(), want_true);
+            EXPECT_EQ(abs->get_want_true(), want_true);
             EXPECT_TRUE(abs->is_strict() == (strict ? vespalib::Trinary::True : vespalib::Trinary::False));
             EXPECT_TRUE(std::equal(element_filter.begin(), element_filter.begin() + element_filter.size(), abs->get_element_filter().begin()));
             EXPECT_EQ(test_attribute.bool_attr, &abs->get_attribute());
