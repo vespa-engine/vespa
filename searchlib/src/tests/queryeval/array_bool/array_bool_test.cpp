@@ -568,7 +568,7 @@ TEST(ArrayBoolSearchTest, require_that_blueprint_hit_estimate_yields_correct_num
  **********************************************************************************************************************/
 
 /**
- * Test fixture
+ * Test fixture that contains an ArrayBoolAttribute with a few arrays
  **/
 template<typename B>
 class ArrayBoolSearchTest : public ::testing::Test {
@@ -577,20 +577,11 @@ protected:
 
     ArrayBoolSearchTest();
     ~ArrayBoolSearchTest() override;
-    void add_docs();
 };
 
 template<typename B>
 ArrayBoolSearchTest<B>::ArrayBoolSearchTest()
     : _test_attribute() {
-    add_docs();
-}
-
-template<typename B>
-ArrayBoolSearchTest<B>::~ArrayBoolSearchTest() = default;
-
-template<typename B>
-void ArrayBoolSearchTest<B>::add_docs() {
     _test_attribute.attr->addDocs(5);
     std::vector<int8_t> vals1 = {0, 1, 0};
     _test_attribute.bool_attr->set_bools(1, vals1);
@@ -602,6 +593,9 @@ void ArrayBoolSearchTest<B>::add_docs() {
     _test_attribute.bool_attr->set_bools(4, vals4);
     _test_attribute.attr->commit();
 }
+
+template<typename B>
+ArrayBoolSearchTest<B>::~ArrayBoolSearchTest() = default;
 
 using Builders = ::testing::Types<ArrayBoolSearchBuilder,
                                   ArrayBoolBlueprintSearchBuilder,
