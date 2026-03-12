@@ -959,62 +959,48 @@ template<typename B>
 Verifier<B>::Verifier(size_t array_length, const std::vector<uint32_t>& element_filter, bool want_true)
     : _test_attribute(),
       _builder(_test_attribute.bool_attr, _test_attribute.attr, element_filter, want_true) {
-    _test_attribute.attr->addDocs(getDocIdLimit());
-
+    assert(!element_filter.empty());
     size_t element_filter_index = 0;
+
     auto expected_docids = getExpectedDocIds();
     size_t index = 0;
+
+    _test_attribute.attr->addDocs(getDocIdLimit());
     for (uint32_t docid = 0; docid < getDocIdLimit(); docid++) {
         if (index < expected_docids.size() && expected_docids[index] == docid) {
             ++index;
             // This docid must match
-            // Add an array for this docid that produces a match
-            std::vector<int8_t> array;
-            array.reserve(array_length);
-
-            // Set one element of the array to want_true, the other to !want_true
+            // Set one element from element_filter to want_true, the others to !want_true
             // This element is determined by element_filter_index
-            uint32_t true_element = element_filter_index < element_filter.size()
-                                    ? element_filter[element_filter_index]
-                                    : 0;
-            element_filter_index = (element_filter_index + 1) % element_filter.size();
-            for (size_t i = 0; i < array_length; i++) {
-                if (i == true_element) {
-                    array.push_back(want_true ? 1 : 0);
+            uint32_t element_id = element_filter[element_filter_index++];
+            element_filter_index = element_filter_index % element_filter.size();
 
-                    // Cut off some of the arrays
-                    if (docid % 2 == 0) {
-                        break;
-                    }
-                } else {
-                    array.push_back(want_true ? 0 : 1);
-                }
+            std::vector<int8_t> match_array(array_length, !want_true);
+            match_array[element_id] = want_true;
+
+            // Cut off some of the arrays
+            if (docid % 2 == 0) {
+                match_array.resize(element_id + 1);
             }
-            _test_attribute.bool_attr->set_bools(docid, array);
+            _test_attribute.bool_attr->set_bools(docid, match_array);
 
         } else {
             // This docid must not match
-            // Add an array that does not match for some of these docids
+            // Set all but the elements in element_filter to want_true
+            std::vector<int8_t> no_match_array(array_length, want_true);
+            for (uint32_t element_id : element_filter) {
+                no_match_array[element_id] = !want_true;
+            }
+
+            // Do not add array for some of the elements. This is another way of producing no match.
             if (docid % 2 == 0) {
-                std::vector<int8_t> array;
-                array.reserve(array_length);
 
-                // Set all but the elements in element_filter to want_true
-                size_t another_element_filter_index = 0;
-                for (size_t i = 0; i < array_length; i++) {
-                    if (another_element_filter_index < element_filter.size() && element_filter[another_element_filter_index] == i) {
-                        ++another_element_filter_index;
-                        array.push_back(want_true ? 0 : 1);
-
-                        // Cut off some of the arrays
-                        if (docid % 8 == 0) {
-                            break;
-                        }
-                    } else {
-                        array.push_back(want_true ? 1 : 0);
-                    }
+                // Cut off some of the arrays
+                if (docid % 8 == 0) {
+                    no_match_array.resize(element_filter[0] + 1);
                 }
-                _test_attribute.bool_attr->set_bools(docid, array);
+
+                _test_attribute.bool_attr->set_bools(docid, no_match_array);
             }
         }
     }
