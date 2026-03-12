@@ -21,7 +21,6 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
-#include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/searchlib/queryeval/same_element_search.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
