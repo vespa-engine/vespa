@@ -5,11 +5,8 @@
 #include <vespa/searchlib/queryeval/near_search_flags.h>
 #include <vespa/searchlib/queryeval/near_search_utils.h>
 #include <vespa/vespalib/objects/visit.hpp>
-#include <algorithm>
-#include <limits>
 
 using search::queryeval::MatchSpan;
-using search::queryeval::MatchSpanPos;
 using search::queryeval::NearSearchFlags;
 using search::queryeval::near_search_utils::BoolMatchResult;
 using search::queryeval::near_search_utils::ElementIdMatchResult;
