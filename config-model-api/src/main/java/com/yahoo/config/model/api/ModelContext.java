@@ -148,7 +148,7 @@ public interface ModelContext {
 
         default List<TenantSecretStore> tenantSecretStores() { return List.of(); }
 
-        // Default setting for the gc-options attribute if not specified explicitly by application
+        @Deprecated(forRemoval = true, since = "8.659") // Remove after '8.659' is gone
         default String jvmGCOptions() { return jvmGCOptions(Optional.empty()); }
 
         // Default setting for the gc-options attribute if not specified explicitly by application
