@@ -30,33 +30,10 @@ import java.util.Optional;
 // TODO: refactor
 public class VespaSearchChainsCreator {
 
-    private static class PhasesCreator {
-
-        private static Set<String> set(String successor) {
-            return successor == null ? null : new LinkedHashSet<>(List.of(successor));
-        }
-
-        private static String lastElement(String[] phases) {
-            return phases[phases.length - 1];
-        }
-
-        private static Phase createPhase(String phase, String before) {
-            return new Phase(phase, set(before), null);
-        }
-
-        static Collection<Phase> linearPhases(String... phases) {
-            List<Phase> result = new ArrayList<>();
-
-            for (int i=0; i < phases.length - 1; ++i) {
-                result.add(createPhase(phases[i], phases[i+1]));
-            }
-
-            if (phases.length > 0) {
-                result.add(createPhase(lastElement(phases), null));
-            }
-
-            return result;
-        }
+    public static void addVespaSearchChains(SearchChains searchChains) {
+        searchChains.add(createVespaPhases());
+        searchChains.add(createNative());
+        searchChains.add(createVespa());
     }
 
     private static Set<ComponentSpecification> noSearcherReferences() {
@@ -133,10 +110,33 @@ public class VespaSearchChainsCreator {
         return vespaChain;
     }
 
-    public static void addVespaSearchChains(SearchChains searchChains) {
-        searchChains.add(createVespaPhases());
-        searchChains.add(createNative());
-        searchChains.add(createVespa());
+    private static class PhasesCreator {
+
+        private static Set<String> set(String successor) {
+            return successor == null ? null : new LinkedHashSet<>(List.of(successor));
+        }
+
+        private static String lastElement(String[] phases) {
+            return phases[phases.length - 1];
+        }
+
+        private static Phase createPhase(String phase, String before) {
+            return new Phase(phase, set(before), null);
+        }
+
+        static Collection<Phase> linearPhases(String... phases) {
+            List<Phase> result = new ArrayList<>();
+
+            for (int i=0; i < phases.length - 1; ++i) {
+                result.add(createPhase(phases[i], phases[i+1]));
+            }
+
+            if (phases.length > 0) {
+                result.add(createPhase(lastElement(phases), null));
+            }
+
+            return result;
+        }
     }
 
 }
