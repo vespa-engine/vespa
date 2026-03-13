@@ -1457,10 +1457,12 @@ public class SelectParser implements Parser {
         return sameElement;
     }
 
+    private static final Set<String> OPERATOR_KEYS =
+            Set.of(AND, AND_NOT, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE);
+
     /** Checks if key is operator keyword or function call keyword. */
     private boolean isOperator(String key) {
-        return Set.of(AND, AND_NOT, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE).contains(key)
-                || FUNCTION_CALLS.contains(key);
+        return OPERATOR_KEYS.contains(key) || FUNCTION_CALLS.contains(key);
     }
 
     private Item instantiatePhraseItem(String field, String key, Inspector value) {
