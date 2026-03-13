@@ -209,7 +209,7 @@ public abstract class VespaBackend {
                     summaryClass = null;
                 Optional<String> summaryError = validateSummaryClass(summaryClass, r.getQuery());
                 if (summaryError.isPresent()) {
-                    r.hits().addError(ErrorMessage.createInvalidQueryParameter(summaryError.get()));
+                    result.hits().addError(ErrorMessage.createInvalidQueryParameter(summaryError.get()));
                 }
                 else {
                     doPartialFill(r, summaryClass);
