@@ -364,7 +364,7 @@ public class SearchHandler extends LoggingRequestHandler {
         ensureQuerySet(result, query);
 
         // StatisticsSearcher does fill, so we can skip the fill here for performance if it is the first in the chain
-        if ( ! searchChain.components().isEmpty() && searchChain.components().get(0) instanceof StatisticsSearcher)
+        if ( ! searchChain.components().isEmpty() && ! (searchChain.components().get(0) instanceof StatisticsSearcher))
             execution.fill(result);
 
         traceExecutionTimes(query, result);
