@@ -18,28 +18,36 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public record CustomerOtelExportParameters(
-        @JsonProperty("metrics") CustomerMetricsExporter metrics,
-        @JsonProperty("logs")    CustomerLogsExporter logs) {
+        @JsonProperty("metrics")        CustomerMetricsExporter metrics,
+        @JsonProperty("logs")           CustomerLogsExporter logs,
+        @JsonProperty("memoryLimitMiB") Integer memoryLimitMiB) {
+
+    private static final int DEFAULT_MEMORY_LIMIT_MIB = 550;
 
     @JsonCreator
-    public CustomerOtelExportParameters {}
+    public CustomerOtelExportParameters {
+        memoryLimitMiB = memoryLimitMiB != null ? memoryLimitMiB : DEFAULT_MEMORY_LIMIT_MIB;
+    }
 
     public boolean hasMetricsExporter() { return metrics != null; }
     public boolean hasLogsExporter()   { return logs != null; }
 
     /**
-     * Customer metric pipeline config. Always uses otlphttp in MVP.
+     * Customer metric pipeline config.
+     * exporterType selects the Alloy exporter component: otlphttp (default) or otlp (gRPC).
      * metricSet defaults to "Vespa9".
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public record CustomerMetricsExporter(
-            @JsonProperty("endpoint")  String endpoint,
-            @JsonProperty("metricSet") String metricSet) {
+            @JsonProperty("exporterType") CustomerExporterConfig.ExporterType exporterType,
+            @JsonProperty("endpoint")     String endpoint,
+            @JsonProperty("metricSet")    String metricSet) {
 
         @JsonCreator
         public CustomerMetricsExporter {
-            metricSet = metricSet != null ? metricSet : "Vespa9";
+            exporterType = exporterType != null ? exporterType : CustomerExporterConfig.ExporterType.otlphttp;
+            metricSet    = metricSet    != null ? metricSet    : "Vespa9";
         }
     }
 
@@ -74,7 +82,7 @@ public record CustomerOtelExportParameters(
             @JsonProperty("endpoint")           String endpoint,
             @JsonProperty("googleCloudProject") String googleCloudProject) {
 
-        public enum ExporterType { otlphttp, googlecloud }
+        public enum ExporterType { otlp, otlphttp, googlecloud }
 
         @JsonCreator
         public CustomerExporterConfig {}
