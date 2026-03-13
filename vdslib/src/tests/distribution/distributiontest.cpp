@@ -1116,4 +1116,26 @@ TEST_F(DistributionTest, control_size_of_IndexList) {
     EXPECT_EQ(24u, sizeof(Distribution::IndexList));
 }
 
+namespace {
+
+std::vector<uint32_t> distribution_bit_mask_legacy_lut() {
+    std::vector<uint32_t> masks;
+    masks.resize(32 + 1);
+    uint32_t mask = 0;
+    for (uint32_t i=0; i<=32; ++i) {
+        masks[i] = mask;
+        mask = (mask << 1) | 1;
+    }
+    return masks;
+}
+
+} // namespace
+
+TEST(DistributionBitMaskTest, distribution_bit_mask_matches_legacy_lut) {
+    const auto masks = distribution_bit_mask_legacy_lut();
+    for (uint32_t i = 0; i <= 32; ++i) {
+        EXPECT_EQ(masks[i], Distribution::distribution_bit_mask(i)) << i;
+    }
+}
+
 }
