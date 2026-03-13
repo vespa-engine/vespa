@@ -5,7 +5,7 @@
 #include "query.h"
 #include "hit_iterator.h"
 #include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
-#include <vespa/searchlib/queryeval/match_span.h>
+#include <vespa/searchlib/queryeval/filtered_match_spans.h>
 #include <vespa/vespalib/util/priority_queue.h>
 
 namespace search::streaming {
@@ -20,6 +20,7 @@ class NearQueryNode : public AndQueryNode
     uint32_t                   _exclusion_distance;
     const search::queryeval::IElementGapInspector& _element_gap_inspector;
     std::vector<queryeval::MatchSpan>              _match_spans;
+    search::queryeval::FilteredMatchSpans          _filtered_match_spans;
 
     template <typename MatchResult>
     void evaluate_helper(MatchResult& match_result) const;
@@ -77,22 +78,8 @@ protected:
         }
     };
 public:
-    explicit NearQueryNode(const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept
-        : AndQueryNode("NEAR"),
-          _distance(0),
-          _num_negative_terms(0),
-          _exclusion_distance(0),
-          _element_gap_inspector(element_gap_inspector),
-          _match_spans()
-    { }
-    explicit NearQueryNode(const char * opName, const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept
-        : AndQueryNode(opName),
-          _distance(0),
-          _num_negative_terms(0),
-          _exclusion_distance(0),
-          _element_gap_inspector(element_gap_inspector),
-          _match_spans()
-    { }
+    explicit NearQueryNode(const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept;
+    NearQueryNode(const char * opName, const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept;
     ~NearQueryNode() override;
     bool evaluate() override;
     void get_element_ids(std::vector<uint32_t>& element_ids) override;

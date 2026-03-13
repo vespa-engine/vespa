@@ -15,6 +15,26 @@ using vespalib::PriorityQueue;
 
 namespace search::streaming {
 
+NearQueryNode::NearQueryNode(const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept
+    : AndQueryNode("NEAR"),
+      _distance(0),
+      _num_negative_terms(0),
+      _exclusion_distance(0),
+      _element_gap_inspector(element_gap_inspector),
+      _match_spans(),
+      _filtered_match_spans()
+{ }
+
+NearQueryNode::NearQueryNode(const char * opName, const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept
+    : AndQueryNode(opName),
+      _distance(0),
+      _num_negative_terms(0),
+      _exclusion_distance(0),
+      _element_gap_inspector(element_gap_inspector),
+      _match_spans(),
+      _filtered_match_spans()
+{ }
+
 NearQueryNode::~NearQueryNode() = default;
 
 template <typename MatchResult>
@@ -111,9 +131,9 @@ NearQueryNode::unpack_match_data(uint32_t docid, fef::MatchData& match_data, con
         if (NearSearchFlags::filter_terms()) {
             _match_spans.clear();
             get_match_spans(_match_spans);
-            // TODO: Filter match spans based on element_ids
+            auto match_spans = _filtered_match_spans.intersection(_match_spans, element_ids);
             for (const auto& node : getChildren()) {
-                node->unpack_match_data(docid, match_data, index_env, _match_spans);
+                node->unpack_match_data(docid, match_data, index_env, match_spans);
             }
         } else {
             for (const auto& node : getChildren()) {
