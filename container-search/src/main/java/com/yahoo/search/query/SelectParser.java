@@ -185,6 +185,7 @@ public class SelectParser implements Parser {
     private IndexFacts.Session indexFactsSession;
 
     private static final List<String> FUNCTION_CALLS = List.of(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_BOUNDING_BOX, GEO_LOCATION, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
+    private static final Set<String> OPERATOR_KEYS = Set.of(AND, AND_NOT, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE);
 
     public SelectParser(ParserEnvironment environment) {
         this.environment = environment;
@@ -1456,9 +1457,6 @@ public class SelectParser implements Parser {
 
         return sameElement;
     }
-
-    private static final Set<String> OPERATOR_KEYS =
-            Set.of(AND, AND_NOT, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE);
 
     /** Checks if key is operator keyword or function call keyword. */
     private boolean isOperator(String key) {
