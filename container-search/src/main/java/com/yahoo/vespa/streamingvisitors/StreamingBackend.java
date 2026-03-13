@@ -40,6 +40,7 @@ import com.yahoo.yolean.Exceptions;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -148,11 +149,9 @@ public class StreamingBackend extends VespaBackend {
             return new Result(query, ErrorMessage.createIllegalQuery("Streaming search requires either " +
                                                                      "streaming.groupname or streaming.selection"));
         }
-        try {
-            ensureLegalSummaryClass(query, PartialSummaryHandler.PRESENTATION);
-        } catch (IllegalInputException e) {
-            return new Result(query, ErrorMessage.createIllegalQuery(Exceptions.toMessageString(e)));
-        }
+        Optional<String> summaryError = validateSummaryClass(PartialSummaryHandler.PRESENTATION, query);
+        if (summaryError.isPresent())
+            return new Result(query, ErrorMessage.createIllegalQuery(summaryError.get()));
 
         if (query.getTrace().isTraceable(4))
             query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + schema, 4);

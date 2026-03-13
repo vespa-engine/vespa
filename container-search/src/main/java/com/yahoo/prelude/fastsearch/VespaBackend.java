@@ -2,14 +2,12 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.collections.TinyIdentitySet;
-import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.prelude.querytransform.QueryRewrite;
-import com.yahoo.processing.IllegalInputException;
 import com.yahoo.protect.Validator;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -207,26 +205,29 @@ public abstract class VespaBackend {
         List<Result> parts = partitionHits(result, summaryClass);
         if (!parts.isEmpty()) { // anything to fill at all?
             for (Result r : parts) {
-                doPartialFill(r, ensureLegalSummaryClass(r.getQuery(), summaryClass));
-                mergeErrorsInto(result, r);
+                if (summaryClass != null && summaryClass.isEmpty())
+                    summaryClass = null;
+                Optional<String> summaryError = validateSummaryClass(summaryClass, r.getQuery());
+                if (summaryError.isPresent()) {
+                    r.hits().addError(ErrorMessage.createInvalidQueryParameter(summaryError.get()));
+                }
+                else {
+                    doPartialFill(r, summaryClass);
+                    mergeErrorsInto(result, r);
+                }
             }
             result.hits().setSorted(false);
             result.analyzeHits();
         }
     }
-    protected String ensureLegalSummaryClass(Query query, String summaryClass) {
-        if (summaryClass != null) {
-            if (summaryClass.isEmpty()) {
-                return null;
-            } else {
-                var db = getDocumentDatabase(query);
-                if (db != null) {
-                    var partialSummaryHandler = new PartialSummaryHandler(db);
-                    partialSummaryHandler.validateSummaryClass(summaryClass, query);
-                }
-            }
+
+    protected Optional<String> validateSummaryClass(String summaryClass, Query query) {
+        if (summaryClass != null && ! summaryClass.isEmpty()) {
+            var db = getDocumentDatabase(query);
+            if (db != null)
+                return new PartialSummaryHandler(db).validateSummaryClass(summaryClass, query);
         }
-        return summaryClass;
+        return Optional.empty();
     }
 
     private void mergeErrorsInto(Result destination, Result source) {
