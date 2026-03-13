@@ -61,7 +61,7 @@ public class SearchChainRegistry extends ChainRegistry<Searcher> {
                 registry.register((Searcher) component);
             }
         }
-        //just freeze this right away
+        // just freeze this right away
         registry.freeze();
         return registry;
     }
