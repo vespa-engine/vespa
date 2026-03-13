@@ -1,6 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
@@ -24,7 +28,7 @@ public class YqlJsonQueryFeatureParityTest {
 
     @BeforeEach
     void setup() {
-        var env = new ParserEnvironment();
+        var env = new ParserEnvironment().setIndexFacts(createIndexFacts());
         yqlParser = new YqlParser(env);
         selectParser = new SelectParser(env);
     }
@@ -58,12 +62,136 @@ public class YqlJsonQueryFeatureParityTest {
         assertWhereParity("public = 5", "{ 'equals' : { 'field' : 'public', 'value' : 5 } }");
     }
 
+    @Test
+    void testNot() {
+        assertWhereParity("!(title contains 'madonna')",
+                "{ 'not' : { 'contains' : ['title', 'madonna'] } }");
+    }
+
+    @Test
+    void testAndNot() {
+        assertWhereParity("title contains 'madonna' and !(title contains 'saint')",
+                "{ 'and_not' : [ { 'contains' : ['title', 'madonna'] }, { 'contains' : ['title', 'saint'] } ] }");
+    }
+
+    @Test
+    void testRange() {
+        assertWhereParity("range(price, 0L, 500L)",
+                "{ 'range' : ['price', { '>=': 0, '<=': 500 }] }");
+    }
+
+    @Test
+    void testIn() {
+        assertWhereParity("field in (42, 22)",
+                "{ 'in' : ['field', 42, 22] }");
+        assertWhereParity("string in ('a', 'b')",
+                "{ 'in' : ['string', 'a', 'b'] }");
+    }
+
+    @Test
+    void testMatches() {
+        assertWhereParity("artist matches 'a\\\\.b'",
+                "{ 'matches' : ['artist', 'a\\\\.b'] }");
+    }
+
+    @Test
+    void testPhrase() {
+        assertWhereParity("baz contains phrase('a', 'b')",
+                "{ 'contains' : ['baz', { 'phrase' : ['a', 'b'] }] }");
+    }
+
+    @Test
+    void testNear() {
+        // NOTE: SelectParser sets implicitTransforms:false on near children, YqlParser does not
+        assertWhereParity("description contains near({implicitTransforms: false}'a', {implicitTransforms: false}'b')",
+                "{ 'contains' : ['description', { 'near' : ['a', 'b'] }] }");
+    }
+
+    @Test
+    void testOnear() {
+        // NOTE: SelectParser sets implicitTransforms:false on onear children, YqlParser does not
+        assertWhereParity("description contains onear({implicitTransforms: false}'a', {implicitTransforms: false}'b')",
+                "{ 'contains' : ['description', { 'onear' : ['a', 'b'] }] }");
+    }
+
+    @Test
+    void testEquiv() {
+        assertWhereParity("fieldName contains equiv('A', 'B')",
+                "{ 'contains' : ['fieldName', { 'equiv' : ['A', 'B'] }] }");
+    }
+
+    @Test
+    void testFuzzy() {
+        assertWhereParity("baz contains fuzzy('a b')",
+                "{ 'contains' : ['baz', { 'fuzzy' : ['a b'] }] }");
+    }
+
+    @Test
+    void testSameElement() {
+        assertWhereParity("baz contains sameElement(f1 contains 'a', f2 contains 'b')",
+                "{ 'contains' : ['baz', { 'sameElement' : [ { 'contains' : ['f1', 'a'] }, { 'contains' : ['f2', 'b'] } ] }] }");
+    }
+
+    @Test
+    void testRank() {
+        assertWhereParity("rank(a contains 'A', b contains 'B')",
+                "{ 'rank' : [ { 'contains' : ['a', 'A'] }, { 'contains' : ['b', 'B'] } ] }");
+    }
+
+    @Test
+    void testWeakAnd() {
+        assertWhereParity("weakAnd(a contains 'A', b contains 'B')",
+                "{ 'weakAnd' : [ { 'contains' : ['a', 'A'] }, { 'contains' : ['b', 'B'] } ] }");
+    }
+
+    @Test
+    void testWand() {
+        assertWhereParity("wand(description, {'a': 1, 'b': 2})",
+                "{ 'wand' : ['description', { 'a': 1, 'b': 2 }] }");
+    }
+
+    @Test
+    void testWeightedSet() {
+        assertWhereParity("weightedSet(description, {'a': 1, 'b': 2})",
+                "{ 'weightedSet' : ['description', { 'a': 1, 'b': 2 }] }");
+    }
+
+    @Test
+    void testDotProduct() {
+        assertWhereParity("dotProduct(description, {'a': 1, 'b': 2})",
+                "{ 'dotProduct' : ['description', { 'a': 1, 'b': 2 }] }");
+    }
+
+    @Test
+    void testPredicate() {
+        assertWhereParity("predicate(predicate_field, {'gender': 'male'}, {'age': 23})",
+                "{ 'predicate' : ['predicate_field', { 'gender': 'male' }, { 'age': 23 }] }");
+    }
+
+    @Test
+    void testGeoLocation() {
+        assertWhereParity("geoLocation(workplace, 63.418417, 10.433033, '0.5 deg')",
+                "{ 'geoLocation' : ['workplace', 63.418417, 10.433033, '0.5 deg'] }");
+    }
+
+    @Test
+    void testGeoBoundingBox() {
+        assertWhereParity("geoBoundingBox('workplace', -63.418, -10.433, 63.5, 10.5)",
+                "{ 'geoBoundingBox' : ['workplace', -63.418, -10.433, 63.5, 10.5] }");
+    }
+
+    @Test
+    void testNearestNeighbor() {
+        assertWhereParity("nearestNeighbor(f1field, q2prop)",
+                "{ 'nearestNeighbor' : ['f1field', 'q2prop'] }");
+    }
+
     /** Asserts parity using a where-clause; automatically wraps the YQL in {@code select * from sources * where ...} */
     private void assertWhereParity(String yqlWhereClause, String jsonWhere) {
         assertParity("select * from sources * where " + yqlWhereClause, jsonWhere);
     }
 
-    /** Asserts parity using a full YQL query string and a JSON where-clause (single quotes are replaced with double quotes). */
+    /** Asserts parity using a full YQL query string and a JSON where-clause. */
     private void assertParity(String yql, String jsonWhere) {
         var yqlTree = yqlParser.parse(new Parsable().setQuery(yql));
         var normalizedJson = SlimeUtils.toJson(SlimeUtils.jsonToSlime(jsonWhere));
@@ -76,6 +204,35 @@ public class YqlJsonQueryFeatureParityTest {
 
         assertEquals(VespaSerializer.serialize(yqlQuery), VespaSerializer.serialize(selectQuery),
                 "YQL and JSON select should produce the same query tree");
+    }
+
+    private static IndexFacts createIndexFacts() {
+        SearchDefinition sd = new SearchDefinition("default");
+        sd.addIndex(new Index("title"));
+        sd.addIndex(new Index("body"));
+        sd.addIndex(new Index("description"));
+        sd.addIndex(new Index("baz"));
+        sd.addIndex(new Index("baz.f1"));
+        sd.addIndex(new Index("baz.f2"));
+        sd.addIndex(new Index("fieldName"));
+        sd.addIndex(new Index("artist"));
+        sd.addIndex(new Index("a"));
+        sd.addIndex(new Index("b"));
+        sd.addIndex(new Index("c"));
+        sd.addIndex(new Index("public"));
+        sd.addIndex(new Index("predicate_field"));
+        sd.addIndex(new Index("workplace"));
+        sd.addIndex(new Index("f1field"));
+        var price = new Index("price");
+        price.setInteger(true);
+        sd.addIndex(price);
+        var field = new Index("field");
+        field.setInteger(true);
+        sd.addIndex(field);
+        var string = new Index("string");
+        string.setString(true);
+        sd.addIndex(string);
+        return new IndexFacts(new IndexModel(sd));
     }
 
 }
