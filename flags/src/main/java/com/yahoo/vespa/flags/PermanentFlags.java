@@ -20,7 +20,6 @@ import static com.yahoo.vespa.flags.Dimension.APPLICATION;
 import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CERTIFICATE_PROVIDER;
 import static com.yahoo.vespa.flags.Dimension.CLAVE;
-import static com.yahoo.vespa.flags.Dimension.CLOUD;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
@@ -30,7 +29,6 @@ import static com.yahoo.vespa.flags.Dimension.FLAVOR;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.Dimension.SYSTEM;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.Dimension.ZONE_ID;
@@ -163,7 +161,7 @@ public class PermanentFlags {
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask), or some node-agent " +
                     "functionality (see NodeAgentTask), that should be skipped",
             "Takes effect on next host admin tick",
-            HOSTNAME, NODE_TYPE, CLAVE);
+            HOSTNAME, NODE_TYPE, CLAVE, CLOUD_ACCOUNT);
 
     public static final UnboundStringFlag DOCKER_IMAGE_REPO = defineStringFlag(
             "docker-image-repo", "",
@@ -220,7 +218,7 @@ public class PermanentFlags {
             HOSTNAME, NODE_TYPE, TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
 
     public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
-            "zookeeper-server-version", "3.9.4",
+            "zookeeper-server-version", "3.9.5",
             "ZooKeeper server version, a jar file zookeeper-server-<ZOOKEEPER_SERVER_VERSION>-jar-with-dependencies.jar must exist",
             "Takes effect on restart of Docker container",
             NODE_TYPE, INSTANCE_ID, HOSTNAME);
@@ -329,12 +327,6 @@ public class PermanentFlags {
     public static final UnboundIntFlag DELAY_HOST_SECURITY_AGENT_START_MINUTES = defineIntFlag(
             "delay-host-security-agent-start-minutes", 5,
             "The number of minutes (from host admin start) to delay the start of the host security agent",
-            "Takes effect on next host-admin tick",
-            NODE_TYPE);
-
-    public static final UnboundStringFlag HOST_SECURITY_AGENT_VERSION = defineStringFlag(
-            "host-security-agent-version", "",
-            "Upgrades/downgrades the host security agent to the specified version, does nothing if empty. Only effective in public systems.",
             "Takes effect on next host-admin tick",
             NODE_TYPE);
 
@@ -677,6 +669,37 @@ public class PermanentFlags {
                     "Value 0 disables automatic backups.",
             "Takes effect on next maintainer run",
             CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
+
+    public static final UnboundBooleanFlag BACKUP_SINGLE_GROUP = defineFeatureFlag(
+            "backup-single-group", false,
+            "Whether to limit back up to a single group during automatic backup snapshots. " +
+            "Recommended only when node bucket distribution is near equivalent between groups.",
+            "Takes effect on next maintainer run",
+            CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
+
+    public static final UnboundBooleanFlag IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP = defineFeatureFlag(
+            "ignore-connectivity-checks-at-startup", false,
+            "Ignore connectivity checks in config-sentinel at startup. " +
+                    "Normally the sentinel checks that a sufficient fraction of cluster nodes can reach each other before starting services. " +
+                    "When this flag is set, services are started immediately regardless of connectivity check results.",
+            "Takes effect on next host restart",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundListFlag<String> ALLOW_FLAVORS = defineListFlag(
+            "allow-flavors", List.of(), String.class,
+            "Flavors that that we will allow provisioning (flavors with lifecycle 'active' are allowed by default)" +
+                    ". Each string in the list is a regexp, e.g. 'c4d-.*' or 'c4d-high.*'.",
+            "Takes effect immediately",
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
+    );
+
+    public static final UnboundListFlag<String> DENY_FLAVORS = defineListFlag(
+            "deny-flavors", List.of(), String.class,
+            "Flavors that that we will deny provisioning (flavors with lifecycle 'new' and 'retired' are disallowed by default)" +
+                    ". Each string in the list is a regexp, e.g. 'c4d-.*' or 'c4d-high.*'.",
+            "Takes effect immediately",
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
+    );
 
     private PermanentFlags() {}
 

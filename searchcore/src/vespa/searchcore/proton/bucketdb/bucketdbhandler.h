@@ -6,6 +6,8 @@
 #include "ibucketdbhandlerinitializer.h"
 #include "bucket_create_notifier.h"
 
+#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
+
 namespace proton::bucketdb {
 
 class BucketDBOwner;

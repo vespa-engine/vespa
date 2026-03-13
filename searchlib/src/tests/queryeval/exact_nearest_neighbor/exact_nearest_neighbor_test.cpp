@@ -136,11 +136,7 @@ SimpleResult find_matches_impl(std::shared_ptr<QueryEvalStats> stats, Fixture &e
                                                        std::make_unique<DistanceCalculator>(attr, qtv),
                                                        dh, filter,
                                                        env._matching_phase != MatchingPhase::FIRST_PHASE);
-    if (strict) {
-        return SimpleResult().searchStrict(*search, attr.getNumDocs());
-    } else {
-        return SimpleResult().search(*search, attr.getNumDocs());
-    }
+    return SimpleResult().search(*search, attr.getNumDocs());
 }
 
 template <bool strict>

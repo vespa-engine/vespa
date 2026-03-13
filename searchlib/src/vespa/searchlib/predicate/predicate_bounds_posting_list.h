@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "predicate_interval.h"
 #include "predicate_posting_list.h"
 #include "predicate_interval_store.h"
 

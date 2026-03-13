@@ -81,7 +81,9 @@ public class Node {
     public void setTargetActiveDocuments(long documents) { this.targetActiveDocuments = documents; }
 
     /** Returns the active documents on this node. If unknown, 0 is returned. */
-    long getActiveDocuments() { return activeDocuments; }
+    public long getActiveDocuments() { return activeDocuments; }
+
+    /** Returns the target active documents on this node. If unknown, 0 is returned. */
     long getTargetActiveDocuments() { return targetActiveDocuments; }
 
     @Override

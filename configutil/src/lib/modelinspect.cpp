@@ -1,41 +1,40 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "modelinspect.h"
-#include <lib/tags.h>
-#include <vespa/config/helper/configgetter.hpp>
+
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/stllike/string.h>
-#include <iostream>
+
 #include <algorithm>
 #include <cstdlib>
+#include <iostream>
 #include <set>
+#include <lib/tags.h>
 
 using configdefinitions::tagsContain;
 using configdefinitions::upcase;
 
-ModelInspect::Flags::Flags()
-    : verbose(false), makeuri(false), tagfilt(false),
-      tagFilter()
-{}
+ModelInspect::Flags::Flags() : verbose(false), makeuri(false), tagfilt(false), tagFilter() {}
 
-ModelInspect::Flags::Flags(const Flags &) = default;
-ModelInspect::Flags & ModelInspect::Flags::operator = (const Flags &) = default;
-ModelInspect::Flags::~Flags() { }
+ModelInspect::Flags::Flags(const Flags&) = default;
+ModelInspect::Flags& ModelInspect::Flags::operator=(const Flags&) = default;
+ModelInspect::Flags::~Flags() {}
 
-ModelInspect::ModelInspect(Flags flags, const config::ConfigUri &uri, std::ostream &out)
-    : _cfg(), _flags(flags), _out(out)
-{
+ModelInspect::ModelInspect(Flags flags, const config::ConfigUri& uri, std::ostream& out)
+    : _cfg(), _flags(flags), _out(out) {
     if (_flags.verbose) {
         std::cerr << "subscribing to model config with configid " << uri.getConfigId() << "\n";
     }
 
     try {
         _cfg = config::ConfigGetter<cloud::config::ModelConfig>::getConfig(uri.getConfigId(), uri.getContext());
-    } catch (config::ConfigRuntimeException &e) {
+    } catch (config::ConfigRuntimeException& e) {
         std::cerr << e.getMessage() << "\n";
     }
     if (_cfg) {
-        if (_flags.verbose) std::cerr << "success!\n";
+        if (_flags.verbose)
+            std::cerr << "success!\n";
     } else {
         std::cerr << "FATAL ERROR: failed to get model configuration.\n";
         std::_Exit(1);
@@ -44,13 +43,10 @@ ModelInspect::ModelInspect(Flags flags, const config::ConfigUri &uri, std::ostre
 
 ModelInspect::~ModelInspect() = default;
 
-void
-ModelInspect::printPort(const std::string &host, int port,
-                        const std::string &tags)
-{
+void ModelInspect::printPort(const std::string& host, int port, const std::string& tags) {
     if (_flags.tagfilt) {
         for (size_t i = 0; i < _flags.tagFilter.size(); ++i) {
-            if (! tagsContain(tags, _flags.tagFilter[i])) {
+            if (!tagsContain(tags, _flags.tagFilter[i])) {
                 return;
             }
         }
@@ -68,10 +64,7 @@ ModelInspect::printPort(const std::string &host, int port,
     }
 }
 
-void
-ModelInspect::printService(const cloud::config::ModelConfig::Hosts::Services &svc,
-                           const std::string &host)
-{
+void ModelInspect::printService(const cloud::config::ModelConfig::Hosts::Services& svc, const std::string& host) {
     if (!_flags.tagfilt) {
         _out << svc.name << " @ " << host << " : " << svc.clustertype << std::endl;
         _out << svc.configid << std::endl;
@@ -81,9 +74,7 @@ ModelInspect::printService(const cloud::config::ModelConfig::Hosts::Services &sv
     }
 }
 
-int
-ModelInspect::action(int cnt, char **argv)
-{
+int ModelInspect::action(int cnt, char** argv) {
     const std::string cmd = vespalib::safe_char_2_string(*argv++);
     if (cnt == 1) {
         if (cmd == "yamldump") {
@@ -132,9 +123,8 @@ ModelInspect::action(int cnt, char **argv)
         }
         if (cmd == "service") {
             size_t colon = arg.find(':');
-            if (colon != std::string::npos)  {
-                return listService(arg.substr(0, colon),
-                                   arg.substr(colon + 1));
+            if (colon != std::string::npos) {
+                return listService(arg.substr(0, colon), arg.substr(colon + 1));
             } else {
                 return listService(arg);
             }
@@ -154,17 +144,14 @@ ModelInspect::action(int cnt, char **argv)
     return 1;
 }
 
-void
-ModelInspect::dumpService(const cloud::config::ModelConfig::Hosts::Services &svc,
-            const std::string &host)
-{
+void ModelInspect::dumpService(const cloud::config::ModelConfig::Hosts::Services& svc, const std::string& host) {
     _out << "- servicename: " << svc.name << "\n";
     _out << "  servicetype: " << svc.type << "\n";
     _out << "  clustertype: " << svc.clustertype << "\n";
     _out << "  clustername: " << svc.clustername << "\n";
-    _out << "  index: "       << svc.index << "\n";
-    _out << "  hostname: "    << host << "\n";
-    _out << "  config-id: "   << svc.configid << "\n";
+    _out << "  index: " << svc.index << "\n";
+    _out << "  hostname: " << host << "\n";
+    _out << "  config-id: " << svc.configid << "\n";
 
     if (svc.ports.size() > 0) {
         _out << "  ports: \n";
@@ -174,24 +161,20 @@ ModelInspect::dumpService(const cloud::config::ModelConfig::Hosts::Services &svc
     }
 }
 
-void
-ModelInspect::yamlDump()
-{
+void ModelInspect::yamlDump() {
     _out << "--- \n";
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         for (size_t j = 0; j < hconf.services.size(); ++j) {
             dumpService(hconf.services[j], hconf.name);
         }
     }
 }
 
-void
-ModelInspect::listHosts()
-{
+void ModelInspect::listHosts() {
     std::vector<std::string> hosts;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         hosts.push_back(hconf.name);
     }
     std::sort(hosts.begin(), hosts.end());
@@ -200,13 +183,11 @@ ModelInspect::listHosts()
     }
 }
 
-void
-ModelInspect::listServices()
-{
+void ModelInspect::listServices() {
     typedef std::set<std::string> Set;
-    Set services;
+    Set                           services;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         for (size_t j = 0; j < hconf.services.size(); ++j) {
             services.insert(hconf.services[j].type);
         }
@@ -216,13 +197,11 @@ ModelInspect::listServices()
     }
 }
 
-void
-ModelInspect::listClusters()
-{
+void ModelInspect::listClusters() {
     typedef std::set<std::string> Set;
-    Set clusters;
+    Set                           clusters;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         for (size_t j = 0; j < hconf.services.size(); ++j) {
             clusters.insert(hconf.services[j].clustername);
         }
@@ -232,12 +211,10 @@ ModelInspect::listClusters()
     }
 }
 
-void
-ModelInspect::listConfigIds()
-{
+void ModelInspect::listConfigIds() {
     std::vector<std::string> configids;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         for (size_t j = 0; j < hconf.services.size(); ++j) {
             configids.push_back(hconf.services[j].configid);
         }
@@ -248,11 +225,9 @@ ModelInspect::listConfigIds()
     }
 }
 
-int
-ModelInspect::listHost(const std::string host)
-{
+int ModelInspect::listHost(const std::string host) {
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         if (host == hconf.name) {
             for (size_t j = 0; j < hconf.services.size(); ++j) {
                 printService(hconf.services[j], host);
@@ -264,12 +239,10 @@ ModelInspect::listHost(const std::string host)
     return 1;
 }
 
-int
-ModelInspect::listCluster(const std::string cluster)
-{
+int ModelInspect::listCluster(const std::string cluster) {
     bool found = false;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         for (size_t j = 0; j < hconf.services.size(); ++j) {
             if (cluster == hconf.services[j].clustername) {
                 found = true;
@@ -277,16 +250,15 @@ ModelInspect::listCluster(const std::string cluster)
             }
         }
     }
-    if (found) return 0;
+    if (found)
+        return 0;
     std::cerr << "no config found for cluster '" << cluster << "'\n";
     return 1;
 }
 
-int
-ModelInspect::listAllPorts()
-{
+int ModelInspect::listAllPorts() {
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         for (size_t j = 0; j < hconf.services.size(); ++j) {
             printService(hconf.services[j], hconf.name);
         }
@@ -294,12 +266,10 @@ ModelInspect::listAllPorts()
     return 0;
 }
 
-int
-ModelInspect::listService(const std::string svctype)
-{
+int ModelInspect::listService(const std::string svctype) {
     bool found = false;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         for (size_t j = 0; j < hconf.services.size(); ++j) {
             if (svctype == hconf.services[j].type) {
                 found = true;
@@ -307,39 +277,33 @@ ModelInspect::listService(const std::string svctype)
             }
         }
     }
-    if (found) return 0;
+    if (found)
+        return 0;
     std::cerr << "no services found with type '" << svctype << "'\n";
     return 1;
 }
 
-
-int
-ModelInspect::listService(const std::string cluster,
-                          const std::string svctype)
-{
+int ModelInspect::listService(const std::string cluster, const std::string svctype) {
     bool found = false;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         for (size_t j = 0; j < hconf.services.size(); ++j) {
-            if (cluster == hconf.services[j].clustername &&
-                svctype == hconf.services[j].type)
-            {
+            if (cluster == hconf.services[j].clustername && svctype == hconf.services[j].type) {
                 found = true;
                 printService(hconf.services[j], hconf.name);
             }
         }
     }
-    if (found) return 0;
+    if (found)
+        return 0;
     std::cerr << "no services found with type '" << svctype << "' in cluster '" << cluster << "'\n";
     return 1;
 }
 
-int
-ModelInspect::listConfigId(const std::string configid)
-{
+int ModelInspect::listConfigId(const std::string configid) {
     bool found = false;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         for (size_t j = 0; j < hconf.services.size(); ++j) {
             if (configid == hconf.services[j].configid) {
                 found = true;
@@ -347,17 +311,16 @@ ModelInspect::listConfigId(const std::string configid)
             }
         }
     }
-    if (found) return 0;
+    if (found)
+        return 0;
     std::cerr << "no services found with configid '" << configid << "'\n";
     return 1;
 }
 
-int
-ModelInspect::getIndexOf(const std::string service, const std::string host)
-{
+int ModelInspect::getIndexOf(const std::string service, const std::string host) {
     bool found = false;
     for (size_t i = 0; i < _cfg->hosts.size(); ++i) {
-        const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        const cloud::config::ModelConfig::Hosts& hconf = _cfg->hosts[i];
         if (host == hconf.name) {
             for (size_t j = 0; j < hconf.services.size(); ++j) {
                 if (service == hconf.services[j].type) {
@@ -367,7 +330,8 @@ ModelInspect::getIndexOf(const std::string service, const std::string host)
             }
         }
     }
-    if (found) return 0;
+    if (found)
+        return 0;
     std::cerr << "no service of type '" << service << "' found for host '" << host << "'\n";
     return 1;
 }

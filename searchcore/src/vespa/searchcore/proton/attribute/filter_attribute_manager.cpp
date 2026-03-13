@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filter_attribute_manager.h"
-#include <vespa/searchcore/proton/common/resource_usage.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -10,6 +10,7 @@
 
 using search::AttributeGuard;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::ResourceUsage;
 
 namespace proton {
 

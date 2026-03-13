@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.config;
+import java.nio.charset.StandardCharsets;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
@@ -11,6 +12,7 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import com.yahoo.text.Utf8;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
@@ -44,13 +46,13 @@ public class QueryProfileXMLReader {
 
             for (File file : sortFiles(dir)) {
                 if ( ! file.getName().endsWith(".xml")) continue;
-                queryProfileReaders.add(new NamedReader(file.getName(), new FileReader(file)));
+                queryProfileReaders.add(new NamedReader(file.getName(), Utf8.createReader(file)));
             }
             File typeDir = new File(dir,"types");
             if (typeDir.isDirectory()) {
                 for (File file : sortFiles(typeDir)) {
                     if ( ! file.getName().endsWith(".xml")) continue;
-                    queryProfileTypeReaders.add(new NamedReader(file.getName(), new FileReader(file)));
+                    queryProfileTypeReaders.add(new NamedReader(file.getName(), Utf8.createReader(file)));
                 }
             }
 

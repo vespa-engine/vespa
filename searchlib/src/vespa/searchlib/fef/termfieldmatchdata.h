@@ -9,6 +9,8 @@
 #include <limits>
 #include <span>
 
+namespace search::queryeval { class MatchSpan; }
+
 namespace search::fef {
 
 class TermMatchDataMerger;
@@ -56,6 +58,7 @@ private:
     static constexpr uint16_t UNPACK_NORMAL_FEATURES_FLAG = 4;
     static constexpr uint16_t UNPACK_INTERLEAVED_FEATURES_FLAG = 8;
     static constexpr uint16_t UNPACK_ALL_FEATURES_MASK = UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG;
+    static constexpr uint16_t HIDDEN_FROM_RANKING = 16;
 
     uint32_t  _docId;
     uint16_t  _fieldId;
@@ -69,7 +72,9 @@ private:
 
     Features  _data;
 
-    void finish_filter_elements();
+    void finish_filter_match_data();
+    template <typename MatchDataFilter>
+    void filter_match_data(uint32_t docid, MatchDataFilter match_data_filter);
 public:
     PositionsIterator begin() const { return allocated() ? getMultiple() : getFixed(); }
     PositionsIterator end() const { return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed()+1; }
@@ -204,6 +209,14 @@ public:
         return _docId;
     }
 
+    // Returns true if this instance has match data for docId that is visible to the ranking framework.
+    bool has_ranking_data(uint32_t docId) const noexcept { return docId == _docId && !is_hidden_from_ranking(); }
+
+    // Returns true if this instance has match data for docId.
+    bool has_data(uint32_t docId) const noexcept { return docId == _docId; }
+
+    bool has_invalid_docid() const noexcept { return _docId == invalidId(); }
+
     /**
      * Obtain the weight of the first occurrence in this field, or 1
      * if no occurrences are present. This function is intended for
@@ -296,7 +309,19 @@ public:
         }
     }
 
+    void set_hidden_from_ranking() noexcept {
+        _flags |= HIDDEN_FROM_RANKING;
+    }
+
+    void clear_hidden_from_ranking() noexcept {
+        _flags &= ~HIDDEN_FROM_RANKING;
+    }
+
+    bool is_hidden_from_ranking() const noexcept { return (_flags & HIDDEN_FROM_RANKING) != 0; }
+
     void filter_elements(uint32_t docid, std::span<const uint32_t> element_ids);
+
+    void filter_match_spans(uint32_t docid, std::span<const queryeval::MatchSpan> match_spans);
 
     /**
      * Special docId value indicating that no data has been saved yet.

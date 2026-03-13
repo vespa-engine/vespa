@@ -17,10 +17,10 @@ public class MockItem extends Item {
     @Override public void setIndexName(String index) { }
     @Override public ItemType getItemType() { return null; }
     @Override public String getName() { return name; }
-    @Override public int encode(ByteBuffer buffer) { return 0; }
+    @Override public int encode(ByteBuffer buffer, SerializationContext context) { return 0; }
     @Override public int getTermCount() { return 0; }
     @Override protected void appendBodyString(StringBuilder buffer) { }
-    @Override protected SearchProtocol.QueryTreeItem toProtobuf() {
+    @Override protected SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         throw new UnsupportedOperationException("MockItem does not support protobuf serialization");
     }
 

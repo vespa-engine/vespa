@@ -35,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+import java.nio.charset.StandardCharsets;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -64,7 +65,7 @@ class LogReader {
         double fromSeconds = from.getEpochSecond() + from.getNano() / 1e9;
         double toSeconds = to.getEpochSecond() + to.getNano() / 1e9;
         long linesWritten = 0;
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
         for (List<Path> logs : getMatchingFiles(from, to)) {
             List<LogLineIterator> logLineIterators = new ArrayList<>();
             try {

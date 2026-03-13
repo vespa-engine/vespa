@@ -3,6 +3,7 @@
 #pragma once
 
 #include <bit>
+#include <cstdint>
 
 namespace vespalib::eval {
 

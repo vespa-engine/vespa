@@ -6,9 +6,9 @@
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/match_data_filters.h>
 #include <algorithm>
 #include <limits>
-#include <optional>
 
 
 namespace search::streaming {
@@ -36,13 +36,12 @@ set_interleaved_features(search::fef::TermFieldMatchData& tmd, uint32_t field_le
 
 }
 
-template <typename HitListType>
+template <typename HitListType, typename MatchDataFilter>
 void
-QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
-                                    const HitListType& hit_list, const QueryTerm& fl_term, bool term_filter,
-                                    const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids)
+QueryTerm::unpack_filtered_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                      const HitListType& hit_list, const QueryTerm& fl_term, bool term_filter,
+                                      const fef::IIndexEnvironment& index_env, MatchDataFilter match_data_filter)
 {
-    (void) element_ids;
     (void) fl_term;
     if (!hit_list.empty()) { // only unpack if we have a hit
 
@@ -51,7 +50,6 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
         search::fef::TermFieldMatchData *tmd = nullptr;
         uint32_t num_occs = 0;
         bool filter = false;
-        std::optional<search::common::ElementIds::iterator> element_ids_it;
 
         // optimize for hitlist giving all hits for a single field in one chunk
         for (const auto& hit : hit_list) {
@@ -71,9 +69,7 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
                 num_occs = 0;
                 auto field = index_env.getField(field_id);
                 filter = term_filter || (field != nullptr && field->isFilter());
-                if (!element_ids.all_elements()) {
-                    element_ids_it.emplace(element_ids.begin());
-                }
+                match_data_filter.new_field();
 
                 // setup for new field that had a hit
                 const search::fef::ITermFieldData *tfd = td.lookupField(field_id);
@@ -81,7 +77,7 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
                     tmd = match_data.resolveTermField(tfd->getHandle());
                     tmd->setFieldId(field_id);
                     // reset field match data, but only once per docId
-                    if (tmd->getDocId() != docid) {
+                    if (!tmd->has_data(docid)) {
                         tmd->reset(docid);
                     }
                 }
@@ -92,14 +88,8 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
                     last_field_length = hit.get_field_length();
                 }
             }
-            if (element_ids_it.has_value()) {
-                auto& it = element_ids_it.value();
-                while (it != element_ids.end() && *it < hit.element_id()) {
-                    ++it;
-                }
-                if (it == element_ids.end() || *it != hit.element_id()) {
-                    continue; // Element is filtered
-                }
+            if (match_data_filter.is_filtered(hit)) {
+                continue; // Match data is filtered
             }
             ++num_occs;
             if (tmd != nullptr && !filter) {
@@ -117,6 +107,19 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
                 tmd->resetOnlyDocId(search::fef::TermFieldMatchData::invalidId());
             }
         }
+    }
+}
+
+template <typename HitListType>
+void
+QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                    const HitListType& hit_list, const QueryTerm& fl_term, bool term_filter,
+                                    const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids)
+{
+    if (element_ids.all_elements()) {
+        unpack_filtered_match_data(docid, td, match_data, hit_list, fl_term, term_filter, index_env, fef::NoMatchDataFilter());
+    } else {
+        unpack_filtered_match_data(docid, td, match_data, hit_list, fl_term, term_filter, index_env, fef::ElementIdMatchDataFilter(element_ids));
     }
 }
 

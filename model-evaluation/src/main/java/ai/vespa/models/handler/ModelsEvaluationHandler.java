@@ -103,7 +103,7 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             }
         }
         Tensor result = evaluator.evaluate();
-        return switch (property(request, "format.tensors").orElse("short").toLowerCase()) {
+        return switch (property(request, "format.tensors").orElse("short").toLowerCase(java.util.Locale.ROOT)) {
             case "short"        -> new Response(200, JsonFormat.encode(result, true,  false));
             case "long"         -> new Response(200, JsonFormat.encode(result, false, false));
             case "short-value"  -> new Response(200, JsonFormat.encode(result, true,  true));
@@ -205,7 +205,7 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         }
 
         private static String[] splitPath(HttpRequest request) {
-            String path = request.getUri().getPath().toLowerCase();
+            String path = request.getUri().getPath().toLowerCase(java.util.Locale.ROOT);
             if (path.startsWith("/")) {
                 path = path.substring("/".length());
             }

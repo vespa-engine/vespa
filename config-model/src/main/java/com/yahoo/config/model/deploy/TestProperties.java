@@ -79,6 +79,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
+    private boolean ignoreConnectivityChecksAtStartup = false;
+    private double searchNodeReservedDiskSpaceFactor = 0.0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -112,7 +114,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double resourceLimitAddressSpace() { return resourceLimitAddressSpace; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
-    @Override public boolean useV8GeoPositions() { return true; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
     @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
@@ -136,6 +137,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
     }
     @Override public boolean useTriton() { return useTriton; }
+    @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
+    @Override public double searchNodeReservedDiskSpaceFactor() { return searchNodeReservedDiskSpaceFactor; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -343,6 +346,16 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseTriton(boolean value) {
         this.useTriton = value;
+        return this;
+    }
+
+    public TestProperties setIgnoreConnectivityChecksAtStartup(boolean value) {
+        this.ignoreConnectivityChecksAtStartup = value;
+        return this;
+    }
+
+    public TestProperties setSearchNodeReservedDiskSpaceFactor(double value) {
+        this.searchNodeReservedDiskSpaceFactor = value;
         return this;
     }
 

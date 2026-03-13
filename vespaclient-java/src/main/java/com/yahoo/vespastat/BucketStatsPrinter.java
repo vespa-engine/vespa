@@ -3,6 +3,7 @@ package com.yahoo.vespastat;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.documentapi.messagebus.protocol.GetBucketListReply;
+import com.yahoo.text.Text;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -26,7 +27,7 @@ public class BucketStatsPrinter {
     public void retrieveAndPrintBucketStats(ClientParameters.SelectionType type, String id, boolean dumpData, String bucketSpace) throws BucketStatsException {
         BucketId bucketId = retriever.getBucketIdForType(type, id);
         if (type == ClientParameters.SelectionType.GROUP || type == ClientParameters.SelectionType.USER) {
-            out.printf("Generated 32-bit bucket id: %s\n", bucketId);
+            out.print(Text.format("Generated 32-bit bucket id: %s\n", bucketId));
         }
 
         List<GetBucketListReply.BucketInfo> bucketList = retriever.retrieveBucketList(bucketId, bucketSpace);
@@ -47,13 +48,13 @@ public class BucketStatsPrinter {
         } else {
             out.println("Bucket maps to the following actual files:");
             for (GetBucketListReply.BucketInfo bucketInfo : bucketList) {
-                out.printf("\t%s\n", bucketInfo);
+                out.print(Text.format("\t%s\n", bucketInfo));
             }
         }
     }
 
     private void printBucketStats(BucketId bucket, String stats) {
-        out.printf("\nDetails for %s:\n%s", bucket, stats);
+        out.print(Text.format("\nDetails for %s:\n%s", bucket, stats));
     }
 
 }

@@ -3,7 +3,7 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.search.result.Coverage;
 
-import static com.yahoo.container.handler.Coverage.*;
+import static com.yahoo.container.handler.Coverage.DEGRADED_BY_ADAPTIVE_TIMEOUT;
 
 /**
  * Aggregates coverage as responses are added.

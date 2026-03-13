@@ -1,14 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi;
 
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
-import com.yahoo.documentapi.messagebus.protocol.*;
 import com.yahoo.messagebus.Message;
-import com.yahoo.vdslib.SearchResult;
-import com.yahoo.vdslib.DocumentSummary;
-import com.yahoo.document.BucketId;
-import java.util.List;
 
 /**
  * A data handler is a class that handles responses from a visitor.

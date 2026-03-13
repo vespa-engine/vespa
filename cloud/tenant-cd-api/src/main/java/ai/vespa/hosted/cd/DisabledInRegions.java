@@ -12,6 +12,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -38,7 +39,7 @@ class DisabledInRegionsCondition implements ExecutionCondition {
 
         List<String> disablingRegions = List.of(annotation.get().value());
         String thisRegion = TestRuntime.get().application().instance();
-        String reason = "Disabled in: %s. Current region: %s.".formatted(disablingRegions.isEmpty() ? "no regions" : "regions " + String.join(", ", disablingRegions), thisRegion);
+        String reason = String.format(Locale.ROOT, "Disabled in: %s. Current region: %s.", disablingRegions.isEmpty() ? "no regions" : "regions " + String.join(", ", disablingRegions), thisRegion);
         return disablingRegions.contains(thisRegion) ? ConditionEvaluationResult.disabled(reason) : ConditionEvaluationResult.enabled(reason);
     }
 

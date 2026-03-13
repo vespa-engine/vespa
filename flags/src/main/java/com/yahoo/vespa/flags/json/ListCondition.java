@@ -43,6 +43,14 @@ public abstract class ListCondition implements Condition {
         return new CreateParams(dimension).withValues(values);
     }
 
+    public List<String> values() { return values; }
+
+    public boolean isWhitelist() { return isWhitelist; }
+
+    public ListCondition withValues(List<String> newValues) {
+        return (ListCondition) new CreateParams(dimension).withValues(newValues).createAs(type);
+    }
+
     @Override
     public boolean test(FetchVector fetchVector) {
         boolean listContainsValue = fetchVector.getValue(dimension).map(values::contains).orElse(false);

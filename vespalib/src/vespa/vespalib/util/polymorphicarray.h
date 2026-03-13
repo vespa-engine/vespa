@@ -3,6 +3,8 @@
 #pragma once
 
 #include "polymorphicarraybase.h"
+#include <unistd.h>
+#include <memory>
 
 namespace vespalib {
 

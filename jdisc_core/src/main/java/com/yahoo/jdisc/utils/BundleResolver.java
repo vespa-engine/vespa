@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.utils;
 
+import com.yahoo.text.Text;
 import org.apache.felix.bundlerepository.RepositoryAdmin;
 import org.apache.felix.bundlerepository.Resource;
 import org.apache.felix.bundlerepository.impl.RepositoryAdminImpl;
@@ -43,19 +44,19 @@ class BundleResolver {
         log.log(Level.FINE, () -> "Resolving dependencies for bundle: " + mainBundleSymbolicName);
 
         try {
-            var resources = repoAdmin.discoverResources("(symbolicname=%s)".formatted(mainBundleSymbolicName));
+            var resources = repoAdmin.discoverResources(Text.format("(symbolicname=%s)", mainBundleSymbolicName));
             if (resources == null || resources.length == 0) {
                 throw new IllegalArgumentException("Bundle not found in repository: " + mainBundleSymbolicName);
             }
             var mainBundle = resources[0];
-            log.log(Level.FINE, () -> "Found main bundle: %s v%s".formatted(mainBundle.getSymbolicName(), mainBundle.getVersion()));
+            log.log(Level.FINE, () -> Text.format("Found main bundle: %s v%s", mainBundle.getSymbolicName(), mainBundle.getVersion()));
             var resolver = repoAdmin.resolver();
             resolver.add(mainBundle);
             if (!resolver.resolve()) {
                 throw new RuntimeException(
-                        "Failed to resolve bundle dependencies: %s"
-                                .formatted(Arrays.stream(resolver.getUnsatisfiedRequirements())
-                                        .map(m -> "%s %s".formatted(m.getRequirement(), m.getResource()))
+                        Text.format("Failed to resolve bundle dependencies: %s",
+                                Arrays.stream(resolver.getUnsatisfiedRequirements())
+                                        .map(m -> Text.format("%s %s", m.getRequirement(), m.getResource()))
                                         .collect(Collectors.joining())));
             }
             var resolvedBundlePaths = Stream.concat(Arrays.stream(resolver.getRequiredResources()), Arrays.stream(resolver.getAddedResources()))
@@ -76,6 +77,6 @@ class BundleResolver {
             if (uri instanceof String uriString) return uriString;
         }
         throw new IllegalStateException(
-                "No uri property found for bundle: %s v%s".formatted(resource.getSymbolicName(), resource.getVersion()));
+                Text.format("No uri property found for bundle: %s v%s", resource.getSymbolicName(), resource.getVersion()));
     }
 }

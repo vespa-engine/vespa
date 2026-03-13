@@ -12,15 +12,14 @@ class IConfigManager;
  * multiple ConfigSubscribers to use the same resources. It also gives the
  * ability to reload config for unit testing or if using file configs.
  */
-class IConfigContext
-{
+class IConfigContext {
 public:
     /**
      * Get an instance of the config manager.
      *
      * @return reference to a manager instance.
      */
-    virtual IConfigManager & getManagerInstance() = 0;
+    virtual IConfigManager& getManagerInstance() = 0;
 
     /**
      * Reload config for source provided by this context.
@@ -30,5 +29,4 @@ public:
     virtual ~IConfigContext() = default;
 };
 
-} // namespace
-
+} // namespace config

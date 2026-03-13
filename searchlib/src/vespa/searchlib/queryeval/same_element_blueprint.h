@@ -17,11 +17,15 @@ private:
     FieldSpec             _field;
     std::vector<search::fef::TermFieldHandle> _descendants_index_handles; // handles with early unpack
     bool                  _expensive;
+    bool                  _expose_match_data_for_same_element;
+    std::vector<uint32_t> _element_filter;
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
     SameElementBlueprint(const FieldSpec &field,
                          const std::vector<search::fef::TermFieldHandle>& descendants_index_handles,
-                         bool expensive);
+                         bool expensive,
+                         bool expose_match_data_for_same_element,
+                         std::vector<uint32_t> element_filter = std::vector<uint32_t>());
     SameElementBlueprint(const SameElementBlueprint &) = delete;
     SameElementBlueprint &operator=(const SameElementBlueprint &) = delete;
     ~SameElementBlueprint() override;
@@ -44,6 +48,8 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const std::string &field_name() const noexcept { return _field.getName(); }
     const FieldSpec& get_field() const noexcept { return _field; }
+
+    Blueprint::UP get_replacement() override;
 };
 
 }

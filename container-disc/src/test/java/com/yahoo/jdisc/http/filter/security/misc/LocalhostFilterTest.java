@@ -5,6 +5,7 @@ import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.util.FilterTestUtils;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,7 +33,7 @@ public class LocalhostFilterTest {
 
     private static DiscFilterRequest createRequest(String remoteAddr, String localAddr) {
         return FilterTestUtils.newRequestBuilder()
-                .withUri("http://%s:8080/".formatted(localAddr))
+                .withUri(Text.format("http://%s:8080/", localAddr))
                 .withRemoteAddress(remoteAddr, 12345)
                 .build();
     }

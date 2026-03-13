@@ -3,9 +3,11 @@
 #pragma once
 
 #include "subscriptionid.h"
+
 #include <vespa/config/common/configkey.h>
 #include <vespa/config/common/source.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <atomic>
 
 namespace config {
@@ -18,13 +20,13 @@ class ConfigValue;
  * A subscription can be polled for config updates, and handles interruption of
  * the nextUpdate call.
  */
-class ConfigSubscription
-{
+class ConfigSubscription {
 public:
     typedef std::unique_ptr<ConfigSubscription> UP;
     typedef std::shared_ptr<ConfigSubscription> SP;
 
-    ConfigSubscription(const SubscriptionId & id, const ConfigKey & key, std::shared_ptr<IConfigHolder> holder, std::unique_ptr<Source> source);
+    ConfigSubscription(const SubscriptionId& id, const ConfigKey& key, std::shared_ptr<IConfigHolder> holder,
+                       std::unique_ptr<Source> source);
     ~ConfigSubscription();
 
     /**
@@ -32,7 +34,7 @@ public:
      *
      * @return the current ConfigValue.
      */
-    const ConfigValue & getConfig() const;
+    const ConfigValue& getConfig() const;
 
     /**
      * Checks whether or not the config has changed.
@@ -47,15 +49,15 @@ public:
     int64_t getLastGenerationChanged() const noexcept { return _lastGenerationChanged; }
 
     /// Used by ConfigSubscriptionSet
-    SubscriptionId getSubscriptionId() const noexcept { return _id; }
-    const ConfigKey & getKey() const noexcept { return _key; }
-    bool nextUpdate(int64_t generation, vespalib::steady_time deadline);
-    int64_t getGeneration() const;
-    bool hasChanged() const;
-    bool hasGenerationChanged() const;
-    void flip();
-    void reset() noexcept { _isChanged = false; }
-    void close();
+    SubscriptionId   getSubscriptionId() const noexcept { return _id; }
+    const ConfigKey& getKey() const noexcept { return _key; }
+    bool             nextUpdate(int64_t generation, vespalib::steady_time deadline);
+    int64_t          getGeneration() const;
+    bool             hasChanged() const;
+    bool             hasGenerationChanged() const;
+    void             flip();
+    void             reset() noexcept { _isChanged = false; }
+    void             close();
 
     // Used by ConfigManager
     void reload(int64_t generation);
@@ -75,4 +77,3 @@ private:
 typedef std::vector<ConfigSubscription::SP> SubscriptionList;
 
 } // namespace config
-

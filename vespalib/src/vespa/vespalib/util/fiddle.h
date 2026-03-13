@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 
 namespace vespalib::bits {
 
@@ -79,4 +80,3 @@ uint32_t split_range(uint32_t min, uint32_t max,
 //-----------------------------------------------------------------------------
 
 }
-

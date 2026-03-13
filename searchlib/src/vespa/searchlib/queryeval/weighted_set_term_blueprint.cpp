@@ -138,7 +138,7 @@ WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &t
 SearchIterator::UP
 WeightedSetTermBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_or_filter(_terms, strict(), constraint);
+    return create_or_filter(_terms, constraint);
 }
 
 std::unique_ptr<MatchingElementsSearch>

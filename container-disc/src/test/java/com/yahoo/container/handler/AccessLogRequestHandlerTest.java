@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
+import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -24,14 +25,14 @@ public class AccessLogRequestHandlerTest {
         keeper.addUri("foo");
         HttpResponse response = handler.handle(null);
         response.render(out);
-        assertEquals("{\"entries\":[{\"url\":\"foo\"}]}", out.toString());
+        assertEquals("{\"entries\":[{\"url\":\"foo\"}]}", out.toString(StandardCharsets.UTF_8));
     }
 
     @Test
     void testEmpty() throws IOException {
         HttpResponse response = handler.handle(null);
         response.render(out);
-        assertEquals("{\"entries\":[]}", out.toString());
+        assertEquals("{\"entries\":[]}", out.toString(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -40,7 +41,7 @@ public class AccessLogRequestHandlerTest {
         keeper.addUri("foo");
         HttpResponse response = handler.handle(null);
         response.render(out);
-        assertEquals("{\"entries\":[{\"url\":\"foo\"},{\"url\":\"foo\"}]}", out.toString());
+        assertEquals("{\"entries\":[{\"url\":\"foo\"},{\"url\":\"foo\"}]}", out.toString(StandardCharsets.UTF_8));
     }
 
 }

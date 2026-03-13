@@ -26,6 +26,7 @@ struct DomainExplorer : vespalib::StateExplorer {
         state.setLong("to", info.range.to());
         state.setLong("numEntries", info.numEntries);
         state.setLong("byteSize", info.byteSize);
+        state.setLong("size_on_disk", info.size_on_disk);
         if (full) {
             Cursor &array = state.setArray("parts");
             for (const PartInfo &part_in: info.parts) {
@@ -34,6 +35,7 @@ struct DomainExplorer : vespalib::StateExplorer {
                 part.setLong("to", part_in.range.to());
                 part.setLong("numEntries", part_in.numEntries);
                 part.setLong("byteSize", part_in.byteSize);
+                part.setLong("size_on_disk", part_in.size_on_disk);
                 part.setString("file", part_in.file);
                 part.setString("lastModified", vespalib::to_string(fs::last_write_time(fs::path(part_in.file))));
             }
@@ -44,11 +46,13 @@ struct DomainExplorer : vespalib::StateExplorer {
 } // namespace search::transactionlog::<unnamed>
 
 TransLogServerExplorer::~TransLogServerExplorer() = default;
+
 void
 TransLogServerExplorer::get_state(const Inserter &inserter, bool full) const
 {
     (void) full;
-    inserter.insertObject();
+    Cursor& state = inserter.insertObject();
+    state.setLong("size_on_disk", _server->get_size_on_disk());
 }
 
 std::vector<std::string>

@@ -6,6 +6,7 @@ import com.google.inject.util.Types;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.List;
@@ -84,7 +85,7 @@ public class ComponentRegistryNode extends Node {
 
     @Override
     public String label() {
-        return String.format("{ComponentRegistry\\<%s\\>|%s}", componentClass.getSimpleName(), Node.packageName(componentClass));
+        return Text.format("{ComponentRegistry\\<%s\\>|%s}", componentClass.getSimpleName(), Node.packageName(componentClass));
     }
 
     private static ComponentId componentId(Class<?> componentClass) {

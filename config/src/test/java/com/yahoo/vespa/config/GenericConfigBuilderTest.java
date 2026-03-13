@@ -42,6 +42,6 @@ public class GenericConfigBuilderTest {
     private String getString(GenericConfig.GenericConfigBuilder builder) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         builder.getPayload().serialize(baos, new JsonFormat(true));
-        return baos.toString();
+        return baos.toString(java.nio.charset.StandardCharsets.UTF_8);
     }
 }

@@ -131,8 +131,8 @@ typename NodeTypes::Phrase *createPhrase(const std::string & view, int32_t id, W
     return new typename NodeTypes::Phrase(view, id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::SameElement *createSameElement(const std::string & view, int32_t id, Weight weight) {
-    return new typename NodeTypes::SameElement(view, id, weight);
+typename NodeTypes::SameElement *createSameElement(const std::string & view, int32_t id, Weight weight, std::vector<uint32_t> element_filter = std::vector<uint32_t>()) {
+    return new typename NodeTypes::SameElement(view, id, weight, std::move(element_filter));
 }
 template <class NodeTypes, typename... Args>
 typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(Args&&... args) {
@@ -302,8 +302,8 @@ public:
         setWeightOverride(weight);
         return node;
     }
-    typename NodeTypes::SameElement &addSameElement(int child_count, const string & view, int32_t id, Weight weight) {
-        return addIntermediate(createSameElement<NodeTypes>(view, id, weight), child_count);
+    typename NodeTypes::SameElement &addSameElement(int child_count, const string & view, int32_t id, Weight weight, std::vector<uint32_t> element_filter = std::vector<uint32_t>()) {
+        return addIntermediate(createSameElement<NodeTypes>(view, id, weight, std::move(element_filter)), child_count);
     }
     typename NodeTypes::WeightedSetTerm &addWeightedSetTerm(int child_count, const string & view, int32_t id, Weight weight) {
         adjustWeight(weight);

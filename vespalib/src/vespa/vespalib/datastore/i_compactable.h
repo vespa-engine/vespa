@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "entryref.h"
+
 namespace vespalib::datastore {
 
 /**

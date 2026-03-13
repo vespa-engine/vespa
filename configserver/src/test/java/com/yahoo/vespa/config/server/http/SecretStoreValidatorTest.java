@@ -14,12 +14,16 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -57,7 +61,7 @@ public class SecretStoreValidatorTest {
         var response = secretStoreValidator.validateSecretStore(app, SystemName.PublicCd, requestBody);
         var body = new ByteArrayOutputStream();
         response.render(body);
-        assertEquals("is ok", body.toString());
+        assertEquals("is ok", body.toString(StandardCharsets.UTF_8));
     }
 
     private Application mockApplication() {

@@ -3,6 +3,7 @@ package com.yahoo.prelude.query.test;
 
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PredicateQueryItem;
+import com.yahoo.prelude.query.SerializationContext;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -79,7 +80,7 @@ public class PredicateQueryItemTestCase {
         item.addFeature("foo", "bar");
         item.addFeature("foo", "baz", 0xffffL);
         ByteBuffer buffer = ByteBuffer.allocate(1000);
-        item.encode(buffer);
+        item.encode(buffer, new SerializationContext(1.0));
         buffer.flip();
         byte[] actual = new byte[buffer.remaining()];
         buffer.get(actual);
@@ -95,7 +96,7 @@ public class PredicateQueryItemTestCase {
         item.addRangeFeature("foo", 23);
         item.addRangeFeature("foo", 34, 0xfffffffffffffffeL);
         buffer.clear();
-        item.encode(buffer);
+        item.encode(buffer, new SerializationContext(1.0));
         buffer.flip();
         actual = new byte[buffer.remaining()];
         buffer.get(actual);
@@ -119,7 +120,7 @@ public class PredicateQueryItemTestCase {
             item.addFeature("foo", "bar");
         }
         ByteBuffer buffer = ByteBuffer.allocate(10000);
-        item.encode(buffer);
+        item.encode(buffer, new SerializationContext(1.0));
         buffer.flip();
         byte[] actual = new byte[buffer.remaining()];
         buffer.get(actual);

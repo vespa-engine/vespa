@@ -3,13 +3,19 @@ package com.yahoo.schema.parser;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.io.IOUtils;
+import com.yahoo.text.Text;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import java.io.File;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author arnej
@@ -213,7 +219,7 @@ public class SchemaParserTestCase {
     }
 
     private void assertRankProfileWithOutOfRangeThrows(String rpContent) {
-        var input = String.format(java.util.Locale.ROOT, "schema foo { rank-profile rp { %s } }", rpContent);
+        var input = Text.format("schema foo { rank-profile rp { %s } }", rpContent);
         var e = assertThrows(IllegalArgumentException.class, () -> parseString(input));
         assertTrue(e.getMessage().contains("must be in range [0, 1]"));
     }

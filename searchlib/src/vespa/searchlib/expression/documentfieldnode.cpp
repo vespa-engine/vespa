@@ -193,6 +193,9 @@ public:
 private:
     void set(const ResultNode&) override;
     size_t hash() const override { return 0; }
+
+    std::string_view friendly_type_name() const noexcept override { return "<field_value>"; }
+
     const FieldValue * _fv;
 };
 
@@ -220,7 +223,7 @@ void DocumentFieldNode::onDoc(const Document & doc)
     _needExecute = true;
 }
 
-bool
+void
 DocumentFieldNode::onExecute() const
 {
     if (_needExecute) {
@@ -240,7 +243,6 @@ DocumentFieldNode::onExecute() const
             _value->set(_keepAliveForIndexLookups->get(idx));
         }
     }
-    return true;
 }
 
 DefaultValue DocumentFieldNode::SingleHandler::_defaultValue;
@@ -312,6 +314,9 @@ private:
     String2ResultNode * clone() const override { return new String2ResultNode(_s); }
     void set(const ResultNode&) override;
     size_t hash() const override { return 0; }
+
+    std::string_view friendly_type_name() const noexcept override { return "<string_adapter>"; }
+
     std::string _s;
 };
 

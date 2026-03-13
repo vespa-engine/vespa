@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <cmath>
 
@@ -64,4 +65,3 @@ public:
 };
 
 } // search
-

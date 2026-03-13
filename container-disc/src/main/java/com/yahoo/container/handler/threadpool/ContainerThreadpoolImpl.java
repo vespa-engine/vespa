@@ -6,6 +6,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.text.Text;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -76,7 +77,7 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
         int minThreads = minThreads(config, cpus, hasRelThreads);
         int queueSize = queueSize(config, maxThreads, hasRelQueueSize);
 
-        log.config(String.format("Threadpool '%s': min=%d, max=%d, queue=%s", name, minThreads, maxThreads, queueSizeToString(queueSize)));
+        log.config(Text.format("Threadpool '%s': min=%d, max=%d, queue=%s", name, minThreads, maxThreads, queueSizeToString(queueSize)));
 
         ThreadPoolMetric threadPoolMetric = new ThreadPoolMetric(metric, name);
         WorkerCompletionTimingThreadPoolExecutor executor =
@@ -154,7 +155,7 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
 
     /** Summary string of the config for exceptions. */
     private static String summarizeConfigToString(ContainerThreadpoolConfig c, int cpus) {
-        return String.format(
+        return Text.format(
                 "abs[min=%d,max=%d,queue=%d] rel[min=%.3f,max=%.3f,queue=%.3f] cpus=%d",
                 c.minThreads(), c.maxThreads(), c.queueSize(),
                 c.relativeMinThreads(), c.relativeMaxThreads(), c.relativeQueueSize(),

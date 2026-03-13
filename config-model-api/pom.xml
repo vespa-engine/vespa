@@ -109,6 +109,12 @@
       <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>abi-check-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>leakagecheck</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

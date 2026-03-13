@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,7 @@ public class MultiFeedException extends RuntimeException {
     }
 
     private static String toMessage(Collection<FeedException> exceptions) {
-        return String.format("%d feed operations failed", exceptions.size());
+        return String.format(Locale.ROOT, "%d feed operations failed", exceptions.size());
     }
 
 }

@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/subscription/configsubscription.h>
 #include "iconfigmanager.h"
 #include "sourcefactory.h"
+
+#include <vespa/config/subscription/configsubscription.h>
+
 #include <map>
 #include <mutex>
 
@@ -18,15 +20,14 @@ struct TimingValues;
  *
  * The manager holds a reference to each subscription.
  */
-class ConfigManager : public IConfigManager
-{
+class ConfigManager : public IConfigManager {
 public:
     ConfigManager(std::unique_ptr<SourceFactory> sourceFactory, int64_t initialGeneration);
     ~ConfigManager() override;
 
-    ConfigSubscription::SP subscribe(const ConfigKey & key, vespalib::duration timeout) override;
-    void unsubscribe(const ConfigSubscription & subscription) override;
-    void reload(int64_t generation) override;
+    ConfigSubscription::SP subscribe(const ConfigKey& key, vespalib::duration timeout) override;
+    void                   unsubscribe(const ConfigSubscription& subscription) override;
+    void                   reload(int64_t generation) override;
 
 private:
     std::atomic<SubscriptionId>    _idGenerator;
@@ -35,8 +36,7 @@ private:
 
     using SubscriptionMap = std::map<SubscriptionId, ConfigSubscription::SP>;
     SubscriptionMap _subscriptionMap;
-    std::mutex _lock;
+    std::mutex      _lock;
 };
 
 } // namespace config
-

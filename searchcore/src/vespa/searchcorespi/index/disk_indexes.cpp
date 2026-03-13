@@ -4,17 +4,22 @@
 #include "indexdisklayout.h"
 #include "index_disk_dir.h"
 #include "index_disk_dir_state.h"
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/util/directory_traverse.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <cassert>
 #include <vector>
 
+using search::DiskSpaceCalculator;
+using searchcorespi::common::ResourceUsage;
+using searchcorespi::common::TransientResourceUsage;
 using std::string;
 
 namespace searchcorespi::index {
 
 DiskIndexes::DiskIndexes()
     : _active(),
-      _sum_size_on_disk(0),
+      _sum_size_on_disk(get_size_on_disk_overhead()),
       _sum_stale_size_on_disk(0u),
       _lock()
 {
@@ -116,10 +121,11 @@ DiskIndexes::remove(IndexDiskDir index_disk_dir)
     return true;
 }
 
-uint64_t
-DiskIndexes::get_transient_size(const IndexDiskLayout& layout) const
+ResourceUsage
+DiskIndexes::get_resource_usage(const IndexDiskLayout& layout) const
 {
     std::unique_lock guard(_lock);
+    uint64_t size_on_disk = _sum_size_on_disk - _sum_stale_size_on_disk;
     uint64_t transient_size = _sum_stale_size_on_disk;
     std::vector<IndexDiskDir> deferred;
     for (auto &entry : _active) {
@@ -142,7 +148,7 @@ DiskIndexes::get_transient_size(const IndexDiskLayout& layout) const
         } catch (std::exception &) {
         }
     }
-    return transient_size;
+    return ResourceUsage{TransientResourceUsage{transient_size, 0}, size_on_disk};
 }
 
 uint64_t
@@ -154,6 +160,12 @@ DiskIndexes::get_size_on_disk(bool include_stale) const
         size_on_disk -= _sum_stale_size_on_disk;
     }
     return size_on_disk;
+}
+
+uint64_t
+DiskIndexes::get_size_on_disk_overhead() noexcept {
+    // The "index" directory under the searchable document subdb directory, e.g. "0.ready/index"
+    return DiskSpaceCalculator::directory_placeholder_size();
 }
 
 }

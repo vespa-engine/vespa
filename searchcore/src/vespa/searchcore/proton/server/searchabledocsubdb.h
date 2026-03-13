@@ -140,7 +140,7 @@ public:
     void close() override;
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
     void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
-    ResourceUsage get_resource_usage() const override;
+    searchcorespi::common::ResourceUsage get_resource_usage() const override;
 };
 
 } // namespace proton

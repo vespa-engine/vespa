@@ -2,6 +2,7 @@
 package com.yahoo.config;
 
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -82,7 +83,7 @@ public class ModelReference {
         if (resolved != null) return resolved.toString();
         return modelId.orElse("\"\"") + " " +
                url.map(UrlReference::value).orElse("\"\"") + " " +
-               secretRef.map("%s "::formatted).orElse("") + // TODO remove conditional after 8.566
+               secretRef.map(s -> String.format(Locale.ROOT, "%s ", s)).orElse("") + // TODO remove conditional after 8.566
                path.map(FileReference::value).orElse("\"\"");
     }
 

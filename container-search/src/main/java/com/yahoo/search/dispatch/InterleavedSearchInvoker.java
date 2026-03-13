@@ -3,9 +3,13 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.concurrent.Timer;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NearestNeighborItem;
+import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
+import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -16,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -53,8 +58,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                                     Set<Integer> alreadyFailedNodes) {
         super(Optional.empty());
         this.timer = timer;
-        this.invokers = Collections.newSetFromMap(new IdentityHashMap<>());
-        this.invokers.addAll(invokers);
+        this.invokers = new LinkedHashSet<>(invokers);
         this.dispatchConfig = dispatchConfig;
         this.group = group;
         this.availableForProcessing = newQueue();
@@ -80,37 +84,36 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
      * Sends search queries to the contained {@link SearchInvoker} sub-invokers. If the search
      * query has an offset other than zero, it will be reset to zero and the expected hit amount
      * will be adjusted accordingly.
+     *
+     * @param query the query to send
+     * @param contentShare the share of the total available content we're searching in this
+     *                     (will be 1, since we don't do hierarchical node groups)
+     * @param unusedContext only used by the single node rpc invokers
      */
     @Override
-    protected Object sendSearchRequest(Query query, Object unusedContext) throws IOException {
+    protected Object sendSearchRequest(Query query, double contentShare, Object unusedContext) throws IOException {
         this.query = query;
         invokers.forEach(invoker -> invoker.setMonitor(this));
 
         int originalHits = query.getHits();
         int originalOffset = query.getOffset();
-        int neededHits = originalHits + originalOffset;
-        int q = neededHits;
-        if (group.isBalanced() && !group.isSparse()) {
-            Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
-            q = (topkProbabilityOverrride != null)
-                    ? estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)
-                    : estimateHitsToFetch(neededHits, invokers.size());
-        }
-        if (q < neededHits) {
-            query.trace("Only fetching " + q + " of " + neededHits + " hits per node (TopK probability for " + invokers.size() + " nodes)", 1);
-        }
-        query.setHits(q);
-        query.setOffset(0);
-
+        topKOptimize(query, group);
         Object context = null;
         for (SearchInvoker invoker : invokers) {
-            context = invoker.sendSearchRequest(query, context);
+            context = invoker.sendSearchRequest(query, contentShare * invokerContentShare(invoker, group), context);
         }
         timeoutHandler = createTimeoutHandler(dispatchConfig, invokers.size(), query);
 
         query.setHits(originalHits);
         query.setOffset(originalOffset);
         return null;
+    }
+
+    private double invokerContentShare(SearchInvoker invoker, Group group) {
+        if (invoker.node().isEmpty()) return 1.0; // This does not invoke multiple nodes, so it's everything
+        Node node = invoker.node().get();
+        if (node.getActiveDocuments() == 0 || group.activeDocuments() == 0) return 1.0 / group.size(); // Unknown: Default assumption is balanced distribution
+        return (double)node.getActiveDocuments() / group.activeDocuments();
     }
 
     @Override
@@ -148,6 +151,22 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         }
         query.setOffset(0);  // Now we are all trimmed down
         return result;
+    }
+
+    private void topKOptimize(Query query, Group group) {
+        int neededHits = query.getHits() + query.getOffset();
+        int q = neededHits;
+        if (group.isBalanced() && !group.isSparse()) {
+            Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
+            q = (topkProbabilityOverrride != null)
+                ? estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)
+                : estimateHitsToFetch(neededHits, invokers.size());
+        }
+        if (q < neededHits) {
+            query.trace("Only fetching " + q + " of " + neededHits + " hits per node (TopK probability for " + invokers.size() + " nodes)", 1);
+        }
+        query.setHits(q);
+        query.setOffset(0);
     }
 
     private void insertNetworkErrors(Result result) {

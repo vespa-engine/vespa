@@ -13,6 +13,7 @@ DirectTensorAttribute::DirectTensorAttribute(string_view name, const Config &cfg
     : TensorAttribute(name, cfg, _direct_store, index_factory),
       _direct_store(cfg.tensorType())
 {
+    setup_memory_usage_empty();
 }
 
 DirectTensorAttribute::~DirectTensorAttribute()

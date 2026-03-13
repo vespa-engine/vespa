@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.DataplaneToken;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.http.Client;
 
@@ -51,7 +52,7 @@ public class DataplaneTokenRemovalValidator implements ChangeValidator {
                                         .map(DataplaneToken::tokenId)
                                         .toList();
 
-        logger.log(Level.FINE, String.format(java.util.Locale.ROOT, "Tokens for cluster %s: Current: [%s], Next: [%s]", clusterId,
+        logger.log(Level.FINE, Text.format("Tokens for cluster %s: Current: [%s], Next: [%s]", clusterId,
                            currentTokenIds.stream().collect(Collectors.joining(", ")),
                            nextTokenIds.stream().collect(Collectors.joining(", "))));
 

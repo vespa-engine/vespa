@@ -5,6 +5,8 @@ import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.text.Text;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -32,7 +34,7 @@ enum GlobalConfigAuthorizationPolicy {
     static void verifyAccessAllowed(ConfigKey<?> configKey, NodeType nodeType) {
         GlobalConfigAuthorizationPolicy policy = findPolicyFromConfigKey(configKey);
         if (!policy.allowedToAccess.contains(nodeType)) {
-            String message = String.format(
+            String message = Text.format(
                     "Node with type '%s' is not allowed to access global config [%s]",
                     nodeType, configKey);
             throw new AuthorizationException(message);
@@ -43,7 +45,7 @@ enum GlobalConfigAuthorizationPolicy {
         return Arrays.stream(values())
                 .filter(policy -> policy.namespace.equals(configKey.getNamespace()) && policy.name.equals(configKey.getName()))
                 .findAny()
-                .orElseThrow(() -> new AuthorizationException(String.format("No policy defined for global config [%s]", configKey)));
+                .orElseThrow(() -> new AuthorizationException(Text.format("No policy defined for global config [%s]", configKey)));
     }
 
 }

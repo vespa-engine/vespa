@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.api.TenantVault;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.xml.CloudSecrets;
 
@@ -36,7 +37,7 @@ public class TenantSecretValidator implements Validator {
                         // Vault exists, check that the secret exists in the vault
                         var vaultSecrets = existingVaults.get(secretConfig.vault());
                         if (! hasSecret(secretConfig.name(), vaultSecrets)) {
-                            context.illegal(String.format(java.util.Locale.ROOT, "Secret '%s' is not defined in vault '%s'", secretConfig.name(), secretConfig.vault()));
+                            context.illegal(Text.format("Secret '%s' is not defined in vault '%s'", secretConfig.name(), secretConfig.vault()));
                         }
                     }
                 }

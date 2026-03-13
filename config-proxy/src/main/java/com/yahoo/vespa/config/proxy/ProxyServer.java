@@ -14,6 +14,7 @@ import com.yahoo.vespa.config.proxy.filedistribution.FileDistributionAndUrlDownl
 import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -106,7 +107,7 @@ public class ProxyServer implements Runnable {
             default:
                 throw new IllegalArgumentException("Cannot set invalid mode '" + modeName + "'");
         }
-        log.log(Level.INFO, "Switched from '" + oldMode.name().toLowerCase() + "' mode to '" + getMode().name().toLowerCase() + "' mode");
+        log.log(Level.INFO, "Switched from '" + oldMode.name().toLowerCase(Locale.ROOT) + "' mode to '" + getMode().name().toLowerCase(Locale.ROOT) + "' mode");
     }
 
     private ConfigProxyRpcServer createRpcServer(Spec spec) {

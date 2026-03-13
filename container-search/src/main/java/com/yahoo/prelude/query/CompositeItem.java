@@ -169,21 +169,21 @@ public abstract class CompositeItem extends Item {
     /** Returns a read only list of the immediate children of this */
     public List<Item> items() { return Collections.unmodifiableList(subitems); }
 
-    public int encode(ByteBuffer buffer) {
-        encodeThis(buffer);
+    public int encode(ByteBuffer buffer, SerializationContext context) {
+        encodeThis(buffer, context);
         int itemCount = 1;
 
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
             Item subitem = i.next();
 
-            itemCount += subitem.encode(buffer);
+            itemCount += subitem.encode(buffer, context);
         }
         return itemCount;
     }
 
     /** Encodes just this item, not its regular subitems, to the given buffer. */
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         IntegerCompressor.putCompressedPositiveNumber(encodingArity(), buffer);
     }
 

@@ -258,7 +258,7 @@ public class VespaXmlUpdateReaderTestCase {
 
     private static String printStackTrace(Throwable t) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        t.printStackTrace(new PrintStream(out));
+        t.printStackTrace(new PrintStream(out, true, StandardCharsets.UTF_8));
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }

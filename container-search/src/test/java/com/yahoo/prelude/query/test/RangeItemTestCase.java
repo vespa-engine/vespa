@@ -3,6 +3,7 @@ package com.yahoo.prelude.query.test;
 
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.RangeItem;
+import com.yahoo.prelude.query.SerializationContext;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -30,9 +31,9 @@ public class RangeItemTestCase {
         }
         assertEquals(isFromQuery, range.isFromQuery());
         ByteBuffer buffer = ByteBuffer.allocate(128);
-        int count = range.encode(buffer);
+        int count = range.encode(buffer, new SerializationContext(1.0));
         ByteBuffer buffer2 = ByteBuffer.allocate(128);
-        int count2 = new IntItem(range.getNumber(), range.getIndexName(), range.isFromQuery()).encode(buffer2);
+        int count2 = new IntItem(range.getNumber(), range.getIndexName(), range.isFromQuery()).encode(buffer2, new SerializationContext(1.0));
         assertEquals(buffer, buffer2);
     }
 

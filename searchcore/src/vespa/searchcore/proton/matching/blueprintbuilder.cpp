@@ -128,7 +128,10 @@ private:
     void buildSameElement(ProtonSameElement &n) {
         if (n.numFields() == 1) {
             auto se = std::make_unique<SameElementBlueprint>(n.field(0).fieldSpec(),
-                                                             n.descendants_index_handles, n.is_expensive());
+                                                             n.descendants_index_handles,
+                                                             n.is_expensive(),
+                                                             n.expose_match_data_for_same_element,
+                                                             n.get_element_filter()); // Copy element filter
             for (auto* node : n.getChildren()) {
                 se->addChild(build(_requestContext, *node, _context, _global_layout));
             }

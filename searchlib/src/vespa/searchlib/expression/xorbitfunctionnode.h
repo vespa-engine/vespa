@@ -11,10 +11,10 @@ public:
     DECLARE_EXPRESSIONNODE(XorBitFunctionNode);
     XorBitFunctionNode();
     XorBitFunctionNode(ExpressionNode::UP arg, unsigned numBits);
-    ~XorBitFunctionNode();
+    ~XorBitFunctionNode() override;
 private:
     mutable std::vector<uint8_t> _tmpXor;
-    bool internalExecute(const vespalib::nbostream & os) const override;
+    void internalExecute(const vespalib::nbostream & os) const override;
     void onPrepareResult() override;
 };
 

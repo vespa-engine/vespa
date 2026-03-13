@@ -1,58 +1,52 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/frt/supervisor.h>
-#include <vespa/fnet/frt/target.h>
-#include <vespa/config/frt/frtconfigrequestfactory.h>
-#include <vespa/config/frt/frtconnection.h>
-#include <vespa/config/frt/protocol.h>
-#include <vespa/config/frt/frtconfigrequest.h>
 #include <vespa/config/common/configresponse.h>
 #include <vespa/config/common/configstate.h>
 #include <vespa/config/common/configvalue.h>
 #include <vespa/config/common/errorcode.h>
 #include <vespa/config/common/payload_converter.h>
 #include <vespa/config/common/trace.h>
+#include <vespa/config/frt/frtconfigrequest.h>
+#include <vespa/config/frt/frtconfigrequestfactory.h>
+#include <vespa/config/frt/frtconnection.h>
+#include <vespa/config/frt/protocol.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <cinttypes>
-#include <unistd.h>
 
-#include <sstream>
+#include <cinttypes>
 #include <fstream>
+#include <sstream>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-get-config");
 
 using namespace config;
 
-class GetConfig
-{
+class GetConfig {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Target     *_target;
+    FRT_Target*                               _target;
 
-    GetConfig(const GetConfig &);
-    GetConfig &operator=(const GetConfig &);
+    GetConfig(const GetConfig&);
+    GetConfig& operator=(const GetConfig&);
 
 public:
     GetConfig() : _server(), _target(nullptr) {}
     ~GetConfig();
-    int usage(const char *self);
-    void initRPC(const char *spec);
+    int  usage(const char* self);
+    void initRPC(const char* spec);
     void finiRPC();
-    int main(int argc, char **argv);
+    int  main(int argc, char** argv);
 };
 
-
-GetConfig::~GetConfig()
-{
-    LOG_ASSERT( ! _server);
+GetConfig::~GetConfig() {
+    LOG_ASSERT(!_server);
     LOG_ASSERT(_target == nullptr);
 }
 
-
-int
-GetConfig::usage(const char *self)
-{
+int GetConfig::usage(const char* self) {
     fprintf(stderr, "usage: %s -n name -i configId\n", self);
     fprintf(stderr, "-n name           config name, on the form <namespace>.<name>\n");
     fprintf(stderr, "-i configId       config id, optional\n");
@@ -73,18 +67,12 @@ GetConfig::usage(const char *self)
     return 1;
 }
 
-
-void
-GetConfig::initRPC(const char *spec)
-{
+void GetConfig::initRPC(const char* spec) {
     _server = std::make_unique<fnet::frt::StandaloneFRT>();
-    _target     = _server->supervisor().GetTarget(spec);
+    _target = _server->supervisor().GetTarget(spec);
 }
 
-
-void
-GetConfig::finiRPC()
-{
+void GetConfig::finiRPC() {
     if (_target != nullptr) {
         _target->internal_subref();
         _target = nullptr;
@@ -92,30 +80,27 @@ GetConfig::finiRPC()
     _server.reset();
 }
 
-
-int
-GetConfig::main(int argc, char **argv)
-{
-    int retval = 1;
+int GetConfig::main(int argc, char** argv) {
+    int  retval = 1;
     bool debugging = false;
-    int c = -1;
+    int  c = -1;
 
     StringVector defSchema;
-    const char *schemaString = nullptr;
-    const char *defName = nullptr;
-    const char *defMD5 = "";
-    std::string defNamespace("config");
-    const char *serverHost = "localhost";
-    const char *configId = getenv("VESPA_CONFIG_ID");
-    bool printAsJson = false; // TODO: Change default value in Vespa 9
-    int traceLevel = config::protocol::readTraceLevel();
-    const char *vespaVersionString = nullptr;
-    int64_t generation = 0;
+    const char*  schemaString = nullptr;
+    const char*  defName = nullptr;
+    const char*  defMD5 = "";
+    std::string  defNamespace("config");
+    const char*  serverHost = "localhost";
+    const char*  configId = getenv("VESPA_CONFIG_ID");
+    bool         printAsJson = false; // TODO: Change default value in Vespa 9
+    int          traceLevel = config::protocol::readTraceLevel();
+    const char*  vespaVersionString = nullptr;
+    int64_t      generation = 0;
 
     if (configId == nullptr) {
         configId = "";
     }
-    const char *configXxhash64 = "";
+    const char*        configXxhash64 = "";
     vespalib::duration serverTimeout = 3s;
     vespalib::duration clientTimeout = 10s;
 
@@ -184,7 +169,7 @@ GetConfig::main(int argc, char **argv)
     }
 
     if (strchr(defName, '.') != nullptr) {
-        const char *tmp = defName;
+        const char* tmp = defName;
         defName = strrchr(defName, '.');
         defName++;
         defNamespace = std::string(tmp, defName - tmp - 1);
@@ -192,27 +177,27 @@ GetConfig::main(int argc, char **argv)
 
     std::string schema;
     if (schemaString == nullptr) {
-      std::ostringstream tmp;
-      tmp << getenv("VESPA_HOME");
-      tmp << "/share/vespa/configdefinitions/";
-      tmp << defNamespace;
-      tmp << ".";
-      tmp << defName;
-      tmp << ".def";
-      schema = tmp.str();
+        std::ostringstream tmp;
+        tmp << getenv("VESPA_HOME");
+        tmp << "/share/vespa/configdefinitions/";
+        tmp << defNamespace;
+        tmp << ".";
+        tmp << defName;
+        tmp << ".def";
+        schema = tmp.str();
     } else {
-      schema = schemaString;
+        schema = schemaString;
     }
     if (debugging) {
-      printf("Using schema in %s\n", schema.c_str());
+        printf("Using schema in %s\n", schema.c_str());
     }
     std::ifstream is;
     is.open(schema);
     std::string item;
     while (std::getline(is, item)) {
-      if (item.find("namespace=") == std::string::npos) {
-        defSchema.push_back(item);
-      }
+        if (item.find("namespace=") == std::string::npos) {
+            defSchema.push_back(item);
+        }
     }
     is.close();
 
@@ -222,7 +207,7 @@ GetConfig::main(int argc, char **argv)
     tmp << ":";
     tmp << serverPort;
     std::string sspec = tmp.str();
-    const char *spec = sspec.c_str();
+    const char* spec = sspec.c_str();
     if (debugging) {
         printf("connecting to '%s'\n", spec);
     }
@@ -236,11 +221,13 @@ GetConfig::main(int argc, char **argv)
     tryVersions.push_back(VespaVersion::fromString(""));
 
     for (const VespaVersion& vespaVersion : tryVersions) {
-        FRTConfigRequestFactory requestFactory(traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
-        FRTConnection connection(spec, _server->supervisor(), TimingValues());
-        ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
-        ConfigState state(configXxhash64, generation, false);
-        std::unique_ptr<FRTConfigRequest> request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout);
+        FRTConfigRequestFactory           requestFactory(traceLevel, vespaVersion,
+                                                         config::protocol::readProtocolCompressionType());
+        FRTConnection                     connection(spec, _server->supervisor(), TimingValues());
+        ConfigKey                         key(configId, defName, defNamespace, defMD5, defSchema);
+        ConfigState                       state(configXxhash64, generation, false);
+        std::unique_ptr<FRTConfigRequest> request =
+            requestFactory.createConfigRequest(key, &connection, state, serverTimeout);
 
         _target->InvokeSync(request->getRequest(), vespalib::to_s(clientTimeout)); // seconds
 
@@ -251,14 +238,13 @@ GetConfig::main(int argc, char **argv)
             if (response->errorCode() == ErrorCode::UNKNOWN_VESPA_VERSION) {
                 continue;
             }
-            fprintf(stderr, "error %d: %s\n",
-                    response->errorCode(), response->errorMessage().c_str());
+            fprintf(stderr, "error %d: %s\n", response->errorCode(), response->errorMessage().c_str());
             break;
         }
         response->fill();
-        ConfigKey rKey(response->getKey());
-        const ConfigState & rState = response->getConfigState();
-        const ConfigValue & rValue = response->getValue();
+        ConfigKey          rKey(response->getKey());
+        const ConfigState& rState = response->getConfigState();
+        const ConfigValue& rValue = response->getValue();
         if (debugging) {
             printf("defName    %s\n", rKey.getDefName().c_str());
             printf("defMD5     %s\n", rKey.getDefMd5().c_str());
@@ -278,7 +264,7 @@ GetConfig::main(int argc, char **argv)
         } else {
             StringVector lines = rValue.getLegacyFormat();
             for (uint32_t j = 0; j < lines.size(); j++) {
-                printf("%s\n",  lines[j].c_str());
+                printf("%s\n", lines[j].c_str());
             }
         }
         retval = 0;
@@ -288,7 +274,7 @@ GetConfig::main(int argc, char **argv)
     return retval;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     GetConfig app;
     return app.main(argc, argv);

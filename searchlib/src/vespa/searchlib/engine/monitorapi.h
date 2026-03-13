@@ -4,6 +4,7 @@
 
 #include "monitorrequest.h"
 #include "monitorreply.h"
+#include <memory>
 
 namespace search::engine {
 
@@ -61,4 +62,3 @@ public:
 };
 
 }
-

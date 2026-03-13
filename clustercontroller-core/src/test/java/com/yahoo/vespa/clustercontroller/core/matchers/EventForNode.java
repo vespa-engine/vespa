@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.matchers;
 
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.NodeEvent;
 import org.hamcrest.BaseMatcher;
@@ -22,13 +23,13 @@ public class EventForNode extends BaseMatcher<NodeEvent> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format(Locale.ROOT, "NodeEvent for node %s", expected));
+        description.appendText(Text.format("NodeEvent for node %s", expected));
     }
 
     @Override
     public void describeMismatch(Object item, Description description) {
         NodeEvent other = (NodeEvent)item;
-        description.appendText(String.format(Locale.ROOT, "got node %s", other.getNode().getNode()));
+        description.appendText(Text.format("got node %s", other.getNode().getNode()));
     }
 
     public static EventForNode eventForNode(Node expected) {

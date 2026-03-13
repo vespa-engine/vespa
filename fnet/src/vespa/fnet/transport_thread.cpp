@@ -1,16 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "transport_thread.h"
+
+#include "connection.h"
+#include "connector.h"
+#include "controlpacket.h"
 #include "iexecutable.h"
 #include "iocomponent.h"
-#include "controlpacket.h"
-#include "connector.h"
-#include "connection.h"
 #include "transport.h"
-#include <vespa/vespalib/net/socket_spec.h>
+
 #include <vespa/vespalib/net/server_socket.h>
+#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/gate.h>
+
 #include <csignal>
 
 #include <vespa/log/log.h>
@@ -24,19 +27,14 @@ using namespace vespalib::atomic;
 
 namespace {
 
-struct Sync : public FNET_IExecutable
-{
+struct Sync : public FNET_IExecutable {
     vespalib::Gate gate;
-    void execute() override {
-        gate.countDown();
-    }
+    void           execute() override { gate.countDown(); }
 };
 
-} // namespace<unnamed>
+} // namespace
 
-void
-FNET_TransportThread::AddComponent(FNET_IOComponent *comp)
-{
+void FNET_TransportThread::AddComponent(FNET_IOComponent* comp) {
     if (comp->ShouldTimeOut()) {
         comp->_ioc_prev = _componentsTail;
         comp->_ioc_next = nullptr;
@@ -62,10 +60,7 @@ FNET_TransportThread::AddComponent(FNET_IOComponent *comp)
     }
 }
 
-
-void
-FNET_TransportThread::RemoveComponent(FNET_IOComponent *comp)
-{
+void FNET_TransportThread::RemoveComponent(FNET_IOComponent* comp) {
     if (comp == _componentsHead)
         _componentsHead = comp->_ioc_next;
     if (comp == _timeOutHead)
@@ -79,19 +74,13 @@ FNET_TransportThread::RemoveComponent(FNET_IOComponent *comp)
     store_relaxed(_componentCnt, load_relaxed(_componentCnt) - 1);
 }
 
-
-void
-FNET_TransportThread::UpdateTimeOut(FNET_IOComponent *comp)
-{
+void FNET_TransportThread::UpdateTimeOut(FNET_IOComponent* comp) {
     comp->_ioc_timestamp = _now;
     RemoveComponent(comp);
     AddComponent(comp);
 }
 
-
-void
-FNET_TransportThread::AddDeleteComponent(FNET_IOComponent *comp)
-{
+void FNET_TransportThread::AddDeleteComponent(FNET_IOComponent* comp) {
     assert(!comp->_flags._ioc_delete);
     comp->_flags._ioc_delete = true;
     comp->_ioc_prev = nullptr;
@@ -99,23 +88,16 @@ FNET_TransportThread::AddDeleteComponent(FNET_IOComponent *comp)
     _deleteList = comp;
 }
 
-
-void
-FNET_TransportThread::FlushDeleteList()
-{
+void FNET_TransportThread::FlushDeleteList() {
     while (_deleteList != nullptr) {
-        FNET_IOComponent *tmp = _deleteList;
+        FNET_IOComponent* tmp = _deleteList;
         _deleteList = tmp->_ioc_next;
         assert(tmp->_flags._ioc_delete);
         tmp->internal_subref();
     }
 }
 
-
-bool
-FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
-                                FNET_Context context)
-{
+bool FNET_TransportThread::PostEvent(FNET_ControlPacket* cpacket, FNET_Context context) {
     size_t qLen;
     {
         std::unique_lock<std::mutex> guard(_lock);
@@ -135,11 +117,7 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
     return true;
 }
 
-
-void
-FNET_TransportThread::DiscardEvent(FNET_ControlPacket *cpacket,
-                                   FNET_Context context)
-{
+void FNET_TransportThread::DiscardEvent(FNET_ControlPacket* cpacket, FNET_Context context) {
     switch (cpacket->GetCommand()) {
     case FNET_ControlPacket::FNET_CMD_IOC_ADD:
         context._value.IOC->Close();
@@ -153,10 +131,7 @@ FNET_TransportThread::DiscardEvent(FNET_ControlPacket *cpacket,
     }
 }
 
-
-void
-FNET_TransportThread::handle_add_cmd(FNET_IOComponent *ioc)
-{
+void FNET_TransportThread::handle_add_cmd(FNET_IOComponent* ioc) {
     if ((_detaching.count(ioc->server_adapter()) == 0) && ioc->handle_add_event()) {
         AddComponent(ioc);
         ioc->_flags._ioc_added = true;
@@ -167,10 +142,7 @@ FNET_TransportThread::handle_add_cmd(FNET_IOComponent *ioc)
     }
 }
 
-
-void
-FNET_TransportThread::handle_close_cmd(FNET_IOComponent *ioc)
-{
+void FNET_TransportThread::handle_close_cmd(FNET_IOComponent* ioc) {
     if (ioc->_flags._ioc_added) {
         RemoveComponent(ioc);
         ioc->internal_subref();
@@ -179,14 +151,11 @@ FNET_TransportThread::handle_close_cmd(FNET_IOComponent *ioc)
     AddDeleteComponent(ioc);
 }
 
-
-void
-FNET_TransportThread::handle_detach_server_adapter_init_cmd(FNET_IServerAdapter *server_adapter)
-{
+void FNET_TransportThread::handle_detach_server_adapter_init_cmd(FNET_IServerAdapter* server_adapter) {
     _detaching.insert(server_adapter);
-    FNET_IOComponent *component = _componentsHead;
+    FNET_IOComponent* component = _componentsHead;
     while (component != nullptr) {
-        FNET_IOComponent *tmp = component;
+        FNET_IOComponent* tmp = component;
         component = component->_ioc_next;
         if (tmp->server_adapter() == server_adapter) {
             RemoveComponent(tmp);
@@ -196,36 +165,31 @@ FNET_TransportThread::handle_detach_server_adapter_init_cmd(FNET_IServerAdapter 
     }
 }
 
-
-void
-FNET_TransportThread::handle_detach_server_adapter_fini_cmd(FNET_IServerAdapter *server_adapter)
-{
+void FNET_TransportThread::handle_detach_server_adapter_fini_cmd(FNET_IServerAdapter* server_adapter) {
     _detaching.erase(server_adapter);
 }
 
 extern "C" {
 
-    static void pipehandler(int)
-    {
-        // nop
-    }
+static void pipehandler(int) {
+    // nop
+}
 
-    static void trapsigpipe()
-    {
-        struct sigaction act;
+static void trapsigpipe() {
+    struct sigaction act;
+    memset(&act, 0, sizeof(act));
+    sigaction(SIGPIPE, nullptr, &act);
+    if (act.sa_handler == SIG_DFL) {
         memset(&act, 0, sizeof(act));
-        sigaction(SIGPIPE, nullptr, &act);
-        if (act.sa_handler == SIG_DFL) {
-            memset(&act, 0, sizeof(act));
-            act.sa_handler = pipehandler;
-            sigaction(SIGPIPE, &act, nullptr);
-            LOG(warning, "missing signal handler for SIGPIPE (added no-op)");
-        }
+        act.sa_handler = pipehandler;
+        sigaction(SIGPIPE, &act, nullptr);
+        LOG(warning, "missing signal handler for SIGPIPE (added no-op)");
     }
+}
 
 } // extern "C"
 
-FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
+FNET_TransportThread::FNET_TransportThread(FNET_Transport& owner_in)
     : _owner(owner_in),
       _now(owner_in.time_tools().current_time()),
       _scheduler(&_now),
@@ -244,14 +208,11 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _shutdown(false),
       _finished(false),
       _detaching(),
-      _reject_events(false)
-{
+      _reject_events(false) {
     trapsigpipe();
 }
 
-
-FNET_TransportThread::~FNET_TransportThread()
-{
+FNET_TransportThread::~FNET_TransportThread() {
     {
         std::lock_guard<std::mutex> guard(_shutdownLock);
     }
@@ -260,34 +221,22 @@ FNET_TransportThread::~FNET_TransportThread()
     }
 }
 
-const FNET_Config &
-FNET_TransportThread::getConfig() const {
-    return _owner.getConfig();
-}
+const FNET_Config& FNET_TransportThread::getConfig() const { return _owner.getConfig(); }
 
-const fnet::TimeTools &
-FNET_TransportThread::time_tools() const
-{
-    return _owner.time_tools();
-}
+const fnet::TimeTools& FNET_TransportThread::time_tools() const { return _owner.time_tools(); }
 
-bool
-FNET_TransportThread::tune(SocketHandle &handle) const
-{
+bool FNET_TransportThread::tune(SocketHandle& handle) const {
     handle.set_keepalive(true);
     handle.set_linger(true, 0);
     handle.set_nodelay(getConfig()._tcpNoDelay);
     return handle.set_blocking(false);
 }
 
-
-FNET_Connector*
-FNET_TransportThread::Listen(const char *spec, FNET_IPacketStreamer *streamer,
-                             FNET_IServerAdapter *serverAdapter)
-{
+FNET_Connector* FNET_TransportThread::Listen(
+    const char* spec, FNET_IPacketStreamer* streamer, FNET_IServerAdapter* serverAdapter) {
     ServerSocket server_socket{SocketSpec(spec)};
     if (server_socket.valid() && server_socket.set_blocking(false)) {
-        FNET_Connector *connector = new FNET_Connector(this, streamer, serverAdapter, spec, std::move(server_socket));
+        FNET_Connector* connector = new FNET_Connector(this, streamer, serverAdapter, spec, std::move(server_socket));
         connector->EnableReadEvent(true);
         connector->internal_addref();
         Add(connector, /* needRef = */ false);
@@ -296,80 +245,57 @@ FNET_TransportThread::Listen(const char *spec, FNET_IPacketStreamer *streamer,
     return nullptr;
 }
 
-
-FNET_Connection*
-FNET_TransportThread::Connect(const char *spec, FNET_IPacketStreamer *streamer,
-                              FNET_IServerAdapter *serverAdapter,
-                              FNET_Context connContext)
-{
-    std::unique_ptr<FNET_Connection> conn = std::make_unique<FNET_Connection>(this, streamer, serverAdapter,
-                                                                              connContext, spec);
+FNET_Connection* FNET_TransportThread::Connect(
+    const char* spec, FNET_IPacketStreamer* streamer, FNET_IServerAdapter* serverAdapter, FNET_Context connContext) {
+    std::unique_ptr<FNET_Connection> conn =
+        std::make_unique<FNET_Connection>(this, streamer, serverAdapter, connContext, spec);
     if (conn->Init()) {
         return conn.release();
     }
     return nullptr;
 }
 
-
-void
-FNET_TransportThread::Add(FNET_IOComponent *comp, bool needRef)
-{
+void FNET_TransportThread::Add(FNET_IOComponent* comp, bool needRef) {
     if (needRef) {
         comp->internal_addref();
     }
     PostEvent(&FNET_ControlPacket::IOCAdd, FNET_Context(comp));
 }
 
-
-void
-FNET_TransportThread::EnableWrite(FNET_IOComponent *comp, bool needRef)
-{
+void FNET_TransportThread::EnableWrite(FNET_IOComponent* comp, bool needRef) {
     if (needRef) {
         comp->internal_addref();
     }
     PostEvent(&FNET_ControlPacket::IOCEnableWrite, FNET_Context(comp));
 }
 
-void
-FNET_TransportThread::handshake_act(FNET_IOComponent *comp, bool needRef)
-{
+void FNET_TransportThread::handshake_act(FNET_IOComponent* comp, bool needRef) {
     if (needRef) {
         comp->internal_addref();
     }
     PostEvent(&FNET_ControlPacket::IOCHandshakeACT, FNET_Context(comp));
 }
 
-void
-FNET_TransportThread::Close(FNET_IOComponent *comp, bool needRef)
-{
+void FNET_TransportThread::Close(FNET_IOComponent* comp, bool needRef) {
     if (needRef) {
         comp->internal_addref();
     }
     PostEvent(&FNET_ControlPacket::IOCClose, FNET_Context(comp));
 }
 
-void
-FNET_TransportThread::init_detach(FNET_IServerAdapter *server_adapter)
-{
+void FNET_TransportThread::init_detach(FNET_IServerAdapter* server_adapter) {
     PostEvent(&FNET_ControlPacket::DetachServerAdapterInit, FNET_Context(server_adapter));
 }
 
-void
-FNET_TransportThread::fini_detach(FNET_IServerAdapter *server_adapter)
-{
+void FNET_TransportThread::fini_detach(FNET_IServerAdapter* server_adapter) {
     PostEvent(&FNET_ControlPacket::DetachServerAdapterFini, FNET_Context(server_adapter));
 }
 
-bool
-FNET_TransportThread::execute(FNET_IExecutable *exe)
-{
+bool FNET_TransportThread::execute(FNET_IExecutable* exe) {
     return PostEvent(&FNET_ControlPacket::Execute, FNET_Context(exe));
 }
 
-
-void
-FNET_TransportThread::sync()
-{
+void FNET_TransportThread::sync() {
     Sync exe;
     if (execute(&exe)) {
         exe.gate.await();
@@ -378,10 +304,7 @@ FNET_TransportThread::sync()
     }
 }
 
-
-void
-FNET_TransportThread::ShutDown(bool waitFinished)
-{
+void FNET_TransportThread::ShutDown(bool waitFinished) {
     bool wasEmpty = false;
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -398,10 +321,7 @@ FNET_TransportThread::ShutDown(bool waitFinished)
     }
 }
 
-
-void
-FNET_TransportThread::WaitFinished()
-{
+void FNET_TransportThread::WaitFinished() {
     if (is_finished())
         return;
 
@@ -410,10 +330,7 @@ FNET_TransportThread::WaitFinished()
         _shutdownCond.wait(guard);
 }
 
-
-bool
-FNET_TransportThread::InitEventLoop()
-{
+bool FNET_TransportThread::InitEventLoop() {
     if (_started.exchange(true)) {
         LOG(error, "Transport: InitEventLoop: object already active!");
         return false;
@@ -422,16 +339,14 @@ FNET_TransportThread::InitEventLoop()
     return true;
 }
 
-void
-FNET_TransportThread::handle_wakeup()
-{
+void FNET_TransportThread::handle_wakeup() {
     {
         std::lock_guard<std::mutex> guard(_lock);
         _queue.FlushPackets_NoLock(&_myQueue);
     }
 
     FNET_Context context;
-    FNET_Packet *packet = nullptr;
+    FNET_Packet* packet = nullptr;
     while ((packet = _myQueue.DequeuePacket_NoLock(&context)) != nullptr) {
 
         if (packet->GetCommand() == FNET_ControlPacket::FNET_CMD_EXECUTE) {
@@ -480,10 +395,7 @@ FNET_TransportThread::handle_wakeup()
     }
 }
 
-
-void
-FNET_TransportThread::handle_event(FNET_IOComponent &ctx, bool read, bool write)
-{
+void FNET_TransportThread::handle_event(FNET_IOComponent& ctx, bool read, bool write) {
     if (!ctx._flags._ioc_delete) {
         bool rc = true;
         if (read) {
@@ -500,9 +412,7 @@ FNET_TransportThread::handle_event(FNET_IOComponent &ctx, bool read, bool write)
     }
 }
 
-
-bool
-FNET_TransportThread::EventLoopIteration() {
+bool FNET_TransportThread::EventLoopIteration() {
 
     if (!should_shut_down()) {
         int msTimeout = vespalib::count_ms(time_tools().event_timeout());
@@ -515,7 +425,9 @@ FNET_TransportThread::EventLoopIteration() {
         // handle io-events
         auto dispatchResult = _selector.dispatch(*this);
 
-        if ((dispatchResult == vespalib::SelectorDispatchResult::NO_WAKEUP) && (getConfig()._events_before_wakeup > 1)) {
+        if ((dispatchResult == vespalib::SelectorDispatchResult::NO_WAKEUP) &&
+            (getConfig()._events_before_wakeup > 1))
+        {
             handle_wakeup();
         }
 
@@ -529,7 +441,7 @@ FNET_TransportThread::EventLoopIteration() {
 
         // perform scheduled delete operations
         FlushDeleteList();
-    }                      // -- END OF MAIN EVENT LOOP --
+    } // -- END OF MAIN EVENT LOOP --
 
     if (!should_shut_down())
         return true;
@@ -540,24 +452,22 @@ FNET_TransportThread::EventLoopIteration() {
     return false;
 }
 
-void
-FNET_TransportThread::checkTimedoutComponents(vespalib::duration timeout) {
+void FNET_TransportThread::checkTimedoutComponents(vespalib::duration timeout) {
     vespalib::steady_time oldest = (_now - timeout);
     while (_timeOutHead != nullptr && oldest > _timeOutHead->_ioc_timestamp) {
-        FNET_IOComponent *component = _timeOutHead;
+        FNET_IOComponent* component = _timeOutHead;
         RemoveComponent(component);
         component->Close();
         AddDeleteComponent(component);
     }
 }
 
-void
-FNET_TransportThread::endEventLoop() {
+void FNET_TransportThread::endEventLoop() {
     // close and remove all I/O Components
-    FNET_IOComponent *component = _componentsHead;
+    FNET_IOComponent* component = _componentsHead;
     while (component != nullptr) {
         assert(component == _componentsHead);
-        FNET_IOComponent *tmp = component;
+        FNET_IOComponent* tmp = component;
         component = component->_ioc_next;
         RemoveComponent(tmp);
         tmp->Close();
@@ -573,21 +483,17 @@ FNET_TransportThread::endEventLoop() {
 
     // discard remaining events
     FNET_Context context;
-    FNET_Packet *packet = nullptr;
+    FNET_Packet* packet = nullptr;
     while ((packet = _myQueue.DequeuePacket_NoLock(&context)) != nullptr) {
         if (packet->GetCommand() == FNET_ControlPacket::FNET_CMD_EXECUTE) {
             context._value.EXECUTABLE->execute();
         } else {
-            DiscardEvent((FNET_ControlPacket *)packet, context);
+            DiscardEvent((FNET_ControlPacket*)packet, context);
         }
     }
 
-    assert(_componentsHead == nullptr &&
-           _componentsTail == nullptr &&
-           _timeOutHead    == nullptr &&
-           load_relaxed(_componentCnt) == 0 &&
-           _queue.IsEmpty_NoLock() &&
-           _myQueue.IsEmpty_NoLock());
+    assert(_componentsHead == nullptr && _componentsTail == nullptr && _timeOutHead == nullptr &&
+           load_relaxed(_componentCnt) == 0 && _queue.IsEmpty_NoLock() && _myQueue.IsEmpty_NoLock());
 
     {
         std::lock_guard<std::mutex> guard(_shutdownLock);
@@ -596,28 +502,16 @@ FNET_TransportThread::endEventLoop() {
     }
 
     LOG(spam, "Transport: event loop finished.");
-
 }
 
-
-bool
-FNET_TransportThread::Start(vespalib::ThreadPool &pool)
-{
-    pool.start([this](){run();});
+bool FNET_TransportThread::Start(vespalib::ThreadPool& pool) {
+    pool.start([this]() { run(); });
     return true;
 }
 
+void FNET_TransportThread::Main() { run(); }
 
-void
-FNET_TransportThread::Main()
-{
-    run();
-}
-
-
-void
-FNET_TransportThread::run()
-{
+void FNET_TransportThread::run() {
     if (!InitEventLoop()) {
         LOG(warning, "Transport: Run: Could not init event loop");
         return;

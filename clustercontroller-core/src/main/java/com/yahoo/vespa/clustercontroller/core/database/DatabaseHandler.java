@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.database;
 
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
@@ -258,7 +259,7 @@ public class DatabaseHandler {
                 didWork |= performZooKeeperWrites();
             }
         } catch (CasWriteFailed e) {
-            fleetControllerContext.log(logger, Level.WARNING, String.format(Locale.ROOT, "CaS write to ZooKeeper failed, another controller " +
+            fleetControllerContext.log(logger, Level.WARNING, Text.format("CaS write to ZooKeeper failed, another controller " +
                                                                             "has likely taken over ownership: %s", e.getMessage()));
             // Clear DB and master election state. This shall trigger a full re-fetch of all
             // version and election-related metadata.

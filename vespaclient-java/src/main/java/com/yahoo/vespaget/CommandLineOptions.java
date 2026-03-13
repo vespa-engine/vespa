@@ -13,6 +13,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
@@ -243,7 +244,7 @@ public class CommandLineOptions {
         // WARNING: CommandLine.getArgs may return a single empty string as the only element
         if (documentIds.isEmpty() ||
                 documentIds.size() == 1 && documentIds.get(0).isEmpty()) {
-            return new Scanner(stdIn);
+            return new Scanner(stdIn, StandardCharsets.UTF_8);
         } else {
             return documentIds.iterator();
         }

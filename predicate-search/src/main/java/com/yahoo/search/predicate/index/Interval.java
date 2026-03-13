@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.index;
 
+import com.yahoo.text.Text;
+
 /**
  * Utility class for interval related constants and methods.
  * An interval consists of a begin and end value indicating the start and end of the interval.
@@ -77,11 +79,11 @@ public class Interval {
 
     private static String toString(int begin, int end) {
         if (begin == 0) {
-            return String.format("[%d]**", end);
+            return Text.format("[%d]**", end);
         } else if (begin > end) {
-            return String.format("[%d, %d]*", begin, end);
+            return Text.format("[%d, %d]*", begin, end);
         }
-        return String.format("[%d, %d]", begin, end);
+        return Text.format("[%d, %d]", begin, end);
     }
 
 }

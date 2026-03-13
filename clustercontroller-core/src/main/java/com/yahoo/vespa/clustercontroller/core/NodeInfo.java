@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.jrt.Target;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.ClusterState;
@@ -447,7 +448,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
                 && (wentDownAtClusterState == null || wentDownAtClusterState.getVersion() < stateBundle.getVersion())
                 && !stateBundle.getBaselineClusterState().getNodeState(node).getState().oneOf("dsm"))
             {
-                log.log(Level.FINE, () -> String.format(Locale.ROOT, "Clearing going down timestamp of node %s after " +
+                log.log(Level.FINE, () -> Text.format("Clearing going down timestamp of node %s after " +
                         "receiving ack of cluster state bundle %s", node, stateBundle));
                 wentDownWithStartTime = 0;
             }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_multi_value_read_view.h"
+#include "i_array_bool_read_view.h"
 
 namespace vespalib { class Stash; }
 
@@ -50,6 +51,9 @@ public:
 
     virtual const IArrayEnumReadView* make_read_view(ArrayEnumTag, vespalib::Stash&) const { return nullptr; }
     virtual const IWeightedSetEnumReadView* make_read_view(WeightedSetEnumTag, vespalib::Stash&) const { return nullptr; }
+
+    using ArrayBoolTag = ArrayTag<bool>;
+    virtual const IArrayBoolReadView* make_read_view(ArrayBoolTag, vespalib::Stash&) const { return nullptr; }
 };
 
 }

@@ -22,6 +22,7 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.text.Text;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -32,6 +33,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -156,7 +159,7 @@ public class DocumentGenMojo extends AbstractMojo {
             getLog().debug("No changes, not updating "+target);
             return;
         }
-        try (Writer out = new FileWriter(target)) {
+        try (Writer out = new FileWriter(target, StandardCharsets.UTF_8)) {
                 out.write("@ExportPackage\n" +
                     "package "+packageName+";\n\n" +
                     "import com.yahoo.osgi.annotation.ExportPackage;\n");
@@ -192,7 +195,7 @@ public class DocumentGenMojo extends AbstractMojo {
             getLog().debug("No changes, not updating "+target);
             return;
         }
-        try (Writer out = new FileWriter(target)) {
+        try (Writer out = new FileWriter(target, StandardCharsets.UTF_8)) {
                 out.write("package "+packageName+";\n\n" +
                     "/**\n" +
                     " *  Registry of generated concrete document, struct and annotation types.\n" +
@@ -305,7 +308,7 @@ public class DocumentGenMojo extends AbstractMojo {
             getLog().debug("No changes, not updating "+target);
             return;
         }
-        try (Writer out = new FileWriter(target)) {
+        try (Writer out = new FileWriter(target, StandardCharsets.UTF_8)) {
                 out.write("package "+packageName+".annotation;\n\n" +
                     "import "+packageName+".ConcreteDocumentFactory;\n" +
                     exportInnerImportsFromDocAndSuperTypes(docType, packageName) +
@@ -413,7 +416,7 @@ public class DocumentGenMojo extends AbstractMojo {
             getLog().debug("No changes, not updating "+target);
             return;
         }
-        try (Writer doc = new FileWriter(target)) {
+        try (Writer doc = new FileWriter(target, StandardCharsets.UTF_8)) {
             exportDocumentClass(docType, doc, packageName);
         } catch (IOException e) {
             throw new RuntimeException("Could not export sources for document type '"+docType.getName()+"'", e);
@@ -639,7 +642,7 @@ public class DocumentGenMojo extends AbstractMojo {
         }
         for (NewDocumentType parentType : parentTypes) {
             if (!parentType.getName().equals("document")) {
-                out.write("%sret.inherit(%s.type);\n".formatted(bodyIndent, className(parentType.getName())));
+                out.write(Text.format("%sret.inherit(%s.type);\n", bodyIndent, className(parentType.getName())));
             }
         }
 
@@ -991,11 +994,11 @@ public class DocumentGenMojo extends AbstractMojo {
         if (dt instanceof AnnotationReferenceDataType adt) return "new com.yahoo.document.annotation.AnnotationReferenceDataType(new com.yahoo.document.annotation.AnnotationType(\""+adt.getAnnotationType().getName()+"\"))";
         if (dt instanceof NewDocumentReferenceDataType nrdt) {
             // All concrete document types have a public `type` constant with their DocumentType.
-            return String.format("new com.yahoo.document.ReferenceDataType(%s.type, %d)",
+            return Text.format("new com.yahoo.document.ReferenceDataType(%s.type, %d)",
                     className(nrdt.getTargetType().getName()), dt.getId());
         }
         if (dt instanceof TensorDataType tdt) {
-            return String.format("new com.yahoo.document.TensorDataType(com.yahoo.tensor.TensorType.fromSpec(\"%s\"))",
+            return Text.format("new com.yahoo.document.TensorDataType(com.yahoo.tensor.TensorType.fromSpec(\"%s\"))",
                     tdt.getTensorType().toString());
         }
         return "com.yahoo.document.DataType.RAW";
@@ -1019,7 +1022,7 @@ public class DocumentGenMojo extends AbstractMojo {
             System.err.println("WARNING - field '"+s+"' has a reserved name; using 'My_"+s+"' instead");
             return "My_" + s;
         }
-        return s.substring(0, 1).toUpperCase()+s.substring(1);
+        return s.substring(0, 1).toUpperCase(Locale.ROOT)+s.substring(1);
     }
 
 }

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -229,7 +230,7 @@ public class ConfigProxyRpcServerTest {
         client.invoke(req);
         assertFalse(req.isError(), req.errorMessage());
         assertEquals(1, req.returnValues().size());
-        assertEquals("Cannot update sources when in '" + Mode.ModeName.MEMORYCACHE.name().toLowerCase() + "' mode", req.returnValues().get(0).asString());
+        assertEquals("Cannot update sources when in '" + Mode.ModeName.MEMORYCACHE.name().toLowerCase(Locale.ROOT) + "' mode", req.returnValues().get(0).asString());
 
         // TODO source connections needs to have deterministic order to work
         /*req = new Request("listSourceConnections");

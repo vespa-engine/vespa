@@ -6,6 +6,7 @@ import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.impl.ConfigSubscription;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
 import com.yahoo.config.subscription.impl.JrtConfigRequesters;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.yolean.Exceptions;
@@ -517,7 +518,7 @@ public class ConfigSubscriber implements AutoCloseable {
         public void run() {
             if (! isClosed) {
                 log.log(WARNING, stackTraceAtConstruction,
-                        () -> String.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)",
+                        () -> Text.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)",
                                             name,
                                             subscriptionHandles.stream()
                                             .map(handle -> handle.subscription().getKey().toString()).toList()));

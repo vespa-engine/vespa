@@ -5,6 +5,7 @@ import com.yahoo.concurrent.Threads;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.statistics.DeactivatedContainerWatchdogMetrics;
 import com.yahoo.lang.MutableInteger;
+import com.yahoo.text.Text;
 import org.apache.felix.framework.BundleWiringImpl;
 import org.osgi.framework.Bundle;
 
@@ -115,13 +116,13 @@ class DeactivatedContainerWatchdog implements DeactivatedContainerWatchdogMetric
     }
 
     private String removalMsg(DeactivatedContainer container) {
-        return String.format(
+        return Text.format(
                 "Removing deactivated container as all references are released: instance=%s, activated=%s, deactivated=%s",
                 container.instance, container.timeActivated, container.timeDeactivated);
     }
 
     private String regularMsg(DeactivatedContainer container, int refCount) {
-        return String.format(
+        return Text.format(
                 "Deactivated container still alive: instance=%s, activated=%s, deactivated=%s, ref-count=%d",
                 container.instance, container.timeActivated, container.timeDeactivated, refCount);
     }
@@ -136,8 +137,8 @@ class DeactivatedContainerWatchdog implements DeactivatedContainerWatchdogMetric
                     log.fine(() -> removalMsg(container));
                     iterator.remove();
                 } else if (isPastGracePeriod(container)) {
-                    log.fine(() ->
-                            String.format(
+                    log.info(() ->
+                            Text.format(
                                     "Destroying stale deactivated container: instance=%s, activated=%s, deactivated=%s, ref-count=%d",
                                     container.instance, container.timeActivated, container.timeDeactivated, refCount));
                     // Destroying the container even though there are requests or other entities still having references to the server.
@@ -154,7 +155,7 @@ class DeactivatedContainerWatchdog implements DeactivatedContainerWatchdogMetric
                     try {
                         container.instance.destroy();
                     } catch (Exception e) {
-                        log.log(Level.FINE, e, () -> "Exception thrown while destroying stale deactivated container");
+                        log.log(Level.INFO, e, () -> "Exception thrown while destroying stale deactivated container");
                     }
                     iterator.remove();
                 } else {
@@ -206,28 +207,44 @@ class DeactivatedContainerWatchdog implements DeactivatedContainerWatchdogMetric
         }
         if (!staleThreads.isEmpty()) {
             StringBuilder msg = new StringBuilder(
-                    ("Found %d stale threads that should have been stopped during previous reconfiguration(s). " +
-                            "These threads have a classloader for a bundle that has been uninstalled: \n")
-                            .formatted(staleThreads.size()));
+                    Text.format(
+                            "Found %d stale threads that should have been stopped during previous reconfiguration(s). " +
+                            "These threads have a classloader for a bundle that has been uninstalled: \n",
+                            staleThreads.size()));
             MutableInteger i = new MutableInteger(1);
             Comparator<ThreadDetails> outputOrdering =
                     Comparator.<ThreadDetails, Long>comparing(td -> td.bundle().getBundleId())
                     .thenComparing(td -> td.thread().getName()).thenComparing(td -> td.thread().getId());
             staleThreads.stream().sorted(outputOrdering).forEach(t ->
-                    msg.append("%d) Thread '%s' using bundle '%s'. \n"
-                            .formatted(i.next(), t.thread().getName(), t.bundle().toString())));
+                    msg.append(Text.format("%d) Thread '%s' using bundle '%s'. \n",
+                            i.next(), t.thread().getName(), t.bundle().toString())));
             log.log(Level.INFO, msg::toString);  // Level 'info' until deemed reliable enough as 'warning'
         }
     }
 
     private static Optional<Runnable> getTargetFieldOfThread(Thread t) {
         try {
+            // Get the Runnable from inside Java 17's Thread object:
             Field f = Thread.class.getDeclaredField("target");
             f.setAccessible(true);
             return Optional.ofNullable((Runnable)f.get(t));
         } catch (ReflectiveOperationException e) {
-            return Optional.empty();
         }
+        try {
+            // Get the Runnable from inside Java 21's Thread object;
+            // it's stored inside a "FieldHolder" internal class:
+            Field holderField = Thread.class.getDeclaredField("holder");
+            holderField.setAccessible(true);
+            var holder = holderField.get(t);
+            if (holder != null) {
+                Field taskField = holder.getClass().getDeclaredField("task");
+                taskField.setAccessible(true);
+                var task = taskField.get(holder);
+                return Optional.ofNullable((Runnable)task);
+            }
+        } catch (ReflectiveOperationException e) {
+        }
+        return Optional.empty();
     }
 
     private static Optional<Bundle> hasClassloaderForUninstalledBundle(Object o) {

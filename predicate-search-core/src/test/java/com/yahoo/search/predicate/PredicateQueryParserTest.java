@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate;
 
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -30,8 +31,8 @@ public class PredicateQueryParserTest {
         List<String> result = new ArrayList<>();
         parser.parseJsonQuery(
                 json,
-                (k, v, s) -> result.add(String.format("%s:%s:%#x", k, v, s)),
-                (k, v, s) -> result.add(String.format("%s:%d:%#x", k, v, s)));
+                (k, v, s) -> result.add(Text.format("%s:%s:%#x", k, v, s)),
+                (k, v, s) -> result.add(Text.format("%s:%d:%#x", k, v, s)));
 
         assertEquals(result, List.of(
                 "k1:value1:0x1", "k2:value2:0x3",

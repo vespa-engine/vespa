@@ -125,7 +125,7 @@ TEST(SourceBlenderTest, test_full_sourceblender_search)
 
     SearchIterator::UP blend(SourceBlenderSearch::create(sel->createIterator(), abc, true));
     SimpleResult result;
-    result.search(*blend);
+    result.search(*blend, 100);
 
     SimpleResult expect_result;
     expect_result.addHit(2).addHit(3).addHit(11).addHit(21).addHit(34);

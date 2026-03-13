@@ -22,8 +22,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
-#include <vespa/searchcore/proton/common/i_resource_usage_provider.h>
-#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/feedoperation/noopoperation.h>
@@ -36,6 +34,8 @@
 #include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcorespi/common/i_resource_usage_provider.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -44,6 +44,7 @@
 
 #include <vespa/log/log.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 
 LOG_SETUP(".proton.server.documentdb");
 
@@ -71,6 +72,9 @@ using vespalib::GateCallback;
 using vespalib::IDestructorCallback;
 using vespalib::makeLambdaTask;
 using searchcorespi::IFlushTarget;
+using searchcorespi::common::IResourceUsageProvider;
+using searchcorespi::common::ResourceUsage;
+using searchcorespi::common::TransientResourceUsage;
 
 namespace proton {
 
@@ -95,18 +99,17 @@ public:
 
 class DocumentDBResourceUsageProvider : public IResourceUsageProvider {
 private:
-    const DocumentDB& _doc_db;
+    std::shared_ptr<const DocumentDB> _doc_db;
+    vespalib::RetainGuard             _retain_guard;
 
 public:
-    explicit DocumentDBResourceUsageProvider(const DocumentDB& doc_db) noexcept
-        : _doc_db(doc_db)
+    explicit DocumentDBResourceUsageProvider(DocumentDB& doc_db) noexcept
+        : _doc_db(doc_db.shared_from_this()),
+          _retain_guard(doc_db.retain())
     {}
 
     ResourceUsage get_resource_usage() const override {
-        if (!_doc_db.get_state().get_load_done())  {
-            return ResourceUsage{};
-        }
-        return _doc_db.getReadySubDB()->get_resource_usage();
+        return _doc_db->get_resource_usage();
     }
 };
 
@@ -208,7 +211,7 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _state(std::make_shared<DDBState>()),
       _resource_usage_forwarder(_writeService.master()),
       _writeFilter(),
-      _resource_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
+      _current_resource_usage_provider(),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, *this, tlsWriterFactory)),
       _subDBs(*this, *this, *_feedHandler, _docTypeName,
               _writeService, shared_service.shared(), fileHeaderContext, std::move(attribute_interlock),
@@ -583,7 +586,7 @@ DocumentDB::close()
     // is going away while system is still up and running then caller must
     // ensure that routing has been torn down and pending messages have been
     // drained.  This goes for all facets: feeding, tls replay,
-    // matching, summary fetch, flushing and reconfig.
+    // matching, summary fetch, flushing, resource usage sampling and reconfig.
     _feedView.clear();
     _subDBs.clearViews();
     _state->enterDeadState();
@@ -1121,7 +1124,36 @@ DocumentDB::getDistributionKey() const
 std::shared_ptr<const IResourceUsageProvider>
 DocumentDB::resource_usage_provider()
 {
-    return _resource_usage_provider;
+    lock_guard guard(_configMutex);
+    if (_state->getClosed()) {
+        return {}; // Not safe to access anymore
+    }
+    /*
+     * If we have a current provider then return it. This is currently mandated by the identity check in
+     * DiskMemUsageSampler::remove_resource_usage_provider().
+     */
+    auto current_provider = _current_resource_usage_provider.lock();
+    if (current_provider) {
+        return current_provider;
+    }
+    auto result = std::make_shared<DocumentDBResourceUsageProvider>(*this);
+    _current_resource_usage_provider = result;
+    return result;
+}
+
+searchcorespi::common::ResourceUsage
+DocumentDB::get_resource_usage() const
+{
+    if (!_state->get_load_done())  {
+        return ResourceUsage{};
+    }
+    auto resource_usage = _subDBs.get_resource_usage();
+    auto config_store_size_on_disk = _config_store->get_size_on_disk();
+    //  Account for document db directory.
+    auto size_on_disk_overhead = DiskSpaceCalculator::directory_placeholder_size();
+    auto extra_size_on_disk = size_on_disk_overhead + config_store_size_on_disk;
+    resource_usage.merge(ResourceUsage{TransientResourceUsage{}, extra_size_on_disk});
+    return resource_usage;
 }
 
 void

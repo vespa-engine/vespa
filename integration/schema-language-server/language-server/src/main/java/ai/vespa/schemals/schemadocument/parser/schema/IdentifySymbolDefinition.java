@@ -38,6 +38,7 @@ import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.tensorTypeElm;
 import ai.vespa.schemals.parser.rankingexpression.ast.LCURLY;
+import ai.vespa.schemals.parser.rankingexpression.ast.feature;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorType;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorTypeDimension;
@@ -284,6 +285,11 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
             return;
         }
 
+        if (node.getText().equals("foreach") && parent.isASTInstance(feature.class)) {
+            handleForeachDefinitions(node, diagnostics);
+            return;
+        }
+
         if (!grandParent.isASTInstance(lambdaFunction.class) || grandParent.size() < 1) {
             return;
         }
@@ -356,6 +362,32 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
 
         identifierNode.setSymbolStatus(SymbolStatus.DEFINITION);
         context.schemaIndex().insertSymbolDefinition(identifierNode.getSymbol());
+    }
+
+    private void handleForeachDefinitions(SchemaNode identifierNode, List<Diagnostic> diagnostics) {
+        Optional<Symbol> scope = CSTUtils.findScope(identifierNode);
+        identifierNode.setSymbol(SymbolType.FOREACH, context.fileURI(), scope.get(), "foreach_" + identifierNode.hashCode());
+        identifierNode.setSymbolStatus(SymbolStatus.DEFINITION);
+        context.schemaIndex().insertSymbolDefinition(identifierNode.getSymbol());
+
+        Node argsNode = identifierNode.getNextSibling();
+        if (argsNode == null) return;
+
+        argsNode = argsNode.getNextSibling();
+
+        if (argsNode == null) return;
+        if (argsNode.size() < 3) return;
+
+        Node iteratorExpressionNode = argsNode.get(2);
+        if (iteratorExpressionNode == null) return;
+
+        Node iteratorIdentifier = iteratorExpressionNode.findFirstLeaf().getParent();
+        if (!iteratorIdentifier.isASTInstance(ai.vespa.schemals.parser.rankingexpression.ast.identifierStr.class))
+            return;
+
+        iteratorIdentifier.setSymbol(SymbolType.PARAMETER, context.fileURI(), identifierNode.getSymbol());
+        iteratorIdentifier.getSymbol().setStatus(SymbolStatus.DEFINITION);
+        context.schemaIndex().insertSymbolDefinition(iteratorIdentifier.getSymbol());
     }
 
     private static final Set<String> reservedFunctionNames = ReservedFunctionNames.getReservedNames();

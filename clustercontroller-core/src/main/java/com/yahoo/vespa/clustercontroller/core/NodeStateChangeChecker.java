@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import ai.vespa.metrics.StorageMetrics;
 import com.yahoo.lang.SettableOptional;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.ClusterState;
@@ -135,7 +136,7 @@ public class NodeStateChangeChecker {
             return Optional.empty();
         }
         if (metrics.docs.isEmpty() || metrics.docs.get().getLast() == null) {
-            log.log(Level.WARNING, String.format(Locale.ROOT, "Host info inconsistency: storage node %d reports entry count but not document count", nodeIndex));
+            log.log(Level.WARNING, Text.format("Host info inconsistency: storage node %d reports entry count but not document count", nodeIndex));
             return Optional.of(disallow("The storage node host info reports stored entry count, but not document count"));
         }
         long lastEntries = metrics.entries.get().getLast();
@@ -143,20 +144,20 @@ public class NodeStateChangeChecker {
         if (lastEntries != 0) {
             long buckets    = metrics.buckets.map(Metrics.Value::getLast).orElse(-1L);
             long tombstones = lastEntries - lastDocs; // docs are a subset of entries, so |docs| <= |entries|
-            return Optional.of(disallow(String.format(Locale.ROOT, "The storage node stores %d documents and %d tombstones across %d buckets", lastDocs, tombstones, buckets)));
+            return Optional.of(disallow(Text.format("The storage node stores %d documents and %d tombstones across %d buckets", lastDocs, tombstones, buckets)));
         }
         // At this point we believe we have zero entries. Cross-check with visible doc count; it should
         // always be present when an entry count of zero is present and transitively always be zero.
         if (lastDocs != 0) {
-            log.log(Level.WARNING, String.format(Locale.ROOT, "Host info inconsistency: storage node %d reports 0 entries, but %d documents", nodeIndex, lastDocs));
-            return Optional.of(disallow(String.format(Locale.ROOT, "The storage node reports 0 entries, but %d documents", lastDocs)));
+            log.log(Level.WARNING, Text.format("Host info inconsistency: storage node %d reports 0 entries, but %d documents", nodeIndex, lastDocs));
+            return Optional.of(disallow(Text.format("The storage node reports 0 entries, but %d documents", lastDocs)));
         }
         return Optional.of(allow());
     }
 
     private static Result checkLegacyZeroBucketsStoredOnContentNode(long lastBuckets) {
         if (lastBuckets != 0) {
-            return disallow(String.format(Locale.ROOT, "The storage node manages %d buckets", lastBuckets));
+            return disallow(Text.format("The storage node manages %d buckets", lastBuckets));
         }
         return allow();
     }
@@ -343,7 +344,7 @@ public class NodeStateChangeChecker {
             return Optional.of(allow());
         }
 
-        return Optional.of(disallow(String.format(Locale.ROOT, "At most %d groups can have wanted state: %s",
+        return Optional.of(disallow(Text.format("At most %d groups can have wanted state: %s",
                                                   maxNumberOfGroupsAllowedToBeDown,
                                                   sortSetIntoList(retiredAndNotUpGroups))));
     }
@@ -403,13 +404,13 @@ public class NodeStateChangeChecker {
             var storageNodeInfo = clusterInfo.getStorageNodeInfo(index);
             State storageNodeWantedState = storageNodeInfo.getUserWantedState().getState();
             if (storageNodeWantedState != UP) {
-                return disallow(String.format(Locale.ROOT, message, storageNodeInfo.type(), index, storageNodeWantedState));
+                return disallow(Text.format(message, storageNodeInfo.type(), index, storageNodeWantedState));
             }
 
             var distributorNodeInfo = clusterInfo.getDistributorNodeInfo(index);
             State distributorWantedState = distributorNodeInfo.getUserWantedState().getState();
             if (distributorWantedState != UP) {
-                return disallow(String.format(Locale.ROOT, message, distributorNodeInfo.type(), index, distributorWantedState));
+                return disallow(Text.format(message, distributorNodeInfo.type(), index, distributorWantedState));
             }
         }
 

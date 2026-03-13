@@ -72,11 +72,10 @@ unsigned TimeStampFunctionNode::getTimePart(time_t secSince70, TimePart tp, bool
     return 0;
 }
 
-bool TimeStampFunctionNode::onExecute() const
+void TimeStampFunctionNode::onExecute() const
 {
     getArg().execute();
     _handler->handle(*getArg().getResult());
-    return true;
 }
 
 void TimeStampFunctionNode::SingleValueHandler::handle(const ResultNode & arg)

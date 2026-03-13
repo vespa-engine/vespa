@@ -26,7 +26,7 @@ public:
     RawBucketResultNode(const RawBucketResultNode&);
     RawBucketResultNode(RawBucketResultNode&&) noexcept = default;
     RawBucketResultNode(ResultNode::UP from, ResultNode::UP to) : _from(from.release()), _to(to.release()) {}
-    ~RawBucketResultNode();
+    ~RawBucketResultNode() override;
     RawBucketResultNode& operator=(const RawBucketResultNode&);
     RawBucketResultNode& operator=(RawBucketResultNode&&) noexcept;
     size_t hash() const override;
@@ -36,6 +36,8 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const RawBucketResultNode& getNullBucket() const override { return getNull(); }
     static const RawBucketResultNode & getNull() { return _nullResult; }
+
+    std::string_view friendly_type_name() const noexcept override { return "raw_bucket"; }
 };
 
 }

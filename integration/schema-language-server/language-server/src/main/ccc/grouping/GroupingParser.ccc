@@ -187,6 +187,7 @@ TOKEN :
     <GROUP: "group"> |
     <HINT: "hint"> |
     <HYPOT: "hypot"> |
+    <ISTRUE: "istrue"> |
     <KEEP: "keep"> |
     <LOG: "log"> |
     <LOG1P: "log1p"> |
@@ -1045,7 +1046,8 @@ FilterExpression filterPrimary(GroupingOperation grp) :
 (
     ( lbraceElm f = filterExp(grp) rbraceElm ) |
     ( f = regexPredicate(grp) )                |
-    ( f = rangePredicate(grp) )
+    ( f = rangePredicate(grp) )                |
+    ( f = istruePredicate(grp) )
 )
 {
     return f;
@@ -1085,6 +1087,16 @@ RangePredicate rangePredicate(GroupingOperation grp) :
     )
 {
     return new RangePredicate(lower, upper, exp, lowerInclusive.getValue(), upperInclusive.getValue());
+}
+;
+
+IsTruePredicate istruePredicate(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <ISTRUE> lbraceElm exp = expElm(grp) rbraceElm )
+{
+    return new IsTruePredicate(exp);
 }
 ;
 
@@ -1228,6 +1240,7 @@ String identifierStr :
         <HINT> |
         <HYPOT> |
         <IDENTIFIER> |
+        <ISTRUE> |
         <KEEP> |
         <LOG> |
         <LOG1P> |

@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
-#include <vespa/searchcore/proton/common/i_resource_usage_provider.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_sampler.h>
 #include <vespa/searchcore/proton/server/resource_usage_write_filter.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
+#include <vespa/searchcorespi/common/i_resource_usage_provider.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <thread>
@@ -13,12 +13,18 @@
 #include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
 LOG_SETUP("disk_mem_usage_sampler_test");
 
+using searchcorespi::common::IResourceUsageProvider;
+using searchcorespi::common::ResourceUsage;
+using searchcorespi::common::TransientResourceUsage;
 using namespace proton;
 using namespace std::chrono_literals;
 using vespalib::HwInfo;
 
+namespace {
+
 constexpr uint64_t disk_size_bytes = 200000;
 constexpr uint64_t memory_size_bytes = 100000;
+constexpr uint64_t zero_size_on_disk = 0;
 
 HwInfo
 make_hw_info()
@@ -39,7 +45,7 @@ public:
           _disk_usage(disk_usage)
     {}
     ResourceUsage get_resource_usage() const override {
-        return ResourceUsage{TransientResourceUsage{_disk_usage, _memory_usage}};
+        return ResourceUsage{TransientResourceUsage{_disk_usage, _memory_usage}, zero_size_on_disk};
     }
 };
 
@@ -54,6 +60,8 @@ public:
 };
 
 MyReservedDiskSpaceProvider::~MyReservedDiskSpaceProvider() = default;
+
+}
 
 struct DiskMemUsageSamplerTest : public ::testing::Test {
     Transport transport;
@@ -70,7 +78,7 @@ struct DiskMemUsageSamplerTest : public ::testing::Test {
           reserved_disk_space_provider(std::make_unique<MyReservedDiskSpaceProvider>()),
           sampler(std::make_unique<DiskMemUsageSampler>(".", *write_filter, *notifier, *reserved_disk_space_provider))
     {
-        sampler->setConfig(DiskMemUsageSampler::Config(0.8, 0.8, AttributeUsageFilterConfig(),
+        sampler->setConfig(DiskMemUsageSampler::Config(0.8, 0.8, 0.0, AttributeUsageFilterConfig(),
                                                        50ms, make_hw_info()), executor);
         sampler->add_resource_usage_provider(std::make_shared<MyProvider>(50, 200));
         sampler->add_resource_usage_provider(std::make_shared<MyProvider>(100, 150));

@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.Locale;
 
 /**
  * @author Bjorn Borud
@@ -26,7 +27,7 @@ public final class VespaAccessLog extends AbstractComponent implements RequestLo
     }
 
     private static SimpleDateFormat createDateFormat() {
-        SimpleDateFormat format = new SimpleDateFormat("[dd/MMM/yyyy:HH:mm:ss Z]");
+        SimpleDateFormat format = new SimpleDateFormat("[dd/MMM/yyyy:HH:mm:ss Z]", Locale.ROOT);
         format.setTimeZone(TimeZone.getTimeZone("UTC"));
         return format;
     }

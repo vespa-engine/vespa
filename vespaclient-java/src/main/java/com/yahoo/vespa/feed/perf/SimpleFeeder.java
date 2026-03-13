@@ -34,6 +34,7 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
+import com.yahoo.text.Text;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.RemoveFeedOperation;
@@ -504,8 +505,8 @@ public class SimpleFeeder implements ReplyHandler {
 
     private synchronized void printReport(PrintStream out) {
         // Errors will stop feed so we just fake the num errors = 0
-        out.format("%10d, %12d, 0, %11d, %11d, %11d\n", System.currentTimeMillis() - startTime,
-                numReplies.get(), minLatency, maxLatency, sumLatency / Long.max(1, numReplies.get()));
+        out.print(Text.format("%10d, %12d, 0, %11d, %11d, %11d\n", System.currentTimeMillis() - startTime,
+                              numReplies.get(), minLatency, maxLatency, sumLatency / Long.max(1, numReplies.get())));
     }
 
     private static String formatErrors(Reply reply) {

@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "protocol.h"
-#include <lz4.h>
-#include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/vespalib/data/slime/slime.h>
-#include <sstream>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <cassert>
+#include <sstream>
+#include <lz4.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.protocol");
@@ -43,17 +45,15 @@ const Memory RESPONSE_PAYLOAD = "payload";
 const Memory RESPONSE_TRACE = "trace";
 const Memory RESPONSE_APPLY_ON_RESTART = "applyOnRestart";
 
-const Inspector &
-extractPayload(const Slime & data)
-{
-    const Inspector & payload(data.get()[RESPONSE_PAYLOAD]);
+const Inspector& extractPayload(const Slime& data) {
+    const Inspector& payload(data.get()[RESPONSE_PAYLOAD]);
     if (LOG_WOULD_LOG(debug)) {
         LOG(debug, "payload: %s", payload.toString().c_str());
     }
     return payload;
 }
 
-}
+} // namespace v2
 
 namespace v3 {
 const Memory REQUEST_COMPRESSION_TYPE = "compressionType";
@@ -61,14 +61,13 @@ const Memory RESPONSE_COMPRESSION_INFO = "compressionInfo";
 const Memory RESPONSE_COMPRESSION_INFO_TYPE = "compressionType";
 const Memory RESPONSE_COMPRESSION_INFO_UNCOMPRESSED_SIZE = "uncompressedSize";
 
-DecompressedData
-decompress_lz4(const char * input, uint32_t inputLen, int uncompressedLength)
-{
-    Alloc memory( Alloc::alloc(uncompressedLength));
-    int sz = LZ4_decompress_safe(input, static_cast<char *>(memory.get()), inputLen, uncompressedLength);
+DecompressedData decompress_lz4(const char* input, uint32_t inputLen, int uncompressedLength) {
+    Alloc memory(Alloc::alloc(uncompressedLength));
+    int   sz = LZ4_decompress_safe(input, static_cast<char*>(memory.get()), inputLen, uncompressedLength);
     if (sz >= 0 && sz != uncompressedLength) {
         if (LOG_WOULD_LOG(debug)) {
-            LOG(debug, "Returned compressed size (%d) is not the same as uncompressed size(%d)", sz, uncompressedLength);
+            LOG(debug, "Returned compressed size (%d) is not the same as uncompressed size(%d)", sz,
+                uncompressedLength);
         }
         Alloc copy = memory.create(sz);
         memcpy(copy.get(), memory.get(), sz);
@@ -78,32 +77,29 @@ decompress_lz4(const char * input, uint32_t inputLen, int uncompressedLength)
     return DecompressedData(std::move(memory), static_cast<uint32_t>(sz));
 }
 
-DecompressedData
-decompress(const char * input, uint32_t len, const CompressionType & compressionType, uint32_t uncompressedLength)
-{
+DecompressedData decompress(const char* input, uint32_t len, const CompressionType& compressionType,
+                            uint32_t uncompressedLength) {
     // No payload means no data
     if (len == 0) {
         return DecompressedData(Memory(input, len), len);
     }
     switch (compressionType) {
-        case CompressionType::LZ4:
-            return decompress_lz4(input, len, uncompressedLength);
-            break;
-        case CompressionType::UNCOMPRESSED:
-        default:
-            return DecompressedData(Memory(input, len), len);
-            break;
+    case CompressionType::LZ4:
+        return decompress_lz4(input, len, uncompressedLength);
+        break;
+    case CompressionType::UNCOMPRESSED:
+    default:
+        return DecompressedData(Memory(input, len), len);
+        break;
     }
 }
 
-}
+} // namespace v3
 
 const int DEFAULT_PROTOCOL_VERSION = 3;
 const int DEFAULT_TRACE_LEVEL = 0;
 
-int
-verifyProtocolVersion(int protocolVersion)
-{
+int verifyProtocolVersion(int protocolVersion) {
     if (1 == protocolVersion || 2 == protocolVersion || 3 == protocolVersion) {
         return protocolVersion;
     }
@@ -111,11 +107,9 @@ verifyProtocolVersion(int protocolVersion)
     return DEFAULT_PROTOCOL_VERSION;
 }
 
-int
-readProtocolVersion()
-{
-    int protocolVersion = DEFAULT_PROTOCOL_VERSION;
-    char *versionStringPtr = getenv("VESPA_CONFIG_PROTOCOL_VERSION");
+int readProtocolVersion() {
+    int   protocolVersion = DEFAULT_PROTOCOL_VERSION;
+    char* versionStringPtr = getenv("VESPA_CONFIG_PROTOCOL_VERSION");
     if (versionStringPtr != nullptr) {
         std::stringstream versionString(versionStringPtr);
         versionString >> protocolVersion;
@@ -123,11 +117,9 @@ readProtocolVersion()
     return verifyProtocolVersion(protocolVersion);
 }
 
-int
-readTraceLevel()
-{
-    int traceLevel = DEFAULT_TRACE_LEVEL;
-    char *traceLevelStringPtr = getenv("VESPA_CONFIG_PROTOCOL_TRACELEVEL");
+int readTraceLevel() {
+    int   traceLevel = DEFAULT_TRACE_LEVEL;
+    char* traceLevelStringPtr = getenv("VESPA_CONFIG_PROTOCOL_TRACELEVEL");
     if (traceLevelStringPtr != nullptr) {
         std::stringstream traceLevelString(traceLevelStringPtr);
         traceLevelString >> traceLevel;
@@ -135,16 +127,14 @@ readTraceLevel()
     return traceLevel;
 }
 
-CompressionType
-readProtocolCompressionType()
-{
+CompressionType readProtocolCompressionType() {
     CompressionType type = CompressionType::LZ4;
-    char *compressionTypeStringPtr = getenv("VESPA_CONFIG_PROTOCOL_COMPRESSION");
+    char*           compressionTypeStringPtr = getenv("VESPA_CONFIG_PROTOCOL_COMPRESSION");
     if (compressionTypeStringPtr != nullptr) {
         type = stringToCompressionType(std::string(compressionTypeStringPtr));
     }
     return type;
 }
 
-}
-}
+} // namespace protocol
+} // namespace config

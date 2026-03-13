@@ -13,6 +13,7 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
+import com.yahoo.text.Text;
 
 import java.io.UncheckedIOException;
 import java.util.Objects;
@@ -55,7 +56,7 @@ public abstract class JsonSecurityRequestFilterBase extends ChainedComponent imp
         error.response.headers().put("Cache-Control", "must-revalidate,no-cache,no-store");
         try (FastContentWriter writer = ResponseDispatch.newInstance(error.response).connectFastWriter(responseHandler)) {
             String jsonAsStr = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
-            log.log(Level.FINE, () -> String.format("Error response for '%s': statusCode=%d, json='%s'",
+            log.log(Level.FINE, () -> Text.format("Error response for '%s': statusCode=%d, json='%s'",
                     request, error.response.getStatus(), jsonAsStr));
             writer.write(jsonAsStr);
         } catch (JsonProcessingException e) {

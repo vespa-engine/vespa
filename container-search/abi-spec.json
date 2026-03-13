@@ -355,7 +355,7 @@
       "public void <init>(boolean, java.lang.String, boolean)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public boolean value()",
       "public java.lang.String stringValue()",
       "public void setValue(boolean)",
@@ -383,7 +383,7 @@
     "methods" : [
       "public void <init>()",
       "public java.lang.String getIndexName()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void setIndexName(java.lang.String)",
       "protected void appendIndexString(java.lang.StringBuilder)",
       "public boolean equals(java.lang.Object)",
@@ -416,8 +416,8 @@
       "public int getItemCount()",
       "public java.util.ListIterator getItemIterator()",
       "public java.util.List items()",
-      "public int encode(java.nio.ByteBuffer)",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "protected int encodingArity()",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "protected boolean shouldParenthesize()",
@@ -536,7 +536,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "protected void appendHeadingString(java.lang.StringBuilder)",
-      "public int encode(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)"
     ],
@@ -570,7 +570,7 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "protected void appendHeadingString(java.lang.StringBuilder)",
-      "protected void encodeThis(java.nio.ByteBuffer)"
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)"
     ],
     "fields" : [
       "public static int DEFAULT_MAX_EDIT_DISTANCE",
@@ -596,7 +596,7 @@
       "public boolean equals(java.lang.Object)",
       "public com.yahoo.prelude.query.GeoLocationItem clone()",
       "public java.lang.String getIndexedString()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public int getNumWords()",
       "public boolean isStemmed()",
       "public boolean isWords()",
@@ -686,7 +686,7 @@
     "methods" : [
       "protected void <init>(java.lang.String, java.lang.String, boolean, boolean, com.yahoo.prelude.query.Substring)",
       "public java.lang.String getIndexName()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void setIndexName(java.lang.String)",
       "protected void appendIndexString(java.lang.StringBuilder)",
       "public boolean equals(java.lang.Object)",
@@ -729,7 +729,7 @@
       "public boolean equals(java.lang.Object)",
       "protected java.lang.String getEncodedInt()",
       "public java.lang.String getIndexedString()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public int getNumWords()",
       "public boolean isStemmed()",
       "public boolean isWords()",
@@ -832,8 +832,8 @@
       "public boolean isProtected()",
       "public void setParent(com.yahoo.prelude.query.CompositeItem)",
       "public com.yahoo.prelude.query.CompositeItem getParent()",
-      "public abstract int encode(java.nio.ByteBuffer)",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "public abstract int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "protected static byte[] getBytes(java.lang.String)",
       "public static void putString(java.lang.String, java.nio.ByteBuffer)",
       "public static void putBytes(byte[], java.nio.ByteBuffer)",
@@ -997,7 +997,7 @@
       "public int getExclusionDistance()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "public boolean equals(java.lang.Object)",
@@ -1019,6 +1019,8 @@
     "methods" : [
       "public void <init>(java.lang.String, java.lang.String)",
       "public int getTargetNumHits()",
+      "public java.lang.Integer getTargetHits()",
+      "public java.lang.Integer getTotalTargetHits()",
       "public java.lang.String getIndexName()",
       "public double getDistanceThreshold()",
       "public int getHnswExploreAdditionalHits()",
@@ -1031,6 +1033,8 @@
       "public java.lang.Double getHnswPostFilterThreshold()",
       "public java.lang.Double getHnswTargetHitsMaxAdjustmentFactor()",
       "public void setTargetNumHits(int)",
+      "public void setTargetHits(java.lang.Integer)",
+      "public void setTotalTargetHits(java.lang.Integer)",
       "public void setDistanceThreshold(double)",
       "public void setHnswExploreAdditionalHits(int)",
       "public void setAllowApproximate(boolean)",
@@ -1044,7 +1048,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public int getTermCount()",
-      "public int encode(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public boolean equals(java.lang.Object)",
@@ -1098,7 +1102,7 @@
     "methods" : [
       "public void <init>()",
       "public void setIndexName(java.lang.String)",
-      "public int encode(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public void appendBodyString(java.lang.StringBuilder)",
       "public void appendHeadingString(java.lang.StringBuilder)",
@@ -1117,8 +1121,8 @@
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.util.Set)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public int encode(java.nio.ByteBuffer)",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public void addToken(long)",
@@ -1182,8 +1186,8 @@
       "public void setWeight(int)",
       "public com.yahoo.prelude.query.WordItem getWordItem(int)",
       "public com.yahoo.prelude.query.BlockItem getBlockItem(int)",
-      "protected void encodeThis(java.nio.ByteBuffer)",
-      "public int encode(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "protected boolean shouldParenthesize()",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void appendBodyString(java.lang.StringBuilder)",
@@ -1217,9 +1221,9 @@
       "public com.yahoo.prelude.query.Item setItem(int, com.yahoo.prelude.query.Item)",
       "public java.util.Optional extractSingleChild()",
       "public com.yahoo.prelude.query.TermItem getTermItem(int)",
-      "protected void encodeThis(java.nio.ByteBuffer)",
-      "public int encode(java.nio.ByteBuffer)",
-      "public int encodeContent(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "public int encodeContent(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "protected boolean shouldParenthesize()",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void appendBodyString(java.lang.StringBuilder)",
@@ -1301,7 +1305,7 @@
       "public java.util.Collection getRangeFeatures()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public int encode(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public com.yahoo.prelude.query.PredicateQueryItem clone()",
@@ -1340,7 +1344,7 @@
       "public void <init>(long)",
       "public void <init>(long, int)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public long getValue()",
@@ -1361,7 +1365,7 @@
       "public void <init>(int)",
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getName()",
-      "public int encode(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
     ],
@@ -1377,7 +1381,7 @@
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, int)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public java.lang.String getString()",
@@ -1464,7 +1468,7 @@
       "public java.lang.String getIndexedString()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public java.util.regex.Pattern getRegexp()",
       "public java.lang.String toString()",
       "public int hashCode()",
@@ -1484,8 +1488,8 @@
       "public void setIndexName(java.lang.String)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public int encode(java.nio.ByteBuffer)",
-      "public ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTree toProtobufQueryTree()",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "public ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTree toProtobufQueryTree(com.yahoo.prelude.query.SerializationContext)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "public com.yahoo.prelude.query.Item getRoot()",
       "public final void setRoot(com.yahoo.prelude.query.Item)",
@@ -1510,7 +1514,7 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String)",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
@@ -1518,6 +1522,8 @@
       "public java.lang.String getFieldName()",
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getIndexName()",
+      "public java.util.List getElementFilter()",
+      "public void setElementFilter(java.util.List)",
       "public int getNumWords()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
@@ -1587,6 +1593,19 @@
       "public static final enum com.yahoo.prelude.query.SegmentingRule BOOLEAN_AND"
     ]
   },
+  "com.yahoo.prelude.query.SerializationContext" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(double)",
+      "public int contentShareOf(int)",
+      "public static com.yahoo.prelude.query.SerializationContext ignored()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.prelude.query.SimpleIndexedItem" : {
     "superClass" : "com.yahoo.prelude.query.SimpleTaggableItem",
     "interfaces" : [
@@ -1600,7 +1619,7 @@
       "public void <init>()",
       "public java.lang.String getIndexName()",
       "public java.lang.String getFieldName()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void setIndexName(java.lang.String)",
       "protected void appendIndexString(java.lang.StringBuilder)",
       "public boolean equals(java.lang.Object)",
@@ -1646,8 +1665,8 @@
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.util.Set)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public int encode(java.nio.ByteBuffer)",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public void addToken(java.lang.String)",
@@ -1779,7 +1798,7 @@
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, boolean)",
       "protected void <init>(java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
-      "public final int encode(java.nio.ByteBuffer)",
+      "public final int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "protected final void appendBodyString(java.lang.StringBuilder)",
       "public abstract void setValue(java.lang.String)",
       "public abstract java.lang.String getRawWord()",
@@ -1855,6 +1874,7 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public static void visit(com.yahoo.search.Query, com.yahoo.prelude.query.ToolBox$QueryVisitor)",
       "public static void visit(com.yahoo.prelude.query.ToolBox$QueryVisitor, com.yahoo.prelude.query.Item)"
     ],
     "fields" : [ ]
@@ -1871,7 +1891,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "protected void appendHeadingString(java.lang.StringBuilder)",
-      "public int encode(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)"
     ],
@@ -1916,7 +1936,7 @@
       "public double getScoreThreshold()",
       "public double getThresholdBoostFactor()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public boolean equals(java.lang.Object)",
@@ -1933,16 +1953,23 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public void <init>(java.lang.String)",
       "public void <init>(int)",
+      "public void <init>(java.lang.Integer)",
       "public void <init>(java.lang.String, int)",
+      "public void <init>(java.lang.String, java.lang.Integer)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getIndexName()",
+      "public java.lang.Integer getTargetHits()",
+      "public java.lang.Integer getTotalTargetHits()",
+      "public void setTargetHits(java.lang.Integer)",
+      "public void setTotalTargetHits(java.lang.Integer)",
       "public int getN()",
       "public boolean nIsExplicit()",
       "public void setN(int)",
-      "public int encode(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
@@ -1973,8 +2000,8 @@
       "public java.lang.String getName()",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
-      "public int encode(java.nio.ByteBuffer)",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public int getTermCount()",
       "public com.yahoo.prelude.query.WeightedSetItem clone()",
       "public boolean equals(java.lang.Object)",
@@ -2022,7 +2049,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public java.util.List getAlternatives()",
-      "public void encodeThis(java.nio.ByteBuffer)",
+      "public void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void addTerm(java.lang.String, double)",
       "public com.yahoo.prelude.query.WordAlternativesItem clone()",
       "public boolean equals(java.lang.Object)",
@@ -2049,7 +2076,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public void setWord(java.lang.String)",
-      "protected void encodeThis(java.nio.ByteBuffer)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "protected java.lang.String getEncodedWord()",
       "public java.lang.String getWord()",
       "public java.lang.String stringValue()",
@@ -2172,7 +2199,7 @@
       "public void setWindow(int, int)",
       "public java.lang.String toString()",
       "public java.lang.String toDetailString()",
-      "public int encode(java.nio.ByteBuffer)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void trace(java.lang.String, int)",
       "public void trace(java.lang.Object, int)",
       "public void trace(java.lang.String, boolean, int)",
@@ -3108,6 +3135,21 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.GeoDistanceFunction" : {
+    "superClass" : "com.yahoo.search.grouping.request.FunctionNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.AttributeFunction, com.yahoo.search.grouping.request.GroupingExpression, com.yahoo.search.grouping.request.GroupingExpression, java.lang.String)",
+      "public java.lang.String getUnit()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.GeoDistanceFunction copy()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.GroupingExpression" : {
     "superClass" : "com.yahoo.search.grouping.request.GroupingNode",
     "interfaces" : [ ],
@@ -3265,6 +3307,20 @@
       "public java.lang.String getAttributeName()",
       "public com.yahoo.search.grouping.request.GroupingExpression getLookupArgument()",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.IsTruePredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression)",
+      "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
     ],
     "fields" : [ ]
   },
@@ -5772,6 +5828,8 @@
       "public java.lang.Integer getRerankCount()",
       "public void setKeepRankCount(int)",
       "public java.lang.Integer getKeepRankCount()",
+      "public void setTotalKeepRankCount(int)",
+      "public java.lang.Integer getTotalKeepRankCount()",
       "public void setRankScoreDropLimit(double)",
       "public java.lang.Double getRankScoreDropLimit()",
       "public com.yahoo.prelude.Location getLocation()",
@@ -5804,6 +5862,8 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String keepRankCountProperty",
+      "public static final java.lang.String totalKeepRankCountProperty",
       "public static final com.yahoo.processing.request.CompoundName RANKFEATURES",
       "public static final java.lang.String RANKING",
       "public static final java.lang.String LOCATION",
@@ -5812,8 +5872,9 @@
       "public static final java.lang.String LIST_FEATURES",
       "public static final java.lang.String FRESHNESS",
       "public static final java.lang.String QUERYCACHE",
-      "public static final java.lang.String RERANKCOUNT",
       "public static final java.lang.String KEEPRANKCOUNT",
+      "public static final java.lang.String TOTALKEEPRANKCOUNT",
+      "public static final java.lang.String RERANKCOUNT",
       "public static final java.lang.String RANKSCOREDROPLIMIT",
       "public static final java.lang.String ELEMENT_GAP",
       "public static final java.lang.String FEATURES",
@@ -7375,7 +7436,9 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
-      "public static final java.lang.String GLOBAL_PHASE"
+      "public static final java.lang.String GLOBAL_PHASE",
+      "public static final java.lang.String RERANK_COUNT",
+      "public static final java.lang.String RANK_SCORE_DROP_LIMIT"
     ]
   },
   "com.yahoo.search.query.ranking.MatchPhase" : {
@@ -7394,8 +7457,10 @@
       "public void setAscending(boolean)",
       "public boolean getAscending()",
       "public void setMaxHits(long)",
+      "public void setTotalMaxHits(long)",
       "public void setMaxFilterCoverage(double)",
       "public java.lang.Long getMaxHits()",
+      "public java.lang.Long getTotalMaxHits()",
       "public java.lang.Double getMaxFilterCoverage()",
       "public com.yahoo.search.query.ranking.Diversity getDiversity()",
       "public void setDiversity(com.yahoo.search.query.ranking.Diversity)",
@@ -7406,10 +7471,13 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String maxHitsProperty",
+      "public static final java.lang.String totalMaxHitsProperty",
       "public static final java.lang.String MATCH_PHASE",
       "public static final java.lang.String ATTRIBUTE",
       "public static final java.lang.String ASCENDING",
       "public static final java.lang.String MAX_HITS",
+      "public static final java.lang.String TOTAL_MAX_HITS",
       "public static final java.lang.String MAX_FILTER_COVERAGE"
     ]
   },
@@ -7521,6 +7589,7 @@
       "public void remove(java.lang.String)",
       "public boolean isEmpty()",
       "public java.util.Map asMap()",
+      "public java.util.Map asMap(com.yahoo.prelude.query.SerializationContext)",
       "public int encode(java.nio.ByteBuffer, boolean)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -7541,6 +7610,10 @@
     "methods" : [
       "public void <init>()",
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public void setRerankCount(int)",
+      "public java.lang.Integer getRerankCount()",
+      "public void setTotalRerankCount(int)",
+      "public java.lang.Integer getTotalRerankCount()",
       "public void setRankScoreDropLimit(double)",
       "public java.lang.Double getRankScoreDropLimit()",
       "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
@@ -7550,7 +7623,12 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
-      "public static final java.lang.String SECOND_PHASE"
+      "public static final java.lang.String rerankCountProperty",
+      "public static final java.lang.String totalRerankCountProperty",
+      "public static final java.lang.String SECOND_PHASE",
+      "public static final java.lang.String RERANK_COUNT",
+      "public static final java.lang.String TOTAL_RERANK_COUNT",
+      "public static final java.lang.String RANK_SCORE_DROP_LIMIT"
     ]
   },
   "com.yahoo.search.query.ranking.Significance" : {
@@ -9082,6 +9160,36 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.schema.MatchPhase$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.schema.MatchPhase$Builder setMaxHits(long)",
+      "public com.yahoo.search.schema.MatchPhase$Builder setTotalMaxHits(long)",
+      "public com.yahoo.search.schema.MatchPhase build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.MatchPhase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.schema.MatchPhase$Builder)",
+      "public java.util.OptionalLong maxHits()",
+      "public java.util.OptionalLong totalMaxHits()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.schema.RankProfile$Builder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -9094,6 +9202,10 @@
       "public com.yahoo.search.schema.RankProfile$Builder setHasRankFeatures(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder addInput(java.lang.String, com.yahoo.search.schema.RankProfile$InputType)",
       "public com.yahoo.search.schema.RankProfile$Builder setUseSignificanceModel(boolean)",
+      "public com.yahoo.search.schema.RankProfile$Builder setKeepRankCount(int)",
+      "public com.yahoo.search.schema.RankProfile$Builder setTotalKeepRankCount(int)",
+      "public com.yahoo.search.schema.RankProfile$Builder setMatchPhase(com.yahoo.search.schema.MatchPhase)",
+      "public com.yahoo.search.schema.RankProfile$Builder setSecondPhase(com.yahoo.search.schema.SecondPhase)",
       "public com.yahoo.search.schema.RankProfile build()"
     ],
     "fields" : [ ]
@@ -9130,6 +9242,10 @@
       "public boolean hasRankFeatures()",
       "public boolean useSignificanceModel()",
       "public java.util.Map inputs()",
+      "public java.util.OptionalInt keepRankCount()",
+      "public java.util.OptionalInt totalKeepRankCount()",
+      "public com.yahoo.search.schema.MatchPhase matchPhase()",
+      "public com.yahoo.search.schema.SecondPhase secondPhase()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -9180,6 +9296,7 @@
     "methods" : [
       "public boolean isStreaming()",
       "public java.util.Collection schemas()",
+      "public java.util.Optional schema(java.lang.String)",
       "public java.util.Optional fieldInfo(java.lang.String)",
       "public com.yahoo.search.schema.RankProfile$InputType rankProfileInput(java.lang.String, java.lang.String)"
     ],
@@ -9194,14 +9311,44 @@
     "methods" : [
       "public void <init>(com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
       "public void <init>(java.util.List, java.util.List)",
-      "public static com.yahoo.search.schema.SchemaInfo createStub(com.yahoo.search.query.parser.ParserEnvironment$ParserSettings)",
       "public java.util.Map schemas()",
       "public java.util.Map clusters()",
       "public com.yahoo.search.query.parser.ParserEnvironment$ParserSettings parserSettings()",
       "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
       "public static com.yahoo.search.schema.SchemaInfo empty()",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public static com.yahoo.search.schema.SchemaInfo createStub(com.yahoo.search.query.parser.ParserEnvironment$ParserSettings)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.SecondPhase$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.schema.SecondPhase$Builder setRerankCount(int)",
+      "public com.yahoo.search.schema.SecondPhase$Builder setTotalRerankCount(int)",
+      "public com.yahoo.search.schema.SecondPhase build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.SecondPhase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.schema.SecondPhase$Builder)",
+      "public java.util.OptionalInt rerankCount()",
+      "public java.util.OptionalInt totalRerankCount()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
     ],
     "fields" : [ ]
   },

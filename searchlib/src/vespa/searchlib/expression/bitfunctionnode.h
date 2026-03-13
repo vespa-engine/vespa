@@ -3,6 +3,7 @@
 
 #include "multiargfunctionnode.h"
 #include "integerresultnode.h"
+#include "numericfunctionnode.h"
 
 namespace search {
 namespace expression {
@@ -21,4 +22,3 @@ private:
 
 }
 }
-

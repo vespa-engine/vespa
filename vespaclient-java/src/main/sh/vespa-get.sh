@@ -83,6 +83,7 @@ exec java \
 -XX:ThreadStackSize=512 \
 -XX:MaxJavaStackTraceDepth=1000000 \
 -Djava.awt.headless=true \
+-Djava.io.tmpdir=${VESPA_HOME}/var/tmp \
 -DVESPA_LOG_LEVEL="all -debug -spam -config -info -event" \
 -Xms128m -Xmx1024m $(getJavaOptionsIPV46) \
 -cp ${VESPA_HOME}/lib/jars/vespaclient-java-jar-with-dependencies.jar com.yahoo.vespaget.Main "$@"

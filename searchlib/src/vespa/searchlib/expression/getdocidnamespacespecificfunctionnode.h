@@ -2,6 +2,8 @@
 #pragma once
 
 #include "documentaccessornode.h"
+#include "resultnode.h"
+#include "stringresultnode.h"
 
 namespace search {
 namespace expression {
@@ -19,7 +21,7 @@ private:
     void onDocType(const document::DocumentType & docType) override { (void) docType; }
     void onDoc(const document::Document & doc) override;
     void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
-    bool onExecute() const override { return true; }
+    void onExecute() const override { }
     ResultNode::CP _value;
 };
 

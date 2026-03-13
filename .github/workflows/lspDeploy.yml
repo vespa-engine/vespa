@@ -11,16 +11,24 @@ on:
           - patch
           - minor
           - major
+  pull_request:
+    paths:
+      - 'integration/schema-language-server/**'
+      - '.github/workflows/lspDeploy.yml'
 
 jobs:
-  lspDeploy:
-    name: Vespa Schema LSP Deployment Job
+  lspBuildAndDeploy:
+    name: Vespa Schema LSP Build and Deploy
+    # Note: While this job declares 'contents: write', step-level conditionals ensure
+    # write operations only execute on workflow_dispatch. For forked PRs, GitHub also
+    # automatically restricts tokens to read-only regardless of declared permissions.
     permissions:
       contents: write
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+      
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -32,34 +40,41 @@ jobs:
         run: |
           export MAVEN_OPTS="-Xms128m -Xmx1024m"
           ./bootstrap.sh java
-          mvn install --threads 1C
+          mvn install --threads 1C -Pschema-language-server -DskipTests -Dmaven.source.skip -Dmaven.javadoc.skip -Denforcer.skip
         working-directory: ./
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Download node dependencies
+        run: npm ci
+        working-directory: ./integration/schema-language-server/clients/vscode
       
+      - name: Build IntelliJ plugin
+        run: gradle buildPlugin
+        working-directory: ./integration/schema-language-server/clients/intellij
+      
+      # Deployment steps below only run on workflow_dispatch
       - name: "Retrieve version"
         id: retrieve_version
+        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server/utils
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 updateVersion.py ${{ github.event.inputs.version }} >> $GITHUB_OUTPUT
 
-      - name: Download node dependencies
-        run: npm ci
-        working-directory: ./integration/schema-language-server/clients/vscode
-
       - name: Publish VScode extension
+        if: github.event_name == 'workflow_dispatch'
         run: npm run publish
         working-directory: ./integration/schema-language-server/clients/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish IntelliJ plugin
+        if: github.event_name == 'workflow_dispatch'
         run: |
           echo $VERSION > VERSION
-          gradle buildPlugin
           curl -i --header "Authorization: Bearer $INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=@./build/distributions/vespa-$VERSION.zip https://plugins.jetbrains.com/plugin/uploadPlugin
         working-directory: ./integration/schema-language-server/clients/intellij
         env:
@@ -68,10 +83,12 @@ jobs:
           PLUGIN_ID: 18074
 
       - name: Publish to open-vsx
+        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server/clients/vscode
         run: npx ovsx publish 'vespa-language-support-${{ steps.retrieve_version.outputs.VERSION }}.vsix' -p ${{ secrets.OPEN_VSX_PAT }}
 
       - name: Prepare Github Release
+        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server
         run: |
           mkdir -p ./clients/github-release/target
@@ -80,6 +97,7 @@ jobs:
           VERSION: ${{ steps.retrieve_version.outputs.VERSION }}
       
       - name: Create release
+        if: github.event_name == 'workflow_dispatch'
         working-directory: ./integration/schema-language-server
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

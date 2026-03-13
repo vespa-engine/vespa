@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
@@ -19,7 +20,8 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * Validates and logs a warning (with deploy logger) when paged attributes are used in a
- * content cluster with nodes with remote storage
+ * content cluster with nodes with remote storage. No validation or warning will be produced
+ * for dev environment
  *
  * @author hmusum
  */
@@ -27,6 +29,8 @@ public class PagedAttributesRemoteStorageValidator implements Validator {
 
     @Override
     public void validate(Context context) {
+        if (context.deployState().zone().environment() == Environment.dev) return;
+
         var contentClustersWithRemoteStorage = context.model().allocatedHosts().getHosts().stream()
                 .filter(hostSpec -> hostSpec.realResources().storageType() == remote)
                 .map(HostSpec::membership)

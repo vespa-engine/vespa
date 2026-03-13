@@ -153,6 +153,7 @@ WORD = \w+
   "significance"             { return SIGNIFICANCE; }
   "first-phase"              { return FIRST_PHASE; }
   "keep-rank-count"          { return KEEP_RANK_COUNT; }
+  "total-keep-rank-count"    { return TOTAL_KEEP_RANK_COUNT; }
   "rank-score-drop-limit"    { return RANK_SCORE_DROP_LIMIT; }
   "expression"               { return EXPRESSION; }
   "file"                     { return FILE; }
@@ -165,6 +166,7 @@ WORD = \w+
   "constants"                { return CONSTANTS; }
   "second-phase"             { return SECOND_PHASE; }
   "rerank-count"             { return RERANK_COUNT; }
+  "total-rerank-count"       { return TOTAL_RERANK_COUNT; }
   "rank-features"            { return RANK_FEATURES; }
 
   "weight"                   { return WEIGHT; }

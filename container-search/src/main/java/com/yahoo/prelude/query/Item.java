@@ -248,12 +248,12 @@ public abstract class Item implements Cloneable {
         return parent;
     }
 
-    public abstract int encode(ByteBuffer buffer);
+    public abstract int encode(ByteBuffer buffer, SerializationContext context);
 
     /** Convert this item to protobuf format */
-    abstract SearchProtocol.QueryTreeItem toProtobuf();
+    abstract SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context);
 
-    protected void encodeThis(ByteBuffer buffer) {
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
         byte CODE_MASK =     0b00011111;
         byte FEAT_WEIGHT =   0b00100000;
         byte FEAT_UNIQUEID = 0b01000000;

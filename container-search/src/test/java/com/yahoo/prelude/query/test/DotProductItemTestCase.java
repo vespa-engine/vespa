@@ -2,7 +2,8 @@
 package com.yahoo.prelude.query.test;
 
 import org.junit.jupiter.api.Test;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.DotProductItem;
+import com.yahoo.prelude.query.Item;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

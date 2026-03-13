@@ -4,7 +4,10 @@ package com.yahoo.vespa.model.test;
 import com.yahoo.vespa.model.PortsMeta;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests proper functioning of the PortsMeta.

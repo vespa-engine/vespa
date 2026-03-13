@@ -1,7 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.processing;
 
-import com.yahoo.document.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
+import com.yahoo.document.PositionDataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
@@ -12,7 +15,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ImplicitStructTypesTestCase extends AbstractSchemaTestCase {
     @Test

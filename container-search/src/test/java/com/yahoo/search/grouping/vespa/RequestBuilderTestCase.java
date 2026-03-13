@@ -23,6 +23,7 @@ import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FilterExpressionNode;
+import com.yahoo.searchlib.expression.IsTruePredicateNode;
 import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.OrPredicateNode;
 import com.yahoo.searchlib.expression.RangePredicateNode;
@@ -41,7 +42,10 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -182,6 +186,8 @@ public class RequestBuilderTestCase {
         assertLayout("all(group(math.tanh(a)) each(output(count())))", "[[{ Math, result = [Count] }]]");
         assertLayout("all(group(zcurve.x(a)) each(output(count())))", "[[{ ZCurve, result = [Count] }]]");
         assertLayout("all(group(zcurve.y(a)) each(output(count())))", "[[{ ZCurve, result = [Count] }]]");
+        assertLayout("all(group(geo_distance(attribute(a), 1.0, 2.0).km) each(output(count())))", "[[{ GeoDistance, result = [Count] }]]");
+        assertLayout("all(group(geo_distance(attribute(a), 1.0, 2.0).miles) each(output(count())))", "[[{ GeoDistance, result = [Count] }]]");
         assertLayout("all(group(time.dayofmonth(a)) each(output(count())))", "[[{ TimeStamp, result = [Count] }]]");
         assertLayout("all(group(time.dayofweek(a)) each(output(count())))", "[[{ TimeStamp, result = [Count] }]]");
         assertLayout("all(group(time.dayofyear(a)) each(output(count())))", "[[{ TimeStamp, result = [Count] }]]");
@@ -849,6 +855,12 @@ public class RequestBuilderTestCase {
     }
 
     @Test
+    void require_that_istrue_filter_layout_is_correct() {
+        assertLayout("all(group(a) filter(istrue(a)) each(output(count())))",
+                "[[{ Attribute, filter = [IsTrue [Attribute]], result = [Count] }]]");
+    }
+
+    @Test
     void require_that_filter_predicate_layout_is_correct() {
         // Not[Regex]
         assertLayout("all(group(a) filter(not regex(\".*suffix$\", a)) each(output(count())))",
@@ -1159,24 +1171,27 @@ public class RequestBuilderTestCase {
         private static String toSimpleName(FilterExpressionNode filterExp) {
             if (filterExp instanceof RegexPredicateNode rpn) {
                 var simpleName = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
-                return "Regex [%s]".formatted(simpleName);
+                return String.format(Locale.ROOT, "Regex [%s]", simpleName);
             } else if (filterExp instanceof RangePredicateNode rpn) {
                 var lower = rpn.getLower().doubleValue();
                 var upper = rpn.getUpper().doubleValue();
                 var lowerInclusive = rpn.getLowerInclusive() ? "true" : "false";
                 var upperInclusive = rpn.getUpperInclusive() ? "true" : "false";
                 var expression = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
-                return String.format(Locale.US, "Range [%f, %f, %s, %s, %s]",
+                return String.format(Locale.ROOT, "Range [%f, %f, %s, %s, %s]",
                                      lower, upper, expression, lowerInclusive, upperInclusive);
+            } else if (filterExp instanceof IsTruePredicateNode itn) {
+                var expression = itn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
+                return String.format("IsTrue [%s]", expression);
             } else if (filterExp instanceof NotPredicateNode npn) {
                 var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
-                return "Not [%s]".formatted(simpleName);
+                return String.format(Locale.ROOT, "Not [%s]", simpleName);
             } else if (filterExp instanceof OrPredicateNode opn) {
                 var simpleName = opn.getArgs().stream().map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
-                return "Or [%s]".formatted(simpleName);
+                return String.format(Locale.ROOT, "Or [%s]", simpleName);
             } else if (filterExp instanceof AndPredicateNode apn) {
                 var simpleName = apn.getArgs().stream().map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
-                return "And [%s]".formatted(simpleName);
+                return String.format(Locale.ROOT, "And [%s]", simpleName);
             }
             return filterExp.getClass().getSimpleName();
         }

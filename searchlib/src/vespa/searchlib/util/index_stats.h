@@ -17,7 +17,6 @@ private:
     vespalib::MemoryUsage _memoryUsage;
     size_t _docsInMemory;
     size_t _sizeOnDisk; // in bytes
-    size_t _fusion_size_on_disk; // in bytes
     uint32_t _disk_indexes;
     uint32_t _memory_indexes;
     std::map<std::string, FieldIndexStats> _field_stats;
@@ -40,11 +39,6 @@ public:
         return *this;
     }
     size_t sizeOnDisk() const { return _sizeOnDisk; }
-    IndexStats& fusion_size_on_disk(size_t value) {
-        _fusion_size_on_disk = value;
-        return *this;
-    }
-    size_t fusion_size_on_disk() const { return _fusion_size_on_disk; }
     IndexStats& disk_indexes(uint32_t value) noexcept
     {
         _disk_indexes = value;

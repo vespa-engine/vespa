@@ -672,7 +672,7 @@ struct FieldIndexInterleavedFeaturesTest : public FieldIndexTest<FieldIndex<true
         EXPECT_EQ(exp_field_positions, toString(match_data));
         EXPECT_EQ(exp_num_occs, match_data.term.getNumOccs());
         EXPECT_EQ(exp_field_length, match_data.term.getFieldLength());
-        EXPECT_EQ(10, match_data.term.getDocId());
+        EXPECT_TRUE(match_data.term.has_ranking_data(10));
         auto& ranked_itr = dynamic_cast<RankedSearchIteratorBase&>(*itr);
         EXPECT_TRUE(ranked_itr.getUnpacked());
         EXPECT_TRUE(!itr->seek(11));

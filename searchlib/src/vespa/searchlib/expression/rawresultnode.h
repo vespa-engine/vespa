@@ -45,6 +45,9 @@ private:
     int64_t onGetInteger(size_t index) const override;
     double onGetFloat(size_t index)    const override;
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+
+    std::string_view friendly_type_name() const noexcept override { return "string"; }
+
     V _value;
 };
 

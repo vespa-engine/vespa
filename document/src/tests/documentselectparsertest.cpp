@@ -230,6 +230,7 @@ DocumentSelectParserTest::createDocs()
 
         MapFieldValue amval(_doc.back()->getField("structarrmap").getDataType());
         amval.put(StringFieldValue("foo"), aval);
+        amval.put(StringFieldValue("a key needing escaping"), aval);
 
         ArrayFieldValue abval(_doc.back()->getField("structarray").getDataType());
         {
@@ -951,6 +952,9 @@ TEST_F(DocumentSelectParserTest, operators_8)
     PARSE("testdoctype1.mymap == 4", *_doc[1], False);
     PARSE("testdoctype1.mymap = 3", *_doc[1], True); // Fallback to ==
     PARSE("testdoctype1.mymap = 4", *_doc[1], False); // Fallback to ==
+
+    PARSE("testdoctype1.structarrmap{\"a key needing escaping\"}", *_doc[1], True);
+    PARSE("testdoctype1.structarrmap{\"a key needing escaping\"}", *_doc[0], False);
 
     PARSE("testdoctype1.structarrmap{$x}[$y].key == 15 AND testdoctype1.structarrmap{$x}[$y].value == \"structval1\"", *_doc[1], True);
     PARSE("testdoctype1.structarrmap.value[$y].key == 15 AND testdoctype1.structarrmap.value[$y].value == \"structval1\"", *_doc[1], True);

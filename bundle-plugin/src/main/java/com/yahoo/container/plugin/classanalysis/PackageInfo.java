@@ -11,11 +11,15 @@ import java.util.Optional;
 record PackageInfo(String name, Optional<ExportPackageAnnotation> exportPackage, boolean isPublicApi) {
 
     /**
-     * Returns this if it has an ExportPackage annotation, otherwise returns the other.
-     * Used to combine objects, where this should take precedence over the other.
+     * Returns a PackageInfo with an ExportPackage annotation if either this or other has one.
+     * If both have ExportPackage, this takes precedence, but isPublicApi is OR-ed from both.
      */
     PackageInfo hasExportPackageOrElse(PackageInfo other) {
-        return exportPackage().isPresent() ? this : other;
+        if (exportPackage().isPresent()) {
+            boolean mergedPublicApi = isPublicApi || other.isPublicApi;
+            return mergedPublicApi == isPublicApi ? this : new PackageInfo(name, exportPackage, true);
+        }
+        return other;
     }
 
 }

@@ -62,7 +62,7 @@
                                 <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependencies">
                                     <allowed>
                                         <include>aopalliance:aopalliance:${aopalliance.vespa.version}:provided</include>
-                                        <include>com.fasterxml.jackson.core:jackson-annotations:${jackson2.vespa.version}:provided</include>
+                                        <include>com.fasterxml.jackson.core:jackson-annotations:${jackson-annotations.vespa.version}:provided</include>
                                         <include>com.fasterxml.jackson.core:jackson-core:${jackson2.vespa.version}:provided</include>
                                         <include>com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}:provided</include>
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}:provided</include>
@@ -198,10 +198,10 @@
                                         <include>org.eclipse.jetty.http2:jetty-http2-common:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty.http2:jetty-http2-hpack:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty.http2:jetty-http2-server:${jetty.vespa.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-client:${jetty.client.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-client:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-java-server:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-server:${jetty.vespa.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-client:${jetty.client.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-client:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-http:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-io:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-jmx:${jetty.vespa.version}:test</include>

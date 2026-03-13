@@ -14,6 +14,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import java.nio.file.Paths;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 /**
  * Deploys a Vespa application package to the hosted Vespa API.
@@ -70,7 +71,7 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
         }
     }
 
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss", Locale.ROOT).withZone(ZoneOffset.UTC);
     private static final String padding = "\n" + " ".repeat(23);
 
     private void print(DeploymentLog.Entry entry) {

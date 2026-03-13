@@ -4,7 +4,14 @@ package com.yahoo.vespa.config.server.configchange;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static com.yahoo.vespa.config.server.configchange.Utils.*;
+import static com.yahoo.vespa.config.server.configchange.Utils.CHANGE_ID;
+import static com.yahoo.vespa.config.server.configchange.Utils.CHANGE_ID_2;
+import static com.yahoo.vespa.config.server.configchange.Utils.CHANGE_MSG;
+import static com.yahoo.vespa.config.server.configchange.Utils.CHANGE_MSG_2;
+import static com.yahoo.vespa.config.server.configchange.Utils.CLUSTER;
+import static com.yahoo.vespa.config.server.configchange.Utils.DOC_TYPE;
+import static com.yahoo.vespa.config.server.configchange.Utils.DOC_TYPE_2;
+import static com.yahoo.vespa.config.server.configchange.Utils.SERVICE_NAME;
 
 /**
  * @author geirst

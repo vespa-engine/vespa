@@ -3,17 +3,22 @@
 #include "attribute_map_lookup_node.h"
 #include "resultvector.h"
 #include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchcommon/attribute/multi_value_read_view_traits.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <format>
 
-using search::attribute::AttributeContent;
-using search::attribute::IAttributeVector;
+using search::attribute::ArrayReadViewType_t;
 using search::attribute::BasicType;
+using search::attribute::IAttributeVector;
+using search::attribute::IMultiValueAttribute;
 using search::attribute::getUndefined;
 using vespalib::Deserializer;
 using vespalib::Serializer;
+using vespalib::Stash;
+using vespalib::datastore::AtomicEntryRef;
 using EnumHandle = IAttributeVector::EnumHandle;
 
 namespace search::expression {
@@ -69,24 +74,71 @@ convertKey<EnumHandle>(const IAttributeVector &attribute, const std::string &key
     return ret;
 }
 
-template <typename T, typename KeyType = T>
+namespace {
+
+template <typename T>
+struct UnwrappedType {
+    using type = T;
+};
+
+template <>
+struct UnwrappedType<AtomicEntryRef> {
+    using type = EnumHandle;
+};
+
+template <typename T>
+using UnwrappedType_t = typename UnwrappedType<T>::type;
+
+template <typename KeyType, typename T>
+bool matching_direct_key(const KeyType& lhs, const T& rhs) {
+    return lhs == rhs;
+}
+
+template <>
+bool matching_direct_key(const EnumHandle& lhs, const AtomicEntryRef& rhs) {
+    return lhs == rhs.load_relaxed().ref();
+}
+
+template <typename T>
+UnwrappedType_t<T> unwrap_value(const T& value) {
+    return value;
+}
+
+template <>
+EnumHandle unwrap_value(const AtomicEntryRef& value) {
+    return value.load_relaxed().ref();
+}
+
+}
+
+template <typename T, typename KeyType>
 class KeyHandlerT : public AttributeMapLookupNode::KeyHandler
 {
-    AttributeContent<T> _keys;
-    KeyType _key;
+    using ReadView = ArrayReadViewType_t<T>;
+    Stash           _stash;
+    const ReadView* _read_view;
+    KeyType         _key;
 
 public:
     KeyHandlerT(const IAttributeVector &attribute, const std::string &key)
         : KeyHandler(attribute),
-          _keys(),
+          _stash(),
+          _read_view(nullptr),
           _key(convertKey<KeyType>(attribute, key))
-    { }
+    {
+        auto* mva = attribute.as_multi_value_attribute();
+        if (mva != nullptr) {
+            _read_view = mva->make_read_view(IMultiValueAttribute::ArrayTag<T>(), _stash);
+        }
+    }
     ~KeyHandlerT() override;
     uint32_t handle(DocId docId) override {
-        _keys.fill(_attribute, docId);
-        for (uint32_t i = 0; i < _keys.size(); ++i) {
-            if (_key == _keys[i]) {
-                return i;
+        if (_read_view != nullptr) {
+            auto keys = _read_view->get_values(docId);
+            for (uint32_t i = 0; i < keys.size(); ++i) {
+                if (matching_direct_key(_key, keys[i])) {
+                    return i;
+                }
             }
         }
         return noKeyIdx();
@@ -96,55 +148,81 @@ public:
 template <typename T, typename KeyType>
 KeyHandlerT<T,KeyType>::~KeyHandlerT() = default;
 
-using IntegerKeyHandler = KeyHandlerT<IAttributeVector::largeint_t>;
-using FloatKeyHandler   = KeyHandlerT<double>;
-using StringKeyHandler  = KeyHandlerT<const char *, std::string>;
-using EnumKeyHandler    = KeyHandlerT<EnumHandle>;
-
 template <typename T>
+using IntegerKeyHandler = KeyHandlerT<T, T>;
+template <typename T>
+using FloatKeyHandler   = KeyHandlerT<T, T>;
+using StringKeyHandler  = KeyHandlerT<const char *, std::string>;
+using EnumKeyHandler    = KeyHandlerT<AtomicEntryRef, EnumHandle>;
+
+template <typename WT, typename T>
 bool
-matchingKey(T lhs, T rhs) {
+matchingKey(WT lhs, T rhs) {
     return lhs == rhs;
 }
 
 template <>
 bool
-matchingKey<const char *>(const char *lhs, const char *rhs) {
+matchingKey<const char*, const char*>(const char *lhs, const char *rhs) {
     return (strcmp(lhs, rhs) == 0);
 }
 
-template <typename T>
+template <typename WT, typename T>
 class IndirectKeyHandlerT : public AttributeMapLookupNode::KeyHandler
 {
-    const IAttributeVector &_keySourceAttribute;
-    AttributeContent<T>     _keys;
+    using ReadView = ArrayReadViewType_t<T>;
+    const IAttributeVector& _keySourceAttribute;
+    Stash                   _stash;
+    const ReadView*         _read_view;
 
 public:
     IndirectKeyHandlerT(const IAttributeVector &attribute, const IAttributeVector &keySourceAttribute)
         : KeyHandler(attribute),
           _keySourceAttribute(keySourceAttribute),
-          _keys()
-    { }
+          _stash(),
+          _read_view(nullptr)
+    {
+        auto* mva = attribute.as_multi_value_attribute();
+        if (mva != nullptr) {
+            _read_view = mva->make_read_view(IMultiValueAttribute::ArrayTag<T>(), _stash);
+        }
+    }
     ~IndirectKeyHandlerT() override;
     uint32_t handle(DocId docId) override {
-        T key = T();
-        _keySourceAttribute.get(docId, &key, 1);
-        _keys.fill(_attribute, docId);
-        for (uint32_t i = 0; i < _keys.size(); ++i) {
-            if (matchingKey(key, _keys[i])) {
-                return i;
+        if (_read_view != nullptr) {
+            WT key = WT();
+            if constexpr (std::is_same_v<WT, IAttributeVector::largeint_t>) {
+                key = _keySourceAttribute.getInt(docId);
+            } else if constexpr (std::is_same_v<WT, double>) {
+                key = _keySourceAttribute.getFloat(docId);
+            } else if constexpr (std::is_same_v<WT, const char*>) {
+                auto raw = _keySourceAttribute.get_raw(docId);
+                if (raw.data() == nullptr) {
+                    return noKeyIdx();
+                }
+                key = raw.data();
+            } else {
+                static_assert(false, "Unexepected WT template argument");
+            }
+            auto keys = _read_view->get_values(docId);
+            for (uint32_t i = 0; i < keys.size(); ++i) {
+                if (matchingKey(key, keys[i])) {
+                    return i;
+                }
             }
         }
         return noKeyIdx();
     }
 };
 
-template <typename T>
-IndirectKeyHandlerT<T>::~IndirectKeyHandlerT() = default;
+template <typename WT, typename T>
+IndirectKeyHandlerT<WT, T>::~IndirectKeyHandlerT() = default;
 
-using IndirectIntegerKeyHandler = IndirectKeyHandlerT<IAttributeVector::largeint_t>;
-using IndirectFloatKeyHandler = IndirectKeyHandlerT<double>;
-using IndirectStringKeyHandler = IndirectKeyHandlerT<const char *>;
+template <typename T>
+using IndirectIntegerKeyHandler = IndirectKeyHandlerT<IAttributeVector::largeint_t, T>;
+template <typename T>
+using IndirectFloatKeyHandler = IndirectKeyHandlerT<double, T>;
+using IndirectStringKeyHandler = IndirectKeyHandlerT<const char*, const char*>;
 
 class ValueHandler : public AttributeNode::Handler
 {
@@ -160,23 +238,32 @@ protected:
 template <typename T, typename ResultNodeType>
 class ValueHandlerT : public ValueHandler
 {
-    AttributeContent<T> _values;
-    ResultNodeType &_result;
-    T _undefinedValue;
+    using ReadView = ArrayReadViewType_t<T>;
+    using UndefinedType = UnwrappedType_t<T>;
+    Stash           _stash;
+    const ReadView* _read_view;
+    ResultNodeType& _result;
+    UndefinedType   _undefinedValue;
 public:
-    ValueHandlerT(std::unique_ptr<AttributeMapLookupNode::KeyHandler> keyHandler, const IAttributeVector &attribute, ResultNodeType &result, T undefinedValue) noexcept
+    ValueHandlerT(std::unique_ptr<AttributeMapLookupNode::KeyHandler> keyHandler, const IAttributeVector &attribute, ResultNodeType &result, UnwrappedType_t<T> undefinedValue) noexcept
         : ValueHandler(std::move(keyHandler), attribute),
-          _values(),
+          _stash(),
+          _read_view(nullptr),
           _result(result),
           _undefinedValue(undefinedValue)
-    { }
+    {
+        auto* mva = attribute.as_multi_value_attribute();
+        if (mva != nullptr) {
+            _read_view = mva->make_read_view(IMultiValueAttribute::ArrayTag<T>(), _stash);
+        }
+    }
     void handle(const AttributeResult & r) override {
         uint32_t docId = r.getDocId();
         uint32_t keyIdx  = _keyHandler->handle(docId);
-        if (keyIdx != AttributeMapLookupNode::KeyHandler::noKeyIdx()) {
-            _values.fill(_attribute, docId);
-            if (keyIdx < _values.size()) {
-                _result = _values[keyIdx];
+        if (keyIdx != AttributeMapLookupNode::KeyHandler::noKeyIdx() && _read_view != nullptr) {
+            auto values = _read_view->get_values(docId);
+            if (keyIdx < values.size()) {
+                _result = unwrap_value(values[keyIdx]);
                 return;
             }
         }
@@ -184,18 +271,19 @@ public:
     }
 };
 
-template <typename ResultNodeType>
-using IntegerValueHandler = ValueHandlerT<IAttributeVector::largeint_t, ResultNodeType>;
-using FloatValueHandler   = ValueHandlerT<double, FloatResultNode>;
+template <typename T, typename ResultNodeType>
+using IntegerValueHandler = ValueHandlerT<T, ResultNodeType>;
+template <typename T>
+using FloatValueHandler   = ValueHandlerT<T, FloatResultNode>;
 using StringValueHandler  = ValueHandlerT<const char *, StringResultNode>;
-using EnumValueHandler    = ValueHandlerT<EnumHandle, EnumResultNode>;
+using EnumValueHandler    = ValueHandlerT<AtomicEntryRef, EnumResultNode>;
 
 const IAttributeVector *
 findAttribute(const search::attribute::IAttributeContext &attrCtx, bool useEnumOptimization, const std::string &name)
 {
     const IAttributeVector *attribute = useEnumOptimization ? attrCtx.getAttributeStableEnum(name) : attrCtx.getAttribute(name);
     if (attribute == nullptr) {
-        throw std::runtime_error(vespalib::make_string("Failed locating attribute vector '%s'", name.c_str()));
+        throw std::runtime_error(std::format("Failed locating attribute vector '{}' for attribute map lookup", name));
     }
     return attribute;
 }
@@ -217,12 +305,12 @@ getUndefinedValue(BasicType::Type basicType)
     }
 }
 
-template <typename ResultNodeType>
+template <typename T, typename ResultNodeType>
 std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<AttributeNode::Handler>>
 prepareIntValues(std::unique_ptr<AttributeMapLookupNode::KeyHandler> keyHandler, const IAttributeVector &attribute, IAttributeVector::largeint_t undefinedValue)
 {
     auto resultNode = std::make_unique<ResultNodeType>();
-    auto handler = std::make_unique<IntegerValueHandler<ResultNodeType>>(std::move(keyHandler), attribute, *resultNode, undefinedValue);
+    auto handler = std::make_unique<IntegerValueHandler<T, ResultNodeType>>(std::move(keyHandler), attribute, *resultNode, undefinedValue);
     return { std::move(resultNode), std::move(handler) };
 }
 
@@ -262,9 +350,29 @@ AttributeMapLookupNode::makeKeyHandlerHelper() const
     if (_keySourceAttribute != nullptr) {
         const IAttributeVector &keySourceAttribute = *_keySourceAttribute;
         if (attribute.isIntegerType() && keySourceAttribute.isIntegerType()) {
-            return std::make_unique<IndirectIntegerKeyHandler>(attribute, keySourceAttribute);
+            switch (attribute.getBasicType()) {
+                case BasicType::BOOL:
+                    return std::make_unique<IndirectIntegerKeyHandler<bool>>(attribute, keySourceAttribute);
+                case BasicType::INT8:
+                    return std::make_unique<IndirectIntegerKeyHandler<int8_t>>(attribute, keySourceAttribute);
+                case BasicType::INT16:
+                    return std::make_unique<IndirectIntegerKeyHandler<int16_t>>(attribute, keySourceAttribute);
+                case BasicType::INT32:
+                    return std::make_unique<IndirectIntegerKeyHandler<int32_t>>(attribute, keySourceAttribute);
+                case BasicType::INT64:
+                    return std::make_unique<IndirectIntegerKeyHandler<int64_t>>(attribute, keySourceAttribute);
+                default:
+                    return std::make_unique<BadKeyHandler>(attribute);
+            }
         } else if (attribute.isFloatingPointType() && keySourceAttribute.isFloatingPointType()) {
-            return std::make_unique<IndirectFloatKeyHandler>(attribute, keySourceAttribute);
+            switch (attribute.getBasicType()) {
+                case BasicType::FLOAT:
+                    return std::make_unique<IndirectFloatKeyHandler<float>>(attribute, keySourceAttribute);
+                case BasicType::DOUBLE:
+                    return std::make_unique<IndirectFloatKeyHandler<double>>(attribute, keySourceAttribute);
+                default:
+                    return std::make_unique<BadKeyHandler>(attribute);
+            }
         } else if (attribute.isStringType() && keySourceAttribute.isStringType()) {
             return std::make_unique<IndirectStringKeyHandler>(attribute, keySourceAttribute);
         } else {
@@ -274,9 +382,29 @@ AttributeMapLookupNode::makeKeyHandlerHelper() const
     if (attribute.hasEnum() && useEnumOptimization()) {
         return std::make_unique<EnumKeyHandler>(attribute, _key);
     } else if (attribute.isIntegerType()) {
-        return std::make_unique<IntegerKeyHandler>(attribute, _key);
+        switch (attribute.getBasicType()) {
+            case BasicType::BOOL:
+                return std::make_unique<IntegerKeyHandler<bool>>(attribute, _key);
+            case BasicType::INT8:
+                return std::make_unique<IntegerKeyHandler<int8_t>>(attribute, _key);
+            case BasicType::INT16:
+                return std::make_unique<IntegerKeyHandler<int16_t>>(attribute, _key);
+            case BasicType::INT32:
+                return std::make_unique<IntegerKeyHandler<int32_t>>(attribute, _key);
+            case BasicType::INT64:
+                return std::make_unique<IntegerKeyHandler<int64_t>>(attribute, _key);
+            default:
+                return std::make_unique<BadKeyHandler>(attribute);
+        }
     } else if (attribute.isFloatingPointType()) {
-        return std::make_unique<FloatKeyHandler>(attribute, _key);
+        switch (attribute.getBasicType()) {
+            case BasicType::FLOAT:
+                return std::make_unique<FloatKeyHandler<float>>(attribute, _key);
+            case BasicType::DOUBLE:
+                return std::make_unique<FloatKeyHandler<double>>(attribute, _key);
+            default:
+                return std::make_unique<BadKeyHandler>(attribute);
+        }
     } else if (attribute.isStringType()) {
         return std::make_unique<StringKeyHandler>(attribute, _key);
     } else {
@@ -302,24 +430,54 @@ AttributeMapLookupNode::createResultHandler(bool preserveAccurateTypes, const at
         IAttributeVector::largeint_t undefinedValue = getUndefinedValue(basicType);
         if (preserveAccurateTypes) {
             switch (basicType) {
+                case BasicType::BOOL:
+                    return prepareIntValues<bool, BoolResultNode>(std::move(keyHandler), attribute, undefinedValue);
                 case BasicType::INT8:
-                    return prepareIntValues<Int8ResultNode>(std::move(keyHandler), attribute, undefinedValue);
+                    return prepareIntValues<int8_t, Int8ResultNode>(std::move(keyHandler), attribute, undefinedValue);
                 case BasicType::INT16:
-                    return prepareIntValues<Int16ResultNode>(std::move(keyHandler), attribute, undefinedValue);
+                    return prepareIntValues<int16_t, Int16ResultNode>(std::move(keyHandler), attribute, undefinedValue);
                 case BasicType::INT32:
-                    return prepareIntValues<Int32ResultNode>(std::move(keyHandler), attribute, undefinedValue);
+                    return prepareIntValues<int32_t, Int32ResultNode>(std::move(keyHandler), attribute, undefinedValue);
                 case BasicType::INT64:
-                    return prepareIntValues<Int64ResultNode>(std::move(keyHandler), attribute, undefinedValue);
+                    return prepareIntValues<int64_t, Int64ResultNode>(std::move(keyHandler), attribute, undefinedValue);
                 default:
-                    throw std::runtime_error("This is no valid integer attribute " + attribute.getName());
+                    throw std::runtime_error(std::format("'{}' is not a valid integer attribute"
+                                                         " for attribute map lookup result", attribute.getName()));
             }
         } else {
-            return prepareIntValues<Int64ResultNode>(std::move(keyHandler), attribute, undefinedValue);
+            switch (basicType) {
+                case BasicType::BOOL:
+                    return prepareIntValues<bool, Int64ResultNode>(std::move(keyHandler), attribute, undefinedValue);
+                case BasicType::INT8:
+                    return prepareIntValues<int8_t, Int64ResultNode>(std::move(keyHandler), attribute, undefinedValue);
+                case BasicType::INT16:
+                    return prepareIntValues<int16_t, Int64ResultNode>(std::move(keyHandler), attribute, undefinedValue);
+                case BasicType::INT32:
+                    return prepareIntValues<int32_t, Int64ResultNode>(std::move(keyHandler), attribute, undefinedValue);
+                case BasicType::INT64:
+                    return prepareIntValues<int64_t, Int64ResultNode>(std::move(keyHandler), attribute, undefinedValue);
+                default:
+                    throw std::runtime_error(std::format("'{}' is not a valid integer attribute",
+                                                         " for attribute map lookup result", attribute.getName()));
+            }
         }
     } else if (attribute.isFloatingPointType()) {
         auto resultNode = std::make_unique<FloatResultNode>();
-        auto handler = std::make_unique<FloatValueHandler>(std::move(keyHandler), attribute, *resultNode, getUndefined<double>());
-        return { std::move(resultNode), std::move(handler) };
+        switch (basicType) {
+            case BasicType::FLOAT:
+            {
+                auto handler = std::make_unique<FloatValueHandler<float>>(std::move(keyHandler), attribute, *resultNode, getUndefined<double>());
+                return { std::move(resultNode), std::move(handler) };
+            }
+            case BasicType::DOUBLE:
+            {
+                auto handler = std::make_unique<FloatValueHandler<double>>(std::move(keyHandler), attribute, *resultNode, getUndefined<double>());
+                return { std::move(resultNode), std::move(handler) };
+            }
+            default:
+                throw std::runtime_error(std::format("'{}' is not a valid float attribute"
+                                                     " for attribute map lookup result", attribute.getName()));
+        }
     } else if (attribute.isStringType()) {
         if (useEnumOptimization()) {
             auto resultNode = std::make_unique<EnumResultNode>();
@@ -335,8 +493,8 @@ AttributeMapLookupNode::createResultHandler(bool preserveAccurateTypes, const at
             return { std::move(resultNode), std::move(handler) };
         }
     } else {
-        throw std::runtime_error(vespalib::make_string("Can not deduce correct resultclass for attribute vector '%s'",
-                                                       attribute.getName().c_str()));
+        throw std::runtime_error(std::format("Can not deduce correct resultclass for attribute vector '{}'"
+                                             " for attribute map lookup result", attribute.getName()));
     }
 }
 

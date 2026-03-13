@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.http.server.jetty.MetricAggregatingRequestLog.StatisticsEntry;
+import com.yahoo.text.Text;
 import org.eclipse.jetty.http.HttpVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -142,7 +143,7 @@ public class MetricAggregatingRequestLogTest {
                         && entry.dimensions.statusCode == statusCode)
                 .mapToLong(entry -> entry.value)
                 .reduce(Long::sum)
-                .orElseThrow(() -> new AssertionError(String.format("Not matching entry in result (scheme=%s, method=%s, name=%s, type=%s)", scheme, method, name, requestType)));
+                .orElseThrow(() -> new AssertionError(Text.format("Not matching entry in result (scheme=%s, method=%s, name=%s, type=%s)", scheme, method, name, requestType)));
         assertThat(value, equalTo(expectedValue));
     }
 

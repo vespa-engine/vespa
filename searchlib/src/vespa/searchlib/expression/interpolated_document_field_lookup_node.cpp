@@ -113,7 +113,7 @@ InterpolatedDocumentFieldLookupNode::onPrepare(bool)
     _value = std::make_unique<FloatResultNode>();
 }
 
-bool
+void
 InterpolatedDocumentFieldLookupNode::onExecute() const
 {
     if (_lookup_expression) {
@@ -127,7 +127,6 @@ InterpolatedDocumentFieldLookupNode::onExecute() const
         _float_result.set(0.0);
     }
     _value->set(_float_result);
-    return true;
 }
 
 }

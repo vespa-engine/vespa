@@ -4,6 +4,7 @@
 
 #include "context.h"
 #include "ipackethandler.h"
+
 #include <memory>
 
 class FNET_Connection;
@@ -15,35 +16,32 @@ class FNET_IPacketHandler;
  * to listen for incoming channels by implementing the ServerAdapter
  * interface.
  **/
-class FNET_Channel
-{
+class FNET_Channel {
 private:
     uint32_t             _id;
-    FNET_Connection     *_conn;
-    FNET_IPacketHandler *_handler;
+    FNET_Connection*     _conn;
+    FNET_IPacketHandler* _handler;
     FNET_Context         _context;
 
-    FNET_Channel(const FNET_Channel &);
-    FNET_Channel &operator=(const FNET_Channel &);
+    FNET_Channel(const FNET_Channel&);
+    FNET_Channel& operator=(const FNET_Channel&);
 
 public:
     using UP = std::unique_ptr<FNET_Channel>;
 
-    FNET_Channel(uint32_t id = FNET_NOID, FNET_Connection * conn = nullptr, FNET_IPacketHandler * handler = nullptr, FNET_Context context = FNET_Context())
-      : _id(id), _conn(conn), _handler(handler), _context(context)
-    { }
-    void SetID(uint32_t id)                       { _id      = id;      }
-    void SetConnection(FNET_Connection *conn)     { _conn    = conn;    }
-    void SetHandler(FNET_IPacketHandler *handler) { _handler = handler; }
-    void SetContext(FNET_Context context)         { _context = context; }
-    void prefetch() {
-        __builtin_prefetch(&_handler, 0);
-    }
+    FNET_Channel(uint32_t id = FNET_NOID, FNET_Connection* conn = nullptr, FNET_IPacketHandler* handler = nullptr,
+                 FNET_Context context = FNET_Context())
+        : _id(id), _conn(conn), _handler(handler), _context(context) {}
+    void SetID(uint32_t id) { _id = id; }
+    void SetConnection(FNET_Connection* conn) { _conn = conn; }
+    void SetHandler(FNET_IPacketHandler* handler) { _handler = handler; }
+    void SetContext(FNET_Context context) { _context = context; }
+    void prefetch() { __builtin_prefetch(&_handler, 0); }
 
-    uint32_t             GetID()              { return _id;      }
-    FNET_Connection     *GetConnection()      { return _conn;    }
-    FNET_IPacketHandler *GetHandler()         { return _handler; }
-    FNET_Context         GetContext()         { return _context; }
+    uint32_t             GetID() { return _id; }
+    FNET_Connection*     GetConnection() { return _conn; }
+    FNET_IPacketHandler* GetHandler() { return _handler; }
+    FNET_Context         GetContext() { return _context; }
 
     /**
      * Send a packet on this channel. This operation will fail if the
@@ -53,7 +51,7 @@ public:
      * @return false if the connection is down, true otherwise.
      * @param packet the packet to send.
      **/
-    bool Send(FNET_Packet *packet);
+    bool Send(FNET_Packet* packet);
 
     /**
      * Sync with the underlying connection. When this method is invoked
@@ -71,8 +69,7 @@ public:
      * @return channel command: keep open, close or free.
      * @param packet the received packet.
      **/
-    FNET_IPacketHandler::HP_RetCode
-    Receive(FNET_Packet *packet);
+    FNET_IPacketHandler::HP_RetCode Receive(FNET_Packet* packet);
 
     /**
      * Close this channel. After a channel is closed, no more packets
@@ -98,4 +95,3 @@ public:
      **/
     void CloseAndFree();
 };
-

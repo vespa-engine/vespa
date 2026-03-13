@@ -11,6 +11,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.Values;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
@@ -114,7 +115,7 @@ public class RPCCommunicator implements Communicator {
     public void getNodeState(NodeInfo node, Waiter<GetNodeStateRequest> externalWaiter) {
         Target connection = getConnection(node);
         if ( ! connection.isValid()) {
-            log.log(Level.FINE, () -> String.format(Locale.ROOT, "Connection to '%s' could not be created.", node.getRpcAddress()));
+            log.log(Level.FINE, () -> Text.format("Connection to '%s' could not be created.", node.getRpcAddress()));
         }
         NodeState currentState = node.getReportedState();
         Request req = new Request("getnodestate3");
@@ -141,7 +142,7 @@ public class RPCCommunicator implements Communicator {
 
         Target connection = getConnection(node);
         if ( ! connection.isValid()) {
-            log.log(Level.FINE, () -> String.format(Locale.ROOT, "Connection to '%s' could not be created.", node.getRpcAddress()));
+            log.log(Level.FINE, () -> Text.format("Connection to '%s' could not be created.", node.getRpcAddress()));
             return;
         }
         Request req = new Request(SET_DISTRIBUTION_STATES_RPC_METHOD_NAME);
@@ -152,7 +153,7 @@ public class RPCCommunicator implements Communicator {
         v.add(new Int32Value(encodedBundle.getCompression().uncompressedSize()));
         v.add(new DataValue(encodedBundle.getCompression().data()));
 
-        log.log(Level.FINE, () -> String.format(Locale.ROOT, "Sending '%s' RPC to %s for state version %d",
+        log.log(Level.FINE, () -> Text.format("Sending '%s' RPC to %s for state version %d",
                 req.methodName(), node.getRpcAddress(), stateBundle.getVersion()));
         RPCSetClusterStateRequest stateRequest = new RPCSetClusterStateRequest(node, req, baselineState.getVersion());
         waiter.setRequest(stateRequest);
@@ -167,14 +168,14 @@ public class RPCCommunicator implements Communicator {
 
         Target connection = getConnection(node);
         if ( ! connection.isValid()) {
-            log.log(Level.FINE, () -> String.format(Locale.ROOT, "Connection to '%s' could not be created.", node.getRpcAddress()));
+            log.log(Level.FINE, () -> Text.format("Connection to '%s' could not be created.", node.getRpcAddress()));
             return;
         }
 
         var req = new Request(ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME);
         req.parameters().add(new Int32Value(clusterStateVersion));
 
-        log.log(Level.FINE, () -> String.format(Locale.ROOT, "Sending '%s' RPC to %s for state version %d",
+        log.log(Level.FINE, () -> Text.format("Sending '%s' RPC to %s for state version %d",
                 req.methodName(), node.getRpcAddress(), clusterStateVersion));
         var activationRequest = new RPCActivateClusterStateVersionRequest(node, req, clusterStateVersion);
         waiter.setRequest(activationRequest);

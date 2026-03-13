@@ -16,7 +16,7 @@ import static com.yahoo.search.searchers.OpportunisticWeakAndSearcher.weakAnd2An
 import static com.yahoo.search.searchers.OpportunisticWeakAndSearcher.adjustWeakAndHeap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author baldersheim
@@ -37,22 +37,37 @@ public class OpportunisticWeakAndSearcherTestCase {
     }
 
     @Test
-    public void requireThatWeakAndIsDetected() {
-        assertEquals(-1, targetHits(new OrItem()));
-        assertEquals(-1, targetHits(new WeakAndItem(33)));
-        assertEquals(-1, targetHits(addItem(new WeakAndItem(33), new TrueItem())));
-        assertEquals(33, targetHits(addItem(addItem(new WeakAndItem(33), new TrueItem()), new TrueItem())));
-        assertEquals(77, targetHits(buildQueryItem(new OrItem(), new WeakAndItem(77))));
-        assertEquals(77, targetHits(buildQueryItem(new AndItem(), new WeakAndItem(77))));
-        assertEquals(-1, targetHits(buildQueryItem(new OrItem(), new AndItem())));
+    public void weakAndIsDetected() {
+        assertEquals(null, targetHits(new OrItem()));
+        assertEquals(null, targetHits(new WeakAndItem(Integer.valueOf(33))));
+        assertEquals(null, targetHits(addItem(new WeakAndItem(Integer.valueOf(33)), new TrueItem())));
+        assertEquals(33, targetHits(addItem(addItem(new WeakAndItem(Integer.valueOf(33)), new TrueItem()), new TrueItem())));
+        assertEquals(77, targetHits(buildQueryItem(new OrItem(), new WeakAndItem(Integer.valueOf(77)))));
+        assertEquals(77, targetHits(buildQueryItem(new AndItem(), new WeakAndItem(Integer.valueOf(77)))));
+        assertEquals(null, targetHits(buildQueryItem(new OrItem(), new AndItem())));
     }
 
     @Test
-    public void requireThatWeakAndIsReplacedWithAnd() {
+    public void weakAndIsReplacedWithAnd() {
         assertEquals(buildQueryItem(new OrItem(), new AndItem()),
                      weakAnd2AndRecurse(buildQueryItem(new OrItem(), new WeakAndItem())));
         assertEquals(buildQueryItem(new AndItem(), new AndItem()),
                      weakAnd2AndRecurse(buildQueryItem(new AndItem(), new WeakAndItem())));
+    }
+
+    @Test
+    public void defaultWeakAndHeapIsAdjustedUpToHits() {
+        assertEquals(1000, try2Adjust(new WeakAndItem(), 1000).getTargetHits());
+        assertNull(try2Adjust(new WeakAndItem(), 10).getTargetHits());
+
+        assertEquals(1000, try2Adjust(new WeakAndItem(), new OrItem(), 1000).getTargetHits());
+        assertNull(try2Adjust(new WeakAndItem(), new OrItem(), 10).getTargetHits());
+    }
+
+    @Test
+    public void nonDefaultWeakAndHeapIsNotAdjustedUpToHits() {
+        assertEquals(33, try2Adjust(new WeakAndItem(Integer.valueOf(33)), 1000).getTargetHits());
+        assertEquals(33, try2Adjust(new WeakAndItem(Integer.valueOf(33)), 11).getTargetHits());
     }
 
     private static WeakAndItem try2Adjust(WeakAndItem item, int hits) {
@@ -64,22 +79,6 @@ public class OpportunisticWeakAndSearcherTestCase {
         parent.addItem(item);
         adjustWeakAndHeap(parent, hits);
         return item;
-    }
-
-    @Test
-    public void requireThatDefaultWeakAndHeapIsAdjustedUpToHits() {
-        assertEquals(1000, try2Adjust(new WeakAndItem(), 1000).getN());
-        assertFalse(try2Adjust(new WeakAndItem(), 10).nIsExplicit());
-
-        assertEquals(1000, try2Adjust(new WeakAndItem(), new OrItem(), 1000).getN());
-        assertFalse(try2Adjust(new WeakAndItem(), new OrItem(), 10).nIsExplicit());
-    }
-
-    @Test
-    public void requireThatNonDefaultWeakAndHeapIsNotAdjustedUpToHits() {
-        assertEquals(33, try2Adjust(new WeakAndItem(33), 1000).getN());
-        assertEquals(33, try2Adjust(new WeakAndItem(33), 11).getN());
-        assertEquals(WeakAndItem.defaultN, try2Adjust(new WeakAndItem(WeakAndItem.defaultN), 1000).getN());
     }
 
 }

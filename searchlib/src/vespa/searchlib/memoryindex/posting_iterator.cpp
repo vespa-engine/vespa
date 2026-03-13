@@ -119,7 +119,11 @@ template <bool interleaved_features, bool unpack_normal_features, bool unpack_in
 void
 PostingIterator<interleaved_features, unpack_normal_features, unpack_interleaved_features>::doUnpack(uint32_t docId)
 {
-    if (!_matchData.valid() || getUnpacked()) {
+    if (!_matchData.valid()) {
+        return;
+    }
+    if (getUnpacked()) {
+        _matchData[0]->clear_hidden_from_ranking();
         return;
     }
     assert(docId == getDocId());
@@ -131,6 +135,7 @@ PostingIterator<interleaved_features, unpack_normal_features, unpack_interleaved
         _feature_decoder.unpackFeatures(_matchData, docId);
     } else {
         _matchData[0]->reset(docId);
+        _matchData[0]->clear_hidden_from_ranking();
     }
     if (interleaved_features && unpack_interleaved_features) {
         auto* tfmd = _matchData[0];

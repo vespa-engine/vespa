@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import java.nio.charset.StandardCharsets;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.document.idstring.IdString;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Before;
 import org.junit.Test;
-
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -108,7 +109,7 @@ public class DocumentIdTestCase {
     public void testCalculateGlobalId() throws IOException {
 
         String file = "src/tests/cpp-globalidbucketids.txt";
-        BufferedReader fr = new BufferedReader(new FileReader(file));
+        BufferedReader fr = new BufferedReader(Utf8.createReader(file));
         String line;
         String[] split_line;
         String[] split_gid;
@@ -140,7 +141,7 @@ public class DocumentIdTestCase {
         for(int i=0; i<b.length;i++){
             String ss = s.substring(2*i,2*i+2);
             assertEquals(Integer.valueOf(ss, 16).intValue(),(((int)b[i])+256)%256);
-        }       
+        }
     }
 
     //Compares bucketId with C++ implementation located in
@@ -148,7 +149,7 @@ public class DocumentIdTestCase {
     @Test
     public void testGetBucketId() throws IOException{
         String file = "src/tests/cpp-globalidbucketids.txt";
-        BufferedReader fr = new BufferedReader(new FileReader(file));
+        BufferedReader fr = new BufferedReader(Utf8.createReader(file));
         String line;
         String[] split_line;
         BucketId bid;
@@ -231,7 +232,7 @@ public class DocumentIdTestCase {
 
     @Test
     public void testSerializedDocumentIdCanContainNonTextCharacter() {
-        String strId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 7, 99}); // "id:a:b::0x7c"
+        String strId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 7, 99}, StandardCharsets.UTF_8); // "id:a:b::0x7c"
         DocumentId docId = DocumentId.createFromSerialized(strId);
         {
             assertEquals(strId, docId.toString());
@@ -247,7 +248,7 @@ public class DocumentIdTestCase {
 
     @Test
     public void testSerializedDocumentIdCannotContainZeroByte() {
-        String strId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 0, 99}); // "id:a:b::0x0c"
+        String strId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 0, 99}, StandardCharsets.UTF_8); // "id:a:b::0x0c"
         try {
             DocumentId.createFromSerialized(strId);
             fail("Expected an IllegalArgumentException to be thrown");

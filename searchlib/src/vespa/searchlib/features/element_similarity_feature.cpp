@@ -265,7 +265,7 @@ public:
         }
         for (size_t i = 0; i < _terms.handles.size(); ++i) {
             const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms.handles[i]);
-            if (tfmd->getDocId() == docId) {
+            if (tfmd->has_ranking_data(docId)) {
                 _pos[i] = tfmd->begin();
                 _end[i] = tfmd->end();
                 if (_pos[i] != _end[i]) {

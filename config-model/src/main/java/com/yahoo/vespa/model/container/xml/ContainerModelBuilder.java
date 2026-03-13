@@ -36,13 +36,15 @@ import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.container.jdisc.DataplaneProxyService;
+
+
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig.Builder;
-import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
+
+
 import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.path.Path;
@@ -51,6 +53,7 @@ import com.yahoo.schema.derived.FileDistributedOnnxModels;
 import com.yahoo.schema.derived.RankProfileList;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.text.Text;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
@@ -111,6 +114,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -124,6 +128,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -248,7 +253,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addParameterStoreValidationHandler(cluster, deployState);
     }
-    
+
     private boolean shouldUseTriton(ApplicationContainerCluster cluster, DeployState deployState) {
         var isPublicCloud = deployState.zone().system().isPublicCloudLike();
         var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
@@ -258,15 +263,20 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
         var sidecars = new ArrayList<SidecarSpec>();
-        
+
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
+            var sidecarImages = readSidecarImages();
+            var image = sidecarImages.get("triton");
 
-            // Hardcoded values for changes to be reviewed and tested
+            if (image == null) {
+                throw new IllegalStateException("Triton sidecar image is not configured in sidecar-images.properties");
+            }
+
             var spec = SidecarSpec.builder()
                     .id(0)
                     .name("triton")
-                    .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.12-py3"))
+                    .image(image)
                     .minCpu(1) // Must have at least one CPU
                     .hasGpu(hasGpu)
                     .volumeMounts(List.of("/models"))
@@ -278,6 +288,26 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         return sidecars;
+    }
+
+    static Map<String, DockerImage> readSidecarImages() {
+        var props = new Properties();
+
+        try (InputStream inputStream = ContainerModelBuilder.class.getResourceAsStream("/sidecar-images.properties")) {
+            if (inputStream == null) {
+                throw new IllegalStateException("sidecar-images.properties not found");
+            }
+
+            props.load(inputStream);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load sidecar-images.properties", e);
+        }
+
+        return props.entrySet().stream()
+                .collect(Collectors.toMap(
+                        e -> e.getKey().toString(),
+                        e -> DockerImage.fromString(e.getValue().toString())
+                ));
     }
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
@@ -336,6 +366,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addSecrets(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {
         if ( ! deployState.isHosted() || ! cluster.getZone().system().isPublicCloudLike())
             return;
+        cluster.addComponent(new CloudAsmSecrets(deployState.getProperties().ztsUrl(),
+                                                 deployState.getProperties().tenantSecretDomain(),
+                                                 deployState.zone().system(),
+                                                 deployState.getProperties().applicationId().tenant(),
+                                                 deployState.getProperties().tenantVaults()));
         Element secretsElement = XML.getChild(spec, "secrets");
         if (secretsElement != null) {
             CloudSecrets secretsConfig = new CloudSecrets();
@@ -346,11 +381,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 secretsConfig.addSecret(key, name, vault);
             }
             cluster.setTenantSecretsConfig(secretsConfig);
-            cluster.addComponent(new CloudAsmSecrets(deployState.getProperties().ztsUrl(),
-                                                     deployState.getProperties().tenantSecretDomain(),
-                                                     deployState.zone().system(),
-                                                     deployState.getProperties().applicationId().tenant(),
-                                                     deployState.getProperties().tenantVaults()));
         }
     }
 
@@ -411,7 +441,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
                             AthenzDomain.from(HOSTED_VESPA_TENANT_PARENT_DOMAIN + context.properties().applicationId().tenant().value()),
-                            AthenzService.from(String.format(java.util.Locale.ROOT, "%s-%s", context.properties().applicationId().application().value(), appContext)));
+                            AthenzService.from(Text.format("%s-%s", context.properties().applicationId().application().value(), appContext)));
     }
 
     private void addDeploymentSpecConfig(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {
@@ -610,7 +640,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private Optional<Client> getClient(Element clientElement, DeployState state) {
         String clientId = XML.attribute("id", clientElement).orElseThrow();
         if (clientId.startsWith("_"))
-            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Invalid client id '%s', id cannot start with '_'", clientId));
+            throw new IllegalArgumentException(Text.format("Invalid client id '%s', id cannot start with '_'", clientId));
         var permissions = XML.attribute("permissions", clientElement)
                 .map(Client.Permission::fromCommaSeparatedString).orElse(Set.of());
 
@@ -618,7 +648,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .flatMap(certElem -> {
                     var file = app.getFile(Path.fromString(certElem.getAttribute("file")));
                     if (!file.exists()) {
-                        throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Certificate file '%s' for client '%s' does not exist", file.getPath().getRelative(), clientId));
+                        throw new IllegalArgumentException(Text.format("Certificate file '%s' for client '%s' does not exist", file.getPath().getRelative(), clientId));
                     }
                     return getCertificates(file).stream();
                 })
@@ -635,7 +665,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     var token = knownTokens.get(tokenId);
                     if (token == null)
                         deployLogger.logApplicationPackage(
-                                WARNING, String.format(java.util.Locale.ROOT, "Token '%s' for client '%s' does not exist", tokenId, clientId));
+                                WARNING, Text.format("Token '%s' for client '%s' does not exist", tokenId, clientId));
                     return token;
                 })
                 .filter(token -> {
@@ -643,14 +673,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     boolean empty = token.versions().isEmpty();
                     if (empty)
                         deployLogger.logApplicationPackage(
-                                WARNING, String.format(java.util.Locale.ROOT, "Token '%s' for client '%s' has no active versions", token.tokenId(), clientId));
+                                WARNING, Text.format("Token '%s' for client '%s' has no active versions", token.tokenId(), clientId));
                     return !empty;
                 })
                 .toList();
 
         // Don't include 'client' that refers to token without versions
         if (referencedTokens.isEmpty()) {
-            deployLogger.log(Level.INFO, String.format(java.util.Locale.ROOT, "Skipping client '%s' as it does not refer to any activate tokens", clientId));
+            deployLogger.log(Level.INFO, Text.format("Skipping client '%s' as it does not refer to any activate tokens", clientId));
             return Optional.empty();
         }
 
@@ -667,10 +697,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             try {
                 x509Certificates = X509CertificateUtils.certificateListFromPem(certPem);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "File %s contains an invalid certificate", file.getPath().getRelative()), e);
+                throw new IllegalArgumentException(Text.format("File %s contains an invalid certificate", file.getPath().getRelative()), e);
             }
             if (x509Certificates.isEmpty()) {
-                throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "File %s does not contain any certificates.", file.getPath().getRelative()));
+                throw new IllegalArgumentException(Text.format("File %s does not contain any certificates.", file.getPath().getRelative()));
             }
             return x509Certificates;
         } catch (IOException e) {
@@ -737,8 +767,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         int tokenPort = getTokenDataplanePort(state, cluster).orElseThrow();
 
         // Set up component to generate proxy cert if token support is enabled
-        cluster.addSimpleComponent(DataplaneProxyCredentials.class);
-        cluster.addSimpleComponent(DataplaneProxyService.class);
+        cluster.addSimpleComponent("com.yahoo.vespa.cloud.tenant.dataplane.DataplaneProxyCredentials", null, "cloud-tenant");
+        cluster.addSimpleComponent("com.yahoo.vespa.cloud.tenant.dataplane.DataplaneProxyService", null, "cloud-tenant");
         var dataplaneProxy = new DataplaneProxy(
                 getMtlsDataplanePort(state, cluster),
                 tokenPort,
@@ -956,8 +986,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
                     if (inferenceMemoryBytes > containerMemoryBytes) {
                         throw new IllegalArgumentException(
-                                String.format(
-                                        Locale.US,
+                                Text.format(
                                         "Inference memory cannot exceed available node memory (%.2f GiB), got: %s",
                                         nodeMemoryGiB, inferenceMemoryString
                                 ));
@@ -1047,8 +1076,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addContainers(List.of(container));
     }
 
-    private static String buildJvmGCOptions(ConfigModelContext context, String jvmGCOptions) {
-        return new JvmGcOptions(context.getDeployState(), jvmGCOptions).build();
+    private static String buildJvmGCOptions(ConfigModelContext context, ApplicationContainerCluster cluster, String jvmGCOptions) {
+        return new JvmGcOptions(context.getDeployState(), cluster.getName(), jvmGCOptions).build();
     }
 
     private static String getJvmOptions(Element nodesElement,
@@ -1087,7 +1116,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         " See https://docs.vespa.ai/en/reference/services/container.html#jvm");
             }
 
-            cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
+            cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, jvmGCOptions));
         }
 
         if (applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME)))
@@ -1102,7 +1131,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         applyNodesTagJvmArgs(nodes, getJvmOptions(nodesElement, context.getDeployState(), false));
         applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
         String jvmGCOptions = extractAttribute(jvmElement, VespaDomBuilder.GC_OPTIONS);
-        cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
+        cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, jvmGCOptions));
     }
 
     /**
@@ -1116,7 +1145,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         if (nodesElement == null) {
             cluster.addContainers(allocateWithoutNodesTag(cluster, context));
-            cluster.setJvmGCOptions(buildJvmGCOptions(context, null));
+            cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, null));
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
 
@@ -1474,7 +1503,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         String idAttr = element.getAttribute("id");
 
         if (idAttr.equals(xmlRendererId) || idAttr.equals(jsonRendererId)) {
-            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Renderer id %s is reserved for internal use", idAttr));
+            throw new IllegalArgumentException(Text.format("Renderer id %s is reserved for internal use", idAttr));
         }
     }
 
@@ -1565,19 +1594,22 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         private static final Pattern invalidCMSPattern = Pattern.compile("-XX:[+-]\\w*CMS[a-zA-z0-9=]+");
 
         private final DeployState deployState;
+        private final String clusterName;
         private final String jvmGcOptions;
         private final DeployLogger logger;
         private final boolean isHosted;
 
-        public JvmGcOptions(DeployState deployState, String jvmGcOptions) {
+        public JvmGcOptions(DeployState deployState, String clusterName, String jvmGcOptions) {
             this.deployState = deployState;
+            this.clusterName = clusterName;
             this.jvmGcOptions = jvmGcOptions;
             this.logger = deployState.getDeployLogger();
             this.isHosted = deployState.isHosted();
         }
 
         private String build() {
-            String options = deployState.getProperties().jvmGCOptions();
+            String options = deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.container),
+                                                                     Optional.of(ClusterSpec.Id.from(clusterName)));
             if (jvmGcOptions != null) {
                 options = jvmGcOptions;
                 String[] optionList = options.split(" ");

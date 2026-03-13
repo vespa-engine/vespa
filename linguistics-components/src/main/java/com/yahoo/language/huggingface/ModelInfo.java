@@ -2,6 +2,7 @@
 
 package com.yahoo.language.huggingface;
 
+import com.yahoo.text.Text;
 import java.util.Arrays;
 
 /**
@@ -21,7 +22,7 @@ public record ModelInfo(
             else if ("false".equals(v)) return DO_NOT_TRUNCATE;
             return Arrays.stream(values())
                     .filter(s -> s.name().equalsIgnoreCase(v))
-                    .findAny().orElseThrow(() -> new IllegalArgumentException("Invalid strategy '%s'".formatted(v)));
+                    .findAny().orElseThrow(() -> new IllegalArgumentException(Text.format("Invalid strategy '%s'", v)));
         }
     }
 
@@ -35,7 +36,7 @@ public record ModelInfo(
             else if ("false".equals(v)) return DO_NOT_PAD;
             return Arrays.stream(values())
                     .filter(s -> s.name().equalsIgnoreCase(v))
-                    .findAny().orElseThrow(() -> new IllegalArgumentException("Invalid strategy '%s'".formatted(v)));
+                    .findAny().orElseThrow(() -> new IllegalArgumentException(Text.format("Invalid strategy '%s'", v)));
         }
     }
 }

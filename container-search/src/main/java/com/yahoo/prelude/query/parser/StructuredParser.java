@@ -27,7 +27,31 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.yahoo.prelude.query.parser.Token.Kind.*;
+import static com.yahoo.prelude.query.parser.Token.Kind.COLON;
+import static com.yahoo.prelude.query.parser.Token.Kind.COMMA;
+import static com.yahoo.prelude.query.parser.Token.Kind.DOLLAR;
+import static com.yahoo.prelude.query.parser.Token.Kind.DOT;
+import static com.yahoo.prelude.query.parser.Token.Kind.EOF;
+import static com.yahoo.prelude.query.parser.Token.Kind.EXCLAMATION;
+import static com.yahoo.prelude.query.parser.Token.Kind.GREATER;
+import static com.yahoo.prelude.query.parser.Token.Kind.HAT;
+import static com.yahoo.prelude.query.parser.Token.Kind.LBRACE;
+import static com.yahoo.prelude.query.parser.Token.Kind.LCURLYBRACKET;
+import static com.yahoo.prelude.query.parser.Token.Kind.LSQUAREBRACKET;
+import static com.yahoo.prelude.query.parser.Token.Kind.MINUS;
+import static com.yahoo.prelude.query.parser.Token.Kind.NOISE;
+import static com.yahoo.prelude.query.parser.Token.Kind.NUMBER;
+import static com.yahoo.prelude.query.parser.Token.Kind.PLUS;
+import static com.yahoo.prelude.query.parser.Token.Kind.QUOTE;
+import static com.yahoo.prelude.query.parser.Token.Kind.RBRACE;
+import static com.yahoo.prelude.query.parser.Token.Kind.RCURLYBRACKET;
+import static com.yahoo.prelude.query.parser.Token.Kind.RSQUAREBRACKET;
+import static com.yahoo.prelude.query.parser.Token.Kind.SEMICOLON;
+import static com.yahoo.prelude.query.parser.Token.Kind.SMALLER;
+import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
+import static com.yahoo.prelude.query.parser.Token.Kind.STAR;
+import static com.yahoo.prelude.query.parser.Token.Kind.UNDERSCORE;
+import static com.yahoo.prelude.query.parser.Token.Kind.WORD;
 
 /**
  * Base class for parsers of the query languages which can be used

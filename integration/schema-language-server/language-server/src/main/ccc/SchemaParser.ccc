@@ -528,6 +528,7 @@ TOKEN :
 | < ORDER: "order" >
 | < MAX_FILTER_COVERAGE: "max-filter-coverage" >
 | < MAX_HITS: "max-hits" >
+| < TOTAL_MAX_HITS: "total-max-hits" >
 | < FIRST_PHASE: "first-phase" >
 | < SECOND_PHASE: "second-phase" >
 | < GLOBAL_PHASE: "global-phase" >
@@ -554,6 +555,7 @@ TOKEN :
 | < EXPRESSION: "expression" >
 | < RANK_PROPERTIES: "rank-properties" >
 | < RERANK_COUNT: "rerank-count" >
+| < TOTAL_RERANK_COUNT: "total-rerank-count" >
 | < NUM_THREADS_PER_SEARCH: "num-threads-per-search" >
 | < MIN_HITS_PER_THREAD: "min-hits-per-thread" >
 | < NUM_SEARCH_PARTITIONS: "num-search-partitions" >
@@ -566,6 +568,7 @@ TOKEN :
 | < PREFETCH_TENSORS: "prefetch-tensors" >
 | < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
+| < TOTAL_KEEP_RANK_COUNT: "total-keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
 | < CONSTANTS: "constants" >
 | < FILE: "file" >
@@ -2375,17 +2378,19 @@ void matchPhase(ParsedRankProfile profile) :
 
 void matchPhaseItem(ParsedRankProfile profile, MatchPhaseSettings settings) :
 {
-    String str;
-    int num;
+    String string;
+    int count;
+    int totalCount;
     double multiplier;
     double coverage;
 }
 
-    ( <ATTRIBUTE> <COLON> str = identifierStr() { settings.setAttribute(str); }
+    ( <ATTRIBUTE> <COLON> string = identifierStr() { settings.setAttribute(string); }
       | diversityDeprecated(profile)
       | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); }
                           | <DESCENDING> { settings.setAscending(false); } )
-      | <MAX_HITS> <COLON> num = integerElm() { settings.setMaxHits(num); }
+      | <MAX_HITS> <COLON> count = integerElm() { settings.setMaxHits(count); }
+      | <TOTAL_MAX_HITS> <COLON> totalCount = integerElm() { settings.setTotalMaxHits(totalCount); }
       | <MAX_FILTER_COVERAGE> <COLON> coverage = floatValue() { settings.setMaxFilterCoverage(coverage); }
       | <EVALUATION_POINT> <COLON> multiplier = floatValue() { settings.setEvaluationPoint(multiplier); }
       | <PRE_POST_FILTER_TIPPING_POINT> <COLON> multiplier = floatValue() { settings.setPrePostFilterTippingPoint(multiplier); }
@@ -2457,11 +2462,13 @@ void firstPhaseItem(ParsedRankProfile profile) :
 {
     String expression;
     int keepRankCount;
+    int totalKeepRankCount;
     double dropLimit;
 }
 
     ( expression = expressionElm()                               { profile.setFirstPhaseRanking(expression); }
     | (<KEEP_RANK_COUNT> <COLON> keepRankCount = integerElm())     { profile.setKeepRankCount(keepRankCount); }
+    | (<TOTAL_KEEP_RANK_COUNT> <COLON> totalKeepRankCount = integerElm()) { profile.setTotalKeepRankCount(totalKeepRankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
     )
 ;
@@ -2485,11 +2492,13 @@ void secondPhaseItem(ParsedRankProfile profile) :
 {
     String expression;
     int rerankCount;
+    int totalRerankCount;
     double dropLimit;
 }
 
     ( expression = expressionElm()                       { profile.setSecondPhaseRanking(expression); }
     | (<RERANK_COUNT> <COLON> rerankCount = integerElm()) { profile.setRerankCount(rerankCount); }
+    | (<TOTAL_RERANK_COUNT> <COLON> totalRerankCount = integerElm()) { profile.setTotalRerankCount(totalRerankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setSecondPhaseRankScoreDropLimit(dropLimit); }
     )
 ;
@@ -3453,6 +3462,9 @@ String identifierWithDashStr :
     | <SUMMARY_TO>
     | <TARGET_HITS_MAX_ADJUSTMENT_FACTOR>
     | <TERMWISE_LIMIT>
+    | <TOTAL_KEEP_RANK_COUNT>
+    | <TOTAL_MAX_HITS>
+    | <TOTAL_RERANK_COUNT>
     | <UPPER_BOUND>
     | <USE_MODEL>
     ) {

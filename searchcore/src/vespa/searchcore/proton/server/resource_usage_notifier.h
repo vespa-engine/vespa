@@ -7,8 +7,8 @@
 #include "disk_mem_usage_metrics.h"
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
-#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <atomic>
@@ -34,18 +34,22 @@ public:
     {
         double _memoryLimit;
         double _diskLimit;
+        double _reserved_disk_space_factor;
         AttributeUsageFilterConfig _attribute_limit;
 
-        Config() : Config(1.0, 1.0, AttributeUsageFilterConfig()) { }
+        Config() : Config(1.0, 1.0, 0.0, AttributeUsageFilterConfig()) { }
 
-        Config(double memoryLimit_in, double diskLimit_in, AttributeUsageFilterConfig attribute_limit_in)
+        Config(double memoryLimit_in, double diskLimit_in, double reserved_disk_space_factor_in,
+               AttributeUsageFilterConfig attribute_limit_in)
             : _memoryLimit(memoryLimit_in),
               _diskLimit(diskLimit_in),
+              _reserved_disk_space_factor(reserved_disk_space_factor_in),
               _attribute_limit(attribute_limit_in)
         { }
         bool operator == (const Config & rhs) const noexcept {
             return (_memoryLimit == rhs._memoryLimit) &&
                    (_diskLimit == rhs._diskLimit) &&
+                   (_reserved_disk_space_factor == rhs._reserved_disk_space_factor) &&
                    (_attribute_limit == rhs._attribute_limit);
         }
         bool operator != (const Config & rhs) const noexcept {
@@ -60,7 +64,7 @@ private:
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
     uint64_t                     _reserved_disk_space;
-    ResourceUsage                _resource_usage;
+    searchcorespi::common::ResourceUsage _resource_usage;
     AttributeUsageStats          _attribute_usage;
     Config                       _config;
     ResourceUsageState           _usage_state;
@@ -80,12 +84,12 @@ public:
     ResourceUsageNotifier(ResourceUsageWriteFilter& filter);
     ~ResourceUsageNotifier() override;
 
-    void set_resource_usage(const ResourceUsage& resource_usage, vespalib::ProcessMemoryStats memoryStats,
+    void set_resource_usage(const searchcorespi::common::ResourceUsage& resource_usage, vespalib::ProcessMemoryStats memoryStats,
                             uint64_t diskUsedSizeBytes, uint64_t reserved_disk_space);
     [[nodiscard]] bool setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
-    ResourceUsage get_resource_usage() const;
+    searchcorespi::common::ResourceUsage get_resource_usage() const;
     Config getConfig() const;
     const vespalib::HwInfo &getHwInfo() const noexcept { return _hwInfo; }
     ResourceUsageState usageState() const;

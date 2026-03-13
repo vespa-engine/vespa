@@ -416,7 +416,7 @@ struct HeapFixture
     HeapFixture() : spec(2, 2), result() {
         spec.leaf(LeafSpec("A", 1).doc(1, 1).doc(2, 2).doc(3, 3).doc(4, 4).doc(5, 5).doc(6, 6));
         SearchIterator::UP sb(spec.create());
-        result.search(*sb);
+        result.search(*sb, 10);
     }
     ~HeapFixture();
 };

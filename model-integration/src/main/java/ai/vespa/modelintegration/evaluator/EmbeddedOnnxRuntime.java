@@ -9,9 +9,11 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.ResourceReference;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,12 +69,11 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
         synchronized (monitor) {
             sessions.forEach((id, sharedSession) -> {
                 int hash = System.identityHashCode(sharedSession.session());
-                log.warning("Closing leaked session %s (%s) with %d outstanding references:\n%s"
-                        .formatted(id, hash, sharedSession.retainCount(), sharedSession.currentState()));
+                log.warning(Text.format("Closing leaked session %s (%s) with %d outstanding references:\n%s", id, hash, sharedSession.retainCount(), sharedSession.currentState()));
                 try {
                     sharedSession.session().close();
                 } catch (Exception e) {
-                    log.log(Level.WARNING, "Failed to close session %s (%s)".formatted(id, hash), e);
+                    log.log(Level.WARNING, Text.format("Failed to close session %s (%s)", id, hash), e);
                 }
             });
             sessions.clear();
@@ -154,7 +155,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
             var ortSession = model.path().isPresent()
                     ? ortEnvironment().createSession(model.path().get(), sessionOpts)
                     : ortEnvironment().createSession(model.data().get(), sessionOpts);
-            log.fine(() -> "Created new session (%s)".formatted(System.identityHashCode(ortSession)));
+            log.fine(() -> Text.format("Created new session (%s)", System.identityHashCode(ortSession)));
             var sharedSession = new SharedOrtSession(sessionId, ortSession);
             var referencedSession = sharedSession.newReference();
             sessions.put(sessionId, sharedSession);
@@ -219,7 +220,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
         protected void destroy() {
             try {
                 removeSession(id);
-                log.fine(() -> "Closing session (%s)".formatted(System.identityHashCode(session)));
+                log.fine(() -> Text.format("Closing session (%s)", System.identityHashCode(session)));
                 session.close();
             } catch (OrtException e) { throw new OnnxRuntimeException(e); }
         }

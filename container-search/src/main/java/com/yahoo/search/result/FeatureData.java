@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
+import java.nio.charset.StandardCharsets;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -110,7 +111,7 @@ public class FeatureData implements Inspectable, JsonProducer, DataSource {
              JsonGenerator generator = jsonFactory.createGenerator(out)) {
             asDataSource(tensorOptions).emit(new NonFiniteToNullDataSink(new JsonGeneratorDataSink(generator)));
             generator.flush();
-            return out.toString();
+            return out.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

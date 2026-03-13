@@ -27,8 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WeakAndReplacementSearcherTestCase {
-    private static final int N = 99;
 
+    private static final int targetHits = 99;
 
     private Execution buildExec() {
         return new Execution(new Chain<Searcher>(new WeakAndReplacementSearcher()),
@@ -37,7 +37,7 @@ public class WeakAndReplacementSearcherTestCase {
 
     private Query buildDefaultQuery(boolean searcherEnabled) {
         Query query = new Query();
-        query.properties().set(WAND_HITS, N);
+        query.properties().set(WAND_HITS, targetHits);
         query.properties().set(WEAKAND_REPLACE, searcherEnabled);
         OrItem root = new OrItem();
         root.addItem(new WordItem("text"));
@@ -53,13 +53,13 @@ public class WeakAndReplacementSearcherTestCase {
 
 
     @Test
-    void requireOrItemsToBeReplaced() {
+    void orItemsToBeReplaced() {
         Query query = buildDefaultQuery(true);
         Result result = buildExec().search(query);
         Item root = TestUtils.getQueryTreeRoot(result);
         assertFalse(orItemsExist(root));
         assertInstanceOf(WeakAndItem.class, root);
-        assertEquals(N, ((WeakAndItem) root).getN());
+        assertEquals(targetHits, ((WeakAndItem) root).getTargetHits());
     }
 
     @Test

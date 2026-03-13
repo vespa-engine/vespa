@@ -3,6 +3,7 @@ package ai.vespa.schemals.lsp.schema.completion.provider;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -134,7 +135,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructSnippet("inputs", "inputs {\n\t$0\n}"),
             CompletionUtils.constructSnippet("match-features", "match-features {\n\t$0\n}", "match-features {}"),
             CompletionUtils.constructSnippet("match-features", "match-features: $0", "match-features:"),
-            CompletionUtils.constructSnippet("match-phase", "match-phase {\n\tattribute: $1\n\torder: $2\n\tmax-hits: $3\n}"),
+            CompletionUtils.constructSnippet("match-phase", "match-phase {\n\tattribute: $1\n\torder: $2\n\ttotal-max-hits: $3\n}"),
             CompletionUtils.constructSnippet("min-hits-per-thread", "min-hits-per-thread: $0"),
             CompletionUtils.constructSnippet("mutate", "mutate {\n\t$0\n}"),
             CompletionUtils.constructSnippet("num-search-partitions", "num-search-partitions: $0"),
@@ -165,13 +166,15 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructSnippet("expression", "expression: $0", "expression:"),
             CompletionUtils.constructSnippet("expression", "expression {\n\t$0\n}", "expression {}"),
             CompletionUtils.constructSnippet("keep-rank-count", "keep-rank-count: $0"),
+            CompletionUtils.constructSnippet("total-keep-rank-count", "total-keep-rank-count: $0"),
             CompletionUtils.constructSnippet("rank-score-drop-limit", "rank-score-drop-limit: $0")
         ));
 
         put(secondPhase.class, List.of(
             CompletionUtils.constructSnippet("expression", "expression: $0", "expression:"),
             CompletionUtils.constructSnippet("expression", "expression {\n\t$0\n}", "expression {}"),
-            CompletionUtils.constructSnippet("keep-rank-count", "keep-rank-count: $0"),
+            CompletionUtils.constructSnippet("rerank-count", "rerank-count: $0"),
+            CompletionUtils.constructSnippet("total-rerank-count", "total-rerank-count: $0"),
             CompletionUtils.constructSnippet("rank-score-drop-limit", "rank-score-drop-limit: $0")
         ));
 
@@ -231,7 +234,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
         // compute docs
         for (var entry : this.entrySet()) {
             for (CompletionItem item : entry.getValue()) {
-                String markdownKey = item.getLabel().toUpperCase().replaceAll("-", "_");
+                String markdownKey = item.getLabel().toUpperCase(Locale.ROOT).replaceAll("-", "_");
                 Optional<Hover> hover = SchemaHover.getFileHoverInformation(schemaHoverPath, markdownKey, new Range());
                 if (hover.isPresent() && hover.get().getContents().isRight()) {
                     item.setDocumentation(hover.get().getContents().getRight());

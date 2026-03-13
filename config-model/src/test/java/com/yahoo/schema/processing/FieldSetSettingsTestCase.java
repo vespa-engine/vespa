@@ -6,6 +6,7 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.derived.TestableDeployLogger;
 import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -162,7 +163,7 @@ public class FieldSetSettingsTestCase {
     }
 
     private static String schemaWithMatchSettings(String fieldSet, String fieldNameWithWordMatching, String fieldNameWithExactMatching) {
-        return String.format(java.util.Locale.ROOT, """
+        return Text.format("""
                   schema index_variants {
                     document index_variants {
                       field %s type string {

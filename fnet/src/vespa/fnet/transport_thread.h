@@ -2,20 +2,24 @@
 
 #pragma once
 
-#include "scheduler.h"
 #include "config.h"
-#include "task.h"
 #include "packetqueue.h"
-#include <vespa/vespalib/net/socket_handle.h>
+#include "scheduler.h"
+#include "task.h"
+
 #include <vespa/vespalib/net/selector.h>
+#include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/util/thread.h>
+
 #include <atomic>
-#include <mutex>
-#include <condition_variable>
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include <set>
 
-namespace fnet { struct TimeTools; }
+namespace fnet {
+struct TimeTools;
+}
 class FNET_Transport;
 class FNET_ControlPacket;
 class FNET_IPacketStreamer;
@@ -26,33 +30,32 @@ class FNET_IServerAdapter;
  * the network related work for the application in both client and
  * server aspects.
  **/
-class FNET_TransportThread
-{
+class FNET_TransportThread {
     friend class FNET_IOComponent;
 
 public:
     using Selector = vespalib::Selector<FNET_IOComponent>;
 
 private:
-    FNET_Transport          &_owner;          // owning transport layer
-    vespalib::steady_time    _now;            // current time sampler
-    FNET_Scheduler           _scheduler;      // transport thread scheduler
-    FNET_IOComponent        *_componentsHead; // I/O component list head
-    FNET_IOComponent        *_timeOutHead;    // first IOC in list to time out
-    FNET_IOComponent        *_componentsTail; // I/O component list tail
-    std::atomic<uint32_t>    _componentCnt;   // # of components
-    FNET_IOComponent        *_deleteList;     // IOC delete list
-    Selector                 _selector;       // I/O event generator
-    FNET_PacketQueue_NoLock  _queue;          // outer event queue
-    FNET_PacketQueue_NoLock  _myQueue;        // inner event queue
-    std::mutex               _lock;           // protects the Q
-    std::mutex               _shutdownLock;   // used for synchronization during shutdown
-    std::condition_variable  _shutdownCond;   // used for synchronization during shutdown
-    std::atomic<bool>        _started;        // event loop started ?
-    std::atomic<bool>        _shutdown;       // should stop event loop ?
-    std::atomic<bool>        _finished;       // event loop stopped ?
-    std::set<FNET_IServerAdapter*> _detaching; // server adapters being detached
-    bool _reject_events; // the transport thread does not want any more events
+    FNET_Transport&                _owner;          // owning transport layer
+    vespalib::steady_time          _now;            // current time sampler
+    FNET_Scheduler                 _scheduler;      // transport thread scheduler
+    FNET_IOComponent*              _componentsHead; // I/O component list head
+    FNET_IOComponent*              _timeOutHead;    // first IOC in list to time out
+    FNET_IOComponent*              _componentsTail; // I/O component list tail
+    std::atomic<uint32_t>          _componentCnt;   // # of components
+    FNET_IOComponent*              _deleteList;     // IOC delete list
+    Selector                       _selector;       // I/O event generator
+    FNET_PacketQueue_NoLock        _queue;          // outer event queue
+    FNET_PacketQueue_NoLock        _myQueue;        // inner event queue
+    std::mutex                     _lock;           // protects the Q
+    std::mutex                     _shutdownLock;   // used for synchronization during shutdown
+    std::condition_variable        _shutdownCond;   // used for synchronization during shutdown
+    std::atomic<bool>              _started;        // event loop started ?
+    std::atomic<bool>              _shutdown;       // should stop event loop ?
+    std::atomic<bool>              _finished;       // event loop stopped ?
+    std::set<FNET_IServerAdapter*> _detaching;      // server adapters being detached
+    bool                           _reject_events;  // the transport thread does not want any more events
 
     /**
      * Add an IOComponent to the list of components. This operation is
@@ -61,8 +64,7 @@ private:
      *
      * @param comp the component to add.
      **/
-    void AddComponent(FNET_IOComponent *comp);
-
+    void AddComponent(FNET_IOComponent* comp);
 
     /**
      * Remove an IOComponent from the list of components. This operation is
@@ -71,8 +73,7 @@ private:
      *
      * @param comp the component to remove.
      **/
-    void RemoveComponent(FNET_IOComponent *comp);
-
+    void RemoveComponent(FNET_IOComponent* comp);
 
     /**
      * Update time-out information for the given I/O component. This
@@ -82,8 +83,7 @@ private:
      *
      * @param comp component to update time-out info for.
      **/
-    void UpdateTimeOut(FNET_IOComponent *comp);
-
+    void UpdateTimeOut(FNET_IOComponent* comp);
 
     /**
      * Add an IOComponent to the delete list. This operation is
@@ -94,14 +94,12 @@ private:
      *
      * @param comp the component to add to the delete list.
      **/
-    void AddDeleteComponent(FNET_IOComponent *comp);
-
+    void AddDeleteComponent(FNET_IOComponent* comp);
 
     /**
      * Delete (call internal_subref on) all IO Components in the delete list.
      **/
     void FlushDeleteList();
-
 
     /**
      * Post an event (ControlPacket) on the transport thread event
@@ -118,8 +116,7 @@ private:
      * @param cpacket the event command
      * @param context the event parameter
      **/
-    bool PostEvent(FNET_ControlPacket *cpacket, FNET_Context context);
-
+    bool PostEvent(FNET_ControlPacket* cpacket, FNET_Context context);
 
     /**
      * Discard an event. This method is used to discard events that will
@@ -128,8 +125,7 @@ private:
      * @param cpacket the event command
      * @param context the event parameter
      **/
-    void DiscardEvent(FNET_ControlPacket *cpacket, FNET_Context context);
-
+    void DiscardEvent(FNET_ControlPacket* cpacket, FNET_Context context);
 
     /**
      * Obtain a reference to the object holding the configuration for
@@ -137,13 +133,13 @@ private:
      *
      * @return config object.
      **/
-    const FNET_Config & getConfig() const;
-    const fnet::TimeTools &time_tools() const;
+    const FNET_Config&     getConfig() const;
+    const fnet::TimeTools& time_tools() const;
 
-    void handle_add_cmd(FNET_IOComponent *ioc);
-    void handle_close_cmd(FNET_IOComponent *ioc);
-    void handle_detach_server_adapter_init_cmd(FNET_IServerAdapter *server_adapter);
-    void handle_detach_server_adapter_fini_cmd(FNET_IServerAdapter *server_adapter);
+    void handle_add_cmd(FNET_IOComponent* ioc);
+    void handle_close_cmd(FNET_IOComponent* ioc);
+    void handle_detach_server_adapter_init_cmd(FNET_IServerAdapter* server_adapter);
+    void handle_detach_server_adapter_fini_cmd(FNET_IServerAdapter* server_adapter);
 
     /**
      * This method is called to initialize the transport thread event
@@ -170,17 +166,13 @@ private:
      **/
     bool EventLoopIteration();
 
-    [[nodiscard]] bool should_shut_down() const noexcept {
-        return _shutdown.load(std::memory_order_relaxed);
-    }
+    [[nodiscard]] bool should_shut_down() const noexcept { return _shutdown.load(std::memory_order_relaxed); }
 
-    [[nodiscard]] bool is_finished() const noexcept {
-        return _finished.load(std::memory_order_acquire);
-    }
+    [[nodiscard]] bool is_finished() const noexcept { return _finished.load(std::memory_order_acquire); }
 
 public:
-    FNET_TransportThread(const FNET_TransportThread &) = delete;
-    FNET_TransportThread &operator=(const FNET_TransportThread &) = delete;
+    FNET_TransportThread(const FNET_TransportThread&) = delete;
+    FNET_TransportThread& operator=(const FNET_TransportThread&) = delete;
     /**
      * Construct a transport object. To activate your newly created
      * transport object you need to call either the Start method to
@@ -189,8 +181,7 @@ public:
      *
      * @param owner owning transport layer
      **/
-    explicit FNET_TransportThread(FNET_Transport &owner_in);
-
+    explicit FNET_TransportThread(FNET_Transport& owner_in);
 
     /**
      * Destruct object. This should NOT be done before the transport
@@ -198,19 +189,18 @@ public:
      **/
     ~FNET_TransportThread();
 
-
     /**
      * Obtain the owning transport layer
      *
      * @return transport layer owning this transport thread
      **/
-    FNET_Transport &owner() const { return _owner; }
+    FNET_Transport& owner() const { return _owner; }
 
     /**
      * Tune the given socket handle to be used as an async transport
      * connection.
      **/
-    bool tune(vespalib::SocketHandle &handle) const;
+    bool tune(vespalib::SocketHandle& handle) const;
 
     /**
      * Add a network listener in an abstract way. The given 'spec'
@@ -228,9 +218,7 @@ public:
      * @param streamer custom packet streamer.
      * @param serverAdapter object for custom channel creation.
      **/
-    FNET_Connector *Listen(const char *spec, FNET_IPacketStreamer *streamer,
-                           FNET_IServerAdapter *serverAdapter);
-
+    FNET_Connector* Listen(const char* spec, FNET_IPacketStreamer* streamer, FNET_IServerAdapter* serverAdapter);
 
     /**
      * Connect to a target host in an abstract way. The given 'spec'
@@ -249,10 +237,8 @@ public:
      * @param serverAdapter adapter used to support 2way channel creation.
      * @param connContext application context for the connection.
      **/
-    FNET_Connection *Connect(const char *spec, FNET_IPacketStreamer *streamer,
-                             FNET_IServerAdapter *serverAdapter = nullptr,
-                             FNET_Context connContext = FNET_Context());
-
+    FNET_Connection* Connect(const char* spec, FNET_IPacketStreamer* streamer,
+                             FNET_IServerAdapter* serverAdapter = nullptr, FNET_Context connContext = FNET_Context());
 
     /**
      * This method may be used to determine how many IO Components are
@@ -261,9 +247,7 @@ public:
      *
      * @return the current number of IOComponents.
      **/
-    uint32_t GetNumIOComponents() const noexcept {
-        return _componentCnt.load(std::memory_order_relaxed);
-    }
+    uint32_t GetNumIOComponents() const noexcept { return _componentCnt.load(std::memory_order_relaxed); }
 
     /**
      * Add an I/O component to the working set of this transport
@@ -280,7 +264,7 @@ public:
      *        component. If this flag is true, this method will call the
      *        internal_addref method on the component.
      **/
-    void Add(FNET_IOComponent *comp, bool needRef = true);
+    void Add(FNET_IOComponent* comp, bool needRef = true);
 
     /**
      * Calling this method enables write events for the given I/O
@@ -297,8 +281,7 @@ public:
      *        component. If this flag is true, this method will call the
      *        internal_addref method on the component.
      **/
-    void EnableWrite(FNET_IOComponent *comp, bool needRef = true);
-
+    void EnableWrite(FNET_IOComponent* comp, bool needRef = true);
 
     /**
      * Signal the completion of an asyncronous handshake operation for
@@ -315,8 +298,7 @@ public:
      *        component. If this flag is true, this method will call the
      *        internal_addref method on the component.
      **/
-    void handshake_act(FNET_IOComponent *comp, bool needRef = true);
-
+    void handshake_act(FNET_IOComponent* comp, bool needRef = true);
 
     /**
      * Close an I/O component and remove it from the working set of this
@@ -333,19 +315,19 @@ public:
      *        component. If this flag is true, this method will call the
      *        internal_addref method on the component.
      **/
-    void Close(FNET_IOComponent *comp, bool needRef = true);
+    void Close(FNET_IOComponent* comp, bool needRef = true);
 
     /**
      * Start the operation of detaching a server adapter from this
      * transport.
      **/
-    void init_detach(FNET_IServerAdapter *server_adapter);
+    void init_detach(FNET_IServerAdapter* server_adapter);
 
     /**
      * Complete the operation of detaching a server adapter from this
      * transport.
      **/
-    void fini_detach(FNET_IServerAdapter *server_adapter);
+    void fini_detach(FNET_IServerAdapter* server_adapter);
 
     /**
      * Post an execution event on the transport event queue. The return
@@ -362,8 +344,7 @@ public:
      * @return true if the execution request was accepted, false if it was rejected
      * @param exe the executable we want to execute in the transport thread
      **/
-    bool execute(FNET_IExecutable *exe);
-
+    bool execute(FNET_IExecutable* exe);
 
     /**
      * Synchronize with the transport thread. This method will block
@@ -376,7 +357,6 @@ public:
      **/
     void sync();
 
-
     /**
      * Obtain a pointer to the transport thread scheduler. This
      * scheduler may be used to schedule tasks to be run by the
@@ -384,8 +364,7 @@ public:
      *
      * @return transport thread scheduler.
      **/
-    FNET_Scheduler *GetScheduler() { return &_scheduler; }
-
+    FNET_Scheduler* GetScheduler() { return &_scheduler; }
 
     /**
      * Calling this method will shut down the transport layer in a nice
@@ -401,7 +380,6 @@ public:
      **/
     void ShutDown(bool waitFinished);
 
-
     /**
      * This method will make the calling thread wait until the transport
      * layer has been shut down. NOTE: do not invoke this method if you
@@ -410,13 +388,11 @@ public:
      **/
     void WaitFinished();
 
-
     // selector call-back for wakeup events
     void handle_wakeup();
 
     // selector call-back for io-events
-    void handle_event(FNET_IOComponent &ctx, bool read, bool write);
-
+    void handle_event(FNET_IOComponent& ctx, bool read, bool write);
 
     /**
      * Start transport layer operation in a separate thread. Note that
@@ -426,8 +402,7 @@ public:
      * @return thread create status.
      * @param pool threadpool that may be used to spawn a new thread.
      **/
-    bool Start(vespalib::ThreadPool &pool);
-
+    bool Start(vespalib::ThreadPool& pool);
 
     /**
      * Calling this method will give the current thread to the transport
@@ -435,7 +410,6 @@ public:
      * shut down by calling the @ref ShutDown method.
      **/
     void Main();
-
 
     /**
      * This is where the transport thread lives, when started by

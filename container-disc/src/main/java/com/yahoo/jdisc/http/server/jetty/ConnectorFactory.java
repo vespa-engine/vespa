@@ -9,6 +9,7 @@ import com.yahoo.jdisc.http.SslProvider;
 import com.yahoo.jdisc.http.ssl.impl.DefaultConnectorSsl;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
+import com.yahoo.text.Text;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http.ComplianceViolation;
 import org.eclipse.jetty.http.HttpCompliance;
@@ -123,7 +124,7 @@ public class ConnectorFactory {
     }
 
     private List<ConnectionFactory> connectionFactoriesForTlsMixedMode(Metric metric) {
-        log.warning(String.format("TLS mixed mode enabled for port %d - HTTP/2 and proxy-protocol are not supported",
+        log.warning(Text.format("TLS mixed mode enabled for port %d - HTTP/2 and proxy-protocol are not supported",
                 connectorConfig.listenPort()));
         HttpConnectionFactory httpFactory = newHttp1ConnectionFactory(metric);
         SslConnectionFactory sslFactory = newSslConnectionFactory(metric, httpFactory);
@@ -172,15 +173,14 @@ public class ConnectorFactory {
                     try {
                         return HttpCompliance.Violation.valueOf(name);
                     } catch (IllegalArgumentException e) {
-                        log.warning("Ignoring unknown violation '%s'".formatted(name));
+                        log.warning(Text.format("Ignoring unknown violation '%s'", name));
                         return null;
                     }
                 })
                 .filter(Objects::nonNull)
                 .toList();
         if (jettyViolationsAllowed.isEmpty()) return HttpCompliance.RFC7230;
-        log.info("Disabling HTTP compliance checks for port %d: %s"
-                .formatted(
+        log.info(Text.format("Disabling HTTP compliance checks for port %d: %s",
                         cfg.listenPort(),
                         jettyViolationsAllowed.stream().map(HttpCompliance.Violation::getName).toList()));
         return HttpCompliance.RFC7230.with(
@@ -261,7 +261,7 @@ public class ConnectorFactory {
     private record HttpComplianceViolationListener(Metric metric) implements ComplianceViolation.Listener {
         @Override
         public void onComplianceViolation(ComplianceViolation.Event e) {
-            log.fine(() -> "Compliance violation: mode=%s, violation=%s".formatted(e.mode().getName(), e.violation().getName()));
+            log.fine(() -> Text.format("Compliance violation: mode=%s, violation=%s", e.mode().getName(), e.violation().getName()));
             var ctx = metric.createContext(Map.of("mode", e.mode().getName(), "violation", e.violation().getName()));
             metric.add(ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.baseName(), 1L, ctx);
         }

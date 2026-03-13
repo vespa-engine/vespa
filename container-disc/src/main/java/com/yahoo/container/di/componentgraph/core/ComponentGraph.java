@@ -15,6 +15,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.di.componentgraph.cycle.CycleFinder;
 import com.yahoo.container.di.componentgraph.cycle.Graph;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.lang.annotation.Annotation;
@@ -110,7 +111,7 @@ public class ComponentGraph {
     public <T> T getInstance(Key<T> key) {
         // TODO: Combine exception handling with lookupGlobalComponent.
         Object ob = lookupGlobalComponent(key).map(Node::component)
-                .orElseThrow(() -> new IllegalStateException(String.format("No global component with key '%s'  ", key)));
+                .orElseThrow(() -> new IllegalStateException(Text.format("No global component with key '%s'", key)));
         return (T) ob;
     }
 
@@ -289,7 +290,7 @@ public class ComponentGraph {
         Key<?> key = getKey(clazz, bindingAnnotations.stream().findFirst());
 
         if (bindingAnnotations.size() > 1) {
-            throw new RuntimeException(String.format("More than one binding annotation used in class '%s'", node.instanceType()));
+            throw new RuntimeException(Text.format("More than one binding annotation used in class '%s'", node.instanceType()));
         }
 
         Collection<ComponentNode> injectedNodesOfCorrectType = matchingComponentNodes(node.componentsToInject, key);
@@ -300,12 +301,12 @@ public class ComponentGraph {
         } else {
             //TODO: !className for last parameter
             throw new RuntimeException(
-                    String.format("Multiple components of type '%s' injected into component '%s'", clazz.getName(), node.instanceType()));
+                    Text.format("Multiple components of type '%s' injected into component '%s'", clazz.getName(), node.instanceType()));
         }
     }
 
     private static String messageForNoGlobalComponent(Class<?> clazz, Node node) {
-        return String.format(" component of class %s to inject into component %s.", clazz.getName(), node.idAndType());
+        return Text.format(" component of class %s to inject into component %s.", clazz.getName(), node.idAndType());
     }
 
     private String messageForMultipleClassLoaders(Class<?> clazz) {

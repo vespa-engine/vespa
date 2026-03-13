@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/process/process.h>
+
 #include <sys/wait.h>
 
 using namespace vespalib;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
     if (argc != 3) {
         fprintf(stderr, "[ERROR] expected argc to be %d (it was %d)\n", 3, argc);

@@ -57,7 +57,7 @@ public abstract class Processor {
      *                 at completing processing without throwing an exception.
      *                 If we are not validating, emitting warnings have no effect and can (but must not) be skipped.
      * @param documentsOnly true to skip processing (including validation, regardless of the validate setting)
-     *                      of aspects not relating to document definitions (e.g rank profiles)
+     *                      of aspects not relating to document definitions (e.g. rank profiles)
      */
     public abstract void process(boolean validate, boolean documentsOnly);
 
@@ -103,8 +103,8 @@ public abstract class Processor {
      * Returns an iterator of all the rank settings with given type in all the rank  profiles in this search
      * definition.
      */
-    protected Iterator<RankProfile.RankSetting> matchingRankSettingsIterator(
-            Schema schema, RankProfile.RankSetting.Type type)
+    protected Iterator<RankProfile.RankSetting> matchingRankSettingsIterator(Schema schema,
+                                                                             RankProfile.RankSetting.Type type)
     {
         List<RankProfile.RankSetting> someRankSettings = new java.util.ArrayList<>();
 

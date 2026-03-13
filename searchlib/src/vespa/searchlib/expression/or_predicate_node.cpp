@@ -1,13 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "or_predicate_node.h"
-#include "resultnode.h"
 
 #include <algorithm>
 
 namespace search::expression {
-
-using vespalib::Deserializer;
-using vespalib::Serializer;
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, expression, OrPredicateNode, MultiArgPredicateNode);
 

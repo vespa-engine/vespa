@@ -385,6 +385,36 @@ public class VoyageAIEmbedderIntegrationTest {
         }
     }
 
+    @Test
+    public void testRealAPIWithVoyage3BatchEmbedding() {
+        var embedder = createEmbedder();
+
+        var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        var context = new Embedder.Context("integration-test");
+
+        var texts = List.of(
+            "Machine learning is a branch of artificial intelligence.",
+            "The weather today is sunny and warm.",
+            "Deep learning uses neural networks."
+        );
+
+        var results = embedder.embed(texts, context, targetType);
+
+        assertEquals(3, results.size());
+        for (var result : results) {
+            assertNotNull(result);
+            assertEquals(1024, result.size());
+            assertNonZeroTensor(result);
+        }
+
+        // ML-related texts (0, 2) should be more similar to each other than to weather text (1)
+        double sim01 = cosineSimilarity(results.get(0), results.get(1));
+        double sim02 = cosineSimilarity(results.get(0), results.get(2));
+        assertTrue(sim02 > sim01, "ML texts should be more similar. Sim(0,2)=" + sim02 + ", Sim(0,1)=" + sim01);
+
+        embedder.deconstruct();
+    }
+
     // ===== Helper Methods =====
 
     private VoyageAIEmbedder createEmbedder() {

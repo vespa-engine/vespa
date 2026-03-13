@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 import java.net.URI;
@@ -57,7 +58,7 @@ public class IdentityProvider extends SimpleComponent implements IdentityConfig.
 
     // TODO Move to Oath configmodel amender
     private String getConfigserverIdentityName() {
-        return String.format(java.util.Locale.ROOT, "%s.provider_%s_%s",
+        return Text.format("%s.provider_%s_%s",
                              configServerDomain(),
                              zone.environment().value(),
                              zone.region().value());

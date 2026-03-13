@@ -48,7 +48,7 @@ ConvertRawScoreToCloseness::execute(uint32_t docId)
     assert(_md);
     for (const auto& elem : _bundle.elements()) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(elem.handle);
-        if (tfmd->getDocId() == docId) {
+        if (tfmd->has_ranking_data(docId)) {
             feature_t converted = tfmd->getRawScore();
             max_closeness = std::max(max_closeness, converted);
         } else if (elem.calc) {

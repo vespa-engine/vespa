@@ -96,7 +96,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitAddressSpace() { return 0.80; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return true; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
@@ -115,9 +114,12 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"glebashnik"}) default int maxDocumentOperationRequestSizeMib() { return 2048; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean useTriton() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter="8.636") default boolean useNewPrepareForRestart() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean ignoreConnectivityChecksAtStartup() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
         @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
+        @ModelFeatureFlag(owners = {"glebashnik"}) default boolean applyOnRestartForApplicationMetadataConfig() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) { return 0.95; }
+        @ModelFeatureFlag(owners = {"toregge"}) default double searchNodeReservedDiskSpaceFactor() { return 0.0; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -146,7 +148,7 @@ public interface ModelContext {
 
         default List<TenantSecretStore> tenantSecretStores() { return List.of(); }
 
-        // Default setting for the gc-options attribute if not specified explicitly by application
+        @Deprecated(forRemoval = true, since = "8.659") // Remove after '8.659' is gone
         default String jvmGCOptions() { return jvmGCOptions(Optional.empty()); }
 
         // Default setting for the gc-options attribute if not specified explicitly by application

@@ -160,7 +160,7 @@ public class HuggingFaceEmbedderTest {
         Tensor binarizedResult = getNormalizePrefixdEmbedder().embed(input, context, TensorType.fromSpec(("tensor<int8>(x[2])")));
         assertEquals("tensor<int8>(x[2]):[125, 44]", binarizedResult.toAbbreviatedString());
 
-        var queryContext = new Embedder.Context("query.qt");
+        var queryContext = new Embedder.Context("query(qt)");
         Tensor queryResult = getNormalizePrefixdEmbedder().embed(input, queryContext, TensorType.fromSpec(("tensor<float>(x[8])")));
         assertEquals(1.0, queryResult.multiply(queryResult).sum().asDouble(), 1e-3);
         queryResult = getNormalizePrefixdEmbedder().embed(input, queryContext, TensorType.fromSpec(("tensor<float>(x[16])")));
@@ -177,7 +177,7 @@ public class HuggingFaceEmbedderTest {
         var embedder = getNormalizePrefixdEmbedder();
         var result = embedder.prependInstruction(input, context);
         assertEquals("This is a document: This is a test",  result);
-        var queryContext = new Embedder.Context("query.qt");
+        var queryContext = new Embedder.Context("query(qt)");
         var queryResult = embedder.prependInstruction(input, queryContext);
         assertEquals("Represent this text: This is a test",  queryResult);
     }

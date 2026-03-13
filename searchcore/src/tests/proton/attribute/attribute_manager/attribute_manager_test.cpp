@@ -9,7 +9,6 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
-#include <vespa/searchcore/proton/common/resource_usage.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
@@ -18,6 +17,7 @@
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
+#include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>

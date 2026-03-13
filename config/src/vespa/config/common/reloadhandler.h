@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <cstdint>
+
 namespace config {
 
-struct ReloadHandler
-{
+struct ReloadHandler {
     /**
      * Reload any configs with a given generation.
      */
@@ -12,5 +13,4 @@ struct ReloadHandler
     virtual ~ReloadHandler() = default;
 };
 
-}
-
+} // namespace config

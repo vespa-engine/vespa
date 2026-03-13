@@ -1,10 +1,13 @@
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.text.Text;
+
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
@@ -50,19 +53,50 @@ public class PendingRestarts {
         return new PendingRestarts(newRestarts);
     }
 
+    /**
+     * Returns a new {@link PendingRestarts} without the given {@code hostnames} for generations up to and including {@code generation}.
+     */
+    public PendingRestarts withoutPreviousGenerations(long generation, Set<String> hostnames) {
+        Map<Long, Set<String>> newRestarts = new LinkedHashMap<>();
+        generationsForRestarts.forEach((restartGen, restartHosts) -> {
+            Set<String> remainingHosts = new LinkedHashSet<>(restartHosts);
+
+            if (restartGen <= generation) {
+                remainingHosts.removeAll(hostnames);
+            }
+
+            if (!remainingHosts.isEmpty()) {
+                newRestarts.put(restartGen, remainingHosts);
+            }
+        });
+        return new PendingRestarts(newRestarts);
+    }
+
     public Set<String> hostnames() {
         LinkedHashSet<String> all = new LinkedHashSet<>();
         generationsForRestarts.forEach((g, hostnames) -> all.addAll(hostnames));
         return all;
     }
-
+    
     // Restarts are ready to be done for all hostnames that report a config generation (through
-    // convergence checker) that is equal to or larger than the config generation that the restaart
+    // convergence checker) that is equal to or larger than the config generation that the restart
     // should happen on
     public Set<String> restartsReadyAt(long generation) {
         LinkedHashSet<String> ready = new LinkedHashSet<>();
         generationsForRestarts.forEach((g, hostnames) -> { if (generation >= g) ready.addAll(hostnames); });
         return ready;
     }
-
+    
+    @Override
+    public String toString() {
+        return Text.format(
+                "generationsForRestarts={%s}",
+                generationsForRestarts().entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .map(entry -> Text.format(
+                                "%d -> [%s]",
+                                entry.getKey(),
+                                entry.getValue().stream().sorted().collect(Collectors.joining(", "))))
+                        .collect(Collectors.joining(", ")));
+    }
 }

@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/gencnt.h>
 #include "service_mapping.h"
+
+#include <vespa/vespalib/util/gencnt.h>
 
 namespace slobrok {
 
@@ -13,23 +14,14 @@ namespace slobrok {
  **/
 struct MapDiff {
     /** construct incremental diff */
-    MapDiff(const vespalib::GenCnt &from,
-            std::vector<std::string> remove,
-            ServiceMappingList update,
-            const vespalib::GenCnt &to)
-      : fromGen(from),
-        removed(std::move(remove)),
-        updated(std::move(update)),
-        toGen(to)
-    {}
+    MapDiff(const vespalib::GenCnt& from, std::vector<std::string> remove, ServiceMappingList update,
+            const vespalib::GenCnt& to)
+        : fromGen(from), removed(std::move(remove)), updated(std::move(update)), toGen(to) {}
 
     /** construct full map dump */
-    MapDiff(ServiceMappingList mappings,
-            const vespalib::GenCnt &to)
-      : MapDiff(0, {}, std::move(mappings), to)
-    {}
+    MapDiff(ServiceMappingList mappings, const vespalib::GenCnt& to) : MapDiff(0, {}, std::move(mappings), to) {}
 
-    MapDiff(MapDiff &&) noexcept;
+    MapDiff(MapDiff&&) noexcept;
     ~MapDiff();
 
     // is this a diff from the empty map:
@@ -49,4 +41,3 @@ struct MapDiff {
 };
 
 } // namespace slobrok
-

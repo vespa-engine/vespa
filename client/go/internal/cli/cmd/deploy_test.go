@@ -105,10 +105,11 @@ func TestDeployCloudFastWait(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	httpClient.NextResponseString(200, `ok`)
-	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccesful"}`)
-	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccesful"}`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "deploymentFailed",
+		"log": {"deployReal": [{"at": 1631707708431, "type": "warning", "message": "Deployment failed: File in application package with unknown extension: schemas/doc.sd~"}]},
+		"steps": {"deployReal": {"status": "failed"}}}`)
 	require.NotNil(t, cli.Run("deploy", pkgDir))
-	assert.Equal(t, stderr.String(), "Error: deployment failed: run 0 ended with unsuccessful status: unsuccesful\n")
+	assert.Equal(t, "Deployment failed: File in application package with unknown extension: schemas/doc.sd~\n", stderr.String())
 	assert.True(t, httpClient.Consumed())
 
 	// Deployment which is running does not return error
@@ -137,7 +138,7 @@ func TestDeployCloudUnauthorized(t *testing.T) {
 	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
 	httpClient.NextResponseString(403, "bugger off")
 	require.NotNil(t, cli.Run("deploy", pkgDir))
-	assert.Equal(t, `Error: deployment failed: unauthorized (status 403)
+	assert.Equal(t, `Deployment failed: unauthorized (status 403)
 bugger off
 Hint: You do not have access to the tenant t1
 Hint: You may need to create the tenant at https://console.vespa-cloud.com/tenant

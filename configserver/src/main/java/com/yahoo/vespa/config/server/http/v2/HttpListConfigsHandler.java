@@ -3,7 +3,13 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.Zone;
@@ -22,7 +28,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.Utils;
-import static com.yahoo.jdisc.http.HttpResponse.Status.*;
+import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
 
 /**
  * Handler for a list configs operation. Lists all configs in model for a given application and tenant.

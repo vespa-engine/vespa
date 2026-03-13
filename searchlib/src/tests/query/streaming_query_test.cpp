@@ -790,9 +790,9 @@ TEST(StreamingQueryTest, test_in_term)
     IndexEnvironment ie;
     term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
     auto tmd0 = md.resolveTermField(0);
-    EXPECT_NE(23, tmd0->getDocId());
+    EXPECT_FALSE(tmd0->has_data(23));
     auto tmd2 = md.resolveTermField(1);
-    EXPECT_EQ(23, tmd2->getDocId());
+    EXPECT_TRUE(tmd2->has_ranking_data(23));
 }
 
 TEST(StreamingQueryTest, dot_product_term)
@@ -822,9 +822,9 @@ TEST(StreamingQueryTest, dot_product_term)
     IndexEnvironment ie;
     term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
     auto tmd0 = md.resolveTermField(0);
-    EXPECT_NE(23, tmd0->getDocId());
+    EXPECT_FALSE(tmd0->has_data(23));
     auto tmd1 = md.resolveTermField(1);
-    EXPECT_EQ(23, tmd1->getDocId());
+    EXPECT_TRUE(tmd1->has_ranking_data(23));
     EXPECT_EQ(-17 * 27 + 9 * 2, tmd1->getRawScore());
 }
 
@@ -869,13 +869,13 @@ check_wand_term(double limit, const std::string& label)
     IndexEnvironment ie;
     term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
     auto tmd0 = md.resolveTermField(0);
-    EXPECT_NE(23, tmd0->getDocId());
+    EXPECT_FALSE(tmd0->has_data(23));
     auto tmd1 = md.resolveTermField(1);
     if (limit < exp_wand_score_field_12) {
-        EXPECT_EQ(23, tmd1->getDocId());
+        EXPECT_TRUE(tmd1->has_ranking_data(23));
         EXPECT_EQ(exp_wand_score_field_12, tmd1->getRawScore());
     } else {
-        EXPECT_NE(23, tmd1->getDocId());
+        EXPECT_FALSE(tmd1->has_data(23));
     }
 }
 
@@ -925,9 +925,9 @@ TEST(StreamingQueryTest, weighted_set_term)
     IndexEnvironment ie;
     term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
     auto tmd0 = md.resolveTermField(0);
-    EXPECT_NE(23, tmd0->getDocId());
+    EXPECT_FALSE(tmd0->has_data(23));
     auto tmd1 = md.resolveTermField(1);
-    EXPECT_EQ(23, tmd1->getDocId());
+    EXPECT_TRUE(tmd1->has_ranking_data(23));
     using Weights = std::vector<int32_t>;
     Weights weights;
     for (auto& pos : *tmd1) {

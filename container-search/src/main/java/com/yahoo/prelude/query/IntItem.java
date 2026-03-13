@@ -259,8 +259,8 @@ public class IntItem extends TermItem {
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer); // takes care of index bytes
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context); // takes care of index bytes
         putString(getEncodedInt(), buffer);
     }
 
@@ -308,7 +308,7 @@ public class IntItem extends TermItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         // Check if this is a range or a simple term
         if (!from.equals(to)) {
             // This is a range

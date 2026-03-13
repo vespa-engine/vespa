@@ -13,7 +13,7 @@ class RangeBucketPreDefFunctionNode : public UnaryFunctionNode
 {
 private:
     void onPrepareResult() override;
-    bool onExecute() const override;
+    void onExecute() const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
     class Handler {
@@ -60,7 +60,7 @@ public:
     RangeBucketPreDefFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)), _predef(), _result(nullptr), _nullResult(nullptr) {}
     RangeBucketPreDefFunctionNode(const RangeBucketPreDefFunctionNode & rhs);
     RangeBucketPreDefFunctionNode & operator = (const RangeBucketPreDefFunctionNode & rhs);
-    ~RangeBucketPreDefFunctionNode();
+    ~RangeBucketPreDefFunctionNode() override;
     const ResultNode * getResult()   const override { return _result; }
     const ResultNodeVector & getBucketList() const { return *_predef; }
     ResultNodeVector       & getBucketList()       { return *_predef; }

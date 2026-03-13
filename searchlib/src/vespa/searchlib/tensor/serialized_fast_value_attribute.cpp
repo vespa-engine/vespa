@@ -19,6 +19,7 @@ SerializedFastValueAttribute::SerializedFastValueAttribute(string_view name, con
       _tensorBufferStore(cfg.tensorType(), get_memory_allocator(),
                          TensorBufferStore::array_store_max_type_id)
 {
+    setup_memory_usage_empty();
 }
 
 

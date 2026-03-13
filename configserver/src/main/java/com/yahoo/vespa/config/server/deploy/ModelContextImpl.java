@@ -28,6 +28,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
+import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
@@ -206,9 +207,13 @@ public class ModelContextImpl implements ModelContext {
         private final int maxDocumentOperationRequestSizeMib;
         private final Sidecars sidecarsForTest;
         private final boolean useTriton;
+        private final boolean ignoreConnectivityChecksAtStartup;
         private final int searchCoreMaxOutstandingMoveOps;
         private final double docprocHandlerThreadpool;
+        private final boolean applyOnRestartForApplicationMetadataConfig;
+        private final DoubleFlag autoscalerTargetWriteCpuPercentageFlag;
         private final IntFlag heapSizePercentageFlag;
+        private final double searchNodeReservedDiskSpaceFactor;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -252,8 +257,12 @@ public class ModelContextImpl implements ModelContext {
             this.maxDocumentOperationRequestSizeMib = Flags.MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB.bindTo(source).with(appId).with(version).value();
             this.sidecarsForTest = Flags.SIDECARS_FOR_TEST.bindTo(source).with(appId).with(version).value();
             this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
+            this.ignoreConnectivityChecksAtStartup = PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP.bindTo(source).with(appId).value();
             this.searchCoreMaxOutstandingMoveOps = Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS.bindTo(source).with(appId).with(version).value();
             this.docprocHandlerThreadpool = Flags.DOCPROC_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
+            this.applyOnRestartForApplicationMetadataConfig = Flags.APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG.bindTo(source).with(appId).with(version).value();
+            this.autoscalerTargetWriteCpuPercentageFlag = Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE.bindTo(source).with(appId).with(version);
+            this.searchNodeReservedDiskSpaceFactor = Flags.SEARCHNODE_RESERVED_DISK_SPACE_FACTOR.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -275,7 +284,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
-        @Override public boolean useV8GeoPositions() { return true; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
         @Override public int mbusJavaEventsBeforeWakeup() { return mbus_java_events_before_wakeup; }
@@ -300,8 +308,15 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxDocumentOperationRequestSizeMib() { return maxDocumentOperationRequestSizeMib; }
         @Override public Object sidecarsForTest() { return sidecarsForTest; }
         @Override public boolean useTriton() { return useTriton; }
+        @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
         @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
         @Override public double docprocHandlerThreadpool() { return docprocHandlerThreadpool; }
+        @Override public boolean applyOnRestartForApplicationMetadataConfig() { return applyOnRestartForApplicationMetadataConfig; }
+        @Override public double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) {
+            return clusterId.map(id -> autoscalerTargetWriteCpuPercentageFlag.with(ClusterSpec.Id.from(id)).value())
+                            .orElseGet(autoscalerTargetWriteCpuPercentageFlag::value);
+        }
+        @Override public double searchNodeReservedDiskSpaceFactor() { return searchNodeReservedDiskSpaceFactor; }
     }
 
     public static class Properties implements ModelContext.Properties {

@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig.Rule;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
@@ -230,7 +231,7 @@ class RuleBasedRequestFilterTest {
         assertEquals(expectedCode, response.getStatus());
         ObjectNode expectedJson = Jackson.mapper().createObjectNode();
         expectedJson.put("message", expectedMessage).put("code", expectedCode);
-        JsonNode actualJson = Jackson.mapper().readTree(handler.readAll().getBytes());
+        JsonNode actualJson = Jackson.mapper().readTree(handler.readAll().getBytes(StandardCharsets.UTF_8));
         assertEquals(expectedJson, actualJson);
     }
 

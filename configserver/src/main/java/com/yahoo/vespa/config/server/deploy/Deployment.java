@@ -4,11 +4,17 @@ package com.yahoo.vespa.config.server.deploy;
 import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationTransaction;
+import com.yahoo.config.provision.BackupConfig;
+import com.yahoo.config.provision.BlockWindow;
+import com.yahoo.config.provision.DeploymentConfigStore;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.Provisioner;
@@ -30,6 +36,7 @@ import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.concurrent.Memoized;
+import com.yahoo.text.Text;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -65,6 +72,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final ApplicationRepository applicationRepository;
     private final Supplier<PrepareParams> params;
     private final Optional<Provisioner> provisioner;
+    private final Optional<DeploymentConfigStore> deploymentConfigStore;
     private final Tenant tenant;
     private final DeployLogger deployLogger;
     private final Clock clock;
@@ -73,11 +81,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private ConfigChangeActions configChangeActions;
 
     private Deployment(Session session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
-                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger deployLogger, Clock clock, boolean prepared) {
+                       Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
+                       Tenant tenant, DeployLogger deployLogger, Clock clock, boolean prepared) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.params = params;
         this.provisioner = provisioner;
+        this.deploymentConfigStore = deploymentConfigStore;
         this.tenant = tenant;
         this.deployLogger = deployLogger;
         this.clock = clock;
@@ -85,22 +95,25 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     }
 
     public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
-                                        Optional<Provisioner> provisioner, Tenant tenant, PrepareParams params, DeployLogger logger, Clock clock) {
-        return new Deployment(session, applicationRepository, () -> params, provisioner, tenant, logger, clock, false);
+                                        Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
+                                        Tenant tenant, PrepareParams params, DeployLogger logger, Clock clock) {
+        return new Deployment(session, applicationRepository, () -> params, provisioner, deploymentConfigStore, tenant, logger, clock, false);
     }
 
     public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
-                                        Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
+                                        Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
+                                        Tenant tenant, DeployLogger logger,
                                         Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, true, isBootstrap, !validate, false, true);
-        return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, false);
+        return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, tenant, logger, clock, false);
     }
 
     public static Deployment prepared(Session session, ApplicationRepository applicationRepository,
-                                      Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
+                                      Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
+                                      Tenant tenant, DeployLogger logger,
                                       Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, false, isBootstrap, false, force, false);
-        return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, true);
+        return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, tenant, logger, clock, true);
     }
 
     /** Prepares this. This does nothing if this is already prepared */
@@ -139,6 +152,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             waitForActivation(applicationId, timeoutBudget, activation);
             restartServicesIfNeeded(applicationId);
             storeReindexing(applicationId);
+            storeDeploymentConfig(applicationId);
 
             return configGeneration();
         }
@@ -181,9 +195,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         long configGeneration = session.getSessionId();
         applicationRepository.modifyPendingRestarts(applicationId, pendingRestarts -> pendingRestarts.withRestarts(configGeneration, nodesToRestart));
         String hostnames = nodesToRestart.stream().sorted().collect(joining(", "));
-        deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
+        deployLogger.log(Level.INFO, Text.format("Scheduled service restart of %d nodes: %s",
                                                    nodesToRestart.size(), hostnames));
-        log.info(String.format("%sWill schedule service restart of %d nodes after convergence on generation %d (unless restartOnDeploy enabled): %s",
+        log.info(Text.format("%sWill schedule service restart of %d nodes after convergence on generation %d (unless restartOnDeploy enabled): %s",
                                session.logPre(), nodesToRestart.size(), configGeneration, hostnames));
         configChangeActions = configChangeActions == null ? null : configChangeActions.withRestartActions(new RestartActions());
     }
@@ -200,7 +214,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             return reindexing;
         });
-        deployLogger.log(Level.INFO, String.format("Scheduled reindexing of %d document types across %d clusters: %s",
+        deployLogger.log(Level.INFO, Text.format("Scheduled reindexing of %d document types across %d clusters: %s",
                                                    entries.size(),
                                                    entries.stream().map(Reindexing::clusterId).distinct().count(),
                                                    entries.stream().collect(groupingBy(Reindexing::clusterId)).entrySet().stream()
@@ -208,6 +222,28 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                                                                  typesInCluster.getValue().stream()
                                                                                                .map(Reindexing::documentType).collect(joining(", ")))
                                                           .collect(joining("; "))));
+    }
+
+    private void storeDeploymentConfig(ApplicationId applicationId) {
+        if (deploymentConfigStore.isEmpty()) return;
+        if ( ! Environment.from(applicationRepository.configserverConfig().environment()).isProduction()) return;
+
+        DeploymentSpec spec = session.getApplicationPackage().getDeploymentSpec();
+        Optional<DeploymentInstanceSpec> instanceSpec = spec.instance(applicationId.instance());
+        if (instanceSpec.isEmpty()) return;
+
+        Optional<BackupConfig> backup = instanceSpec.get().backup()
+                .map(b -> new BackupConfig(b.frequency(), BackupConfig.Granularity.valueOf(b.granularity().name())));
+
+        List<BlockWindow> blockWindows = instanceSpec.get().changeBlocker().stream()
+                .map(cb -> new BlockWindow(
+                        cb.blocksRevisions(), cb.blocksVersions(),
+                        cb.window().days(),
+                        cb.window().hours(),
+                        cb.window().zone()))
+                .toList();
+
+        deploymentConfigStore.get().store(applicationId, backup, blockWindows);
     }
 
     private void applyDeferredReconfigurationOfClusters() {
@@ -224,8 +260,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                         "Cannot apply deferred reconfiguration: no model available for session " + session.getSessionId()));
         model.markClustersForDeferredReconfiguration(clustersWithDeferredReconfiguration);
         clustersWithDeferredReconfiguration.forEach(clusterName ->
-            deployLogger.log(Level.INFO, "Deferring reconfiguration of cluster '%s' until restart is completed"
-                    .formatted(clusterName)));
+            deployLogger.log(Level.INFO, Text.format("Deferring reconfiguration of cluster '%s' until restart is completed", clusterName)));
     }
 
     /**

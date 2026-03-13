@@ -14,7 +14,13 @@ import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.foo.FunctionTestConfig.*;
+import static com.yahoo.foo.FunctionTestConfig.BasicStruct;
+import static com.yahoo.foo.FunctionTestConfig.Enum_val;
+import static com.yahoo.foo.FunctionTestConfig.Enumarr;
+import static com.yahoo.foo.FunctionTestConfig.Enumwithdef;
+import static com.yahoo.foo.FunctionTestConfig.Myarray;
+import static com.yahoo.foo.FunctionTestConfig.MyStructMap;
+import static com.yahoo.foo.FunctionTestConfig.RootStruct;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

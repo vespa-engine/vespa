@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -270,7 +271,7 @@ public class CliClient {
 
     private static void writeFloatField(JsonGenerator generator, String name, double value, int precision) throws IOException {
         generator.writeFieldName(name);
-        generator.writeNumber(String.format("%." + precision + "f", value));
+        generator.writeNumber(String.format(Locale.ROOT, "%." + precision + "f", value));
     }
 
     /** Creates an input stream that spits out random documents (id and data) for one minute. */
@@ -281,7 +282,7 @@ public class CliClient {
 
     static InputStream createDummyInputStream(int payloadSize, Random random, BooleanSupplier hasNext) {
         int idSize = 8;
-        String template = String.format("{ \"put\": \"id:test:test::%s\", \"fields\": { \"test\": \"%s\" } }\n",
+        String template = String.format(Locale.ROOT, "{ \"put\": \"id:test:test::%s\", \"fields\": { \"test\": \"%s\" } }\n",
                                         IntStream.range(0, idSize).mapToObj(__ -> "*").collect(joining()),
                                         IntStream.range(0, payloadSize).mapToObj(__ -> "#").collect(joining()));
         byte[] buffer = template.getBytes(StandardCharsets.UTF_8);

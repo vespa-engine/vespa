@@ -34,8 +34,8 @@ public abstract class PureWeightedItem extends Item {
     }
 
     @Override
-    public int encode(ByteBuffer buffer) {
-        encodeThis(buffer);
+    public int encode(ByteBuffer buffer, SerializationContext context) {
+        encodeThis(buffer, context);
         return 1;
     }
 
@@ -50,7 +50,7 @@ public abstract class PureWeightedItem extends Item {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         throw new UnsupportedOperationException("PureWeightedItem should not serialize itself to protobuf");
     }
 

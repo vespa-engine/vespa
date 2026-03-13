@@ -49,6 +49,7 @@ public final class ScriptParser {
         parser.setChunkers(context.getChunkers());
         parser.setEmbedders(context.getEmbedders());
         parser.setGenerators(context.getGenerators());
+        parser.setMetricReceiver(context.getMetricReceiver());
 
         try {
             return method.call(parser);

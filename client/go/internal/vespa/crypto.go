@@ -18,6 +18,7 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -25,9 +26,23 @@ import (
 )
 
 const (
-	defaultCommonName = "cloud.vespa.example"
 	certificateExpiry = 3650 * 24 * time.Hour // Approximately 10 years
 )
+
+func defaultCommonName() string {
+	user := os.Getenv("USER")
+	if user == "" {
+		user = os.Getenv("LOGNAME")
+	}
+	if user == "" {
+		user = "unknown"
+	}
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "unknown"
+	}
+	return user + "@" + hostname
+}
 
 // PemKeyPair represents a PEM-encoded private key and X509 certificate.
 type PemKeyPair struct {
@@ -65,7 +80,7 @@ func CreateKeyPair() (PemKeyPair, error) {
 	notAfter := notBefore.Add(certificateExpiry)
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
-		Subject:      pkix.Name{CommonName: defaultCommonName},
+		Subject:      pkix.Name{CommonName: defaultCommonName()},
 		NotBefore:    notBefore,
 		NotAfter:     notAfter,
 	}

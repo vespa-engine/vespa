@@ -18,6 +18,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.objects.Ids;
 
 import java.util.Collection;
+import java.util.Locale;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class StringFieldValue extends FieldValue implements DataSource {
         if ( ! Text.isValidTextString(value)) {
             if (replaceInvalidUnicode) return Text.stripInvalidCharacters(value);
             else throw new IllegalArgumentException("The string field value contains illegal code point 0x" +
-                                                    Integer.toHexString(Text.validateTextString(value).getAsInt()).toUpperCase());
+                                                    Integer.toHexString(Text.validateTextString(value).getAsInt()).toUpperCase(Locale.ROOT));
         }
         return value;
     }

@@ -71,6 +71,10 @@ public:
         (void) strict;
         return SearchIterator::UP(_fp->createIterator(_tfmda));
     }
+    std::unique_ptr<SearchIterator> create(bool, const TermFieldMatchDataArray& tfmda) const override {
+        return _fp->createIterator(tfmda);
+    }
+    void verify_hidden_from_ranking() { SearchIteratorVerifier::verify_hidden_from_ranking(_tfmda); }
 private:
     TermFieldMatchData _tfmd;
     TermFieldMatchDataArray _tfmda;
@@ -197,6 +201,7 @@ DiskIndexTest::requireThatSearchIteratorsConforms()
             FakePosting::SP f(ff->make(fw));
             Verifier verifier(f);
             verifier.verify();
+            verifier.verify_hidden_from_ranking();
         }
     }
 }
@@ -257,7 +262,7 @@ DiskIndexTest::search(const FieldIndex& field_index, const DictionaryLookupResul
 {
     TermFieldMatchDataArray mda;
     auto sb = field_index.create_iterator(lookup_result, handle, mda);
-    return SimpleResult().search(*sb);
+    return SimpleResult().search(*sb, 1000);
 }
 
 Blueprint::UP
@@ -382,8 +387,8 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
         EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != nullptr);
-        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
-        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s, 1000));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound), 1000));
     }
     { // bitvector due to no ranking needed
         b = create_blueprint(FieldSpec("f2", 0, 0, false), makeTerm("w2"));
@@ -397,24 +402,24 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
         EXPECT_TRUE(mda2[0]->isNotNeeded());
         s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda2);
         EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != nullptr);
-        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
-        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s, 1000));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound), 1000));
     }
     { // fake bitvector (wrapping posocc iterator)
         b = create_blueprint(FieldSpec("f1", 0, 0, true), makeTerm("w1"));
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
         EXPECT_TRUE(dynamic_cast<BooleanMatchIteratorWrapper *>(s.get()) != nullptr);
-        EXPECT_EQ(result_f1_w1, SimpleResult().search(*s));
-        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*s, 1000));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound), 1000));
     }
     { // posting list iterator
         b = create_blueprint(FieldSpec("f1", 0, 0), makeTerm("w1"));
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
         ASSERT_TRUE((dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(s.get()) != nullptr) || (dynamic_cast<ZcPosOccIterator<true, false> *>(s.get()) != nullptr));
-        EXPECT_EQ(result_f1_w1, SimpleResult().search(*s));
-        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*s, 1000));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound), 1000));
     }
     { // bitvector used due to filter threshold set.
         // The term 'w2' hits 17 docs in field 'f2' (bitvector for term exists).
@@ -423,8 +428,8 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
         EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != nullptr);
-        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
-        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s, 100));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound), 100));
     }
     { // bitvector used due to filter threshold overridden in the query.
         // The term 'w2' hits 17 docs in field 'f2' (bitvector for term exists).
@@ -434,8 +439,8 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
         EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != nullptr);
-        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
-        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s, 100));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound), 100));
         _requestContext.get_create_blueprint_params().filter_threshold = std::nullopt;
     }
     { // fake bitvector (wrapping posocc iterator) used due to filter threshold set.
@@ -445,8 +450,8 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
         EXPECT_TRUE((dynamic_cast<BooleanMatchIteratorWrapper *>(s.get()) != nullptr));
-        EXPECT_EQ(result_f1_w1, SimpleResult().search(*s));
-        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*s, 100));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound), 100));
     }
 }
 

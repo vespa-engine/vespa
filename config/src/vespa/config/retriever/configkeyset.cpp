@@ -4,11 +4,9 @@
 
 namespace config {
 
-ConfigKeySet &
-ConfigKeySet::add(const ConfigKeySet & configKeySet)
-{
+ConfigKeySet& ConfigKeySet::add(const ConfigKeySet& configKeySet) {
     insert(configKeySet.begin(), configKeySet.end());
     return *this;
 }
 
-}
+} // namespace config

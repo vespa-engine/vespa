@@ -4,15 +4,14 @@
 #include <string>
 
 struct Method {
-    const char *shortName;
-    const char *rpcMethod;
-    const int args;
+    const char* shortName;
+    const char* rpcMethod;
+    const int   args;
 };
 
 namespace methods {
 
-const Method find(const std::string &name);
-void dump();
+const Method find(const std::string& name);
+void         dump();
 
-};
-
+}; // namespace methods

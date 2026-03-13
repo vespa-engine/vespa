@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
@@ -318,7 +319,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         var previouslyExhausted = calc.enumerateNodeResourceExhaustions(nodeInfo);
         var nowExhausted        = calc.resourceExhaustionsFromHostInfo(nodeInfo, newHostInfo);
         if (!previouslyExhausted.equals(nowExhausted)) {
-            context.log(logger, Level.FINE, () -> String.format(Locale.ROOT, "Triggering state recomputation due to change in cluster feed block: %s -> %s",
+            context.log(logger, Level.FINE, () -> Text.format("Triggering state recomputation due to change in cluster feed block: %s -> %s",
                                             previouslyExhausted, nowExhausted));
             stateChangeHandler.setStateChangedFlag();
         }
@@ -445,7 +446,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         Set<ConfiguredNode> nodes = new HashSet<>(cluster.clusterInfo().getConfiguredNodes().values());
         // TODO wouldn't it be better to always get bundle information from the state broadcaster?
         var currentBundle = stateVersionTracker.getVersionedClusterStateBundle();
-        context.log(logger, Level.FINE, () -> String.format(Locale.ROOT, "All distributors have ACKed cluster state version %d", currentBundle.getVersion()));
+        context.log(logger, Level.FINE, () -> Text.format("All distributors have ACKed cluster state version %d", currentBundle.getVersion()));
         stateChangeHandler.handleAllDistributorsInSync(currentBundle.getBaselineClusterState(), nodes, database, dbContext);
         convergedStates.add(currentBundle);
     }
@@ -701,13 +702,13 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         }
 
         final RemoteClusterControllerTask.Context taskContext = createRemoteTaskProcessingContext();
-        context.log(logger, Level.FINEST, () -> String.format(Locale.ROOT, "Processing remote task of type '%s'", task.getClass().getName()));
+        context.log(logger, Level.FINEST, () -> Text.format("Processing remote task of type '%s'", task.getClass().getName()));
         task.doRemoteFleetControllerTask(taskContext);
         if (taskMayBeCompletedImmediately(task)) {
-            context.log(logger, Level.FINEST, () -> String.format(Locale.ROOT, "Done processing remote task of type '%s'", task.getClass().getName()));
+            context.log(logger, Level.FINEST, () -> Text.format("Done processing remote task of type '%s'", task.getClass().getName()));
             task.notifyCompleted();
         } else {
-            context.log(logger, Level.FINEST, () -> String.format(Locale.ROOT, "Remote task of type '%s' queued until state recomputation", task.getClass().getName()));
+            context.log(logger, Level.FINEST, () -> Text.format("Remote task of type '%s' queued until state recomputation", task.getClass().getName()));
             tasksPendingStateRecompute.add(task);
         }
 
@@ -756,7 +757,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     private static <E> String stringifyListWithLimits(List<E> list, int limit) {
         if (list.size() > limit) {
             var sub = list.subList(0, limit);
-            return String.format(Locale.ROOT, "%s (... and %d more)",
+            return Text.format("%s (... and %d more)",
                     sub.stream().map(E::toString).collect(Collectors.joining(", ")),
                     list.size() - limit);
         } else {
@@ -769,7 +770,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         if (nodes.isEmpty()) {
             return "";
         }
-        return String.format(Locale.ROOT, "the following nodes have not converged to at least version %d: %s",
+        return Text.format("the following nodes have not converged to at least version %d: %s",
                 taskConvergeVersion, stringifyListWithLimits(nodes, options.maxDivergentNodesPrintedInTaskErrorMessages()));
     }
 
@@ -787,13 +788,13 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             VersionDependentTaskCompletion taskCompletion = taskCompletionQueue.peek();
             // TODO expose and use monotonic clock instead of system clock
             if (publishedVersion >= taskCompletion.getMinimumVersion()) {
-                context.log(logger, Level.FINE, () -> String.format(Locale.ROOT, "Deferred task of type '%s' has minimum version %d, published is %d; completing",
+                context.log(logger, Level.FINE, () -> Text.format("Deferred task of type '%s' has minimum version %d, published is %d; completing",
                                                     taskCompletion.getTask().getClass().getName(), taskCompletion.getMinimumVersion(), publishedVersion));
                 taskCompletion.getTask().notifyCompleted();
                 taskCompletionQueue.remove();
             } else if (taskCompletion.getDeadlineTimePointMs() <= now) {
                 var details = buildNodesNotYetConvergedMessage(taskCompletion.getMinimumVersion());
-                context.log(logger, Level.WARNING, () -> String.format(Locale.ROOT, "Deferred task of type '%s' has exceeded wait deadline; completing with failure (details: %s)",
+                context.log(logger, Level.WARNING, () -> Text.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure (details: %s)",
                                                        taskCompletion.getTask().getClass().getName(), details));
                 taskCompletion.getTask().handleFailure(RemoteClusterControllerTask.Failure.of(
                         RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED, details));
@@ -1030,7 +1031,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                 database.loadWantedStates(databaseContext);
                 // TODO determine if we need any specialized handling here if feed block is set in the loaded bundle
 
-                context.log(logger, Level.INFO, () -> String.format(Locale.ROOT, "Loaded previous cluster state bundle from ZooKeeper: %s", previousBundle));
+                context.log(logger, Level.INFO, () -> Text.format("Loaded previous cluster state bundle from ZooKeeper: %s", previousBundle));
                 stateVersionTracker.setClusterStateBundleRetrievedFromZooKeeper(previousBundle);
 
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node just became fleetcontroller master. Bumped version to "

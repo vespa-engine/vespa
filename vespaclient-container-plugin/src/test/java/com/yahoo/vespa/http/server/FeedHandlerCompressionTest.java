@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPOutputStream;
 
 import static org.junit.Assert.assertEquals;
@@ -19,7 +20,7 @@ public class FeedHandlerCompressionTest {
     public static byte[] compress(final String dataToBrCompressed) throws IOException {
         final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(dataToBrCompressed.length());
         final GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream);
-        gzipOutputStream.write(dataToBrCompressed.getBytes());
+        gzipOutputStream.write(dataToBrCompressed.getBytes(StandardCharsets.UTF_8));
         gzipOutputStream.close();
         byte[] compressedBytes = byteArrayOutputStream.toByteArray();
         byteArrayOutputStream.close();
@@ -51,7 +52,7 @@ public class FeedHandlerCompressionTest {
     @Test
     public void testUnzipFails() throws Exception {
         final String testData = "foo bar";
-        InputStream inputStream = new ByteArrayInputStream(testData.getBytes());
+        InputStream inputStream = new ByteArrayInputStream(testData.getBytes(StandardCharsets.UTF_8));
         HttpRequest httpRequest = mock(HttpRequest.class);
         when(httpRequest.getHeader("Content-Encoding")).thenReturn("gzip");
         InputStream decompressedStream = FeedHandler.unzipStreamIfNeeded(inputStream, httpRequest);

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static com.yahoo.search.predicate.serialization.SerializationTestHelper.*;
+import static com.yahoo.search.predicate.serialization.SerializationTestHelper.assertSerializationDeserializationMatches;
 
 /**
  * @author bjorncs

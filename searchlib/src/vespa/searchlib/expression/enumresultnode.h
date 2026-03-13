@@ -16,6 +16,8 @@ public:
 private:
     int64_t onGetEnum(size_t index) const override { (void) index; return getValue(); }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+
+    std::string_view friendly_type_name() const noexcept override { return "string"; }
 };
 
 }

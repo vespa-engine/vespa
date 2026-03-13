@@ -43,6 +43,15 @@ public class JRTConnection implements Connection {
         return address;
     }
 
+    @Override
+    public synchronized void closeConnection() {
+        if (target != null) {
+            logger.log(Level.INFO, "Closing connection to " + address);
+            target.close();
+            target = null;
+        }
+    }
+
     /**
      * This is synchronized to avoid multiple ConfigInstances creating new targets simultaneously, if
      * the existing target is null, invalid or has not yet been initialized.

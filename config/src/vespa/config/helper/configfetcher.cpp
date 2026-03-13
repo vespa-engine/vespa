@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configfetcher.h"
+
 #include "configpoller.h"
-#include <vespa/config/common/exceptions.h>
+
 #include <vespa/config/common/configcontext.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/thread.h>
 
 #include <vespa/log/log.h>
@@ -14,21 +16,11 @@ namespace config {
 VESPA_THREAD_STACK_TAG(config_fetcher_thread);
 
 ConfigFetcher::ConfigFetcher(std::shared_ptr<IConfigContext> context)
-    : _poller(std::make_unique<ConfigPoller>(std::move(context))),
-      _thread(),
-      _closed(false),
-      _started(false)
-{
-}
+    : _poller(std::make_unique<ConfigPoller>(std::move(context))), _thread(), _closed(false), _started(false) {}
 
-ConfigFetcher::ConfigFetcher(const SourceSpec & spec)
-    : ConfigFetcher(std::make_shared<ConfigContext>(spec))
-{
-}
+ConfigFetcher::ConfigFetcher(const SourceSpec& spec) : ConfigFetcher(std::make_shared<ConfigContext>(spec)) {}
 
-void
-ConfigFetcher::start()
-{
+void ConfigFetcher::start() {
     if (!_closed) {
         LOG(debug, "Polling for config");
         _poller->poll();
@@ -42,19 +34,11 @@ ConfigFetcher::start()
     }
 }
 
-ConfigFetcher::~ConfigFetcher()
-{
-    close();
-}
+ConfigFetcher::~ConfigFetcher() { close(); }
 
-int64_t
-ConfigFetcher::getGeneration() const {
-    return _poller->getGeneration();
-}
+int64_t ConfigFetcher::getGeneration() const { return _poller->getGeneration(); }
 
-void
-ConfigFetcher::close()
-{
+void ConfigFetcher::close() {
     if (!_closed) {
         _poller->close();
         if (_started)

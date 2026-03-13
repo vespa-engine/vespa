@@ -67,8 +67,8 @@ public:
 private:
     virtual std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<Handler>>
     createResultHandler(bool preserveAccurateType, const attribute::IAttributeVector & attribute) const;
-    template <typename V> class IntegerHandler;
-    class FloatHandler;
+    template <typename V, typename T> class IntegerHandler;
+    template <typename T> class FloatHandler;
     class StringHandler;
     class EnumHandler;
     void wireAttributes(const attribute::IAttributeContext & attrCtx) override;
@@ -89,7 +89,7 @@ protected:
         _scratchResult = std::move(result);
     }
     virtual void cleanup();
-    bool onExecute() const override;
+    void onExecute() const override;
     std::string                  _attributeName;
 };
 

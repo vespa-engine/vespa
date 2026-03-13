@@ -396,6 +396,28 @@ public:
     }
 
     /**
+     * Returns whether the serialized form of an attribute with the
+     * given basic type and collection type needs an index (.idx) file.
+     **/
+    static bool needs_idx_file(BasicType::Type basic_type, CollectionType::Type collection_type) {
+        if (collection_type == CollectionType::SINGLE) {
+            return false;
+        }
+        if (basic_type == BasicType::BOOL && collection_type == CollectionType::ARRAY) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Returns whether the serialized form of this attribute needs an
+     * index (.idx) file.
+     **/
+    bool needs_idx_file() const {
+        return needs_idx_file(getBasicType(), getCollectionType());
+    }
+
+    /**
      * Returns whether this attribute vector has underlying enum values.
      *
      * @return true if it has enum values.

@@ -5,6 +5,8 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vector>
 
+namespace search::fef { class TermFieldMatchDataArray; }
+
 namespace search::test {
 
 class SearchIteratorVerifier {
@@ -21,7 +23,9 @@ public:
     SearchIteratorVerifier();
     virtual ~SearchIteratorVerifier();
     void verify() const;
+    void verify_hidden_from_ranking(const fef::TermFieldMatchDataArray& tfmda) const;
     virtual SearchIterator::UP create(bool strict) const = 0;
+    virtual std::unique_ptr<SearchIterator> create(bool strict, const fef::TermFieldMatchDataArray& tfmda) const;
     const DocIds & getExpectedDocIds() const { return _docIds; }
     static uint32_t getDocIdLimit() { return 207; }
 private:

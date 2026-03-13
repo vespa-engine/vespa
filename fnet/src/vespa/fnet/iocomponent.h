@@ -3,11 +3,13 @@
 #pragma once
 
 #include "scheduler.h"
+
 #include <vespa/vespalib/net/selector.h>
 #include <vespa/vespalib/util/ref_counted.h>
-#include <mutex>
-#include <condition_variable>
+
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
 
 class FNET_IServerAdapter;
 class FNET_TransportThread;
@@ -19,41 +21,40 @@ class FNET_Config;
  * Components do IO against the network and that they use sockets to
  * perform that IO.
  **/
-class FNET_IOComponent : public vespalib::enable_ref_counted
-{
+class FNET_IOComponent : public vespalib::enable_ref_counted {
     friend class FNET_TransportThread;
 
     using Selector = vespalib::Selector<FNET_IOComponent>;
 
     struct Flags {
-        Flags(bool shouldTimeout) :
-            _ioc_readEnabled(false),
-            _ioc_writeEnabled(false),
-            _ioc_shouldTimeOut(shouldTimeout),
-            _ioc_added(false),
-            _ioc_delete(false)
-        { }
-        bool  _ioc_readEnabled;   // read event enabled ?
-        bool  _ioc_writeEnabled;  // write event enabled ?
-        bool  _ioc_shouldTimeOut; // component should timeout ?
-        bool  _ioc_added;         // was added to event loop
-        bool  _ioc_delete;        // going down...
+        Flags(bool shouldTimeout)
+            : _ioc_readEnabled(false),
+              _ioc_writeEnabled(false),
+              _ioc_shouldTimeOut(shouldTimeout),
+              _ioc_added(false),
+              _ioc_delete(false) {}
+        bool _ioc_readEnabled;   // read event enabled ?
+        bool _ioc_writeEnabled;  // write event enabled ?
+        bool _ioc_shouldTimeOut; // component should timeout ?
+        bool _ioc_added;         // was added to event loop
+        bool _ioc_delete;        // going down...
     };
+
 protected:
-    FNET_IOComponent        *_ioc_next;          // next in list
-    FNET_IOComponent        *_ioc_prev;          // prev in list
-    FNET_TransportThread    *_ioc_owner;         // owner(TransportThread) ref.
-    Selector                *_ioc_selector;      // attached event selector
-    std::string              _ioc_spec;          // connect/listen spec
-    Flags                    _flags;             // Compressed representation of boolean flags;
-    int                      _ioc_socket_fd;     // source of events.
-    vespalib::steady_time    _ioc_timestamp;     // last I/O activity
-    std::mutex               _ioc_lock;          // synchronization
-    std::condition_variable  _ioc_cond;          // synchronization
+    FNET_IOComponent*       _ioc_next;      // next in list
+    FNET_IOComponent*       _ioc_prev;      // prev in list
+    FNET_TransportThread*   _ioc_owner;     // owner(TransportThread) ref.
+    Selector*               _ioc_selector;  // attached event selector
+    std::string             _ioc_spec;      // connect/listen spec
+    Flags                   _flags;         // Compressed representation of boolean flags;
+    int                     _ioc_socket_fd; // source of events.
+    vespalib::steady_time   _ioc_timestamp; // last I/O activity
+    std::mutex              _ioc_lock;      // synchronization
+    std::condition_variable _ioc_cond;      // synchronization
 
 public:
-    FNET_IOComponent(const FNET_IOComponent &) = delete;
-    FNET_IOComponent &operator=(const FNET_IOComponent &) = delete;
+    FNET_IOComponent(const FNET_IOComponent&) = delete;
+    FNET_IOComponent& operator=(const FNET_IOComponent&) = delete;
 
     /**
      * Construct an IOComponent with the given owner. The socket that
@@ -67,20 +68,17 @@ public:
      * @param spec listen/connect spec for this IOC
      * @param shouldTimeOut should this IOC time out if idle ?
      **/
-    FNET_IOComponent(FNET_TransportThread *owner, int socket_fd,
-                     const char *spec, bool shouldTimeOut);
-
+    FNET_IOComponent(FNET_TransportThread* owner, int socket_fd, const char* spec, bool shouldTimeOut);
 
     /**
      * Destruct component.
      **/
     virtual ~FNET_IOComponent();
 
-
     /**
      * @return connect/listen spec
      **/
-    const char *GetSpec() const { return _ioc_spec.c_str(); }
+    const char* GetSpec() const { return _ioc_spec.c_str(); }
 
     /*
      * Get a guard to gain exclusive access.
@@ -90,8 +88,7 @@ public:
     /**
      * @return the owning TransportThread object.
      **/
-    FNET_TransportThread *Owner() { return _ioc_owner; }
-
+    FNET_TransportThread* Owner() { return _ioc_owner; }
 
     /**
      * Get the configuration object associated with the owning transport
@@ -99,14 +96,12 @@ public:
      *
      * @return config object.
      **/
-    const FNET_Config & getConfig() const;
-
+    const FNET_Config& getConfig() const;
 
     /**
      * @return whether this component should time-out if idle.
      **/
     bool ShouldTimeOut() { return _flags._ioc_shouldTimeOut; }
-
 
     /**
      * Update time-out information. This method simply performs a
@@ -122,7 +117,7 @@ public:
      *
      * @param selector event selector to be attached.
      **/
-    void attach_selector(Selector &selector);
+    void attach_selector(Selector& selector);
 
     /**
      * Detach from the attached event selector. This will disable
@@ -137,14 +132,12 @@ public:
      **/
     void EnableReadEvent(bool enabled);
 
-
     /**
      * Enable or disable write events.
      *
      * @param enabled enabled(true)/disabled(false).
      **/
     void EnableWriteEvent(bool enabled);
-
 
     //----------- virtual methods below ----------------------//
 
@@ -154,7 +147,7 @@ public:
      *
      * @return the server adapter attached to this component
      **/
-    virtual FNET_IServerAdapter *server_adapter() = 0;
+    virtual FNET_IServerAdapter* server_adapter() = 0;
 
     /**
      * This function is called as the first step of adding an io
@@ -180,7 +173,6 @@ public:
      **/
     virtual bool handle_handshake_act();
 
-
     /**
      * Close this component immediately. NOTE: this method should only
      * be called by the transport thread. If you want to close an IO
@@ -190,7 +182,6 @@ public:
      **/
     virtual void Close() = 0;
 
-
     /**
      * Called by the transport thread when a read event has
      * occurred.
@@ -198,7 +189,6 @@ public:
      * @return false if broken, true otherwise.
      **/
     virtual bool HandleReadEvent() = 0;
-
 
     /**
      * Called by the transport thread when a write event has
@@ -208,4 +198,3 @@ public:
      **/
     virtual bool HandleWriteEvent() = 0;
 };
-

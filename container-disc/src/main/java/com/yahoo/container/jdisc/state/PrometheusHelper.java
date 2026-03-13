@@ -2,10 +2,12 @@
 package com.yahoo.container.jdisc.state;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.yahoo.text.Text;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -47,8 +49,8 @@ public class PrometheusHelper {
     }
 
     private static byte[] getMetricLines(String metricName, String dimensions, Number value, long timestamp) {
-        return (String.format(HELP_LINE, metricName, metricName) +
-                String.format(METRIC_LINE, metricName, dimensions, value, timestamp)).getBytes();
+        return (Text.format(HELP_LINE, metricName, metricName) +
+                Text.format(METRIC_LINE, metricName, dimensions, value, timestamp)).getBytes(StandardCharsets.UTF_8);
     }
 
     private static String sanitize(String name) {

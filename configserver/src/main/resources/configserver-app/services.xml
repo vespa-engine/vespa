@@ -21,6 +21,7 @@
     <component id="com.yahoo.vespa.config.server.SuperModelRequestHandler" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.StaticConfigDefinitionRepo" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.provision.HostProvisionerProvider" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.provision.DeploymentConfigStoreProvider" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.deploy.InfraDeployerProvider" bundle="configserver" />
     <component id="com.yahoo.vespa.curator.Curator" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.tenant.TenantRepository" bundle="configserver" />
@@ -31,6 +32,7 @@
     <component id="com.yahoo.vespa.config.server.version.VersionState" bundle="configserver" />
     <component id="com.yahoo.config.provision.Zone" bundle="config-provisioning" />
     <component id="com.yahoo.vespa.config.server.application.ConfigConvergenceChecker" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.application.ConfigStateChecker" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.application.HttpProxy" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.filedistribution.FileServer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.filedistribution.FileDirectory" bundle="configserver" />

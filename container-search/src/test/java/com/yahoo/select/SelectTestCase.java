@@ -23,6 +23,7 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.IllegalInputException;
@@ -48,7 +49,16 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.yahoo.language.Language;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests Query.Select
@@ -666,7 +676,7 @@ public class SelectTestCase {
     @Test
     void testNearestNeighbor() {
         assertParse("{ \"nearestNeighbor\": [ \"f1field\", \"q2prop\" ] }",
-                "NEAREST_NEIGHBOR {field=f1field,queryTensorName=q2prop,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=0}");
+                "NEAREST_NEIGHBOR {field=f1field,queryTensorName=q2prop,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true}");
 
         assertParse("{ \"nearestNeighbor\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"targetHits\": 37, \"hnsw.exploreAdditionalHits\": 42, \"distanceThreshold\": 100100.25 } }}",
                 "NEAREST_NEIGHBOR {field=f3field,queryTensorName=q4prop,hnsw.exploreAdditionalHits=42,distanceThreshold=100100.25,approximate=true,targetHits=37}");
@@ -675,12 +685,12 @@ public class SelectTestCase {
     @Test
     void testWeakAnd() {
         assertParse("{ \"weakAnd\": [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ] }",
-                "WEAKAND(100) a:A b:B");
+                "WEAKAND a:A b:B");
         assertParse("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ], \"attributes\" : {\"targetHits\": 37} }}",
                 "WEAKAND(37) a:A b:B");
 
         QueryTree tree = parseWhere("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ] }}");
-        assertEquals("WEAKAND(100) a:A b:B", tree.toString());
+        assertEquals("WEAKAND a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
     }
 
@@ -774,6 +784,47 @@ public class SelectTestCase {
     void testEquals() {
         assertParse("{\"equals\": [\"public\",true]}", "public:true");
         assertParse("{\"equals\": [\"public\",5]}", "public:5");
+        assertParse("{\"equals\": {\"field\": \"public\", \"value\": true}}", "public:true");
+        assertParse("{\"equals\": {\"field\": \"public\", \"value\": 5}}", "public:5");
+    }
+
+    @Test
+    void testEqualsWithArrayIndex() {
+        // Boolean value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 2, \"value\": true }}",
+                    "my_arr:{true}");
+        var boolTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 2, \"value\": true }}");
+        var boolSameElement = assertInstanceOf(SameElementItem.class, boolTree.getRoot());
+        assertEquals("my_arr", boolSameElement.getFieldName());
+        assertEquals(List.of(2), boolSameElement.getElementFilter());
+        assertEquals(1, boolSameElement.getItemCount());
+
+        // Integer value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}",
+                    "my_arr:{42}");
+        var intTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}");
+        var intSameElement = assertInstanceOf(SameElementItem.class, intTree.getRoot());
+        assertEquals(List.of(0), intSameElement.getElementFilter());
+
+        // String value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 1, \"value\": \"hello\" }}",
+                    "my_arr:{hello}");
+
+        // Double value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 3.14 }}",
+                    "my_arr:{3.14}");
+    }
+
+    @Test
+    void testEqualsWithArrayIndexErrors() {
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 2 }}",
+                new IllegalArgumentException("Expected 'value' in 'equals' but is missing."));
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": -1, \"value\": true }}",
+                new IllegalArgumentException("element id must be non-negative, got: -1"));
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 3000000000, \"value\": true }}",
+                new IllegalArgumentException("element id must fit in int32 range, got: 3000000000"));
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 1.5, \"value\": true }}",
+                new IllegalArgumentException("'index' in 'equals' should be an integer but was DOUBLE"));
     }
 
     @Test
@@ -869,7 +920,7 @@ public class SelectTestCase {
     @Test
     void testOverridingOtherQueryTree() {
         Query query = new Query("?query=default:query");
-        assertEquals("WEAKAND(100) default:query", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND default:query", query.getModel().getQueryTree().toString());
         assertEquals(Query.Type.WEAKAND, query.getModel().getType());
 
         query.getSelect().setWhereString("{\"contains\" : [\"default\", \"select\"] }");
@@ -1054,5 +1105,26 @@ public class SelectTestCase {
         var item = new StringInItem(field);
         for (var value : values) item.addToken(value);
         return item;
+    }
+
+    @Test
+    void testExplicitEnglishLanguageSetsEnglish() {
+        Item root = parseWhere("{ \"contains\": { \"children\": [\"baz\", \"hello\"], \"attributes\": { \"language\": \"en\" } } }").getRoot();
+        assertEquals(Language.ENGLISH, root.getLanguage(),
+                "Explicit language: 'en' should set ENGLISH, not UNKNOWN");
+    }
+
+    @Test
+    void testExplicitFrenchLanguageSetsFrench() {
+        Item root = parseWhere("{ \"contains\": { \"children\": [\"baz\", \"hello\"], \"attributes\": { \"language\": \"fr\" } } }").getRoot();
+        assertEquals(Language.FRENCH, root.getLanguage(),
+                "Explicit language: 'fr' should set FRENCH");
+    }
+
+    @Test
+    void testNoLanguageAnnotationStaysUnknown() {
+        Item root = parseWhere("{ \"contains\": [\"baz\", \"hello\"] }").getRoot();
+        assertEquals(Language.UNKNOWN, root.getLanguage(),
+                "No language annotation should leave UNKNOWN");
     }
 }

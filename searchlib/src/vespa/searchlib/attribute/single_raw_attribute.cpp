@@ -5,6 +5,7 @@
 #include "single_raw_attribute_saver.h"
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 
 using vespalib::alloc::MemoryAllocator;
@@ -15,7 +16,8 @@ namespace search::attribute {
 SingleRawAttribute::SingleRawAttribute(const std::string& name, const Config& config)
     : RawAttribute(name, config),
       _ref_vector(config.getGrowStrategy(), getGenerationHolder()),
-      _raw_store(get_memory_allocator(), RawBufferStore::array_store_max_type_id, RawBufferStore::array_store_grow_factor)
+      _raw_store(get_memory_allocator(), RawBufferStore::array_store_max_type_id, RawBufferStore::array_store_grow_factor),
+      _raw_bytes_stats(0)
 {
 }
 
@@ -85,6 +87,7 @@ SingleRawAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
                            total.usedBytes(),
                            total.deadBytes(),
                            total.allocatedBytesOnHold());
+    _raw_bytes_stats.store(_raw_store.get_raw_bytes(), std::memory_order_relaxed);
 }
 
 vespalib::MemoryUsage
@@ -152,7 +155,9 @@ bool
 SingleRawAttribute::onLoad(vespalib::Executor* executor)
 {
     SingleRawAttributeLoader loader(*this, _ref_vector, _raw_store);
-    return loader.on_load(executor);
+    auto result = loader.on_load(executor);
+    _raw_bytes_stats.store(_raw_store.get_raw_bytes(), std::memory_order_relaxed);
+    return result;
 }
 
 bool
@@ -166,6 +171,14 @@ void
 SingleRawAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
     usage.set(AddressSpaceComponents::raw_store, _raw_store.get_address_space_usage());
+}
+
+uint64_t
+SingleRawAttribute::getEstimatedSaveByteSize() const
+{
+    uint64_t header_size = FileSettings::DIRECTIO_ALIGNMENT;
+    uint32_t docid_limit = getCommittedDocIdLimit();
+    return header_size + docid_limit * sizeof(uint32_t) + get_raw_bytes_stats();
 }
 
 }

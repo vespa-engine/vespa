@@ -21,7 +21,7 @@ public class ParameterRankFeatureTestCase extends RuleBaseAbstractTestCase {
     @Test
     void testParameterProduction() {
         Query query = new Query("?query=youtube%20cat%20videos");
-        assertSemantics("WEAKAND(100) youtube cat videos", query);
+        assertSemantics("WEAKAND youtube cat videos", query);
         assertEquals("1", query.getRanking().getProperties().get("isYoutube").get(0));
     }
 

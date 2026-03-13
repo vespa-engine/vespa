@@ -69,6 +69,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -784,7 +785,7 @@ public class DocumentGenPluginTest {
     }
 
     private String className(String s) {
-        return s.substring(0, 1).toUpperCase()+s.substring(1);
+        return s.substring(0, 1).toUpperCase(Locale.ROOT)+s.substring(1);
     }
 
     private Music getMusicBasic() {

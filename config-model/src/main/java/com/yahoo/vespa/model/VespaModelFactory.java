@@ -26,6 +26,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.Validator;
@@ -85,7 +86,7 @@ public class VespaModelFactory implements ModelFactory {
                 Clock.systemUTC(), Zone.defaultZone());
     }
 
-    private VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock, Zone zone) {
+    protected VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock, Zone zone) {
         this.version = version;
         if (configModelRegistry == null) {
             this.configModelRegistry = new NullConfigModelRegistry();
@@ -132,7 +133,7 @@ public class VespaModelFactory implements ModelFactory {
                 VespaModel currentModel = (VespaModel) currentActiveModel.get();
                 var currentMeta = currentModel.applicationPackage().getMetaData();
                 var nextMeta = nextModel.applicationPackage().getMetaData();
-                log.log(Level.INFO, String.format(java.util.Locale.ROOT, "Model [%s/%s] -> [%s/%s] triggers reindexing: %s",
+                log.log(Level.INFO, Text.format("Model [%s/%s] -> [%s/%s] triggers reindexing: %s",
                                                   currentModel.version().toString(), currentMeta.toString(),
                                                   nextModel.version().toString(), nextMeta.toString(),
                                                   action));

@@ -73,7 +73,7 @@ ElementwiseBm25Executor::execute(uint32_t doc_id)
     uint32_t element_length = 0;
     uint32_t num_occs = 0;
     for (const auto& term : _terms) {
-        if (term.tfmd->getDocId() == doc_id) {
+        if (term.tfmd->has_ranking_data(doc_id)) {
             num_occs = 0;
             for (auto& pos : *term.tfmd) {
                 if (num_occs > 0 && element_id == pos.getElementId()) {

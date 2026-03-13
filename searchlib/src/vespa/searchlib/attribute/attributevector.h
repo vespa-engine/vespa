@@ -508,9 +508,10 @@ public:
 
     void drain_hold(uint64_t hold_limit);
 
-    void set_size_on_disk(uint64_t value) noexcept { _size_on_disk.store(value, std::memory_order_release); }
+    virtual void set_size_on_disk(uint64_t value) noexcept;
     void set_size_on_disk(const IAttributeSaveTarget& target);
     uint64_t size_on_disk() const noexcept { return _size_on_disk.load(std::memory_order_acquire); }
+    uint64_t get_memory_allocator_size_on_disk() const noexcept;
     void set_last_flush_duration(std::chrono::steady_clock::duration value) noexcept {
         _last_flush_duration.store(value.count(), std::memory_order_relaxed);
     }

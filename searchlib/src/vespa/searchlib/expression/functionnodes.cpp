@@ -223,23 +223,22 @@ MultiArgFunctionNode::onPrepareResult()
     }
 }
 
-bool
+void
 MultiArgFunctionNode::onExecute() const
 {
     for(size_t i(0), m(_args.size()); i < m; i++) {
         _args[i]->execute();
     }
-    return calculate(_args, updateResult());
+    calculate(_args, updateResult());
 }
 
-bool
+void
 MultiArgFunctionNode::onCalculate(const ExpressionNodeVector & args, ResultNode & result) const
 {
     result.set(*args[0]->getResult());
     for (size_t i(1), m(args.size()); i < m; i++) {
         executeIterative(*args[i]->getResult(), result);
     }
-    return true;
 }
 
 void
@@ -364,12 +363,11 @@ ToStringFunctionNode::onPrepareResult()
     setResultType(std::make_unique<StringResultNode>());
 }
 
-bool
+void
 ToStringFunctionNode::onExecute() const
 {
     getArg().execute();
     updateResult().set(*getArg().getResult());
-    return true;
 }
 
 void
@@ -378,12 +376,11 @@ ToRawFunctionNode::onPrepareResult()
     setResultType(std::make_unique<RawResultNode>());
 }
 
-bool
+void
 ToRawFunctionNode::onExecute() const
 {
     getArg().execute();
     updateResult().set(*getArg().getResult());
-    return true;
 }
 
 void
@@ -392,12 +389,11 @@ ToIntFunctionNode::onPrepareResult()
     setResultType(std::make_unique<Int64ResultNode>());
 }
 
-bool
+void
 ToIntFunctionNode::onExecute() const
 {
     getArg().execute();
     updateResult().set(*getArg().getResult());
-    return true;
 }
 
 void
@@ -406,12 +402,11 @@ ToFloatFunctionNode::onPrepareResult()
     setResultType(std::make_unique<FloatResultNode>());
 }
 
-bool
+void
 ToFloatFunctionNode::onExecute() const
 {
     getArg().execute();
     updateResult().set(*getArg().getResult());
-    return true;
 }
 
 void
@@ -420,13 +415,12 @@ StrLenFunctionNode::onPrepareResult()
     setResultType(std::make_unique<Int64ResultNode>());
 }
 
-bool
+void
 StrLenFunctionNode::onExecute() const
 {
     getArg().execute();
     HoldString tmp(*getArg().getResult());
     static_cast<Int64ResultNode &> (updateResult()).set(tmp.size());
-    return true;
 }
 
 void
@@ -435,7 +429,7 @@ NormalizeSubjectFunctionNode::onPrepareResult()
     setResultType(std::make_unique<StringResultNode>());
 }
 
-bool
+void
 NormalizeSubjectFunctionNode::onExecute() const
 {
     getArg().execute();
@@ -455,7 +449,6 @@ NormalizeSubjectFunctionNode::onExecute() const
         }
     }
     static_cast<StringResultNode &> (updateResult()).set(tmp.substr(pos));
-    return true;
 }
 
 void
@@ -464,44 +457,40 @@ NumElemFunctionNode::onPrepareResult()
     setResultType(std::make_unique<Int64ResultNode>(1));
 }
 
-bool
+void
 NumElemFunctionNode::onExecute() const
 {
     getArg().execute();
     if (getArg().getResult()->inherits(ResultNodeVector::classId)) {
         static_cast<Int64ResultNode &> (updateResult()).set(static_cast<const ResultNodeVector &>(*getArg().getResult()).size());
     }
-    return true;
 }
 
-bool
+void
 NegateFunctionNode::onExecute() const
 {
     getArg().execute();
     updateResult().assign(*getArg().getResult());
     updateResult().negate();
-    return true;
 }
 
-bool
+void
 SortFunctionNode::onExecute() const
 {
     getArg().execute();
     updateResult().assign(*getArg().getResult());
     updateResult().sort();
-    return true;
 }
 
-bool
+void
 ReverseFunctionNode::onExecute() const
 {
     getArg().execute();
     updateResult().assign(*getArg().getResult());
     updateResult().reverse();
-    return true;
 }
 
-bool
+void
 StrCatFunctionNode::onExecute() const
 {
     asciistream os;
@@ -511,10 +500,9 @@ StrCatFunctionNode::onExecute() const
         getArg(i).getResult()->serialize(nos);
     }
     static_cast<StringResultNode &>(updateResult()).set(os.view());
-    return true;
 }
 
-bool
+void
 CatFunctionNode::onExecute() const
 {
     nbostream os;
@@ -524,7 +512,6 @@ CatFunctionNode::onExecute() const
         getArg(i).getResult()->serialize(nos);
     }
     static_cast<RawResultNode &>(updateResult()).setBuffer(os.data(), os.size());
-    return true;
 }
 
 XorBitFunctionNode::XorBitFunctionNode() = default;
@@ -535,14 +522,14 @@ XorBitFunctionNode::XorBitFunctionNode(ExpressionNode::UP arg, unsigned numBits)
     _tmpXor(getNumBytes(), 0)
 {}
 
-bool
+void
 UnaryBitFunctionNode::onExecute() const
 {
     _tmpOs.clear();
     getArg().execute();
     CatSerializer os(_tmpOs);
     getArg().getResult()->serialize(os);
-    return internalExecute(_tmpOs);
+    internalExecute(_tmpOs);
 }
 
 void
@@ -552,7 +539,7 @@ XorBitFunctionNode::onPrepareResult()
     _tmpXor.resize(getNumBytes());
 }
 
-bool
+void
 XorBitFunctionNode::internalExecute(const nbostream & os) const
 {
     const size_t numBytes(_tmpXor.size());
@@ -567,17 +554,15 @@ XorBitFunctionNode::internalExecute(const nbostream & os) const
         _tmpXor[i%numBytes] = os.data()[i];
     }
     static_cast<RawResultNode &>(updateResult()).setBuffer(&_tmpXor[0], numBytes);
-    return true;
 }
 
-bool
+void
 MD5BitFunctionNode::internalExecute(const nbostream & os) const
 {
     const unsigned int MD5_DIGEST_LENGTH = 16;
     unsigned char md5ScratchPad[MD5_DIGEST_LENGTH];
     fastc_md5sum(os.data(), os.size(), md5ScratchPad);
     static_cast<RawResultNode &>(updateResult()).setBuffer(md5ScratchPad, std::min(sizeof(md5ScratchPad), getNumBytes()));
-    return true;
 }
 
 Serializer &

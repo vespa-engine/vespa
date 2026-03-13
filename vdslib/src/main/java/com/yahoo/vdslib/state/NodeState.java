@@ -146,7 +146,7 @@ public class NodeState implements Cloneable {
     public String toString(boolean compact) {
         StringBuilder sb = new StringBuilder();
         if (compact) {
-            sb.append(state.serialize().toUpperCase());
+            sb.append(state.serialize().toUpperCase(Locale.ROOT));
         } else {
             sb.append(state);
         }

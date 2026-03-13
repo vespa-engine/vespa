@@ -6,6 +6,7 @@ import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.search.Query;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.searchlib.aggregation.Hit;
+import com.yahoo.text.Text;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,7 +33,7 @@ class GroupingResultAggregator {
         if (documentDatabase == null) documentDatabase = result.getDocumentDatBase();
         if (query == null) query = result.getQuery();
         log.log(Level.FINE, () ->
-                String.format("Merging hit #%d having %d groupings",
+                Text.format("Merging hit #%d having %d groupings",
                         groupingHitsMerged, result.getGroupingList().size()));
         for (Grouping grouping : result.getGroupingList()) {
             groupings.merge(grouping.getId(), grouping, (existingGrouping, newGrouping) -> {
@@ -45,7 +46,7 @@ class GroupingResultAggregator {
     Optional<GroupingListHit> toAggregatedHit() {
         if (groupingHitsMerged == 0) return Optional.empty();
         log.log(Level.FINE, () ->
-                String.format("Creating aggregated hit containing %d groupings from %d hits with docsums '%s' and %s",
+                Text.format("Creating aggregated hit containing %d groupings from %d hits with docsums '%s' and %s",
                         groupings.size(), groupingHitsMerged, documentDatabase.getDocsumDefinitionSet(), query));
         GroupingListHit groupingHit = new GroupingListHit(List.copyOf(groupings.values()), documentDatabase, query);
         groupingHit.setQuery(query);

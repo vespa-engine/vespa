@@ -13,7 +13,7 @@ public:
     NumericFunctionNode();
     NumericFunctionNode(const NumericFunctionNode & rhs);
     NumericFunctionNode & operator = (const NumericFunctionNode & rhs);
-    ~NumericFunctionNode();
+    ~NumericFunctionNode() override;
     void reset() override { _handler.reset(); MultiArgFunctionNode::reset(); }
 protected:
     void onPrepare(bool preserveAccurateTypes) override;
@@ -166,7 +166,7 @@ private:
         StringResultNode _initial;
     };
 
-    bool onCalculate(const ExpressionNodeVector & args, ResultNode & result) const override;
+    void onCalculate(const ExpressionNodeVector & args, ResultNode & result) const override;
     std::unique_ptr<Handler> _handler;
 };
 

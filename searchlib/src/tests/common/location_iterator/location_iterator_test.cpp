@@ -94,7 +94,7 @@ public:
             d = std::max(d, iterator->getDocId());
             _tfmd.setRawScore(0, 0.0);
             iterator->unpack(d);
-            EXPECT_EQ(_tfmd.getDocId(), d);
+            EXPECT_TRUE(_tfmd.has_ranking_data(d));
             EXPECT_NE(_tfmd.getRawScore(), 0.0);
             int32_t dx = geo.point.x - _positions[d].first;
             int32_t dy = geo.point.y - _positions[d].second;

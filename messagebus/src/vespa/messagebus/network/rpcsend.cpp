@@ -7,6 +7,7 @@
 #include <vespa/messagebus/tracelevel.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/metadata_extractor.h>
 #include <vespa/fnet/channel.h>
 #include <vespa/fnet/frt/reflection.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -53,7 +54,21 @@ private:
     mutable Blob _payload;
 };
 
-}
+// MetadataExtractor for use when there's no metadata header present, but we still
+// want to give the illusion that an empty one was provided.
+class AlwaysEmptyMetadataExtractor final : public MetadataExtractor {
+public:
+    ~AlwaysEmptyMetadataExtractor() override = default;
+    std::optional<std::string> extract_value(std::string_view) const override {
+        return std::nullopt;
+    }
+    [[nodiscard]] static const AlwaysEmptyMetadataExtractor& instance() noexcept {
+        static const AlwaysEmptyMetadataExtractor sentinel;
+        return sentinel;
+    }
+};
+
+} // namespace
 
 RPCSend::RPCSend()
     : _net(nullptr),
@@ -163,17 +178,17 @@ RPCSend::doRequestDone(FRT_RPCRequest *req) {
         switch (req->GetErrorCode()) {
             case FRTE_RPC_TIMEOUT:
                 error = Error(ErrorCode::TIMEOUT,
-                              make_string("A timeout occured while waiting for '%s' (%g seconds expired); %s",
+                              make_string("A timeout occurred while waiting for '%s' (%g seconds expired); %s",
                                           serviceName.c_str(), vespalib::to_s(ctx->getTimeout()), req->GetErrorMessage()));
                 break;
             case FRTE_RPC_CONNECTION:
                 error = Error(ErrorCode::CONNECTION_ERROR,
-                              make_string("A connection error occured for '%s'; %s",
+                              make_string("A connection error occurred for '%s'; %s",
                                           serviceName.c_str(), req->GetErrorMessage()));
                 break;
             default:
                 error = Error(ErrorCode::NETWORK_ERROR,
-                              make_string("A network error occured for '%s'; %s",
+                              make_string("A network error occurred for '%s'; %s",
                                           serviceName.c_str(), req->GetErrorMessage()));
         }
     } else {
@@ -237,7 +252,7 @@ RPCSend::doHandleReply(Reply::UP reply) {
     if (reply->getType() != 0) {
         payload = protocol->encode(ctx->getVersion(), *reply);
         if (payload.size() == 0) {
-            reply->addError(Error(ErrorCode::ENCODE_ERROR, "An error occured while encoding the reply, see log."));
+            reply->addError(Error(ErrorCode::ENCODE_ERROR, "An error occurred while encoding the reply, see log."));
         }
     }
     FRT_Values &ret = *req.GetReturn();
@@ -274,7 +289,7 @@ RPCSend::doRequest(FRT_RPCRequest *req)
     }
     if (routable->isReply()) {
         replyError(req, params->getVersion(), params->getTraceLevel(),
-                   Error(ErrorCode::DECODE_ERROR, "Payload decoded to a reply when expecting a mesage."));
+                   Error(ErrorCode::DECODE_ERROR, "Payload decoded to a reply when expecting a message."));
         return;
     }
     Message::UP msg(static_cast<Message*>(routable.release()));
@@ -293,6 +308,11 @@ RPCSend::doRequest(FRT_RPCRequest *req)
         msg->getTrace().trace(TraceLevel::SEND_RECEIVE,
                               make_string("Message (type %d) received at %s for session '%s'.",
                                           msg->getType(), _serverIdent.c_str(), string(params->getSession()).c_str()));
+    }
+    if (auto meta_extractor = params->steal_metadata_extractor()) {
+        msg->extractMetadata(*meta_extractor);
+    } else {
+        msg->extractMetadata(AlwaysEmptyMetadataExtractor::instance());
     }
     _net->getOwner().deliverMessage(std::move(msg), params->getSession());
 }

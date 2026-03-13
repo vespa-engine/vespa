@@ -11,6 +11,9 @@
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/searchlib/parsequery/parse.h>
 
+#include <iostream>
+#include <thread>
+
 namespace search {
 
 std::unique_ptr<ResultSet>

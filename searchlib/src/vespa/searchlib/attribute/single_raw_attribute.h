@@ -19,6 +19,7 @@ class SingleRawAttribute : public RawAttribute
 
     RefVector                           _ref_vector;
     RawBufferStore                      _raw_store;
+    std::atomic<uint64_t>               _raw_bytes_stats;
 
     vespalib::MemoryUsage update_stat();
     EntryRef acquire_entry_ref(DocId docid) const noexcept { return _ref_vector.acquire_elem_ref(docid).load_acquire(); }
@@ -44,6 +45,8 @@ public:
     }
     bool isUndefined(DocId docid) const override;
     uint32_t clearDoc(DocId docId) override;
+    uint64_t getEstimatedSaveByteSize() const override;
+    uint64_t get_raw_bytes_stats() const noexcept { return _raw_bytes_stats.load(std::memory_order_relaxed); }
 };
 
 }

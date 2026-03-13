@@ -2,7 +2,6 @@
 
 #include "attributefieldvaluenode.h"
 #include "selectcontext.h"
-#include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/eval/eval/value.h>
@@ -22,7 +21,6 @@ using document::select::ValueNode;
 using document::select::Visitor;
 using document::select::TensorValue;
 using search::AttributeVector;
-using search::attribute::AttributeContent;
 using search::attribute::BasicType;
 using search::attribute::IAttributeVector;
 using vespalib::IllegalArgumentException;
@@ -44,7 +42,7 @@ AttributeFieldValueNode::
 getValue(const Context &context) const
 {
     const auto &sc(dynamic_cast<const SelectContext &>(context));
-    uint32_t docId(sc._docId); 
+    uint32_t docId(sc._docId);
     assert(docId != 0u);
     const auto& v = sc.guarded_attribute_at_index(_attr_guard_index);
     if (v.isUndefined(docId)) {
@@ -53,10 +51,8 @@ getValue(const Context &context) const
     switch (v.getBasicType()) {
         case BasicType::STRING:
             {
-                AttributeContent<const char *> content;
-                content.fill(v, docId);
-                assert(content.size() == 1u);
-                return std::make_unique<StringValue>(content[0]);
+                auto value = v.get_raw(docId);
+                return std::make_unique<StringValue>(std::string_view{value.data(), value.size()});
             }
         case BasicType::BOOL:
         case BasicType::UINT2:
@@ -65,20 +61,10 @@ getValue(const Context &context) const
         case BasicType::INT16:
         case BasicType::INT32:
         case BasicType::INT64:
-            {
-                AttributeContent<IAttributeVector::largeint_t> content;
-                content.fill(v, docId);
-                assert(content.size() == 1u);
-                return std::make_unique<IntegerValue>(content[0], false);
-            }
+            return std::make_unique<IntegerValue>(v.getInt(docId), false);
         case BasicType::FLOAT:
         case BasicType::DOUBLE:
-            {
-                AttributeContent<double> content;
-                content.fill(v, docId);
-                assert(content.size() == 1u);
-                return std::make_unique<FloatValue>(content[0]);
-            }
+            return std::make_unique<FloatValue>(v.getFloat(docId));
         case BasicType::TENSOR:
             {
                 auto* tensor_attr = v.asTensorAttribute();

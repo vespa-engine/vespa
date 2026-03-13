@@ -11,7 +11,7 @@ import com.yahoo.language.process.Stemmer;
 import com.yahoo.language.process.StemmerImpl;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
-import static com.yahoo.language.opennlp.OpenNlpTokenizer.Mode.*;
+import static com.yahoo.language.opennlp.OpenNlpTokenizer.Mode.query;
 
 /**
  * A linguistics implementation based on OpenNlp.

@@ -154,13 +154,14 @@ public class ParsedType {
         }
         switch (vt.name()) {
             // allowed types:
-        case "bool":
         case "byte":
         case "int":
         case "long":
         case "string":
         case "uri":
             break;
+        case "bool":
+            throw new IllegalArgumentException("weightedset of trivial type '" + vt + "' is not supported");
         case "predicate":
         case "raw":
         case "tag":

@@ -19,7 +19,12 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for query class
@@ -72,12 +77,12 @@ public class QueryTestCase {
     @Test
     void testOrQueryWithDefaultIndexWeakAndParsing() {
         Query q = newQuery("/search?query=(fOObar foobar) kanoo&type=weakAnd&default-index=def");
-        assertEquals("WEAKAND(100) (OR def:fOObar def:foobar) def:kanoo", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND (OR def:fOObar def:foobar) def:kanoo", q.getModel().getQueryTree().getRoot().toString());
     }
     @Test
     void testOrPhraseQueryWithDefaultIndexWeakAndParsing() {
         Query q = newQuery("/search?query=(\"fOObar\" foobar) kanoo&type=weakAnd&default-index=def");
-        assertEquals("WEAKAND(100) (OR def:fOObar def:foobar) def:kanoo", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND (OR def:fOObar def:foobar) def:kanoo", q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
@@ -221,11 +226,9 @@ public class QueryTestCase {
     /** Test using the defaultindex feature */
     @Test
     void testDefaultIndex() {
-        Query q = newQuery("?query=hi hello keyword:kanoo " +
-                "default:munkz \"phrases too\"&default-index=def");
-        assertEquals("WEAKAND(100) def:hi def:hello keyword:kanoo " +
-                "default:munkz def:\"phrases too\"",
-                q.getModel().getQueryTree().getRoot().toString());
+        Query q = newQuery("?query=hi hello keyword:kanoo default:munkz \"phrases too\"&default-index=def");
+        assertEquals("WEAKAND def:hi def:hello keyword:kanoo default:munkz def:\"phrases too\"",
+                     q.getModel().getQueryTree().getRoot().toString());
     }
 
     /** Test that GET parameter names are case in-sensitive */
@@ -355,10 +358,10 @@ public class QueryTestCase {
     @Test
     void testCopy() {
         Query qs = newQuery("?query=test&rankfeature.something=2");
-        assertEquals("WEAKAND(100) test", qs.getModel().getQueryTree().toString());
-        assertEquals((int) qs.properties().getInteger("rankfeature.something"), 2);
+        assertEquals("WEAKAND test", qs.getModel().getQueryTree().toString());
+        assertEquals(2, (int) qs.properties().getInteger("rankfeature.something"));
         Query qp = new Query(qs);
-        assertEquals("WEAKAND(100) test", qp.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND test", qp.getModel().getQueryTree().getRoot().toString());
         assertFalse(qp.getRanking().getFeatures().isEmpty());
         assertEquals(2.0, qp.getRanking().getFeatures().getDouble("something").getAsDouble(), 0.000001);
     }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.OnnxModelOptions;
@@ -12,6 +13,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
@@ -53,6 +55,10 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         assertEquals(1, result.size());
         assertTrue(result.get(0).validationId().isEmpty());
         assertEquals("Onnx model 'https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx' has changed (estimated cost), need to restart services in container cluster 'cluster1'", result.get(0).getMessage());
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     @Test
@@ -71,6 +77,10 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
         assertStartsWith("Onnx model 'https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx' has changed (model hash)", result);
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     @Test
@@ -80,6 +90,10 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
         assertStartsWith("Onnx model 'https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx' has changed (model option(s))", result);
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     @Test
@@ -91,6 +105,10 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
         assertStartsWith("Onnx model set has changed from [https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx] " +
                                  "to [https://data.vespa-cloud.com/onnx_models/e5-small-v2/model.onnx",
                          result);
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
@@ -161,7 +179,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     }
 
     private static VespaModel hostedModel(DeployState.Builder builder, String executionMode, String modelId) {
-        var servicesXml  = String.format(java.util.Locale.ROOT, """
+        var servicesXml  = Text.format("""
                           <services version='1.0'>
                             <container id='cluster1' version='1.0'>
                               <component id="hf-embedder" type="hugging-face-embedder">
@@ -197,7 +215,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     }
 
     private static VespaModel nonHostedModel(DeployState.Builder builder, String executionMode, String modelId) {
-        var xml = String.format(java.util.Locale.ROOT, """
+        var xml = Text.format("""
                                        <services version='1.0'>
                                          <container id='cluster1' version='1.0'>
                                            <http>

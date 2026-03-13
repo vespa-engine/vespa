@@ -5,7 +5,8 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.json.TokenBuffer;
 
-import static com.yahoo.document.json.readers.JsonParserHelpers.*;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
 
 /**
  * @author arnej

@@ -4,7 +4,9 @@ package com.yahoo.documentapi;
 import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+
+import java.nio.charset.StandardCharsets;
 
 public class VisitorParametersTestCase {
 
@@ -47,8 +49,8 @@ public class VisitorParametersTestCase {
         assertEquals(10001, copy.getToTimestamp());
         assertEquals("CoolVisitor", copy.getVisitorLibrary());
         assertEquals(2, copy.getLibraryParameters().size());
-        assertEquals("dudes", new String(copy.getLibraryParameters().get("groovy")));
-        assertEquals("turtles", new String(copy.getLibraryParameters().get("ninja")));
+        assertEquals("dudes", new String(copy.getLibraryParameters().get("groovy"), StandardCharsets.UTF_8));
+        assertEquals("turtles", new String(copy.getLibraryParameters().get("ninja"), StandardCharsets.UTF_8));
         assertEquals(55, copy.getMaxBucketsPerVisitor());
         assertEquals(DocumentProtocol.Priority.HIGHEST, copy.getPriority());
         assertEquals("extraterrestrial/highway", copy.getRoute().toString());

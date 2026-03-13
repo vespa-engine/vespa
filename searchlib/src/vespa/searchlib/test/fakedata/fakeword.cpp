@@ -427,8 +427,9 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
             unsigned int positions = d->_positions;
             iterator->unpack(docId);
             for (size_t lfi = 0; lfi < matchData.size(); ++lfi) {
-                if (matchData[lfi]->getDocId() != docId)
+                if (!matchData[lfi]->has_data(docId)) {
                     continue;
+                }
                 if (unpack_interleaved_features) {
                     assert(d->_collapsedDocWordFeatures._field_len == matchData[lfi]->getFieldLength());
                     assert(d->_collapsedDocWordFeatures._num_occs == matchData[lfi]->getNumOccs());
@@ -493,8 +494,9 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
             iterator->unpack(docId);
             unsigned int positions = d->_positions;
             for (size_t lfi = 0; lfi < matchData.size(); ++lfi) {
-                if (matchData[lfi]->getDocId() != docId)
+                if (!matchData[lfi]->has_data(docId)) {
                     continue;
+                }
                 if (unpack_interleaved_features) {
                     assert(d->_collapsedDocWordFeatures._field_len == matchData[lfi]->getFieldLength());
                     assert(d->_collapsedDocWordFeatures._num_occs == matchData[lfi]->getNumOccs());
@@ -647,8 +649,9 @@ FakeWord::validate(FieldReader &fieldReader,
             unsigned int positions = d->_positions;
             presidue = positions;
             for (size_t lfi = 0; lfi < matchData.size(); ++lfi) {
-                if (matchData[lfi]->getDocId() != docId)
+                if (!matchData[lfi]->has_data(docId)) {
                     continue;
+                }
                 TMDPI mdpe = matchData[lfi]->end();
                 TMDPI mdp = matchData[lfi]->begin();
                 while (mdp != mdpe) {

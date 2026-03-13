@@ -21,6 +21,7 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
@@ -162,7 +163,7 @@ public class RawRankProfile {
         private final boolean ignoreDefaultRankFeatures;
         private final RankProfile.MatchPhaseSettings matchPhaseSettings;
         private final RankProfile.DiversitySettings diversitySettings;
-        private final int rerankCount;
+        private final Optional<Integer> rerankCount;
         private final int keepRankCount;
         private final int numThreadsPerSearch;
         private final int minHitsPerThread;
@@ -239,7 +240,7 @@ public class RawRankProfile {
             weakandAdjustTarget = compiled.getWeakandAdjustTarget();
             weakandAllowDropAll = compiled.getWeakandAllowDropAll();
             filterThreshold = compiled.getFilterThreshold();
-            keepRankCount = compiled.getKeepRankCount();
+            keepRankCount = compiled.getKeepRankCount().orElse(-1);
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
             secondPhaseRankScoreDropLimit = compiled.getSecondPhaseRankScoreDropLimit();
             globalPhaseRankScoreDropLimit = compiled.getGlobalPhaseRankScoreDropLimit();
@@ -531,15 +532,15 @@ public class RawRankProfile {
                 properties.add(new Pair<>("vespa.matching.filter_threshold", String.valueOf(filterThreshold.getAsDouble())));
             }
             for (var fieldAndThreshold : explicitFieldRankFilterThresholds.entrySet()) {
-                properties.add(new Pair<>(String.format(java.util.Locale.ROOT, "vespa.matching.filter_threshold.%s", fieldAndThreshold.getKey()), String.valueOf(fieldAndThreshold.getValue())));
+                properties.add(new Pair<>(Text.format("vespa.matching.filter_threshold.%s", fieldAndThreshold.getKey()), String.valueOf(fieldAndThreshold.getValue())));
             }
             for (var fieldAndElementGap : activeElementGapsPerField.entrySet()) {
-                properties.add(new Pair<>(String.format(java.util.Locale.ROOT, "vespa.matching.element_gap.%s", fieldAndElementGap.getKey()), fieldAndElementGap.getValue().toString()));
+                properties.add(new Pair<>(Text.format("vespa.matching.element_gap.%s", fieldAndElementGap.getKey()), fieldAndElementGap.getValue().toString()));
             }
             if (matchPhaseSettings != null) {
                 properties.add(new Pair<>("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute()));
                 properties.add(new Pair<>("vespa.matchphase.degradation.ascendingorder", matchPhaseSettings.getAscending() + ""));
-                properties.add(new Pair<>("vespa.matchphase.degradation.maxhits", matchPhaseSettings.getMaxHits() + ""));
+                properties.add(new Pair<>("vespa.matchphase.degradation.maxhits", matchPhaseSettings.getMaxHits().orElse(0L) + ""));
                 properties.add(new Pair<>("vespa.matchphase.degradation.maxfiltercoverage", matchPhaseSettings.getMaxFilterCoverage() + ""));
                 properties.add(new Pair<>("vespa.matchphase.degradation.samplepercentage", matchPhaseSettings.getEvaluationPoint() + ""));
                 properties.add(new Pair<>("vespa.matchphase.degradation.postfiltermultiplier", matchPhaseSettings.getPrePostFilterTippingPoint() + ""));
@@ -550,9 +551,7 @@ public class RawRankProfile {
                 properties.add(new Pair<>("vespa.matchphase.diversity.cutoff.factor", String.valueOf(diversitySettings.getCutoffFactor())));
                 properties.add(new Pair<>("vespa.matchphase.diversity.cutoff.strategy", String.valueOf(diversitySettings.getCutoffStrategy())));
             }
-            if (rerankCount > -1) {
-                properties.add(new Pair<>("vespa.hitcollector.heapsize", rerankCount + ""));
-            }
+            rerankCount.ifPresent(count -> properties.add(new Pair<>("vespa.hitcollector.heapsize", count + "")));
             if (keepRankCount > -1) {
                 properties.add(new Pair<>("vespa.hitcollector.arraysize", keepRankCount + ""));
             }

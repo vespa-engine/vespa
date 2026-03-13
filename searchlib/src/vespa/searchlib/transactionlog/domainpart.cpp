@@ -4,6 +4,7 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <cassert>
@@ -345,6 +346,13 @@ DomainPart::close()
                                 _transLog->GetFileName(), _transLog->getSize()));
     }
     return retval;
+}
+
+uint64_t
+DomainPart::get_size_on_disk() const
+{
+    DiskSpaceCalculator calc;
+    return calc(_byteSize.load(std::memory_order_acquire));
 }
 
 bool

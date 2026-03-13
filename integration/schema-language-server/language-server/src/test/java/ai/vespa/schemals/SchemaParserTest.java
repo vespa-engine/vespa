@@ -22,7 +22,11 @@ import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
-import ai.vespa.schemals.testutils.*;
+import ai.vespa.schemals.testutils.TestLogger;
+import ai.vespa.schemals.testutils.TestSchemaDiagnosticsHandler;
+import ai.vespa.schemals.testutils.TestSchemaMessageHandler;
+import ai.vespa.schemals.testutils.TestSchemaProgressHandler;
+import ai.vespa.schemals.testutils.Utils;
 
 public class SchemaParserTest {
 
@@ -238,6 +242,7 @@ public class SchemaParserTest {
             "src/test/sdfiles/single/defaultdefault.sd",
             "src/test/sdfiles/single/elementwise.sd",
             "src/test/sdfiles/single/embed.sd",
+            "src/test/sdfiles/single/foreach.sd",
             "src/test/sdfiles/single/rankprofilebuiltin.sd",
             "src/test/sdfiles/single/structinfieldset.sd",
             "src/test/sdfiles/single/subqueries.sd",
@@ -319,6 +324,7 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5), // TODO: unused rank-profile functions should throw errors? Also rank-type doesntexist: ... in field?
 
             new BadFileTestCase("src/test/sdfiles/single/featuresinheritance.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/foreachbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodelinput.sd", 6),
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),

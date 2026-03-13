@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.matchers;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.clustercontroller.core.ClusterEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -24,7 +25,7 @@ public class ClusterEventWithDescription extends BaseMatcher<ClusterEvent> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format(Locale.ROOT, "ClusterEvent with description '%s'", expected));
+        description.appendText(Text.format("ClusterEvent with description '%s'", expected));
     }
 
     @Override
@@ -33,7 +34,7 @@ public class ClusterEventWithDescription extends BaseMatcher<ClusterEvent> {
             return;
         }
         ClusterEvent other = (ClusterEvent)item;
-        description.appendText(String.format(Locale.ROOT, "got description '%s'", other.getDescription()));
+        description.appendText(Text.format("got description '%s'", other.getDescription()));
     }
 
     public static ClusterEventWithDescription clusterEventWithDescription(String description) {

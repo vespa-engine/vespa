@@ -20,6 +20,7 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.TimeoutException;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensors;
@@ -338,8 +339,9 @@ public class IndexingProcessorTestCase {
         var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null,
                                         Chunker.throwsOnUse.asMap(),
                                         Map.of("test", new TestEmbedder()),
-                                        FieldGenerator.throwsOnUse.asMap());
-        
+                                        FieldGenerator.throwsOnUse.asMap(),
+                                        MetricReceiver.nullImplementation);
+
         assertNotNull(scripts.getScript(documentTypes.getDocumentType("test")));
 
         var tester = new IndexingProcessorTester(documentTypes, scripts);
@@ -382,7 +384,8 @@ public class IndexingProcessorTestCase {
         var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null,
                                         Chunker.throwsOnUse.asMap(),
                                         Map.of("test", embedder),
-                                        FieldGenerator.throwsOnUse.asMap());
+                                        FieldGenerator.throwsOnUse.asMap(),
+                                        MetricReceiver.nullImplementation);
 
         var processor = new IndexingProcessor(documentTypes, scripts);
         var input = new DocumentPut(testType, "id:ns:test::");
@@ -432,7 +435,8 @@ public class IndexingProcessorTestCase {
             null,
             Chunker.throwsOnUse.asMap(),
             Map.of("test", embedder),
-            FieldGenerator.throwsOnUse.asMap()
+            FieldGenerator.throwsOnUse.asMap(),
+            MetricReceiver.nullImplementation
         );
 
         var processor = new IndexingProcessor(documentTypes, scripts);
@@ -487,7 +491,8 @@ public class IndexingProcessorTestCase {
                 null,
                 Chunker.throwsOnUse.asMap(),
                 Map.of("test", embedder),
-                FieldGenerator.throwsOnUse.asMap()
+                FieldGenerator.throwsOnUse.asMap(),
+                MetricReceiver.nullImplementation
         );
 
         var processor = new IndexingProcessor(documentTypes, scripts);
@@ -529,7 +534,8 @@ public class IndexingProcessorTestCase {
             var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null,
                                             Chunker.throwsOnUse.asMap(),
                                             Map.of("test", new TestEmbedder()),
-                                            FieldGenerator.throwsOnUse.asMap());
+                                            FieldGenerator.throwsOnUse.asMap(),
+                                            MetricReceiver.nullImplementation);
 
             nestedTester = new IndexingProcessorTester(documentTypes, scripts);
             inputType = nestedTester.getDocumentType("test");

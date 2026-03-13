@@ -8,6 +8,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
@@ -39,7 +40,7 @@ public class ContainerInCloudValidatorTest {
     }
 
     private static void runValidatorOnApp(boolean isHosted, String container) throws IOException, SAXException {
-        String servicesXml = String.format(java.util.Locale.ROOT, """
+        String servicesXml = Text.format("""
                         <services version='1.0'>
                           %s
                         </services>

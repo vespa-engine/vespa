@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.custom.CustomerOtelExportParameters;
 import com.yahoo.vespa.flags.custom.Sidecars;
 
 import java.time.Instant;
@@ -51,6 +52,13 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag GCP_ENCLAVE_V2 = defineFeatureFlag(
+            "gcp-enclave-v2", false,
+            List.of("hakonhall"), "2026-03-05", "2026-05-05",
+            "Whether to enable v2 of Vespa Cloud Enclave in GCP",
+            "Takes effect on the next host-admin tick.",
+            CLOUD_ACCOUNT);
+
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
             List.of("hakonhall"), "2025-03-19", "2026-04-10",
@@ -58,16 +66,18 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
+    // TODO(2026-02-20): Remove once this has rolled out, and the overrides have been removed.
     public static final UnboundLongFlag DELETE_IDLE_TENANT_SECONDS = defineLongFlag(
-            "delete-idle-tenant-seconds", -1,
+            "delete-idle-tenant-seconds", 604800,
             List.of("hakonhall"), "2026-02-03", "2026-04-03",
             "If >=0, then (A) the last deploy time is not updated on config server bootstrap, " +
             "and (B) an idle tenant will be deleted after this many seconds (default 604800 = 1 week).",
             "(A) takes effect on cfg bootstrap, (B) on next tick of TenantsMaintainer",
             TENANT_ID);
 
+    // TODO(2026-02-20): Remove once this has rolled out, and the overrides have been removed.
     public static final UnboundBooleanFlag SOFT_DELETE_TENANT = defineFeatureFlag(
-            "soft-delete-tenant", false,
+            "soft-delete-tenant", true,
             List.of("hakonhall"), "2026-01-20", "2026-04-20",
             "When deleting /config/v2/tenants/TENANT recursively - whether to give up (true) or retry (false) on NotEmptyException",
             "Takes effect immediately",
@@ -146,19 +156,11 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2026-03-01",
+            List.of("vekterli"), "2021-02-19", "2026-04-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
             INSTANCE_ID);
-
-    // Do not use. Removing
-    public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
-            "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2026-02-07",
-            "Whether an OpenTelemetry collector should be enabled",
-            "Takes effect at next tick",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
@@ -192,23 +194,30 @@ public class Flags {
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
+    public static final UnboundDoubleFlag AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE = defineDoubleFlag(
+            "autoscaler-target-write-cpu-percentage", 0.95,
+            List.of("hmusum"), "2026-02-15", "2026-08-15",
+            "Target write CPU percentage for autoscaler (e.g., 0.8 = 80%)",
+            "Takes effect on next autoscaler evaluation",
+            INSTANCE_ID, CLUSTER_ID);
+
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2026-02-01",
+            List.of("andreer"), "2023-08-21", "2026-04-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2026-02-01",
+            List.of("andreer"), "2023-08-28", "2026-04-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2026-02-01",
+            List.of("andreer"), "2023-08-28", "2026-04-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
@@ -221,16 +230,9 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
-            "search-handler-threadpool", 10,
-            List.of("bjorncs"), "2023-10-01", "2026-03-01",
-            "Adjust search handler threadpool size",
-            "Takes effect at redeployment",
-            APPLICATION);
-
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
-            List.of("johsol"), "2025-10-17", "2026-03-01",
+            List.of("johsol"), "2025-10-17", "2026-04-01",
             "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
             "Takes effect at redeployment",
             APPLICATION);
@@ -249,9 +251,26 @@ public class Flags {
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+    public static final UnboundBooleanFlag USE_GRAFANA_ALLOY = defineFeatureFlag(
+            "use-grafana-alloy", false,
+            List.of("onur"), "2026-02-17", "2026-08-01",
+            "Whether to use Grafana Alloy instead of otelcol-contrib for telemetry collection",
+            "Takes effect on next host-admin tick",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundJacksonFlag<CustomerOtelExportParameters> CUSTOMER_OTEL_EXPORT = defineJacksonFlag(
+            "customer-otel-export", new CustomerOtelExportParameters(null, null), CustomerOtelExportParameters.class,
+            List.of("onur"), "2026-03-02", "2027-01-01",
+            "Export telemetry to a customer-owned OTel endpoint in addition to the internal otel-gateway. " +
+            "metrics and logs are independently optional. " +
+            "logs.logFileNames is a list of log file enum names (e.g. CONTAINER_VESPA_LOGS, VAR_LOG_MESSAGES).",
+            "Takes effect on next host-admin tick",
+            __ -> true,
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
-            List.of("arnej"), "2023-07-26", "2026-02-01",
+            List.of("arnej"), "2023-07-26", "2027-01-01",
             "If true, force legacy mode for weakAnd query parsing",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -270,13 +289,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
-            "monitoring-jwt", true,
-            List.of("olaa"), "2024-07-05", "2026-05-01",
-            "Whether a monitoring JWT should be issued by the controller",
-            "Takes effect immediately",
-            TENANT_ID, CONSOLE_USER_EMAIL);
-
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
             List.of("olaa"), "2024-10-22", "2026-05-01",
@@ -285,7 +297,7 @@ public class Flags {
 
     public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
             "zookeeper-pre-alloc-size", 65536,
-            List.of("hmusum"), "2024-11-11", "2026-03-01",
+            List.of("hmusum"), "2024-11-11", "2026-04-01",
             "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
@@ -303,13 +315,6 @@ public class Flags {
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
-
-    public static final UnboundIntFlag DOCUMENT_V1_QUEUE_SIZE = defineIntFlag(
-            "document-v1-queue-size", -1,
-            List.of("bjorncs"), "2025-01-14", "2026-03-01",
-            "Size of the document v1 queue. Use -1 for default as determined by 'document-operation-executor.def'",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
             "max-content-node-maintenance-op-concurrency", -1,
@@ -334,7 +339,7 @@ public class Flags {
 
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2026-03-01",
+            List.of("glebashnik"), "2025-04-25", "2026-04-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             __ -> true,
@@ -343,7 +348,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
             "create-tenant-roles", true,
-            List.of("andreer"), "2025-04-28", "2026-02-01",
+            List.of("andreer"), "2025-04-28", "2026-04-01",
             "Whether to create tenant specific roles",
             "Takes effect immediately",
             TENANT_ID
@@ -358,18 +363,10 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
             "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2026-02-01",
+            List.of("andreer"), "2025-05-05", "2026-04-01",
             "Whether to delete tenant specific roles",
             "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
             TENANT_ID
-    );
-
-    public static final UnboundBooleanFlag USE_NEW_PREPARE_FOR_RESTART_METHOD = defineFeatureFlag(
-            "use-new-prepare-for-restart-method", true,
-            List.of("hmusum"), "2025-06-17", "2026-03-01",
-            "Whether to use new logic and new RPC method to do prepareForRestart for content nodes",
-            "Takes effect at next tick",
-            HOSTNAME
     );
 
     public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
@@ -390,11 +387,30 @@ public class Flags {
 
     public static final UnboundStringFlag VESPA_USE_MALLOC_IMPL = defineStringFlag(
             "vespa-use-malloc-impl", "",
-            List.of("hmusum", "johsol"), "2025-09-10", "2026-03-01",
+            List.of("hmusum", "johsol"), "2025-09-10", "2026-12-01",
             "Which malloc implementation to use  " +
                     "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
             "Takes effect at next reboot of the node",
             TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
+    );
+
+    public static final UnboundBooleanFlag WAIT_FOR_APPLY_ON_RESTART = defineFeatureFlag(
+            "wait-for-apply-on-restart", false,
+            List.of("glebashnik"), "2026-02-01", "2026-08-01",
+            "Determines whether triggering of a pending restart waits for `applyOnRestart` to be set to `true` " +
+                    "in the observed config state. In addition, changes service convergence condition bounded to a " +
+                    "current node instead of across multiple nodes, see `RestartOnDeployMaintainer`.",
+            "Takes effect at next run of RestartOnDeployMaintainer.",
+            INSTANCE_ID
+    );
+
+    public static final UnboundBooleanFlag APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG = defineFeatureFlag(
+            "apply-on-restart-for-application-metadata-config", false,
+            List.of("glebashnik"), "2026-02-13", "2026-08-13",
+            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " + 
+                    "This might fix deferring config changes until container restart.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
     );
 
     public static final UnboundDoubleFlag HOST_MEMORY_SERVICES_MIXING_FACTOR = defineDoubleFlag(
@@ -405,6 +421,16 @@ public class Flags {
             "0.0 means none at all, 1.0 means the sum of the memory limits.",
             "Affects future deployments, JVM settings for new config server Podman containers, auto scaling modelling.",
             TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE
+    );
+
+    public static final UnboundDoubleFlag SEARCHNODE_RESERVED_DISK_SPACE_FACTOR = defineDoubleFlag(
+            "searchnode-reserved-disk-space-factor", 0.0,
+            List.of("toregge"), "2026-01-17", "2026-10-16",
+            "How much of the calculated reserved disk space should be added to the used disk space when " +
+                    "reporting disk space usage. " +
+                    "0.0 means none at all, 1.0 means the all of the reserved disk space.",
+            "Takes effect at redeployment.",
+            INSTANCE_ID
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

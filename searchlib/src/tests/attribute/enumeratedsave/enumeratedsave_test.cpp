@@ -840,7 +840,7 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
     sb->seek(1u);
     EXPECT_EQ(7u, sb->getDocId());
     sb->unpack(7u);
-    EXPECT_EQ(md.getDocId(), 7u);
+    EXPECT_TRUE(md.has_ranking_data(7u));
     if (v->getCollectionType() == CollectionType::SINGLE || flagAttr) {
         EXPECT_EQ(md.getWeight(), 1);
     } else if (v->getCollectionType() == CollectionType::ARRAY) {

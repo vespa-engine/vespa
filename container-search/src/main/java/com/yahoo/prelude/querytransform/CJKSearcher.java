@@ -41,16 +41,23 @@ public class CJKSearcher extends Searcher {
     @Override
     public Result search(Query query, Execution execution) {
         Language language = query.getModel().getParsingLanguage();
-        if ( ! language.isCjk()) return execution.search(query);
 
         QueryTree tree = query.getModel().getQueryTree();
-        tree.setRoot(transform(tree.getRoot(), execution.context().getIndexFacts().newSession(query)));
-        query.trace("Rewriting for CJK behavior for implicit phrases", true, 2);
+        boolean[] modified = { false };
+        Item newRoot = transform(tree.getRoot(), language, execution.context().getIndexFacts().newSession(query), modified);
+        if (modified[0]) {
+            tree.setRoot(newRoot);
+            query.trace("Rewriting for CJK behavior for implicit phrases", true, 2);
+        }
         return execution.search(query);
     }
 
-    private Item transform(Item item, IndexFacts.Session indexFacts) {
+    private Item transform(Item item, Language language, IndexFacts.Session indexFacts, boolean[] modified) {
+        if (item.getLanguage() != Language.UNKNOWN)
+            language = item.getLanguage();
+
         if (item instanceof PhraseItem phrase) {
+            if ( ! language.isCjk()) return item;
             if (phrase.isExplicit()) return item;
             if (indexFacts.getIndex(phrase.getIndexName()).isNGram()) return item;
             if (hasOverlappingTokens(phrase)) return item;
@@ -65,13 +72,15 @@ public class CJKSearcher extends Searcher {
                 else
                     replacement.addItem(child); // should never get here
             }
+            modified[0] = true;
             return replacement;
         }
         else if (item instanceof PhraseSegmentItem segment) {
+            if ( ! language.isCjk()) return item;
             if (segment.isExplicit() || hasOverlappingTokens(segment))
                 return item;
-            else
-                return new AndSegmentItem(segment);
+            modified[0] = true;
+            return new AndSegmentItem(segment);
         }
         else if (item instanceof SegmentItem) {
             return item; // avoid descending into AndSegmentItems and similar
@@ -79,7 +88,7 @@ public class CJKSearcher extends Searcher {
         else if (item instanceof CompositeItem composite) {
             for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext();) {
                 Item child = i.next();
-                Item transformedItem = transform(child, indexFacts);
+                Item transformedItem = transform(child, language, indexFacts, modified);
                 if (child != transformedItem && composite.acceptsItemsOfType(transformedItem.getItemType()))
                     i.set(transformedItem);
             }

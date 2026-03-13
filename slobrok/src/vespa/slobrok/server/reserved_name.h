@@ -2,6 +2,7 @@
 #pragma once
 
 #include "named_service.h"
+
 #include <chrono>
 
 namespace slobrok {
@@ -15,20 +16,19 @@ namespace slobrok {
  * a reservation expires 15 seconds after it is created.
  **/
 
-class ReservedName: public NamedService
-{
+class ReservedName : public NamedService {
 private:
     using steady_clock = std::chrono::steady_clock;
     steady_clock::time_point _reservedTime;
-    int64_t milliseconds() const;
+    int64_t                  milliseconds() const;
+
 public:
     const bool isLocal;
 
-    ReservedName(const std::string &name, const std::string &spec, bool local);
+    ReservedName(const std::string& name, const std::string& spec, bool local);
     bool stillReserved() const;
 };
 
 //-----------------------------------------------------------------------------
 
 } // namespace slobrok
-

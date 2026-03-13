@@ -27,6 +27,7 @@ import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForTri
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
+import com.yahoo.vespa.model.application.validation.first.MinimumNodeCountValidator;
 import com.yahoo.vespa.model.application.validation.first.RedundancyValidator;
 import com.yahoo.yolean.Exceptions;
 
@@ -124,6 +125,7 @@ public class Validation {
 
     private static void validateFirstTimeDeployment(Execution execution) {
         new RedundancyValidator().validate((Context) execution);
+        new MinimumNodeCountValidator().validate((Context) execution);
     }
 
     private static void validateChanges(Execution execution) {
@@ -140,6 +142,7 @@ public class Validation {
         new NodeResourceChangeValidator().validate(execution);
         new CertificateRemovalChangeValidator().validate(execution);
         new RedundancyValidator().validate(execution);
+        new MinimumNodeCountValidator().validate(execution);
         new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
         new RestartOnDeployForLocalLLMValidator().validate(execution);
         new RestartOnDeployForTritonOnnxRuntimeValidator().validate(execution);

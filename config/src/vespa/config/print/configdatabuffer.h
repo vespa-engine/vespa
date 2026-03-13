@@ -5,7 +5,7 @@
 #include <string>
 
 namespace vespalib {
-    class Slime;
+class Slime;
 }
 
 namespace config {
@@ -13,23 +13,22 @@ namespace config {
 /**
  * Simple data container for slime object.
  */
-class ConfigDataBuffer
-{
+class ConfigDataBuffer {
 public:
-    ConfigDataBuffer(const ConfigDataBuffer &) = delete;
-    ConfigDataBuffer & operator = (const ConfigDataBuffer &) = delete;
-    ConfigDataBuffer(ConfigDataBuffer &&) noexcept = default;
-    ConfigDataBuffer & operator = (ConfigDataBuffer &&) noexcept = default;
+    ConfigDataBuffer(const ConfigDataBuffer&) = delete;
+    ConfigDataBuffer& operator=(const ConfigDataBuffer&) = delete;
+    ConfigDataBuffer(ConfigDataBuffer&&) noexcept = default;
+    ConfigDataBuffer& operator=(ConfigDataBuffer&&) noexcept = default;
     ConfigDataBuffer();
     ~ConfigDataBuffer();
-    vespalib::Slime & slimeObject() { return *_slime; }
-    const vespalib::Slime & slimeObject() const { return *_slime; }
-    const std::string & getEncodedString() const { return _encoded; }
-    void setEncodedString(std::string_view encoded) { _encoded = encoded; }
+    vespalib::Slime&       slimeObject() { return *_slime; }
+    const vespalib::Slime& slimeObject() const { return *_slime; }
+    const std::string&     getEncodedString() const { return _encoded; }
+    void                   setEncodedString(std::string_view encoded) { _encoded = encoded; }
+
 private:
     std::unique_ptr<vespalib::Slime> _slime;
-    std::string _encoded;
+    std::string                      _encoded;
 };
 
 } // namespace config
-

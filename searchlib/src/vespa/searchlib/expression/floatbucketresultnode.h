@@ -47,6 +47,8 @@ public:
     }
     const FloatBucketResultNode& getNullBucket() const override { return getNull(); }
     static const FloatBucketResultNode & getNull() { return _nullResult; }
+
+    std::string_view friendly_type_name() const noexcept override { return "float_bucket"; }
 };
 
 }

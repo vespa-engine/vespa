@@ -6,6 +6,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.Test;
 
@@ -32,7 +33,8 @@ public class ScriptManagerTestCase {
         ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null,
                                                     Chunker.throwsOnUse.asMap(),
                                                     Embedder.throwsOnUse.asMap(),
-                                                    FieldGenerator.throwsOnUse.asMap());
+                                                    FieldGenerator.throwsOnUse.asMap(),
+                                                    MetricReceiver.nullImplementation);
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newsarticle")));
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
@@ -49,7 +51,8 @@ public class ScriptManagerTestCase {
         ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null,
                                                     Chunker.throwsOnUse.asMap(),
                                                     Embedder.throwsOnUse.asMap(),
-                                                    FieldGenerator.throwsOnUse.asMap());
+                                                    FieldGenerator.throwsOnUse.asMap(),
+                                                    MetricReceiver.nullImplementation);
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newssummary")));
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
@@ -60,7 +63,8 @@ public class ScriptManagerTestCase {
         ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null,
                                                     Chunker.throwsOnUse.asMap(),
                                                     Embedder.throwsOnUse.asMap(),
-                                                    FieldGenerator.throwsOnUse.asMap());
+                                                    FieldGenerator.throwsOnUse.asMap(),
+                                                    MetricReceiver.nullImplementation);
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
 
@@ -70,7 +74,8 @@ public class ScriptManagerTestCase {
         ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null,
                                                     Chunker.throwsOnUse.asMap(),
                                                     Embedder.throwsOnUse.asMap(),
-                                                    FieldGenerator.throwsOnUse.asMap());
+                                                    FieldGenerator.throwsOnUse.asMap(),
+                                                    MetricReceiver.nullImplementation);
         for (Iterator<DocumentType> it = typeMgr.documentTypeIterator(); it.hasNext(); ) {
             assertNull(scriptMgr.getScript(it.next()));
         }
@@ -90,7 +95,8 @@ public class ScriptManagerTestCase {
         ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null,
                                                     Chunker.throwsOnUse.asMap(),
                                                     Embedder.throwsOnUse.asMap(),
-                                                    FieldGenerator.throwsOnUse.asMap());
+                                                    FieldGenerator.throwsOnUse.asMap(),
+                                                    MetricReceiver.nullImplementation);
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newsarticle"), "title"));
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newsarticle"), "weight"));
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newsarticle"), "uri"));

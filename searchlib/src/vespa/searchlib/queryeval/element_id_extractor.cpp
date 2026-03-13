@@ -9,7 +9,7 @@ void
 ElementIdExtractor::get_element_ids(const fef::TermFieldMatchData& tfmd, uint32_t docid,
                                     std::vector<uint32_t>& element_ids)
 {
-    if (tfmd.getDocId() == docid) {
+    if (tfmd.has_data(docid)) {
         int32_t prevId(-1);
         for (auto element: tfmd) {
             uint32_t id(element.getElementId());
@@ -25,7 +25,7 @@ void
 ElementIdExtractor::and_element_ids_into(const fef::TermFieldMatchData& tfmd, uint32_t docid,
                                          std::vector<uint32_t>& element_ids)
 {
-    if (tfmd.getDocId() == docid) {
+    if (tfmd.has_data(docid)) {
         size_t toKeep(0);
         int32_t id(-1);
         auto it = tfmd.begin();

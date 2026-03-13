@@ -63,7 +63,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Specification for the conversion of YQL+ expressions to Vespa search queries.
@@ -450,6 +459,70 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testSameElementWithElementFilter() {
+        // Test with array of element filters
+        QueryTree queryTree = parse("select * from sources * where myfield contains ({elementFilter:[1,2,5]} sameElement(name contains 'John'))");
+        SameElementItem sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(1, 2, 5), sameElem.getElementFilter(), "Element filter should match");
+
+        // Test with single element filter
+        queryTree = parse("select * from sources * where myfield contains ({elementFilter:42} sameElement(name contains 'Jane'))");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(42), sameElem.getElementFilter(), "Single element filter should work");
+
+        // Test with zero value (should be valid)
+        queryTree = parse("select * from sources * where myfield contains ({elementFilter:0} sameElement(name contains 'Zero'))");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(0), sameElem.getElementFilter(), "Zero should be valid");
+
+        // Test deduplication and sorting
+        queryTree = parse("select * from sources * where myfield contains ({elementFilter:[5,2,5,1,2]} sameElement(name contains 'Dedup'))");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(1, 2, 5), sameElem.getElementFilter(), "Should be sorted and deduplicated");
+    }
+
+    @Test
+    void testSameElementWithInvalidElementFilter() {
+        // Test negative number
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:-1} sameElement(name contains 'John'))",
+                new IllegalArgumentException("element id must be non-negative, got: -1"));
+
+        // Test negative in array
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:[1,-2,3]} sameElement(name contains 'John'))",
+                new IllegalArgumentException("element id must be non-negative, got: -2"));
+
+        // Test floating point number
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:1.5} sameElement(name contains 'John'))",
+                new IllegalArgumentException("element id must be integer, not floating point number. Got: 1.5"));
+
+        // Test floating point in array
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:[1,2.5,3]} sameElement(name contains 'John'))",
+                new IllegalArgumentException("element id must be integer, not floating point number. Got: 2.5"));
+    }
+
+    @Test
+    void testIndexedAccessRewritesToSameElement() {
+        // ints[1] = 2 should rewrite to ints contains ({elementFilter:[1]}sameElement(2))
+        QueryTree qt = parse("select * from sources * where strings[1] = \"foo\"");
+        SameElementItem se = (SameElementItem) qt.getRoot();
+        assertEquals("strings", se.getFieldName());
+        assertEquals(List.of(1), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
+
+        qt = parse("select * from sources * where ints[1] = 2");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals("ints", se.getFieldName());
+        assertEquals(List.of(1), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
+
+        qt = parse("select * from sources * where bools[0] = true");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals("bools", se.getFieldName());
+        assertEquals(List.of(0), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
+    }
+
+    @Test
     void testPhrase() {
         assertParse("select foo from bar where baz contains phrase(\"a\", \"b\")",
                 "baz:\"a b\"");
@@ -508,7 +581,7 @@ public class YqlParserTestCase {
     }
 
     @Test
-    void testRaw() {
+    void testRawContainsLiteral() {
         // Default: Not raw, for comparison
         Item root = parse("select foo from bar where baz contains (\"yoni jo dima\")").getRoot();
         assertEquals("baz:'yoni jo dima'", root.toString());
@@ -520,16 +593,6 @@ public class YqlParserTestCase {
         assertInstanceOf(WordItem.class, root);
         assertFalse(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem) root).getWord());
-
-        root = parse("select foo from bar where {grammar:\"all\"}userInput(\"yoni jo dima\")").getRoot();
-        assertInstanceOf(AndItem.class, root);
-        AndItem andItem = (AndItem) root;
-        assertEquals(3, andItem.getItemCount());
-
-        root = parse("select foo from bar where {grammar:\"raw\"}userInput(\"yoni jo dima\")").getRoot();
-        assertInstanceOf(WordItem.class, root);
-        assertInstanceOf(ExactStringItem.class, root);
-        assertEquals("yoni jo dima", ((WordItem) root).getWord());
     }
 
     @Test
@@ -537,7 +600,7 @@ public class YqlParserTestCase {
         // Default for comparison
         Item root = parse("select foo from bar where userInput(\"yoni jo dima\")").getRoot();
         assertInstanceOf(WeakAndItem.class, root);
-        assertEquals("WEAKAND(100) default:yoni default:jo default:dima", root.toString());
+        assertEquals("WEAKAND default:yoni default:jo default:dima", root.toString());
         for (Item child : ((WeakAndItem)root).items()) {
             assertInstanceOf(WordItem.class, child);
             WordItem childWord = (WordItem)child;
@@ -548,7 +611,7 @@ public class YqlParserTestCase {
 
         root = parse("select foo from bar where {grammar:\"linguistics\"}userInput(\"yoni jo dima\")").getRoot();
         assertInstanceOf(WeakAndItem.class, root);
-        assertEquals("WEAKAND(100) default:yoni default:jo default:dima", root.toString());
+        assertEquals("WEAKAND default:yoni default:jo default:dima", root.toString());
         for (Item child : ((WeakAndItem)root).items()) {
             assertInstanceOf(WordItem.class, child);
             WordItem childWord = (WordItem)child;
@@ -683,7 +746,7 @@ public class YqlParserTestCase {
         QueryTree parsed = parse("select * from sources * where " +
                                  "weakAnd(field1 contains ({weight: 120}'term1'), " +
                                  "        field1 contains ({weight: 70}'term2'))");
-        assertEquals("WEAKAND(100) field1:term1!120 field1:term2!70", parsed.toString());
+        assertEquals("WEAKAND field1:term1!120 field1:term2!70", parsed.toString());
     }
 
     @Test
@@ -830,7 +893,7 @@ public class YqlParserTestCase {
     @Test
     void testNearestNeighbor() {
         assertParse("select foo from bar where nearestNeighbor(semantic_embedding, my_vector);",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=0}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true}");
         assertParse("select foo from bar where {targetHits: 37} nearestNeighbor(semantic_embedding, my_vector)",
                 "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=37}");
         assertParse("select foo from bar where {approximate: false, hnsw.exploreAdditionalHits: 8, targetHits: 3} nearestNeighbor(semantic_embedding, my_vector)",
@@ -906,14 +969,16 @@ public class YqlParserTestCase {
     @Test
     void testWeakAnd() {
         assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")",
-                "WEAKAND(100) a:A b:B");
+                "WEAKAND a:A b:B");
         assertParse("select foo from bar where {targetHits: 37}weakAnd(a contains \"A\", " +
-                "b contains \"B\")",
-                "WEAKAND(37) a:A b:B");
+                    "b contains \"B\")",
+                    "WEAKAND(37) a:A b:B");
+        assertParse("select foo from bar where {totalTargetHits: 37}weakAnd(a contains \"A\", " +
+                    "b contains \"B\")",
+                    "WEAKAND {totalTargetHits=37} a:A b:B");
 
-        QueryTree tree = parse("select foo from bar where weakAnd(a " +
-                "contains \"A\", b contains \"B\")");
-        assertEquals("WEAKAND(100) a:A b:B", tree.toString());
+        QueryTree tree = parse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")");
+        assertEquals("WEAKAND a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
     }
 
@@ -1356,10 +1421,15 @@ public class YqlParserTestCase {
         parser.setUserQuery(createUserQuery());
         var query = parse("select * from sources * where field in (42, 22L, -7, @foonumeric)");
         assertNumericInItem("field", new long[]{-11, -7, 22, 24, 25, 26, 42}, query);
+
         parser.setUserQuery(createUserQuery());
         query = parse("select * from sources * where string in ('a','b', @foostring)");
         assertStringInItem("string", new String[]{"a","b","might","this", "work"}, query);
         parser.setUserQuery(null);
+
+        query = parse("select * from sources * where {ranked:false}string in ('a','b')");
+        assertFalse(query.getRoot().isRanked());
+
         assertParseFail("select * from sources * where field in (29.9, -7.4)",
                 new ClassCastException("Cannot cast java.lang.Double to java.lang.Long"));
         assertParseFail("select * from sources * where string in ('a', 25L)",
@@ -1619,6 +1689,30 @@ public class YqlParserTestCase {
         for (VespaGroupingStep step : steps)
             actual.add(step.continuations().toString() + step.getOperation());
         return actual.toString();
+    }
+
+    @Test
+    void testExplicitEnglishOnContainsSetsLanguage() {
+        QueryTree tree = parse("select * from sources * where foo contains ({language: 'en'}\"hello\")");
+        Item root = tree.getRoot();
+        assertEquals(Language.ENGLISH, root.getLanguage(),
+                "Explicit {language: 'en'} on contains should set ENGLISH, not UNKNOWN");
+    }
+
+    @Test
+    void testExplicitFrenchOnContainsSetsLanguage() {
+        QueryTree tree = parse("select * from sources * where foo contains ({language: 'fr'}\"hello\")");
+        Item root = tree.getRoot();
+        assertEquals(Language.FRENCH, root.getLanguage(),
+                "Explicit {language: 'fr'} on contains should set FRENCH");
+    }
+
+    @Test
+    void testNoLanguageOnContainsStaysUnknown() {
+        QueryTree tree = parse("select * from sources * where foo contains \"hello\"");
+        Item root = tree.getRoot();
+        assertEquals(Language.UNKNOWN, root.getLanguage(),
+                "No language annotation on contains should leave UNKNOWN");
     }
 
 }

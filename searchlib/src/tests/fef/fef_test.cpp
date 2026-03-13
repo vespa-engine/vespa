@@ -4,12 +4,14 @@
 #include <vespa/searchlib/fef/filter_threshold.h>
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/searchlib/queryeval/element_id_extractor.h>
+#include <vespa/searchlib/queryeval/match_span.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("fef_test");
 
 using namespace search::fef;
 using search::queryeval::ElementIdExtractor;
+using search::queryeval::MatchSpan;
 using std::shared_ptr;
 using search::feature_t;
 
@@ -24,7 +26,7 @@ std::vector<uint32_t> elems(std::vector<uint32_t> element_ids) {
 void set_elems(TermFieldMatchData& tfmd, uint32_t docid, const std::vector<uint32_t>& element_ids) {
     tfmd.reset(docid);
     for (auto element_id: element_ids) {
-        tfmd.appendPosition({element_id, 0, 1, 1});
+        tfmd.appendPosition({element_id, 1, 1, 3});
     }
     tfmd.setNumOccs(element_ids.size());
     tfmd.setFieldLength(100);
@@ -40,6 +42,10 @@ void filter_elems(TermFieldMatchData& tfmd, uint32_t docid, const std::vector<ui
     tfmd.filter_elements(docid, { element_ids.data(), element_ids.size() });
 }
 
+void filter_match_spans(TermFieldMatchData& tfmd, uint32_t docid, const std::vector<MatchSpan>& match_spans) {
+    tfmd.filter_match_spans(docid, { match_spans.data(), match_spans.size() });
+}
+
 }
 
 TEST(FefTest, test_layout)
@@ -47,7 +53,7 @@ TEST(FefTest, test_layout)
     {
         TermFieldMatchData tmd;
         EXPECT_EQ(IllegalFieldId, tmd.getFieldId());
-        EXPECT_EQ(TermFieldMatchData::invalidId(), tmd.getDocId());
+        EXPECT_TRUE(tmd.has_invalid_docid());
     }
     MatchDataLayout mdl;
     EXPECT_EQ(mdl.allocTermField(0), 0u);
@@ -137,10 +143,10 @@ TEST(FefTest, term_field_match_data_filter_elements_normal)
     filter_elems(tfmd, docid3, {2, 3});
     EXPECT_EQ(elems({3}), get_elems(tfmd, docid3));
     EXPECT_EQ(1, tfmd.getNumOccs());
-    EXPECT_EQ(docid3, tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_ranking_data(docid3));
     filter_elems(tfmd, docid3, {1, 2});
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
-    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_invalid_docid());
 }
 
 TEST(FefTest, term_field_match_data_filter_elements_future_match_data)
@@ -150,7 +156,7 @@ TEST(FefTest, term_field_match_data_filter_elements_future_match_data)
     set_elems(tfmd, docid3, {1, 3});
     filter_elems(tfmd, docid2, {});
     EXPECT_EQ(elems({1, 3}), get_elems(tfmd, docid3));
-    EXPECT_EQ(docid3, tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_ranking_data(docid3));
 }
 
 TEST(FefTest, term_field_match_data_filter_elements_past_match_data)
@@ -160,7 +166,7 @@ TEST(FefTest, term_field_match_data_filter_elements_past_match_data)
     set_elems(tfmd, docid3, {1, 3});
     filter_elems(tfmd, docid4, {1, 2, 3});
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
-    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_invalid_docid());
 }
 
 TEST(FefTest, term_field_match_data_filter_elements_empty_filter)
@@ -169,17 +175,59 @@ TEST(FefTest, term_field_match_data_filter_elements_empty_filter)
     set_elems(tfmd, docid3, {1, 3});
     filter_elems(tfmd, docid3, {});
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
-    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_invalid_docid());
 }
 
 TEST(FefTest, term_field_match_data_filter_elements_empty_match_data)
 {
     TermFieldMatchData tfmd;
     set_elems(tfmd, docid3, {});
-    EXPECT_EQ(docid3, tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_ranking_data(docid3));
     filter_elems(tfmd, docid3, {1, 2, 3}); // Clear empty (before and after filtering) match data
     EXPECT_EQ(elems({}), get_elems(tfmd, docid3));
-    EXPECT_EQ(TermFieldMatchData::invalidId(), tfmd.getDocId());
+    EXPECT_TRUE(tfmd.has_invalid_docid());
+}
+
+TEST(FefTest, term_field_match_data_filter_match_spans)
+{
+    TermFieldMatchData tfmd;
+    constexpr uint32_t field_id = 7;
+    tfmd.setFieldId(field_id);
+    set_elems(tfmd, docid3, {1, 3});
+    // match span covers all match data
+    filter_match_spans(tfmd, docid3, {{field_id, {0, 0}, {5, 0}}});
+    EXPECT_TRUE(tfmd.has_ranking_data(docid3));
+    EXPECT_EQ(elems({1, 3}), get_elems(tfmd, docid3));
+    set_elems(tfmd, docid3, {1, 3});
+    // Match span is before match data in element 1
+    filter_match_spans(tfmd, docid3, {{field_id, {1, 0}, {1, 0}}});
+    EXPECT_TRUE(tfmd.has_invalid_docid());
+    set_elems(tfmd, docid3, {1, 3});
+    // Match span is after match data in element 1
+    filter_match_spans(tfmd, docid3, {{field_id, {1, 2}, {1, 2}}});
+    EXPECT_TRUE(tfmd.has_invalid_docid());
+    set_elems(tfmd, docid3, {1, 3});
+    // Match span covers match data in element 1
+    filter_match_spans(tfmd, docid3, {{field_id, {1, 1}, {1, 1}}});
+    EXPECT_TRUE(tfmd.has_ranking_data(docid3));
+    EXPECT_EQ(elems({1}), get_elems(tfmd, docid3));
+    // Match span is before current field
+    set_elems(tfmd, docid3, {1, 3});
+    filter_match_spans(tfmd, docid3, {{field_id - 1, {1, 1}, {1, 1}}});
+    EXPECT_TRUE(tfmd.has_invalid_docid());
+    set_elems(tfmd, docid3, {1, 3});
+    // Match span is after current field
+    filter_match_spans(tfmd, docid3, {{field_id + 1, {1, 1}, {1, 1}}});
+    EXPECT_TRUE(tfmd.has_invalid_docid());
+    set_elems(tfmd, docid3, {1, 3});
+    // match spans covers elements 2, 3 and 4
+    filter_match_spans(tfmd, docid3, {
+                           {field_id, {2, 0}, {2, 1}},
+                           {field_id, {3, 0}, {3, 1}},
+                           {field_id, {4, 0}, {4, 1}}
+                       });
+    EXPECT_TRUE(tfmd.has_ranking_data(docid3));
+    EXPECT_EQ(elems({3}), get_elems(tfmd, docid3));
 }
 
 TEST(FefTest, verify_size_of_essential_fef_classes) {

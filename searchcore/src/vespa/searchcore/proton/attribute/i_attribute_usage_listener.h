@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "attribute_usage_stats.h"
+
 namespace proton {
 
 /*

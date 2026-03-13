@@ -237,6 +237,7 @@ unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
     }
     TermFieldMatchData *tfmd = matchData[0];
     tfmd->reset(docId);
+    tfmd->clear_hidden_from_ranking();
     uint32_t elementId = 0;
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++elementId) {
         int32_t elementWeight = 1;
@@ -627,6 +628,7 @@ unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
     }
     TermFieldMatchData *tfmd = matchData[0];
     tfmd->reset(docId);
+    tfmd->clear_hidden_from_ranking();
     uint32_t elementId = 0;
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++elementId) {
         int32_t elementWeight = 1;

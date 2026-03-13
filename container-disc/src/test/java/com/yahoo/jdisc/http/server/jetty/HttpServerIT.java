@@ -76,7 +76,7 @@ import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.jdisc.Response.Status.REQUEST_TOO_LONG;
-import static com.yahoo.jdisc.Response.Status.REQUEST_URI_TOO_LONG;
+
 import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
 import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.CONNECTION;
@@ -156,14 +156,14 @@ public class HttpServerIT {
     }
 
     @Test
-    void requireThatTooLongInitLineReturns414() throws Exception {
+    void requireThatTooLongInitLineReturns431() throws Exception {
         final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder()
                         .requestHeaderSize(1));
         driver.client().get("/status.html")
-                .expectStatusCode(is(REQUEST_URI_TOO_LONG));
+                .expectStatusCode(is(431));
         assertTrue(driver.close());
     }
 
@@ -208,9 +208,9 @@ public class HttpServerIT {
                 new ConnectorConfig.Builder().requestHeaderSize(1),
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().get("/status.html")
-                .expectStatusCode(is(REQUEST_URI_TOO_LONG));
+                .expectStatusCode(is(431));
         RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));
-        assertEquals(414, entry.statusCode().getAsInt());
+        assertEquals(431, entry.statusCode().getAsInt());
         assertTrue(driver.close());
     }
 
@@ -716,7 +716,7 @@ public class HttpServerIT {
         for (int i = 0; i < 1000; i++) {
             builder.append(i);
         }
-        byte[] content = builder.toString().getBytes();
+        byte[] content = builder.toString().getBytes(UTF_8);
         for (int i = 0; i < 100; i++) {
             driver.client().newPost("/status.html").setBinaryContent(content).execute()
                     .expectStatusCode(is(OK));
@@ -1122,7 +1122,7 @@ public class HttpServerIT {
         public ContentChannel handleRequest(Request request, ResponseHandler handler) {
             var ch = handler.handleResponse(new Response(OK));
             for (var value : request.headers().get(headerName)) {
-                ch.write(ByteBuffer.wrap((value + "\n").getBytes()), null);
+                ch.write(ByteBuffer.wrap((value + "\n").getBytes(java.nio.charset.StandardCharsets.UTF_8)), null);
             }
             ch.close(null);
             return null;

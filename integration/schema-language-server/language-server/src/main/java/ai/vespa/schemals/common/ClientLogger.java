@@ -2,6 +2,7 @@ package ai.vespa.schemals.common;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import org.eclipse.lsp4j.MessageType;
 
@@ -26,10 +27,10 @@ public class ClientLogger {
 
     public static String errorToString(Exception ex) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream logger = new PrintStream(outputStream);
+        PrintStream logger = new PrintStream(outputStream, true, StandardCharsets.UTF_8);
         ex.printStackTrace(logger);
 
-        return outputStream.toString();
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 
     public void error(Exception ex) {

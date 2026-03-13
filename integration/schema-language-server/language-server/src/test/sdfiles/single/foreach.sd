@@ -1,0 +1,17 @@
+schema foreach {
+    document foreach {
+        field foo type tensor<bfloat16>(x[]) {
+            indexing: attribute
+        }
+    }
+
+    rank-profile profile {
+        first-phase {
+            expression: foreach(terms, N, term(N).significance, true, max)
+        }
+
+        function func() {
+            expression: map(attribute(foo), f(N)(N+foreach(fields, N, attribute(N).count, "aaa", sum)))
+        }
+    }
+}

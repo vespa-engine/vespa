@@ -217,6 +217,32 @@ func stripNameSpacesKeepSuffix(input string) string {
 	return stripped + suffix
 }
 
+// stripTemplateParams abbreviates template parameters with <...>
+// 'MultiTermHashFilter<IntegerHashFilterWrapper<true> >::doSeek' -> 'MultiTermHashFilter<...>::doSeek'
+func stripTemplateParams(input string) string {
+	var result strings.Builder
+	depth := 0
+
+	for i := 0; i < len(input); i++ {
+		c := input[i]
+		switch c {
+		case '<':
+			depth++
+		case '>':
+			depth--
+			if depth == 0 {
+				result.WriteString("<...>")
+			}
+		default:
+			if depth == 0 {
+				result.WriteByte(c)
+			}
+		}
+	}
+
+	return result.String()
+}
+
 type perfSample struct {
 	source slime.Value
 }
@@ -466,6 +492,9 @@ func (p protonTrace) globalFilterPerf() *topNPerf {
 		name := sample.name()
 		if sample.isEnumSample() {
 			name = stripNameSpacesKeepSuffix(name)
+			if len(name) > 80 {
+				name = stripTemplateParams(name)
+			}
 		}
 		perf.addSample(name, sample.count(), sample.selfTimeMs())
 	})

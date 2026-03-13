@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
@@ -33,7 +34,7 @@ public class RestartOnDeployForLocalLLMValidator implements ChangeValidator {
 
         // Only restart services if we use a local LLM in both the next and previous generation
         for (var clusterId : intersect(previousClustersWithLocalLLM, nextClustersWithLocalLLM)) {
-            String message = String.format(java.util.Locale.ROOT, "Need to restart services in %s due to use of local LLM", clusterId);
+            String message = Text.format("Need to restart services in %s due to use of local LLM", clusterId);
             context.require(new VespaRestartAction(
                     clusterId,
                     message,

@@ -93,17 +93,16 @@ TEST_F(NearestNeighborQueryNodeTest, unpack_match_data_for_nearest_neighbor_quer
     td.addField(field_id).setHandle(handle);
     auto md = MatchData::makeTestInstance(handle + 1, handle + 1);
     auto tfmd = md->resolveTermField(handle);
-    auto invalid_id = TermFieldMatchData::invalidId();
-    EXPECT_EQ(invalid_id, tfmd->getDocId());
+    EXPECT_TRUE(tfmd->has_invalid_docid());
     IndexEnvironment ie;
     node->unpack_match_data(1, *md, ie, ElementIds::select_all());
-    EXPECT_EQ(invalid_id, tfmd->getDocId());
+    EXPECT_TRUE(tfmd->has_invalid_docid());
     constexpr double distance = 1.5;
     node->set_distance(distance);
     node->unpack_match_data(2, *md, ie, ElementIds::select_all());
-    EXPECT_EQ(2, tfmd->getDocId());
+    EXPECT_TRUE(tfmd->has_ranking_data(2));
     EXPECT_EQ(distance * 2, tfmd->getRawScore());
     node->reset();
     node->unpack_match_data(3, *md, ie, ElementIds::select_all());
-    EXPECT_EQ(2, tfmd->getDocId());
+    EXPECT_TRUE(tfmd->has_ranking_data(2));
 }

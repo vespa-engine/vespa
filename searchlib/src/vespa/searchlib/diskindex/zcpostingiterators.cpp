@@ -132,7 +132,11 @@ template <bool bigEndian>
 void
 ZcRareWordPostingIteratorBase<bigEndian>::doUnpack(uint32_t docId)
 {
-    if (!_matchData.valid() || getUnpacked()) {
+    if (!_matchData.valid()) {
+        return;
+    }
+    if (getUnpacked()) {
+        _matchData[0]->clear_hidden_from_ranking();
         return;
     }
     assert(docId == getDocId());
@@ -142,9 +146,11 @@ ZcRareWordPostingIteratorBase<bigEndian>::doUnpack(uint32_t docId)
         } else {
             _decodeContext->skipFeatures(1);
             _matchData[0]->reset(docId);
+            _matchData[0]->clear_hidden_from_ranking();
         }
     } else {
         _matchData[0]->reset(docId);
+        _matchData[0]->clear_hidden_from_ranking();
     }
     if (_decode_interleaved_features && _unpack_interleaved_features) {
         TermFieldMatchData *tfmd = _matchData[0];
@@ -604,7 +610,11 @@ template <bool bigEndian>
 void
 ZcPostingIterator<bigEndian>::doUnpack(uint32_t docId)
 {
-    if (!_matchData.valid() || getUnpacked()) {
+    if (!_matchData.valid()) {
+        return;
+    }
+    if (getUnpacked()) {
+        _matchData[0]->clear_hidden_from_ranking();
         return;
     }
     assert(docId == getDocId());
@@ -621,6 +631,7 @@ ZcPostingIterator<bigEndian>::doUnpack(uint32_t docId)
         _decodeContext->unpackFeatures(_matchData, docId);
     } else {
         _matchData[0]->reset(docId);
+        _matchData[0]->clear_hidden_from_ranking();
     }
     if (_decode_interleaved_features && _unpack_interleaved_features) {
         TermFieldMatchData *tfmd = _matchData[0];

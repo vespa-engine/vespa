@@ -9,6 +9,7 @@ import com.yahoo.slime.SlimeStream;
 import com.yahoo.slime.SlimeUtils;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -87,7 +88,7 @@ public class TestDescriptor {
         addJsonArrayForTests(tests, JSON_FIELD_STAGING_SETUP_TESTS, TestCategory.stagingsetuptest);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         uncheck(() -> new JsonFormat(/*compact*/false).encode(out, slime));
-        return out.toString();
+        return out.toString(StandardCharsets.UTF_8);
     }
 
     private void addJsonArrayForTests(Cursor testsRoot, String fieldName, TestCategory category) {

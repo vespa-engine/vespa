@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.significance;
+import java.util.Locale;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.Before;
@@ -81,12 +82,13 @@ public class SignificanceSearcher extends Searcher {
             var result = new Result(query);
             result.hits().addError(
                     ErrorMessage.createIllegalQuery(
-                            ("Inconsistent 'significance' configuration for the rank profile '%s' in the schemas %s. " +
+                            String.format(Locale.ROOT,
+                                    "Inconsistent 'significance' configuration for the rank profile '%s' in the schemas %s. " +
                                     "Use 'restrict' to limit the query to a subset of schemas " +
                                     "(https://docs.vespa.ai/en/basics/schemas.html#multiple-schemas). " +
                                     "Specify same 'significance' configuration for all selected schemas " +
-                                    "(https://docs.vespa.ai/en/reference/schemas/schemas.html#significance).")
-                                    .formatted(rankProfileName, perSchemaSetup.keySet())));
+                                    "(https://docs.vespa.ai/en/reference/schemas/schemas.html#significance).",
+                                    rankProfileName, perSchemaSetup.keySet())));
             return result;
         }
 
@@ -99,11 +101,12 @@ public class SignificanceSearcher extends Searcher {
 
     private Result calculateAndSetSignificance(Query query, Execution execution) {
         try {
-            var significanceModel = getSignificanceModelFromQueryLanguage(query);
-            log.log(Level.FINE, () -> "Got model for language %s: %s"
-                    .formatted(query.getModel().getParsingLanguage(), significanceModel.getId()));
+            var defaultModel = getSignificanceModelFromQueryLanguage(query);
+            var defaultLanguage = query.getModel().getParsingLanguage();
+            log.log(Level.FINE, () -> String.format(Locale.ROOT, "Got default model for language %s: %s",
+                    defaultLanguage, defaultModel.getId()));
 
-            setIDF(query.getModel().getQueryTree().getRoot(), significanceModel);
+            setIDF(query.getModel().getQueryTree().getRoot(), defaultLanguage, defaultModel);
 
             return execution.search(query);
         } catch (IllegalArgumentException e) {
@@ -157,15 +160,22 @@ public class SignificanceSearcher extends Searcher {
         return unknownModel.orElseGet(englishModel::get);
     }
 
-    private void setIDF(Item root, SignificanceModel significanceModel) {
+    private void setIDF(Item root, Language language, SignificanceModel defaultModel) {
         if (root == null || root instanceof NullItem) return;
+
+        // Use per-clause language if explicitly set on this item
+        if (root.getLanguage() != Language.UNKNOWN)
+            language = root.getLanguage();
+
+        // Resolve model for effective language, falling back to default model
+        var model = significanceModelRegistry.getModel(language).orElse(defaultModel);
 
         if (root instanceof WordItem wi) {
             if (wi.getDocumentFrequency().isPresent() || wi.hasExplicitSignificance())
                 return;
 
             var word = wi.getWord();
-            var documentFrequency = significanceModel.documentFrequency(word.toLowerCase());
+            var documentFrequency = model.documentFrequency(word.toLowerCase(Locale.ROOT));
             long N                = documentFrequency.corpusSize();
             long nq_i             = documentFrequency.frequency();
             log.log(Level.FINE, () -> "Setting document frequency for " + word + " to {frequency: " + nq_i + ", count: " + N + "}");
@@ -176,7 +186,7 @@ public class SignificanceSearcher extends Searcher {
             long best_freq = Long.MAX_VALUE;
             long best_count = 0;
             for (var alternative : wai.getAlternatives()) {
-                var documentFrequency = significanceModel.documentFrequency(alternative.word.toLowerCase());
+                var documentFrequency = model.documentFrequency(alternative.word.toLowerCase(Locale.ROOT));
                 long N                = documentFrequency.corpusSize();
                 long nq_i             = documentFrequency.frequency();
                 if (nq_i < best_freq) {
@@ -191,7 +201,7 @@ public class SignificanceSearcher extends Searcher {
             }
         } else if (root instanceof CompositeItem ci) {
             for (int i = 0; i < ci.getItemCount(); i++) {
-                setIDF(ci.getItem(i), significanceModel);
+                setIDF(ci.getItem(i), language, defaultModel);
             }
         }
     }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.component.ComponentId;
 import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import com.yahoo.path.Path;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
@@ -12,7 +13,12 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for VoyageAI embedder configuration parsing and validation.
@@ -36,6 +42,8 @@ public class VoyageAIEmbedderTest {
         assertEquals(1024, config.dimensions());
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint());
         assertTrue(config.truncate());
+        assertEquals(16, config.batching().maxSize());
+        assertEquals(200, config.batching().maxDelayMillis());
     }
 
     @Test
@@ -55,6 +63,8 @@ public class VoyageAIEmbedderTest {
         assertEquals("https://api.voyageai.com/v1/embeddings", config.endpoint()); // Default endpoint
         assertEquals(3, config.maxRetries()); // Default retries
         assertTrue(config.truncate()); // Default truncate
+        assertEquals(0, config.batching().maxSize()); // Default batching
+        assertEquals(0, config.batching().maxDelayMillis()); // Default batching
     }
 
     @Test
@@ -105,7 +115,7 @@ public class VoyageAIEmbedderTest {
         };
 
         for (int i = 0; i < quantizations.length; i++) {
-            String xml = String.format(java.util.Locale.ROOT, """
+            String xml = Text.format("""
                     <?xml version="1.0" encoding="utf-8" ?>
                     <services version="1.0">
                         <container id="container" version="1.0">

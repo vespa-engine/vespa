@@ -19,6 +19,7 @@ import com.yahoo.search.predicate.index.PredicateOptimizer;
 import com.yahoo.search.predicate.index.SimpleIndex;
 import com.yahoo.search.predicate.index.conjunction.ConjunctionIndexBuilder;
 import com.yahoo.search.predicate.index.conjunction.IndexableFeatureConjunction;
+import com.yahoo.text.Text;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -262,7 +263,7 @@ public class PredicateIndexBuilder {
         @Override
         public String toString() {
             return metrics.entrySet().stream()
-                    .map(e -> String.format("%50s: %s", e.getKey(), e.getValue()))
+                    .map(e -> Text.format("%50s: %s", e.getKey(), e.getValue()))
                     .collect(joining("\n"));
         }
     }

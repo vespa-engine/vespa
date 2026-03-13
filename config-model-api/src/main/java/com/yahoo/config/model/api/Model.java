@@ -94,8 +94,9 @@ public interface Model {
     default void markClustersForDeferredReconfiguration(Set<String> clusterNames) {
         if (!clusterNames.isEmpty()) {
             Logger.getLogger(Model.class.getName()).log(Level.INFO,
-                    "Deferred reconfiguration requested for clusters %s, but not supported for model of version %s"
-                            .formatted(clusterNames, version()));
+                    String.format(java.util.Locale.ROOT,
+                            "Deferred reconfiguration requested for clusters %s, but not supported for model of version %s",
+                            clusterNames, version()));
         }
     }
 }

@@ -118,8 +118,8 @@ public class PredicateQueryItem extends SimpleTaggableItem {
     }
 
     @Override
-    public int encode(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    public int encode(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         putString(fieldName, buffer);
         encodeFeatures(features, buffer);
         encodeFeatures(rangeFeatures, buffer);
@@ -189,7 +189,7 @@ public class PredicateQueryItem extends SimpleTaggableItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemPredicateQuery.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
 

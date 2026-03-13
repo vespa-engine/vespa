@@ -13,11 +13,13 @@ import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Locale;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,7 +43,7 @@ public class FieldGeneratorUtilsTest {
     @MethodSource("providePrimitiveTypes")
     void testGenerateJsonSchemaForPrimitiveField(PrimitiveDataType primitiveType, String jsonType, FieldValue value) {
         var schema = FieldGeneratorUtils.generateJsonSchemaForField("doc.field", primitiveType);
-        var expectedSchema = """
+        var expectedSchema = Text.format("""
                 {
                   "type": "object",
                   "properties": {
@@ -54,7 +56,7 @@ public class FieldGeneratorUtilsTest {
                   ],
                   "additionalProperties": false
                 }
-                """.formatted(jsonType);
+                """, jsonType);
         assertEquals(expectedSchema, schema);
     }
 
@@ -62,7 +64,7 @@ public class FieldGeneratorUtilsTest {
     @MethodSource("providePrimitiveTypes")
     void testGenerateJsonSchemaForArrayField(PrimitiveDataType primitiveType, String jsonType, FieldValue value) {
         var schema = FieldGeneratorUtils.generateJsonSchemaForField("doc.field", DataType.getArray(primitiveType));
-        var expectedSchema = """
+        var expectedSchema = Text.format("""
                 {
                   "type": "object",
                   "properties": {
@@ -78,7 +80,7 @@ public class FieldGeneratorUtilsTest {
                   ],
                   "additionalProperties": false
                 }
-                """.formatted(jsonType);
+                """, jsonType);
         assertEquals(expectedSchema, schema);
     }
     
@@ -185,7 +187,7 @@ public class FieldGeneratorUtilsTest {
     void testParsePrimitiveJsonField(PrimitiveDataType primitiveType, String jsonType, FieldValue value) {
         var fieldPath = "document.field";
         var jsonFieldValue = primitiveType.equals(DataType.STRING) ? "\"" + value + "\"" : value.toString();
-        var jsonField = "{ \"%s\": %s }".formatted(fieldPath, jsonFieldValue);
+        var jsonField = Text.format("{ \"%s\": %s }", fieldPath, jsonFieldValue);
         var fieldValue = FieldGeneratorUtils.parseJsonFieldValue(jsonField, fieldPath, primitiveType);
         assertEquals(fieldValue, value);
     }

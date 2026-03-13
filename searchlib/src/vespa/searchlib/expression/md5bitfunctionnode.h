@@ -13,7 +13,7 @@ public:
     MD5BitFunctionNode() { }
     MD5BitFunctionNode(ExpressionNode::UP arg, unsigned numBits) : UnaryBitFunctionNode(std::move(arg), numBits) { }
 private:
-    bool internalExecute(const vespalib::nbostream & os) const override;
+    void internalExecute(const vespalib::nbostream & os) const override;
 };
 
 }

@@ -118,7 +118,7 @@ public class RelatedDocumentsByNearestNeighborSearcher extends Searcher {
 
         NearestNeighborItem nnItem = new NearestNeighborItem(embeddingField, queryTensorName);
         nnItem.setAllowApproximate(true);
-        nnItem.setTargetNumHits(targetHits);
+        nnItem.setTargetHits(targetHits);
         nnItem.setHnswExploreAdditionalHits(exploreAdditionalHits);
 
         Item root = query.getModel().getQueryTree().getRoot();

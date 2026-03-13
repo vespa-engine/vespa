@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import java.nio.charset.StandardCharsets;
 import com.yahoo.document.annotation.AbstractTypesTest;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
@@ -99,9 +100,9 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             doc.setFieldValue("doublefield", new DoubleFieldValue(98374532.398820));
             doc.setFieldValue("bytefield", new ByteFieldValue(254));
             doc.setFieldValue("boolfield", new BoolFieldValue(true));
-            byte[] rawData = "RAW DATA".getBytes();
+            byte[] rawData = "RAW DATA".getBytes(StandardCharsets.UTF_8);
             assertEquals(8, rawData.length);
-            doc.setFieldValue(docType.getField("rawfield"),new Raw(ByteBuffer.wrap("RAW DATA".getBytes())));
+            doc.setFieldValue(docType.getField("rawfield"),new Raw(ByteBuffer.wrap("RAW DATA".getBytes(StandardCharsets.UTF_8))));
             Document docInDoc = new Document(docInDocType, "id:ns:docindoc::http://doc.in.doc/");
             docInDoc.setFieldValue("stringindocfield", "Elvis is dead");
             doc.setFieldValue(docType.getField("docfield"), docInDoc);
@@ -166,8 +167,8 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             // Todo add cpp serialization
             // assertEquals(new BoolFieldValue(true), doc.getFieldValue("boolfield"));
             ByteBuffer bbuffer = ((Raw)doc.getFieldValue("rawfield")).getByteBuffer();
-            if (!Arrays.equals("RAW DATA".getBytes(), bbuffer.array())) {
-                System.err.println("Expected 'RAW DATA' but got '" + new String(bbuffer.array()) + "'.");
+            if (!Arrays.equals("RAW DATA".getBytes(StandardCharsets.UTF_8), bbuffer.array())) {
+                System.err.println("Expected 'RAW DATA' but got '" + new String(bbuffer.array(), StandardCharsets.UTF_8) + "'.");
                 fail();
             }
             if (test.version > 6) {

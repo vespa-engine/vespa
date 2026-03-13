@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/util/vespa_dll_local.h>
+
 #include <memory>
 #include <cstdint>
 
-#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
 
 /**
  * Interface for posting lists used by PredicateSearch.

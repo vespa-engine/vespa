@@ -17,6 +17,7 @@
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
+#include <vespa/searchlib/attribute/array_bool_ext_attribute.h>
 #include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
@@ -136,6 +137,9 @@ createMultiValueAttribute(const std::string & name, const document::FieldValue &
     }
     LOG(debug, "Create %s attribute '%s' with data type '%s' (%s)",
         arrayType ? "array" : "weighted set", name.c_str(), ndt->getName().c_str(), fv.className());
+    if (ndt->getId() == DataType::T_BOOL && arrayType) {
+        return std::make_shared<search::attribute::ArrayBoolExtAttribute>(name);
+    }
     if (ndt->getId() == DataType::T_BYTE ||
         ndt->getId() == DataType::T_INT ||
         ndt->getId() == DataType::T_LONG)

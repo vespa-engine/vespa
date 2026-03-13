@@ -44,9 +44,9 @@ public class ConfigUtils {
     private static final Pattern packageDirectivePattern = Pattern.compile("^\\s*package\\s*=(.*)$");
     private static final Pattern namespaceDirectivePattern = Pattern.compile("^\\s*namespace\\s*=(.*)$");
     private static final Pattern packagePattern = Pattern.compile("^(([a-z][a-z0-9_]*)+([.][a-z][a-z0-9_]*)*)$");
-    private static final String intFormattedMax = new DecimalFormat("#.#").format(0x7fffffff);
+    private static final String intFormattedMax = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(0x7fffffff);
     private static final String intFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-0x80000000);
-    private static final String doubleFormattedMax = new DecimalFormat("#.#").format(1e308);
+    private static final String doubleFormattedMax = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(1e308);
     private static final String doubleFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-1e308);
 
     public static String getMd5(String input) {
@@ -64,7 +64,7 @@ public class ConfigUtils {
     private static String getMd5(ByteBuffer input) {
         MessageDigest md5 = getMd5Instance();
         md5.update(input);
-        return HexDump.toHexString(md5.digest()).toLowerCase();
+        return HexDump.toHexString(md5.digest()).toLowerCase(java.util.Locale.ROOT);
     }
 
     private static MessageDigest getMd5Instance() {
@@ -81,7 +81,7 @@ public class ConfigUtils {
 
     public static String getXxhash64(ByteBuffer input) {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
-        return Long.toHexString(hasher.hash(input, 0)).toLowerCase();
+        return Long.toHexString(hasher.hash(input, 0)).toLowerCase(java.util.Locale.ROOT);
     }
 
     @SuppressWarnings("unused") // Used by config integration test in system-test module

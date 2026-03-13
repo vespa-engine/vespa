@@ -11,6 +11,7 @@ import ai.vespa.feed.client.OperationStats;
 import ai.vespa.feed.client.impl.HttpFeedClient.ClusterFactory;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
@@ -138,10 +139,10 @@ class HttpRequestStrategy implements RequestStrategy {
     private boolean shouldRetry(HttpRequest request, int attempt) {
         var timeLeft = request.timeLeft().toMillis();
         if (attempt > strategy.retries() || timeLeft <= 0) {
-            log.fine(() -> String.format("Giving up on %s after %d attempts (%dms left)", request, attempt, timeLeft));
+            log.fine(() -> String.format(Locale.ROOT, "Giving up on %s after %d attempts (%dms left)", request, attempt, timeLeft));
             return false;
         }
-        switch (request.method().toUpperCase()) {
+        switch (request.method().toUpperCase(Locale.ROOT)) {
             case "POST":   return strategy.retry(FeedClient.OperationType.PUT);
             case "PUT":    return strategy.retry(FeedClient.OperationType.UPDATE);
             case "DELETE": return strategy.retry(FeedClient.OperationType.REMOVE);
@@ -155,13 +156,13 @@ class HttpRequestStrategy implements RequestStrategy {
      */
     private boolean shouldRetry(HttpRequest request, Throwable thrown, int attempt) {
         breaker.failure(thrown);
-        log.log(FINE, thrown, () -> String.format("Failed attempt %d at %s", attempt, request));
+        log.log(FINE, thrown, () -> String.format(Locale.ROOT, "Failed attempt %d at %s", attempt, request));
         if (   (thrown instanceof IOException)               // General IO problems.
             //  Thrown by HTTP2Session.StreamsState.reserveSlot, likely on GOAWAY from server
             || (thrown instanceof IllegalStateException && "session closed".equals(thrown.getMessage()))
             || thrown instanceof RetryableException
         ) {
-            log.finer(() -> String.format("Retrying request %s after exception '%s'", request, thrown));
+            log.finer(() -> String.format(Locale.ROOT, "Retrying request %s after exception '%s'", request, thrown));
             return shouldRetry(request, attempt);
         }
         return false;

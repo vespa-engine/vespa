@@ -163,6 +163,23 @@
       <artifactId>HdrHistogram</artifactId>
     </dependency>
 
+    <!-- MCP SDK -->
+    <dependency>
+      <groupId>io.modelcontextprotocol.sdk</groupId>
+      <artifactId>mcp</artifactId>
+      <version>${mcp-sdk.vespa.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
     <!-- START JETTY embedded jars -->
     <dependency>
       <!-- Required for JDK9ServerALPNProcessor through ServiceLoader API -->
@@ -481,7 +498,7 @@
                 bcutil-jdk18on-${bouncycastle.vespa.version}.jar, <!-- Used by security-utils -->
                 <!-- END Bundles needed to retrieve config, or used by container-disc -->
 
-                jackson-annotations-${jackson2.vespa.version}.jar,
+                jackson-annotations-${jackson-annotations.vespa.version}.jar,
                 jackson-core-${jackson2.vespa.version}.jar,
                 jackson-databind-${jackson-databind.vespa.version}.jar,
                 jackson-datatype-jdk8-${jackson2.vespa.version}.jar,

@@ -16,7 +16,7 @@ public:
     void setRelevance(double relevance) { _relevance.set(relevance); }
 private:
     void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
-    bool onExecute() const override { return true; }
+    void onExecute() const override { }
     FloatResultNode _relevance;
 };
 

@@ -7,7 +7,10 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModelFactory;
+
+import java.time.Clock;
 
 /**
  * @author Ulf Lilleengen
@@ -22,7 +25,11 @@ public class TestModelFactory extends VespaModelFactory {
     }
 
     public TestModelFactory(ConfigModelRegistry registry, Version vespaVersion) {
-        super(registry);
+        this(registry, vespaVersion, Clock.systemUTC());
+    }
+
+    public TestModelFactory(ConfigModelRegistry registry, Version vespaVersion, Clock clock) {
+        super(vespaVersion, registry, clock, Zone.defaultZone());
         this.vespaVersion = vespaVersion;
     }
 

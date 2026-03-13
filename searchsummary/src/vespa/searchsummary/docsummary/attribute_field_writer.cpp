@@ -2,6 +2,7 @@
 
 #include "attribute_field_writer.h"
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/i_array_bool_read_view.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/data/slime/cursor.h>
@@ -176,6 +177,47 @@ WriteIntField<BasicType>::print(uint32_t idx, Cursor &cursor)
     }
 }
 
+class WriteBoolField : public AttributeFieldWriter
+{
+    const search::attribute::IArrayBoolReadView* _read_view;
+    vespalib::BitSpan _content;
+public:
+    WriteBoolField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash);
+    ~WriteBoolField() override;
+    uint32_t fetch(uint32_t docId) override;
+    void print(uint32_t idx, Cursor& cursor) override;
+};
+
+WriteBoolField::WriteBoolField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash)
+    : AttributeFieldWriter(fieldName),
+      _read_view(nullptr),
+      _content()
+{
+    auto multi_value_attribute = attr.as_multi_value_attribute();
+    if (multi_value_attribute != nullptr) {
+        _read_view = multi_value_attribute->make_read_view(search::attribute::IMultiValueAttribute::ArrayBoolTag(), stash);
+    }
+}
+
+WriteBoolField::~WriteBoolField() = default;
+
+uint32_t
+WriteBoolField::fetch(uint32_t docId)
+{
+    if (_read_view) {
+        _content = _read_view->get_values(docId);
+    }
+    return _content.size();
+}
+
+void
+WriteBoolField::print(uint32_t idx, Cursor& cursor)
+{
+    if (idx < _content.size()) {
+        cursor.setBool(_fieldName, _content[idx]);
+    }
+}
+
 }
 
 AttributeFieldWriter&
@@ -194,6 +236,8 @@ AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector&
         return stash.create<WriteFloatField<float>>(fieldName, attr, stash);
     case BasicType::DOUBLE:
         return stash.create<WriteFloatField<double>>(fieldName, attr, stash);
+    case BasicType::BOOL:
+        return stash.create<WriteBoolField>(fieldName, attr, stash);
     case BasicType::STRING:
         if (keep_empty_strings) {
             return stash.create<WriteStringFieldNeverSkip>(fieldName, attr, stash);

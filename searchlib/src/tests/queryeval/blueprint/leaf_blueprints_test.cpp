@@ -21,7 +21,7 @@ TEST(LeafBlueprintsTest, empty_blueprint)
     SearchIterator::UP search = empty.createSearch(*md);
 
     SimpleResult res;
-    res.search(*search);
+    res.search(*search, 100);
     SimpleResult expect; // empty
     EXPECT_EQ(res, expect);
 }
@@ -39,7 +39,7 @@ TEST(LeafBlueprintsTest, simple_blueprint)
     SearchIterator::UP search = simple.createSearch(*md);
 
     SimpleResult res;
-    res.search(*search);
+    res.search(*search, 100);
     SimpleResult expect;
     expect.addHit(3).addHit(5).addHit(7);
     EXPECT_EQ(res, expect);
@@ -66,8 +66,7 @@ TEST(LeafBlueprintsTest, fake_blueprint)
         search->unpack(10u);
         TermFieldMatchData &data = *md->resolveTermField(handle);
         EXPECT_EQ(fieldId, data.getFieldId());
-        EXPECT_EQ(10u, data.getDocId());
-        EXPECT_EQ(10u, data.getDocId());
+        EXPECT_TRUE(data.has_ranking_data(10u));
         FieldPositionsIterator itr = data.getIterator();
         EXPECT_EQ(50u, itr.getFieldLength());
         EXPECT_EQ(2u, itr.size());
@@ -85,7 +84,7 @@ TEST(LeafBlueprintsTest, fake_blueprint)
         search->unpack(25u);
         TermFieldMatchData &data = *md->resolveTermField(handle);
         EXPECT_EQ(fieldId, data.getFieldId());
-        EXPECT_EQ(25u, data.getDocId());
+        EXPECT_TRUE(data.has_ranking_data(25u));
         FieldPositionsIterator itr = data.getIterator();
         EXPECT_EQ(10u, itr.getFieldLength());
         EXPECT_EQ(1u, itr.size());

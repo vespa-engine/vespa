@@ -20,7 +20,7 @@ public:
     ExpressionNode *getExpression() { return _expressionNode; }
     const ResultNode * getResult() const override { return _expressionNode->getResult(); }
     void onPrepare(bool preserveAccurateTypes) override { _expressionNode->prepare(preserveAccurateTypes); }
-    bool onExecute() const override;
+    void onExecute() const override;
 
     void locateExpression(ExpressionNodeArray & exprVec) const;
 private:

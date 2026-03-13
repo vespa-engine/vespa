@@ -1,23 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storageapi/message/persistence.h>
+#include <vespa/document/base/testdocman.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/document/update/fieldpathupdates.h>
+#include <vespa/storageapi/mbusprot/storagecommand.h>
+#include <vespa/storageapi/mbusprot/storageprotocol.h>
+#include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/internal.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/storageapi/mbusprot/storageprotocol.h>
-#include <vespa/storageapi/mbusprot/storagecommand.h>
-#include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/document/base/testdocman.h>
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/update/fieldpathupdates.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -921,7 +921,7 @@ TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
     EXPECT_EQ(sizeof(UpdateReply),       doc_reply_baseline + 120);
     EXPECT_EQ(sizeof(RemoveReply),       doc_reply_baseline + 112);
     EXPECT_EQ(sizeof(GetReply),          doc_reply_baseline + 136 + sizeof(std::string));
-    EXPECT_EQ(sizeof(StorageCommand),    msg_baseline   + 16);
+    EXPECT_EQ(sizeof(StorageCommand),    msg_baseline + 16);
     EXPECT_EQ(sizeof(BucketCommand),     sizeof(StorageCommand) + 24);
     EXPECT_EQ(sizeof(BucketInfoCommand), sizeof(BucketCommand));
     EXPECT_EQ(sizeof(TestAndSetCommand), sizeof(BucketInfoCommand) + sizeof(std::string) + sizeof(uint64_t));

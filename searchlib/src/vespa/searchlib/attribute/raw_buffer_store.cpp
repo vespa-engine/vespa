@@ -23,7 +23,8 @@ RawBufferStore::RawBufferStore(std::shared_ptr<vespalib::alloc::MemoryAllocator>
                                                               MemoryAllocator::PAGE_SIZE,
                                                               max_buffer_size,
                                                               8_Ki, ALLOC_GROW_FACTOR),
-                   std::move(allocator), TypeMapper(max_type_id, grow_factor, max_buffer_size))
+                   std::move(allocator), TypeMapper(max_type_id, grow_factor, max_buffer_size)),
+      _raw_bytes(0)
 {
 }
 

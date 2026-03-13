@@ -3,6 +3,8 @@ package com.yahoo.document.select;
 
 import com.yahoo.document.select.rule.AttributeNode;
 
+import java.util.Locale;
+
 /**
  * @author Simon Thoresen Hult
  */
@@ -17,7 +19,7 @@ public enum Result {
 
     @Override
     public String toString() {
-        return name().toLowerCase();
+        return name().toLowerCase(Locale.ROOT);
     }
     
     /**

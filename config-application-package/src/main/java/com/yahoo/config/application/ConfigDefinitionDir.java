@@ -3,8 +3,12 @@ package com.yahoo.config.application;
 
 import com.yahoo.config.model.application.provider.Bundle;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A @{link ConfigDefinitionDir} contains a set of config definitions. New definitions may be added,
@@ -38,7 +42,7 @@ public class ConfigDefinitionDir {
                         " (got " + outFile.getAbsolutePath() + ")");
             }
             OutputStream out = new FileOutputStream(outFile);
-            out.write(def.contents.getBytes());
+            out.write(def.contents.getBytes(StandardCharsets.UTF_8));
             out.close();
         }
     }

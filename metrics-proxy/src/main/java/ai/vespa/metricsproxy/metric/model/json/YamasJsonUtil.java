@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +87,7 @@ public class YamasJsonUtil {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             toJson(metrics, output, addStatus);
             output.flush();
-            return output.toString();
+            return output.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             return "{}";
         }

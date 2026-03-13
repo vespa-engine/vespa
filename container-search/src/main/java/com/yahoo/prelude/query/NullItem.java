@@ -19,7 +19,7 @@ public class NullItem extends Item {
     public void setIndexName(String index) {}
 
     @Override
-    public int encode(ByteBuffer buffer) {
+    public int encode(ByteBuffer buffer, SerializationContext context) {
         throw new IllegalStateException("A NullItem was attempted encoded. This is probably a misbehaving searcher");
     }
 
@@ -45,7 +45,7 @@ public class NullItem extends Item {
     public int getTermCount() { return 0; }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         throw new IllegalStateException("A NullItem was attempted serialized. This is probably a misbehaving searcher");
     }
 

@@ -194,7 +194,7 @@ assertWhiteList(const SimpleResult &exp, Blueprint::UP whiteListBlueprint, bool 
 
     SearchIterator::UP sb = whiteListBlueprint->createSearch(*md);
     SimpleResult act;
-    act.searchStrict(*sb, docIdLimit);
+    act.search(*sb, docIdLimit);
     EXPECT_EQ(exp, act);
 }
 
@@ -208,11 +208,7 @@ assertSearchResult(const SimpleResult &exp, const DocumentMetaStore &dms,
     TermFieldMatchData tfmd;
     SearchIterator::UP sb = sc->createIterator(&tfmd, strict);
     SimpleResult act;
-    if (strict) {
-        act.search(*sb);
-    } else {
-        act.search(*sb, docIdLimit);
-    }
+    act.search(*sb, docIdLimit);
     EXPECT_EQ(exp, act);
 }
 

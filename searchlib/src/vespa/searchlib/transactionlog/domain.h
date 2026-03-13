@@ -40,6 +40,7 @@ public:
     void markDeleted() { _markedDeleted = true; }
 
     size_t byteSize() const;
+    uint64_t get_size_on_disk() const;
     size_t getNumSessions() const { return _sessions.size(); }
 
     int startSession(int sessionId);
@@ -67,6 +68,7 @@ private:
     SerialNum begin(const UniqueLock & guard) const;
     SerialNum end(const UniqueLock & guard) const;
     size_t byteSize(const UniqueLock & guard) const;
+    uint64_t get_size_on_disk(const UniqueLock& guard) const;
     uint64_t size(const UniqueLock & guard) const;
     void cleanSessions();
     std::string dir() const { return getDir(_baseDir, _name); }

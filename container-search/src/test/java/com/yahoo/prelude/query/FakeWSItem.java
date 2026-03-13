@@ -11,7 +11,7 @@ public class FakeWSItem extends CompositeIndexedItem {
     @Override public String getName() { return "WEIGHTEDSET"; }
     @Override public int getNumWords() { return 1; }
     @Override public String getIndexedString() { return ""; }
-    @Override protected SearchProtocol.QueryTreeItem toProtobuf() {
+    @Override protected SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         throw new UnsupportedOperationException("FakeWSItem does not support protobuf serialization");
     }
 

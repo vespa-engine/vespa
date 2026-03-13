@@ -22,6 +22,7 @@ import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.messagebus.Routable;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
@@ -75,7 +76,7 @@ abstract class RoutableFactories80 {
                 protoStream.checkNoSpaceLeft();
                 return buf;
             } catch (IOException | RuntimeException e) {
-                log.severe("Error during Protobuf encoding of message type %s: %s".formatted(apiClass.getSimpleName(), Exceptions.toMessageString(e)));
+                log.severe(Text.format("Error during Protobuf encoding of message type %s: %s", apiClass.getSimpleName(), Exceptions.toMessageString(e)));
                 log.log(Level.FINE, "Protobuf encode error has exception trace:", e);
                 return null;
             }
@@ -92,8 +93,8 @@ abstract class RoutableFactories80 {
             try {
                 return decoderFn.apply(in);
             } catch (RuntimeException e) {
-                throw new RuntimeException("Error during Protobuf decoding of message type %s: %s"
-                        .formatted(apiClass.getSimpleName(), e.getMessage()), e);
+                throw new RuntimeException(Text.format("Error during Protobuf decoding of message type %s: %s",
+                        apiClass.getSimpleName(), e.getMessage()), e);
             }
         }
 

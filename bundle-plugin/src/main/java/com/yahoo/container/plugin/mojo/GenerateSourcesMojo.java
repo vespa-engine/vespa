@@ -12,7 +12,6 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -24,7 +23,18 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import org.twdata.maven.mojoexecutor.MojoExecutor.ExecutionEnvironment;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * Calls the generate-sources phase in the container lifecycle defined in lifecycle.xml.
@@ -41,7 +51,6 @@ public class GenerateSourcesMojo extends AbstractMojo {
     protected MavenSession session;
 
     @Inject
-    @Requirement
     private BuildPluginManager pluginManager;
 
     @Parameter

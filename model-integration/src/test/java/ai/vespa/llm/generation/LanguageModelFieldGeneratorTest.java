@@ -10,6 +10,7 @@ import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,6 +48,7 @@ public class LanguageModelFieldGeneratorTest {
         var generator = createGenerator(config, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         var result = generator.generate(StringPrompt.from("hello"), context);
+        assertNotNull(result);
         assertEquals("hello hello", result.toString());
     }
     
@@ -59,11 +62,13 @@ public class LanguageModelFieldGeneratorTest {
         var generator1 = createGenerator(config1, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         var result1 = generator1.generate(StringPrompt.from("hello"), context);
+        assertNotNull(result1);
         assertEquals("hello hello", result1.toString());
     
         var config2 = new LanguageModelFieldGeneratorConfig.Builder().providerId("languageModel2").build();
         var generator2 = createGenerator(config2, languageModels);
         var result2 = generator2.generate(StringPrompt.from("hello"), context);
+        assertNotNull(result2);
         assertEquals("hello hello hello", result2.toString());
     }
 
@@ -80,9 +85,11 @@ public class LanguageModelFieldGeneratorTest {
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         
         var result1 = generator.generate(StringPrompt.from("world"), context);
+        assertNotNull(result1);
         assertEquals("hello world hello world", result1.toString());
 
         var result2 = generator.generate(StringPrompt.from("there"), context);
+        assertNotNull(result2);
         assertEquals("hello there hello there", result2.toString());
     }
 
@@ -99,6 +106,7 @@ public class LanguageModelFieldGeneratorTest {
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
         var result1 = generator.generate(StringPrompt.from("world"), context);
+        assertNotNull(result1);
         assertEquals("world world", result1.toString());
     }
 
@@ -115,9 +123,11 @@ public class LanguageModelFieldGeneratorTest {
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
         var result1 = generator.generate(StringPrompt.from("world"), context);
+        assertNotNull(result1);
         assertEquals("hello hello", result1.toString());
 
         var result2 = generator.generate(StringPrompt.from("there"), context);
+        assertNotNull(result2);
         assertEquals("hello hello", result2.toString());
     }
     
@@ -135,6 +145,7 @@ public class LanguageModelFieldGeneratorTest {
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
         var result1 = generator.generate(StringPrompt.from("world"), context);
+        assertNotNull(result1);
         assertEquals("hello world hello world", result1.toString());
     }
 
@@ -184,9 +195,42 @@ public class LanguageModelFieldGeneratorTest {
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
         var result1 = generator.generate(StringPrompt.from("world"), context);
+        assertNotNull(result1);
         assertEquals("bye world bye world", result1.toString());
     }
-    
+
+    @Test
+    public void testGenerateWithResponseJsonSchema() {
+        var languageModel = new CaptureCompleteArgsLanguageModel();
+        Map<String, LanguageModel> languageModels = Map.of("languageModel", languageModel);
+
+        var customSchema = """
+            {
+              "type": "object",
+              "properties": {
+                "doc.text": {
+                  "type": "string",
+                  "enum": ["electronics", "clothing"]
+                }
+              },
+              "required": ["doc.text"],
+              "additionalProperties": false
+            }
+            """;
+        var config = new LanguageModelFieldGeneratorConfig.Builder()
+                .providerId("languageModel")
+                .responseJsonSchema(customSchema)
+                .build();
+        var generator = createGenerator(config, languageModels);
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
+        generator.generate(StringPrompt.from("hello"), context);
+
+        // Verify the schema was passed to the language model
+        assertEquals(
+                customSchema,
+                languageModel.lastCompleteParams.get(InferenceParameters.OPTION_JSON_SCHEMA).orElseThrow());
+    }
+
     @Test
     public void testGenerateWithLocalLLM() {
         var localLLMPath = "src/test/models/llm/tinyllm.gguf";
@@ -204,6 +248,7 @@ public class LanguageModelFieldGeneratorTest {
         var generator = createGenerator(generatorConfig, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         var result = generator.generate(StringPrompt.from("hello"), context);
+        assertNotNull(result);
         assertFalse(result.toString().isEmpty());
     }
     
@@ -221,6 +266,7 @@ public class LanguageModelFieldGeneratorTest {
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         
         var result = generator.generate(StringPrompt.from("hello world"), context);
+        assertNotNull(result);
         assertEquals("hello world hello world", result.toString());
     }
     
@@ -316,11 +362,11 @@ public class LanguageModelFieldGeneratorTest {
             var completionStr = stringBuilder.toString().trim();
             
             if (params.get(InferenceParameters.OPTION_JSON_SCHEMA).isPresent())
-                completionStr = """
+                completionStr = Text.format("""
                        {
                         "doc.text": "%s"
                        }
-                       """.formatted(completionStr);
+                       """, completionStr);
             
             return List.of(Completion.from(completionStr));
         }
@@ -338,6 +384,25 @@ public class LanguageModelFieldGeneratorTest {
         public List<Completion> complete(Prompt prompt, InferenceParameters params) {
             var invalidJson = "{doc.text:: test347ukdrjfhds";
             return List.of(Completion.from(invalidJson));
+        }
+
+        @Override
+        public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
+                                                                        InferenceParameters params,
+                                                                        Consumer<Completion> consumer) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class CaptureCompleteArgsLanguageModel implements LanguageModel {
+        public Prompt lastCompletePrompt;
+        public InferenceParameters lastCompleteParams;
+
+        @Override
+        public List<Completion> complete(Prompt prompt, InferenceParameters params) {
+            this.lastCompletePrompt = prompt;
+            this.lastCompleteParams = params;
+            return List.of(Completion.from(""));
         }
 
         @Override

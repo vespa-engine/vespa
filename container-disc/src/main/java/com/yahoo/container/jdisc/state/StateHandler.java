@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.nio.charset.StandardCharsets;
 
 import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -211,7 +212,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
     private byte[] buildHistogramsOutput() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         if (snapshotProvider != null) {
-            snapshotProvider.histogram(new PrintStream(baos));
+            snapshotProvider.histogram(new PrintStream(baos, false, StandardCharsets.UTF_8));
         }
         return baos.toByteArray();
     }
@@ -426,7 +427,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
     private static byte[] toPrettyString(JsonNode resources) throws JsonProcessingException {
         return jsonMapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(resources)
-                .getBytes();
+                .getBytes(StandardCharsets.UTF_8);
     }
 
     static class Tuple {

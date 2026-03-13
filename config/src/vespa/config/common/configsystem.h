@@ -9,10 +9,10 @@ class ConfigSystem {
 public:
     ConfigSystem();
     bool isUp() const;
+
 private:
-    bool isConfigProxyRunning() const;
+    bool        isConfigProxyRunning() const;
     std::string _configProxyPidFile;
 };
 
-}
-
+} // namespace config

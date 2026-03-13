@@ -3,13 +3,12 @@
 #pragma once
 
 #include <vespa/searchlib/queryeval/begin_and_end_id.h>
+#include <vespa/vespalib/util/vespa_dll_local.h>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
 #include <algorithm>
 #include <vector>
-
-#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
 
 namespace proton::matching {
 
@@ -71,7 +70,7 @@ public:
  * something to do. When a worker is ready for more work, it calls the
  * 'next_range' function. When a worker is assigned an empty range,
  * its work is done.
- * 
+ *
  * The 'total_size' function returns the accumulated size of all
  * ranges assigned to the given worker. The 'unassigned_size' function
  * returns the accumulated size of all currently unassigned ranges.

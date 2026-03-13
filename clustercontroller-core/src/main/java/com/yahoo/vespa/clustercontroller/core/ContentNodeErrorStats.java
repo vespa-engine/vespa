@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.ResponseStats;
 
 import java.util.Arrays;
@@ -155,7 +156,7 @@ public class ContentNodeErrorStats {
 
     @Override
     public String toString() {
-        return String.format(Locale.ROOT, "{statsFromDistributors=[%s]}",
+        return Text.format("{statsFromDistributors=[%s]}",
                              Arrays.toString(statsFromDistributors.entrySet().toArray()));
     }
 

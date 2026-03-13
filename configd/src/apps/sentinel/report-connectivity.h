@@ -2,13 +2,14 @@
 
 #pragma once
 
-#include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/fnet/frt/supervisor.h>
-#include <vespa/config-model.h>
-#include <vespa/config/helper/configfetcher.h>
 #include "model-owner.h"
 #include "peer-check.h"
 #include "status-callback.h"
+
+#include <vespa/config-model.h>
+#include <vespa/config/helper/configfetcher.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/supervisor.h>
 
 #include <atomic>
 #include <memory>
@@ -17,17 +18,17 @@
 
 namespace config::sentinel {
 
-class ReportConnectivity : public StatusCallback
-{
+class ReportConnectivity : public StatusCallback {
 public:
-    ReportConnectivity(FRT_RPCRequest *req, int timeout_ms, FRT_Supervisor &orb, ModelOwner &modelOwner);
+    ReportConnectivity(FRT_RPCRequest* req, int timeout_ms, FRT_Supervisor& orb, ModelOwner& modelOwner);
     virtual ~ReportConnectivity();
     void returnStatus(bool ok) override;
+
 private:
-    void finish() const;
-    FRT_RPCRequest *_parentRequest;
+    void                                    finish() const;
+    FRT_RPCRequest*                         _parentRequest;
     std::vector<std::unique_ptr<PeerCheck>> _checks;
-    std::atomic<size_t> _remaining;
+    std::atomic<size_t>                     _remaining;
 };
 
-}
+} // namespace config::sentinel

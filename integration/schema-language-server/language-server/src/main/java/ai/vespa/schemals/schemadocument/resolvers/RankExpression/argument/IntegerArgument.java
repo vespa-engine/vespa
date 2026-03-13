@@ -40,8 +40,9 @@ public class IntegerArgument implements Argument {
     @Override
     public Optional<Diagnostic> parseArgument(ParseContext context, RankNode node) {
 
-        Node leaf = ArgumentUtils.removeNodeSymbols(context, node);
+        ArgumentUtils.removeNodeSymbols(context, node);
 
+        var leaf = node.getSchemaNode().findFirstLeaf();
         if (!leaf.isASTInstance(INTEGER.class)) {
             return Optional.of(new SchemaDiagnostic.Builder()
                 .setRange(leaf.getRange())

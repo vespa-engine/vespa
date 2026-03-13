@@ -40,7 +40,7 @@ QueryCompletenessExecutor::execute(uint32_t docId)
     uint32_t hit = 0, miss = 0;
     for (const auto& handle : _fieldHandles) {
         const fef::TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
-        if (tfmd.getDocId() == docId) {
+        if (tfmd.has_ranking_data(docId)) {
             search::fef::FieldPositionsIterator field = tfmd.getIterator();
             while (field.valid() && field.getPosition() < _config.fieldBegin) {
                 field.next();

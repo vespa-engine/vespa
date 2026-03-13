@@ -4,10 +4,15 @@
 #include "resource_usage_write_filter.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 #include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
-#include <vespa/searchcore/proton/common/i_resource_usage_provider.h>
+#include <vespa/searchcorespi/common/i_resource_usage_provider.h>
+#include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
+
+using search::DirectoryTraverse;
+using searchcorespi::common::IResourceUsageProvider;
+using searchcorespi::common::ResourceUsage;
 
 using vespalib::makeLambdaTask;
 
@@ -47,8 +52,16 @@ DiskMemUsageSampler::setConfig(const Config &config, IScheduledExecutor & execut
     if (_periodicHandle && (_sampleInterval == config.sampleInterval) && !wasChanged) {
         return;
     }
+    restart(config.sampleInterval, executor);
+}
+
+void
+DiskMemUsageSampler::restart(std::optional<vespalib::duration> sample_interval, IScheduledExecutor& executor)
+{
     _periodicHandle.reset();
-    _sampleInterval = config.sampleInterval;
+    if (sample_interval.has_value()) {
+        _sampleInterval = sample_interval.value();
+    }
     sampleAndReportUsage();
     vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
     _periodicHandle = executor.scheduleAtFixedRate(makeLambdaTask([this]() {
@@ -69,7 +82,7 @@ DiskMemUsageSampler::sampleAndReportUsage()
      * and a short period of allowed feed. The latter will be very rare as you are rarely feed blocked anyway.
      */
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
-    uint64_t diskUsage = sampleDiskUsage();
+    uint64_t diskUsage = sampleDiskUsage(resource_usage);
     uint64_t reserved_disk_space = _reserved_disk_space_provider.get_reserved_disk_space();
     _notifier.set_resource_usage(resource_usage, memoryStats, diskUsage, reserved_disk_space);
     _lastSampleTime = vespalib::steady_clock::now();
@@ -78,10 +91,6 @@ DiskMemUsageSampler::sampleAndReportUsage()
 namespace {
 
 namespace fs = std::filesystem;
-
-// Disk usage for symbolic links and directories
-constexpr uint64_t symlink_disk_usage = 4_Ki;
-constexpr uint64_t directory_disk_usage = 4_Ki;
 
 uint64_t
 sampleDiskUsageOnFileSystem(const fs::path &path, const vespalib::HwInfo::Disk &disk)
@@ -94,52 +103,14 @@ sampleDiskUsageOnFileSystem(const fs::path &path, const vespalib::HwInfo::Disk &
     return result;
 }
 
-// May throw fs::filesystem_error on concurrent directory tree modification
-uint64_t
-attemptSampleDirectoryDiskUsageOnce(const fs::path &path)
-{
-    uint64_t result = directory_disk_usage;
-    for (const auto &elem : fs::recursive_directory_iterator(path, fs::directory_options::skip_permission_denied)) {
-        if (elem.is_symlink()) {
-            result += symlink_disk_usage;
-        } else if (elem.is_regular_file()) {
-            std::error_code fsize_err;
-            const auto size = elem.file_size(fsize_err);
-            // Errors here typically happens when a file is removed while doing the directory scan. Ignore them.
-            if (!fsize_err) {
-                result += size;
-            }
-        } else if (elem.is_directory()) {
-            result += directory_disk_usage;
-        }
-    }
-    return result;
 }
 
 uint64_t
-sampleDiskUsageInDirectory(const fs::path &path)
-{
-    // Since attemptSampleDirectoryDiskUsageOnce may throw on concurrent directory
-    // modifications, immediately retry a bounded number of times if this happens.
-    // Number of retries chosen randomly by counting fingers.
-    for (int i = 0; i < 10; ++i) {
-        try {
-            return attemptSampleDirectoryDiskUsageOnce(path);
-        } catch (const fs::filesystem_error&) {
-            // Go around for another spin that hopefully won't race.
-        }
-    }
-    return 0;
-}
-
-}
-
-uint64_t
-DiskMemUsageSampler::sampleDiskUsage()
+DiskMemUsageSampler::sampleDiskUsage(const ResourceUsage& resource_usage)
 {
     const auto &disk = _notifier.getHwInfo().disk();
     return disk.shared()
-        ? sampleDiskUsageInDirectory(_path)
+        ? (resource_usage.disk() + resource_usage.transient().disk())
         : sampleDiskUsageOnFileSystem(_path, disk);
 }
 
@@ -166,7 +137,9 @@ void
 DiskMemUsageSampler::add_resource_usage_provider(std::shared_ptr<const IResourceUsageProvider> provider)
 {
     std::lock_guard<std::mutex> guard(_lock);
-    _resource_usage_providers.push_back(provider);
+    if (provider) {
+        _resource_usage_providers.push_back(provider);
+    }
 }
 
 void

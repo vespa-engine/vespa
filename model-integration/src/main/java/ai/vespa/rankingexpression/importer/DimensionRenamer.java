@@ -4,12 +4,14 @@ package ai.vespa.rankingexpression.importer;
 import ai.vespa.rankingexpression.importer.operations.IntermediateOperation;
 import ai.vespa.rankingexpression.importer.operations.Rename;
 import com.yahoo.collections.ListMap;
+import com.yahoo.text.Text;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -145,7 +147,7 @@ public class DimensionRenamer {
     public Optional<String> dimensionNameOf(String name) {
         if ( renames == null || ! renames.containsKey(name))
             return Optional.empty();
-        return Optional.of(String.format("%s%d", dimensionPrefix, renames.get(name)));
+        return Optional.of(Text.format("%s%d", dimensionPrefix, renames.get(name)));
     }
 
     private static String renamesToString(Map<String, Integer> renames) {

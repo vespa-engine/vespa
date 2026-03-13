@@ -12,6 +12,9 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
+: "${VESPA_VERSION:?Environment variable VESPA_VERSION must be set (version to build)}"
+: "${LOCAL_RPM_REPO:?Environment variable LOCAL_RPM_REPO must be set (path to local RPM repo)}"
+
 echo "--- 📦 Building RPM packages"
 ulimit -c 0
 
@@ -26,5 +29,5 @@ rpmbuild --rebuild \
   --define "installdir $WORKDIR/vespa-install" "$WORKDIR"/vespa-"$VESPA_VERSION"-*.src.rpm
 
 echo "Moving RPMs and creating repository..."
-mv "$WORKDIR"/vespa-rpmbuild/RPMS/*/*.rpm "$WORKDIR/artifacts/$ARCH/rpms"
-createrepo "$WORKDIR/artifacts/$ARCH/rpms"
+mv "$WORKDIR"/vespa-rpmbuild/RPMS/*/*.rpm "$LOCAL_RPM_REPO"
+createrepo "$LOCAL_RPM_REPO"

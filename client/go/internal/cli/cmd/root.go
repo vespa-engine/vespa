@@ -339,7 +339,7 @@ func (c *CLI) configureCommands() {
 	configCmd := newConfigCmd()
 	documentCmd := newDocumentCmd(c)
 	prodCmd := newProdCmd()
-	statusCmd := newStatusCmd(c)
+	statusCmd := newStatusCmd(c, false)
 	applicationCmd := newApplicationCmd()
 
 	certCmd.AddCommand(newCertAddCmd(c))                // auth cert add
@@ -373,6 +373,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(newQueryCmd(c))                  // query
 	statusCmd.AddCommand(newStatusDeployCmd(c))         // status deploy
 	statusCmd.AddCommand(newStatusDeploymentCmd(c))     // status deployment
+	statusCmd.AddCommand(newStatusEndpointCmd(c))       // status endpoint
 	rootCmd.AddCommand(statusCmd)                       // status
 	rootCmd.AddCommand(newTestCmd(c))                   // test
 	rootCmd.AddCommand(newVersionCmd(c))                // version
@@ -394,7 +395,11 @@ func (c *CLI) bindWaitFlag(cmd *cobra.Command, defaultSecs int, value *int) {
 }
 
 func (c *CLI) printErr(err error, hints ...string) {
-	fmt.Fprintln(c.Stderr, color.RedString("Error:"), err)
+	if msg, ok := strings.CutPrefix(err.Error(), "deployment failed: "); ok {
+		fmt.Fprintln(c.Stderr, color.RedString("Deployment failed:"), msg)
+	} else {
+		fmt.Fprintln(c.Stderr, color.RedString("Error:"), err)
+	}
 	for _, hint := range hints {
 		fmt.Fprintln(c.Stderr, color.CyanString("Hint:"), hint)
 	}

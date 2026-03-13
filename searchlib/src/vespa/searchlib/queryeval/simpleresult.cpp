@@ -21,43 +21,18 @@ SimpleResult::clear()
 }
 
 SimpleResult &
-SimpleResult::search(SearchIterator &sb)
-{
-    clear();
-    // assume strict toplevel search object located at start
-    sb.initFullRange();
-    for (sb.seek(1); !sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
-        sb.unpack(sb.getDocId());
-        _hits.push_back(sb.getDocId());
-    }
-    return *this;
-}
-
-SimpleResult &
-SimpleResult::searchStrict(SearchIterator &sb, uint32_t docIdLimit)
-{
-    clear();
-    // assume strict toplevel search object located at start
-    sb.initRange(1, docIdLimit);
-    for (sb.seek(1); !sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
-        sb.unpack(sb.getDocId());
-        _hits.push_back(sb.getDocId());
-    }
-    return *this;
-}
-
-SimpleResult &
 SimpleResult::search(SearchIterator &sb, uint32_t docIdLimit)
 {
     clear();
-    // assume non-strict toplevel search object
-    sb.initRange(1, docIdLimit);
-    for (uint32_t docId = 1; !sb.isAtEnd(docId); ++docId) {
-        if (sb.seek(docId)) {
-            assert(docId == sb.getDocId());
-            sb.unpack(docId);
-            _hits.push_back(docId);
+    uint32_t docid = 1;
+    sb.initRange(docid, docIdLimit);
+    while (!sb.isAtEnd(docid)) {
+        if (sb.seek(docid)) {
+            assert(sb.getDocId() == docid);
+            sb.unpack(docid);
+            _hits.push_back(docid);
         }
+        docid = std::max(docid + 1, sb.getDocId());
     }
     return *this;
 }

@@ -8,6 +8,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudTokenDataPlaneFilterConfig;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.http.Client;
 import com.yahoo.vespa.model.container.http.Filter;
@@ -24,7 +25,7 @@ class CloudTokenDataPlaneFilter extends Filter implements CloudTokenDataPlaneFil
         super(model());
         this.clients = List.copyOf(cluster.getClients());
         // Token domain must be identical to the domain used for generating the tokens
-        this.tokenContext = String.format(java.util.Locale.ROOT, "Vespa Cloud tenant data plane:%s", state.getProperties().applicationId().tenant().value());
+        this.tokenContext = Text.format("Vespa Cloud tenant data plane:%s", state.getProperties().applicationId().tenant().value());
     }
 
     private static ChainedComponentModel model() {

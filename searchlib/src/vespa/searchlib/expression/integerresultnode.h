@@ -104,6 +104,8 @@ public:
     bool getBool() const { return getValue(); }
 private:
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+
+    std::string_view friendly_type_name() const noexcept override { return "bool"; }
 };
 
 class Int8ResultNode : public IntegerResultNodeT<int8_t>
@@ -115,6 +117,8 @@ public:
     Int8ResultNode(int8_t v=0) : Base(v) { }
 private:
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+
+    std::string_view friendly_type_name() const noexcept override { return "byte"; }
 };
 
 class Int16ResultNode : public IntegerResultNodeT<int16_t>
@@ -126,6 +130,8 @@ public:
     Int16ResultNode(int16_t v=0) : Base(v) { }
 private:
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+
+    std::string_view friendly_type_name() const noexcept override { return "short"; }
 };
 
 class Int32ResultNode : public IntegerResultNodeT<int32_t>
@@ -137,6 +143,8 @@ public:
     Int32ResultNode(int32_t v=0) : Base(v) { }
 private:
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+
+    std::string_view friendly_type_name() const noexcept override { return "int"; }
 };
 
 class Int64ResultNode : public IntegerResultNodeT<int64_t>
@@ -148,6 +156,8 @@ public:
     Int64ResultNode(int64_t v=0) : Base(v) { }
 private:
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+
+    std::string_view friendly_type_name() const noexcept override { return "long"; }
 };
 
 }

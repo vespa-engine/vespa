@@ -2,6 +2,7 @@
 
 #include "nearsearch.h"
 #include "i_element_gap_inspector.h"
+#include "near_search_flags.h"
 #include "near_search_utils.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/priority_queue.h>
@@ -14,6 +15,7 @@ LOG_SETUP(".nearsearch");
 using search::queryeval::IElementGapInspector;
 using search::queryeval::near_search_utils::BoolMatchResult;
 using search::queryeval::near_search_utils::ElementIdMatchResult;
+using search::queryeval::near_search_utils::SpanMatchResult;
 
 namespace search::queryeval {
 
@@ -32,9 +34,10 @@ void setup_fields(uint32_t window, const IElementGapInspector& element_gap_inspe
     for (size_t i = 0; i < in.size(); ++i) {
         ++fields[in[i]->getFieldId()];
     }
-    for (auto [field, cnt]: fields) {
+    for (auto [field, cnt] : fields) {
         if (cnt == terms) {
-            matchers.push_back(T(window, element_gap_inspector.get_element_gap(field), field, in, num_negative_terms, exclusion_distance));
+            matchers.emplace_back(window, element_gap_inspector.get_element_gap(field), field, in, num_negative_terms,
+                                  exclusion_distance, field);
         }
     }
 }
@@ -51,6 +54,26 @@ calc_window_end_pos(const TermFieldMatchDataPosition& pos, uint32_t window, Elem
 
 } // namespace search::queryeval::<unnamed>
 
+void
+NearSearchBase::MatcherBase::hide_positive_terms_from_ranking()
+{
+    uint32_t size = _inputs.size();
+    uint32_t num_positive_terms = size - _num_negative_terms;
+    for (uint32_t i = 0; i < num_positive_terms; ++i) {
+        _inputs[i]->set_hidden_from_ranking();
+    }
+}
+
+void
+NearSearchBase::MatcherBase::filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans)
+{
+    uint32_t size = _inputs.size();
+    uint32_t num_positive_terms = size - _num_negative_terms;
+    for (uint32_t i = 0; i < num_positive_terms; ++i) {
+        _inputs[i]->filter_match_spans(docid, match_spans);
+    }
+}
+
 NearSearchBase::NearSearchBase(Children terms,
                                const TermFieldMatchDataArray &data,
                                uint32_t window,
@@ -62,11 +85,15 @@ NearSearchBase::NearSearchBase(Children terms,
       _window(window),
       _num_negative_terms(num_negative_terms),
       _exclusion_distance(exclusion_distance),
-      _strict(strict)
+      _strict(strict),
+      _match_spans(),
+      _unpacked_docid(beginId())
 {
     // we need at least one positive term
     assert(getChildren().size() > _num_negative_terms);
 }
+
+NearSearchBase::~NearSearchBase() = default;
 
 void
 NearSearchBase::visitMembers(vespalib::ObjectVisitor &visitor) const
@@ -150,6 +177,32 @@ NearSearchBase::doSeek(uint32_t docId)
         LOG(debug, "Document %d does not match, seeking next.", docId);
         seekNext(docId);
     }
+    if (foundHit || _strict) {
+        /*
+         * Match data has been unpacked, but (o)near operator or another operator above (e.g. and, sameElement) might
+         * not be a match for the query.
+         */
+        hide_positive_terms_from_ranking();
+    }
+}
+
+void
+NearSearchBase::doUnpack(uint32_t docid)
+{
+    MultiSearch::doUnpack(docid);
+    if (NearSearchFlags::filter_terms() && docid != _unpacked_docid) {
+        _match_spans.clear();
+        get_match_spans(docid, _match_spans);
+        filter_positive_terms(docid, _match_spans);
+    }
+    _unpacked_docid = docid;
+}
+
+void
+NearSearchBase::initRange(uint32_t begin, uint32_t end)
+{
+    MultiSearch::initRange(begin, end);
+    _unpacked_docid = beginId();
 }
 
 NearSearch::NearSearch(Children terms,
@@ -206,7 +259,7 @@ public:
     bool setup(const TermFieldMatchDataArray &input, size_t num_positive_terms, uint32_t docid) {
         for (size_t i = num_positive_terms; i < input.size(); ++i) {
             const search::fef::TermFieldMatchData *term = input[i];
-            if (term->getDocId() == docid && term->begin() != term->end()) {
+            if (term->has_data(docid) && term->begin() != term->end()) {
                 _queue.push({term->begin(), term->end()});
             }
         }
@@ -247,11 +300,13 @@ struct Iterators
     vespalib::PriorityQueue<PosIter> _queue;
     TermFieldMatchDataPosition       _maxOcc;
     ElementGap                       _element_gap;
+    uint32_t                         _field_id;
 
-    Iterators(ElementGap element_gap)
+    Iterators(ElementGap element_gap, uint32_t field_id)
         : _queue(),
           _maxOcc(),
-          _element_gap(element_gap)
+          _element_gap(element_gap),
+          _field_id(field_id)
     {
     }
     void update(const TermFieldMatchDataPosition& occ)
@@ -277,7 +332,11 @@ struct Iterators
 
             if (!(lastAllowed < _maxOcc)) {
                 if (filter.check_window(*front.curPos, _maxOcc)) {
-                    match_result.register_match(front.curPos->getElementId());
+                    if constexpr (MatchResult::collect_spans) {
+                        match_result.register_match(MatchSpan(_field_id, *front.curPos, _maxOcc));
+                    } else {
+                        match_result.register_match(front.curPos->getElementId());
+                    }
                     if constexpr (MatchResult::shortcut_return) {
                         return;
                     }
@@ -303,11 +362,11 @@ template <typename MatchResult>
 void
 NearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
 {
-    Iterators pos(get_element_gap());
+    Iterators pos(get_element_gap(), field_id());
     uint32_t num_positive_terms = inputs().size() - num_negative_terms();
     for (uint32_t i = 0; i < num_positive_terms; ++i) {
         const search::fef::TermFieldMatchData *term = inputs()[i];
-        if (term->getDocId() != docId || term->begin() == term->end()) {
+        if (!term->has_data(docId) || term->begin() == term->end()) {
             LOG(debug, "No occurrences found for term %d.", i);
             return;
         }
@@ -328,7 +387,7 @@ bool
 NearSearch::match(uint32_t docId)
 {
     // Retrieve position iterators for each term.
-    doUnpack(docId);
+    MultiSearch::doUnpack(docId);
     BoolMatchResult match_result;
     for (size_t i = 0; i < _matchers.size(); ++i) {
         _matchers[i].match(docId, match_result);
@@ -349,6 +408,33 @@ NearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids)
         matcher.match(docId, match_result);
     }
     match_result.maybe_sort_element_ids();
+}
+
+void
+NearSearch::get_match_spans(uint32_t docid, std::vector<MatchSpan>& match_spans)
+{
+    // Retrieve spans that matched
+    assert(match_spans.empty());
+    SpanMatchResult match_result(match_spans);
+    for (auto& matcher : _matchers) {
+        matcher.match(docid, match_result);
+    }
+}
+
+void
+NearSearch::hide_positive_terms_from_ranking()
+{
+    for (auto& matcher : _matchers) {
+        matcher.hide_positive_terms_from_ranking();
+    }
+}
+
+void
+NearSearch::filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans)
+{
+    for (auto& matcher : _matchers) {
+        matcher.filter_positive_terms(docid, match_spans);
+    }
 }
 
 ONearSearch::ONearSearch(Children terms,
@@ -383,7 +469,7 @@ ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filt
     PositionsIteratorList pos;
     for (uint32_t i = 0; i < numTerms; ++i) {
         const search::fef::TermFieldMatchData *term = inputs()[i];
-        if (term->getDocId() != docId || term->begin() == term->end()) {
+        if (!term->has_data(docId) || term->begin() == term->end()) {
             LOG(debug, "No occurrences found for term %d.", i);
             return;
         }
@@ -393,7 +479,11 @@ ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filt
     if (numTerms < 2) {
         for ( ; pos[0] != inputs()[0]->end(); ++pos[0]) {
             if (filter.check_window(*pos[0], *pos[0])) {
-                match_result.register_match(pos[0]->getElementId());
+                if constexpr (MatchResult::collect_spans) {
+                    match_result.register_match(MatchSpan(field_id(), *pos[0], *pos[0]));
+                } else {
+                    match_result.register_match(pos[0]->getElementId());
+                }
                 if constexpr (MatchResult::shortcut_return) {
                     return;
                 }
@@ -438,7 +528,11 @@ ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filt
                 if (filter.check_window(*pos[0], *pos[i])) {
                     LOG(debug, "ONEAR match found for document %d.", docId);
                     // OK for all terms
-                    match_result.register_match(firstTermPos.getElementId());
+                    if constexpr (MatchResult::collect_spans) {
+                        match_result.register_match(MatchSpan(field_id(), *pos[0], *pos[i]));
+                    } else {
+                        match_result.register_match(pos[0]->getElementId());
+                    }
                     if constexpr (MatchResult::shortcut_return) {
                         return;
                     }
@@ -472,7 +566,7 @@ bool
 ONearSearch::match(uint32_t docId)
 {
     // Retrieve position iterators for each term.
-    doUnpack(docId);
+    MultiSearch::doUnpack(docId);
     BoolMatchResult match_result;
     for (auto& matcher : _matchers) {
         matcher.match(docId, match_result);
@@ -493,6 +587,33 @@ ONearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids)
         matcher.match(docId, match_result);
     }
     match_result.maybe_sort_element_ids();
+}
+
+void
+ONearSearch::get_match_spans(uint32_t docid, std::vector<MatchSpan>& match_spans)
+{
+    // Retrieve spans that matched
+    assert(match_spans.empty());
+    SpanMatchResult match_result(match_spans);
+    for (auto& matcher : _matchers) {
+        matcher.match(docid, match_result);
+    }
+}
+
+void
+ONearSearch::hide_positive_terms_from_ranking()
+{
+    for (auto& matcher : _matchers) {
+        matcher.hide_positive_terms_from_ranking();
+    }
+}
+
+void
+ONearSearch::filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans)
+{
+    for (auto& matcher : _matchers) {
+        matcher.filter_positive_terms(docid, match_spans);
+    }
 }
 
 }

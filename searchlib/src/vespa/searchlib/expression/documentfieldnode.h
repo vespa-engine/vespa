@@ -24,6 +24,9 @@ public:
 private:
     void set(const ResultNode&) override;
     size_t hash() const override { return 0; }
+
+    std::string_view friendly_type_name() const noexcept override { return "<default>"; }
+
     static char null;
 };
 
@@ -73,7 +76,7 @@ private:
 
     const ResultNode * getResult() const override { return _value.get(); }
     void onPrepare(bool preserveAccurateTypes) override;
-    bool onExecute() const override;
+    void onExecute() const override;
     void onDoc(const document::Document & doc) override;
     void onDocType(const document::DocumentType & docType) override;
 protected:

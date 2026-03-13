@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.benchmark;
+import java.nio.charset.StandardCharsets;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,6 +15,7 @@ import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.RuleImporter;
 import com.yahoo.prelude.semantics.parser.ParseException;
+import com.yahoo.text.Utf8;
 
 public class RuleBaseBenchmark {
 
@@ -30,7 +32,7 @@ public class RuleBaseBenchmark {
         }
         RuleBase ruleBase = new RuleImporter(new SimpleLinguistics()).importFile(ruleBaseFile, fsaFile);
         ArrayList<String> queries = new ArrayList<>();
-        BufferedReader reader = new BufferedReader(new FileReader(queryFile));
+        BufferedReader reader = new BufferedReader(Utf8.createReader(queryFile));
         String line;
         while((line=reader.readLine())!=null){
             queries.add(line);

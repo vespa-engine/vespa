@@ -51,45 +51,45 @@ public class BacktrackingTestCase {
 
     @Test
     void testMultilevelBacktrackingLiteralTerms() {
-        assertSemantics("WEAKAND(100) replaced", "word1 word2 word5 word8");
+        assertSemantics("WEAKAND replaced", "word1 word2 word5 word8");
     }
 
     @Test
     void testMultilevelBacktrackingWontReorderOthertermsLiteralTerms() {
-        assertSemantics("WEAKAND(100) other1 other2 other3 replaced", "other1 other2 other3 word1 word2 word5 word8");
+        assertSemantics("WEAKAND other1 other2 other3 replaced", "other1 other2 other3 word1 word2 word5 word8");
     }
 
     @Test
     void testMultilevelBacktrackingWithMulticompoundMatchLiteralTerms() {
-        assertSemantics("WEAKAND(100) other1 other2 other3 replaced", "other1 other2 other3 word1 word2 word5-word8");
+        assertSemantics("WEAKAND other1 other2 other3 replaced", "other1 other2 other3 word1 word2 word5-word8");
     }
 
     @Test
     void testMultilevelBacktrackingPreservePartialMatchBeforeLiteralTerms() {
-        assertSemantics("WEAKAND(100) word1 word2 word5 replaced", "word1 word2 word5 word1 word2 word5 word8");
+        assertSemantics("WEAKAND word1 word2 word5 replaced", "word1 word2 word5 word1 word2 word5 word8");
     }
 
     @Test
     void testMultilevelBacktrackingPreservePartialMatchAfterLiteralTerms() {
-        assertSemantics("WEAKAND(100) replaced word1 word2 word5", "word1 word2 word5 word8 word1 word2 word5 ");
+        assertSemantics("WEAKAND replaced word1 word2 word5", "word1 word2 word5 word8 word1 word2 word5 ");
     }
 
     // reference terms ---------------
 
     @Test
     void testMultilevelBacktrackingReferenceTerms() {
-        assertSemantics("WEAKAND(100) ref:ref1 ref:ref2 ref:ref5 ref:ref8", "ref1 ref2 ref5 ref8");
+        assertSemantics("WEAKAND ref:ref1 ref:ref2 ref:ref5 ref:ref8", "ref1 ref2 ref5 ref8");
     }
 
     @Test
     void testMultilevelBacktrackingPreservePartialMatchBeforeReferenceTerms() {
-        assertSemantics("WEAKAND(100) ref1 ref2 ref5 ref:ref1 ref:ref2 ref:ref5 ref:ref8",
+        assertSemantics("WEAKAND ref1 ref2 ref5 ref:ref1 ref:ref2 ref:ref5 ref:ref8",
                 "ref1 ref2 ref5 ref1 ref2 ref5 ref8");
     }
 
     @Test
     void testMultilevelBacktrackingPreservePartialMatchAfterReferenceTerms() {
-        assertSemantics("WEAKAND(100) ref:ref1 ref:ref2 ref:ref5 ref:ref8 ref1 ref2 ref5",
+        assertSemantics("WEAKAND ref:ref1 ref:ref2 ref:ref5 ref:ref8 ref1 ref2 ref5",
                 "ref1 ref2 ref5 ref8 ref1 ref2 ref5");
     }
 

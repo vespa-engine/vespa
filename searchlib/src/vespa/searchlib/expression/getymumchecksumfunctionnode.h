@@ -2,6 +2,7 @@
 #pragma once
 
 #include "documentaccessornode.h"
+#include "integerresultnode.h"
 
 namespace search {
 namespace expression {
@@ -17,10 +18,9 @@ private:
     const ResultNode * getResult() const override { return &_checkSum; }
     void onDocType(const document::DocumentType & docType) override { (void) docType; }
     void onDoc(const document::Document & doc) override;
-    bool onExecute() const override { return true; }
+    void onExecute() const override { }
     Int64ResultNode _checkSum;
 };
 
 }
 }
-

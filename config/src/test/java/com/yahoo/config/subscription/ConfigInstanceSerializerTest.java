@@ -223,7 +223,7 @@ public class ConfigInstanceSerializerTest {
             fail();
         }
 
-        assertJsonEquals(baos.toString(), expectedJson);
+        assertJsonEquals(baos.toString(java.nio.charset.StandardCharsets.UTF_8), expectedJson);
     }
 
 }

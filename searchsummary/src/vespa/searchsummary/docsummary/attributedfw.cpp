@@ -8,6 +8,7 @@
 #include "summary_elements_selector.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/searchcommon/attribute/i_array_bool_read_view.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/attribute/multi_value_traits.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
@@ -25,6 +26,7 @@ using namespace search;
 using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
+using search::attribute::IArrayBoolReadView;
 using search::attribute::IMultiValueAttribute;
 using search::attribute::IMultiValueReadView;
 using search::common::ElementIds;
@@ -239,6 +241,52 @@ MultiAttrDFWState<MultiValueType>::insertField(uint32_t docid, ElementIds select
     }
 }
 
+class MultiAttrDFWStateBool : public DocsumFieldWriterState
+{
+    const IArrayBoolReadView* _read_view;
+public:
+    MultiAttrDFWStateBool(const IAttributeVector& attr, vespalib::Stash& stash);
+    ~MultiAttrDFWStateBool() override;
+    void insertField(uint32_t docid, ElementIds selected_elements, Inserter& target) override;
+};
+
+MultiAttrDFWStateBool::MultiAttrDFWStateBool(const IAttributeVector& attr, vespalib::Stash& stash)
+    : _read_view(nullptr)
+{
+    auto multi_value_attribute = attr.as_multi_value_attribute();
+    if (multi_value_attribute != nullptr) {
+        _read_view = multi_value_attribute->make_read_view(IMultiValueAttribute::ArrayBoolTag(), stash);
+    }
+}
+
+MultiAttrDFWStateBool::~MultiAttrDFWStateBool() = default;
+
+void
+MultiAttrDFWStateBool::insertField(uint32_t docid, ElementIds selected_elements, Inserter& target)
+{
+    if (!_read_view) {
+        return;
+    }
+    auto elements = _read_view->get_values(docid);
+    if (elements.empty()) {
+        return;
+    }
+    if (!selected_elements.all_elements()) {
+        if (selected_elements.empty() || selected_elements.back() >= elements.size()) {
+            return;
+        }
+        Cursor &arr = target.insertArray();
+        for (uint32_t id_to_keep : selected_elements) {
+            arr.addBool(elements[id_to_keep]);
+        }
+    } else {
+        Cursor &arr = target.insertArray(elements.size());
+        for (bool element : elements) {
+            arr.addBool(element);
+        }
+    }
+}
+
 class MultiAttrDFW : public AttrDFW {
 private:
     uint32_t _state_index; // index into _fieldWriterStates in GetDocsumsState
@@ -293,6 +341,8 @@ make_field_writer_state(const std::string& field_name, const IAttributeVector& a
         return make_field_writer_state_helper<float>(field_name, attr, stash);
     case BasicType::Type::DOUBLE:
         return make_field_writer_state_helper<double>(field_name, attr, stash);
+    case BasicType::Type::BOOL:
+        return &stash.create<MultiAttrDFWStateBool>(attr, stash);
     default:
         ;
     }
@@ -326,6 +376,7 @@ create_multi_writer(const IAttributeVector& attr)
     case BasicType::INT64:
     case BasicType::FLOAT:
     case BasicType::DOUBLE:
+    case BasicType::BOOL:
         return std::make_unique<MultiAttrDFW>(attr.getName());
     default:
         // should not happen

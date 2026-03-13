@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "frtconfigresponsev3.h"
+
 #include "compressioninfo.h"
+
 #include <vespa/fnet/frt/values.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 
@@ -16,53 +18,44 @@ using namespace config::protocol::v3;
 
 namespace config {
 
-std::string make_json(const Slime &slime, bool compact) {
+std::string make_json(const Slime& slime, bool compact) {
     vespalib::SimpleBuffer buf;
     vespalib::slime::JsonFormat::encode(slime, buf, compact);
     return buf.get().make_string();
 }
 
-class V3Payload : public Payload
-{
+class V3Payload : public Payload {
 public:
-    explicit V3Payload(Slime::UP data) noexcept
-        : _data(std::move(data))
-    {
-    }
+    explicit V3Payload(Slime::UP data) noexcept : _data(std::move(data)) {}
 
-    const Inspector & getSlimePayload() const override {
-        return _data->get();
-    }
+    const Inspector& getSlimePayload() const override { return _data->get(); }
+
 private:
     Slime::UP _data;
 };
 
 const std::string FRTConfigResponseV3::RESPONSE_TYPES = "sx";
 
-FRTConfigResponseV3::FRTConfigResponseV3(FRT_RPCRequest * request)
-    : SlimeConfigResponse(request)
-{
-}
+FRTConfigResponseV3::FRTConfigResponseV3(FRT_RPCRequest* request) : SlimeConfigResponse(request) {}
 
-const std::string &
-FRTConfigResponseV3::getResponseTypes() const
-{
-    return RESPONSE_TYPES;
-}
+const std::string& FRTConfigResponseV3::getResponseTypes() const { return RESPONSE_TYPES; }
 
-ConfigValue
-FRTConfigResponseV3::readConfigValue() const
-{
-    std::string xxhash64(_data->get()[RESPONSE_CONFIG_XXHASH64].asString().make_string());
+ConfigValue FRTConfigResponseV3::readConfigValue() const {
+    std::string     xxhash64(_data->get()[RESPONSE_CONFIG_XXHASH64].asString().make_string());
     CompressionInfo info;
     info.deserialize(_data->get()[RESPONSE_COMPRESSION_INFO]);
-    auto slime = std::make_unique<Slime>();
-    DecompressedData data(decompress(((*_returnValues)[1]._data._buf), ((*_returnValues)[1]._data._len), info.compressionType, info.uncompressedSize));
+    auto             slime = std::make_unique<Slime>();
+    DecompressedData data(decompress(((*_returnValues)[1]._data._buf), ((*_returnValues)[1]._data._len),
+                                     info.compressionType, info.uncompressedSize));
     if (data.memRef.size > 0) {
         size_t consumedSize = JsonFormat::decode(data.memRef, *slime);
         if (consumedSize == 0) {
             std::string json(make_json(*slime, true));
-            LOG(error, "Error decoding JSON. Consumed size: %lu, uncompressed size: %u, compression type: %s, assumed uncompressed size(%u), compressed size: %u, slime(%s)", consumedSize, data.size, compressionTypeToString(info.compressionType).c_str(), info.uncompressedSize, ((*_returnValues)[1]._data._len), json.c_str());
+            LOG(error,
+                "Error decoding JSON. Consumed size: %lu, uncompressed size: %u, compression type: %s, assumed "
+                "uncompressed size(%u), compressed size: %u, slime(%s)",
+                consumedSize, data.size, compressionTypeToString(info.compressionType).c_str(), info.uncompressedSize,
+                ((*_returnValues)[1]._data._len), json.c_str());
             LOG_ABORT("Error decoding JSON");
         }
     }

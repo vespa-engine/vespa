@@ -6,10 +6,8 @@
 set -o errexit
 set -o nounset
 set -o pipefail
+set -o xtrace
 
-if [[ -n "${DEBUG:-}" ]]; then
-    set -o xtrace
-fi
 
 if ! docker ps &> /dev/null; then
     echo "No working docker command found."
@@ -40,11 +38,22 @@ else
 fi
 
 echo "Preparing RPMs for container build..."
-rm -rf "${WORKDIR}/docker-image/rpms"
-cp -a "${WORKDIR}/artifacts/$ARCH/rpms" "${WORKDIR}/docker-image/"
+# Ensure clean state for rpms directory
+rm -rf "${WORKDIR}/docker-image/rpms" && mkdir -p "${WORKDIR}/docker-image/rpms"
+# Note: Appending "./" ensures that the directory's contents are copied, rather than the directory itself.
+cp -a "${LOCAL_RPM_REPO}/." "${WORKDIR}/docker-image/rpms/"
 
 cd "${WORKDIR}/docker-image"
 SOURCE_GITREF=$(git rev-parse HEAD)
+
+select_dockerfile() {
+    wanted="Dockerfile.${VESPA_BUILDOS_LABEL}"
+    if [ -f "${wanted}" ]; then
+        echo "${wanted}"
+    else
+        echo "Dockerfile"
+    fi
+}
 
 echo "--- Building Vespa preview container"
 GHCR_PREVIEW_TAG=ghcr.io/vespa-engine/vespa-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
@@ -55,7 +64,7 @@ docker build --progress plain \
              --build-arg VESPA_BASE_IMAGE="$VESPA_BASE_IMAGE" \
              --tag vespaengine/vespa \
              --tag "${GHCR_PREVIEW_TAG}" \
-             --file Dockerfile .
+             --file "$(select_dockerfile)" .
 
 declare -r GITREF="${GITREF_SYSTEM_TEST:-HEAD}"
 
@@ -73,6 +82,9 @@ cd system-test
 git checkout "$GITREF"
 mkdir -p docker/vespa-systemtests
 git archive HEAD --format tar | tar x -C docker/vespa-systemtests
+before="\\\$[{]vespa.version[}]"
+after="${VESPA_VERSION}"
+find docker/vespa-systemtests -name pom.xml -print0 | xargs -0 perl -pi -e "s,>${before}<,>${after}<,"
 cd docker
 echo "Copying Maven repository and RPMs for system-test container..."
 rm -rf maven-repo
@@ -88,4 +100,4 @@ docker build --progress=plain \
              --build-arg VESPA_BASE_IMAGE="${GHCR_PREVIEW_TAG}" \
              --target systemtest \
              --tag "$DOCKER_SYSTEMTEST_TAG" \
-             --file Dockerfile .
+             --file "$(select_dockerfile)" .

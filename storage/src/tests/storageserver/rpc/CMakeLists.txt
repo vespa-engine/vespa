@@ -11,6 +11,7 @@ vespa_add_executable(storage_storageserver_rpc_gtest_runner_app TEST
     storage_teststorageserver
     vespa_storage
     GTest::gtest
+    GTest::gmock
 )
 
 vespa_add_test(

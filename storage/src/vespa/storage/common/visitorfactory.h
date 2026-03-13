@@ -9,6 +9,7 @@
 #pragma once
 
 #include <vespa/vdslib/container/parameters.h>
+#include <map>
 
 namespace storage {
 
@@ -36,4 +37,3 @@ public:
 };
 
 } // storage
-

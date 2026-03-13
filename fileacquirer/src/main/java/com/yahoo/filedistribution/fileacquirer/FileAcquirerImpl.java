@@ -11,6 +11,7 @@ import com.yahoo.jrt.Transport;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -159,7 +160,7 @@ class FileAcquirerImpl implements FileAcquirer {
             }
         } while ( timer.isTimeLeft() );
 
-        throw new TimeoutException("Timed out waiting for " + fileReference + " after " + timeout + " " + timeUnit.name().toLowerCase());
+        throw new TimeoutException("Timed out waiting for " + fileReference + " after " + timeout + " " + timeUnit.name().toLowerCase(Locale.ROOT));
     }
 
 }

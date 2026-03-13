@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.rewrite.test;
 
-import com.yahoo.search.*;
-import com.yahoo.search.searchchain.*;
-import com.yahoo.search.intent.model.*;
-import com.yahoo.search.query.rewrite.*;
-import com.yahoo.search.query.rewrite.rewriters.*;
+import com.yahoo.search.Query;
+import com.yahoo.search.intent.model.IntentModel;
+import com.yahoo.search.query.rewrite.RewriterConstants;
+import com.yahoo.search.query.rewrite.RewriterUtils;
+import com.yahoo.search.query.rewrite.rewriters.MisspellRewriter;
+import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +48,7 @@ public class MisspellRewriterTestCase {
         utils.assertRewrittenQuery("?query=willl+smith&" +
                 REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                 REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
-                "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith sugg)'",
+                "query 'OR (WEAKAND willl smith) (WEAKAND will smith sugg)'",
                 intentModel);
     }
 
@@ -67,7 +68,7 @@ public class MisspellRewriterTestCase {
 
         utils.assertRewrittenQuery("?query=willl+smith&" +
                 REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true",
-                "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith rw1)'",
+                "query 'OR (WEAKAND willl smith) (WEAKAND will smith rw1)'",
                 intentModel);
     }
 
@@ -87,7 +88,7 @@ public class MisspellRewriterTestCase {
 
         utils.assertRewrittenQuery("?query=willl+smith&" +
                 REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
-                "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith sugg1)'",
+                "query 'OR (WEAKAND willl smith) (WEAKAND will smith sugg1)'",
                 intentModel);
     }
 
@@ -104,7 +105,7 @@ public class MisspellRewriterTestCase {
                         false, true));
 
         utils.assertRewrittenQuery("?query=willl+smith",
-                "query 'WEAKAND(100) willl smith'",
+                "query 'WEAKAND willl smith'",
                 intentModel);
     }
 
@@ -123,7 +124,7 @@ public class MisspellRewriterTestCase {
         utils.assertRewrittenQuery("?query=will+smith&" +
                 REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                 REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
-                "query 'WEAKAND(100) will smith'",
+                "query 'WEAKAND will smith'",
                 intentModel);
     }
 

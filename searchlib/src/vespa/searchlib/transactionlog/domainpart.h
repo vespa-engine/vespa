@@ -41,6 +41,7 @@ public:
     size_t      byteSize() const {
         return _byteSize.load(std::memory_order_acquire);
     }
+    uint64_t    get_size_on_disk() const;
     bool        isClosed() const;
 private:
     using Alloc = vespalib::alloc::Alloc;

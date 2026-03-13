@@ -126,10 +126,10 @@ public class AdvancedParser extends StructuredParser {
     }
 
 
-    private static boolean needWeakAnd(Item topLevelItem, int n) {
+    private static boolean needWeakAnd(Item topLevelItem, int targetHits) {
         return !(topLevelItem instanceof WeakAndItem topLevelWeakAnd) ||
-                ((n != 0 || topLevelWeakAnd.nIsExplicit()) && (n != topLevelWeakAnd.getN()));
-
+                ((targetHits != 0 || topLevelWeakAnd.getTargetHits() != null) &&
+                 (topLevelWeakAnd.getTargetHits() == null || targetHits != topLevelWeakAnd.getTargetHits()));
     }
 
     /** Returns the new top level, or null if the current item is not an operator */
@@ -159,11 +159,11 @@ public class AdvancedParser extends StructuredParser {
             }
             return topLevelItem;
         } else if (isTheWord("wand", item) || isTheWord("weakand", item)) {
-            int n = consumeNumericArgument();
-            if (topLevelIsClosed || needWeakAnd(topLevelItem, n)) {
+            int targetHits = consumeNumericArgument();
+            if (topLevelIsClosed || needWeakAnd(topLevelItem, targetHits)) {
                 WeakAndItem wand = new WeakAndItem();
-                if (n != 0) {
-                    wand.setN(n);
+                if (targetHits != 0) {
+                    wand.setTargetHits(targetHits);
                 }
                 wand.addItem(topLevelItem);
                 return wand;

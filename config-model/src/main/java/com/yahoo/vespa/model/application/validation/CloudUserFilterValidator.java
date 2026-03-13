@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.container.http.HttpFilterChain;
 
@@ -27,7 +28,7 @@ public class CloudUserFilterValidator implements Validator {
             if (cluster.getHttp() == null) continue;
             for (var chain : cluster.getHttp().getFilterChains().allChains().allComponents()) {
                 if (chain.type() == HttpFilterChain.Type.USER) {
-                    var msg = String.format(java.util.Locale.ROOT, "Found filter chain violation - chain '%s' in cluster '%s'", cluster.name(), chain.id());
+                    var msg = Text.format("Found filter chain violation - chain '%s' in cluster '%s'", cluster.name(), chain.id());
                     context.deployState().getDeployLogger().log(Level.WARNING, msg);
                     violations.add(new Violation(cluster.name(), chain.id()));
                 }
@@ -35,9 +36,9 @@ public class CloudUserFilterValidator implements Validator {
         }
         if (violations.isEmpty()) return;
         var violationsStr = violations.stream()
-                .map(v -> String.format(java.util.Locale.ROOT, "chain '%s' in cluster '%s'", v.chain(), v.cluster()))
+                .map(v -> Text.format("chain '%s' in cluster '%s'", v.chain(), v.cluster()))
                 .collect(Collectors.joining(", ", "[", "]"));
-        var msg = String.format(java.util.Locale.ROOT, "HTTP filter chains are currently not supported in Vespa Cloud (%s)", violationsStr);
+        var msg = Text.format("HTTP filter chains are currently not supported in Vespa Cloud (%s)", violationsStr);
         context.illegal(msg);
     }
 

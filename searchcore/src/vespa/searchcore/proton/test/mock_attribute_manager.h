@@ -99,7 +99,7 @@ public:
     std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view name) const override {
         return _mock.readable_attribute_vector(name);
     }
-    ResourceUsage get_resource_usage() const override;
+    searchcorespi::common::ResourceUsage get_resource_usage() const override;
 };
 
 }

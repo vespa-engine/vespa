@@ -51,7 +51,7 @@ void testInvalidId() {
     const TermFieldMatchData empty;
     using search::queryeval::SearchIterator;
 
-    EXPECT_EQ(TermFieldMatchData::invalidId(), empty.getDocId());
+    EXPECT_TRUE(empty.has_invalid_docid());
     EXPECT_TRUE(TermFieldMatchData::invalidId() < (SearchIterator::beginId() + 1 ) ||
                TermFieldMatchData::invalidId() > (search::endDocId - 1));
 }
@@ -124,7 +124,7 @@ void testGenerate(State &state) {
 
     // stale unpacked data
     state.f5->reset(5);
-    EXPECT_EQ(5u, state.f5->getDocId());
+    EXPECT_TRUE(state.f5->has_ranking_data(5u));
     {
         TermFieldMatchDataPosition pos;
         pos.setPosition(3);
@@ -135,7 +135,7 @@ void testGenerate(State &state) {
         EXPECT_EQ(10u, state.f5->getIterator().getFieldLength());
     }
     state.f5->reset(6);
-    EXPECT_EQ(6u, state.f5->getDocId());
+    EXPECT_TRUE(state.f5->has_ranking_data(6u));
     EXPECT_EQ(FieldPositionsIterator::UNKNOWN_LENGTH,
                state.f5->getIterator().getFieldLength());
     EXPECT_EQ(0u, state.f5->getIterator().size());
@@ -175,9 +175,9 @@ void testGenerate(State &state) {
 }
 
 void testAnalyze(State &state) {
-    EXPECT_EQ(10u, state.f3->getDocId());
-    EXPECT_NE(10u, state.f5->getDocId());
-    EXPECT_EQ(10u, state.f7->getDocId());
+    EXPECT_TRUE(state.f3->has_ranking_data(10u));
+    EXPECT_FALSE(state.f5->has_data(10u));
+    EXPECT_TRUE(state.f7->has_ranking_data(10u));
 
     FieldPositionsIterator it = state.f3->getIterator();
     EXPECT_EQ(20u, it.getFieldLength());
@@ -316,7 +316,7 @@ TEST(TermFieldModelTest, require_that_MatchData_soft_reset_retains_appropriate_s
     EXPECT_TRUE(old_term->isNotNeeded());
     EXPECT_EQ(old_term->getFieldId(), 7u);
     EXPECT_EQ(old_term->getWeight(), 21);
-    EXPECT_EQ(old_term->getDocId(), 42u);
+    EXPECT_TRUE(old_term->has_ranking_data(42u));
     md->soft_reset();
     auto *new_term = md->resolveTermField(7);
     EXPECT_EQ(new_term, old_term);
@@ -324,7 +324,7 @@ TEST(TermFieldModelTest, require_that_MatchData_soft_reset_retains_appropriate_s
     EXPECT_TRUE(new_term->isNotNeeded());
     EXPECT_EQ(new_term->getFieldId(), 7u);
     EXPECT_EQ(new_term->getWeight(), 21);
-    EXPECT_EQ(new_term->getDocId(), TermFieldMatchData::invalidId());
+    EXPECT_TRUE(new_term->has_invalid_docid());
 }
 
 TEST(TermFieldModelTest, require_that_compareWithExactness_implements_a_strict_weak_ordering) {

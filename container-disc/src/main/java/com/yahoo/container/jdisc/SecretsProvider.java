@@ -4,6 +4,7 @@ package com.yahoo.container.jdisc;
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.yahoo.container.di.componentgraph.Provider;
+import com.yahoo.text.Text;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
@@ -35,7 +36,7 @@ public class SecretsProvider implements Provider<Secrets> {
             var value = System.getenv(envName);
             if (value == null || value.isEmpty()) {
                 throw new IllegalArgumentException(
-                        "Secret '%s' not found. Set environment variable '%s'".formatted(key, envName));
+                        Text.format("Secret '%s' not found. Set environment variable '%s'", key, envName));
             }
             return () -> value;
         }

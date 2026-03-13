@@ -305,6 +305,11 @@ public class EmbedderTestCase {
     }
 
     @Test
+    void negativeGpuDevicePassesXmlValidation() {
+        new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed_negative_gpu/").create();
+    }
+
+    @Test
     void passesXmlValidation() {
         new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed/").create();
     }

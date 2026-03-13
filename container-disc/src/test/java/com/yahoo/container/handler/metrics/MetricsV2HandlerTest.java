@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.io.InputStreamReader;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -26,7 +27,9 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.V2_PATH;
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.VALUES_PATH;
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.consumerQuery;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author gjoranv
@@ -137,7 +140,7 @@ public class MetricsV2HandlerTest {
         if (in == null) {
             throw new RuntimeException("File not found: " + filename);
         }
-        return new BufferedReader(new InputStreamReader(in)).lines().collect(Collectors.joining("\n"));
+        return new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
     }
 
 }

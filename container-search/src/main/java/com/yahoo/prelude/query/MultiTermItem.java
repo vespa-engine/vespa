@@ -61,11 +61,11 @@ abstract class MultiTermItem extends SimpleTaggableItem {
     }
 
     @Override
-    public final int encode(ByteBuffer buffer) {
+    public final int encode(ByteBuffer buffer, SerializationContext context) {
         // TODO: Remove once backend support deserialisation of this type.
-        if (getClass() == MultiRangeItem.class) return asCompositeItem().encode(buffer);
+        if (getClass() == MultiRangeItem.class) return asCompositeItem().encode(buffer, context);
 
-        super.encodeThis(buffer);
+        super.encodeThis(buffer, context);
         byte metadata = 0;
         metadata |= (byte)((byte)(operatorType().code << 5) & (byte)0b11100000);
         metadata |= (byte)(termType().code & (byte)0b00011111);

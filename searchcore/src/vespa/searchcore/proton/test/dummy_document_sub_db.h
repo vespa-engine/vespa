@@ -92,7 +92,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     }
 
     void tearDownReferences(IDocumentDBReferenceResolver &) override { }
-    ResourceUsage get_resource_usage() const override;
+    searchcorespi::common::ResourceUsage get_resource_usage() const override;
 };
 
 }

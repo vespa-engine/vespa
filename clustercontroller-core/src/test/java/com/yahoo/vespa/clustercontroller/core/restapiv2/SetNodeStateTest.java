@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.time.TimeBudget;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.MasterInterface;
@@ -31,7 +32,12 @@ import java.util.regex.Pattern;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
@@ -110,7 +116,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         restAPI.setUnitState(new SetUnitStateRequestImpl(
                 "music/distributor/1").setNewState("user", state, reason));
         UnitResponse response = restAPI.getState(new StateRequest("music/distributor/1", 0));
-        String expected = musicClusterExpectedUserStateString("east.g2", "up", "up", state.toLowerCase(), reason);
+        String expected = musicClusterExpectedUserStateString("east.g2", "up", "up", state.toLowerCase(Locale.ROOT), reason);
         assertEquals(expected, jsonWriter.createJson(response).toPrettyString());
     }
 
@@ -119,7 +125,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         for (int index : new int[]{1, 2, 3, 5, 7}) {
             UnitResponse response = restAPI.getState(new StateRequest("music/storage/" + index, 0));
             String actualState = response.getCurrentState().getStatePerType().get("user").id();
-            assertThat(actualState, is(state.toLowerCase()));
+            assertThat(actualState, is(state.toLowerCase(Locale.ROOT)));
             String actualReason = response.getCurrentState().getStatePerType().get("user").reason();
             assertThat(actualReason, is(reason));
         }
@@ -128,7 +134,7 @@ public class SetNodeStateTest extends StateRestApiTest {
     private String musicClusterExpectedUserStateString(String groupName,
                                                        String generatedState, String unitState,
                                                        String userState, String userReason) {
-        return String.format(Locale.ROOT, """
+        return Text.format("""
                {
                  "attributes" : {
                    "hierarchical-group" : "%s"
@@ -265,13 +271,13 @@ public class SetNodeStateTest extends StateRestApiTest {
         Response.NodeResponse nodeResponse = (Response.NodeResponse) response;
         UnitState unitState = nodeResponse.getStatePerType().get(type);
         assertNotNull(unitState, "No such type " + type + " at path " + path);
-        assertEquals(state.toString().toLowerCase(), unitState.id());
+        assertEquals(state.toString().toLowerCase(Locale.ROOT), unitState.id());
         assertEquals(reason, unitState.reason());
     }
 
     private void assertSetUnitState(int index, State state, String failureReason) throws StateRestApiException {
         SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/" + index)
-                .setNewState("user", state.toString().toLowerCase(), "whatever reason.")
+                .setNewState("user", state.toString().toLowerCase(Locale.ROOT), "whatever reason.")
                 .setCondition(SetUnitStateRequest.Condition.SAFE));
         if (failureReason == null) {
             assertThat(setResponse.getReason(), is("ok"));
@@ -295,7 +301,7 @@ public class SetNodeStateTest extends StateRestApiTest {
     private void assertSetUnitStateFails(int index, State state, String reasonRegex)
             throws StateRestApiException {
         SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/" + index)
-                .setNewState("user", state.toString().toLowerCase(), "whatever reason.")
+                .setNewState("user", state.toString().toLowerCase(Locale.ROOT), "whatever reason.")
                 .setCondition(SetUnitStateRequest.Condition.SAFE));
 
         Matcher matcher = Pattern.compile(reasonRegex).matcher(setResponse.getReason());

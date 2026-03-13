@@ -1,38 +1,35 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/transport.h>
-#include <vespa/fnet/simplepacketstreamer.h>
 #include <vespa/fnet/channel.h>
 #include <vespa/fnet/connection.h>
-#include <examples/ping/packets.h>
+#include <vespa/fnet/simplepacketstreamer.h>
+#include <vespa/fnet/transport.h>
 #include <vespa/vespalib/util/signalhandler.h>
+
+#include <examples/ping/packets.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("pingclient");
 
-class PingClient
-{
+class PingClient {
 public:
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 };
 
-
-int
-PingClient::main(int argc, char **argv)
-{
+int PingClient::main(int argc, char** argv) {
     if (argc < 2) {
         printf("usage  : pingclient <connectspec> <timeout>\n");
         printf("example: pingclient 'tcp/localhost:8000'\n");
         return 1;
     }
 
-    FNET_PacketQueue           queue;
-    PingPacketFactory          factory;
-    FNET_SimplePacketStreamer  streamer(&factory);
-    FNET_Transport             transport;
-    FNET_Connection           *conn = transport.Connect(argv[1], &streamer);
-    uint32_t                   timeout_ms=5000;
-    FNET_Channel              *channels[10];
+    FNET_PacketQueue          queue;
+    PingPacketFactory         factory;
+    FNET_SimplePacketStreamer streamer(&factory);
+    FNET_Transport            transport;
+    FNET_Connection*          conn = transport.Connect(argv[1], &streamer);
+    uint32_t                  timeout_ms = 5000;
+    FNET_Channel*             channels[10];
 
     if (argc == 3) {
         timeout_ms = atof(argv[2]) * 1000;
@@ -52,13 +49,13 @@ PingClient::main(int argc, char **argv)
         fprintf(stderr, "Sent ping in context %d\n", i);
     }
 
-    FNET_Packet  *packet;
-    FNET_Context  context;
+    FNET_Packet* packet;
+    FNET_Context context;
     while (channelCnt > 0) {
         packet = queue.DequeuePacket(timeout_ms, &context);
         if (packet == nullptr) {
             fprintf(stderr, "Timeout\n");
-            for(int c = 0; c < 10; c++) {
+            for (int c = 0; c < 10; c++) {
                 if (channels[c] != nullptr) {
                     channels[c]->Close();
                     channels[c]->Free();
@@ -69,18 +66,15 @@ PingClient::main(int argc, char **argv)
             break;
         }
         if (packet->GetPCODE() == PCODE_PING_REPLY) {
-            fprintf(stderr, "Got ping result in context %d\n",
-                    context._value.INT);
+            fprintf(stderr, "Got ping result in context %d\n", context._value.INT);
         } else if (packet->IsChannelLostCMD()) {
-            fprintf(stderr, "Lost channel with context %d\n",
-                    context._value.INT);
+            fprintf(stderr, "Lost channel with context %d\n", context._value.INT);
         }
         if (channels[context._value.INT] != nullptr) {
             channels[context._value.INT]->Close();
             channels[context._value.INT]->Free();
             channels[context._value.INT] = nullptr;
-            fprintf(stderr, "Closed channel with context %d\n",
-                    context._value.INT);
+            fprintf(stderr, "Closed channel with context %d\n", context._value.INT);
             channelCnt--;
         }
         packet->Free();
@@ -91,8 +85,7 @@ PingClient::main(int argc, char **argv)
     return 0;
 }
 
-
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     PingClient myapp;
     return myapp.main(argc, argv);

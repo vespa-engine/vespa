@@ -54,6 +54,8 @@ public:
         _attrs.build_string_attribute("wset_str", { {"a", "b", "c"}, {} }, CollectionType::WSET);
         _attrs.build_int_attribute("wset_int", BasicType::INT32, { {10, 20, 30}, {} }, CollectionType::WSET);
         _attrs.build_float_attribute("wset_float", { {10.5, 20.5, 30.5}, {} }, CollectionType::WSET);
+        _attrs.build_bool_attribute("array_bool", { {1, 0, 1}, {} });
+
         _attrs.build_string_attribute("single_str", { {"world"}, {}}, CollectionType::SINGLE);
         _attrs.build_raw_attribute("single_raw", { {as_vector("hello")}, {} });
         _state._attrCtx = _attrs.mgr().createContext();
@@ -122,6 +124,22 @@ TEST_F(AttributeDFWTest, outputs_slime_for_array_of_float)
     setup("array_float", false);
     expect_field("[ 10.5, 20.5, 30.5 ]", 1);
     expect_field("null", 2);
+}
+
+TEST_F(AttributeDFWTest, outputs_slime_for_array_of_bool)
+{
+    setup("array_bool", false);
+    expect_field("[ true, false, true ]", 1);
+    expect_field("null", 2);
+}
+
+TEST_F(AttributeDFWTest, filteres_matched_elements_in_array_bool_attribute)
+{
+    setup("array_bool", true);
+    expect_filtered({}, "null");
+    expect_filtered({0}, "[ true ]");
+    expect_filtered({1, 2}, "[ false, true ]");
+    expect_filtered({3}, "null");
 }
 
 TEST_F(AttributeDFWTest, outputs_slime_for_wset_of_string)

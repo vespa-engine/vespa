@@ -27,6 +27,7 @@ public enum ValidationId {
     pagedSettingRemoval("paged-setting-removal", "Removing paged for an attribute. May cause content nodes to run out of memory"),
     redundancyIncrease("redundancy-increase", "Not in use"), // TODO: Remove on Vespa 9
     redundancyOne("redundancy-one", "Setting redundancy=1 requires a validation override on first deployment"),
+    minimumNodeCount("minimum-node-count", "Deploying clusters with fewer than 2 nodes in production requires a validation override on first deployment"),
     resourcesReduction("resources-reduction", "Large reductions in node resources (> 50% of the current max total resources)"),
     skipOldConfigModels("skip-old-config-models", "For internal use, skip building old config models"),
     tensorTypeChange("tensor-type-change", "NOT USED"), // TODO: Remove on Vespa 9

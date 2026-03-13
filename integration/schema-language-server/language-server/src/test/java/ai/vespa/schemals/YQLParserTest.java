@@ -15,7 +15,7 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.schemadocument.YQLDocument;
 import ai.vespa.schemals.schemadocument.YQLDocument.ParseResult;
 
-import ai.vespa.schemals.testutils.*;
+import ai.vespa.schemals.testutils.Utils;
 import ai.vespa.schemals.tree.YQLNode;
 
 public class YQLParserTest {

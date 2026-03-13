@@ -3,11 +3,13 @@ package ai.vespa.schemals.lsp.common.command.commandtypes;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
@@ -55,7 +57,7 @@ public class RunVespaQuery implements SchemaCommand {
 
         runVespaQuery(queryCommand, context.logger).thenAccept(result -> {
             if (!result.success()) {
-                if (result.result().toLowerCase().contains("cannot run program")) {
+                if (result.result().toLowerCase(Locale.ROOT).contains("cannot run program")) {
                     context.messageHandler.sendMessage(MessageType.Error, "Could not find vespa CLI. Make sure vespa CLI is installed and added to path. Download vespa CLI here: https://docs.vespa.ai/en/clients/vespa-cli.html");
                     return;
                 }
@@ -102,7 +104,7 @@ public class RunVespaQuery implements SchemaCommand {
 
     private CompletableFuture<QueryResult> runVespaQuery(String query, ClientLogger logger) {
 
-        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+        boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ROOT).startsWith("windows");
 
         ProcessBuilder builder = new ProcessBuilder();
 
@@ -117,7 +119,7 @@ public class RunVespaQuery implements SchemaCommand {
 
                 Process process = builder.start();
 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
 
                 String line;
                 StringBuilder output = new StringBuilder();
@@ -131,7 +133,7 @@ public class RunVespaQuery implements SchemaCommand {
                     return new QueryResult(true, output.toString());
                 }
 
-                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8));
                 StringBuilder error = new StringBuilder();
                 while ((line = errorReader.readLine()) != null) {
                     error.append(line).append("\n");

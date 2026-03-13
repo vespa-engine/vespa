@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.container.QrConfig;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.ApplicationContainer;
@@ -55,7 +56,7 @@ public class ContainerRestartValidator implements ChangeValidator {
     }
 
     private static String createMessage(Container container) {
-        return String.format(java.util.Locale.ROOT, "Container '%s' is configured to always restart on deploy.", container.getConfigId());
+        return Text.format("Container '%s' is configured to always restart on deploy.", container.getConfigId());
     }
 
     private static boolean shouldContainerRestartOnDeploy(Container container, VespaModel nextModel) {

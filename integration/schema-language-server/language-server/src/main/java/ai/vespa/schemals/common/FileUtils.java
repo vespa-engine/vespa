@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.yahoo.io.IOUtils;
+import com.yahoo.text.Utf8;
 
 public class FileUtils {
     public static String fileNameFromPath(String path) {
@@ -42,7 +43,7 @@ public class FileUtils {
 
     public static String readFromURI(String fileURI) throws IOException {
         File file = new File(URI.create(fileURI));
-        return IOUtils.readAll(new FileReader(file));
+        return IOUtils.readAll(Utf8.createReader(file));
     }
 
     public static List<String> findSchemaFiles(String workspaceFolderUri, ClientLogger logger) {

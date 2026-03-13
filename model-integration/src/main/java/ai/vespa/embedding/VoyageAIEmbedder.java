@@ -19,6 +19,7 @@ import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.text.Text;
 import okhttp3.ConnectionPool;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
@@ -28,8 +29,12 @@ import okhttp3.RequestBody;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -55,6 +60,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     // Configuration
     private final VoyageAiEmbedderConfig config;
     private final Embedder.Runtime runtime;
+    private final Embedder.Batching batching;
     private final Secret apiKey;
     private final OkHttpClient httpClient;
     private final String resolvedEndpoint;
@@ -63,11 +69,12 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     public VoyageAIEmbedder(VoyageAiEmbedderConfig config, Embedder.Runtime runtime, Secrets secretStore) {
         this.config = config;
         this.runtime = runtime;
+        this.batching = Embedder.Batching.of(config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()));
         this.apiKey = secretStore.get(config.apiKeySecretRef());
         this.httpClient = createHttpClient(config);
         this.resolvedEndpoint = resolveEndpoint(config);
 
-        log.fine(() -> "VoyageAI embedder initialized with model: %s, endpoint: %s".formatted(config.model(), resolvedEndpoint));
+        log.fine(() -> Text.format("VoyageAI embedder initialized with model: %s, endpoint: %s", config.model(), resolvedEndpoint));
     }
 
     private String resolveEndpoint(VoyageAiEmbedderConfig config) {
@@ -103,6 +110,9 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     }
 
     @Override
+    public Batching batchingConfig() { return batching; }
+
+    @Override
     public List<Integer> embed(String text, Context context) {
         throw new UnsupportedOperationException(
             "VoyageAI embedder only supports embed() with TensorType. " +
@@ -118,7 +128,6 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Tensor> embed(List<String> texts, Context context, TensorType targetType) {
-        if (!isContextualModel()) return Embedder.super.embed(texts, context, targetType);
         return invokeVoyageAI(texts, context, targetType);
     }
 
@@ -137,54 +146,41 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
         switch (config.quantization()) {
             case AUTO:
-                if (valueType == TensorType.Value.FLOAT) {
+                if (valueType == TensorType.Value.FLOAT || valueType == TensorType.Value.BFLOAT16) {
                     if (tensorDim != configuredDim)
-                        throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
-                                .formatted(tensorDim, configuredDim));
+                        throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDim));
                 } else if (valueType == TensorType.Value.INT8) {
                     if (tensorDim != configuredDim && tensorDim != configuredDim / 8)
-                        throw new IllegalArgumentException(("Tensor dimension %d does not match configured dimension. " +
-                                "Expected %d or %d.").formatted(tensorDim, configuredDim, configuredDim / 8));
+                        throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension. Expected %d or %d.", tensorDim, configuredDim, configuredDim / 8));
                 } else {
                     throw new IllegalArgumentException(
                             "Quantization 'auto' is incompatible with tensor type " + targetTensorType + ".");
                 }
                 break;
             case FLOAT:
-                if (valueType != TensorType.Value.FLOAT)
+                if (valueType != TensorType.Value.FLOAT && valueType != TensorType.Value.BFLOAT16)
                     throw new IllegalArgumentException(
                             "Quantization 'float' is incompatible with tensor type " + targetTensorType + ".");
                 if (tensorDim != configuredDim)
-                    throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
-                            .formatted(tensorDim, configuredDim));
+                    throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDim));
                 break;
             case INT8:
                 if (valueType != TensorType.Value.INT8)
                     throw new IllegalArgumentException(
                             "Quantization 'int8' is incompatible with tensor type " + targetTensorType + ".");
                 if (tensorDim != configuredDim)
-                    throw new IllegalArgumentException("Tensor dimension %d does not match configured dimension %d."
-                            .formatted(tensorDim, configuredDim));
+                    throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDim));
                 break;
             case BINARY:
                 if (valueType != TensorType.Value.INT8)
                     throw new IllegalArgumentException(
                             "Quantization 'binary' is incompatible with tensor type " + targetTensorType + ".");
                 if (tensorDim != configuredDim / 8)
-                    throw new IllegalArgumentException("Tensor dimension %d does not match required dimension %d."
-                            .formatted(tensorDim, configuredDim / 8));
+                    throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match required dimension %d.", tensorDim, configuredDim / 8));
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported quantization: " + config.quantization());
         }
-    }
-
-    private String detectInputType(Context context) {
-        String destination = context.getDestination();
-        if (destination != null && destination.startsWith("query(")) {
-            return "query";
-        }
-        return "document";
     }
 
     private boolean isMultimodalModel() { return config.model().startsWith("voyage-multimodal-"); }
@@ -193,7 +189,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private String resolveOutputDataType(TensorType targetType) {
         return switch (config.quantization()) {
             case AUTO -> {
-                if (targetType.valueType() == TensorType.Value.FLOAT) {
+                if (targetType.valueType() == TensorType.Value.FLOAT || targetType.valueType() == TensorType.Value.BFLOAT16) {
                     yield "float";
                 } else if (targetType.valueType() == TensorType.Value.INT8) {
                     long tensorDim = targetType.dimensions().get(0).size().orElseThrow();
@@ -211,7 +207,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private List<Tensor> invokeVoyageAI(List<String> texts, Context context, TensorType targetType) {
         long startTime = System.nanoTime();
         validateTensorType(targetType);
-        var inputType = detectInputType(context);
+        var inputType = context.getDestinationType() == Context.DestinationType.QUERY ? "query" : "document";
         var outputDataType = resolveOutputDataType(targetType);
         var timeoutMs = calculateTimeoutMs(context);
 
@@ -231,26 +227,26 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
     private List<Tensor> toTensors(String responseBody, TensorType targetType, String outputDtype, Context context) {
         try {
             Response response;
-            List<List<Number>> embeddings;
+            List<String> encodedEmbeddings;
             if (isContextualModel()) {
                 var contextualResponse = objectMapper.readValue(responseBody, ContextualResponse.class);
                 response = contextualResponse;
-                embeddings = contextualResponse.data.get(0).data.stream()
+                encodedEmbeddings = contextualResponse.data.get(0).data.stream()
                         .map(TextEmbeddingData::embedding)
                         .toList();
             } else {
                 var voyageResponse = objectMapper.readValue(responseBody, TextResponse.class);
                 response = voyageResponse;
-                embeddings = voyageResponse.data.stream()
+                encodedEmbeddings = voyageResponse.data.stream()
                         .map(TextEmbeddingData::embedding)
                         .toList();
             }
             runtime.sampleSequenceLength(response.usage().totalTokens(), context);
             String dimensionName = targetType.dimensions().get(0).name();
-            return embeddings.stream()
-                    .map(embedding -> switch (outputDtype) {
-                        case "float" -> createFloatTensor(embedding, dimensionName);
-                        case "int8", "binary" -> createInt8Tensor(embedding, dimensionName);
+            return encodedEmbeddings.stream()
+                    .map(encoded -> switch (outputDtype) {
+                        case "float" -> decodeBase64FloatTensor(encoded, dimensionName, targetType.valueType());
+                        case "int8", "binary" -> decodeBase64Int8Tensor(encoded, dimensionName);
                         default -> throw new IllegalArgumentException("Unsupported output_dtype: " + outputDtype);
                     })
                     .toList();
@@ -269,7 +265,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                     texts, config.model(), inputType, config.dimensions(), outputDataType);
         } else {
             request = TextRequest.of(
-                    texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
+                    texts, config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         }
         try {
             return objectMapper.writeValueAsString(request);
@@ -341,24 +337,20 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
         return remainingMs;
     }
 
-    private Tensor createFloatTensor(List<Number> embedding, String dimensionName) {
-        TensorType type = new TensorType.Builder(TensorType.Value.FLOAT)
-                .indexed(dimensionName, embedding.size())
-                .build();
-        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);
-        for (int i = 0; i < embedding.size(); i++) {
-            builder.cell(embedding.get(i).floatValue(), i);
-        }
-        return builder.build();
+    private static Tensor decodeBase64FloatTensor(String base64, String dimensionName, TensorType.Value valueType) {
+        var buffer = ByteBuffer.wrap(Base64.getDecoder().decode(base64)).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer();
+        var values = new float[buffer.remaining()];
+        buffer.get(values);
+        var type = new TensorType.Builder(valueType).indexed(dimensionName, values.length).build();
+        return IndexedTensor.Builder.of(type, values).build();
     }
 
-    private Tensor createInt8Tensor(List<Number> embedding, String dimensionName) {
-        TensorType type = new TensorType.Builder(TensorType.Value.INT8)
-                .indexed(dimensionName, embedding.size())
-                .build();
-        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);
-        for (int i = 0; i < embedding.size(); i++) {
-            builder.cell(embedding.get(i).byteValue(), i);
+    private static Tensor decodeBase64Int8Tensor(String base64, String dimensionName) {
+        var bytes = Base64.getDecoder().decode(base64);
+        var type = new TensorType.Builder(TensorType.Value.INT8).indexed(dimensionName, bytes.length).build();
+        var builder = IndexedTensor.Builder.of(type);
+        for (int i = 0; i < bytes.length; i++) {
+            builder.cell(bytes[i], i);
         }
         return builder.build();
     }
@@ -401,8 +393,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
                     if (attempt < maxRetries) {
                         int retryNumber = attempt + 1;
-                        log.fine(() -> "VoyageAI API server error (%d). Retry %d of %d after %dms"
-                                .formatted(code, retryNumber + 1, maxRetries, RETRY_DELAY_MS));
+                        log.fine(() -> Text.format("VoyageAI API server error (%d). Retry %d of %d after %dms", code, retryNumber + 1, maxRetries, RETRY_DELAY_MS));
                         Thread.sleep(RETRY_DELAY_MS);
                     }
                 } catch (InterruptedException e) {
@@ -411,8 +402,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
                 }
             }
 
-            var errorMsg = "Max retries exceeded for VoyageAI API (%d). Last response: %d - %s"
-                    .formatted(maxRetries, lastStatusCode, lastResponseBody);
+            var errorMsg = Text.format("Max retries exceeded for VoyageAI API (%d). Last response: %d - %s", maxRetries, lastStatusCode, lastResponseBody);
             throw new IOException(errorMsg);
         }
     }
@@ -440,17 +430,18 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("input_type") String inputType,
             @JsonProperty("truncation") boolean truncation,
             @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
-            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
+            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype,
+            @JsonProperty("encoding_format") String encodingFormat) {
 
-        static TextRequest of(String texts, String model, String inputType,
+        static TextRequest of(List<String> texts, String model, String inputType,
                               boolean truncation, Integer outputDimension, String outputDtype) {
-            return new TextRequest(List.of(texts), model, inputType, truncation, outputDimension, outputDtype);
+            return new TextRequest(texts, model, inputType, truncation, outputDimension, outputDtype, "base64");
         }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record TextEmbeddingData(
-            @JsonProperty("embedding") List<Number> embedding,
+            @JsonProperty("embedding") String embedding,
             @JsonProperty("index") int index) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -466,12 +457,13 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("model") String model,
             @JsonProperty("input_type") @JsonInclude(JsonInclude.Include.NON_NULL) String inputType,
             @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
-            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
+            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype,
+            @JsonProperty("encoding_format") String encodingFormat) {
 
         static ContextualRequest of(List<String> texts, String model, String inputType,
                                     Integer outputDimension, String outputDtype) {
             return new ContextualRequest(List.of(texts), model, inputType,
-                                         outputDimension, outputDtype);
+                                         outputDimension, outputDtype, "base64");
         }
     }
 
@@ -492,12 +484,13 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("input_type") @JsonInclude(JsonInclude.Include.NON_NULL) String inputType,
             @JsonProperty("truncation") boolean truncation,
             @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
-            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype) {
+            @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype,
+            @JsonProperty("encoding_format") String encodingFormat) {
 
         static MultimodalRequest of(String text, String model, String inputType,
                                     boolean truncation, Integer outputDimension, String outputDtype) {
             return new MultimodalRequest(List.of(MultimodalInput.of(text)), model, inputType,
-                                         truncation, outputDimension, outputDtype);
+                                         truncation, outputDimension, outputDtype, "base64");
         }
     }
 

@@ -18,13 +18,17 @@ class MockInvoker extends SearchInvoker {
     private List<Hit> hits;
     int hitsRequested;
 
-    protected MockInvoker(int key, Coverage coverage) {
-        super(Optional.of(new Node("test", key, "?", 0)));
-        this.coverage = coverage;
-    }
-
     protected MockInvoker(int key) {
         this(key, null);
+    }
+
+    protected MockInvoker(int key, Coverage coverage) {
+        this(coverage, new Node("test", key, "?", 0));
+    }
+
+    protected MockInvoker(Coverage coverage, Node node) {
+        super(Optional.of(node));
+        this.coverage = coverage;
     }
 
     MockInvoker setHits(List<Hit> hits) {
@@ -33,7 +37,7 @@ class MockInvoker extends SearchInvoker {
     }
 
     @Override
-    protected Object sendSearchRequest(Query query, Object context) {
+    protected Object sendSearchRequest(Query query, double contentShare, Object context) {
         this.query = query;
         hitsRequested = query.getHits();
         return context;

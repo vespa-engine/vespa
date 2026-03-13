@@ -9,7 +9,9 @@ import java.util.List;
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.A;
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.B;
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.C;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author gjoranv

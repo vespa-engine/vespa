@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.querytransform;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.After;
@@ -9,8 +11,17 @@ import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexFacts.Session;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.BlockItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
+import com.yahoo.prelude.query.SegmentItem;
+import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordAlternativesItem.Alternative;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.language.Language;
@@ -65,11 +76,12 @@ public class NormalizingSearcher extends Searcher {
         Item root = query.getModel().getQueryTree().getRoot();
         Language language = query.getModel().getParsingLanguage();
         if (root instanceof BlockItem) {
+            Language rootLanguage = root.getLanguage() != Language.UNKNOWN ? root.getLanguage() : language;
             List<Item> rootItems = new ArrayList<>(1);
             rootItems.add(root);
             ListIterator<Item> i = rootItems.listIterator();
             i.next();
-            normalizeBlocks(language, indexFacts, (BlockItem) root, i);
+            normalizeBlocks(rootLanguage, indexFacts, (BlockItem) root, i);
             if ( ! rootItems.isEmpty()) // give up normalizing if the root was removed
                 query.getModel().getQueryTree().setRoot(rootItems.get(0));
         } else if (root instanceof CompositeItem) {
@@ -78,6 +90,9 @@ public class NormalizingSearcher extends Searcher {
     }
     
     private Item normalizeComposite(Language language, IndexFacts.Session indexFacts, CompositeItem item) {
+        if (item.getLanguage() != Language.UNKNOWN)
+            language = item.getLanguage();
+
         if (item instanceof PhraseItem phrase)  {
             return normalizePhrase(language, indexFacts, phrase);
         }
@@ -86,7 +101,9 @@ public class NormalizingSearcher extends Searcher {
                 Item current = i.next();
 
                 if (current instanceof BlockItem block) {
-                    normalizeBlocks(language, indexFacts, block, i);
+                    Language blockLanguage = ((Item) block).getLanguage() != Language.UNKNOWN
+                            ? ((Item) block).getLanguage() : language;
+                    normalizeBlocks(blockLanguage, indexFacts, block, i);
                 } else if (current instanceof CompositeItem composite) {
                     Item currentProcessed = normalizeComposite(language, indexFacts, composite);
                     i.set(currentProcessed);

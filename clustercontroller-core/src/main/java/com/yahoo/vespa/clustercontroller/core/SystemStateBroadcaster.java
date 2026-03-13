@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.ErrorCode;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -107,13 +108,13 @@ public class SystemStateBroadcaster {
                 if (reply.getReturnCode() != ErrorCode.NO_SUCH_METHOD) {
                     context.log(log,
                                 Level.FINE,
-                                () -> String.format(Locale.ROOT, "Activation NACK for node %s with version %d, message %s",
+                                () -> Text.format("Activation NACK for node %s with version %d, message %s",
                                                     info, version, reply.getReturnMessage()));
                     success = false;
                 } else {
                     context.log(log,
                                 Level.FINE,
-                                () -> String.format(Locale.ROOT, "Node %s did not understand state activation RPC; " +
+                                () -> Text.format("Node %s did not understand state activation RPC; " +
                                                     "implicitly treating state %d as activated on node",
                                                     info, version));
                 }
@@ -122,14 +123,14 @@ public class SystemStateBroadcaster {
                 // Avoid spamming the logs since this will happen on all resends until (presumably) the controller
                 // loses election status.
                 // TODO this should trigger a loss of current controller's leadership!
-                reportNodeError(nodeOk, info, String.format(Locale.ROOT, "Activation of version %d did not take effect, node %s " +
+                reportNodeError(nodeOk, info, Text.format("Activation of version %d did not take effect, node %s " +
                                 "reports it has an actual pending version of %d. Racing with another controller?",
                                 version, info, reply.getActualVersion()));
                 success = false;
             } else {
                 context.log(log,
                             Level.FINE,
-                            () -> String.format(Locale.ROOT, "Node %s reports successful activation of state version %d",
+                            () -> Text.format("Node %s reports successful activation of state version %d",
                                                 info, version));
             }
             info.setSystemStateVersionActivationAcked(version, success);
@@ -154,13 +155,13 @@ public class SystemStateBroadcaster {
                     if (info.getNewestSystemStateVersionSent() == version) {
                         boolean nodeOk = nodeReportsSelfAsAvailable(info);
                         reportNodeError(nodeOk, info,
-                                String.format(Locale.ROOT, "Got error response %d: %s from %s setdistributionstates request.",
+                                Text.format("Got error response %d: %s from %s setdistributionstates request.",
                                         req.getReply().getReturnCode(), req.getReply().getReturnMessage(), info));
                     }
                 }
             } else {
                 info.setClusterStateBundleVersionAcknowledged(version, true);
-                context.log(log, Level.FINE, () -> String.format(Locale.ROOT, "Node %s ACKed system state version %d.", info, version));
+                context.log(log, Level.FINE, () -> Text.format("Node %s ACKed system state version %d.", info, version));
                 lastErrorReported.remove(info.getNode());
             }
         }
@@ -238,7 +239,7 @@ public class SystemStateBroadcaster {
             if (clusterStateBundle.deferredActivation()) {
                 context.log(log,
                             Level.FINE,
-                            () -> String.format(Locale.ROOT, "All distributors have ACKed cluster state " +
+                            () -> Text.format("All distributors have ACKed cluster state " +
                                                 "version %d, sending activation", currentStateVersion));
             } else {
                 markCurrentClusterStateAsConverged(database, dbContext, fleetController);
@@ -259,7 +260,7 @@ public class SystemStateBroadcaster {
         } else {
             context.log(log,
                         Level.FINE,
-                        () -> String.format(Locale.ROOT, "distributors still need activation in state %d (last converged: %d)",
+                        () -> Text.format("distributors still need activation in state %d (last converged: %d)",
                                             currentStateVersion, lastClusterStateVersionConverged));
         }
     }

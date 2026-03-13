@@ -33,6 +33,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.context.QueryContext;
+import com.yahoo.search.query.properties.IllegalAssignmentException;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.properties.DefaultProperties;
@@ -80,7 +81,6 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private static final CompoundName DETAILED_TIMING_LOGGING = CompoundName.from("trace.timingDetails");
     private static final CompoundName FORCE_TIMESTAMPS = CompoundName.from("trace.timestamps");
-
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = ContainerMetrics.SEARCH_CONNECTIONS.baseName();
     static final String RENDER_LATENCY_METRIC = ContainerMetrics.JDISC_RENDER_LATENCY.baseName();
@@ -183,7 +183,7 @@ public class SearchHandler extends LoggingRequestHandler {
         try {
             try {
                 return handleBody(request);
-            } catch (IllegalInputException e) {
+            } catch (IllegalInputException | IllegalAssignmentException e) {
                 return illegalQueryResponse(request, e);
             } catch (RuntimeException e) { // Make sure we generate a valid response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
@@ -227,6 +227,7 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     private HttpSearchResponse handleBody(HttpRequest request) {
+        long executionStart = System.currentTimeMillis();
         Map<String, String> requestMap = requestMapFromRequest(request);
 
         // Get query profile
@@ -240,6 +241,7 @@ public class SearchHandler extends LoggingRequestHandler {
                                          .setZoneInfo(zoneInfo)
                                          .setSchemaInfo(executionFactory.schemaInfo())
                                          .build();
+        query.getHttpRequest().context().put("search.handlerStartTime", executionStart);
 
         // If format not explicitly set, use Accept header to determine response format
         if (!requestMap.containsKey("format") && !requestMap.containsKey("presentation.format")) {

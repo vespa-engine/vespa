@@ -3,6 +3,7 @@
 #pragma once
 
 #include "posting_priority_queue.h"
+#include <vespa/searchlib/common/i_flush_token.h>
 
 namespace search {
 

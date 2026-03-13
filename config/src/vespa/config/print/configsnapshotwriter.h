@@ -17,9 +17,8 @@ public:
      * @param config The config snapshot to write.
      * @return true if successful, false if not.
      */
-    virtual bool write(const ConfigSnapshot & snapshot) = 0;
+    virtual bool write(const ConfigSnapshot& snapshot) = 0;
     virtual ~ConfigSnapshotWriter() = default;
 };
 
 } // namespace config
-

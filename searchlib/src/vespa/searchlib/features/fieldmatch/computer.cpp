@@ -71,7 +71,7 @@ Computer::reset(uint32_t docId)
     for (uint32_t i = 0; i < _queryTerms.size(); ++i) {
         const ITermData *td = _queryTerms[i].termData();
         const TermFieldMatchData *tfmd = _splitter.resolveTermField(_queryTerms[i].fieldHandle());
-        if (tfmd->getDocId() != docId) { // only term match data if we have a hit
+        if (!tfmd->has_ranking_data(docId)) { // only term match data if we have a hit
             tfmd = nullptr;
         } else {
             FieldPositionsIterator it = tfmd->getIterator();

@@ -3,6 +3,7 @@ package com.yahoo.vespa.security.tool.crypto;
 
 import com.yahoo.security.Base58;
 import com.yahoo.security.Base62;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.security.tool.CliUtils;
 import com.yahoo.vespa.security.tool.Tool;
 import com.yahoo.vespa.security.tool.ToolDescription;
@@ -53,10 +54,10 @@ public class ConvertBaseTool implements Tool {
     public ToolDescription description() {
         return new ToolDescription(
                 "--from <base N> --to <base M>",
-                ("Reads up to %d bytes of STDIN interpreted as a base N string (ignoring " +
-                 "whitespace) and writes to STDOUT as a base M string. Note that base 64 is " +
-                 "expected to be in (and is output as) the URL-safe alphabet (padding optional " +
-                 "for input, no padding for output).").formatted(MAX_IN_BYTES),
+                Text.format("Reads up to %d bytes of STDIN interpreted as a base N string (ignoring " +
+                            "whitespace) and writes to STDOUT as a base M string. Note that base 64 is " +
+                            "expected to be in (and is output as) the URL-safe alphabet (padding optional " +
+                            "for input, no padding for output).", MAX_IN_BYTES),
                 "Note: this is a BETA tool version; its interface may be changed at any time.",
                 OPTIONS);
     }
@@ -71,8 +72,8 @@ public class ConvertBaseTool implements Tool {
             // to risk melting someone's CPU by them piping something large into the process by accident.
             byte[] inBytes = invocation.stdIn().readAllBytes();
             if (inBytes.length > MAX_IN_BYTES) {
-                throw new IllegalArgumentException("Input size is too large (%d), max is %d"
-                                                   .formatted(inBytes.length, MAX_IN_BYTES));
+                throw new IllegalArgumentException(Text.format("Input size is too large (%d), max is %d",
+                                                                inBytes.length, MAX_IN_BYTES));
             }
             var inString = fromUtf8Bytes(inBytes).strip(); // We ignore whitespace to avoid trailing \n issues
             byte[] decoded = switch (fromBase) {
@@ -80,14 +81,14 @@ public class ConvertBaseTool implements Tool {
                 case 58 -> Base58.codec().decode(inString);
                 case 62 -> Base62.codec().decode(inString);
                 case 64 -> Base64.getUrlDecoder().decode(inString);
-                default -> throw new IllegalArgumentException("Unsupported from-base: %d".formatted(fromBase));
+                default -> throw new IllegalArgumentException(Text.format("Unsupported from-base: %d", fromBase));
             };
             String encoded = switch (toBase) {
                 case 16 -> hex(decoded);
                 case 58 -> Base58.codec().encode(decoded);
                 case 62 -> Base62.codec().encode(decoded);
                 case 64 -> Base64.getUrlEncoder().withoutPadding().encodeToString(decoded);
-                default -> throw new IllegalArgumentException("Unsupported to-base: %d".formatted(toBase));
+                default -> throw new IllegalArgumentException(Text.format("Unsupported to-base: %d", toBase));
             };
             invocation.stdOut().println(encoded);
         } catch (IOException e) {

@@ -301,6 +301,9 @@
                     <groupId>io.github.tulipcc</groupId>
                     <artifactId>tulipcc-maven-plugin</artifactId>
                     <version>5.0.0</version>
+                    <configuration>
+                        <jdkVersion>17</jdkVersion>
+                    </configuration>
                     <executions>
                         <execution>
                             <phase>generate-sources</phase>
@@ -309,6 +312,19 @@
                             </goals>
                         </execution>
                     </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.reporting</groupId>
+                            <artifactId>maven-reporting-impl</artifactId>
+                            <version>3.2.0</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>dom4j</groupId>
+                                    <artifactId>dom4j</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>io.github.ascopes</groupId>
@@ -338,9 +354,17 @@
                     </configuration>
                     <executions>
                         <execution>
+                            <id>abicheck</id>
                             <phase>package</phase>
                             <goals>
                                 <goal>abicheck</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>leakagecheck</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>leakagecheck</goal>
                             </goals>
                         </execution>
                     </executions>
@@ -366,8 +390,36 @@
                         </dependency>
                     </dependencies>
                 </plugin>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless-maven-plugin.vespa.version}</version>
+                    <configuration>
+                        <java>
+                            <includes>
+                                <include>src/**/*.java</include>
+                            </includes>
+                            <forbidWildcardImports/>
+                        </java>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>check-wildcard-imports</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
     <profiles>
         <profile>
@@ -573,6 +625,16 @@
             </activation>
             <properties>
                 <vespaCompilerArgs.xlint>-Xlint:all,-this-escape</vespaCompilerArgs.xlint>
+            </properties>
+        </profile>
+        <!-- Build schema-language-server modules (language-server and lemminx-vespa).
+             Disabled by default as these are only needed for IDE plugin development/deployment.
+             Enable with -Pschema-language-server or activate in IntelliJ via
+             Maven tool window > Profiles > schema-language-server -->
+        <profile>
+            <id>schema-language-server</id>
+            <properties>
+                <schema-language-server.skip>false</schema-language-server.skip>
             </properties>
         </profile>
     </profiles>
@@ -1032,6 +1094,11 @@
                 <version>${maven-xml-impl.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-api-xml</artifactId>
+                <version>${maven-api.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven.enforcer</groupId>
                 <artifactId>enforcer-api</artifactId>
                 <version>${maven-enforcer-plugin.vespa.version}</version>
@@ -1220,7 +1287,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
                 <artifactId>jetty-http2-client-transport</artifactId>
-                <version>${jetty.client.vespa.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
@@ -1240,7 +1307,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-client</artifactId>
-                <version>${jetty.client.vespa.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -1453,6 +1520,7 @@
         <test.hide>true</test.hide>
         <ffm.args/>
 
+        <schema-language-server.skip>true</schema-language-server.skip>
         <vespaClients.jdk.releaseVersion>11</vespaClients.jdk.releaseVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

@@ -15,8 +15,10 @@ class SameElementQueryNode : public QueryTerm
     QueryNodeList         _children;
     std::vector<uint32_t> _element_ids;
     std::optional<bool>   _cached_evaluate_result;
+    std::vector<uint32_t> _element_filter;
 public:
-    SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms) noexcept;
+    SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index,
+                         uint32_t num_terms, std::vector<uint32_t> element_filter) noexcept;
     ~SameElementQueryNode() override;
     bool evaluate() override;
     const HitList & evaluateHits(HitList & hl) override;

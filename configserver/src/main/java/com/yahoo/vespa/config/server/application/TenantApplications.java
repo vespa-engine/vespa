@@ -31,6 +31,7 @@ import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import com.yahoo.text.Text;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -84,7 +85,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
                               ConfigserverConfig configserverConfig, HostRegistry hostRegistry,
                               TenantFileSystemDirs tenantFileSystemDirs, Clock clock, FlagSource flagSource) {
         this.curator = curator;
-        this.database = new ApplicationCuratorDatabase(tenant, curator);
+        this.database = new ApplicationCuratorDatabase(tenant, curator, configserverConfig);
         this.tenant = tenant;
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
         this.directoryCache = database.createApplicationsPathCache(zkCacheExecutor);
@@ -374,7 +375,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
         try {
             return applicationMapper.getForVersion(appId, vespaVersion, clock.instant());
         } catch (VersionDoesNotExistException ex) {
-            throw new NotFoundException(String.format("%sNo such application (id %s): %s", TenantRepository.logPre(tenant), appId, ex.getMessage()));
+            throw new NotFoundException(Text.format("%sNo such application (id %s): %s", TenantRepository.logPre(tenant), appId, ex.getMessage()));
         }
     }
 

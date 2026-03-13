@@ -17,8 +17,10 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensors;
+import com.yahoo.text.Text;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -113,7 +115,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                 .addDefaultModel(tokenizerPath)
                 .setPadding(false);
         var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
-        log.fine(() -> "'%s' has info '%s'".formatted(tokenizerPath, info));
+        log.fine(() -> Text.format("'%s' has info '%s'", tokenizerPath, info));
         if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
             // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
             int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()
@@ -165,10 +167,10 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     }
 
     String prependInstruction(String text, Context context) {
-        if (prependQuery != null && !prependQuery.isEmpty() && context.getDestination().startsWith("query")) {
+        if (prependQuery != null && !prependQuery.isEmpty() && context.getDestinationType() == Context.DestinationType.QUERY) {
             return prependQuery + " " + text;
         }
-        if (prependDocument != null && !prependDocument.isEmpty()){
+        if (prependDocument != null && !prependDocument.isEmpty()) {
             return prependDocument + " " + text;
         }
         return text;
@@ -212,7 +214,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     }
 
     private Tensor binaryQuantization(HuggingFaceEmbedder.HFEmbeddingResult embeddingResult, TensorType targetType) {
-        long outputDimensions = embeddingResult.output().shape()[2];
+        long[] shape = embeddingResult.output().shape();
+        long outputDimensions = shape[shape.length - 1];
         long targetDimensions = targetType.dimensions().get(0).size().get();
         //🪆 flexibility - packing only the first 8*targetDimension float values from the model output
         long targetUnpackagedDimensions = 8 * targetDimensions;

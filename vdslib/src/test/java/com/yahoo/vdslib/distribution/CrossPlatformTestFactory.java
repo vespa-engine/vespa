@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.distribution;
 
+import com.yahoo.text.Utf8;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -28,7 +31,7 @@ public abstract class CrossPlatformTestFactory {
         if (!reference.exists()) {
             return;
         }
-        try (BufferedReader br = new BufferedReader(new FileReader(reference))) {
+        try (BufferedReader br = new BufferedReader(Utf8.createReader(reference))) {
             StringBuilder sb = new StringBuilder();
             while (true) {
                 String line = br.readLine();
@@ -43,7 +46,7 @@ public abstract class CrossPlatformTestFactory {
         String target = directory + "/" + name + ".java.results";
         String tmpName = target + ".tmp";
         File results = new File(tmpName);
-        try (FileWriter fw = new FileWriter(results)) {
+        try (FileWriter fw = new FileWriter(results, StandardCharsets.UTF_8)) {
             fw.write(serialize());
         }
         Files.move(Path.of(tmpName), Path.of(target),

@@ -8,6 +8,8 @@ ifeq ($(VERSION),)
 	VERSION = $(DEVEL_VERSION)
 endif
 
+export PATH := /usr/local/bin:$(PATH)
+
 PREFIX ?= $(CURDIR)
 BIN ?= $(PREFIX)/bin
 SHARE ?= $(PREFIX)/share
@@ -131,6 +133,7 @@ install-brew:
 	brew install vespa-cli
 
 install: setenv
+	env GOBIN=$(BIN) go version
 	env GOBIN=$(BIN) go install $(GO_FLAGS) ./...
 
 manpages: install

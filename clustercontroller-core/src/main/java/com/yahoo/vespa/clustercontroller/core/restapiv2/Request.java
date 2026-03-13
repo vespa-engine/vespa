@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.DeadlineExceededException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailure;
@@ -65,7 +66,7 @@ public abstract class Request<Result> extends RemoteClusterControllerTask {
 
     private static String failureStringWithPossibleMessage(String prefix, String message) {
         if (message != null && !message.isEmpty()) {
-            return String.format(Locale.ROOT, "%s: %s", prefix, message);
+            return Text.format("%s: %s", prefix, message);
         }
         return prefix;
     }

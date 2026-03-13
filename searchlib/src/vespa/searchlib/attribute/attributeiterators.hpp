@@ -258,7 +258,7 @@ template <typename PL>
 void
 AttributePostingListIteratorT<PL>::doUnpack(uint32_t docId)
 {
-    if (_matchData->getDocId() == docId) {
+    if (_matchData->has_ranking_data(docId)) {
         return;
     }
     _matchData->resetOnlyDocId(docId);

@@ -16,6 +16,8 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.yolean.Exceptions;
+import com.yahoo.yolean.Exceptions;
+import com.yahoo.text.Text;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -112,7 +114,7 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
         DeploymentRoutingStatus deploymentRoutingStatus = deploymentStatus(upstreamName);
         // If the entire zone is out, we always return OUT regardless of the actual routing status
         if (zoneStatus() == RoutingStatus.out) {
-            String reason = String.format("Rotation is OUT because the zone is OUT (actual deployment status is %s)",
+            String reason = Text.format("Rotation is OUT because the zone is OUT (actual deployment status is %s)",
                                           deploymentRoutingStatus.status().name().toUpperCase(Locale.ENGLISH));
             deploymentRoutingStatus = new DeploymentRoutingStatus(RoutingStatus.out, "operator", reason,
                                                                   clock.instant());

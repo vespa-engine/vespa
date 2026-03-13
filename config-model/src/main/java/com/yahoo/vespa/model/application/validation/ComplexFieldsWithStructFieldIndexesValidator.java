@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.ImmutableSDField;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
             // TODO (Vespa 9 or before): Change back to an exception when no applications are using it wrong.
             context.deployState().getDeployLogger().logApplicationPackage(
                     Level.WARNING,
-                    String.format(java.util.Locale.ROOT, "For cluster '%s', schema '%s': The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: %s. " +
+                    Text.format("For cluster '%s', schema '%s': The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: %s. " +
                                   "Remove setting or change to 'indexing: attribute' if needed for matching.",
                                   clusterName, schema.getName(), unsupportedFields));
         }

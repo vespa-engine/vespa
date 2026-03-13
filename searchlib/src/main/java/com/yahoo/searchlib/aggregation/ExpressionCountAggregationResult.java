@@ -1,7 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
-import com.yahoo.searchlib.aggregation.hll.*;
+import com.yahoo.searchlib.aggregation.hll.HyperLogLogEstimator;
+import com.yahoo.searchlib.aggregation.hll.Sketch;
+import com.yahoo.searchlib.aggregation.hll.SketchMerger;
+import com.yahoo.searchlib.aggregation.hll.SparseSketch;
+import com.yahoo.searchlib.aggregation.hll.UniqueCountEstimator;
 import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.ResultNode;
 import com.yahoo.vespa.objects.Deserializer;

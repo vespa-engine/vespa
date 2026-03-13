@@ -12,6 +12,7 @@ import java.util.stream.StreamSupport;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -144,6 +145,117 @@ public class CidrBlockTest {
         assertEquals("ab63:aca:dcdc:e2a8:1fb4:542:b80d:f7c3/24", ipv6Block.setByte(0, 0xab).asString());
         assertEquals("de63:aca:dcdc:e2a8:1fb4:542:b80d:f7c4/24", ipv6Block.addByte(15, 1).asString());
         assertEquals("de63:aca:dcdc:e2a8:1fb4:542:b80d:f7fe/24", ipv6Block.setByte(15, 0xfe).asString());
+    }
+
+    @Test
+    public void subnets() {
+        assertSubnet("10.0.0.0/8", 0, 0, "10.0.0.0/8");
+
+        assertSubnet("10.0.0.0/8", 1, 0, "10.0.0.0/9");
+        assertSubnet("10.0.0.0/8", 1, 1, "10.128.0.0/9");
+
+        assertSubnet("10.128.0.0/9", 9, 0, "10.128.0.0/18");
+        assertSubnet("10.128.0.0/9", 9, 1, "10.128.64.0/18");
+        assertSubnet("10.128.0.0/9", 9, 0b011001011, "10.178.192.0/18");
+        assertSubnet("10.128.0.0/9", 9, 0b111111111, "10.255.192.0/18");
+
+        CidrBlock cidr = CidrBlock.fromString("10.0.0.0/8");
+        try {
+            cidr.subnet(2, -1);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+        cidr.subnet(2, 0);
+        cidr.subnet(2, 3);
+        try {
+            cidr.subnet(2, 4);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void ipv6_subnets() {
+        assertSubnet("1234:5678::/32", 0, 0, "1234:5678::/32");
+
+        assertSubnet("1234:5678::/32", 1, 0, "1234:5678:0::/33");
+        assertSubnet("1234:5678::/32", 1, 1, "1234:5678:8000::/33");
+
+        assertSubnet("1234:5678:8000::/33", 7, 0, "1234:5678:8000::/40");
+        assertSubnet("1234:5678:8000::/33", 7, 1, "1234:5678:8100::/40");
+        assertSubnet("1234:5678:8000::/33", 7, 0b0110110, "1234:5678:b600::/40");
+        assertSubnet("1234:5678:8000::/33", 7, 0b1111111, "1234:5678:ff00::/40");
+
+        CidrBlock cidr = CidrBlock.fromString("1234:5678::/32");
+        try {
+            cidr.subnet(2, -1);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+        cidr.subnet(2, 0);
+        cidr.subnet(2, 3);
+        try {
+            cidr.subnet(2, 4);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+    }
+
+    private void assertSubnet(String cidr, int bits, long value, String expectedSubnet) {
+        assertEquals(CidrBlock.fromString(expectedSubnet),
+                     CidrBlock.fromString(cidr).subnet(bits, value));
+    }
+
+    @Test
+    public void networkPrefixTranslation() {
+        assertNpt("123.45.67.89", "10.0.0.0/8", "10.45.67.89");
+        assertNpt("2603:1030:20e:26::5c", "fd00::/64", "fd00::5c");
+        assertNpt("2600:1f16:f34:5300:ccc6:1703:b7c2:369d", "fd00::/64", "fd00::ccc6:1703:b7c2:369d");
+        assertNpt("2600:1f16:f34:5300:ccc6:1703:b7c2:369d", "fd00::/48", "fd00::5300:ccc6:1703:b7c2:369d");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void networkPrefixTranslate_rejects_ip_version_mismatch() {
+        CidrBlock.fromString("10.0.0.0/8").networkPrefixTranslate(InetAddresses.forString("::1"));
+    }
+
+    private void assertNpt(String ip, String cidr, String expectedNptIp) {
+        assertEquals(toInetAddress(expectedNptIp),
+                     CidrBlock.fromString(cidr).networkPrefixTranslate(toInetAddress(ip)));
+    }
+
+    @Test
+    public void ipv4_contains_cidr_test() {
+        CidrBlock base = CidrBlock.fromString("10.3.0.0/16");
+
+        assertTrue(base.contains(CidrBlock.fromString("10.3.0.0/16")));
+        assertTrue(base.contains(CidrBlock.fromString("10.3.128.0/17")));
+        assertTrue(base.contains(CidrBlock.fromString("10.3.4.8/29")));
+        assertFalse(base.contains(CidrBlock.fromString("10.0.0.0/8")));
+        assertFalse(base.contains(CidrBlock.fromString("10.4.0.0/16")));
+        assertFalse(base.contains(CidrBlock.fromString("11.0.0.0/8")));
+    }
+
+    @Test
+    public void ipv6_contains_cidr_test() {
+        CidrBlock base = CidrBlock.fromString("1234:5678:abcd::/48");
+
+        assertTrue(base.contains(CidrBlock.fromString("1234:5678:abcd::/48")));
+        assertTrue(base.contains(CidrBlock.fromString("1234:5678:abcd:8000::/49")));
+        assertTrue(base.contains(CidrBlock.fromString("1234:5678:abcd:1234::/64")));
+        assertFalse(base.contains(CidrBlock.fromString("1234:5678::/32")));
+        assertFalse(base.contains(CidrBlock.fromString("1234:5678:abce::/48")));
+        assertFalse(base.contains(CidrBlock.fromString("1234:5679::/32")));
+    }
+
+    @Test
+    public void contains_cidr_rejects_mixed_ip_families() {
+        assertFalse(CidrBlock.fromString("10.0.0.0/8").contains(CidrBlock.fromString("1234:5678::/32")));
+        assertFalse(CidrBlock.fromString("1234:5678::/32").contains(CidrBlock.fromString("10.0.0.0/8")));
     }
 
     @Test

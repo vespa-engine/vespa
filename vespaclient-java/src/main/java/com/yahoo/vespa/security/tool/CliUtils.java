@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.security.tool;
 
+import com.yahoo.text.Text;
 import org.apache.commons.cli.CommandLine;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ public class CliUtils {
     public static String optionOrThrow(CommandLine arguments, String option) {
         var value = arguments.getOptionValue(option);
         if (value == null) {
-            throw new IllegalArgumentException("Required argument '--%s' must be provided".formatted(option));
+            throw new IllegalArgumentException(Text.format("Required argument '--%s' must be provided", option));
         }
         return value;
     }
@@ -33,7 +34,7 @@ public class CliUtils {
         } else {
             var inputPath = Paths.get(pathOrDash);
             if (!Files.exists(inputPath)) {
-                throw new IllegalArgumentException("Input file '%s' does not exist".formatted(inputPath.toString()));
+                throw new IllegalArgumentException(Text.format("Input file '%s' does not exist", inputPath.toString()));
             }
             return Files.newInputStream(inputPath);
         }

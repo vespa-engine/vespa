@@ -1,0 +1,50 @@
+{
+  "com.yahoo.messagebus.ConfigAgent" : [
+    "com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber",
+    "com.yahoo.config.subscription.ConfigURI"
+  ],
+  "com.yahoo.messagebus.ConfigHandler" : [
+    "com.yahoo.messagebus.routing.RoutingSpec"
+  ],
+  "com.yahoo.messagebus.DynamicThrottlePolicy" : [
+    "com.yahoo.concurrent.Timer"
+  ],
+  "com.yahoo.messagebus.Message" : [
+    "com.yahoo.messagebus.routing.Route"
+  ],
+  "com.yahoo.messagebus.MessageBus" : [
+    "com.yahoo.messagebus.network.Network",
+    "com.yahoo.messagebus.network.NetworkMultiplexer",
+    "com.yahoo.messagebus.network.NetworkOwner",
+    "com.yahoo.messagebus.routing.Resender",
+    "com.yahoo.messagebus.routing.RoutingPolicy",
+    "com.yahoo.messagebus.routing.RoutingSpec",
+    "com.yahoo.messagebus.routing.RoutingTable"
+  ],
+  "com.yahoo.messagebus.MessageBusParams" : [
+    "com.yahoo.messagebus.routing.RetryPolicy"
+  ],
+  "com.yahoo.messagebus.NetworkMessageBus" : [
+    "com.yahoo.messagebus.network.Network"
+  ],
+  "com.yahoo.messagebus.Protocol" : [
+    "com.yahoo.messagebus.routing.RoutingPolicy"
+  ],
+  "com.yahoo.messagebus.ProtocolRepository" : [
+    "com.yahoo.messagebus.routing.RoutingPolicy"
+  ],
+  "com.yahoo.messagebus.RPCMessageBus" : [
+    "com.yahoo.messagebus.network.rpc.RPCNetwork",
+    "com.yahoo.messagebus.network.rpc.RPCNetworkParams"
+  ],
+  "com.yahoo.messagebus.RateThrottlingPolicy" : [
+    "com.yahoo.concurrent.Timer"
+  ],
+  "com.yahoo.messagebus.SendProxy" : [
+    "com.yahoo.messagebus.network.Network",
+    "com.yahoo.messagebus.routing.Resender"
+  ],
+  "com.yahoo.messagebus.SourceSession" : [
+    "com.yahoo.messagebus.routing.Route"
+  ]
+}

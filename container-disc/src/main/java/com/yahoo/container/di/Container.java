@@ -17,6 +17,7 @@ import com.yahoo.container.di.componentgraph.core.Node;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.di.config.SubscriberFactory;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.UncheckedInterruptedException;
 import org.osgi.framework.Bundle;
@@ -50,7 +51,6 @@ public class Container {
     private final Osgi osgi;
 
     private final ConfigRetriever retriever;
-    private final com.yahoo.container.Container vespaContainer;
     private List<String> platformBundles;  // Used to verify that platform bundles don't change.
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
@@ -61,7 +61,6 @@ public class Container {
                      ComponentDeconstructor destructor,
                      Osgi osgi) {
         this.subscriberFactory = subscriberFactory;
-        this.vespaContainer = vespaContainer;
         this.destructor = destructor;
         this.osgi = osgi;
 
@@ -69,7 +68,7 @@ public class Container {
         platformBundlesConfigKey = new ConfigKey<>(PlatformBundlesConfig.class, configId);
         componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
         var bootstrapKeys = Set.of(applicationBundlesConfigKey, platformBundlesConfigKey, componentsConfigKey);
-        this.retriever = new ConfigRetriever(bootstrapKeys, subscriberFactory);
+        this.retriever = new ConfigRetriever(bootstrapKeys, subscriberFactory, vespaContainer);
     }
 
     // TODO: try to simplify by returning the result even when the graph failed, instead of throwing here.
@@ -120,15 +119,14 @@ public class Container {
         ConfigSnapshot snapshot;
         while (true) {
             snapshot = retriever.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
-            updateApplyOnRestart();
 
             if (log.isLoggable(FINE))
-                log.log(FINE, String.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
+                log.log(FINE, Text.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
                                             graph.configKeys(), graph.generation(), snapshot));
 
             if (snapshot instanceof BootstrapConfigs) {
                 if (getBootstrapGeneration() <= previousConfigGeneration) {
-                    throw new IllegalStateException(String.format(
+                    throw new IllegalStateException(Text.format(
                             "Got bootstrap configs out of sequence for old config generation %d.\n" + "Previous config generation is %d",
                             getBootstrapGeneration(), previousConfigGeneration));
                 }
@@ -163,7 +161,7 @@ public class Container {
     }
 
     private String configGenerationsString() {
-        return String.format("bootstrap generation = %d\n" + "components generation: %d\n" + "previous generation: %d",
+        return Text.format("bootstrap generation = %d\n" + "components generation: %d\n" + "previous generation: %d",
                              getBootstrapGeneration(), getComponentsGeneration(), previousConfigGeneration);
     }
 
@@ -309,14 +307,7 @@ public class Container {
 
         return key.getConfigClass().cast(inst);
     }
-
-    /**
-     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
-     */
-    public void updateApplyOnRestart() {
-        vespaContainer.setApplyOnRestart(retriever.applyOnRestart());
-    }
-
+    
     private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {
         return BundleInstantiationSpecification.fromStrings(config.id(), config.classId(), config.bundle());
     }

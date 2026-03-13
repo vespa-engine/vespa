@@ -5,7 +5,36 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 import java.nio.charset.StandardCharsets;
 
-import static java.lang.Character.*;
+import static java.lang.Character.COMBINING_SPACING_MARK;
+import static java.lang.Character.CONNECTOR_PUNCTUATION;
+import static java.lang.Character.CONTROL;
+import static java.lang.Character.CURRENCY_SYMBOL;
+import static java.lang.Character.DASH_PUNCTUATION;
+import static java.lang.Character.DECIMAL_DIGIT_NUMBER;
+import static java.lang.Character.ENCLOSING_MARK;
+import static java.lang.Character.END_PUNCTUATION;
+import static java.lang.Character.FINAL_QUOTE_PUNCTUATION;
+import static java.lang.Character.FORMAT;
+import static java.lang.Character.INITIAL_QUOTE_PUNCTUATION;
+import static java.lang.Character.LETTER_NUMBER;
+import static java.lang.Character.LINE_SEPARATOR;
+import static java.lang.Character.LOWERCASE_LETTER;
+import static java.lang.Character.MATH_SYMBOL;
+import static java.lang.Character.MODIFIER_LETTER;
+import static java.lang.Character.MODIFIER_SYMBOL;
+import static java.lang.Character.NON_SPACING_MARK;
+import static java.lang.Character.OTHER_LETTER;
+import static java.lang.Character.OTHER_NUMBER;
+import static java.lang.Character.OTHER_PUNCTUATION;
+import static java.lang.Character.OTHER_SYMBOL;
+import static java.lang.Character.PARAGRAPH_SEPARATOR;
+import static java.lang.Character.PRIVATE_USE;
+import static java.lang.Character.SPACE_SEPARATOR;
+import static java.lang.Character.START_PUNCTUATION;
+import static java.lang.Character.SURROGATE;
+import static java.lang.Character.TITLECASE_LETTER;
+import static java.lang.Character.UNASSIGNED;
+import static java.lang.Character.UPPERCASE_LETTER;
 
 // Output each character Java consider to be a letter on its own line.
 // This is used as input to the other implementations of lowercasing we

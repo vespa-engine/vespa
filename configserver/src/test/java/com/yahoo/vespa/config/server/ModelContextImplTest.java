@@ -96,6 +96,7 @@ public class ModelContextImplTest {
         assertEquals(new Version(8), context.wantedNodeVespaVersion());
         assertTrue(context.properties().featureFlags().useAsyncMessageHandlingOnSchedule());
         assertEquals(0.5, context.properties().featureFlags().feedConcurrency(), 0.0);
+        assertEquals(0.0, context.properties().featureFlags().searchNodeReservedDiskSpaceFactor(), 0.0);
     }
 
 }

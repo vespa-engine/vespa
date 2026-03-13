@@ -1,2 +1,4 @@
-- Support for multiple inheritance of match-features.
-- Fixed formatting bugs.
+- The 'tensorFromStructs' rank feature.
+- Fix bugs related to the 'foreach' rank feature.
+- Publish to the Open VSX registry.
+- General stability improvements.

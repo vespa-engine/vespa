@@ -67,6 +67,7 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.restapi.Path;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.tensor.serialization.JsonFormat;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.http.server.Headers;
 import com.yahoo.vespa.http.server.MetricNames;
@@ -229,7 +230,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.maxThrottledTotalBytes = calculateMaxThrottledTotalBytes(executorConfig);
         this.maxDocumentOperationRequestSizeBytes = (long) executorConfig.maxDocumentOperationRequestSizeMib() * 1024 * 1024;
 
-        log.info("Operation queue: max-items=%d, max-age=%d ms, max-bytes=%s".formatted(
+        log.info(Text.format("Operation queue: max-items=%d, max-age=%d ms, max-bytes=%s",
                 maxThrottled, Duration.ofNanos(maxThrottledAgeNS).toMillis(), BytesQuantity.ofBytes(maxThrottledTotalBytes).asPrettyString()));
         this.access = access;
         var asyncParameters = new AsyncParameters();
@@ -250,8 +251,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         // Calculate maxThrottledTotalBytes based on max heap size and configured percentage
         if (cfg.maxThrottledBytes() < -1)
             throw new IllegalArgumentException(
-                    "maxThrottledTotalBytesPercent must be between 0 and -1, but was %.2f"
-                            .formatted(cfg.maxThrottledBytes()));
+                    Text.format("maxThrottledTotalBytesPercent must be between 0 and -1, but was %.2f",
+                            cfg.maxThrottledBytes()));
         var maxHeapSize = Runtime.getRuntime().maxMemory();
         return (maxHeapSize == Long.MAX_VALUE || maxHeapSize == 0)
                 ? 0 : (long)Math.ceil(Math.abs(cfg.maxThrottledBytes()) * maxHeapSize);
@@ -326,7 +327,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         // Check in case 'operations' and 'operationBytesQueued' are not consistent
         var operationBytesQueued = this.operationBytesQueued.get();
         if (operationBytesQueued > 0)
-            log.log(WARNING, "Failed to empty request queue before shutdown timeout — %d bytes left in queue".formatted(operationBytesQueued));
+            log.log(WARNING, Text.format("Failed to empty request queue before shutdown timeout — %d bytes left in queue", operationBytesQueued));
 
         try {
             while (outstanding.get() > 0 && clock.instant().isBefore(doom))
@@ -568,7 +569,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         });
         return ignoredContent;
     }
-    
+
     private DocumentOperationParameters parametersFromRequest(HttpRequest request, String... names) {
         DocumentOperationParameters parameters = getProperty(request, TRACELEVEL, integerParser).map(parameters()::withTraceLevel)
                                                                                                 .orElse(parameters());
@@ -587,7 +588,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             };
         return parameters;
     }
-    
+
     private boolean isDocumentOperationRequestTooLarge(long bytesRead) {
         return bytesRead > maxDocumentOperationRequestSizeBytes;
     }
@@ -688,9 +689,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             var bytes = operationBytesQueued.addAndGet(-operationSize);
             sampleQueuedBytes(bytes);
             overload(request,
-                    ("Rejecting execution due to overload: estimated size of operation is %s, " +
-                            "total size of queue %s would exceed queue limit of %s")
-                            .formatted(
+                    Text.format("Rejecting execution due to overload: estimated size of operation is %s, " +
+                            "total size of queue %s would exceed queue limit of %s",
                                     BytesQuantity.ofBytes(operationSize).asPrettyString(),
                                     BytesQuantity.ofBytes(bytesQueued).asPrettyString(),
                                     BytesQuantity.ofBytes(maxThrottledTotalBytes).asPrettyString()),
@@ -794,8 +794,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private void documentOperationRequestTooLarge(HttpRequest request, long bytesRead, ResponseHandler handler) {
         loggingException(() -> {
-            var message = String.format(
-                    "Document operation request size %d bytes exceeds maximum size of %d bytes. " + 
+            var message = Text.format(
+                    "Document operation request size %d bytes exceeds maximum size of %d bytes. " +
                             "See https://docs.vespa.ai/en/writing/document-v1-api-guide.html#request-size-limit", bytesRead,
                     maxDocumentOperationRequestSizeBytes
             );
@@ -1295,7 +1295,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                     return true;
                 }
             } catch (IllegalArgumentException e) {
-                log.fine(() -> "Failed to parse Accept header '%s': %s".formatted(combinedAcceptHeader, e.getMessage()));
+                log.fine(() -> Text.format("Failed to parse Accept header '%s': %s", combinedAcceptHeader, e.getMessage()));
                 // The source exception will contain an internal lexer/parser error string, which is
                 // likely to cause more confusion than it clears up. Just return a generic error with
                 // a link to relevant documentation. IllegalArgumentExceptions are mapped to 400 Bad Request.
@@ -1533,7 +1533,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                 case 413 -> report(DocumentOperationStatus.DOCUMENT_TOO_LARGE);
                 case 429 -> report(DocumentOperationStatus.TOO_MANY_REQUESTS);
                 case 500,503,504,507 -> report(DocumentOperationStatus.SERVER_ERROR);
-                default -> throw new IllegalStateException("Unexpected status code '%s'".formatted(response.getStatus()));
+                default -> throw new IllegalStateException(Text.format("Unexpected status code '%s'", response.getStatus()));
             }
             metrics.reportHttpRequest(clientVersion());
             return delegate.handleResponse(response);

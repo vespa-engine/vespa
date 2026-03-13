@@ -61,6 +61,7 @@ public:
     const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
     bool hasMultiValue() const;
     bool hasWeightedSetType() const;
+    bool needs_idx_file() const;
     uint32_t getNumDocs() const { return _numDocs; }
     bool getEnumerated() const { return _enumerated; }
     uint64_t getCreateSerialNum() const { return _createSerialNum; }

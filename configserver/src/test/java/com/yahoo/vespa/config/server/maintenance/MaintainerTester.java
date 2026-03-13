@@ -51,6 +51,7 @@ class MaintainerTester {
                 .withConfigserverConfig(configserverConfig)
                 .withConfigserverConfig(configserverConfig)
                 .withModelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))
+                .withFlagSource(flagSource)
                 .build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

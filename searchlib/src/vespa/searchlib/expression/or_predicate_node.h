@@ -2,7 +2,6 @@
 #pragma once
 
 #include "expressiontree.h"
-#include "filter_predicate_node.h"
 #include "multi_arg_predicate_node.h"
 
 namespace search::expression {

@@ -10,14 +10,12 @@ namespace config {
  */
 class RawSourceFactory : public SourceFactory {
 public:
-    RawSourceFactory(const std::string & payload)
-        : _payload(payload)
-    { }
+    RawSourceFactory(const std::string& payload) : _payload(payload) {}
 
-    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
+    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey& key) const override;
+
 private:
     const std::string _payload;
 };
 
-}
-
+} // namespace config

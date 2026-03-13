@@ -15,6 +15,7 @@ import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.VespaBackend;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.search.Query;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Result;
@@ -78,8 +79,8 @@ public class ProtobufSerialization {
      */
     private static final ThreadLocal<Boolean> isProtobufAlsoSerialized = ThreadLocal.withInitial(() -> false);
 
-    static byte[] serializeSearchRequest(Query query, int hits, String serverId, double requestTimeout, QrSearchersConfig qrSearchersConfig) {
-        return convertFromQuery(query, hits, serverId, requestTimeout, qrSearchersConfig).toByteArray();
+    static byte[] serializeSearchRequest(Query query, int hits, String nodeId, double contentShare, double requestTimeout, QrSearchersConfig qrSearchersConfig) {
+        return convertFromQuery(query, hits, nodeId, contentShare, requestTimeout, qrSearchersConfig).toByteArray();
     }
 
     private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors) {
@@ -88,7 +89,8 @@ public class ProtobufSerialization {
         }
     }
 
-    static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId, double requestTimeout, QrSearchersConfig qrSearchersConfig) {
+    static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String nodeId, double contentShare,
+                                                         double requestTimeout, QrSearchersConfig qrSearchersConfig) {
         var builder = SearchProtocol.SearchRequest.newBuilder().setHits(hits).setOffset(query.getOffset())
                 .setTimeout((int) (requestTimeout * 1000));
         var documentDb = query.getModel().getDocumentDb();
@@ -97,19 +99,20 @@ public class ProtobufSerialization {
         }
         GrowableByteBuffer scratchPad = threadLocalBuffer.get();
         var queryTree = query.getModel().getQueryTree();
+        var context = new SerializationContext(contentShare);
         boolean sendProtobuf = qrSearchersConfig.sendProtobufQuerytree();
         try {
             isProtobufAlsoSerialized.set(sendProtobuf);
-            builder.setQueryTreeBlob(serializeQueryTree(queryTree, scratchPad));
+            builder.setQueryTreeBlob(serializeQueryTree(queryTree, context, scratchPad));
         } finally {
             isProtobufAlsoSerialized.set(false);
         }
         if (sendProtobuf) {
-            builder.setQueryTree(queryTree.toProtobufQueryTree());
+            builder.setQueryTree(queryTree.toProtobufQueryTree(context));
         }
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
             // TODO verify that the session key is included whenever rank properties would have been
-            builder.setSessionKey(query.getSessionId(serverId).toString());
+            builder.setSessionKey(query.getSessionId(nodeId).toString());
         }
         if (query.properties().getBoolean(Model.ESTIMATE)) {
             builder.setHits(0);
@@ -136,7 +139,7 @@ public class ProtobufSerialization {
             mergeToSearchRequestFromProfiling(query.getTrace().getProfiling(), builder);
         }
 
-        mergeToSearchRequestFromRanking(query.getRanking(), scratchPad, builder);
+        mergeToSearchRequestFromRanking(query.getRanking(), context, scratchPad, builder);
 
         return builder.build();
     }
@@ -152,7 +155,8 @@ public class ProtobufSerialization {
         return traceLevel;
     }
 
-    private static void mergeToSearchRequestFromRanking(Ranking ranking, GrowableByteBuffer scratchPad, SearchProtocol.SearchRequest.Builder builder) {
+    private static void mergeToSearchRequestFromRanking(Ranking ranking, SerializationContext context,
+                                                        GrowableByteBuffer scratchPad, SearchProtocol.SearchRequest.Builder builder) {
         builder.setRankProfile(ranking.getProfile());
 
         if (ranking.getQueryCache()) {
@@ -168,7 +172,7 @@ public class ProtobufSerialization {
         var featureMap = ranking.getFeatures().asMap();
         MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(scratchPad, featureMap, builder::addTensorFeatureOverrides);
-        mergeRankProperties(ranking, scratchPad, builder::addRankProperties, builder::addTensorRankProperties);
+        mergeRankProperties(ranking, context, scratchPad, builder::addRankProperties, builder::addTensorRankProperties);
     }
 
     private static void mergeToSearchRequestFromSorting(Sorting sorting, SearchProtocol.SearchRequest.Builder builder) {
@@ -248,19 +252,23 @@ public class ProtobufSerialization {
         return builder.build().toByteArray();
     }
 
-    private static void mergeQueryDataToDocsumRequest(Query query, GrowableByteBuffer scratchPad, SearchProtocol.DocsumRequest.Builder builder, QrSearchersConfig qrSearchersConfig) {
+    private static void mergeQueryDataToDocsumRequest(Query query,
+                                                      GrowableByteBuffer scratchPad,
+                                                      SearchProtocol.DocsumRequest.Builder builder,
+                                                      QrSearchersConfig qrSearchersConfig) {
         var ranking = query.getRanking();
         var featureMap = ranking.getFeatures().asMap();
 
         boolean sendProtobuf = qrSearchersConfig.sendProtobufQuerytree();
+        var context = SerializationContext.ignored(); // Not necessary to track content share for docsum requests
         try {
             isProtobufAlsoSerialized.set(sendProtobuf);
-            builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree(), scratchPad));
+            builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree(), context, scratchPad));
         } finally {
             isProtobufAlsoSerialized.set(false);
         }
         if (sendProtobuf) {
-            builder.setQueryTree(query.getModel().getQueryTree().toProtobufQueryTree());
+            builder.setQueryTree(query.getModel().getQueryTree().toProtobufQueryTree(context));
         }
 
         MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
@@ -268,7 +276,7 @@ public class ProtobufSerialization {
         if (query.getPresentation().getHighlight() != null) {
             MapConverter.convertStringMultiMap(query.getPresentation().getHighlight().getHighlightTerms(), builder::addHighlightTerms);
         }
-        mergeRankProperties(ranking, scratchPad, builder::addRankProperties, builder::addTensorRankProperties);
+        mergeRankProperties(ranking, context, scratchPad, builder::addRankProperties, builder::addTensorRankProperties);
     }
     static byte[] serializeResult(Result searchResult) {
         return convertFromResult(searchResult).toByteArray();
@@ -376,12 +384,13 @@ public class ProtobufSerialization {
         return builder.build();
     }
 
-    private static ByteString serializeQueryTree(QueryTree queryTree, GrowableByteBuffer scratchPad) {
+    private static ByteString serializeQueryTree(QueryTree queryTree, SerializationContext context,
+                                                 GrowableByteBuffer scratchPad) {
         while (true) {
             try {
                 scratchPad.clear();
                 ByteBuffer treeBuffer = scratchPad.getByteBuffer();
-                queryTree.encode(treeBuffer);
+                queryTree.encode(treeBuffer, context);
                 return ByteString.copyFrom(treeBuffer.flip());
             } catch (java.nio.BufferOverflowException e) {
                 scratchPad.clear();
@@ -391,10 +400,11 @@ public class ProtobufSerialization {
     }
 
     private static void mergeRankProperties(Ranking ranking,
+                                            SerializationContext context,
                                             GrowableByteBuffer scratchPad,
                                             Consumer<StringProperty.Builder> stringProperties,
                                             Consumer<TensorProperty.Builder> tensorProperties) {
-        MapConverter.convertMultiMap(scratchPad, ranking.getProperties().asMap(), propB -> {
+        MapConverter.convertMultiMap(scratchPad, ranking.getProperties().asMap(context), propB -> {
             if (!GetDocSumsPacket.sessionIdKey.equals(propB.getName())) {
                 stringProperties.accept(propB);
             }

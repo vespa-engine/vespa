@@ -47,7 +47,7 @@ struct SimpleFixture
              false),
         _res()
     {
-        _res.search(_itr);
+        _res.search(_itr, 10);
     }
     ~SimpleFixture();
 };
@@ -96,7 +96,7 @@ struct TreeFixture
         _itr.reset(new MonitoringSearchIterator("and",
                                                 SearchIterator::UP(AndSearch::create(std::move(children), true)),
                                                 false));
-        _res.search(*_itr);
+        _res.search(*_itr, 10);
     }
     ~TreeFixture();
 };

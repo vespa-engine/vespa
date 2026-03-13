@@ -32,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.yahoo.jrt.ErrorCode.CONNECTION;
+import static com.yahoo.jrt.ErrorCode.TIMEOUT;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
@@ -264,6 +265,66 @@ public class FileDownloaderTest {
         assertEquals("content", IOUtils.readFile(downloadedFile));
     }
 
+    @Test
+    public void testConnectionCloseOnTimeout() {
+        int timesToTimeout = 2;
+        MockConnection mockConnection = new MockConnection();
+        MockConnection.TimeoutResponseHandler responseHandler =
+                new MockConnection.TimeoutResponseHandler(timesToTimeout);
+        mockConnection.setResponseHandler(responseHandler);
+
+        FileDownloader downloader = new FileDownloader(mockConnection, supervisor, downloadDir,
+                                                       Duration.ofSeconds(4), sleepBetweenRetries,
+                                                       1);
+        FileReference fileReference = new FileReference("timeoutTest");
+        // File won't be found, download will fail after retries and timeout
+        assertFalse(downloader.getFile(new FileReferenceDownload(fileReference, "test")).isPresent());
+        assertEquals("Expected closeConnection called for each timeout, got " + mockConnection.getCloseConnectionCount(),
+                     timesToTimeout, mockConnection.getCloseConnectionCount());
+        downloader.close();
+    }
+
+    @Test
+    public void testConnectionCloseAfterNTimeouts() {
+        int timesToTimeout = 6;
+        int retriesOnTimeoutBeforeClose = 2;
+        MockConnection mockConnection = new MockConnection();
+        MockConnection.TimeoutResponseHandler responseHandler =
+                new MockConnection.TimeoutResponseHandler(timesToTimeout);
+        mockConnection.setResponseHandler(responseHandler);
+
+        FileDownloader downloader = new FileDownloader(mockConnection, supervisor, downloadDir,
+                                                       Duration.ofSeconds(4), sleepBetweenRetries,
+                                                       retriesOnTimeoutBeforeClose);
+        FileReference fileReference = new FileReference("timeoutNTest");
+        // File won't be found, download will fail after retries and timeout
+        assertFalse(downloader.getFile(new FileReferenceDownload(fileReference, "test")).isPresent());
+        // With retriesOnTimeoutBeforeClose=2, close happens after the 2nd timeout (count 1,2 -> close),
+        // then counter resets, so 6 timeouts / 2 = 3 closes
+        assertEquals("Expected 3 closeConnection calls for 6 timeouts with threshold 2, got " + mockConnection.getCloseConnectionCount(),
+                     3, mockConnection.getCloseConnectionCount());
+        downloader.close();
+    }
+
+    @Test
+    public void testNoConnectionCloseOnTimeoutByDefault() {
+        int timesToTimeout = 2;
+        MockConnection mockConnection = new MockConnection();
+        MockConnection.TimeoutResponseHandler responseHandler =
+                new MockConnection.TimeoutResponseHandler(timesToTimeout);
+        mockConnection.setResponseHandler(responseHandler);
+
+        // maxTimeoutsBeforeClose=0 means timeout-based close feature is disabled
+        FileDownloader downloader = new FileDownloader(mockConnection, supervisor, downloadDir,
+                                                       Duration.ofSeconds(4), sleepBetweenRetries,
+                                                       0);
+        FileReference fileReference = new FileReference("timeoutDefaultTest");
+        assertFalse(downloader.getFile(new FileReferenceDownload(fileReference, "test")).isPresent());
+        assertEquals("Expected no closeConnection calls when feature is disabled, got " + mockConnection.getCloseConnectionCount(),
+                     0, mockConnection.getCloseConnectionCount());
+        downloader.close();
+    }
+
     private void writeFileReference(File dir, String fileReferenceString, String fileName) throws IOException {
         File fileReferenceDir = new File(dir, fileReferenceString);
         fileReferenceDir.mkdir();
@@ -307,6 +368,7 @@ public class FileDownloaderTest {
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {
 
         private ResponseHandler responseHandler;
+        private int closeConnectionCount = 0;
 
         MockConnection() {
             this(new FileReferenceFoundResponseHandler());
@@ -328,7 +390,16 @@ public class FileDownloaderTest {
 
         @Override
         public String getAddress() {
-            return null;
+            return "localhost";
+        }
+
+        @Override
+        public void closeConnection() {
+            closeConnectionCount++;
+        }
+
+        int getCloseConnectionCount() {
+            return closeConnectionCount;
         }
 
         @Override
@@ -399,6 +470,30 @@ public class FileDownloaderTest {
                 if (request.methodName().equals("filedistribution.serveFile")) {
                     request.returnValues().add(new Int32Value(0));
                     request.returnValues().add(new StringValue("OK"));
+                }
+            }
+        }
+
+        static class TimeoutResponseHandler implements MockConnection.ResponseHandler {
+
+            private final int timesToTimeout;
+            private int timedOutTimes = 0;
+
+            TimeoutResponseHandler(int timesToTimeout) {
+                super();
+                this.timesToTimeout = timesToTimeout;
+            }
+
+            @Override
+            public void request(Request request) {
+                if (request.methodName().equals("filedistribution.serveFile")) {
+                    if (timedOutTimes < timesToTimeout) {
+                        request.setError(TIMEOUT, "Request timed out");
+                        timedOutTimes++;
+                    } else {
+                        request.returnValues().add(new Int32Value(0));
+                        request.returnValues().add(new StringValue("OK"));
+                    }
                 }
             }
         }

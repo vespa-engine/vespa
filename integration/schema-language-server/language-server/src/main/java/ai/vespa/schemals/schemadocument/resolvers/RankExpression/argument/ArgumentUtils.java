@@ -1,5 +1,7 @@
 package ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument;
 
+import java.util.Optional;
+
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -14,39 +16,36 @@ public class ArgumentUtils {
      * If newStatus is not equal to REFERENCE, any symbol is deleted from the reference index if it exists there.
      *
      * Symbols may be on a node or a depth-first descendant (following .get(0) recursively).
-     *
-     * Returns the leaf on the depth-first path from node.
      */
-    public static Node modifyNodeSymbol(ParseContext context, RankNode node, SymbolType newType, SymbolStatus newStatus) {
-        Node leaf = node.getSchemaNode();
-        while (leaf.size() > 0) {
-            leaf = leaf.get(0);
-
-            if (leaf.hasSymbol()) {
-                Symbol symbol = leaf.getSymbol();
-
-                if (newStatus != SymbolStatus.REFERENCE && symbol.getStatus() == SymbolStatus.REFERENCE) {
-                    context.schemaIndex().deleteSymbolReference(symbol);
-                }
-
-                if (newType != null) {
-                    symbol.setType(newType);
-                    symbol.setStatus(newStatus);
-                } else {
-                    leaf.removeSymbol();
-                }
+    public static void modifyNodeSymbol(ParseContext context, RankNode node, SymbolType newType, SymbolStatus newStatus) {
+        findRankNodeSymbol(node).ifPresent(symbol -> {
+            if (newStatus != SymbolStatus.REFERENCE && symbol.getStatus() == SymbolStatus.REFERENCE) {
+                context.schemaIndex().deleteSymbolReference(symbol);
             }
-        }
 
-        return leaf;
+            if (newType != null) {
+                symbol.setType(newType);
+                symbol.setStatus(newStatus);
+            } else {
+                symbol.getNode().removeSymbol();
+            }
+        });
+    }
+
+    public static Optional<Symbol> findRankNodeSymbol(RankNode node) {
+        Node ptr = node.getSchemaNode();
+        for (;;) {
+            if (ptr.hasSymbol()) return Optional.of(ptr.getSymbol());
+            if (ptr.isLeaf()) break;
+            ptr = ptr.get(0);
+        }
+        return Optional.empty();
     }
 
     /*
      * Removes any symbol registered on this node or on any depth-first descendant.
-     *
-     * Returns the leaf on the depth-first path from node.
      */
-    public static Node removeNodeSymbols(ParseContext context, RankNode node) {
-        return modifyNodeSymbol(context, node, null, null);
+    public static void removeNodeSymbols(ParseContext context, RankNode node) {
+        modifyNodeSymbol(context, node, null, null);
     }
 }

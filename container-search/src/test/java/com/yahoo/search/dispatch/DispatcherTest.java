@@ -202,7 +202,7 @@ public class DispatcherTest {
         InvokerFactoryFactory invokerFactories = (rpcConnectionPool, searchGroups, dispatchConfig, qrSearchersConfig) -> new InvokerFactory(searchGroups, dispatchConfig) {
             @Override protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackend searcher, Query query, int maxHits, Node node) {
                 return Optional.of(new SearchInvoker(Optional.of(node)) {
-                    @Override protected Object sendSearchRequest(Query query, Object context) {
+                    @Override protected Object sendSearchRequest(Query query, double contentShare, Object context) {
                         rpcPool.getConnection(node.key()).request(null, null, 0, null, null, 0);
                         return null;
                     };
@@ -251,11 +251,11 @@ public class DispatcherTest {
 
         // Start some searches, one against each group, since we have a round-robin policy.
         SearchInvoker search0 = dispatcher.getSearchInvoker(new Query(), null);
-        search0.search(new Query());
+        search0.search(new Query(), 1.0);
         // Unknown whether the first or second search hits node0, so we must track that.
         int offset = nodeIdOfSearcher0.get();
         SearchInvoker search1 = dispatcher.getSearchInvoker(new Query(), null);
-        search1.search(new Query());
+        search1.search(new Query(), 1.0);
 
         // Wait for the current cluster monitor to be mid-ping-round.
         doPing.set(true);
@@ -293,7 +293,7 @@ public class DispatcherTest {
 
         // Next search should hit group0 again, this time on node2.
         SearchInvoker search2 = dispatcher.getSearchInvoker(new Query(), null);
-        search2.search(new Query());
+        search2.search(new Query(), 1.0);
 
         // Searches against nodes 1 and 2 complete.
         (offset == 0 ? search0 : search1).close();

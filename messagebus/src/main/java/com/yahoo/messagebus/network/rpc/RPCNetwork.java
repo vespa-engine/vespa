@@ -29,6 +29,7 @@ import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingNode;
 import com.yahoo.security.tls.CapabilitySet;
+import com.yahoo.text.Text;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -256,7 +257,7 @@ public class RPCNetwork implements Network, MethodHandler {
             if (!(r.getServiceAddress() instanceof RPCServiceAddress addr)) {
                 return "<non-RPC service address>";
             }
-            return String.format("%s at %s", addr.getServiceName(), addr.getConnectionSpec());
+            return Text.format("%s at %s", addr.getServiceName(), addr.getConnectionSpec());
         }).collect(Collectors.joining(", "));
     }
 
@@ -272,7 +273,7 @@ public class RPCNetwork implements Network, MethodHandler {
             replyError(ctx, ErrorCode.NETWORK_SHUTDOWN, "Network layer has performed shutdown.");
         } else if (ctx.hasError) {
             replyError(ctx, ErrorCode.HANDSHAKE_FAILED,
-                    String.format("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
+                    Text.format("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
                                   buildRecipientListString(ctx), identity.getHostname()));
         } else {
             new SendTask(owner.getProtocol(ctx.msg.getProtocol()), ctx).run();
@@ -333,7 +334,7 @@ public class RPCNetwork implements Network, MethodHandler {
         RPCServiceAddress ret = servicePool.resolve(serviceName, getMirror());
         if (ret == null) {
             return new Error(ErrorCode.NO_ADDRESS_FOR_SERVICE,
-                             String.format("The address of service '%s' could not be resolved. It is not currently " +
+                             Text.format("The address of service '%s' could not be resolved. It is not currently " +
                                            "registered with the Vespa name server. " +
                                            "The service must be having problems, or the routing configuration is wrong. " +
                                            "Address resolution attempted from host '%s'", serviceName, identity.getHostname()));
@@ -341,7 +342,7 @@ public class RPCNetwork implements Network, MethodHandler {
         RPCTarget target = targetPool.getTarget(orb, ret);
         if (target == null) {
             return new Error(ErrorCode.CONNECTION_ERROR,
-                             String.format("Failed to connect to service '%s' from host '%s'.",
+                             Text.format("Failed to connect to service '%s' from host '%s'.",
                                            serviceName, identity.getHostname()));
         }
         ret.setTarget(target); // free by freeServiceAddress()

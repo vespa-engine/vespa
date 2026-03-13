@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/document/bucket/bucketid.h>
+#include <memory>
 
 namespace search {
 

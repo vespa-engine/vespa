@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "frtconnection.h"
 #include "connectionfactory.h"
+#include "frtconnection.h"
+
 #include <vespa/config/subscription/sourcespec.h>
-#include <vector>
+
 #include <map>
+#include <vector>
 
 class FNET_Transport;
 
@@ -13,7 +15,6 @@ namespace config {
 
 class FRTConnectionPool : public ConnectionFactory {
 private:
-
     /**
      * This class makes it possible to iterate over the entries in the
      * connections map in the order they were inserted. Used to keep
@@ -21,8 +22,9 @@ private:
      */
     class FRTConnectionKey {
     private:
-        int _idx;
+        int         _idx;
         std::string _hostname;
+
     public:
         FRTConnectionKey() : FRTConnectionKey(0, "") {}
         FRTConnectionKey(int idx, const std::string& hostname);
@@ -31,13 +33,13 @@ private:
     };
 
     std::unique_ptr<FRT_Supervisor> _supervisor;
-    int _selectIdx;
-    std::string _hostname;
+    int                             _selectIdx;
+    std::string                     _hostname;
     using ConnectionMap = std::map<FRTConnectionKey, FRTConnection::SP>;
     ConnectionMap _connections;
 
 public:
-    FRTConnectionPool(FNET_Transport & transport, const ServerSpec & spec, const TimingValues & timingValues);
+    FRTConnectionPool(FNET_Transport& transport, const ServerSpec& spec, const TimingValues& timingValues);
     FRTConnectionPool(const FRTConnectionPool&) = delete;
     FRTConnectionPool& operator=(const FRTConnectionPool&) = delete;
     ~FRTConnectionPool() override;
@@ -54,9 +56,9 @@ public:
      *
      * @param hostname the hostname
      */
-    void setHostname(const std::string & hostname) { _hostname = hostname; }
+    void setHostname(const std::string& hostname) { _hostname = hostname; }
 
-    FNET_Scheduler * getScheduler() override;
+    FNET_Scheduler* getScheduler() override;
 
     /**
      * Returns the current FRTConnection instance, taken from the list of error-free sources.
@@ -102,18 +104,18 @@ public:
 
 class FRTConnectionPoolWithTransport : public ConnectionFactory {
 public:
-    FRTConnectionPoolWithTransport(std::unique_ptr<FNET_Transport> transport,
-                                   const ServerSpec & spec, const TimingValues & timingValues);
+    FRTConnectionPoolWithTransport(std::unique_ptr<FNET_Transport> transport, const ServerSpec& spec,
+                                   const TimingValues& timingValues);
     FRTConnectionPoolWithTransport(const FRTConnectionPoolWithTransport&) = delete;
     FRTConnectionPoolWithTransport& operator=(const FRTConnectionPoolWithTransport&) = delete;
     ~FRTConnectionPoolWithTransport() override;
-    FNET_Scheduler * getScheduler() override { return _connectionPool->getScheduler(); }
-    void syncTransport() override { _connectionPool->syncTransport(); }
-    Connection* getCurrent() override { return _connectionPool->getCurrent(); }
+    FNET_Scheduler* getScheduler() override { return _connectionPool->getScheduler(); }
+    void            syncTransport() override { _connectionPool->syncTransport(); }
+    Connection*     getCurrent() override { return _connectionPool->getCurrent(); }
+
 private:
     std::unique_ptr<FNET_Transport>    _transport;
     std::unique_ptr<FRTConnectionPool> _connectionPool;
 };
 
 } // namespace config
-

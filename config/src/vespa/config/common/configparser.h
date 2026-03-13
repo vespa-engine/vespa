@@ -2,9 +2,11 @@
 #pragma once
 
 #include "types.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
-#include <set>
+
 #include <cerrno>
+#include <set>
 
 namespace config {
 
@@ -16,83 +18,61 @@ class ConfigParser {
 public:
     class Cfg {
     public:
-        Cfg(const std::vector<std::string> & v)
-            : _cfg(v.empty() ? nullptr : &v[0]),
-              _sz(v.size())
-        { }
-        Cfg(const std::vector<std::string, vespalib::allocator_large<std::string>> & v) :
-            _cfg(v.empty() ? nullptr : &v[0]),
-            _sz(v.size())
-        { }
-        size_t size() const noexcept { return _sz; }
-        const std::string & operator[] (size_t idx) const noexcept {
-            return _cfg[idx];
-        }
+        Cfg(const std::vector<std::string>& v) : _cfg(v.empty() ? nullptr : &v[0]), _sz(v.size()) {}
+        Cfg(const std::vector<std::string, vespalib::allocator_large<std::string>>& v)
+            : _cfg(v.empty() ? nullptr : &v[0]), _sz(v.size()) {}
+        size_t             size() const noexcept { return _sz; }
+        const std::string& operator[](size_t idx) const noexcept { return _cfg[idx]; }
+
     private:
-        const std::string * _cfg;
-        size_t                   _sz;
+        const std::string* _cfg;
+        size_t             _sz;
     };
+
 private:
     static StringVector getLinesForKey(std::string_view key, Cfg config);
 
-    static std::vector<StringVector> splitArray(Cfg config);
+    static std::vector<StringVector>           splitArray(Cfg config);
     static std::map<std::string, StringVector> splitMap(Cfg config);
 
-    static std::string deQuote(const std::string & source);
-    static void throwNoDefaultValue(std::string_view key);
+    static std::string deQuote(const std::string& source);
+    static void        throwNoDefaultValue(std::string_view key);
 
-    template<typename T>
-    static T convert(const StringVector & config);
+    template <typename T> static T convert(const StringVector& config);
 
     static std::string arrayToString(Cfg config);
 
-    template<typename T>
-    static T parseInternal(std::string_view key, Cfg config);
-    template<typename T>
-    static T parseInternal(std::string_view key, Cfg config, T defaultValue);
+    template <typename T> static T parseInternal(std::string_view key, Cfg config);
+    template <typename T> static T parseInternal(std::string_view key, Cfg config, T defaultValue);
 
-    template<typename V>
-    static V parseArrayInternal(std::string_view key, Cfg config);
-    template<typename T>
-    static std::map<std::string, T> parseMapInternal(std::string_view key, Cfg config);
-    template<typename T>
-    static T parseStructInternal(std::string_view key, Cfg config);
+    template <typename V> static V                        parseArrayInternal(std::string_view key, Cfg config);
+    template <typename T> static std::map<std::string, T> parseMapInternal(std::string_view key, Cfg config);
+    template <typename T> static T                        parseStructInternal(std::string_view key, Cfg config);
 
 public:
-    static void stripLinesForKey(std::string_view key, std::set<std::string>& config);
+    static void                  stripLinesForKey(std::string_view key, std::set<std::string>& config);
     static std::set<std::string> getUniqueNonWhiteSpaceLines(Cfg config);
-    static std::string stripWhitespace(std::string_view source);
+    static std::string           stripWhitespace(std::string_view source);
 
-    template<typename T>
-    static T parse(std::string_view key, Cfg config) {
-        return parseInternal<T>(key, config);
-    }
-    template<typename T>
-    static T parse(std::string_view key, Cfg config, T defaultValue) {
+    template <typename T> static T parse(std::string_view key, Cfg config) { return parseInternal<T>(key, config); }
+    template <typename T> static T parse(std::string_view key, Cfg config, T defaultValue) {
         return parseInternal(key, config, defaultValue);
     }
 
-    template<typename V>
-    static V parseArray(std::string_view key, Cfg config) {
+    template <typename V> static V parseArray(std::string_view key, Cfg config) {
         return parseArrayInternal<V>(key, config);
     }
 
-    template<typename T>
-    static std::map<std::string, T> parseMap(std::string_view key, Cfg config) {
+    template <typename T> static std::map<std::string, T> parseMap(std::string_view key, Cfg config) {
         return parseMapInternal<T>(key, config);
     }
 
-    template<typename T>
-    static T parseStruct(std::string_view key, Cfg config) {
+    template <typename T> static T parseStruct(std::string_view key, Cfg config) {
         return parseStructInternal<T>(key, config);
     }
-
 };
 
-template<typename T>
-T
-ConfigParser::parseInternal(std::string_view key, Cfg config)
-{
+template <typename T> T ConfigParser::parseInternal(std::string_view key, Cfg config) {
     StringVector lines = getLinesForKey(key, config);
 
     if (lines.size() == 0) {
@@ -101,10 +81,7 @@ ConfigParser::parseInternal(std::string_view key, Cfg config)
     return convert<T>(lines);
 }
 
-template<typename T>
-T
-ConfigParser::parseInternal(std::string_view key, Cfg config, T defaultValue)
-{
+template <typename T> T ConfigParser::parseInternal(std::string_view key, Cfg config, T defaultValue) {
     StringVector lines = getLinesForKey(key, config);
 
     if (lines.size() == 0) {
@@ -114,31 +91,21 @@ ConfigParser::parseInternal(std::string_view key, Cfg config, T defaultValue)
     return convert<T>(lines);
 }
 
-template<typename T>
-T
-ConfigParser::convert(const StringVector & lines) {
-    return T(lines);
-}
+template <typename T> T ConfigParser::convert(const StringVector& lines) { return T(lines); }
 
-template<typename T>
-std::map<std::string, T>
-ConfigParser::parseMapInternal(std::string_view key, Cfg config)
-{
+template <typename T> std::map<std::string, T> ConfigParser::parseMapInternal(std::string_view key, Cfg config) {
     StringVector lines = getLinesForKey(key, config);
     using SplittedMap = std::map<std::string, StringVector>;
-    SplittedMap s = splitMap(lines);
+    SplittedMap              s = splitMap(lines);
     std::map<std::string, T> retval;
-    for (const auto & e : s) {
+    for (const auto& e : s) {
         retval[e.first] = convert<T>(e.second);
     }
     return retval;
 }
 
-template<typename V>
-V
-ConfigParser::parseArrayInternal(std::string_view key, Cfg config)
-{
-    StringVector lines = getLinesForKey(key, config);
+template <typename V> V ConfigParser::parseArrayInternal(std::string_view key, Cfg config) {
+    StringVector              lines = getLinesForKey(key, config);
     std::vector<StringVector> split = splitArray(lines);
 
     V retval;
@@ -150,34 +117,20 @@ ConfigParser::parseArrayInternal(std::string_view key, Cfg config)
     return retval;
 }
 
-template<typename T>
-T
-ConfigParser::parseStructInternal(std::string_view key, Cfg config)
-{
+template <typename T> T ConfigParser::parseStructInternal(std::string_view key, Cfg config) {
     StringVector lines = getLinesForKey(key, config);
 
     return convert<T>(lines);
 }
 
-template<>
-bool
-ConfigParser::convert<bool>(const StringVector & config);
+template <> bool ConfigParser::convert<bool>(const StringVector& config);
 
-template<>
-int32_t
-ConfigParser::convert<int32_t>(const StringVector & config);
+template <> int32_t ConfigParser::convert<int32_t>(const StringVector& config);
 
-template<>
-int64_t
-ConfigParser::convert<int64_t>(const StringVector & config);
+template <> int64_t ConfigParser::convert<int64_t>(const StringVector& config);
 
-template<>
-double
-ConfigParser::convert<double>(const StringVector & config);
+template <> double ConfigParser::convert<double>(const StringVector& config);
 
-template<>
-std::string
-ConfigParser::convert<std::string>(const StringVector & config);
+template <> std::string ConfigParser::convert<std::string>(const StringVector& config);
 
-} // config
-
+} // namespace config

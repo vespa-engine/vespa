@@ -954,7 +954,7 @@ TEST(QueryTest, requireThatWhiteListBlueprintCanBeUsed)
     SearchIterator::UP search = query.createSearch(*md);
     SimpleResult exp = SimpleResult().addHit(1).addHit(5).addHit(7).addHit(11);
     SimpleResult act;
-    act.search(*search);
+    act.search(*search, 42);
     EXPECT_EQ(exp, act);
 }
 

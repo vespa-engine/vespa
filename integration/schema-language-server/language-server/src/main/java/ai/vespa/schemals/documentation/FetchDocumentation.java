@@ -3,12 +3,14 @@ package ai.vespa.schemals.documentation;
 import ai.vespa.schemals.common.FileUtils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -78,7 +80,7 @@ public class FetchDocumentation {
 
             for (var entry : markdownContent.entrySet()) {
                 if (entry.getKey().contains("/")) continue;
-                String fileName = entry.getKey().toLowerCase();
+                String fileName = entry.getKey().toLowerCase(Locale.ROOT);
                 fileName = FileUtils.sanitizeFileName(fileName);
                 writeMarkdown(writePath.resolve(fileName + ".md"), entry.getValue());
             }
@@ -87,11 +89,11 @@ public class FetchDocumentation {
 
 
     private static void writeMarkdown(Path writePath, String markdown) throws IOException {
-        Files.write(writePath, markdown.getBytes(), StandardOpenOption.CREATE);
+        Files.write(writePath, markdown.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
     }
 
     private static String convertToToken(String h2Id) {
-        return h2Id.toUpperCase().replaceAll("-", "_");
+        return h2Id.toUpperCase(Locale.ROOT).replaceAll("-", "_");
     }
 
     // Runs during build

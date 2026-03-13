@@ -6,6 +6,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 
 import java.security.cert.X509Certificate;
@@ -51,7 +52,7 @@ public class CloudDataPlaneFilterValidator implements Validator {
                     .map(p -> ApplicationPackage.SECURITY_DIR.append(p).getRelative())
                     .sorted()
                     .toList();
-            context.illegal(String.format(java.util.Locale.ROOT, "Duplicate certificate(s) detected in files: %s. Certificate subject of duplicates: %s", filesWithDuplicates.toString(),
+            context.illegal(Text.format("Duplicate certificate(s) detected in files: %s. Certificate subject of duplicates: %s", filesWithDuplicates.toString(),
                                                duplicates.stream().map(cert -> cert.getSubjectX500Principal().getName()).toList().toString()));
         }
     }
@@ -60,7 +61,7 @@ public class CloudDataPlaneFilterValidator implements Validator {
         try {
             return X509CertificateUtils.certificateListFromPem(IOUtils.readAll(reader));
         } catch (Exception e) {
-            log.warning(String.format(java.util.Locale.ROOT, "Exception reading certificate list from application package. File: %s, exception message: %s", reader.getName(), e.getMessage()));
+            log.warning(Text.format("Exception reading certificate list from application package. File: %s, exception message: %s", reader.getName(), e.getMessage()));
             context.illegal("Error reading certificates from application package", e);
             return List.of();
         }

@@ -19,6 +19,8 @@ export LOCAL_MVN_REPO ?= $(WORKDIR)/artifacts/$(ARCH)/maven-repo
 export VESPA_MAVEN_EXTRA_OPTS ?= --show-version --batch-mode --no-snapshot-updates  \
 	-DaltDeploymentRepository=local-repo::default::file:$(LOCAL_MVN_REPO)
 
+export LOCAL_RPM_REPO ?= $(WORKDIR)/artifacts/$(ARCH)/rpms
+
 export NUM_CPU_LIMIT ?= $(shell nproc)
 export NUM_CPP_THREADS := $(shell echo $$(( $(NUM_CPU_LIMIT)*2/3 )))
 export NUM_MVN_THREADS := $(shell echo $$(( $(NUM_CPU_LIMIT)*2/3 )))

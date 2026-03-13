@@ -77,7 +77,7 @@ public:
             if (iterator.seek(doc_id)) {
                 result.emplace_back(doc_id);
                 iterator.unpack(doc_id);
-                EXPECT_EQ(doc_id, _tfmd.getDocId());
+                EXPECT_TRUE(_tfmd.has_ranking_data(doc_id));
                 ++doc_id;
             } else {
                 doc_id = std::max(doc_id + 1, iterator.getDocId());

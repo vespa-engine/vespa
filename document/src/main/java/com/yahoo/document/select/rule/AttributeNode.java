@@ -20,6 +20,7 @@ import com.yahoo.document.select.Visitor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Simon Thoresen Hult
@@ -120,9 +121,9 @@ public class AttributeNode implements ExpressionNode {
         } else if (function.equalsIgnoreCase("hash")) {
             return BobHash.hash(value.toString());
         } else if (function.equalsIgnoreCase("lowercase")) {
-            return value.toString().toLowerCase();
+            return value.toString().toLowerCase(Locale.ROOT);
         } else if (function.equalsIgnoreCase("uppercase")) {
-            return value.toString().toUpperCase();
+            return value.toString().toUpperCase(Locale.ROOT);
         }
         throw new IllegalStateException("Function '" + function + "' is not supported.");
     }

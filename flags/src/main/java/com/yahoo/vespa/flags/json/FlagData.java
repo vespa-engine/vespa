@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.vespa.flags.Deserializer;
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.FlagSource;
@@ -15,8 +16,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -74,6 +77,19 @@ public class FlagData {
         FetchVector newDefaultFetchVector = defaultFetchVector.without(fetchVector.dimensions());
 
         return new FlagData(id, newDefaultFetchVector, newRules);
+    }
+
+    /** Returns a copy of this flag data with rules narrowed to the given allowed values per dimension. */
+    public FlagData partialResolve(Map<Dimension, Set<String>> allowedValues) {
+        List<Rule> newRules = new ArrayList<>();
+        for (var rule : rules) {
+            Optional<Rule> narrowed = rule.partialResolve(allowedValues);
+            if (narrowed.isPresent()) {
+                newRules.add(narrowed.get());
+                if (narrowed.get().conditions().isEmpty()) break;
+            }
+        }
+        return new FlagData(id, defaultFetchVector, optimizeRules(newRules));
     }
 
     public Optional<RawFlag> resolve(FetchVector fetchVector) {

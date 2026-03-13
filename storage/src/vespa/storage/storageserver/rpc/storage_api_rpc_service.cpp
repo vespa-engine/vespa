@@ -2,6 +2,7 @@
 
 #include "caching_rpc_target_resolver.h"
 #include "message_codec_provider.h"
+#include "metadata_propagator.h"
 #include "rpc_envelope_proto.h"
 #include "shared_rpc_resources.h"
 #include "storage_api_rpc_service.h"
@@ -15,6 +16,8 @@
 #include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/storageapi/mbusprot/protocolserialization7.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
+#include <vespa/storageapi/messageapi/metadata_extractor.h>
+#include <vespa/storageapi/messageapi/metadata_injector.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/trace/tracelevel.h>
 #include <vespa/vespalib/util/compressor.h>
@@ -89,10 +92,10 @@ struct SubRefDeleter {
 
 template <typename HeaderType>
 bool decode_header_from_rpc_params(const FRT_Values& params, HeaderType& hdr) {
-    const auto compression_type = vespalib::compression::CompressionConfig::toType(params[0]._intval8);
+    const auto compression_type = CompressionConfig::toType(params[0]._intval8);
     const uint32_t uncompressed_length = params[1]._intval32;
 
-    if (compression_type == vespalib::compression::CompressionConfig::NONE) {
+    if (compression_type == CompressionConfig::NONE) {
         // Fast-path in the common case where request header is not compressed.
         return hdr.ParseFromArray(params[2]._data._buf, params[2]._data._len);
     } else {
@@ -107,7 +110,11 @@ bool decode_header_from_rpc_params(const FRT_Values& params, HeaderType& hdr) {
 // Must be done prior to adding payload
 template <typename HeaderType>
 void encode_header_into_rpc_params(HeaderType& hdr, FRT_Values& params) {
-    params.AddInt8(vespalib::compression::CompressionConfig::Type::NONE); // TODO when needed
+    // Headers may contain sensitive key/value data and must therefore never be
+    // compressed. This is to prevent compression oracle attacks (a-la CRIME/BREACH)
+    // that can be used to deduce the value of secret tokens from observing the
+    // change in ciphertext sizes on the wire across many messages.
+    params.AddInt8(CompressionConfig::Type::NONE);
     const auto header_size = hdr.ByteSizeLong();
     assert(header_size <= UINT32_MAX);
     params.AddInt32(static_cast<uint32_t>(header_size));
@@ -129,6 +136,34 @@ void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload,
     params.AddData(std::move(buf));
 }
 
+class ProtobufMetadataInjector final : public api::MetadataInjector {
+    protobuf::RequestHeader& _proto_hdr;
+public:
+    explicit ProtobufMetadataInjector(protobuf::RequestHeader& proto_hdr) noexcept
+        : _proto_hdr(proto_hdr)
+    {}
+    ~ProtobufMetadataInjector() override = default;
+
+    void inject_key_value(std::string_view key, std::string_view value) override {
+        _proto_hdr.mutable_header_kvs()->emplace(key, value);
+    }
+};
+
+class ProtobufMetadataExtractor final : public api::MetadataExtractor {
+    const protobuf::RequestHeader& _proto_hdr;
+public:
+    explicit ProtobufMetadataExtractor(const protobuf::RequestHeader& proto_hdr) noexcept
+        : _proto_hdr(proto_hdr)
+    {}
+    ~ProtobufMetadataExtractor() override = default;
+
+    std::optional<std::string> extract_value(std::string_view key) const override {
+        const auto& kvs = _proto_hdr.header_kvs();
+        auto iter = kvs.find(key);
+        return iter != kvs.end() ? std::optional(iter->second) : std::nullopt;
+    }
+};
+
 } // anon ns
 
 template <typename MessageType>
@@ -144,7 +179,7 @@ bool StorageApiRpcService::uncompress_rpc_payload(
         const FRT_Values& params,
         PayloadCodecCallback payload_callback)
 {
-    const auto compression_type = vespalib::compression::CompressionConfig::toType(params[3]._intval8);
+    const auto compression_type = CompressionConfig::toType(params[3]._intval8);
     const uint32_t uncompressed_length = params[4]._intval32;
     // TODO fast path if uncompressed?
     vespalib::DataBuffer uncompressed(params[5]._data._buf, params[5]._data._len);
@@ -184,6 +219,10 @@ void StorageApiRpcService::RPC_rpc_v1_send(FRT_RPCRequest* req) {
         scmd->setApproxByteSize(uncompressed_size);
         scmd->getTrace().setLevel(hdr.trace_level());
         scmd->setTimeout(std::chrono::milliseconds(hdr.time_remaining_ms()));
+        if (_params.metadata_propagator) {
+            ProtobufMetadataExtractor extractor(hdr);
+            _params.metadata_propagator->on_receive_command(*scmd, extractor);
+        }
         req->DiscardBlobs();
         if (scmd->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
             scmd->getTrace().trace(TraceLevel::SEND_RECEIVE,
@@ -248,6 +287,10 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
     protobuf::RequestHeader req_hdr;
     req_hdr.set_time_remaining_ms(std::chrono::duration_cast<std::chrono::milliseconds>(cmd->getTimeout()).count());
     req_hdr.set_trace_level(cmd->getTrace().getLevel());
+    if (_params.metadata_propagator) {
+        ProtobufMetadataInjector injector(req_hdr);
+        _params.metadata_propagator->on_send_command(*cmd, injector);
+    }
 
     auto* params = req->GetParams();
     encode_header_into_rpc_params(req_hdr, *params);

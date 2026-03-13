@@ -2,6 +2,7 @@
 
 #include "imported_attribute_vector_read_guard.h"
 #include "imported_attribute_vector.h"
+#include "imported_array_bool_read_view.h"
 #include "imported_multi_value_read_view.h"
 #include "imported_search_context.h"
 #include "reference_attribute.h"
@@ -276,6 +277,20 @@ const IWeightedSetEnumReadView*
 ImportedAttributeVectorReadGuard::make_read_view(WeightedSetEnumTag tag, vespalib::Stash& stash) const
 {
     return make_read_view_helper(tag, stash);
+}
+
+const IArrayBoolReadView*
+ImportedAttributeVectorReadGuard::make_read_view(ArrayBoolTag tag, vespalib::Stash& stash) const
+{
+    auto target_mv_attr = _target_attribute.as_multi_value_attribute();
+    if (target_mv_attr == nullptr) {
+        return nullptr;
+    }
+    auto target_read_view = target_mv_attr->make_read_view(tag, stash);
+    if (target_read_view == nullptr) {
+        return nullptr;
+    }
+    return &stash.create<ImportedArrayBoolReadView>(_targetLids, target_read_view);
 }
 
 bool ImportedAttributeVectorReadGuard::isUndefined(DocId doc) const {

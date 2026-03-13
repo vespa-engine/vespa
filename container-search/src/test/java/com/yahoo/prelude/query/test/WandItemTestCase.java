@@ -3,6 +3,7 @@ package com.yahoo.prelude.query.test;
 
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PureWeightedString;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
@@ -42,9 +43,9 @@ public class WandItemTestCase {
         expect.put((byte) 10);  // targetNumHits
         expect.putDouble(20);  // scoreThreshold
         expect.putDouble(2.0); // thresholdBoostFactor
-        new PureWeightedString("foo", 30).encode(expect);
+        new PureWeightedString("foo", 30).encode(expect, new SerializationContext(1.0));
 
-        assertEquals(2, item.encode(actual));
+        assertEquals(2, item.encode(actual, new SerializationContext(1.0)));
 
         actual.flip();
         expect.flip();

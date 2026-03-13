@@ -1,4 +1,4 @@
-# VSCode extension for Schema Language Server
+# Extension for Vespa Schema Language Server
 Language support for the Vespa Schema language using LSP.
 
 The extension acts as a client for the Schema Language Server, providing tools for developing Vespa Schema files.
@@ -33,4 +33,6 @@ The extension also requires [Vespa CLI](https://docs.vespa.ai/en/clients/vespa-c
 ## XML support
 This extension bundles with an extension to the [LemMinX XML Language server](https://github.com/eclipse/lemminx).
 This is to provide additional support when editing the services.xml file in Vespa applications. 
-For the best possible experience, install the [VSCode XML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml) as well.
+For the best possible experience, install the appropriate extension for your editor:
+- [VS Code](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml)
+- [Open VSX](https://open-vsx.org/extension/redhat/vscode-xml)

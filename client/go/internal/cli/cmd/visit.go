@@ -7,6 +7,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand/v2"
@@ -235,8 +236,32 @@ func probeHandler(vArgs *visitArgs, service *vespa.Service, cli *CLI) (res Opera
 		Header: vArgs.header,
 	}
 	timeout := time.Duration(90) * time.Second
-	response, err := service.Do(request, timeout)
-	if err != nil {
+	const maxRetrySeconds = 15
+	deadline := time.Now().Add(maxRetrySeconds * time.Second)
+	retryStart := time.Now()
+	var response *http.Response
+	var err error
+	inRetry := false
+	for {
+		response, err = service.Do(request, timeout)
+		if err == nil {
+			if inRetry {
+				fmt.Fprintf(cli.Stderr, "\r\033[K")
+			}
+			break
+		}
+		if (errors.Is(err, io.EOF) || strings.Contains(err.Error(), "EOF")) && time.Now().Before(deadline) {
+			inRetry = true
+			for i := 3; i > 0; i-- {
+				elapsed := int(time.Since(retryStart).Seconds())
+				fmt.Fprintf(cli.Stderr, "\r\033[K  Got EOF, retrying in %ds... [%ds / %ds]", i, elapsed, maxRetrySeconds)
+				time.Sleep(time.Second)
+			}
+			continue
+		}
+		if inRetry {
+			fmt.Fprintf(cli.Stderr, "\n")
+		}
 		return Failure("Request failed: " + err.Error())
 	}
 	defer response.Body.Close()

@@ -6,8 +6,13 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParser;
 import com.yahoo.searchlib.rankingexpression.parser.TokenMgrException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.text.Utf8;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -50,7 +55,7 @@ public class FeatureList implements Iterable<ReferenceNode> {
      * @throws FileNotFoundException Thrown if the file specified could not be found.
      */
     public FeatureList(File file) throws ParseException, FileNotFoundException {
-        features.addAll(parse(new FileReader(file)));
+        features.addAll(parse(Utf8.createReader(file)));
     }
 
     /**

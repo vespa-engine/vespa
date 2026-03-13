@@ -4,6 +4,7 @@ package com.yahoo.document.idstring;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.text.Text;
 import com.yahoo.text.Utf8String;
+import java.util.Locale;
 
 /**
  * To be used with DocumentId constructor.
@@ -81,7 +82,7 @@ public abstract class IdString {
     private static void validateTextString(String id) {
         if ( ! Text.isValidTextString(id)) {
             throw new IllegalArgumentException("Unparseable id '" + id + "': Contains illegal code point 0x" +
-                    Integer.toHexString(Text.validateTextString(id).getAsInt()).toUpperCase());
+                    Integer.toHexString(Text.validateTextString(id).getAsInt()).toUpperCase(Locale.ROOT));
         }
     }
 

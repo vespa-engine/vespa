@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
@@ -49,6 +50,15 @@ type deploymentResponse struct {
 	Endpoints []deploymentEndpoint `json:"endpoints"`
 }
 
+type privateService struct {
+	Cluster string `json:"cluster"`
+	PrivateServiceInfo
+}
+
+type privateServicesResponse struct {
+	PrivateServices []privateService `json:"privateServices"`
+}
+
 type clusterTarget struct {
 	URL        string
 	AuthMethod string
@@ -58,7 +68,12 @@ type runResponse struct {
 	Active bool                    `json:"active"`
 	Status string                  `json:"status"`
 	Log    map[string][]logMessage `json:"log"`
+	Steps  map[string]stepStatus   `json:"steps"`
 	LastID int64                   `json:"lastId"`
+}
+
+type stepStatus struct {
+	Status string `json:"status"`
 }
 
 type jobResponse struct {
@@ -116,6 +131,7 @@ func (t *cloudTarget) DeployService() (*Service, error) {
 
 func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, error) {
 	var clusterTargets map[string][]clusterTarget
+	var privateServices map[string]*PrivateServiceInfo
 	switch {
 	case t.deploymentOptions.CustomURL != "":
 		// Custom URL is always preferred
@@ -141,6 +157,8 @@ func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, erro
 			return nil, err
 		}
 		clusterTargets = endpoints
+		// Fetch private services information
+		privateServices, _ = t.discoverPrivateServices(timeout)
 	}
 	services := make([]*Service, 0, len(clusterTargets))
 	for name, targets := range clusterTargets {
@@ -153,6 +171,12 @@ func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, erro
 				httpClient:    t.httpClient,
 				auth:          t.deploymentAuth,
 				retryInterval: t.retryInterval,
+			}
+			// Attach private service info if available for this cluster
+			if privateServices != nil {
+				if psInfo, exists := privateServices[name]; exists {
+					service.PrivateService = psInfo
+				}
 			}
 			if timeout > 0 {
 				if err := service.Wait(timeout); err != nil {
@@ -201,10 +225,7 @@ func (t *cloudTarget) CompatibleWith(clientVersion version.Version) error {
 }
 
 func (t *cloudTarget) logsURL() string {
-	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s/logs",
-		t.apiOptions.System.URL,
-		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
-		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region)
+	return t.apiOptions.System.LogsURL(t.deploymentOptions.Deployment).String()
 }
 
 func (t *cloudTarget) PrintLog(options LogOptions) error {
@@ -258,6 +279,7 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		return req
 	}
 	success := false
+	failureMsgs := make(map[string][]string)
 	jobSuccessFunc := func(status int, response []byte) (bool, error) {
 		if ok, err := isOK(status); !ok {
 			return ok, err
@@ -266,14 +288,29 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		if err := json.Unmarshal(response, &resp); err != nil {
 			return false, err
 		}
+		for step, msgs := range resp.Log {
+			for _, msg := range msgs {
+				if msg.Type == "warning" || msg.Type == "error" {
+					failureMsgs[step] = append(failureMsgs[step], msg.Message)
+				}
+			}
+		}
+		if !resp.Active && resp.Status != "success" {
+			failed := failedStep(resp.Steps)
+			if t.logOptions.Writer != nil {
+				t.printLog(resp, lastID, failed)
+			}
+			if msgs := failureMsgs[failed]; len(msgs) > 0 {
+				combined := strings.Join(msgs, "\n")
+				return false, fmt.Errorf("%w: %s", ErrDeployment, strings.TrimPrefix(combined, "Deployment failed: "))
+			}
+			return false, fmt.Errorf("%w: run %d ended with unsuccessful status: %s", ErrDeployment, runID, resp.Status)
+		}
 		if t.logOptions.Writer != nil {
-			lastID = t.printLog(resp, lastID)
+			lastID = t.printLog(resp, lastID, "")
 		}
 		if resp.Active {
 			return false, nil
-		}
-		if resp.Status != "success" {
-			return false, fmt.Errorf("%w: run %d ended with unsuccessful status: %s", ErrDeployment, runID, resp.Status)
 		}
 		success = true
 		return success, nil
@@ -288,13 +325,25 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 	return runID, nil
 }
 
-func (t *cloudTarget) printLog(response runResponse, last int64) int64 {
+func failedStep(steps map[string]stepStatus) string {
+	for name, s := range steps {
+		if s.Status == "failed" {
+			return name
+		}
+	}
+	return ""
+}
+
+func (t *cloudTarget) printLog(response runResponse, last int64, muteStep string) int64 {
 	if response.LastID == 0 {
 		return last
 	}
 	var msgs []logMessage
 	for step, stepMsgs := range response.Log {
 		for _, msg := range stepMsgs {
+			if step == muteStep && (msg.Type == "warning" || msg.Type == "error") {
+				continue
+			}
 			if (step == "copyVespaLogs" && LogLevel(msg.Type) > t.logOptions.Level) || LogLevel(msg.Type) == 3 {
 				continue
 			}
@@ -310,11 +359,36 @@ func (t *cloudTarget) printLog(response runResponse, last int64) int64 {
 	return response.LastID
 }
 
+func (t *cloudTarget) discoverPrivateServices(timeout time.Duration) (map[string]*PrivateServiceInfo, error) {
+	deploymentURL := t.apiOptions.System.PrivateServicesURL(t.deploymentOptions.Deployment)
+	req, err := http.NewRequest("GET", deploymentURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	privateServices := make(map[string]*PrivateServiceInfo)
+	privateServiceFunc := func(status int, response []byte) (bool, error) {
+		if ok, err := isOK(status); !ok {
+			return ok, err
+		}
+		var resp privateServicesResponse
+		if err := json.Unmarshal(response, &resp); err != nil {
+			return false, nil
+		}
+		for _, ps := range resp.PrivateServices {
+			// Only include if it has actual configuration (not just cluster name)
+			if ps.ServiceID != "" {
+				privateServices[ps.Cluster] = &ps.PrivateServiceInfo
+			}
+		}
+		return true, nil
+	}
+	// Ignore errors from private-services endpoint - it's optional
+	_, _ = deployRequest(t, privateServiceFunc, func() *http.Request { return req }, timeout, t.retryInterval)
+	return privateServices, nil
+}
+
 func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string][]clusterTarget, error) {
-	deploymentURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",
-		t.apiOptions.System.URL,
-		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
-		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region)
+	deploymentURL := t.apiOptions.System.DeploymentURL(t.deploymentOptions.Deployment)
 	req, err := http.NewRequest("GET", deploymentURL, nil)
 	if err != nil {
 		return nil, err
@@ -353,11 +427,11 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string][]clu
 }
 
 func (t *cloudTarget) tenantUrl(tenant string) string {
-	return fmt.Sprintf("%s/application/v4/tenant/%s", t.apiOptions.System.URL, tenant)
+	return t.apiOptions.System.TenantURL(tenant).String()
 }
 
 func (t *cloudTarget) applicationInstanceUrl(id ApplicationID) string {
-	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s", t.apiOptions.System.URL, id.Tenant, id.Application)
+	return t.apiOptions.System.ApplicationURL(id).String()
 }
 
 type CloudTenantResponse struct {

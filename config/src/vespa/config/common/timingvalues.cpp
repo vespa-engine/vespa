@@ -4,7 +4,6 @@
 
 namespace config {
 
-
 const vespalib::duration DEFAULT_NEXTCONFIG_TIMEOUT(55s);
 const vespalib::duration DEFAULT_SUBSCRIBE_TIMEOUT(55s);
 const vespalib::duration DEFAULT_GETCONFIGS_TIMEOUT(55s);
@@ -20,21 +19,12 @@ TimingValues::TimingValues()
       configuredErrorDelay(15s),
       maxDelayMultiplier(10),
       transientDelay(60s),
-      fatalDelay(60s)
-{ }
+      fatalDelay(60s) {}
 
-
-TimingValues::TimingValues(duration initSuccessTimeout,
-                           duration initErrorTimeout,
-                           duration initInitialTimeout,
-                           duration initSubscribeTimeout,
-                           duration initFixedDelay,
-                           duration initSuccessDelay,
-                           duration initUnconfiguredDelay,
-                           duration initConfiguredErrorDelay,
-                           unsigned int initMaxDelayMultiplier,
-                           duration initTransientDelay,
-                           duration initFatalDelay)
+TimingValues::TimingValues(duration initSuccessTimeout, duration initErrorTimeout, duration initInitialTimeout,
+                           duration initSubscribeTimeout, duration initFixedDelay, duration initSuccessDelay,
+                           duration initUnconfiguredDelay, duration initConfiguredErrorDelay,
+                           unsigned int initMaxDelayMultiplier, duration initTransientDelay, duration initFatalDelay)
     : successTimeout(initSuccessTimeout),
       errorTimeout(initErrorTimeout),
       initialTimeout(initInitialTimeout),
@@ -45,7 +35,6 @@ TimingValues::TimingValues(duration initSuccessTimeout,
       configuredErrorDelay(initConfiguredErrorDelay),
       maxDelayMultiplier(initMaxDelayMultiplier),
       transientDelay(initTransientDelay),
-      fatalDelay(initFatalDelay)
-{ }
+      fatalDelay(initFatalDelay) {}
 
-}
+} // namespace config

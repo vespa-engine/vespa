@@ -15,7 +15,7 @@ public:
     DebugWaitFunctionNode(ExpressionNode::UP arg, double waitTime, bool busyWait);
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 private:
-    bool onExecute() const override;
+    void onExecute() const override;
     double _waitTime;
     bool   _busyWait;
 };

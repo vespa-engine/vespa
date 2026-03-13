@@ -395,7 +395,7 @@ BitVectorTest::checkSearch(AttributePtr v,
         ++docFreq,
         assert(!checkStride || (docId % 5) == 2u);
         sb->unpack(docId);
-        EXPECT_EQ(md.getDocId(), docId);
+        EXPECT_TRUE(md.has_ranking_data(docId));
         if (v->getCollectionType() == CollectionType::SINGLE || !weights) {
             EXPECT_EQ(1, md.getWeight());
         } else if (v->getCollectionType() == CollectionType::ARRAY) {

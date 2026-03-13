@@ -11,10 +11,16 @@ import com.yahoo.collections.LazyMap;
 import com.yahoo.geo.DistanceParser;
 import com.yahoo.geo.ParsedDegree;
 import com.yahoo.language.Language;
+import com.yahoo.language.detect.Detector;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.Normalizer;
+import com.yahoo.language.process.Segmenter;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Location;
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.BlockItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DotProductItem;
@@ -27,10 +33,12 @@ import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
+import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.ONearItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PredicateQueryItem;
 import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.RangeItem;
@@ -42,16 +50,20 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
+import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WeightedSetItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.search.Query;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
+import com.yahoo.search.query.parser.ParserFactory;
 import com.yahoo.search.yql.VespaGroupingStep;
+import com.yahoo.search.yql.YqlParser;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
@@ -120,6 +132,7 @@ import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
 import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
+import static com.yahoo.search.yql.YqlParser.TOTAL_TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
 import static com.yahoo.search.yql.YqlParser.USE_POSITION_DATA;
@@ -148,18 +161,36 @@ public class SelectParser implements Parser {
     private static final String NOT = "not";
     private static final String OR = "or";
 
+    // text() function constants
+    private static final String TEXT = "text";
+    private static final String TEXT_QUERY = "query";
+    private static final String GRAMMAR = "grammar";
+    private static final String GRAMMAR_RAW = "raw";
+    private static final String GRAMMAR_SEGMENT = "segment";
+    private static final String GRAMMAR_COMPOSITE = "grammar." + QueryType.COMPOSITE;
+    private static final String GRAMMAR_TOKENIZATION = "grammar." + QueryType.TOKENIZATION;
+    private static final String GRAMMAR_SYNTAX = "grammar." + QueryType.SYNTAX;
+    private static final String GRAMMAR_PROFILE = "grammar." + QueryType.PROFILE;
+    private static final String ALLOW_EMPTY = "allowEmpty";
+
     Parsable query;
+    private final ParserEnvironment environment;
     private final IndexFacts indexFacts;
     private final Map<Integer, TaggableItem> identifiedItems = LazyMap.newHashMap();
     private final List<ConnectedItem> connectedItems = new ArrayList<>();
     private final Normalizer normalizer;
+    private final Segmenter segmenter;
+    private final Detector detector;
     private IndexFacts.Session indexFactsSession;
 
     private static final List<String> FUNCTION_CALLS = List.of(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_BOUNDING_BOX, GEO_LOCATION, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
 
     public SelectParser(ParserEnvironment environment) {
+        this.environment = environment;
         indexFacts = environment.getIndexFacts();
         normalizer = environment.getLinguistics().getNormalizer();
+        segmenter = environment.getLinguistics().getSegmenter();
+        detector = environment.getLinguistics().getDetector();
     }
 
     @Override
@@ -482,10 +513,13 @@ public class SelectParser implements Parser {
         if (annotations != null){
             annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
                 if (TARGET_HITS.equals(annotation_name)){
-                    item.setTargetNumHits((int)(annotation_value.asDouble()));
+                    item.setTargetHits((int)(annotation_value.asDouble()));
                 }
                 if (TARGET_NUM_HITS.equals(annotation_name)){
-                    item.setTargetNumHits((int)(annotation_value.asDouble()));
+                    item.setTargetHits((int)(annotation_value.asDouble()));
+                }
+                if (TOTAL_TARGET_HITS.equals(annotation_name)){
+                    item.setTotalTargetHits((int)(annotation_value.asDouble()));
                 }
                 if (DISTANCE_THRESHOLD.equals(annotation_name)) {
                     double distanceThreshold = annotation_value.asDouble();
@@ -514,8 +548,11 @@ public class SelectParser implements Parser {
 
         if (annotations != null) {
             annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
-                if (TARGET_HITS.equals(annotation_name) || TARGET_NUM_HITS.equals(annotation_name)){
-                    weakAnd.setN((int)(annotation_value.asDouble()));
+                if (TARGET_HITS.equals(annotation_name) || TARGET_NUM_HITS.equals(annotation_name)) {
+                    weakAnd.setTargetHits((int)(annotation_value.asDouble()));
+                }
+                if (TOTAL_TARGET_HITS.equals(annotation_name)) {
+                    weakAnd.setTotalTargetHits((int)(annotation_value.asDouble()));
                 }
             });
         }
@@ -636,23 +673,81 @@ public class SelectParser implements Parser {
         return hitLimit[0];
     }
 
-
+    /**
+     * Equals operator.
+     * <p>
+     * Short form: { "equals": [field, value] }
+     * Long form:  { "equals": { "field": field, "value": value } }
+     * <p>
+     * Optional argument: "index". Then it is turned into sameElement with array access.
+     */
     private Item buildEquals(String key, Inspector value) {
-        Map<Integer, Inspector> children = childMap(value);
-        if ( children.size() != 2)
-            throw new IllegalArgumentException("The value of 'equals' should be an array containing a field name and " +
-                                               "a value, but was " + value);
-        if ( children.get(0).type() != STRING)
-            throw new IllegalArgumentException("The first array element under 'equals' should be a field name string " +
-                                               "but was " + children.get(0));
-        String field = children.get(0).asString();
-        return switch (children.get(1).type()) {
-            case BOOL -> new BoolItem(children.get(1).asBool(), field);
-            case LONG -> new IntItem(children.get(1).asLong(), field);
-            default ->
-                    throw new IllegalArgumentException("The second array element under 'equals' should be a boolean " +
-                                                       "or int value but was " + children.get(1));
+        var params = extractEqualsParams(value);
+        params.validateTypes();
+        if (params.index.valid()) {
+            return buildSameElementWithElementFilter(params);
+        }
+
+        String field = params.field.asString();
+        return switch (params.value.type()) {
+            case BOOL -> new BoolItem(params.value.asBool(), field);
+            case LONG -> new IntItem(params.value.asLong(), field);
+            default -> throw new IllegalArgumentException("'value' in 'equals' should be a boolean or integer, but " +
+                    "was " + params.value.type());
         };
+    }
+
+    /** Holds and validates equals operator parameters. */
+    record EqualsParams(Inspector field, Inspector value, Inspector index) {
+        void validateTypes() {
+            if (!field.valid()) {
+                throw new IllegalArgumentException("Expected 'field' in 'equals' but is missing.");
+            }
+
+            if (!value.valid()) {
+                throw new IllegalArgumentException("Expected 'value' in 'equals' but is missing.");
+            }
+
+            if (field.type() != STRING) {
+                throw new IllegalArgumentException("'field' in 'equals' should be a string but was " + field.type());
+            }
+
+            if (index.valid() && (index.type() != LONG)) {
+                throw new IllegalArgumentException("'index' in 'equals' should be an integer but was " + index.type());
+            }
+        }
+    }
+
+    /** Extracts equals operator parameters from object and array form. */
+    private EqualsParams extractEqualsParams(Inspector value) {
+        if (value.type() == OBJECT) {
+            return new EqualsParams(value.field("field"), value.field("value"), value.field("index"));
+        } else {
+            if (value.entries() != 2) {
+                throw new IllegalArgumentException("The value of 'equals' should be an array containing a field name" +
+                        " and a value, but was " + value);
+            }
+            return new EqualsParams(value.entry(0), value.entry(1), value.entry(2));
+        }
+    }
+
+    /** Builds sameElement accessing a specific index in an array. */
+    private Item buildSameElementWithElementFilter(EqualsParams params) {
+        int elementIndex = YqlParser.convertToElementId(params.index.asLong());
+        var value = params.value;
+        Item valueItem = switch (value.type()) {
+            case BOOL -> new BoolItem(value.asBool(), "");
+            case LONG -> new IntItem(value.asLong(), "");
+            case DOUBLE -> new IntItem(new Limit(value.asDouble(), true), new Limit(value.asDouble(), true), "");
+            case STRING -> new WordItem(value.asString(), "");
+            default -> throw new IllegalArgumentException("'value' in 'equals' should be a boolean, integer, double, " +
+                                                          "or string but was " + value.type());
+        };
+
+        SameElementItem sameElement = new SameElementItem(params.field.asString());
+        sameElement.setElementFilter(List.of(elementIndex));
+        sameElement.addItem(valueItem);
+        return sameElement;
     }
 
     private Item buildIn(String key, Inspector value) {
@@ -964,8 +1059,233 @@ public class SelectParser implements Parser {
             case EQUIV -> instantiateEquivItem(field, key, value);
             case FUZZY -> instantiateFuzzyItem(field, key, value);
             case ALTERNATIVES -> instantiateWordAlternativesItem(field, key, value);
-            default -> throw newUnexpectedArgumentException(key, EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT);
+            case TEXT -> buildText(field, key, value);
+            default -> throw newUnexpectedArgumentException(key, EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT, TEXT);
         };
+    }
+
+    /**
+     * Builds a text() query item. The value inspector is the inner value of the "text" key and can be:
+     * <ul>
+     *   <li>A string: {@code {"text": "hello world"}} -> value is STRING</li>
+     *   <li>An object with query/attributes: {@code {"text": {"query": "hello world", "attributes": {...}}}}
+     *       -> value is OBJECT</li>
+     * </ul>
+     */
+    private Item buildText(String field, String key, Inspector value) {
+        // 1. Extract text string from supported JSON shapes
+        String wordData = extractTextString(value);
+
+        // 2. Read annotations (empty map for STRING form, populated for OBJECT form)
+        HashMap<String, Inspector> annotations = getAnnotationMap(value);
+
+        // 3. Check allowEmpty
+        boolean allowEmpty = getBoolAnnotation(ALLOW_EMPTY, annotations, Boolean.FALSE);
+        if (allowEmpty && (wordData == null || wordData.isEmpty()))
+            return new NullItem();
+        if (wordData == null || wordData.isEmpty())
+            throw new IllegalArgumentException("text() requires a non-empty input string. " +
+                                               "Use allowEmpty annotation to allow empty input.");
+
+        // 4. Resolve language
+        Language language = decideParsingLanguage(value, wordData);
+        boolean explicitLanguage = hasExplicitLanguageAnnotation(value);
+
+        // 5. Resolve grammar and query type
+        String grammar = getAnnotation(GRAMMAR, annotations, String.class, "linguistics");
+
+        QueryType queryType = buildQueryType(grammar, annotations);
+
+        // 6. Handle grammar:raw specially
+        if (GRAMMAR_RAW.equals(grammar)) {
+            ExactStringItem item = new ExactStringItem(wordData, true);
+            item.setIndexName(field);
+            if (explicitLanguage || language != Language.ENGLISH)
+                item.setLanguage(language);
+            return assignQueryType(item, queryType);
+        }
+
+        // 6b. Handle grammar:segment specially
+        if (GRAMMAR_SEGMENT.equals(grammar)) {
+            return assignQueryType(buildSegmentItem(field, wordData, language, explicitLanguage, annotations), queryType);
+        }
+
+        // 7. Parse via sub-parser (same pattern as YqlParser.parseUserInput)
+        Parser subParser = ParserFactory.newInstance(queryType, environment);
+        Item item = subParser.parse(new Parsable().setQuery(wordData)
+                                                  .addSources(query.getSources())
+                                                  .addRestricts(query.getRestrict())
+                                                  .setLanguage(language)
+                                                  .setDefaultIndexName(field)).getRoot();
+        if (item == null || item instanceof NullItem) {
+            if (allowEmpty) return new NullItem();
+            throw new IllegalArgumentException("Parsing '" + wordData + "' produced no result.");
+        }
+
+        // 8. Mark language if explicitly set or non-default
+        if (explicitLanguage || language != Language.ENGLISH)
+            setLanguageRecursively(item, language);
+
+        // 9. Propagate item-level annotations
+        propagateTextAnnotations(annotations, item);
+
+        // 10. Set composite-specific annotations
+        if (queryType.getComposite() == QueryType.Composite.weakAnd && item instanceof WeakAndItem weakAndItem) {
+            Integer targetHits = getIntegerAnnotation(TARGET_HITS, annotations, null);
+            if (targetHits != null)
+                weakAndItem.setTargetHits(targetHits);
+            Integer totalTargetHits = getIntegerAnnotation(TOTAL_TARGET_HITS, annotations, null);
+            if (totalTargetHits != null)
+                weakAndItem.setTotalTargetHits(totalTargetHits);
+        }
+        if ((queryType.getComposite() == QueryType.Composite.near || queryType.getComposite() == QueryType.Composite.oNear)
+            && item instanceof NearItem nearItem) {
+            Integer distance = getIntegerAnnotation(DISTANCE, annotations, null);
+            if (distance != null)
+                nearItem.setDistance(distance);
+        }
+
+        return item;
+    }
+
+    /** Builds a QueryType from a grammar string and annotation overrides, defaulting to LINGUISTICS. */
+    private QueryType buildQueryType(String grammar, HashMap<String, Inspector> annotations) {
+        var queryType = QueryType.from(Query.Type.LINGUISTICS);
+        String resolvedGrammar = grammar;
+        if (GRAMMAR_RAW.equals(resolvedGrammar) || GRAMMAR_SEGMENT.equals(resolvedGrammar))
+            resolvedGrammar = "linguistics"; // raw and segment are not separate types since they don't cause parsing - use linguistics to annotate the term
+        if (resolvedGrammar != null)
+            queryType = QueryType.from(resolvedGrammar);
+
+        String composite = getAnnotation(GRAMMAR_COMPOSITE, annotations, String.class, null);
+        String tokenization = getAnnotation(GRAMMAR_TOKENIZATION, annotations, String.class, null);
+        String syntax = getAnnotation(GRAMMAR_SYNTAX, annotations, String.class, null);
+        String profile = getAnnotation(GRAMMAR_PROFILE, annotations, String.class, null);
+        if (profile == null)
+            profile = queryType.getProfile();
+        return queryType.setComposite(composite)
+                        .setTokenization(tokenization)
+                        .setSyntax(syntax)
+                        .setProfile(profile);
+    }
+
+    /** Assigns the query type to the item if it is a BlockItem, for downstream consumers like StemmingSearcher. */
+    private Item assignQueryType(Item item, QueryType queryType) {
+        if (item instanceof BlockItem blockItem)
+            blockItem.setQueryType(queryType);
+        return item;
+    }
+
+    /** Returns the linguistics profile for the given field, checking query-assigned profile first. */
+    private String linguisticsProfileFor(String field) {
+        String queryAssignedProfile = environment.getType().getProfile();
+        if (queryAssignedProfile != null) return queryAssignedProfile;
+        Index index = indexFactsSession.getIndex(field);
+        if (index == null) return null;
+        return index.getLinguisticsProfile();
+    }
+
+    /**
+     * Builds a segment item from text input, forcing segmentation of the entire input string.
+     * Mirrors YqlParser's grammar:segment path through instantiateWordItem with SegmentWhen.ALWAYS.
+     */
+    private Item buildSegmentItem(String field, String wordData, Language language,
+                                  boolean explicitLanguage, HashMap<String, Inspector> annotations) {
+        // Read transform annotations (mirrors YqlParser.instantiateWordItem 7-arg, lines 1735-1742)
+        if (getBoolAnnotation(NFKC, annotations, Boolean.FALSE))
+            wordData = normalizer.normalize(wordData);
+        boolean fromQuery = getBoolAnnotation(IMPLICIT_TRANSFORMS, annotations, Boolean.TRUE);
+
+        // Segment using linguistics
+        String profile = linguisticsProfileFor(field);
+        List<String> segments = segmenter.segment(wordData, new LinguisticsParameters(profile, language, StemMode.NONE, false, false));
+
+        Item item;
+        if (segments.isEmpty() || segments.size() == 1) {
+            String word = segments.isEmpty() ? wordData : segments.get(0);
+            WordItem wordItem = new WordItem(word, fromQuery);
+            wordItem.setIndexName(field);
+            item = wordItem;
+        } else {
+            PhraseSegmentItem phrase = new PhraseSegmentItem(wordData, fromQuery, false);
+            phrase.setIndexName(field);
+            for (String s : segments) {
+                WordItem segment = new WordItem(s, fromQuery);
+                segment.setIndexName(field);
+                phrase.addItem(segment);
+            }
+            phrase.lock();
+            item = phrase;
+        }
+
+        // Mark language recursively if explicitly set or non-default
+        if (explicitLanguage || language != Language.ENGLISH)
+            setLanguageRecursively(item, language);
+
+        // Propagate item-level annotations (stem, ranked, filter, etc.)
+        propagateTextAnnotations(annotations, item);
+
+        return item;
+    }
+
+    /** Extracts the text string from the various JSON shapes passed to text(). */
+    private String extractTextString(Inspector value) {
+        if (value.type() == STRING) {
+            return value.asString();
+        } else if (value.type() == OBJECT) {
+            if (value.field(TEXT_QUERY).valid()) {
+                return requireStringField(value.field(TEXT_QUERY), TEXT_QUERY);
+            }
+            if (value.field("children").valid()) {
+                throw new IllegalArgumentException("text() does not support 'children'; use a 'query' string field instead.");
+            }
+            throw new IllegalArgumentException("text() object form requires a 'query' string field.");
+        } else if (value.type() == ARRAY) {
+            throw new IllegalArgumentException("text() does not support array arguments; use a string or an object with a 'query' field.");
+        }
+        throw new IllegalArgumentException("Unexpected JSON type for text(): " + value.type());
+    }
+
+    private static String requireStringField(Inspector value, String fieldName) {
+        if (value.type() != STRING)
+            throw new IllegalArgumentException("text()." + fieldName + " must be a string, got " + value.type());
+        return value.asString();
+    }
+
+    /** Propagates item-level annotations (stem, ranked, filter, etc.) recursively onto query items. */
+    private void propagateTextAnnotations(HashMap<String, Inspector> annotations, Item item) {
+        Boolean isRanked = getBoolAnnotation(RANKED, annotations, null);
+        Boolean filter = getBoolAnnotation(FILTER, annotations, null);
+        Boolean stem = getBoolAnnotation(STEM, annotations, null);
+        Boolean normalizeCase = getBoolAnnotation(NORMALIZE_CASE, annotations, null);
+        Boolean accentDrop = getBoolAnnotation(ACCENT_DROP, annotations, null);
+        Boolean usePositionData = getBoolAnnotation(USE_POSITION_DATA, annotations, null);
+
+        ToolBox.visit(new ToolBox.QueryVisitor() {
+            @Override
+            public boolean visit(Item visitItem) {
+                if (visitItem instanceof WordItem w) {
+                    if (usePositionData != null) w.setPositionData(usePositionData);
+                    if (stem != null) w.setStemmed(!stem);
+                    if (normalizeCase != null) w.setLowercased(!normalizeCase);
+                    if (accentDrop != null) w.setNormalizable(accentDrop);
+                }
+                if (visitItem instanceof TaggableItem) {
+                    if (isRanked != null) visitItem.setRanked(isRanked);
+                    if (filter != null) visitItem.setFilter(filter);
+                }
+                return true;
+            }
+        }, item);
+    }
+
+    /** Sets language recursively on all items in the tree. */
+    private void setLanguageRecursively(Item item, Language language) {
+        if (item instanceof CompositeItem composite) {
+            for (int i = 0; i < composite.getItemCount(); i++)
+                setLanguageRecursively(composite.getItem(i), language);
+        }
+        item.setLanguage(language);
     }
 
     private Item instantiateWordItem(String field, String key, Inspector node) {
@@ -1010,10 +1330,16 @@ public class SelectParser implements Parser {
         }
 
         prepareWord(field, node, wordItem);
-        if (language != Language.ENGLISH)
+        // Mark the language used if it was explicitly set or is not the default
+        if (hasExplicitLanguageAnnotation(node) || language != Language.ENGLISH)
             wordItem.setLanguage(language);
 
         return leafStyleSettings(getAnnotations(node), wordItem);
+    }
+
+    /** Returns whether the language annotation is explicitly set on the given node. */
+    private boolean hasExplicitLanguageAnnotation(Inspector value) {
+        return getAnnotation(USER_INPUT_LANGUAGE, getAnnotationMap(value), String.class, null) != null;
     }
 
     private Language decideParsingLanguage(Inspector value, String wordData) {
@@ -1023,8 +1349,12 @@ public class SelectParser implements Parser {
         if (language != Language.UNKNOWN) return language;
 
         Optional<Language> explicitLanguage = query.getExplicitLanguage();
-        return explicitLanguage.orElse(Language.ENGLISH);
+        if (explicitLanguage.isPresent()) return explicitLanguage.get();
 
+        language = detector.detect(wordData, null).getLanguage();
+        if (language != Language.UNKNOWN) return language;
+
+        return Language.ENGLISH;
     }
 
     private void prepareWord(String field, Inspector value, WordItem wordItem) {

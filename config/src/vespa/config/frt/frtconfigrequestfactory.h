@@ -4,6 +4,7 @@
 #include <vespa/config/common/compressiontype.h>
 #include <vespa/config/common/vespa_version.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <memory>
 
 namespace config {
@@ -16,21 +17,20 @@ struct ConfigState;
 /**
  * Factory for creating config requests depending on protocol version;
  */
-class FRTConfigRequestFactory
-{
+class FRTConfigRequestFactory {
 public:
-    FRTConfigRequestFactory(int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType);
+    FRTConfigRequestFactory(int traceLevel, const VespaVersion& vespaVersion, const CompressionType& compressionType);
     ~FRTConfigRequestFactory();
 
-    std::unique_ptr<FRTConfigRequest>
-    createConfigRequest(const ConfigKey & key, Connection * connection,
-                        const ConfigState & state, vespalib::duration serverTimeout) const;
+    std::unique_ptr<FRTConfigRequest> createConfigRequest(const ConfigKey& key, Connection* connection,
+                                                          const ConfigState& state,
+                                                          vespalib::duration serverTimeout) const;
+
 private:
     const int             _traceLevel;
     const VespaVersion    _vespaVersion;
-    std::string      _hostName;
+    std::string           _hostName;
     const CompressionType _compressionType;
 };
 
 } // namespace config
-

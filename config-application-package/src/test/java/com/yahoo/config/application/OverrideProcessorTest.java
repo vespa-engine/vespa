@@ -410,8 +410,8 @@ public class OverrideProcessorTest {
                         </container>
                         "</services>""";
 
-        assertOverride(input, "aws", expected.formatted("AwsSearcher"));
-        assertOverride(input, "gcp", expected.formatted("GcpSearcher"));
+        assertOverride(input, "aws", com.yahoo.text.Text.format(expected, "AwsSearcher"));
+        assertOverride(input, "gcp", com.yahoo.text.Text.format(expected, "GcpSearcher"));
     }
 
     private void assertOverride(Environment environment, RegionName region, String expected) throws TransformerException {

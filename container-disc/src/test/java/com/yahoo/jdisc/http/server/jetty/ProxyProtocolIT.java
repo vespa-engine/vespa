@@ -8,6 +8,7 @@ import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.security.SslContextBuilder;
+import com.yahoo.text.Text;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.eclipse.jetty.client.ContentResponse;
 import org.eclipse.jetty.client.HttpClient;
@@ -175,7 +176,7 @@ class ProxyProtocolIT {
             } catch (ExecutionException e) {
                 // Retry when the server closes the connection before the TLS handshake is completed. This has been observed in CI.
                 // We have been unable to reproduce this locally. The cause is therefor currently unknown.
-                log.log(Level.WARNING, String.format("Attempt %d failed: %s", attempt, e.getMessage()), e);
+                log.log(Level.WARNING, Text.format("Attempt %d failed: %s", attempt, e.getMessage()), e);
                 Thread.sleep(10);
                 cause = e;
             } finally {

@@ -3,6 +3,7 @@ package com.yahoo.container.standalone;
 
 import com.yahoo.vespa.model.container.configserver.option.ConfigOptions;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Function;
@@ -42,9 +43,17 @@ public class ConfigEnvironmentVariables implements ConfigOptions {
     }
 
     @Override
-    public Optional<Long> zookeeperBarrierTimeout() {
+    public Optional<Duration> zookeeperBarrierTimeout() {
         return  Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_ZOOKEEPER_BARRIER_TIMEOUT"))
-                .map(Long::parseLong);
+                        .map(Long::parseLong)
+                        .map(Duration::ofSeconds);
+    }
+
+    @Override
+    public Optional<Duration> applicationLockTimeoutSeconds() {
+        return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_APPLICATION_LOCK_TIMEOUT_SECONDS"))
+                       .map(Long::parseLong)
+                       .map(Duration::ofSeconds);
     }
 
     @Override

@@ -24,6 +24,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
@@ -2254,7 +2255,7 @@ public class ModelProvisioningTest {
         {
             VespaModelTester tester = new VespaModelTester();
             tester.addHosts(6);
-            VespaModel model = tester.createModel(String.format(java.util.Locale.ROOT, servicesXml, "node", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
+            VespaModel model = tester.createModel(Text.format(servicesXml, "node", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
 
             var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
             model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
@@ -2264,7 +2265,7 @@ public class ModelProvisioningTest {
         {
             VespaModelTester tester = new VespaModelTester();
             tester.addHosts(6);
-            VespaModel model = tester.createModel(String.format(java.util.Locale.ROOT, servicesXml, "group", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
+            VespaModel model = tester.createModel(Text.format(servicesXml, "group", ""), true, deployStateWithClusterEndpoints("qrs").properties(new TestProperties()));
 
             var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
             model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
@@ -2275,7 +2276,7 @@ public class ModelProvisioningTest {
             VespaModelTester tester = new VespaModelTester();
             tester.addHosts(6);
             assertThrows(IllegalArgumentException.class, () ->
-            tester.createModel(String.format(java.util.Locale.ROOT, servicesXml, "node",
+            tester.createModel(Text.format(servicesXml, "node",
                                                      """
                                                      <tuning>
                                                        <cluster-controller>
@@ -2543,7 +2544,7 @@ public class ModelProvisioningTest {
     }
 
     private static String multipleContentClusters(int count1, int count2) {
-        return String.format(java.util.Locale.ROOT, """
+        return Text.format("""
                 <?xml version="1.0" encoding="utf-8" ?>
                 <services>
                   <content version='1.0' id='foo'>

@@ -7,6 +7,7 @@ import com.yahoo.vespa.flags.json.FlagData;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Locale;
 
 import static com.yahoo.vespa.flags.FlagsTest.testGeneric;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,7 +38,7 @@ class PermanentFlagsTest {
     }
 
     private static FlagData wantedDockerTagFlagData(String value) {
-        return FlagData.deserialize("""
+        return FlagData.deserialize(String.format(Locale.ROOT, """
                 {
                     "id": "wanted-docker-tag",
                     "rules": [
@@ -46,7 +47,7 @@ class PermanentFlagsTest {
                         }
                     ]
                 }
-                """.formatted(value));
+                """, value));
     }
 
 }

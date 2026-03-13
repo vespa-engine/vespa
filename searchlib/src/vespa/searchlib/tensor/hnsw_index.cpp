@@ -81,6 +81,21 @@ bool operator< (const PairDist &a, const PairDist &b) noexcept {
     return (a.distance < b.distance);
 }
 
+template <typename GraphType>
+struct NeighborLinkMeta {
+    uint32_t             neighbor_nodeid;
+    GraphType::LevelsRef neighbor_ref;
+    uint32_t             neighbor_docid;
+    uint32_t             neighbor_subspace;
+
+    constexpr NeighborLinkMeta(uint32_t neighbor_nodeid_in, GraphType::LevelsRef neighbor_ref_in,
+                               uint32_t neighbor_docid_in, uint32_t neighbor_subspace_in) noexcept
+        : neighbor_nodeid(neighbor_nodeid_in),
+          neighbor_ref(neighbor_ref_in),
+          neighbor_docid(neighbor_docid_in),
+          neighbor_subspace(neighbor_subspace_in) {}
+};
+
 }
 
 namespace internal {
@@ -399,20 +414,8 @@ HnswIndex<type>::search_layer_helper(Stats &stats, const BoundDistanceFunction &
     }
     double limit_dist = std::numeric_limits<double>::max();
 
-    struct NeighborLinkMeta final {
-        uint32_t neighbor_nodeid;
-        GraphType::LevelsRef neighbor_ref;
-        uint32_t neighbor_docid;
-        uint32_t neighbor_subspace;
-
-        constexpr NeighborLinkMeta(uint32_t neighbor_nodeid_in, GraphType::LevelsRef neighbor_ref_in,
-                                   uint32_t neighbor_docid_in, uint32_t neighbor_subspace_in) noexcept
-            : neighbor_nodeid(neighbor_nodeid_in),
-              neighbor_ref(neighbor_ref_in),
-              neighbor_docid(neighbor_docid_in),
-              neighbor_subspace(neighbor_subspace_in) {}
-    };
-    std::vector<NeighborLinkMeta> neighbor_link_metas;
+    std::vector<NeighborLinkMeta<GraphType>> neighbor_link_metas;
+    neighbor_link_metas.reserve(max_links_for_level(level));
 
     while (!candidates.empty()) {
         auto cand = candidates.top();
@@ -439,13 +442,7 @@ HnswIndex<type>::search_layer_helper(Stats &stats, const BoundDistanceFunction &
             const auto neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             const auto neighbor_subspace = neighbor_node.acquire_subspace();
 
-            neighbor_link_metas.emplace_back(
-                neighbor_nodeid,
-                neighbor_ref,
-                neighbor_docid,
-                neighbor_subspace
-            );
-
+            neighbor_link_metas.emplace_back(neighbor_nodeid, neighbor_ref, neighbor_docid, neighbor_subspace);
             prefetch_docid(_vectors, neighbor_docid);
         }
 
@@ -481,9 +478,9 @@ template <HnswIndexType type>
 template <class VisitedTracker, class BestNeighbors>
 void
 HnswIndex<type>::search_layer_filter_first_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
-                                                  BestNeighbors& best_neighbors, double exploration, uint32_t level, const GlobalFilter *filter,
-                                                  uint32_t nodeid_limit, const vespalib::Doom* const doom,
-                                                  uint32_t estimated_visited_nodes) const
+                                                  bool prefetch_tensors, BestNeighbors& best_neighbors, double exploration,
+                                                  uint32_t level, const GlobalFilter *filter, uint32_t nodeid_limit,
+                                                  const vespalib::Doom* const doom, uint32_t estimated_visited_nodes) const
 {
     assert(filter);
     NearestPriQ candidates;
@@ -510,6 +507,9 @@ HnswIndex<type>::search_layer_filter_first_helper(Stats &stats, const BoundDista
     double limit_dist = std::numeric_limits<double>::max();
 
     std::deque<uint32_t> neighborhood;
+    std::vector<NeighborLinkMeta<GraphType>> neighbor_link_metas;
+    neighbor_link_metas.reserve(max_links_for_level(level));
+
     while (!candidates.empty()) {
         auto cand = candidates.top();
         if (cand.distance > (1.0 + exploration_slack) * limit_dist) {
@@ -520,6 +520,7 @@ HnswIndex<type>::search_layer_filter_first_helper(Stats &stats, const BoundDista
         // Instead of taking immediate neighbors, we additionally explore 2-hop neighbors (and possibly 3-hop neighbors)
         neighborhood.clear();
         exploreNeighborhood(stats, cand, neighborhood, visited, exploration, level, filter_wrapper, nodeid_limit);
+        neighbor_link_metas.clear();
 
         for (uint32_t neighbor_nodeid : neighborhood) {
             auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
@@ -529,14 +530,24 @@ HnswIndex<type>::search_layer_filter_first_helper(Stats &stats, const BoundDista
             }
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
-            double dist_to_input = calc_distance(df, neighbor_docid, neighbor_subspace);
+
+            neighbor_link_metas.emplace_back(neighbor_nodeid, neighbor_ref, neighbor_docid, neighbor_subspace);
+            prefetch_docid(_vectors, neighbor_docid);
+        }
+        if (prefetch_tensors) {
+            for (const auto& link : neighbor_link_metas) {
+                prefetch_vector(_vectors, link.neighbor_docid);
+            }
+        }
+        for (const auto& link : neighbor_link_metas) {
+            double dist_to_input = calc_distance(df, link.neighbor_docid, link.neighbor_subspace);
             stats.count_computed_distance();
             if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
-                candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
+                candidates.emplace(link.neighbor_nodeid, link.neighbor_ref, dist_to_input);
 
                 if (dist_to_input < limit_dist) {
                     // exploreNeighborhood only returns nodes that pass the filter, no need to check that here
-                    best_neighbors.emplace(neighbor_nodeid, neighbor_docid, neighbor_ref, dist_to_input);
+                    best_neighbors.emplace(link.neighbor_nodeid, link.neighbor_docid, link.neighbor_ref, dist_to_input);
                     while (best_neighbors.size() > neighbors_to_find) {
                         best_neighbors.pop();
                         limit_dist = best_neighbors.top().distance;
@@ -635,15 +646,20 @@ HnswIndex<type>::search_layer(Stats &stats, const BoundDistanceFunction &df, uin
 template <HnswIndexType type>
 template <class BestNeighbors>
 void
-HnswIndex<type>::search_layer_filter_first(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, BestNeighbors& best_neighbors, double exploration,
+HnswIndex<type>::search_layer_filter_first(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
+                                           bool prefetch_tensors, BestNeighbors& best_neighbors, double exploration,
                                            uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter) const
 {
     uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
     uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
     if (estimated_visited_nodes >= nodeid_limit / 128) {
-        search_layer_filter_first_helper<BitVectorVisitedTracker>(stats, df, neighbors_to_find, exploration_slack, best_neighbors, exploration, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+        search_layer_filter_first_helper<BitVectorVisitedTracker>(stats, df, neighbors_to_find, exploration_slack,
+                                                                  prefetch_tensors, best_neighbors, exploration, level,
+                                                                  filter, nodeid_limit, doom, estimated_visited_nodes);
     } else {
-        search_layer_filter_first_helper<HashSetVisitedTracker>(stats, df, neighbors_to_find, exploration_slack, best_neighbors, exploration, level, filter, nodeid_limit, doom, estimated_visited_nodes);
+        search_layer_filter_first_helper<HashSetVisitedTracker>(stats, df, neighbors_to_find, exploration_slack,
+                                                                prefetch_tensors, best_neighbors, exploration, level,
+                                                                filter, nodeid_limit, doom, estimated_visited_nodes);
     }
 }
 
@@ -1114,7 +1130,7 @@ HnswIndex<type>::top_k_candidates(Stats &stats, const BoundDistanceFunction &df,
     }
     best_neighbors.push(entry_point);
     if (filter && filter->is_active() && low_hit_ratio) {
-        search_layer_filter_first(stats, df, k, exploration_slack, best_neighbors, exploration, 0, &doom, filter);
+        search_layer_filter_first(stats, df, k, exploration_slack, prefetch_tensors, best_neighbors, exploration, 0, &doom, filter);
     } else {
         search_layer(stats, df, k, exploration_slack, prefetch_tensors, best_neighbors, 0, &doom, filter);
     }

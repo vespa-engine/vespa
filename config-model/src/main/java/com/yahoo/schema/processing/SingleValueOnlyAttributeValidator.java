@@ -8,9 +8,7 @@ import com.yahoo.schema.document.Attribute;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
- * Validates attribute fields using bool type, ensuring the collection type is supported.
- *
- * Currently, only the single value bool type is supported.
+ * Validates attribute fields using raw type, ensuring the collection type is single value.
  *
  * @author geirst
  */
@@ -27,8 +25,7 @@ public class SingleValueOnlyAttributeValidator extends Processor {
             if (attribute == null) {
                 continue;
             }
-            if ((attribute.getType().equals(Attribute.Type.BOOL) ||
-                    attribute.getType().equals(Attribute.Type.RAW)) &&
+            if (attribute.getType().equals(Attribute.Type.RAW) &&
                     !attribute.getCollectionType().equals(Attribute.CollectionType.SINGLE)) {
                 fail(schema, field, "Only single value " + attribute.getType().getName() + " attribute fields are supported");
             }

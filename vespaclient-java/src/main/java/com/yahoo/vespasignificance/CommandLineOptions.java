@@ -3,17 +3,16 @@ package com.yahoo.vespasignificance;
 
 import ai.vespa.vespasignificance.export.ExportClientParameters;
 import ai.vespa.vespasignificance.merge.MergeClientParameters;
+import com.yahoo.text.Text;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
-
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 
 /**
  * This class is responsible for parsing the command line arguments and print the help page.
@@ -69,7 +68,7 @@ public class CommandLineOptions {
         StringBuilder header = new StringBuilder("Commands:\n");
         registeredCommands().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey(byName))
-                .forEach(e -> header.append(String.format("  %-12s %s%n", e.getKey(), e.getValue())));
+                .forEach(e -> header.append(Text.format("  %-12s %s%n", e.getKey(), e.getValue())));
         header.append("\nOptions:");
 
         fmt.printHelp("vespa-significance <command> [options]", header.toString(), createGlobalOptions(), "", false);
@@ -318,4 +317,3 @@ public class CommandLineOptions {
         }
     }
 }
-

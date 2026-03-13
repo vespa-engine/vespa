@@ -1,13 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "same_element_blueprint.h"
+#include "array_bool_blueprint.h"
+#include "array_bool_search.h"
 #include "same_element_search.h"
 #include "field_spec.hpp"
+#include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
 #include <cassert>
 #include <map>
+#include <memory>
 
 using search::fef::MatchData;
 using search::fef::TermFieldMatchData;
@@ -16,11 +20,15 @@ namespace search::queryeval {
 
 SameElementBlueprint::SameElementBlueprint(const FieldSpec &field,
                                            const std::vector<search::fef::TermFieldHandle>& descendants_index_handles,
-                                           bool expensive)
+                                           bool expensive,
+                                           bool expose_match_data_for_same_element,
+                                           std::vector<uint32_t> element_filter)
     : IntermediateBlueprint(),
       _field(field),
       _descendants_index_handles(descendants_index_handles),
-      _expensive(expensive)
+      _expensive(expensive),
+      _expose_match_data_for_same_element(expose_match_data_for_same_element),
+      _element_filter(std::move(element_filter))
 {
 }
 
@@ -108,6 +116,23 @@ SameElementBlueprint::create_same_element_search(MatchData& md, TermFieldMatchDa
     auto& children = get_children();
     sub_searches.reserve(children.size());
     for (const auto & child : children) {
+        if (!_element_filter.empty()) {
+            const attribute::ISearchContext* search_context = child->get_attribute_search_context();
+            if (search_context) {
+                const attribute::ArrayBoolSearchContext* array_bool_context = search_context->as_array_bool_search_context();
+                const auto& state = child->getState();
+                if (state.numFields() == 1 && array_bool_context && array_bool_context->get_valid()) {
+
+                    sub_searches.push_back(ArrayBoolSearch::create(array_bool_context->get_attribute(),
+                                                                   _element_filter,
+                                                                   array_bool_context->get_want_true(),
+                                                                   child->strict(),
+                                                                   state.field(0).resolve(md)));
+                    continue;
+                }
+            }
+        }
+
         sub_searches.push_back(child->createSearch(md));
     }
     std::vector<TermFieldMatchData*> descendants_index_tfmd;
@@ -117,19 +142,43 @@ SameElementBlueprint::create_same_element_search(MatchData& md, TermFieldMatchDa
     }
     // match data for subtree (subtree_md) must be owned by search iterator
     return std::make_unique<SameElementSearch>(tfmd, std::move(descendants_index_tfmd), std::move(sub_searches),
-                                               strict());
+                                               strict(),
+                                               _element_filter); // Copy element filter, do not move it
 }
 
 SearchIterator::UP
 SameElementBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
-    return create_atmost_and_filter(get_children(), strict(), constraint);
+    return create_atmost_and_filter(get_children(), constraint);
 }
 
 void
 SameElementBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     IntermediateBlueprint::visitMembers(visitor);
+    visitor.visitInt("element_filter.size", _element_filter.size());
+}
+
+Blueprint::UP SameElementBlueprint::get_replacement() {
+    // If this blueprint is used for indexing into a bool array (and only that), replace it by an ArrayBoolBlueprint
+    auto& children = get_children();
+    if (children.size() == 1 && !_element_filter.empty()) {
+        const auto& only_child = children[0];
+        const attribute::ISearchContext* search_context = only_child->get_attribute_search_context();
+        if (search_context) {
+            const auto& state = only_child->getState();
+            const attribute::ArrayBoolSearchContext* array_bool_context = search_context->as_array_bool_search_context();
+            if (state.numFields() == 1 && array_bool_context && array_bool_context->get_valid()) {
+
+                return std::make_unique<ArrayBoolBlueprint>(_expose_match_data_for_same_element ? _field : state.field(0),
+                                                            array_bool_context->get_attribute(),
+                                                            _element_filter,
+                                                            array_bool_context->get_want_true());
+            }
+        }
+    }
+
+    return {};
 }
 
 }

@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "multi_arg_predicate_node.h"
-#include "resultvector.h"
 
-#include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
+#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+
+#include <algorithm>
 
 namespace search::expression {
 

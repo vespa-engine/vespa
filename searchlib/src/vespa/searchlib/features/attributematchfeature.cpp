@@ -107,7 +107,7 @@ AttributeMatchExecutor<T>::Computer::run(uint32_t docId)
         const ITermData * td = _queryTerms[i].termData();
         feature_t significance = _queryTerms[i].significance();
         const TermFieldMatchData *tfmd = _md->resolveTermField(_queryTerms[i].fieldHandle());
-        if (tfmd->getDocId() == docId) { // hit on this document
+        if (tfmd->has_ranking_data(docId)) { // hit on this document
             _matches++;
             _matchedTermWeight += td->getWeight().percent();
             _matchedTermSignificance += significance;

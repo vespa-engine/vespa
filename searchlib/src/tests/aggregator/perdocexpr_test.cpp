@@ -1,19 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/base/testdocman.h>
+#include <vespa/document/fieldvalue/bytefieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/objects/objectdumper.h>
-#include <vespa/document/base/testdocman.h>
-#include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/vespalib/util/md5.h>
-#include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
+#include <vespa/searchlib/expression/geo_distance_function_node.h>
+#include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
+#include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/md5.h>
 #include <cctype>
 #include <cmath>
 #include <iomanip>
@@ -47,12 +48,14 @@ void testMin(const ResultNode & a, const ResultNode & b, const std::string& labe
     ASSERT_TRUE(a.cmp(b) < 0);
     MinFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+    ASSERT_NO_THROW(func.execute());
     ASSERT_TRUE(func.getResult()->cmp(a) == 0);
 
     MinFunctionNode funcR;
     funcR.appendArg(MU<ConstantNode>(ResultNode::UP(b.clone())))
-         .appendArg(MU<ConstantNode>(ResultNode::UP(a.clone()))).prepare(false).execute();
+         .appendArg(MU<ConstantNode>(ResultNode::UP(a.clone()))).prepare(false);
+    ASSERT_NO_THROW(funcR.execute());
     ASSERT_TRUE(funcR.getResult()->cmp(a) == 0);
 }
 
@@ -92,14 +95,14 @@ void testMax(const ResultNode & a, const ResultNode & b, const std::string& labe
     ASSERT_TRUE(a.cmp(b) < 0);
     MaxFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false)
-        .execute();
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+    ASSERT_NO_THROW(func.execute());
     ASSERT_TRUE(func.getResult()->cmp(b) == 0);
 
     MaxFunctionNode funcR;
     funcR.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-         .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false)
-         .execute();
+         .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+    ASSERT_NO_THROW(funcR.execute());
     ASSERT_TRUE(funcR.getResult()->cmp(b) == 0);
 }
 
@@ -264,7 +267,8 @@ TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_aggregates_
 void testAdd(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
     AddFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+    ASSERT_NO_THROW(func.execute());
     EXPECT_EQ(func.getResult()->asString(), c.asString());
     EXPECT_EQ(func.getResult()->cmp(c), 0);
     EXPECT_EQ(c.cmp(*func.getResult()), 0);
@@ -280,7 +284,8 @@ TEST(PerDocExprTest, testAdd) {
 void testDivide(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
     DivideFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+    ASSERT_NO_THROW(func.execute());
     EXPECT_EQ(func.getResult()->asString(), c.asString());
     EXPECT_EQ(func.getResult()->getFloat(), c.getFloat());
     EXPECT_EQ(func.getResult()->cmp(c), 0);
@@ -296,7 +301,8 @@ TEST(PerDocExprTest, testDivide) {
 void testModulo(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
     ModuloFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+    ASSERT_NO_THROW(func.execute());
     EXPECT_EQ(func.getResult()->asString(), c.asString());
     EXPECT_EQ(func.getResult()->getFloat(), c.getFloat());
     EXPECT_EQ(func.getResult()->cmp(c), 0);
@@ -321,7 +327,8 @@ TEST(PerDocExprTest, testModulo) {
 
 void testNegate(const ResultNode & a, const ResultNode & b) {
     NegateFunctionNode func;
-    func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone()))).prepare(false).execute();
+    func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone()))).prepare(false);
+    ASSERT_NO_THROW(func.execute());
     EXPECT_EQ(func.getResult()->asString(), b.asString());
     EXPECT_EQ(func.getResult()->cmp(b), 0);
     EXPECT_EQ(b.cmp(*func.getResult()), 0);
@@ -676,7 +683,7 @@ TEST(PerDocExprTest, testMailChecksumExpression) {
     // sfn.prepare(false);
     cfn.prepare(false);
 
-    cfn.execute();
+    ASSERT_NO_THROW(cfn.execute());
     ConstBufferRef ref = static_cast<const RawResultNode &>(*cfn.getResult()).get();
 
     std::string cmp = getVespaChecksumV2(ymumid, folder, flags);
@@ -692,7 +699,7 @@ TEST(PerDocExprTest, testMailChecksumExpression) {
     EXPECT_TRUE(memcmp(cmp.c_str(), ref.c_str(), cmp.size()) == 0);
 
     node.prepare(true);
-    node.execute();
+    ASSERT_NO_THROW(node.execute());
 
     ConstBufferRef ref2 =
         static_cast<const RawResultNode &>(*node.getResult()).get();
@@ -711,7 +718,7 @@ TEST(PerDocExprTest, testDebugFunction) {
         n.prepare(false);
 
         vespalib::Timer timer;
-        n.execute();
+        ASSERT_NO_THROW(n.execute());
         EXPECT_TRUE(timer.elapsed() > 1s);
         EXPECT_EQ(static_cast<const Int64ResultNode &>(*n.getResult()).get(), 7);
     }
@@ -723,7 +730,7 @@ TEST(PerDocExprTest, testDebugFunction) {
         n.prepare(false);
 
         vespalib::Timer timer;
-        n.execute();
+        ASSERT_NO_THROW(n.execute());
         EXPECT_TRUE(timer.elapsed() > 1s);
         EXPECT_EQ(static_cast<const Int64ResultNode &>(*n.getResult()).get(), 7);
     }
@@ -744,40 +751,40 @@ TEST(PerDocExprTest, testDivExpressions) {
     {
         StrLenFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const Int64ResultNode &>(*e.getResult()).get(), 6);
     }
     {
         NormalizeSubjectFunctionNode e(MU<ConstantNode>(MU<StringResultNode>("Re: Your mail")));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const StringResultNode &>(*e.getResult()).get(), "Your mail");
     }
     {
         NormalizeSubjectFunctionNode e(MU<ConstantNode>(MU<StringResultNode>("Your mail")));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const StringResultNode &>(*e.getResult()).get(), "Your mail");
     }
     {
         StrCatFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.appendArg(MU<ConstantNode>(MU<StringResultNode>("ARG 2")));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const StringResultNode &>(*e.getResult()).get(), "238686ARG 2");
     }
 
     {
         ToStringFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(strcmp(static_cast<const StringResultNode &>(*e.getResult()).get().c_str(), "238686"), 0);
     }
 
     {
         ToRawFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         auto raw_result = static_cast<const RawResultNode &>(*e.getResult()).get();
         EXPECT_EQ(6u, raw_result.size());
         EXPECT_EQ(strncmp(raw_result.c_str(), "238686", 6u), 0);
@@ -786,20 +793,20 @@ TEST(PerDocExprTest, testDivExpressions) {
     {
         CatFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 8u);
     }
     {
         CatFunctionNode e(MU<ConstantNode>(MU<Int32ResultNode>(23886)));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 4u);
     }
     {
         const uint8_t buf[4] = { 0, 0, 0, 7 };
         MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 16*8);
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         ASSERT_TRUE(e.getResult()->getClass().inherits(RawResultNode::classId));
         const RawResultNode &r(static_cast<const RawResultNode &>(*e.getResult()));
         EXPECT_EQ(r.get().size(), 16u);
@@ -808,14 +815,14 @@ TEST(PerDocExprTest, testDivExpressions) {
         const uint8_t buf[4] = { 0, 0, 0, 7 };
         MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 2*8);
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 2u);
     }
     {
         const uint8_t buf[4] = { 0, 0, 0, 7 };
         XorBitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 1*8);
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 1u);
         EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().c_str()[0], 0x7);
     }
@@ -823,7 +830,7 @@ TEST(PerDocExprTest, testDivExpressions) {
         const uint8_t buf[4] = { 6, 0, 7, 7 };
         XorBitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 2*8);
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 2u);
         EXPECT_EQ((int)static_cast<const RawResultNode &>(*e.getResult()).get().c_str()[0], 0x1);
         EXPECT_EQ((int)static_cast<const RawResultNode &>(*e.getResult()).get().c_str()[1], 0x7);
@@ -843,7 +850,7 @@ TEST(PerDocExprTest, testDivExpressions) {
 
         MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(wantedBuf, sizeof(wantedBuf))), 16*8);
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         ASSERT_TRUE(e.getResult()->getClass().inherits(RawResultNode::classId));
         const RawResultNode &r(static_cast<const RawResultNode &>(*e.getResult()));
         EXPECT_EQ(r.get().size(), 16u);
@@ -861,7 +868,7 @@ TEST(PerDocExprTest, testDivExpressions) {
 
         MD5BitFunctionNode finalCheck(std::move(cat), 32);
         finalCheck.prepare(false);
-        finalCheck.execute();
+        ASSERT_NO_THROW(finalCheck.execute());
         const RawResultNode &rr(static_cast<const RawResultNode &>(*finalCheck.getResult()));
         EXPECT_EQ(rr.get().size(), 4u);
         fastc_md5sum(wantedBuf, sizeof(wantedBuf), md5);
@@ -871,37 +878,37 @@ TEST(PerDocExprTest, testDivExpressions) {
     {
         CatFunctionNode e(MU<ConstantNode>(MU<Int16ResultNode>(23886)));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 2u);
     }
     {
         CatFunctionNode e(MU<ConstantNode>(createIntRV<Int8ResultNodeVector>({86, 14})));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 1*2u);
     }
     {
         CatFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 4*2u);
     }
     {
         NumElemFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(e.getResult()->getInteger(), 1);
     }
     {
         NumElemFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(e.getResult()->getInteger(), 2);
     }
     {
         NumElemFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
         e.prepare(false);
-        e.execute();
+        ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(e.getResult()->getInteger(), 2);
     }
 }
@@ -914,7 +921,7 @@ bool test1MultivalueExpression(const MultiArgFunctionNode &exprConst, Expression
     expr.prepare(false);
 
     bool ok = true;
-    EXPECT_TRUE(expr.execute()) << (ok = false, "");
+    expr.execute();
     EXPECT_EQ(0, expr.getResult()->cmp(expected)) << (ok = false, "");
     if (!ok) {
         std::cerr << "Expected:" << expected.asString() << std::endl
@@ -1049,9 +1056,9 @@ TEST(PerDocExprTest, testArithmeticNodes) {
     et.select(treeConf, treeConf);
 
     EXPECT_TRUE(et.getResult()->getClass().inherits(IntegerResultNode::classId));
-    EXPECT_TRUE(et.ExpressionNode::execute());
+    et.ExpressionNode::execute();
     EXPECT_EQ(et.getResult()->getInteger(), 3);
-    EXPECT_TRUE(et.ExpressionNode::execute());
+    et.ExpressionNode::execute();
     EXPECT_EQ(et.getResult()->getInteger(), 3);
     AddFunctionNode add2;
     add2.appendArg(createScalarInt(I1));
@@ -1086,7 +1093,7 @@ void testArith(MultiArgFunctionNode &op, ExpressionNode::UP arg1, ExpressionNode
     op.appendArg(std::move(arg1));
     op.appendArg(std::move(arg2));
     op.prepare(false);
-    op.execute();
+    ASSERT_NO_THROW(op.execute());
     EXPECT_EQ(intResult, op.getResult()->getInteger());
     ASSERT_TRUE(intResult == op.getResult()->getInteger());
     EXPECT_EQ(floatResult, op.getResult()->getFloat());
@@ -1139,7 +1146,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     function.appendArg(createScalarInt(arg1[0])).appendArg(createScalarInt(arg2[0]));
     function.prepare(false);
     EXPECT_TRUE(function.getResult()->getClass().equal(Int64ResultNode::classId));
-    EXPECT_TRUE(function.execute());
+    ASSERT_NO_THROW(function.execute());
     EXPECT_EQ(function.getResult()->getInteger(), static_cast<int64_t>(result[0]));
 
     function.reset();
@@ -1147,7 +1154,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     function.appendArg(createScalarInt(arg1[0])).appendArg(createScalarFloat(arg2[0]));
     function.prepare(false);
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNode::classId));
-    EXPECT_TRUE(function.execute());
+    ASSERT_NO_THROW(function.execute());
     EXPECT_EQ(function.getResult()->getFloat(), result[0]);
 
     function.reset();
@@ -1155,7 +1162,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     function.appendArg(createScalarFloat(arg1[0])).appendArg(createScalarInt(arg2[0]));
     function.prepare(false);
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNode::classId));
-    EXPECT_TRUE(function.execute());
+    ASSERT_NO_THROW(function.execute());
     EXPECT_EQ(function.getResult()->getFloat(), result[0]);
 
     function.reset();
@@ -1163,7 +1170,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     function.appendArg(createScalarFloat(arg1[0])).appendArg(createScalarFloat(arg2[0]));
     function.prepare(false);
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNode::classId));
-    EXPECT_TRUE(function.execute());
+    ASSERT_NO_THROW(function.execute());
     EXPECT_EQ(function.getResult()->getFloat(), result[0]);
 
     function.reset();
@@ -1171,7 +1178,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     function.appendArg(createVectorInt(arg1));
     function.prepare(false);
     EXPECT_TRUE(function.getResult()->getClass().equal(Int64ResultNode::classId));
-    EXPECT_TRUE(function.execute());
+    ASSERT_NO_THROW(function.execute());
     EXPECT_EQ(function.getResult()->getInteger(), static_cast<int64_t>(flattenResult));
 
     function.reset();
@@ -1179,7 +1186,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     function.appendArg(createVectorFloat(arg1));
     function.prepare(false);
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNode::classId));
-    EXPECT_TRUE(function.execute());
+    ASSERT_NO_THROW(function.execute());
     EXPECT_EQ(function.getResult()->getFloat(), flattenResult);
 
     function.reset();
@@ -1187,7 +1194,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     function.appendArg(createVectorInt(arg1)).appendArg(createVectorInt(arg2));
     function.prepare(false);
     EXPECT_TRUE(function.getResult()->getClass().equal(IntegerResultNodeVector::classId));
-    EXPECT_TRUE(function.execute());
+    ASSERT_NO_THROW(function.execute());
     EXPECT_TRUE(function.getResult()->getClass().equal(IntegerResultNodeVector::classId));
     EXPECT_EQ(static_cast<const IntegerResultNodeVector &>(*function.getResult()).size(), 7u);
     EXPECT_EQ(0, function.getResult()->cmp(ir));
@@ -1197,7 +1204,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     function.appendArg(createVectorFloat(arg1)).appendArg(createVectorFloat(arg2));
     function.prepare(false);
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
-    EXPECT_TRUE(function.execute());
+    ASSERT_NO_THROW(function.execute());
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
     EXPECT_EQ(static_cast<const FloatResultNodeVector &>(*function.getResult()).size(), 7u);
     EXPECT_EQ(0, function.getResult()->cmp(fr));
@@ -1207,7 +1214,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     function.appendArg(createVectorInt(arg1)).appendArg(createVectorFloat(arg2));
     function.prepare(false);
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
-    EXPECT_TRUE(function.execute());
+    ASSERT_NO_THROW(function.execute());
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
     EXPECT_EQ(static_cast<const FloatResultNodeVector &>(*function.getResult()).size(), 7u);
     EXPECT_EQ(0, function.getResult()->cmp(fr));
@@ -1217,7 +1224,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     function.appendArg(createVectorFloat(arg1)).appendArg(createVectorInt(arg2));
     function.prepare(false);
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
-    EXPECT_TRUE(function.execute());
+    ASSERT_NO_THROW(function.execute());
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
     EXPECT_EQ(static_cast<const FloatResultNodeVector &>(*function.getResult()).size(), 7u);
     EXPECT_EQ(0, function.getResult()->cmp(fr));
@@ -1690,6 +1697,60 @@ TEST(PerDocExprTest, testIntegerTypes) {
     EXPECT_EQ(AttributeNode(*AttributeGuard(std::make_shared<MultiInt64ExtAttribute>("test")))
               .prepare(true).getResult()->getClass().id(),
               uint32_t(Int64ResultNodeVector::classId));
+}
+
+TEST(PerDocExprTest, testGeoDistance) {
+    // Doc 0: TRD (63.45, 10.92), Doc 1: OSL (60.20, 11.08), Doc 2: JFK (40.64, -73.78)
+    auto posAttr = std::make_shared<SingleInt64ExtAttribute>("pos");
+    DocId docId = 0;
+    posAttr->addDoc(docId); // doc 0: TRD
+    posAttr->add(vespalib::geo::ZCurve::encode(10920000, 63450000));
+    posAttr->addDoc(docId); // doc 1: OSL
+    posAttr->add(vespalib::geo::ZCurve::encode(11080000, 60200000));
+    posAttr->addDoc(docId); // doc 2: JFK
+    posAttr->add(vespalib::geo::ZCurve::encode(-73780000, 40640000));
+    AttributeGuard guard(posAttr);
+
+    using Unit = GeoDistanceFunctionNode::Unit;
+
+    auto make_tree = [&](double lat, double lon, Unit unit) {
+        GeoDistanceFunctionNode func(unit);
+        func.appendArg(MU<AttributeNode>(*guard))
+            .appendArg(MU<ConstantNode>(MU<FloatResultNode>(lat)))
+            .appendArg(MU<ConstantNode>(MU<FloatResultNode>(lon)));
+        ExpressionTree tree(func);
+        ExpressionTree::Configure conf;
+        tree.select(conf, conf);
+        return tree;
+    };
+
+    // Query from OSL (60.20, 11.08) to doc 0 TRD (63.45, 10.92) ~361 km
+    {
+        auto tree = make_tree(60.20, 11.08, Unit::KM);
+        ASSERT_NO_THROW(tree.execute(0, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 361.0, 5.0);
+    }
+
+    // Same point: query OSL -> doc 1 OSL, should be ~0
+    {
+        auto tree = make_tree(60.20, 11.08, Unit::KM);
+        ASSERT_NO_THROW(tree.execute(1, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 0.0, 1.0);
+    }
+
+    // SFO (37.61, -122.38) -> doc 2 JFK (40.64, -73.78) ~4139 km
+    {
+        auto tree = make_tree(37.61, -122.38, Unit::KM);
+        ASSERT_NO_THROW(tree.execute(2, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 4139.0, 50.0);
+    }
+
+    // OSL -> TRD in miles (~224 miles)
+    {
+        auto tree = make_tree(60.20, 11.08, Unit::MILES);
+        ASSERT_NO_THROW(tree.execute(0, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 224.0, 5.0);
+    }
 }
 
 TEST(PerDocExprTest, testStreamingAll) {

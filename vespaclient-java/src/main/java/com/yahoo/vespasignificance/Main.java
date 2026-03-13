@@ -4,6 +4,7 @@ package com.yahoo.vespasignificance;
 
 import ai.vespa.vespasignificance.export.Export;
 import ai.vespa.vespasignificance.merge.MergeCommand;
+import com.yahoo.text.Text;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
@@ -72,7 +73,7 @@ public class Main {
             SignificanceModelGenerator significanceModelGenerator = createSignificanceModelGenerator(params);
             System.exit(significanceModelGenerator.run());
         } catch (ParseException e) {
-            System.err.printf("Error: %s.\n", e.getMessage());
+            System.err.print(Text.format("Error: %s.\n", e.getMessage()));
             CommandLineOptions.printGenerateHelp();
             System.exit(1);
         }
@@ -97,7 +98,7 @@ public class Main {
             Export export = new Export(clientParams);
             System.exit(export.run());
         } catch (ParseException e) {
-            System.err.printf("Error: %s.\n", e.getMessage());
+            System.err.print(Text.format("Error: %s.\n", e.getMessage()));
             CommandLineOptions.printExportHelp();
             System.exit(1);
         }
@@ -118,7 +119,7 @@ public class Main {
             MergeCommand merge = new MergeCommand(clientParams);
             System.exit(merge.run());
         } catch (ParseException e) {
-            System.err.printf("Error: %s.\n", e.getMessage());
+            System.err.print(Text.format("Error: %s.\n", e.getMessage()));
             CommandLineOptions.printMergeHelp();
             System.exit(1);
         }

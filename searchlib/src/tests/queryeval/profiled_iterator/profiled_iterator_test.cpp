@@ -154,7 +154,7 @@ void print_counts(const std::map<std::string,size_t> &counts) {
 void verify_result(SearchIterator &search, const std::vector<uint32_t> &hits) {
     SimpleResult actual;
     SimpleResult expect(hits);
-    actual.searchStrict(search, num_docs);
+    actual.search(search, num_docs);
     EXPECT_EQ(actual, expect);
 }
 

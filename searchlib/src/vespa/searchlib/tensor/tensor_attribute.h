@@ -10,6 +10,7 @@
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/document/update/tensor_update.h>
+#include <atomic>
 
 namespace vespalib::eval { struct Value; struct ValueBuilderFactory; }
 
@@ -35,6 +36,9 @@ protected:
     uint64_t    _compactGeneration; // Generation when last compact occurred
     SubspaceType         _subspace_type;
     TypedCellsComparator _comp;
+    uint64_t             _memory_usage_empty;
+    uint64_t             _memory_usage_at_save_start;
+    std::atomic<double>  _size_on_disk_factor; // size on disk / memory usage
 
     void checkTensorType(const vespalib::eval::Value &tensor) const;
     void setTensorRef(DocId docId, EntryRef ref);
@@ -48,6 +52,7 @@ protected:
     bool tensor_cells_are_unchanged(DocId docid, VectorBundle vectors) const;
 
     void prefetch_docid(DocId docid) const noexcept override { _refVector.prefetch_elem_ref(docid); }
+    void setup_memory_usage_empty();
 
 public:
     TensorAttribute(std::string_view name, const Config &cfg, TensorStore &tensorStore, const NearestNeighborIndexFactory& index_factory);
@@ -97,6 +102,9 @@ public:
      * It uses the result from the prepare step to do the modifying changes.
      */
     virtual void complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor, std::unique_ptr<PrepareResult> prepare_result);
+    void set_memory_usage_at_save_start(uint64_t memory_usage) noexcept;
+    void set_size_on_disk(uint64_t value) noexcept override;
+    uint64_t getEstimatedSaveByteSize() const override;
 };
 
 }

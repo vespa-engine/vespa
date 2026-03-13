@@ -3,6 +3,8 @@ vespa_add_library(searchlib_queryeval OBJECT
     SOURCES
     andnotsearch.cpp
     andsearch.cpp
+    array_bool_blueprint.cpp
+    array_bool_search.cpp
     blueprint.cpp
     booleanmatchiteratorwrapper.cpp
     children_iterators.cpp
@@ -35,11 +37,13 @@ vespa_add_library(searchlib_queryeval OBJECT
     iterators.cpp
     lazy_filter.cpp
     leaf_blueprints.cpp
+    match_span.cpp
     matching_elements_search.cpp
     monitoring_dump_iterator.cpp
     monitoring_search_iterator.cpp
     multibitvectoriterator.cpp
     multisearch.cpp
+    near_search_flags.cpp
     near_search_utils.cpp
     nearest_neighbor_blueprint.cpp
     nearsearch.cpp

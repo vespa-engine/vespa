@@ -29,3 +29,7 @@ timeout int default=60000
 
 # Truncate inputs that exceed model's maximum token limit
 truncate bool default=true
+
+# Dynamic batching configuration
+batching.maxSize int default=0
+batching.maxDelayMillis long default=0

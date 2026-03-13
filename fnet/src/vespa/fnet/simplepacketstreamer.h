@@ -22,20 +22,18 @@ class FNET_IPacketFactory;
  * packet encode/decode the AssertValid databuffer method is run to
  * check for illegal reads/writes.
  **/
-class FNET_SimplePacketStreamer : public FNET_IPacketStreamer
-{
+class FNET_SimplePacketStreamer : public FNET_IPacketStreamer {
 private:
-    FNET_IPacketFactory *_factory;
+    FNET_IPacketFactory* _factory;
 
-    FNET_SimplePacketStreamer(const FNET_SimplePacketStreamer &);
-    FNET_SimplePacketStreamer &operator=(const FNET_SimplePacketStreamer &);
+    FNET_SimplePacketStreamer(const FNET_SimplePacketStreamer&);
+    FNET_SimplePacketStreamer& operator=(const FNET_SimplePacketStreamer&);
 
 public:
-    FNET_SimplePacketStreamer(FNET_IPacketFactory *factory);
+    FNET_SimplePacketStreamer(FNET_IPacketFactory* factory);
     ~FNET_SimplePacketStreamer();
 
-    bool GetPacketInfo(FNET_DataBuffer *src, uint32_t *plen, uint32_t *pcode, uint32_t *chid, bool *broken) override;
-    FNET_Packet *Decode(FNET_DataBuffer *src, uint32_t plen, uint32_t pcode, FNET_Context context) override;
-    void Encode(FNET_Packet *packet, uint32_t chid, FNET_DataBuffer *dst) override;
+    bool GetPacketInfo(FNET_DataBuffer* src, uint32_t* plen, uint32_t* pcode, uint32_t* chid, bool* broken) override;
+    FNET_Packet* Decode(FNET_DataBuffer* src, uint32_t plen, uint32_t pcode, FNET_Context context) override;
+    void         Encode(FNET_Packet* packet, uint32_t chid, FNET_DataBuffer* dst) override;
 };
-

@@ -1,6 +1,7 @@
 package ai.vespa.schemals.schemadocument;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Position;
@@ -17,7 +18,7 @@ class VespaGroupingParser {
 
     static YQLPartParseResult parseVespaGrouping(String input, ClientLogger logger, Position offset, int charOffset) {
 
-        CharSequence charSequence = input.toLowerCase();
+        CharSequence charSequence = input.toLowerCase(Locale.ROOT);
         GroupingParser parser = new GroupingParser(charSequence);
 
         try {

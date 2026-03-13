@@ -3,6 +3,7 @@
 
 #include <vespa/messagebus/trace.h>
 #include <vespa/messagebus/routing/routingnode.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 
 namespace mbus::network::internal {
 /**

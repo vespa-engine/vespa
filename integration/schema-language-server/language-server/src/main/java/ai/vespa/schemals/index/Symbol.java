@@ -149,6 +149,7 @@ public class Symbol {
         DOCUMENT_SUMMARY,
         FIELD,
         FIELDSET,
+        FOREACH,
         FUNCTION,
         LABEL,
         LAMBDA_FUNCTION,

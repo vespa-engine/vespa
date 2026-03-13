@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -89,14 +90,20 @@ public class RankProfile implements Cloneable {
     /** The ranking expression to be used for global-phase */
     private RankingExpressionFunction globalPhaseRanking = null;
 
-    /** Number of hits to be reranked in second phase, -1 means use default */
-    private int rerankCount = -1;
+    /** Number of hits to be reranked in second phase */
+    private Optional<Integer> rerankCount = Optional.empty();
+
+    /** Number of hits to be reranked in second phase across all nodes, */
+    private Optional<Integer> totalRerankCount = Optional.empty();
 
     /** Number of hits to be reranked in global-phase, -1 means use default */
     private int globalPhaseRerankCount = -1;
 
-    /** Mysterious attribute */
-    private int keepRankCount = -1;
+    /** The number of hits per node for which to keep rank data in first phase, empty to use the default */
+    private Optional<Integer> keepRankCount = Optional.empty();
+
+    /** The number of hits across all nodes for which to keep rank data in first phase, empty to use keepRankCount */
+    private Optional<Integer> totalKeepRankCount = Optional.empty();
 
     private int numThreadsPerSearch = -1;
     private int minHitsPerThread = -1;
@@ -763,11 +770,18 @@ public class RankProfile implements Cloneable {
         rankProperties.computeIfAbsent(rankProperty.getName(), (String key) -> new ArrayList<>(1)).add(rankProperty);
     }
 
-    public void setRerankCount(int rerankCount) { this.rerankCount = rerankCount; }
+    public void setRerankCount(int rerankCount) { this.rerankCount = Optional.of(rerankCount); }
 
-    public int getRerankCount() {
-        if (rerankCount >= 0) return rerankCount;
-        return uniquelyInherited(RankProfile::getRerankCount, c -> c >= 0, "rerank-count").orElse(-1);
+    public void setTotalRerankCount(int totalRerankCount) { this.totalRerankCount = Optional.of(totalRerankCount); }
+
+    public Optional<Integer> getRerankCount() {
+        if (rerankCount.isPresent()) return rerankCount;
+        return uniquelyInherited(RankProfile::getRerankCount, Optional::isPresent, "rerank-count").orElse(Optional.empty());
+    }
+
+    public Optional<Integer> getTotalRerankCount() {
+        if (totalRerankCount.isPresent()) return totalRerankCount;
+        return uniquelyInherited(RankProfile::getTotalRerankCount, Optional::isPresent, "total-rerank-count").orElse(Optional.empty());
     }
 
     public void setGlobalPhaseRerankCount(int count) { this.globalPhaseRerankCount = count; }
@@ -905,11 +919,18 @@ public class RankProfile implements Cloneable {
         return uniquelyInherited(RankProfile::getIgnoreDefaultRankFeatures, "ignore-default-rank-features").orElse(false);
     }
 
-    public void setKeepRankCount(int rerankArraySize) { this.keepRankCount = rerankArraySize; }
+    public void setKeepRankCount(int count) { this.keepRankCount = Optional.of(count); }
 
-    public int getKeepRankCount() {
-        if (keepRankCount >= 0) return keepRankCount;
-        return uniquelyInherited(RankProfile::getKeepRankCount, c -> c >= 0, "keep-rank-count").orElse(-1);
+    public Optional<Integer> getKeepRankCount() {
+        if (keepRankCount.isPresent()) return keepRankCount;
+        return uniquelyInherited(RankProfile::getKeepRankCount, Optional::isPresent, "keep-rank-count").orElse(Optional.empty());
+    }
+
+    public void setTotalKeepRankCount(int totalKeepRankCount) { this.totalKeepRankCount = Optional.of(totalKeepRankCount); }
+
+    public Optional<Integer> getTotalKeepRankCount() {
+        if (totalKeepRankCount.isPresent()) return totalKeepRankCount;
+        return uniquelyInherited(RankProfile::getTotalKeepRankCount, Optional::isPresent, "total-keep-rank-count").orElse(Optional.empty());
     }
 
     public void setRankScoreDropLimit(double rankScoreDropLimit) { this.rankScoreDropLimit = rankScoreDropLimit; }
@@ -1018,9 +1039,7 @@ public class RankProfile implements Cloneable {
         addRankProperty(prefix + ".attribute", op.attribute);
         addRankProperty(prefix + ".operation", op.operation);
     }
-    public void addMutateOperation(MutateOperation.Phase phase, String attribute, String operation) {
-        addMutateOperation(new MutateOperation(phase, attribute, operation));
-    }
+
     public List<MutateOperation> getMutateOperations() { return mutateOperations; }
 
     public RankingExpressionFunction findFunction(String name) {
@@ -1671,32 +1690,33 @@ public class RankProfile implements Cloneable {
 
         private String attribute = null;
         private boolean ascending = false;
-        private int maxHits = 0; // try to get this many hits before degrading the match phase
+        private Optional<Long> maxHits = Optional.empty(); // try to get this many hits on each node before degrading the match phase
+        private Optional<Long> totalMaxHits = Optional.empty(); // try to get this many hits across all nodes before degrading the match phase
         private double maxFilterCoverage = 0.2; // Max coverage of original corpus that will trigger the filter.
         private double evaluationPoint = 0.20;
         private double prePostFilterTippingPoint = 1.0;
 
         public void setAscending(boolean value) { ascending = value; }
         public void setAttribute(String value) { attribute = value; }
-        public void setMaxHits(int value) { maxHits = value; }
+        public void setMaxHits(long value) { maxHits = Optional.of(value); }
+        public void setTotalMaxHits(long value) { totalMaxHits = Optional.of(value); }
         public void setMaxFilterCoverage(double value) { maxFilterCoverage = value; }
         public void setEvaluationPoint(double evaluationPoint) { this.evaluationPoint = evaluationPoint; }
         public void setPrePostFilterTippingPoint(double prePostFilterTippingPoint) { this.prePostFilterTippingPoint = prePostFilterTippingPoint; }
 
         public boolean                getAscending() { return ascending; }
         public String                 getAttribute() { return attribute; }
-        public int                      getMaxHits() { return maxHits; }
+        public Optional<Long>        getMaxHits() { return maxHits; }
+        public Optional<Long>   getTotalMaxHits() { return totalMaxHits; }
         public double         getMaxFilterCoverage() { return maxFilterCoverage; }
         public double           getEvaluationPoint() { return evaluationPoint; }
         public double getPrePostFilterTippingPoint() { return prePostFilterTippingPoint; }
 
         public void checkValid() {
-            if (attribute == null) {
-                throw new IllegalArgumentException("match-phase did not set any attribute");
-            }
-            if (! (maxHits > 0)) {
-                throw new IllegalArgumentException("match-phase did not set max-hits > 0");
-            }
+            if (attribute == null)
+                throw new IllegalArgumentException("match-phase must specify an attribute");
+            if (maxHits.isEmpty() && totalMaxHits.isEmpty())
+                throw new IllegalArgumentException("match-phase must contain max-hits or total-max-hits");
         }
 
     }
@@ -1915,6 +1935,5 @@ public class RankProfile implements Cloneable {
             }
         }
     }
-
 
 }

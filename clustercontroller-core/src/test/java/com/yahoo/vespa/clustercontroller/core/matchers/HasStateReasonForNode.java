@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.matchers;
 
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.NodeStateReason;
 import org.hamcrest.BaseMatcher;
@@ -28,7 +29,7 @@ public class HasStateReasonForNode extends BaseMatcher<Map<Node, NodeStateReason
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format(Locale.ROOT, "has node state reason %s", expected.toString()));
+        description.appendText(Text.format("has node state reason %s", expected.toString()));
     }
 
     @Override
@@ -36,7 +37,7 @@ public class HasStateReasonForNode extends BaseMatcher<Map<Node, NodeStateReason
         @SuppressWarnings("unchecked")
         Map<Node, NodeStateReason> other = (Map<Node, NodeStateReason>)item;
         if (other.containsKey(node)) {
-            description.appendText(String.format(Locale.ROOT, "has reason %s", other.get(node).toString()));
+            description.appendText(Text.format("has reason %s", other.get(node).toString()));
         } else {
             description.appendText("has no entry for node");
         }

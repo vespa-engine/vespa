@@ -57,7 +57,7 @@ NativeFieldMatchExecutor::calculateScore(const MyQueryTerm &qt, uint32_t docId)
         TermFieldHandle tfh = qt.handles()[i].first;
         const TermFieldMatchData *tfmd = _md->resolveTermField(tfh);
         const NativeFieldMatchParam & param = _params.vector[tfmd->getFieldId()];
-        if (tfmd->getDocId() == docId) { // do we have a hit
+        if (tfmd->has_ranking_data(docId)) { // do we have a hit
             FieldPositionsIterator pos = tfmd->getIterator();
             if (pos.valid()) {
                 uint32_t fieldLength = getFieldLength(param, pos.getFieldLength());

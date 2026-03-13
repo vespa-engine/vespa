@@ -14,6 +14,7 @@ import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.StaticThrottlePolicy;
+import com.yahoo.text.Text;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
 import org.apache.commons.cli.CommandLine;
@@ -353,7 +354,7 @@ public class VdsVisit {
                 .longOpt("bucketspace")
                 .hasArg(true)
                 .argName("space")
-                .desc(String.format("Bucket space to visit ('%s' or '%s'). If not specified, '%s' is used.",
+                .desc(Text.format("Bucket space to visit ('%s' or '%s'). If not specified, '%s' is used.",
                         FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace(), FixedBucketSpaces.defaultSpace()))
                 .build());
 
@@ -761,7 +762,7 @@ public class VdsVisit {
         } else {
             out.println("Visiting documents matching: " + params.getDocumentSelection());
         }
-        out.println(String.format("Visiting bucket space: %s", params.getBucketSpace()));
+        out.println(Text.format("Visiting bucket space: %s", params.getBucketSpace()));
         if (params.getFromTimestamp() != 0 && params.getToTimestamp() != 0) {
             out.println("Visiting in the inclusive timestamp range "
                                + params.getFromTimestamp() + " - " + params.getToTimestamp() + ".");
@@ -808,7 +809,7 @@ public class VdsVisit {
             out.println("Skip visiting super buckets with fatal errors.");
         }
         if (params.getSlices() > 1) {
-            out.format("Visiting slice %d out of %s slices\n", params.getSliceId(), params.getSlices());
+            out.print(Text.format("Visiting slice %d out of %s slices\n", params.getSliceId(), params.getSlices()));
         }
     }
 
@@ -839,8 +840,8 @@ public class VdsVisit {
                 visitorParameters.setResumeToken(new ProgressToken(progressFileContents));
 
                 if (params.isVerbose()) {
-                    System.err.format("Resuming visitor already %.1f %% finished.\n",
-                            visitorParameters.getResumeToken().percentFinished());
+                    System.err.print(Text.format("Resuming visitor already %.1f %% finished.\n",
+                                                 visitorParameters.getResumeToken().percentFinished()));
                 }
             } catch (NoSuchFileException e) {
                 // Ignore; file has not been created yet but will be shortly.

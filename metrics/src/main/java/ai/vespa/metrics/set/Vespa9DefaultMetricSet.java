@@ -59,6 +59,7 @@ public class Vespa9DefaultMetricSet {
         return new MetricSet.Builder("default-container")
                 .metric(MicrometerMetrics.JVM_GC_OVERHEAD, EnumSet.of(sum, count, max))
                 .metric(ContainerMetrics.MEM_HEAP_FREE.average())
+                .metric(ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile))
                 .metric(ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count))
                 .metric(ContainerMetrics.HANDLED_LATENCY, EnumSet.of(sum, count, max))
                 .metric(ContainerMetrics.CPU.baseName())

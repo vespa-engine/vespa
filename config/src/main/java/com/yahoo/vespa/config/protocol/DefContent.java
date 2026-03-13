@@ -3,7 +3,9 @@ package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
-import com.yahoo.slime.*;
+import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;

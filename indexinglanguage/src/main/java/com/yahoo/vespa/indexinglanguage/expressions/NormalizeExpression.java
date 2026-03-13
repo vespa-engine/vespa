@@ -5,6 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Transformer;
+import com.yahoo.text.Text;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,7 +63,7 @@ public final class NormalizeExpression extends Expression {
             if (c >= ' ') {
                 buf.append(c);
             } else {
-                buf.append(String.format("U+%04X", (int)c));
+                buf.append(Text.format("U+%04X", (int)c));
             }
         }
         return buf.toString();

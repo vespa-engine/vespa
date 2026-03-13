@@ -14,7 +14,11 @@ import com.yahoo.tensor.TensorType.Dimension;
 
 import java.util.function.Supplier;
 
-import static com.yahoo.document.json.readers.JsonParserHelpers.*;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectCompositeEnd;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectOneOf;
 import static com.yahoo.tensor.serialization.JsonFormat.decodeHexString;
 import static com.yahoo.tensor.serialization.JsonFormat.decodeNumberString;
 

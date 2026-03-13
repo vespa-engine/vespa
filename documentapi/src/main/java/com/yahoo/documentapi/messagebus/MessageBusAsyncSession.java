@@ -349,7 +349,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         @Override
         public void handleReply(Reply reply) {
             if (reply.getTrace().getLevel() > 0) {
-                log.log(Level.INFO, reply.getTrace().toString());
+                log.log(Level.FINE, () -> reply.getTrace().toString());
             }
             OperationContext context = (OperationContext) reply.getContext();
             long reqId = context.reqId;

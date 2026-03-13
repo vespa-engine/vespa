@@ -870,7 +870,7 @@ public class ApplicationHandlerTest {
         if (expectedBody != null) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             response.render(out);
-            assertJsonEquals(out.toString(), expectedBody);
+            assertJsonEquals(out.toString(UTF_8), expectedBody);
         }
         assertEquals(statusCode, response.getStatus());
     }
@@ -919,14 +919,14 @@ public class ApplicationHandlerTest {
 
     private static void assertResponse(String expectedJson, int status, HttpResponse response) {
         assertResponse((responseBody) -> assertJsonEquals(new String(responseBody
-                                                                             .getBytes()), expectedJson), status, response);
+                                                                             .getBytes(UTF_8), UTF_8), expectedJson), status, response);
     }
 
     private static void assertResponse(Consumer<String> assertFunc, int status, HttpResponse response) {
         ByteArrayOutputStream responseBody = new ByteArrayOutputStream();
         try {
             response.render(responseBody);
-            assertFunc.accept(responseBody.toString());
+            assertFunc.accept(responseBody.toString(UTF_8));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -30,9 +30,9 @@ bool RangePredicateNode::satisfies_bounds(double value) const {
 
 bool RangePredicateNode::check(const ResultNode* result) const {
     if (result->inherits(ResultNodeVector::classId)) {
-        const auto * rv = static_cast<const ResultNodeVector *>(result);
-        for (size_t i = 0; i < rv->size(); i++) {
-            if (satisfies_bounds(rv[i].getFloat())) {
+        const auto& result_vector = static_cast<const ResultNodeVector&>(*result);
+        for (const auto& node : result_vector) {
+            if (satisfies_bounds(node.getFloat())) {
                 return true;
             }
         }

@@ -57,7 +57,7 @@ public class ContentTypeRemovalValidatorTest {
                "    <documents>" +
                "      <document type='" + documentType + "' mode='index'/>" +
                "    </documents>" +
-               "    <nodes count='1'/>" +
+               "    <nodes count='2'/>" +
                "   </content>" +
                "</services>";
     }

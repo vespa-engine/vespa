@@ -22,6 +22,7 @@ import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.osgi.OsgiWrapper;
+import com.yahoo.text.Text;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 
@@ -127,7 +128,7 @@ public class HandlersConfigurerDi {
             if (qualifierIsUsed(bundleSpec, activeVersions)) {
                 versionsMessage += " Note that qualifier strings must be matched exactly. ";
             }
-            return String.format("%sInstalled application bundles: [%s]",
+            return Text.format("%sInstalled application bundles: [%s]",
                                  versionsMessage,
                                  activeBundles.stream()
                                          .map(BsnVersion::toReadableString)

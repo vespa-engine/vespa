@@ -2,7 +2,15 @@
 package com.yahoo.search.querytransform;
 
 import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.Highlight;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.WeightedSetItem;
+import com.yahoo.prelude.query.WordAlternativesItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;

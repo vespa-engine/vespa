@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -67,7 +68,7 @@ class Model {
 
     List<Integer> embed(String text, Tokenizer tokenizer, LinguisticsParameters parameters) {
         List<Integer> ids = new ArrayList<>();
-        text = text.toLowerCase();
+        text = text.toLowerCase(Locale.ROOT);
         for (Token t : tokenizer.tokenize(text, parameters)) {
             String originalToken = t.getTokenString();
             String candidate = originalToken;

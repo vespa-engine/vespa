@@ -842,7 +842,7 @@ TEST_F(LogDataStoreTest, testWriteRead)
         EXPECT_EQ(dat_pending_data_len + idx_pending_data_len + headerFootprint, datastore.getDiskFootprint());
         DiskSpaceCalculator calc;
         EXPECT_EQ(DiskSpaceCalculator::directory_placeholder_size() +
-                  calc(dat_header_len + dat_pending_data_len) + calc(idx_header_len + idx_pending_data_len),
+                  calc(dat_header_len) + calc(idx_header_len),
                   datastore.get_size_on_disk());
         EXPECT_EQ(datastore.getDiskBloat(), 0ul);
         EXPECT_EQ(datastore.getMaxSpreadAsBloat(), 0ul);
@@ -884,8 +884,8 @@ TEST_F(LogDataStoreTest, testWriteRead)
                   idx_header_len + idx_data_len + idx_pending_data_len,
                   datastore.getDiskFootprint());
         EXPECT_EQ(DiskSpaceCalculator::directory_placeholder_size() +
-                  calc(dat_header_len + dat_data_len + dat_pending_data_len) +
-                  calc(idx_header_len + idx_data_len + idx_pending_data_len),
+                  calc(dat_header_len + dat_data_len) +
+                  calc(idx_header_len + idx_data_len),
                   datastore.get_size_on_disk());
         EXPECT_EQ(0ul, datastore.getDiskBloat());
         EXPECT_EQ(0ul, datastore.getMaxSpreadAsBloat());

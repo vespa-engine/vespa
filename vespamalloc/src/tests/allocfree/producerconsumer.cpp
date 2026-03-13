@@ -3,42 +3,20 @@
 
 namespace vespalib {
 
-Consumer::Consumer(uint32_t maxQueue, bool inverse) :
-   _queue(nullptr, maxQueue),
-   _inverse(inverse),
-   _operations(0)
-{
-}
+Consumer::Consumer(uint32_t maxQueue, bool inverse) : _queue(nullptr, maxQueue), _inverse(inverse), _operations(0) {}
 
-Consumer::~Consumer()
-{
-}
+Consumer::~Consumer() {}
 
-Producer::Producer(uint32_t cnt, Consumer &target) :
-    _target(target),
-    _cnt(cnt),
-    _operations(0)
-{
-}
+Producer::Producer(uint32_t cnt, Consumer& target) : _target(target), _cnt(cnt), _operations(0) {}
 
-Producer::~Producer()
-{
-}
+Producer::~Producer() {}
 
-ProducerConsumer::ProducerConsumer(uint32_t cnt, bool inverse) :
-    _cnt(cnt),
-    _inverse(inverse),
-    _operationsConsumed(0),
-    _operationsProduced(0)
-{
-}
+ProducerConsumer::ProducerConsumer(uint32_t cnt, bool inverse)
+    : _cnt(cnt), _inverse(inverse), _operationsConsumed(0), _operationsProduced(0) {}
 
-ProducerConsumer::~ProducerConsumer()
-{
-}
+ProducerConsumer::~ProducerConsumer() {}
 
-
-void Consumer::run(std::atomic<bool> &) {
+void Consumer::run(std::atomic<bool>&) {
     for (;;) {
         MemList ml = _queue.dequeue();
         if (ml == nullptr) {
@@ -59,7 +37,7 @@ void Consumer::run(std::atomic<bool> &) {
     }
 }
 
-void Producer::run(std::atomic<bool> &stop_flag) {
+void Producer::run(std::atomic<bool>& stop_flag) {
     while (!stop_flag.load(std::memory_order_relaxed)) {
         MemList ml = new MemListImpl();
         for (uint32_t i = 0; i < _cnt; ++i) {
@@ -71,7 +49,7 @@ void Producer::run(std::atomic<bool> &stop_flag) {
     _target.close();
 }
 
-void ProducerConsumer::run(std::atomic<bool> &stop_flag) {
+void ProducerConsumer::run(std::atomic<bool>& stop_flag) {
     while (!stop_flag.load(std::memory_order_relaxed)) {
         MemListImpl ml;
         for (uint32_t i = 0; i < _cnt; ++i) {
@@ -92,4 +70,4 @@ void ProducerConsumer::run(std::atomic<bool> &stop_flag) {
     }
 }
 
-}
+} // namespace vespalib

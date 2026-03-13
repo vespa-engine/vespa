@@ -25,7 +25,6 @@ namespace storage::rpc {
 namespace {
 
 class RpcTargetImpl : public RpcTarget {
-private:
     FRT_Target* _target;
     std::string _spec;
 
@@ -45,7 +44,6 @@ public:
 }
 
 class SharedRpcResources::RpcTargetFactoryImpl : public RpcTargetFactory {
-private:
     FRT_Supervisor& _orb;
 
 public:
@@ -57,7 +55,7 @@ public:
         if (raw_target) {
             return std::make_unique<RpcTargetImpl>(raw_target, connection_spec);
         }
-        return std::unique_ptr<RpcTarget>();
+        return {};
     }
 };
 

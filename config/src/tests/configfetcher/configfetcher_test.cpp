@@ -1,22 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/config/helper/configfetcher.hpp>
-#include <vespa/config/common/configcontext.h>
-#include <vespa/vespalib/util/exception.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include "config-my.h"
+
+#include <vespa/config/common/configcontext.h>
+#include <vespa/config/helper/configfetcher.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exception.h>
+
 #include <atomic>
 #include <thread>
 
 using namespace config;
 
-
-class MyCallback : public IFetcherCallback<MyConfig>
-{
+class MyCallback : public IFetcherCallback<MyConfig> {
 public:
-    MyCallback(const std::string & badConfig="");
+    MyCallback(const std::string& badConfig = "");
     ~MyCallback() override;
-    void configure(std::unique_ptr<MyConfig> config) override
-    {
+    void configure(std::unique_ptr<MyConfig> config) override {
         _config = std::move(config);
         _configured = true;
         if (_config->myField.compare(_badConfig) == 0) {
@@ -24,16 +23,15 @@ public:
         }
     }
     std::unique_ptr<MyConfig> _config;
-    std::atomic<bool> _configured;
-    std::string _badConfig;
+    std::atomic<bool>         _configured;
+    std::string               _badConfig;
 };
 
-MyCallback::MyCallback(const std::string & badConfig) : _config(), _configured(false), _badConfig(badConfig) { }
+MyCallback::MyCallback(const std::string& badConfig) : _config(), _configured(false), _badConfig(badConfig) {}
 MyCallback::~MyCallback() = default;
 
-TEST(ConfigFetcherTest, requireThatConfigIsAvailableOnConstruction)
-{
-    RawSpec spec("myField \"foo\"\n");
+TEST(ConfigFetcherTest, requireThatConfigIsAvailableOnConstruction) {
+    RawSpec    spec("myField \"foo\"\n");
     MyCallback cb;
 
     {
@@ -82,8 +80,7 @@ TEST(ConfigFetcherTest, requireThatConfigUpdatesArePerformed)
 }
 #endif
 
-TEST(ConfigFetcherTest, requireThatFetcherCanHandleMultipleConfigs)
-{
+TEST(ConfigFetcherTest, requireThatFetcherCanHandleMultipleConfigs) {
     MyConfigBuilder b1, b2;
     b1.myField = "foo";
     b2.myField = "bar";
@@ -110,8 +107,7 @@ TEST(ConfigFetcherTest, requireThatFetcherCanHandleMultipleConfigs)
     }
 }
 
-TEST(ConfigFetcherTest, verify_that_exceptions_in_callback_is_thrown_on_initial_subscribe)
-{
+TEST(ConfigFetcherTest, verify_that_exceptions_in_callback_is_thrown_on_initial_subscribe) {
     MyConfigBuilder b1;
     b1.myField = "foo";
     ConfigSet set;
@@ -127,8 +123,8 @@ TEST(ConfigFetcherTest, verify_that_exceptions_in_callback_is_thrown_on_initial_
 namespace {
 
 struct ConfigFixture {
-    MyConfigBuilder builder;
-    ConfigSet set;
+    MyConfigBuilder                builder;
+    ConfigSet                      set;
     std::shared_ptr<ConfigContext> context;
     ConfigFixture() : builder(), set(), context() {
         set.addBuilder("cfgid", &builder);
@@ -136,10 +132,9 @@ struct ConfigFixture {
     }
 };
 
-} // namespace <unnamed>
+} // namespace
 
-TEST(ConfigFetcherTest, verify_that_config_generation_can_be_obtained_from_config_fetcher)
-{
+TEST(ConfigFetcherTest, verify_that_config_generation_can_be_obtained_from_config_fetcher) {
     ConfigFixture f1;
     f1.builder.myField = "foo";
     MyCallback cb;
@@ -157,7 +152,8 @@ TEST(ConfigFetcherTest, verify_that_config_generation_can_be_obtained_from_confi
             if (cb._configured) {
                 break;
             }
-            std::this_thread::sleep_for(10ms);;
+            std::this_thread::sleep_for(10ms);
+            ;
         }
         EXPECT_EQ(2, fetcher.getGeneration());
         EXPECT_EQ("bar", cb._config.get()->myField);

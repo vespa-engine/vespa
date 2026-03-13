@@ -13,7 +13,9 @@ import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test configuration of dictionary control.

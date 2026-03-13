@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.ObjLongConsumer;
 import java.util.stream.Collectors;
+import java.util.Locale;
 
 /**
  * A {@link RequestLog} implementation that collects statistics like HTTP response types aggregated by category.
@@ -156,7 +157,7 @@ class MetricAggregatingRequestLog implements RequestLog {
         private static String requestType(Request req, List<String> monitoringHandlerPaths,
                                           List<String> searchHandlerPaths) {
             HttpRequest.RequestType requestType = (HttpRequest.RequestType)req.getAttribute(requestTypeAttribute);
-            if (requestType != null) return requestType.name().toLowerCase();
+            if (requestType != null) return requestType.name().toLowerCase(Locale.ROOT);
             // Deduce from path and method:
             String path = req.getHttpURI().getPath();
             if (path == null) return "none";

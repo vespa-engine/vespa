@@ -11,6 +11,7 @@ import com.yahoo.log.LogMessage;
 import com.yahoo.schema.DistributableResource;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.text.StringUtilities;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.ImportedFieldsConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
@@ -85,13 +86,13 @@ public class RankSetupValidator implements Validator {
     private boolean validate(Context context, String configId, SearchCluster searchCluster, String schema, File tempDir, boolean isStreaming) {
         Instant start = Instant.now();
         try {
-            log.log(Level.FINE, () -> String.format(java.util.Locale.ROOT, "Validating schema '%s' for cluster %s with config id %s", schema, searchCluster, configId));
+            log.log(Level.FINE, () -> Text.format("Validating schema '%s' for cluster %s with config id %s", schema, searchCluster, configId));
             boolean ret = execValidate(context, configId, searchCluster, schema, isStreaming);
             if (!ret) {
                 // Give up, don't log same error msg repeatedly
                 deleteTempDir(tempDir);
             }
-            log.log(Level.FINE, () -> String.format(java.util.Locale.ROOT, "Validation took %s ms", Duration.between(start, Instant.now()).toMillis()));
+            log.log(Level.FINE, () -> Text.format("Validation took %s ms", Duration.between(start, Instant.now()).toMillis()));
             return ret;
         } catch (IllegalArgumentException e) {
             deleteTempDir(tempDir);
@@ -142,8 +143,8 @@ public class RankSetupValidator implements Validator {
         for (DistributableResource model : resources) {
             String modelPath = getFileRepositoryPath(model.getFilePath().getName(), model.getFileReference());
             int index = config.size() / 2;
-            config.add(String.format(java.util.Locale.ROOT, "file[%d].ref \"%s\"", index, model.getFileReference()));
-            config.add(String.format(java.util.Locale.ROOT, "file[%d].path \"%s\"", index, modelPath));
+            config.add(Text.format("file[%d].ref \"%s\"", index, model.getFileReference()));
+            config.add(Text.format("file[%d].path \"%s\"", index, modelPath));
             log.log(Level.FINE, index + ": " + model.getPathType() + " -> " + model.getName() + " -> " + modelPath + " -> " + model.getFileReference());
         }
     }
@@ -171,7 +172,7 @@ public class RankSetupValidator implements Validator {
     }
 
     private boolean execValidate(Context context, String configId, SearchCluster sc, String sdName, boolean isStreaming) {
-        String command = String.format(java.util.Locale.ROOT, (isStreaming ? "%s %s -S" : "%s %s"), binaryName, configId);
+        String command = Text.format((isStreaming ? "%s %s -S" : "%s %s"), binaryName, configId);
         try {
             Pair<Integer, String> ret = new ProcessExecuter(true).exec(command);
             Integer exitCode = ret.getFirst();

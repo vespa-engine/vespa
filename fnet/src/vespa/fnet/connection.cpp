@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "connection.h"
-#include "dummypacket.h"
+
 #include "channel.h"
+#include "config.h"
 #include "controlpacket.h"
+#include "dummypacket.h"
 #include "ipacketstreamer.h"
 #include "iserveradapter.h"
-#include "config.h"
-#include "transport_thread.h"
 #include "transport.h"
+#include "transport_thread.h"
+
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/socket_spec.h>
 
@@ -22,15 +24,11 @@ class SyncPacket : public FNET_DummyPacket {
 private:
     std::mutex              _lock;
     std::condition_variable _cond;
-    bool _done;
-    bool _waiting;
+    bool                    _done;
+    bool                    _waiting;
 
 public:
-    SyncPacket()
-            : _lock(),
-              _cond(),
-              _done(false),
-              _waiting(false) {}
+    SyncPacket() : _lock(), _cond(), _done(false), _waiting(false) {}
 
     ~SyncPacket() override;
 
@@ -47,9 +45,7 @@ public:
 
 SyncPacket::~SyncPacket() = default;
 
-void
-SyncPacket::Free()
-{
+void SyncPacket::Free() {
     std::lock_guard<std::mutex> guard(_lock);
     _done = true;
     if (_waiting) {
@@ -57,13 +53,10 @@ SyncPacket::Free()
     }
 }
 
-
 struct DoHandshakeWork : vespalib::Executor::Task {
-    FNET_Connection *conn;
-    vespalib::CryptoSocket *socket;
-    DoHandshakeWork(FNET_Connection *conn_in, vespalib::CryptoSocket *socket_in)
-        : conn(conn_in), socket(socket_in)
-    {
+    FNET_Connection*        conn;
+    vespalib::CryptoSocket* socket;
+    DoHandshakeWork(FNET_Connection* conn_in, vespalib::CryptoSocket* socket_in) : conn(conn_in), socket(socket_in) {
         conn->internal_addref();
     }
     void run() override {
@@ -74,42 +67,27 @@ struct DoHandshakeWork : vespalib::Executor::Task {
     ~DoHandshakeWork() override;
 };
 
-DoHandshakeWork::~DoHandshakeWork()
-{
-    assert(conn == nullptr);
-}
+DoHandshakeWork::~DoHandshakeWork() { assert(conn == nullptr); }
 
-}
+} // namespace
 
-
-FNET_Connection::ResolveHandler::ResolveHandler(FNET_Connection *conn) noexcept
-    : connection(conn),
-      address()
-{
+FNET_Connection::ResolveHandler::ResolveHandler(FNET_Connection* conn) noexcept : connection(conn), address() {
     connection->internal_addref();
 }
 
-void
-FNET_Connection::ResolveHandler::handle_result(vespalib::SocketAddress result)
-{
+void FNET_Connection::ResolveHandler::handle_result(vespalib::SocketAddress result) {
     address = result;
     connection->Owner()->Add(connection);
 }
 
-FNET_Connection::ResolveHandler::~ResolveHandler()
-{
-    connection->internal_subref();
-}
-
+FNET_Connection::ResolveHandler::~ResolveHandler() { connection->internal_subref(); }
 
 ///////////////////////
 // PROTECTED METHODS //
 ///////////////////////
 
-const char*
-FNET_Connection::GetStateString(State state)
-{
-    switch(state) {
+const char* FNET_Connection::GetStateString(State state) {
+    switch (state) {
     case FNET_CONNECTING:
         return "CONNECTING";
     case FNET_CONNECTED:
@@ -123,18 +101,16 @@ FNET_Connection::GetStateString(State state)
     }
 }
 
-void
-FNET_Connection::SetState(State state)
-{
-    State         oldstate;
+void FNET_Connection::SetState(State state) {
+    State oldstate;
 
     std::vector<FNET_Channel::UP> toDelete;
-    std::unique_lock<std::mutex> guard(_ioc_lock);
+    std::unique_lock<std::mutex>  guard(_ioc_lock);
     oldstate = GetState();
     _state.store(state, std::memory_order_relaxed);
     if (LOG_WOULD_LOG(debug) && state != oldstate) {
-        LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
-            GetStateString(oldstate), GetStateString(state));
+        LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(), GetStateString(oldstate),
+            GetStateString(state));
     }
     if (oldstate < FNET_CLOSING && state >= FNET_CLOSING) {
 
@@ -152,35 +128,30 @@ FNET_Connection::SetState(State state)
         AfterCallback(guard);
     }
 
-    if ( ! toDelete.empty() ) {
+    if (!toDelete.empty()) {
         const uint32_t cnt = toDelete.size();
         const uint32_t reserve = 1;
         internal_subref(cnt, reserve);
     }
 }
 
-
-void
-FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
-                              uint32_t chid)
-{
-    FNET_Packet *packet;
-    FNET_Channel *channel;
+void FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode, uint32_t chid) {
+    FNET_Packet*                    packet;
+    FNET_Channel*                   channel;
     FNET_IPacketHandler::HP_RetCode hp_rc;
 
     std::unique_lock<std::mutex> guard(_ioc_lock);
     channel = _channels.Lookup(chid);
 
     if (channel != nullptr) { // deliver packet on open channel
-        channel->prefetch(); // Prefetch in the shadow of the lock operation in BeforeCallback.
+        channel->prefetch();  // Prefetch in the shadow of the lock operation in BeforeCallback.
         __builtin_prefetch(&_streamer);
         __builtin_prefetch(&_input);
 
         BeforeCallback(guard, channel);
-        __builtin_prefetch(channel->GetHandler(), 0);  // Prefetch the handler while packet is being decoded.
+        __builtin_prefetch(channel->GetHandler(), 0); // Prefetch the handler while packet is being decoded.
         packet = _streamer->Decode(&_input, plen, pcode, channel->GetContext());
-        hp_rc = (packet != nullptr) ? channel->Receive(packet)
-                : channel->Receive(&FNET_ControlPacket::BadPacket);
+        hp_rc = (packet != nullptr) ? channel->Receive(packet) : channel->Receive(&FNET_ControlPacket::BadPacket);
         AfterCallback(guard);
 
         FNET_Channel::UP toDelete;
@@ -201,8 +172,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
         if (_serverAdapter->InitChannel(channel, pcode)) {
 
             packet = _streamer->Decode(&_input, plen, pcode, channel->GetContext());
-            hp_rc = (packet != nullptr) ? channel->Receive(packet)
-                    : channel->Receive(&FNET_ControlPacket::BadPacket);
+            hp_rc = (packet != nullptr) ? channel->Receive(packet) : channel->Receive(&FNET_ControlPacket::BadPacket);
             AfterCallback(guard);
 
             if (hp_rc == FNET_IPacketHandler::FNET_FREE_CHANNEL) {
@@ -230,9 +200,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
     }
 }
 
-bool
-FNET_Connection::handshake()
-{
+bool FNET_Connection::handshake() {
     bool broken = false;
     if (_flags._handshake_work_pending) {
         return !broken;
@@ -250,7 +218,7 @@ FNET_Connection::handshake()
         EnableReadEvent(true);
         EnableWriteEvent(writePendingAfterConnect());
         _flags._framed = (_socket->min_read_buffer_size() > 1);
-        size_t chunk_size = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
+        size_t  chunk_size = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
         ssize_t res = 0;
         do { // drain input pipeline
             _input.EnsureFree(chunk_size);
@@ -260,8 +228,8 @@ FNET_Connection::handshake()
                 broken = !handle_packets();
                 _input.resetIfEmpty();
             }
-        } while ((res > 0) && !broken); }
-        break;
+        } while ((res > 0) && !broken);
+    } break;
     case vespalib::CryptoSocket::HandshakeResult::NEED_READ:
         EnableReadEvent(true);
         EnableWriteEvent(false);
@@ -280,15 +248,12 @@ FNET_Connection::handshake()
     return !broken;
 }
 
-bool
-FNET_Connection::handle_packets()
-{
+bool FNET_Connection::handle_packets() {
     bool broken = false;
     for (bool done = false; !done;) { // handle each complete packet in the buffer.
         if (!_flags._gotheader) {
-            _flags._gotheader = _streamer->GetPacketInfo(&_input, &_packetLength,
-                    &_packetCode, &_packetCHID,
-                    &broken);
+            _flags._gotheader =
+                _streamer->GetPacketInfo(&_input, &_packetLength, &_packetCode, &_packetCHID, &broken);
         }
         if (_flags._gotheader && (_input.GetDataLen() >= _packetLength)) {
             HandlePacket(_packetLength, _packetCode, _packetCHID);
@@ -300,14 +265,12 @@ FNET_Connection::handle_packets()
     return !broken;
 }
 
-bool
-FNET_Connection::Read()
-{
-    size_t   chunk_size  = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
-    int      readCnt     = 0;     // read count
-    bool     broken      = false; // is this conn broken ?
-    int      my_errno    = 0;     // sample and preserve errno
-    ssize_t  res;                 // single read result
+bool FNET_Connection::Read() {
+    size_t  chunk_size = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
+    int     readCnt = 0;    // read count
+    bool    broken = false; // is this conn broken ?
+    int     my_errno = 0;   // sample and preserve errno
+    ssize_t res;            // single read result
 
     _input.EnsureFree(chunk_size);
     res = _socket->read(_input.GetFree(), _input.GetFreeLen());
@@ -349,8 +312,7 @@ done_read:
         _input.Shrink(0);
     }
     uint32_t maxSize = getConfig()._maxInputBufferSize;
-    if (maxSize > 0 && _input.GetBufSize() > maxSize)
-    {
+    if (maxSize > 0 && _input.GetBufSize() > maxSize) {
         if (!_flags._gotheader || _packetLength < maxSize) {
             _input.Shrink(maxSize);
         }
@@ -359,7 +321,7 @@ done_read:
     if (res <= 0) {
         if (res == 0) {
             broken = true; // handle EOF
-        } else { // res < 0
+        } else {           // res < 0
             broken = ((my_errno != EWOULDBLOCK) && (my_errno != EAGAIN));
             if (broken && (my_errno != ECONNRESET)) {
                 LOG(debug, "Connection(%s): read error: %d", GetSpec(), my_errno);
@@ -370,19 +332,16 @@ done_read:
     return !broken;
 }
 
+bool FNET_Connection::Write() {
+    size_t   chunk_size = std::max(size_t(FNET_WRITE_SIZE), _socket->min_read_buffer_size());
+    uint32_t my_write_work = 0;
+    int      writeCnt = 0;   // write count
+    bool     broken = false; // is this conn broken ?
+    int      my_errno = 0;   // sample and preserve errno
+    ssize_t  res;            // single write result
 
-bool
-FNET_Connection::Write()
-{
-    size_t   chunk_size     = std::max(size_t(FNET_WRITE_SIZE), _socket->min_read_buffer_size());
-    uint32_t my_write_work  = 0;
-    int      writeCnt       = 0;     // write count
-    bool     broken         = false; // is this conn broken ?
-    int      my_errno       = 0;     // sample and preserve errno
-    ssize_t  res;                    // single write result
-
-    FNET_Packet     *packet;
-    FNET_Context     context;
+    FNET_Packet* packet;
+    FNET_Context context;
 
     do {
 
@@ -413,10 +372,7 @@ FNET_Connection::Write()
             _output.DataToDead((uint32_t)res);
             _output.resetIfEmpty();
         }
-    } while (res > 0 &&
-             _output.GetDataLen() == 0 &&
-             !_myQueue.IsEmpty_NoLock() &&
-             writeCnt < FNET_WRITE_REDO);
+    } while (res > 0 && _output.GetDataLen() == 0 && !_myQueue.IsEmpty_NoLock() && writeCnt < FNET_WRITE_REDO);
 
     if ((_output.GetDataLen() > 0)) {
         ++my_write_work;
@@ -452,9 +408,7 @@ FNET_Connection::Write()
     }
 
     std::unique_lock<std::mutex> guard(_ioc_lock);
-    _writeWork = _queue.GetPacketCnt_NoLock()
-                 + _myQueue.GetPacketCnt_NoLock()
-                 + my_write_work;
+    _writeWork = _queue.GetPacketCnt_NoLock() + _myQueue.GetPacketCnt_NoLock() + my_write_work;
     bool writePending = (_writeWork > 0);
 
     guard.unlock();
@@ -468,12 +422,8 @@ FNET_Connection::Write()
 // PUBLIC METHODS //
 ////////////////////
 
-
-FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
-                                 FNET_IPacketStreamer *streamer,
-                                 FNET_IServerAdapter *serverAdapter,
-                                 vespalib::SocketHandle socket,
-                                 const char *spec)
+FNET_Connection::FNET_Connection(FNET_TransportThread* owner, FNET_IPacketStreamer* streamer,
+                                 FNET_IServerAdapter* serverAdapter, vespalib::SocketHandle socket, const char* spec)
     : FNET_IOComponent(owner, socket.get(), spec, /* time-out = */ true),
       _streamer(streamer),
       _serverAdapter(serverAdapter),
@@ -492,18 +442,13 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _myQueue(256),
       _output(0),
       _channels(),
-      _callbackTarget(nullptr)
-{
+      _callbackTarget(nullptr) {
     assert(_socket && (_socket->get_fd() >= 0));
     _num_connections.fetch_add(1, std::memory_order_relaxed);
 }
 
-
-FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
-                                 FNET_IPacketStreamer *streamer,
-                                 FNET_IServerAdapter *serverAdapter,
-                                 FNET_Context context,
-                                 const char *spec)
+FNET_Connection::FNET_Connection(FNET_TransportThread* owner, FNET_IPacketStreamer* streamer,
+                                 FNET_IServerAdapter* serverAdapter, FNET_Context context, const char* spec)
     : FNET_IOComponent(owner, -1, spec, /* time-out = */ true),
       _streamer(streamer),
       _serverAdapter(serverAdapter),
@@ -522,22 +467,16 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _myQueue(256),
       _output(0),
       _channels(),
-      _callbackTarget(nullptr)
-{
+      _callbackTarget(nullptr) {
     _num_connections.fetch_add(1, std::memory_order_relaxed);
 }
 
-
-FNET_Connection::~FNET_Connection()
-{
+FNET_Connection::~FNET_Connection() {
     assert(!_resolve_handler);
     _num_connections.fetch_sub(1, std::memory_order_relaxed);
 }
 
-
-bool
-FNET_Connection::Init()
-{
+bool FNET_Connection::Init() {
     // set up relevant events
     EnableReadEvent(true);
     EnableWriteEvent(true);
@@ -550,40 +489,28 @@ FNET_Connection::Init()
     return true;
 }
 
-FNET_IServerAdapter *
-FNET_Connection::server_adapter()
-{
-    return _serverAdapter;
-}
+FNET_IServerAdapter* FNET_Connection::server_adapter() { return _serverAdapter; }
 
-bool
-FNET_Connection::handle_add_event()
-{
+bool FNET_Connection::handle_add_event() {
     if (_resolve_handler) {
-        auto tweak = [this](vespalib::SocketHandle &handle) { return Owner()->tune(handle); };
-        _socket = Owner()->owner().create_client_crypto_socket(_resolve_handler->address.connect(tweak), vespalib::SocketSpec(GetSpec()));
+        auto tweak = [this](vespalib::SocketHandle& handle) { return Owner()->tune(handle); };
+        _socket = Owner()->owner().create_client_crypto_socket(
+            _resolve_handler->address.connect(tweak), vespalib::SocketSpec(GetSpec()));
         _ioc_socket_fd = _socket->get_fd();
         _resolve_handler.reset();
     }
     return (_socket && (_socket->get_fd() >= 0));
 }
 
-bool
-FNET_Connection::handle_handshake_act()
-{
+bool FNET_Connection::handle_handshake_act() {
     assert(_flags._handshake_work_pending);
     _flags._handshake_work_pending = false;
     return ((GetState() == FNET_CONNECTING) && handshake());
 }
 
-
-FNET_Channel*
-FNET_Connection::OpenChannel(FNET_IPacketHandler *handler,
-                             FNET_Context context,
-                             uint32_t *chid)
-{
+FNET_Channel* FNET_Connection::OpenChannel(FNET_IPacketHandler* handler, FNET_Context context, uint32_t* chid) {
     FNET_Channel::UP newChannel(new FNET_Channel(FNET_NOID, this, handler, context));
-    FNET_Channel * ret = nullptr;
+    FNET_Channel*    ret = nullptr;
 
     std::unique_lock<std::mutex> guard(_ioc_lock);
     if (__builtin_expect(GetState() < FNET_CLOSING, true)) {
@@ -599,10 +526,7 @@ FNET_Connection::OpenChannel(FNET_IPacketHandler *handler,
     return ret;
 }
 
-
-FNET_Channel*
-FNET_Connection::OpenChannel()
-{
+FNET_Channel* FNET_Connection::OpenChannel() {
 
     uint32_t chid;
     {
@@ -613,27 +537,18 @@ FNET_Connection::OpenChannel()
     return new FNET_Channel(chid, this);
 }
 
-
-bool
-FNET_Connection::CloseChannel(FNET_Channel *channel)
-{
+bool FNET_Connection::CloseChannel(FNET_Channel* channel) {
     std::unique_lock<std::mutex> guard(_ioc_lock);
     WaitCallback(guard, channel);
     return _channels.Unregister(channel);
 }
 
-
-void
-FNET_Connection::FreeChannel(FNET_Channel *channel)
-{
+void FNET_Connection::FreeChannel(FNET_Channel* channel) {
     delete channel;
     internal_subref();
 }
 
-
-void
-FNET_Connection::CloseAndFreeChannel(FNET_Channel *channel)
-{
+void FNET_Connection::CloseAndFreeChannel(FNET_Channel* channel) {
     {
         std::unique_lock<std::mutex> guard(_ioc_lock);
         WaitCallback(guard, channel);
@@ -643,10 +558,7 @@ FNET_Connection::CloseAndFreeChannel(FNET_Channel *channel)
     internal_subref();
 }
 
-
-bool
-FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
-{
+bool FNET_Connection::PostPacket(FNET_Packet* packet, uint32_t chid) {
     uint32_t writeWork;
 
     assert(packet != nullptr);
@@ -658,7 +570,7 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
             guard.unlock();
             packet->Free(); // discard packet
         }
-        return false;     // connection is down
+        return false; // connection is down
     }
     writeWork = _writeWork;
     _writeWork++;
@@ -671,19 +583,13 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
     return true;
 }
 
-
-void
-FNET_Connection::Sync()
-{
+void FNET_Connection::Sync() {
     SyncPacket sp;
     PostPacket(&sp, FNET_NOID);
     sp.WaitFree();
 }
 
-
-void
-FNET_Connection::Close()
-{
+void FNET_Connection::Close() {
     _resolve_handler.reset();
     detach_selector();
     SetState(FNET_CLOSED);
@@ -693,13 +599,10 @@ FNET_Connection::Close()
     }
 }
 
+bool FNET_Connection::HandleReadEvent() {
+    bool broken = false; // is connection broken ?
 
-bool
-FNET_Connection::HandleReadEvent()
-{
-    bool broken = false;  // is connection broken ?
-
-    switch(GetState()) {
+    switch (GetState()) {
     case FNET_CONNECTING:
         broken = !handshake();
         break;
@@ -714,31 +617,25 @@ FNET_Connection::HandleReadEvent()
     return !broken;
 }
 
-
-bool
-FNET_Connection::writePendingAfterConnect()
-{
+bool FNET_Connection::writePendingAfterConnect() {
     std::lock_guard<std::mutex> guard(_ioc_lock);
     _state.store(FNET_CONNECTED, std::memory_order_relaxed); // SetState(FNET_CONNECTED)
-    LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
-        GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
+    LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(), GetStateString(FNET_CONNECTING),
+        GetStateString(FNET_CONNECTED));
     return (_writeWork > 0);
 }
 
-bool
-FNET_Connection::HandleWriteEvent()
-{
-    bool broken = false;  // is connection broken ?
+bool FNET_Connection::HandleWriteEvent() {
+    bool broken = false; // is connection broken ?
 
-    switch(GetState()) {
+    switch (GetState()) {
     case FNET_CONNECTING:
         broken = !handshake();
         break;
-    case FNET_CONNECTED:
-        {
-            std::unique_lock<std::mutex> guard(_ioc_lock);
-            _queue.FlushPackets_NoLock(&_myQueue);
-        }
+    case FNET_CONNECTED: {
+        std::unique_lock<std::mutex> guard(_ioc_lock);
+        _queue.FlushPackets_NoLock(&_myQueue);
+    }
         broken = !Write();
         break;
     case FNET_CLOSING:
@@ -749,15 +646,11 @@ FNET_Connection::HandleWriteEvent()
     return !broken;
 }
 
-std::string
-FNET_Connection::GetPeerSpec() const
-{
+std::string FNET_Connection::GetPeerSpec() const {
     return vespalib::SocketAddress::peer_address(_socket->get_fd()).spec();
 }
 
-const vespalib::net::ConnectionAuthContext&
-FNET_Connection::auth_context() const noexcept
-{
+const vespalib::net::ConnectionAuthContext& FNET_Connection::auth_context() const noexcept {
     assert(_auth_context);
     return *_auth_context;
 }

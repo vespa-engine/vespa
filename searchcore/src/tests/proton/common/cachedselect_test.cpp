@@ -220,11 +220,11 @@ public:
     }
     ~MyIntAv() override;
 
-    uint32_t
-    get(AttributeVector::DocId doc, largeint_t *v, uint32_t sz) const override
+    largeint_t
+    getInt(AttributeVector::DocId doc) const override
     {
         ++_gets;
-        return SvIntAttr::get(doc, v, sz);
+        return SvIntAttr::get(doc);
     }
 
     uint32_t

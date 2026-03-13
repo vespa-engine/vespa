@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.google.common.base.Joiner;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.text.Text;
 
 import static com.yahoo.tensor.serialization.JsonFormat.decodeNumberString;
 
@@ -112,10 +113,10 @@ public class ConstantTensorJsonValidator {
                 return;
             } else if (isScalar()) {
                 throw new InvalidConstantTensorException(
-                        parser, String.format(java.util.Locale.ROOT, "Invalid type %s: Only tensors with dimensions can be stored as file constants", tensorType.toString()));
+                        parser, Text.format("Invalid type %s: Only tensors with dimensions can be stored as file constants", tensorType.toString()));
             }
             throw new InvalidConstantTensorException(
-                    parser, String.format(java.util.Locale.ROOT, "Unexpected first token '%s' for constant with type %s",
+                    parser, Text.format("Unexpected first token '%s' for constant with type %s",
                                           parser.getText(), tensorType.toString()));
         } catch (IOException e) {
             if (parser != null) {
@@ -143,10 +144,10 @@ public class ConstantTensorJsonValidator {
         }
         if (seenSimpleMapValue) {
             if (! isSingleSparse()) {
-                throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Cannot use {label: value} format for constant of type %s", tensorType.toString()));
+                throw new InvalidConstantTensorException(parser, Text.format("Cannot use {label: value} format for constant of type %s", tensorType.toString()));
             }
             if (seenCells || seenValues || seenBlocks || seenType) {
-                throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Cannot use {label: value} format together with '%s'",
+                throw new InvalidConstantTensorException(parser, Text.format("Cannot use {label: value} format together with '%s'",
                                                                                (seenCells ? FIELD_CELLS :
                                                                                 (seenValues ? FIELD_VALUES :
                                                                                  (seenBlocks ? FIELD_BLOCKS : FIELD_TYPE)))));
@@ -154,12 +155,12 @@ public class ConstantTensorJsonValidator {
         }
         if (seenCells) {
             if (seenValues || seenBlocks) {
-                throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Cannot use both '%s' and '%s' at the same time",
+                throw new InvalidConstantTensorException(parser, Text.format("Cannot use both '%s' and '%s' at the same time",
                                                                                FIELD_CELLS, (seenValues ? FIELD_VALUES : FIELD_BLOCKS)));
             }
         }
         if (seenValues && seenBlocks) {
-            throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Cannot use both '%s' and '%s' at the same time",
+            throw new InvalidConstantTensorException(parser, Text.format("Cannot use both '%s' and '%s' at the same time",
                                                                            FIELD_VALUES, FIELD_BLOCKS));
         }
     }
@@ -185,7 +186,7 @@ public class ConstantTensorJsonValidator {
 
     private void consumeSimpleMappedObject() throws IOException {
         if (! isSingleSparse()) {
-            throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Cannot use {label: value} format for constant of type %s", tensorType.toString()));
+            throw new InvalidConstantTensorException(parser, Text.format("Cannot use {label: value} format for constant of type %s", tensorType.toString()));
         }
         for (var cur = parser.nextToken(); cur != JsonToken.END_OBJECT; cur = parser.nextToken()) {
             assertCurrentTokenIs(JsonToken.FIELD_NAME);
@@ -210,15 +211,15 @@ public class ConstantTensorJsonValidator {
                     seenValue = true;
                 }
                 default ->
-                        throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Only '%s' or '%s' fields are permitted within a cell object",
+                        throw new InvalidConstantTensorException(parser, Text.format("Only '%s' or '%s' fields are permitted within a cell object",
                                 FIELD_ADDRESS, FIELD_VALUE));
             }
         }
         if (! seenAddress) {
-            throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Missing '%s' field in cell object", FIELD_ADDRESS));
+            throw new InvalidConstantTensorException(parser, Text.format("Missing '%s' field in cell object", FIELD_ADDRESS));
         }
         if (! seenValue) {
-            throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Missing '%s' field in cell object", FIELD_VALUE));
+            throw new InvalidConstantTensorException(parser, Text.format("Missing '%s' field in cell object", FIELD_VALUE));
         }
         assertNextTokenIs(JsonToken.END_OBJECT);
     }
@@ -231,16 +232,16 @@ public class ConstantTensorJsonValidator {
             String dimensionName = parser.currentName();
             TensorType.Dimension dimension = tensorDimensions.get(dimensionName);
             if (dimension == null) {
-                throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Tensor dimension '%s' does not exist", dimensionName));
+                throw new InvalidConstantTensorException(parser, Text.format("Tensor dimension '%s' does not exist", dimensionName));
             }
             if (!cellDimensions.contains(dimensionName)) {
-                throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Duplicate tensor dimension '%s'", dimensionName));
+                throw new InvalidConstantTensorException(parser, Text.format("Duplicate tensor dimension '%s'", dimensionName));
             }
             cellDimensions.remove(dimensionName);
             validateLabel(dimension);
         }
         if (!cellDimensions.isEmpty()) {
-            throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Tensor address missing dimension(s) %s", Joiner.on(", ").join(cellDimensions)));
+            throw new InvalidConstantTensorException(parser, Text.format("Tensor address missing dimension(s) %s", Joiner.on(", ").join(cellDimensions)));
         }
     }
 
@@ -252,7 +253,7 @@ public class ConstantTensorJsonValidator {
     private void validateLabel(TensorType.Dimension dimension) throws IOException {
         JsonToken token = parser.nextToken();
         if (token != JsonToken.VALUE_STRING) {
-            throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Tensor label is not a string (%s)", token.toString()));
+            throw new InvalidConstantTensorException(parser, Text.format("Tensor label is not a string (%s)", token.toString()));
         }
         if (dimension instanceof TensorType.IndexedBoundDimension) {
             validateBoundIndex((TensorType.IndexedBoundDimension) dimension);
@@ -265,7 +266,7 @@ public class ConstantTensorJsonValidator {
         try {
             int value = Integer.parseInt(parser.getValueAsString());
             if (value >= dimension.size().get().intValue())
-                throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Index %s not within limits of bound dimension '%s'", value, dimension.name()));
+                throw new InvalidConstantTensorException(parser, Text.format("Index %s not within limits of bound dimension '%s'", value, dimension.name()));
         } catch (NumberFormatException e) {
             throwCoordinateIsNotInteger(parser.getValueAsString(), dimension.name());
         }
@@ -280,7 +281,7 @@ public class ConstantTensorJsonValidator {
     }
 
     private void throwCoordinateIsNotInteger(String value, String dimensionName) {
-        throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Index '%s' for dimension '%s' is not an integer", value, dimensionName));
+        throw new InvalidConstantTensorException(parser, Text.format("Index '%s' for dimension '%s' is not an integer", value, dimensionName));
     }
 
     private void validateNumeric(String where, JsonToken token) throws IOException {
@@ -293,10 +294,10 @@ public class ConstantTensorJsonValidator {
                 double d = decodeNumberString(input);
                 return;
             } catch (NumberFormatException e) {
-                throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Inside '%s': cell value '%s' is not a number", where, input));
+                throw new InvalidConstantTensorException(parser, Text.format("Inside '%s': cell value '%s' is not a number", where, input));
             }
         }
-        throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Inside '%s': cell value is not a number (%s)", where, token.toString()));
+        throw new InvalidConstantTensorException(parser, Text.format("Inside '%s': cell value is not a number (%s)", where, token.toString()));
     }
 
     private void assertCurrentTokenIs(JsonToken wantedToken) {
@@ -309,7 +310,7 @@ public class ConstantTensorJsonValidator {
 
     private void assertTokenIs(JsonToken token, JsonToken wantedToken) {
         if (token != wantedToken) {
-            throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Expected JSON token %s, but got %s", wantedToken.toString(), token.toString()));
+            throw new InvalidConstantTensorException(parser, Text.format("Expected JSON token %s, but got %s", wantedToken.toString(), token.toString()));
         }
     }
 
@@ -332,7 +333,7 @@ public class ConstantTensorJsonValidator {
         assertCurrentTokenIs(JsonToken.START_ARRAY);
         if (level >= denseDims.size()) {
             throw new InvalidConstantTensorException(
-                    parser, String.format(java.util.Locale.ROOT, "Too deep array nesting for constant with type %s", tensorType.toString()));
+                    parser, Text.format("Too deep array nesting for constant with type %s", tensorType.toString()));
         }
         var dim = tensorDimensions.get(denseDims.get(level));
         long count = 0;
@@ -343,7 +344,7 @@ public class ConstantTensorJsonValidator {
                 consumeValuesNesting(level + 1);
             } else {
                 throw new InvalidConstantTensorException(
-                        parser, String.format(java.util.Locale.ROOT, "Unexpected token %s '%s'", cur.toString(), parser.getText()));
+                        parser, Text.format("Unexpected token %s '%s'", cur.toString(), parser.getText()));
             }
             ++count;
         }
@@ -351,7 +352,7 @@ public class ConstantTensorJsonValidator {
             var sz = dim.size().get();
             if (sz != count) {
                 throw new InvalidConstantTensorException(
-                        parser, String.format(java.util.Locale.ROOT, "Dimension '%s' has size %d but array had %d values", dim.name(), sz, count));
+                        parser, Text.format("Dimension '%s' has size %d but array had %d values", dim.name(), sz, count));
             }
         }
     }
@@ -365,7 +366,7 @@ public class ConstantTensorJsonValidator {
             seenSimpleMapValue = true;
         } else {
             throw new InvalidConstantTensorException(
-                    parser, String.format(java.util.Locale.ROOT, "Field '%s' should contain the tensor type as a string, got %s", FIELD_TYPE, parser.getText()));
+                    parser, Text.format("Field '%s' should contain the tensor type as a string, got %s", FIELD_TYPE, parser.getText()));
         }
     }
 
@@ -398,13 +399,13 @@ public class ConstantTensorJsonValidator {
             seenSimpleMapValue = true;
         } else {
             throw new InvalidConstantTensorException(
-                    parser, String.format(java.util.Locale.ROOT, "Unexpected content '%s' for field '%s'", parser.getText(), fieldName));
+                    parser, Text.format("Unexpected content '%s' for field '%s'", parser.getText(), fieldName));
         }
     }
 
     private void consumeBlocksArray() throws IOException {
         if (! isMixed()) {
-            throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Cannot use blocks format:[] for constant of type %s", tensorType.toString()));
+            throw new InvalidConstantTensorException(parser, Text.format("Cannot use blocks format:[] for constant of type %s", tensorType.toString()));
         }
         while (parser.nextToken() != JsonToken.END_ARRAY) {
             assertCurrentTokenIs(JsonToken.START_OBJECT);
@@ -424,15 +425,15 @@ public class ConstantTensorJsonValidator {
                         seenValues = true;
                     }
                     default ->
-                            throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Only '%s' or '%s' fields are permitted within a block object",
+                            throw new InvalidConstantTensorException(parser, Text.format("Only '%s' or '%s' fields are permitted within a block object",
                                     FIELD_ADDRESS, FIELD_VALUES));
                 }
             }
             if (! seenAddress) {
-                throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Missing '%s' field in block object", FIELD_ADDRESS));
+                throw new InvalidConstantTensorException(parser, Text.format("Missing '%s' field in block object", FIELD_ADDRESS));
             }
             if (! seenValues) {
-                throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Missing '%s' field in block object", FIELD_VALUES));
+                throw new InvalidConstantTensorException(parser, Text.format("Missing '%s' field in block object", FIELD_VALUES));
             }
             assertNextTokenIs(JsonToken.END_OBJECT);
         }
@@ -440,7 +441,7 @@ public class ConstantTensorJsonValidator {
 
     private void consumeBlocksObject() throws IOException {
         if (numMappedDims > 1 || ! isMixed()) {
-            throw new InvalidConstantTensorException(parser, String.format(java.util.Locale.ROOT, "Cannot use blocks:{} format for constant of type %s", tensorType.toString()));
+            throw new InvalidConstantTensorException(parser, Text.format("Cannot use blocks:{} format for constant of type %s", tensorType.toString()));
         }
         while (parser.nextToken() != JsonToken.END_OBJECT) {
             assertCurrentTokenIs(JsonToken.FIELD_NAME);

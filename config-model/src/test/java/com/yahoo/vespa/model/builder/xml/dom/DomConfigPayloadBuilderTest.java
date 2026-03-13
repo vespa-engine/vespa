@@ -20,7 +20,9 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.io.StringReader;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for the {@link com.yahoo.vespa.model.builder.xml.dom.DomConfigPayloadBuilder} class.

@@ -4,13 +4,14 @@
 
 #include "context.h"
 
+class FNET_Packet;
+
 /**
  * Interface describing objects that are able to create packets. An
  * object implementing this interface is needed in order to use the
  * SimplePacketStreamer class.
  **/
-class FNET_IPacketFactory
-{
+class FNET_IPacketFactory {
 public:
     /**
      * Destructor.  No cleanup needed for base class.
@@ -30,6 +31,5 @@ public:
      *        for the channel that will receive the packet after it is
      *        created and un-streamed.
      **/
-    virtual FNET_Packet *CreatePacket(uint32_t pcode, FNET_Context context) = 0;
+    virtual FNET_Packet* CreatePacket(uint32_t pcode, FNET_Context context) = 0;
 };
-

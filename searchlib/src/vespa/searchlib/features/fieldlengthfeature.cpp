@@ -35,7 +35,7 @@ FieldLengthExecutor::execute(uint32_t docId)
     bool validVal = false;
     for (auto handle : _fieldHandles) {
         const TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
-        if (tfmd.getDocId() == docId) {
+        if (tfmd.has_ranking_data(docId)) {
             FieldPositionsIterator it = tfmd.getIterator();
             if (it.valid()) {
                 if (val < it.getFieldLength())

@@ -20,6 +20,8 @@ import com.yahoo.document.json.JsonReaderException;
 import com.yahoo.document.json.ParsedDocumentOperation;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.text.Text;
+import java.util.Locale;
 
 import static com.yahoo.document.json.readers.AddRemoveCreator.createAdds;
 import static com.yahoo.document.json.readers.AddRemoveCreator.createRemoves;
@@ -174,7 +176,7 @@ public class VespaJsonDocumentReader {
 
         buffer.next();
         while (localNesting <= buffer.nesting()) {
-            String fieldPathOperation = buffer.currentName().toLowerCase();
+            String fieldPathOperation = buffer.currentName().toLowerCase(Locale.ROOT);
             FieldPathUpdate fieldPathUpdate;
             if (fieldPathOperation.equals(UPDATE_ASSIGN)) {
                 fieldPathUpdate = readAssignFieldPathUpdate(update.getType(), fieldPath, buffer);
@@ -223,7 +225,7 @@ public class VespaJsonDocumentReader {
         AssignFieldPathUpdate fieldPathUpdate = new AssignFieldPathUpdate(documentType, fieldPath);
         String arithmeticSign = SingleValueReader.UPDATE_OPERATION_TO_ARITHMETIC_SIGN.get(fieldPathOperation);
         double value = Double.parseDouble(buffer.currentText());
-        String expression = String.format("$value %s %s", arithmeticSign, value);
+        String expression = Text.format("$value %s %s", arithmeticSign, value);
         fieldPathUpdate.setExpression(expression);
         return fieldPathUpdate;
     }

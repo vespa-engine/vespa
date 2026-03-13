@@ -32,6 +32,7 @@ public:
                    const common::FileHeaderContext &fileHeaderContext);
     ~TransLogServer() override;
     DomainStats getDomainStats() const;
+    uint64_t get_size_on_disk() const;
     std::shared_ptr<Writer> getWriter(const std::string & domainName) const override;
     TransLogServer & setDomainConfig(const DomainConfig & cfg);
 

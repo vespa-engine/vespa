@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "array_bool_attribute.h"
 #include "attributefactory.h"
 #include "defines.h"
 #include "multinumericattribute.h"
@@ -26,6 +27,8 @@ AttributeFactory::createArrayStd(std::string name, const Config & info)
     AttributeVector::SP ret;
     switch(info.basicType().type()) {
     case BasicType::BOOL:
+        ret.reset(new attribute::ArrayBoolAttribute(name, info));
+        break;
     case BasicType::UINT2:
     case BasicType::UINT4:
         break;

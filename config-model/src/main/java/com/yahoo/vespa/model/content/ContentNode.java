@@ -7,6 +7,7 @@ import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
@@ -42,7 +43,7 @@ public abstract class ContentNode extends AbstractService
         // Only [0, UINT16_MAX - 1] is a valid range. UINT16_MAX is a special content layer-internal
         // sentinel value that must never be used by actual nodes.
         if (distributionKey < 0 || distributionKey >= 65535) {
-            throw new IllegalArgumentException(String.format(java.util.Locale.ROOT, "Distribution key %d is outside valid range [0, 65534]", distributionKey));
+            throw new IllegalArgumentException(Text.format("Distribution key %d is outside valid range [0, 65534]", distributionKey));
         }
 
         initialize();

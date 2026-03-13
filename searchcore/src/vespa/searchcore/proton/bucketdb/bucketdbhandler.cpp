@@ -88,4 +88,3 @@ BucketDBHandler::handleDeleteBucket(const BucketId &bucketId)
 }
 
 }
-

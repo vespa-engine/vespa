@@ -2,10 +2,12 @@
 #pragma once
 
 #include "configsnapshot.h"
-#include "genericconfigsubscriber.h"
 #include "fixedconfigsubscriber.h"
+#include "genericconfigsubscriber.h"
+
 #include <vespa/config/common/configkey.h>
 #include <vespa/config/subscription/configsubscription.h>
+
 #include <mutex>
 #include <string>
 
@@ -22,11 +24,9 @@ class SourceSpec;
  * The retriever should be used from one thread only, but close can be called
  * from another thread.
  */
-class ConfigRetriever
-{
+class ConfigRetriever {
 public:
-    ConfigRetriever(const ConfigKeySet & bootstrapSet,
-                    std::shared_ptr<IConfigContext> context,
+    ConfigRetriever(const ConfigKeySet& bootstrapSet, std::shared_ptr<IConfigContext> context,
                     vespalib::duration subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
     ~ConfigRetriever();
 
@@ -60,7 +60,7 @@ public:
      *                 method can be used to check for this condition.
      * @throws ConfigTimeoutException if resubscribe timed out.
      */
-    ConfigSnapshot getConfigs(const ConfigKeySet & keySet, vespalib::duration timeout = DEFAULT_NEXTGENERATION_TIMEOUT);
+    ConfigSnapshot getConfigs(const ConfigKeySet& keySet, vespalib::duration timeout = DEFAULT_NEXTGENERATION_TIMEOUT);
 
     /**
      * Close this retriever in order to shut down.
@@ -90,6 +90,7 @@ public:
 
     static const vespalib::duration DEFAULT_SUBSCRIBE_TIMEOUT;
     static const vespalib::duration DEFAULT_NEXTGENERATION_TIMEOUT;
+
 private:
     FixedConfigSubscriber                            _bootstrapSubscriber;
     std::unique_ptr<GenericConfigSubscriber>         _configSubscriber;
@@ -98,11 +99,10 @@ private:
     ConfigKeySet                                     _lastKeySet;
     std::shared_ptr<IConfigContext>                  _context;
     std::unique_ptr<SourceSpec>                      _spec;
-    int64_t              _generation;
-    vespalib::duration   _subscribeTimeout;
-    bool                 _bootstrapRequired;
-    std::atomic<bool>    _closed;
+    int64_t                                          _generation;
+    vespalib::duration                               _subscribeTimeout;
+    bool                                             _bootstrapRequired;
+    std::atomic<bool>                                _closed;
 };
 
 } // namespace config
-

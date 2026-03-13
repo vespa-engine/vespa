@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vector>
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperation.h>
 #include <vespa/storage/distributor/maintenance/node_maintenance_stats_tracker.h>
 

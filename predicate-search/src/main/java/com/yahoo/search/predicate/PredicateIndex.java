@@ -3,7 +3,17 @@ package com.yahoo.search.predicate;
 
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.document.predicate.Predicate;
-import com.yahoo.search.predicate.index.*;
+import com.yahoo.search.predicate.index.BoundsPostingList;
+import com.yahoo.search.predicate.index.CachedPostingListCounter;
+import com.yahoo.search.predicate.index.Feature;
+import com.yahoo.search.predicate.index.IntervalPostingList;
+import com.yahoo.search.predicate.index.PostingList;
+import com.yahoo.search.predicate.index.PredicateIntervalStore;
+import com.yahoo.search.predicate.index.PredicateRangeTermExpander;
+import com.yahoo.search.predicate.index.PredicateSearch;
+import com.yahoo.search.predicate.index.SimpleIndex;
+import com.yahoo.search.predicate.index.ZeroConstraintPostingList;
+import com.yahoo.search.predicate.index.ZstarCompressedPostingList;
 import com.yahoo.search.predicate.index.conjunction.ConjunctionHit;
 import com.yahoo.search.predicate.index.conjunction.ConjunctionIndex;
 import com.yahoo.search.predicate.serialization.SerializationHelper;
@@ -13,6 +23,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
@@ -117,7 +128,7 @@ public class PredicateIndex {
     public static PredicateIndex fromInputStream(DataInputStream in) throws IOException {
         int version = in.readInt();
         if (version != SERIALIZATION_FORMAT_VERSION) {
-            throw new IllegalArgumentException(String.format(
+            throw new IllegalArgumentException(String.format(Locale.ROOT,
                     "Invalid serialization format version. Expected %d, was %d.", SERIALIZATION_FORMAT_VERSION, version));
         }
         Config config = Config.fromInputStream(in);

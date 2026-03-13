@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
+import com.yahoo.text.Text;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogEntry;
@@ -46,7 +47,7 @@ class ConsoleLogFormatter {
 
     private StringBuilder formatTime(LogEntry entry, StringBuilder out) {
         Instant instant = Instant.ofEpochMilli(entry.getTime());
-        out.append(String.format("%d.%06d", instant.getEpochSecond(), instant.getNano() / 1000));
+        out.append(Text.format("%d.%06d", instant.getEpochSecond(), instant.getNano() / 1000));
         return out;
     }
 

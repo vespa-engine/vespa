@@ -14,6 +14,7 @@ import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.json.readers.VespaJsonDocumentReader;
+import com.yahoo.text.Text;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -197,7 +198,7 @@ public class JsonReader {
     private static DocumentType getDocumentTypeFromString(String docTypeString, DocumentTypeManager typeManager) {
         final DocumentType docType = typeManager.getDocumentType(docTypeString);
         if (docType == null)
-            throw new IllegalArgumentException(String.format("Document type %s does not exist", docTypeString));
+            throw new IllegalArgumentException(Text.format("Document type %s does not exist", docTypeString));
         return docType;
     }
 

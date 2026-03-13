@@ -9,6 +9,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 
 namespace search::attribute { class IAttributeFunctor; }
+namespace searchcorespi::common { class ResourceUsage; }
 
 namespace vespalib {
     class ISequencedTaskExecutor;
@@ -21,7 +22,6 @@ namespace proton {
 class AttributeCollectionSpec;
 class IAttributeManagerReconfig;
 class ImportedAttributesRepo;
-class ResourceUsage;
 
 /**
  * Proton specific interface for an attribute manager that handles a set of attribute vectors.
@@ -105,7 +105,7 @@ struct IAttributeManager : public search::IAttributeManager
 
     virtual const ImportedAttributesRepo *getImportedAttributes() const = 0;
 
-    virtual ResourceUsage get_resource_usage() const = 0;
+    virtual searchcorespi::common::ResourceUsage get_resource_usage() const = 0;
 };
 
 } // namespace proton

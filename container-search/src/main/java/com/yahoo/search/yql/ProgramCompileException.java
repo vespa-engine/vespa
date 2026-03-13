@@ -2,6 +2,8 @@
 package com.yahoo.search.yql;
 
 import com.yahoo.processing.IllegalInputException;
+import com.yahoo.text.Text;
+
 
 class ProgramCompileException extends IllegalInputException {
 
@@ -10,7 +12,7 @@ class ProgramCompileException extends IllegalInputException {
     }
 
     public ProgramCompileException(Location sourceLocation, String message, Object... args) {
-        super(String.format("%s %s", sourceLocation != null ? sourceLocation : "", args == null ? message : String.format(message, args)));
+        super(Text.format("%s %s", sourceLocation != null ? sourceLocation : "", args == null ? message : Text.format(message, args)));
     }
 
 }

@@ -36,6 +36,7 @@ import com.yahoo.messagebus.SourceSession;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.RoutingTable;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vdslib.state.ClusterState;
 
@@ -859,7 +860,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
     }
 
     private String formatProcessingException(Exception e, String whileProcessing) {
-        return String.format(
+        return Text.format(
                     "Got exception of type %s with message '%s' while processing %s",
                     e.getClass().getName(),
                     e.getMessage(),
@@ -867,7 +868,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
     }
 
     private String formatIdentifyingVisitorErrorString(String details) {
-        return String.format(
+        return Text.format(
                     "Visitor %s (selection '%s'): %s",
                     sessionName,
                     params.getDocumentSelection(),
@@ -1101,7 +1102,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
     private boolean scheduleSendCreateVisitorsIfApplicable(long delay, TimeUnit unit) {
         final long elapsedMillis = elapsedTimeMillis();
         if (!isInfiniteTimeout(sessionTimeoutMillis()) && (elapsedMillis >= sessionTimeoutMillis())) {
-            transitionTo(new StateDescription(State.TIMED_OUT, String.format("Session timeout of %d ms expired", sessionTimeoutMillis())));
+            transitionTo(new StateDescription(State.TIMED_OUT, Text.format("Session timeout of %d ms expired", sessionTimeoutMillis())));
         }
         if (!mayScheduleCreateVisitorsTask() || visitingCompleted()) {
             return false;

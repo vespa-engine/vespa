@@ -22,6 +22,7 @@ struct MockIndexManager : public searchcorespi::IIndexManager
     search::IndexStats get_index_stats(bool) const override {
         return search::IndexStats();
     }
+    searchcorespi::common::ResourceUsage get_resource_usage() const override;
     searchcorespi::IFlushTarget::List getFlushTargets() override {
         return searchcorespi::IFlushTarget::List();
     }

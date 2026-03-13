@@ -1052,12 +1052,12 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
     // unpack and check weights
     search.unpack(1);
     EXPECT_EQ(search.getDocId(), 1u);
-    EXPECT_EQ(md.getDocId(), 1u);
+    EXPECT_TRUE(md.has_ranking_data(1u));
     EXPECT_EQ(md.getWeight(), weights[0]);
 
     search.unpack(2);
     EXPECT_EQ(search.getDocId(), 2u);
-    EXPECT_EQ(md.getDocId(), 2u);
+    EXPECT_TRUE(md.has_ranking_data(2u));
     if (withElementId && attr->hasMultiValue() && !attr->hasWeightedSetType()) {
         std::vector<uint32_t> elems;
         search.get_element_ids(2, elems);
@@ -1070,7 +1070,7 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
 
     search.unpack(3);
     EXPECT_EQ(search.getDocId(), 3u);
-    EXPECT_EQ(md.getDocId(), 3u);
+    EXPECT_TRUE(md.has_ranking_data(3u));
     if (withElementId && attr->hasMultiValue() && !attr->hasWeightedSetType()) {
         std::vector<uint32_t> elems;
         search.get_element_ids(3, elems);
@@ -1084,7 +1084,7 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
     if (extra) {
         search.unpack(4);
         EXPECT_EQ(search.getDocId(), 4u);
-        EXPECT_EQ(md.getDocId(), 4u);
+        EXPECT_TRUE(md.has_ranking_data(4u));
         EXPECT_EQ(md.getWeight(), 1);
     }
 }
@@ -1599,7 +1599,7 @@ SearchContextTest::test_weighted_prefix_search(const std::string& name, const Co
             itr->initRange(1, attr->getCommittedDocIdLimit());
             EXPECT_TRUE(itr->seek(1));
             itr->unpack(1);
-            EXPECT_EQ(1, md.getDocId());
+            EXPECT_TRUE(md.has_ranking_data(1));
             int32_t expected_weight = (preserve_weight || !common_word || !cfg.fastSearch()) ?
                                       (attr->hasWeightedSetType() ?
                                        (common_word ? (1000 + 300 + 200 + 10 + 3 + 2) : (1000 + 300 + 200)) :
@@ -1975,11 +1975,7 @@ public:
         TermFieldMatchData tfmd;
         auto itr = search_ctx->createIterator(&tfmd, strict);
         SimpleResult result;
-        if (strict) {
-            result.searchStrict(*itr, _attr.getNumDocs());
-        } else {
-            result.search(*itr, _attr.getNumDocs());
-        }
+        result.search(*itr, _attr.getNumDocs());
         return result;
     }
 };

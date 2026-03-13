@@ -50,7 +50,7 @@ AttributeFileSaveTarget::setup()
             return false;
         }
     }
-    if (_header.hasMultiValue()) {
+    if (_header.needs_idx_file()) {
         std::string idxFileName(baseFileName + ".idx");
         if (!_idxWriter.open(idxFileName)) {
             return false;

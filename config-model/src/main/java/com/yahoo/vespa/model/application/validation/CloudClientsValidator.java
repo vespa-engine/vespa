@@ -1,6 +1,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.text.Text;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 
 import java.security.cert.CertificateEncodingException;
@@ -49,6 +50,6 @@ public class CloudClientsValidator implements Validator {
     }
 
     private static String errorMessage(String clusterName, String clientId, String message) {
-        return String.format(java.util.Locale.ROOT, "Client **%s** defined for cluster **%s** contains an invalid certificate: %s", clientId, clusterName, message);
+        return Text.format("Client **%s** defined for cluster **%s** contains an invalid certificate: %s", clientId, clusterName, message);
     }
 }

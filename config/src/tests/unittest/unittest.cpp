@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "config-my.h"
-#include "config-foo.h"
 #include "config-bar.h"
+#include "config-foo.h"
+#include "config-my.h"
+
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -13,23 +14,20 @@ LOG_SETUP("unittest");
 using namespace config;
 
 namespace {
-    void verifyConfig(const std::string & expected, std::unique_ptr<FooConfig> cfg)
-    {
-        ASSERT_TRUE(cfg);
-        ASSERT_EQ(expected, cfg->fooValue);
-    }
-
-    void verifyConfig(const std::string & expected, std::unique_ptr<BarConfig> cfg)
-    {
-        ASSERT_TRUE(cfg);
-        ASSERT_EQ(expected, cfg->barValue);
-    }
+void verifyConfig(const std::string& expected, std::unique_ptr<FooConfig> cfg) {
+    ASSERT_TRUE(cfg);
+    ASSERT_EQ(expected, cfg->fooValue);
 }
 
-TEST(UnitTest, requireThatConfigCanBeReloaded)
-{
-    ConfigSet set;
-    auto ctx = std::make_shared<ConfigContext>(set);
+void verifyConfig(const std::string& expected, std::unique_ptr<BarConfig> cfg) {
+    ASSERT_TRUE(cfg);
+    ASSERT_EQ(expected, cfg->barValue);
+}
+} // namespace
+
+TEST(UnitTest, requireThatConfigCanBeReloaded) {
+    ConfigSet       set;
+    auto            ctx = std::make_shared<ConfigContext>(set);
     MyConfigBuilder builder;
     builder.myField = "myfoo";
     set.addBuilder("myid", &builder);
@@ -50,10 +48,9 @@ TEST(UnitTest, requireThatConfigCanBeReloaded)
     ASSERT_EQ("foobar", cfg->myField);
 }
 
-TEST(UnitTest, requireThatCanSubscribeWithSameIdToDifferentDefs)
-{
-    ConfigSet set;
-    auto ctx = std::make_shared<ConfigContext>(set);
+TEST(UnitTest, requireThatCanSubscribeWithSameIdToDifferentDefs) {
+    ConfigSet        set;
+    auto             ctx = std::make_shared<ConfigContext>(set);
     FooConfigBuilder fooBuilder;
     BarConfigBuilder barBuilder;
 
@@ -63,7 +60,7 @@ TEST(UnitTest, requireThatCanSubscribeWithSameIdToDifferentDefs)
     set.addBuilder("fooid", &fooBuilder);
     set.addBuilder("fooid", &barBuilder);
 
-    ConfigSubscriber subscriber(ctx);
+    ConfigSubscriber            subscriber(ctx);
     ConfigHandle<FooConfig>::UP h1 = subscriber.subscribe<FooConfig>("fooid");
     ConfigHandle<BarConfig>::UP h2 = subscriber.subscribe<BarConfig>("fooid");
 

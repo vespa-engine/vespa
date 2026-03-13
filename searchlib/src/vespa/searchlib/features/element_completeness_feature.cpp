@@ -42,7 +42,7 @@ ElementCompletenessExecutor::execute(uint32_t docId)
     assert(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms[i].termHandle);
-        if (tfmd->getDocId() == docId) {
+        if (tfmd->has_ranking_data(docId)) {
             Item item(i, tfmd->begin(), tfmd->end());
             if (item.pos != item.end) {
                 _queue.push(item);

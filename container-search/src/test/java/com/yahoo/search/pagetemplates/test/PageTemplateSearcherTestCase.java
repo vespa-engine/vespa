@@ -6,7 +6,11 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.intent.model.*;
+import com.yahoo.search.intent.model.Intent;
+import com.yahoo.search.intent.model.IntentModel;
+import com.yahoo.search.intent.model.IntentNode;
+import com.yahoo.search.intent.model.InterpretationNode;
+import com.yahoo.search.intent.model.SourceNode;
 import com.yahoo.search.pagetemplates.PageTemplate;
 import com.yahoo.search.pagetemplates.PageTemplateRegistry;
 import com.yahoo.search.pagetemplates.PageTemplateSearcher;
@@ -20,9 +24,17 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.text.interpretation.Interpretation;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth

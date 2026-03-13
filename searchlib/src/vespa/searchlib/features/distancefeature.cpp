@@ -56,7 +56,7 @@ ConvertRawscoreToDistance::execute(uint32_t docId)
     assert(_md);
     for (const auto& elem : _bundle.elements()) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(elem.handle);
-        if (tfmd->getDocId() == docId) {
+        if (tfmd->has_ranking_data(docId)) {
             feature_t invdist = tfmd->getRawScore();
             feature_t converted = elem.calc ? elem.calc->function().to_distance(invdist) : ((1.0 / invdist) - 1.0);
             min_distance = std::min(min_distance, converted);

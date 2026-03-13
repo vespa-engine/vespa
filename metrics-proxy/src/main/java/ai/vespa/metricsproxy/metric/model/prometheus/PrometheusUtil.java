@@ -31,12 +31,17 @@ public class PrometheusUtil {
     public static PrometheusModel toPrometheusModel(List<MetricsPacket> metricsPackets,
                                                     ApplicationDimensions applicationDimensions,
                                                     NodeDimensions nodeDimensions) {
-        Set<MetricId> metricNames = new HashSet<>();
-        for (MetricsPacket metricsPacket : metricsPackets) {
-            metricNames.addAll(metricsPacket.metrics().keySet());
-        }
+        return toPrometheusModel(metricsPackets.stream(), applicationDimensions, nodeDimensions);
+    }
 
-        Map<ServiceId, List<MetricsPacket>> packetsByService = metricsPackets.stream()
+    public static PrometheusModel toPrometheusModel(Stream<MetricsPacket> metricsPacketsStream,
+                                                    ApplicationDimensions applicationDimensions,
+                                                    NodeDimensions nodeDimensions) {
+        Set<MetricId> metricNames = new HashSet<>();
+
+        // Collect both metric names and packets grouped by service in a single pass
+        Map<ServiceId, List<MetricsPacket>> packetsByService = metricsPacketsStream
+                .peek(packet -> metricNames.addAll(packet.metrics().keySet()))
                 .collect(Collectors.groupingBy(MetricsPacket::service));
 
         var labelKeys = new ArrayList<String>();

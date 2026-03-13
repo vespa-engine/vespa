@@ -314,6 +314,7 @@ message ItemPhrase {
 message ItemSameElement {
     TermItemProperties properties = 1;
     repeated QueryTreeItem children = 2;
+    repeated uint32 element_filter = 3;
 }
 
 // special-purpose leaf nodes:

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.messagebus.routing.Route;
 
@@ -55,6 +56,38 @@ public abstract class Message extends Routable {
         this.route = new Route(route);
         return this;
     }
+
+    /**
+     * <p>At the time of serializing a Message to the underlying transport carrier, the
+     * network subsystem will call this method to inject any metadata key/value pairs
+     * the Message wants to propagate to the receiver. The newly materialized Message
+     * instance on the receiver side will have {@link #extractMetadata(MetadataExtractor)}
+     * invoked on it with an extractor that can read the values set by the sender.</p>
+     *
+     * <p>The transport carrier shall guarantee that the metadata injected will not be
+     * compressed during transport.</p>
+     *
+     * <p>Should not throw exceptions.</p>
+     *
+     * @param injector used to set metadata key/value pairs in the underlying
+     *                 message carrier.
+     */
+    @Beta
+    public void injectMetadata(MetadataInjector injector) {}
+
+    /**
+     * <p>Lets a Message subclass extract specific metadata values received via the
+     * underlying transport for this particular Message.</p>
+     *
+     * <p>This method is always invoked by the transport layer right after it has
+     * been decoded but <em>before</em> it is passed to any message handlers.</p>
+     *
+     * <p>Should not throw exceptions.</p>
+     *
+     * @param extractor used to extract values for specific keys
+     */
+    @Beta
+    public void extractMetadata(MetadataExtractor extractor) {}
 
     /**
      * <p>Returns the timestamp for when this message was last seen by message bus. If you are using this to determine

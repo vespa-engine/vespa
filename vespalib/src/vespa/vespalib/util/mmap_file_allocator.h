@@ -7,6 +7,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <atomic>
 #include <map>
 #include <string>
 
@@ -35,7 +36,7 @@ class MmapFileAllocator : public MemoryAllocator {
     const uint32_t   _small_limit;
     const uint32_t   _premmap_size;
     mutable File     _file;
-    mutable uint64_t _end_offset;
+    mutable std::atomic<uint64_t> _end_offset;
     mutable Allocations _allocations;
     mutable FileAreaFreeList _freelist;
     mutable Allocations _small_allocations;
@@ -57,9 +58,10 @@ public:
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const noexcept override;
     size_t resize_inplace(PtrAndSize, size_t) const override;
+    uint64_t get_size_on_disk() const noexcept;
 
     // For unit test
-    size_t get_end_offset() const noexcept { return _end_offset; }
+    uint64_t get_end_offset() const noexcept { return _end_offset.load(std::memory_order_relaxed); }
 };
 
 }

@@ -38,6 +38,7 @@ FakeSearch::doSeek(uint32_t docid)
 void
 FakeSearch::doUnpack(uint32_t docid)
 {
+    _tfmda[0]->clear_hidden_from_ranking();
     if (_unpacked_docid == docid) {
         return;
     }

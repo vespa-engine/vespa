@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -291,7 +292,7 @@ public class EventRendererTestCase {
         @Override
         public synchronized void write(byte[] b, int off, int len) {
             super.write(b, off, len);
-            System.out.print(new String(b, off, len));
+            System.out.print(new String(b, off, len, StandardCharsets.UTF_8));
         }
     }
 

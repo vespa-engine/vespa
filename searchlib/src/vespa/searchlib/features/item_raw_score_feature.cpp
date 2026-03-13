@@ -15,7 +15,7 @@ ItemRawScoreExecutor::execute(uint32_t docId)
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == docId) {
+        if (tfmd->has_ranking_data(docId)) {
             output += tfmd->getRawScore();
         }
     }
@@ -35,7 +35,7 @@ SimpleItemRawScoreExecutor::execute(uint32_t docId)
 {
     feature_t output = 0.0;
     const TermFieldMatchData *tfmd = _md->resolveTermField(_handle);
-    if (tfmd->getDocId() == docId) {
+    if (tfmd->has_ranking_data(docId)) {
         output = tfmd->getRawScore();
     }
     outputs().set_number(0, output);

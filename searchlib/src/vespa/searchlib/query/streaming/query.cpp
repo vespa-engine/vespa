@@ -14,6 +14,7 @@
 using search::common::ElementIds;
 using search::fef::IIndexEnvironment;
 using search::fef::MatchData;
+using search::queryeval::MatchSpan;
 
 namespace search::streaming {
 
@@ -67,8 +68,19 @@ QueryConnector::unpack_match_data(uint32_t docid, MatchData& match_data, const I
                                   ElementIds element_ids)
 {
     if (evaluate()) {
-        for (const auto &node: _children) {
+        for (const auto &node : _children) {
             node->unpack_match_data(docid, match_data, index_env, element_ids);
+        }
+    }
+}
+
+void
+QueryConnector::unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
+                                  std::span<const MatchSpan> match_spans)
+{
+    if (evaluate()) {
+        for (const auto &node : _children) {
+            node->unpack_match_data(docid, match_data, index_env, match_spans);
         }
     }
 }

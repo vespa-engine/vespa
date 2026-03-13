@@ -36,8 +36,8 @@ public abstract class IndexedSegmentItem extends TaggableSegmentItem implements 
 
     // encode index bytes
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         putString(index, buffer);
     }
 

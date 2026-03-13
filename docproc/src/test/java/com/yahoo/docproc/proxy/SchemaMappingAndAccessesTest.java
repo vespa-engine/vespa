@@ -2,6 +2,7 @@
 package com.yahoo.docproc.proxy;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -310,7 +311,7 @@ public class SchemaMappingAndAccessesTest {
         ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
         mapped.serialize(bos);
         doc.serialize(bos2);
-        assertEquals(bos.toString(), bos2.toString());
+        assertEquals(bos.toString(StandardCharsets.UTF_8), bos2.toString(StandardCharsets.UTF_8));
         assertEquals(mapped.toXml(), doc.toXml());
         assertEquals(mapped.getFieldCount(), doc.getFieldCount());
         assertTrue(mapped.getDocument()==doc);

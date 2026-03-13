@@ -1,7 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.parser;
 
-import com.yahoo.prelude.query.parser.*;
+import com.yahoo.prelude.query.parser.AdvancedParser;
+import com.yahoo.prelude.query.parser.AllParser;
+import com.yahoo.prelude.query.parser.AnyParser;
+import com.yahoo.prelude.query.parser.LinguisticsParser;
+import com.yahoo.prelude.query.parser.PhraseParser;
+import com.yahoo.prelude.query.parser.ProgrammaticParser;
+import com.yahoo.prelude.query.parser.TokenizeParser;
+import com.yahoo.prelude.query.parser.WebParser;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.SelectParser;
