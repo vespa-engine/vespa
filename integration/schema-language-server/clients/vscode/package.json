@@ -88,17 +88,17 @@
   },
   "devDependencies": {
     "@types/hasbin": "^1.2.2",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "^20.19.9",
-    "@types/vscode": "^1.72.0",
-    "@typescript-eslint/eslint-plugin": "^7.11.0",
-    "@typescript-eslint/parser": "^7.11.0",
-    "@vscode/test-cli": "^0.0.9",
-    "@vscode/test-electron": "^2.4.0",
-    "@vscode/vsce": "^2.31.1",
-    "esbuild": "^0.25.0",
-    "eslint": "^8.57.0",
-    "typescript": "^5.4.5"
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.5.0",
+    "@types/vscode": "^1.110.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
+    "esbuild": "^0.27.4",
+    "eslint": "^10.0.3",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "hasbin": "^1.2.3",
