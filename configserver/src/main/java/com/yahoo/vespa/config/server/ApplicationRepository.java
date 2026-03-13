@@ -103,10 +103,12 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
@@ -677,8 +679,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         log.log(Level.FINE, () -> "File references not in use: " + toDelete);
         List<String> deleted = new ArrayList<>();
         toDelete.forEach(fileReference -> {
-            if (fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse, this::isFileReferenceOld))
-                deleted.add(fileReference);
+            try {
+                if (fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse, this::isFileReferenceOld))
+                    deleted.add(fileReference);
+            } catch (UncheckedIOException e) {
+                log.log(Level.INFO, () -> "Deleting file reference not in use (" + fileReference + ") failed, probably deleted already: " + e.getMessage());
+            }
         });
         log.log(Level.FINE, () -> "Deleted " + deleted.size() + " file references not in use");
         return deleted;
