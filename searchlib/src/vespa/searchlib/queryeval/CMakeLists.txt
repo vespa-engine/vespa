@@ -25,6 +25,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     fake_searchable.cpp
     field_spec.cpp
     filter_wrapper.cpp
+    filtered_match_spans.cpp
     first_phase_rescorer.cpp
     flow.cpp
     full_search.cpp
