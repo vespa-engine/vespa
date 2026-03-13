@@ -50,6 +50,14 @@ public class YqlJsonQueryFeatureParityTest {
                 "{ 'or' : [ { 'contains' : ['title', 'madonna'] }, { 'contains' : ['title', 'saint'] } ] }");
     }
 
+    @Test
+    void testEquals() {
+        assertWhereParity("public = true", "{ 'equals' : ['public', true] }");
+        assertWhereParity("public = true", "{ 'equals' : { 'field' : 'public', 'value' : true } }");
+        assertWhereParity("public = 5", "{ 'equals' : ['public', 5] }");
+        assertWhereParity("public = 5", "{ 'equals' : { 'field' : 'public', 'value' : 5 } }");
+    }
+
     /** Asserts parity using a where-clause; automatically wraps the YQL in {@code select * from sources * where ...} */
     private void assertWhereParity(String yqlWhereClause, String jsonWhere) {
         assertParity("select * from sources * where " + yqlWhereClause, jsonWhere);
