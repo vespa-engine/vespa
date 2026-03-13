@@ -26,6 +26,7 @@ import com.yahoo.net.AcceptHeaderMatcher;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.parser.ParseException;
+import com.yahoo.prelude.statistics.StatisticsSearcher;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
@@ -360,9 +361,11 @@ public class SearchHandler extends LoggingRequestHandler {
             execution.context().setDetailedDiagnostics(true);
         }
         Result result = execution.search(query);
-
         ensureQuerySet(result, query);
-        execution.fill(result);
+
+        // StatisticsSearcher does fill, so we can skip the fill here for performance if it is the first in the chain
+        if ( ! searchChain.components().isEmpty() && searchChain.components().get(0) instanceof StatisticsSearcher)
+            execution.fill(result);
 
         traceExecutionTimes(query, result);
         traceVespaVersion(query);
