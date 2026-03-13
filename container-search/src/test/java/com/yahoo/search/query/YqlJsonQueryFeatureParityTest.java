@@ -137,6 +137,13 @@ public class YqlJsonQueryFeatureParityTest {
                 "{ 'contains' : ['baz', { 'sameElement' : [ { 'contains' : ['f1', 'a'] }, { 'range' : ['f2', { '>=': 0, '<=': 10 }] } ] }] }");
     }
 
+    @Test
+    void testSameElementShorthand() {
+        // Shorthand: {"f1": "a"} is equivalent to {"contains": ["f1", "a"]}
+        assertWhereParity("baz contains sameElement(f1 contains 'a', f2 contains 'b')",
+                "{ 'contains' : ['baz', { 'sameElement' : [ { 'f1' : 'a', 'f2' : 'b' } ] }] }");
+    }
+
     @Disabled("SelectParser does not strip field prefix inside sameElement on string arrays — parity bug")
     @Test
     void testSameElementWithAndOrChildren() {
