@@ -76,6 +76,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.PREFIX_LENGTH;
@@ -184,6 +185,7 @@ public class SelectParser implements Parser {
     private IndexFacts.Session indexFactsSession;
 
     private static final List<String> FUNCTION_CALLS = List.of(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_BOUNDING_BOX, GEO_LOCATION, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
+    private static final Set<String> OPERATOR_KEYS = Set.of(AND, AND_NOT, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE);
 
     public SelectParser(ParserEnvironment environment) {
         this.environment = environment;
@@ -226,22 +228,27 @@ public class SelectParser implements Parser {
 
         Item[] item = {null};
         inspector.traverse((ObjectTraverser) (key, value) -> {
-            String type = (FUNCTION_CALLS.contains(key)) ? CALL : key;
-            switch (type) {
-                case AND -> item[0] = buildAnd(key, value);
-                case AND_NOT -> item[0] = buildNotAnd(key, value);
-                case CALL -> item[0] = buildFunctionCall(key, value);
-                case CONTAINS -> item[0] = buildTermSearch(key, value);
-                case EQ -> item[0] = buildEquals(key, value);
-                case IN -> item[0] = buildIn(key, value);
-                case MATCHES -> item[0] = buildRegExpSearch(key, value);
-                case NOT -> item[0] = buildNot(key, value);
-                case OR -> item[0] = buildOr(key, value);
-                case RANGE -> item[0] = buildRange(key, value);
-                default -> throw newUnexpectedArgumentException(key, AND, AND_NOT, CALL, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE);
-            }
+            item[0] = buildOperator(key, value);
         });
         return item[0];
+    }
+
+    /** Builds a query item from a single operator key and its value. */
+    private Item buildOperator(String key, Inspector value) {
+        String type = (FUNCTION_CALLS.contains(key)) ? CALL : key;
+        return switch (type) {
+            case AND -> buildAnd(key, value);
+            case AND_NOT -> buildNotAnd(key, value);
+            case CALL -> buildFunctionCall(key, value);
+            case CONTAINS -> buildTermSearch(key, value);
+            case EQ -> buildEquals(key, value);
+            case IN -> buildIn(key, value);
+            case MATCHES -> buildRegExpSearch(key, value);
+            case NOT -> buildNot(key, value);
+            case OR -> buildOr(key, value);
+            case RANGE -> buildRange(key, value);
+            default -> throw newUnexpectedArgumentException(key, AND, AND_NOT, CALL, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE);
+        };
     }
 
     public List<VespaGroupingStep> getGroupingSteps(String grouping){
@@ -1434,10 +1441,26 @@ public class SelectParser implements Parser {
         SameElementItem sameElement = new SameElementItem(field);
         // All terms below sameElement are relative to this.
         getChildren(value).traverse((ArrayTraverser) (index, term) -> {
-            sameElement.addItem(walkJson(term));
+            if (term.type() == OBJECT) {
+                term.traverse((ObjectTraverser) (childKey, childValue) -> {
+                    if (isOperator(childKey)) {
+                        sameElement.addItem(buildOperator(childKey, childValue));
+                    } else {
+                        // Shorthand: {"fieldName": "value"} is equivalent to {"contains": ["fieldName", "value"]}
+                        sameElement.addItem(instantiateWordItem(childKey, childValue.asString(), childValue, false));
+                    }
+                });
+            } else {
+                sameElement.addItem(walkJson(term));
+            }
         });
 
         return sameElement;
+    }
+
+    /** Checks if key is operator keyword or function call keyword. */
+    private boolean isOperator(String key) {
+        return OPERATOR_KEYS.contains(key) || FUNCTION_CALLS.contains(key);
     }
 
     private Item instantiatePhraseItem(String field, String key, Inspector value) {
