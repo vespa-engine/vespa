@@ -436,7 +436,7 @@ NearTest::NearSpec::verify_spans(const search::queryeval::FakeIndex& index, uint
                                  const std::vector<MatchSpan>& expected_match_spans)
 {
     std::ostringstream os;
-    os << to_string() << ".verify spans(index," << docid << "," << testing::PrintToString(expected_match_spans) << ")";
+    os << to_string() << ".verify_spans(index," << docid << "," << testing::PrintToString(expected_match_spans) << ")";
     SCOPED_TRACE(os.str());
     verify_common(index, docid, std::nullopt, expected_match_spans, std::nullopt, std::nullopt);
 }
@@ -447,7 +447,7 @@ NearTest::NearSpec::verify_occs(const search::queryeval::FakeIndex& index, uint3
                                 const std::vector<uint32_t>& expected_occs)
 {
     std::ostringstream os;
-    os << to_string() << ".verify occs(index " << docid << "," << testing::PrintToString(unpack_element_filter) << "," <<
+    os << to_string() << ".verify_occs(index," << docid << "," << testing::PrintToString(unpack_element_filter) << "," <<
         testing::PrintToString(expected_occs) << ")";
     SCOPED_TRACE(os.str());
     verify_common(index, docid, std::nullopt, std::nullopt, unpack_element_filter, expected_occs);

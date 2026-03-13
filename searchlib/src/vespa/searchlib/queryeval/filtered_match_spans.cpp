@@ -82,6 +82,11 @@ FilteredMatchSpans::intersection_helper(std::span<const MatchSpan> spans, MatchS
             continue;
         }
         while (!filter.is_after(match_span.field_id(), match_span.last())) {
+            /*
+             * match_span and the filter span overlaps. Calculate first and last match span position of the
+             * intersection. Element id has higher priority than position in element when comparing match
+             * span positions.
+             */
             auto first = std::max(match_span.first(), filter.first());
             auto last = std::min(match_span.last(), filter.last());
             _filtered_spans.emplace_back(match_span.field_id(), first, last);

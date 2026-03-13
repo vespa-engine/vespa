@@ -16,12 +16,12 @@ namespace search::queryeval {
 class FilteredMatchSpans {
     std::vector<MatchSpan> _filtered_spans;
     template <typename MatchSpanFilter>
-    std::span<const MatchSpan> intersection_helper(std::span<const MatchSpan> spans, MatchSpanFilter filter);
+    [[nodiscard]] std::span<const MatchSpan> intersection_helper(std::span<const MatchSpan> spans, MatchSpanFilter filter);
 
 public:
     FilteredMatchSpans() noexcept;
     ~FilteredMatchSpans();
-    std::span<const MatchSpan> intersection(std::span<const MatchSpan> spans, search::common::ElementIds element_ids);
+    [[nodiscard]] std::span<const MatchSpan> intersection(std::span<const MatchSpan> spans, search::common::ElementIds element_ids);
 };
 
 }
