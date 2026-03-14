@@ -4,7 +4,7 @@
 
 namespace search::queryeval {
 
-bool NearSearchFlags::_filter_terms = true;
+bool NearSearchFlags::_filter_terms = false;
 
 NearSearchFlags::FilterTermsTweak::FilterTermsTweak(bool filter_terms_in)
     : _old_filter_terms(_filter_terms)
