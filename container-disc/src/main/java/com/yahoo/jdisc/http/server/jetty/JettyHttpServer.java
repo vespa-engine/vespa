@@ -68,8 +68,6 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
             throw new IllegalArgumentException("No connectors configured.");
 
         var histogramSettings = new MetricSettings.Builder().histogram(true).build();
-        metricReceiver.declareGauge(MetricDefinitions.TOTAL_SUCCESSFUL_LATENCY, Optional.empty(), histogramSettings);
-        metricReceiver.declareGauge(MetricDefinitions.TOTAL_FAILED_LATENCY, Optional.empty(), histogramSettings);
         metricReceiver.declareGauge(MetricDefinitions.TIME_TO_FIRST_BYTE, Optional.empty(), histogramSettings);
 
         this.config = serverConfig;
@@ -85,7 +83,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         server.setErrorHandler(errorHandler);
 
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
-        var metricAggregatingRequestLog = new MetricAggregatingRequestLog(config.metric());
+        var metricAggregatingRequestLog = new MetricAggregatingRequestLog(config.metric(), metric, metricReceiver);
         server.addBean(metricAggregatingRequestLog);
         if (requestLog instanceof VoidRequestLog) {
             server.setRequestLog(metricAggregatingRequestLog);

@@ -70,11 +70,6 @@ class ServerMetricReporter {
         private void setServerMetrics(MetricAggregatingRequestLog statisticsCollector) {
             long timeSinceStarted = System.currentTimeMillis() - timeStarted.toEpochMilli();
             metric.set(MetricDefinitions.STARTED_MILLIS, timeSinceStarted, null);
-
-            addResponseMetrics(statisticsCollector);
-        }
-
-        private void addResponseMetrics(MetricAggregatingRequestLog statisticsCollector) {
             statisticsCollector.reportSnapshot(metric);
         }
 

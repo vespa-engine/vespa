@@ -8,7 +8,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
- * Responsible for metric reporting for JDisc http request handler support.
+ * Responsible for (some) metric reporting for JDisc http request handlers.
+ * See also {@link MetricAggregatingRequestLog}.
  *
  * @author Tony Vaagenes
  */
@@ -16,12 +17,10 @@ class RequestMetricReporter {
 
     private final Metric metric;
     private final Context context;
-
     private final long requestStartTime;
 
-    //TODO: rename
+    // TODO: rename
     private final AtomicBoolean firstSetOfTimeToFirstByte = new AtomicBoolean(true);
-
 
     RequestMetricReporter(Metric metric, Context context, long requestStartTime) {
         this.metric = metric;
@@ -50,14 +49,11 @@ class RequestMetricReporter {
 
     void successfulResponse() {
         setTimeToFirstByteFirstTime();
-        long requestLatency = getRequestLatency();
-        metric.set(MetricDefinitions.TOTAL_SUCCESSFUL_LATENCY, requestLatency, context);
         metric.add(MetricDefinitions.NUM_SUCCESSFUL_RESPONSES, 1, context);
     }
 
     void failedResponse() {
         setTimeToFirstByteFirstTime();
-        metric.set(MetricDefinitions.TOTAL_FAILED_LATENCY, getRequestLatency(), context);
         metric.add(MetricDefinitions.NUM_FAILED_RESPONSES, 1, context);
     }
 
