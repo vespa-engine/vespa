@@ -19,6 +19,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <format>
 #include <ostream>
+#include <sstream>
 #include <tuple>
 
 using TestHit = std::tuple<uint32_t, uint32_t, int32_t, uint32_t, uint32_t>;
@@ -154,15 +155,18 @@ protected:
             return *this;
         }
 
+        std::string to_string() const;
         void verify_common(const search::queryeval::FakeIndex& index, uint32_t docid,
                            std::optional<std::vector<uint32_t>> expected_elements,
                            std::optional<std::vector<MatchSpan>> expected_match_spans,
+                           std::optional<std::vector<uint32_t>> unpack_element_filter,
                            std::optional<std::vector<uint32_t>> expected_occs);
         void verify(const search::queryeval::FakeIndex& index, uint32_t docid,
                    const std::vector<uint32_t>& expected_elements);
         void verify_spans(const search::queryeval::FakeIndex& index, uint32_t docid,
                           const std::vector<MatchSpan>& expected_match_spans);
         void verify_occs(const search::queryeval::FakeIndex& index, uint32_t docid,
+                         std::optional<std::vector<uint32_t>> unpack_element_filter,
                          const std::vector<uint32_t>& expected_occs);
     };
 
@@ -291,10 +295,23 @@ NearTest::match_span(uint32_t field_id, uint32_t first_elem, uint32_t first_pos,
     return MatchSpan(field_id, MatchSpanPos(first_elem, first_pos), MatchSpanPos(last_elem, last_pos));
 }
 
+std::string
+NearTest::NearSpec::to_string() const
+{
+    std::ostringstream os;
+    os << "near(\"" << _terms << "\"," << _window;
+    if (!_negative_terms.empty()) {
+        os << ", -\"" << _negative_terms << "\"," << _exclusion_distance;
+    }
+    os << ")";
+    return os.str();
+}
+
 void
 NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uint32_t docid,
                                   std::optional<std::vector<uint32_t>> expected_elements,
                                   std::optional<std::vector<MatchSpan>> expected_match_spans,
+                                  std::optional<std::vector<uint32_t>> unpack_element_filter,
                                   std::optional<std::vector<uint32_t>> expected_occs)
 {
     MockElementGapInspector element_gap_inspector(_test->_element_gap_setting.value_or(std::nullopt));
@@ -376,7 +393,11 @@ NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uin
     }
     if (expected_occs.has_value()) {
         auto md = mdl.createMatchData();
-        near_node->unpack_match_data(docid, *md, index_env, ElementIds::select_all());
+        if (unpack_element_filter.has_value()) {
+            near_node->unpack_match_data(docid, *md, index_env, ElementIds(unpack_element_filter.value()));
+        } else {
+            near_node->unpack_match_data(docid, *md, index_env, ElementIds::select_all());
+        }
         std::vector<uint32_t> act_occs;
         for (auto& term : positive_terms) {
             uint32_t occs = 0;
@@ -404,21 +425,32 @@ void
 NearTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t docid,
                            const std::vector<uint32_t>& expected_elements)
 {
-    verify_common(index, docid, expected_elements, std::nullopt, std::nullopt);
+    std::ostringstream os;
+    os << to_string() << ".verify(index," << docid << "," << testing::PrintToString(expected_elements) << ")";
+    SCOPED_TRACE(os.str());
+    verify_common(index, docid, expected_elements, std::nullopt, std::nullopt, std::nullopt);
 }
 
 void
 NearTest::NearSpec::verify_spans(const search::queryeval::FakeIndex& index, uint32_t docid,
                                  const std::vector<MatchSpan>& expected_match_spans)
 {
-    verify_common(index, docid, std::nullopt, expected_match_spans, std::nullopt);
+    std::ostringstream os;
+    os << to_string() << ".verify_spans(index," << docid << "," << testing::PrintToString(expected_match_spans) << ")";
+    SCOPED_TRACE(os.str());
+    verify_common(index, docid, std::nullopt, expected_match_spans, std::nullopt, std::nullopt);
 }
 
 void
 NearTest::NearSpec::verify_occs(const search::queryeval::FakeIndex& index, uint32_t docid,
+                                std::optional<std::vector<uint32_t>> unpack_element_filter,
                                 const std::vector<uint32_t>& expected_occs)
 {
-    verify_common(index, docid, std::nullopt, std::nullopt, expected_occs);
+    std::ostringstream os;
+    os << to_string() << ".verify_occs(index," << docid << "," << testing::PrintToString(unpack_element_filter) << "," <<
+        testing::PrintToString(expected_occs) << ")";
+    SCOPED_TRACE(os.str());
+    verify_common(index, docid, std::nullopt, std::nullopt, unpack_element_filter, expected_occs);
 }
 
 TEST_P(NearTest, test_empty_near)
@@ -582,10 +614,12 @@ TEST_P(NearTest, basic_visual_test)
         NearSearchFlags::FilterTermsTweak tweak(false);
         if (GetParam().ordered()) {
             _element_gap_setting.emplace(1);
-            near("CA", 6).verify_occs(docs, 69, {3, 3});
+            near("CA", 6).verify_occs(docs, 69, {}, {3, 3});
+            near("CA", 6).verify_occs(docs, 69, {{2, 3}}, {2, 2});
             _element_gap_setting.reset();
         } else {
-            near("ABC", 4).verify_occs(docs, 69, {3, 3, 3});
+            near("ABC", 4).verify_occs(docs, 69, {}, {3, 3, 3});
+            near("ABC", 4).verify_occs(docs, 69, {{2, 3}}, {2, 2, 2});
         }
     }
     {
@@ -593,10 +627,14 @@ TEST_P(NearTest, basic_visual_test)
         NearSearchFlags::FilterTermsTweak tweak(true);
         if (GetParam().ordered()) {
             _element_gap_setting.emplace(1);
-            near("CA", 6).verify_occs(docs, 69, {1, 1});
+            near("CA", 6).verify_occs(docs, 69, {}, {1, 1});
+            near("CA", 6).verify_occs(docs, 69, {{1, 2}}, {1, 1});
+            near("CA", 6).verify_occs(docs, 69, {{1}}, {1, 0});
+            near("CA", 6).verify_occs(docs, 69, {{2}}, {0, 1});
             _element_gap_setting.reset();
         } else {
-            near("ABC", 4).verify_occs(docs, 69, {2, 2, 2});
+            near("ABC", 4).verify_occs(docs, 69, {}, {2, 2, 2});
+            near("ABC", 4).verify_occs(docs, 69, {{1, 3}}, {1, 1, 1});
         }
     }
 }

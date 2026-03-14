@@ -104,9 +104,7 @@ public class GroupingExecutor extends Searcher {
         Object metaData = hit.getSearcherSpecificMetaData(this);
         if (metaData instanceof String metaDataString) {
             // Use the summary class specified by grouping, set in
-            // HitConverter, in the fill request indented for presentation.
-            // We reset the summary class here as cleanup.
-            hit.setSearcherSpecificMetaData(this, null);
+            // HitConverter, in the fill request intended for presentation.
             return metaDataString;
         }
         return summaryClass;

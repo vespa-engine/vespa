@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Tony Vaagenes
  */
 class RequestMetricReporter {
+
     private final Metric metric;
     private final Context context;
     private final long requestStartTime;
@@ -75,4 +76,5 @@ class RequestMetricReporter {
     void contentSize(long size) {
         metric.set(MetricDefinitions.CONTENT_SIZE, size, context);
     }
+
 }

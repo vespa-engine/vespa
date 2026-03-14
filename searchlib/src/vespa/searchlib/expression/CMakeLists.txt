@@ -32,6 +32,7 @@ vespa_add_library(searchlib_expression OBJECT
     numericfunctionnode.cpp
     or_predicate_node.cpp
     perdocexpression.cpp
+    position_document_field_node.cpp
     range_predicate_node.cpp
     rangebucketpredef.cpp
     rawbucketresultnode.cpp

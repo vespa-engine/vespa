@@ -941,6 +941,19 @@ public class ExpressionTestCase {
         assertMultiply(f1, f2, 11, 10.8517727372816364);
     }
 
+    @Test
+    public void testPositionDocumentFieldNode() {
+        PositionDocumentFieldNode a = new PositionDocumentFieldNode("mypos");
+        PositionDocumentFieldNode b = (PositionDocumentFieldNode) assertSerialize(a);
+        assertEquals("mypos", b.getFieldName());
+
+        PositionDocumentFieldNode c = new PositionDocumentFieldNode("mypos");
+        assertEquals(b, c);
+
+        c = new PositionDocumentFieldNode("other");
+        assertNotEquals(b, c);
+    }
+
     // --------------------------------------------------------------------------------
     //
     // Everything below this point is helper functions.
