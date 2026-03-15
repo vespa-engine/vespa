@@ -27,9 +27,4 @@ public class AllLowercasingSearcher extends LowercasingSearcher {
         return true;
     }
 
-    @Override
-    public boolean shouldLowercase(String commonPath, WordItem word, IndexFacts.Session settings) {
-        return true;
-    }
-
 }

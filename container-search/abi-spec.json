@@ -316,6 +316,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public java.lang.String getIndexName()",
+      "public java.lang.String getFieldName()",
       "public void setWeight(int)"
     ],
     "fields" : [ ]
@@ -383,6 +384,7 @@
     "methods" : [
       "public void <init>()",
       "public java.lang.String getIndexName()",
+      "public java.lang.String getFieldName()",
       "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void setIndexName(java.lang.String)",
       "protected void appendIndexString(java.lang.StringBuilder)",
@@ -615,6 +617,7 @@
     ],
     "methods" : [
       "public abstract java.lang.String getIndexName()",
+      "public java.lang.String getFieldName()",
       "public abstract int getNumWords()"
     ],
     "fields" : [ ]
@@ -686,6 +689,7 @@
     "methods" : [
       "protected void <init>(java.lang.String, java.lang.String, boolean, boolean, com.yahoo.prelude.query.Substring)",
       "public java.lang.String getIndexName()",
+      "public java.lang.String getFieldName()",
       "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void setIndexName(java.lang.String)",
       "protected void appendIndexString(java.lang.StringBuilder)",

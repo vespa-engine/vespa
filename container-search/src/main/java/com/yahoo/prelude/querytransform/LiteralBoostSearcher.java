@@ -80,7 +80,7 @@ public class LiteralBoostSearcher extends Searcher {
         }
         else if (item instanceof TermItem) {
             TermItem termItem = (TermItem)item;
-            Index index = indexFacts.getIndex(termItem.getIndexName());
+            Index index = indexFacts.getIndex(termItem.getFieldName());
             if (index.getLiteralBoost())
                 rankTerms.addItem(new WordItem(toLowerCase(termItem.getRawWord()), index.getName() + "_literal"));
         }

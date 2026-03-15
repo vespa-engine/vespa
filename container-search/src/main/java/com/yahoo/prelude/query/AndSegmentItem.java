@@ -53,6 +53,14 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
         }
     }
 
+    @Override
+    public String getFieldName() {
+        if (getParent() instanceof SameElementItem sameElementParent)
+            return sameElementParent.getFieldName() + "." + getIndexName();
+        else
+            return getIndexName();
+    }
+
     public void setWeight(int w) {
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
             i.next().setWeight(w);
