@@ -17,6 +17,7 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.PhaseNames;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +50,7 @@ import static com.yahoo.container.protect.Error.UNSPECIFIED;
  * @author Steinar Knutsen
  * @author bergum
  */
-@Before("*")
+@Before(PhaseNames.RAW_QUERY)
 public class StatisticsSearcher extends Searcher {
 
     private static final CompoundName IGNORE_QUERY = CompoundName.from("metrics.ignore");
@@ -413,4 +414,3 @@ public class StatisticsSearcher extends Searcher {
     }
 
 }
-
