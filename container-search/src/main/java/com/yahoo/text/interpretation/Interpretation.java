@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text.interpretation;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -218,8 +218,9 @@ public class Interpretation {
      * If there are none, an empty list is returned, never null. The returned list should not be modified.
      */
     public List<Annotations> getAll(AnnotationClass annotationClass) {
-        // TODO: This implementation is very inefficient because it unnecessarily collects for all classes
-        return getAll().getOrDefault(annotationClass, List.of());
+        List<Annotations> result = new ArrayList<>();
+        rootSpan.getAllAnnotations(annotationClass, result);
+        return result;
     }
 
     /**
