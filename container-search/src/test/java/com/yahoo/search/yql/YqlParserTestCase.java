@@ -128,9 +128,11 @@ public class YqlParserTestCase {
     }
 
     @Test
-    void backslashCanBeEscaped() {
+    void testRegexpItem() {
+        assertParse("select * from sources * where myField matches '10001-1234*'",
+                    "REGEXP myField:10001-1234*");
         // Java escaping on top of YQL escaping, to produce a regexp with a single backslash
-        assertParse("select * from sources * where artist matches 'a\\\\.'", "RegExpItem [expression=a\\.]");
+        assertParse("select * from sources * where artist matches 'a\\\\.'", "REGEXP artist:a\\.");
     }
 
     @Test

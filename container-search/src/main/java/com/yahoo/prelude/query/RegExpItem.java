@@ -76,11 +76,6 @@ public class RegExpItem extends TermItem {
     public Pattern getRegexp() { return regexp; }
 
     @Override
-    public String toString() {
-        return "RegExpItem [expression=" + expression + "]";
-    }
-
-    @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), expression);
     }
