@@ -1470,7 +1470,6 @@
       "public java.lang.String getName()",
       "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public java.util.regex.Pattern getRegexp()",
-      "public java.lang.String toString()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
     ],
