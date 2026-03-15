@@ -39,12 +39,13 @@ public class ChainBuilder<T extends ChainedComponent> {
     private Map<String, NameProvider> nameProviders = new LinkedHashMap<>();
 
     private Node afterAllPhase;
-    private Node beforeAllPhase;
+    private final Node beforeAllPhase;
     private final Set<String> beforeAllProvides = new HashSet<>();
 
     public ChainBuilder(ComponentId id) {
         this.id = id;
         afterAllPhase = addPhase(new Phase("*", Set.of("*"), Set.of()));
+        beforeAllPhase = new PhaseNameProvider("before(*)", 0);
     }
 
     public PhaseNameProvider addPhase(Phase phase) {
@@ -53,16 +54,16 @@ public class ChainBuilder<T extends ChainedComponent> {
             throw new ConflictingNodeTypeException("Cannot add phase '" + phase.getName() + "' as it is already provided by " + nameProvider);
         }
         PhaseNameProvider phaseNameProvider;
-        if(nameProvider == null) {
+        if (nameProvider == null) {
             phaseNameProvider = new PhaseNameProvider(phase.getName(), priority++);
         } else {
-            phaseNameProvider = (PhaseNameProvider) nameProvider;
+            phaseNameProvider = (PhaseNameProvider)nameProvider;
         }
         nameProviders.put(phase.getName(), phaseNameProvider);
-        for(String before : phase.before()) {
+        for (String before : phase.before()) {
             phaseNameProvider.before(getPhaseNameProvider(before));
         }
-        for(String after : phase.after()) {
+        for (String after : phase.after()) {
             getPhaseNameProvider(after).before(phaseNameProvider);
         }
 
@@ -81,8 +82,6 @@ public class ChainBuilder<T extends ChainedComponent> {
 
         for (String before : component.getDependencies().before()) {
             if ("*".equals(before)) {
-                if (beforeAllPhase == null)
-                    beforeAllPhase = new PhaseNameProvider("before(*)", 0);
                 componentNode.before(beforeAllPhase);
                 beforeAllProvides.addAll(component.getDependencies().provides());
             } else {
@@ -100,11 +99,9 @@ public class ChainBuilder<T extends ChainedComponent> {
     // destroys this dependency handler in the process
     @SuppressWarnings("unchecked")
     public Chain<T> orderNodes() {
-        if (beforeAllPhase != null) {
-            for (Map.Entry<String, NameProvider> entry : nameProviders.entrySet()) {
-                if ( ! beforeAllProvides.contains(entry.getKey()) && entry.getValue() != afterAllPhase) {
-                    beforeAllPhase.before(entry.getValue());
-                }
+        for (Map.Entry<String, NameProvider> entry : nameProviders.entrySet()) {
+            if ( ! beforeAllProvides.contains(entry.getKey()) && entry.getValue() != afterAllPhase) {
+                beforeAllPhase.before(entry.getValue());
             }
         }
 
@@ -124,7 +121,6 @@ public class ChainBuilder<T extends ChainedComponent> {
 
         // prevent accidental reuse
         nameProviders = null;
-
         return new Chain<>(id, chain);
     }
 
