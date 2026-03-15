@@ -134,6 +134,56 @@ public class ChainBuilderTest {
     }
 
     @Test
+    void testBeforeAll1() throws Exception {
+        ChainBuilder chainBuilder = createDependencyHandler();
+        ChainedComponent beforeAll = new BeforeAll();
+        chainBuilder.addComponent(beforeAll);
+        addAtoG(chainBuilder);
+
+        List<ChainedComponent> resolution = chainBuilder.orderNodes().components();
+        assertEquals(beforeAll, resolution.get(0));
+    }
+
+    @Test
+    void testBeforeAll2() throws Exception {
+        ChainBuilder chainBuilder = createDependencyHandler();
+        addAtoG(chainBuilder);
+        ChainedComponent beforeAll = new BeforeAll();
+        chainBuilder.addComponent(beforeAll);
+
+        List<ChainedComponent> resolution = chainBuilder.orderNodes().components();
+        assertEquals(beforeAll, resolution.get(0));
+    }
+
+    @Test
+    void testBeforeAndAfterAll1() throws Exception {
+        ChainBuilder chainBuilder = createDependencyHandler();
+        addAtoG(chainBuilder);
+        ChainedComponent beforeAll = new BeforeAll();
+        ChainedComponent afterAll = new AfterAll();
+        chainBuilder.addComponent(afterAll);
+        chainBuilder.addComponent(beforeAll);
+
+        List<ChainedComponent> resolution = chainBuilder.orderNodes().components();
+        assertEquals(beforeAll, resolution.get(0));
+        assertEquals(afterAll, resolution.get(resolution.size() - 1));
+    }
+
+    @Test
+    void testBeforeAndAfterAll2() throws Exception {
+        ChainBuilder chainBuilder = createDependencyHandler();
+        ChainedComponent beforeAll = new BeforeAll();
+        ChainedComponent afterAll = new AfterAll();
+        chainBuilder.addComponent(afterAll);
+        chainBuilder.addComponent(beforeAll);
+        addAtoG(chainBuilder);
+
+        List<ChainedComponent> resolution = chainBuilder.orderNodes().components();
+        assertEquals(beforeAll, resolution.get(0));
+        assertEquals(afterAll, resolution.get(resolution.size() - 1));
+    }
+
+    @Test
     void testAfterAll1() throws Exception {
         ChainBuilder chainBuilder = createDependencyHandler();
         ChainedComponent afterAll1 = new AfterAll();
@@ -220,6 +270,11 @@ public class ChainBuilderTest {
     @Before("A")
     @After("F")
     static class H extends NoopComponent {
+    }
+
+    @Provides("BeforeAll")
+    @Before("*")
+    static class BeforeAll extends NoopComponent {
     }
 
     @Provides("AfterAll")
