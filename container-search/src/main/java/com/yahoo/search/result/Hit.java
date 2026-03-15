@@ -385,6 +385,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * will also return true if this hit is not fillable.
      */
     public boolean isFilled(String summaryClass) {
+        // TODO: consider also checking filled.contains(null) which signals "filled completely"
         return (filled == null) || filled.contains(summaryClass);
     }
 
