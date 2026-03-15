@@ -297,7 +297,7 @@ class ApplicationApiHandlerTest {
         // Retry only activation of session 3, but fail again with lock.
         provisioner.activationFailure(new ApplicationLockException("lock timeout"));
         verifyResponse(put(3, Map.of()),
-                       500,
+                       409,
                        """
                        {
                          "error-code": "APPLICATION_LOCK_FAILURE",
