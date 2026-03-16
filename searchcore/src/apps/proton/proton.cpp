@@ -13,6 +13,7 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/fastos/file_interface.h>
 #include <absl/debugging/failure_signal_handler.h>
+#include <absl/debugging/symbolize.h>
 #include <filesystem>
 #include <iostream>
 #include <thread>
@@ -43,7 +44,7 @@ Params::~Params() = default;
 class App
 {
 private:
-    static void setupSignals();
+    static void setupSignals(char **argv);
     static void setup_fadvise();
     Params parseParams(int argc, char **argv);
     void startAndRun(FNET_Transport & transport, int argc, char **argv);
@@ -52,8 +53,12 @@ public:
 };
 
 void
-App::setupSignals()
+App::setupSignals(char **argv)
 {
+    // Ensure that symbolizer global setup/allocation happens prior to any invocations of
+    // the symbolizer itself. Otherwise, we risk nested failures when the symbolizer attempts
+    // to allocate internal structures when processing an abort-signal caused by an OOM.
+    absl::InitializeSymbolizer(argv[0]);
     absl::FailureSignalHandlerOptions opts;
     // Sanitizers set up their own signal handler, so we must ensure that the failure signal
     // handler calls this when it's done, or we won't get a proper report.
@@ -325,7 +330,7 @@ int
 App::main(int argc, char **argv)
 {
     try {
-        setupSignals();
+        setupSignals(argv);
         setup_fadvise();
         FastOS_FileInterface::enableFSync();
         Transport transport(buildTransportConfig());
