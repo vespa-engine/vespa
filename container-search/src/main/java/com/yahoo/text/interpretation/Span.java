@@ -287,6 +287,15 @@ public class Span {
         }
     }
 
+    /** Collects all annotations of the given class from this span and all sub-spans. */
+    void getAllAnnotations(AnnotationClass clazz, List<Annotations> results) {
+        Annotations a = annotations.get(clazz);
+        if (a != null)
+            results.add(a);
+        for (Span subSpan : getSubSpans())
+            subSpan.getAllAnnotations(clazz, results);
+    }
+
     private void getTermSpans(String term, List<Span> spans) {
         if(term.equalsIgnoreCase(this.getText())) {
             spans.add(this);
