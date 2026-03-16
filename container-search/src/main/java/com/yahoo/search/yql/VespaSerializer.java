@@ -776,8 +776,12 @@ public class VespaSerializer {
             int explore = item.getHnswExploreAdditionalHits();
             if (explore != 0) {
                 comma(destination, initLen);
-                String key = YqlParser.HNSW_EXPLORE_ADDITIONAL_HITS;
-                annotationKey(destination, key).append(explore);
+                annotationKey(destination, YqlParser.HNSW_EXPLORE_ADDITIONAL_HITS).append(explore);
+            }
+            Integer totalExplore = item.getHnswTotalExploreAdditionalHits();
+            if (totalExplore != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.TOTAL_HNSW_EXPLORE_ADDITIONAL_HITS).append(totalExplore);
             }
             boolean allow_approx = item.getAllowApproximate();
             if (! allow_approx) {

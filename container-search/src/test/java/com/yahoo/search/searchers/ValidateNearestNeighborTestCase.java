@@ -141,7 +141,6 @@ public class ValidateNearestNeighborTestCase {
         return "NEAREST_NEIGHBOR {" +
                "field=" + field +
                ",queryTensorName=" + qt +
-               ",hnsw.exploreAdditionalHits=0" +
                ",distanceThreshold=Infinity" +
                ",approximate=true" +
                (th != 0 ? ",targetHits=" + th : "") +
