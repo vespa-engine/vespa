@@ -28,21 +28,6 @@ public:
     const BucketResultNode& getNullBucket() const override;
 
 private:
-    int cmpMem(const void * a, const void *b) const override {
-        const double & ai(*static_cast<const double *>(a));
-        const double & bi(*static_cast<const double *>(b));
-        return ai < bi ? -1 : ai == bi ? 0 : 1;
-    }
-    void create(void * buf)  const override { (void) buf; }
-    void destroy(void * buf) const override { (void) buf; }
-    void decode(const void * buf) override { _value = *static_cast<const double *>(buf); }
-    void encode(void * buf) const override { *static_cast<double *>(buf) = _value; }
-    void swap(void * buf) override { std::swap(*static_cast<double *>(buf), _value); }
-    size_t hash(const void * buf) const override { size_t tmpHash(0); memcpy(&tmpHash, buf, sizeof(tmpHash)); return tmpHash; }
-    uint64_t  radixAsc(const void * buf) const override { return vespalib::convertForSort<double,  true>::convert(*static_cast<const double *>(buf)); }
-     uint64_t radixDesc(const void * buf) const override { return vespalib::convertForSort<double, false>::convert(*static_cast<const double *>(buf)); }
-
-    size_t onGetRawByteSize() const override { return sizeof(_value); }
     bool isNan() const;
     void setMin() override;
     void setMax() override;

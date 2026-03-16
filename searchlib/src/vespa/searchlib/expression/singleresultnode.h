@@ -20,8 +20,6 @@ public:
 
     virtual void setMin() = 0;
     virtual void setMax() = 0;
-    virtual size_t onGetRawByteSize() const = 0;
-    size_t getRawByteSize() const override { return onGetRawByteSize(); }
 };
 
 }

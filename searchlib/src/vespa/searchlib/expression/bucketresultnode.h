@@ -17,8 +17,6 @@ private:
     int64_t onGetInteger(size_t index) const override { (void) index; return 0; }
     double onGetFloat(size_t index)    const override { (void) index; return 0; }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override { (void) index; return buf; }
-    size_t getRawByteSize() const override { return onGetRawByteSize(); }
-    virtual size_t onGetRawByteSize() const = 0;
 };
 
 }

@@ -339,13 +339,6 @@ StringResultNode & StringResultNode::append(const ResultNode & rhs)
 
 size_t StringResultNode::hash() const { return hashBuf(_value.c_str(),  _value.size()); }
 
-size_t
-StringResultNode::hash(const void * buf) const
-{
-    const std::string & s = *static_cast<const std::string *>(buf);
-    return hashBuf(s.c_str(), s.size());
-}
-
 int64_t
 RawResultNode::onGetInteger(size_t index) const
 {
@@ -401,13 +394,6 @@ int RawResultNode::onCmp(const Identifiable & b) const
 }
 
 size_t RawResultNode::hash() const { return hashBuf(_value.data(), _value.size()); }
-
-size_t
-RawResultNode::hash(const void * buf) const
-{
-    const std::vector<uint8_t> & s = *static_cast<const std::vector<uint8_t> *>(buf);
-    return hashBuf(s.data(), s.size());
-}
 
 Deserializer &
 RawResultNode::onDeserialize(Deserializer & is)
