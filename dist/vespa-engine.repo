@@ -1,6 +1,6 @@
 [vespa-open-source-rpms]
 name=vespa-open-source-rpms
-baseurl=https://dl.cloudsmith.io/public/vespa/open-source-rpms/rpm/el/8/$basearch
+baseurl=https://dl.cloudsmith.io/public/vespa/open-source-rpms/rpm/el/$releasever/$basearch
 type=rpm-md
 gpgkey=https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key
 gpgcheck=1
@@ -12,7 +12,7 @@ enabled=1
 
 [vespa-open-source-rpms-noarch]
 name=vespa-open-source-rpms
-baseurl=https://dl.cloudsmith.io/public/vespa/open-source-rpms/rpm/el/8/noarch
+baseurl=https://dl.cloudsmith.io/public/vespa/open-source-rpms/rpm/el/$releasever/noarch
 type=rpm-md
 gpgkey=https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key
 gpgcheck=1
