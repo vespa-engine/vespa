@@ -416,6 +416,14 @@ public class Flags {
             INSTANCE_ID
     );
 
+    public static final UnboundBooleanFlag PARTIAL_RESOLVE_FLAG_DATA = defineFeatureFlag(
+            "partially-resolve-flag-data", false,
+            List.of("olaa"), "2026-03-16", "2026-04-16",
+            "Whether host-admin should retrieve partially resolved flag data",
+            "Takes effect on the next host-admin tick.",
+            HOSTNAME
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
