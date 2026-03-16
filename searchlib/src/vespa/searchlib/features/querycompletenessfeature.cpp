@@ -13,7 +13,7 @@ LOG_SETUP(".features.querycompleteness");
 namespace search::features {
 
 QueryCompletenessConfig::QueryCompletenessConfig() :
-    fieldId(search::fef::IllegalHandle),
+    fieldId(search::fef::IllegalFieldId),
     fieldBegin(0),
     fieldEnd(std::numeric_limits<uint32_t>::max())
 {

@@ -170,7 +170,7 @@ const std::string TextSimilarityBlueprint::query_coverage_output("queryCoverage"
 const std::string TextSimilarityBlueprint::field_coverage_output("fieldCoverage");
 
 TextSimilarityBlueprint::TextSimilarityBlueprint()
-    : Blueprint("textSimilarity"), _field_id(fef::IllegalHandle) {}
+    : Blueprint("textSimilarity"), _field_id(fef::IllegalFieldId) {}
 
 TextSimilarityBlueprint::~TextSimilarityBlueprint() = default;
 
