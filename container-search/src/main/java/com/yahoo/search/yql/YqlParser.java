@@ -519,7 +519,7 @@ public class YqlParser implements Parser {
 
     private Item buildIn(OperatorNode<ExpressionOperator> ast) {
         String field = getIndex(ast.getArgument(0));
-        var index = indexFactsSession.getIndex(field);
+        var index = indexFactsSession.getIndex(indexNameExpander.expand(field));
         boolean stringField = index.isString();
         if (!index.isInteger() && !stringField)
             throw new IllegalArgumentException("The in operator is only supported for integer and string fields. The field " +
@@ -1536,7 +1536,7 @@ public class YqlParser implements Parser {
     private Item buildTermSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.CONTAINS);
         String field = getIndex(ast.getArgument(0));
-        if (userQuery != null && indexFactsSession.getIndex(field).isAttribute()) {
+        if (userQuery != null && indexFactsSession.getIndex(indexNameExpander.expand(field)).isAttribute()) {
             userQuery.trace("Field '" + field + "' is an attribute, 'contains' will only match exactly (unless fuzzy is used)", 2);
         }
         return instantiateLeafItem(field, ast.getArgument(1));
@@ -1545,7 +1545,7 @@ public class YqlParser implements Parser {
     private Item buildRegExpSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.MATCHES);
         String field = getIndex(ast.getArgument(0));
-        if (userQuery != null && !indexFactsSession.getIndex(field).isAttribute()) {
+        if (userQuery != null && !indexFactsSession.getIndex(indexNameExpander.expand(field)).isAttribute()) {
             userQuery.trace("Field '" + field + "' is indexed, non-literal regular expressions will not be matched", 1);
         }
         OperatorNode<ExpressionOperator> ast1 = ast.getArgument(1);
@@ -1751,7 +1751,7 @@ public class YqlParser implements Parser {
         UriItem uriItem = new UriItem(field);
 
         boolean startAnchorDefault = false;
-        boolean endAnchorDefault = indexFactsSession.getIndex(field).isHostIndex();
+        boolean endAnchorDefault = indexFactsSession.getIndex(indexNameExpander.expand(field)).isHostIndex();
 
         if (getAnnotation(ast, START_ANCHOR, Boolean.class, startAnchorDefault,
                           "whether uri matching should be anchored to the start"))
@@ -2306,7 +2306,7 @@ public class YqlParser implements Parser {
     protected String linguisticsProfileFor(String field) {
         String queryAssignedProfile = environment.getType().getProfile();
         if (queryAssignedProfile != null) return queryAssignedProfile;
-        Index index = indexFactsSession.getIndex(field);
+        Index index = indexFactsSession.getIndex(indexNameExpander.expand(field));
         if (index == null) return null;
         return index.getLinguisticsProfile();
     }

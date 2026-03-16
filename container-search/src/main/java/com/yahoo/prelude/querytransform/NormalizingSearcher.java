@@ -129,7 +129,7 @@ public class NormalizingSearcher extends Searcher {
     private void normalizeAlternatives(Language language, Session indexFacts, WordAlternativesItem block) {
         if ( ! block.isNormalizable()) return;
 
-        Index index = indexFacts.getIndex(block.getIndexName());
+        Index index = indexFacts.getIndex(block.getFieldName());
         if (index.isAttribute()) return;
         if ( ! index.getNormalize()) return;
 
@@ -142,7 +142,7 @@ public class NormalizingSearcher extends Searcher {
     }
 
     private Item normalizePhrase(Language language, IndexFacts.Session indexFacts, PhraseItem phrase) {
-        if ( ! indexFacts.getIndex(phrase.getIndexName()).getNormalize()) return phrase;
+        if ( ! indexFacts.getIndex(phrase.getFieldName()).getNormalize()) return phrase;
 
         for (ListIterator<Item> i = phrase.getItemIterator(); i.hasNext();) {
             IndexedItem content = (IndexedItem)i.next();
@@ -161,7 +161,7 @@ public class NormalizingSearcher extends Searcher {
     private void normalizeWord(Language language, IndexFacts.Session indexFacts, TermItem term, ListIterator<Item> i) {
         if ( ! (term instanceof WordItem word)) return;
         if ( ! term.isNormalizable()) return;
-        Index index = indexFacts.getIndex(term.getIndexName());
+        Index index = indexFacts.getIndex(term.getFieldName());
         if (index.isAttribute()) return;
         if ( ! index.getNormalize()) return;
 

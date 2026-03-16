@@ -34,6 +34,19 @@ public abstract class IndexedSegmentItem extends TaggableSegmentItem implements 
         return index;
     }
 
+    /**
+     * The *full* name of the field searched by this,
+     * which is prefixed by the parent name and a dot if this is inside a SameElement,
+     * and the same as getIndexName otherwise.
+     */
+    @Override
+    public String getFieldName() {
+        if (getParent() instanceof SameElementItem sameElementParent)
+            return sameElementParent.getFieldName() + "." + getIndexName();
+        else
+            return getIndexName();
+    }
+
     // encode index bytes
     @Override
     protected void encodeThis(ByteBuffer buffer, SerializationContext context) {

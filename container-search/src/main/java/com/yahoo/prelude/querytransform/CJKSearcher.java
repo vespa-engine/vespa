@@ -59,7 +59,7 @@ public class CJKSearcher extends Searcher {
         if (item instanceof PhraseItem phrase) {
             if ( ! language.isCjk()) return item;
             if (phrase.isExplicit()) return item;
-            if (indexFacts.getIndex(phrase.getIndexName()).isNGram()) return item;
+            if (indexFacts.getIndex(phrase.getFieldName()).isNGram()) return item;
             if (hasOverlappingTokens(phrase)) return item;
 
             AndItem replacement = new AndItem();

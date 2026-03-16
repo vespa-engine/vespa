@@ -189,7 +189,7 @@ public class StemmingSearcher extends Searcher {
         if (item instanceof PrefixItem || !item.isWords()) return (Item) item;
 
         if (item.isFromQuery() && !item.isStemmed()) {
-            Index index = context.indexFacts.getIndex(item.getIndexName());
+            Index index = context.indexFacts.getIndex(item.getFieldName());
             StemMode stemMode = index.getStemMode();
             if (stemMode != StemMode.NONE) return stem(item, context, index);
         }

@@ -1717,4 +1717,41 @@ public class YqlParserTestCase {
                 "No language annotation on contains should leave UNKNOWN");
     }
 
+    /** Creates index facts where top-level "x" and struct-field "myArray.x" have different settings. */
+    private static IndexFacts createIndexFactsWithFieldNameCollision() {
+        SearchDefinition sd = new SearchDefinition("default");
+        // Top-level field x: indexed, not exact
+        Index topX = new Index("x");
+        topX.setString(true);
+        sd.addIndex(topX);
+        // Struct-field myArray.x: attribute, exact
+        Index structX = new Index("myArray.x");
+        structX.setExact(true, null);
+        structX.setString(true);
+        sd.addIndex(structX);
+        // Parent field for sameElement
+        Index myArray = new Index("myArray");
+        sd.addIndex(myArray);
+        return new IndexFacts(new IndexModel(sd));
+    }
+
+    @Test
+    void testSameElementUsesStructFieldSettings() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsWithFieldNameCollision()));
+        // Inside sameElement, "x" should resolve to struct-field "myArray.x" which is exact
+        QueryTree tree = parse("select * from sources * where myArray contains sameElement(x contains \"hello\")");
+        SameElementItem sameElement = (SameElementItem) tree.getRoot();
+        assertInstanceOf(ExactStringItem.class, sameElement.getItem(0),
+                "struct-field myArray.x is exact, so should produce ExactStringItem");
+    }
+
+    @Test
+    void testTopLevelFieldNotAffectedByStructFieldSettings() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsWithFieldNameCollision()));
+        // Outside sameElement, "x" should resolve to top-level field which is not exact
+        QueryTree tree = parse("select * from sources * where x contains \"hello\"");
+        assertInstanceOf(WordItem.class, tree.getRoot(),
+                "Top-level field x is not exact, so should produce WordItem");
+    }
+
 }
