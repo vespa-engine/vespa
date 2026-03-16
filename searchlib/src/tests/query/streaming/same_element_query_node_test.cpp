@@ -4,6 +4,7 @@
 #include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/streaming/query.h>
@@ -20,6 +21,7 @@
 
 using search::common::ElementIds;
 using search::fef::MatchData;
+using search::fef::MatchDataLayout;
 using search::fef::SimpleTermData;
 using search::fef::TermFieldHandle;
 using search::fef::test::IndexEnvironment;
@@ -56,6 +58,29 @@ private:
 
 AllowRewrite::~AllowRewrite() = default;
 
+class QueryAndHandles {
+    std::unique_ptr<Query>           _query;
+    std::unique_ptr<MatchDataLayout> _mdl;
+    std::vector<TermFieldHandle>     _handles;
+public:
+    QueryAndHandles(std::unique_ptr<Query> query_, std::unique_ptr<MatchDataLayout> mdl_,
+                    std::vector<TermFieldHandle> handles_) noexcept;
+    ~QueryAndHandles();
+    Query& query() noexcept { return *_query; }
+    const MatchDataLayout& mdl() const noexcept { return *_mdl; }
+    std::span<const TermFieldHandle> handles() const noexcept { return _handles; }
+};
+
+QueryAndHandles::QueryAndHandles(std::unique_ptr<Query> query_, std::unique_ptr<MatchDataLayout> mdl_,
+                                 std::vector<TermFieldHandle> handles_) noexcept
+    : _query(std::move(query_)),
+      _mdl(std::move(mdl_)),
+      _handles(std::move(handles_))
+{
+}
+
+QueryAndHandles::~QueryAndHandles() = default;
+
 }
 
 class SameElementQueryNodeTest : public ::testing::Test {
@@ -75,9 +100,9 @@ protected:
     std::vector<std::vector<uint32_t>> extract_element_ids(QueryTweak query_tweak,
                                                            const std::vector<std::vector<uint32_t>>& elementsvv,
                                                            std::vector<uint32_t> element_filter = std::vector<uint32_t>());
-    static std::unique_ptr<Query> make_query(QueryTweak query_tweak,
-                                             const std::vector<std::vector<uint32_t>>& elementsvv,
-                                             std::vector<uint32_t> element_filter = std::vector<uint32_t>());
+    static std::unique_ptr<QueryAndHandles> make_query(QueryTweak query_tweak,
+                                                       const std::vector<std::vector<uint32_t>>& elementsvv,
+                                                       std::vector<uint32_t> element_filter = std::vector<uint32_t>());
 };
 
 SameElementQueryNodeTest::SameElementQueryNodeTest()
@@ -91,7 +116,7 @@ bool
 SameElementQueryNodeTest::evaluate_query(QueryTweak query_tweak, const std::vector<std::vector<uint32_t>>& elementsvv, std::vector<uint32_t> element_filter)
 {
     auto query = make_query(query_tweak, elementsvv, std::move(element_filter));
-    return query->getRoot().evaluate();
+    return query->query().getRoot().evaluate();
 }
 
 std::vector<uint32_t>
@@ -99,7 +124,7 @@ SameElementQueryNodeTest::get_element_ids(QueryTweak query_tweak, const std::vec
 {
     auto query = make_query(query_tweak, elementsvv, std::move(element_filter));
     std::vector<uint32_t> result;
-    query->getRoot().get_element_ids(result);
+    query->query().getRoot().get_element_ids(result);
     return result;
 }
 
@@ -107,25 +132,27 @@ std::vector<std::vector<uint32_t>>
 SameElementQueryNodeTest::extract_element_ids(QueryTweak query_tweak, const std::vector<std::vector<uint32_t>>& elementsvv, std::vector<uint32_t> element_filter)
 {
     auto query = make_query(query_tweak, elementsvv, std::move(element_filter));
-    auto md = MatchData::makeTestInstance(elementsvv.size(), 1);
+    auto md = query->mdl().createMatchData();
     constexpr uint32_t docid = 2;
     IndexEnvironment index_env;
-    query->getRoot().unpack_match_data(docid, *md, index_env, ElementIds::select_all());
+    query->query().getRoot().unpack_match_data(docid, *md, index_env, ElementIds::select_all());
     std::vector<std::vector<uint32_t>> result;
     for (uint32_t idx = 0; idx < elementsvv.size(); ++idx) {
         result.emplace_back();
-        auto* tfmd = md->resolveTermField(idx);
+        auto* tfmd = md->resolveTermField(query->handles()[idx]);
         ElementIdExtractor::get_element_ids(*tfmd, docid, result.back());
     }
     return result;
 }
 
-std::unique_ptr<Query>
+std::unique_ptr<QueryAndHandles>
 SameElementQueryNodeTest::make_query(QueryTweak query_tweak,
                                      const std::vector<std::vector<uint32_t>>& elementsvv,
                                      std::vector<uint32_t> element_filter)
 {
     QueryBuilder<SimpleQueryNodeTypes> builder;
+    auto mdl = std::make_unique<MatchDataLayout>();
+    std::vector<TermFieldHandle> handles;
     auto num_terms = elementsvv.size();
     auto top_arity = num_terms;
     switch (query_tweak) {
@@ -198,13 +225,15 @@ SameElementQueryNodeTest::make_query(QueryTweak query_tweak,
         }
         auto& qtd = static_cast<QueryTermData &>(term->getQueryItem());
         auto& td = qtd.getTermData();
-        td.addField(field_id).setHandle(idx);
+        auto handle = mdl->allocTermField(field_id);
+        handles.emplace_back(handle);
+        td.addField(field_id).setHandle(handle);
         for (auto& element : elementsv) {
             auto hl_idx = term->add(field_id, element, element_weight, pos);
             term->set_element_length(hl_idx, element_len);
         }
     }
-    return q;
+    return std::make_unique<QueryAndHandles>(std::move(q), std::move(mdl), std::move(handles));;
 }
 
 TEST_F(SameElementQueryNodeTest, a_unhandled_sameElement_stack)
@@ -295,11 +324,16 @@ TEST_F(SameElementQueryNodeTest, test_same_element_evaluate)
     EXPECT_TRUE(sameElem->evaluate());
 
     SimpleTermData td;
-    constexpr TermFieldHandle handle0 = 27;
-    constexpr TermFieldHandle handle_max = handle0;
-    td.addField(0).setHandle(handle0);
-    auto md = MatchData::makeTestInstance(handle_max + 1, handle_max + 1);
-    auto tfmd0 = md->resolveTermField(handle0);
+    MatchDataLayout mdl;
+    constexpr uint32_t field0 = 0;
+    constexpr uint32_t existing_handles = 27;
+    for (uint32_t i = 0; i < existing_handles; ++i) {
+        (void) mdl.allocTermField(field0);
+    }
+    auto handle27 = mdl.allocTermField(field0);
+    td.addField(field0).setHandle(handle27);
+    auto md = mdl.createMatchData();
+    auto tfmd0 = md->resolveTermField(handle27);
     tfmd0->setNeedInterleavedFeatures(true);
     IndexEnvironment ie;
     sameElem->unpack_match_data(2, td, *md, ie, ElementIds::select_all());
