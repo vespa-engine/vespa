@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <iostream>
 #include <list>
+#include <unordered_map>
 
 #include <vespa/log/log.h>
 LOG_SETUP("per_doc_expr_test");
@@ -1699,16 +1700,35 @@ TEST(PerDocExprTest, testIntegerTypes) {
               uint32_t(Int64ResultNodeVector::classId));
 }
 
+namespace {
+
+/**
+ * Airport repository for geo distance tests.
+ */
+struct Airports {
+    enum Airport { TRD, OSL, JFK };
+    std::unordered_map<Airport, int64_t> positions;
+    Airports() {
+        positions[TRD] = vespalib::geo::ZCurve::encode(10920000, 63450000);
+        positions[OSL] = vespalib::geo::ZCurve::encode(11080000, 60200000);
+        positions[JFK] = vespalib::geo::ZCurve::encode(-73780000, 40640000);
+    }
+    [[nodiscard]] int64_t operator[](Airport a) const { return positions.at(a); }
+};
+
+}
+
 TEST(PerDocExprTest, testGeoDistance) {
-    // Doc 0: TRD (63.45, 10.92), Doc 1: OSL (60.20, 11.08), Doc 2: JFK (40.64, -73.78)
+    Airports airports;
+
     auto posAttr = std::make_shared<SingleInt64ExtAttribute>("pos");
     DocId docId = 0;
-    posAttr->addDoc(docId); // doc 0: TRD
-    posAttr->add(vespalib::geo::ZCurve::encode(10920000, 63450000));
-    posAttr->addDoc(docId); // doc 1: OSL
-    posAttr->add(vespalib::geo::ZCurve::encode(11080000, 60200000));
-    posAttr->addDoc(docId); // doc 2: JFK
-    posAttr->add(vespalib::geo::ZCurve::encode(-73780000, 40640000));
+    posAttr->addDoc(docId);
+    posAttr->add(airports[Airports::TRD]);
+    posAttr->addDoc(docId);
+    posAttr->add(airports[Airports::OSL]);
+    posAttr->addDoc(docId);
+    posAttr->add(airports[Airports::JFK]);
     AttributeGuard guard(posAttr);
 
     using Unit = GeoDistanceFunctionNode::Unit;
@@ -1750,6 +1770,55 @@ TEST(PerDocExprTest, testGeoDistance) {
         auto tree = make_tree(60.20, 11.08, Unit::MILES);
         ASSERT_NO_THROW(tree.execute(0, 0));
         EXPECT_NEAR(tree.getResult()->getFloat(), 224.0, 5.0);
+    }
+}
+
+TEST(PerDocExprTest, testGeoDistanceMultiValue) {
+    Airports airports;
+
+    auto posAttr = std::make_shared<MultiInt64ExtAttribute>("pos");
+    DocId docId = 0;
+    posAttr->addDoc(docId);
+    posAttr->add(airports[Airports::TRD]);
+    posAttr->add(airports[Airports::OSL]);
+    posAttr->add(airports[Airports::JFK]);
+    posAttr->addDoc(docId);
+    posAttr->add(airports[Airports::JFK]);
+    posAttr->add(airports[Airports::TRD]);
+    AttributeGuard guard(posAttr);
+
+    using Unit = GeoDistanceFunctionNode::Unit;
+
+    auto make_tree = [&](double lat, double lon, Unit unit) {
+        GeoDistanceFunctionNode func(unit);
+        func.appendArg(MU<AttributeNode>(*guard))
+            .appendArg(MU<ConstantNode>(MU<FloatResultNode>(lat)))
+            .appendArg(MU<ConstantNode>(MU<FloatResultNode>(lon)));
+        ExpressionTree tree(func);
+        ExpressionTree::Configure conf;
+        tree.select(conf, conf);
+        return tree;
+    };
+
+    // Query from OSL (60.20, 11.08): closest in doc 0 is OSL itself (~0 km)
+    {
+        auto tree = make_tree(60.20, 11.08, Unit::KM);
+        ASSERT_NO_THROW(tree.execute(0, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 0.0, 1.0);
+    }
+
+    // Query from OSL (60.20, 11.08): closest in doc 1 is TRD (~361 km), not JFK
+    {
+        auto tree = make_tree(60.20, 11.08, Unit::KM);
+        ASSERT_NO_THROW(tree.execute(1, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 361.0, 5.0);
+    }
+
+    // Query from SFO (37.61, -122.38): closest in doc 0 is JFK (~4139 km), not TRD or OSL
+    {
+        auto tree = make_tree(37.61, -122.38, Unit::KM);
+        ASSERT_NO_THROW(tree.execute(0, 0));
+        EXPECT_NEAR(tree.getResult()->getFloat(), 4139.0, 50.0);
     }
 }
 
