@@ -15,7 +15,7 @@ namespace search::features {
 // JaroWinklerDistanceConfig
 //-----------------------------------------------------------------------------
 JaroWinklerDistanceConfig::JaroWinklerDistanceConfig() :
-    fieldId(search::fef::IllegalHandle),
+    fieldId(search::fef::IllegalFieldId),
     fieldBegin(0),
     fieldEnd(std::numeric_limits<uint32_t>::max()),
     boostThreshold(0.7f),

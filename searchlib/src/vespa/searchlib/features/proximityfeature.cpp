@@ -9,7 +9,7 @@
 namespace search::features {
 
 ProximityConfig::ProximityConfig() :
-    fieldId(search::fef::IllegalHandle),
+    fieldId(search::fef::IllegalFieldId),
     termA(std::numeric_limits<uint32_t>::max()),
     termB(std::numeric_limits<uint32_t>::max())
 {
