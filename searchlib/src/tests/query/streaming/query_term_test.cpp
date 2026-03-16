@@ -3,6 +3,7 @@
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/fef/match_data_filters.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
@@ -15,7 +16,9 @@
 using search::common::ElementIds;
 using search::fef::FieldInfo;
 using search::fef::FieldType;
+using search::fef::IllegalHandle;
 using search::fef::MatchData;
+using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
 using search::fef::test::IndexEnvironment;
@@ -51,13 +54,19 @@ protected:
     std::unique_ptr<Query>     _query;
     uint32_t                   _field_id;
     QueryTerm*                 _node;
+    MatchDataLayout            _mdl;
+    TermFieldHandle            _normal_handle;
+    TermFieldHandle            _filter_handle;
     std::unique_ptr<MatchData> _md;
     TermFieldMatchData*        _tfmd;
 
     QueryTermTest();
     ~QueryTermTest() override;
 
-    static constexpr TermFieldHandle handle = 27;
+    static constexpr uint32_t field0 = 0;
+    static constexpr uint32_t normal_field_id = 12;
+    static constexpr uint32_t filter_field_id = 13;
+    static constexpr uint32_t existing_handles = 27;
     static constexpr uint32_t mock_num_occs = 4;
     static constexpr uint32_t mock_field_length = 101;
 
@@ -77,11 +86,14 @@ QueryTermTest::QueryTermTest()
       _query(),
       _field_id(0u),
       _node(nullptr),
+      _mdl(),
+      _normal_handle(IllegalHandle),
+      _filter_handle(IllegalHandle),
       _md(),
       _tfmd(nullptr)
 {
-    FieldInfo field(FieldType::INDEX, CollectionType::ARRAY, "field", 12);
-    FieldInfo filterfield(FieldType::INDEX, CollectionType::ARRAY, "filterfield", 13);
+    FieldInfo field(FieldType::INDEX, CollectionType::ARRAY, "field", normal_field_id);
+    FieldInfo filterfield(FieldType::INDEX, CollectionType::ARRAY, "filterfield", filter_field_id);
     filterfield.setFilter(true);
     auto& fields = _index_env.getFields();
     for (uint32_t id = 0; id < field.id(); ++id) {
@@ -89,6 +101,11 @@ QueryTermTest::QueryTermTest()
     }
     _index_env.getFields().emplace_back(field);
     _index_env.getFields().emplace_back(filterfield);
+    for (uint32_t i = 0; i < existing_handles; ++i) {
+        (void) _mdl.allocTermField(field0);
+    }
+    _normal_handle = _mdl.allocTermField(field.id());;
+    _filter_handle = _mdl.allocTermField(filterfield.id());;
 }
 
 QueryTermTest::~QueryTermTest() = default;
@@ -116,10 +133,11 @@ QueryTermTest::build_query(bool filter)
     ASSERT_NE(nullptr, _node);
     auto &qtd = static_cast<QueryTermData &>(_node->getQueryItem());
     auto &td = qtd.getTermData();
-    _field_id = filter ? 13 : 12;
+    _field_id = filter ? filter_field_id : normal_field_id;
+    auto handle = filter ? _filter_handle : _normal_handle;
     td.addField(_field_id).setHandle(handle);
     _node->resizeFieldId(_field_id);
-    _md = MatchData::makeTestInstance(handle + 1, handle + 1);
+    _md = _mdl.createMatchData();
     _tfmd = _md->resolveTermField(handle);
     ASSERT_NE(nullptr, _tfmd);
 }
