@@ -2,11 +2,13 @@
 
 #include "geo_distance_function_node.h"
 #include "floatresultnode.h"
+#include "resultvector.h"
 
 #include <vespa/searchlib/common/geo_gcd.h>
 #include <vespa/vespalib/geo/zcurve.h>
 
 #include <cassert>
+#include <limits>
 
 using vespalib::Deserializer;
 using vespalib::Serializer;
@@ -39,6 +41,18 @@ GeoDistanceFunctionNode& GeoDistanceFunctionNode::operator=(const GeoDistanceFun
 
 void GeoDistanceFunctionNode::onPrepareResult() { setResultType(std::make_unique<FloatResultNode>()); }
 
+namespace {
+
+double calculate_distance_km(int64_t zcurve, const GeoGcd& geo_gcd) {
+    int32_t xp, yp;
+    ZCurve::decode(zcurve, &xp, &yp);
+    double doc_lat = yp / 1.0e6;
+    double doc_lng = xp / 1.0e6;
+    return geo_gcd.km_great_circle_distance(doc_lat, doc_lng);
+}
+
+}
+
 void GeoDistanceFunctionNode::onExecute() const {
     assert(getNumArgs() == 3 && "Expect 3 arguments: position attribute, lat, lon");
 
@@ -46,17 +60,21 @@ void GeoDistanceFunctionNode::onExecute() const {
         getArg(i).execute();
     }
 
-    int64_t zcurve = getArg(0).getResult()->getInteger();
-    int32_t xp, yp;
-    ZCurve::decode(zcurve, &xp, &yp);
-    double doc_lat = yp / 1.0e6;
-    double doc_lng = xp / 1.0e6;
-
     double query_lat = getArg(1).getResult()->getFloat();
     double query_lng = getArg(2).getResult()->getFloat();
-
     GeoGcd geo_gcd(query_lat, query_lng);
-    double distance = geo_gcd.km_great_circle_distance(doc_lat, doc_lng);
+
+    double distance = std::numeric_limits<double>::infinity();
+    const auto& attribute_result = *getArg(0).getResult();
+    if (attribute_result.inherits(ResultNodeVector::classId)) {
+        for (const auto& value : static_cast<const ResultNodeVector&>(attribute_result)) {
+            int64_t zcurve = value.getInteger();
+            distance = std::min(distance, calculate_distance_km(zcurve, geo_gcd));
+        }
+    } else {
+        int64_t zcurve = attribute_result.getInteger();
+        distance = calculate_distance_km(zcurve, geo_gcd);
+    }
 
     if (_unit == Unit::MILES) {
         distance *= miles_per_kilometer;
