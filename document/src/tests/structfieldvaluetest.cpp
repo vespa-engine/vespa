@@ -42,7 +42,8 @@ DocumenttypesConfig createConfig() {
 
 } // namespace
 
-StructFieldValueTest::StructFieldValueTest() : doc_repo(createConfig()) {}
+StructFieldValueTest::StructFieldValueTest() : doc_repo(createConfig()) {
+}
 
 TEST_F(StructFieldValueTest, testEmptyStruct) {
     FixedTypeRepo    repo(doc_repo, *doc_repo.getDocumentType(42));

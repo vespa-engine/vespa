@@ -13,7 +13,8 @@ namespace document {
 
 using vespalib::nbostream;
 
-FieldUpdate::FieldUpdate(const Field& field) : _field(field), _updates() {}
+FieldUpdate::FieldUpdate(const Field& field) : _field(field), _updates() {
+}
 
 namespace {
 

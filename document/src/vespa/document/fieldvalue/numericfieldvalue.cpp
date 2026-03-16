@@ -8,7 +8,9 @@
 
 namespace document {
 
-void NumericFieldValueBase::printXml(XmlOutputStream& out) const { out << vespalib::xml::XmlContent(getAsString()); }
+void NumericFieldValueBase::printXml(XmlOutputStream& out) const {
+    out << vespalib::xml::XmlContent(getAsString());
+}
 
 template class NumericFieldValue<float>;
 template class NumericFieldValue<double>;

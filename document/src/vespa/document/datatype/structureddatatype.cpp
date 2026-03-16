@@ -10,9 +10,11 @@ using vespalib::make_string;
 
 namespace document {
 
-StructuredDataType::StructuredDataType(std::string_view name) : DataType(name, createId(name)) {}
+StructuredDataType::StructuredDataType(std::string_view name) : DataType(name, createId(name)) {
+}
 
-StructuredDataType::StructuredDataType(std::string_view name, int dataTypeId) : DataType(name, dataTypeId) {}
+StructuredDataType::StructuredDataType(std::string_view name, int dataTypeId) : DataType(name, dataTypeId) {
+}
 
 bool StructuredDataType::equals(const DataType& other) const noexcept {
     return DataType::equals(other) && other.isStructured();

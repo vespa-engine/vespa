@@ -12,7 +12,8 @@ using document::new_config_builder::NewConfigBuilder;
 
 namespace document {
 
-TestDocRepo::TestDocRepo() : _cfg(getDefaultConfig()), _repo(new DocumentTypeRepo(_cfg)) {}
+TestDocRepo::TestDocRepo() : _cfg(getDefaultConfig()), _repo(new DocumentTypeRepo(_cfg)) {
+}
 
 TestDocRepo::~TestDocRepo() = default;
 
@@ -77,7 +78,9 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
     return builder.config();
 }
 
-const DataType* TestDocRepo::getDocumentType(const std::string& t) const { return _repo->getDocumentType(t); }
+const DataType* TestDocRepo::getDocumentType(const std::string& t) const {
+    return _repo->getDocumentType(t);
+}
 
 DocumenttypesConfig readDocumenttypesConfig(const char* file_name) {
     ::config::FileConfigReader<DocumenttypesConfig> reader(file_name);

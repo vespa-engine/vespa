@@ -40,13 +40,15 @@ std::unique_ptr<const TensorDataType> convertToCompatibleType(const TensorDataTy
 
 } // namespace
 
-TensorRemoveUpdate::TensorRemoveUpdate() : ValueUpdate(TensorRemove), TensorUpdate(), _tensorType(), _tensor() {}
+TensorRemoveUpdate::TensorRemoveUpdate() : ValueUpdate(TensorRemove), TensorUpdate(), _tensorType(), _tensor() {
+}
 
 TensorRemoveUpdate::TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor)
     : ValueUpdate(TensorRemove),
       TensorUpdate(),
       _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType&>(*tensor->getDataType()))),
-      _tensor(std::move(tensor)) {}
+      _tensor(std::move(tensor)) {
+}
 
 TensorRemoveUpdate::~TensorRemoveUpdate() = default;
 

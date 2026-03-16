@@ -25,10 +25,12 @@ using vespalib::eval::FastValueBuilderFactory;
 
 namespace document {
 
-TensorAddUpdate::TensorAddUpdate() : ValueUpdate(TensorAdd), TensorUpdate(), _tensor() {}
+TensorAddUpdate::TensorAddUpdate() : ValueUpdate(TensorAdd), TensorUpdate(), _tensor() {
+}
 
 TensorAddUpdate::TensorAddUpdate(std::unique_ptr<TensorFieldValue> tensor)
-    : ValueUpdate(TensorAdd), TensorUpdate(), _tensor(std::move(tensor)) {}
+    : ValueUpdate(TensorAdd), TensorUpdate(), _tensor(std::move(tensor)) {
+}
 
 TensorAddUpdate::~TensorAddUpdate() = default;
 

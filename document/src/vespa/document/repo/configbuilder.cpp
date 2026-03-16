@@ -14,7 +14,9 @@ int32_t createFieldId(const std::string& name, int32_t type) {
 
 int32_t DatatypeConfig::id_counter = 100;
 
-DatatypeConfig::DatatypeConfig() { id = ++id_counter; }
+DatatypeConfig::DatatypeConfig() {
+    id = ++id_counter;
+}
 
 DatatypeConfig::DatatypeConfig(const DatatypeConfig&) = default;
 DatatypeConfig::~DatatypeConfig() = default;

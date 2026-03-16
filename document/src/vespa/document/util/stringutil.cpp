@@ -25,7 +25,9 @@ using namespace vespalib::make_string_short;
 namespace document {
 
 namespace {
-char toHex(uint32_t val) { return (val < 10 ? '0' + val : 'a' + (val - 10)); }
+char toHex(uint32_t val) {
+    return (val < 10 ? '0' + val : 'a' + (val - 10));
+}
 } // namespace
 
 class ReplacementCharacters {

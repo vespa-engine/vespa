@@ -52,7 +52,9 @@ using vespalib::make_string_short::fmt;
 namespace document {
 
 namespace {
-template <typename Input> uint32_t readSize(Input& input) { return getInt1_2_4Bytes(input); }
+template <typename Input> uint32_t readSize(Input& input) {
+    return getInt1_2_4Bytes(input);
+}
 
 uint32_t getChunkCount(uint8_t contentCode) {
     uint8_t chunks = 0;
@@ -91,7 +93,9 @@ void VespaDocumentDeserializer::readDocument(Document& value) {
     }
 }
 
-void VespaDocumentDeserializer::read(FieldValue& value) { value.accept(*this); }
+void VespaDocumentDeserializer::read(FieldValue& value) {
+    value.accept(*this);
+}
 
 const DocumentType* VespaDocumentDeserializer::readDocType(const DocumentType& guess) {
     string_view type_name = read_cstr(_stream);
@@ -192,17 +196,29 @@ template <typename T> void readFieldValue(nbostream& input, T& value) {
 
 } // namespace
 
-void VespaDocumentDeserializer::read(BoolFieldValue& value) { readFieldValue(_stream, value); }
+void VespaDocumentDeserializer::read(BoolFieldValue& value) {
+    readFieldValue(_stream, value);
+}
 
-void VespaDocumentDeserializer::read(ByteFieldValue& value) { readFieldValue(_stream, value); }
+void VespaDocumentDeserializer::read(ByteFieldValue& value) {
+    readFieldValue(_stream, value);
+}
 
-void VespaDocumentDeserializer::read(DoubleFieldValue& value) { readFieldValue(_stream, value); }
+void VespaDocumentDeserializer::read(DoubleFieldValue& value) {
+    readFieldValue(_stream, value);
+}
 
-void VespaDocumentDeserializer::read(FloatFieldValue& value) { readFieldValue(_stream, value); }
+void VespaDocumentDeserializer::read(FloatFieldValue& value) {
+    readFieldValue(_stream, value);
+}
 
-void VespaDocumentDeserializer::read(IntFieldValue& value) { readFieldValue(_stream, value); }
+void VespaDocumentDeserializer::read(IntFieldValue& value) {
+    readFieldValue(_stream, value);
+}
 
-void VespaDocumentDeserializer::read(LongFieldValue& value) { readFieldValue(_stream, value); }
+void VespaDocumentDeserializer::read(LongFieldValue& value) {
+    readFieldValue(_stream, value);
+}
 
 void VespaDocumentDeserializer::read(PredicateFieldValue& value) {
     uint32_t               stored_size = readValue<uint32_t>(_stream);
@@ -235,7 +251,9 @@ void VespaDocumentDeserializer::read(RawFieldValue& value) {
     _stream.adjustReadPos(size);
 }
 
-void VespaDocumentDeserializer::read(ShortFieldValue& value) { readFieldValue(_stream, value); }
+void VespaDocumentDeserializer::read(ShortFieldValue& value) {
+    readFieldValue(_stream, value);
+}
 
 void VespaDocumentDeserializer::read(StringFieldValue& value) {
     uint8_t coding = readValue<uint8_t>(_stream);
@@ -382,7 +400,9 @@ void VespaDocumentDeserializer::read(WeightedSetFieldValue& value) {
     }
 }
 
-void VespaDocumentDeserializer::read(TensorFieldValue& value) { value.assignDeserialized(readTensor()); }
+void VespaDocumentDeserializer::read(TensorFieldValue& value) {
+    value.assignDeserialized(readTensor());
+}
 
 std::unique_ptr<vespalib::eval::Value> VespaDocumentDeserializer::readTensor() {
     size_t length = _stream.getInt1_4Bytes();

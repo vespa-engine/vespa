@@ -21,12 +21,15 @@ using std::unique_ptr;
 
 namespace document {
 namespace {
-[[noreturn]] void fail(const char* message) { throw DeserializeException(message); }
+[[noreturn]] void fail(const char* message) {
+    throw DeserializeException(message);
+}
 } // namespace
 
 AnnotationDeserializer::AnnotationDeserializer(const FixedTypeRepo& repo, vespalib::nbostream& stream,
                                                uint16_t version)
-    : _repo(repo), _stream(stream), _version(version), _nodes() {}
+    : _repo(repo), _stream(stream), _version(version), _nodes() {
+}
 
 unique_ptr<SpanTree> AnnotationDeserializer::readSpanTree() {
     VespaDocumentDeserializer deserializer(_repo, _stream, _version);

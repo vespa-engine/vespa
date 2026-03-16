@@ -82,7 +82,9 @@ template <typename Output> void putInt1_2_4Bytes(Output& out, uint32_t val) {
     }
 }
 
-template <typename Output> void putInt1_2_4BytesAs4(Output& out, uint32_t val) { out << (val | 0xc0000000); }
+template <typename Output> void putInt1_2_4BytesAs4(Output& out, uint32_t val) {
+    out << (val | 0xc0000000);
+}
 
 template <typename Output> void putInt2_4_8Bytes(Output& out, uint64_t val) {
     if (val < 0x8000) {

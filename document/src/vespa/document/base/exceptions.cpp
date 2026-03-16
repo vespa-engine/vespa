@@ -24,7 +24,8 @@ InvalidDataTypeException::InvalidDataTypeException(const DataType& actual, const
                                 actual.toString().c_str(), expected.toString().c_str()),
                             location, 1),
       _actual(actual),
-      _expected(expected) {}
+      _expected(expected) {
+}
 
 InvalidDataTypeException::~InvalidDataTypeException() = default;
 
@@ -34,26 +35,32 @@ InvalidDataTypeConversionException::InvalidDataTypeConversionException(const Dat
     : IllegalStateException(
           fmt("%s can not be converted to %s.", actual.toString().c_str(), expected.toString().c_str()), location, 1),
       _actual(actual),
-      _expected(expected) {}
+      _expected(expected) {
+}
 
 DocumentTypeNotFoundException::DocumentTypeNotFoundException(std::string name, const std::string& location)
-    : Exception("Document type " + name + " not found", location, 1), _type(std::move(name)) {}
+    : Exception("Document type " + name + " not found", location, 1), _type(std::move(name)) {
+}
 
 DataTypeNotFoundException::DataTypeNotFoundException(int id, const std::string& location)
-    : Exception(fmt("Data type with id %d not found", id), location, 1) {}
+    : Exception(fmt("Data type with id %d not found", id), location, 1) {
+}
 
 DataTypeNotFoundException::DataTypeNotFoundException(const std::string& name, const std::string& location)
-    : Exception("Data type with name " + name + " not found.", location, 1) {}
+    : Exception("Data type with name " + name + " not found.", location, 1) {
+}
 
 DataTypeNotFoundException::~DataTypeNotFoundException() = default;
 
 AnnotationTypeNotFoundException::AnnotationTypeNotFoundException(int id, const std::string& location)
-    : Exception(fmt("Data type with id %d not found", id), location, 1) {}
+    : Exception(fmt("Data type with id %d not found", id), location, 1) {
+}
 
 FieldNotFoundException::FieldNotFoundException(std::string fieldName, const std::string& location)
     : Exception("Field with name " + fieldName + " not found", location, 1),
       _fieldName(std::move(fieldName)),
-      _fieldId(0) {}
+      _fieldId(0) {
+}
 
 FieldNotFoundException::FieldNotFoundException(int fieldId, int16_t serializationVersion, const std::string& location)
     : Exception((serializationVersion < Document::getNewestSerializationVersion())
@@ -61,7 +68,8 @@ FieldNotFoundException::FieldNotFoundException(int fieldId, int16_t serializatio
                     : fmt("Field with id %i not found", fieldId),
                 location, 1),
       _fieldName(),
-      _fieldId(fieldId) {}
+      _fieldId(fieldId) {
+}
 
 InvalidDataTypeConversionException::~InvalidDataTypeConversionException() = default;
 AnnotationTypeNotFoundException::~AnnotationTypeNotFoundException() = default;

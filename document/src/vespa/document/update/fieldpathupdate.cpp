@@ -40,13 +40,15 @@ std::unique_ptr<select::Node> parseDocumentSelection(std::string_view query, con
 } // namespace
 
 FieldPathUpdate::FieldPathUpdate(FieldPathUpdateType type) noexcept
-    : _type(type), _originalFieldPath(), _originalWhereClause() {}
+    : _type(type), _originalFieldPath(), _originalWhereClause() {
+}
 
 FieldPathUpdate::FieldPathUpdate(const FieldPathUpdate&) = default;
 FieldPathUpdate& FieldPathUpdate::operator=(const FieldPathUpdate&) = default;
 
 FieldPathUpdate::FieldPathUpdate(FieldPathUpdateType type, string_view fieldPath, string_view whereClause)
-    : _type(type), _originalFieldPath(fieldPath), _originalWhereClause(whereClause) {}
+    : _type(type), _originalFieldPath(fieldPath), _originalWhereClause(whereClause) {
+}
 
 FieldPathUpdate::~FieldPathUpdate() = default;
 

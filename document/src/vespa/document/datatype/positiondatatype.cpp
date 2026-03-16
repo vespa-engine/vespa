@@ -26,7 +26,9 @@ const StructDataType& PositionDataType::getInstance() {
     return *instance;
 }
 
-std::string PositionDataType::getZCurveFieldName(const std::string& fieldName) { return fieldName + ZCURVE; }
+std::string PositionDataType::getZCurveFieldName(const std::string& fieldName) {
+    return fieldName + ZCURVE;
+}
 
 std::string_view PositionDataType::cutZCurveFieldName(std::string_view name) {
     return name.substr(0, name.size() - 7);

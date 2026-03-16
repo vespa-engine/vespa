@@ -131,9 +131,11 @@ int32_t createId(std::string_view name) {
 
 } // namespace
 
-DataType::DataType(std::string_view name, int dataTypeId) noexcept : _dataTypeId(dataTypeId), _name(name) {}
+DataType::DataType(std::string_view name, int dataTypeId) noexcept : _dataTypeId(dataTypeId), _name(name) {
+}
 
-DataType::DataType(std::string_view name) noexcept : DataType(name, createId(name)) {}
+DataType::DataType(std::string_view name) noexcept : DataType(name, createId(name)) {
+}
 
 DataType::~DataType() = default;
 
@@ -144,6 +146,8 @@ void DataType::buildFieldPath(FieldPath& path, std::string_view remainFieldName)
     }
 }
 
-const Field& DataType::getField(int fieldId) const { throw FieldNotFoundException(fieldId, 7, VESPA_STRLOC); }
+const Field& DataType::getField(int fieldId) const {
+    throw FieldNotFoundException(fieldId, 7, VESPA_STRLOC);
+}
 
 } // namespace document

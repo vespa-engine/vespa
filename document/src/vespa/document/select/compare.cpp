@@ -19,7 +19,8 @@ Compare::Compare(std::unique_ptr<ValueNode> left, const Operator& op, std::uniqu
       _left(std::move(left)),
       _right(std::move(right)),
       _operator(op),
-      _bucketIdFactory(bucketIdFactory) {}
+      _bucketIdFactory(bucketIdFactory) {
+}
 
 Compare::~Compare() = default;
 
@@ -100,7 +101,9 @@ ResultList Compare::trace(const Context& context, std::ostream& out) const {
     return traceValue(context, *_left, *_right, _operator, out);
 }
 
-void Compare::visit(Visitor& v) const { v.visitComparison(*this); }
+void Compare::visit(Visitor& v) const {
+    v.visitComparison(*this);
+}
 
 void Compare::print(std::ostream& out, bool verbose, const std::string& indent) const {
     if (_parentheses)

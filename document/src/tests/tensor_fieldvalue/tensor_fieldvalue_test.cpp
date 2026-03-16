@@ -22,7 +22,9 @@ namespace {
 TensorDataType xSparseTensorDataType(ValueType::from_spec("tensor(x{})"));
 TensorDataType xySparseTensorDataType(ValueType::from_spec("tensor(x{},y{})"));
 
-vespalib::eval::Value::UP createTensor(const TensorSpec& spec) { return SimpleValue::from_spec(spec); }
+vespalib::eval::Value::UP createTensor(const TensorSpec& spec) {
+    return SimpleValue::from_spec(spec);
+}
 
 std::unique_ptr<vespalib::eval::Value> makeSimpleTensor() {
     return SimpleValue::from_spec(TensorSpec("tensor(x{},y{})").add({{"x", "4"}, {"y", "5"}}, 7));

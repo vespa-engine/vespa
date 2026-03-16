@@ -8,14 +8,18 @@
 
 namespace document::select {
 
-Context::Context() : _doc(nullptr), _docId(nullptr), _docUpdate(nullptr), _variables() {}
+Context::Context() : _doc(nullptr), _docId(nullptr), _docUpdate(nullptr), _variables() {
+}
 
-Context::Context(const Document& doc) : _doc(&doc), _docId(nullptr), _docUpdate(nullptr), _variables() {}
+Context::Context(const Document& doc) : _doc(&doc), _docId(nullptr), _docUpdate(nullptr), _variables() {
+}
 
-Context::Context(const DocumentId& docId) : _doc(nullptr), _docId(&docId), _docUpdate(nullptr), _variables() {}
+Context::Context(const DocumentId& docId) : _doc(nullptr), _docId(&docId), _docUpdate(nullptr), _variables() {
+}
 
 Context::Context(const DocumentUpdate& docUpdate)
-    : _doc(nullptr), _docId(nullptr), _docUpdate(&docUpdate), _variables() {}
+    : _doc(nullptr), _docId(nullptr), _docUpdate(&docUpdate), _variables() {
+}
 
 Context::~Context() = default;
 
@@ -33,6 +37,8 @@ std::unique_ptr<Value> Context::getValue(const std::string& value) const {
     }
 }
 
-void Context::setVariableMap(std::unique_ptr<VariableMap> map) { _variables = std::move(map); }
+void Context::setVariableMap(std::unique_ptr<VariableMap> map) {
+    _variables = std::move(map);
+}
 
 } // namespace document::select

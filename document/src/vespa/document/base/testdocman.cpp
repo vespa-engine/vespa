@@ -58,7 +58,8 @@ std::vector<char> createBuffer() {
 
 std::vector<char> TestDocMan::_buffer = createBuffer();
 
-TestDocMan::TestDocMan() : _test_repo(), _repo(_test_repo.getTypeRepoSp()), _typeCfg(&_test_repo.getTypeConfig()) {}
+TestDocMan::TestDocMan() : _test_repo(), _repo(_test_repo.getTypeRepoSp()), _typeCfg(&_test_repo.getTypeConfig()) {
+}
 
 TestDocMan::~TestDocMan() = default;
 

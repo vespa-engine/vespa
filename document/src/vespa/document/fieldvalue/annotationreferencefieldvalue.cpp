@@ -29,6 +29,8 @@ AnnotationReferenceFieldValue* AnnotationReferenceFieldValue::clone() const {
     return new AnnotationReferenceFieldValue(*this);
 }
 
-void AnnotationReferenceFieldValue::printXml(XmlOutputStream& out) const { out << _annotation_index; }
+void AnnotationReferenceFieldValue::printXml(XmlOutputStream& out) const {
+    out << _annotation_index;
+}
 
 } // namespace document

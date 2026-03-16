@@ -21,7 +21,8 @@ namespace document {
 using namespace fieldvalue;
 
 AssignFieldPathUpdate::AssignFieldPathUpdate()
-    : FieldPathUpdate(Assign), _newValue(), _expression(), _removeIfZero(false), _createMissingPath(false) {}
+    : FieldPathUpdate(Assign), _newValue(), _expression(), _removeIfZero(false), _createMissingPath(false) {
+}
 
 AssignFieldPathUpdate::AssignFieldPathUpdate(const DataType& type, string_view fieldPath, string_view whereClause,
                                              std::unique_ptr<FieldValue> newValue)

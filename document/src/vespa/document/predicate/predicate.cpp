@@ -103,7 +103,9 @@ int compareNodes(const Inspector& n1, const Inspector& n2) {
 }
 } // namespace
 
-int Predicate::compare(const Slime& s1, const Slime& s2) { return compareNodes(s1.get(), s2.get()); }
+int Predicate::compare(const Slime& s1, const Slime& s2) {
+    return compareNodes(s1.get(), s2.get());
+}
 
 namespace {
 template <typename InsertIt> class InsertFromArray : public ArrayTraverser {
@@ -127,19 +129,22 @@ int64_t defaultUnlessDefined(const Inspector& i, int64_t default_value) {
 }
 } // namespace
 
-FeatureBase::FeatureBase(const Inspector& inspector) : _key(inspector[Predicate::KEY].asString().make_string()) {}
+FeatureBase::FeatureBase(const Inspector& inspector) : _key(inspector[Predicate::KEY].asString().make_string()) {
+}
 
 FeatureSet::FeatureSet(const Inspector& inspector) : FeatureBase(inspector), _features() {
     inspector[Predicate::SET].traverse(make_insert_from_array(back_inserter(_features)).ref());
 }
 
-FeatureSet::~FeatureSet() {}
+FeatureSet::~FeatureSet() {
+}
 
 FeatureRange::FeatureRange(const Inspector& inspector)
     : FeatureBase(inspector),
       _min(defaultUnlessDefined(inspector[Predicate::RANGE_MIN], LLONG_MIN)),
       _max(defaultUnlessDefined(inspector[Predicate::RANGE_MAX], LLONG_MAX)),
       _has_min(inspector[Predicate::RANGE_MIN].valid()),
-      _has_max(inspector[Predicate::RANGE_MAX].valid()) {}
+      _has_max(inspector[Predicate::RANGE_MAX].valid()) {
+}
 
 } // namespace document

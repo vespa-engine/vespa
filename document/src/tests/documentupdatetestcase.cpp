@@ -99,7 +99,8 @@ protected:
     static void TearDownTestSuite();
 };
 
-DocumentUpdateTest::DocumentUpdateTest() : ::testing::Test(), vespalib::test::TestData<DocumentUpdateTest>() {}
+DocumentUpdateTest::DocumentUpdateTest() : ::testing::Test(), vespalib::test::TestData<DocumentUpdateTest>() {
+}
 
 DocumentUpdateTest::~DocumentUpdateTest() = default;
 
@@ -108,7 +109,9 @@ void DocumentUpdateTest::SetUpTestSuite() {
     std::filesystem::create_directory(build_testdata());
 }
 
-void DocumentUpdateTest::TearDownTestSuite() { tear_down_test_data(); }
+void DocumentUpdateTest::TearDownTestSuite() {
+    tear_down_test_data();
+}
 
 TEST_F(DocumentUpdateTest, testSimpleUsage) {
     NewConfigBuilder builder;
@@ -772,7 +775,9 @@ TEST_F(DocumentUpdateTest, testMapValueUpdate) {
     EXPECT_EQ(fv4->find(StringFieldValue("apple")), fv4->end());
 }
 
-std::unique_ptr<vespalib::eval::Value> makeTensor(const TensorSpec& spec) { return SimpleValue::from_spec(spec); }
+std::unique_ptr<vespalib::eval::Value> makeTensor(const TensorSpec& spec) {
+    return SimpleValue::from_spec(spec);
+}
 
 std::unique_ptr<TensorFieldValue> makeTensorFieldValue(const TensorSpec& spec, const TensorDataType& dataType) {
     auto tensor = makeTensor(spec);

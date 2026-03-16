@@ -98,7 +98,9 @@ long ArithmeticValueUpdate::applyTo(int64_t value) const {
 }
 
 // Perform the contained operation on the given value.
-std::string ArithmeticValueUpdate::applyTo(const std::string& value) const { return value; }
+std::string ArithmeticValueUpdate::applyTo(const std::string& value) const {
+    return value;
+}
 
 // Print this update as a human readable string.
 void ArithmeticValueUpdate::print(std::ostream& out, bool, const std::string& indent) const {

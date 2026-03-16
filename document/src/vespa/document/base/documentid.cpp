@@ -10,9 +10,11 @@ using vespalib::nbostream;
 
 namespace document {
 
-DocumentId::DocumentId() : _globalId(), _id() {}
+DocumentId::DocumentId() : _globalId(), _id() {
+}
 
-DocumentId::DocumentId(std::string_view id) : _globalId(), _id(id) {}
+DocumentId::DocumentId(std::string_view id) : _globalId(), _id(id) {
+}
 
 DocumentId::DocumentId(vespalib::nbostream& is) : _globalId(), _id({is.peek(), strlen(is.peek())}) {
     is.adjustReadPos(strlen(is.peek()) + 1);
@@ -22,14 +24,18 @@ DocumentId::DocumentId(const DocumentId& rhs) = default;
 DocumentId& DocumentId::operator=(const DocumentId& rhs) = default;
 DocumentId::~DocumentId() noexcept = default;
 
-std::string DocumentId::toString() const { return _id.toString(); }
+std::string DocumentId::toString() const {
+    return _id.toString();
+}
 
 void DocumentId::set(std::string_view id) {
     _id = IdString(id);
     _globalId.first = false;
 }
 
-size_t DocumentId::getSerializedSize() const { return _id.toString().size() + 1; }
+size_t DocumentId::getSerializedSize() const {
+    return _id.toString().size() + 1;
+}
 
 void DocumentId::calculateGlobalId() const {
     std::string id(_id.toString());
@@ -45,6 +51,8 @@ void DocumentId::calculateGlobalId() const {
     _globalId.first = true;
 }
 
-std::ostream& operator<<(std::ostream& os, const DocumentId& id) { return os << id.toString(); }
+std::ostream& operator<<(std::ostream& os, const DocumentId& id) {
+    return os << id.toString();
+}
 
 } // namespace document

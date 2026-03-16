@@ -38,7 +38,9 @@ struct UpdateVisitor {
     virtual void visit(const TensorRemoveUpdate& value) = 0;
 };
 
-#define ACCEPT_UPDATE_VISITOR                                                    \
-    void accept(UpdateVisitor& visitor) const override { visitor.visit(*this); }
+#define ACCEPT_UPDATE_VISITOR                            \
+    void accept(UpdateVisitor& visitor) const override { \
+        visitor.visit(*this);                            \
+    }
 
 } // namespace document

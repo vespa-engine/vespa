@@ -25,7 +25,8 @@ AddFieldPathUpdate::AddFieldPathUpdate(const DataType& type, string_view fieldPa
     checkCompatibility(*_values, type);
 }
 
-AddFieldPathUpdate::AddFieldPathUpdate() : FieldPathUpdate(Add), _values() {}
+AddFieldPathUpdate::AddFieldPathUpdate() : FieldPathUpdate(Add), _values() {
+}
 
 AddFieldPathUpdate::~AddFieldPathUpdate() = default;
 

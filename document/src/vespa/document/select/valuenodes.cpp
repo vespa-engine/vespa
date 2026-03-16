@@ -41,9 +41,12 @@ namespace {
 
 } // namespace
 
-InvalidValueNode::InvalidValueNode(std::string_view name) : _name(name) {}
+InvalidValueNode::InvalidValueNode(std::string_view name) : _name(name) {
+}
 
-void InvalidValueNode::visit(Visitor& visitor) const { visitor.visitInvalidValueNode(*this); }
+void InvalidValueNode::visit(Visitor& visitor) const {
+    visitor.visitInvalidValueNode(*this);
+}
 
 void InvalidValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -57,7 +60,9 @@ void InvalidValueNode::print(std::ostream& out, bool verbose, const std::string&
 
 NullValueNode::NullValueNode() = default;
 
-void NullValueNode::visit(Visitor& visitor) const { visitor.visitNullValueNode(*this); }
+void NullValueNode::visit(Visitor& visitor) const {
+    visitor.visitNullValueNode(*this);
+}
 
 void NullValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -69,9 +74,12 @@ void NullValueNode::print(std::ostream& out, bool verbose, const std::string& in
         out << ')';
 }
 
-StringValueNode::StringValueNode(std::string_view val) : _value(val) {}
+StringValueNode::StringValueNode(std::string_view val) : _value(val) {
+}
 
-void StringValueNode::visit(Visitor& visitor) const { visitor.visitStringValueNode(*this); }
+void StringValueNode::visit(Visitor& visitor) const {
+    visitor.visitStringValueNode(*this);
+}
 
 void StringValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -83,7 +91,9 @@ void StringValueNode::print(std::ostream& out, bool verbose, const std::string& 
         out << ')';
 }
 
-void IntegerValueNode::visit(Visitor& visitor) const { visitor.visitIntegerValueNode(*this); }
+void IntegerValueNode::visit(Visitor& visitor) const {
+    visitor.visitIntegerValueNode(*this);
+}
 
 void IntegerValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -95,7 +105,9 @@ void IntegerValueNode::print(std::ostream& out, bool verbose, const std::string&
         out << ')';
 }
 
-void BoolValueNode::visit(Visitor& visitor) const { visitor.visitBoolValueNode(*this); }
+void BoolValueNode::visit(Visitor& visitor) const {
+    visitor.visitBoolValueNode(*this);
+}
 
 void BoolValueNode::print(std::ostream& out, [[maybe_unused]] bool verbose,
                           [[maybe_unused]] const std::string& indent) const {
@@ -112,7 +124,9 @@ int64_t CurrentTimeValueNode::getValue() const {
     return mytime.tv_sec;
 }
 
-void CurrentTimeValueNode::visit(Visitor& visitor) const { visitor.visitCurrentTimeValueNode(*this); }
+void CurrentTimeValueNode::visit(Visitor& visitor) const {
+    visitor.visitCurrentTimeValueNode(*this);
+}
 
 void CurrentTimeValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -120,9 +134,13 @@ void CurrentTimeValueNode::print(std::ostream& out, bool verbose, const std::str
     out << "now()";
 }
 
-std::unique_ptr<Value> VariableValueNode::getValue(const Context& context) const { return context.getValue(_value); }
+std::unique_ptr<Value> VariableValueNode::getValue(const Context& context) const {
+    return context.getValue(_value);
+}
 
-void VariableValueNode::visit(Visitor& visitor) const { visitor.visitVariableValueNode(*this); }
+void VariableValueNode::visit(Visitor& visitor) const {
+    visitor.visitVariableValueNode(*this);
+}
 
 void VariableValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -134,7 +152,9 @@ void VariableValueNode::print(std::ostream& out, bool verbose, const std::string
         out << ')';
 }
 
-void FloatValueNode::visit(Visitor& visitor) const { visitor.visitFloatValueNode(*this); }
+void FloatValueNode::visit(Visitor& visitor) const {
+    visitor.visitFloatValueNode(*this);
+}
 
 void FloatValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -147,7 +167,8 @@ void FloatValueNode::print(std::ostream& out, bool verbose, const std::string& i
 }
 
 FieldValueNode::FieldValueNode(const std::string& doctype, const std::string& fieldExpression)
-    : _doctype(doctype), _fieldExpression(fieldExpression), _fieldName(extractFieldName(fieldExpression)) {}
+    : _doctype(doctype), _fieldExpression(fieldExpression), _fieldName(extractFieldName(fieldExpression)) {
+}
 
 FieldValueNode::~FieldValueNode() = default;
 
@@ -200,9 +221,13 @@ private:
 IteratorHandler::IteratorHandler() = default;
 IteratorHandler::~IteratorHandler() = default;
 
-bool IteratorHandler::hasSingleValue() const { return _firstValue && _values.empty(); }
+bool IteratorHandler::hasSingleValue() const {
+    return _firstValue && _values.empty();
+}
 
-std::unique_ptr<Value> IteratorHandler::stealSingleValue() && { return std::move(_firstValue); }
+std::unique_ptr<Value> IteratorHandler::stealSingleValue() && {
+    return std::move(_firstValue);
+}
 
 std::vector<ArrayValue::VariableValue> IteratorHandler::stealValues() && {
     if (_firstValue) {
@@ -386,7 +411,9 @@ std::unique_ptr<Value> FieldValueNode::getValue(const Context& context) const {
     }
 }
 
-void FieldValueNode::visit(Visitor& visitor) const { visitor.visitFieldValueNode(*this); }
+void FieldValueNode::visit(Visitor& visitor) const {
+    visitor.visitFieldValueNode(*this);
+}
 
 void FieldValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -604,7 +631,9 @@ std::unique_ptr<Value> IdValueNode::traceValue(const DocumentId& id, std::ostrea
     return std::make_unique<StringValue>(value);
 }
 
-void IdValueNode::visit(Visitor& visitor) const { visitor.visitIdValueNode(*this); }
+void IdValueNode::visit(Visitor& visitor) const {
+    visitor.visitIdValueNode(*this);
+}
 
 void IdValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -766,7 +795,9 @@ std::unique_ptr<Value> FunctionValueNode::traceValue(std::unique_ptr<Value> val,
     return std::make_unique<InvalidValue>();
 }
 
-void FunctionValueNode::visit(Visitor& visitor) const { visitor.visitFunctionValueNode(*this); }
+void FunctionValueNode::visit(Visitor& visitor) const {
+    visitor.visitFunctionValueNode(*this);
+}
 
 void FunctionValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     if (hadParentheses())
@@ -984,7 +1015,9 @@ std::unique_ptr<Value> ArithmeticValueNode::traceValue(std::unique_ptr<Value> lv
     return std::make_unique<InvalidValue>();
 }
 
-void ArithmeticValueNode::visit(Visitor& visitor) const { visitor.visitArithmeticValueNode(*this); }
+void ArithmeticValueNode::visit(Visitor& visitor) const {
+    visitor.visitArithmeticValueNode(*this);
+}
 
 void ArithmeticValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     if (hadParentheses())

@@ -12,9 +12,15 @@ std::string Printable::toString(bool verbose, const std::string& indent) const {
     return o.str();
 }
 
-void Printable::print(std::ostream& out) const { print(out, false, ""); }
-void Printable::print(std::ostream& out, bool verbose) const { print(out, verbose, ""); }
-void Printable::print(std::ostream& out, const std::string& indent) const { print(out, false, indent); }
+void Printable::print(std::ostream& out) const {
+    print(out, false, "");
+}
+void Printable::print(std::ostream& out, bool verbose) const {
+    print(out, verbose, "");
+}
+void Printable::print(std::ostream& out, const std::string& indent) const {
+    print(out, false, indent);
+}
 
 std::ostream& operator<<(std::ostream& out, const Printable& p) {
     p.print(out, false, "");

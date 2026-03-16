@@ -12,6 +12,7 @@ AlignConsecutiveDeclarations:
   AlignFunctionDeclarations: false
   AlignFunctionPointers: false
 AlignEscapedNewlines: LeftWithLastLine
+AllowShortFunctionsOnASingleLine: InlineOnly
 PackConstructorInitializers: NextLine
 BreakBeforeBraces: Custom
 BraceWrapping:

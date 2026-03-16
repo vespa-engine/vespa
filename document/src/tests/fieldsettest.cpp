@@ -261,6 +261,8 @@ TEST(FieldCollectionTest, testHash) {
               FieldCollection(type, Field::Set::Builder().add(&type.getField("hstringval")).build()).hash());
 }
 
-TEST(FieldTest, testSizeOf) { EXPECT_EQ(sizeof(Field), 24u + sizeof(std::string)); }
+TEST(FieldTest, testSizeOf) {
+    EXPECT_EQ(sizeof(Field), 24u + sizeof(std::string));
+}
 
 } // namespace document

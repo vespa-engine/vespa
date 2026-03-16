@@ -12,7 +12,8 @@
 namespace document::select {
 
 CloningVisitor::CloningVisitor()
-    : _node(), _valueNode(), _constVal(false), _priority(-1), _fieldNodes(0u), _resultSet() {}
+    : _node(), _valueNode(), _constVal(false), _priority(-1), _fieldNodes(0u), _resultSet() {
+}
 
 CloningVisitor::~CloningVisitor() = default;
 

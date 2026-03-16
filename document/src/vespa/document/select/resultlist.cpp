@@ -12,7 +12,9 @@ ResultList::ResultList(ResultList&&) noexcept = default;
 ResultList& ResultList::operator=(ResultList&&) noexcept = default;
 ResultList::~ResultList() = default;
 
-ResultList::ResultList(const Result& result) { add(VariableMap(), result); }
+ResultList::ResultList(const Result& result) {
+    add(VariableMap(), result);
+}
 
 void ResultList::add(VariableMap variables, const Result& result) {
     _results.emplace_back(std::move(variables), &result);
@@ -51,7 +53,9 @@ const Result& combineResultsLocal(const ResultList::Results& results) {
 
 } // namespace
 
-const Result& ResultList::combineResults() const { return combineResultsLocal(_results); }
+const Result& ResultList::combineResults() const {
+    return combineResultsLocal(_results);
+}
 
 bool ResultList::combineVariables(VariableMap& combination, const VariableMap& a, const VariableMap& b) {
     // First, verify that all variables are overlapping

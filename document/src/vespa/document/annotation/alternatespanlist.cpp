@@ -53,6 +53,8 @@ double AlternateSpanList::getProbability(size_t index) const {
     return _subtrees[index].probability;
 }
 
-void AlternateSpanList::accept(SpanTreeVisitor& visitor) const { visitor.visit(*this); }
+void AlternateSpanList::accept(SpanTreeVisitor& visitor) const {
+    visitor.visit(*this);
+}
 
 } // namespace document

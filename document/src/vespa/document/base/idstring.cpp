@@ -59,7 +59,9 @@ union FourByte {
 constexpr FourByte G_null = {{'n', 'u', 'l', 'l'}};
 constexpr TwoByte  G_id = {{'i', 'd'}};
 
-const char* fmemchr(const char* s, const char* e) noexcept { return static_cast<const char*>(memchr(s, ':', e - s)); }
+const char* fmemchr(const char* s, const char* e) noexcept {
+    return static_cast<const char*>(memchr(s, ':', e - s));
+}
 
 // Avoid issues with primitive alignment when reading from buffer.
 // Requires caller to ensure buffer is big enough to read from.
@@ -131,7 +133,9 @@ void setLocation(IdString::LocationType& loc, IdString::LocationType val, bool& 
 
 const IdString::Offsets IdString::Offsets::DefaultID(DEFAULT_ID);
 
-IdString::Offsets::Offsets(string_view id) noexcept : _offsets() { compute(id); }
+IdString::Offsets::Offsets(string_view id) noexcept : _offsets() {
+    compute(id);
+}
 
 uint16_t IdString::Offsets::compute(string_view id) {
     _offsets[0] = NAMESPACE_OFFSET;
@@ -155,7 +159,8 @@ IdString::LocationType IdString::makeLocation(string_view s) {
 }
 
 IdString::IdString()
-    : _rawId(DEFAULT_ID), _location(0), _offsets(Offsets::DefaultID), _groupOffset(0), _has_number(false) {}
+    : _rawId(DEFAULT_ID), _location(0), _offsets(Offsets::DefaultID), _groupOffset(0), _has_number(false) {
+}
 
 IdString::IdString(string_view id) : _rawId(id), _location(0), _offsets(), _groupOffset(0), _has_number(false) {
     // TODO(magnarn): Require that keys are lexicographically ordered.

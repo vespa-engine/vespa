@@ -4,8 +4,10 @@
 
 namespace document {
 
-SlimeOutputToVector::SlimeOutputToVector() : _buf(), _size(0) {}
+SlimeOutputToVector::SlimeOutputToVector() : _buf(), _size(0) {
+}
 
-SlimeOutputToVector::~SlimeOutputToVector() {}
+SlimeOutputToVector::~SlimeOutputToVector() {
+}
 
 } // namespace document

@@ -24,7 +24,9 @@ using namespace document;
 
 namespace {
 
-template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
+template <typename T, int N> int arraysize(const T (&)[N]) {
+    return N;
+}
 
 } // namespace
 

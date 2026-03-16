@@ -19,6 +19,8 @@ vespalib::asciistream& operator<<(vespalib::asciistream& os, const BucketSpace& 
               << vespalib::setfill('0') << id.getId() << ")";
 }
 
-std::ostream& operator<<(std::ostream& os, const BucketSpace& bucketSpace) { return os << bucketSpace.toString(); }
+std::ostream& operator<<(std::ostream& os, const BucketSpace& bucketSpace) {
+    return os << bucketSpace.toString();
+}
 
 } // namespace document

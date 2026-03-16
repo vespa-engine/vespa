@@ -18,10 +18,12 @@ namespace document {
 
 using namespace fieldvalue;
 
-StructuredFieldValue::Iterator::Iterator() : _iterator(), _field(nullptr) {}
+StructuredFieldValue::Iterator::Iterator() : _iterator(), _field(nullptr) {
+}
 
 StructuredFieldValue::Iterator::Iterator(const StructuredFieldValue& owner, const Field* first)
-    : _iterator(owner.getIterator(first).release()), _field(_iterator->getNextField()) {}
+    : _iterator(owner.getIterator(first).release()), _field(_iterator->getNextField()) {
+}
 
 void StructuredFieldValue::setFieldValue(const Field& field, const FieldValue& value) {
     if (!field.getDataType().isValueType(value) && !value.getDataType()->isA(field.getDataType())) {

@@ -6,6 +6,8 @@
 
 namespace document {
 
-void Span::accept(SpanTreeVisitor& visitor) const { visitor.visit(*this); }
+void Span::accept(SpanTreeVisitor& visitor) const {
+    visitor.visit(*this);
+}
 
 } // namespace document

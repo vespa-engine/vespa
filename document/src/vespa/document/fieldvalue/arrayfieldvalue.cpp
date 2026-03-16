@@ -33,7 +33,8 @@ ArrayFieldValue::ArrayFieldValue(const DataType& type) : CollectionFieldValue(Ty
 }
 
 ArrayFieldValue::ArrayFieldValue(const ArrayFieldValue& other)
-    : CollectionFieldValue(other), _array(other._array->clone()) {}
+    : CollectionFieldValue(other), _array(other._array->clone()) {
+}
 
 ArrayFieldValue::~ArrayFieldValue() = default;
 

@@ -11,7 +11,8 @@ using namespace vespalib::xml;
 
 namespace document {
 
-BoolFieldValue::BoolFieldValue(bool value) : FieldValue(Type::BOOL), _value(value) {}
+BoolFieldValue::BoolFieldValue(bool value) : FieldValue(Type::BOOL), _value(value) {
+}
 
 BoolFieldValue::~BoolFieldValue() = default;
 
@@ -32,22 +33,40 @@ int BoolFieldValue::compare(const FieldValue& rhs) const {
     return (_value == o._value) ? 0 : _value ? 1 : -1;
 }
 
-void BoolFieldValue::printXml(XmlOutputStream& out) const { out << XmlContent(getAsString()); }
+void BoolFieldValue::printXml(XmlOutputStream& out) const {
+    out << XmlContent(getAsString());
+}
 
 void BoolFieldValue::print(std::ostream& out, bool, const std::string&) const {
     out << (_value ? "true" : "false") << "\n";
 }
 
-const DataType* BoolFieldValue::getDataType() const { return DataType::BOOL; }
+const DataType* BoolFieldValue::getDataType() const {
+    return DataType::BOOL;
+}
 
-FieldValue* BoolFieldValue::clone() const { return new BoolFieldValue(*this); }
+FieldValue* BoolFieldValue::clone() const {
+    return new BoolFieldValue(*this);
+}
 
-char BoolFieldValue::getAsByte() const { return _value ? 1 : 0; }
-int32_t BoolFieldValue::getAsInt() const { return _value ? 1 : 0; }
-int64_t BoolFieldValue::getAsLong() const { return _value ? 1 : 0; }
-float BoolFieldValue::getAsFloat() const { return _value ? 1 : 0; }
-double BoolFieldValue::getAsDouble() const { return _value ? 1 : 0; }
-std::string BoolFieldValue::getAsString() const { return _value ? "true" : "false"; }
+char BoolFieldValue::getAsByte() const {
+    return _value ? 1 : 0;
+}
+int32_t BoolFieldValue::getAsInt() const {
+    return _value ? 1 : 0;
+}
+int64_t BoolFieldValue::getAsLong() const {
+    return _value ? 1 : 0;
+}
+float BoolFieldValue::getAsFloat() const {
+    return _value ? 1 : 0;
+}
+double BoolFieldValue::getAsDouble() const {
+    return _value ? 1 : 0;
+}
+std::string BoolFieldValue::getAsString() const {
+    return _value ? "true" : "false";
+}
 
 BoolFieldValue& BoolFieldValue::operator=(std::string_view v) {
     _value = (v == "true");

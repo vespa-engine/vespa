@@ -35,7 +35,8 @@ StructFieldValue::StructFieldValue(const DataType& type)
       _repo(nullptr),
       _doc_type(nullptr),
       _version(Document::getNewestSerializationVersion()),
-      _hasChanged(true) {}
+      _hasChanged(true) {
+}
 
 StructFieldValue::StructFieldValue(const DocumentTypeRepo& repo, const DataType& type)
     : StructuredFieldValue(Type::STRUCT, type),
@@ -43,7 +44,8 @@ StructFieldValue::StructFieldValue(const DocumentTypeRepo& repo, const DataType&
       _repo(&repo),
       _doc_type(nullptr),
       _version(Document::getNewestSerializationVersion()),
-      _hasChanged(true) {}
+      _hasChanged(true) {
+}
 
 StructFieldValue::StructFieldValue(const StructFieldValue& rhs) = default;
 StructFieldValue& StructFieldValue::operator=(const StructFieldValue& rhs) = default;
@@ -106,9 +108,13 @@ void StructFieldValue::getRawFieldIds(vector<int>& raw_ids, const FieldSet& fiel
     raw_ids.erase(unique(raw_ids.begin(), raw_ids.end()), raw_ids.end());
 }
 
-bool StructFieldValue::hasField(std::string_view name) const { return getStructType().hasField(name); }
+bool StructFieldValue::hasField(std::string_view name) const {
+    return getStructType().hasField(name);
+}
 
-const Field& StructFieldValue::getField(std::string_view name) const { return getStructType().getField(name); }
+const Field& StructFieldValue::getField(std::string_view name) const {
+    return getStructType().getField(name);
+}
 
 namespace {
 
@@ -170,7 +176,9 @@ bool StructFieldValue::getFieldValue(const Field& field, FieldValue& value) cons
     return false;
 }
 
-bool StructFieldValue::hasFieldValue(const Field& field) const { return _fields.has(field.getId()); }
+bool StructFieldValue::hasFieldValue(const Field& field) const {
+    return _fields.has(field.getId());
+}
 
 namespace {
 
@@ -272,7 +280,9 @@ void StructFieldValue::print(std::ostream& out, bool verbose, const std::string&
     out << ")";
 }
 
-bool StructFieldValue::empty() const { return _fields.empty(); }
+bool StructFieldValue::empty() const {
+    return _fields.empty();
+}
 
 void StructFieldValue::reset() {
     clear();

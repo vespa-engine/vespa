@@ -45,17 +45,28 @@ using vespalib::slime::BinaryFormat;
 
 namespace document {
 
-VespaDocumentSerializer::VespaDocumentSerializer(nbostream& stream) : _stream(stream) {}
+VespaDocumentSerializer::VespaDocumentSerializer(nbostream& stream) : _stream(stream) {
+}
 
-void VespaDocumentSerializer::writeFieldValue(const FieldValue& value) { write(value); }
+void VespaDocumentSerializer::writeFieldValue(const FieldValue& value) {
+    write(value);
+}
 
-void VespaDocumentSerializer::writeSerializedData(const void* buf, size_t length) { _stream.write(buf, length); }
+void VespaDocumentSerializer::writeSerializedData(const void* buf, size_t length) {
+    _stream.write(buf, length);
+}
 
-void VespaDocumentSerializer::write(const ValueUpdate& value) { value.accept(*this); }
+void VespaDocumentSerializer::write(const ValueUpdate& value) {
+    value.accept(*this);
+}
 
-void VespaDocumentSerializer::write(const FieldPathUpdate& value) { value.accept(*this); }
+void VespaDocumentSerializer::write(const FieldPathUpdate& value) {
+    value.accept(*this);
+}
 
-void VespaDocumentSerializer::write(const FieldValue& value) { value.accept(*this); }
+void VespaDocumentSerializer::write(const FieldValue& value) {
+    value.accept(*this);
+}
 
 void VespaDocumentSerializer::write(const DocumentId& value) {
     string id_string = value.getScheme().toString();
@@ -127,13 +138,21 @@ void VespaDocumentSerializer::write(const MapFieldValue& value) {
     }
 }
 
-void VespaDocumentSerializer::write(const BoolFieldValue& value) { _stream << value.getValue(); }
+void VespaDocumentSerializer::write(const BoolFieldValue& value) {
+    _stream << value.getValue();
+}
 
-void VespaDocumentSerializer::write(const ByteFieldValue& value) { _stream << value.getValue(); }
+void VespaDocumentSerializer::write(const ByteFieldValue& value) {
+    _stream << value.getValue();
+}
 
-void VespaDocumentSerializer::write(const DoubleFieldValue& value) { _stream << value.getValue(); }
+void VespaDocumentSerializer::write(const DoubleFieldValue& value) {
+    _stream << value.getValue();
+}
 
-void VespaDocumentSerializer::write(const FloatFieldValue& value) { _stream << value.getValue(); }
+void VespaDocumentSerializer::write(const FloatFieldValue& value) {
+    _stream << value.getValue();
+}
 
 void VespaDocumentSerializer::write(const IntFieldValue& value) {
     _stream << static_cast<uint32_t>(value.getValue());
@@ -390,7 +409,9 @@ void VespaDocumentSerializer::write(const AssignFieldPathUpdate& value) {
     }
 }
 
-void VespaDocumentSerializer::write(const RemoveFieldPathUpdate& value) { writeFieldPath(_stream, value); }
+void VespaDocumentSerializer::write(const RemoveFieldPathUpdate& value) {
+    writeFieldPath(_stream, value);
+}
 
 namespace {
 
@@ -414,20 +435,26 @@ void VespaDocumentSerializer::write(const TensorModifyUpdate& value) {
     write(value.getTensor());
 }
 
-void VespaDocumentSerializer::visit(const TensorModifyUpdate& value) { write(value); }
+void VespaDocumentSerializer::visit(const TensorModifyUpdate& value) {
+    write(value);
+}
 
 void VespaDocumentSerializer::write(const TensorAddUpdate& value) {
     _stream << uint32_t(ValueUpdate::TensorAdd);
     write(value.getTensor());
 }
 
-void VespaDocumentSerializer::visit(const TensorAddUpdate& value) { write(value); }
+void VespaDocumentSerializer::visit(const TensorAddUpdate& value) {
+    write(value);
+}
 
 void VespaDocumentSerializer::write(const TensorRemoveUpdate& value) {
     _stream << uint32_t(ValueUpdate::TensorRemove);
     write(value.getTensor());
 }
 
-void VespaDocumentSerializer::visit(const TensorRemoveUpdate& value) { write(value); }
+void VespaDocumentSerializer::visit(const TensorRemoveUpdate& value) {
+    write(value);
+}
 
 } // namespace document

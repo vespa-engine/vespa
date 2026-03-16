@@ -91,7 +91,8 @@ void testSerialize(const DocumentTypeRepo& repo, const DocumentUpdate& a) {
 
 } // namespace
 
-FieldPathUpdateTestCase::FieldPathUpdateTestCase() : _foobar_type(nullptr) {}
+FieldPathUpdateTestCase::FieldPathUpdateTestCase() : _foobar_type(nullptr) {
+}
 
 FieldPathUpdateTestCase::~FieldPathUpdateTestCase() = default;
 
@@ -118,7 +119,8 @@ void FieldPathUpdateTestCase::SetUp() {
     _foobar_type = _repo->getDocumentType("foobar");
 }
 
-void FieldPathUpdateTestCase::TearDown() {}
+void FieldPathUpdateTestCase::TearDown() {
+}
 
 TEST_F(FieldPathUpdateTestCase, testRemoveField) {
     auto doc = std::make_unique<Document>(*_repo, *_foobar_type, DocumentId("id:ns:foobar::things:thangs"));
@@ -507,8 +509,10 @@ struct Keys {
     ~Keys();
 };
 
-Keys::Keys() : key1("foo"), key2("bar"), key3("zoo") {}
-Keys::~Keys() {}
+Keys::Keys() : key1("foo"), key2("bar"), key3("zoo") {
+}
+Keys::~Keys() {
+}
 
 struct Fixture {
     const DocumentType* _doc_type;

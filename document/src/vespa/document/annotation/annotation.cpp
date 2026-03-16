@@ -12,7 +12,9 @@
 
 namespace document {
 
-std::ostream& operator<<(std::ostream& os, const Annotation& annotation) { return os << annotation.toString(); }
+std::ostream& operator<<(std::ostream& os, const Annotation& annotation) {
+    return os << annotation.toString();
+}
 
 Annotation::~Annotation() = default;
 

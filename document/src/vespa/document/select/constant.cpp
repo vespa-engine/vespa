@@ -10,14 +10,17 @@ namespace document::select {
 
 Constant::Constant(bool value)
     : Node(value ? "true" : "false"), // TODO remove required name from Node
-      _value(value) {}
+      _value(value) {
+}
 
 ResultList Constant::trace(const Context&, std::ostream& ost) const {
     ost << "Constant - " << Result::get(_value) << ".\n";
     return ResultList(Result::get(_value));
 }
 
-void Constant::visit(Visitor& v) const { v.visitConstant(*this); }
+void Constant::visit(Visitor& v) const {
+    v.visitConstant(*this);
+}
 
 void Constant::print(std::ostream& out, bool, const std::string&) const {
     if (_parentheses)

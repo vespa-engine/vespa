@@ -81,7 +81,8 @@ Document::Document(const Document& rhs)
       _id(rhs._id),
       _fields(rhs._fields),
       _backingBuffer(),
-      _lastModified(rhs._lastModified) {}
+      _lastModified(rhs._lastModified) {
+}
 
 Document::Document(const DataType& type, DocumentId documentId)
     : StructuredFieldValue(Type::DOCUMENT, verifyDocumentType(&type)),
@@ -112,7 +113,9 @@ Document::Document(const DocumentTypeRepo& repo, const DataType& type, DocumentI
     }
 }
 
-void Document::setRepo(const DocumentTypeRepo& repo) { _fields.setRepo(repo); }
+void Document::setRepo(const DocumentTypeRepo& repo) {
+    _fields.setRepo(repo);
+}
 
 Document::Document(const DocumentTypeRepo& repo, vespalib::nbostream& is)
     : StructuredFieldValue(Type::DOCUMENT, *DataType::DOCUMENT),
@@ -168,7 +171,9 @@ const DocumentType& Document::getType() const {
     return static_cast<const DocumentType&>(StructuredFieldValue::getType());
 }
 
-void Document::clear() { _fields.clear(); }
+void Document::clear() {
+    _fields.clear();
+}
 
 void Document::setFieldValue(const Field& field, FieldValue::UP data) {
     _fields.setFieldValue(field, std::move(data));
@@ -262,7 +267,9 @@ StructuredFieldValue::StructuredIterator::UP Document::getIterator(const Field* 
     return _fields.getIterator(first);
 }
 
-void Document::beginTransaction() { _cache = std::make_unique<StructuredCache>(); }
+void Document::beginTransaction() {
+    _cache = std::make_unique<StructuredCache>();
+}
 void Document::commitTransaction() {
     for (auto& e : *_cache) {
         if (e.second.status == fieldvalue::ModificationStatus::REMOVED) {

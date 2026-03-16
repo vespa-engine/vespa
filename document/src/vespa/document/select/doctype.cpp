@@ -13,10 +13,13 @@
 namespace document::select {
 
 namespace {
-bool documentTypeEqualsName(const DocumentType& type, std::string_view name) { return (type.getName() == name); }
+bool documentTypeEqualsName(const DocumentType& type, std::string_view name) {
+    return (type.getName() == name);
+}
 } // namespace
 
-DocType::DocType(std::string_view doctype) : Node("DocType"), _doctype(doctype) {}
+DocType::DocType(std::string_view doctype) : Node("DocType"), _doctype(doctype) {
+}
 
 ResultList DocType::contains(const Context& context) const {
     if (context._doc != nullptr) {
@@ -47,7 +50,9 @@ ResultList DocType::trace(const Context& context, std::ostream& out) const {
     return result;
 }
 
-void DocType::visit(Visitor& v) const { v.visitDocumentType(*this); }
+void DocType::visit(Visitor& v) const {
+    v.visitDocumentType(*this);
+}
 
 void DocType::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;

@@ -16,7 +16,9 @@ LOG_SETUP(".document.base.globalid");
 
 namespace {
 
-bool validateHex(char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
+bool validateHex(char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
 
 uint16_t getHexVal(char c) {
     if (c >= '0' && c <= '9') {
@@ -82,7 +84,9 @@ GlobalId GlobalId::parse(std::string_view source) {
     return id;
 }
 
-bool GlobalId::containedInBucket(const BucketId& bucket) const { return bucket.contains(convertToBucketId()); }
+bool GlobalId::containedInBucket(const BucketId& bucket) const {
+    return bucket.contains(convertToBucketId());
+}
 
 GlobalId GlobalId::calculateFirstInBucket(const BucketId& bucket) {
     // std::cerr << "First: Calculating gid from " << bucket << "\n" << std::hex;
@@ -140,9 +144,13 @@ GlobalId GlobalId::calculateLastInBucket(const BucketId& bucket) {
     return GlobalId(raw);
 }
 
-vespalib::asciistream& operator<<(vespalib::asciistream& os, const GlobalId& gid) { return os << gid.toString(); }
+vespalib::asciistream& operator<<(vespalib::asciistream& os, const GlobalId& gid) {
+    return os << gid.toString();
+}
 
-std::ostream& operator<<(std::ostream& os, const GlobalId& gid) { return os << gid.toString(); }
+std::ostream& operator<<(std::ostream& os, const GlobalId& gid) {
+    return os << gid.toString();
+}
 
 } // namespace document
 

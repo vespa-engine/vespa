@@ -22,7 +22,8 @@ using vespalib::nbostream;
 namespace document {
 
 StringFieldValue::StringFieldValue(const StringFieldValue& rhs)
-    : Parent(rhs), _annotationData(rhs.copyAnnotationData()) {}
+    : Parent(rhs), _annotationData(rhs.copyAnnotationData()) {
+}
 
 StringFieldValue::~StringFieldValue() = default;
 
@@ -84,7 +85,9 @@ StringFieldValue::SpanTrees StringFieldValue::getSpanTrees() const {
     return trees;
 }
 
-void StringFieldValue::doClearSpanTrees() { _annotationData.reset(); }
+void StringFieldValue::doClearSpanTrees() {
+    _annotationData.reset();
+}
 
 const SpanTree* StringFieldValue::findTree(const SpanTrees& trees, string_view name) {
     for (const auto& tree : trees) {
@@ -141,6 +144,7 @@ StringFieldValue::SpanTrees StringFieldValue::AnnotationData::getSpanTrees() con
 }
 
 StringFieldValue::AnnotationData::AnnotationData(const StringFieldValue::AnnotationData& rhs)
-    : AnnotationData(rhs._serialized, FixedTypeRepo(rhs._repo, rhs._docType), rhs._version, false) {}
+    : AnnotationData(rhs._serialized, FixedTypeRepo(rhs._repo, rhs._docType), rhs._version, false) {
+}
 
 } // namespace document

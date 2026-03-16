@@ -20,7 +20,8 @@ using namespace vespalib::xml;
 namespace document {
 
 AddValueUpdate::AddValueUpdate(std::unique_ptr<FieldValue> value, int weight)
-    : ValueUpdate(Add), _value(std::move(value)), _weight(weight) {}
+    : ValueUpdate(Add), _value(std::move(value)), _weight(weight) {
+}
 
 AddValueUpdate::~AddValueUpdate() = default;
 

@@ -37,7 +37,8 @@ const DataType& getKeyType(const DataType& type) {
 WeightedSetFieldValue::WeightedSetFieldValue(const DataType& type)
     : CollectionFieldValue(Type::WSET, type),
       _map_type(std::make_shared<MapDataType>(getKeyType(type), *DataType::INT)),
-      _map(*_map_type) {}
+      _map(*_map_type) {
+}
 
 WeightedSetFieldValue::WeightedSetFieldValue(const WeightedSetFieldValue&) = default;
 WeightedSetFieldValue& WeightedSetFieldValue::operator=(const WeightedSetFieldValue&) = default;
@@ -100,7 +101,9 @@ int32_t WeightedSetFieldValue::get(const FieldValue& key, int32_t defaultValue) 
     return (it == end() ? defaultValue : static_cast<const IntFieldValue&>(*it->second).getValue());
 }
 
-bool WeightedSetFieldValue::containsValue(const FieldValue& key) const { return _map.contains(key); }
+bool WeightedSetFieldValue::containsValue(const FieldValue& key) const {
+    return _map.contains(key);
+}
 
 bool WeightedSetFieldValue::removeValue(const FieldValue& key) {
     bool result = _map.erase(key);
@@ -153,7 +156,9 @@ WeightedSetFieldValue::const_iterator WeightedSetFieldValue::find(const FieldVal
     return _map.find(key);
 }
 
-WeightedSetFieldValue::iterator WeightedSetFieldValue::find(const FieldValue& key) { return _map.find(key); }
+WeightedSetFieldValue::iterator WeightedSetFieldValue::find(const FieldValue& key) {
+    return _map.find(key);
+}
 
 ModificationStatus WeightedSetFieldValue::onIterateNested(PathRange nested, IteratorHandler& handler) const {
     return _map.iterateNestedImpl(nested, handler, *this);

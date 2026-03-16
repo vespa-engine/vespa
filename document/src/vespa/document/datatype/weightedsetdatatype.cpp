@@ -33,12 +33,14 @@ std::string createName(const DataType& nestedType, bool create, bool remove) {
 WeightedSetDataType::WeightedSetDataType(const DataType& nested, bool createIfNon, bool remove)
     : CollectionDataType(createName(nested, createIfNon, remove), nested),
       _createIfNonExistent(createIfNon),
-      _removeIfZero(remove) {}
+      _removeIfZero(remove) {
+}
 
 WeightedSetDataType::WeightedSetDataType(const DataType& nested, bool createIfNon, bool remove, int id)
     : CollectionDataType(createName(nested, createIfNon, remove), nested, id),
       _createIfNonExistent(createIfNon),
-      _removeIfZero(remove) {}
+      _removeIfZero(remove) {
+}
 
 WeightedSetDataType::~WeightedSetDataType() = default;
 

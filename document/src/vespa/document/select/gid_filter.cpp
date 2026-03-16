@@ -139,6 +139,7 @@ GidFilter::OptionalLocation location_bits_from_selection(const Node& ast_root) {
 
 } // namespace
 
-GidFilter::GidFilter(const Node& ast_root) : _required_gid_location(location_bits_from_selection(ast_root)) {}
+GidFilter::GidFilter(const Node& ast_root) : _required_gid_location(location_bits_from_selection(ast_root)) {
+}
 
 } // namespace document::select

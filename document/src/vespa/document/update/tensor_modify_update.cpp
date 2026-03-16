@@ -35,7 +35,9 @@ namespace document {
 
 namespace {
 
-double replace(double, double b) { return b; }
+double replace(double, double b) {
+    return b;
+}
 
 join_fun_t getJoinFunction(TensorModifyUpdate::Operation operation) {
     using Operation = TensorModifyUpdate::Operation;
@@ -84,7 +86,8 @@ TensorModifyUpdate::TensorModifyUpdate()
       _operation(Operation::MAX_NUM_OPERATIONS),
       _tensorType(),
       _tensor(),
-      _default_cell_value() {}
+      _default_cell_value() {
+}
 
 TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor)
     : ValueUpdate(TensorModify),

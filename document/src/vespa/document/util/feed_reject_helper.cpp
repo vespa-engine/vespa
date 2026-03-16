@@ -8,7 +8,9 @@
 
 namespace document {
 
-bool FeedRejectHelper::isFixedSizeSingleValue(const document::FieldValue& fv) { return fv.isFixedSizeSingleValue(); }
+bool FeedRejectHelper::isFixedSizeSingleValue(const document::FieldValue& fv) {
+    return fv.isFixedSizeSingleValue();
+}
 
 bool FeedRejectHelper::mustReject(const document::ValueUpdate& valueUpdate) {
     using namespace document;

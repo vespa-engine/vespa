@@ -32,7 +32,8 @@ FieldCollection build_field_collection(const std::set<std::string>& fields, cons
 } // namespace
 
 DocumentType::FieldSet::FieldSet(const std::string& name, Fields fields, const DocumentType& doc_type)
-    : _name(name), _fields(fields), _field_collection(build_field_collection(fields, doc_type)) {}
+    : _name(name), _fields(fields), _field_collection(build_field_collection(fields, doc_type)) {
+}
 
 DocumentType::FieldSet::~FieldSet() = default;
 
@@ -207,16 +208,24 @@ bool DocumentType::equals(const DataType& other) const noexcept {
     return true;
 }
 
-const Field& DocumentType::getField(string_view name) const { return _fields->getField(name); }
+const Field& DocumentType::getField(string_view name) const {
+    return _fields->getField(name);
+}
 
-const Field& DocumentType::getField(int fieldId) const { return _fields->getField(fieldId); }
+const Field& DocumentType::getField(int fieldId) const {
+    return _fields->getField(fieldId);
+}
 
-Field::Set DocumentType::getFieldSet() const { return _fields->getFieldSet(); }
+Field::Set DocumentType::getFieldSet() const {
+    return _fields->getFieldSet();
+}
 
 bool DocumentType::has_imported_field_name(const std::string& name) const noexcept {
     return (_imported_field_names.find(name) != _imported_field_names.end());
 }
 
-void DocumentType::add_imported_field_name(const std::string& name) { _imported_field_names.insert(name); }
+void DocumentType::add_imported_field_name(const std::string& name) {
+    _imported_field_names.insert(name);
+}
 
 } // namespace document

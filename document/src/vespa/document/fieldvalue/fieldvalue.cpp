@@ -89,9 +89,13 @@ size_t FieldValue::hash() const {
     return vespalib::hashValue(os.data(), os.size());
 }
 
-int FieldValue::compare(const FieldValue& other) const { return getDataType()->cmpId(*other.getDataType()); }
+int FieldValue::compare(const FieldValue& other) const {
+    return getDataType()->cmpId(*other.getDataType());
+}
 
-int FieldValue::fastCompare(const FieldValue& other) const { return compare(other); }
+int FieldValue::fastCompare(const FieldValue& other) const {
+    return compare(other);
+}
 
 FieldValue& FieldValue::assign(const FieldValue& value) {
     throw IllegalArgumentException("Cannot assign value of type " + value.getDataType()->toString() +

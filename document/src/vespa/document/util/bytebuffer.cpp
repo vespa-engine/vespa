@@ -25,7 +25,9 @@ namespace {
 
 [[noreturn]] static void throwOutOfBounds(size_t want, size_t has) __attribute__((noinline));
 
-void throwOutOfBounds(size_t want, size_t has) { throw BufferOutOfBoundsException(want, has, VESPA_STRLOC); }
+void throwOutOfBounds(size_t want, size_t has) {
+    throw BufferOutOfBoundsException(want, has, VESPA_STRLOC);
+}
 
 } // namespace
 
@@ -56,16 +58,19 @@ std::string BufferOutOfBoundsException::createMessage(size_t pos, size_t len) {
 }
 
 BufferOutOfBoundsException::BufferOutOfBoundsException(size_t pos, size_t len, const std::string& location)
-    : IoException(createMessage(pos, len), IoException::NO_SPACE, location, 1) {}
+    : IoException(createMessage(pos, len), IoException::NO_SPACE, location, 1) {
+}
 
 ByteBuffer::ByteBuffer(Alloc buffer, uint32_t len)
     : _buffer(static_cast<const char*>(buffer.get())),
       _len(len),
       _pos(0),
-      _ownedBuffer(std::make_unique<Alloc>(std::move(buffer))) {}
+      _ownedBuffer(std::make_unique<Alloc>(std::move(buffer))) {
+}
 
 ByteBuffer::ByteBuffer(std::unique_ptr<Alloc> buffer, uint32_t len)
-    : _buffer(static_cast<const char*>(buffer->get())), _len(len), _pos(0), _ownedBuffer(std::move(buffer)) {}
+    : _buffer(static_cast<const char*>(buffer->get())), _len(len), _pos(0), _ownedBuffer(std::move(buffer)) {
+}
 
 ByteBuffer::ByteBuffer(const ByteBuffer& rhs) : _buffer(nullptr), _len(rhs._len), _pos(rhs._pos), _ownedBuffer() {
     if (rhs._len > 0 && rhs._buffer) {
@@ -134,9 +139,13 @@ void ByteBuffer::getNumeric(int64_t& v) {
     }
 }
 
-void ByteBuffer::getNumericNetwork(double& v) { getDoubleLongNetwork(v); }
+void ByteBuffer::getNumericNetwork(double& v) {
+    getDoubleLongNetwork(v);
+}
 
-void ByteBuffer::getNumericNetwork(int64_t& v) { getDoubleLongNetwork(v); }
+void ByteBuffer::getNumericNetwork(int64_t& v) {
+    getDoubleLongNetwork(v);
+}
 
 void ByteBuffer::getBytes(void* buffer, uint32_t count) {
     const char* v = getBufferAtPos();

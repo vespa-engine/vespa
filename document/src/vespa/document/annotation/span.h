@@ -44,6 +44,8 @@ inline bool operator<(const Span& span1, const Span& span2) noexcept {
     }
 }
 
-inline bool operator>(const Span& span1, const Span& span2) { return span2 < span1; }
+inline bool operator>(const Span& span1, const Span& span2) {
+    return span2 < span1;
+}
 
 } // namespace document

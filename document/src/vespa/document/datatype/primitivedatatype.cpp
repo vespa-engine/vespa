@@ -61,7 +61,8 @@ const std::string_view getTypeName(DataType::Type type) {
 
 } // namespace
 
-PrimitiveDataType::PrimitiveDataType(Type type) : DataType(getTypeName(type), type) {}
+PrimitiveDataType::PrimitiveDataType(Type type) : DataType(getTypeName(type), type) {
+}
 
 FieldValue::UP PrimitiveDataType::createFieldValue() const {
     switch (getId()) {

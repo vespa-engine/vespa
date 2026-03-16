@@ -115,11 +115,15 @@ DocumenttypesConfig getDocTypesConfig() {
 const DocumentTypeRepo doc_repo(getDocTypesConfig());
 const FixedTypeRepo    repo(doc_repo, *doc_repo.getDocumentType(doc_type_id));
 
-template <typename T> T newFieldValue(const T&) { return T(); }
+template <typename T> T newFieldValue(const T&) {
+    return T();
+}
 template <> ArrayFieldValue newFieldValue(const ArrayFieldValue& value) {
     return ArrayFieldValue(*value.getDataType());
 }
-template <> MapFieldValue newFieldValue(const MapFieldValue& value) { return MapFieldValue(*value.getDataType()); }
+template <> MapFieldValue newFieldValue(const MapFieldValue& value) {
+    return MapFieldValue(*value.getDataType());
+}
 template <> WeightedSetFieldValue newFieldValue(const WeightedSetFieldValue& value) {
     return WeightedSetFieldValue(*value.getDataType());
 }
@@ -504,7 +508,9 @@ TEST(VespaDocumentSerializerTest, requireThatReserializationIsUnompressedIfUnmod
     EXPECT_EQ(value, value2);
 }
 
-template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
+template <typename T, int N> int arraysize(const T (&)[N]) {
+    return N;
+}
 
 TEST(VespaDocumentSerializerTest, requireThatDocumentCanBeSerialized) {
     const DocumentType& type = repo.getDocumentType();
@@ -752,7 +758,9 @@ TEST(VespaDocumentSerializerTest, Require_that_predicate_deserialization_matches
 
 namespace {
 
-vespalib::eval::Value::UP createTensor(const TensorSpec& spec) { return SimpleValue::from_spec(spec); }
+vespalib::eval::Value::UP createTensor(const TensorSpec& spec) {
+    return SimpleValue::from_spec(spec);
+}
 
 } // namespace
 
@@ -784,7 +792,9 @@ DocumenttypesConfig getTensorDocTypesConfig(const std::string& tensorType) {
     return builder.config();
 }
 
-DocumenttypesConfig getTensorDocTypesConfig() { return getTensorDocTypesConfig("tensor(dimX{},dimY{})"); }
+DocumenttypesConfig getTensorDocTypesConfig() {
+    return getTensorDocTypesConfig("tensor(dimX{},dimY{})");
+}
 
 const DocumentTypeRepo tensor_doc_repo(getTensorDocTypesConfig());
 const FixedTypeRepo    tensor_repo(tensor_doc_repo, *tensor_doc_repo.getDocumentType(tensor_doc_type_id));
@@ -861,7 +871,8 @@ struct DeserializedTensorDoc {
     const vespalib::eval::Value* getTensor() const;
 };
 
-DeserializedTensorDoc::DeserializedTensorDoc() : _doc(), _fieldValue() {}
+DeserializedTensorDoc::DeserializedTensorDoc() : _doc(), _fieldValue() {
+}
 
 DeserializedTensorDoc::~DeserializedTensorDoc() = default;
 

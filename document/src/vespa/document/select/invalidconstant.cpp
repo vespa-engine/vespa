@@ -8,14 +8,17 @@
 
 namespace document::select {
 
-InvalidConstant::InvalidConstant(std::string_view value) : Node(value) {}
+InvalidConstant::InvalidConstant(std::string_view value) : Node(value) {
+}
 
 ResultList InvalidConstant::trace(const Context&, std::ostream& ost) const {
     ost << "InvalidConstant - " << Result::Invalid << ".\n";
     return ResultList(Result::Invalid);
 }
 
-void InvalidConstant::visit(Visitor& v) const { v.visitInvalidConstant(*this); }
+void InvalidConstant::visit(Visitor& v) const {
+    v.visitInvalidConstant(*this);
+}
 
 void InvalidConstant::print(std::ostream& out, bool, const std::string&) const {
     if (_parentheses)

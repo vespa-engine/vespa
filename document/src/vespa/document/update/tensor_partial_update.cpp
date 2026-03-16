@@ -25,7 +25,9 @@ namespace {
 
 using join_fun_t = vespalib::eval::operation::op2_t;
 
-static constexpr size_t npos() { return -1; }
+static constexpr size_t npos() {
+    return -1;
+}
 
 enum class DimCase { MAPPED_MATCH, CONV_TO_INDEXED };
 

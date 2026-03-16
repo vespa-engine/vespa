@@ -27,9 +27,13 @@ size_t SpanTree::annotate(const SpanNode& node, const AnnotationType& annotation
     return annotate(node, Annotation(annotation_type));
 }
 
-void SpanTree::accept(SpanTreeVisitor& visitor) const { _root->accept(visitor); }
+void SpanTree::accept(SpanTreeVisitor& visitor) const {
+    _root->accept(visitor);
+}
 
-int SpanTree::compare(const SpanTree& other) const { return toString().compare(other.toString()); }
+int SpanTree::compare(const SpanTree& other) const {
+    return toString().compare(other.toString());
+}
 
 std::string SpanTree::toString() const {
     vespalib::asciistream os;

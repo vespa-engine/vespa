@@ -24,14 +24,18 @@ std::string createName(const DataType& keyType, const DataType& valueType) {
 } // namespace
 
 MapDataType::MapDataType(const DataType& key, const DataType& value) noexcept
-    : DataType(createName(key, value)), _keyType(&key), _valueType(&value) {}
+    : DataType(createName(key, value)), _keyType(&key), _valueType(&value) {
+}
 
 MapDataType::MapDataType(const DataType& key, const DataType& value, int id) noexcept
-    : DataType(createName(key, value), id), _keyType(&key), _valueType(&value) {}
+    : DataType(createName(key, value), id), _keyType(&key), _valueType(&value) {
+}
 
 MapDataType::~MapDataType() = default;
 
-FieldValue::UP MapDataType::createFieldValue() const { return std::make_unique<MapFieldValue>(*this); }
+FieldValue::UP MapDataType::createFieldValue() const {
+    return std::make_unique<MapFieldValue>(*this);
+}
 
 void MapDataType::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "MapDataType(";

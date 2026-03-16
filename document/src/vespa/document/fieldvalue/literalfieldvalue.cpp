@@ -11,7 +11,9 @@ using namespace vespalib::xml;
 
 namespace document {
 
-LiteralFieldValueB::LiteralFieldValueB(Type type) : FieldValue(type), _value(), _backing() { _value = _backing; }
+LiteralFieldValueB::LiteralFieldValueB(Type type) : FieldValue(type), _value(), _backing() {
+    _value = _backing;
+}
 
 LiteralFieldValueB::~LiteralFieldValueB() = default;
 
@@ -66,7 +68,9 @@ FieldValue& LiteralFieldValueB::operator=(std::string_view value) {
     return *this;
 }
 
-std::string LiteralFieldValueB::getAsString() const { return getValue(); }
+std::string LiteralFieldValueB::getAsString() const {
+    return getValue();
+}
 
 std::pair<const char*, size_t> LiteralFieldValueB::getAsRaw() const {
     return std::make_pair(_value.data(), _value.size());

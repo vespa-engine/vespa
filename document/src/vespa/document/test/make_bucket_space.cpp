@@ -4,7 +4,9 @@
 
 namespace document::test {
 
-BucketSpace makeBucketSpace() noexcept { return BucketSpace(1); }
+BucketSpace makeBucketSpace() noexcept {
+    return BucketSpace(1);
+}
 
 BucketSpace makeBucketSpace(const std::string& docTypeName) noexcept {
     // Used by persistence conformance test to map from document type name

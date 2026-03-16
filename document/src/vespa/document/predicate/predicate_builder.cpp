@@ -12,9 +12,13 @@ using vespalib::slime::Inspector;
 
 namespace document {
 
-void PredicateBuilder::visitFeatureSet(const Inspector& i) { _nodes.push_back(new FeatureSet(i)); }
+void PredicateBuilder::visitFeatureSet(const Inspector& i) {
+    _nodes.push_back(new FeatureSet(i));
+}
 
-void PredicateBuilder::visitFeatureRange(const Inspector& i) { _nodes.push_back(new FeatureRange(i)); }
+void PredicateBuilder::visitFeatureRange(const Inspector& i) {
+    _nodes.push_back(new FeatureRange(i));
+}
 
 void PredicateBuilder::visitNegation(const Inspector& i) {
     visitChildren(i);
@@ -37,9 +41,13 @@ void PredicateBuilder::visitDisjunction(const Inspector& i) {
     nodes.swap(_nodes);
 }
 
-void PredicateBuilder::visitTrue(const Inspector&) { _nodes.push_back(new TruePredicate); }
+void PredicateBuilder::visitTrue(const Inspector&) {
+    _nodes.push_back(new TruePredicate);
+}
 
-void PredicateBuilder::visitFalse(const Inspector&) { _nodes.push_back(new FalsePredicate); }
+void PredicateBuilder::visitFalse(const Inspector&) {
+    _nodes.push_back(new FalsePredicate);
+}
 
 std::unique_ptr<PredicateNode> PredicateBuilder::build(const vespalib::slime::Inspector& i) {
     visit(i);

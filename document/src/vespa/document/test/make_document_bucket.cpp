@@ -6,6 +6,8 @@
 
 namespace document::test {
 
-Bucket makeDocumentBucket(BucketId bucketId) { return Bucket(makeBucketSpace(), bucketId); }
+Bucket makeDocumentBucket(BucketId bucketId) {
+    return Bucket(makeBucketSpace(), bucketId);
+}
 
 } // namespace document::test

@@ -10,7 +10,8 @@ using vespalib::slime::Cursor;
 
 namespace document {
 
-PredicateSlimeBuilder::PredicateSlimeBuilder() : _slime(new Slime), _cursor(&_slime->setObject()) {}
+PredicateSlimeBuilder::PredicateSlimeBuilder() : _slime(new Slime), _cursor(&_slime->setObject()) {
+}
 
 PredicateSlimeBuilder& PredicateSlimeBuilder::feature(const std::string& key) {
     _cursor->setString(Predicate::KEY, key);

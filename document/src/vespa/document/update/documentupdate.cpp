@@ -67,7 +67,8 @@ DocumentUpdate::DocumentUpdate()
       _updates(),
       _fieldPathUpdates(),
       _createIfNonExistent(false),
-      _needHardReserialize(false) {}
+      _needHardReserialize(false) {
+}
 
 DocumentUpdate::~DocumentUpdate() = default;
 
@@ -76,7 +77,9 @@ bool DocumentUpdate::operator==(const DocumentUpdate& other) const {
            (memcmp(_backing.peek(), other._backing.peek(), _backing.size()) == 0);
 }
 
-const DocumentType& DocumentUpdate::getType() const noexcept { return static_cast<const DocumentType&>(*_type); }
+const DocumentType& DocumentUpdate::getType() const noexcept {
+    return static_cast<const DocumentType&>(*_type);
+}
 
 const DocumentUpdate::FieldUpdateV& DocumentUpdate::getUpdates() const {
     ensureDeserialized();
@@ -88,7 +91,9 @@ const DocumentUpdate::FieldPathUpdateV& DocumentUpdate::getFieldPathUpdates() co
     return _fieldPathUpdates;
 }
 
-void DocumentUpdate::eagerDeserialize() const { ensureDeserialized(); }
+void DocumentUpdate::eagerDeserialize() const {
+    ensureDeserialized();
+}
 
 void DocumentUpdate::lazyDeserialize(const DocumentTypeRepo& repo, nbostream& stream) {
     size_t           start(stream.rp());

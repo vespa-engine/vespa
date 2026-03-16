@@ -46,9 +46,13 @@ std::ostream& operator<<(std::ostream& os, Value::Type t) {
     return os;
 }
 
-ResultList Value::globCompare(const Value& value) const { return GlobOperator::GLOB.compareImpl(*this, value); }
+ResultList Value::globCompare(const Value& value) const {
+    return GlobOperator::GLOB.compareImpl(*this, value);
+}
 
-ResultList Value::regexCompare(const Value& value) const { return RegexOperator::REGEX.compareImpl(*this, value); }
+ResultList Value::regexCompare(const Value& value) const {
+    return RegexOperator::REGEX.compareImpl(*this, value);
+}
 
 ResultList Value::globTrace(const Value& value, std::ostream& trace) const {
     return GlobOperator::GLOB.traceImpl(*this, value, trace);
@@ -58,9 +62,13 @@ ResultList Value::regexTrace(const Value& value, std::ostream& trace) const {
     return RegexOperator::REGEX.traceImpl(*this, value, trace);
 }
 
-ResultList InvalidValue::operator<(const Value&) const { return ResultList(Result::Invalid); }
+ResultList InvalidValue::operator<(const Value&) const {
+    return ResultList(Result::Invalid);
+}
 
-ResultList InvalidValue::operator==(const Value&) const { return ResultList(Result::Invalid); }
+ResultList InvalidValue::operator==(const Value&) const {
+    return ResultList(Result::Invalid);
+}
 
 void InvalidValue::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -68,7 +76,9 @@ void InvalidValue::print(std::ostream& out, bool verbose, const std::string& ind
     out << "invalid";
 }
 
-ResultList NullValue::operator<(const Value&) const { return ResultList(Result::Invalid); }
+ResultList NullValue::operator<(const Value&) const {
+    return ResultList(Result::Invalid);
+}
 
 ResultList NullValue::operator==(const Value& value) const {
     const NullValue* nval(dynamic_cast<const NullValue*>(&value));
@@ -79,11 +89,17 @@ ResultList NullValue::operator==(const Value& value) const {
     return ResultList(ival != nullptr ? Result::Invalid : Result::False);
 }
 
-ResultList NullValue::operator>(const Value&) const { return ResultList(Result::Invalid); }
+ResultList NullValue::operator>(const Value&) const {
+    return ResultList(Result::Invalid);
+}
 
-ResultList NullValue::operator>=(const Value&) const { return ResultList(Result::Invalid); }
+ResultList NullValue::operator>=(const Value&) const {
+    return ResultList(Result::Invalid);
+}
 
-ResultList NullValue::operator<=(const Value&) const { return ResultList(Result::Invalid); }
+ResultList NullValue::operator<=(const Value&) const {
+    return ResultList(Result::Invalid);
+}
 
 void NullValue::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
@@ -91,7 +107,8 @@ void NullValue::print(std::ostream& out, bool verbose, const std::string& indent
     out << "nil";
 }
 
-StringValue::StringValue(std::string_view val) : Value(Type::String), _value(val) {}
+StringValue::StringValue(std::string_view val) : Value(Type::String), _value(val) {
+}
 
 ResultList StringValue::operator<(const Value& value) const {
     const StringValue* val(dynamic_cast<const StringValue*>(&value));
@@ -117,7 +134,8 @@ void StringValue::print(std::ostream& out, bool verbose, const std::string& inde
 }
 
 IntegerValue::IntegerValue(int64_t val, bool isBucketValue)
-    : NumberValue(isBucketValue ? Type::Bucket : Type::Integer), _value(val) {}
+    : NumberValue(isBucketValue ? Type::Bucket : Type::Integer), _value(val) {
+}
 
 ResultList IntegerValue::operator<(const Value& value) const {
     const NumberValue* val(dynamic_cast<const NumberValue*>(&value));
@@ -142,7 +160,8 @@ void IntegerValue::print(std::ostream& out, bool verbose, const std::string& ind
     out << _value << 'i';
 }
 
-FloatValue::FloatValue(double val) : NumberValue(Type::Float), _value(val) {}
+FloatValue::FloatValue(double val) : NumberValue(Type::Float), _value(val) {
+}
 
 ResultList FloatValue::operator<(const Value& value) const {
     const NumberValue* val(dynamic_cast<const NumberValue*>(&value));
@@ -167,7 +186,8 @@ void FloatValue::print(std::ostream& out, bool verbose, const std::string& inden
     out << _value << 'f';
 }
 
-ArrayValue::ArrayValue(std::vector<VariableValue> values) : Value(Type::Array), _values(std::move(values)) {}
+ArrayValue::ArrayValue(std::vector<VariableValue> values) : Value(Type::Array), _values(std::move(values)) {
+}
 ArrayValue::~ArrayValue() = default;
 
 struct ArrayValue::EqualsComparator {
@@ -214,22 +234,36 @@ struct ArrayValue::RegexComparator {
     }
 };
 
-ResultList ArrayValue::operator<(const Value& value) const { return doCompare(value, LessThanComparator()); }
+ResultList ArrayValue::operator<(const Value& value) const {
+    return doCompare(value, LessThanComparator());
+}
 
-ResultList ArrayValue::operator==(const Value& value) const { return doCompare(value, EqualsComparator()); }
+ResultList ArrayValue::operator==(const Value& value) const {
+    return doCompare(value, EqualsComparator());
+}
 
-ResultList ArrayValue::operator>(const Value& value) const { return doCompare(value, GreaterThanComparator()); }
+ResultList ArrayValue::operator>(const Value& value) const {
+    return doCompare(value, GreaterThanComparator());
+}
 
 ResultList ArrayValue::operator>=(const Value& value) const {
     return doCompare(value, GreaterThanOrEqualsComparator());
 }
 
-ResultList ArrayValue::operator<=(const Value& value) const { return doCompare(value, LessThanOrEqualsComparator()); }
+ResultList ArrayValue::operator<=(const Value& value) const {
+    return doCompare(value, LessThanOrEqualsComparator());
+}
 
-ResultList ArrayValue::operator!=(const Value& value) const { return doCompare(value, NotEqualsComparator()); }
+ResultList ArrayValue::operator!=(const Value& value) const {
+    return doCompare(value, NotEqualsComparator());
+}
 
-ResultList ArrayValue::globCompare(const Value& value) const { return doCompare(value, GlobComparator()); }
-ResultList ArrayValue::regexCompare(const Value& value) const { return doCompare(value, RegexComparator()); }
+ResultList ArrayValue::globCompare(const Value& value) const {
+    return doCompare(value, GlobComparator());
+}
+ResultList ArrayValue::regexCompare(const Value& value) const {
+    return doCompare(value, RegexComparator());
+}
 
 ResultList ArrayValue::globTrace(const Value& value, std::ostream& trace) const {
     trace << "Glob compare of lhs ArrayValue, rhs " << value << "\n";
@@ -249,7 +283,8 @@ void ArrayValue::print(std::ostream& out, bool verbose, const std::string& inden
     out << "<no array representation in language yet>";
 }
 
-StructValue::StructValue(ValueMap values) : Value(Type::Struct), _values(std::move(values)) {}
+StructValue::StructValue(ValueMap values) : Value(Type::Struct), _values(std::move(values)) {
+}
 
 StructValue::~StructValue() = default;
 
@@ -359,7 +394,8 @@ template <typename Predicate> ResultList ArrayValue::doCompare(const Value& valu
     }
 }
 
-TensorValue::TensorValue() : Value(Type::Tensor) {}
+TensorValue::TensorValue() : Value(Type::Tensor) {
+}
 TensorValue::~TensorValue() = default;
 
 ResultList TensorValue::operator<(const Value&) const {

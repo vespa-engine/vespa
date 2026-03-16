@@ -18,10 +18,14 @@ size_t eatWhite(const char* s, size_t len) {
     return pos;
 }
 
-bool icmp(unsigned char c, unsigned char l) { return std::tolower(c) == l; }
+bool icmp(unsigned char c, unsigned char l) {
+    return std::tolower(c) == l;
+}
 } // namespace
 
-void Parser::setRemaining(std::string_view s, size_t fromPos) { _remaining = s.substr(std::min(fromPos, s.size())); }
+void Parser::setRemaining(std::string_view s, size_t fromPos) {
+    _remaining = s.substr(std::min(fromPos, s.size()));
+}
 
 bool IdSpecParser::parse(std::string_view s) {
     bool   retval(false);

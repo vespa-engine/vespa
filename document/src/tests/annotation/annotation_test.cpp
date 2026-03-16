@@ -31,7 +31,9 @@ AnnotationType header_type(5, "header");
 AnnotationType city_type(6, "city");
 AnnotationType markup_type(7, "markup");
 
-template <typename T> unique_ptr<T> makeUP(T* p) { return unique_ptr<T>(p); }
+template <typename T> unique_ptr<T> makeUP(T* p) {
+    return unique_ptr<T>(p);
+}
 
 TEST(AnnotationTest, requireThatSpansHaveOrder) {
     Span span(10, 10);

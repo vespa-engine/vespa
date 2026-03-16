@@ -18,7 +18,8 @@ using vespalib::nbostream;
 
 namespace document {
 
-AnnotationSerializer::AnnotationSerializer(nbostream& stream) : _stream(stream), _span_node_map() {}
+AnnotationSerializer::AnnotationSerializer(nbostream& stream) : _stream(stream), _span_node_map() {
+}
 
 void AnnotationSerializer::write(const SpanTree& tree) {
     _span_node_map.clear();

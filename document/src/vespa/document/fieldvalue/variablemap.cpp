@@ -8,8 +8,10 @@
 
 namespace document::fieldvalue {
 
-IndexValue::IndexValue() : index(-1), key() {}
-IndexValue::IndexValue(int index_) : index(index_), key() {}
+IndexValue::IndexValue() : index(-1), key() {
+}
+IndexValue::IndexValue(int index_) : index(index_), key() {
+}
 
 bool IndexValue::operator==(const IndexValue& other) const {
     if (key) {
@@ -22,11 +24,13 @@ bool IndexValue::operator==(const IndexValue& other) const {
     return index == other.index;
 }
 
-IndexValue::IndexValue(const FieldValue& key_) : index(-1), key(key_.clone()) {}
+IndexValue::IndexValue(const FieldValue& key_) : index(-1), key(key_.clone()) {
+}
 
 IndexValue::IndexValue(IndexValue&& rhs) noexcept = default;
 IndexValue& IndexValue::operator=(IndexValue&& rhs) noexcept = default;
-IndexValue::IndexValue(const IndexValue& rhs) : index(rhs.index), key(rhs.key ? rhs.key->clone() : nullptr) {}
+IndexValue::IndexValue(const IndexValue& rhs) : index(rhs.index), key(rhs.key ? rhs.key->clone() : nullptr) {
+}
 IndexValue& IndexValue::operator=(const IndexValue& rhs) {
     if (this != &rhs) {
         IndexValue tmp(rhs);

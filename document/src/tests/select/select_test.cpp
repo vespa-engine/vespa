@@ -67,7 +67,8 @@ DocumentSelectTest::DocumentSelectTest()
       _child_ref_field(_child_document_type->getField("ref")),
       _child_ref_field_type(dynamic_cast<const ReferenceDataType&>(_child_ref_field.getDataType())),
       _bucket_id_factory(),
-      _parser(std::make_unique<Parser>(*_repo, _bucket_id_factory)) {}
+      _parser(std::make_unique<Parser>(*_repo, _bucket_id_factory)) {
+}
 
 DocumentSelectTest::~DocumentSelectTest() = default;
 

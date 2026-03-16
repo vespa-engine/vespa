@@ -37,7 +37,8 @@ protected:
 };
 
 GidFilterTest::Fixture::Fixture(std::string_view selection)
-    : _repo(), _id_factory(), _root(Parser(_repo.getTypeRepo(), _id_factory).parse(std::string(selection))) {}
+    : _repo(), _id_factory(), _root(Parser(_repo.getTypeRepo(), _id_factory).parse(std::string(selection))) {
+}
 GidFilterTest::Fixture::~Fixture() = default;
 
 TEST_F(GidFilterTest, same_user_for_selection_and_gid_returns_match) {

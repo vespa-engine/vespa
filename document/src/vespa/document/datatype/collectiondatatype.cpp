@@ -5,10 +5,12 @@
 namespace document {
 
 CollectionDataType::CollectionDataType(std::string_view name, const DataType& nestedType) noexcept
-    : DataType(name), _nestedType(&nestedType) {}
+    : DataType(name), _nestedType(&nestedType) {
+}
 
 CollectionDataType::CollectionDataType(std::string_view name, const DataType& nestedType, int32_t id) noexcept
-    : DataType(name, id), _nestedType(&nestedType) {}
+    : DataType(name, id), _nestedType(&nestedType) {
+}
 
 CollectionDataType::~CollectionDataType() = default;
 

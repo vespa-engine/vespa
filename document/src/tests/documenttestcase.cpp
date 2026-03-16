@@ -173,8 +173,10 @@ public:
     };
 };
 
-VariableIteratorHandler::VariableIteratorHandler() {}
-VariableIteratorHandler::~VariableIteratorHandler() {}
+VariableIteratorHandler::VariableIteratorHandler() {
+}
+VariableIteratorHandler::~VariableIteratorHandler() {
+}
 
 TEST(DocumentTest, testVariables) {
     ArrayDataType iarr(*DataType::INT);
@@ -760,7 +762,9 @@ TEST(DocumentTest, testReadSerializedAllVersions) {
     }
 }
 
-size_t getSerializedSize(const Document& doc) { return doc.serialize().size(); }
+size_t getSerializedSize(const Document& doc) {
+    return doc.serialize().size();
+}
 
 TEST(DocumentTest, testGenerateSerializedFile) {
     const std::string file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");

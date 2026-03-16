@@ -20,10 +20,12 @@ namespace document {
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 
-StructDataType::StructDataType(std::string_view name) : StructuredDataType(name), _nameFieldMap(), _idFieldMap() {}
+StructDataType::StructDataType(std::string_view name) : StructuredDataType(name), _nameFieldMap(), _idFieldMap() {
+}
 
 StructDataType::StructDataType(std::string_view name, int32_t dataTypeId)
-    : StructuredDataType(name, dataTypeId), _nameFieldMap(), _idFieldMap() {}
+    : StructuredDataType(name, dataTypeId), _nameFieldMap(), _idFieldMap() {
+}
 
 StructDataType::StructDataType(const StructDataType& rhs) = default;
 StructDataType::~StructDataType() = default;
@@ -84,7 +86,9 @@ void StructDataType::addInheritedField(const Field& field) {
     _idFieldMap[field.getId()] = newF;
 }
 
-FieldValue::UP StructDataType::createFieldValue() const { return std::make_unique<StructFieldValue>(*this); }
+FieldValue::UP StructDataType::createFieldValue() const {
+    return std::make_unique<StructFieldValue>(*this);
+}
 
 const Field& StructDataType::getField(std::string_view name) const {
     StringFieldMap::const_iterator it(_nameFieldMap.find(name));

@@ -55,8 +55,12 @@ private:
     static bool combineVariables(VariableMap& combination, const VariableMap& output, const VariableMap& input);
 };
 
-inline bool operator==(const ResultList& list, const Result& other) { return (list.combineResults() == other); }
+inline bool operator==(const ResultList& list, const Result& other) {
+    return (list.combineResults() == other);
+}
 
-inline bool operator!=(const ResultList& list, const Result& other) { return (list.combineResults() != other); }
+inline bool operator!=(const ResultList& list, const Result& other) {
+    return (list.combineResults() != other);
+}
 
 } // namespace document::select

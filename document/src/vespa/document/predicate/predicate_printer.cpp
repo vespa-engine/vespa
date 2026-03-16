@@ -19,9 +19,12 @@ void printEscapedString(vespalib::asciistream& out, const Inspector& in) {
 }
 } // namespace
 
-std::string PredicatePrinter::str() const { return _out->str(); }
+std::string PredicatePrinter::str() const {
+    return _out->str();
+}
 
-PredicatePrinter::PredicatePrinter() : _out(std::make_unique<vespalib::asciistream>()), _negated(false) {}
+PredicatePrinter::PredicatePrinter() : _out(std::make_unique<vespalib::asciistream>()), _negated(false) {
+}
 PredicatePrinter::~PredicatePrinter() = default;
 
 void PredicatePrinter::visitFeatureSet(const Inspector& in) {
@@ -90,9 +93,13 @@ void PredicatePrinter::visitDisjunction(const Inspector& in) {
     *_out << ")";
 }
 
-void PredicatePrinter::visitTrue(const Inspector&) { *_out << "true"; }
+void PredicatePrinter::visitTrue(const Inspector&) {
+    *_out << "true";
+}
 
-void PredicatePrinter::visitFalse(const Inspector&) { *_out << "false"; }
+void PredicatePrinter::visitFalse(const Inspector&) {
+    *_out << "false";
+}
 
 std::string PredicatePrinter::print(const Slime& slime) {
     PredicatePrinter printer;

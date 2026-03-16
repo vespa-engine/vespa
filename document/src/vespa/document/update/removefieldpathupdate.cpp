@@ -10,12 +10,14 @@ namespace document {
 
 using namespace fieldvalue;
 
-RemoveFieldPathUpdate::RemoveFieldPathUpdate() noexcept : FieldPathUpdate(Remove) {}
+RemoveFieldPathUpdate::RemoveFieldPathUpdate() noexcept : FieldPathUpdate(Remove) {
+}
 
 RemoveFieldPathUpdate::~RemoveFieldPathUpdate() = default;
 
 RemoveFieldPathUpdate::RemoveFieldPathUpdate(string_view fieldPath, string_view whereClause)
-    : FieldPathUpdate(Remove, fieldPath, whereClause) {}
+    : FieldPathUpdate(Remove, fieldPath, whereClause) {
+}
 
 void RemoveFieldPathUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "RemoveFieldPathUpdate(\n";

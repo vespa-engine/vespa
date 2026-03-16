@@ -17,7 +17,9 @@ And::And(std::unique_ptr<Node> left, std::unique_ptr<Node> right, const char* na
     assert(_right);
 }
 
-void And::visit(Visitor& v) const { v.visitAndBranch(*this); }
+void And::visit(Visitor& v) const {
+    v.visitAndBranch(*this);
+}
 
 void And::print(std::ostream& out, bool verbose, const std::string& indent) const {
     if (_parentheses)
@@ -54,7 +56,9 @@ Or::Or(std::unique_ptr<Node> left, std::unique_ptr<Node> right, const char* name
     assert(_right.get());
 }
 
-void Or::visit(Visitor& v) const { v.visitOrBranch(*this); }
+void Or::visit(Visitor& v) const {
+    v.visitOrBranch(*this);
+}
 
 void Or::print(std::ostream& out, bool verbose, const std::string& indent) const {
     if (_parentheses)
@@ -88,7 +92,9 @@ Not::Not(std::unique_ptr<Node> child, const char* name)
     assert(_child.get());
 }
 
-void Not::visit(Visitor& v) const { v.visitNotBranch(*this); }
+void Not::visit(Visitor& v) const {
+    v.visitNotBranch(*this);
+}
 
 void Not::print(std::ostream& out, bool verbose, const std::string& indent) const {
     if (_parentheses)

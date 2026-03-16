@@ -30,10 +30,12 @@ std::string makeWrongTensorTypeMsg(const ValueType& fieldTensorType, const Value
 
 } // namespace
 
-TensorFieldValue::TensorFieldValue() : TensorFieldValue(emptyTensorDataType) {}
+TensorFieldValue::TensorFieldValue() : TensorFieldValue(emptyTensorDataType) {
+}
 
 TensorFieldValue::TensorFieldValue(const TensorDataType& dataType)
-    : FieldValue(Type::TENSOR), _dataType(dataType), _tensor() {}
+    : FieldValue(Type::TENSOR), _dataType(dataType), _tensor() {
+}
 
 TensorFieldValue::TensorFieldValue(const TensorFieldValue& rhs)
     : FieldValue(Type::TENSOR), _dataType(rhs._dataType), _tensor() {
@@ -81,13 +83,21 @@ void TensorFieldValue::make_empty_if_not_existing() {
     }
 }
 
-void TensorFieldValue::accept(FieldValueVisitor& visitor) { visitor.visit(*this); }
+void TensorFieldValue::accept(FieldValueVisitor& visitor) {
+    visitor.visit(*this);
+}
 
-void TensorFieldValue::accept(ConstFieldValueVisitor& visitor) const { visitor.visit(*this); }
+void TensorFieldValue::accept(ConstFieldValueVisitor& visitor) const {
+    visitor.visit(*this);
+}
 
-const DataType* TensorFieldValue::getDataType() const { return &_dataType; }
+const DataType* TensorFieldValue::getDataType() const {
+    return &_dataType;
+}
 
-TensorFieldValue* TensorFieldValue::clone() const { return new TensorFieldValue(*this); }
+TensorFieldValue* TensorFieldValue::clone() const {
+    return new TensorFieldValue(*this);
+}
 
 void TensorFieldValue::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;

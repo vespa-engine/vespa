@@ -977,7 +977,8 @@ void configureDocTypes(const DocumenttypesConfig::DoctypeVector& t, DocumentType
 } // namespace
 
 DocumentTypeRepo::DocumentTypeRepo()
-    : _doc_types(std::make_unique<internal::DocumentTypeMap>()), _default(addDefaultDocument(*_doc_types)) {}
+    : _doc_types(std::make_unique<internal::DocumentTypeMap>()), _default(addDefaultDocument(*_doc_types)) {
+}
 
 DocumentTypeRepo::DocumentTypeRepo(const DocumentType& type)
     : _doc_types(std::make_unique<internal::DocumentTypeMap>()), _default(addDefaultDocument(*_doc_types)) {
@@ -1005,7 +1006,9 @@ DocumentTypeRepo::DocumentTypeRepo(const DocumenttypesConfig& config)
 
 DocumentTypeRepo::~DocumentTypeRepo() = default;
 
-DataTypeRepo* DocumentTypeRepo::findRepo(int32_t doc_type_id) const { return _doc_types->findRepo(doc_type_id); }
+DataTypeRepo* DocumentTypeRepo::findRepo(int32_t doc_type_id) const {
+    return _doc_types->findRepo(doc_type_id);
+}
 
 const DocumentType* DocumentTypeRepo::getDocumentType(int32_t type_id) const noexcept {
     const DataTypeRepo* repo = findRepo(type_id);

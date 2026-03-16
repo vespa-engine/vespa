@@ -165,7 +165,9 @@ template <typename Literal> void testLiteral() {
 
 } // namespace
 
-TEST(PrimitiveFieldValueTest, testLiterals) { testLiteral<StringFieldValue>(); }
+TEST(PrimitiveFieldValueTest, testLiterals) {
+    testLiteral<StringFieldValue>();
+}
 
 TEST(PrimitiveFieldValueTest, testRaw) {
     testCommon(RawFieldValue(), RawFieldValue("bar\0bar", 7), RawFieldValue("bar\0bar", 7),

@@ -81,7 +81,8 @@ private:
     }
 };
 
-ToStringVisitor::ToStringVisitor() : _os(), _indent() {}
+ToStringVisitor::ToStringVisitor() : _os(), _indent() {
+}
 ToStringVisitor::~ToStringVisitor() = default;
 
 } // namespace
@@ -92,6 +93,8 @@ std::string SpanNode::toString() const {
     return os.str();
 }
 
-std::ostream& operator<<(std::ostream& os, const SpanNode& node) { return os << node.toString(); }
+std::ostream& operator<<(std::ostream& os, const SpanNode& node) {
+    return os << node.toString();
+}
 
 } // namespace document

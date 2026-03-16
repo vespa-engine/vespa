@@ -13,7 +13,9 @@ using vespalib::GrowableByteBuffer;
 
 namespace {
 
-template <typename S> void assign(S& lhs, const S& rhs) { lhs = rhs; }
+template <typename S> void assign(S& lhs, const S& rhs) {
+    lhs = rhs;
+}
 
 } // namespace
 

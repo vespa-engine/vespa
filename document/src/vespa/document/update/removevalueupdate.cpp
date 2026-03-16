@@ -18,7 +18,8 @@ using namespace vespalib::xml;
 
 namespace document {
 
-RemoveValueUpdate::RemoveValueUpdate(std::unique_ptr<FieldValue> key) : ValueUpdate(Remove), _key(std::move(key)) {}
+RemoveValueUpdate::RemoveValueUpdate(std::unique_ptr<FieldValue> key) : ValueUpdate(Remove), _key(std::move(key)) {
+}
 
 RemoveValueUpdate::~RemoveValueUpdate() = default;
 
@@ -63,7 +64,9 @@ bool RemoveValueUpdate::applyTo(FieldValue& value) const {
     return true;
 }
 
-void RemoveValueUpdate::printXml(XmlOutputStream& xos) const { xos << XmlTag("remove") << *_key << XmlEndTag(); }
+void RemoveValueUpdate::printXml(XmlOutputStream& xos) const {
+    xos << XmlTag("remove") << *_key << XmlEndTag();
+}
 
 // Print this update in human readable form.
 void RemoveValueUpdate::print(std::ostream& out, bool, const std::string&) const {

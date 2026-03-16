@@ -88,7 +88,9 @@ void SerializableArray::set(int id, ByteBuffer buffer) {
     }
 }
 
-void SerializableArray::set(int id, const char* value, int len) { set(id, ByteBuffer::copyBuffer(value, len)); }
+void SerializableArray::set(int id, const char* value, int len) {
+    set(id, ByteBuffer::copyBuffer(value, len));
+}
 
 SerializableArray::EntryMap::const_iterator SerializableArray::find(int id) const {
     return std::find_if(_entries.begin(), _entries.end(), [id](const auto& e) { return e.id() == id; });
@@ -98,7 +100,9 @@ SerializableArray::EntryMap::iterator SerializableArray::find(int id) {
     return std::find_if(_entries.begin(), _entries.end(), [id](const auto& e) { return e.id() == id; });
 }
 
-bool SerializableArray::has(int id) const { return (find(id) != _entries.end()); }
+bool SerializableArray::has(int id) const {
+    return (find(id) != _entries.end());
+}
 
 vespalib::ConstBufferRef SerializableArray::get(int id) const {
     vespalib::ConstBufferRef buf;

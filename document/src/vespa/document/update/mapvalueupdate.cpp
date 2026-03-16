@@ -19,7 +19,8 @@ using namespace vespalib::xml;
 namespace document {
 
 MapValueUpdate::MapValueUpdate(std::unique_ptr<FieldValue> key, std::unique_ptr<ValueUpdate> update)
-    : ValueUpdate(Map), _key(std::move(key)), _update(std::move(update)) {}
+    : ValueUpdate(Map), _key(std::move(key)), _update(std::move(update)) {
+}
 
 MapValueUpdate::~MapValueUpdate() = default;
 

@@ -164,7 +164,8 @@ BucketVisitor::~BucketVisitor() = default;
 
 //}
 
-BucketSelector::BucketSelector(const document::BucketIdFactory& factory) : _factory(factory) {}
+BucketSelector::BucketSelector(const document::BucketIdFactory& factory) : _factory(factory) {
+}
 
 std::unique_ptr<BucketSelector::BucketVector> BucketSelector::select(const document::select::Node& expression) const {
     BucketVisitor v(_factory);

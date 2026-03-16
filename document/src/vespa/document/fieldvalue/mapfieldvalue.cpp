@@ -73,7 +73,8 @@ MapFieldValue::MapFieldValue(const DataType& mapType)
       _keys(static_cast<IArray*>(createArray(getMapType().getKeyType()).release())),
       _values(static_cast<IArray*>(createArray(getMapType().getValueType()).release())),
       _present(),
-      _lookupMap() {}
+      _lookupMap() {
+}
 
 MapFieldValue::~MapFieldValue() = default;
 
@@ -84,7 +85,8 @@ MapFieldValue::MapFieldValue(const MapFieldValue& rhs)
       _keys(rhs._keys ? rhs._keys->clone() : nullptr),
       _values(rhs._values ? rhs._values->clone() : nullptr),
       _present(rhs._present),
-      _lookupMap() {}
+      _lookupMap() {
+}
 
 MapFieldValue& MapFieldValue::operator=(const MapFieldValue& rhs) {
     if (this != &rhs) {
@@ -153,13 +155,21 @@ void MapFieldValue::push_back(FieldValue::UP key, FieldValue::UP value) {
     }
 }
 
-bool MapFieldValue::insert(FieldValue::UP key, FieldValue::UP value) { return insertVerify(*key, *value); }
+bool MapFieldValue::insert(FieldValue::UP key, FieldValue::UP value) {
+    return insertVerify(*key, *value);
+}
 
-bool MapFieldValue::put(FieldValue::UP key, FieldValue::UP value) { return insertVerify(*key, *value); }
+bool MapFieldValue::put(FieldValue::UP key, FieldValue::UP value) {
+    return insertVerify(*key, *value);
+}
 
-bool MapFieldValue::put(const FieldValue& key, const FieldValue& value) { return insertVerify(key, value); }
+bool MapFieldValue::put(const FieldValue& key, const FieldValue& value) {
+    return insertVerify(key, value);
+}
 
-bool MapFieldValue::addValue(const FieldValue& fv) { return put(fv, fv); }
+bool MapFieldValue::addValue(const FieldValue& fv) {
+    return put(fv, fv);
+}
 
 FieldValue::UP MapFieldValue::get(const FieldValue& key) const {
     const_iterator it = find(key);
@@ -269,9 +279,13 @@ void MapFieldValue::printXml(XmlOutputStream& xos) const {
     }
 }
 
-const DataType* MapFieldValue::getDataType() const { return _type; }
+const DataType* MapFieldValue::getDataType() const {
+    return _type;
+}
 
-FieldValue::UP MapFieldValue::createValue() const { return getMapType().getValueType().createFieldValue(); }
+FieldValue::UP MapFieldValue::createValue() const {
+    return getMapType().getValueType().createFieldValue();
+}
 
 void MapFieldValue::ensureLookupMap() const {
     if (!_lookupMap) {

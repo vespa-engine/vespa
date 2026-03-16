@@ -13,10 +13,12 @@ using vespalib::make_string;
 
 namespace document {
 
-ReferenceFieldValue::ReferenceFieldValue() : FieldValue(Type::REFERENCE), _dataType(nullptr), _documentId() {}
+ReferenceFieldValue::ReferenceFieldValue() : FieldValue(Type::REFERENCE), _dataType(nullptr), _documentId() {
+}
 
 ReferenceFieldValue::ReferenceFieldValue(const ReferenceDataType& dataType)
-    : FieldValue(Type::REFERENCE), _dataType(&dataType), _documentId() {}
+    : FieldValue(Type::REFERENCE), _dataType(&dataType), _documentId() {
+}
 
 ReferenceFieldValue::ReferenceFieldValue(const ReferenceDataType& dataType, const DocumentId& documentId)
     : FieldValue(Type::REFERENCE), _dataType(&dataType), _documentId(documentId) {
@@ -88,8 +90,12 @@ void ReferenceFieldValue::print(std::ostream& os, bool verbose, const std::strin
     os << indent << "ReferenceFieldValue(" << *_dataType << ", DocumentId(" << _documentId << "))";
 }
 
-void ReferenceFieldValue::accept(FieldValueVisitor& visitor) { visitor.visit(*this); }
+void ReferenceFieldValue::accept(FieldValueVisitor& visitor) {
+    visitor.visit(*this);
+}
 
-void ReferenceFieldValue::accept(ConstFieldValueVisitor& visitor) const { visitor.visit(*this); }
+void ReferenceFieldValue::accept(ConstFieldValueVisitor& visitor) const {
+    visitor.visit(*this);
+}
 
 } // namespace document

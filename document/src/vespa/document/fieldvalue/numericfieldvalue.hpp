@@ -98,7 +98,9 @@ template <typename Number> FieldValue& NumericFieldValue<Number>::operator=(std:
     return *this;
 }
 
-template <typename Number> char NumericFieldValue<Number>::getAsByte() const { return static_cast<char>(_value); }
+template <typename Number> char NumericFieldValue<Number>::getAsByte() const {
+    return static_cast<char>(_value);
+}
 
 template <typename Number> int32_t NumericFieldValue<Number>::getAsInt() const {
     return static_cast<int32_t>(_value);
@@ -108,7 +110,9 @@ template <typename Number> int64_t NumericFieldValue<Number>::getAsLong() const 
     return static_cast<int64_t>(_value);
 }
 
-template <typename Number> float NumericFieldValue<Number>::getAsFloat() const { return static_cast<float>(_value); }
+template <typename Number> float NumericFieldValue<Number>::getAsFloat() const {
+    return static_cast<float>(_value);
+}
 
 template <typename Number> double NumericFieldValue<Number>::getAsDouble() const {
     return static_cast<double>(_value);

@@ -32,7 +32,8 @@ int32_t ReferenceDataType::makeInternalId(const std::string& targetDocType) {
 }
 
 ReferenceDataType::ReferenceDataType(const DocumentType& targetDocType, int id)
-    : DataType(refTypeName(targetDocType.getName()), id), _targetDocType(targetDocType) {}
+    : DataType(refTypeName(targetDocType.getName()), id), _targetDocType(targetDocType) {
+}
 
 ReferenceDataType::~ReferenceDataType() = default;
 

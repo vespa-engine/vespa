@@ -52,11 +52,14 @@ NewStruct::NewStruct(NewConfigBuilder& builder, std::string name, int32_t doctyp
       _internalid(hashId(_name)),
       _idx(-1),
       _doctype_idx(doctype_idx),
-      _registered(false) {}
+      _registered(false) {
+}
 
 NewStruct::~NewStruct() = default;
 
-int32_t NewStruct::hashId(const std::string& name) const { return ::document::new_config_builder::hashId(name); }
+int32_t NewStruct::hashId(const std::string& name) const {
+    return ::document::new_config_builder::hashId(name);
+}
 
 NewStruct& NewStruct::addField(const std::string& name, TypeRef type) {
     assert(!_registered && "Cannot modify struct after it's been registered");
@@ -113,7 +116,8 @@ NewWset::NewWset(NewConfigBuilder& builder, TypeRef element_type, int32_t doctyp
       _doctype_idx(doctype_idx),
       _registered(false),
       _removeifzero(false),
-      _createifnonexistent(false) {}
+      _createifnonexistent(false) {
+}
 
 NewWset& NewWset::removeIfZero() {
     assert(!_registered && "Cannot modify wset after it's been registered");
@@ -157,7 +161,8 @@ TypeRef NewMap::ref() {
 // ==================== NewAnnotationRef ====================
 
 NewAnnotationRef::NewAnnotationRef(int32_t annotation_idx) noexcept
-    : _annotation_idx(annotation_idx), _idx(-1), _registered(false) {}
+    : _annotation_idx(annotation_idx), _idx(-1), _registered(false) {
+}
 
 TypeRef NewAnnotationRef::ref() {
     if (!_registered) {
@@ -169,9 +174,12 @@ TypeRef NewAnnotationRef::ref() {
 // ==================== NewDocTypeRep ====================
 
 NewDocTypeRep::NewDocTypeRep(NewConfigBuilder& builder, int32_t idx, std::string name)
-    : _builder(builder), _idx(idx), _name(std::move(name)) {}
+    : _builder(builder), _idx(idx), _name(std::move(name)) {
+}
 
-int32_t NewDocTypeRep::hashId(const std::string& name) const { return ::document::new_config_builder::hashId(name); }
+int32_t NewDocTypeRep::hashId(const std::string& name) const {
+    return ::document::new_config_builder::hashId(name);
+}
 
 NewDocTypeRep& NewDocTypeRep::addField(const std::string& name, TypeRef type) {
     // Find the doctype and contentstruct
@@ -361,11 +369,17 @@ NewDocTypeRep& NewDocTypeRep::fieldSet(const std::string& name, const std::vecto
     return *this;
 }
 
-NewStruct NewDocTypeRep::createStruct(const std::string& name) { return NewStruct(_builder, name, _idx); }
+NewStruct NewDocTypeRep::createStruct(const std::string& name) {
+    return NewStruct(_builder, name, _idx);
+}
 
-NewArray NewDocTypeRep::createArray(TypeRef element_type) { return NewArray(_builder, element_type, _idx); }
+NewArray NewDocTypeRep::createArray(TypeRef element_type) {
+    return NewArray(_builder, element_type, _idx);
+}
 
-NewWset NewDocTypeRep::createWset(TypeRef element_type) { return NewWset(_builder, element_type, _idx); }
+NewWset NewDocTypeRep::createWset(TypeRef element_type) {
+    return NewWset(_builder, element_type, _idx);
+}
 
 NewMap NewDocTypeRep::createMap(TypeRef key_type, TypeRef value_type) {
     return NewMap(_builder, key_type, value_type, _idx);
@@ -486,7 +500,9 @@ const DocumenttypesConfig& NewConfigBuilder::config() {
     return _config;
 }
 
-NewDocTypeRep& NewConfigBuilder::document(const std::string& name) { return document(name, hashId(name)); }
+NewDocTypeRep& NewConfigBuilder::document(const std::string& name) {
+    return document(name, hashId(name));
+}
 
 NewDocTypeRep& NewConfigBuilder::document(const std::string& name, int32_t internalid) {
     // Check if document type already exists

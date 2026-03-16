@@ -24,7 +24,8 @@ FieldPathEntry::FieldPathEntry()
       _lookupIndex(0),
       _lookupKey(),
       _variableName(),
-      _fillInVal() {}
+      _fillInVal() {
+}
 
 FieldPathEntry::FieldPathEntry(const DataType& dataType, uint32_t arrayIndex)
     : _type(ARRAY_INDEX),
@@ -46,7 +47,8 @@ FieldPathEntry::FieldPathEntry(const Field& fieldRef)
       _lookupIndex(0),
       _lookupKey(),
       _variableName(),
-      _fillInVal(fieldRef.createValue()) {}
+      _fillInVal(fieldRef.createValue()) {
+}
 
 FieldPathEntry::FieldPathEntry(const DataType& dataType, const DataType& fillType, FieldValue::UP lookupKey)
     : _type(MAP_KEY),
@@ -68,7 +70,8 @@ FieldPathEntry::FieldPathEntry(const FieldPathEntry& rhs)
       _lookupIndex(rhs._lookupIndex),
       _lookupKey(rhs._lookupKey ? rhs._lookupKey->clone() : nullptr),
       _variableName(rhs._variableName),
-      _fillInVal(rhs._fillInVal ? rhs._fillInVal->clone() : nullptr) {}
+      _fillInVal(rhs._fillInVal ? rhs._fillInVal->clone() : nullptr) {
+}
 
 void FieldPathEntry::setFillValue(const DataType& dataType) {
     const DataType* dt = &dataType;
@@ -117,9 +120,13 @@ FieldPathEntry::FieldPathEntry(const DataType& dataType, std::string_view variab
     setFillValue(*_dataType);
 }
 
-const DataType& FieldPathEntry::getDataType() const { return _field.valid() ? _field.getDataType() : *_dataType; }
+const DataType& FieldPathEntry::getDataType() const {
+    return _field.valid() ? _field.getDataType() : *_dataType;
+}
 
-FieldValue::UP FieldPathEntry::stealFieldValueToSet() const { return std::move(_fillInVal); }
+FieldValue::UP FieldPathEntry::stealFieldValueToSet() const {
+    return std::move(_fillInVal);
+}
 
 std::string FieldPathEntry::parseKey(std::string_view& key) {
     std::string v;
@@ -180,9 +187,17 @@ FieldPath::FieldPath(const FieldPath& rhs) : _path() {
 FieldPath::iterator FieldPath::insert(iterator pos, std::unique_ptr<FieldPathEntry> entry) {
     return _path.insert(pos, std::move(entry));
 }
-void FieldPath::push_back(std::unique_ptr<FieldPathEntry> entry) { _path.emplace_back(entry.release()); }
-void FieldPath::pop_back() { _path.pop_back(); }
-void FieldPath::clear() { _path.clear(); }
-void FieldPath::reserve(size_t sz) { _path.reserve(sz); }
+void FieldPath::push_back(std::unique_ptr<FieldPathEntry> entry) {
+    _path.emplace_back(entry.release());
+}
+void FieldPath::pop_back() {
+    _path.pop_back();
+}
+void FieldPath::clear() {
+    _path.clear();
+}
+void FieldPath::reserve(size_t sz) {
+    _path.reserve(sz);
+}
 
 } // namespace document

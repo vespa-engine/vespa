@@ -6,7 +6,8 @@
 
 namespace document {
 
-NumericDataType::NumericDataType(Type type) : PrimitiveDataType(type) {}
+NumericDataType::NumericDataType(Type type) : PrimitiveDataType(type) {
+}
 
 void NumericDataType::print(std::ostream& out, bool, const std::string&) const {
     out << "NumericDataType(" << getName() << ", id " << getId() << ")";

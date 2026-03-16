@@ -18,10 +18,12 @@ using namespace vespalib::xml;
 
 namespace document {
 
-AssignValueUpdate::AssignValueUpdate() : ValueUpdate(Assign), _value() {}
+AssignValueUpdate::AssignValueUpdate() : ValueUpdate(Assign), _value() {
+}
 
 AssignValueUpdate::AssignValueUpdate(std::unique_ptr<FieldValue> value)
-    : ValueUpdate(Assign), _value(std::move(value)) {}
+    : ValueUpdate(Assign), _value(std::move(value)) {
+}
 AssignValueUpdate::~AssignValueUpdate() = default;
 
 // Declare content bits.

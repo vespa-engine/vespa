@@ -7,7 +7,8 @@
 namespace document {
 
 CollectionFieldValue::CollectionFieldValue(const CollectionFieldValue& other)
-    : FieldValue(other), _type(other._type) {}
+    : FieldValue(other), _type(other._type) {
+}
 
 void CollectionFieldValue::verifyType(const CollectionFieldValue& other) const {
     if (!_type->equals(*other._type)) {

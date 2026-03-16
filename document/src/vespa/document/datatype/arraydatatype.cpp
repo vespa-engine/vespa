@@ -10,14 +10,18 @@
 namespace document {
 
 ArrayDataType::ArrayDataType(const DataType& nestedType, int32_t id)
-    : CollectionDataType("Array<" + nestedType.getName() + ">", nestedType, id) {}
+    : CollectionDataType("Array<" + nestedType.getName() + ">", nestedType, id) {
+}
 
 ArrayDataType::ArrayDataType(const DataType& nestedType)
-    : CollectionDataType("Array<" + nestedType.getName() + ">", nestedType) {}
+    : CollectionDataType("Array<" + nestedType.getName() + ">", nestedType) {
+}
 
 ArrayDataType::~ArrayDataType() = default;
 
-FieldValue::UP ArrayDataType::createFieldValue() const { return std::make_unique<ArrayFieldValue>(*this); }
+FieldValue::UP ArrayDataType::createFieldValue() const {
+    return std::make_unique<ArrayFieldValue>(*this);
+}
 
 void ArrayDataType::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "ArrayDataType(\n" << indent << "    ";

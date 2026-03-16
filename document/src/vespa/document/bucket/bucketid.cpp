@@ -119,7 +119,9 @@ vespalib::asciistream& operator<<(asciistream& os, const BucketId& id) {
               << vespalib::setfill('0') << id.getId() << ")";
 }
 
-std::ostream& operator<<(std::ostream& os, const BucketId& id) { return os << id.toString(); }
+std::ostream& operator<<(std::ostream& os, const BucketId& id) {
+    return os << id.toString();
+}
 
 nbostream& operator<<(nbostream& os, const BucketId& bucketId) {
     os << bucketId._id;

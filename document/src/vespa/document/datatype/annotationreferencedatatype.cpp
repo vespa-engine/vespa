@@ -13,7 +13,8 @@ using std::unique_ptr;
 namespace document {
 
 AnnotationReferenceDataType::AnnotationReferenceDataType(const AnnotationType& type, int id)
-    : DataType("annotationreference<" + type.getName() + ">", id), _type(&type) {}
+    : DataType("annotationreference<" + type.getName() + ">", id), _type(&type) {
+}
 
 AnnotationReferenceDataType::~AnnotationReferenceDataType() = default;
 
@@ -30,6 +31,7 @@ unique_ptr<FieldValue> AnnotationReferenceDataType::createFieldValue() const {
     return std::make_unique<AnnotationReferenceFieldValue>(*this, 0);
 }
 
-void AnnotationReferenceDataType::onBuildFieldPath(FieldPath&, std::string_view) const {}
+void AnnotationReferenceDataType::onBuildFieldPath(FieldPath&, std::string_view) const {
+}
 
 } // namespace document

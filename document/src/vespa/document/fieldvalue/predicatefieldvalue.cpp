@@ -15,9 +15,11 @@ using namespace vespalib::xml;
 
 namespace document {
 
-PredicateFieldValue::PredicateFieldValue() : FieldValue(Type::PREDICATE), _slime(std::make_unique<Slime>()) {}
+PredicateFieldValue::PredicateFieldValue() : FieldValue(Type::PREDICATE), _slime(std::make_unique<Slime>()) {
+}
 
-PredicateFieldValue::PredicateFieldValue(vespalib::Slime::UP s) : FieldValue(Type::PREDICATE), _slime(std::move(s)) {}
+PredicateFieldValue::PredicateFieldValue(vespalib::Slime::UP s) : FieldValue(Type::PREDICATE), _slime(std::move(s)) {
+}
 
 PredicateFieldValue::PredicateFieldValue(const PredicateFieldValue& rhs) : FieldValue(rhs), _slime(new Slime) {
     inject(rhs._slime->get(), SlimeInserter(*_slime));
@@ -56,8 +58,12 @@ void PredicateFieldValue::print(std::ostream& out, bool, const std::string&) con
     out << PredicatePrinter::print(*_slime) << "\n";
 }
 
-const DataType* PredicateFieldValue::getDataType() const { return DataType::PREDICATE; }
+const DataType* PredicateFieldValue::getDataType() const {
+    return DataType::PREDICATE;
+}
 
-FieldValue* PredicateFieldValue::clone() const { return new PredicateFieldValue(*this); }
+FieldValue* PredicateFieldValue::clone() const {
+    return new PredicateFieldValue(*this);
+}
 
 } // namespace document

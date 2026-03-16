@@ -18,7 +18,9 @@ void TraversingVisitor::visitOrBranch(const Or& expr) {
     expr.getRight().visit(*this);
 };
 
-void TraversingVisitor::visitNotBranch(const Not& expr) { expr.getChild().visit(*this); };
+void TraversingVisitor::visitNotBranch(const Not& expr) {
+    expr.getChild().visit(*this);
+};
 
 void TraversingVisitor::visitComparison(const Compare& expr) {
     expr.getLeft().visit(*this);
@@ -30,32 +32,47 @@ void TraversingVisitor::visitArithmeticValueNode(const ArithmeticValueNode& expr
     expr.getRight().visit(*this);
 }
 
-void TraversingVisitor::visitFunctionValueNode(const FunctionValueNode& expr) { expr.getChild().visit(*this); };
+void TraversingVisitor::visitFunctionValueNode(const FunctionValueNode& expr) {
+    expr.getChild().visit(*this);
+};
 
-void TraversingVisitor::visitConstant(const Constant&) {}
+void TraversingVisitor::visitConstant(const Constant&) {
+}
 
-void TraversingVisitor::visitInvalidConstant(const InvalidConstant&) {}
+void TraversingVisitor::visitInvalidConstant(const InvalidConstant&) {
+}
 
-void TraversingVisitor::visitDocumentType(const DocType&) {}
+void TraversingVisitor::visitDocumentType(const DocType&) {
+}
 
-void TraversingVisitor::visitIdValueNode(const IdValueNode&) {}
+void TraversingVisitor::visitIdValueNode(const IdValueNode&) {
+}
 
-void TraversingVisitor::visitFieldValueNode(const FieldValueNode&) {}
+void TraversingVisitor::visitFieldValueNode(const FieldValueNode&) {
+}
 
-void TraversingVisitor::visitFloatValueNode(const FloatValueNode&) {}
+void TraversingVisitor::visitFloatValueNode(const FloatValueNode&) {
+}
 
-void TraversingVisitor::visitVariableValueNode(const VariableValueNode&) {}
+void TraversingVisitor::visitVariableValueNode(const VariableValueNode&) {
+}
 
-void TraversingVisitor::visitIntegerValueNode(const IntegerValueNode&) {}
+void TraversingVisitor::visitIntegerValueNode(const IntegerValueNode&) {
+}
 
-void TraversingVisitor::visitBoolValueNode(const BoolValueNode&) {}
+void TraversingVisitor::visitBoolValueNode(const BoolValueNode&) {
+}
 
-void TraversingVisitor::visitCurrentTimeValueNode(const CurrentTimeValueNode&) {}
+void TraversingVisitor::visitCurrentTimeValueNode(const CurrentTimeValueNode&) {
+}
 
-void TraversingVisitor::visitStringValueNode(const StringValueNode&) {}
+void TraversingVisitor::visitStringValueNode(const StringValueNode&) {
+}
 
-void TraversingVisitor::visitNullValueNode(const NullValueNode&) {}
+void TraversingVisitor::visitNullValueNode(const NullValueNode&) {
+}
 
-void TraversingVisitor::visitInvalidValueNode(const InvalidValueNode&) {}
+void TraversingVisitor::visitInvalidValueNode(const InvalidValueNode&) {
+}
 
 } // namespace document::select

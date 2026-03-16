@@ -27,17 +27,22 @@ bool Field::Set::contains(const Set& fields) const {
                          Field::FieldPtrLess());
 }
 
-Field::Field() : Field("", 0, *DataType::INT) {}
+Field::Field() : Field("", 0, *DataType::INT) {
+}
 
 Field::Field(std::string_view name, int fieldId, const DataType& dataType)
-    : FieldSet(), _name(name), _dataType(&dataType), _fieldId(fieldId) {}
+    : FieldSet(), _name(name), _dataType(&dataType), _fieldId(fieldId) {
+}
 
 Field::Field(std::string_view name, const DataType& dataType)
-    : FieldSet(), _name(name), _dataType(&dataType), _fieldId(calculateIdV7()) {}
+    : FieldSet(), _name(name), _dataType(&dataType), _fieldId(calculateIdV7()) {
+}
 
 Field::~Field() = default;
 
-FieldValue::UP Field::createValue() const { return _dataType->createFieldValue(); }
+FieldValue::UP Field::createValue() const {
+    return _dataType->createFieldValue();
+}
 
 std::string Field::toString(bool verbose) const {
     vespalib::asciistream out;

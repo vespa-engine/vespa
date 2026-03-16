@@ -39,7 +39,9 @@ void Operator::print(std::ostream& out, bool verbose, const std::string& indent)
     out << _name;
 }
 
-ResultList FunctionOperator::compare(const Value& a, const Value& b) const { return (a.*_comparator)(b); }
+ResultList FunctionOperator::compare(const Value& a, const Value& b) const {
+    return (a.*_comparator)(b);
+}
 
 ResultList FunctionOperator::trace(const Value& a, const Value& b, std::ostream& out) const {
     ResultList result = (a.*_comparator)(b);
@@ -59,9 +61,12 @@ const FunctionOperator FunctionOperator::LT("<", &Value::operator<);
 
 const FunctionOperator FunctionOperator::NE("!=", &Value::operator!=);
 
-RegexOperator::RegexOperator(std::string_view name) : Operator(name) {}
+RegexOperator::RegexOperator(std::string_view name) : Operator(name) {
+}
 
-ResultList RegexOperator::compare(const Value& a, const Value& b) const { return a.regexCompare(b); }
+ResultList RegexOperator::compare(const Value& a, const Value& b) const {
+    return a.regexCompare(b);
+}
 
 ResultList RegexOperator::trace(const Value& a, const Value& b, std::ostream& out) const {
     return a.regexTrace(b, out);
@@ -105,9 +110,12 @@ ResultList RegexOperator::match(const std::string& val, std::string_view expr) c
 
 const RegexOperator RegexOperator::REGEX("=~");
 
-GlobOperator::GlobOperator(std::string_view name) : RegexOperator(name) {}
+GlobOperator::GlobOperator(std::string_view name) : RegexOperator(name) {
+}
 
-ResultList GlobOperator::compare(const Value& a, const Value& b) const { return a.globCompare(b); }
+ResultList GlobOperator::compare(const Value& a, const Value& b) const {
+    return a.globCompare(b);
+}
 
 ResultList GlobOperator::trace(const Value& a, const Value& b, std::ostream& out) const {
     return a.globTrace(b, out);

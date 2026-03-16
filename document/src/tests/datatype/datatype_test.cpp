@@ -14,7 +14,9 @@ using namespace document;
 
 namespace {
 
-template <typename S> void assign(S& lhs, const S& rhs) { lhs = rhs; }
+template <typename S> void assign(S& lhs, const S& rhs) {
+    lhs = rhs;
+}
 
 TEST(DataTypeTest, require_that_assignment_operator_works_for_LongFieldValue) {
     LongFieldValue val;

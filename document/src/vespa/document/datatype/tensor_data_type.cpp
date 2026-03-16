@@ -12,7 +12,8 @@ using vespalib::eval::ValueType;
 namespace document {
 
 TensorDataType::TensorDataType(ValueType tensorType)
-    : PrimitiveDataType(DataType::T_TENSOR), _tensorType(std::move(tensorType)) {}
+    : PrimitiveDataType(DataType::T_TENSOR), _tensorType(std::move(tensorType)) {
+}
 
 TensorDataType::TensorDataType(const TensorDataType&) = default;
 TensorDataType::~TensorDataType() = default;
@@ -24,7 +25,9 @@ bool TensorDataType::equals(const DataType& other) const noexcept {
     return _tensorType == other.cast_tensor()->_tensorType;
 }
 
-FieldValue::UP TensorDataType::createFieldValue() const { return std::make_unique<TensorFieldValue>(*this); }
+FieldValue::UP TensorDataType::createFieldValue() const {
+    return std::make_unique<TensorFieldValue>(*this);
+}
 
 void TensorDataType::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
