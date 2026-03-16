@@ -3,6 +3,7 @@
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/streaming/phrase_query_node.h>
@@ -15,6 +16,7 @@
 
 using search::common::ElementIds;
 using search::fef::MatchData;
+using search::fef::MatchDataLayout;
 using search::fef::SimpleTermData;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchDataPosition;
@@ -158,11 +160,17 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
      * match data information.
      */
     SimpleTermData td;
-    constexpr TermFieldHandle handle0 = 27;
-    constexpr TermFieldHandle handle1 = 29;
-    constexpr TermFieldHandle handle_max = std::max(handle0, handle1);
-    td.addField(0).setHandle(handle0);
-    td.addField(1).setHandle(handle1);
+    MatchDataLayout mdl;
+    constexpr uint32_t existing_handles = 27;
+    for (uint32_t i = 0; i < existing_handles; ++i) {
+        (void) mdl.allocTermField(field0);
+    }
+    auto handle0 = mdl.allocTermField(field0);
+    (void) mdl.allocTermField(field0);
+    auto handle1 = mdl.allocTermField(field1);
+
+    td.addField(field0).setHandle(handle0);
+    td.addField(field1).setHandle(handle1);
     terms[0]->resizeFieldId(field0);
     terms[0]->getFieldInfo(field0).setFieldLength(field0_len);
     terms[1]->resizeFieldId(field1);
@@ -171,7 +179,7 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
     terms[2]->resizeFieldId(field1);
     terms[2]->getFieldInfo(field0).setFieldLength(field0_len);
     terms[2]->getFieldInfo(field1).setFieldLength(field1_len);
-    auto md = MatchData::makeTestInstance(handle_max + 1, handle_max + 1);
+    auto md = mdl.createMatchData();
     auto tfmd0 = md->resolveTermField(handle0);
     auto tfmd1 = md->resolveTermField(handle1);
     tfmd0->setNeedInterleavedFeatures(true);
