@@ -27,29 +27,6 @@ public:
     const BucketResultNode& getNullBucket() const override;
 
 private:
-    int cmpMem(const void * a, const void *b) const override {
-        return static_cast<const std::string *>(a)->compare(*static_cast<const std::string *>(b));
-    }
-    void create(void * buf)  const override {
-        new (buf) std::string();
-    }
-    void destroy(void * buf) const override {
-        using string = std::string;
-        static_cast<string *>(buf)->string::~string();
-    }
-
-    void decode(const void * buf) override {
-        _value = *static_cast<const std::string *>(buf);
-    }
-    void encode(void * buf) const override {
-        *static_cast<std::string *>(buf) = _value;
-    }
-    void swap(void * buf) override {
-        std::swap(*static_cast<std::string *>(buf), _value);
-    }
-    size_t hash(const void * buf) const override;
-
-    size_t onGetRawByteSize() const override { return sizeof(_value); }
     void setMin() override;
     void setMax() override;
     int64_t onGetInteger(size_t index) const override;

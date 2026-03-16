@@ -63,58 +63,6 @@ public:
     using UP = std::unique_ptr<ResultNode>;
     using CP = vespalib::IdentifiablePtr<ResultNode>;
     virtual void set(const ResultNode & rhs) = 0;
-
-    /**
-     * Will initialize a memory area that must be destroyed. After creation it can be encoded or decoded.
-     * Memory must be fixed size.
-     * This interface is used to efficiently store data in vectors without the overhead of virtual objects.
-     * @param memory area to initialize
-     */
-    virtual void create(void * buf) const;
-    /**
-     * Will initialize itself with the memory area supplied.
-     * @param memory area containing alrady encoded data.
-     */
-    virtual void decode(const void * buf);
-    /**
-     * Will decode itself into the memory area supplied.
-     * @param memory area used as storage.
-     */
-    virtual void encode(void * buf) const;
-    /**
-     * Will return a radixsortable value that will sort ascending.
-     * @param memory area used as storage.
-     */
-    virtual uint64_t radixAsc(const void * buf) const;
-    /**
-     * Will return a radixsortable value that will sort descending.
-     * @param memory area used as storage.
-     */
-    virtual uint64_t radixDesc(const void * buf) const;
-    /**
-     * Will return the typed hash of memory area supplied.
-     * @param memory area used as storage.
-     */
-    virtual size_t hash(const void * buf) const;
-    /**
-     * Will decode itself into the memory area supplied.
-     * It will also encode itself from the memory area.
-     * @param memory area used as storage.
-     */
-    virtual void swap(void * buf);
-    /**
-     * Will destroy any initialized memory.
-     * @param memory area used as storage.
-     */
-    virtual void destroy(void * buf) const;
-    /**
-     * Will do a typed compare of the given memory a and b.
-     * @param a memory area of a
-     * @param b memory area of b
-     * @return -1 if a<b, 0 if a==b, and 1 if a>b
-     */
-    virtual int cmpMem(const void * a, const void *b) const;
-
     virtual void negate();
     virtual void sort();
     virtual void reverse();
@@ -123,7 +71,6 @@ public:
     ResultNode::UP createBaseType() const { return ResultNode::UP(static_cast<ResultNode *>(getBaseClass().create())); }
     virtual ResultSerializer & onSerializeResult(ResultSerializer & os) const;
     virtual ResultDeserializer & onDeserializeResult(ResultDeserializer & is);
-    virtual size_t getRawByteSize() const;
     virtual bool isMultiValue() const { return false; }
     virtual const BucketResultNode& getNullBucket() const;
 };

@@ -13,7 +13,6 @@ private:
     ResultNode::CP _from;
     ResultNode::CP _to;
     static RawBucketResultNode _nullResult;
-    size_t onGetRawByteSize() const override { return sizeof(_from) + sizeof(_to); }
 public:
     struct GetValue {
         BufferRef _tmp;

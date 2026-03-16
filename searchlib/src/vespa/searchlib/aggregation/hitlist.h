@@ -24,27 +24,6 @@ private:
     std::string_view friendly_type_name() const noexcept override { return "<hitlist>"; }
     size_t hash() const override { return 0; }
     void set(const ResultNode & rhs) override;
-    void decode(const void * buf) override {
-        _fs4hits = *static_cast<const Fs4V *>(buf);
-        _vdshits = *static_cast<const VdsV *>(static_cast<const void *>(static_cast<const uint8_t *>(buf)+sizeof(_fs4hits)));
-    }
-    void swap(void * buf) override {
-        static_cast<Fs4V *>(buf)->swap(_fs4hits);
-        static_cast<VdsV *>(static_cast<void *>(static_cast<uint8_t *>(buf)+sizeof(_fs4hits)))->swap(_vdshits);
-    }
-    void encode(void * buf) const override {
-        *static_cast<Fs4V *>(buf) = _fs4hits;
-        *static_cast<VdsV *>(static_cast<void *>(static_cast<uint8_t *>(buf)+sizeof(_fs4hits))) = _vdshits;
-    }
-    void create(void * buf) const override {
-        new (buf) Fs4V();
-        new (static_cast<uint8_t *>(buf)+sizeof(_fs4hits)) VdsV();
-    }
-    void destroy(void * buf) const override {
-        static_cast<Fs4V *>(buf)->Fs4V::~Fs4V();
-        static_cast<VdsV *>(static_cast<void *>(static_cast<uint8_t *>(buf)+sizeof(_fs4hits)))->VdsV::~VdsV();
-    }
-    size_t getRawByteSize() const override { return sizeof(_fs4hits) + sizeof(_vdshits); }
 public:
     DECLARE_IDENTIFIABLE_NS2(search, aggregation, HitList);
     HitList * clone() const override { return new HitList(*this); }

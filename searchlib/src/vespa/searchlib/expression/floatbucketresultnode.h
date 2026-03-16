@@ -12,20 +12,6 @@ private:
     double _from;
     double _to;
     static FloatBucketResultNode _nullResult;
-    size_t onGetRawByteSize() const override { return sizeof(_from) + sizeof(_to); }
-    void create(void * buf)  const override  { (void) buf; }
-    void destroy(void * buf) const override  { (void) buf; }
-    void encode(void * buf) const override {
-        double * v(static_cast<double *>(buf));
-        v[0] = _from;
-        v[1] = _to;
-    }
-    size_t hash(const void * buf) const override { return static_cast<const size_t *>(buf)[0]; }
-    void decode(const void * buf) override {
-        const double * v(static_cast<const double *>(buf));
-        _from = v[0];
-        _to = v[1];
-    }
 public:
     struct GetValue {
         double operator () (const ResultNode & r) { return r.getFloat(); }
