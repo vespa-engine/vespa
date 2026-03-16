@@ -97,15 +97,15 @@ public class RpcSearchInvokerTest {
     }
 
     @Test
-    void contentShareIsUsedToSetTargetHits() throws IOException {
+    void contentShareIsUsedToSetQueryParameters() throws IOException {
         // Total target is distributed proportional to content share (by active document count)
-        assertAdjustedTotalTargetHits(List.of(46, 55), List.of(1000, 1200));
+        assertAdjustedQueryParameters(List.of(46, 55), List.of(1000, 1200));
 
         // Small differences (<5%) do not justify reserialization and so get the same value
-        assertAdjustedTotalTargetHits(List.of(50, 50), List.of(1000, 1035));
+        assertAdjustedQueryParameters(List.of(50, 50), List.of(1000, 1035));
 
         // Nodes with 0 documents get default content share: 1/nodes
-        assertAdjustedTotalTargetHits(List.of(49, 49, 20, 1, 1), List.of(1000, 1035, 0, 1, 13));
+        assertAdjustedQueryParameters(List.of(49, 49, 20, 1, 1), List.of(1000, 1035, 0, 1, 13));
     }
 
     @Test
@@ -316,7 +316,7 @@ public class RpcSearchInvokerTest {
         fail("Property '" + name + "' is not present");
     }
 
-    private void assertAdjustedTotalTargetHits(List<Integer> expected, List<Integer> activeDocs) throws IOException {
+    private void assertAdjustedQueryParameters(List<Integer> expected, List<Integer> activeDocs) throws IOException {
         Query query = new Query();
         var root = new OrItem();
 
@@ -328,6 +328,7 @@ public class RpcSearchInvokerTest {
 
         var nn = new NearestNeighborItem("myField", "myQueryTensor");
         nn.setTotalTargetHits(100);
+        nn.setHnswTotalExploreAdditionalHits(100);
         root.addItem(nn);
 
         query.getModel().getQueryTree().setRoot(root);
@@ -341,7 +342,9 @@ public class RpcSearchInvokerTest {
             assertEquals(expected.get(i), or.getChildren(0).getItemWeakAnd().getTargetNumHits(),
                          "WeakAnd in node " + i);
             assertEquals(expected.get(i), or.getChildren(1).getItemNearestNeighbor().getTargetNumHits(),
-                         "NearestNeighbor in node " + i);
+                         "TargetNumHits in NearestNeighbor in node " + i);
+            assertEquals(expected.get(i), or.getChildren(1).getItemNearestNeighbor().getExploreAdditionalHits(),
+                         "ExploreAdditionalHits in NearestNeighbor in node " + i);
         }
     }
 
