@@ -116,6 +116,10 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
             changes.add(Text.format("image: %s -> %s", from.image(), to.image()));
         }
 
+        if (from.hasImageMirror() != to.hasImageMirror()) {
+            changes.add(Text.format("hasImageMirror: %s -> %s", from.hasImageMirror(), to.hasImageMirror()));
+        }
+
         if (fromResources.maxCpu() != toResources.maxCpu()) {
             changes.add(Text.format("maxCpu: %s -> %s", fromResources.maxCpu(), toResources.maxCpu()));
         }
