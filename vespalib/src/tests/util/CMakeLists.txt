@@ -19,6 +19,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     generation_hold_list_test.cpp
     generationhandler_test.cpp
     json.cpp
+    logic_test.cpp
     issue_test.cpp
     memory_trap_test.cpp
     mmap_file_allocator_factory_test.cpp
