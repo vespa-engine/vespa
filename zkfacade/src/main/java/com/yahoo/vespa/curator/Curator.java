@@ -26,6 +26,7 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.client.ZKClientConfig;
+import org.apache.zookeeper.common.ConfigException;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.EphemeralType;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
@@ -138,7 +139,7 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         if (clientConfigFile.isPresent()) {
             try {
                 return new ZkClientConfigBuilder().toConfig(clientConfigFile.get().toPath());
-            } catch (QuorumPeerConfig.ConfigException e) {
+            } catch (ConfigException e) {
                 throw new RuntimeException("Unable to create ZooKeeper client config file " + clientConfigFile.get());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
