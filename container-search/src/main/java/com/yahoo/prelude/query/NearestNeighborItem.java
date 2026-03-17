@@ -184,15 +184,16 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     protected void appendBodyString(StringBuilder buffer) {
         buffer.append("{field=").append(field);
         buffer.append(",queryTensorName=").append(queryTensorName);
-        buffer.append(",hnsw.exploreAdditionalHits=").append(hnswExploreAdditionalHits);
-        buffer.append(",distanceThreshold=").append(distanceThreshold);
-        buffer.append(",approximate=").append(approximate);
         if (targetHits != null)
             buffer.append(",targetHits=").append(targetHits);
         if (totalTargetHits != null)
             buffer.append(",totalTargetHits=").append(totalTargetHits);
         if (minTargetHits != null)
             buffer.append(",minTargetHits=").append(minTargetHits);
+        if ( ! approximate)
+            buffer.append(",approximate=").append(approximate);
+        if (distanceThreshold != Double.POSITIVE_INFINITY)
+            buffer.append(",distanceThreshold=").append(distanceThreshold);
         if (hnswApproximateThreshold != null)
             buffer.append(",hnsw.approximateThreshold=").append(hnswApproximateThreshold);
         if (hnswExplorationSlack != null)
@@ -205,6 +206,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
             buffer.append(",hnsw.postFilterThreshold=").append(hnswPostFilterThreshold);
         if (hnswTargetHitsMaxAdjustmentFactor != null)
             buffer.append(",hnsw.targetHitsMaxAdjustmentFactor=").append(hnswTargetHitsMaxAdjustmentFactor);
+        if (hnswExploreAdditionalHits != 0)
+            buffer.append(",hnsw.exploreAdditionalHits=").append(hnswExploreAdditionalHits);
         buffer.append("}");
     }
 
@@ -213,15 +216,16 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         super.disclose(discloser);
         discloser.addProperty("field", field);
         discloser.addProperty("queryTensorName", queryTensorName);
-        discloser.addProperty("hnsw.exploreAdditionalHits", hnswExploreAdditionalHits);
-        discloser.addProperty("distanceThreshold", distanceThreshold);
-        discloser.addProperty("approximate", approximate);
         if (targetHits != null)
             discloser.addProperty("targetHits", targetHits);
         if (totalTargetHits != null)
             discloser.addProperty("totalTargetHits", totalTargetHits);
         if (minTargetHits != null)
             discloser.addProperty("minTargetHits", minTargetHits);
+        if ( ! approximate)
+            discloser.addProperty("approximate", approximate);
+        if (distanceThreshold != Double.POSITIVE_INFINITY)
+            discloser.addProperty("distanceThreshold", distanceThreshold);
         if (hnswApproximateThreshold != null)
             discloser.addProperty("hnsw.approximateThreshold", hnswApproximateThreshold);
         if (hnswExplorationSlack != null)
@@ -234,6 +238,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
             discloser.addProperty("hnsw.postFilterThreshold", hnswPostFilterThreshold);
         if (hnswTargetHitsMaxAdjustmentFactor != null)
             discloser.addProperty("hnsw.targetHitsMaxAdjustmentFactor", hnswTargetHitsMaxAdjustmentFactor);
+        if (hnswExploreAdditionalHits != 0)
+            discloser.addProperty("hnsw.exploreAdditionalHits", hnswExploreAdditionalHits);
     }
 
     @Override
@@ -276,24 +282,18 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         builder.setAllowApproximate(approximate);
         builder.setExploreAdditionalHits(hnswExploreAdditionalHits);
         builder.setDistanceThreshold(distanceThreshold);
-        if (hnswApproximateThreshold != null) {
+        if (hnswApproximateThreshold != null)
             builder.setApproximateThreshold(hnswApproximateThreshold);
-        }
-        if (hnswExplorationSlack != null) {
+        if (hnswExplorationSlack != null)
             builder.setExplorationSlack(hnswExplorationSlack);
-        }
-        if (hnswFilterFirstExploration != null) {
+        if (hnswFilterFirstExploration != null)
             builder.setFilterFirstExploration(hnswFilterFirstExploration);
-        }
-        if (hnswFilterFirstThreshold != null) {
+        if (hnswFilterFirstThreshold != null)
             builder.setFilterFirstThreshold(hnswFilterFirstThreshold);
-        }
-        if (hnswPostFilterThreshold != null) {
+        if (hnswPostFilterThreshold != null)
             builder.setPostFilterThreshold(hnswPostFilterThreshold);
-        }
-        if (hnswTargetHitsMaxAdjustmentFactor != null) {
+        if (hnswTargetHitsMaxAdjustmentFactor != null)
             builder.setTargetHitsMaxAdjustmentFactor(hnswTargetHitsMaxAdjustmentFactor);
-        }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemNearestNeighbor(builder.build())
                 .build();
