@@ -139,6 +139,7 @@ public class AllocatedHostsSerializer {
             cursor.setLong("id", sidecar.id());
             cursor.setString("name", sidecar.name());
             cursor.setString("image", sidecar.image().asString());
+            cursor.setBool("hasImageMirror", sidecar.hasImageMirror());
 
             var resourcesCursor = cursor.setObject("resources");
             var resources = sidecar.resources();
@@ -350,6 +351,8 @@ public class AllocatedHostsSerializer {
             var command = new ArrayList<String>();
             specInspector.field("command").traverse((ArrayTraverser) (idx, elem) -> command.add(elem.asString()));
 
+            var hasImageMirror = specInspector.field("hasImageMirror").asBool();
+
             var builder = SidecarSpec.builder()
                     .id(id)
                     .name(name)
@@ -360,7 +363,8 @@ public class AllocatedHostsSerializer {
                     .hasGpu(hasGpu)
                     .volumeMounts(volumeMounts)
                     .envs(envs)
-                    .command(command);
+                    .command(command)
+                    .hasImageMirror(hasImageMirror);
 
             var livenessProbeInspector = specInspector.field("livenessProbe");
             if (livenessProbeInspector.valid()) {

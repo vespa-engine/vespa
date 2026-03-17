@@ -7,7 +7,7 @@ import java.util.Optional;
 
 /**
  * Sidecar container configuration.
- * 
+ *
  * @param id Unique identifier of the sidecar in a specific node assigned by config-server or in a feature flag.
  *           Should be a positive integer from 0 to 99 inclusive. Used as part of a sidecar container name and hostname.
  * @param name User-defined sidecar name. Must be unique within a node.
@@ -18,6 +18,8 @@ import java.util.Optional;
  * @param envs Environment variables to set in the sidecar container.
  * @param command Command to run in the sidecar container where the first element is the executable and the rest are arguments.
  * @param livenessProbe Health check to determine if the sidecar container is running correctly.
+ * @param hasImageMirror Whether a mirrored copy of the image exists in a private registry.
+ *
  * @author glebashnik
  */
 public record SidecarSpec(
@@ -28,7 +30,8 @@ public record SidecarSpec(
         List<String> volumeMounts,
         Map<String, String> envs,
         List<String> command,
-        Optional<SidecarProbe> livenessProbe) {
+        Optional<SidecarProbe> livenessProbe,
+        boolean hasImageMirror) {
 
     public SidecarSpec {
         if (id < 0 || id > 99) { // This limit is due to hostname length restrictions.
@@ -41,9 +44,27 @@ public record SidecarSpec(
         Objects.requireNonNull(command);
     }
 
-    public SidecarSpec(long id, String name, DockerImage image, SidecarResources resources,
-                       List<String> volumeMounts, Map<String, String> envs, List<String> command) {
-        this(id, name, image, resources, volumeMounts, envs, command, Optional.empty());
+    public SidecarSpec(
+            long id,
+            String name,
+            DockerImage image,
+            SidecarResources resources,
+            List<String> volumeMounts,
+            Map<String, String> envs,
+            List<String> command) {
+        this(id, name, image, resources, volumeMounts, envs, command, Optional.empty(), false);
+    }
+
+    public SidecarSpec(
+            long id,
+            String name,
+            DockerImage image,
+            SidecarResources resources,
+            List<String> volumeMounts,
+            Map<String, String> envs,
+            List<String> command,
+            Optional<SidecarProbe> livenessProbe) {
+        this(id, name, image, resources, volumeMounts, envs, command, livenessProbe, false);
     }
 
     public boolean matchesByIdOrName(SidecarSpec other) {
@@ -67,6 +88,7 @@ public record SidecarSpec(
         private Map<String, String> envs = Map.of();
         private List<String> command = List.of();
         private Optional<SidecarProbe> livenessProbe = Optional.empty();
+        private boolean hasImageMirror = false;
 
         public Builder() {}
 
@@ -79,6 +101,7 @@ public record SidecarSpec(
             this.envs = spec.envs;
             this.command = spec.command;
             this.livenessProbe = spec.livenessProbe;
+            this.hasImageMirror = spec.hasImageMirror;
         }
 
         public Builder id(long id) {
@@ -141,8 +164,14 @@ public record SidecarSpec(
             return this;
         }
 
+        public Builder hasImageMirror(boolean hasImageMirror) {
+            this.hasImageMirror = hasImageMirror;
+            return this;
+        }
+
         public SidecarSpec build() {
-            return new SidecarSpec(id, name, image, resources, volumeMounts, envs, command, livenessProbe);
+            return new SidecarSpec(
+                    id, name, image, resources, volumeMounts, envs, command, livenessProbe, hasImageMirror);
         }
     }
 }

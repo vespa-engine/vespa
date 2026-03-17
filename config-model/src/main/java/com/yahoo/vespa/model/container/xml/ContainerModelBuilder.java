@@ -277,6 +277,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .id(0)
                     .name("triton")
                     .image(image)
+                    .hasImageMirror(true)
                     .minCpu(1) // Must have at least one CPU
                     .hasGpu(hasGpu)
                     .volumeMounts(List.of("/models"))

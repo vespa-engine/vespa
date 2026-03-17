@@ -2725,6 +2725,7 @@ public class ModelProvisioningTest {
                 .id(0)
                 .name("triton")
                 .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.12-py3"))
+                .hasImageMirror(true)
                 .minCpu(1)
                 .hasGpu(false)
                 .volumeMounts(List.of("/models"))
