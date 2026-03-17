@@ -22,6 +22,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
 
     private Integer targetHits = null;
     private Integer totalTargetHits = null;
+    private Integer minTargetHits;
     private int hnswExploreAdditionalHits = 0;
     private double distanceThreshold = Double.POSITIVE_INFINITY;
     private boolean approximate = true;
@@ -53,13 +54,27 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     /** Returns the total number of hits to produce across all nodes, or null if not set */
     public Integer getTotalTargetHits() { return totalTargetHits; }
 
+    /**
+     * Returns the minimum targetHits to use on a node. This can be used to ensure a minimum
+     * amount of graph exploration also when a node's share of totalTargetHits is small.
+     * This is ignored when targetHits is set explicitly.
+     *
+     * @return the minimum targetHits to use, or null if no minimum is set
+     */
+    public Integer getMinTargetHits() { return minTargetHits; }
+
     /** Returns the name of the index (field) to be searched */
     public String getIndexName() { return field; }
 
     /** Returns the distance threshold for nearest-neighbor hits */
     public double getDistanceThreshold () { return this.distanceThreshold ; }
 
-    /** Returns the number of extra hits to explore in HNSW algorithm */
+    /**
+     * Returns the number of extra hits to explore in HNSW algorithm
+     *
+     * @deprecated use totalTargetHits and minTargetHits instead
+     */
+    @Deprecated // TODO: Remove on Vespa 9
     public int getHnswExploreAdditionalHits() { return hnswExploreAdditionalHits; }
 
     /** Returns whether approximation is allowed */
@@ -100,10 +115,23 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     /** Set the total number of hits to produce across all nodes */
     public void setTotalTargetHits(Integer total) { this.totalTargetHits = total; }
 
+    /**
+     * Sets the minimum targetHits to use on a node. This can be used to ensure a minimum
+     * amount of graph exploration also when a node's share of totalTargetHits is small.
+     */
+    public void setMinTargetHits(Integer target) {
+        this.minTargetHits = target;
+    }
+
     /** Set the distance threshold for nearest-neighbor hits */
     public void setDistanceThreshold(double threshold) { this.distanceThreshold = threshold; }
 
-    /** Set the number of extra hits to explore in HNSW algorithm */
+    /**
+     * Sets the number of extra hits to explore in HNSW algorithm
+     *
+     * @deprecated use totalTargetHits and minTargetHits instead
+     */
+    @Deprecated // TODO: Remove on Vespa 9
     public void setHnswExploreAdditionalHits(int num) { this.hnswExploreAdditionalHits = num; }
 
     /** Set whether approximation is allowed */
@@ -163,6 +191,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
             buffer.append(",targetHits=").append(targetHits);
         if (totalTargetHits != null)
             buffer.append(",totalTargetHits=").append(totalTargetHits);
+        if (minTargetHits != null)
+            buffer.append(",minTargetHits=").append(minTargetHits);
         if (hnswApproximateThreshold != null)
             buffer.append(",hnsw.approximateThreshold=").append(hnswApproximateThreshold);
         if (hnswExplorationSlack != null)
@@ -190,6 +220,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
             discloser.addProperty("targetHits", targetHits);
         if (totalTargetHits != null)
             discloser.addProperty("totalTargetHits", totalTargetHits);
+        if (minTargetHits != null)
+            discloser.addProperty("minTargetHits", minTargetHits);
         if (hnswApproximateThreshold != null)
             discloser.addProperty("hnsw.approximateThreshold", hnswApproximateThreshold);
         if (hnswExplorationSlack != null)
@@ -210,6 +242,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         NearestNeighborItem other = (NearestNeighborItem)o;
         if ( ! Objects.equals(this.targetHits, other.targetHits)) return false;
         if ( ! Objects.equals(this.totalTargetHits, other.totalTargetHits)) return false;
+        if ( ! Objects.equals(this.minTargetHits, other.minTargetHits)) return false;
         if (this.hnswExploreAdditionalHits != other.hnswExploreAdditionalHits) return false;
         if (this.distanceThreshold != other.distanceThreshold) return false;
         if (this.approximate != other.approximate) return false;
@@ -226,7 +259,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), targetHits, totalTargetHits, hnswExploreAdditionalHits,
+        return Objects.hash(super.hashCode(), targetHits, totalTargetHits, minTargetHits,
+                            hnswExploreAdditionalHits,
                             distanceThreshold, approximate, field, queryTensorName,
                             hnswApproximateThreshold, hnswExplorationSlack,
                             hnswFilterFirstExploration, hnswFilterFirstThreshold,
@@ -269,7 +303,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         if (targetHits != null) return targetHits;
         if (totalTargetHits == null)
             throw new IllegalStateException("targetHits or totalTargetHits must be set before this is serialized");
-        return context.contentShareOf(totalTargetHits);
+        int minTargetHits = this.minTargetHits == null ? 0 : this.minTargetHits;
+        return Math.max(minTargetHits, context.contentShareOf(totalTargetHits));
    }
 
 }

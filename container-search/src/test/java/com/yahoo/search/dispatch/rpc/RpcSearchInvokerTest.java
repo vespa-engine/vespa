@@ -326,8 +326,10 @@ public class RpcSearchInvokerTest {
         weakAnd.addItem(new WordItem("bar", "myindex"));
         root.addItem(weakAnd);
 
+        var minTargetHits = 2;
         var nn = new NearestNeighborItem("myField", "myQueryTensor");
         nn.setTotalTargetHits(100);
+        nn.setMinTargetHits(minTargetHits);
         root.addItem(nn);
 
         query.getModel().getQueryTree().setRoot(root);
@@ -340,7 +342,8 @@ public class RpcSearchInvokerTest {
             var or = requests.get(i).getQueryTree().getRoot().getItemOr();
             assertEquals(expected.get(i), or.getChildren(0).getItemWeakAnd().getTargetNumHits(),
                          "WeakAnd in node " + i);
-            assertEquals(expected.get(i), or.getChildren(1).getItemNearestNeighbor().getTargetNumHits(),
+            assertEquals(Math.max(minTargetHits, expected.get(i)),
+                         or.getChildren(1).getItemNearestNeighbor().getTargetNumHits(),
                          "NearestNeighbor in node " + i);
         }
     }

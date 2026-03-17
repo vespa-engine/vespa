@@ -48,6 +48,7 @@ import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
 import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.TOTAL_TARGET_HITS;
+import static com.yahoo.search.yql.YqlParser.MIN_TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
 import static com.yahoo.search.yql.YqlParser.URI;
@@ -767,12 +768,18 @@ public class VespaSerializer {
                 comma(destination, initLen);
                 annotationKey(destination, YqlParser.TOTAL_TARGET_HITS).append(totalTargetHits);
             }
+            Integer minTargetHits = item.getMinTargetHits();
+            if (minTargetHits != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.MIN_TARGET_HITS).append(minTargetHits);
+            }
             double distanceThreshold = item.getDistanceThreshold();
             if (distanceThreshold < Double.POSITIVE_INFINITY) {
                 comma(destination, initLen);
                 String key = YqlParser.DISTANCE_THRESHOLD;
                 annotationKey(destination, key).append(distanceThreshold);
             }
+            @SuppressWarnings("deprecation")
             int explore = item.getHnswExploreAdditionalHits();
             if (explore != 0) {
                 comma(destination, initLen);
