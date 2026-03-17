@@ -92,6 +92,12 @@ cp -a "$HOME/.m2/repository" maven-repo
 rm -rf rpms
 mv "$WORKDIR/docker-image/rpms" rpms
 
+dep_versions="${SOURCE_DIR}/dependency-versions/pom.xml"
+
+if [ -f "${dep_versions}" ]; then
+	grep plexus "${dep_versions}" > include/allow-versions.txt
+fi
+
 echo "--- Building system-test container"
 DOCKER_SYSTEMTEST_TAG=docker.io/vespaengine/vespa-systemtest-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
 echo "Building system-test container with tag: ${DOCKER_SYSTEMTEST_TAG}"
