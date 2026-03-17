@@ -7,6 +7,7 @@
 #include <vespa/searchlib/common/geo_gcd.h>
 #include <vespa/vespalib/geo/zcurve.h>
 
+#include <algorithm>
 #include <cassert>
 #include <limits>
 
