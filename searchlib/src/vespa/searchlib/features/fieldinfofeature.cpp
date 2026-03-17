@@ -11,10 +11,12 @@
 #include <vespa/vespalib/util/stash.h>
 #include <sstream>
 
+using search::fef::TermFieldHandle;
+
 namespace search::features {
 
 IndexFieldInfoExecutor::IndexFieldInfoExecutor(feature_t type, feature_t isFilter,
-                                               [[maybe_unused]] uint32_t field, uint32_t fieldHandle)
+                                               [[maybe_unused]] uint32_t field, TermFieldHandle fieldHandle)
     : fef::FeatureExecutor(),
       _type(type),
       _isFilter(isFilter),
@@ -64,11 +66,11 @@ IndexFieldInfoExecutor::handle_bind_match_data(const fef::MatchData &md)
 
 //-----------------------------------------------------------------------------
 
-AttrFieldInfoExecutor::AttrFieldInfoExecutor(feature_t type, uint32_t fieldHandle) :
-    FeatureExecutor(),
-    _type(type),
-    _fieldHandle(fieldHandle),
-    _md(nullptr)
+AttrFieldInfoExecutor::AttrFieldInfoExecutor(feature_t type, TermFieldHandle fieldHandle)
+    : FeatureExecutor(),
+      _type(type),
+      _fieldHandle(fieldHandle),
+      _md(nullptr)
 {
     // empty
 }
@@ -206,7 +208,7 @@ FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv, vespa
         values.push_back(_attrcnt);
         return stash.create<ValueExecutor>(values);
     }
-    uint32_t fieldHandle = util::getTermFieldHandle(queryEnv, 0, _fieldId);
+    TermFieldHandle fieldHandle = util::getTermFieldHandle(queryEnv, 0, _fieldId);
     if (fieldHandle == fef::IllegalHandle) {
         std::vector<feature_t> values;
         values.push_back(_type);
