@@ -24,7 +24,7 @@ public class DockerImageTest {
                                "registry.example.com/vespa/vespa:7.42", new DockerImage("registry.example.com", "vespa/vespa", Optional.of("7.42")),
                                "registry.example.com:9999/vespa/vespa", new DockerImage("registry.example.com:9999", "vespa/vespa", Optional.empty()),
                                "registry.example.com/vespa/vespa", new DockerImage("registry.example.com", "vespa/vespa", Optional.empty()),
-                               "registry.example.com/project/repo/vespa/vespa", new DockerImage("registry.example.com/project/repo", "vespa/vespa", Optional.empty())
+                               "registry.example.com/prefix/vespa/vespa", new DockerImage("registry.example.com", "prefix/vespa/vespa", Optional.empty())
         );
         tests.forEach((value, expected) -> {
             DockerImage parsed = DockerImage.fromString(value);

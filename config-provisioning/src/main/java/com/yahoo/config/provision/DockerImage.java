@@ -94,8 +94,9 @@ public class DockerImage {
     public static DockerImage fromString(String s) {
         if (s.isEmpty()) return EMPTY;
 
-        int repositoryStart = s.lastIndexOf('/', s.lastIndexOf('/') - 1);
-        if (repositoryStart < 0) throw new IllegalArgumentException("Expected to find at least 2 path segments in: " + s);
+        int repositoryStart = s.indexOf('/');
+        if (repositoryStart < 0 || s.indexOf('/', repositoryStart + 1) < 0)
+            throw new IllegalArgumentException("Expected to find at least 2 path segments in: " + s);
 
         String registry = s.substring(0, repositoryStart);
         String repository = s.substring(repositoryStart + 1);
