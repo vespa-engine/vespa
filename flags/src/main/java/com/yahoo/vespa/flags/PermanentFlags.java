@@ -281,7 +281,7 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_DISK = defineDoubleFlag(
-            "resource-limit-disk", 0.75,
+            "resource-limit-disk", 0.775,
             "Resource limit (between 0.0 and 1.0) for disk usage on content nodes, used by cluster controller for when to block feed",
             "Takes effect on next deployment",
             INSTANCE_ID
