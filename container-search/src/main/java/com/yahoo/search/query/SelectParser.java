@@ -71,6 +71,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +108,6 @@ import static com.yahoo.search.yql.YqlParser.GEO_BOUNDING_BOX;
 import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.HNSW_EXPLORE_ADDITIONAL_HITS;
-import static com.yahoo.search.yql.YqlParser.TOTAL_HNSW_EXPLORE_ADDITIONAL_HITS;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
 import static com.yahoo.search.yql.YqlParser.LABEL;
 import static com.yahoo.search.yql.YqlParser.NEAR;
@@ -533,10 +533,8 @@ public class SelectParser implements Parser {
                     item.setDistanceThreshold(distanceThreshold);
                 }
                 if (HNSW_EXPLORE_ADDITIONAL_HITS.equals(annotation_name)) {
-                    item.setHnswExploreAdditionalHits((int)(annotation_value.asDouble()));
-                }
-                if (TOTAL_HNSW_EXPLORE_ADDITIONAL_HITS.equals(annotation_name)) {
-                    item.setHnswTotalExploreAdditionalHits((int)(annotation_value.asDouble()));
+                    int hnswExploreAdditionalHits = (int)(annotation_value.asDouble());
+                    item.setHnswExploreAdditionalHits(hnswExploreAdditionalHits);
                 }
                 if (APPROXIMATE.equals(annotation_name)) {
                     boolean allowApproximate = annotation_value.asBool();
