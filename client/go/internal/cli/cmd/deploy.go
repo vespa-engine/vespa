@@ -79,6 +79,14 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 						return err
 					}
 				}
+				if err == nil {
+					if vaultNames := services.VaultNames(); len(vaultNames) > 0 {
+						if vaultErr := vespa.EnsureVaultAccessForDev(target, vaultNames); vaultErr != nil {
+							cli.printWarning("Could not set up vault access: "+vaultErr.Error(),
+								"You may need to configure vault access manually in the Vespa Cloud console")
+						}
+					}
+				}
 			}
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			if _, err := waiter.DeployService(target); err != nil {

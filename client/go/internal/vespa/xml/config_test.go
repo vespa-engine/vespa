@@ -333,6 +333,51 @@ func assertNodeCount(t *testing.T, input string, wantMin, wantMax int, wantErr b
 	}
 }
 
+func TestVaultNames(t *testing.T) {
+	// No secrets element
+	s, err := ReadServices(strings.NewReader(`<services><container id="c"><nodes count="1"/></container></services>`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := s.VaultNames(); len(got) != 0 {
+		t.Errorf("expected no vault names, got %v", got)
+	}
+
+	// Single secret with vault
+	s, err = ReadServices(strings.NewReader(`<services>
+  <container id="c">
+    <secrets>
+      <secret vault="my-vault" name="foo"/>
+    </secrets>
+    <nodes count="1"/>
+  </container>
+</services>`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := s.VaultNames(); !reflect.DeepEqual(got, []string{"my-vault"}) {
+		t.Errorf("expected [my-vault], got %v", got)
+	}
+
+	// Multiple vaults (deduplicated and sorted)
+	s, err = ReadServices(strings.NewReader(`<services>
+  <container id="c">
+    <secrets>
+      <secret vault="vault-b" name="foo"/>
+      <secret vault="vault-a" name="bar"/>
+      <secret vault="vault-b" name="baz"/>
+    </secrets>
+    <nodes count="1"/>
+  </container>
+</services>`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := s.VaultNames(); !reflect.DeepEqual(got, []string{"vault-a", "vault-b"}) {
+		t.Errorf("expected [vault-a vault-b], got %v", got)
+	}
+}
+
 func assertResources(t *testing.T, input string, want Resources, wantErr bool) {
 	got, err := ParseResources(input)
 	if wantErr {

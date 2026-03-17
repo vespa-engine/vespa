@@ -444,6 +444,28 @@ func createCloudTarget(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPCli
 	return target, client
 }
 
+func createCloudTargetControlPlane(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPClient) {
+	auth := &mockAuthenticator{}
+	client := &mock.HTTPClient{}
+	target, err := CloudTarget(
+		client,
+		auth,
+		auth,
+		APIOptions{System: PublicSystem},
+		CloudDeploymentOptions{
+			Deployment: Deployment{
+				Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
+				Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
+				System:      PublicSystem,
+			},
+		},
+		LogOptions{Writer: logWriter},
+		0,
+	)
+	require.Nil(t, err)
+	return target, client
+}
+
 func getService(t *testing.T, target Target, name string) (*Service, error) {
 	t.Helper()
 	if name == "deploy" {
