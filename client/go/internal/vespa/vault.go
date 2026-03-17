@@ -101,6 +101,10 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 		}
 	}
 
+	if len(t.apiOptions.APIKey) > 0 {
+		return fmt.Errorf("editing vault access rules is not allowed with an API key: please switch to control plane auth with 'vespa auth login'")
+	}
+
 	// Build new rule and merge into the full GET response body (preserving extra fields)
 	newRule := vaultAccessRule{
 		Application: appID,

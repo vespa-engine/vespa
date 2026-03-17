@@ -43,7 +43,7 @@ func TestEnsureVaultAccessForDevAlreadySet(t *testing.T) {
 }
 
 func TestEnsureVaultAccessForDevAddsRule(t *testing.T) {
-	target, client := createCloudTarget(t, io.Discard)
+	target, client := createCloudTargetControlPlane(t, io.Discard)
 	client.ReadBody = true
 
 	// GET: no existing rules
@@ -73,4 +73,16 @@ func TestEnsureVaultAccessForDevGetError(t *testing.T) {
 	client.NextResponseError(io.EOF)
 	err := EnsureVaultAccessForDev(target, []string{"my-vault"})
 	assert.NotNil(t, err)
+}
+
+func TestEnsureVaultAccessForDevAPIKeyFails(t *testing.T) {
+	target, client := createCloudTarget(t, io.Discard)
+
+	// GET: no existing rules, so we reach the API key check
+	getBody, _ := json.Marshal(vaultRulesResponse{Rules: []vaultAccessRule{}})
+	client.NextResponse(mock.HTTPResponse{Status: 200, Body: getBody})
+
+	err := EnsureVaultAccessForDev(target, []string{"my-vault"})
+	assert.ErrorContains(t, err, "API key")
+	require.Len(t, client.Requests, 1) // only the GET, no PUT
 }
