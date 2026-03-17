@@ -1785,6 +1785,7 @@ TEST(PerDocExprTest, testGeoDistanceMultiValue) {
     posAttr->addDoc(docId);
     posAttr->add(airports[Airports::JFK]);
     posAttr->add(airports[Airports::TRD]);
+    posAttr->addDoc(docId); // empty
     AttributeGuard guard(posAttr);
 
     using Unit = GeoDistanceFunctionNode::Unit;
@@ -1819,6 +1820,15 @@ TEST(PerDocExprTest, testGeoDistanceMultiValue) {
         auto tree = make_tree(37.61, -122.38, Unit::KM);
         ASSERT_NO_THROW(tree.execute(0, 0));
         EXPECT_NEAR(tree.getResult()->getFloat(), 4139.0, 50.0);
+    }
+
+    // Query when document has no positions
+    {
+        auto tree = make_tree(60.20, 11.08, Unit::KM);
+        ASSERT_NO_THROW(tree.execute(2, 0));
+        double dist = tree.getResult()->getFloat();
+        EXPECT_TRUE(std::isinf(dist));
+        EXPECT_GT(dist, 0.0);
     }
 }
 
