@@ -1174,6 +1174,12 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testArrayIndex() {
+        assertParse("SELECT title FROM product WHERE inventory.in_stock[10000] = true",
+                    "inventory.in_stock[10000]:{true}");
+    }
+
+    @Test
     void testSegmenting() {
         assertParse("select * from bar where title contains 'foo.bar'", "title:'foo bar'");
         assertParse("select * from bar where title contains 'foo&123'", "title:'foo 123'");

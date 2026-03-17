@@ -792,7 +792,7 @@ public class SelectTestCase {
     void testEqualsWithArrayIndex() {
         // Boolean value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 2, \"value\": true }}",
-                    "my_arr:{true}");
+                    "my_arr[2]:{true}");
         var boolTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 2, \"value\": true }}");
         var boolSameElement = assertInstanceOf(SameElementItem.class, boolTree.getRoot());
         assertEquals("my_arr", boolSameElement.getFieldName());
@@ -801,18 +801,18 @@ public class SelectTestCase {
 
         // Integer value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}",
-                    "my_arr:{42}");
+                    "my_arr[0]:{42}");
         var intTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}");
         var intSameElement = assertInstanceOf(SameElementItem.class, intTree.getRoot());
         assertEquals(List.of(0), intSameElement.getElementFilter());
 
         // String value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 1, \"value\": \"hello\" }}",
-                    "my_arr:{hello}");
+                    "my_arr[1]:{hello}");
 
         // Double value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 3.14 }}",
-                    "my_arr:{3.14}");
+                    "my_arr[0]:{3.14}");
     }
 
     @Test
