@@ -185,7 +185,6 @@ public class YqlParser implements Parser {
     public static final String HNSW_APPROXIMATE_THRESHOLD = "hnsw.approximateThreshold"; // default 0.05
     public static final String HNSW_EXPLORATION_SLACK = "hnsw.explorationSlack"; // 'adaptive beam', default 0.0 (aka off)
     public static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits"; // 'ef' in HNSW
-    public static final String TOTAL_HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.totalExploreAdditionalHits";
     public static final String HNSW_FILTER_FIRST_EXPLORATION = "hnsw.filterFirstExploration"; // acorn-1 aggression, default 0.3
     public static final String HNSW_FILTER_FIRST_THRESHOLD = "hnsw.filterFirstThreshold"; // 'acorn-1', default 0.0 (aka off)
     public static final String HNSW_POST_FILTER_THRESHOLD = "hnsw.postFilterThreshold"; // default 1.0 (aka off)
@@ -622,8 +621,6 @@ public class YqlParser implements Parser {
         if (hnswExploreAdditionalHits != null) {
             item.setHnswExploreAdditionalHits(hnswExploreAdditionalHits);
         }
-        item.setHnswTotalExploreAdditionalHits(getAnnotation(ast, TOTAL_HNSW_EXPLORE_ADDITIONAL_HITS,
-                                                             Integer.class, null, "total extra hits to explore for HNSW algorithm across all nodes"));
         Boolean allowApproximate = getAnnotation(ast, APPROXIMATE,
                                                  Boolean.class, null, "allow approximate nearest neighbor search");
         if (allowApproximate != null) {

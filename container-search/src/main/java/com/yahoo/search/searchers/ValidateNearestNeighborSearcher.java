@@ -122,9 +122,6 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             if (item.getTotalTargetHits() != null && item.getTotalTargetHits() < 1)
                 return item + " has invalid totalTargetHits " + item.getTotalTargetHits() + ": Must be >= 1";
 
-            if (item.getHnswExploreAdditionalHits() != 0 && item.getHnswTotalExploreAdditionalHits() != null)
-                return item + " cannot have both hnsw.exploreAdditionalHits and hnsw.totalExploreAdditionalHits set";
-
             String queryFeatureName = "query(" + item.getQueryTensorName() + ")";
             Optional<Tensor> queryTensor = query.getRanking().getFeatures().getTensor(queryFeatureName);
             if (queryTensor.isEmpty())
