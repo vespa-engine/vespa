@@ -30,13 +30,10 @@ func TestEnsureVaultAccessForDevNoVaults(t *testing.T) {
 
 func TestEnsureVaultAccessForDevAlreadySet(t *testing.T) {
 	target, client := createCloudTarget(t, io.Discard)
-	// GET response: rule already present for t1.a1.i1 with "dev" context
-	existingRules := vaultResponse{
-		Rules: []vaultAccessRule{
-			{Application: "a1", Contexts: []string{"SANDBOX"}, ID: 0},
-		},
-	}
-	body, _ := json.Marshal(existingRules)
+	// GET response: rule already present for a1 with SANDBOX context
+	body, _ := json.Marshal(vaultRulesResponse{Rules: []vaultAccessRule{
+		{Application: "a1", Contexts: []string{"SANDBOX"}, ID: 0},
+	}})
 	client.NextResponse(mock.HTTPResponse{Status: 200, Body: body})
 
 	err := EnsureVaultAccessForDev(target, []string{"my-vault"})
@@ -50,22 +47,16 @@ func TestEnsureVaultAccessForDevAddsRule(t *testing.T) {
 	client.ReadBody = true
 
 	// GET: no existing rules
-	emptyRules := vaultResponse{Rules: []vaultAccessRule{}}
-	getBody, _ := json.Marshal(emptyRules)
+	getBody, _ := json.Marshal(vaultRulesResponse{Rules: []vaultAccessRule{}})
 	client.NextResponse(mock.HTTPResponse{Status: 200, Body: getBody})
 
 	// CSRF GET
 	csrfBody, _ := json.Marshal(map[string]string{"token": "test-csrf"})
 	client.NextResponse(mock.HTTPResponse{Status: 200, Body: csrfBody})
 
-	// PUT response with new rule confirmed
-	updatedRules := vaultResponse{
-		Rules: []vaultAccessRule{
-			{Application: "a1", Contexts: []string{"SANDBOX"}, ID: 0},
-		},
-	}
-	putBody, _ := json.Marshal(updatedRules)
-	client.NextResponse(mock.HTTPResponse{Status: 200, Body: putBody})
+	// PUT response with confirmation message
+	putRespBody, _ := json.Marshal(map[string]string{"message": "Set access rules for tenant t1, vault my-vault"})
+	client.NextResponse(mock.HTTPResponse{Status: 200, Body: putRespBody})
 
 	err := EnsureVaultAccessForDev(target, []string{"my-vault"})
 	assert.Nil(t, err)

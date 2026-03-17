@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -18,7 +19,7 @@ type vaultAccessRule struct {
 	ID          int      `json:"id"`
 }
 
-type vaultResponse struct {
+type vaultRulesResponse struct {
 	Rules []vaultAccessRule `json:"rules"`
 }
 
@@ -77,13 +78,20 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 	if resp.StatusCode/100 != 2 {
 		return fmt.Errorf("could not get vault access rules for %q: server returned %d: %s", vaultName, resp.StatusCode, getRawBody)
 	}
-	var vaultResp vaultResponse
-	if err := json.Unmarshal(getRawBody, &vaultResp); err != nil {
+	// Parse GET response as a generic map to preserve all fields for the PUT body
+	var getRawResp map[string]json.RawMessage
+	if err := json.Unmarshal(getRawBody, &getRawResp); err != nil {
 		return fmt.Errorf("could not parse vault access rules for %q: %w", vaultName, err)
+	}
+	var existingRules []vaultAccessRule
+	if rulesRaw, ok := getRawResp["rules"]; ok {
+		if err := json.Unmarshal(rulesRaw, &existingRules); err != nil {
+			return fmt.Errorf("could not parse vault access rules for %q: %w", vaultName, err)
+		}
 	}
 
 	// Check if access rule already exists for this application with the dev alias
-	for _, rule := range vaultResp.Rules {
+	for _, rule := range existingRules {
 		if rule.Application == appID {
 			for _, ctx := range rule.Contexts {
 				if ctx == secretStoreDevAlias {
@@ -93,18 +101,22 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 		}
 	}
 
-	// Build new rule with no context restriction (grants access to all environments)
+	// Build new rule and merge into the full GET response body (preserving extra fields)
 	newRule := vaultAccessRule{
 		Application: appID,
 		Contexts:    []string{secretStoreDevAlias},
-		ID:          len(vaultResp.Rules),
+		ID:          len(existingRules),
 	}
-	updatedRules := vaultResponse{Rules: append(vaultResp.Rules, newRule)}
-	body, err := json.Marshal(updatedRules)
+	updatedRules := append(existingRules, newRule)
+	updatedRulesJSON, err := json.Marshal(updatedRules)
 	if err != nil {
 		return err
 	}
-
+	getRawResp["rules"] = updatedRulesJSON
+	body, err := json.Marshal(getRawResp)
+	if err != nil {
+		return err
+	}
 	csrfToken, err := t.csrfToken()
 	if err != nil {
 		return fmt.Errorf("could not fetch CSRF token: %w", err)
@@ -119,11 +131,7 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 	if csrfToken != "" {
 		putReq.Header.Set("vespa-csrf-token", csrfToken)
 	}
-	deployService2, err := t.DeployService()
-	if err != nil {
-		return err
-	}
-	putResp, err := deployService2.Do(putReq, 10*time.Second)
+	putResp, err := deployService.Do(putReq, 10*time.Second)
 	if err != nil {
 		return fmt.Errorf("could not set vault access rule for %q: %w", vaultName, err)
 	}
@@ -132,7 +140,18 @@ func (t *cloudTarget) ensureVaultAccessRule(vaultName string) error {
 	if putResp.StatusCode/100 != 2 {
 		return fmt.Errorf("could not set vault access rule for %q: server returned %d: %s", vaultName, putResp.StatusCode, putRawBody)
 	}
-	return nil
+
+	// TODO(17.03.2026) BrageHK: This is temporary. It is not possible right now to use GET to fetch the new rules and check if they
+	// are actually set. This is because the GET returns the only the old rules unless the application is actually deployed.
+	var putResponseBody struct {
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(putRawBody, &putResponseBody); err == nil &&
+		strings.Contains(putResponseBody.Message, "Set access rules for tenant") {
+		return nil
+	}
+
+	return fmt.Errorf("vault access rule for %q was not confirmed in response", vaultName)
 }
 
 func (t *cloudTarget) ensureVaultAccessForDev(vaultNames []string) error {
