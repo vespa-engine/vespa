@@ -52,10 +52,10 @@ commons-cli:commons-cli:${commons-cli.vespa.version}
 commons-codec:commons-codec:${commons-codec.vespa.version}
 commons-io:commons-io:${commons-io.vespa.version}
 commons-logging:commons-logging:${commons-logging.vespa.version}
-de.kherud:llama:${kherud.llama.vespa.version}
 io.airlift:aircompressor:${aircompressor.vespa.version}
 io.airlift:airline:${airline.vespa.version}
 io.dropwizard.metrics:metrics-core:${dropwizard.metrics.vespa.version}
+io.github.arnej27959:jllama:${jllama.vespa.version}
 io.grpc:grpc-api:${grpc.vespa.version}
 io.grpc:grpc-context:${grpc.vespa.version}
 io.grpc:grpc-core:${grpc.vespa.version}

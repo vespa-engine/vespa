@@ -66,12 +66,16 @@
       <artifactId>onnxruntime</artifactId>
     </dependency>
     <dependency>
-      <groupId>de.kherud</groupId>
-      <artifactId>llama</artifactId>
+      <groupId>io.github.arnej27959</groupId>
+      <artifactId>jllama</artifactId>
       <exclusions>
         <exclusion>
           <groupId>org.jetbrains</groupId>
           <artifactId>annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
