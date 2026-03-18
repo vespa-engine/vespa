@@ -11,8 +11,8 @@ using vespalib::getLastErrorString;
 
 namespace {
 
-const size_t DEFAULT_BUF_SIZE = 0x200000;
-const size_t MIN_ALIGNMENT = 0x1000;
+constexpr size_t DEFAULT_BUF_SIZE = 0x200000;
+constexpr size_t MIN_ALIGNMENT = 0x1000;
 
 }
 
@@ -274,6 +274,21 @@ Fast_BufferedFile::Read(void *dst, size_t dstlen)
             break;
     }
     return p - static_cast<char *>(dst);
+}
+
+vespalib::Memory Fast_BufferedFile::obtain() {
+    if (const size_t avail = _bufe - _bufi; avail > 0) [[likely]] {
+        return {_bufi, avail};
+    }
+    fillReadBuf();
+    const size_t avail = _bufe - _bufi; // Zero if at EOF
+    return {_bufi, avail};
+}
+
+vespalib::Input& Fast_BufferedFile::evict(size_t bytes) {
+    assert(_bufi + bytes <= _bufe);
+    _bufi += bytes;
+    return *this;
 }
 
 void

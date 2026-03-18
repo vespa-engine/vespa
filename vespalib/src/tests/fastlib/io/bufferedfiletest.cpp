@@ -3,24 +3,28 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <filesystem>
 
+using namespace ::testing;
+
 namespace fs = std::filesystem;
-namespace {
 
-void remove_testfiles()
-{
-    fs::remove(fs::path("testfile1"));
-    fs::remove(fs::path("testfile2"));
-    fs::remove(fs::path("testfile3"));
-    fs::remove(fs::path("testfile4"));
-    fs::remove(fs::path("testfile5"));
-}
+struct BufferedFileTest : Test {
+    void SetUp() override {
+        remove_testfiles();
+    }
+    void TearDown() override {
+        remove_testfiles();
+    }
+    static void remove_testfiles() {
+        fs::remove(fs::path("testfile1"));
+        fs::remove(fs::path("testfile2"));
+        fs::remove(fs::path("testfile3"));
+        fs::remove(fs::path("testfile4"));
+        fs::remove(fs::path("testfile5"));
+    }
+};
 
-}
-
-TEST(BufferedFileTest, main) {
+TEST_F(BufferedFileTest, main) {
     int value = 0;
-
-    remove_testfiles();
 
     Fast_BufferedFile bufFile(4096);
 
@@ -72,11 +76,57 @@ TEST(BufferedFileTest, main) {
     ASSERT_TRUE(bufFile.Close());
     ASSERT_EQ(610000u, fs::file_size(fs::path("testfile5")));
     printf (" -- SUCCESS\n\n");
+}
 
-    remove_testfiles();
-
-    printf ("All tests OK for bufferedfiletest\n");
-    printf (" -- SUCCESS\n\n");
+TEST_F(BufferedFileTest, can_access_underlying_buffer_via_input_api) {
+    {
+        Fast_BufferedFile out_file;
+        out_file.WriteOpen("testfile1");
+        // The internal Fast_BufferedFile read buffer has a minimum size of 4Ki, so to
+        // test boundary cases we need to write at least 2 such blocks. Also throw in a
+        // partial block at the end of the file.
+        char buf[8192 + 100];
+        memset(buf, 'A', 4096);
+        memset(buf + 4096, 'B', 4096);
+        memset(buf + 8192, 'C', 100);
+        ASSERT_TRUE(out_file.CheckedWrite(buf, sizeof(buf)));
+        ASSERT_TRUE(out_file.Close());
+    }
+    Fast_BufferedFile f(4096);
+    f.ReadOpenExisting("testfile1");
+    ASSERT_TRUE(f.IsOpened());
+    auto mem = f.obtain();
+    ASSERT_TRUE(mem.data);
+    ASSERT_EQ(mem.size, 4096);
+    ASSERT_EQ(mem.make_string(), std::string(4096, 'A'));
+    // obtain() should be idempotent until evict() is called
+    auto mem2 = f.obtain();
+    ASSERT_EQ(mem2.data, mem.data);
+    ASSERT_EQ(mem2.size, mem.size);
+    f.evict(1);
+    mem = f.obtain();
+    ASSERT_TRUE(mem.data);
+    ASSERT_EQ(mem.size, 4095);
+    ASSERT_EQ(mem.make_string(), std::string(4095, 'A'));
+    f.evict(4094);
+    mem = f.obtain();
+    ASSERT_TRUE(mem.data);
+    ASSERT_EQ(mem.size, 1);
+    ASSERT_EQ(mem.make_string(), "A");
+    f.evict(1);
+    mem = f.obtain(); // --> read new block
+    ASSERT_TRUE(mem.data);
+    ASSERT_EQ(mem.size, 4096);
+    ASSERT_EQ(mem.make_string(), std::string(4096, 'B'));
+    f.evict(4096);
+    mem = f.obtain(); // --> read new block (partial this time)
+    ASSERT_TRUE(mem.data);
+    ASSERT_EQ(mem.size, 100);
+    ASSERT_EQ(mem.make_string(), std::string(100, 'C'));
+    f.evict(100);
+    // EOF
+    mem = f.obtain();
+    ASSERT_EQ(mem.size, 0);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
