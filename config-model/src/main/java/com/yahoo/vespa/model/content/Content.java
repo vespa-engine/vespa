@@ -106,6 +106,26 @@ public class Content extends ConfigModel {
         containerCluster.getDocprocChains().add(new IndexingDocprocChain());
     }
 
+    private static boolean inheritsFromIndexing(DocprocChain chain) {
+        for (ComponentSpecification inherited : chain.getChainSpecification().inheritance.chainSpecifications) {
+            if (IndexingDocprocChain.NAME.equals(inherited.getName())) return true;
+        }
+        return false;
+    }
+
+    private static void addIndexingChainToContainersInheritingFromIt(Collection<ContainerModel> containers) {
+        for (ContainerModel containerModel : containers) {
+            ContainerCluster<?> cluster = containerModel.getCluster();
+            if (cluster.getDocproc() == null) continue;
+            for (DocprocChain chain : cluster.getDocprocChains().allChains().allComponents()) {
+                if (inheritsFromIndexing(chain)) {
+                    addIndexingChain(cluster);
+                    break;
+                }
+            }
+        }
+    }
+
     private static ContainerCluster<?> getContainerWithSearch(Collection<ContainerModel> containers) {
         for (ContainerModel container : containers)
             if (container.getCluster().getSearch() != null)
@@ -211,6 +231,7 @@ public class Content extends ConfigModel {
             content.cluster = new ContentCluster.Builder(admin).build(modelContext, xml);
             buildIndexingClusters(content, modelContext,
                                   (ApplicationConfigProducerRoot)modelContext.getParentProducer());
+            addIndexingChainToContainersInheritingFromIt(content.containers);
         }
 
         /** Select/creates and initializes the indexing cluster coupled to this */
