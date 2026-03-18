@@ -12,7 +12,6 @@ import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.slime.SlimeUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -103,14 +102,12 @@ public class YqlJsonQueryFeatureParityTest {
 
     @Test
     void testNear() {
-        // NOTE: SelectParser sets implicitTransforms:false on near children, YqlParser does not
         assertWhereParity("description contains near({implicitTransforms: false}'a', {implicitTransforms: false}'b')",
                 "{ 'contains' : ['description', { 'near' : ['a', 'b'] }] }");
     }
 
     @Test
     void testOnear() {
-        // NOTE: SelectParser sets implicitTransforms:false on onear children, YqlParser does not
         assertWhereParity("description contains onear({implicitTransforms: false}'a', {implicitTransforms: false}'b')",
                 "{ 'contains' : ['description', { 'onear' : ['a', 'b'] }] }");
     }
@@ -144,36 +141,30 @@ public class YqlJsonQueryFeatureParityTest {
                 "{ 'contains' : ['baz', { 'sameElement' : [ { 'f1' : 'a', 'f2' : 'b' } ] }] }");
     }
 
-    @Disabled("SelectParser does not strip field prefix inside sameElement on string arrays — parity bug")
     @Test
     void testSameElementWithAndOrChildren() {
-        // AND inside sameElement (string array)
         assertWhereParity("description contains sameElement('a' and 'b')",
-                "{ 'contains' : ['description', { 'sameElement' : [ { 'and' : [ { 'contains' : ['description', 'a'] }, { 'contains' : ['description', 'b'] } ] } ] }] }");
-        // OR inside sameElement (string array)
+                "{ 'contains' : ['description', { 'sameElement' : [ { 'and' : [ 'a', 'b' ] } ] }] }");
         assertWhereParity("description contains sameElement('a' or 'b')",
-                "{ 'contains' : ['description', { 'sameElement' : [ { 'or' : [ { 'contains' : ['description', 'a'] }, { 'contains' : ['description', 'b'] } ] } ] }] }");
+                "{ 'contains' : ['description', { 'sameElement' : [ { 'or' : [ 'a', 'b' ] } ] }] }");
     }
 
-    @Disabled("SelectParser does not strip field prefix inside sameElement on string arrays — parity bug")
     @Test
     void testSameElementWithNear() {
-        assertWhereParity("description contains sameElement({distance: 3}near('a', 'b'))",
-                "{ 'contains' : ['description', { 'sameElement' : [ { 'contains' : ['description', { 'near' : { 'children' : ['a', 'b'], 'attributes' : { 'distance' : 3 } } }] } ] }] }");
+        assertWhereParity("description contains sameElement({distance: 3}near({implicitTransforms: false}'a', {implicitTransforms: false}'b'))",
+                "{ 'contains' : ['description', { 'sameElement' : [ { 'near' : { 'children' : ['a', 'b'], 'attributes' : { 'distance' : 3 } } } ] }] }");
     }
 
-    @Disabled("SelectParser does not strip field prefix inside sameElement on string arrays — parity bug")
     @Test
     void testSameElementWithPhrase() {
         assertWhereParity("description contains sameElement(phrase('a', 'b'))",
-                "{ 'contains' : ['description', { 'sameElement' : [ { 'contains' : ['description', { 'phrase' : ['a', 'b'] }] } ] }] }");
+                "{ 'contains' : ['description', { 'sameElement' : [ { 'phrase' : ['a', 'b'] } ] }] }");
     }
 
-    @Disabled("SelectParser does not strip field prefix inside sameElement on string arrays — parity bug")
     @Test
     void testSameElementWithRank() {
         assertWhereParity("description contains sameElement(rank('a', 'b'))",
-                "{ 'contains' : ['description', { 'sameElement' : [ { 'rank' : [ { 'contains' : ['description', 'a'] }, { 'contains' : ['description', 'b'] } ] } ] }] }");
+                "{ 'contains' : ['description', { 'sameElement' : [ { 'rank' : [ 'a', 'b' ] } ] }] }");
     }
 
     @Test
