@@ -62,6 +62,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     monitored_refcount.cpp
     normalize_class_name.cpp
     nice.cpp
+    perf_counters.cpp
     printable.cpp
     priority_queue.cpp
     process_memory_stats.cpp
