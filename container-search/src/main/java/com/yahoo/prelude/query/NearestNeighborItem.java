@@ -304,8 +304,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         if (totalTargetHits == null)
             throw new IllegalStateException("targetHits or totalTargetHits must be set before this is serialized");
         // Use 100 as the default min total target hits to ensure *some* exploration,
-        // unless total target hits is set even lower than that
-        int minTargetHits = this.minTargetHits != null ? this.minTargetHits : Math.min(100, totalTargetHits);
+        int minTargetHits = this.minTargetHits != null ? this.minTargetHits : 100;
         return Math.max(minTargetHits, context.contentShareOf(totalTargetHits));
    }
 
