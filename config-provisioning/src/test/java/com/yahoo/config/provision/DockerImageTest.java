@@ -22,6 +22,8 @@ public class DockerImageTest {
         new DockerImage("registry.example.com:5000", "vespa", Optional.empty());
         // Multi-component hostname
         new DockerImage("a.b.c.d", "vespa", Optional.empty());
+        // Domain name with trailing dot
+        new DockerImage("registry.example.com.", "vespa", Optional.empty());
         // IPv4
         new DockerImage("192.168.1.1", "vespa", Optional.empty());
         // IPv4 with port
@@ -35,9 +37,8 @@ public class DockerImageTest {
     void test_registry_invalid() {
         // Empty
         assertThrows(IllegalArgumentException.class, () -> new DockerImage("", "vespa", Optional.empty()));
-        // Starts or ends with dot
+        // Starts with dot
         assertThrows(IllegalArgumentException.class, () -> new DockerImage(".registry.example.com", "vespa", Optional.empty()));
-        assertThrows(IllegalArgumentException.class, () -> new DockerImage("registry.example.com.", "vespa", Optional.empty()));
         // Invalid characters
         assertThrows(IllegalArgumentException.class, () -> new DockerImage("registry/example", "vespa", Optional.empty()));
         assertThrows(IllegalArgumentException.class, () -> new DockerImage("registry example", "vespa", Optional.empty()));

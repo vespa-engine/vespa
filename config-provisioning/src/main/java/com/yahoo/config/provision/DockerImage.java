@@ -21,11 +21,15 @@ public record DockerImage(String registry, String repository, Optional<String> t
         this.repository = Objects.requireNonNull(repository, "Repository must be non-null");
         this.tag = Objects.requireNonNull(tag, "Tag must be non-null");
 
-        if (!registry.isEmpty() || !repository.isEmpty()) {
-            validateRegistry(registry);
-            validateRepository(repository);
-            validateTag(tag);
+        if (registry.isEmpty() && repository.isEmpty() && tag.isEmpty()) {
+            // This is EMPTY
+            return;
         }
+
+        // Otherwise ensure we don't create invalid images.
+        validateRegistry(registry);
+        validateRepository(repository);
+        validateTag(tag);
     }
     /** Returns the registry and repository for this image, excluding its tag */
     public String untagged() {
@@ -56,9 +60,9 @@ public record DockerImage(String registry, String repository, Optional<String> t
     // Registry pattern per https://github.com/distribution/reference
     // ip4 is part of the domain name pattern, no need for a separate pattern.
     private static final String DOMAIN_NAME_COMPONENT = "(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])";
-    private static final String DOMAIN_NAME = DOMAIN_NAME_COMPONENT + "(?:\\." + DOMAIN_NAME_COMPONENT + ")*";
+    private static final String DOMAIN_NAME = DOMAIN_NAME_COMPONENT + "(?:\\." + DOMAIN_NAME_COMPONENT + ")*\\.?";
     private static final String IPV6_ADDRESS = "\\[(?:[a-fA-F0-9:]+)\\]";
-    private static final String HOST = "(?:" + DOMAIN_NAME +  "|" + IPV6_ADDRESS + ")";
+    private static final String HOST = "(?:" + DOMAIN_NAME + "|" + IPV6_ADDRESS + ")";
     private static final String PORT = "(?::[0-9]+)?";
     private static final Pattern REGISTRY_PATTERN = Pattern.compile(HOST + PORT);
 
@@ -67,7 +71,7 @@ public record DockerImage(String registry, String repository, Optional<String> t
     private static final String PATH_COMPONENT = "[a-z0-9]+(?:(?:[._]|__|[-]+)[a-z0-9]+)*";
     private static final Pattern REPOSITORY_PATTERN = Pattern.compile(PATH_COMPONENT + "(?:/" + PATH_COMPONENT + ")*");
     private static final Pattern TAG_PATTERN = Pattern.compile("[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}");
-    
+
     private static void validateRegistry(String registry) {
         if (!REGISTRY_PATTERN.matcher(registry).matches()) {
             throw new IllegalArgumentException("Invalid registry: " + registry);
@@ -90,7 +94,7 @@ public record DockerImage(String registry, String repository, Optional<String> t
         if (equals(EMPTY)) {
             return "";
         }
-        
+
         return registry + "/" + repository + tag.map(t -> ':' + t).orElse("");
     }
 
