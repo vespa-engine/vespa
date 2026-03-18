@@ -271,7 +271,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                                                                                 configserverConfig,
                                                                                 new ApplicationLockException(new UncheckedTimeoutException(exceptionMessage)));
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
-        assertEquals(409, response.getStatus());
+        assertEquals(504, response.getStatus());
         Slime data = getData(response);
         assertEquals(HttpErrorResponse.ErrorCode.APPLICATION_LOCK_FAILURE.name(), data.get().field("error-code").asString());
         assertEquals(exceptionMessage, data.get().field("message").asString());

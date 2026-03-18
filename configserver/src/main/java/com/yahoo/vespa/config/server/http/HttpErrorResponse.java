@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
+import static com.yahoo.jdisc.Response.Status.GATEWAY_TIMEOUT;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
@@ -96,7 +97,7 @@ public class HttpErrorResponse extends HttpResponse {
     }
 
     public static HttpErrorResponse applicationLockFailure(String msg) {
-        return new HttpErrorResponse(CONFLICT, ErrorCode.APPLICATION_LOCK_FAILURE.name(), msg);
+        return new HttpErrorResponse(GATEWAY_TIMEOUT, ErrorCode.APPLICATION_LOCK_FAILURE.name(), msg);
     }
 
     public static HttpErrorResponse parentHostNotReady(String msg) {
