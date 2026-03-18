@@ -7,6 +7,9 @@ namespace search::expression {
 
 /**
  * Implements geo distance from a position attribute to a point.
+ *
+ * If the attribute is of type `array<position>`, the distance is computed for each position in the array,
+ * and the minimum distance is returned.
  */
 class GeoDistanceFunctionNode : public MultiArgFunctionNode {
 public:
