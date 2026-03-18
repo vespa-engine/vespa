@@ -275,7 +275,7 @@ public class XML {
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             DocumentBuilder builder = factory.newDocumentBuilder();
-            builder.setErrorHandler(new LoggingErrorHandler());
+            builder.setErrorHandler(LoggingErrorHandler.INSTANCE);
             return builder;
         } catch (ParserConfigurationException e) {
             throw new RuntimeException("Could not create an XML builder", e);
@@ -639,9 +639,12 @@ public class XML {
     }
 
     /**
-     * Custom error handler that logs XML parse errors instead of printing to stderr.
+     * Error handler that prevents the default Xerces behavior of printing raw
+     * "[Fatal Error]" messages to stderr. Warnings are logged; errors and fatal
+     * errors are re-thrown to be handled (with application context) by callers.
      */
-    private static class LoggingErrorHandler implements ErrorHandler {
+    private static final class LoggingErrorHandler implements ErrorHandler {
+        private static final LoggingErrorHandler INSTANCE = new LoggingErrorHandler();
         @Override public void warning(SAXParseException e) {
             log.log(Level.WARNING, messageFrom(e));
         }
