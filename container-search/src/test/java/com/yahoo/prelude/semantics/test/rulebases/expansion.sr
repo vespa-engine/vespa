@@ -6,3 +6,6 @@ equiv1 +> =equiv2 =equiv3;
 testfield:[test] -> =testfield:e1 =testfield:e2 =testfield:e3;
 
 [test] :- foo, bar, baz;
+
+cascade1 +> =cascade2;
+cascade2 +> =cascade3;

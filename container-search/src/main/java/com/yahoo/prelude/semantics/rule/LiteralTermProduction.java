@@ -2,6 +2,7 @@
 package com.yahoo.prelude.semantics.rule;
 
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.TermType;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.semantics.engine.Match;
@@ -73,7 +74,28 @@ public class LiteralTermProduction extends TermProduction {
             newItem.setWeight(getWeight());
             if (e.getTraceLevel() >= 6)
                 e.trace(6, "Adding '" + newItem + "'");
-            if (shouldInsertAtMatch(e)) {
+            if (getTermType() == TermType.EQUIV && e.getNonreferencedMatchCount() > 0
+                    && e.getNonreferencedMatch(0).getParent() != null) {
+                // If an EQUIV already exists at the match position
+                // (from a previous EQUIV production), add to it.
+                Match matched = e.getNonreferencedMatch(0);
+                CompositeItem matchParent = matched.getParent();
+                int matchIndex = matched.getPosition();
+                if (matchParent instanceof EquivItem parentEquiv) {
+                    // Matched term is inside an existing EQUIV (cascading from a previous rule)
+                    parentEquiv.addItem(newItem);
+                } else if (matchIndex < matchParent.getItemCount()
+                        && matchParent.getItem(matchIndex) instanceof EquivItem existingEquiv) {
+                    existingEquiv.addItem(newItem);
+                } else if (matchIndex < matchParent.getItemCount()) {
+                    EquivItem equiv = new EquivItem(matchParent.getItem(matchIndex));
+                    equiv.addItem(newItem);
+                    matchParent.setItem(matchIndex, equiv);
+                } else {
+                    e.addItems(List.of(newItem), getTermType());
+                }
+            }
+            else if (shouldInsertAtMatch(e)) {
                 // Add to the match's parent when it's a nested composite with default type
                 Match matched = e.getNonreferencedMatch(0);
                 insertMatch(e, matched, List.of(newItem), offset);
