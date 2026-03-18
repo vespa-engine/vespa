@@ -103,7 +103,7 @@ TEST_F(SingleValuePositionTest, returns_zero_without_document) {
     _node = std::make_unique<PositionDocumentFieldNode>(field_name);
     _node->prepare(true);
     _node->execute();
-    // No handler set up (onDocType not called), getResult returns nullptr
+    ASSERT_EQ(nullptr, _node->getResult());
 }
 
 struct MultiValueFixture {
