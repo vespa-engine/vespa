@@ -49,6 +49,10 @@ public record DockerImage(String registry, String repository, Optional<String> t
         return new DockerImage(this.registry, repository, this.tag);
     }
 
+    public DockerImage withRepositoryPrefix(String prefix) {
+        return withRepository(prefix + "/" + this.repository);
+    }
+
     public DockerImage withTag(Optional<String> tag) {
         return new DockerImage(this.registry, this.repository, tag);
     }
