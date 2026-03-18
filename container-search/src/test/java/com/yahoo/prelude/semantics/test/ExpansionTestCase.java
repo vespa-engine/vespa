@@ -49,4 +49,16 @@ public class ExpansionTestCase extends RuleBaseAbstractTestCase {
         assertSemantics("AND foo (EQUIV equiv1 equiv2 equiv3) bar", "foo equiv1 bar");
     }
 
+    /** Cascading EQUIV: rule 1 produces cascade2, rule 2 matches it and adds cascade3 to the same EQUIV. */
+    @Test
+    void testEquivCascading() {
+        assertSemantics("EQUIV cascade1 cascade2 cascade3", "cascade1");
+    }
+
+    /** Cascading EQUIV in a multi-term query should preserve structure. */
+    @Test
+    void testEquivCascadingPreservesQueryStructure() {
+        assertSemantics("AND foo (EQUIV cascade1 cascade2 cascade3) bar", "foo cascade1 bar");
+    }
+
 }

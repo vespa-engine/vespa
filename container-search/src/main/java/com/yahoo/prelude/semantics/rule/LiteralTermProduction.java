@@ -81,7 +81,10 @@ public class LiteralTermProduction extends TermProduction {
                 Match matched = e.getNonreferencedMatch(0);
                 CompositeItem matchParent = matched.getParent();
                 int matchIndex = matched.getPosition();
-                if (matchIndex < matchParent.getItemCount()
+                if (matchParent instanceof EquivItem parentEquiv) {
+                    // Matched term is inside an existing EQUIV (cascading from a previous rule)
+                    parentEquiv.addItem(newItem);
+                } else if (matchIndex < matchParent.getItemCount()
                         && matchParent.getItem(matchIndex) instanceof EquivItem existingEquiv) {
                     existingEquiv.addItem(newItem);
                 } else if (matchIndex < matchParent.getItemCount()) {
