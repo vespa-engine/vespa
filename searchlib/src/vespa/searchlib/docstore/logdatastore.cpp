@@ -445,8 +445,9 @@ void LogDataStore::flushActiveAndWait(SerialNum syncToken) {
     return flushFileAndWait(std::move(guard), active, syncToken);
 }
 
-bool LogDataStore::must_compact_to_the_active_file(NameId compacting_name_id) const {
-    MonitorGuard guard(_updateLock);
+bool LogDataStore::must_compact_to_the_active_file(const MonitorGuard & guard, NameId compacting_name_id,
+                                                   size_t compactedSize) const {
+    assert(hasUpdateLock(guard));
     auto next_id = compacting_name_id.next();
     auto next_next_id = next_id.next();
     auto it = _current_nameids.lower_bound(next_id);
@@ -456,11 +457,8 @@ bool LogDataStore::must_compact_to_the_active_file(NameId compacting_name_id) co
      * due to eraseIncompleteCompactedFiles.
      * The check for next_next_id is needed to ensure correct result from findIncompleteCompactedFiles.
      */
-    return (it != _current_nameids.end() && !(next_next_id < *it));
-}
-
-bool LogDataStore::shouldCompactToActiveFile(size_t compactedSize) const {
-    return (_config.getMinFileSizeFactor() * _config.getMaxFileSize() > compactedSize);
+    return ((it != _current_nameids.end() && !(next_next_id < *it)) ||
+            (_config.getMinFileSizeFactor() * _config.getMaxFileSize() > compactedSize));
 }
 
 void LogDataStore::setNewFileChunk(const MonitorGuard & guard, FileChunk::UP file)
@@ -481,18 +479,15 @@ void LogDataStore::compactFile(FileId fileId)
     std::unique_ptr<IWriteData> compacter;
     FileId destinationFileId = FileId::active();
     if (_bucketizer) {
-        size_t compacted_size;
-        {
-            MonitorGuard guard(_updateLock);
-            size_t disk_footprint = fc->getDiskFootprint();
-            size_t disk_bloat = fc->getDiskBloat();
-            compacted_size = (disk_footprint <= disk_bloat) ? 0u : (disk_footprint - disk_bloat);
-        }
-        if (!must_compact_to_the_active_file(compactedNameId) && !shouldCompactToActiveFile(compacted_size)) {
-            MonitorGuard guard(_updateLock);
+        MonitorGuard guard(_updateLock);
+        size_t disk_footprint = fc->getDiskFootprint();
+        size_t disk_bloat = fc->getDiskBloat();
+        size_t compacted_size = (disk_footprint <= disk_bloat) ? 0u : (disk_footprint - disk_bloat);
+        if (!must_compact_to_the_active_file(guard, compactedNameId, compacted_size)) {
             destinationFileId = allocateFileId(guard);
             setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(), fc->getNameId().next()));
         }
+        guard.unlock();
         size_t numSignificantBucketBits = computeNumberOfSignificantBucketIdBits(*_bucketizer, fc->getFileId());
         compacter = std::make_unique<BucketCompacter>(numSignificantBucketBits, _config.compactCompression(), *this,
                                                       _executor, *_bucketizer, fc->getFileId(), destinationFileId);

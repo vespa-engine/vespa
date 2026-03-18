@@ -242,8 +242,8 @@ private:
     SerialNum getMinLastPersistedSerialNum() const {
         return (_fileChunks.empty() ? 0 : _fileChunks.back()->getLastPersistedSerialNum());
     }
-    bool must_compact_to_the_active_file(NameId compacting_name_id) const;
-    bool shouldCompactToActiveFile(size_t compactedSize) const;
+    bool must_compact_to_the_active_file(const MonitorGuard & guard, NameId compacting_name_id,
+                                         size_t compactedSize) const;
     std::pair<bool, FileId> findNextToCompact(bool compactDiskBloat);
     void incGeneration();
     bool canShrinkLidSpace(const MonitorGuard &guard) const;
