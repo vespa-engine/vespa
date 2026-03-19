@@ -205,14 +205,6 @@ public class Flags {
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
 
-    public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
-            "content-layer-metadata-feature-level", 1,
-            List.of("vekterli"), "2022-09-12", "2026-04-01",
-            "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
-            "cancellation and ephemeral content node sequence numbers for bucket replicas",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
             List.of("johsol"), "2025-10-17", "2026-04-01",
