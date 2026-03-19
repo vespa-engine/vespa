@@ -85,7 +85,7 @@ public:
 /**
  * Uniform access to the string form of any ResultNode.
  *
- * The internal ConstBufferRef is a non-owning view that points to memory owned elsewhere.
+ * The internal ConstBufferRef is a non-owning view that points to memory possibly owned elsewhere.
  * For string/raw nodes it points into the ResultNode's own storage.
  * For numeric nodes it points into _num_buf, a scratch buffer owned by this object.
  */
