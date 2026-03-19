@@ -166,7 +166,7 @@ public class DockerImageTest {
     @Test
     void test_withRepositoryPrefix() {
         var image = DockerImage.fromString("registry.example.com/vespa:7.42");
-        var result = image.withRepositoryPrefix("prefix");
+        var result = image.withRepositoryPrefix("prefix/");
         assertEquals(image.registry(), result.registry());
         assertEquals("prefix/vespa", result.repository());
         assertEquals(image.tag(), result.tag());
