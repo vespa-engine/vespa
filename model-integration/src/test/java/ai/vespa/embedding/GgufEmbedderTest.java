@@ -102,7 +102,7 @@ class GgufEmbedderTest {
         private static final String LARGE_PROMPT = "This is a test. ".repeat(100);
 
         @Test
-        void succeeds_when_overriding_batch_and_context_size() {
+        void fails_when_overriding_batch_and_context_size() {
             var config = new GgufEmbedderConfig.Builder()
                     .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
                     .physicalMaxBatchSize(2*1024)
@@ -110,16 +110,14 @@ class GgufEmbedderTest {
                     .contextSize(2*1024)
                     .seed(1)
                     .build();
+
+            // load_model: the slot context (2048) exceeds the training context of the model (128) - capping
+
             var embedder = new GgufEmbedder(config, ModelReference::value);
             try {
-                var tokens = embedder.embed(LARGE_PROMPT, DUMMY_CONTEXT);
-                assertEquals(1001, tokens.size());
-                var tensorType = TensorType.fromSpec("tensor<float>(x[64])");
-                var embedding = embedder.embed(LARGE_PROMPT, DUMMY_CONTEXT, tensorType);
-
-                assertNotNull(embedding);
-                assertEquals(tensorType, embedding.type());
-                assertTrue(embedding.sum().asDouble() != 0.0);
+                var message = assertThrows(RuntimeException.class, () ->
+                    embedder.embed(LARGE_PROMPT, DUMMY_CONTEXT, TensorType.fromSpec("tensor<float>(x[1024])")));
+                assertTrue(message.getMessage().contains("larger than the max context size"));
             } finally {
                 assertDoesNotThrow(embedder::deconstruct);
             }
@@ -156,7 +154,7 @@ class GgufEmbedderTest {
             var embedder = new GgufEmbedder(config, ModelReference::value);
             try {
                 var message = assertThrows(IllegalArgumentException.class, () ->
-                    embedder.embed(LARGE_PROMPT, DUMMY_CONTEXT, TensorType.fromSpec("tensor<float>(x[1024])")));
+                                           embedder.embed(LARGE_PROMPT, DUMMY_CONTEXT, TensorType.fromSpec("tensor<float>(x[1024])")));
                 assertEquals(
                         "Input text is too large (prompt UTF-16 length: 1600). Either set max prompt tokens or adjust batch/context size.",
                         message.getMessage());
