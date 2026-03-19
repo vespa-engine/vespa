@@ -32,6 +32,13 @@ class BucketResultNode;
     IMPLEMENT_IDENTIFIABLE_NS2(search, expression, Class, base) \
     Class * Class::clone() const { return new Class(*this); }
 
+/**
+ * Common base type for all values in the expression and aggregation/grouping subsystem.
+ *
+ * Concrete subclasses represent integers, floats, strings, raw bytes, buckets (ranges), and vectors of these. Every
+ * ExpressionNode produces a ResultNode, and the grouping engine uses ResultNodes as group identifiers and aggregation
+ * accumulators.
+ */
 class ResultNode : public vespalib::Identifiable
 {
 public:
@@ -75,6 +82,13 @@ public:
     virtual const BucketResultNode& getNullBucket() const;
 };
 
+/**
+ * Uniform access to the string form of any ResultNode.
+ *
+ * The internal ConstBufferRef is a non-owning view that points to memory owned elsewhere.
+ * For string/raw nodes it points into the ResultNode's own storage.
+ * For numeric nodes it points into _num_buf, a scratch buffer owned by this object.
+ */
 class HoldString {
 public:
     HoldString(const ResultNode &rv, size_t idx = 0) {
