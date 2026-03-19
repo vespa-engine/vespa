@@ -24,11 +24,11 @@ public class SidecarImages {
     public static final String SIDECAR_REPOSITORY_PREFIX = "sidecar/";
     private final Map<String, DockerImage> images;
 
-    public SidecarImages() {
-        images = readFromProperties();
+    SidecarImages(Map<String, DockerImage> images) {
+        this.images = images;
     }
 
-    private static Map<String, DockerImage> readFromProperties() {
+    public static SidecarImages readFromProperties() {
         var props = new Properties();
 
         try (InputStream inputStream = SidecarImages.class.getResourceAsStream("/sidecar-images.properties")) {
@@ -41,10 +41,10 @@ public class SidecarImages {
             throw new RuntimeException("Failed to load sidecar-images.properties", e);
         }
 
-        return props.entrySet().stream()
+        return new SidecarImages(props.entrySet().stream()
                 .collect(Collectors.toMap(
                         e -> e.getKey().toString(),
-                        e -> DockerImage.fromString(e.getValue().toString())));
+                        e -> DockerImage.fromString(e.getValue().toString()))));
     }
 
     public DockerImage getOrThrow(String key) {

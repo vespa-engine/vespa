@@ -183,7 +183,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Always disable rpc server for standalone container
         this.rpcServerEnabled = !standaloneBuilder;
         this.httpServerEnabled = networking == Networking.enable;
-        this.sidecarImages = new SidecarImages();
+        this.sidecarImages = SidecarImages.readFromProperties();
     }
 
     @Override
