@@ -5,15 +5,13 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.io.IOUtils;
-import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.version.CuratorVersionState;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.text.Text;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -30,16 +28,14 @@ import static java.util.logging.Level.WARNING;
  * @author Ulf Lilleengen
  * @author hmusum
  */
-public class VersionState {
+public class VersionState extends CuratorVersionState {
 
     private static final Logger log = Logger.getLogger(VersionState.class.getName());
     private static final int allowedMinorVersionInterval = 30; // (2 months of releases => ~30 releases)
     private static final Version latestVersionOnPreviousMajor = Version.fromString("7.594.36");
-    static final Path versionPath = Path.fromString("/config/v2/vespa_version");
 
     private final File versionFile;
     private final Curator curator;
-    private final Version currentVersion;
     private final boolean skipUpgradeCheck;
 
     @Inject
@@ -60,12 +56,13 @@ public class VersionState {
                         Curator curator,
                         Version currentVersion,
                         boolean skipUpgradeCheck) {
+        super(curator, currentVersion);
         this.versionFile = versionFile;
         this.curator = curator;
-        this.currentVersion = currentVersion;
         this.skipUpgradeCheck = skipUpgradeCheck;
     }
 
+    @Override
     public boolean isUpgraded() {
         Version storedVersion = storedVersion();
         if (storedVersion.equals(Version.emptyVersion)) return true;
@@ -92,24 +89,16 @@ public class VersionState {
         }
     }
 
+    @Override
     public Version storedVersion() {
-        Optional<byte[]> version = curator.getData(versionPath);
-        if (version.isPresent()) {
-            try {
-                return Version.fromString(Utf8.toString(version.get()));
-            } catch (Exception e) {
-                // continue, use value in file
-            }
-        }
+        Version zkVersion = super.storedVersion();
+        if (!zkVersion.equals(Version.emptyVersion)) return zkVersion;
+
         try (var reader = Files.newBufferedReader(versionFile.toPath(), StandardCharsets.UTF_8)) {
             return Version.fromString(IOUtils.readAll(reader));
         } catch (Exception e) {
             return Version.emptyVersion;
         }
-    }
-
-    public Version currentVersion() {
-        return currentVersion;
     }
 
     File versionFile() {
@@ -124,8 +113,8 @@ public class VersionState {
     private void verifyVersionIntervalForUpgrade(Version storedVersion) {
         int storedVersionMajor = storedVersion.getMajor();
         int storedVersionMinor = storedVersion.getMinor();
-        int currentVersionMajor = currentVersion.getMajor();
-        int currentVersionMinor = currentVersion.getMinor();
+        int currentVersionMajor = currentVersion().getMajor();
+        int currentVersionMinor = currentVersion().getMinor();
         boolean sameMajor = storedVersionMajor == currentVersionMajor;
         boolean differentMajor = !sameMajor;
 
