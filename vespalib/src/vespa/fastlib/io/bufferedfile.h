@@ -2,16 +2,22 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/hdr_abort.h>
-#include <vespa/vespalib/util/alloc.h>
 #include <vespa/fastos/file_interface.h>
+#include <vespa/vespalib/data/input.h>
+#include <vespa/vespalib/util/alloc.h>
 
 /**
  * Provides buffered file access.
+ *
+ * Also provides an implementation of the vespalib Input interface that enables
+ * zero-copy semantics for directly accessing the underlying file read buffer.
+ * Do not cross the streams on the same Fast_BufferedFile instance; use _either_
+ * the classic Read() _or_ the Input API, not both at the same time.
  */
-class Fast_BufferedFile : public FastOS_FileInterface
+class Fast_BufferedFile
+    : public FastOS_FileInterface,
+      public vespalib::Input
 {
-private:
     using Alloc = vespalib::alloc::Alloc;
     /** The number of bytes left in the file. */
     int64_t _fileleft;
@@ -115,6 +121,24 @@ public:
      * @return The number of bytes read.
      */
     [[nodiscard]] ssize_t Read(void *dst, size_t dstlen) override;
+
+    /**
+     * Obtains a view into the underlying file read buffer. Returns a size of
+     * zero iff EOF is reached. Subsequent calls to obtain() are idempotent
+     * (i.e. will return the same buffer region) until evict() is called.
+     *
+     * See vespalib::Input:obtain()
+     */
+    [[nodiscard]] vespalib::Memory obtain() override;
+
+    /**
+     * Evict a number of bytes up to and including the previously obtain()'ed
+     * number of bytes.
+     *
+     * See vespalib::Input::evict()
+     */
+    Input& evict(size_t bytes) override;
+
     /**
      * Write one byte to the buffered file, flushing to
      * file if necessary.
