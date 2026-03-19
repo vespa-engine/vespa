@@ -174,8 +174,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
 
-    private final SidecarImages sidecarImages;
-
     public ContainerModelBuilder(boolean standaloneBuilder, Networking networking) {
         super(ContainerModel.class);
         this.standaloneBuilder = standaloneBuilder;
@@ -183,7 +181,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Always disable rpc server for standalone container
         this.rpcServerEnabled = !standaloneBuilder;
         this.httpServerEnabled = networking == Networking.enable;
-        this.sidecarImages = SidecarImages.readFromProperties();
     }
 
     @Override
@@ -268,12 +265,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
-            var image = sidecarImages.getOrThrow("triton");
+            var sidecarImage = SidecarImages.readFromProperties().getOrThrow("triton");
 
             var spec = SidecarSpec.builder()
                     .id(0)
                     .name("triton")
-                    .image(image)
+                    .image(sidecarImage)
                     .hasImageMirror(true)
                     .minCpu(1) // Must have at least one CPU
                     .hasGpu(hasGpu)

@@ -72,7 +72,7 @@ public class SidecarImages {
      */
     public static String removeSidecarRepositoryPrefix(String sidecarRepository) {
         if (!sidecarRepository.startsWith(SIDECAR_REPOSITORY_PREFIX)) {
-            throw new IllegalStateException(Text.format(
+            throw new IllegalArgumentException(Text.format(
                     "Sidecar repository '%s' does not start with expected prefix '%s'",
                     sidecarRepository, SIDECAR_REPOSITORY_PREFIX));
         }
