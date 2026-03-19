@@ -396,16 +396,6 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundDoubleFlag HOST_MEMORY_SERVICES_MIXING_FACTOR = defineDoubleFlag(
-            "host-memory-services-mixing-factor", 0.0,
-            List.of("boeker"), "2026-01-16", "2026-04-16",
-            "How much of the sum of the memory limits specified for the customer rpm services should be added to " +
-            "the memory reserved for host's management processes. " +
-            "0.0 means none at all, 1.0 means the sum of the memory limits.",
-            "Affects future deployments, JVM settings for new config server Podman containers, auto scaling modelling.",
-            TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE
-    );
-
     public static final UnboundDoubleFlag SEARCHNODE_RESERVED_DISK_SPACE_FACTOR = defineDoubleFlag(
             "searchnode-reserved-disk-space-factor", 0.5,
             List.of("toregge"), "2026-01-17", "2026-10-16",
