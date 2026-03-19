@@ -31,6 +31,7 @@ import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SidecarImages;
 import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.Zone;
@@ -114,7 +115,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -128,7 +128,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -175,6 +174,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
 
+    private final SidecarImages sidecarImages;
+
     public ContainerModelBuilder(boolean standaloneBuilder, Networking networking) {
         super(ContainerModel.class);
         this.standaloneBuilder = standaloneBuilder;
@@ -182,6 +183,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Always disable rpc server for standalone container
         this.rpcServerEnabled = !standaloneBuilder;
         this.httpServerEnabled = networking == Networking.enable;
+        this.sidecarImages = new SidecarImages();
     }
 
     @Override
@@ -266,12 +268,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
-            var sidecarImages = readSidecarImages();
-            var image = sidecarImages.get("triton");
-
-            if (image == null) {
-                throw new IllegalStateException("Triton sidecar image is not configured in sidecar-images.properties");
-            }
+            var image = sidecarImages.getOrThrow("triton");
 
             var spec = SidecarSpec.builder()
                     .id(0)
@@ -289,26 +286,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         return sidecars;
-    }
-
-    static Map<String, DockerImage> readSidecarImages() {
-        var props = new Properties();
-
-        try (InputStream inputStream = ContainerModelBuilder.class.getResourceAsStream("/sidecar-images.properties")) {
-            if (inputStream == null) {
-                throw new IllegalStateException("sidecar-images.properties not found");
-            }
-
-            props.load(inputStream);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load sidecar-images.properties", e);
-        }
-
-        return props.entrySet().stream()
-                .collect(Collectors.toMap(
-                        e -> e.getKey().toString(),
-                        e -> DockerImage.fromString(e.getValue().toString())
-                ));
     }
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {

@@ -1,0 +1,40 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.config.provision;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class SidecarImagesTest {
+
+    @Test
+    void test_getOrThrow_returns_for_known_key() {
+        var images = new SidecarImages();
+        var triton = images.getOrThrow("triton");
+        assertEquals("nvidia/tritonserver", triton.repository());
+        assertEquals("nvcr.io", triton.registry());
+    }
+
+    @Test
+    void test_getOrThrow_throws_for_unknown_key() {
+        var images = new SidecarImages();
+        var ex = assertThrows(IllegalStateException.class, () -> images.getOrThrow("unknown"));
+        assertEquals("Sidecar image 'unknown' is not configured in sidecar-images.properties", ex.getMessage());
+    }
+
+    @Test
+    void test_getByRepositoryOrThrow_returns_for_known_repository() {
+        var images = new SidecarImages();
+        var triton = images.getByRepositoryOrThrow("nvidia/tritonserver");
+        assertEquals("nvcr.io", triton.registry());
+    }
+
+    @Test
+    void test_getByRepositoryOrThrow_throws_for_unknown_repository() {
+        var images = new SidecarImages();
+        var ex = assertThrows(IllegalStateException.class, () -> images.getByRepositoryOrThrow("unknown/repo"));
+        assertEquals("No sidecar image with repository 'unknown/repo' configured in sidecar-images.properties", ex.getMessage());
+    }
+
+}
