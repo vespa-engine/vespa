@@ -221,10 +221,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
                     break;
                 // Event CHILD_REMOVED will be triggered on all config servers if deleteApplication() above is called on one of them
                 case CHILD_REMOVED:
-                    applicationId = ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName());
-                    try (@SuppressWarnings("unused") Lock lock = lock(applicationId)) {
-                        removeApplication(applicationId);
-                    }
+                    removeApplication(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
                     break;
                 case CHILD_UPDATED:
                     // do nothing, application just got redeployed
@@ -263,7 +260,9 @@ public class TenantApplications implements RequestHandler, HostValidator {
         }
     }
 
-    // Note: Caller must hold the application lock
+    // Note: Assumes that caller already holds the application lock
+    // (when getting event from zookeeper to remove application,
+    // the lock should be held by the thread that causes the event to happen)
     public void removeApplication(ApplicationId applicationId) {
         log.log(Level.FINE, () -> "Removing application " + applicationId);
         if (exists(applicationId)) {
@@ -273,6 +272,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
 
         if (hasApplication(applicationId)) {
             applicationMapper.remove(applicationId);
+            hostRegistry.removeHosts(applicationId);
             configActivationListenersOnRemove(applicationId);
             tenantMetricUpdater.setApplications(applicationMapper.numApplications());
             metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
