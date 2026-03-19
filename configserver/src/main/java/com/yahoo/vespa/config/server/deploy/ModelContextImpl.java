@@ -191,7 +191,6 @@ public class ModelContextImpl implements ModelContext {
         private final int rpc_num_targets;
         private final int rpc_events_before_wakeup;
         private final boolean sortBlueprintsByCost;
-        private final int contentLayerMetadataFeatureLevel;
         private final String unknownConfigDefinition;
         private final boolean logserverOtelCol;
         private final SharedHosts sharedHosts;
@@ -240,7 +239,6 @@ public class ModelContextImpl implements ModelContext {
             this.rpc_events_before_wakeup = Flags.RPC_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
             this.queryDispatchWarmup = PermanentFlags.QUERY_DISPATCH_WARMUP.bindTo(source).with(appId).with(version).value();
             this.heapSizePercentageFlag = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(source).with(appId).with(version);
-            this.contentLayerMetadataFeatureLevel = Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL.bindTo(source).with(appId).with(version).value();
             this.unknownConfigDefinition = PermanentFlags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
             this.sortBlueprintsByCost = PermanentFlags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
             this.logserverOtelCol = Flags.LOGSERVER_OTELCOL_AGENT.bindTo(source).with(appId).with(version).value();
@@ -291,7 +289,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public int mbusCppEventsBeforeWakeup() { return mbus_cpp_events_before_wakeup; }
         @Override public int rpcNumTargets() { return rpc_num_targets; }
         @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
-        @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
         @Override public boolean sortBlueprintsByCost() { return sortBlueprintsByCost; }
         @Override public boolean logserverOtelCol() { return logserverOtelCol; }

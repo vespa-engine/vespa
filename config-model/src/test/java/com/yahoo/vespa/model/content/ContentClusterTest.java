@@ -1541,20 +1541,9 @@ public class ContentClusterTest extends ContentBaseTest {
         return resolveStorDistributormanagerConfig(properties);
     }
 
-    private boolean resolveDistributorOperationCancellationConfig(Integer featureLevel) throws Exception {
-        return resolveDistributorConfig((props) -> {
-            if (featureLevel != null) {
-                props.setContentLayerMetadataFeatureLevel(featureLevel);
-            }
-        }).enable_operation_cancellation();
-    }
-
     @Test
-    void distributor_operation_cancelling_config_controlled_by_properties() throws Exception {
-        assertFalse(resolveDistributorOperationCancellationConfig(null)); // defaults to false
-        assertFalse(resolveDistributorOperationCancellationConfig(0));
-        assertTrue(resolveDistributorOperationCancellationConfig(1));
-        assertTrue(resolveDistributorOperationCancellationConfig(2));
+    void distributor_operation_cancelling_config() throws Exception {
+        assertTrue(resolveDistributorConfig((props) -> {}).enable_operation_cancellation());
     }
 
     @Test

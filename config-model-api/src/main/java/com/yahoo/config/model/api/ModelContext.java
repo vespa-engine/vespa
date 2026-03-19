@@ -97,7 +97,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitAddressSpace() { return 0.80; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
-        @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.663") default int contentLayerMetadataFeatureLevel() { return 1; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }

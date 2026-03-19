@@ -72,7 +72,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
-    private int contentLayerMetadataFeatureLevel = 0;
     private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int searchCoreMaxOutstandingMoveOps = 100;
@@ -128,7 +127,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
-    @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
@@ -306,11 +304,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setDataplaneTokens(Collection<DataplaneToken> tokens) {
         this.dataplaneTokens = List.copyOf(tokens);
-        return this;
-    }
-
-    public TestProperties setContentLayerMetadataFeatureLevel(int level) {
-        this.contentLayerMetadataFeatureLevel = level;
         return this;
     }
 
