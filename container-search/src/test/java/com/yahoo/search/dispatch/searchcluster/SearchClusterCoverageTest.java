@@ -181,7 +181,7 @@ public class SearchClusterCoverageTest {
     }
 
     @Test
-    void twenty_groups_of_which_eleven_were_just_added_with_no_docs() {
+    void prefer_existing_groups_with_coverage_when_added_majority_is_empty() {
         var tester = new SearchClusterTester(20, 3);
 
         for (int i = 0; i < 9; i++)
@@ -189,8 +189,8 @@ public class SearchClusterCoverageTest {
 
         tester.pingIterationCompleted();
 
-        for (int i = 0;  i < 9;  i++) assertTrue(tester.group(i).hasSufficientCoverage());
-        for (int i = 9;  i < 20; i++) assertFalse(tester.group(i).hasSufficientCoverage());
+        for (int i = 0; i < 9;  i++) assertTrue(tester.group(i).hasSufficientCoverage());
+        for (int i = 9; i < 20; i++) assertFalse(tester.group(i).hasSufficientCoverage());
     }
 
     @Test
