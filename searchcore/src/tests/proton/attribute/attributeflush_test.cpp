@@ -72,6 +72,7 @@ public:
     run() override
     {
         _task->run();
+        _task.reset();
         _gate->countDown();
         LOG(info, "doneFlushing");
     }
@@ -95,6 +96,7 @@ public:
     doFlushing(Executor::Task::UP task)
     {
         if (!task) {
+            LOG(error, "initFlush failed, no task");
             return;
         }
         Executor::Task::UP wrapper(new TaskWrapper(std::move(task), gate));
