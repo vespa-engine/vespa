@@ -14,22 +14,22 @@ public class EquivTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     void testEquiv() {
-        assertSemantics("EQUIV \"lord of the rings\" lotr", "lotr");
+        assertSemantics("EQUIV lotr \"lord of the rings\"", "lotr");
     }
 
     @Test
     void testEquivWithFollowingQuery() {
-        assertSemantics("AND (EQUIV \"lord of the rings\" lotr) is a movie", "lotr is a movie");
+        assertSemantics("AND (EQUIV lotr \"lord of the rings\") is a movie", "lotr is a movie");
     }
 
     @Test
     void testEquivWithPrecedingQuery() {
-        assertSemantics("AND a movie is (EQUIV \"lord of the rings\" lotr)", "a movie is lotr");
+        assertSemantics("AND a movie is (EQUIV lotr \"lord of the rings\")", "a movie is lotr");
     }
 
     @Test
     void testEquivWithSurroundingQuery() {
-        assertSemantics("AND a movie is (EQUIV \"lord of the rings\" lotr) yes", "a movie is lotr yes");
+        assertSemantics("AND a movie is (EQUIV lotr \"lord of the rings\") yes", "a movie is lotr yes");
     }
 
 }

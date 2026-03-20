@@ -36,20 +36,21 @@ namespace proton {
  **/
 class FlushableAttribute::Flusher : public Task {
 private:
-    FlushableAttribute                      & _fattr;
-    search::AttributeMemorySaveTarget         _saveTarget;
-    std::unique_ptr<search::AttributeSaver>   _saver;
-    uint64_t                                  _syncToken;
-    std::string                          _flushFile;
+    FlushableAttribute&                         _fattr;
+    search::AttributeMemorySaveTarget           _saveTarget;
+    std::unique_ptr<search::AttributeSaver>     _saver;
+    uint64_t                                    _syncToken;
+    std::string                                 _flushFile;
+    std::unique_ptr<AttributeDirectory::Writer> _writer;
 
     bool saveAttribute(); // not updating snap info.
 public:
-    Flusher(FlushableAttribute & fattr, uint64_t syncToken, AttributeDirectory::Writer &writer);
+    Flusher(FlushableAttribute & fattr, uint64_t syncToken, std::unique_ptr<AttributeDirectory::Writer> writer);
     ~Flusher() override;
     uint64_t getSyncToken() const { return _syncToken; }
-    bool flush(AttributeDirectory::Writer &writer);
+    bool flush();
     void updateStats();
-    bool cleanUp(AttributeDirectory::Writer &writer);
+    bool cleanUp();
     // Implements vespalib::Executor::Task
     void run() override;
 
@@ -59,17 +60,19 @@ public:
 };
 
 
-FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncToken, AttributeDirectory::Writer &writer)
+FlushableAttribute::Flusher::Flusher(FlushableAttribute& fattr, SerialNum syncToken,
+                                     std::unique_ptr<AttributeDirectory::Writer> writer)
     : _fattr(fattr),
       _saveTarget(),
       _saver(),
       _syncToken(syncToken),
-      _flushFile("")
+      _flushFile(""),
+      _writer(std::move(writer))
 {
     fattr._attr->commit(CommitParam(syncToken, CommitParam::UpdateStats::SKIP));
     AttributeVector &attr = *_fattr._attr;
     // Called by attribute field writer executor
-    _flushFile = writer.getSnapshotDir(_syncToken) + "/" + attr.getName();
+    _flushFile = _writer->getSnapshotDir(_syncToken) + "/" + attr.getName();
     _saver = attr.initSave(_flushFile);
     assert(_saver);
 }
@@ -105,19 +108,23 @@ FlushableAttribute::Flusher::saveAttribute()
             }
         }
     }
+    if (saveSuccess) {
+        File::sync(_writer->getSnapshotDir(_syncToken));
+        File::sync(_writer->get_dir());
+    }
     return saveSuccess;
 }
 
 bool
-FlushableAttribute::Flusher::flush(AttributeDirectory::Writer &writer)
+FlushableAttribute::Flusher::flush()
 {
-    writer.createInvalidSnapshot(_syncToken);
+    _writer->createInvalidSnapshot(_syncToken);
     if (!saveAttribute()) {
         LOG(warning, "Could not write attribute vector '%s' to disk", _flushFile.c_str());
         return false;
     }
-    writer.markValidSnapshot(_syncToken);
-    writer.setLastFlushTime(search::FileKit::getModificationTime(vespalib::dirname(_flushFile)));
+    _writer->markValidSnapshot(_syncToken);
+    _writer->setLastFlushTime(search::FileKit::getModificationTime(vespalib::dirname(_flushFile)));
     return true;
 }
 
@@ -128,11 +135,11 @@ FlushableAttribute::Flusher::updateStats()
 }
 
 bool
-FlushableAttribute::Flusher::cleanUp(AttributeDirectory::Writer &writer)
+FlushableAttribute::Flusher::cleanUp()
 {
     if (_fattr._cleanUpAfterFlush) {
-        writer.invalidateOldSnapshots();
-        writer.removeInvalidSnapshots();
+        _writer->invalidateOldSnapshots();
+        _writer->removeInvalidSnapshots();
     }
     return true;
 }
@@ -140,17 +147,16 @@ FlushableAttribute::Flusher::cleanUp(AttributeDirectory::Writer &writer)
 void
 FlushableAttribute::Flusher::run()
 {
-    auto writer = _fattr._attrDir->tryGetWriter();
-    if (!writer || _syncToken <= _fattr.getFlushedSerialNum()) {
+    if (_syncToken <= _fattr.getFlushedSerialNum()) {
         // another flusher has created an equal or better snapshot
         // after this flusher was created
         return;
     }
-    if (!flush(*writer)) {
+    if (!flush()) {
         // TODO (geirst): throw exception ?
     }
     updateStats();
-    if (!cleanUp(*writer)) {
+    if (!cleanUp()) {
         // TODO (geirst): throw exception ?
     }
 }
@@ -236,7 +242,7 @@ FlushableAttribute::internalInitFlush(SerialNum currentSerial)
             vespalib::to_s(getLastFlushTime().time_since_epoch()));
         return Task::UP();
     }
-    return std::make_unique<Flusher>(*this, syncToken, *writer);
+    return std::make_unique<Flusher>(*this, syncToken, std::move(writer));
 }
 
 

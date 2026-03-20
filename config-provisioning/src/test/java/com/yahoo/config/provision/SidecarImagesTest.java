@@ -38,18 +38,4 @@ public class SidecarImagesTest {
                 "No sidecar image with repository 'unknown/repo' configured in sidecar-images.properties",
                 ex.getMessage());
     }
-
-    @Test
-    void test_removeSidecarRepositoryPrefix_returns_source_repository() {
-        assertEquals("nvidia/tritonserver", SidecarImages.removeSidecarRepositoryPrefix("sidecar/nvidia/tritonserver"));
-    }
-
-    @Test
-    void test_removeSidecarRepositoryPrefix_throws_wrong_prefix() {
-        var ex = assertThrows(
-                IllegalArgumentException.class, () -> SidecarImages.removeSidecarRepositoryPrefix("nvidia/tritonserver"));
-        assertEquals(
-                "Sidecar repository 'nvidia/tritonserver' does not start with expected prefix 'sidecar/'",
-                ex.getMessage());
-    }
 }

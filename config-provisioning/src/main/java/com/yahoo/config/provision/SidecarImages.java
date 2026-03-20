@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
  * @author glebashnik
  */
 public class SidecarImages {
-    public static final String SIDECAR_REPOSITORY_PREFIX = "sidecar/";
     private final Map<String, DockerImage> images;
 
     SidecarImages(Map<String, DockerImage> images) {
@@ -38,7 +37,7 @@ public class SidecarImages {
 
             props.load(inputStream);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load sidecar-images.properties", e);
+            throw new RuntimeException("Failed to read sidecar-images.properties", e);
         }
 
         return new SidecarImages(props.entrySet().stream()
@@ -64,19 +63,5 @@ public class SidecarImages {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(Text.format(
                         "No sidecar image with repository '%s' configured in sidecar-images.properties", repository)));
-    }
-
-    /**
-     * Returns repository without SIDECAR_REPOSITORY_PREFIX,
-     * e.g. given "sidecar/nvidia/tritonserver" returns "nvidia/tritonserver".
-     */
-    public static String removeSidecarRepositoryPrefix(String sidecarRepository) {
-        if (!sidecarRepository.startsWith(SIDECAR_REPOSITORY_PREFIX)) {
-            throw new IllegalArgumentException(Text.format(
-                    "Sidecar repository '%s' does not start with expected prefix '%s'",
-                    sidecarRepository, SIDECAR_REPOSITORY_PREFIX));
-        }
-
-        return sidecarRepository.substring(SIDECAR_REPOSITORY_PREFIX.length());
     }
 }

@@ -9,3 +9,15 @@ testfield:[test] -> =testfield:e1 =testfield:e2 =testfield:e3;
 
 cascade1 +> =cascade2;
 cascade2 +> =cascade3;
+
+multi1 multi2 +> =expanded;
+multi3 multi4 +> =expanded3 =expanded4;
+multi5 multi6 +> ="quotedexpanded";
+multi7 multi8 +> ="quoted two words";
+
+mw1 mw2 +> =single1 =single2;
+single1 +> ="mw1 mw2" =single2;
+single2 +> ="mw1 mw2" =single1;
+
+phrase1 +> ="target one" ="target two";
+phrase2 +> =unquoted ="quoted phrase";

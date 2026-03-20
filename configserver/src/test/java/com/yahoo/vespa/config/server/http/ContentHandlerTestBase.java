@@ -26,11 +26,11 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
     public void require_that_content_can_be_retrieved() throws IOException {
         assertContent("/test.txt", "foo\n");
         assertContent("/foo/", generateResultArray("foo/bar/", "foo/test1.json", "foo/test2.txt"), "application/json");
-        assertContent("/foo", generateResultArray("foo/"), "application/json");
+        assertContent("/foo", generateResultArray("foo/bar/", "foo/test1.json", "foo/test2.txt"), "application/json");
         assertContent("/foo/test1.json", "bar\n", "application/json");
         assertContent("/foo/test2.txt", "baz\n");
         assertContent("/foo/bar/", generateResultArray("foo/bar/file-without-extension", "foo/bar/test.jar"), "application/json");
-        assertContent("/foo/bar", generateResultArray("foo/bar/"), "application/json");
+        assertContent("/foo/bar", generateResultArray("foo/bar/file-without-extension", "foo/bar/test.jar"), "application/json");
         assertContent("/foo/bar/file-without-extension", "content");
         assertBinaryContent("/foo/bar/test.jar", "56f62ad750881d2f8276136896ff84fb", "application/java-archive");
         assertContent("/foo/?recursive=true", generateResultArray("foo/bar/", "foo/bar/file-without-extension", "foo/bar/test.jar", "foo/test1.json", "foo/test2.txt"), "application/json");

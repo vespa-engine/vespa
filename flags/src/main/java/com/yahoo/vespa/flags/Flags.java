@@ -205,14 +205,6 @@ public class Flags {
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
 
-    public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
-            "content-layer-metadata-feature-level", 1,
-            List.of("vekterli"), "2022-09-12", "2026-04-01",
-            "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
-            "cancellation and ephemeral content node sequence numbers for bucket replicas",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
             List.of("johsol"), "2025-10-17", "2026-04-01",
@@ -394,16 +386,6 @@ public class Flags {
                     "This might fix deferring config changes until container restart.",
             "Takes effect at redeployment",
             INSTANCE_ID
-    );
-
-    public static final UnboundDoubleFlag HOST_MEMORY_SERVICES_MIXING_FACTOR = defineDoubleFlag(
-            "host-memory-services-mixing-factor", 0.0,
-            List.of("boeker"), "2026-01-16", "2026-04-16",
-            "How much of the sum of the memory limits specified for the customer rpm services should be added to " +
-            "the memory reserved for host's management processes. " +
-            "0.0 means none at all, 1.0 means the sum of the memory limits.",
-            "Affects future deployments, JVM settings for new config server Podman containers, auto scaling modelling.",
-            TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE
     );
 
     public static final UnboundDoubleFlag SEARCHNODE_RESERVED_DISK_SPACE_FACTOR = defineDoubleFlag(

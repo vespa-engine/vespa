@@ -19,7 +19,7 @@ struct Input
      *
      * @return the obtained input data
      **/
-    virtual Memory obtain() = 0;
+    [[nodiscard]] virtual Memory obtain() = 0;
 
     /**
      * Evict processed input data. Never evict more data than you have
