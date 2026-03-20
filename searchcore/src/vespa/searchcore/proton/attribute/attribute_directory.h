@@ -77,6 +77,7 @@ public:
         void createInvalidSnapshot(SerialNum serialNum) { _dir.createInvalidSnapshot(serialNum); }
         void markValidSnapshot(SerialNum serialNum) { _dir.markValidSnapshot(serialNum); }
         std::string getSnapshotDir(SerialNum serialNum) { return _dir.getSnapshotDir(serialNum); }
+        std::string get_dir() { return _dir.getDirName(); }
 
         // methods called while pruning old snapshots or removing attribute
         void invalidateOldSnapshots(SerialNum serialNum) { _dir.invalidateOldSnapshots(serialNum); }
