@@ -13,4 +13,7 @@ public interface FlagSource {
     /** Returns the raw flag for the given vector (specifying hostname, application id, etc). */
     Optional<RawFlag> fetch(FlagId id, FetchVector vector);
 
+    /** Returns a snapshot of this flag source where all values are frozen at the current point in time. */
+    FlagSource snapshot();
+
 }

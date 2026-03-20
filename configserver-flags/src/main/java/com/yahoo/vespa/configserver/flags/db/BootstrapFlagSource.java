@@ -33,4 +33,7 @@ public class BootstrapFlagSource implements FlagSource {
     public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
         return Optional.ofNullable(flagData.get(id)).flatMap(data -> data.resolve(vector));
     }
+
+    @Override
+    public FlagSource snapshot() { return this; }
 }
