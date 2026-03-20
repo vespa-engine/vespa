@@ -75,6 +75,7 @@ class ResultBuilder {
      * @return this, to allow chaining
      */
     public ResultBuilder setRequestId(int requestId) {
+        // TODO: Assign query to this RootGroup in case it becomes the top-level group in a result
         root = new RootGroup(requestId, continuation);
         rootBuilder = new GroupListBuilder(ResultId.valueOf(requestId), 0, true, true);
         return this;
@@ -162,6 +163,7 @@ class ResultBuilder {
         }
 
         Group build(double relevance) {
+            // TODO: Assign query to this Group in case it becomes the top-level group in a result
             return fill(new Group(newGroupId(group), new Relevance(relevance)));
         }
 

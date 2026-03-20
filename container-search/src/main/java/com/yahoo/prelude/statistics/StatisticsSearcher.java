@@ -118,7 +118,7 @@ public class StatisticsSearcher extends Searcher {
         Result result;
         try {
             result = execution.search(query);
-            execution.fill(result); // Ensure the fill phase is included in latency measurements
+            fill(query, result, execution); // Ensure the fill phase is included in latency measurements
         } catch (Exception e) {
             increaseErrorCount(null, metricContext);
             throw e;
@@ -167,6 +167,12 @@ public class StatisticsSearcher extends Searcher {
     @Override
     public void deconstruct() {
         scheduler.cancel();
+    }
+
+    private void fill(Query query, Result result, Execution execution) {
+        if (result.getQuery() == null)
+            result.setQuery(query); // required by fill, but not enforced
+        execution.fill(result);
     }
 
     private void qps(Metric.Context metricContext) {
