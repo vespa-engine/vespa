@@ -10,7 +10,7 @@ public class SidecarImagesTest {
 
     @Test
     void test_getOrThrow_returns_known_key() {
-        var images = SidecarImages.readFromProperties();
+        var images = SidecarImages.readFromPropertiesFile();
         var triton = images.getOrThrow("triton");
         assertEquals("nvidia/tritonserver", triton.repository());
         assertEquals("nvcr.io", triton.registry());
@@ -18,21 +18,21 @@ public class SidecarImagesTest {
 
     @Test
     void test_getOrThrow_throws_unknown_key() {
-        var images = SidecarImages.readFromProperties();
+        var images = SidecarImages.readFromPropertiesFile();
         var ex = assertThrows(IllegalStateException.class, () -> images.getOrThrow("unknown"));
         assertEquals("Sidecar image 'unknown' is not configured in sidecar-images.properties", ex.getMessage());
     }
 
     @Test
     void test_getByRepositoryOrThrow_returns_known_repository() {
-        var images = SidecarImages.readFromProperties();
+        var images = SidecarImages.readFromPropertiesFile();
         var triton = images.getByRepositoryOrThrow("nvidia/tritonserver");
         assertEquals("nvcr.io", triton.registry());
     }
 
     @Test
     void test_getByRepositoryOrThrow_throws_unknown_repository() {
-        var images = SidecarImages.readFromProperties();
+        var images = SidecarImages.readFromPropertiesFile();
         var ex = assertThrows(IllegalStateException.class, () -> images.getByRepositoryOrThrow("unknown/repo"));
         assertEquals(
                 "No sidecar image with repository 'unknown/repo' configured in sidecar-images.properties",

@@ -27,7 +27,7 @@ public class SidecarImages {
         this.images = images;
     }
 
-    public static SidecarImages readFromProperties() {
+    public static SidecarImages readFromPropertiesFile() {
         var props = new Properties();
 
         try (InputStream inputStream = SidecarImages.class.getResourceAsStream("/sidecar-images.properties")) {

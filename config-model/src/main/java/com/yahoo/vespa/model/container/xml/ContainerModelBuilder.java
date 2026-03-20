@@ -28,7 +28,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SidecarImages;
@@ -124,7 +123,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -265,7 +263,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
-            var sidecarImage = SidecarImages.readFromProperties().getOrThrow("triton");
+            var sidecarImage = SidecarImages.readFromPropertiesFile().getOrThrow("triton");
 
             var spec = SidecarSpec.builder()
                     .id(0)
