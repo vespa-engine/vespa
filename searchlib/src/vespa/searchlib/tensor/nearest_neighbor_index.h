@@ -51,7 +51,8 @@ public:
         size_t _nodes_visited;
 
     public:
-        Stats() : _distances_computed(0), _nodes_visited(0) {}
+        Stats() { reset(); }
+        void reset() { _distances_computed = 0; _nodes_visited = 0; }
         size_t distances_computed() const { return _distances_computed; }
         void count_computed_distance() { ++_distances_computed; }
         size_t nodes_visited() const { return _nodes_visited; }
