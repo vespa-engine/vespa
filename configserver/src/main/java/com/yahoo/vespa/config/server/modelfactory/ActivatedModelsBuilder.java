@@ -154,7 +154,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                ImmutableSet.copyOf(new ContainerEndpointsCache(TenantRepository.getTenantPath(tenant), curator).read(applicationId)),
                                                false, // We may be bootstrapping, but we only know and care during prepare
                                                false, // Always false, assume no one uses it when activating
-                                               LegacyFlags.from(applicationPackage, flagSource),
+                                               LegacyFlags.from(applicationPackage, flagSource.snapshot()),
                                                new EndpointCertificateMetadataStore(curator, TenantRepository.getTenantPath(tenant))
                                                        .readEndpointCertificateMetadata(applicationId)
                                                        .flatMap(new EndpointCertificateRetriever(endpointCertificateSecretStores)::readEndpointCertificateSecrets),

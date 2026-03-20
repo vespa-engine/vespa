@@ -7,6 +7,7 @@ import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.FlagRepository;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.RawFlag;
+import com.yahoo.vespa.flags.SnapshotFlagSource;
 import com.yahoo.vespa.flags.json.FlagData;
 
 import java.io.IOException;
@@ -57,6 +58,9 @@ public class FlagDbFile implements FlagRepository, FlagSource {
     public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
         return Optional.ofNullable(getAllFlagData().get(id)).flatMap(flagData -> flagData.resolve(vector));
     }
+
+    @Override
+    public FlagSource snapshot() { return new SnapshotFlagSource(read()); }
 
     public Map<FlagId, FlagData> read() {
         Optional<byte[]> bytes = readFile();

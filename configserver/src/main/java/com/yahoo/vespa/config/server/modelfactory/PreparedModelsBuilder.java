@@ -215,7 +215,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                Set.copyOf(containerEndpoints),
                                                params.isBootstrap(),
                                                activeApplicationVersions.isEmpty(),
-                                               LegacyFlags.from(applicationPackage, flagSource),
+                                               LegacyFlags.from(applicationPackage, flagSource.snapshot()),
                                                endpointCertificateSecrets,
                                                params.athenzDomain(),
                                                params.quota(),

@@ -157,7 +157,13 @@ public interface ModelContext {
         }
 
         // Default setting for the gc-options attribute if not specified explicitly by application
+        @Deprecated(forRemoval = true)
         String jvmGCOptions(Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId);
+
+        /** Returns a flag for resolving JVM GC options with per-hostname granularity. */
+        default FeatureFlag<String> jvmGCOptionsFlag() {
+            return new FeatureFlag.Static<>(jvmGCOptions(Optional.empty(), Optional.empty()));
+        }
 
         default String mallocImpl(Optional<ClusterSpec.Type> clusterType) { return ""; }
 
@@ -190,6 +196,18 @@ public interface ModelContext {
         default List<String> jdiscHttpComplianceViolations() { return List.of(); }
     }
 
+    /** A flag value that can be refined with additional dimensions before resolving. */
+    interface FeatureFlag<T> {
+        default FeatureFlag<T> withClusterType(ClusterSpec.Type clusterType) { return this; }
+        default FeatureFlag<T> withClusterId(ClusterSpec.Id clusterId) { return this; }
+        default FeatureFlag<T> withHostname(String hostname) { return this; }
+        T value();
+
+        /** A flag with a fixed value, ignoring all dimensions. */
+        record Static<T>(T value) implements FeatureFlag<T> {}
+    }
+
+    /** Annotation for manual bookkeeping for life-cycle of config-model flags */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     @interface ModelFeatureFlag {
