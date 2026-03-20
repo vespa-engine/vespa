@@ -148,8 +148,8 @@ class ResultBuilder {
 
     private class GroupBuilder {
         private static final int CHILDLIST_SIZE_INCREMENTS = 4;
-        boolean [] results = new boolean[8];
-        GroupListBuilder [] childLists;
+        boolean[] results = new boolean[8];
+        GroupListBuilder[] childLists;
         int childCount = 0;
         final ResultId resultId;
         final com.yahoo.searchlib.aggregation.Group group;
