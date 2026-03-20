@@ -26,7 +26,7 @@ public class BootstrapFlagSource implements FlagSource {
 
     public BootstrapFlagSource(FileSystem fileSystem) {
         // The flags on disk is read once now and never again.
-        this.flagData = new FlagDbFile(fileSystem).read();
+        this.flagData = Map.copyOf(new FlagDbFile(fileSystem).read());
     }
 
     @Override
