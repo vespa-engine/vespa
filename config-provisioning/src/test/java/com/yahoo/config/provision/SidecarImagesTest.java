@@ -47,7 +47,7 @@ public class SidecarImagesTest {
     @Test
     void test_removeSidecarRepositoryPrefix_throws_wrong_prefix() {
         var ex = assertThrows(
-                IllegalStateException.class, () -> SidecarImages.removeSidecarRepositoryPrefix("nvidia/tritonserver"));
+                IllegalArgumentException.class, () -> SidecarImages.removeSidecarRepositoryPrefix("nvidia/tritonserver"));
         assertEquals(
                 "Sidecar repository 'nvidia/tritonserver' does not start with expected prefix 'sidecar/'",
                 ex.getMessage());
