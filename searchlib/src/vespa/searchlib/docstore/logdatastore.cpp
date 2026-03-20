@@ -361,7 +361,7 @@ LogDataStore::findNextToCompact(bool dueToBloat)
     MonitorGuard guard(_updateLock);
     for (size_t i(0); i < _fileChunks.size(); i++) {
         const auto & fc(_fileChunks[i]);
-        if (fc && fc->frozen() && (_currentlyCompacting.find(fc->getNameId()) == _currentlyCompacting.end())) {
+        if (fc && fc->frozen() && !_currentlyCompacting.contains(fc->getNameId())) {
             uint64_t usage = fc->getDiskFootprint();
             if ( ! dueToBloat && _bucketizer) {
                 worst.emplace(fc->getBucketSpread(), FileId(i));
@@ -630,7 +630,7 @@ LogDataStore::getMaxBucketSpread() const
         /// Ignore the the active file as it is never considered for reordering until completed and frozen.
         if (i != _active) {
             const auto & fc = _fileChunks[i.getId()];
-            if (fc && _bucketizer && fc->frozen()) {
+            if (fc && _bucketizer && fc->frozen() && !_currentlyCompacting.contains(fc->getNameId())) {
                 maxSpread = std::max(maxSpread, fc->getBucketSpread());
             }
         }
@@ -648,7 +648,7 @@ LogDataStore::getDiskBloat() const
         /// never considered for compaction until completed and frozen.
         if (i != _active) {
             const auto & chunk = _fileChunks[i.getId()];
-            if (chunk) {
+            if (chunk && chunk->frozen() && !_currentlyCompacting.contains(chunk->getNameId())) {
                 sz += chunk->getDiskBloat();
             }
         }
