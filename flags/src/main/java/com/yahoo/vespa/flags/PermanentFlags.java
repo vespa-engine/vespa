@@ -494,7 +494,7 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_HOSTS_PER_HOUR = defineIntFlag(
-            "max-hosts-per-hour", 40,
+            "max-hosts-per-hour", 125,
             "The number of hosts that can be provisioned per hour in a zone, before throttling is " +
             "triggered",
             "Takes effect immediately");
