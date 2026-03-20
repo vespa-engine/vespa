@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class SidecarImages {
     private final Map<String, DockerImage> images;
 
-    SidecarImages(Map<String, DockerImage> images) {
+    private SidecarImages(Map<String, DockerImage> images) {
         this.images = images;
     }
 
