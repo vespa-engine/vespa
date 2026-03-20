@@ -29,11 +29,13 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.vespa.flags.DoubleFlag;
+import com.yahoo.vespa.flags.Flag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
+import com.yahoo.vespa.flags.UnboundFlag;
 import com.yahoo.vespa.flags.custom.Sidecars;
 
 import java.io.File;
@@ -48,6 +50,7 @@ import java.util.concurrent.ExecutorService;
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
+import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 
 /**
  * Implementation of {@link ModelContext} for configserver.
@@ -320,6 +323,8 @@ public class ModelContextImpl implements ModelContext {
 
         private final ModelContext.FeatureFlags featureFlags;
         private final ApplicationId applicationId;
+        private final FlagSource flagSource;
+        private final Version modelVersion;
         private final boolean multitenant;
         private final List<ConfigServerSpec> configServerSpecs;
         private final HostName loadBalancerName;
@@ -367,6 +372,8 @@ public class ModelContextImpl implements ModelContext {
                           List<DataplaneToken> dataplaneTokens) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId, modelVersion);
             this.applicationId = applicationId;
+            this.flagSource = flagSource;
+            this.modelVersion = modelVersion;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
             this.configServerSpecs = fromConfig(configserverConfig);
             this.loadBalancerName = configserverConfig.loadBalancerAddress().isEmpty() ? null : HostName.of(configserverConfig.loadBalancerAddress());
@@ -382,7 +389,7 @@ public class ModelContextImpl implements ModelContext {
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
             this.tenantVaults = tenantVaults;
             this.tenantSecretStores = tenantSecretStores;
-            this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
+        this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(applicationId)
                     .withVersion(Optional.of(modelVersion));
             this.searchNodeInitializerThreadsFlag = PermanentFlags.SEARCHNODE_INITIALIZER_THREADS.bindTo(flagSource).with(applicationId);
@@ -466,8 +473,13 @@ public class ModelContextImpl implements ModelContext {
             return tenantSecretStores;
         }
 
+        @SuppressWarnings("removal")
         @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId) {
             return flagValueForClusterTypeAndClusterId(jvmGCOptionsFlag, clusterType, clusterId);
+        }
+
+        @Override public ModelContext.FeatureFlag<String> jvmGCOptionsFlag() {
+            return new FeatureFlag<>(PermanentFlags.JVM_GC_OPTIONS, flagSource, applicationId, modelVersion);
         }
 
         @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
@@ -533,6 +545,31 @@ public class ModelContextImpl implements ModelContext {
         @Override public List<String> requestPrefixForLoggingContent() { return requestPrefixForLoggingContent; }
 
         @Override public List<String> jdiscHttpComplianceViolations() { return jdiscHttpComplianceViolations; }
+
+        private record FeatureFlag<T, F extends Flag<T, F>, U extends UnboundFlag<T, F, U>>(F flag)
+                implements ModelContext.FeatureFlag<T> {
+
+            FeatureFlag(U unboundFlag, FlagSource source, ApplicationId appId, Version version) {
+                this(unboundFlag.bindTo(source).with(appId).with(version));
+            }
+
+            @Override
+            public ModelContext.FeatureFlag<T> withClusterType(ClusterSpec.Type clusterType) {
+                return new FeatureFlag<>(flag.with(CLUSTER_TYPE, clusterType.name()));
+            }
+
+            @Override
+            public ModelContext.FeatureFlag<T> withClusterId(ClusterSpec.Id clusterId) {
+                return new FeatureFlag<>(flag.with(CLUSTER_ID, clusterId.value()));
+            }
+
+            @Override
+            public ModelContext.FeatureFlag<T> withHostname(String hostname) {
+                return new FeatureFlag<>(flag.with(HOSTNAME, hostname));
+            }
+
+            @Override public T value() { return flag.boxedValue(); }
+        }
     }
 
 }
