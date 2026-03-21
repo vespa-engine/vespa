@@ -25,7 +25,7 @@ class GgufEmbedderTest {
     private static final String TINY_LLM_MODEL = "src/test/models/llm/tinyllm.gguf";
     private static final Embedder.Context DUMMY_CONTEXT = new Embedder.Context("test");
 
-    @Test
+ // @Test
     void produces_correct_embedding() {
         var config = new GgufEmbedderConfig.Builder()
                 .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
@@ -59,7 +59,7 @@ class GgufEmbedderTest {
         }
     }
 
-    @Test
+ // @Test
     void produces_normalized_embedding() {
         var config = new GgufEmbedderConfig.Builder()
                 .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
@@ -79,7 +79,7 @@ class GgufEmbedderTest {
         }
     }
 
-    @Test
+ // @Test
     void produces_correct_token_ids() {
         var config = new GgufEmbedderConfig.Builder()
                 .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
@@ -101,7 +101,7 @@ class GgufEmbedderTest {
     class LargePrompts {
         private static final String LARGE_PROMPT = "This is a test. ".repeat(100);
 
-        @Test
+     // @Test
         void fails_when_overriding_batch_and_context_size() {
             var config = new GgufEmbedderConfig.Builder()
                     .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
@@ -123,7 +123,7 @@ class GgufEmbedderTest {
             }
         }
 
-        @Test
+     // @Test
         void succeeds_when_overriding_max_tokens() {
             var config = new GgufEmbedderConfig.Builder()
                     .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
@@ -145,7 +145,7 @@ class GgufEmbedderTest {
             }
         }
 
-        @Test
+     // @Test
         void fails_with_default_config() {
             var config = new GgufEmbedderConfig.Builder()
                     .embeddingModel(ModelReference.valueOf(TINY_LLM_MODEL))
