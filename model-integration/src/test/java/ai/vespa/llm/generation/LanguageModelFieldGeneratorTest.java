@@ -12,6 +12,13 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.text.Text;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -231,9 +238,40 @@ public class LanguageModelFieldGeneratorTest {
                 languageModel.lastCompleteParams.get(InferenceParameters.OPTION_JSON_SCHEMA).orElseThrow());
     }
 
+    private static final String BIGGER_MODEL_URL = "https://data.vespa-cloud.com/gguf_models/llama-3.2-1b-instruct-q4_k_m.gguf";
+    private static final String BIGGER_MODEL_PATH = "src/test/models/llm/llama-3.2-1b-instruct-q4_k_m.gguf";
+    private static final String TINY_MODEL_PATH = "src/test/models/llm/tinyllm.gguf";
+
+    private static final Logger log = Logger.getLogger(LanguageModelFieldGeneratorTest.class.getName());
+
+    private static String downloadModelOrFallback() {
+        var path = Path.of(BIGGER_MODEL_PATH);
+        if (Files.exists(path)) {
+            log.info("Using existing model: " + BIGGER_MODEL_PATH);
+            return BIGGER_MODEL_PATH;
+        }
+        log.info("Downloading model from " + BIGGER_MODEL_URL + " ...");
+        try {
+            var client = HttpClient.newHttpClient();
+            var request = HttpRequest.newBuilder(URI.create(BIGGER_MODEL_URL)).GET().build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofFile(path));
+            if (response.statusCode() == 200) {
+                long size = Files.size(path);
+                log.info("Downloaded model to " + BIGGER_MODEL_PATH + " (" + size + " bytes)");
+                return BIGGER_MODEL_PATH;
+            }
+            log.warning("Download failed with HTTP status " + response.statusCode() + ", falling back to " + TINY_MODEL_PATH);
+            Files.deleteIfExists(path);
+        } catch (IOException | InterruptedException e) {
+            log.warning("Download failed: " + e.getMessage() + ", falling back to " + TINY_MODEL_PATH);
+            try { Files.deleteIfExists(path); } catch (IOException ignored) {}
+        }
+        return TINY_MODEL_PATH;
+    }
+
     @Test
     public void testGenerateWithLocalLLM() {
-        var localLLMPath = "src/test/models/llm/tinyllm.gguf";
+        var localLLMPath = downloadModelOrFallback();
         var localLLMConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .model(ModelReference.valueOf(localLLMPath));
