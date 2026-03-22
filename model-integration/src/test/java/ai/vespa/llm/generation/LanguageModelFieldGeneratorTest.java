@@ -238,8 +238,8 @@ public class LanguageModelFieldGeneratorTest {
                 languageModel.lastCompleteParams.get(InferenceParameters.OPTION_JSON_SCHEMA).orElseThrow());
     }
 
-    private static final String BIGGER_MODEL_URL = "https://data.vespa-cloud.com/gguf_models/Llama-160M-Chat-v1.Q6_K.gguf";
-    private static final String BIGGER_MODEL_PATH = "src/test/models/llm/Llama-160M-Chat-v1.Q6_K.gguf";
+    private static final String BIGGER_MODEL_URL = "https://data.vespa-cloud.com/gguf_models/llama-3.2-1b-instruct-q4_k_m.gguf";
+    private static final String BIGGER_MODEL_PATH = "src/test/models/llm/llama-3.2-1b-instruct-q4_k_m.gguf";
     private static final String TINY_MODEL_PATH = "src/test/models/llm/tinyllm.gguf";
 
     private static final Logger log = Logger.getLogger(LanguageModelFieldGeneratorTest.class.getName());
