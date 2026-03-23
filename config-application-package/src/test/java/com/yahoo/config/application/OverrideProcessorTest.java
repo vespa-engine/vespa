@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
@@ -300,7 +301,8 @@ public class OverrideProcessorTest {
                     "  </admin>" +
                     "</services>";
         Document inputDoc = Xml.getDocument(new StringReader(in));
-        new OverrideProcessor(InstanceName.from("default"),
+        new OverrideProcessor(ApplicationName.defaultName(),
+                              InstanceName.from("default"),
                               Environment.from("prod"),
                               RegionName.from("us-west"),
                               Cloud.defaultCloud().name(),
@@ -316,7 +318,8 @@ public class OverrideProcessorTest {
                 "  </admin>" +
                 "</services>";
         Document inputDoc = Xml.getDocument(new StringReader(in));
-        new OverrideProcessor(InstanceName.from("default"),
+        new OverrideProcessor(ApplicationName.defaultName(),
+                              InstanceName.from("default"),
                               Environment.defaultEnvironment(),
                               RegionName.from("us-west"),
                               Cloud.defaultCloud().name(),
@@ -429,7 +432,7 @@ public class OverrideProcessorTest {
     private void assertOverride(String input, Environment environment, RegionName region, CloudName cloudName, String expected) {
         var inputDoc = Xml.getDocument(new StringReader(input));
         try {
-            var newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region, cloudName, Tags.empty())
+            var newDoc = new OverrideProcessor(ApplicationName.defaultName(), InstanceName.from("default"), environment, region, cloudName, Tags.empty())
                     .process(inputDoc);
             TestBase.assertDocument(expected, newDoc);
         } catch (TransformerException e) {
