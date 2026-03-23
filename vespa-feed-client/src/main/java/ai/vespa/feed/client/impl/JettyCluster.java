@@ -110,7 +110,7 @@ class JettyCluster implements Cluster {
                 Request jettyReq = client.httpClient.newRequest(URI.create(client.uri + req.pathAndQuery()))
                         .version(HttpVersion.HTTP_2)
                         .method(HttpMethod.fromString(req.method()))
-                        .headers(hs -> req.headers().forEach((k, v) -> hs.add(k, v.get())))
+                        .headers(hs -> req.headers().forEach((k, v) -> hs.put(k, v.get())))
                         .idleTimeout(reqTimeoutMillis, MILLISECONDS)
                         .timeout(reqTimeoutMillis, MILLISECONDS);
                 if (req.body() != null) {
