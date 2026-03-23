@@ -851,7 +851,6 @@ public class ToProtobufTest {
         NearestNeighborItem nearestNeighbor = new NearestNeighborItem("myvector", "query_vector");
         nearestNeighbor.setTargetHits(100);
         nearestNeighbor.setAllowApproximate(false);
-        nearestNeighbor.setHnswExploreAdditionalHits(50);
         nearestNeighbor.setDistanceThreshold(0.5);
         nearestNeighbor.setWeight(200);
         nearestNeighbor.setFilter(true);
@@ -866,7 +865,6 @@ public class ToProtobufTest {
                 },
                 "queryTensorName": "query_vector",
                 "targetNumHits": 100,
-                "exploreAdditionalHits": 50,
                 "distanceThreshold": 0.5
               }
             }
