@@ -180,4 +180,18 @@ public abstract class TermProduction extends Production {
         return grandparent != null && !(grandparent instanceof QueryTree);
     }
 
+    /**
+     * Returns true if the match's parent already has the same type as this production's term type,
+     * and is nested (not directly under root). In this case we should add to the existing parent
+     * rather than creating a new one at root level.
+     */
+    protected boolean parentHasCompatibleType(Match match) {
+        if (getTermType() == TermType.DEFAULT) return false;
+        CompositeItem parent = match.getParent();
+        if (parent == null) return false;
+        if (!getTermType().hasItemClass(parent.getClass())) return false;
+        CompositeItem grandparent = parent.getParent();
+        return grandparent != null && !(grandparent instanceof QueryTree);
+    }
+
 }
