@@ -80,6 +80,11 @@ public class LiteralTermProduction extends TermProduction {
                 Match matched = e.getNonreferencedMatch(0);
                 insertMatch(e, matched, List.of(newItem), offset);
             }
+            else if (e.getNonreferencedMatchCount() > 0 && parentHasCompatibleType(e.getNonreferencedMatch(0))) {
+                // Parent already has the right type (e.g., OR inside OR) - insert after match
+                Match matched = e.getNonreferencedMatch(0);
+                insertMatch(e, matched, List.of(newItem), offset + 1);
+            }
             else {
                 // Use root-level combining for specific types (RANK, OR, etc.) and non-nested cases
                 e.addItems(List.of(newItem), getTermType());
