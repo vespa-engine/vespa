@@ -70,6 +70,7 @@ import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.LogRetriever;
@@ -106,12 +107,10 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
@@ -141,6 +140,7 @@ import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
+import static java.util.logging.Level.INFO;
 
 /**
  * The API for managing applications.
@@ -825,6 +825,26 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public HttpResponse validateSecretStore(ApplicationId applicationId, SystemName systemName, Slime slime) {
         Application application = getApplication(applicationId);
         return secretStoreValidator.validateSecretStore(application, systemName, slime);
+    }
+
+    public void removeStaleHostRegistryEntries() {
+        tenantRepository.getAllTenants().stream()
+                .map(Tenant::getApplicationRepo)
+                .forEach(a -> {
+                    HostRegistry hostRegistry = a.hostRegistry();
+                    var hostsWithNoApplication = hostRegistry.getAllHosts()
+                                                             .stream()
+                                                             .filter(h -> getApplicationIdForHostname(h) == null)
+                                                             .collect(Collectors.toCollection(HashSet::new));
+                    if (!hostsWithNoApplication.isEmpty()) {
+                        log.log(INFO, "Found " + hostsWithNoApplication.size() + " hosts not belonging to any application: " + hostsWithNoApplication);
+                    }
+                    hostsWithNoApplication.forEach(host -> {
+                        var appId = hostRegistry.getApplicationId(host);
+                        log.log(INFO, "Want to remove host " + host + " from host registry for application " + appId);
+                        //hostRegistry.removeHosts(appId);
+                    });
+                });
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
