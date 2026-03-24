@@ -264,18 +264,27 @@ func (s *Service) Description() string {
 	return s.Type() + " " + s.Name
 }
 
-// FindService returns the service of given name, found among services, if any.
+// FindService returns the service matching name and authMethod from services,
+// with fallbacks if no exact match was found.
 func FindService(name string, authMethod string, services []*Service) (*Service, error) {
+	// First pass: exact match on both name and authMethod
 	applicableServices := make([]*Service, 0, len(services))
 	for _, s := range services {
+		if name == s.Name && s.AuthMethod == authMethod {
+			return s, nil
+		}
 		if s.AuthMethod == authMethod || s.AuthMethod == "" {
 			applicableServices = append(applicableServices, s)
 		}
 	}
-	if name == "" && len(applicableServices) == 1 {
-		return applicableServices[0], nil
+	// Second pass: match by name among services with compatible authMethod
+	for _, s := range applicableServices {
+		if name == "" || name == s.Name {
+			return s, nil
+		}
 	}
 	names := make([]string, 0, len(services))
+	// Third pass: match by name among all services, or generate error message
 	for _, s := range services {
 		if name == s.Name {
 			return s, nil

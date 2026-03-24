@@ -55,24 +55,14 @@ $ vespa status --no-verify`,
 			}
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			var failingContainers []*vespa.Service
-			if cluster == "" {
-				services, err := waiter.Services(t)
-				if err != nil {
-					return err
-				}
-				if len(services) == 0 {
-					return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
-				}
-				for _, s := range services {
-					if !printServiceStatus(s, format, waiter, cli, noVerify) {
-						failingContainers = append(failingContainers, s)
-					}
-				}
-			} else {
-				s, err := waiter.Service(t, cluster)
-				if err != nil {
-					return err
-				}
+			services, err := waiter.NamedServices(cluster, t)
+			if err != nil {
+				return err
+			}
+			if len(services) == 0 {
+				return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
+			}
+			for _, s := range services {
 				if !printServiceStatus(s, format, waiter, cli, noVerify) {
 					failingContainers = append(failingContainers, s)
 				}
