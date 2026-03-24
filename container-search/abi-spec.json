@@ -4539,6 +4539,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(com.yahoo.search.grouping.result.GroupId, com.yahoo.search.result.Relevance, com.yahoo.search.Query)",
       "public void <init>(com.yahoo.search.grouping.result.GroupId, com.yahoo.search.result.Relevance)",
       "public com.yahoo.search.grouping.result.GroupId getGroupId()",
       "public com.yahoo.search.grouping.result.HitList getHitList(java.lang.String)",
@@ -4657,6 +4658,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(int, com.yahoo.search.grouping.Continuation, com.yahoo.search.Query)",
       "public void <init>(int, com.yahoo.search.grouping.Continuation)",
       "public com.yahoo.search.grouping.Continuation continuation()"
     ],

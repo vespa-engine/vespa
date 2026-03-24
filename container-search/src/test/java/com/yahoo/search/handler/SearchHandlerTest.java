@@ -540,7 +540,7 @@ public class SearchHandlerTest {
         }
 
         public ResultBuilder withGroups() {
-            result.hits().add(new Group(new RootId(1), new Relevance(1.0)));
+            result.hits().add(new Group(new RootId(1), new Relevance(1.0), result.getQuery()));
             return this;
         }
 
