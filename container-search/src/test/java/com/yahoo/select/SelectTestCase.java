@@ -606,14 +606,14 @@ public class SelectTestCase {
     @Test
     void testWand() {
         assertParse("{ \"wand\": [\"description\", { \"a\": 1, \"b\": 2 }] }",
-                "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND description{[1]:\"a\",[2]:\"b\"}");
         assertParse("{ \"wand\": { \"children\": [\"description\", { \"a\": 1, \"b\": 2 }], \"attributes\": { \"scoreThreshold\": 13.3, \"targetHits\": 7, \"thresholdBoostFactor\": 2.3 } } }",
-                "WAND(7,13.3,2.3) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND(7) {scoreThreshold=13.3, thresholdBoostFactor=2.3} description{[1]:\"a\",[2]:\"b\"}");
     }
 
     @Test
     void testNumericWand() {
-        String numWand = "WAND(10,0.0,1.0) description{[1]:\"11\",[2]:\"37\"}";
+        String numWand = "WAND description{[1]:\"11\",[2]:\"37\"}";
         assertParse("{ \"wand\" : [\"description\", [[11,1], [37,2]] ]}", numWand);
         assertParseFail("{ \"wand\" : [\"description\", 12] }",
                 new IllegalArgumentException("Expected ARRAY or OBJECT, got LONG."));

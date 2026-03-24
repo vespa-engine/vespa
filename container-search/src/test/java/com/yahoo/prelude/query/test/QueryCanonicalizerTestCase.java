@@ -86,10 +86,10 @@ public class QueryCanonicalizerTestCase {
         nestedAnd.addItem(new WordItem("b"));
         nestedAnd.addItem(new WordItem("c"));
         rank.addItem(nestedAnd);
-        WandItem wand = new WandItem("default", 100);
+        WandItem wand = new WandItem("default");
         and.addItem(wand);
 
-        assertCanonicalized("AND a b c WAND(100,0.0,1.0) default}", null, and);
+        assertCanonicalized("AND a b c WAND default}", null, and);
     }
 
     @Test
