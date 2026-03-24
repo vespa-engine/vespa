@@ -828,23 +828,34 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public void removeStaleHostRegistryEntries() {
-        tenantRepository.getAllTenants().stream()
-                .map(Tenant::getApplicationRepo)
-                .forEach(a -> {
-                    HostRegistry hostRegistry = a.hostRegistry();
-                    var hostsWithNoApplication = hostRegistry.getAllHosts()
-                                                             .stream()
-                                                             .filter(h -> getApplicationIdForHostname(h) == null)
-                                                             .collect(Collectors.toCollection(HashSet::new));
-                    if (!hostsWithNoApplication.isEmpty()) {
-                        log.log(INFO, "Found " + hostsWithNoApplication.size() + " hosts not belonging to any application: " + hostsWithNoApplication);
+        for (var tenant : tenantRepository.getAllTenants()) {
+            TenantApplications tenantApplications = tenant.getApplicationRepo();
+            SessionRepository sessionRepository = tenant.getSessionRepository();
+            HostRegistry hostRegistry = tenantApplications.hostRegistry();
+
+            // Collect all hosts that belong to active applications (from their active sessions' AllocatedHosts)
+            Set<String> hostsInActiveApplications = new HashSet<>();
+            for (ApplicationId appId : tenantApplications.activeApplications()) {
+                tenantApplications.activeSessionOf(appId).ifPresent(sessionId -> {
+                    Session session = sessionRepository.getRemoteSession(sessionId);
+                    if (session != null) {
+                        session.getAllocatedHosts().getHosts()
+                                .forEach(hostSpec -> hostsInActiveApplications.add(hostSpec.hostname()));
                     }
-                    hostsWithNoApplication.forEach(host -> {
-                        var appId = hostRegistry.getApplicationId(host);
-                        log.log(INFO, "Want to remove host " + host + " from host registry for application " + appId);
-                        //hostRegistry.removeHosts(appId);
-                    });
                 });
+            }
+
+            // Find hosts in the registry that are not in any active application's allocated hosts
+            var staleHosts = hostRegistry.getAllHosts().stream()
+                    .filter(host -> !hostsInActiveApplications.contains(host))
+                    .toList();
+
+            if (!staleHosts.isEmpty()) {
+                log.log(INFO, "Found " + staleHosts.size() + " stale hosts in host registry for tenant " +
+                        tenant.getName() + ", removing: " + staleHosts);
+                //hostRegistry.removeHosts(staleHosts);
+            }
+        }
     }
 
     // ---------------- Convergence ----------------------------------------------------------------

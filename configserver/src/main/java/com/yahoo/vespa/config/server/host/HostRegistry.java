@@ -79,7 +79,7 @@ public class HostRegistry implements HostValidator {
         return Collections2.filter(previousHosts, host -> !newHosts.contains(host));
     }
 
-    private void removeHosts(Collection<String> removedHosts) {
+    public synchronized void removeHosts(Collection<String> removedHosts) {
         for (String host : removedHosts) {
             log.log(Level.FINE, () -> "Removing " + host);
             host2ApplicationId.remove(host);
