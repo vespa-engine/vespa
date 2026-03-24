@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.result;
 
+import com.yahoo.search.Query;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.Relevance;
@@ -21,12 +22,20 @@ public class Group extends HitGroup {
      *
      * @param groupId the id to assign to this group
      * @param rel     the relevance of this group
+     * @param query   the query that produced this
      */
-    public Group(GroupId groupId, Relevance rel) {
+    public Group(GroupId groupId, Relevance rel, Query query) {
         super(groupId.toString(), rel);
         setMeta(false);
         setAuxiliary(true);
+        setQuery(query);
         this.groupId = groupId;
+    }
+
+    /** @deprecated use {@link #Group(GroupId, Relevance, Query)}.*/
+    @Deprecated  // TODO: Remove on Vespa 9
+    public Group(GroupId groupId, Relevance rel) {
+        this(groupId, rel, null);
     }
 
     /** Returns the id of this group. This is a model of the otherwise flattened {@link #getId() hit id}. */

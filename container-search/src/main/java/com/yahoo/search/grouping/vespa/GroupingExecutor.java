@@ -94,7 +94,7 @@ public class GroupingExecutor extends Searcher {
         // Convert Vespa style results to hits.
         HitConverter hitConverter = new HitConverter(this);
         for (RequestContext context : requestContextList) {
-            RootGroup group = convertResult(context, groupingMap, hitConverter);
+            RootGroup group = convertResult(query, context, groupingMap, hitConverter);
             result.hits().add(group);
         }
         return result;
@@ -193,9 +193,9 @@ public class GroupingExecutor extends Searcher {
      * @param hitConverter   the converter to use for {@link Hit} conversion
      * @return the corresponding root RootGroup.
      */
-    private RootGroup convertResult(RequestContext requestContext, Map<Integer, Grouping> groupingMap,
+    private RootGroup convertResult(Query query, RequestContext requestContext, Map<Integer, Grouping> groupingMap,
                                     HitConverter hitConverter) {
-        ResultBuilder builder = new ResultBuilder();
+        ResultBuilder builder = new ResultBuilder(query);
         builder.setHitConverter(hitConverter);
         builder.setTransform(requestContext.transform);
         builder.setRequestId(requestContext.request.getRequestId());

@@ -79,7 +79,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     /**
      * A direct reference to the errors of this result, or null if there are no errors.
-     * The error hit will also be listed in the set of this of this result
+     * The error hit will also be listed in the set of this result
      */
     private DefaultErrorHit errorHit = null;
 
