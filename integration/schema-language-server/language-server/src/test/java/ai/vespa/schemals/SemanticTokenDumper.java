@@ -17,7 +17,6 @@ import org.eclipse.lsp4j.SemanticTokensLegend;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
-import org.junit.jupiter.api.Test;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -35,13 +34,24 @@ import ai.vespa.schemals.testutils.TestSchemaDiagnosticsHandler;
 import ai.vespa.schemals.testutils.TestSchemaMessageHandler;
 import ai.vespa.schemals.testutils.TestSchemaProgressHandler;
 
+/**
+ * Dumps the Java LSP's semantic tokens to JSON for comparison with
+ * the TextMate grammar in integration/tmgrammar/.
+ *
+ * This is a utility, not a test. It lives in test sources because it
+ * depends on test scaffolding (TestLogger, etc.).
+ *
+ * Run from the language-server directory:
+ *   mvn test-compile exec:java \
+ *     -Dexec.mainClass=ai.vespa.schemals.SemanticTokenDumper \
+ *     -Dexec.classpathScope=test
+ */
 public class SemanticTokenDumper {
 
     private static final Path SD_FILES_DIR = Paths.get("src/test/sdfiles");
     private static final Path OUTPUT_PATH = Paths.get("../../tmgrammar/tools/java_tokens.json");
 
-    @Test
-    void dumpSemanticTokens() throws IOException, InvalidContextException {
+    public static void main(String[] args) throws IOException, InvalidContextException {
         SemanticTokensWithRegistrationOptions options = CommonSemanticTokens.getSemanticTokensRegistrationOptions();
         SemanticTokensLegend legend = options.getLegend();
         List<String> tokenTypes = legend.getTokenTypes();

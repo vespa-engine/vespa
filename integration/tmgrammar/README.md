@@ -76,11 +76,15 @@ uv run tools/test_tmgrammar.py
 
 ### Compare with Java LSP tokens
 
-The comparison needs `tools/java_tokens.json` produced by the Java LSP's `SemanticTokenDumper`. To generate it, from the **vespa repo root**:
+The comparison needs `tools/java_tokens.json` produced by `SemanticTokenDumper`.
+This is a utility (not a test) that lives in test sources because it needs test scaffolding.
+From the **vespa repo root**:
 
 ```bash
 cd integration/schema-language-server/language-server
-mvn test -Dtest=SemanticTokenDumper -pl .
+mvn test-compile exec:java \
+  -Dexec.mainClass=ai.vespa.schemals.SemanticTokenDumper \
+  -Dexec.classpathScope=test
 ```
 
 This writes `java_tokens.json` directly to `integration/tmgrammar/tools/`.
