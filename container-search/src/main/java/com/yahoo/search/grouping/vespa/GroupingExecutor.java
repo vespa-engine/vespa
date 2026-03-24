@@ -150,6 +150,18 @@ public class GroupingExecutor extends Searcher {
                 hit.setFilled(null);
             }
         }
+        for (Iterator<Hit> it = result.hits().unorderedDeepIterator(); it.hasNext(); ) {
+            Hit hit = it.next();
+            if (hit.getSearcherSpecificMetaData(this) instanceof String metaDataString) {
+                if (hit.isFilled(metaDataString)) {
+                    hit.setFilled(null);
+                    // TODO: the above should have been enough
+                    hit.setFilled(summaryClass);
+                    // we could in theory also clear SearcherSpecificMetaData here,
+                    // but there's no gain and some risk involved.
+                }
+            }
+        }
     }
 
     /**
