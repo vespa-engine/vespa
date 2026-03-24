@@ -154,11 +154,8 @@ public class GroupingExecutor extends Searcher {
             Hit hit = it.next();
             if (hit.getSearcherSpecificMetaData(this) instanceof String metaDataString) {
                 if (hit.isFilled(metaDataString)) {
-                    hit.setFilled(null);
-                    // TODO: the above should have been enough
-                    hit.setFilled(summaryClass);
-                    // we could in theory also clear SearcherSpecificMetaData here,
-                    // but there's no gain and some risk involved.
+                    // mark as fully filled:
+                    hit.setUnfillable();
                 }
             }
         }

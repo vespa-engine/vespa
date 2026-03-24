@@ -329,7 +329,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * summaries. This also enables tracking of which summary classes
      * have been used for filling so far. Invoking this method
      * multiple times is allowed and will have no addition
-     * effect. Note that a fillable hit may not be made unfillable.
+     * effect. Call setUnfillable() if there is no more data fill()
+     * can obtain for that hit.
      */
     public void setFillable() {
         if (filled == null) {
@@ -337,6 +338,14 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
             filled = Collections.emptySet();
             unmodifiableFilled = filled;
         }
+    }
+
+    /**
+     * Tag this hit as no longer fillable.
+     */
+    public void setUnfillable() {
+        filled = null;
+        unmodifiableFilled = null;
     }
 
     /**
@@ -354,7 +363,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         } else if (filled.size() == 1) {
             filled = new HashSet<>(filled);
             unmodifiableFilled = Collections.unmodifiableSet(filled);
-
             filled.add(summaryClass);
         } else {
             filled.add(summaryClass);
@@ -600,7 +608,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
     final void setFilledInternal(Set<String> filled) {
         this.filled = filled;
-        unmodifiableFilled = (filled != null) ? Collections.unmodifiableSet(filled) : null;
+        unmodifiableFilled = (filled == null) ? null : Collections.unmodifiableSet(filled);
     }
 
     /**

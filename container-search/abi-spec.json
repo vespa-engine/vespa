@@ -8638,6 +8638,7 @@
       "public void setCached(boolean)",
       "public boolean isCached()",
       "public void setFillable()",
+      "public void setUnfillable()",
       "public void setFilled(java.lang.String)",
       "public boolean isFillable()",
       "public java.util.Set getFilled()",
