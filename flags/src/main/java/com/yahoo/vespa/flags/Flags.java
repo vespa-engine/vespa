@@ -389,7 +389,7 @@ public class Flags {
     );
 
     public static final UnboundDoubleFlag SEARCHNODE_RESERVED_DISK_SPACE_FACTOR = defineDoubleFlag(
-            "searchnode-reserved-disk-space-factor", 0.5,
+            "searchnode-reserved-disk-space-factor", 1.0,
             List.of("toregge"), "2026-01-17", "2026-10-16",
             "How much of the calculated reserved disk space should be added to the used disk space when " +
                     "reporting disk space usage. " +

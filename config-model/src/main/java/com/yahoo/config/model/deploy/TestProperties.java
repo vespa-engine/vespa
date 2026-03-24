@@ -79,7 +79,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
     private boolean ignoreConnectivityChecksAtStartup = false;
-    private double searchNodeReservedDiskSpaceFactor = 0.0;
+    private double searchNodeReservedDiskSpaceFactor = 1.0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
