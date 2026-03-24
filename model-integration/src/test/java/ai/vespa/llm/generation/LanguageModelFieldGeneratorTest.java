@@ -276,24 +276,29 @@ public class LanguageModelFieldGeneratorTest {
         var localLLMConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .model(ModelReference.valueOf(localLLMPath));
-        LanguageModel localLLM = new LocalLLM(localLLMConfig.build());
+        var llm = new LocalLLM(localLLMConfig.build());
+        try {
+            LanguageModel localLLM = llm;
 
-        var languageModels = Map.of("localLLM", localLLM);
+            var languageModels = Map.of("localLLM", localLLM);
 
-        var generatorConfig = new LanguageModelFieldGeneratorConfig.Builder()
-                .providerId("localLLM")
-                .build();
+            var generatorConfig = new LanguageModelFieldGeneratorConfig.Builder()
+                    .providerId("localLLM")
+                    .build();
 
-        var generator = createGenerator(generatorConfig, languageModels);
-        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
-        FieldValue result = null;
-        for (int attempt = 0; attempt <= 10; attempt++) {
-            result = generator.generate(StringPrompt.from("hello"), context);
-            if (result != null && !result.toString().isEmpty()) break;
-            log.info("LLM.generate retry: " + attempt);
+            var generator = createGenerator(generatorConfig, languageModels);
+            var context = new FieldGenerator.Context("doc.text", DataType.STRING);
+            FieldValue result = null;
+            for (int attempt = 0; attempt <= 10; attempt++) {
+                result = generator.generate(StringPrompt.from("hello"), context);
+                if (result != null && !result.toString().isEmpty()) break;
+                log.info("LLM.generate retry: " + attempt);
+            }
+            assertNotNull(result);
+            assertFalse(result.toString().isEmpty());
+        } finally {
+            llm.deconstruct();
         }
-        assertNotNull(result);
-        assertFalse(result.toString().isEmpty());
     }
 
     @Test
