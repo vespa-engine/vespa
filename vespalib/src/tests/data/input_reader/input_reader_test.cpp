@@ -155,4 +155,31 @@ TEST(InputReaderTest, require_that_try_read_finds_eof_without_failing_the_reader
     EXPECT_TRUE(!src.failed());
 }
 
+TEST(InputReaderTest, can_read_across_chunks_into_caller_buffer) {
+    const char *data = "the quick red fox rocket-jumps over the lazy dog";
+    MemoryInput memory_input(data);
+    ChunkedInput input(memory_input, 3);
+    InputReader src(input);
+    std::string buf(12, '_');
+    ASSERT_TRUE(src.read_into(buf.data(), 1)); // smaller than chunk
+    EXPECT_EQ(buf, "t___________");
+    ASSERT_TRUE(src.read_into(buf.data(), 4)); // remaining of chunk + partial of next chunk
+    EXPECT_EQ(buf, "he q________");
+    ASSERT_TRUE(src.read_into(buf.data(), 5)); // remaining of chunk + full chunk + partial
+    EXPECT_EQ(buf, "uick _______");
+    ASSERT_TRUE(src.read_into(buf.data(), 12)); // spanning multiple full chunks
+    EXPECT_EQ(buf, "red fox rock");
+    ASSERT_TRUE(src.read_into(buf.data(), 12));
+    EXPECT_EQ(buf, "et-jumps ove");
+    ASSERT_TRUE(src.read_into(buf.data(), 12));
+    EXPECT_EQ(buf, "r the lazy d");
+    buf.assign(12, '_');
+    ASSERT_TRUE(src.read_into(buf.data(), 2));
+    EXPECT_EQ(buf, "og__________");
+    EXPECT_FALSE(src.failed());
+    EXPECT_FALSE(src.read_into(buf.data(), 1));
+    EXPECT_TRUE(src.failed());
+    EXPECT_EQ(src.get_error_message(), "input underflow");
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
