@@ -1018,6 +1018,16 @@ def build_grammar(
         "match": r"[+\-*/]?=",
     }
 
+    # --- file path values (file: path/to/file.onnx) ---
+    # Must appear before keywords so "constants/" in a path isn't colored
+    repository["file-path"] = {
+        "match": r"\b(file)\s*:\s*(\S+)",
+        "captures": {
+            "1": {"name": "keyword.control.vespa"},
+            "2": {"name": "string.unquoted.path.vespa"},
+        },
+    }
+
     # --- user-defined type after 'type' keyword ---
     # Catches type names that aren't primitive, container, or tensor
     # e.g. "field author type person {" → "person" gets colored
@@ -1052,6 +1062,7 @@ def build_grammar(
         {"include": "#numeric-literal"},
         {"include": "#boolean-constants"},
         {"include": "#declarations"},
+        {"include": "#file-path"},
         {"include": "#schema-keywords"},
         {"include": "#user-type"},
         {"include": "#assignment-operator"},

@@ -11,7 +11,7 @@ schema spotcheck {
     document spotcheck {
 
         # Primitive types
-        field title type string {
+        field title type string { 
             indexing: index | summary
             index: enable-bm25
             stemming: best

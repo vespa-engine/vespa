@@ -61,6 +61,9 @@
       "include": "#declarations"
     },
     {
+      "include": "#file-path"
+    },
+    {
       "include": "#schema-keywords"
     },
     {
@@ -888,6 +891,17 @@
     "assignment-operator": {
       "name": "keyword.operator.assignment.vespa",
       "match": "[+\\-*/]?="
+    },
+    "file-path": {
+      "match": "\\b(file)\\s*:\\s*(\\S+)",
+      "captures": {
+        "1": {
+          "name": "keyword.control.vespa"
+        },
+        "2": {
+          "name": "string.unquoted.path.vespa"
+        }
+      }
     },
     "user-type": {
       "match": "(?<=\\btype\\s)(\\s*[a-zA-Z_]\\w*)",
