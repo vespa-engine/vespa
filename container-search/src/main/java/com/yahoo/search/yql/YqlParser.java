@@ -215,7 +215,6 @@ public class YqlParser implements Parser {
     public static final String TARGET_HITS = "targetHits";
     public static final String TARGET_NUM_HITS = "targetNumHits";
     public static final String TOTAL_TARGET_HITS = "totalTargetHits";
-    public static final String MIN_TARGET_HITS = "minTargetHits";
     public static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
     public static final String UNIQUE_ID = "id";
     public static final String URI = "uri";
@@ -604,7 +603,6 @@ public class YqlParser implements Parser {
         throw newUnexpectedArgumentException(literalOrNested, ExpressionOperator.LITERAL);
     }
 
-    @SuppressWarnings("deprecation")
     private Item buildNearestNeighbor(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
@@ -613,7 +611,6 @@ public class YqlParser implements Parser {
         NearestNeighborItem item = new NearestNeighborItem(indexFactsSession.getCanonicName(field), property);
         item.setTargetHits(buildTargetHits(ast));
         item.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
-        item.setMinTargetHits(getAnnotation(ast, MIN_TARGET_HITS, Integer.class, null, "min hits to produce on a node"));
 
         Double distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD, Double.class, null, "maximum distance allowed from query point");
         if (distanceThreshold != null) {
