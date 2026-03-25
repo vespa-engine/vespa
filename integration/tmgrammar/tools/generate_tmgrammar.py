@@ -21,7 +21,7 @@ Java LSP semantic tokens in VS Code's default Dark+ theme:
   Operator               →  keyword.operator
   Type                   →  support.type
   EnumMember             →  variable.other.enummember
-  Property (readonly)    →  variable.other.property
+  Macro                  →  entity.name.function
   Comment                →  comment.line
 
 Tokens that the LSP leaves uncolored are also left uncolored here.
@@ -210,14 +210,13 @@ _LSP_TO_TM = {
     "Operator":   "keyword.operator",
     "Type":       "support.type",
     "EnumMember": "variable.other.enummember",
+    "Macro":      "entity.name.function",
 }
 
 
 # Hyphenated tokens the LSP doesn't color but that TextMate must claim as
 # keywords to prevent sub-word mismatches (e.g. "on-match" splitting into
 # "on" (boolean) + "match" (keyword)).
-# Hyphenated tokens the LSP doesn't color but that TextMate must claim as
-# keywords to prevent sub-word mismatches or for readability.
 _TM_EXTRA_SCHEMA_KEYWORDS = {
     "ON_MATCH", "ON_FIRST_PHASE", "ON_SECOND_PHASE", "ON_SUMMARY",
     # Sub-block property keywords needed for TextMate

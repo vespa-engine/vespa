@@ -557,7 +557,7 @@ def _collect_keyword_patterns(obj, patterns: list[re.Pattern]) -> None:
 def main() -> int:
     if not GRAMMAR_PATH.exists():
         print(f"FAIL: Grammar file not found: {GRAMMAR_PATH}")
-        print("      Run: uv run utils/generate_tmgrammar.py")
+        print("      Run: uv run tools/generate_tmgrammar.py")
         return 1
 
     grammar = json.loads(GRAMMAR_PATH.read_text())

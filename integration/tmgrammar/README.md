@@ -141,7 +141,7 @@ integration/tmgrammar/
     package.json                   #   Node.js deps (shiki, vite)
 
 integration/schema-language-server/language-server/src/test/java/ai/vespa/schemals/
-  SemanticTokenDumper.java         # Java test class: dumps LSP semantic tokens to JSON
+  SemanticTokenDumper.java         # Java utility: dumps LSP semantic tokens to JSON
 ```
 
 **tools/** is the build pipeline -- generate, validate, and structurally compare the grammar against the Java LSP. **playground/** is for visual inspection -- see how `.sd` files actually render across themes and find tokens that aren't getting colored.

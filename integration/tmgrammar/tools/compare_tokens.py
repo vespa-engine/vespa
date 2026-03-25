@@ -290,10 +290,10 @@ def main():
     tm_path = SCRIPT_DIR / "tm_tokens.json"
 
     if not java_path.exists():
-        print(f"Error: {java_path} not found. Run: cd language-server && mvn test -Dtest=SemanticTokenDumper", file=sys.stderr)
+        print(f"Error: {java_path} not found. Run: cd integration/schema-language-server/language-server && mvn test-compile exec:java -Dexec.mainClass=ai.vespa.schemals.SemanticTokenDumper -Dexec.classpathScope=test", file=sys.stderr)
         sys.exit(1)
     if not tm_path.exists():
-        print(f"Error: {tm_path} not found. Run: cd utils && npm install && node tm_tokenize.mjs", file=sys.stderr)
+        print(f"Error: {tm_path} not found. Run: cd tools && npm install && node tm_tokenize.mjs", file=sys.stderr)
         sys.exit(1)
 
     with open(java_path) as f:
