@@ -77,8 +77,9 @@ struct PreparedAddDoc final : public PrepareResult {
     using ReadGuard = vespalib::GenerationHandler::Guard;
     uint32_t docid;
     ReadGuard read_guard;
+    ReadGuard hnsw_graph_read_guard;
     std::vector<PreparedAddNode> nodes;
-    PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in) noexcept;
+    PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
     ~PreparedAddDoc() override;
     PreparedAddDoc(PreparedAddDoc&& other) noexcept;
 };
