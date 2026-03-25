@@ -105,6 +105,8 @@ public:
     void set_memory_usage_at_save_start(uint64_t memory_usage) noexcept;
     void set_size_on_disk(uint64_t value) noexcept override;
     uint64_t getEstimatedSaveByteSize() const override;
+    void incGeneration() override;
+    void reclaim_unused_memory() override;
 };
 
 }

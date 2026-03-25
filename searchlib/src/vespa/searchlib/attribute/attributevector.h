@@ -154,8 +154,8 @@ protected:
     }
 
 public:
-    void incGeneration();
-    void reclaim_unused_memory();
+    virtual void incGeneration();
+    virtual void reclaim_unused_memory();
 
     generation_t get_oldest_used_generation() const {
         return _genHandler.get_oldest_used_generation();
