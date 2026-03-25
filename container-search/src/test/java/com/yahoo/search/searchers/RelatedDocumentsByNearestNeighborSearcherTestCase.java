@@ -94,8 +94,9 @@ public class RelatedDocumentsByNearestNeighborSearcherTestCase {
 
         var nnItem = (NearestNeighborItem) positive;
         assertEquals("embedding", nnItem.getIndexName());
-        // Default: hits=10, offset=0 -> targetHits=10
+        // Default: hits=10, offset=0 -> targetHits=10, exploreAdditionalHits=100
         assertEquals(10, nnItem.getTargetHits());
+        assertEquals(100, nnItem.getHnswExploreAdditionalHits());
         assertTrue(nnItem.getAllowApproximate());
     }
 
@@ -118,8 +119,8 @@ public class RelatedDocumentsByNearestNeighborSearcherTestCase {
     @Test
     void testTargetHitsBasedOnQueryHitsAndOffset() {
         var searcher = new RelatedDocumentsByNearestNeighborSearcher();
-        // hits=20, offset=5 -> targetHits=25
-        var query = new Query("?relatedTo.id=doc1&relatedTo.embeddingField=embedding&relatedTo.queryTensorName=q&hits=20&offset=5");
+        // hits=20, offset=5 -> targetHits=25, exploreAdditionalHits=50
+        var query = new Query("?relatedTo.id=doc1&relatedTo.embeddingField=embedding&relatedTo.queryTensorName=q&relatedTo.exploreAdditionalHits=50&hits=20&offset=5");
 
         var sourceHit = new Hit("source");
         sourceHit.setField("embedding", TEST_EMBEDDING);
@@ -131,6 +132,7 @@ public class RelatedDocumentsByNearestNeighborSearcherTestCase {
         var nnItem = findNearestNeighborItem(root);
         assertNotNull(nnItem);
         assertEquals(25, nnItem.getTargetHits());
+        assertEquals(50, nnItem.getHnswExploreAdditionalHits());
     }
 
     @Test
