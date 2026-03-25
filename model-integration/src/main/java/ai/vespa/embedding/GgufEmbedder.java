@@ -35,7 +35,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     private final boolean normalize;
 
     public static class Exception extends RuntimeException {
-        public Exception(Throwable cause) { super(cause); }
+        public Exception(Throwable cause) { super(cause.getMessage(), cause); }
     }
 
     @Inject
@@ -56,7 +56,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
         if (config.seed() > -1) modelParams.setSeed(config.seed());
         if (config.threads() != 0) modelParams.setThreads(calculateThreadCount(config.threads()));
         if (config.batchThreads() != 0) modelParams.setThreadsBatch(calculateThreadCount(config.batchThreads()));
-        if (!log.isLoggable(Level.FINE)) modelParams.disableLog();
+    //  if (!log.isLoggable(Level.FINE)) modelParams.disableLog();
         model = new LlamaModel(modelParams);
         maxPromptTokens = config.maxPromptTokens();
         prependQuery = config.prependQuery();
@@ -134,7 +134,8 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
             var cause = e.getCause();
             if (cause == null) throw e;
             if (cause.getClass().getName().endsWith("de.kherud.llama.LlamaException") // Package-private exception
-                    && cause.getMessage().contains("input is too large to process")) {
+                    && cause.getMessage().contains("too large to process"))
+            {
                 // Illegal input must be propagated as IllegalArgumentException
                 throw new IllegalArgumentException(
                         Text.format("Input text is too large (prompt UTF-16 length: %d). Either set max prompt tokens or adjust batch/context size.", prompt.length()),

@@ -1,13 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.rule;
 
-import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.TermType;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.semantics.engine.Match;
 import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 import com.yahoo.protect.Validator;
-import com.yahoo.search.query.QueryTree;
 
 import java.util.List;
 
@@ -73,10 +71,19 @@ public class LiteralTermProduction extends TermProduction {
             newItem.setWeight(getWeight());
             if (e.getTraceLevel() >= 6)
                 e.trace(6, "Adding '" + newItem + "'");
-            if (shouldInsertAtMatch(e)) {
+            if (getTermType() == TermType.EQUIV && e.getNonreferencedMatchCount() > 0
+                    && e.getNonreferencedMatch(0).getParent() != null) {
+                addEquivItem(e, newItem);
+            }
+            else if (shouldInsertAtMatch(e)) {
                 // Add to the match's parent when it's a nested composite with default type
                 Match matched = e.getNonreferencedMatch(0);
                 insertMatch(e, matched, List.of(newItem), offset);
+            }
+            else if (e.getNonreferencedMatchCount() > 0 && parentHasCompatibleType(e.getNonreferencedMatch(0))) {
+                // Parent already has the right type (e.g., OR inside OR) - insert after match
+                Match matched = e.getNonreferencedMatch(0);
+                insertMatch(e, matched, List.of(newItem), offset + 1);
             }
             else {
                 // Use root-level combining for specific types (RANK, OR, etc.) and non-nested cases

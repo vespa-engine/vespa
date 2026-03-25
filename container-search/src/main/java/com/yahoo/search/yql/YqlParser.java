@@ -710,10 +710,9 @@ public class YqlParser implements Parser {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        Integer targetNumHits = buildTargetHits(ast);
-        if (targetNumHits == null)
-            targetNumHits = DEFAULT_WAND_TARGET_HITS;
-        WandItem out = new WandItem(getIndex(args.get(0)), targetNumHits);
+        WandItem out = new WandItem(getIndex(args.get(0)));
+        out.setTargetHits(buildTargetHits(ast));
+        out.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
         Double scoreThreshold = getAnnotation(ast, SCORE_THRESHOLD, Double.class, null,
                                               "score must be above this threshold for hit inclusion");
         if (scoreThreshold != null) {
@@ -1499,10 +1498,7 @@ public class YqlParser implements Parser {
 
     private CompositeItem buildWeakAnd(OperatorNode<ExpressionOperator> spec) {
         WeakAndItem weakAnd = new WeakAndItem();
-        Integer targetHits = buildTargetHits(spec);
-        if (targetHits != null) {
-            weakAnd.setTargetHits(targetHits);
-        }
+        weakAnd.setTargetHits(buildTargetHits(spec));
         weakAnd.setTotalTargetHits(getAnnotation(spec, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
         return convertVarArgs(spec, 1, weakAnd, null);
     }

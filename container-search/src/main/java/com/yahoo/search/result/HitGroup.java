@@ -34,13 +34,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<Hit> {
 
-    // This does its own book-keeping of its various state variables
+    // This does its own bookkeeping of its various state variables
     // (see methods towards the end). For state variables which are recursive
     // (depending on the state of hits in subgroups), the strategy is to do
-    // book-keeping on only this immediate level, but not do recursive calls to
+    // bookkeeping on only this immediate level, but not do recursive calls to
     // find the true recursive state when queried. This is sort of a middle ground
-    // between handling the complexity of recursive state book-keeping and the
-    // query cost of not doing any book-keeping.
+    // between handling the complexity of recursive state bookkeeping and the
+    // query cost of not doing any bookkeeping.
     // There is also a method, analyse which recursively updates the recursive
     // state of the group and all subgroups. This should be called if the hits
     // may have changed their own state in a way that may impact the recursive
@@ -50,10 +50,10 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     transient private List<Hit> unmodifiableHits = Collections.unmodifiableList(hits);
 
-    /** Whether or not the hits are sorted */
+    /** Whether the hits are sorted */
     private boolean hitsSorted = true;
 
-    /** Whether or not deletion of hits breaks the sorted ordering */
+    /** Whether deletion of hits breaks the sorted ordering */
     private boolean deletionBreaksOrdering = false;
 
     /** Whether the hits should be sorted (again) */
@@ -79,7 +79,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     /**
      * A direct reference to the errors of this result, or null if there are no errors.
-     * The error hit will also be listed in the set of this of this result
+     * The error hit will also be listed in the set of this result
      */
     private DefaultErrorHit errorHit = null;
 

@@ -190,5 +190,8 @@ public class SerializationTest {
         public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
             return flagData.id().equals(id) ? flagData.resolve(vector) : Optional.empty();
         }
+
+        @Override
+        public FlagSource snapshot() { return this; }
     }
 }

@@ -2,6 +2,7 @@
 
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/query/streaming/query.h>
@@ -13,6 +14,7 @@
 
 using search::common::ElementIds;
 using search::fef::MatchData;
+using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
 using search::fef::test::IndexEnvironment;
@@ -88,11 +90,17 @@ TEST_F(NearestNeighborQueryNodeTest, unpack_match_data_for_nearest_neighbor_quer
     node->set_raw_score_calc(&calc);
     auto& qtd = static_cast<QueryTermData &>(node->getQueryItem());
     auto& td = qtd.getTermData();
-    constexpr TermFieldHandle handle = 27;
-    constexpr uint32_t field_id = 12;
-    td.addField(field_id).setHandle(handle);
-    auto md = MatchData::makeTestInstance(handle + 1, handle + 1);
-    auto tfmd = md->resolveTermField(handle);
+    MatchDataLayout mdl;
+    constexpr uint32_t field0 = 0;
+    constexpr uint32_t existing_handles = 27;
+    for (uint32_t i = 0; i < existing_handles; ++i) {
+        (void) mdl.allocTermField(field0);
+    }
+    constexpr uint32_t field12 = 12;
+    TermFieldHandle handle27 = mdl.allocTermField(field12);
+    td.addField(field12).setHandle(handle27);
+    auto md = mdl.createMatchData();
+    auto tfmd = md->resolveTermField(handle27);
     EXPECT_TRUE(tfmd->has_invalid_docid());
     IndexEnvironment ie;
     node->unpack_match_data(1, *md, ie, ElementIds::select_all());

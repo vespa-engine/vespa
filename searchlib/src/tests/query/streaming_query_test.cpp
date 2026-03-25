@@ -3,6 +3,7 @@
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/streaming/dot_product_term.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
@@ -27,8 +28,50 @@ using TermType = QueryTerm::Type;
 using search::common::ElementIds;
 using search::fef::SimpleTermData;
 using search::fef::MatchData;
+using search::fef::MatchDataLayout;
+using search::fef::TermFieldHandle;
 using search::fef::test::IndexEnvironment;
 using search::SerializedQueryTree;
+
+namespace {
+
+static constexpr uint32_t field10 = 10;
+static constexpr uint32_t field11 = 11;
+static constexpr uint32_t field12 = 12;
+
+class SimpleTermDataSetup {
+    MatchDataLayout _mdl;
+    TermFieldHandle _handle0;
+    TermFieldHandle _handle1;
+public:
+    SimpleTermDataSetup(SimpleTermData& td);
+    ~SimpleTermDataSetup();
+    const MatchDataLayout& mdl() const noexcept { return _mdl; }
+    TermFieldHandle handle0() { return _handle0; }
+    TermFieldHandle handle1() { return _handle1; }
+};
+
+SimpleTermDataSetup::SimpleTermDataSetup(SimpleTermData& td)
+    : _mdl(),
+      _handle0(_mdl.allocTermField(field10)),
+      _handle1(_mdl.allocTermField(field12))
+{
+    /*
+     * Search in fields 10, 11 and 12 (cf. fieldset in schema).
+     * Fields 11 and 12 have content for doc containing the keys.
+     * Fields 10 and 12 have valid handles and can be used for ranking.
+     * Field 11 does not have a valid handle, thus no associated match data.
+     */
+    td.addField(field10);
+    td.addField(field11);
+    td.addField(field12);
+    td.lookupField(field10)->setHandle(_handle0);
+    td.lookupField(field12)->setHandle(_handle1);
+}
+
+SimpleTermDataSetup::~SimpleTermDataSetup() = default;
+
+}
 
 void assertHit(const Hit & h, uint32_t exp_field_id, uint32_t exp_element_id, int32_t exp_element_weight, size_t exp_position) {
     EXPECT_EQ(h.field_id(), exp_field_id);
@@ -36,7 +79,6 @@ void assertHit(const Hit & h, uint32_t exp_field_id, uint32_t exp_element_id, in
     EXPECT_EQ(h.element_weight(), exp_element_weight);
     EXPECT_EQ(h.position(), exp_position);
 }
-
 
 TEST(StreamingQueryTest, test_query_language)
 {
@@ -304,6 +346,8 @@ TEST(StreamingQueryTest, test_query_language)
     }
 }
 
+namespace {
+
 class AllowRewrite : public QueryNodeResultFactory
 {
 public:
@@ -314,6 +358,8 @@ private:
 };
 
 const char TERM_UNIQ = static_cast<char>(ParseItem::ITEM_TERM) | static_cast<char>(ParseItem::IF_UNIQUEID);
+
+}
 
 TEST(StreamingQueryTest, e_is_not_rewritten_even_if_allowed)
 {
@@ -775,23 +821,19 @@ TEST(StreamingQueryTest, test_in_term)
     term_vector->addTerm("7");
     search::streaming::InTerm term({}, "index", std::move(term_vector), Normalizing::NONE);
     SimpleTermData td;
-    td.addField(10);
-    td.addField(11);
-    td.addField(12);
-    td.lookupField(10)->setHandle(0);
-    td.lookupField(12)->setHandle(1);
+    SimpleTermDataSetup tds(td);
     EXPECT_FALSE(term.evaluate());
     term.reset();
     auto& q = *term.get_terms().front();
     q.add(11, 0, 1, 0);
     q.add(12, 0, 1, 0);
     EXPECT_TRUE(term.evaluate());
-    MatchData md(MatchData::params().numTermFields(2));
+    auto md = tds.mdl().createMatchData();
     IndexEnvironment ie;
-    term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
-    auto tmd0 = md.resolveTermField(0);
+    term.unpack_match_data(23, td, *md, ie, ElementIds::select_all());
+    auto tmd0 = md->resolveTermField(tds.handle0());
     EXPECT_FALSE(tmd0->has_data(23));
-    auto tmd2 = md.resolveTermField(1);
+    auto tmd2 = md->resolveTermField(tds.handle1());
     EXPECT_TRUE(tmd2->has_ranking_data(23));
 }
 
@@ -804,11 +846,7 @@ TEST(StreamingQueryTest, dot_product_term)
     term.get_terms().back()->setWeight(Weight(2));
     EXPECT_EQ(2, term.get_terms().size());
     SimpleTermData td;
-    td.addField(10);
-    td.addField(11);
-    td.addField(12);
-    td.lookupField(10)->setHandle(0);
-    td.lookupField(12)->setHandle(1);
+    SimpleTermDataSetup tds(td);
     EXPECT_FALSE(term.evaluate());
     term.reset();
     auto& q0 = *term.get_terms()[0];
@@ -818,12 +856,12 @@ TEST(StreamingQueryTest, dot_product_term)
     q1.add(11, 0, 4, 0);
     q1.add(12, 0, 9, 0);
     EXPECT_TRUE(term.evaluate());
-    MatchData md(MatchData::params().numTermFields(2));
+    auto md = tds.mdl().createMatchData();
     IndexEnvironment ie;
-    term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
-    auto tmd0 = md.resolveTermField(0);
+    term.unpack_match_data(23, td, *md, ie, ElementIds::select_all());
+    auto tmd0 = md->resolveTermField(tds.handle0());
     EXPECT_FALSE(tmd0->has_data(23));
-    auto tmd1 = md.resolveTermField(1);
+    auto tmd1 = md->resolveTermField(tds.handle1());
     EXPECT_TRUE(tmd1->has_ranking_data(23));
     EXPECT_EQ(-17 * 27 + 9 * 2, tmd1->getRawScore());
 }
@@ -845,17 +883,7 @@ check_wand_term(double limit, const std::string& label)
     EXPECT_EQ(2, term.get_terms().size());
     term.set_score_threshold(limit);
     SimpleTermData td;
-    /*
-     * Search in fields 10, 11 and 12 (cf. fieldset in schema).
-     * Fields 11 and 12 have content for doc containing the keys.
-     * Fields 10 and 12 have valid handles and can be used for ranking.
-     * Field 11 does not have a valid handle, thus no associated match data.
-     */
-    td.addField(10);
-    td.addField(11);
-    td.addField(12);
-    td.lookupField(10)->setHandle(0);
-    td.lookupField(12)->setHandle(1);
+    SimpleTermDataSetup tds(td);
     EXPECT_FALSE(term.evaluate());
     term.reset();
     auto& q0 = *term.get_terms()[0];
@@ -865,12 +893,12 @@ check_wand_term(double limit, const std::string& label)
     q1.add(11, 0, 9, 0);
     q1.add(12, 0, 4, 0);
     EXPECT_EQ(limit < exp_wand_score_field_11, term.evaluate());
-    MatchData md(MatchData::params().numTermFields(2));
+    auto md = tds.mdl().createMatchData();
     IndexEnvironment ie;
-    term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
-    auto tmd0 = md.resolveTermField(0);
+    term.unpack_match_data(23, td, *md, ie, ElementIds::select_all());
+    auto tmd0 = md->resolveTermField(tds.handle0());
     EXPECT_FALSE(tmd0->has_data(23));
-    auto tmd1 = md.resolveTermField(1);
+    auto tmd1 = md->resolveTermField(tds.handle1());
     if (limit < exp_wand_score_field_12) {
         EXPECT_TRUE(tmd1->has_ranking_data(23));
         EXPECT_EQ(exp_wand_score_field_12, tmd1->getRawScore());
@@ -901,17 +929,7 @@ TEST(StreamingQueryTest, weighted_set_term)
     term.get_terms().back()->setWeight(Weight(13));
     EXPECT_EQ(2, term.get_terms().size());
     SimpleTermData td;
-    /*
-     * Search in fields 10, 11 and 12 (cf. fieldset in schema).
-     * Fields 11 and 12 have content for doc containing the keys.
-     * Fields 10 and 12 have valid handles and can be used for ranking.
-     * Field 11 does not have a valid handle, thus no associated match data.
-     */
-    td.addField(10);
-    td.addField(11);
-    td.addField(12);
-    td.lookupField(10)->setHandle(0);
-    td.lookupField(12)->setHandle(1);
+    SimpleTermDataSetup tds(td);
     EXPECT_FALSE(term.evaluate());
     term.reset();
     auto& q0 = *term.get_terms()[0];
@@ -921,12 +939,12 @@ TEST(StreamingQueryTest, weighted_set_term)
     q1.add(11, 0, 10, 0);
     q1.add(12, 0, 10, 0);
     EXPECT_TRUE(term.evaluate());
-    MatchData md(MatchData::params().numTermFields(2));
+    auto md = tds.mdl().createMatchData();
     IndexEnvironment ie;
-    term.unpack_match_data(23, td, md, ie, ElementIds::select_all());
-    auto tmd0 = md.resolveTermField(0);
+    term.unpack_match_data(23, td, *md, ie, ElementIds::select_all());
+    auto tmd0 = md->resolveTermField(tds.handle0());
     EXPECT_FALSE(tmd0->has_data(23));
-    auto tmd1 = md.resolveTermField(1);
+    auto tmd1 = md->resolveTermField(tds.handle1());
     EXPECT_TRUE(tmd1->has_ranking_data(23));
     using Weights = std::vector<int32_t>;
     Weights weights;

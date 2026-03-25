@@ -4,6 +4,7 @@ package com.yahoo.config.model.application.provider;
 import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.application.XmlPreProcessor;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
@@ -93,9 +94,11 @@ class ApplicationPackagePreprocessor {
     private void preprocessXML(File destination, File inputXml, Zone zone) throws IOException {
         if ( ! inputXml.exists()) return;
         try {
+            ApplicationName application = applicationPackage.getMetaData().getApplicationId().application();
             InstanceName instance = applicationPackage.getMetaData().getApplicationId().instance();
             Document document = new XmlPreProcessor(applicationPackage.getAppDir(),
                                                     inputXml,
+                                                    application,
                                                     instance,
                                                     zone.environment(),
                                                     zone.region(),

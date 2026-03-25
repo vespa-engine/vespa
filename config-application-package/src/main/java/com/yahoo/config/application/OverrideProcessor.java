@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -39,6 +40,7 @@ class OverrideProcessor implements PreProcessor {
 
     private static final Logger log = Logger.getLogger(OverrideProcessor.class.getName());
 
+    private final ApplicationName application;
     private final InstanceName instance;
     private final Environment environment;
     private final RegionName region;
@@ -47,13 +49,15 @@ class OverrideProcessor implements PreProcessor {
 
     private static final String ID_ATTRIBUTE = "id";
     private static final String IDREF_ATTRIBUTE = "idref";
+    private static final String APPLICATION_ATTRIBUTE = "application";
     private static final String INSTANCE_ATTRIBUTE = "instance";
     private static final String ENVIRONMENT_ATTRIBUTE = "environment";
     private static final String REGION_ATTRIBUTE = "region";
     private static final String CLOUD_ATTRIBUTE = "cloud";
     private static final String TAGS_ATTRIBUTE = "tags";
 
-    public OverrideProcessor(InstanceName instance, Environment environment, RegionName region, CloudName cloud, Tags tags) {
+    public OverrideProcessor(ApplicationName application, InstanceName instance, Environment environment, RegionName region, CloudName cloud, Tags tags) {
+        this.application = application;
         this.instance = instance;
         this.environment = environment;
         this.region = region;
@@ -85,6 +89,7 @@ class OverrideProcessor implements PreProcessor {
         for (Element child : XML.getChildren(parent)) {
             applyOverrides(child, context);
             // Remove attributes
+            child.removeAttributeNS(XmlPreProcessor.deployNamespaceUri, APPLICATION_ATTRIBUTE);
             child.removeAttributeNS(XmlPreProcessor.deployNamespaceUri, INSTANCE_ATTRIBUTE);
             child.removeAttributeNS(XmlPreProcessor.deployNamespaceUri, ENVIRONMENT_ATTRIBUTE);
             child.removeAttributeNS(XmlPreProcessor.deployNamespaceUri, REGION_ATTRIBUTE);
@@ -94,11 +99,14 @@ class OverrideProcessor implements PreProcessor {
     }
 
     private Context getParentContext(Element parent, Context context) {
+        Set<ApplicationName> applications = context.applications;
         Set<InstanceName> instances = context.instances;
         Set<Environment> environments = context.environments;
         Set<RegionName> regions = context.regions;
         Set<CloudName> clouds = context.clouds;
         Tags tags = context.tags;
+        if (applications.isEmpty())
+            applications = getApplications(parent);
         if (instances.isEmpty())
             instances = getInstances(parent);
         if (environments.isEmpty())
@@ -109,7 +117,7 @@ class OverrideProcessor implements PreProcessor {
             clouds = getClouds(parent);
         if (tags.isEmpty())
             tags = getTags(parent);
-        return Context.create(instances, environments, regions, clouds, tags);
+        return Context.create(applications, instances, environments, regions, clouds, tags);
     }
 
     /**
@@ -127,6 +135,12 @@ class OverrideProcessor implements PreProcessor {
 
     private void checkConsistentInheritance(List<Element> children, Context context) {
         for (Element child : children) {
+            Set<ApplicationName> applications = getApplications(child);
+            if ( ! applications.isEmpty() &&  ! context.applications.isEmpty() && ! context.applications.containsAll(applications)) {
+                throw new IllegalArgumentException("Applications in child (" + applications +
+                                                   ") are not a subset of those of the parent (" + context.applications + ") at " + child);
+            }
+
             Set<InstanceName> instances = getInstances(child);
             if ( ! instances.isEmpty() &&  ! context.instances.isEmpty() && ! context.instances.containsAll(instances)) {
                 throw new IllegalArgumentException("Instances in child (" + instances +
@@ -164,18 +178,23 @@ class OverrideProcessor implements PreProcessor {
         Iterator<Element> elemIt = children.iterator();
         while (elemIt.hasNext()) {
             Element child = elemIt.next();
-            if ( ! matches(getInstances(child), getEnvironments(child), getRegions(child), getClouds(child), getTags(child))) {
+            if ( ! matches(getApplications(child), getInstances(child), getEnvironments(child), getRegions(child), getClouds(child), getTags(child))) {
                 parent.removeChild(child);
                 elemIt.remove();
             }
         }
     }
     
-    private boolean matches(Set<InstanceName> elementInstances,
+    private boolean matches(Set<ApplicationName> elementApplications,
+                            Set<InstanceName> elementInstances,
                             Set<Environment> elementEnvironments,
                             Set<RegionName> elementRegions,
                             Set<CloudName> elementClouds,
                             Tags elementTags) {
+        if ( ! elementApplications.isEmpty()) { // match application
+            if ( ! elementApplications.contains(application)) return false;
+        }
+
         if ( ! elementInstances.isEmpty()) { // match instance
             if ( ! elementInstances.contains(instance)) return false;
         }
@@ -236,11 +255,14 @@ class OverrideProcessor implements PreProcessor {
 
     private int getNumberOfOverrides(Element child, Context context) {
         int currentMatch = 0;
+        Set<ApplicationName> elementApplications = hasApplication(child) ? getApplications(child) : context.applications;
         Set<InstanceName> elementInstances = hasInstance(child) ? getInstances(child) : context.instances;
         Set<Environment> elementEnvironments = hasEnvironment(child) ? getEnvironments(child) : context.environments;
         Set<RegionName> elementRegions = hasRegion(child) ? getRegions(child) : context.regions;
         Set<CloudName> elementClouds = hasCloud(child) ? getClouds(child) : context.clouds;
         Tags elementTags = hasTag(child) ? getTags(child) : context.tags;
+        if ( ! elementApplications.isEmpty() && elementApplications.contains(application))
+            currentMatch++;
         if ( ! elementInstances.isEmpty() && elementInstances.contains(instance))
             currentMatch++;
         if ( ! elementEnvironments.isEmpty() && elementEnvironments.contains(environment))
@@ -280,7 +302,7 @@ class OverrideProcessor implements PreProcessor {
             List<Element> elements = it.next().getValue();
             boolean hasOverrides = false;
             for (Element element : elements) {
-                if (hasInstance(element) || hasEnvironment(element) || hasRegion(element) || hasCloud(element) || hasTag(element)) {
+                if (hasApplication(element) || hasInstance(element) || hasEnvironment(element) || hasRegion(element) || hasCloud(element) || hasTag(element)) {
                     hasOverrides = true;
                 }
             }
@@ -288,6 +310,10 @@ class OverrideProcessor implements PreProcessor {
                 it.remove();
             }
         }
+    }
+
+    private boolean hasApplication(Element element) {
+        return element.hasAttributeNS(XmlPreProcessor.deployNamespaceUri, APPLICATION_ATTRIBUTE);
     }
 
     private boolean hasInstance(Element element) {
@@ -308,6 +334,12 @@ class OverrideProcessor implements PreProcessor {
 
     private boolean hasTag(Element element) {
         return element.hasAttributeNS(XmlPreProcessor.deployNamespaceUri, TAGS_ATTRIBUTE);
+    }
+
+    private Set<ApplicationName> getApplications(Element element) {
+        String application = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, APPLICATION_ATTRIBUTE);
+        if (application.isEmpty()) return Set.of();
+        return Arrays.stream(application.split(" ")).map(ApplicationName::from).collect(Collectors.toSet());
     }
 
     private Set<InstanceName> getInstances(Element element) {
@@ -388,21 +420,24 @@ class OverrideProcessor implements PreProcessor {
     }
 
     /**
-     * Represents environments, regions, instances, clouds and tags in a given context.
+     * Represents applications, environments, regions, instances, clouds and tags in a given context.
      */
     private static final class Context {
 
+        final Set<ApplicationName> applications;
         final Set<InstanceName> instances;
         final Set<Environment> environments;
         final Set<RegionName> regions;
         final Set<CloudName> clouds;
         final Tags tags;
 
-        private Context(Set<InstanceName> instances,
+        private Context(Set<ApplicationName> applications,
+                        Set<InstanceName> instances,
                         Set<Environment> environments,
                         Set<RegionName> regions,
                         Set<CloudName> clouds,
                         Tags tags) {
+            this.applications = Set.copyOf(applications);
             this.instances = Set.copyOf(instances);
             this.environments = Set.copyOf(environments);
             this.regions = Set.copyOf(regions);
@@ -411,15 +446,16 @@ class OverrideProcessor implements PreProcessor {
         }
 
         static Context empty() {
-            return new Context(Set.of(), Set.of(), Set.of(), Set.of(), Tags.empty());
+            return new Context(Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Tags.empty());
         }
 
-        public static Context create(Set<InstanceName> instances,
+        public static Context create(Set<ApplicationName> applications,
+                                     Set<InstanceName> instances,
                                      Set<Environment> environments,
                                      Set<RegionName> regions,
                                      Set<CloudName> clouds,
                                      Tags tags) {
-            return new Context(instances, environments, regions, clouds, tags);
+            return new Context(applications, instances, environments, regions, clouds, tags);
         }
 
     }

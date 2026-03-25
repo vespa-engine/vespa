@@ -606,14 +606,14 @@ public class SelectTestCase {
     @Test
     void testWand() {
         assertParse("{ \"wand\": [\"description\", { \"a\": 1, \"b\": 2 }] }",
-                "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND description{[1]:\"a\",[2]:\"b\"}");
         assertParse("{ \"wand\": { \"children\": [\"description\", { \"a\": 1, \"b\": 2 }], \"attributes\": { \"scoreThreshold\": 13.3, \"targetHits\": 7, \"thresholdBoostFactor\": 2.3 } } }",
-                "WAND(7,13.3,2.3) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND(7) {scoreThreshold=13.3, thresholdBoostFactor=2.3} description{[1]:\"a\",[2]:\"b\"}");
     }
 
     @Test
     void testNumericWand() {
-        String numWand = "WAND(10,0.0,1.0) description{[1]:\"11\",[2]:\"37\"}";
+        String numWand = "WAND description{[1]:\"11\",[2]:\"37\"}";
         assertParse("{ \"wand\" : [\"description\", [[11,1], [37,2]] ]}", numWand);
         assertParseFail("{ \"wand\" : [\"description\", 12] }",
                 new IllegalArgumentException("Expected ARRAY or OBJECT, got LONG."));
@@ -793,7 +793,7 @@ public class SelectTestCase {
     void testEqualsWithArrayIndex() {
         // Boolean value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 2, \"value\": true }}",
-                    "my_arr:{true}");
+                    "my_arr[2]:{true}");
         var boolTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 2, \"value\": true }}");
         var boolSameElement = assertInstanceOf(SameElementItem.class, boolTree.getRoot());
         assertEquals("my_arr", boolSameElement.getFieldName());
@@ -802,18 +802,18 @@ public class SelectTestCase {
 
         // Integer value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}",
-                    "my_arr:{42}");
+                    "my_arr[0]:{42}");
         var intTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}");
         var intSameElement = assertInstanceOf(SameElementItem.class, intTree.getRoot());
         assertEquals(List.of(0), intSameElement.getElementFilter());
 
         // String value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 1, \"value\": \"hello\" }}",
-                    "my_arr:{hello}");
+                    "my_arr[1]:{hello}");
 
         // Double value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 3.14 }}",
-                    "my_arr:{3.14}");
+                    "my_arr[0]:{3.14}");
     }
 
     @Test

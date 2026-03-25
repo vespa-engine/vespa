@@ -5,6 +5,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -28,6 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -41,6 +44,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class XML {
 
+    private static final Logger log = Logger.getLogger(XML.class.getName());
     private static final Scan scanner = new Scan();
 
     /** Replaces the characters that need to be escaped with their corresponding character entities. */
@@ -270,7 +274,9 @@ public class XML {
             // https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            return factory.newDocumentBuilder();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            builder.setErrorHandler(LoggingErrorHandler.INSTANCE);
+            return builder;
         } catch (ParserConfigurationException e) {
             throw new RuntimeException("Could not create an XML builder", e);
         }
@@ -629,6 +635,26 @@ public class XML {
         @Override
         protected void ctrlEscape(final int codepoint) {
             lastQuoted = REPLACEMENT_CHARACTER;
+        }
+    }
+
+    /**
+     * Error handler that prevents the default Xerces behavior of printing raw
+     * "[Fatal Error]" messages to stderr. Warnings are logged; errors and fatal
+     * errors are re-thrown to be handled (with application context) by callers.
+     */
+    private static final class LoggingErrorHandler implements ErrorHandler {
+        private static final LoggingErrorHandler INSTANCE = new LoggingErrorHandler();
+        @Override public void warning(SAXParseException e) {
+            log.log(Level.WARNING, messageFrom(e));
+        }
+        @Override public void error(SAXParseException e) throws SAXParseException { throw e; }
+        @Override public void fatalError(SAXParseException e) throws SAXParseException { throw e; }
+        private static String messageFrom(SAXParseException e) {
+            return "Invalid XML" +
+                    (e.getSystemId() != null ? " in " + e.getSystemId() : "") +
+                    ": " + e.getMessage() +
+                    " [line " + e.getLineNumber() + ", column " + e.getColumnNumber() + "]";
         }
     }
 

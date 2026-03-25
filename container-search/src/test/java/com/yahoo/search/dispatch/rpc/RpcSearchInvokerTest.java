@@ -12,6 +12,7 @@ import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
@@ -326,6 +327,11 @@ public class RpcSearchInvokerTest {
         weakAnd.addItem(new WordItem("bar", "myindex"));
         root.addItem(weakAnd);
 
+        var wandItem = new WandItem("myField");
+        wandItem.setTotalTargetHits(100);
+        wandItem.addToken(10L, 37);
+        root.addItem(wandItem);
+
         var minTargetHits = 2;
         var nn = new NearestNeighborItem("myField", "myQueryTensor");
         nn.setTotalTargetHits(100);
@@ -342,8 +348,10 @@ public class RpcSearchInvokerTest {
             var or = requests.get(i).getQueryTree().getRoot().getItemOr();
             assertEquals(expected.get(i), or.getChildren(0).getItemWeakAnd().getTargetNumHits(),
                          "WeakAnd in node " + i);
+            assertEquals(expected.get(i), or.getChildren(1).getItemLongWand().getTargetNumHits(),
+                         "Wand in node " + i);
             assertEquals(Math.max(minTargetHits, expected.get(i)),
-                         or.getChildren(1).getItemNearestNeighbor().getTargetNumHits(),
+                         or.getChildren(2).getItemNearestNeighbor().getTargetNumHits(),
                          "NearestNeighbor in node " + i);
         }
     }

@@ -86,14 +86,11 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
 {
     _distance_heap.set_distance_threshold(_hnsw_params.distance_threshold);
     uint32_t est_hits = _attr_tensor.get_num_docs();
+    // Default to the expensive cost tier to allow the WhiteListBlueprint to come before this blueprint.
+    // If we decide to use HNSW (INDEX_TOP_K, INDEX_TOP_K_WITH_FILTER) or exact search with a global filter (EXACT_FALLBACK),
+    // we move the blueprint to the normal cost tier.
+    set_cost_tier(State::COST_TIER_EXPENSIVE);
     setEstimate(HitEstimate(est_hits, false));
-}
-
-NearestNeighborBlueprint::~NearestNeighborBlueprint() {
-    if (_stats) {
-        _stats->add_to_approximate_nns_distances_computed(_nni_stats.distances_computed());
-        _stats->add_to_approximate_nns_nodes_visited(_nni_stats.nodes_visited());
-    }
 }
 
 bool
@@ -122,6 +119,7 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
             est_hits = std::min(est_hits, _global_filter_hits.value());
             if (_global_filter_hit_ratio.value() < _hnsw_params.global_filter_lower_limit) {
                 _algorithm = Algorithm::EXACT_FALLBACK;
+                set_cost_tier(State::COST_TIER_NORMAL);
                 setEstimate(HitEstimate(est_hits, false));
             }
         } else { // post-filtering case
@@ -135,6 +133,7 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
         }
         if (_algorithm != Algorithm::EXACT_FALLBACK) {
             est_hits = std::min(est_hits, _adjusted_target_hits);
+            set_cost_tier(State::COST_TIER_NORMAL);
             setEstimate(HitEstimate(est_hits, false));
             perform_top_k(nns_index);
         }
@@ -171,6 +170,10 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
         _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K;
     }
+
+    // Flush collected statistics if a QueryEvalStats object is already installed.
+    // (This is not the case in the matching pipeline as of now. The stats will be flushed later when install_stats() is called.)
+    flush_stats();
 }
 
 void
@@ -199,6 +202,17 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
 
 void NearestNeighborBlueprint::install_stats(QueryEvalStats &stats) {
     _stats = stats.shared_from_this();
+
+    // Flush statistics collected so far
+    flush_stats();
+}
+
+void NearestNeighborBlueprint::flush_stats() {
+    if (_stats) {
+        _stats->add_to_approximate_nns_distances_computed(_nni_stats.distances_computed());
+        _stats->add_to_approximate_nns_nodes_visited(_nni_stats.nodes_visited());
+        _nni_stats.reset();
+    }
 }
 
 void

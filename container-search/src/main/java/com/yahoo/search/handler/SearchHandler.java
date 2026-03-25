@@ -361,7 +361,8 @@ public class SearchHandler extends LoggingRequestHandler {
             execution.context().setDetailedDiagnostics(true);
         }
         Result result = execution.search(query);
-        ensureQuerySet(result, query);
+        if (result.getQuery() == null)
+            result.setQuery(query);
 
         // StatisticsSearcher does fill, so we can skip the fill here for performance if it is the first in the chain
         if ( ! searchChain.components().isEmpty() && ! (searchChain.components().get(0) instanceof StatisticsSearcher))
@@ -390,13 +391,6 @@ public class SearchHandler extends LoggingRequestHandler {
         Renderer<Result> copy = renderer.clone();
         copy.init();
         return copy;
-    }
-
-    private void ensureQuerySet(Result result, Query fallbackQuery) {
-        Query query = result.getQuery();
-        if (query == null) {
-            result.setQuery(fallbackQuery);
-        }
     }
 
     private Result search(String request, Query query, Chain<Searcher> searchChain) {

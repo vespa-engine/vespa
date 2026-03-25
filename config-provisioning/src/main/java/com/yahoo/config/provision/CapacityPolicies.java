@@ -47,12 +47,18 @@ public class CapacityPolicies {
     private final Exclusivity exclusivity;
     private final ApplicationId applicationId;
     private final Tuning tuning;
+    private final double cpuCap;
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning) {
+        this(zone, exclusivity, applicationId, tuning, 0.0);  // TODO: Consider changing cpu cap from 0.0 to 1.0
+    }
+
+    public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning, double cpuCap) {
         this.zone = zone;
         this.exclusivity = exclusivity;
         this.applicationId = applicationId;
         this.tuning = tuning;
+        this.cpuCap = cpuCap;
     }
 
     public Capacity applyOn(Capacity capacity, boolean exclusive) {
@@ -95,8 +101,12 @@ public class CapacityPolicies {
         if (target.isUnspecified()) return target; // Cannot be modified
 
         if (zone.environment() == Environment.dev && zone.cloud().allowHostSharing()) {
-            // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively
-            target = target.withVcpu(0.1).withBandwidthGbps(0.1);
+            if (cpuCap <= 0.001) {
+                // If cpu cap is > 0, we will use the specified resource.
+                // If it is 0, allocate just a small amount exclusively  (see internal repo for how
+                // we then adjust cpu share given to each container on a host)
+                target = target.withVcpu(0.1).withBandwidthGbps(0.1);
+            }
 
             // Allocate without GPU in dev
             target = target.with(NodeResources.GpuResources.zero());

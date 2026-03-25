@@ -100,9 +100,9 @@ public class Evaluation {
     /** Sets the item iterator to point to the last item: */
     public void setToLast() {
         if (flattenedItems != null)
-                currentIndex = flattenedItems.size() - 1;
+            currentIndex = flattenedItems.size() - 1;
         else
-                currentIndex = -1;
+            currentIndex = -1;
     }
 
     /** Resets the item iterator to point to the last item: */
@@ -285,7 +285,8 @@ public class Evaluation {
         }
 
         if (( desiredParentType == TermType.DEFAULT || desiredParentType.hasItemClass(parent.getClass()) )
-             && equalIndexNameIfParentIsPhrase(items, parent)) {
+            && equalIndexNameIfParentIsPhrase(items, parent))
+        {
             for (Item item : items)
                 addItem(parent, index, item, desiredParentType);
         }
@@ -362,13 +363,12 @@ public class Evaluation {
             return;
         }
 
-        for (Item item : items)
-            newParent.addItem(item);
-
         Item current = parent;
         if (parent instanceof QueryTree && parent.getItemCount() > 0)
             current = parent.getItem(0);
         if (current instanceof CompositeItem && !replacing) { // insert new parent below the current
+            for (Item item : items)
+                newParent.addItem(item);
             if (parent.getItemCount() > index) {
                 var combinedItem = combineItems(newParent, parent.getItem(index), desiredParentType);
                 parent.setItem(index, combinedItem);
@@ -379,6 +379,8 @@ public class Evaluation {
         }
         else if (newParent.acceptsItemsOfType(current.getItemType())) { // insert new parent above the current
             newParent.addItem(current);
+            for (Item item : items)
+                newParent.addItem(item);
             if (newParent != parentsParent) { // Insert new parent as root or child of old parent's parent
                 if (parentsParent != null)
                     parentsParent.setItem(parentsParent.getItemIndex(current), newParent);
@@ -387,6 +389,8 @@ public class Evaluation {
             }
         }
         else {
+            for (Item item : items)
+                newParent.addItem(item);
             ((CompositeItem)current).addItem(newParent); // not an acceptable child -> composite
         }
     }
@@ -457,15 +461,11 @@ public class Evaluation {
     private CompositeItem createType(TermType termType) {
         if (termType == TermType.DEFAULT) {
             if (query.getModel().getType() == Query.Type.ANY)
-                return new OrItem();
+                termType = TermType.OR;
             else if (query.getModel().getType() == Query.Type.WEAKAND)
-                return new WeakAndItem();
-            else
-                return new AndItem();
+                termType = TermType.WEAK_AND;
         }
-        else {
-            return (CompositeItem)termType.createItemClass();
-        }
+        return (CompositeItem)termType.createItemClass();
     }
 
     private void flatten(Item item,int position,List<FlattenedItem> toList) {

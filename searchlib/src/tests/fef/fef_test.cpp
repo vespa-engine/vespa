@@ -56,15 +56,15 @@ TEST(FefTest, test_layout)
         EXPECT_TRUE(tmd.has_invalid_docid());
     }
     MatchDataLayout mdl;
-    EXPECT_EQ(mdl.allocTermField(0), 0u);
-    EXPECT_EQ(mdl.allocTermField(42), 1u);
-    EXPECT_EQ(mdl.allocTermField(IllegalFieldId), 2u);
+    auto handle0 = mdl.allocTermField(0);
+    auto handle1 = mdl.allocTermField(42);
+    auto handle2 = mdl.allocTermField(IllegalFieldId);
 
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQ(md->getNumTermFields(), 3u);
-    TermFieldMatchData *t0 = md->resolveTermField(0);
-    TermFieldMatchData *t1 = md->resolveTermField(1);
-    TermFieldMatchData *t2 = md->resolveTermField(2);
+    TermFieldMatchData *t0 = md->resolveTermField(handle0);
+    TermFieldMatchData *t1 = md->resolveTermField(handle1);
+    TermFieldMatchData *t2 = md->resolveTermField(handle2);
     EXPECT_EQ(t1, t0 + 1);
     EXPECT_EQ(t2, t1 + 1);
     EXPECT_EQ(0u, t0->getFieldId());

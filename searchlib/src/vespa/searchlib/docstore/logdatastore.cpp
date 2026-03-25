@@ -82,6 +82,7 @@ LogDataStore::LogDataStore(vespalib::Executor &executor, const std::string &dirN
       _genHandler(),
       _lidInfo(growStrategy),
       _fileChunks(),
+      _current_nameids(),
       _holdFileChunks(),
       _active(0),
       _prevActive(FileId::active()),
@@ -360,7 +361,7 @@ LogDataStore::findNextToCompact(bool dueToBloat)
     MonitorGuard guard(_updateLock);
     for (size_t i(0); i < _fileChunks.size(); i++) {
         const auto & fc(_fileChunks[i]);
-        if (fc && fc->frozen() && (_currentlyCompacting.find(fc->getNameId()) == _currentlyCompacting.end())) {
+        if (fc && fc->frozen() && !_currentlyCompacting.contains(fc->getNameId())) {
             uint64_t usage = fc->getDiskFootprint();
             if ( ! dueToBloat && _bucketizer) {
                 worst.emplace(fc->getBucketSpread(), FileId(i));
@@ -444,8 +445,20 @@ void LogDataStore::flushActiveAndWait(SerialNum syncToken) {
     return flushFileAndWait(std::move(guard), active, syncToken);
 }
 
-bool LogDataStore::shouldCompactToActiveFile(size_t compactedSize) const {
-    return (_config.getMinFileSizeFactor() * _config.getMaxFileSize() > compactedSize);
+bool LogDataStore::must_compact_to_the_active_file(const MonitorGuard & guard, NameId compacting_name_id,
+                                                   size_t compactedSize) const {
+    assert(hasUpdateLock(guard));
+    auto next_id = compacting_name_id.next();
+    auto next_next_id = next_id.next();
+    auto it = _current_nameids.lower_bound(next_id);
+    /*
+     * If next_id or next_next_id is present among current files then the compaction must be to the active file.
+     * The check for next_id is to avoid multiple files with same NameId, although this should never happen
+     * due to eraseIncompleteCompactedFiles.
+     * The check for next_next_id is needed to ensure correct result from findIncompleteCompactedFiles.
+     */
+    return ((it != _current_nameids.end() && !(next_next_id < *it)) ||
+            (_config.getMinFileSizeFactor() * _config.getMaxFileSize() > compactedSize));
 }
 
 void LogDataStore::setNewFileChunk(const MonitorGuard & guard, FileChunk::UP file)
@@ -454,6 +467,7 @@ void LogDataStore::setNewFileChunk(const MonitorGuard & guard, FileChunk::UP fil
     size_t fileId = file->getFileId().getId();
     assert( ! _fileChunks[fileId]);
     _fileChunks[fileId] = std::move(file);
+    _current_nameids.emplace(_fileChunks[fileId]->getNameId());
 }
 
 void LogDataStore::compactFile(FileId fileId)
@@ -465,18 +479,15 @@ void LogDataStore::compactFile(FileId fileId)
     std::unique_ptr<IWriteData> compacter;
     FileId destinationFileId = FileId::active();
     if (_bucketizer) {
-        size_t compacted_size;
-        {
-            MonitorGuard guard(_updateLock);
-            size_t disk_footprint = fc->getDiskFootprint();
-            size_t disk_bloat = fc->getDiskBloat();
-            compacted_size = (disk_footprint <= disk_bloat) ? 0u : (disk_footprint - disk_bloat);
-        }
-        if ( ! shouldCompactToActiveFile(compacted_size)) {
-            MonitorGuard guard(_updateLock);
+        MonitorGuard guard(_updateLock);
+        size_t disk_footprint = fc->getDiskFootprint();
+        size_t disk_bloat = fc->getDiskBloat();
+        size_t compacted_size = (disk_footprint <= disk_bloat) ? 0u : (disk_footprint - disk_bloat);
+        if (!must_compact_to_the_active_file(guard, compactedNameId, compacted_size)) {
             destinationFileId = allocateFileId(guard);
             setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(), fc->getNameId().next()));
         }
+        guard.unlock();
         size_t numSignificantBucketBits = computeNumberOfSignificantBucketIdBits(*_bucketizer, fc->getFileId());
         compacter = std::make_unique<BucketCompacter>(numSignificantBucketBits, _config.compactCompression(), *this,
                                                       _executor, *_bucketizer, fc->getFileId(), destinationFileId);
@@ -523,6 +534,7 @@ void LogDataStore::compactFile(FileId fileId)
     toDie->erase();
     MonitorGuard guard(_updateLock);
     _currentlyCompacting.erase(compactedNameId);
+    _current_nameids.erase(compactedNameId);
 }
 
 size_t
@@ -618,7 +630,7 @@ LogDataStore::getMaxBucketSpread() const
         /// Ignore the the active file as it is never considered for reordering until completed and frozen.
         if (i != _active) {
             const auto & fc = _fileChunks[i.getId()];
-            if (fc && _bucketizer && fc->frozen()) {
+            if (fc && _bucketizer && fc->frozen() && !_currentlyCompacting.contains(fc->getNameId())) {
                 maxSpread = std::max(maxSpread, fc->getBucketSpread());
             }
         }
@@ -636,7 +648,7 @@ LogDataStore::getDiskBloat() const
         /// never considered for compaction until completed and frozen.
         if (i != _active) {
             const auto & chunk = _fileChunks[i.getId()];
-            if (chunk) {
+            if (chunk && chunk->frozen() && !_currentlyCompacting.contains(chunk->getNameId())) {
                 sz += chunk->getDiskBloat();
             }
         }
@@ -836,14 +848,17 @@ LogDataStore::preload()
         partList = scanDir(getBaseDir(), ".idx");
         for (auto it(partList.begin()), mt(--partList.end()); it != mt; it++) {
             _fileChunks.push_back(createReadOnlyFile(FileId(_fileChunks.size()), *it));
+            _current_nameids.emplace(*it);
         }
         _fileChunks.push_back(isReadOnly()
             ? createReadOnlyFile(FileId(_fileChunks.size()), *partList.rbegin())
             : createWritableFile(FileId(_fileChunks.size()), getMinLastPersistedSerialNum(), *partList.rbegin()));
         _last_name_id = *partList.rbegin();
+        _current_nameids.emplace(*partList.rbegin());
     } else {
         if ( ! isReadOnly() ) {
             _fileChunks.push_back(createWritableFile(FileId::first(), 0));
+            _current_nameids.emplace(_fileChunks.back()->getNameId());
         } else {
             throw vespalib::IllegalArgumentException(getBaseDir() + " does not have any summary data... And that is no good in readonly case.");
         }
@@ -898,14 +913,8 @@ LogDataStore::findIncompleteCompactedFiles(const NameIdSet & partList) {
 
 LogDataStore::NameIdSet
 LogDataStore::getAllActiveFiles() const {
-    NameIdSet files;
     MonitorGuard guard(_updateLock);
-    for (const auto & fc : _fileChunks) {
-        if (fc) {
-            files.insert(fc->getNameId());
-        }
-    }
-    return files;
+    return _current_nameids;
 }
 
 LogDataStore::NameIdSet
@@ -1150,6 +1159,10 @@ LogDataStore::accept(IDataStoreVisitor &visitor,
                 toDie = std::move(_fileChunks[fcId.getId()]);
             }
             toDie->erase();
+            {
+                MonitorGuard guard(_updateLock);
+                _current_nameids.erase(toDie->getNameId());
+            }
         }
     }
     lfc.appendTo(_executor, *this, wrap, lastChunks, &wrapProgress, CpuCategory::WRITE);

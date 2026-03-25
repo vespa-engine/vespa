@@ -226,6 +226,48 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         }
     }
 
+    @Test
+    void containerWithDocprocInheritingIndexingButNotReferencedByContent() {
+        String xml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<services version=\"1.0\">\n" +
+                "  <admin version=\"2.0\">\n" +
+                "    <adminserver hostalias=\"node0\"/>\n" +
+                "  </admin>\n" +
+                "  <container version='1.0' id='default'>\n" +
+                "    <search/>\n" +
+                "    <nodes>\n" +
+                "      <node hostalias='node0'/>\n" +
+                "    </nodes>\n" +
+                "  </container>\n" +
+                "  <container version='1.0' id='unreferenced'>\n" +
+                "    <document-processing>\n" +
+                "      <chain id='mychain' inherits='indexing'/>\n" +
+                "    </document-processing>\n" +
+                "    <nodes>\n" +
+                "      <node hostalias='node0'/>\n" +
+                "    </nodes>\n" +
+                "    <http>\n" +
+                "      <server id='unreferenced' port='8010'/>\n" +
+                "    </http>\n" +
+                "  </container>\n" +
+                "  <content id='musiccluster' version='1.0'>\n" +
+                "    <redundancy>1</redundancy>\n" +
+                "    <documents>\n" +
+                "      <document type='music' mode='index'/>\n" +
+                "    </documents>\n" +
+                "    <group>\n" +
+                "      <node hostalias='node0' distribution-key='0'/>\n" +
+                "    </group>\n" +
+                "  </content>\n" +
+                "</services>\n";
+        VespaModel model = getIndexedSearchVespaModel(xml);
+        // Verify the unreferenced container has the indexing chain registered
+        ContainerCluster<?> unreferenced = model.getContainerClusters().get("unreferenced");
+        assertNotNull(unreferenced);
+        assertNotNull(unreferenced.getDocprocChains().allChains().getComponent("indexing"));
+    }
+
     private void assertIndexing(VespaModel model, DocprocClusterSpec... expectedDocprocClusters) {
         Map<String, ContainerCluster> docprocClusters = getDocprocClusters(model);
         assertEquals(expectedDocprocClusters.length, docprocClusters.size());

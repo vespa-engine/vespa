@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
+#include <atomic>
 
 namespace search::common { struct ICompactableLidSpace; }
 
@@ -20,9 +21,16 @@ class ShrinkLidSpaceFlushTarget : public searchcorespi::LeafFlushTarget
     using ICompactableLidSpace = search::common::ICompactableLidSpace;
     using FlushStats = searchcorespi::FlushStats;
     std::shared_ptr<ICompactableLidSpace> _target;
-    SerialNum                             _flushedSerialNum;
-    Time                                  _lastFlushTime;
+    std::atomic<SerialNum>                _flushedSerialNum;
+    std::atomic<vespalib::system_time::rep> _last_flush_time;
     FlushStats                            _lastStats;
+
+    void set_flushed_serial_num(SerialNum flushed_serial_num) noexcept {
+        _flushedSerialNum.store(flushed_serial_num, std::memory_order_relaxed);
+    }
+    void set_last_flush_time(vespalib::system_time last_flush_time) {
+        _last_flush_time.store(last_flush_time.time_since_epoch().count(), std::memory_order_relaxed);
+    }
 
 public:
     /**

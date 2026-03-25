@@ -50,7 +50,6 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_
 @Beta
 public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
     private static final Set<String> serviceTypesToCheck = Set.of(
-            CONTAINER.serviceName,
             LOGSERVER_CONTAINER.serviceName,
             CLUSTERCONTROLLER_CONTAINER.serviceName,
             METRICS_PROXY_CONTAINER.serviceName,

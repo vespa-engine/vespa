@@ -823,22 +823,22 @@ public class YqlParserTestCase {
     @Test
     void testWand() {
         assertParse("select foo from bar where wand(description, {\"a\":1, \"b\":2});",
-                "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND description{[1]:\"a\",[2]:\"b\"}");
         assertParse("select foo from bar where {scoreThreshold : 13.3, targetHits: 7, " +
                 "thresholdBoostFactor: 2.3} wand(description, {\"a\":1, \"b\":2})",
-                "WAND(7,13.3,2.3) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND(7) {scoreThreshold=13.3, thresholdBoostFactor=2.3} description{[1]:\"a\",[2]:\"b\"}");
     }
 
     @Test
     void testQuotedAnnotations() {
         assertParse("select foo from bar where {\"scoreThreshold\": 13.3, \"targetHits\": 7, " +
                 "'thresholdBoostFactor': 2.3} wand(description, {\"a\":1})",
-                "WAND(7,13.3,2.3) description{[1]:\"a\"}");
+                "WAND(7) {scoreThreshold=13.3, thresholdBoostFactor=2.3} description{[1]:\"a\"}");
     }
 
     @Test
     void testNumericWand() {
-        String numWand = "WAND(10,0.0,1.0) description{[1]:\"11\",[2]:\"37\"}";
+        String numWand = "WAND description{[1]:\"11\",[2]:\"37\"}";
         assertParse("select foo from bar where wand(description, [[11,1], [37,2]])", numWand);
         assertParse("select foo from bar where wand(description, [[11L,1], [37L,2]])", numWand);
         assertParseFail("select foo from bar where wand(description, 12);",
@@ -1171,6 +1171,12 @@ public class YqlParserTestCase {
             AttributeSorter sorter = fieldOrder.getSorter();
             assertEquals(LowerCaseSorter.class, sorter.getClass());
         }
+    }
+
+    @Test
+    void testArrayIndex() {
+        assertParse("SELECT title FROM product WHERE inventory.in_stock[10000] = true",
+                    "inventory.in_stock[10000]:{true}");
     }
 
     @Test

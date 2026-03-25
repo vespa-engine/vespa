@@ -1017,11 +1017,16 @@ public class VespaSerializer {
 
         private String specificAnnotations(WandItem w) {
             StringBuilder annotations = new StringBuilder();
-            int targetNumHits = w.getTargetNumHits();
+            Integer targetHits = w.getTargetHits();
+            Integer totalTargetHits = w.getTotalTargetHits();
             double scoreThreshold = w.getScoreThreshold();
             double thresholdBoostFactor = w.getThresholdBoostFactor();
-            if (targetNumHits != 10) {
-                annotations.append(TARGET_HITS).append(": ").append(targetNumHits);
+            if (targetHits != null) {
+                annotations.append(TARGET_HITS).append(": ").append(targetHits);
+            }
+            if (totalTargetHits != null) {
+                comma(annotations, 0);
+                annotations.append(TOTAL_TARGET_HITS).append(": ").append(totalTargetHits);
             }
             if (scoreThreshold != 0) {
                 comma(annotations, 0);

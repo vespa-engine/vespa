@@ -39,11 +39,26 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     string_escape_test.cpp
     time_test.cpp
     typify_test.cpp
+    unordered_u32_set_test.cpp
     xmlserializabletest.cpp
     DEPENDS
     vespalib
     onnxruntime
     GTest::gtest
+    GTest::gmock
 )
 
 vespa_add_test( NAME vespalib_util_gtest_runner_test_app COMMAND vespalib_util_gtest_runner_test_app)
+
+vespa_add_executable(vespalib_util_unordered_u32_set_benchmark_app TEST
+    SOURCES
+    unordered_u32_set_benchmark.cpp
+    DEPENDS
+    vespalib
+)
+vespa_add_target_external_dependency(vespalib_util_unordered_u32_set_benchmark_app benchmark)
+vespa_add_test(
+    NAME    vespalib_util_unordered_u32_set_benchmark_app
+    COMMAND vespalib_util_unordered_u32_set_benchmark_app
+    BENCHMARK
+)

@@ -800,9 +800,9 @@
                 <version>${onnxruntime.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>de.kherud</groupId>
-                <artifactId>llama</artifactId>
-                <version>${kherud.llama.vespa.version}</version>
+                <groupId>io.github.arnej27959</groupId>
+                <artifactId>jllama</artifactId>
+                <version>${jllama.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>

@@ -35,7 +35,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
     private static final Logger logger = Logger.getLogger(AccessLogRequestLog.class.getName());
 
     // HTTP headers that are logged as extra key-value-pairs in access log entries
-    private static final List<String> LOGGED_REQUEST_HEADERS = List.of("Vespa-Client-Version");
+    private static final List<String> LOGGED_REQUEST_HEADERS = List.of("Vespa-Client-Version", "Vespa-Client-Id");
 
     private final RequestLog requestLog;
 

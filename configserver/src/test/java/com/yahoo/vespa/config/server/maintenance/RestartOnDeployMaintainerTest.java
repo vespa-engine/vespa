@@ -208,20 +208,21 @@ class RestartOnDeployMaintainerTest {
     void test_filterServicesToCheck_filters_by_service_type() {
         List<ServiceInfo> services = List.of(
                 createService("container1", "container", "host1", 8080, "state", "cluster1"),
-                createService("searchnode1", "searchnode", "host1", 8081, "state", "cluster1"),
-                createService("unknown1", "unknown-type", "host1", 8082, "state", "cluster1"));
+                createService("storagenode1", "storagenode", "host1", 8081, "state", "cluster1"),
+                createService("searchnode1", "searchnode", "host1", 8082, "state", "cluster1"),
+                createService("unknown1", "unknown-type", "host1", 8083, "state", "cluster1"));
 
         List<ServiceInfo> filtered = filterServicesToCheck("app1", List.of(), services, Set.of("host1"), log);
 
         Set<String> serviceTypes =
                 filtered.stream().map(ServiceInfo::getServiceType).collect(Collectors.toSet());
-        assertEquals(Set.of("container", "searchnode"), serviceTypes);
+        assertEquals(Set.of("storagenode", "searchnode"), serviceTypes);
     }
 
     @Test
     void test_filterServicesToCheck_filters_by_hostname() {
-        ServiceInfo service1 = createService("container1", "container", "host1", 8080, "state", "cluster1");
-        ServiceInfo service2 = createService("container2", "container", "host2", 8080, "state", "cluster1");
+        ServiceInfo service1 = createService("searchnode1", "searchnode", "host1", 8080, "state", "cluster1");
+        ServiceInfo service2 = createService("searchnode2", "searchnode", "host2", 8080, "state", "cluster1");
 
         List<ServiceInfo> filtered = filterServicesToCheck("app1", List.of(), List.of(service1, service2), Set.of("host1"), log);
 
@@ -230,8 +231,8 @@ class RestartOnDeployMaintainerTest {
 
     @Test
     void test_filterServicesToCheck_filters_by_state_port() {
-        ServiceInfo serviceWithState = createService("container1", "container", "host1", 8080, "state", "cluster1");
-        ServiceInfo serviceWithoutState = createService("container2", "container", "host1", 8081, "http", "cluster1");
+        ServiceInfo serviceWithState = createService("searchnode1", "searchnode", "host1", 8080, "state", "cluster1");
+        ServiceInfo serviceWithoutState = createService("searchnode2", "searchnode", "host1", 8081, "http", "cluster1");
 
         List<ServiceInfo> filtered = filterServicesToCheck("app1", List.of(), List.of(serviceWithState, serviceWithoutState), Set.of("host1"), log);
 
@@ -243,8 +244,8 @@ class RestartOnDeployMaintainerTest {
         MockApplicationClusterInfo deferCluster = new MockApplicationClusterInfo("deferCluster", true);
         MockApplicationClusterInfo normalCluster = new MockApplicationClusterInfo("normalCluster", false);
 
-        ServiceInfo deferredService = createService("container1", "container", "host1", 8080, "state", "deferCluster");
-        ServiceInfo normalService = createService("container2", "container", "host1", 8081, "state", "normalCluster");
+        ServiceInfo deferredService = createService("searchnode1", "searchnode", "host1", 8080, "state", "deferCluster");
+        ServiceInfo normalService = createService("searchnode2", "searchnode", "host1", 8081, "state", "normalCluster");
 
         List<ServiceInfo> filtered = filterServicesToCheck(
                 "app1", List.of(deferCluster, normalCluster), List.of(deferredService, normalService), Set.of("host1"), log);
@@ -257,11 +258,11 @@ class RestartOnDeployMaintainerTest {
         MockApplicationClusterInfo deferCluster = new MockApplicationClusterInfo("deferCluster", true);
         MockApplicationClusterInfo normalCluster = new MockApplicationClusterInfo("normalCluster", false);
 
-        ServiceInfo passesAll = createService("container1", "container", "host1", 8080, "state", "normalCluster");
-        ServiceInfo wrongHost = createService("container2", "container", "host2", 8080, "state", "normalCluster");
-        ServiceInfo wrongType = createService("unknown1", "unknown", "host1", 8080, "state", "normalCluster");
-        ServiceInfo noStatePort = createService("container3", "container", "host1", 8080, "http", "normalCluster");
-        ServiceInfo deferredCluster = createService("container4", "container", "host1", 8080, "state", "deferCluster");
+        ServiceInfo passesAll = createService("searchnode1", "searchnode", "host1", 8080, "state", "normalCluster");
+        ServiceInfo wrongHost = createService("searchnode2", "searchnode", "host2", 8080, "state", "normalCluster");
+        ServiceInfo wrongType = createService("container1", "container", "host1", 8080, "state", "normalCluster");
+        ServiceInfo noStatePort = createService("searchnode3", "searchnode", "host1", 8080, "http", "normalCluster");
+        ServiceInfo deferredCluster = createService("searchnode4", "searchnode", "host1", 8080, "state", "deferCluster");
 
         List<ServiceInfo> filtered = filterServicesToCheck(
                 "app1", List.of(deferCluster, normalCluster),

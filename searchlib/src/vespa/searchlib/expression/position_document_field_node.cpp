@@ -8,13 +8,15 @@
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/vespalib/geo/zcurve.h>
 
+#include <algorithm>
 #include <format>
+#include <vector>
 
 namespace search::expression {
 
 using document::Document;
 using document::DocumentType;
-using document::FieldPathEntry;
+using document::FieldPath;
 using document::PositionDataType;
 using document::fieldvalue::IteratorHandler;
 using vespalib::geo::ZCurve;
@@ -42,28 +44,22 @@ PositionDocumentFieldNode& PositionDocumentFieldNode::operator=(const PositionDo
         _x_path.clear();
         _y_path.clear();
         _doc = nullptr;
+        _handler.reset();
     }
     return *this;
 }
 
-void PositionDocumentFieldNode::onDocType(const DocumentType& docType) {
-    _x_path.clear();
-    _y_path.clear();
-    std::string x_name = std::format("{}.{}", _field_name, PositionDataType::FIELD_X);
-    std::string y_name = std::format("{}.{}", _field_name, PositionDataType::FIELD_Y);
-    docType.buildFieldPath(_x_path, x_name);
-    docType.buildFieldPath(_y_path, y_name);
-}
-
-void PositionDocumentFieldNode::onDoc(const Document& doc) {
-    _doc = &doc;
-}
-
-void PositionDocumentFieldNode::onPrepare(bool) {
-    // Result type is always Int64
-}
-
 namespace {
+
+/**
+ * For complex field path access, if the last entry is array this returns true, else false.
+ */
+bool check_multivalue(const FieldPath& field_path) {
+    if (field_path.empty()) {
+        return false;
+    }
+    return field_path.back().getDataType().isArray();
+}
 
 class IntExtractor : public IteratorHandler {
 public:
@@ -73,27 +69,72 @@ public:
     }
 };
 
+class IntListExtractor : public IteratorHandler {
+public:
+    std::vector<int32_t> values;
+    ~IntListExtractor() override;
+    void onPrimitive(uint32_t, const Content& c) override {
+        values.push_back(c.getValue().getAsInt());
+    }
+};
+
+IntListExtractor::~IntListExtractor() = default;
+
+}
+
+void PositionDocumentFieldNode::onDocType(const DocumentType& docType) {
+    _x_path.clear();
+    _y_path.clear();
+    std::string x_name = std::format("{}.{}", _field_name, PositionDataType::FIELD_X);
+    std::string y_name = std::format("{}.{}", _field_name, PositionDataType::FIELD_Y);
+    docType.buildFieldPath(_x_path, x_name);
+    docType.buildFieldPath(_y_path, y_name);
+
+    FieldPath field_path;
+    docType.buildFieldPath(field_path, _field_name);
+    if (check_multivalue(field_path)) {
+        _handler = std::make_unique<MultiValueHandler>();
+    } else {
+        _handler = std::make_unique<SingleValueHandler>();
+    }
+}
+
+void PositionDocumentFieldNode::onDoc(const Document& doc) {
+    _doc = &doc;
+}
+
+void PositionDocumentFieldNode::onPrepare(bool) {
+    // Handler and result type are set up in onDocType
+}
+
+void PositionDocumentFieldNode::SingleValueHandler::handle(const Document& doc, const FieldPath& x_path,
+                                                           const FieldPath& y_path) {
+    IntExtractor x_ext;
+    IntExtractor y_ext;
+    doc.iterateNested(x_path.getFullRange(), x_ext);
+    doc.iterateNested(y_path.getFullRange(), y_ext);
+    _result.set(ZCurve::encode(x_ext.value, y_ext.value));
+}
+
+void PositionDocumentFieldNode::MultiValueHandler::handle(const Document& doc, const FieldPath& x_path,
+                                                          const FieldPath& y_path) {
+    IntListExtractor x_ext;
+    IntListExtractor y_ext;
+    doc.iterateNested(x_path.getFullRange(), x_ext);
+    doc.iterateNested(y_path.getFullRange(), y_ext);
+
+    size_t n = std::min(x_ext.values.size(), y_ext.values.size());
+    _result.getVector().resize(n);
+    for (size_t i = 0; i < n; ++i) {
+        _result.getVector()[i].set(ZCurve::encode(x_ext.values[i], y_ext.values[i]));
+    }
 }
 
 void PositionDocumentFieldNode::onExecute() const {
-    if (_doc == nullptr || _x_path.empty() || _y_path.empty()) {
-        _result.set(0);
+    if (_doc == nullptr || _x_path.empty() || _y_path.empty() || !_handler) {
         return;
     }
-
-    int32_t x = 0;
-    int32_t y = 0;
-
-    IntExtractor x_extractor;
-    _doc->iterateNested(_x_path.getFullRange(), x_extractor);
-    x = x_extractor.value;
-
-    IntExtractor y_extractor;
-    _doc->iterateNested(_y_path.getFullRange(), y_extractor);
-    y = y_extractor.value;
-
-    int64_t zcurve = ZCurve::encode(x, y);
-    _result.set(zcurve);
+    _handler->handle(*_doc, _x_path, _y_path);
 }
 
 vespalib::Serializer& PositionDocumentFieldNode::onSerialize(vespalib::Serializer& os) const {

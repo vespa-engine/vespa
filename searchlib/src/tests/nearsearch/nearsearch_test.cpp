@@ -386,7 +386,7 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
         if (i + query.getNumNegativeTerms() < query.getNumTerms()) {
             positive_handles.emplace_back(handle);
         }
-        near_b->addChild(query.getTerm(i).make_blueprint(fieldId, i));
+        near_b->addChild(query.getTerm(i).make_blueprint(fieldId, handle));
     }
     bp->setDocIdLimit(1000);
     bp = search::queryeval::Blueprint::optimize_and_sort(std::move(bp));

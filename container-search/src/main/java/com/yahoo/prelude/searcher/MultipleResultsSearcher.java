@@ -34,7 +34,6 @@ public class MultipleResultsSearcher extends Searcher {
     public Result search(Query query, Execution e) {
         try {
             Parameters parameters = new Parameters(query);
-
             query.trace("MultipleResultsSearcher: " + parameters, false, 2);
             HitsRetriever hitsRetriever = new HitsRetriever(query,e,parameters);
 
@@ -43,7 +42,6 @@ public class MultipleResultsSearcher extends Searcher {
                     hitsRetriever.retrieveMoreHits(documentGroup);
                 }
             }
-
             return hitsRetriever.createMultipleResultSets();
         } catch(ParameterException exception) {
             Result result = new Result(query);
@@ -80,17 +78,11 @@ public class MultipleResultsSearcher extends Searcher {
         }
 
         void retrieveMoreHits(DocumentGroup documentGroup) {
-            if ( ++numRetrieveMoreHitsCalls <
-                 parameters.maxTimesRetrieveHeterogeneousHits) {
-
+            if ( ++numRetrieveMoreHitsCalls < parameters.maxTimesRetrieveHeterogeneousHits) {
                 retrieveHeterogenousHits();
-
-                if (numHits(documentGroup) <
-                    documentGroup.targetNumberOfDocuments) {
-
+                if (numHits(documentGroup) < documentGroup.targetNumberOfDocuments) {
                     retrieveMoreHits(documentGroup);
                 }
-
             } else {
                 retrieveRemainingHitsForGroup(documentGroup);
             }
@@ -98,10 +90,8 @@ public class MultipleResultsSearcher extends Searcher {
 
         void retrieveHeterogenousHits() {
             int numHitsToRetrieve = (int)(hits * parameters.additionalHitsFactor);
-
-            final int maxNumHitsToRetrieve = 1000;
+            int maxNumHitsToRetrieve = 1000;
             numHitsToRetrieve = Math.min(numHitsToRetrieve,maxNumHitsToRetrieve);
-
             try {
                 query.setWindow(nextOffset,numHitsToRetrieve);
                 partitionedResult.addHits(retrieveHits());
@@ -113,7 +103,7 @@ public class MultipleResultsSearcher extends Searcher {
         }
 
         private void restoreWindow() {
-            query.setWindow(offset,hits);
+            query.setWindow(offset, hits);
         }
 
         void retrieveRemainingHitsForGroup(DocumentGroup documentGroup) {
@@ -121,7 +111,6 @@ public class MultipleResultsSearcher extends Searcher {
             try {
                 int numMissingHits = documentGroup.targetNumberOfDocuments - numHits(documentGroup);
                 int offset = numHits(documentGroup);
-
                 query.getModel().getRestrict().clear();
                 query.getModel().getRestrict().add(documentGroup.documentName);
                 query.setWindow(offset, numMissingHits);
@@ -188,7 +177,6 @@ public class MultipleResultsSearcher extends Searcher {
             addHits(result, false);
         }
 
-
         void add(Hit hit, boolean addOtherHits) {
             String documentName = (String)hit.getField(Hit.SDDOCNAME_FIELD);
 
@@ -226,22 +214,13 @@ public class MultipleResultsSearcher extends Searcher {
         }
 
         private void addGroup(DocumentGroup group) throws ParameterException {
-            final String documentName = group.documentName;
-            if ( resultSets.put(group.documentName,
-                    new HitGroup(documentName) {
-                        /**
-                         *
-                         */
-                        private static final long serialVersionUID = 5732822886080288688L;
-                    })
-                 != null ) {
-
+            String documentName = group.documentName;
+            if ( resultSets.put(group.documentName, new HitGroup(documentName)) != null ) {
                 throw new ParameterException("Document name " + group.documentName + "mentioned multiple times");
             }
         }
 
     }
-
 
     //examples:
     //multipleresultsets.numhits=music:10,movies:20
@@ -261,90 +240,62 @@ public class MultipleResultsSearcher extends Searcher {
         double additionalHitsFactor = 0.8;
         int maxTimesRetrieveHeterogeneousHits = 2;
 
-        private void readAdditionalHitsFactor(Query query)
-            throws ParameterException {
-
+        private void readAdditionalHitsFactor(Query query) throws ParameterException {
             String additionalHitsFactorStr = query.properties().getString(additionalHitsFactorName);
-
             if (additionalHitsFactorStr == null)
                 return;
-
             try {
-                additionalHitsFactor =
-                    Double.parseDouble(additionalHitsFactorStr);
+                additionalHitsFactor = Double.parseDouble(additionalHitsFactorStr);
             } catch (NumberFormatException e) {
-                throw new ParameterException(
-                    "Expected floating point number, got '" +
-                    additionalHitsFactorStr + "'.");
+                throw new ParameterException("Expected floating point number, got '" + additionalHitsFactorStr + "'.");
             }
         }
 
         private void readMaxTimesRetrieveHeterogeneousHits(Query query) {
-            maxTimesRetrieveHeterogeneousHits = query.properties().getInteger(
-                maxTimesRetrieveHeterogeneousHitsName,
-                maxTimesRetrieveHeterogeneousHits);
+            maxTimesRetrieveHeterogeneousHits = query.properties().getInteger(maxTimesRetrieveHeterogeneousHitsName,
+                                                                              maxTimesRetrieveHeterogeneousHits);
         }
 
+        private void readNumHitsSpecification(Query query) throws ParameterException {
 
-        private void readNumHitsSpecification(Query query)
-            throws ParameterException {
+            // example numHitsSpecification: "music:10,movies:20"
+            String numHitsSpecification = query.properties().getString(numHits);
 
-            //example numHitsSpecification: "music:10,movies:20"
-            String numHitsSpecification =
-                query.properties().getString(numHits);
-
-            if (numHitsSpecification == null)
-                return;
+            if (numHitsSpecification == null) return;
 
             String[] numHitsForDocumentNames = numHitsSpecification.split(",");
-
             for (String s:numHitsForDocumentNames) {
                 handleDocumentNameWithNumberOfHits(s);
             }
 
         }
 
+        @Override
         public String toString() {
-            String s = "additionalHitsFactor=" + additionalHitsFactor +
-                ", maxTimesRetrieveHeterogeneousHits="
-                + maxTimesRetrieveHeterogeneousHits +
-                ", numHitsSpecification='";
-
-            for (DocumentGroup group : documentGroups) {
-                s += group.documentName + ":" +
-                    group.targetNumberOfDocuments + ", ";
-            }
-
-            s += "'";
-
-            return s;
+            var s = new StringBuilder("additionalHitsFactor=" + additionalHitsFactor +
+                                      ", maxTimesRetrieveHeterogeneousHits=" + maxTimesRetrieveHeterogeneousHits +
+                                      ", numHitsSpecification='");
+            for (DocumentGroup group : documentGroups)
+                s.append(group.documentName).append(":").append(group.targetNumberOfDocuments).append(", ");
+            s.append("'");
+            return s.toString();
         }
 
         //example input: music:10
-        private void handleDocumentNameWithNumberOfHits(String s)
-            throws ParameterException {
-
+        private void handleDocumentNameWithNumberOfHits(String s) throws ParameterException {
             String[] documentNameWithNumberOfHits = s.split(":");
-
             if (documentNameWithNumberOfHits.length != 2) {
                 String msg = "Expected a single ':' in '" + s + "'.";
-
                 if (documentNameWithNumberOfHits.length > 2)
                     msg += " Please check for missing commas.";
-
                 throw new ParameterException(msg);
             } else {
-                String documentName =
-                    documentNameWithNumberOfHits[0].trim();
+                String documentName = documentNameWithNumberOfHits[0].trim();
                 try {
-                    int numHits = Integer.parseInt(
-                        documentNameWithNumberOfHits[1].trim());
-
+                    int numHits = Integer.parseInt(documentNameWithNumberOfHits[1].trim());
                     numRequestedHits(documentName, numHits);
                 } catch (NumberFormatException e) {
-                    throw new ParameterException(
-                        "Excpected an integer but got '" +
-                        documentNameWithNumberOfHits[1] + "'");
+                    throw new ParameterException("Excpected an integer but got '" + documentNameWithNumberOfHits[1] + "'");
                 }
             }
         }

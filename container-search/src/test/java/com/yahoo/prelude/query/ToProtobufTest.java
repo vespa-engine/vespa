@@ -576,7 +576,8 @@ public class ToProtobufTest {
 
     @Test
     void testConvertFromQueryWithWandItem() {
-        WandItem wand = new WandItem("myindex", 10);
+        WandItem wand = new WandItem("myindex");
+        wand.setTargetHits(10);
         wand.addToken("foo", 100);
         wand.addToken("bar", 200);
 

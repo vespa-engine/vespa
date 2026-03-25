@@ -2,7 +2,9 @@
 package com.yahoo.prelude.semantics.rule;
 
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.TermType;
 import com.yahoo.prelude.semantics.engine.Match;
 import com.yahoo.prelude.semantics.engine.RuleEvaluation;
@@ -81,6 +83,76 @@ public abstract class TermProduction extends Production {
                        e.getEvaluation().getQuery().getModel().getQueryTree());
     }
 
+    /**
+     * Collapses multiple matched terms from a multi-word condition into a single PhraseItem,
+     * preserving the adjacency constraint of the original query terms. For example, when
+     * "running shoes" matches a two-word condition, this replaces the individual terms with
+     * a single PhraseItem so they can be wrapped in an EQUIV as {@code EQUIV "running shoes" sneakers}.
+     *
+     * @return the PhraseItem that replaced the matched terms, or null if there was only one match
+     */
+    protected PhraseItem collapseMultiWordMatches(RuleEvaluation e) {
+        int count = e.getNonreferencedMatchCount();
+        if (count <= 1) return null;
+
+        Match first = e.getNonreferencedMatch(0);
+        CompositeItem parent = first.getParent();
+        if (parent == null) return null;
+
+        for (int i = 1; i < count; i++) {
+            if (e.getNonreferencedMatch(i).getParent() != parent) return null;
+        }
+
+        PhraseItem phrase = new PhraseItem();
+        phrase.setIndexName(getLabel());
+        for (int i = 0; i < count; i++) {
+            phrase.addItem(e.getNonreferencedMatch(i).toItem(getLabel()));
+        }
+
+        // Remove extra matched terms (1..N-1) from parent
+        for (int i = 1; i < count; i++) {
+            parent.removeItem(e.getNonreferencedMatch(i).getItem());
+        }
+
+        // Replace first matched term with the phrase
+        parent.setItem(first.getPosition(), phrase);
+
+        return phrase;
+    }
+
+    /** Adds newItem into an EQUIV at the match position, creating one if needed. */
+    protected void addEquivItem(RuleEvaluation e, Item newItem) {
+        Match matched = e.getNonreferencedMatch(0);
+        CompositeItem matchParent = matched.getParent();
+        int matchIndex = matched.getPosition();
+        EquivItem ancestor = findAncestorEquiv(matchParent);
+        if (ancestor != null) {
+            ancestor.addItem(newItem);
+        } else if (matchIndex < matchParent.getItemCount()
+                && matchParent.getItem(matchIndex) instanceof EquivItem existingEquiv) {
+            existingEquiv.addItem(newItem);
+        } else if (matchIndex < matchParent.getItemCount()) {
+            collapseMultiWordMatches(e);
+            EquivItem equiv = new EquivItem(matchParent.getItem(matchIndex));
+            equiv.addItem(newItem);
+            matchParent.setItem(matchIndex, equiv);
+        } else {
+            e.addItems(List.of(newItem), getTermType());
+        }
+    }
+
+    /**
+     * Walks up the query tree from item looking for an EquivItem ancestor, up to 4 levels.
+     * Cascading rules may match a term nested inside a composite (e.g. WordItem inside
+     * PhraseItem inside EquivItem), and we need the enclosing EQUIV to add to it.
+     */
+    private static EquivItem findAncestorEquiv(Item item) {
+        for (int i = 0; i < 4 && item != null; i++, item = item.getParent()) {
+            if (item instanceof EquivItem equiv) return equiv;
+        }
+        return null;
+    }
+
     protected String getLabelString() {
         if (label == null) return "";
         return label + ":";
@@ -104,6 +176,20 @@ public abstract class TermProduction extends Production {
         if (getTermType() != TermType.DEFAULT) return false;
         CompositeItem parent = match.getParent();
         if (parent == null) return false;
+        CompositeItem grandparent = parent.getParent();
+        return grandparent != null && !(grandparent instanceof QueryTree);
+    }
+
+    /**
+     * Returns true if the match's parent already has the same type as this production's term type,
+     * and is nested (not directly under root). In this case we should add to the existing parent
+     * rather than creating a new one at root level.
+     */
+    protected boolean parentHasCompatibleType(Match match) {
+        if (getTermType() == TermType.DEFAULT) return false;
+        CompositeItem parent = match.getParent();
+        if (parent == null) return false;
+        if (!getTermType().hasItemClass(parent.getClass())) return false;
         CompositeItem grandparent = parent.getParent();
         return grandparent != null && !(grandparent instanceof QueryTree);
     }

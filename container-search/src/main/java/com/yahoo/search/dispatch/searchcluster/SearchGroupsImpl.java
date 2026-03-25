@@ -35,6 +35,7 @@ public class SearchGroupsImpl implements SearchGroups {
 
     public boolean isGroupCoverageSufficient(boolean currentIsGroupCoverageSufficient,
                                              long groupDocumentCount, long medianDocumentCount, long maxDocumentCount) {
+        // If no group has any active documents, coverage checks are meaningless — consider all groups sufficient.
         if (maxDocumentCount <= 0) return true;
         if (currentIsGroupCoverageSufficient) {
             if (availabilityPolicy.prioritizeAvailability()) {
