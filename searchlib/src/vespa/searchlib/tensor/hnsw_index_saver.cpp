@@ -42,7 +42,9 @@ HnswIndexSaver<type>::~HnswIndexSaver() = default;
 
 template <HnswIndexType type>
 HnswIndexSaver<type>::HnswIndexSaver(const HnswGraph<type> &graph)
-    : _graph_links(graph.links_store), _meta_data()
+    : _graph_links(graph.links_store),
+      _meta_data(),
+      _guard(graph.make_guard())
 {
     auto entry = graph.get_entry_node();
     _meta_data.entry_nodeid = entry.nodeid;

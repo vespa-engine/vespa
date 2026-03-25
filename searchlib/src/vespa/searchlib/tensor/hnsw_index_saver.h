@@ -7,6 +7,7 @@
 #include "hnsw_index_saver_metadata_node.h"
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/stllike/allocator.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vector>
 
 namespace search::tensor {
@@ -36,6 +37,7 @@ private:
     };
     const typename HnswGraph<type>::LinkArrayStore &_graph_links;
     MetaData _meta_data;
+    vespalib::GenerationHandler::Guard _guard;
 };
 
 }
