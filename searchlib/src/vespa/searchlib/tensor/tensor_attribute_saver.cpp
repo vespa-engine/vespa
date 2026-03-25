@@ -40,6 +40,10 @@ TensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
         if (!saveTarget.setup_writer(index_file_suffix(), "Binary data file for nearest neighbor index")) {
             return false;
         }
+        auto index_writer = saveTarget.get_writer(index_file_suffix()).allocBufferWriter();
+        // Note: Implementation of save() is responsible to call BufferWriter::flush().
+        _index_saver->save(*index_writer);
+        _index_saver.reset();
     }
 
     auto dat_writer = saveTarget.datWriter().allocBufferWriter();
@@ -48,11 +52,6 @@ TensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
         save_dense_tensor_store(*dat_writer, *dense_tensor_store);
     } else {
         save_tensor_store(*dat_writer);
-    }
-    if (_index_saver) {
-        auto index_writer = saveTarget.get_writer(index_file_suffix()).allocBufferWriter();
-        // Note: Implementation of save() is responsible to call BufferWriter::flush().
-        _index_saver->save(*index_writer);
     }
     return true;
 }
