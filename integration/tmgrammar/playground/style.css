@@ -1,0 +1,110 @@
+/* Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #1e1e2e;
+  --fg: #cdd6f4;
+  --border: rgba(128, 128, 128, 0.25);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1.2rem;
+  background-color: var(--bg);
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+header h1 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+select {
+  appearance: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 0.3rem 1.6rem 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: transparent;
+  color: inherit;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+select:hover {
+  border-color: var(--fg);
+}
+
+select:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+main {
+  flex: 1;
+  overflow: auto;
+}
+
+main pre {
+  padding: 1.2rem 1.5rem;
+  min-height: 100%;
+}
+
+main .shiki {
+  background-color: transparent !important;
+}
+
+main code {
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 520px) {
+  header {
+    flex-wrap: wrap;
+  }
+
+  .controls {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  select {
+    flex: 1;
+  }
+}
