@@ -143,9 +143,6 @@ TensorAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
     _tensorStore.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
-    if (_index) {
-        _index->reclaim_memory(oldest_used_gen);
-    }
 }
 
 void
@@ -153,9 +150,6 @@ TensorAttribute::before_inc_generation(generation_t current_gen)
 {
     getGenerationHolder().assign_generation(current_gen);
     _tensorStore.assign_generation(current_gen);
-    if (_index) {
-        _index->assign_generation(current_gen);
-    }
 }
 
 bool
@@ -503,6 +497,32 @@ TensorAttribute::getEstimatedSaveByteSize() const
      */
     double estimate = size_on_disk_factor * dynamic_memory_usage + headerSize;
     return estimate;
+}
+
+void
+TensorAttribute::incGeneration()
+{
+    auto& generation_handler = getGenerationHandler();
+    auto current_gen = generation_handler.getCurrentGeneration();
+    before_inc_generation(current_gen);
+    if (_index) {
+        _index->assign_generation(current_gen);
+    }
+    generation_handler.incGeneration();
+    // Remove old data on hold lists that can no longer be reached by readers
+    reclaim_unused_memory();
+}
+
+void
+TensorAttribute::reclaim_unused_memory()
+{
+    auto& generation_handler = getGenerationHandler();
+    generation_handler.update_oldest_used_generation();
+    auto oldest_used_gen = generation_handler.get_oldest_used_generation();
+    reclaim_memory(oldest_used_gen);
+    if (_index) {
+        _index->reclaim_memory(oldest_used_gen);
+    }
 }
 
 }
