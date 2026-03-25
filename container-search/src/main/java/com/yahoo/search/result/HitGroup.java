@@ -864,8 +864,15 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         return hitGroupClone;
     }
 
+    /** Ignored as this should always be derived from the content hits */
     @Override
     public void setFillable() {}
+
+    /** This does not make sense for a HitGroup, must be done on the content hits */
+    @Override
+    public void setUnfillable() {
+        throw new IllegalArgumentException("calling setUnfillable() on a HitGroup does not make sense, it needs to be called on its individual hits");
+    }
 
     /** Ignored as this should always be derived from the content hits */
     @Override
