@@ -395,17 +395,17 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         # Phase 1: Declaration name highlighting
         ("schema foo {", "foo", "entity.name.type.vespa", "declarations"),
         ("document bar {", "bar", "entity.name.type.vespa", "declarations"),
-        ("field myField type int", "myField", "entity.name.other.vespa", "declarations"),
+        ("field myField type int", "myField", None, "declarations"),
         ("field myField type int", "type", "keyword.control.vespa", "declarations"),
         ("struct myStruct {", "myStruct", "entity.name.type.vespa", "declarations"),
         ("rank-profile prof {", "prof", "entity.name.function.vespa", "declarations"),
         ("function fn(x)", "fn", "entity.name.function.vespa", "declarations"),
         ("annotation myAnnotation {", "myAnnotation", "entity.name.type.vespa", "declarations"),
         ("document-summary ds {", "ds", "entity.name.type.vespa", "declarations"),
-        ("fieldset fs {", "fs", "entity.name.other.vespa", "declarations"),
-        ("struct-field sf {", "sf", "entity.name.other.vespa", "declarations"),
-        ("constant myConst {", "myConst", "entity.name.other.vespa", "declarations"),
-        ("onnx-model myModel {", "myModel", "entity.name.other.vespa", "declarations"),
+        ("fieldset fs {", "fs", None, "declarations"),
+        ("struct-field sf {", "sf", None, "declarations"),
+        ("constant myConst {", "myConst", None, "declarations"),
+        ("onnx-model myModel {", "myModel", None, "declarations"),
 
         # Phase 2: Inherits target highlighting
         ("schema foo inherits bar", "bar", "entity.other.inherited-class.vespa", "declarations"),

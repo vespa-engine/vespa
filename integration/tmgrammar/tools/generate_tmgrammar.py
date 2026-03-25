@@ -600,12 +600,11 @@ def build_grammar(
         },
     })
 
-    # field NAME type
+    # field NAME type – LSP leaves field names uncolored
     declaration_patterns.append({
         "match": r"\b(field)\s+(" + _IDENT + r")\s+(type)\b",
         "captures": {
             "1": {"name": "keyword.declaration.vespa"},
-            "2": {"name": "entity.name.other.vespa"},
             "3": {"name": "keyword.control.vespa"},
         },
     })
@@ -663,21 +662,19 @@ def build_grammar(
         },
     })
 
-    # fieldset NAME
+    # fieldset NAME – LSP leaves name uncolored
     declaration_patterns.append({
         "match": r"\b(fieldset)\s+(" + _IDENT + r")",
         "captures": {
             "1": {"name": "keyword.declaration.vespa"},
-            "2": {"name": "entity.name.other.vespa"},
         },
     })
 
-    # struct-field NAME
+    # struct-field NAME – LSP leaves name uncolored
     declaration_patterns.append({
         "match": r"(?<![a-zA-Z0-9_-])(struct-field)\s+(" + _IDENT + r")",
         "captures": {
             "1": {"name": "keyword.declaration.vespa"},
-            "2": {"name": "entity.name.other.vespa"},
         },
     })
 
@@ -690,21 +687,19 @@ def build_grammar(
         },
     })
 
-    # constant NAME
+    # constant NAME – LSP leaves name uncolored
     declaration_patterns.append({
         "match": r"\b(constant)\s+(" + _IDENT + r")",
         "captures": {
             "1": {"name": "keyword.declaration.vespa"},
-            "2": {"name": "entity.name.other.vespa"},
         },
     })
 
-    # onnx-model NAME
+    # onnx-model NAME – LSP leaves name uncolored
     declaration_patterns.append({
         "match": r"(?<![a-zA-Z0-9_-])(onnx-model)\s+(" + _IDENT_DASH + r")",
         "captures": {
             "1": {"name": "keyword.declaration.vespa"},
-            "2": {"name": "entity.name.other.vespa"},
         },
     })
 
@@ -993,7 +988,6 @@ def build_grammar(
         "begin": r"\b(summary)\s+(?:([a-zA-Z_]\w*)\s+(?:(inherits)\s+([a-zA-Z_]\w*)\s*)?)?(\{)",
         "beginCaptures": {
             "1": {"name": "keyword.declaration.vespa"},
-            "2": {"name": "entity.name.other.vespa"},
             "3": {"name": "keyword.control.vespa"},
             "4": {"name": "entity.other.inherited-class.vespa"},
             "5": {"name": "punctuation.section.block.begin.vespa"},

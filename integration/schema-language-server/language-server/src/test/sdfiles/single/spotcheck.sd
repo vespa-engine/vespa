@@ -1,0 +1,500 @@
+# ============================================================================
+# Comprehensive Vespa schema for visual spot-checking of TextMate grammar.
+# Covers all major syntax constructs: declarations, types, indexing, ranking,
+# inheritance, punctuation, literals, and context-specific highlighting.
+# ============================================================================
+
+schema spotcheck {
+
+    # ---------- Document with inheritance and diverse field types ----------
+
+    document spotcheck {
+
+        # Primitive types
+        field title type string {
+            indexing: index | summary
+            index: enable-bm25
+            stemming: best
+            bolding: on
+            normalizing: none
+            match: text
+            weight: 200
+            alias: heading
+            id: 1
+        }
+
+        field body type string {
+            indexing: index | summary
+            match {
+                word
+            }
+        }
+
+        field count type int {
+            indexing: summary | attribute
+            attribute: fast-search
+            rank: literal
+        }
+
+        field score type double {
+            indexing: attribute
+        }
+
+        field rating type float {
+            indexing: attribute | summary
+            attribute: fast-access
+        }
+
+        field timestamp type long {
+            indexing: attribute
+            attribute {
+                fast-search
+                mutable
+                paged
+            }
+        }
+
+        field flag type bool {
+            indexing: summary | attribute
+        }
+
+        field raw_data type byte {
+            indexing: attribute
+        }
+
+        field location type position {
+            indexing: attribute | summary
+        }
+
+        field tags type tag {
+            indexing: index | attribute
+        }
+
+        field filter_expr type predicate {
+            indexing: attribute
+            index {
+                arity: 2
+                lower-bound: 0
+                upper-bound: 1000
+                dense-posting-list-threshold: 0.25
+            }
+        }
+
+        # Container types
+        field categories type array<string> {
+            indexing: index | attribute | summary
+        }
+
+        field weights type weightedset<string> {
+            indexing: attribute | summary
+            weightedset {
+                create-if-nonexistent
+                remove-if-zero
+            }
+        }
+
+        field metadata type map<string, string> {
+            indexing: attribute | summary
+        }
+
+        # Tensor type
+        field text_embedding type tensor<float>(x[384]) {
+            indexing: attribute
+            attribute {
+                distance-metric: angular
+            }
+            index {
+                hnsw {
+                    max-links-per-node: 16
+                    neighbors-to-explore-at-insert: 200
+                }
+            }
+        }
+
+        field sparse_features type tensor<double>(category{}) {
+            indexing: attribute
+        }
+
+        field matrix type tensor<bfloat16>(d0[10], d1[20]) {
+            indexing: attribute
+        }
+
+        # Nested container types
+        field nested_array type array<array<string>> {
+            indexing: summary
+        }
+
+        field complex_map type map<int, array<person>> {
+            indexing: attribute
+        }
+
+        # Struct declaration
+        struct address {
+            field street type string {}
+            field city type string {}
+            field zipcode type int {}
+            field country type string {}
+        }
+
+        struct person {
+            field name type string {}
+            field age type int {}
+            field home type address {}
+        }
+
+        field author type person {
+            indexing: summary
+            struct-field name {
+                indexing: index | attribute
+                match: exact
+                rank: literal
+                attribute: fast-rank
+            }
+            struct-field age {
+                indexing: attribute
+            }
+        }
+
+        field authors type array<person> {
+            indexing: summary
+            struct-field name {
+                indexing: index
+            }
+        }
+
+        # Sorting configuration
+        field sorted_field type string {
+            indexing: attribute
+            attribute {
+                sorting {
+                    function: lowercase
+                    locale: en_US
+                    strength: primary
+                }
+            }
+        }
+
+        # Dictionary configuration
+        field dict_field type long {
+            indexing: attribute
+            attribute: fast-search
+            dictionary {
+            }
+        }
+
+        # Match modes
+        field exact_field type string {
+            indexing: index
+            match: exact
+            rank-type: identity
+        }
+
+        field gram_field type string {
+            indexing: index
+            match {
+                gram
+                gram-size: 3
+            }
+        }
+
+        field prefix_field type string {
+            indexing: index
+            match: prefix
+        }
+
+        field substring_field type string {
+            indexing: index
+            match: substring
+        }
+
+        field suffix_field type string {
+            indexing: index
+            match: suffix
+        }
+    }
+
+    # ---------- Annotation declarations ----------
+
+    annotation highlight {}
+
+    annotation semantic_entity {
+        field entity_type type string {}
+        field confidence type double {}
+    }
+
+    annotation child_annotation inherits semantic_entity {
+        field source type string {}
+    }
+
+    # ---------- Schema-level fields (outside document) ----------
+
+    field embedding type tensor<float>(d0[384]) {
+        indexing: input body | embed my_embedder | attribute | index
+        attribute {
+            distance-metric: dotproduct
+        }
+    }
+
+    field chunked_body type array<string> {
+        indexing: input body | chunk anv | summary
+    }
+
+    raw-as-base64-in-summary
+
+    # ---------- Fieldset ----------
+
+    fieldset default {
+        fields: title, body
+    }
+
+    fieldset extended {
+        fields: title, body, categories, author.name
+    }
+
+    # ---------- Constant declarations ----------
+
+    constant my_tensor_constant {
+        file: constants/tensor_data.json.lz4
+        type: tensor<bfloat16>(d0[768])
+    }
+
+    constant another_constant {
+        file: constants/values.json
+        type: tensor<float>(d0[100])
+    }
+
+    # ---------- ONNX model declarations ----------
+
+    onnx-model cross_encoder {
+        file: models/cross-encoder.onnx
+        input "input_ids": input_ids
+        input "attention_mask": attention_mask
+        output "logits": logits
+        gpu-device: 0
+        intraop-threads: 4
+        interop-threads: 1
+        execution-mode: parallel
+    }
+
+    onnx-model ranker {
+        file: models/ranker.onnx
+        input "features": attribute(score)
+        #input "constant_input": constant(my_tensor_constant)
+        output "output": ranking_score
+    }
+
+    # ---------- Document summaries ----------
+
+    document-summary minimal {
+        summary title {
+            source: title
+        }
+        summary count {}
+    }
+
+    document-summary detailed inherits minimal {
+        summary body {
+            source: body
+            bolding: on
+            dynamic
+        }
+        summary author_name {
+            source: author.name
+            full
+        }
+        summary tags {
+            source: tags
+            tokens
+            matched-elements-only
+        }
+    }
+
+    # ---------- Rank profiles ----------
+
+    rank-profile base_ranking {
+        inputs {
+            query(q) tensor<float>(x[384])
+            query(user_embedding) tensor<float>(x[128])
+            query(alpha) double: 0.7
+        }
+
+        constants {
+            WEIGHT_BM25: 0.3
+            WEIGHT_SEMANTIC: 0.7
+        }
+
+        rank-properties {
+            bm25(title).k1: 1.2
+            bm25(title).b: 0.75
+            bm25(title).averageFieldLength: 50
+            bm25(body).k1: 1.5
+            bm25(body).b: 0.85
+            fieldMatch(title).maxOccurrences: 100
+            elementSimilarity(categories).output.weight: 0.5
+        }
+
+        function bm25_score() {
+            expression: 2 * bm25(title) + bm25(body)
+        }
+
+        function semantic_score() {
+            expression: closeness(field, embedding)
+        }
+
+        function hybrid_score() {
+            expression {
+                query(alpha) * semantic_score + (1 - query(alpha)) * bm25_score
+            }
+        }
+
+        first-phase {
+            expression: bm25_score
+            keep-rank-count: 10000
+            rank-score-drop-limit: -1.0
+        }
+
+        second-phase {
+            expression: hybrid_score
+            rerank-count: 1000
+            rank-score-drop-limit: 0.0
+        }
+
+        match-phase {
+            attribute: count
+            order: descending
+            max-hits: 50000
+            max-filter-coverage: 0.2
+        }
+
+        diversity {
+            attribute: categories
+            min-groups: 5
+        }
+
+        match-features {
+            bm25(title)
+            bm25(body)
+            closeness(field, embedding)
+            fieldMatch(title)
+            nativeRank
+            attribute(count)
+        }
+
+        summary-features {
+            bm25(title)
+            hybrid_score
+        }
+
+        rank-features {
+            attribute(score)
+        }
+
+        strict: false
+        num-threads-per-search: 2
+        min-hits-per-thread: 100
+        termwise-limit: 0.01
+    }
+
+    rank-profile advanced_ranking inherits base_ranking {
+        inputs {
+            query(q) tensor<float>(x[384])
+            query(diversity_weight) double: 0.1
+        }
+
+        function onnx_score() {
+            expression: sum(onnxModel(cross_encoder).logits)
+        }
+
+        function xgboost_score() {
+            expression: xgboost("models/xgboost-model.json")
+        }
+
+        function lightgbm_score() {
+            expression: lightgbm("models/lightgbm-model.json")
+        }
+
+        # Tensor operations in expression
+        function tensor_ops() {
+            expression {
+                reduce(
+                    query(q) * attribute(text_embedding),
+                    sum, x
+                )
+            }
+        }
+
+        # Complex ranking expression with all operator types
+        function complex_ranking() {
+            expression {
+                if (bm25(title) > 0.5,
+                    bm25(title) * 2.0 + bm25(body) * 1.5,
+                    closeness(field, embedding) * 3.0
+                ) + 100
+            }
+        }
+
+        # Tensor generation and lambda
+        function generate_tensor() {
+            expression: tensor<float>(d0[100])(d0 / 100.0)
+        }
+
+        # Mathematical functions
+        function math_demo() {
+            expression: pow(bm25(title), 2) + sqrt(abs(score)) + log(1 + count) + sigmoid(score - 0.5)
+        }
+
+        # Foreach loop in ranking
+        function term_significance() {
+            expression: foreach(terms, N, term(N).significance, true, max)
+        }
+
+        function attribute_access() {
+            expression: attribute(count) + query(alpha) * 0.5
+        }
+
+        second-phase {
+            expression: onnx_score
+            rerank-count: 100
+        }
+
+        global-phase {
+            expression {
+                reciprocal_rank_fusion(bm25_score, onnx_score)
+            }
+            rerank-count: 200
+        }
+
+        summary-features inherits base_ranking {
+            onnx_score
+            tensor_ops
+        }
+
+        match-features inherits base_ranking {
+            attribute(score)
+        }
+
+        mutate {
+            on-match {
+                timestamp += 3600 
+            }
+        }
+
+        mutate {
+            on-first-phase {
+                score += 0.1
+            }
+        }
+    }
+
+    # Rank profile with inline function
+    rank-profile with_inline {
+        function inline my_inline_fn() {
+            expression: 0
+        }
+
+        first-phase {
+            expression: my_inline_fn
+        }
+    }
+
+}
