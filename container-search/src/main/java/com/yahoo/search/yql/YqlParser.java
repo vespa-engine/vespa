@@ -1131,7 +1131,11 @@ public class YqlParser implements Parser {
             case VARREF -> {
                 Preconditions.checkState(userQuery != null,
                         "properties must be available when trying to fetch user input");
-                yield userQuery.properties().getString(operator.getArgument(0, String.class));
+                String key = operator.getArgument(0, String.class);
+                String value = userQuery.properties().getString(key);
+                if (value == null)
+                    throw new IllegalInputException("Input '" + key + "' is not set");
+                yield value;
             }
             default -> throw newUnexpectedArgumentException(operator.getOperator(),
                     ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
