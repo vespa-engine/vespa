@@ -333,9 +333,6 @@
           "captures": {
             "1": {
               "name": "keyword.declaration.vespa"
-            },
-            "2": {
-              "name": "entity.name.type.vespa"
             }
           }
         },
@@ -378,9 +375,6 @@
           "captures": {
             "1": {
               "name": "keyword.declaration.vespa"
-            },
-            "2": {
-              "name": "entity.name.type.vespa"
             },
             "3": {
               "name": "keyword.control.vespa"

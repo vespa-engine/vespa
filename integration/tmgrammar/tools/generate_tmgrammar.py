@@ -609,12 +609,11 @@ def build_grammar(
         },
     })
 
-    # struct NAME
+    # struct NAME – LSP leaves name uncolored
     declaration_patterns.append({
         "match": r"\b(struct)\s+(" + _IDENT + r")",
         "captures": {
             "1": {"name": "keyword.declaration.vespa"},
-            "2": {"name": "entity.name.type.vespa"},
         },
     })
 
@@ -640,12 +639,11 @@ def build_grammar(
         },
     })
 
-    # annotation NAME [inherits PARENT]
+    # annotation NAME [inherits PARENT] – LSP leaves name uncolored
     declaration_patterns.append({
         "match": r"\b(annotation)\s+(" + _IDENT + r")(?:\s+(inherits)\s+(" + _IDENT + r"))?",
         "captures": {
             "1": {"name": "keyword.declaration.vespa"},
-            "2": {"name": "entity.name.type.vespa"},
             "3": {"name": "keyword.control.vespa"},
             "4": {"name": "entity.other.inherited-class.vespa"},
         },
