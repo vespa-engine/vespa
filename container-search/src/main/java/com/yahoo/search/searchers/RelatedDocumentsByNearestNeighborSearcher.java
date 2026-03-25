@@ -70,7 +70,6 @@ public class RelatedDocumentsByNearestNeighborSearcher extends Searcher {
         String idField = query.properties().getString(RELATED_TO_ID_FIELD, "id");
         String summary = query.properties().getString(RELATED_TO_SUMMARY, embeddingField);
         int targetHits = query.getHits() + query.getOffset();
-        int exploreAdditionalHits = query.properties().getInteger(RELATED_TO_EXPLORE_ADDITIONAL_HITS, 100);
         boolean excludeSource = query.properties().getBoolean(RELATED_TO_EXCLUDE_SOURCE, true);
 
         Tensor embedding = fetchEmbedding(sourceId, idField, embeddingField, summary, execution, query);
@@ -79,7 +78,11 @@ public class RelatedDocumentsByNearestNeighborSearcher extends Searcher {
                     "Could not find document with " + idField + "=" + sourceId + " or it has no " + embeddingField));
         }
 
-        addNearestNeighborItem(embedding, embeddingField, queryTensorName, targetHits, exploreAdditionalHits, query);
+        // Translate explored additional hits (deprecated) into an increased target hits
+        int exploreAdditionalHits = query.properties().getInteger(RELATED_TO_EXPLORE_ADDITIONAL_HITS, 0);
+        targetHits = Math.max(targetHits, exploreAdditionalHits);
+
+        addNearestNeighborItem(embedding, embeddingField, queryTensorName, targetHits, query);
 
         if (excludeSource) {
             excludeSourceDocument(sourceId, idField, query);
@@ -113,13 +116,12 @@ public class RelatedDocumentsByNearestNeighborSearcher extends Searcher {
     }
 
     private void addNearestNeighborItem(Tensor embedding, String embeddingField, String queryTensorName,
-                                         int targetHits, int exploreAdditionalHits, Query query) {
+                                         int targetHits, Query query) {
         query.getRanking().getFeatures().put("query(" + queryTensorName + ")", embedding);
 
         NearestNeighborItem nnItem = new NearestNeighborItem(embeddingField, queryTensorName);
         nnItem.setAllowApproximate(true);
         nnItem.setTargetHits(targetHits);
-        nnItem.setHnswExploreAdditionalHits(exploreAdditionalHits);
 
         Item root = query.getModel().getQueryTree().getRoot();
         if (root instanceof NullItem || root == null) {

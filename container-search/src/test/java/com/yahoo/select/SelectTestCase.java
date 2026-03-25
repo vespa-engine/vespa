@@ -676,10 +676,11 @@ public class SelectTestCase {
     @Test
     void testNearestNeighbor() {
         assertParse("{ \"nearestNeighbor\": [ \"f1field\", \"q2prop\" ] }",
-                "NEAREST_NEIGHBOR {field=f1field,queryTensorName=q2prop,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true}");
-
+                "NEAREST_NEIGHBOR {field=f1field,queryTensorName=q2prop}");
         assertParse("{ \"nearestNeighbor\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"targetHits\": 37, \"hnsw.exploreAdditionalHits\": 42, \"distanceThreshold\": 100100.25 } }}",
-                "NEAREST_NEIGHBOR {field=f3field,queryTensorName=q4prop,hnsw.exploreAdditionalHits=42,distanceThreshold=100100.25,approximate=true,targetHits=37}");
+                "NEAREST_NEIGHBOR {field=f3field,queryTensorName=q4prop,targetHits=37,distanceThreshold=100100.25,hnsw.exploreAdditionalHits=42}");
+        assertParse("{ \"nearestNeighbor\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"totalTargetHits\": 100, \"minTargetHits\": 11, \"hnsw.exploreAdditionalHits\": 42, \"distanceThreshold\": 100100.25 } }}",
+                    "NEAREST_NEIGHBOR {field=f3field,queryTensorName=q4prop,totalTargetHits=100,minTargetHits=11,distanceThreshold=100100.25,hnsw.exploreAdditionalHits=42}");
     }
 
     @Test
