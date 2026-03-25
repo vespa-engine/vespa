@@ -60,7 +60,11 @@ $ vespa status --no-verify`,
 				return err
 			}
 			if len(services) == 0 {
-				return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
+				if cluster == "" {
+					return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
+				} else {
+					return errHint(fmt.Errorf("no services exist for cluster '%v'", cluster), "Bad cluster name or not ready", "For full status try: vespa status --cluster \"\"")
+				}
 			}
 			for _, s := range services {
 				if !printServiceStatus(s, format, waiter, cli, noVerify) {
