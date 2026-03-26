@@ -89,8 +89,8 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
             server.setRequestLog(metricAggregatingRequestLog);
         } else {
             server.setRequestLog(new org.eclipse.jetty.server.RequestLog.Collection(
-                    new AccessLogRequestLog(requestLog),
-                    metricAggregatingRequestLog));
+                    metricAggregatingRequestLog,
+                    new AccessLogRequestLog(requestLog)));
         }
         setupJmx(server, serverConfig);
         configureJettyThreadpool(server, serverConfig);
