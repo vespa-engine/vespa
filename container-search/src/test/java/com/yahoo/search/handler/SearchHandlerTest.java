@@ -145,6 +145,13 @@ public class SearchHandlerTest {
         assertEquals(400, responseHandler.getStatus());
         assertTrue(response.contains("offset"));
         assertTrue(response.contains("\"code\":" + com.yahoo.container.protect.Error.ILLEGAL_QUERY.code));
+
+        // Illegal request property key should be handled as IllegalInputException, which will give
+        // a 400 response saying this was an illegal query
+        responseHandler = testDriver.sendRequest("http://localhost/search/?query=status_code%3A0&T.=20");
+        response = responseHandler.readAll();
+        assertEquals(400, responseHandler.getStatus());
+        assertTrue(response.contains("\"code\":" + com.yahoo.container.protect.Error.ILLEGAL_QUERY.code));
     }
 
     @Test
