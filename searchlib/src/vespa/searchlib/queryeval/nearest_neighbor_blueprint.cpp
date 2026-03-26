@@ -79,6 +79,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _lazy_filter_hits(),
       _lazy_filter_hit_ratio(),
       _low_hit_ratio(false),
+      _will_perform_index_top_k(false),
       _doom(doom),
       _matching_phase(MatchingPhase::FIRST_PHASE),
       _nni_stats(),
@@ -135,7 +136,7 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
             est_hits = std::min(est_hits, _adjusted_target_hits);
             set_cost_tier(State::COST_TIER_NORMAL);
             setEstimate(HitEstimate(est_hits, false));
-            perform_top_k(nns_index);
+            _will_perform_index_top_k = true;
         }
     }
 }
@@ -143,6 +144,19 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
 void
 NearestNeighborBlueprint::set_lazy_filter(const GlobalFilter &lazy_filter) {
     _lazy_filter = lazy_filter.shared_from_this();
+}
+
+bool
+NearestNeighborBlueprint::will_perform_index_top_k() const {
+    return _will_perform_index_top_k;
+}
+
+void
+NearestNeighborBlueprint::perform_index_top_k() {
+    if (_will_perform_index_top_k) {
+        perform_top_k(_attr_tensor.nearest_neighbor_index());
+        _will_perform_index_top_k = false;
+    }
 }
 
 void

@@ -128,6 +128,8 @@ public:
                                      double global_filter_lower_limit, double global_filter_upper_limit,
                                      vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace, bool use_lazy_filter = false);
 
+    static void perform_ann_searches(Blueprint& blueprint, search::engine::Trace* trace);
+
     void freeze();
     void set_matching_phase(search::queryeval::MatchingPhase matching_phase) const noexcept;
 

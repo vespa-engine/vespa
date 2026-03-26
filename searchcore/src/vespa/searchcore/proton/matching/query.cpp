@@ -358,7 +358,26 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
         trace->addEvent(5, "Handle global filter in query execution plan");
     }
     blueprint.set_global_filter(*global_filter, estimated_hit_ratio);
+    perform_ann_searches(blueprint, trace);
     return true;
+}
+
+void
+Query::perform_ann_searches(Blueprint& blueprint, search::engine::Trace* trace)
+{
+    uint32_t num_ann_searches = 0;
+    blueprint.each_node_post_order([&num_ann_searches](Blueprint& bp) {
+        if (auto nearest_neighbor = bp.asNearestNeighbor()) {
+            num_ann_searches += nearest_neighbor->will_perform_index_top_k();
+        }
+    });
+    if (num_ann_searches > 0) {
+        blueprint.each_node_post_order([](Blueprint& bp) {
+            if (auto nearest_neighbor = bp.asNearestNeighbor()) {
+                nearest_neighbor->perform_index_top_k();
+            }
+        });
+    }
 }
 
 void
