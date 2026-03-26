@@ -134,6 +134,7 @@ private:
     Avg                    _doomOvertime;
     using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
     SoftDoomFactor         _softDoomFactor;
+    Avg                    _total_ann_time;
     Avg                    _querySetupTime;
     Avg                    _queryLatency;
     Avg                    _matchTime;
@@ -186,6 +187,11 @@ public:
     MatchingStats &softDoomFactor(double value) { _softDoomFactor.store_relaxed(value); return *this; }
     double softDoomFactor() const { return _softDoomFactor.load_relaxed(); }
     MatchingStats &updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::duration softLimit, vespalib::duration duration);
+
+    double total_ann_time_avg() const { return _total_ann_time.avg(); }
+    size_t total_ann_time_count() const { return _total_ann_time.count(); }
+    double total_ann_time_min() const { return _total_ann_time.min(); }
+    double total_ann_time_max() const { return _total_ann_time.max(); }
 
     MatchingStats &querySetupTime(double time_s) { _querySetupTime.set(time_s); return *this; }
     double querySetupTimeAvg() const { return _querySetupTime.avg(); }

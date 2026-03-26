@@ -58,14 +58,19 @@ private:
     std::optional<uint32_t> _lazy_filter_hits;
     std::optional<double> _lazy_filter_hit_ratio;
     bool _low_hit_ratio;
+    bool _will_perform_index_top_k;
     const vespalib::Doom& _doom;
     MatchingPhase _matching_phase;
+    vespalib::duration                          _ann_time_until_doom;
+    vespalib::duration                          _ann_time_used;
+    bool                                        _ann_terminated_early;
+    bool                                        _ann_timeout_hit;
     search::tensor::NearestNeighborIndex::Stats _nni_stats;
-    std::shared_ptr<QueryEvalStats> _stats;
+    std::shared_ptr<QueryEvalStats>             _stats;
 
     static double convert_distance_threshold(double distance_threshold,
                                              const search::tensor::DistanceCalculator& distance_calc);
-    void perform_top_k(const search::tensor::NearestNeighborIndex* nns_index);
+    void perform_top_k(const search::tensor::NearestNeighborIndex* nns_index, const vespalib::ANNDoom &doom);
 public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                              std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
@@ -82,6 +87,8 @@ public:
     bool want_global_filter(GlobalFilterLimits& limits) const override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
     void set_lazy_filter(const GlobalFilter &lazy_filter) override;
+    bool will_perform_index_top_k() const;
+    void perform_index_top_k(const vespalib::ANNDoom &doom);
     Algorithm get_algorithm() const { return _algorithm; }
     double get_distance_threshold() const { return _hnsw_params.distance_threshold; }
     const HnswParams& get_hnsw_params() const { return _hnsw_params; }
