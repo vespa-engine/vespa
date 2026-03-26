@@ -1333,9 +1333,9 @@ TEST(TensorAttributeTest, commit_ensures_transfer_and_trim_hold_lists_on_nearest
 
     generation_t gen_2 = 0;
     {
-        // Takes guard on gen_1 if NearestNeighborIndex::manage_generation is false.
+        // Takes guard on gen_1 if TensorAttributeFlags::use_nearest_neighbor_index_generation_manager is false.
         auto guard = f._attr->makeReadGuard(false);
-        // Takes guard on gen_1 if NearestNeighborIndex::manage_generation is true.
+        // Takes guard on gen_1 if TensorAttributeFlags::use_nearest_neighbor_index_generation_manager is true.
         auto index_guard = index.make_generation_read_guard();
         f.set_tensor(2, spec);
         gen_2 = f.get_current_index_gen();
