@@ -281,6 +281,9 @@ public:
     void remove_document(uint32_t docid) override;
     void assign_generation(generation_t current_gen) override;
     void reclaim_memory(generation_t oldest_used_gen) override;
+    vespalib::GenerationHandler::Guard make_generation_read_guard() const override;
+    void inc_generation() override;
+    void reclaim_unused_memory() override;
     void compact_level_arrays(const CompactionStrategy& compaction_strategy);
     void compact_link_arrays(const CompactionStrategy& compaction_strategy);
     bool consider_compact(const CompactionStrategy& compaction_strategy) override;
