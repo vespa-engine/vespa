@@ -48,17 +48,25 @@ public class CapacityPolicies {
     private final ApplicationId applicationId;
     private final Tuning tuning;
     private final double cpuCap;
+    private final boolean honorDiskSpeedAndStorageTypeInDev;
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning) {
-        this(zone, exclusivity, applicationId, tuning, 0.0);  // TODO: Consider changing cpu cap from 0.0 to 1.0
+        // TODO: Consider changing cpu cap from 0.0 to 1.0 and honorDiskSpeedAndStorageTypeInDev to true
+        this(zone, exclusivity, applicationId, tuning, 0.0, false);
     }
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning, double cpuCap) {
+        this(zone, exclusivity, applicationId, tuning, cpuCap, false);
+    }
+
+    public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning, double cpuCap,
+                            boolean honorDiskSpeedAndStorageTypeInDev) {
         this.zone = zone;
         this.exclusivity = exclusivity;
         this.applicationId = applicationId;
         this.tuning = tuning;
         this.cpuCap = cpuCap;
+        this.honorDiskSpeedAndStorageTypeInDev = honorDiskSpeedAndStorageTypeInDev;
     }
 
     public Capacity applyOn(Capacity capacity, boolean exclusive) {
@@ -113,8 +121,14 @@ public class CapacityPolicies {
         }
 
         // Allow slow storage in zones which are not performance sensitive
-        if (zone.system().isCdLike() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
+        if (zone.system().isCdLike() || zone.environment() == Environment.test)
             target = target.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any).withBandwidthGbps(0.1);
+        else if (zone.environment() == Environment.dev) {
+            if (honorDiskSpeedAndStorageTypeInDev)
+                target = target.withBandwidthGbps(0.1);
+            else
+                target = target.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any).withBandwidthGbps(0.1);
+        }
 
         return target;
     }
