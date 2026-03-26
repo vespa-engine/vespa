@@ -7,6 +7,7 @@
 #include "serialized_tensor_ref.h"
 #include "tensor_attribute_constants.h"
 #include "tensor_attribute_explorer.h"
+#include "tensor_attribute_flags.h"
 #include "tensor_attribute_loader.h"
 #include "tensor_attribute_saver.h"
 #include <vespa/document/base/exceptions.h>
@@ -27,6 +28,7 @@ using document::TensorDataType;
 using document::TensorUpdate;
 using document::WrongTensorTypeException;
 using search::AddressSpaceComponents;
+using vespalib::GenerationHandler;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -505,10 +507,17 @@ TensorAttribute::incGeneration()
     auto& generation_handler = getGenerationHandler();
     auto current_gen = generation_handler.getCurrentGeneration();
     before_inc_generation(current_gen);
-    if (_index) {
-        _index->assign_generation(current_gen);
+    if constexpr (!TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+        if (_index) {
+            _index->assign_generation(current_gen);
+        }
     }
     generation_handler.incGeneration();
+    if constexpr (TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+        if (_index) {
+            _index->inc_generation();
+        }
+    }
     // Remove old data on hold lists that can no longer be reached by readers
     reclaim_unused_memory();
 }
@@ -521,7 +530,11 @@ TensorAttribute::reclaim_unused_memory()
     auto oldest_used_gen = generation_handler.get_oldest_used_generation();
     reclaim_memory(oldest_used_gen);
     if (_index) {
-        _index->reclaim_memory(oldest_used_gen);
+        if constexpr (TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+            _index->reclaim_unused_memory();
+        } else {
+            _index->reclaim_memory(oldest_used_gen);
+        }
     }
 }
 

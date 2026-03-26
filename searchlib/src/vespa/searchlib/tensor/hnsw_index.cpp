@@ -28,6 +28,7 @@ using search::queryeval::GlobalFilter;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
+using vespalib::GenerationHandler;
 using vespalib::GenericHeader;
 
 namespace {
@@ -946,6 +947,31 @@ HnswIndex<type>::reclaim_memory(generation_t oldest_used_gen)
     _graph.levels_store.reclaim_memory(oldest_used_gen);
     _graph.links_store.reclaim_memory(oldest_used_gen);
     _id_mapping.reclaim_memory(oldest_used_gen);
+}
+
+template <HnswIndexType type>
+GenerationHandler::Guard
+HnswIndex<type>::make_generation_read_guard() const
+{
+    return _graph._generation_handler.takeGuard();
+};
+
+template <HnswIndexType type>
+void
+HnswIndex<type>::inc_generation()
+{
+    auto current_gen = _graph._generation_handler.getCurrentGeneration();
+    assign_generation(current_gen);
+    _graph._generation_handler.incGeneration();
+}
+
+template <HnswIndexType type>
+void
+HnswIndex<type>::reclaim_unused_memory()
+{
+    _graph._generation_handler.update_oldest_used_generation();
+    auto oldest_used_gen = _graph._generation_handler.get_oldest_used_generation();
+    reclaim_memory(oldest_used_gen);
 }
 
 template <HnswIndexType type>
