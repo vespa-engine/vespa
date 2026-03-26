@@ -291,7 +291,11 @@ public class SearchHandler extends LoggingRequestHandler {
 
         // Transform result to response
         Renderer<Result> renderer = toRendererCopy(query.getPresentation().getRenderer());
-        HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
+        int status = getHttpResponseStatus(request, result);
+        if (status >= 500 && result.hits().getError() != null) {
+            log.log(Level.WARNING, () -> "Search request returning %d: %s".formatted(status, result.hits().getError().getDetailedMessage()));
+        }
+        HttpSearchResponse response = new HttpSearchResponse(status,
                                                              result, query, renderer,
                                                              extractTraceNode(query),
                                                              metric);
