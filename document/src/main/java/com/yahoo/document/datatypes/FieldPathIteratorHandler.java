@@ -2,6 +2,7 @@
 package com.yahoo.document.datatypes;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 /**
@@ -9,10 +10,38 @@ import java.util.TreeMap;
  */
 public abstract class FieldPathIteratorHandler {
 
+    private final VariableMap variables = new VariableMap();
+
+    public void onPrimitive(FieldValue fv) {}
+
+    public boolean onComplex(FieldValue fv) {
+        return true;
+    }
+
+    public ModificationStatus doModify(FieldValue fv) {
+        return ModificationStatus.NOT_MODIFIED;
+    }
+
+    public ModificationStatus modify(FieldValue fv) {
+        return doModify(fv);
+    }
+
+    public boolean createMissingPath() {
+        return false;
+    }
+
+    public VariableMap getVariables() {
+        return variables;
+    }
+
+    public enum ModificationStatus {
+        MODIFIED, REMOVED, NOT_MODIFIED
+    }
+
     public static class IndexValue {
 
-        private int index;
-        private FieldValue key;
+        private final int index;
+        private final FieldValue key;
 
         public int getIndex() {
             return index;
@@ -56,17 +85,10 @@ public abstract class FieldPathIteratorHandler {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof IndexValue)) {
-                return false;
-            }
-            IndexValue other = (IndexValue)o;
-            if (key != null && other.key != null) {
-                return key.equals(other.key);
-            }
-            if (key == null && other.key == null) {
-                return index == other.index;
-            }
-            return false;
+            if (!(o instanceof IndexValue other)) return false;
+            if ( ! Objects.equals(this.key, other.key)) return false;
+            if ( ! Objects.equals(this.index, other.index)) return false;
+            return true;
         }
     };
 
@@ -78,36 +100,6 @@ public abstract class FieldPathIteratorHandler {
             map.putAll(this);
             return map;
         }
-    }
-
-    private VariableMap variables = new VariableMap();
-
-    public void onPrimitive(FieldValue fv) {
-
-    }
-
-    public boolean onComplex(FieldValue fv) {
-        return true;
-    }
-
-    public ModificationStatus doModify(FieldValue fv) {
-        return ModificationStatus.NOT_MODIFIED;
-    }
-
-    public enum ModificationStatus {
-        MODIFIED, REMOVED, NOT_MODIFIED
-    }
-
-    public ModificationStatus modify(FieldValue fv) {
-        return doModify(fv);
-    }
-
-    public boolean createMissingPath() {
-        return false;
-    }
-
-    public VariableMap getVariables() {
-        return variables;
     }
 
 }
