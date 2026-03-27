@@ -2,54 +2,47 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
 #include <gmock/gmock.h>
 
 using document::new_config_builder::NewConfigBuilder;
 using namespace ::testing;
 
-
 namespace document {
 
-TEST(DocumentTypeTest, testSetGet)
-{
-  DocumentType docType("doctypetestdoc", 0);
+TEST(DocumentTypeTest, testSetGet) {
+    DocumentType docType("doctypetestdoc", 0);
 
-  docType.addField(Field("stringattr", 3, *DataType::STRING));
-  docType.addField(Field("nalle", 0, *DataType::INT));
+    docType.addField(Field("stringattr", 3, *DataType::STRING));
+    docType.addField(Field("nalle", 0, *DataType::INT));
 
-  const Field& fetch1 = docType.getField("stringattr");
-  const Field& fetch2 = docType.getField("stringattr");
+    const Field& fetch1 = docType.getField("stringattr");
+    const Field& fetch2 = docType.getField("stringattr");
 
-  EXPECT_TRUE(fetch1 == fetch2);
-  EXPECT_TRUE(fetch1.getName() == "stringattr");
+    EXPECT_TRUE(fetch1 == fetch2);
+    EXPECT_TRUE(fetch1.getName() == "stringattr");
 
-  const Field& fetch3 = docType.getField(3);
+    const Field& fetch3 = docType.getField(3);
 
-  EXPECT_TRUE(fetch1 == fetch3);
+    EXPECT_TRUE(fetch1 == fetch3);
 
-  const Field& fetch4 = docType.getField(0);
+    const Field& fetch4 = docType.getField(0);
 
-  EXPECT_TRUE(fetch4 != fetch1);
+    EXPECT_TRUE(fetch4 != fetch1);
 }
 
-void
-categorizeFields(const Field::Set& fields,
-                 std::vector<const Field*>& headers)
-{
-    for (const Field * field : fields)
-    {
+void categorizeFields(const Field::Set& fields, std::vector<const Field*>& headers) {
+    for (const Field* field : fields) {
         headers.push_back(field);
     }
 }
 
-TEST(DocumentTypeTest, testInheritanceConfig)
-{
-    DocumentTypeRepo
-        repo(readDocumenttypesConfig(TEST_PATH("data/inheritancetest.cfg")));
+TEST(DocumentTypeTest, testInheritanceConfig) {
+    DocumentTypeRepo repo(readDocumenttypesConfig(TEST_PATH("data/inheritancetest.cfg")));
     {
         const DocumentType* type(repo.getDocumentType("music"));
         EXPECT_TRUE(type != nullptr);
@@ -61,10 +54,8 @@ TEST(DocumentTypeTest, testInheritanceConfig)
     }
 }
 
-TEST(DocumentTypeTest, testHeaderContent)
-{
-    DocumentTypeRepo
-        repo(readDocumenttypesConfig(TEST_PATH("data/doctypesconfigtest.cfg")));
+TEST(DocumentTypeTest, testHeaderContent) {
+    DocumentTypeRepo repo(readDocumenttypesConfig(TEST_PATH("data/doctypesconfigtest.cfg")));
 
     const DocumentType* type(repo.getDocumentType("derived"));
 
@@ -82,13 +73,11 @@ TEST(DocumentTypeTest, testHeaderContent)
     EXPECT_TRUE(headers[5]->getName() == "fieldarray1");
 }
 
-TEST(DocumentTypeTest, testMultipleInheritance)
-{
+TEST(DocumentTypeTest, testMultipleInheritance) {
     NewConfigBuilder builder;
 
     auto& doc1 = builder.document("test1", 42);
-    doc1.addField("stringattr", builder.stringTypeRef())
-        .addField("nalle", builder.intTypeRef());
+    doc1.addField("stringattr", builder.stringTypeRef()).addField("nalle", builder.intTypeRef());
 
     auto& doc2 = builder.document("test2", 43);
     doc2.addField("stringattr", builder.stringTypeRef())
@@ -98,7 +87,7 @@ TEST(DocumentTypeTest, testMultipleInheritance)
     auto& doc3 = builder.document("test3", 44);
     doc3.inherit(doc1.idx()).inherit(doc2.idx());
 
-    DocumentTypeRepo repo(builder.config());
+    DocumentTypeRepo    repo(builder.config());
     const DocumentType* docType3(repo.getDocumentType("test3"));
 
     EXPECT_TRUE(docType3->hasField("stringattr"));
@@ -114,21 +103,19 @@ TEST(DocumentTypeTest, testMultipleInheritance)
     StringFieldValue stringVal("tmp");
     doc.setValue(doc.getField("tmp"), stringVal);
 
-    EXPECT_TRUE(doc.getValue(doc.getField("nalle"))->getAsInt()==3);
-    EXPECT_EQ(std::string("tmp"),
-              doc.getValue(doc.getField("tmp"))->getAsString());
+    EXPECT_TRUE(doc.getValue(doc.getField("nalle"))->getAsInt() == 3);
+    EXPECT_EQ(std::string("tmp"), doc.getValue(doc.getField("tmp"))->getAsString());
 }
 
 namespace {
 
-bool containsField(const DocumentType::FieldSet &fieldSet, const std::string &field) {
+bool containsField(const DocumentType::FieldSet& fieldSet, const std::string& field) {
     return fieldSet.getFields().find(field) != fieldSet.getFields().end();
 }
 
-}
+} // namespace
 
-TEST(DocumentTypeTest, testFieldSetCanContainFieldsNotInDocType)
-{
+TEST(DocumentTypeTest, testFieldSetCanContainFieldsNotInDocType) {
     DocumentType docType("test1");
     docType.addField(Field("stringattr", 3, *DataType::STRING));
     docType.addField(Field("nalle", 0, *DataType::INT));
@@ -144,9 +131,8 @@ TEST(DocumentTypeTest, testFieldSetCanContainFieldsNotInDocType)
     EXPECT_TRUE(containsField(*fieldSet, "nulle"));
 }
 
-TEST(DocumentTypeTest, testInheritance)
-{
-        // Inheritance of conflicting but equal datatype ok
+TEST(DocumentTypeTest, testInheritance) {
+    // Inheritance of conflicting but equal datatype ok
     DocumentType docType("test1");
     docType.addField(Field("stringattr", 3, *DataType::STRING));
     docType.addField(Field("nalle", 0, *DataType::INT));
@@ -166,14 +152,14 @@ TEST(DocumentTypeTest, testInheritance)
     docType3.addField(Field("stringattr", 3, *DataType::RAW));
     docType3.addField(Field("tall", 10, *DataType::INT));
 
-    try{
+    try {
         docType2.inherit(docType3);
         // FAIL() << "Supposed to fail";
     } catch (std::exception& e) {
         EXPECT_EQ(std::string("foo"), std::string(e.what()));
     }
 
-    try{
+    try {
         docType.inherit(docType3);
         // FAIL() << "Supposed to fail";
     } catch (std::exception& e) {
@@ -186,7 +172,7 @@ TEST(DocumentTypeTest, testInheritance)
     EXPECT_TRUE(docType4.hasField("stringattr"));
     EXPECT_TRUE(docType4.hasField("tall"));
 
-    try{
+    try {
         docType3.inherit(docType4);
         FAIL() << "Accepted cyclic inheritance";
     } catch (std::exception& e) {
@@ -196,7 +182,7 @@ TEST(DocumentTypeTest, testInheritance)
     DocumentType docType5("test5");
     docType5.addField(Field("stringattr", 20, *DataType::RAW));
 
-    try{
+    try {
         docType4.inherit(docType5);
         // FAIL() << "Supposed to fail";
     } catch (std::exception& e) {
@@ -204,13 +190,12 @@ TEST(DocumentTypeTest, testInheritance)
     }
 }
 
-TEST(DocumentTypeTest,testOutputOperator)
-{
-    DocumentType docType("test1");
+TEST(DocumentTypeTest, testOutputOperator) {
+    DocumentType       docType("test1");
     std::ostringstream ost;
     ost << docType;
     std::string expected("DocumentType(test1)");
     EXPECT_EQ(expected, ost.str());
 }
 
-} // document
+} // namespace document

@@ -5,7 +5,9 @@
 
 namespace document {
 
-namespace select { class VariableMap; }
+namespace select {
+class VariableMap;
+}
 
 class IDocumentTypeRepo;
 
@@ -19,5 +21,4 @@ private:
     std::unique_ptr<select::Node> _selectionNode;
 };
 
-}
-
+} // namespace document

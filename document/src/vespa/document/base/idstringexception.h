@@ -16,4 +16,4 @@ namespace document {
 
 VESPA_DEFINE_EXCEPTION(IdParseException, vespalib::Exception);
 
-}
+} // namespace document

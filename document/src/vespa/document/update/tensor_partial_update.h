@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
+#include <vespa/eval/eval/value.h>
 
 namespace document {
 
@@ -20,8 +20,8 @@ struct TensorPartialUpdate {
      *  as the input type.
      *  Returns null pointer if this constraint is violated.
      **/
-    static Value::UP modify(const Value &input, join_fun_t function,
-                            const Value &modifier, const ValueBuilderFactory &factory);
+    static Value::UP modify(const Value& input, join_fun_t function, const Value& modifier,
+                            const ValueBuilderFactory& factory);
 
     /**
      *  Make a copy of the input and add all dense sub-spaces (with default cell value) exising only in the modifier.
@@ -29,15 +29,15 @@ struct TensorPartialUpdate {
      *  The modifier type must be sparse with exactly the same dimension names as the input type.
      *  Returns null pointer if this constraint is violated.
      **/
-    static Value::UP modify_with_defaults(const Value& input, join_fun_t function,
-                                          const Value& modifier, double default_cell_value, const ValueBuilderFactory& factory);
+    static Value::UP modify_with_defaults(const Value& input, join_fun_t function, const Value& modifier,
+                                          double default_cell_value, const ValueBuilderFactory& factory);
 
     /**
      *  Make a copy of the input, but add or overwrite cells from add_cells.
      *  Requires same type for input and add_cells.
      *  Returns null pointer if this constraint is violated.
      **/
-    static Value::UP add(const Value &input, const Value &add_cells, const ValueBuilderFactory &factory);
+    static Value::UP add(const Value& input, const Value& add_cells, const ValueBuilderFactory& factory);
 
     /**
      *  Make a copy of the input, but remove cells present in remove_spec.
@@ -47,7 +47,7 @@ struct TensorPartialUpdate {
      *  Not valid for dense tensors, since removing cells for those are impossible.
      *  Returns null pointer if these constraints are violated.
      **/
-    static Value::UP remove(const Value &input, const Value &remove_spec, const ValueBuilderFactory &factory);
+    static Value::UP remove(const Value& input, const Value& remove_spec, const ValueBuilderFactory& factory);
 };
 
-} // namespace
+} // namespace document

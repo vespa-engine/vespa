@@ -1,55 +1,60 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldsetrepo.h"
+
+#include <vespa/document/base/exceptions.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/base/exceptions.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <string>
 
-using vespalib::StringTokenizer;
 using vespalib::IllegalArgumentException;
+using vespalib::StringTokenizer;
 
 namespace document {
 
 namespace {
 
-FieldSet::SP
-parseSpecialValues(std::string_view name)
-{
+FieldSet::SP parseSpecialValues(std::string_view name) {
     if ((name.size() == 4) && (name[1] == 'i') && (name[2] == 'd') && (name[3] == ']')) {
         return std::make_shared<DocIdOnly>();
     } else if ((name.size() == 5) && (name[1] == 'a') && (name[2] == 'l') && (name[3] == 'l') && (name[4] == ']')) {
         return std::make_shared<AllFields>();
-    } else if ((name.size() == 6) && (name[1] == 'n') && (name[2] == 'o') && (name[3] == 'n') && (name[4] == 'e') && (name[5] == ']')) {
+    } else if ((name.size() == 6) && (name[1] == 'n') && (name[2] == 'o') && (name[3] == 'n') && (name[4] == 'e') &&
+               (name[5] == ']'))
+    {
         return std::make_shared<NoFields>();
-    } else if ((name.size() == 7) && (name[1] == 'd') && (name[2] == 'o') && (name[3] == 'c') && (name[4] == 'i') && (name[5] == 'd') && (name[6] == ']')) {
+    } else if ((name.size() == 7) && (name[1] == 'd') && (name[2] == 'o') && (name[3] == 'c') && (name[4] == 'i') &&
+               (name[5] == 'd') && (name[6] == ']'))
+    {
         return std::make_shared<DocIdOnly>();
     } else if (name.size() == 10 && name == DocumentOnly::NAME) {
         return std::make_shared<DocumentOnly>();
     } else {
         throw IllegalArgumentException("The only special names (enclosed in '[]') allowed are "
-                                       "id, all, none, docid, document; but not '" + std::string(name) + "'.");
+                                       "id, all, none, docid, document; but not '" +
+                                       std::string(name) + "'.");
     }
 }
 
-FieldSet::SP
-parseFieldCollection(const DocumentTypeRepo& repo, std::string_view docType, std::string_view fieldNames)
-{
+FieldSet::SP parseFieldCollection(const DocumentTypeRepo& repo, std::string_view docType,
+                                  std::string_view fieldNames) {
     const DocumentType* typePtr = repo.getDocumentType(docType);
     if (!typePtr) {
         throw IllegalArgumentException("Unknown document type " + std::string(docType));
     }
     const DocumentType& type(*typePtr);
 
-    StringTokenizer tokenizer(fieldNames, ",");
+    StringTokenizer     tokenizer(fieldNames, ",");
     Field::Set::Builder builder;
-    for (const auto & token : tokenizer) {
-        const DocumentType::FieldSet * fs = type.getFieldSet(std::string(token));
+    for (const auto& token : tokenizer) {
+        const DocumentType::FieldSet* fs = type.getFieldSet(std::string(token));
         if (fs) {
-            for (const auto & fieldName : fs->getFields()) {
+            for (const auto& fieldName : fs->getFields()) {
                 builder.add(&type.getField(fieldName));
             }
         } else {
@@ -59,11 +64,9 @@ parseFieldCollection(const DocumentTypeRepo& repo, std::string_view docType, std
     return std::make_shared<FieldCollection>(type, builder.build());
 }
 
-}
+} // namespace
 
-FieldSet::SP
-FieldSetRepo::parse(const DocumentTypeRepo& repo, std::string_view str)
-{
+FieldSet::SP FieldSetRepo::parse(const DocumentTypeRepo& repo, std::string_view str) {
     if (str[0] == '[') {
         return parseSpecialValues(str);
     } else {
@@ -77,68 +80,58 @@ FieldSetRepo::parse(const DocumentTypeRepo& repo, std::string_view str)
     }
 }
 
-std::string
-FieldSetRepo::serialize(const FieldSet& fieldSet)
-{
+std::string FieldSetRepo::serialize(const FieldSet& fieldSet) {
     switch (fieldSet.getType()) {
-        case FieldSet::Type::FIELD:
-            return static_cast<const Field&>(fieldSet).getName();
-        case FieldSet::Type::SET: {
-            const auto & collection = static_cast<const FieldCollection&>(fieldSet);
+    case FieldSet::Type::FIELD:
+        return static_cast<const Field&>(fieldSet).getName();
+    case FieldSet::Type::SET: {
+        const auto& collection = static_cast<const FieldCollection&>(fieldSet);
 
-            vespalib::asciistream stream;
-            stream << collection.getDocumentType().getName() << ":";
-            bool first = true;
-            for (const Field * field : collection.getFields()) {
-                if (first) {
-                    first = false;
-                } else {
-                    stream << ",";
-                }
-                stream << field->getName();
+        vespalib::asciistream stream;
+        stream << collection.getDocumentType().getName() << ":";
+        bool first = true;
+        for (const Field* field : collection.getFields()) {
+            if (first) {
+                first = false;
+            } else {
+                stream << ",";
             }
-
-            return stream.str();
+            stream << field->getName();
         }
-        case FieldSet::Type::ALL:
-            return AllFields::NAME;
-        case FieldSet::Type::NONE:
-            return NoFields::NAME;
-        case FieldSet::Type::DOCID:
-            return DocIdOnly::NAME;
-        case FieldSet::Type::DOCUMENT_ONLY:
-            return DocumentOnly::NAME;
-        default:
-            return "";
+
+        return stream.str();
+    }
+    case FieldSet::Type::ALL:
+        return AllFields::NAME;
+    case FieldSet::Type::NONE:
+        return NoFields::NAME;
+    case FieldSet::Type::DOCID:
+        return DocIdOnly::NAME;
+    case FieldSet::Type::DOCUMENT_ONLY:
+        return DocumentOnly::NAME;
+    default:
+        return "";
     }
 }
 
-
-FieldSetRepo::FieldSetRepo(const DocumentTypeRepo& repo)
-    : _doumentTyperepo(repo),
-      _configuredFieldSets()
-{
-    repo.forEachDocumentType([&](const DocumentType &type) {
-        configureDocumentType(type);
-    });
+FieldSetRepo::FieldSetRepo(const DocumentTypeRepo& repo) : _doumentTyperepo(repo), _configuredFieldSets() {
+    repo.forEachDocumentType([&](const DocumentType& type) { configureDocumentType(type); });
 }
 FieldSetRepo::~FieldSetRepo() = default;
 
-void
-FieldSetRepo::configureDocumentType(const DocumentType & documentType) {
-    for (const auto & entry : documentType.getFieldSets()) {
+void FieldSetRepo::configureDocumentType(const DocumentType& documentType) {
+    for (const auto& entry : documentType.getFieldSets()) {
         std::string fieldSetName(documentType.getName());
         fieldSetName.append(":").append(entry.first);
         try {
             auto fieldset = parse(_doumentTyperepo, fieldSetName);
             _configuredFieldSets[fieldSetName] = std::move(fieldset);
-        } catch (const FieldNotFoundException & ex) {
+        } catch (const FieldNotFoundException& ex) {
             // Just silently skip it so error handling can be done when you can return proper error to user.
         }
     }
 }
-FieldSet::SP
-FieldSetRepo::getFieldSet(std::string_view fieldSetString) const {
+FieldSet::SP FieldSetRepo::getFieldSet(std::string_view fieldSetString) const {
     auto found = _configuredFieldSets.find(fieldSetString);
     if (found != _configuredFieldSets.end()) {
         return found->second;
@@ -146,5 +139,4 @@ FieldSetRepo::getFieldSet(std::string_view fieldSetString) const {
     return parse(_doumentTyperepo, fieldSetString);
 }
 
-}
-
+} // namespace document
