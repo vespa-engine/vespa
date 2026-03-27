@@ -180,6 +180,26 @@ TEST_F(FieldPathUpdateTestCase, testApplyRemoveMultiList2) {
     }
 }
 
+TEST_F(FieldPathUpdateTestCase, can_remove_array_element_by_index) {
+    auto doc = std::make_unique<Document>(*_repo, *_foobar_type, DocumentId("id:ns:foobar::stuff:fluff"));
+    {
+        ArrayFieldValue strArray(doc->getType().getField("strarray").getDataType());
+        strArray.add(StringFieldValue("one"));
+        strArray.add(StringFieldValue("two"));
+        strArray.add(StringFieldValue("three"));
+        doc->setValue("strarray", strArray);
+    }
+    DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::stuff:fluff"));
+    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("strarray[1]"));
+    docUp.applyTo(*doc);
+    {
+        std::unique_ptr<ArrayFieldValue> strArray = doc->getAs<ArrayFieldValue>(doc->getField("strarray"));
+        ASSERT_EQ(strArray->size(), 2);
+        EXPECT_EQ((*strArray)[0].getAsString(), "one");
+        EXPECT_EQ((*strArray)[1].getAsString(), "three");
+    }
+}
+
 TEST_F(FieldPathUpdateTestCase, testApplyRemoveEntireListField) {
     auto doc = std::make_unique<Document>(*_repo, *_foobar_type, DocumentId("id:ns:foobar::things:thangs"));
     EXPECT_TRUE(doc->hasValue("strarray") == false);
