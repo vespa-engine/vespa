@@ -85,6 +85,7 @@ public:
     const Buffer &buf() const { return _buf; }
 
     std::unique_ptr<BufferWriter> allocBufferWriter() override;
+    void close() override;
 };
 
 std::unique_ptr<BufferWriter>
@@ -94,6 +95,11 @@ MemAttrFileWriter::allocBufferWriter()
         _buf = allocBuf(1);
     }
     return std::make_unique<AttributeMemoryFileBufferWriter>(*this);
+}
+
+void
+MemAttrFileWriter::close()
+{
 }
 
 class MemAttr : public search::IAttributeSaveTarget

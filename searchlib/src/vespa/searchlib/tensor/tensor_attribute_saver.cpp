@@ -40,9 +40,12 @@ TensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
         if (!saveTarget.setup_writer(index_file_suffix(), "Binary data file for nearest neighbor index")) {
             return false;
         }
-        auto index_writer = saveTarget.get_writer(index_file_suffix()).allocBufferWriter();
+
+        auto& index_file_writer = saveTarget.get_writer(index_file_suffix());
+        auto index_writer = index_file_writer.allocBufferWriter();
         // Note: Implementation of save() is responsible to call BufferWriter::flush().
         _index_saver->save(*index_writer);
+        index_file_writer.close();
         _index_saver.reset();
     }
 
