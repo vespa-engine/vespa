@@ -14,6 +14,8 @@ import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http.ComplianceViolation;
 import org.eclipse.jetty.http.HttpCompliance;
 import org.eclipse.jetty.http.UriCompliance;
+import org.eclipse.jetty.http2.RateControl;
+import org.eclipse.jetty.http2.WindowRateControl;
 import org.eclipse.jetty.http2.server.AbstractHTTP2ServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
@@ -209,6 +211,12 @@ public class ConnectorFactory {
         factory.setMaxConcurrentStreams(connectorConfig.http2().maxConcurrentStreams());
         factory.setInitialSessionRecvWindow(1 << 24);
         factory.setInitialStreamRecvWindow(1 << 20);
+        int maxRateControlEvents = connectorConfig.http2().maxRateControlEvents();
+        if (maxRateControlEvents > 0) {
+            factory.setRateControlFactory(new WindowRateControl.Factory(maxRateControlEvents));
+        } else if (maxRateControlEvents < 0) {
+            factory.setRateControlFactory(new RateControl.Factory() {});
+        }
     }
 
     private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
