@@ -430,7 +430,7 @@ func TestAwaitBuild(t *testing.T) {
 	client.NextResponse(mock.HTTPResponse{
 		URI:    buildStatusURI,
 		Status: 200,
-		Body:   []byte(`{"deployed": true, "status": "success", "jobs": []}`),
+		Body:   []byte(`{"deployed": true, "status": "done", "jobs": []}`),
 	})
 	skipped, err := AwaitBuild(target, 42, time.Second, nil)
 	assert.Nil(t, err)
@@ -446,22 +446,26 @@ func TestAwaitBuild(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, skipped)
 
-	// Build cancelled
+	// Build failed (no jobs with runs)
 	client.NextResponse(mock.HTTPResponse{
 		URI:    buildStatusURI,
 		Status: 200,
-		Body:   []byte(`{"status": "cancelled"}`),
+		Body:   []byte(`{"hasFailed": true, "jobs": []}`),
 	})
 	_, err = AwaitBuild(target, 42, time.Second, nil)
 	require.NotNil(t, err)
 	assert.True(t, errors.Is(err, ErrDeployment))
-	assert.Contains(t, err.Error(), "cancelled")
 
 	// Production job failure
 	client.NextResponse(mock.HTTPResponse{
 		URI:    buildStatusURI,
 		Status: 200,
-		Body:   []byte(`{"jobs": [{"jobName": "production-aws-us-east-1c", "runStatus": "failure", "runId": 0, "instance": "default"}]}`),
+		Body:   []byte(`{"hasFailed": true, "jobs": [{"jobName": "production-aws-us-east-1c", "runStatus": "deploymentFailed", "runId": 1, "instance": "default"}]}`),
+	})
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/default/job/production-aws-us-east-1c/run/1?after=-1",
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "deploymentFailed"}`),
 	})
 	_, err = AwaitBuild(target, 42, time.Second, nil)
 	require.NotNil(t, err)
@@ -472,7 +476,12 @@ func TestAwaitBuild(t *testing.T) {
 	client.NextResponse(mock.HTTPResponse{
 		URI:    buildStatusURI,
 		Status: 200,
-		Body:   []byte(`{"jobs": [{"jobName": "system-test.aws-us-east-1c", "runStatus": "failure", "runId": 0, "instance": "i1"}]}`),
+		Body:   []byte(`{"hasFailed": true, "jobs": [{"jobName": "system-test.aws-us-east-1c", "runStatus": "testFailure", "runId": 1, "instance": "i1"}]}`),
+	})
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/system-test.aws-us-east-1c/run/1?after=-1",
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "testFailure"}`),
 	})
 	_, err = AwaitBuild(target, 42, time.Second, nil)
 	require.NotNil(t, err)
@@ -483,7 +492,7 @@ func TestAwaitBuild(t *testing.T) {
 	client.NextResponse(mock.HTTPResponse{
 		URI:    buildStatusURI,
 		Status: 200,
-		Body:   []byte(`{"deployed": false, "status": "running"}`),
+		Body:   []byte(`{"deployed": false, "status": "deploying"}`),
 	})
 	_, err = AwaitBuild(target, 42, time.Millisecond, nil)
 	assert.True(t, errors.Is(err, ErrWaitTimeout))

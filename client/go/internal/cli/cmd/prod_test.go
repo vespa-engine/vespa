@@ -300,11 +300,12 @@ func TestProdDeployWithWait(t *testing.T) {
 	assert.Nil(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
 	assert.Contains(t, stdout.String(), "Success: Build 43 completed")
 
-	// Job failure (runId=0 avoids goroutine log streaming so test is deterministic)
+	// Job failure
 	stdout.Reset()
 	stderr.Reset()
 	httpClient.NextResponseString(200, `{"build": 44}`)
-	httpClient.NextResponseString(200, `{"jobs": [{"jobName": "production-aws-us-east-1c", "runStatus": "failure", "runId": 0, "instance": "default"}]}`)
+	httpClient.NextResponseString(200, `{"hasFailed": true, "jobs": [{"jobName": "production-aws-us-east-1c", "runStatus": "deploymentFailed", "runId": 1, "instance": "default"}]}`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "deploymentFailed"}`)
 	assert.NotNil(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
 	assert.Contains(t, stderr.String(), "Deployment failed")
 	assert.Contains(t, stderr.String(), "production-aws-us-east-1c")

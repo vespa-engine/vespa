@@ -98,6 +98,7 @@ type buildStatusResponse struct {
 	Status     string           `json:"status"`
 	SkipReason string           `json:"skipReason,omitempty"`
 	Jobs       []buildStatusJob `json:"jobs"`
+	HasFailed  bool             `json:"hasFailed"`
 }
 
 type buildStatusJob struct {
@@ -431,7 +432,7 @@ func streamBuildJobLogs(target Target, job buildStatusJob, timeout time.Duration
 		if resp.Active {
 			return false, nil
 		}
-		if resp.Status != "success" {
+		if resp.Status != "success" && resp.Status != "noTests" {
 			return false, fmt.Errorf("%w: %s failed with status %s", ErrDeployment, job.JobName, resp.Status)
 		}
 		return true, nil
@@ -459,17 +460,8 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 	if err != nil {
 		return false, err
 	}
-	var sw io.Writer
-	{
-		sw = &syncWriter{w: logWriter}
-	}
-	var (
-		mutex       sync.Mutex
-		waitGroup   sync.WaitGroup
-		trackedJobs = make(map[string]bool)
-		jobErrors   []error
-		isSkipped   bool
-	)
+	sw := io.Writer(&syncWriter{w: logWriter})
+	var isSkipped bool
 	retryInterval := 2 * time.Second
 	statusFunc := func(status int, response []byte) (bool, error) {
 		if ok, err := isOK(status); !ok {
@@ -483,42 +475,36 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 			isSkipped = true
 			return true, nil
 		}
-		if resp.Status == "cancelled" {
-			return false, fmt.Errorf("%w: build %d was cancelled", ErrDeployment, buildID)
+		if !resp.HasFailed {
+			return resp.Deployed, nil
 		}
+		var (
+			wg      sync.WaitGroup
+			mu      sync.Mutex
+			jobErrs []error
+		)
 		for _, job := range resp.Jobs {
-			if job.RunStatus == "failure" || job.RunStatus == "error" || job.RunStatus == "aborted" {
-				return false, fmt.Errorf("%w: %s failed with status %s", ErrDeployment, job.JobName, job.RunStatus)
-			}
-			if sw != nil && job.RunID > 0 {
-				mutex.Lock()
-				if !trackedJobs[job.JobName] {
-					trackedJobs[job.JobName] = true
-					mutex.Unlock()
-					waitGroup.Go(func() {
-						if err := streamBuildJobLogs(target, job, timeout, sw, retryInterval); err != nil && !errors.Is(err, ErrWaitTimeout) {
-							mutex.Lock()
-							jobErrors = append(jobErrors, err)
-							mutex.Unlock()
-						}
-					})
-				} else {
-					mutex.Unlock()
-				}
+			if job.RunID > 0 {
+				wg.Add(1)
+				go func(j buildStatusJob) {
+					defer wg.Done()
+					if err := streamBuildJobLogs(target, j, timeout, sw, retryInterval); err != nil && !errors.Is(err, ErrWaitTimeout) {
+						mu.Lock()
+						jobErrs = append(jobErrs, err)
+						mu.Unlock()
+					}
+				}(job)
 			}
 		}
-		return resp.Deployed, nil
+		wg.Wait()
+		if len(jobErrs) > 0 {
+			return false, jobErrs[0]
+		}
+		return false, fmt.Errorf("%w: build %d failed", ErrDeployment, buildID)
 	}
 	_, mainErr := deployRequest(target, statusFunc, func() *http.Request { return req }, timeout, retryInterval)
 	if mainErr != nil {
 		return false, mainErr
-	}
-	waitGroup.Wait()
-	mutex.Lock()
-	errs := jobErrors
-	mutex.Unlock()
-	if len(errs) > 0 {
-		return false, errs[0]
 	}
 	return isSkipped, nil
 }
