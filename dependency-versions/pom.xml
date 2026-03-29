@@ -146,7 +146,7 @@
         <plexus-archiver.vespa.version>4.11.0</plexus-archiver.vespa.version>
         <plexus-interpolation.vespa.version>1.29</plexus-interpolation.vespa.version>
         <plexus-io.vespa.version>3.6.0</plexus-io.vespa.version>
-        <plexus-utils.vespa.version>4.0.2</plexus-utils.vespa.version>
+        <plexus-utils.vespa.version>4.0.3</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.1.1</plexus-xml.vespa.version>
         <plexus-classworlds.vespa.version>2.9.0</plexus-classworlds.vespa.version>
         <proto-google-common-protos.vespa.version>2.51.0</proto-google-common-protos.vespa.version>
