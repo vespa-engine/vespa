@@ -14,7 +14,12 @@ public:
     {}
     Doom(const std::atomic<steady_time> & now_ref, steady_time softDoom,
          steady_time hardDoom, bool explicitSoftDoom) noexcept;
+    Doom(const std::atomic<steady_time> & now_ref,
+         vespalib::duration ann_timebudget, bool ann_timeout_enabled, steady_time ann_timeout,
+         steady_time softDoom, steady_time hardDoom, bool explicitSoftDoom) noexcept;
 
+    void arm_ann_doom(uint32_t num_ann_searches) noexcept;
+    bool ann_doom() const noexcept { return (getTimeNS() > _ann_doom); }
     bool soft_doom() const noexcept { return (getTimeNS() > _softDoom); }
     bool hard_doom() const noexcept { return (getTimeNS() > _hardDoom); }
     duration soft_left() const noexcept { return _softDoom - getTimeNS(); }
@@ -26,9 +31,13 @@ private:
         return vespalib::steady_time(_now.load(std::memory_order_relaxed));
     }
     const std::atomic<steady_time> & _now;
-    steady_time    _softDoom;
-    steady_time    _hardDoom;
-    bool           _isExplicitSoftDoom;
+    steady_time                      _ann_doom;
+    vespalib::duration               _ann_timebudget;
+    bool                             _ann_timeout_enabled;
+    steady_time                      _ann_timeout;
+    steady_time                      _softDoom;
+    steady_time                      _hardDoom;
+    bool                             _isExplicitSoftDoom;
 };
 
 }
