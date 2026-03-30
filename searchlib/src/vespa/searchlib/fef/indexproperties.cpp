@@ -600,6 +600,47 @@ bool SortBlueprintsByCost::check(const Properties &props, bool fallback) {
     return lookupBool(props, NAME, fallback);
 }
 
+const std::string ANNTimeBudget::NAME("vespa.matching.anntimebudget");
+const uint32_t ANNTimeBudget::DEFAULT_VALUE(std::numeric_limits<uint32_t>::max());
+
+uint32_t ANNTimeBudget::lookup(const Properties &props) {
+    return lookupUint32(props, NAME, DEFAULT_VALUE);
+}
+
+uint32_t ANNTimeBudget::lookup(const Properties &props, uint32_t default_value) {
+    return lookupUint32(props, NAME, default_value);
+}
+
+bool ANNTimeBudget::isPresent(const Properties &props) {
+    return props.lookup(NAME).found();
+}
+
+namespace anntimeout {
+
+const std::string Enabled::NAME("vespa.matching.anntimeout.enable");
+const bool Enabled::DEFAULT_VALUE(true);
+
+bool Enabled::lookup(const Properties &props) {
+    return lookupBool(props, NAME, DEFAULT_VALUE);
+}
+
+bool Enabled::lookup(const Properties &props, bool default_value) {
+    return lookupBool(props, NAME, default_value);
+}
+
+const std::string Factor::NAME("vespa.matching.anntimeout.factor");
+const double Factor::DEFAULT_VALUE(0.9);
+
+double Factor::lookup(const Properties &props) {
+    return lookupDouble(props, NAME, DEFAULT_VALUE);
+}
+double Factor::lookup(const Properties &props, double default_value) {
+    return lookupDouble(props, NAME, default_value);
+}
+
+}
+
+
 } // namespace matching
 
 namespace softtimeout {
