@@ -157,13 +157,21 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                         ? softtimeout::Factor::lookup(rankProperties, _stats.softDoomFactor())
                         : _stats.softDoomFactor())
                     : 0.95;
+    vespalib::steady_time now(_now_ref.load(std::memory_order_relaxed));
     vespalib::duration safeLeft = std::chrono::duration_cast<vespalib::duration>(request.getTimeLeft() * factor);
-    vespalib::steady_time safeDoom(_now_ref.load(std::memory_order_relaxed) + safeLeft);
+    vespalib::steady_time safeDoom(now + safeLeft);
     if (softTimeoutEnabled) {
         LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, userSupplied=%d, softTimeout=%" PRId64,
                    _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));
     }
-    vespalib::Doom doom(_now_ref, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
+    bool ann_timeout_enabled = anntimeout::Enabled::lookup(rankProperties);
+    double ann_timeout_factor = ann_timeout_enabled ? anntimeout::Factor::lookup(rankProperties) : 1.0;
+    vespalib::duration ann_left = std::chrono::duration_cast<vespalib::duration>(safeLeft * ann_timeout_factor);
+    vespalib::steady_time ann_timeout(now + ann_left);
+    vespalib::duration ann_timebudget = std::chrono::duration_cast<vespalib::duration>(1ms * ANNTimeBudget::lookup(rankProperties));
+    LOG(debug, "ANN timebudget=%" PRId64 ", ANN timeout: enabled=%d, factor=%1.3f, left=%" PRId64,
+               vespalib::count_ns(ann_timebudget), ann_timeout_enabled, ann_timeout_factor, vespalib::count_ns(ann_left));
+    vespalib::Doom doom(_now_ref, ann_timebudget, ann_timeout_enabled, ann_timeout, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
     const auto& queryTree = request.getSerializedQueryTree();
     return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext,
                                                request.trace(), queryTree, request.location,
