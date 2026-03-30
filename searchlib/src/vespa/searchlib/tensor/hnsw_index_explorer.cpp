@@ -15,6 +15,7 @@ namespace {
 const std::string LEVELS_STORE_NAME("levels_store");
 const std::string LINKS_STORE_NAME("links_store");
 const std::string NODEID_STORE_NAME("nodeid_store");
+const std::string LAST_FLUSH_DURATION("last_flush_duration");
 
 }
 
@@ -33,6 +34,7 @@ HnswIndexExplorer<type>::get_state(const vespalib::slime::Inserter& inserter, bo
 {
     (void) full;
     auto& object = inserter.insertObject();
+    auto last_flush_duration = duration_cast<std::chrono::duration<double>>(_index.get_graph().last_flush_duration()).count();
     auto& graph = _index.get_graph();
     auto& memUsageObj = object.setObject("memory_usage");
     StateExplorerUtils::memory_usage_to_slime(_index.memory_usage(), memUsageObj.setObject("all"));
@@ -70,6 +72,8 @@ HnswIndexExplorer<type>::get_state(const vespalib::slime::Inserter& inserter, bo
     cfgObj.setLong("max_links_on_inserts", cfg.max_links_on_inserts());
     cfgObj.setLong("neighbors_to_explore_at_construction",
                    cfg.neighbors_to_explore_at_construction());
+    object.setDouble(LAST_FLUSH_DURATION, last_flush_duration);
+
 }
 
 template <HnswIndexType type>
