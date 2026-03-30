@@ -11,6 +11,7 @@
 #include "vector_bundle.h"
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
+#include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/doom.h>
@@ -24,6 +25,7 @@ LOG_SETUP(".searchlib.tensor.hnsw_index");
 namespace search::tensor {
 
 using search::AddressSpaceComponents;
+using search::common::FileHeaderContext;
 using search::queryeval::GlobalFilter;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionStrategy;
@@ -1098,6 +1100,7 @@ HnswIndex<type>::make_loader(FastOS_FileInterface& file, const vespalib::Generic
 {
     assert(get_entry_nodeid() == 0); // cannot load after index has data
     load_mips_max_distance(header, distance_function_factory());
+    _graph.set_last_flush_duration(FileHeaderContext::get_flush_duration(header));
     using ReaderType = FileReader<uint32_t>;
     using LoaderType = HnswIndexLoader<ReaderType, type>;
     return std::make_unique<LoaderType>(_graph, _id_mapping, std::make_unique<ReaderType>(&file));

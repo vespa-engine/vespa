@@ -2,9 +2,13 @@
 
 #include "hnsw_index_saver.h"
 #include "hnsw_graph.h"
+#include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <limits>
 #include <cassert>
+
+using search::common::FileHeaderContext;
+using vespalib::GenerationHandler;
 
 namespace search::tensor {
 
@@ -38,13 +42,19 @@ template <HnswIndexType type>
 HnswIndexSaver<type>::MetaData::~MetaData() = default;
 
 template <HnswIndexType type>
-HnswIndexSaver<type>::~HnswIndexSaver() = default;
+HnswIndexSaver<type>::~HnswIndexSaver()
+{
+    _guard = GenerationHandler::Guard();
+    _graph.set_last_flush_duration(FileHeaderContext::make_flush_duration(_index_flush_start_time));
+}
 
 template <HnswIndexType type>
 HnswIndexSaver<type>::HnswIndexSaver(const HnswGraph<type> &graph)
     : _graph_links(graph.links_store),
       _meta_data(),
-      _guard(graph.make_guard())
+      _guard(graph.make_guard()),
+      _index_flush_start_time(std::chrono::steady_clock::now()),
+      _graph(graph)
 {
     auto entry = graph.get_entry_node();
     _meta_data.entry_nodeid = entry.nodeid;

@@ -8,6 +8,7 @@
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/util/generationhandler.h>
+#include <chrono>
 #include <vector>
 
 namespace search::tensor {
@@ -28,16 +29,21 @@ public:
 private:
     struct MetaData {
         using EntryRef = vespalib::datastore::EntryRef;
-        uint32_t entry_nodeid;
-        int32_t  entry_level;
-        std::vector<EntryRef, vespalib::allocator_large<EntryRef>> refs;
-        std::vector<HnswIndexSaverMetaDataNode<type>, vespalib::allocator_large<HnswIndexSaverMetaDataNode<type>>> nodes;
+        using RefVector = std::vector<EntryRef, vespalib::allocator_large<EntryRef>>;
+        using NodeVector = std::vector<HnswIndexSaverMetaDataNode<type>, vespalib::allocator_large<HnswIndexSaverMetaDataNode<type>>>;
+        uint32_t   entry_nodeid;
+        int32_t    entry_level;
+        RefVector  refs;
+        NodeVector nodes;
         MetaData();
         ~MetaData();
     };
-    const typename HnswGraph<type>::LinkArrayStore &_graph_links;
-    MetaData _meta_data;
-    vespalib::GenerationHandler::Guard _guard;
+    using LinkArrayStore = typename HnswGraph<type>::LinkArrayStore;
+    const LinkArrayStore&                 _graph_links;
+    MetaData                              _meta_data;
+    vespalib::GenerationHandler::Guard    _guard;
+    std::chrono::steady_clock::time_point _index_flush_start_time;
+    const HnswGraph<type>&                _graph;
 };
 
 }
