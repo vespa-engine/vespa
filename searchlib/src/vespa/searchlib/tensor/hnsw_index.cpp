@@ -402,7 +402,7 @@ HnswIndex<type>::search_layer_helper(Stats &stats, const BoundDistanceFunction &
     internal::GlobalFilterWrapper<type> filter_wrapper(filter);
     filter_wrapper.clamp_nodeid_limit(nodeid_limit);
     VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
-    if (doom != nullptr && doom->soft_doom()) {
+    if (doom != nullptr && doom->ann_doom()) {
         while (!best_neighbors.empty()) {
             best_neighbors.pop();
         }
@@ -474,7 +474,7 @@ HnswIndex<type>::search_layer_helper(Stats &stats, const BoundDistanceFunction &
                 }
             }
         }
-        if (doom != nullptr && doom->soft_doom()) {
+        if (doom != nullptr && doom->ann_doom()) {
             break;
         }
     }
@@ -494,7 +494,7 @@ HnswIndex<type>::search_layer_filter_first_helper(Stats &stats, const BoundDista
     internal::GlobalFilterWrapper<type> filter_wrapper(filter);
     filter_wrapper.clamp_nodeid_limit(nodeid_limit);
     VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
-    if (doom != nullptr && doom->soft_doom()) {
+    if (doom != nullptr && doom->ann_doom()) {
         while (!best_neighbors.empty()) {
             best_neighbors.pop();
         }
@@ -562,7 +562,7 @@ HnswIndex<type>::search_layer_filter_first_helper(Stats &stats, const BoundDista
                 }
             }
         }
-        if (doom != nullptr && doom->soft_doom()) {
+        if (doom != nullptr && doom->ann_doom()) {
             break;
         }
     }
