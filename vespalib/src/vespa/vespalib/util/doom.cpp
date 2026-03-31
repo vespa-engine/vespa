@@ -25,7 +25,7 @@ Doom::Doom(const std::atomic<steady_time> & now_ref,
       _isExplicitSoftDoom(explicitSoftDoom)
 { }
 
-void Doom::arm_ann_doom(uint32_t num_ann_searches) noexcept {
+void Doom::arm_ann_doom(uint32_t num_ann_searches) const noexcept {
     vespalib::steady_time now(_now.load(std::memory_order_relaxed));
     vespalib::duration ann_duration = _ann_timebudget;
     if (_ann_timeout_enabled) {

@@ -276,7 +276,7 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
                             double global_filter_lower_limit, double global_filter_upper_limit,
                             search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter)
 {
-    if (!handle_global_filter(*_blueprint, docid_limit, global_filter_lower_limit, global_filter_upper_limit,
+    if (!handle_global_filter(*_blueprint, requestContext.getDoom(), docid_limit, global_filter_lower_limit, global_filter_upper_limit,
                               requestContext.thread_bundle(), &trace, use_lazy_filter))
     {
         return;
@@ -291,7 +291,7 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
 }
 
 bool
-Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
+Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom, uint32_t docid_limit,
                             double global_filter_lower_limit, double global_filter_upper_limit,
                             vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace, bool use_lazy_filter)
 {
@@ -358,12 +358,12 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
         trace->addEvent(5, "Handle global filter in query execution plan");
     }
     blueprint.set_global_filter(*global_filter, estimated_hit_ratio);
-    perform_ann_searches(blueprint, trace);
+    perform_ann_searches(blueprint, doom, trace);
     return true;
 }
 
 void
-Query::perform_ann_searches(Blueprint& blueprint, search::engine::Trace* trace)
+Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom, search::engine::Trace* /*trace*/)
 {
     uint32_t num_ann_searches = 0;
     blueprint.each_node_post_order([&num_ann_searches](Blueprint& bp) {
@@ -372,8 +372,9 @@ Query::perform_ann_searches(Blueprint& blueprint, search::engine::Trace* trace)
         }
     });
     if (num_ann_searches > 0) {
-        blueprint.each_node_post_order([](Blueprint& bp) {
+        blueprint.each_node_post_order([num_ann_searches, &doom](Blueprint& bp) {
             if (auto nearest_neighbor = bp.asNearestNeighbor()) {
+                doom.arm_ann_doom(num_ann_searches);
                 nearest_neighbor->perform_index_top_k();
             }
         });
