@@ -139,7 +139,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2026-04-01",
+            List.of("vekterli"), "2021-02-19", "2026-05-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -186,28 +186,28 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2026-04-01",
+            List.of("andreer"), "2023-08-21", "2026-05-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2026-04-01",
+            List.of("andreer"), "2023-08-28", "2026-05-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2026-04-01",
+            List.of("andreer"), "2023-08-28", "2026-05-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
-            List.of("johsol"), "2025-10-17", "2026-04-01",
+            List.of("johsol"), "2025-10-17", "2026-05-01",
             "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
             "Takes effect at redeployment",
             APPLICATION);
@@ -259,7 +259,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SEND_PROTOBUF_QUERYTREE = defineFeatureFlag(
             "send-protobuf-querytree", true,
-            List.of("arnej"), "2025-10-06", "2026-03-31",
+            List.of("arnej"), "2025-10-06", "2026-04-30",
             "If true, send query tree as protobuf in addition to legacy format",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -272,7 +272,7 @@ public class Flags {
 
     public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
             "zookeeper-pre-alloc-size", 65536,
-            List.of("hmusum"), "2024-11-11", "2026-04-01",
+            List.of("hmusum"), "2024-11-11", "2026-05-01",
             "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
@@ -293,7 +293,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
             "max-content-node-maintenance-op-concurrency", -1,
-            List.of("vekterli"), "2025-03-07", "2026-04-01",
+            List.of("vekterli"), "2025-03-07", "2026-05-01",
             "Sets the maximum concurrency for maintenance-related operations on content nodes. " +
             "Only intended as a manual emergency brake feature if a system is suddenly incapable of handling " +
             "regular maintenance pressure.",
@@ -314,7 +314,7 @@ public class Flags {
 
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2026-04-01",
+            List.of("glebashnik"), "2025-04-25", "2026-05-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             __ -> true,
@@ -323,7 +323,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
             "create-tenant-roles", true,
-            List.of("andreer"), "2025-04-28", "2026-04-01",
+            List.of("andreer"), "2025-04-28", "2026-05-01",
             "Whether to create tenant specific roles",
             "Takes effect immediately",
             TENANT_ID
@@ -338,7 +338,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
             "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2026-04-01",
+            List.of("andreer"), "2025-05-05", "2026-05-01",
             "Whether to delete tenant specific roles",
             "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
             TENANT_ID
