@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -403,6 +404,13 @@ public class ContainerTest extends ContainerTestBase {
         }
     }
 
+    public static class ComponentThrowingOnConfigValue extends AbstractComponent {
+        public ComponentThrowingOnConfigValue(TestConfig config) {
+            if (config.stringVal().equals("throw"))
+                throw new RuntimeException("Configured to throw");
+        }
+    }
+
     public static class DestructableComponent extends AbstractComponent {
         private boolean deconstructed = false;
 
@@ -459,6 +467,45 @@ public class ContainerTest extends ContainerTestBase {
             fail("Stale config keys from failed generation caused error: " + e.getCause().getMessage() +
                  ". The old graph's configKeys were used to subscribe after a failed constructComponents, " +
                  "but those keys no longer exist in the config server.");
+        } finally {
+            exec.shutdownNow();
+        }
+    }
+
+    @Test
+    void reconfig_with_unchanged_bootstrap_works_after_failed_construction() throws Exception {
+        // Covers the case where the same component is redeployed with a fixed config after failing
+        // to construct. Bootstrap config (ComponentsConfig) is unchanged across all generations —
+        // only the component-specific config value changes. Without Fix 1, the container gets stuck
+        // waiting for a new bootstrap generation that never comes.
+
+        // Gen 1: ComponentThrowingOnConfigValue with stringVal="ok" — success
+        writeBootstrapConfigs("comp", ComponentThrowingOnConfigValue.class);
+        dirConfigSource.writeConfig("test", "stringVal \"ok\"");
+        Container container = newContainer(dirConfigSource);
+        ComponentGraph gen1Graph = getNewComponentGraph(container);
+        assertEquals(1, gen1Graph.generation());
+
+        // Gen 2: same component, stringVal="throw" — construction fails, bootstrap UNCHANGED
+        dirConfigSource.writeConfig("test", "stringVal \"throw\"");
+        container.reloadConfig(2);
+        assertNewComponentGraphFails(container, gen1Graph, ComponentConstructorException.class);
+        assertEquals(1, gen1Graph.generation());
+
+        // Gen 3: same component, stringVal="ok" — should recover, bootstrap UNCHANGED
+        dirConfigSource.writeConfig("test", "stringVal \"ok\"");
+        container.reloadConfig(3);
+
+        ExecutorService exec = Executors.newFixedThreadPool(1);
+        Future<ComponentGraph> future = exec.submit(() -> getNewComponentGraph(container, gen1Graph));
+        try {
+            ComponentGraph gen3Graph = future.get(5, TimeUnit.SECONDS);
+            assertEquals(3, gen3Graph.generation());
+            container.shutdownConfigRetriever();
+            container.shutdown(gen3Graph);
+        } catch (TimeoutException e) {
+            container.shutdownConfigRetriever();
+            fail("Container got stuck after failed construction with unchanged bootstrap config");
         } finally {
             exec.shutdownNow();
         }
