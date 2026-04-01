@@ -146,7 +146,6 @@ public class SessionRepository {
     private final int maxNodeSize;
     private final BooleanFlag writeSessionData;
     private final BooleanFlag readSessionData;
-    private final BooleanFlag experimentalDeleteSessions;
     private final InheritableApplications inheritableApplications;
 
     public SessionRepository(TenantName tenantName,
@@ -193,7 +192,6 @@ public class SessionRepository {
         this.maxNodeSize = maxNodeSize;
         this.writeSessionData = Flags.WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
         this.readSessionData = Flags.READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
-        this.experimentalDeleteSessions = Flags.USE_EXPERIMENTAL_DELETE_SESSIONS_CODE.bindTo(flagSource);
         this.inheritableApplications = inheritableApplications;
 
         loadSessions(); // Needs to be done before creating cache below
@@ -731,17 +729,12 @@ public class SessionRepository {
     }
 
     private boolean hasNoCreateTime(Session session) {
-        return (experimentalDeleteSessions.value() && session.getCreateTime() == Instant.EPOCH) ||
-                session == null;
+        return (session == null || session.getCreateTime() == Instant.EPOCH);
     }
 
     private RemoteSession remoteSessionFromCacheOrCreated(Long sessionId) {
         var session = remoteSessionCache.get(sessionId);
-        if (session == null && experimentalDeleteSessions.value()) {
-            return createRemoteSession(sessionId);
-        } else {
-            return session;
-        }
+        return (session == null) ? createRemoteSession(sessionId) : session;
     }
 
     private record ApplicationLock(Optional<Lock> lock) implements Closeable {

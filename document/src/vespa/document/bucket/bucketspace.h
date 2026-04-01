@@ -7,7 +7,7 @@
 #include <string>
 
 namespace vespalib {
-    class asciistream;
+class asciistream;
 }
 
 namespace document {
@@ -21,7 +21,7 @@ public:
     constexpr BucketSpace() noexcept : BucketSpace(invalid()) {}
     constexpr explicit BucketSpace(Type id) noexcept : _id(id) {}
 
-    constexpr bool operator <(const BucketSpace& bucket) const noexcept { return _id < bucket._id; }
+    constexpr bool operator<(const BucketSpace& bucket) const noexcept { return _id < bucket._id; }
     constexpr bool operator==(const BucketSpace& bucket) const noexcept { return _id == bucket._id; }
     constexpr bool operator!=(const BucketSpace& bucket) const noexcept { return _id != bucket._id; }
 
@@ -30,9 +30,7 @@ public:
     std::string toString() const;
 
     struct hash {
-        size_t operator () (const BucketSpace& bs) const noexcept {
-            return std::hash<Type>()(bs.getId());
-        }
+        size_t operator()(const BucketSpace& bs) const noexcept { return std::hash<Type>()(bs.getId()); }
     };
 
     /*
@@ -40,6 +38,7 @@ public:
      */
     static constexpr BucketSpace placeHolder() noexcept { return BucketSpace(1); }
     static constexpr BucketSpace invalid() noexcept { return BucketSpace(0); }
+
 private:
     Type _id;
 };
@@ -47,4 +46,4 @@ private:
 vespalib::asciistream& operator<<(vespalib::asciistream&, const BucketSpace&);
 std::ostream& operator<<(std::ostream&, const BucketSpace&);
 
-}
+} // namespace document

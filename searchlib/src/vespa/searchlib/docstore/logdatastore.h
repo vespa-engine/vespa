@@ -123,10 +123,10 @@ public:
     void write(MonitorGuard guard, FileId destinationFileId, uint32_t lid, ConstBufferRef data);
 
     /**
-     * This will spinn through the data and verify the content of both
+     * This will spin through the data and verify the contents of both
      * the '.dat' and the '.idx' files.
      *
-     * @param reportOnly If set inconsitencies will be written to 'stderr'.
+     * @param reportOnly If set, inconsistencies will be written to 'stderr'.
      */
     void verify(bool reportOnly) const;
 
@@ -242,7 +242,8 @@ private:
     SerialNum getMinLastPersistedSerialNum() const {
         return (_fileChunks.empty() ? 0 : _fileChunks.back()->getLastPersistedSerialNum());
     }
-    bool shouldCompactToActiveFile(size_t compactedSize) const;
+    bool must_compact_to_the_active_file(const MonitorGuard & guard, NameId compacting_name_id,
+                                         size_t compactedSize) const;
     std::pair<bool, FileId> findNextToCompact(bool compactDiskBloat);
     void incGeneration();
     bool canShrinkLidSpace(const MonitorGuard &guard) const;
@@ -254,6 +255,7 @@ private:
     mutable vespalib::GenerationHandler      _genHandler;
     LidInfoVector                            _lidInfo;
     FileChunkVector                          _fileChunks;
+    NameIdSet                                _current_nameids;
     vespalib::hash_map<uint32_t, uint32_t>   _holdFileChunks;
     FileId                                   _active;
     FileId                                   _prevActive;

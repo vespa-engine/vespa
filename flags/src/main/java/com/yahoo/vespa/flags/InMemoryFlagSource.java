@@ -62,4 +62,15 @@ public class InMemoryFlagSource extends AbstractComponent implements FlagSource 
     public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
         return Optional.ofNullable(rawFlagsById.get(id));
     }
+
+    @Override
+    public FlagSource snapshot() {
+        Map<FlagId, RawFlag> frozen = Map.copyOf(rawFlagsById);
+        return new FlagSource() {
+            @Override public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
+                return Optional.ofNullable(frozen.get(id));
+            }
+            @Override public FlagSource snapshot() { return this; }
+        };
+    }
 }

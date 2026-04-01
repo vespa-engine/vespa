@@ -1541,20 +1541,9 @@ public class ContentClusterTest extends ContentBaseTest {
         return resolveStorDistributormanagerConfig(properties);
     }
 
-    private boolean resolveDistributorOperationCancellationConfig(Integer featureLevel) throws Exception {
-        return resolveDistributorConfig((props) -> {
-            if (featureLevel != null) {
-                props.setContentLayerMetadataFeatureLevel(featureLevel);
-            }
-        }).enable_operation_cancellation();
-    }
-
     @Test
-    void distributor_operation_cancelling_config_controlled_by_properties() throws Exception {
-        assertFalse(resolveDistributorOperationCancellationConfig(null)); // defaults to false
-        assertFalse(resolveDistributorOperationCancellationConfig(0));
-        assertTrue(resolveDistributorOperationCancellationConfig(1));
-        assertTrue(resolveDistributorOperationCancellationConfig(2));
+    void distributor_operation_cancelling_config() throws Exception {
+        assertTrue(resolveDistributorConfig((props) -> {}).enable_operation_cancellation());
     }
 
     @Test
@@ -1668,7 +1657,7 @@ public class ContentClusterTest extends ContentBaseTest {
         // Resource limits for content cluster should be changed based on new values above
         var protonConfigBuilder = new ProtonConfig.Builder();
         model.getConfig(protonConfigBuilder, "foo/search/cluster.foo");
-        assertEquals(0.864, protonConfigBuilder.build().writefilter().disklimit(), 0.001);
+        assertEquals(0.83, protonConfigBuilder.build().writefilter().disklimit(), 0.001);
         assertEquals(0.875, protonConfigBuilder.build().writefilter().memorylimit(), 0.001);
 
         // Resource limits for content nodes should be changed based on new values above
@@ -1677,7 +1666,7 @@ public class ContentClusterTest extends ContentBaseTest {
         contentCluster.getSearch().getSearchNodes().get(0).getConfig(protonConfigBuilder2);
         var config2 = protonConfigBuilder2.build();
         assertEquals(0, config2.distributionkey());
-        assertEquals(0.864, config2.writefilter().disklimit(), 0.001);
+        assertEquals(0.83, config2.writefilter().disklimit(), 0.001);
         assertEquals(0.875, config2.writefilter().memorylimit(), 0.001);
     }
 

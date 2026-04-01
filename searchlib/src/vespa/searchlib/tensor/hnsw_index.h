@@ -77,8 +77,9 @@ struct PreparedAddDoc final : public PrepareResult {
     using ReadGuard = vespalib::GenerationHandler::Guard;
     uint32_t docid;
     ReadGuard read_guard;
+    ReadGuard hnsw_graph_read_guard;
     std::vector<PreparedAddNode> nodes;
-    PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in) noexcept;
+    PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
     ~PreparedAddDoc() override;
     PreparedAddDoc(PreparedAddDoc&& other) noexcept;
 };
@@ -230,12 +231,13 @@ protected:
      */
     HnswCandidate find_nearest_in_layer(Stats &stats, const BoundDistanceFunction &df, const HnswCandidate& entry_point, uint32_t level) const __attribute__((noinline));
     template <class VisitedTracker, class BestNeighbors>
-    void search_layer_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors,
-                             uint32_t level, const GlobalFilter *filter, uint32_t nodeid_limit,
-                             const vespalib::Doom* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
+    void search_layer_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
+                             bool prefetch_tensors, BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
+                             uint32_t nodeid_limit, const vespalib::Doom* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
     template <class VisitedTracker, class BestNeighbors>
-    void search_layer_filter_first_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, BestNeighbors& best_neighbors,
-                                          double exploration, uint32_t level, const GlobalFilter *filter, uint32_t nodeid_limit,
+    void search_layer_filter_first_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
+                                          bool prefetch_tensors, BestNeighbors& best_neighbors, double exploration,
+                                          uint32_t level, const GlobalFilter *filter, uint32_t nodeid_limit,
                                           const vespalib::Doom* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
     template <class VisitedTracker>
     void exploreNeighborhood(Stats &stats, HnswTraversalCandidate &cand, std::deque<uint32_t> &found, VisitedTracker &visited, double exploration, uint32_t level,
@@ -248,7 +250,8 @@ protected:
     void search_layer(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors,
                       uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter = nullptr) const;
     template <class BestNeighbors>
-    void search_layer_filter_first(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, BestNeighbors& best_neighbors, double exploration,
+    void search_layer_filter_first(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
+                                   bool prefetch_tensors, BestNeighbors& best_neighbors, double exploration,
                                    uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter = nullptr) const;
     std::vector<Neighbor> top_k_by_docid(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
                                          uint32_t explore_k, double exploration_slack, bool prefetch_tensors, const vespalib::Doom& doom, double distance_threshold) const;
@@ -278,6 +281,9 @@ public:
     void remove_document(uint32_t docid) override;
     void assign_generation(generation_t current_gen) override;
     void reclaim_memory(generation_t oldest_used_gen) override;
+    vespalib::GenerationHandler::Guard make_generation_read_guard() const override;
+    void inc_generation() override;
+    void reclaim_unused_memory() override;
     void compact_level_arrays(const CompactionStrategy& compaction_strategy);
     void compact_link_arrays(const CompactionStrategy& compaction_strategy);
     bool consider_compact(const CompactionStrategy& compaction_strategy) override;

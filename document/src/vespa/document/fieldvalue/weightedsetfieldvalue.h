@@ -8,30 +8,31 @@
 #pragma once
 
 #include "collectionfieldvalue.h"
-#include "mapfieldvalue.h"
 #include "intfieldvalue.h"
+#include "mapfieldvalue.h"
+
 #include <map>
 
 namespace document {
 
-class WeightedSetFieldValue final : public CollectionFieldValue
-{
+class WeightedSetFieldValue final : public CollectionFieldValue {
 public:
     struct FieldValuePtrOrder {
-        template<typename T> bool operator()(const T& s1, const T& s2) const
-            { return *s1 < *s2; }
+        template <typename T> bool operator()(const T& s1, const T& s2) const { return *s1 < *s2; }
     };
     using WeightedFieldValueMap = MapFieldValue;
 
 private:
     std::shared_ptr<const MapDataType> _map_type;
-    WeightedFieldValueMap _map;
+    WeightedFieldValueMap              _map;
 
-    void verifyKey(const FieldValue & key);
+    void verifyKey(const FieldValue& key);
     bool addValue(const FieldValue& fval) override { return add(fval, 1); }
     bool containsValue(const FieldValue& val) const override;
     bool removeValue(const FieldValue& val) override;
-    fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler& handler) const override;
+    fieldvalue::ModificationStatus onIterateNested(PathRange                    nested,
+                                                   fieldvalue::IteratorHandler& handler) const override;
+
 public:
     using UP = std::unique_ptr<WeightedSetFieldValue>;
 
@@ -40,15 +41,15 @@ public:
      *                 but does not enforce type compile time so it will be
      *                 easier to create instances using field's getDataType().
      */
-    WeightedSetFieldValue(const DataType &wsetType);
-    WeightedSetFieldValue(const WeightedSetFieldValue &);
-    WeightedSetFieldValue & operator = (const WeightedSetFieldValue &);
-    WeightedSetFieldValue(WeightedSetFieldValue &&) = default;
-    WeightedSetFieldValue & operator = (WeightedSetFieldValue &&) = default;
+    WeightedSetFieldValue(const DataType& wsetType);
+    WeightedSetFieldValue(const WeightedSetFieldValue&);
+    WeightedSetFieldValue& operator=(const WeightedSetFieldValue&);
+    WeightedSetFieldValue(WeightedSetFieldValue&&) = default;
+    WeightedSetFieldValue& operator=(WeightedSetFieldValue&&) = default;
     ~WeightedSetFieldValue() override;
 
-    void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
-    void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
+    void accept(FieldValueVisitor& visitor) override { visitor.visit(*this); }
+    void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
 
     /**
      * Add an item to the weighted set with the given weight. If removeIfZero
@@ -63,7 +64,7 @@ public:
     bool addIgnoreZeroWeight(const FieldValue&, int32_t weight = 1);
     void push_back(FieldValue::UP, int32_t weight);
     void increment(const FieldValue& fval, int val = 1);
-    void decrement(const FieldValue& fval, int val = 1) { increment(fval, -1*val); }
+    void decrement(const FieldValue& fval, int val = 1) { increment(fval, -1 * val); }
     int32_t get(const FieldValue&, int32_t defaultValue = 0) const;
 
     bool isEmpty() const override { return _map.isEmpty(); }
@@ -92,5 +93,4 @@ public:
     iterator find(const FieldValue& fv);
 };
 
-} // document
-
+} // namespace document

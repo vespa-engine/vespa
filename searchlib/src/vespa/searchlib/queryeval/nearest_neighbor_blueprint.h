@@ -74,7 +74,7 @@ public:
                              const vespalib::Doom& doom);
     NearestNeighborBlueprint(const NearestNeighborBlueprint&) = delete;
     NearestNeighborBlueprint& operator=(const NearestNeighborBlueprint&) = delete;
-    ~NearestNeighborBlueprint() override;
+    ~NearestNeighborBlueprint() override = default;
     const tensor::ITensorAttribute& get_attribute_tensor() const { return _attr_tensor; }
     const vespalib::eval::Value& get_query_tensor() const { return _query_tensor; }
     uint32_t get_target_hits() const { return _target_hits; }
@@ -95,9 +95,13 @@ public:
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
-    // Write stats to the given QueryEvalStats object on destruction, and pass it on to
-    // created exact search iterators, which also write stats to it on destruction.
+    // Install the given QueryEvalStats object in this blueprint. The blueprint writes the stats it collects
+    // to this object. Moreover, this object is also passed to the exact search iterators this blueprint creates,
+    // and these write their stats to this object on their destruction.
     void install_stats(QueryEvalStats &stats);
+    // Flush metrics collected in this blueprint to the QueryEvalStats object installed before with install_stats().
+    // This method is called internally and does not have to be called from the outside.
+    void flush_stats();
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     bool always_needs_unpack() const override;
     void set_matching_phase(MatchingPhase matching_phase) noexcept override;

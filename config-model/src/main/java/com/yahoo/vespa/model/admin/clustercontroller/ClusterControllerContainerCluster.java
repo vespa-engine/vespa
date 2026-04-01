@@ -10,7 +10,6 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.PlatformBundles;
 
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -32,8 +31,10 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
         super(parent, subId, name, deployState, false);
         addDefaultHandlersWithVip();
         this.reindexingContext = createReindexingContext(deployState);
-        setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin),
-                                                                 Optional.of(ClusterSpec.Id.from(name))));
+        setJvmGCOptions(deployState.getProperties().jvmGCOptionsFlag()
+                                .withClusterType(ClusterSpec.Type.admin)
+                                .withClusterId(ClusterSpec.Id.from(name))
+                                .value());
         if (isHostedVespa())
             addAccessLog("controller");
     }

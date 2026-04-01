@@ -263,6 +263,54 @@ func TestProdDeployInvalidZip(t *testing.T) {
 	assert.Equal(t, "Error: found invalid path inside zip: ../../../../../../../tmp/foo\n", stderr.String())
 }
 
+func TestProdDeployWithWait(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	httpClient := &mock.HTTPClient{}
+	cli, stdout, stderr := newTestCLI(t, "CI=true")
+	cli.httpClient = httpClient
+	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", "--no-add"))
+	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
+
+	if cwd, err := os.Getwd(); err != nil {
+		t.Fatal(err)
+	} else {
+		defer os.Chdir(cwd)
+	}
+	if err := os.Chdir(pkgDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Deployed successfully
+	stdout.Reset()
+	httpClient.NextResponseString(200, `{"build": 42}`)
+	httpClient.NextResponseString(200, `{"deployed": true, "jobs": []}`)
+	assert.Nil(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
+	assert.Contains(t, stdout.String(), "Success: Deployed '.' with build number 42")
+	assert.Contains(t, stdout.String(), "Success: Build 42 deployed to production")
+
+	// Skipped due to no changes
+	stdout.Reset()
+	httpClient.NextResponseString(200, `{"build": 43}`)
+	httpClient.NextResponseString(200, `{"skipReason": "no changes detected"}`)
+	assert.Nil(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
+	assert.Contains(t, stdout.String(), "Success: Build 43 completed")
+
+	// Job failure
+	stdout.Reset()
+	stderr.Reset()
+	httpClient.NextResponseString(200, `{"build": 44}`)
+	httpClient.NextResponseString(200, `{"hasFailed": true, "jobs": [{"jobName": "production-aws-us-east-1c", "runStatus": "deploymentFailed", "runId": 1, "instance": "default"}]}`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "deploymentFailed"}`)
+	assert.NotNil(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
+	assert.Contains(t, stderr.String(), "Deployment failed")
+	assert.Contains(t, stderr.String(), "production-aws-us-east-1c")
+}
+
 func TestProdDeployWarnsOnInstance(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false, false)

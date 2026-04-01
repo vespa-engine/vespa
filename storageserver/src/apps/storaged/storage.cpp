@@ -22,6 +22,7 @@
 #include <vespa/vespalib/util/signalhandler.h>
 #include <google/protobuf/message_lite.h>
 #include <absl/debugging/failure_signal_handler.h>
+#include <absl/debugging/symbolize.h>
 #include <iostream>
 #include <csignal>
 #include <cstdlib>
@@ -214,8 +215,10 @@ int StorageApp::main(int argc, char **argv)
 } // storage
 
 int main(int argc, char **argv) {
+    // See `App::setupSignals` in `searchcore/src/apps/proton/proton.cpp` for
+    // parameter and handler ordering rationale for the Abseil integration.
+    absl::InitializeSymbolizer(argv[0]);
     absl::FailureSignalHandlerOptions opts;
-    // See `searchcore/src/apps/proton/proton.cpp` for parameter and handler ordering rationale.
     opts.call_previous_handler = true;
     opts.use_alternate_stack = false;
     absl::InstallFailureSignalHandler(opts);

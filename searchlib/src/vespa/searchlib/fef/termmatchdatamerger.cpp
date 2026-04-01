@@ -66,6 +66,7 @@ TermMatchDataMerger::merge(uint32_t docid,
         }
     }
     if (wasMatch) {
+        out.clear_hidden_from_ranking();
         out.reset(docid);
         if (needs_normal_features) {
             num_occs = 0;

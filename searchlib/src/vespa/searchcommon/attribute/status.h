@@ -27,6 +27,9 @@ public:
     uint64_t getDead()                     const { return _dead.load(std::memory_order_relaxed); }
     uint64_t getOnHold()                   const { return _onHold.load(std::memory_order_relaxed); }
     uint64_t getOnHoldMax()                const { return _onHoldMax.load(std::memory_order_relaxed); }
+    uint64_t get_used_minus_dead_and_onhold() const noexcept {
+        return _used_minus_dead_and_onhold.load(std::memory_order_relaxed);
+    }
     // This might be accessed from other threads than the writer thread.
     uint64_t getLastSyncToken()            const { return _lastSyncToken.load(std::memory_order_relaxed); }
     uint64_t getUpdateCount()              const { return _updates; }
@@ -54,6 +57,7 @@ private:
     std::atomic<uint64_t> _unused;
     std::atomic<uint64_t> _onHold;
     std::atomic<uint64_t> _onHoldMax;
+    std::atomic<uint64_t> _used_minus_dead_and_onhold;
     std::atomic<uint64_t> _lastSyncToken;
     uint64_t _updates;
     uint64_t _nonIdempotentUpdates;

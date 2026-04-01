@@ -6,10 +6,8 @@
 set -o errexit
 set -o nounset
 set -o pipefail
+set -o xtrace
 
-if [[ -n "${DEBUG:-}" ]]; then
-    set -o xtrace
-fi
 
 if ! docker ps &> /dev/null; then
     echo "No working docker command found."
@@ -49,7 +47,7 @@ cd "${WORKDIR}/docker-image"
 SOURCE_GITREF=$(git rev-parse HEAD)
 
 select_dockerfile() {
-    wanted="Dockefile.${VESPA_BUILDOS_LABEL}"
+    wanted="Dockerfile.${VESPA_BUILDOS_LABEL}"
     if [ -f "${wanted}" ]; then
         echo "${wanted}"
     else
@@ -84,12 +82,21 @@ cd system-test
 git checkout "$GITREF"
 mkdir -p docker/vespa-systemtests
 git archive HEAD --format tar | tar x -C docker/vespa-systemtests
+before="\\\$[{]vespa.version[}]"
+after="${VESPA_VERSION}"
+find docker/vespa-systemtests -name pom.xml -print0 | xargs -0 perl -pi -e "s,>${before}<,>${after}<,"
 cd docker
 echo "Copying Maven repository and RPMs for system-test container..."
 rm -rf maven-repo
 cp -a "$HOME/.m2/repository" maven-repo
 rm -rf rpms
 mv "$WORKDIR/docker-image/rpms" rpms
+
+dep_versions="${SOURCE_DIR}/dependency-versions/pom.xml"
+
+if [ -f "${dep_versions}" ]; then
+	grep plexus "${dep_versions}" > include/allow-versions.txt
+fi
 
 echo "--- Building system-test container"
 DOCKER_SYSTEMTEST_TAG=docker.io/vespaengine/vespa-systemtest-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}

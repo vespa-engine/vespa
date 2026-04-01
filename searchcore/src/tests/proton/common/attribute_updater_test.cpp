@@ -345,6 +345,7 @@ TEST(AttributeUpdaterTest, require_that_array_bool_attribute_is_updated)
     bool_attr.set_bools(1, std::vector<int8_t>{1, 0, 1});
     bool_attr.set_bools(2, std::vector<int8_t>{0, 1});
     bool_attr.set_bools(3, std::vector<int8_t>{1});
+    bool_attr.set_bools(4, std::vector<int8_t>{1, 0});
     attr->commit();
 
     // Assign via handleUpdate
@@ -355,19 +356,27 @@ TEST(AttributeUpdaterTest, require_that_array_bool_attribute_is_updated)
     EXPECT_EQ(2u, attr->getValueCount(1));
     EXPECT_TRUE(check(attr, 1, std::vector<WeightedInt>{WeightedInt(0), WeightedInt(1)}));
 
-    // Clear via handleUpdate
-    f.applyValueUpdate(*attr, 2, std::make_unique<ClearValueUpdate>());
-    EXPECT_EQ(0u, attr->getValueCount(2));
+    // Add (append) via handleUpdate
+    f.applyValueUpdate(*attr, 2, std::make_unique<AddValueUpdate>(std::make_unique<BoolFieldValue>(true)));
+    EXPECT_EQ(3u, attr->getValueCount(2));
+    EXPECT_TRUE(check(attr, 2, std::vector<WeightedInt>{WeightedInt(0), WeightedInt(1), WeightedInt(1)}));
+
+    // Clear via handleUpdate, then append to empty array
+    f.applyValueUpdate(*attr, 3, std::make_unique<ClearValueUpdate>());
+    EXPECT_EQ(0u, attr->getValueCount(3));
+    f.applyValueUpdate(*attr, 3, std::make_unique<AddValueUpdate>(std::make_unique<BoolFieldValue>(false)));
+    EXPECT_EQ(1u, attr->getValueCount(3));
+    EXPECT_TRUE(check(attr, 3, std::vector<WeightedInt>{WeightedInt(0)}));
 
     // Put via handleValue
     auto put_val = std::make_unique<ArrayFieldValue>(f.docType->getField("abool").getDataType());
     put_val->add(BoolFieldValue(true));
     put_val->add(BoolFieldValue(true));
     put_val->add(BoolFieldValue(false));
-    f.applyValue(*attr, 3, std::move(put_val));
+    f.applyValue(*attr, 4, std::move(put_val));
     attr->commit();
-    EXPECT_EQ(3u, attr->getValueCount(3));
-    EXPECT_TRUE(check(attr, 3, std::vector<WeightedInt>{WeightedInt(1), WeightedInt(1), WeightedInt(0)}));
+    EXPECT_EQ(3u, attr->getValueCount(4));
+    EXPECT_TRUE(check(attr, 4, std::vector<WeightedInt>{WeightedInt(1), WeightedInt(1), WeightedInt(0)}));
 }
 
 TEST(AttributeUpdaterTest, require_that_weighted_set_attributes_are_updated)

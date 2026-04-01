@@ -91,7 +91,7 @@ class IndexMaintainer : public IIndexManager,
     bool                   _flush_empty_current_index;
     std::atomic<SerialNum> _current_serial_num;// Writes protected by IUL
     std::atomic<SerialNum> _flush_serial_num;  // Writes protected by SL
-    vespalib::system_time  _lastFlushTime; // Protected by SL
+    std::atomic<vespalib::system_time::rep> _last_flush_time; // Writes protected by SL
     // Extra frozen memory indexes.  This list is empty unless new
     // memory index has been added by force (due to config change or
     // data structure limitations).
@@ -273,6 +273,9 @@ class IndexMaintainer : public IIndexManager,
     void set_flush_serial_num(SerialNum new_serial_num) noexcept {
         _flush_serial_num.store(new_serial_num, std::memory_order_relaxed);
     }
+    void set_last_flush_time(vespalib::system_time last_flush_time) {
+        _last_flush_time.store(last_flush_time.time_since_epoch().count(), std::memory_order_relaxed);
+    }
 
 public:
     IndexMaintainer(const IndexMaintainer &) = delete;
@@ -333,7 +336,10 @@ public:
     uint32_t getNumFrozenMemoryIndexes() const;
     uint32_t getMaxFrozenMemoryIndexes() const { return _maxFrozen; }
 
-    vespalib::system_time getLastFlushTime() const { return _lastFlushTime; }
+    vespalib::system_time getLastFlushTime() const {
+        auto ticks = _last_flush_time.load(std::memory_order_relaxed);
+        return vespalib::system_time(vespalib::system_clock::duration(ticks));
+    }
 
     // Implements IIndexManager
     void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, const OnWriteDoneType& on_write_done) override;

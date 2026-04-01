@@ -142,7 +142,7 @@ public class DeploymentSpecTest {
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
         assertEquals(DeploymentSpec.RevisionTarget.latest, spec.requireInstance("default").revisionTarget());
         assertEquals(DeploymentSpec.RevisionChange.whenFailing, spec.requireInstance("default").revisionChange());
-        assertEquals(DeploymentSpec.UpgradeRollout.separate, spec.requireInstance("default").upgradeRollout());
+        assertEquals(DeploymentSpec.UpgradeRollout.simultaneous, spec.requireInstance("default").upgradeRollout());
         assertEquals(0, spec.requireInstance("default").minRisk());
         assertEquals(0, spec.requireInstance("default").maxRisk());
         assertEquals(8, spec.requireInstance("default").maxIdleHours());
@@ -425,16 +425,16 @@ public class DeploymentSpecTest {
                 "   <instance id='default'>" +
                 "      <upgrade rollout='leading' />" +
                 "   </instance>" +
-                "   <instance id='aggressive'>" +
-                "      <upgrade rollout='simultaneous' />" +
+                "   <instance id='conservative'>" +
+                "      <upgrade rollout='separate' />" +
                 "   </instance>" +
                 "   <instance id='custom'/>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("leading", spec.requireInstance("default").upgradeRollout().toString());
-        assertEquals("separate", spec.requireInstance("custom").upgradeRollout().toString());
-        assertEquals("simultaneous", spec.requireInstance("aggressive").upgradeRollout().toString());
+        assertEquals("separate", spec.requireInstance("conservative").upgradeRollout().toString());
+        assertEquals("simultaneous", spec.requireInstance("custom").upgradeRollout().toString());
     }
 
     @Test
@@ -892,6 +892,193 @@ public class DeploymentSpecTest {
 
         assertEquals(1, spec.requireInstance("instance2").changeBlocker().size());
         assertEquals(inheritedChangeBlocker, spec.requireInstance("instance2").changeBlocker().get(0).toString());
+    }
+
+    @Test
+    public void backupSpecWithDaysFrequency() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <instance id='default'>" +
+                "      <backup frequency='7d' />" +
+                "      <prod>" +
+                "         <region>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        var backup = spec.requireInstance("default").backup();
+        assertTrue(backup.isPresent());
+        assertEquals(Duration.ofDays(7), backup.get().frequency());
+        assertEquals(DeploymentSpec.BackupSpec.Granularity.cluster, backup.get().granularity());
+    }
+
+    @Test
+    public void backupSpecWithHoursFrequencyAndGroupGranularity() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <instance id='default'>" +
+                "      <backup frequency='48h' granularity='group' />" +
+                "      <prod>" +
+                "         <region>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        var backup = spec.requireInstance("default").backup();
+        assertTrue(backup.isPresent());
+        assertEquals(Duration.ofHours(48), backup.get().frequency());
+        assertEquals(DeploymentSpec.BackupSpec.Granularity.group, backup.get().granularity());
+    }
+
+    @Test
+    public void backupSpecExplicitClusterGranularity() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <instance id='default'>" +
+                "      <backup frequency='24h' granularity='cluster' />" +
+                "      <prod>" +
+                "         <region>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        var backup = spec.requireInstance("default").backup();
+        assertTrue(backup.isPresent());
+        assertEquals(DeploymentSpec.BackupSpec.Granularity.cluster, backup.get().granularity());
+    }
+
+    @Test
+    public void backupSpecImplicitInstance() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <backup frequency='7d' />" +
+                "   <prod>" +
+                "      <region>us-west-1</region>" +
+                "   </prod>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        var backup = spec.requireInstance("default").backup();
+        assertTrue(backup.isPresent());
+        assertEquals(Duration.ofDays(7), backup.get().frequency());
+        assertEquals(DeploymentSpec.BackupSpec.Granularity.cluster, backup.get().granularity());
+    }
+
+    @Test
+    public void backupSpecMultiInstance() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <instance id='instance-a'>" +
+                "      <backup frequency='7d' />" +
+                "      <prod>" +
+                "         <region>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "   <instance id='instance-b'>" +
+                "      <backup frequency='48h' granularity='group' />" +
+                "      <prod>" +
+                "         <region>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        var backupA = spec.requireInstance("instance-a").backup();
+        var backupB = spec.requireInstance("instance-b").backup();
+        assertTrue(backupA.isPresent());
+        assertTrue(backupB.isPresent());
+        assertEquals(Duration.ofDays(7), backupA.get().frequency());
+        assertEquals(Duration.ofHours(48), backupB.get().frequency());
+        assertEquals(DeploymentSpec.BackupSpec.Granularity.cluster, backupA.get().granularity());
+        assertEquals(DeploymentSpec.BackupSpec.Granularity.group, backupB.get().granularity());
+    }
+
+    @Test
+    public void noBackupSpecYieldsEmpty() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <instance id='default'>" +
+                "      <prod>" +
+                "         <region>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertTrue(spec.requireInstance("default").backup().isEmpty());
+    }
+
+    @Test
+    public void backupSpecAfterProdIsRejected() {
+        try {
+            DeploymentSpec.fromXml(
+                    "<deployment>" +
+                    "   <instance id='default'>" +
+                    "      <prod>" +
+                    "         <region>us-west-1</region>" +
+                    "      </prod>" +
+                    "      <backup frequency='7d' />" +
+                    "   </instance>" +
+                    "</deployment>"
+            );
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("<backup> must be placed after <test> and <staging> and before <prod>"));
+        }
+    }
+
+    @Test
+    public void backupSpecInvalidFrequencyMissingUnit() {
+        try {
+            DeploymentSpec.fromXml(
+                    "<deployment>" +
+                    "   <instance id='default'>" +
+                    "      <backup frequency='7' />" +
+                    "      <prod><region>us-west-1</region></prod>" +
+                    "   </instance>" +
+                    "</deployment>"
+            );
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("'d' or 'h'"));
+        }
+    }
+
+    @Test
+    public void backupSpecFrequencyAtLeast1h() {
+        try {
+            DeploymentSpec.fromXml(
+                    "<deployment>" +
+                    "   <instance id='default'>" +
+                    "      <backup frequency='0d' />" +
+                    "      <prod><region>us-west-1</region></prod>" +
+                    "   </instance>" +
+                    "</deployment>"
+            );
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("must be at least 1h"));
+        }
+    }
+
+    @Test
+    public void backupSpecInvalidGranularity() {
+        try {
+            DeploymentSpec.fromXml(
+                    "<deployment>" +
+                    "   <instance id='default'>" +
+                    "      <backup frequency='7d' granularity='node' />" +
+                    "      <prod><region>us-west-1</region></prod>" +
+                    "   </instance>" +
+                    "</deployment>"
+            );
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Invalid backup granularity 'node'"));
+        }
     }
 
     @Test

@@ -1177,7 +1177,7 @@ TEST_F(LogDataStoreTest, require_that_there_is_control_of_static_memory_usage)
     auto tmp7= build_testdata() + "/tmp7";
     Fixture f(tmp7);
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
-    EXPECT_EQ(464u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(std::string), sizeof(LogDataStore));
+    EXPECT_EQ(464u + 2 * sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(std::string), sizeof(LogDataStore));
     EXPECT_EQ(73924u + 3 * sizeof(std::string), usage.allocatedBytes());
     EXPECT_EQ(200u + 3 * sizeof(std::string), usage.usedBytes());
 }

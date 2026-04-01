@@ -4,8 +4,8 @@
 
 namespace document::bucket {
 
-BucketIdList::BucketIdList(const BucketIdList & rhs) = default;
-BucketIdList & BucketIdList::operator = (const BucketIdList &) = default;
+BucketIdList::BucketIdList(const BucketIdList& rhs) = default;
+BucketIdList& BucketIdList::operator=(const BucketIdList&) = default;
 BucketIdList::~BucketIdList() = default;
 
-}
+} // namespace document::bucket

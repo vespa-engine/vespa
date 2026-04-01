@@ -31,14 +31,7 @@ public class VespaLowercasingSearcher extends LowercasingSearcher {
     public boolean shouldLowercase(WordItem word, IndexFacts.Session indexFacts) {
         if (word.isLowercased()) return false;
 
-        return indexFacts.getIndex(word.getIndexName()).isLowercase();
-    }
-
-    @Override
-    public boolean shouldLowercase(String commonPath, WordItem word, IndexFacts.Session indexFacts) {
-        if (word.isLowercased()) return false;
-
-        return indexFacts.getIndex(commonPath + "." + word.getIndexName()).isLowercase();
+        return indexFacts.getIndex(word.getFieldName()).isLowercase();
     }
 
 }

@@ -39,4 +39,15 @@ public class PendingRestartsTest {
         assertTrue("Generation 2 should exist", generations.containsKey(2L));
         assertEquals("Generation 2 should be unchanged", Set.of("host2", "host4"), generations.get(2L));
     }
+
+    @Test
+    public void testToString() {
+        assertEquals("generationsForRestarts={}", PendingRestarts.empty().toString());
+
+        PendingRestarts restarts = new PendingRestarts(Map.of(
+                10L, Set.of("host1", "host2"),
+                20L, Set.of("host3")));
+
+        assertEquals("generationsForRestarts={10 -> [host1, host2], 20 -> [host3]}", restarts.toString());
+    }
 }

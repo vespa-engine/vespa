@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.service;
 
+import org.apache.hc.client5.http.ConnectTimeoutException;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
@@ -34,6 +35,8 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
             } finally {
                 EntityUtils.consumeQuietly(entity);
             }
+        } catch (ConnectTimeoutException cte) {
+            logMessageNoResponse("Got connect timeout when getting metrics for service '" + service + "'", fetchCount);
         } catch (IOException e) {
             logMessage("Got exception when getting metrics for service '" + service + "'", e, fetchCount);
         }

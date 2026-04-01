@@ -147,7 +147,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ContainerMetrics.MEM_HEAP_USED.average());
         addMetric(metrics, ContainerMetrics.SERVER_NUM_REQUESTS.count());
         addMetric(metrics, ContainerMetrics.SERVER_STARTED_MILLIS.max());
-        addMetric(metrics, ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY.max());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_LATENCY.max());
 
         return metrics;
     }
@@ -221,6 +221,13 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.ATLASSIAN_LAST_SUCCESS.last());
         addMetric(metrics, ControllerMetrics.ATLASSIAN_ASSETS.max());
         addMetric(metrics, ControllerMetrics.ATLASSIAN_SERVICEDESK_CUSTOMERS.max());
+
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_LEASED_CONCURRENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_AVAILABLE_CONCURRENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_MAX_CONCURRENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_PENDING_CONCURRENCY_ACQUIRES, EnumSet.of(max, sum, count));
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_CONCURRENCY_ACQUIRE_DURATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, ControllerMetrics.AWS_S3_POOL_OPEN_STREAMS, EnumSet.of(max, sum, count));
 
         return metrics;
     }

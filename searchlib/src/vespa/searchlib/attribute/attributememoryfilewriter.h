@@ -22,6 +22,7 @@ public:
     void writeBuf(Buffer buf) override;
     std::unique_ptr<BufferWriter> allocBufferWriter() override;
     void writeTo(IAttributeFileWriter &writer);
+    void close() override;
 };
 
 

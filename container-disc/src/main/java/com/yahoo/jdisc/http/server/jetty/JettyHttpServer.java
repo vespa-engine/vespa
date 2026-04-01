@@ -68,8 +68,6 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
             throw new IllegalArgumentException("No connectors configured.");
 
         var histogramSettings = new MetricSettings.Builder().histogram(true).build();
-        metricReceiver.declareGauge(MetricDefinitions.TOTAL_SUCCESSFUL_LATENCY, Optional.empty(), histogramSettings);
-        metricReceiver.declareGauge(MetricDefinitions.TOTAL_FAILED_LATENCY, Optional.empty(), histogramSettings);
         metricReceiver.declareGauge(MetricDefinitions.TIME_TO_FIRST_BYTE, Optional.empty(), histogramSettings);
 
         this.config = serverConfig;
@@ -85,14 +83,14 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         server.setErrorHandler(errorHandler);
 
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
-        var metricAggregatingRequestLog = new MetricAggregatingRequestLog(config.metric());
+        var metricAggregatingRequestLog = new MetricAggregatingRequestLog(config.metric(), metric, metricReceiver);
         server.addBean(metricAggregatingRequestLog);
         if (requestLog instanceof VoidRequestLog) {
             server.setRequestLog(metricAggregatingRequestLog);
         } else {
             server.setRequestLog(new org.eclipse.jetty.server.RequestLog.Collection(
-                    new AccessLogRequestLog(requestLog),
-                    metricAggregatingRequestLog));
+                    metricAggregatingRequestLog,
+                    new AccessLogRequestLog(requestLog)));
         }
         setupJmx(server, serverConfig);
         configureJettyThreadpool(server, serverConfig);
@@ -235,7 +233,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
     }
 
     private static GzipHandler newGzipHandler(Handler handler) {
-        var h = new GzipHandler(new org.eclipse.jetty.server.handler.gzip.GzipRequestCleanupHandler(handler));
+        var h = new GzipHandler(handler);
         h.setInflateBufferSize(8 * 1024);
         h.setIncludedMethods("GET", "POST", "PUT", "PATCH");
         return h;

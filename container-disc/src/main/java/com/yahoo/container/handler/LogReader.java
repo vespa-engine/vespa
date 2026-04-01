@@ -41,8 +41,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author olaaun
- * @author freva
- * @author jonmv
+ * @author Valerij Fredriksen
+ * @author Jon Marius Venstad
  */
 class LogReader {
 
@@ -174,8 +174,10 @@ class LogReader {
         }
 
         private LineWithTimestamp readNext() {
+            String lastLine = null;
             try {
                 for (String line; (line = reader.readLine()) != null; ) {
+                    lastLine = line;
                     String[] parts = line.split("\t");
                     if (parts.length != 7)
                         continue;
@@ -194,6 +196,9 @@ class LogReader {
             }
             catch (IOException e) {
                 throw new UncheckedIOException(e);
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Unable to parse log line: " + lastLine, e);
             }
         }
 

@@ -256,7 +256,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
                 return; // Application activated a new session before we got here.
 
             setActiveApp(applicationVersions);
-            configActivationListener.configActivated(applicationVersions);
         }
     }
 
@@ -272,7 +271,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
 
         if (hasApplication(applicationId)) {
             applicationMapper.remove(applicationId);
-            hostRegistry.removeHosts(applicationId);
             configActivationListenersOnRemove(applicationId);
             tenantMetricUpdater.setApplications(applicationMapper.numApplications());
             metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
@@ -307,6 +305,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
         applicationVersions.updateHostMetrics();
         tenantMetricUpdater.setApplications(applicationMapper.numApplications());
         applicationMapper.register(applicationId, applicationVersions);
+        configActivationListener.configActivated(applicationVersions);
     }
 
     @Override

@@ -104,10 +104,10 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);
         addClusterComponents();
 
-        setJvmGCOptions(deployState.getProperties().jvmGCOptions(
-                Optional.of(ClusterSpec.Type.admin),
-                Optional.of(ClusterSpec.Id.from(name))
-        ));
+        setJvmGCOptions(deployState.getProperties().jvmGCOptionsFlag()
+                .withClusterType(ClusterSpec.Type.admin)
+                .withClusterId(ClusterSpec.Id.from(name))
+                .value());
         
         if (isHostedVespa())
             addAccessLog("metrics-proxy");

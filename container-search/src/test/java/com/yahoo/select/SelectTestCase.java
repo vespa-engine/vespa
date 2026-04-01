@@ -23,6 +23,7 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.IllegalInputException;
@@ -605,14 +606,14 @@ public class SelectTestCase {
     @Test
     void testWand() {
         assertParse("{ \"wand\": [\"description\", { \"a\": 1, \"b\": 2 }] }",
-                "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND description{[1]:\"a\",[2]:\"b\"}");
         assertParse("{ \"wand\": { \"children\": [\"description\", { \"a\": 1, \"b\": 2 }], \"attributes\": { \"scoreThreshold\": 13.3, \"targetHits\": 7, \"thresholdBoostFactor\": 2.3 } } }",
-                "WAND(7,13.3,2.3) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND(7) {scoreThreshold=13.3, thresholdBoostFactor=2.3} description{[1]:\"a\",[2]:\"b\"}");
     }
 
     @Test
     void testNumericWand() {
-        String numWand = "WAND(10,0.0,1.0) description{[1]:\"11\",[2]:\"37\"}";
+        String numWand = "WAND description{[1]:\"11\",[2]:\"37\"}";
         assertParse("{ \"wand\" : [\"description\", [[11,1], [37,2]] ]}", numWand);
         assertParseFail("{ \"wand\" : [\"description\", 12] }",
                 new IllegalArgumentException("Expected ARRAY or OBJECT, got LONG."));
@@ -675,10 +676,11 @@ public class SelectTestCase {
     @Test
     void testNearestNeighbor() {
         assertParse("{ \"nearestNeighbor\": [ \"f1field\", \"q2prop\" ] }",
-                "NEAREST_NEIGHBOR {field=f1field,queryTensorName=q2prop,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true}");
-
+                "NEAREST_NEIGHBOR {field=f1field,queryTensorName=q2prop}");
         assertParse("{ \"nearestNeighbor\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"targetHits\": 37, \"hnsw.exploreAdditionalHits\": 42, \"distanceThreshold\": 100100.25 } }}",
-                "NEAREST_NEIGHBOR {field=f3field,queryTensorName=q4prop,hnsw.exploreAdditionalHits=42,distanceThreshold=100100.25,approximate=true,targetHits=37}");
+                "NEAREST_NEIGHBOR {field=f3field,queryTensorName=q4prop,targetHits=37,distanceThreshold=100100.25,hnsw.exploreAdditionalHits=42}");
+        assertParse("{ \"nearestNeighbor\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"totalTargetHits\": 100, \"minTargetHits\": 11, \"hnsw.exploreAdditionalHits\": 42, \"distanceThreshold\": 100100.25 } }}",
+                    "NEAREST_NEIGHBOR {field=f3field,queryTensorName=q4prop,totalTargetHits=100,minTargetHits=11,distanceThreshold=100100.25,hnsw.exploreAdditionalHits=42}");
     }
 
     @Test
@@ -783,6 +785,47 @@ public class SelectTestCase {
     void testEquals() {
         assertParse("{\"equals\": [\"public\",true]}", "public:true");
         assertParse("{\"equals\": [\"public\",5]}", "public:5");
+        assertParse("{\"equals\": {\"field\": \"public\", \"value\": true}}", "public:true");
+        assertParse("{\"equals\": {\"field\": \"public\", \"value\": 5}}", "public:5");
+    }
+
+    @Test
+    void testEqualsWithArrayIndex() {
+        // Boolean value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 2, \"value\": true }}",
+                    "my_arr[2]:{true}");
+        var boolTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 2, \"value\": true }}");
+        var boolSameElement = assertInstanceOf(SameElementItem.class, boolTree.getRoot());
+        assertEquals("my_arr", boolSameElement.getFieldName());
+        assertEquals(List.of(2), boolSameElement.getElementFilter());
+        assertEquals(1, boolSameElement.getItemCount());
+
+        // Integer value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}",
+                    "my_arr[0]:{42}");
+        var intTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}");
+        var intSameElement = assertInstanceOf(SameElementItem.class, intTree.getRoot());
+        assertEquals(List.of(0), intSameElement.getElementFilter());
+
+        // String value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 1, \"value\": \"hello\" }}",
+                    "my_arr[1]:{hello}");
+
+        // Double value
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 3.14 }}",
+                    "my_arr[0]:{3.14}");
+    }
+
+    @Test
+    void testEqualsWithArrayIndexErrors() {
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 2 }}",
+                new IllegalArgumentException("Expected 'value' in 'equals' but is missing."));
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": -1, \"value\": true }}",
+                new IllegalArgumentException("element id must be non-negative, got: -1"));
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 3000000000, \"value\": true }}",
+                new IllegalArgumentException("element id must fit in int32 range, got: 3000000000"));
+        assertParseFail("{\"equals\": {\"field\": \"my_arr\", \"index\": 1.5, \"value\": true }}",
+                new IllegalArgumentException("'index' in 'equals' should be an integer but was DOUBLE"));
     }
 
     @Test

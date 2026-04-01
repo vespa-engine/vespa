@@ -62,6 +62,7 @@ private:
     static void updateValue(attribute::ReferenceAttribute & vec, uint32_t lid, const FieldValue & val);
     static void updateValue(attribute::SingleRawAttribute& vec, uint32_t lid, const FieldValue& val);
     static void updateValue(attribute::ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void appendValue(attribute::ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val);
 };
 
 }

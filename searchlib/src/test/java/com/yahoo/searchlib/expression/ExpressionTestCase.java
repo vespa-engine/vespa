@@ -153,6 +153,20 @@ public class ExpressionTestCase {
     }
 
     @Test
+    public void testGeoDistanceFunctionNode() {
+        assertMultiArgFunctionNode(
+                new GeoDistanceFunctionNode(new AttributeNode("pos"),
+                        new ConstantNode(new FloatResultNode(63.0)),
+                        new ConstantNode(new FloatResultNode(10.0)),
+                        GeoDistanceFunctionNode.Unit.KM));
+        assertMultiArgFunctionNode(
+                new GeoDistanceFunctionNode(new AttributeNode("location"),
+                        new ConstantNode(new FloatResultNode(63.0)),
+                        new ConstantNode(new FloatResultNode(10.0)),
+                        GeoDistanceFunctionNode.Unit.MILES));
+    }
+
+    @Test
     public void testTimeStampFunctionNode() {
         assertMultiArgFunctionNode(new TimeStampFunctionNode(new AttributeNode("testattribute"), TimeStampFunctionNode.TimePart.Hour, true));
         assertEquals(new TimeStampFunctionNode(new AttributeNode("testattribute"), TimeStampFunctionNode.TimePart.Hour, true),
@@ -925,6 +939,19 @@ public class ExpressionTestCase {
         assertMultiply(i1, i2, 3006427292488851361l, 3006427292488851361l);
         assertMultiply(i1, f2, 17515926039l, 1793253241.0 * 9.767681239);
         assertMultiply(f1, f2, 11, 10.8517727372816364);
+    }
+
+    @Test
+    public void testPositionDocumentFieldNode() {
+        PositionDocumentFieldNode a = new PositionDocumentFieldNode("mypos");
+        PositionDocumentFieldNode b = (PositionDocumentFieldNode) assertSerialize(a);
+        assertEquals("mypos", b.getFieldName());
+
+        PositionDocumentFieldNode c = new PositionDocumentFieldNode("mypos");
+        assertEquals(b, c);
+
+        c = new PositionDocumentFieldNode("other");
+        assertNotEquals(b, c);
     }
 
     // --------------------------------------------------------------------------------

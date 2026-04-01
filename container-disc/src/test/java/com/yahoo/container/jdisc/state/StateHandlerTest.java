@@ -182,17 +182,10 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
         JsonNode json = requestAsJson(V1_URI + "health");
         assertEquals("up", json.get("status").get("code").asText(), json.toString());
-        assertEquals(2, json.get("metrics").get("values").size(), json.toString());
-        assertEquals("requestsPerSecond",
-                json.get("metrics").get("values").get(0).get("name").asText(),
-                json.toString());
-        assertEquals(6,
-                json.get("metrics").get("values").get(0).get("values").get("count").asDouble(), 0.001, json.toString());
-        assertEquals("latencySeconds",
-                json.get("metrics").get("values").get(1).get("name").asText(),
-                json.toString());
-        assertEquals(0.03,
-                json.get("metrics").get("values").get(1).get("values").get("average").asDouble(), 0.001, json.toString());
+        var values = json.get("metrics").get("values");
+        assertEquals(1, values.size(), json.toString());
+        assertEquals("requestsPerSecond", values.get(0).get("name").asText(), json.toString());
+        assertEquals(6, values.get(0).get("values").get("count").asDouble(), 0.001, json.toString());
     }
 
     @Test

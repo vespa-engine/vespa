@@ -97,7 +97,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitAddressSpace() { return 0.80; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
-        @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.663") default int contentLayerMetadataFeatureLevel() { return 1; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
@@ -120,7 +120,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"glebashnik"}) default boolean applyOnRestartForApplicationMetadataConfig() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean scaleMetricsproxyHeapByNodeCount() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) { return 0.95; }
-        @ModelFeatureFlag(owners = {"toregge"}) default double searchNodeReservedDiskSpaceFactor() { return 0.0; }
+        @ModelFeatureFlag(owners = {"toregge"}) default double searchNodeReservedDiskSpaceFactor() { return 1.0; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -149,7 +149,7 @@ public interface ModelContext {
 
         default List<TenantSecretStore> tenantSecretStores() { return List.of(); }
 
-        // Default setting for the gc-options attribute if not specified explicitly by application
+        @Deprecated(forRemoval = true, since = "8.659") // Remove after '8.659' is gone
         default String jvmGCOptions() { return jvmGCOptions(Optional.empty()); }
 
         // Default setting for the gc-options attribute if not specified explicitly by application
@@ -158,7 +158,13 @@ public interface ModelContext {
         }
 
         // Default setting for the gc-options attribute if not specified explicitly by application
+        @Deprecated(forRemoval = true)
         String jvmGCOptions(Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId);
+
+        /** Returns a flag for resolving JVM GC options with per-hostname granularity. */
+        default FeatureFlag<String> jvmGCOptionsFlag() {
+            return new FeatureFlag.Static<>(jvmGCOptions(Optional.empty(), Optional.empty()));
+        }
 
         default String mallocImpl(Optional<ClusterSpec.Type> clusterType) { return ""; }
 
@@ -191,6 +197,18 @@ public interface ModelContext {
         default List<String> jdiscHttpComplianceViolations() { return List.of(); }
     }
 
+    /** A flag value that can be refined with additional dimensions before resolving. */
+    interface FeatureFlag<T> {
+        default FeatureFlag<T> withClusterType(ClusterSpec.Type clusterType) { return this; }
+        default FeatureFlag<T> withClusterId(ClusterSpec.Id clusterId) { return this; }
+        default FeatureFlag<T> withHostname(String hostname) { return this; }
+        T value();
+
+        /** A flag with a fixed value, ignoring all dimensions. */
+        record Static<T>(T value) implements FeatureFlag<T> {}
+    }
+
+    /** Annotation for manual bookkeeping for life-cycle of config-model flags */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     @interface ModelFeatureFlag {

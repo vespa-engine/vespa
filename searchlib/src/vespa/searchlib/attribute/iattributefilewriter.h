@@ -33,6 +33,7 @@ public:
     virtual void writeBuf(Buffer buf) = 0;
 
     virtual std::unique_ptr<BufferWriter> allocBufferWriter() = 0;
+    virtual void close() = 0;
 };
 
 } // namespace search

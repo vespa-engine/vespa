@@ -15,6 +15,7 @@
 #pragma once
 
 #include <vespa/document/util/printable.h>
+
 #include <cstdint>
 
 namespace document {
@@ -22,8 +23,7 @@ namespace document {
 class BucketId;
 class DocumentId;
 
-class BucketIdFactory : public document::Printable
-{
+class BucketIdFactory : public document::Printable {
     uint16_t _locationBits;
     uint16_t _gidBits;
     uint16_t _countBits;
@@ -41,4 +41,4 @@ private:
     void initializeMasks();
 };
 
-} // document
+} // namespace document

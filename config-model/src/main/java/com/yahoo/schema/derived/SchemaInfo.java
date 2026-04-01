@@ -194,6 +194,9 @@ public final class SchemaInfo extends Derived {
                     .hasRankFeatures(rankProfile.hasRankFeatures())
                     .significance(new SchemaInfoConfig.Schema.Rankprofile.Significance.Builder()
                                           .useModel(rankProfile.useSignificanceModel()));
+            rankProfile.getMatchPhaseMaxHits().ifPresent(rankProfileConfig::matchPhaseMaxHits);
+            rankProfile.getTotalMatchPhaseMaxHits().ifPresent(rankProfileConfig::totalMatchPhaseMaxHits);
+            rankProfile.getTotalKeepRankCount().ifPresent(rankProfileConfig::totalKeepRankCount);
             rankProfile.getKeepRankCount().ifPresent(rankProfileConfig::keepRankCount);
             rankProfile.getTotalKeepRankCount().ifPresent(rankProfileConfig::totalKeepRankCount);
             rankProfile.getRerankCount().ifPresent(rankProfileConfig::rerankCount);
@@ -237,6 +240,8 @@ public final class SchemaInfo extends Derived {
         private final String name;
         private final boolean hasSummaryFeatures;
         private final boolean hasRankFeatures;
+        private final Optional<Long> matchPhaseMaxHits;
+        private final Optional<Long> totalMatchPhaseMaxHits;
         private final Optional<Integer> keepRankCount;
         private final Optional<Integer> totalKeepRankCount;
         private final Optional<Integer> rerankCount;
@@ -249,6 +254,10 @@ public final class SchemaInfo extends Derived {
             this.hasSummaryFeatures =  ! profile.getSummaryFeatures().isEmpty();
             this.hasRankFeatures =  ! profile.getRankFeatures().isEmpty();
             this.inputs = profile.inputs();
+            this.matchPhaseMaxHits = profile.getMatchPhase() == null ? Optional.empty()
+                                                                     : profile.getMatchPhase().getMaxHits();
+            this.totalMatchPhaseMaxHits = profile.getMatchPhase() == null ? Optional.empty()
+                                                                          : profile.getMatchPhase().getTotalMaxHits();
             this.keepRankCount = profile.getKeepRankCount();
             this.totalKeepRankCount = profile.getTotalKeepRankCount();
             this.rerankCount = profile.getRerankCount();
@@ -259,6 +268,8 @@ public final class SchemaInfo extends Derived {
         public String name() { return name; }
         public boolean hasSummaryFeatures() { return hasSummaryFeatures; }
         public boolean hasRankFeatures() { return hasRankFeatures; }
+        public Optional<Long> getMatchPhaseMaxHits() { return matchPhaseMaxHits; }
+        public Optional<Long> getTotalMatchPhaseMaxHits() { return totalMatchPhaseMaxHits; }
         public Optional<Integer> getKeepRankCount() { return keepRankCount; }
         public Optional<Integer> getTotalKeepRankCount() { return totalKeepRankCount; }
         public Optional<Integer> getRerankCount() { return rerankCount; }

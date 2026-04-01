@@ -32,6 +32,13 @@ class BucketResultNode;
     IMPLEMENT_IDENTIFIABLE_NS2(search, expression, Class, base) \
     Class * Class::clone() const { return new Class(*this); }
 
+/**
+ * Common base type for all values in the expression and aggregation/grouping subsystem.
+ *
+ * Concrete subclasses represent integers, floats, strings, raw bytes, buckets (ranges), and vectors of these. Every
+ * ExpressionNode produces a ResultNode, and the grouping engine uses ResultNodes as group identifiers and aggregation
+ * accumulators.
+ */
 class ResultNode : public vespalib::Identifiable
 {
 public:
@@ -63,58 +70,6 @@ public:
     using UP = std::unique_ptr<ResultNode>;
     using CP = vespalib::IdentifiablePtr<ResultNode>;
     virtual void set(const ResultNode & rhs) = 0;
-
-    /**
-     * Will initialize a memory area that must be destroyed. After creation it can be encoded or decoded.
-     * Memory must be fixed size.
-     * This interface is used to efficiently store data in vectors without the overhead of virtual objects.
-     * @param memory area to initialize
-     */
-    virtual void create(void * buf) const;
-    /**
-     * Will initialize itself with the memory area supplied.
-     * @param memory area containing alrady encoded data.
-     */
-    virtual void decode(const void * buf);
-    /**
-     * Will decode itself into the memory area supplied.
-     * @param memory area used as storage.
-     */
-    virtual void encode(void * buf) const;
-    /**
-     * Will return a radixsortable value that will sort ascending.
-     * @param memory area used as storage.
-     */
-    virtual uint64_t radixAsc(const void * buf) const;
-    /**
-     * Will return a radixsortable value that will sort descending.
-     * @param memory area used as storage.
-     */
-    virtual uint64_t radixDesc(const void * buf) const;
-    /**
-     * Will return the typed hash of memory area supplied.
-     * @param memory area used as storage.
-     */
-    virtual size_t hash(const void * buf) const;
-    /**
-     * Will decode itself into the memory area supplied.
-     * It will also encode itself from the memory area.
-     * @param memory area used as storage.
-     */
-    virtual void swap(void * buf);
-    /**
-     * Will destroy any initialized memory.
-     * @param memory area used as storage.
-     */
-    virtual void destroy(void * buf) const;
-    /**
-     * Will do a typed compare of the given memory a and b.
-     * @param a memory area of a
-     * @param b memory area of b
-     * @return -1 if a<b, 0 if a==b, and 1 if a>b
-     */
-    virtual int cmpMem(const void * a, const void *b) const;
-
     virtual void negate();
     virtual void sort();
     virtual void reverse();
@@ -123,11 +78,17 @@ public:
     ResultNode::UP createBaseType() const { return ResultNode::UP(static_cast<ResultNode *>(getBaseClass().create())); }
     virtual ResultSerializer & onSerializeResult(ResultSerializer & os) const;
     virtual ResultDeserializer & onDeserializeResult(ResultDeserializer & is);
-    virtual size_t getRawByteSize() const;
     virtual bool isMultiValue() const { return false; }
     virtual const BucketResultNode& getNullBucket() const;
 };
 
+/**
+ * Uniform access to the string form of any ResultNode.
+ *
+ * The internal ConstBufferRef is a non-owning view that points to memory possibly owned elsewhere.
+ * For string/raw nodes it points into the ResultNode's own storage.
+ * For numeric nodes it points into _num_buf, a scratch buffer owned by this object.
+ */
 class HoldString {
 public:
     HoldString(const ResultNode &rv, size_t idx = 0) {

@@ -31,8 +31,8 @@ ShrinkLidSpaceFlushTarget::Flusher::Flusher(ShrinkLidSpaceFlushTarget &target, S
 void
 ShrinkLidSpaceFlushTarget::Flusher::run()
 {
-    _target._flushedSerialNum = _flushSerialNum;
-    _target._lastFlushTime = vespalib::system_clock::now();
+    _target.set_flushed_serial_num(_flushSerialNum);
+    _target.set_last_flush_time(vespalib::system_clock::now());
 }
 
 search::SerialNum
@@ -51,7 +51,7 @@ ShrinkLidSpaceFlushTarget::ShrinkLidSpaceFlushTarget(const std::string &name,
 
       _target(std::move(target)),
       _flushedSerialNum(flushedSerialNum),
-      _lastFlushTime(lastFlushTime),
+      _last_flush_time(lastFlushTime.time_since_epoch().count()),
       _lastStats()
 {
 }
@@ -72,24 +72,25 @@ ShrinkLidSpaceFlushTarget::getApproxDiskGain() const
 IFlushTarget::SerialNum
 ShrinkLidSpaceFlushTarget::getFlushedSerialNum() const
 {
-    return _flushedSerialNum;
+    return _flushedSerialNum.load(std::memory_order_relaxed);
 }
 
 IFlushTarget::Time
 ShrinkLidSpaceFlushTarget::getLastFlushTime() const
 {
-    return _lastFlushTime;
+    auto ticks = _last_flush_time.load(std::memory_order_relaxed);
+    return vespalib::system_time(vespalib::system_clock::duration(ticks));
 }
 
 IFlushTarget::Task::UP
 ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
 {
-    if (currentSerial < _flushedSerialNum) {
-        _lastFlushTime = vespalib::system_clock::now();
+    if (currentSerial < _flushedSerialNum.load(std::memory_order_relaxed)) {
+        set_last_flush_time(vespalib::system_clock::now());
         return IFlushTarget::Task::UP();
     } else if (!_target->canShrinkLidSpace()) {
-        _flushedSerialNum = currentSerial;
-        _lastFlushTime = vespalib::system_clock::now();
+        set_flushed_serial_num(currentSerial);
+        set_last_flush_time(vespalib::system_clock::now());
         return IFlushTarget::Task::UP();
     } else {
         return std::make_unique<Flusher>(*this, currentSerial);

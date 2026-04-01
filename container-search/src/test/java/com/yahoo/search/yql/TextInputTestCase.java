@@ -11,10 +11,12 @@ import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for the text() function in YQL.
@@ -179,6 +182,17 @@ public class TextInputTestCase {
     void textOutsideContainsFails() {
         assertThrows(IllegalArgumentException.class,
                 () -> parse("select foo from bar where text(\"a b\")"));
+    }
+
+    @Test
+    void missingInputCausesIllegalInputException() {
+        try {
+            parse("select foo from bar where title contains text(@missing)", "dummy", "foo").getRoot();
+            fail("Expected exception");
+        }
+        catch (IllegalInputException e) {
+            assertEquals("Input 'missing' is not set", Exceptions.toMessageString(e));
+        }
     }
 
     private static void assertCompositeOfWords(Item root, Class<? extends CompositeItem> expectedType,

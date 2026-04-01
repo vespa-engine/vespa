@@ -1,16 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.jdisc.http.server.jetty.MetricAggregatingRequestLog.StatisticsEntry;
+import com.yahoo.jdisc.test.MockMetric;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Text;
 import org.eclipse.jetty.http.HttpVersion;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 
 /**
  * @author ollivir
@@ -20,11 +23,23 @@ public class MetricAggregatingRequestLogTest {
 
     private final List<String> monitoringPaths = List.of("/status.html");
     private final List<String> searchPaths = List.of("/search");
-    private final MetricAggregatingRequestLog collector = new MetricAggregatingRequestLog(monitoringPaths, searchPaths, List.of(), false);
+    private final MockMetric metric = new MockMetric();
+    private final MetricAggregatingRequestLog collector = new MetricAggregatingRequestLog(monitoringPaths, searchPaths, List.of(), false, metric, new MetricReceiver.MockReceiver());
 
     @BeforeEach
     public void initializeCollector() {
         collector.takeStatistics();
+    }
+
+    @Test
+    void latency_is_recorded() {
+        testRequest("http", 200, "GET");
+        assertTrue(metric.metrics().containsKey(MetricDefinitions.LATENCY));
+        var metricSnapshot = metric.metrics().get(MetricDefinitions.LATENCY);
+        assertEquals(1, metricSnapshot.size());
+        var latencySample = metricSnapshot.entrySet().iterator().next();
+        assertEquals(200L, latencySample.getKey().get(MetricDefinitions.STATUS_CODE_DIMENSION));
+        assertEquals(0.0, latencySample.getValue());
     }
 
     @Test
@@ -115,13 +130,14 @@ public class MetricAggregatingRequestLogTest {
         assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "write", 200, 1L);
     }
 
-
     private void testRequest(String scheme, int responseCode, String httpMethod) {
         testRequest(scheme, responseCode, httpMethod, "foo/bar");
     }
+
     private void testRequest(String scheme, int responseCode, String httpMethod, String path) {
         testRequest(scheme, responseCode, httpMethod, path, null);
     }
+
     private void testRequest(String scheme, int responseCode, String httpMethod, String path,
                                 com.yahoo.jdisc.Request.RequestType explicitRequestType) {
         var builder = JettyMockRequestBuilder.newBuilder()
@@ -144,7 +160,7 @@ public class MetricAggregatingRequestLogTest {
                 .mapToLong(entry -> entry.value)
                 .reduce(Long::sum)
                 .orElseThrow(() -> new AssertionError(Text.format("Not matching entry in result (scheme=%s, method=%s, name=%s, type=%s)", scheme, method, name, requestType)));
-        assertThat(value, equalTo(expectedValue));
+        assertEquals(expectedValue, value);
     }
 
 }

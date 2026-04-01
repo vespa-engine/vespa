@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/common/serialized_query_tree.h>
+#include <vespa/searchlib/fef/match_data_filters.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
@@ -15,7 +16,9 @@
 using search::common::ElementIds;
 using search::fef::FieldInfo;
 using search::fef::FieldType;
+using search::fef::IllegalHandle;
 using search::fef::MatchData;
+using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
 using search::fef::test::IndexEnvironment;
@@ -26,6 +29,7 @@ using search::query::QueryBuilder;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
 using search::queryeval::ElementIdExtractor;
+using search::queryeval::MatchSpan;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
 using search::streaming::QueryTermData;
@@ -50,13 +54,19 @@ protected:
     std::unique_ptr<Query>     _query;
     uint32_t                   _field_id;
     QueryTerm*                 _node;
+    MatchDataLayout            _mdl;
+    TermFieldHandle            _normal_handle;
+    TermFieldHandle            _filter_handle;
     std::unique_ptr<MatchData> _md;
     TermFieldMatchData*        _tfmd;
 
     QueryTermTest();
     ~QueryTermTest() override;
 
-    static constexpr TermFieldHandle handle = 27;
+    static constexpr uint32_t field0 = 0;
+    static constexpr uint32_t normal_field_id = 12;
+    static constexpr uint32_t filter_field_id = 13;
+    static constexpr uint32_t existing_handles = 27;
     static constexpr uint32_t mock_num_occs = 4;
     static constexpr uint32_t mock_field_length = 101;
 
@@ -65,6 +75,7 @@ protected:
     void populate_term();
     void reset_tfmd() { _tfmd->resetOnlyDocId(TermFieldMatchData::invalidId()); }
     std::vector<uint32_t> extract_element_ids(uint32_t docid);
+    static std::vector<MatchSpan> make_match_spans(const std::vector<MatchSpan> match_spans_in);
     void test_unpack_match_data_for_term_node(bool interleaved_features, bool filter);
 };
 
@@ -75,11 +86,14 @@ QueryTermTest::QueryTermTest()
       _query(),
       _field_id(0u),
       _node(nullptr),
+      _mdl(),
+      _normal_handle(IllegalHandle),
+      _filter_handle(IllegalHandle),
       _md(),
       _tfmd(nullptr)
 {
-    FieldInfo field(FieldType::INDEX, CollectionType::ARRAY, "field", 12);
-    FieldInfo filterfield(FieldType::INDEX, CollectionType::ARRAY, "filterfield", 13);
+    FieldInfo field(FieldType::INDEX, CollectionType::ARRAY, "field", normal_field_id);
+    FieldInfo filterfield(FieldType::INDEX, CollectionType::ARRAY, "filterfield", filter_field_id);
     filterfield.setFilter(true);
     auto& fields = _index_env.getFields();
     for (uint32_t id = 0; id < field.id(); ++id) {
@@ -87,6 +101,11 @@ QueryTermTest::QueryTermTest()
     }
     _index_env.getFields().emplace_back(field);
     _index_env.getFields().emplace_back(filterfield);
+    for (uint32_t i = 0; i < existing_handles; ++i) {
+        (void) _mdl.allocTermField(field0);
+    }
+    _normal_handle = _mdl.allocTermField(field.id());;
+    _filter_handle = _mdl.allocTermField(filterfield.id());;
 }
 
 QueryTermTest::~QueryTermTest() = default;
@@ -114,10 +133,11 @@ QueryTermTest::build_query(bool filter)
     ASSERT_NE(nullptr, _node);
     auto &qtd = static_cast<QueryTermData &>(_node->getQueryItem());
     auto &td = qtd.getTermData();
-    _field_id = filter ? 13 : 12;
+    _field_id = filter ? filter_field_id : normal_field_id;
+    auto handle = filter ? _filter_handle : _normal_handle;
     td.addField(_field_id).setHandle(handle);
     _node->resizeFieldId(_field_id);
-    _md = MatchData::makeTestInstance(handle + 1, handle + 1);
+    _md = _mdl.createMatchData();
     _tfmd = _md->resolveTermField(handle);
     ASSERT_NE(nullptr, _tfmd);
 }
@@ -141,6 +161,12 @@ QueryTermTest::extract_element_ids(uint32_t docid)
     std::vector<uint32_t> element_ids;
     ElementIdExtractor::get_element_ids(*_tfmd, docid, element_ids);
     return element_ids;
+}
+
+std::vector<MatchSpan>
+QueryTermTest::make_match_spans(std::vector<MatchSpan> match_spans)
+{
+    return match_spans;
 }
 
 void
@@ -216,8 +242,62 @@ TEST_F(QueryTermTest, unpack_match_data_with_element_filter)
     reset_tfmd();
     _node->unpack_match_data(docid, *_md, _index_env, ElementIds(make_vec({4})));
     EXPECT_TRUE(_tfmd->has_invalid_docid());
-    EXPECT_EQ(0, _tfmd->getNumOccs());
-    EXPECT_EQ(0, _tfmd->getFieldLength());
-    EXPECT_EQ(0, _tfmd->size());
     EXPECT_EQ(make_vec({}), extract_element_ids(docid));
+    reset_tfmd();
+    _node->unpack_match_data(docid, *_md, _index_env, ElementIds(make_vec({})));
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
+}
+
+TEST_F(QueryTermTest, unpack_match_data_with_match_spans)
+{
+    ASSERT_NO_FATAL_FAILURE(build_query(false));
+    _tfmd->setNeedInterleavedFeatures(true);
+    ASSERT_NO_FATAL_FAILURE(populate_term());
+    constexpr uint32_t docid = 2;
+    // Match span covers all matches
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {0, 0}, {10, 1}}}));
+    EXPECT_TRUE(_tfmd->has_ranking_data(docid));
+    EXPECT_EQ(mock_num_occs, _tfmd->getNumOccs());
+    EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
+    EXPECT_EQ(mock_num_occs, _tfmd->size());
+    EXPECT_EQ(make_vec({0, 3, 7, 10}), extract_element_ids(docid));
+    reset_tfmd();
+    // Intersection between match spans and match data contains multiple matches in multiple elements.
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({
+                                 {_field_id, {0, 0}, {0, 1}},
+                                 {_field_id, {2, 0}, {2, 1}},
+                                 {_field_id, {3, 0}, {3, 1}},
+                                 {_field_id, {8, 0}, {8, 1}},
+                                 {_field_id, {10, 0}, {10, 1}},
+                                 {_field_id, {12, 0}, {12, 1}}
+                             }));
+    EXPECT_TRUE(_tfmd->has_ranking_data(docid));
+    EXPECT_EQ(3, _tfmd->getNumOccs());
+    EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
+    EXPECT_EQ(3, _tfmd->size());
+    EXPECT_EQ(make_vec({0, 3, 10}), extract_element_ids(docid));
+    reset_tfmd();
+    // Intersection between match span and match data contains a match at start of element 3.
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {3, 0}, {3, 1}}}));
+    EXPECT_TRUE(_tfmd->has_ranking_data(docid));
+    EXPECT_EQ(1, _tfmd->getNumOccs());
+    EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
+    EXPECT_EQ(1, _tfmd->size());
+    EXPECT_EQ(make_vec({3}), extract_element_ids(docid));
+    reset_tfmd();
+    // Intersection between match span and match data is empty (match span is before match data in element 3).
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {3, 0}, {3, 0}}}));
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
+    EXPECT_EQ(make_vec({}), extract_element_ids(docid));
+    reset_tfmd();
+    // Intersection between match span and match data is empty (match span is after match data in element 3).
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {3, 2}, {3, 2}}}));
+    reset_tfmd();
+    // Intersection between match span (start of element 4) and match data is empty.
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({{_field_id, {4, 0}, {4, 1}}}));
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
+    reset_tfmd();
+    // No spans, thus empty intersection between match spans and match data
+    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({}));
+    EXPECT_TRUE(_tfmd->has_invalid_docid());
 }

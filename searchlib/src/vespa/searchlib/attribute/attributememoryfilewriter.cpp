@@ -48,5 +48,9 @@ AttributeMemoryFileWriter::allocBufferWriter()
     return std::make_unique<AttributeMemoryFileBufferWriter>(*this);
 }
 
+void
+AttributeMemoryFileWriter::close()
+{
+}
 
 } // namespace search

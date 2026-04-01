@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -117,6 +118,39 @@ func (s *Services) Replace(parentName, name string, data interface{}) error {
 	}
 	*s = newXML
 	return nil
+}
+
+// VaultNames returns the names of all vaults referenced in <secrets> elements of services.xml.
+func (s Services) VaultNames() []string {
+	dec := xml.NewDecoder(bytes.NewReader(s.rawXML.Bytes()))
+	var names []string
+	seen := map[string]bool{}
+	inSecrets := 0
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			break
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			if t.Name.Local == "secrets" {
+				inSecrets++
+			} else if inSecrets > 0 {
+				for _, attr := range t.Attr {
+					if attr.Name.Local == "vault" && attr.Value != "" && !seen[attr.Value] {
+						seen[attr.Value] = true
+						names = append(names, attr.Value)
+					}
+				}
+			}
+		case xml.EndElement:
+			if t.Name.Local == "secrets" && inSecrets > 0 {
+				inSecrets--
+			}
+		}
+	}
+	sort.Strings(names)
+	return names
 }
 
 func (s *Services) ContainsAnyTokenClient() bool {

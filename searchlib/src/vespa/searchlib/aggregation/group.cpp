@@ -85,9 +85,7 @@ void
 Group::groupNext(const GroupingLevel & level, const Doc & doc, HitRank rank)
 {
     const ExpressionTree &selector = level.getExpression();
-    if (!selector.execute(doc, rank)) {
-        throw std::runtime_error("Does not know how to handle failed select statements");
-    }
+    selector.execute(doc, rank);
     const ResultNode &selectResult = *selector.getResult();
     level.group(*this, selectResult, doc, rank);
 }

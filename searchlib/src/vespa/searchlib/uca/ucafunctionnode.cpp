@@ -65,11 +65,10 @@ void UcaFunctionNode::Handler::handleOne(const ResultNode & arg, RawResultNode &
     result.set(RawResultNode(buf.c_str(), buf.size()));
 }
 
-bool UcaFunctionNode::onExecute() const
+void UcaFunctionNode::onExecute() const
 {
     getArg().execute();
     _handler->handle(*getArg().getResult());
-    return true;
 }
 
 void UcaFunctionNode::SingleValueHandler::handle(const ResultNode & arg)

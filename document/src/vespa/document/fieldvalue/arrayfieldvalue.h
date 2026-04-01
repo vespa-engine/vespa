@@ -13,6 +13,7 @@
 #pragma once
 
 #include "collectionfieldvalue.h"
+
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/vespalib/util/polymorphicarray.h>
 
@@ -26,9 +27,11 @@ private:
     bool addValue(const FieldValue&) override;
     bool containsValue(const FieldValue& val) const override;
     bool removeValue(const FieldValue& val) override;
-    fieldvalue::ModificationStatus iterateSubset(int startPos, int endPos, const std::string & variable,
+    fieldvalue::ModificationStatus iterateSubset(int startPos, int endPos, const std::string& variable,
                                                  PathRange nested, fieldvalue::IteratorHandler& handler) const;
-    fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
+    fieldvalue::ModificationStatus onIterateNested(PathRange                    nested,
+                                                   fieldvalue::IteratorHandler& handler) const override;
+
 public:
     using const_iterator = IArray::const_iterator;
     using iterator = IArray::iterator;
@@ -39,7 +42,7 @@ public:
      *                  not enforce type compile time so it will be easier to
      *                  create instances using field's getDataType().
      */
-    explicit ArrayFieldValue(const DataType &arrayType);
+    explicit ArrayFieldValue(const DataType& arrayType);
     ArrayFieldValue(const ArrayFieldValue&);
     ~ArrayFieldValue() override;
 
@@ -48,8 +51,8 @@ public:
     const FieldValue& operator[](uint32_t index) const { return array()[index]; }
     FieldValue& operator[](uint32_t index) { return array()[index]; }
 
-    void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
-    void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
+    void accept(FieldValueVisitor& visitor) override { visitor.visit(*this); }
+    void accept(ConstFieldValueVisitor& visitor) const override { visitor.visit(*this); }
 
     void append(FieldValue::UP value) { _array->push_back(*value); }
     void remove(uint32_t index);
@@ -66,18 +69,17 @@ public:
     int compare(const FieldValue&) const override;
     void printXml(XmlOutputStream& out) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void swap(ArrayFieldValue & other) { _array.swap(other._array); }
+    void swap(ArrayFieldValue& other) { _array.swap(other._array); }
 
-        // Iterator functionality
+    // Iterator functionality
     const_iterator begin() const { return array().begin(); }
     const_iterator end() const { return array().end(); }
 
 private:
     iterator begin() { return array().begin(); }
     iterator end() { return array().end(); }
-    const IArray & array() const { return *_array; }
-    IArray & array() { return *_array; }
+    const IArray& array() const { return *_array; }
+    IArray& array() { return *_array; }
 };
 
-} // document
-
+} // namespace document

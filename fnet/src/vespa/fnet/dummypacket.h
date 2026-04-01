@@ -12,8 +12,7 @@
  * override either the Free method or the destructor, depending on the
  * intended lifetime of the packet.
  **/
-class FNET_DummyPacket : public FNET_Packet
-{
+class FNET_DummyPacket : public FNET_Packet {
 public:
     /**
      * Empty constructor.
@@ -43,16 +42,15 @@ public:
     /**
      * This method should never be called and will abort the program.
      **/
-    void Encode(FNET_DataBuffer *) override;
+    void Encode(FNET_DataBuffer*) override;
 
     /**
      * This method should never be called and will abort the program.
      **/
-    bool Decode(FNET_DataBuffer *, uint32_t) override;
+    bool Decode(FNET_DataBuffer*, uint32_t) override;
 
     /**
      * Identify as dummy packet.
      **/
     std::string Print(uint32_t indent = 0) override;
 };
-

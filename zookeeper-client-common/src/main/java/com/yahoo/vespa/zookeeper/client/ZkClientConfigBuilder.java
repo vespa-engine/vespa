@@ -4,7 +4,7 @@ package com.yahoo.vespa.zookeeper.client;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.vespa.zookeeper.tls.VespaZookeeperTlsContextUtils;
 import org.apache.zookeeper.client.ZKClientConfig;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import org.apache.zookeeper.common.ConfigException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,13 +41,13 @@ public class ZkClientConfigBuilder {
         this.tlsContext = tlsContext;
     }
 
-    public ZKClientConfig toConfig(Path configFile) throws IOException, QuorumPeerConfig.ConfigException {
+    public ZKClientConfig toConfig(Path configFile) throws IOException, ConfigException {
         String configString = toConfigString();
         Files.createDirectories(configFile.getParent());
         Path tempFile = Files.createTempFile(configFile.toAbsolutePath().getParent(), "." + configFile.getFileName(), ".tmp");
         Files.writeString(tempFile, configString);
         Files.move(tempFile, configFile, StandardCopyOption.ATOMIC_MOVE);
-        return new ZKClientConfig(configFile.toString());
+        return new ZKClientConfig(configFile);
     }
 
     public ZKClientConfig toConfig() {

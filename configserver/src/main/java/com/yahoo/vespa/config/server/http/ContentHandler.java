@@ -62,7 +62,7 @@ public class ContentHandler {
     }
 
     private static List<ApplicationFile> listSortedFiles(ApplicationFile file, Path path, boolean recursive) {
-        if (path.length() > 0 && ! path.hasTrailingSlash()) {
+        if ( ! file.isDirectory()) {
             return List.of(file);
         }
         List<ApplicationFile> files = file.listFiles(recursive);

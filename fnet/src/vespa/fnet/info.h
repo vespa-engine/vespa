@@ -7,17 +7,12 @@
  * This class provides overall information about the FNET
  * implementation.
  **/
-class FNET_Info
-{
+class FNET_Info {
 public:
     /**
      * Host endian enum. See @ref GetEndian method below.
      **/
-    enum {
-        ENDIAN_UNKNOWN,
-        ENDIAN_LITTLE,
-        ENDIAN_BIG
-    };
+    enum { ENDIAN_UNKNOWN, ENDIAN_LITTLE, ENDIAN_BIG };
 
 private:
     static uint32_t _endian;
@@ -46,7 +41,7 @@ public:
      *
      * @return a string indicating the FNET version.
      **/
-    static const char *GetFNETVersion();
+    static const char* GetFNETVersion();
 
     /**
      * This method is deprecated.  Use the FNET_Info::LogInfo method

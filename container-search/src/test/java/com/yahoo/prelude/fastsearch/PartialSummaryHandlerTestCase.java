@@ -43,6 +43,14 @@ public class PartialSummaryHandlerTestCase {
         assertTrue(hit1.isFilled(null));
         assertTrue(hit1.isFilled("default"));
         assertEquals(1, result.hits().getFilled().size());
+        assertTrue(result.hits().isFilled(null));
+        assertFalse(result.hits().isFilled("foobar"));
+        hit2.setUnfillable();
+        assertTrue(result.hits().isFilled("default"));
+        assertTrue(result.hits().isFilled(null));
+        assertFalse(result.hits().isFilled("foobar"));
+        hit1.setUnfillable();
+        assertTrue(result.hits().isFilled("foobar"));
     }
 
     @Test

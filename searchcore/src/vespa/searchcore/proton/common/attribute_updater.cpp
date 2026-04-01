@@ -292,6 +292,9 @@ AttributeUpdater::handleUpdate(ArrayBoolAttribute &vec, uint32_t lid, const Valu
         } else {
             vec.clearDoc(lid);
         }
+    } else if (op == ValueUpdate::Add) {
+        const AddValueUpdate & add(static_cast<const AddValueUpdate &>(upd));
+        appendValue(vec, lid, add.getValue());
     } else if (op == ValueUpdate::Clear) {
         vec.clearDoc(lid);
     } else {
@@ -587,6 +590,19 @@ AttributeUpdater::updateValue(ArrayBoolAttribute& vec, uint32_t lid, const Field
     for (uint32_t i = 0; i < array.size(); ++i) {
         bools.push_back(array[i].getAsLong() ? 1 : 0);
     }
+    vec.set_bools(lid, bools);
+}
+
+void
+AttributeUpdater::appendValue(ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val)
+{
+    std::vector<int8_t> bools;
+    auto old_val = vec.get_bools(lid);
+    bools.reserve(old_val.size() + 1);
+    for (bool bit: old_val) {
+        bools.push_back(bit ? 1 : 0);
+    }
+    bools.push_back(val.getAsLong() ? 1 : 0);
     vec.set_bools(lid, bools);
 }
 

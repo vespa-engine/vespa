@@ -5,6 +5,7 @@ import com.google.common.net.InetAddresses;
 
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Iterator;
@@ -40,7 +41,7 @@ public class CidrBlock {
         if (prefixLength > addressLength) throw new IllegalArgumentException(
                 String.format(java.util.Locale.ROOT, "Prefix size (%s) cannot be longer than address length (%s)", prefixLength, addressLength));
 
-        this.addressInteger = inetAddressToBigInteger(address);
+        this.addressInteger = addressBytesToBigInteger(address);
     }
 
     /** For internal use only, does not validate */
@@ -50,7 +51,7 @@ public class CidrBlock {
         this.addressLength = addressLength;
     }
 
-    /** @return The first IP address in this CIDR block */
+    /** @return The first IP address in this CIDR block (the network address) */
     public InetAddress getInetAddress() {
         return bitsToInetAddress(addressInteger, addressLength);
     }
@@ -64,6 +65,13 @@ public class CidrBlock {
 
     public boolean isIpv6() {
         return addressLength == 128;
+    }
+
+    /** @return true iff all addresses in `that` are in this CIDR network. */
+    public boolean contains(CidrBlock that) {
+        if (this.isIpv6() != that.isIpv6()) return false;
+        return firstAddressInteger().compareTo(that.firstAddressInteger()) <= 0 &&
+               that.lastAddressInteger().compareTo(lastAddressInteger()) <= 0;
     }
 
     /** @return true iff the address is in this CIDR network. */
@@ -119,6 +127,21 @@ public class CidrBlock {
         return new CidrBlock(bit, prefixLength, addressLength);
     }
 
+    /** Returns a subnet of this CIDR, with `numBits` more bits in the prefix set to `value`. */
+    public CidrBlock subnet(int numBits, long value) {
+        if (numBits < 0)
+            throw new IllegalArgumentException("numBits must be >=0: " + numBits);
+        int newPrefixLength = prefixLength + numBits;
+        if (newPrefixLength > addressLength)
+            throw new IllegalArgumentException("Subnet prefix length " + newPrefixLength + " exceeds address length " + addressLength);
+        if (value < 0)
+            throw new IllegalArgumentException("Value must be >= 0: " + value);
+        if (BigInteger.valueOf(value).bitLength() > numBits)
+            throw new IllegalArgumentException("The value (" + value + ") has more bits set than numBits (" + numBits + ")");
+        BigInteger result = firstAddressInteger().or(BigInteger.valueOf(value).shiftLeft(addressLength - newPrefixLength));
+        return new CidrBlock(result, newPrefixLength, addressLength);
+    }
+
     public boolean overlapsWith(CidrBlock other) {
         if (this.isIpv6() != other.isIpv6()) return false;
 
@@ -141,6 +164,17 @@ public class CidrBlock {
         }
 
         return recordPtr.append(isIpv6() ? "ip6" : "in-addr").append(".arpa.").toString();
+    }
+
+    /** @return address, with its prefix replaced by this CIDR (NPT). */
+    public InetAddress networkPrefixTranslate(InetAddress address) {
+        if (address instanceof Inet6Address != isIpv6()) {
+            throw new IllegalArgumentException("IP version mismatch: cannot translate between IPv4 and IPv6: " +
+                                               asString() + " and " + address.getHostAddress());
+        }
+        BigInteger suffix = addressBytesToBigInteger(address.getAddress()).and(suffixMask());
+        BigInteger result = firstAddressInteger().or(suffix);
+        return bitsToInetAddress(result, addressLength);
     }
 
     /** @return iterable over all CIDR blocks of the same prefix size, from the current one and up */
@@ -216,24 +250,29 @@ public class CidrBlock {
         return new CidrBlock(inetAddress, prefixSize);
     }
 
-    private static BigInteger inetAddressToBigInteger(byte[] address) {
+    private static BigInteger addressBytesToBigInteger(byte[] address) {
         BigInteger bit = BigInteger.ZERO;
         for (byte b : address)
             bit = bit.shiftLeft(8).add(BigInteger.valueOf(b & 0xFF));
         return bit;
     }
 
+    private static byte[] bitsToByteArray(BigInteger ipAddressBits, int addressLength) {
+        byte[] addr = ipAddressBits.toByteArray();
+        int addressBytes = addressLength / 8;
+        if (addr.length != addressBytes) {
+            byte[] temp = new byte[addressBytes];
+            System.arraycopy(
+                    addr, Math.max(addr.length - addressBytes, 0),
+                    temp, Math.max(addressBytes - addr.length, 0), Math.min(addr.length, addressBytes));
+            addr = temp;
+        }
+        return addr;
+    }
+
     private static InetAddress bitsToInetAddress(BigInteger ipAddressBits, int addressLength) {
         try {
-            byte[] addr = ipAddressBits.toByteArray();
-            int addressBytes = addressLength / 8;
-            if (addr.length != addressBytes) {
-                byte[] temp = new byte[addressBytes];
-                System.arraycopy(
-                        addr, Math.max(addr.length - addressBytes, 0),
-                        temp, Math.max(addressBytes - addr.length, 0), Math.min(addr.length, addressBytes));
-                addr = temp;
-            }
+            byte[] addr = bitsToByteArray(ipAddressBits, addressLength);
             return InetAddress.getByAddress(addr);
         } catch (UnknownHostException e) {
             throw new UncheckedIOException(e);

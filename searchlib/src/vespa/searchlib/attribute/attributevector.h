@@ -154,8 +154,8 @@ protected:
     }
 
 public:
-    void incGeneration();
-    void reclaim_unused_memory();
+    virtual void incGeneration();
+    virtual void reclaim_unused_memory();
 
     generation_t get_oldest_used_generation() const {
         return _genHandler.get_oldest_used_generation();
@@ -508,7 +508,7 @@ public:
 
     void drain_hold(uint64_t hold_limit);
 
-    void set_size_on_disk(uint64_t value) noexcept { _size_on_disk.store(value, std::memory_order_release); }
+    virtual void set_size_on_disk(uint64_t value) noexcept;
     void set_size_on_disk(const IAttributeSaveTarget& target);
     uint64_t size_on_disk() const noexcept { return _size_on_disk.load(std::memory_order_acquire); }
     uint64_t get_memory_allocator_size_on_disk() const noexcept;

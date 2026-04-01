@@ -137,6 +137,7 @@ vespa_define_module(
     src/tests/expression/filter_predicate_node
     src/tests/expression/float_bucket_result_node
     src/tests/expression/interpolated_document_field_lookup_node
+    src/tests/expression/position_document_field_node
     src/tests/expression/resultvector_iterator
     src/tests/features
     src/tests/features/beta
@@ -202,6 +203,7 @@ vespa_define_module(
     src/tests/query
     src/tests/query/streaming
     src/tests/queryeval
+    src/tests/queryeval/array_bool
     src/tests/queryeval/blueprint
     src/tests/queryeval/dot_product
     src/tests/queryeval/equiv

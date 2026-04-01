@@ -24,6 +24,7 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DataplaneToken;
@@ -320,9 +321,11 @@ public class SessionPreparer {
 
         void vespaPreprocess(File appDir, File inputXml, ApplicationMetaData metaData, Tags tags) {
             try {
+                ApplicationName application = metaData.getApplicationId().application();
                 InstanceName instance = metaData.getApplicationId().instance();
                 new XmlPreProcessor(appDir,
                                     inputXml,
+                                    application,
                                     instance,
                                     zone.environment(),
                                     zone.region(),

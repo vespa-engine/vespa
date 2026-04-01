@@ -51,7 +51,8 @@ public:
         size_t _nodes_visited;
 
     public:
-        Stats() : _distances_computed(0), _nodes_visited(0) {}
+        Stats() { reset(); }
+        void reset() { _distances_computed = 0; _nodes_visited = 0; }
         size_t distances_computed() const { return _distances_computed; }
         void count_computed_distance() { ++_distances_computed; }
         size_t nodes_visited() const { return _nodes_visited; }
@@ -98,6 +99,9 @@ public:
     virtual void remove_document(uint32_t docid) = 0;
     virtual void assign_generation(generation_t current_gen) = 0;
     virtual void reclaim_memory(generation_t first_used_gen) = 0;
+    virtual vespalib::GenerationHandler::Guard make_generation_read_guard() const = 0;
+    virtual void inc_generation() = 0;
+    virtual void reclaim_unused_memory() = 0;
     virtual bool consider_compact(const CompactionStrategy& compaction_strategy) = 0;
     virtual vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) = 0;
     virtual vespalib::MemoryUsage memory_usage() const = 0;

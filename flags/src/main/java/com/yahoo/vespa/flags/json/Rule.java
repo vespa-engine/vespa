@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.JsonNodeRawFlag;
 import com.yahoo.vespa.flags.RawFlag;
@@ -9,8 +10,10 @@ import com.yahoo.vespa.flags.json.wire.WireRule;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author hakonhall
@@ -62,6 +65,35 @@ public class Rule {
             }
         }
 
+        return Optional.of(new Rule(valueToApply, newConditions));
+    }
+
+    /**
+     * Returns a copy of this rule with conditions narrowed to the given allowed values per dimension.
+     * Returns empty if any whitelist condition has no overlap with the allowed values (rule can never match).
+     */
+    public Optional<Rule> partialResolve(Map<Dimension, Set<String>> allowedValues) {
+        List<Condition> newConditions = new ArrayList<>();
+        for (var condition : andConditions) {
+            Set<String> allowed = allowedValues.get(condition.dimension());
+            if (allowed == null) {
+                newConditions.add(condition);
+            } else if (condition instanceof ListCondition lc) {
+                List<String> intersection = lc.values().stream().filter(allowed::contains).toList();
+                if (lc.isWhitelist()) {
+                    if (intersection.isEmpty()) return Optional.empty();
+                    newConditions.add(intersection.size() < lc.values().size()
+                                      ? lc.withValues(intersection) : condition);
+                } else {
+                    if (!intersection.isEmpty())
+                        newConditions.add(intersection.size() < lc.values().size()
+                                          ? lc.withValues(intersection) : condition);
+                    // empty intersection in blacklist -> condition always true -> drop condition
+                }
+            } else {
+                newConditions.add(condition);
+            }
+        }
         return Optional.of(new Rule(valueToApply, newConditions));
     }
 

@@ -34,7 +34,17 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
     protected void appendHeadingString(StringBuilder buffer) { }
     @Override
     protected void appendBodyString(StringBuilder buffer) {
-        buffer.append(fieldName).append(':');
+        buffer.append(fieldName);
+        if ( ! elementFilter.isEmpty()) {
+            buffer.append('[');
+            for (var element : elementFilter) {
+                buffer.append(element);
+                buffer.append(", ");
+            }
+            buffer.setLength(buffer.length() - ", ".length());
+            buffer.append(']');
+        }
+        buffer.append(':');
         buffer.append('{');
         super.appendBodyString(buffer);
         buffer.append('}');

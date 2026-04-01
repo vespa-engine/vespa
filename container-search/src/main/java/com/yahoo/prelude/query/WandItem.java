@@ -20,7 +20,11 @@ import java.util.Objects;
  */
 public class WandItem extends WeightedSetItem {
 
-    private final int targetNumHits;
+    /** The default targetHits used if none is specified: 100 */
+    private static final int defaultTargetHits = 100;
+
+    private Integer targetHits;
+    private Integer totalTargetHits = null;
     private double scoreThreshold = 0;
     private double thresholdBoostFactor = 1;
 
@@ -28,23 +32,47 @@ public class WandItem extends WeightedSetItem {
      * Creates an empty WandItem.
      *
      * @param fieldName the name of the weighted set field to search with this WandItem.
-     * @param targetNumHits the target for minimum number of hits to produce by the backend search operator handling this WandItem.
      */
-    public WandItem(String fieldName, int targetNumHits) {
+    public WandItem(String fieldName) {
         super(fieldName);
-        this.targetNumHits = targetNumHits;
+    }
+
+    /** @deprecated set totalTargetHits instead. */
+    @Deprecated // TODO: Remove on Vespa 9
+    public WandItem(String fieldName, int targetHits) {
+        this(fieldName);
+        this.targetHits = targetHits;
+    }
+
+    /** @deprecated set totalTargetHits instead. */
+    @Deprecated // TODO: Remove on Vespa 9
+    public WandItem(String fieldName, Integer targetHits) {
+        this(fieldName);
+        this.targetHits = targetHits;
     }
 
     /**
      * Creates an empty WandItem.
      *
      * @param fieldName the name of the weighted set field to search with this WandItem.
-     * @param targetNumHits the target for minimum number of hits to produce by the backend search operator handling this WandItem.
      * @param tokens the tokens to search for
      */
-    public WandItem(String fieldName, int targetNumHits, Map<Object, Integer> tokens) {
+    public WandItem(String fieldName, Map<Object, Integer> tokens) {
         super(fieldName, tokens);
-        this.targetNumHits = targetNumHits;
+    }
+
+    /** @deprecated set totalTargetHits instead. */
+    @Deprecated // TODO: Remove on Vespa 9
+    public WandItem(String fieldName, Integer targetHits, Map<Object, Integer> tokens) {
+        this(fieldName, tokens);
+        this.targetHits = targetHits;
+    }
+
+    /** @deprecated set totalTargetHits instead. */
+    @Deprecated // TODO: Remove on Vespa 9
+    public WandItem(String fieldName, int targetHits, Map<Object, Integer> tokens) {
+        this(fieldName, tokens);
+        this.targetHits = targetHits;
     }
 
     /**
@@ -72,8 +100,22 @@ public class WandItem extends WeightedSetItem {
         this.thresholdBoostFactor = thresholdBoostFactor;
     }
 
+    /** Returns the number of hits to produce per node, or null if not set. */
+    public Integer getTargetHits() { return targetHits; }
+
+    /** Returns the total number of hits to produce across all nodes, or null if not set. */
+    public Integer getTotalTargetHits() { return totalTargetHits; }
+
+    /** Set the number of hits to produce per node. */
+    public void setTargetHits(Integer target) { this.targetHits = target; }
+
+    /** Set the total number of hits to produce across all nodes. */
+    public void setTotalTargetHits(Integer total) { this.totalTargetHits = total; }
+
+    /** @deprecated use {@link #getTargetHits()} */
+    @Deprecated // TODO Vespa 9: Remove
     public int getTargetNumHits() {
-        return targetNumHits;
+        return targetHits != null ? targetHits : defaultTargetHits;
     }
 
     public double getScoreThreshold() {
@@ -92,7 +134,7 @@ public class WandItem extends WeightedSetItem {
     @Override
     protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
         super.encodeThis(buffer, context);
-        IntegerCompressor.putCompressedPositiveNumber(targetNumHits, buffer);
+        IntegerCompressor.putCompressedPositiveNumber(resolveTargetHits(context), buffer);
         buffer.putDouble(scoreThreshold);
         buffer.putDouble(thresholdBoostFactor);
     }
@@ -100,42 +142,61 @@ public class WandItem extends WeightedSetItem {
     @Override
     protected void appendHeadingString(StringBuilder buffer) {
         buffer.append(getName());
-        buffer.append("(");
-        buffer.append(targetNumHits).append(",");
-        buffer.append(scoreThreshold).append(",");
-        buffer.append(thresholdBoostFactor);
-        buffer.append(") ");
+        if (targetHits != null) {
+            buffer.append("(");
+            buffer.append(targetHits);
+            buffer.append(")");
+        }
+        if (totalTargetHits != null || scoreThreshold != 0 || thresholdBoostFactor != 1) {
+            buffer.append(" {");
+            if (totalTargetHits != null)
+                buffer.append("totalTargetHits=").append(totalTargetHits).append(", ");
+            if (scoreThreshold != 0)
+                buffer.append("scoreThreshold=").append(scoreThreshold).append(", ");
+            if (thresholdBoostFactor != 0)
+                buffer.append("thresholdBoostFactor=").append(thresholdBoostFactor).append(", ");
+            buffer.setLength(buffer.length() - ", ".length());
+            buffer.append("}");
+        }
+        buffer.append(" ");
     }
 
     @Override
     public void disclose(Discloser discloser) {
         super.disclose(discloser);
-        discloser.addProperty("targetNumHits", targetNumHits);
-        discloser.addProperty("scoreThreshold", scoreThreshold);
-        discloser.addProperty("thresholdBoostFactor", thresholdBoostFactor);
+        if (targetHits != null)
+            discloser.addProperty("targetHits", targetHits);
+        if (totalTargetHits != null)
+            discloser.addProperty("totalTargetHits", totalTargetHits);
+        if (scoreThreshold != 0)
+            discloser.addProperty("scoreThreshold", scoreThreshold);
+        if (thresholdBoostFactor != 1)
+            discloser.addProperty("thresholdBoostFactor", thresholdBoostFactor);
     }
 
     @Override
     public boolean equals(Object o) {
         if ( ! super.equals(o)) return false;
         var other = (WandItem)o;
-        if ( this.targetNumHits != other.targetNumHits) return false;
+        if ( ! Objects.equals(this.targetHits, other.targetHits)) return false;
+        if ( ! Objects.equals(this.totalTargetHits, other.totalTargetHits)) return false;
         if ( this.scoreThreshold != other.scoreThreshold) return false;
         if ( this.thresholdBoostFactor != other.thresholdBoostFactor) return false;
-        return false;
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), targetNumHits, scoreThreshold, thresholdBoostFactor);
+        return Objects.hash(super.hashCode(), targetHits, totalTargetHits, scoreThreshold, thresholdBoostFactor);
     }
 
     @Override
     SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
+        int resolvedTargetHits = resolveTargetHits(context);
         if (hasOnlyLongs()) {
             var builder = SearchProtocol.ItemLongWand.newBuilder();
             builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
-            builder.setTargetNumHits(targetNumHits);
+            builder.setTargetNumHits(resolvedTargetHits);
             builder.setScoreThreshold(scoreThreshold);
             builder.setThresholdBoostFactor(thresholdBoostFactor);
             for (var it = getTokens(); it.hasNext();) {
@@ -152,7 +213,7 @@ public class WandItem extends WeightedSetItem {
         } else {
             var builder = SearchProtocol.ItemStringWand.newBuilder();
             builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
-            builder.setTargetNumHits(targetNumHits);
+            builder.setTargetNumHits(resolvedTargetHits);
             builder.setScoreThreshold(scoreThreshold);
             builder.setThresholdBoostFactor(thresholdBoostFactor);
             for (var it = getTokens(); it.hasNext();) {
@@ -167,6 +228,13 @@ public class WandItem extends WeightedSetItem {
                     .setItemStringWand(builder.build())
                     .build();
         }
+    }
+
+    private int resolveTargetHits(SerializationContext context) {
+        if (targetHits != null) return targetHits;
+        if (totalTargetHits != null)
+            return context.contentShareOf(totalTargetHits);
+        return defaultTargetHits;
     }
 
 }

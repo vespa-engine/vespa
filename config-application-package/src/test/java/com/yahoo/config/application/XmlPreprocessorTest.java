@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -54,6 +55,7 @@ public class XmlPreprocessorTest {
         TestBase.assertDocument(expectedDev,
                                 new XmlPreProcessor(appDir,
                                                     services,
+                                                    ApplicationName.defaultName(),
                                                     InstanceName.defaultName(),
                                                     Environment.dev,
                                                     RegionName.defaultName(),
@@ -90,6 +92,7 @@ public class XmlPreprocessorTest {
         TestBase.assertDocument(expectedStaging,
                                 new XmlPreProcessor(appDir,
                                                     services,
+                                                    ApplicationName.defaultName(),
                                                     InstanceName.defaultName(),
                                                     Environment.staging,
                                                     RegionName.defaultName(),
@@ -124,6 +127,7 @@ public class XmlPreprocessorTest {
         TestBase.assertDocument(expectedPerfUsWest,
                                 new XmlPreProcessor(appDir,
                                                     services,
+                                                    ApplicationName.defaultName(),
                                                     InstanceName.defaultName(),
                                                     Environment.perf,
                                                     RegionName.from("us-west"),
@@ -158,6 +162,7 @@ public class XmlPreprocessorTest {
         TestBase.assertDocument(expectedPerfUsEastAndCentral,
                                 new XmlPreProcessor(appDir,
                                                     services,
+                                                    ApplicationName.defaultName(),
                                                     InstanceName.defaultName(),
                                                     Environment.perf,
                                                     RegionName.from("us-east"),
@@ -165,6 +170,7 @@ public class XmlPreprocessorTest {
         TestBase.assertDocument(expectedPerfUsEastAndCentral,
                                 new XmlPreProcessor(appDir,
                                                     services,
+                                                    ApplicationName.defaultName(),
                                                     InstanceName.defaultName(),
                                                     Environment.perf,
                                                     RegionName.from("us-central"),
@@ -207,6 +213,7 @@ public class XmlPreprocessorTest {
         TestBase.assertDocument(expectedProdUsWest,
                                 new XmlPreProcessor(appDir,
                                                     services,
+                                                    ApplicationName.defaultName(),
                                                     InstanceName.defaultName(),
                                                     Environment.prod,
                                                     RegionName.from("us-west"),
@@ -249,6 +256,7 @@ public class XmlPreprocessorTest {
         TestBase.assertDocument(expectedProdUsEastAndCentral,
                                 new XmlPreProcessor(appDir,
                                                     services,
+                                                    ApplicationName.defaultName(),
                                                     InstanceName.defaultName(),
                                                     Environment.prod,
                                                     RegionName.from("us-east"),
@@ -256,6 +264,7 @@ public class XmlPreprocessorTest {
         TestBase.assertDocument(expectedProdUsEastAndCentral,
                                 new XmlPreProcessor(appDir,
                                                     services,
+                                                    ApplicationName.defaultName(),
                                                     InstanceName.defaultName(),
                                                     Environment.prod,
                                                     RegionName.from("us-central"),
@@ -307,6 +316,7 @@ public class XmlPreprocessorTest {
                 </services>""";
         Document docDev = (new XmlPreProcessor(appDir,
                                                new StringReader(input),
+                                               ApplicationName.defaultName(),
                                                InstanceName.defaultName(),
                                                Environment.prod,
                                                RegionName.defaultName(),
@@ -323,6 +333,7 @@ public class XmlPreprocessorTest {
         var exception = assertThrows(IllegalArgumentException.class, () ->
                 new XmlPreProcessor(appDir,
                                     services,
+                                    ApplicationName.defaultName(),
                                     InstanceName.defaultName(),
                                     Environment.prod,
                                     RegionName.defaultName(),

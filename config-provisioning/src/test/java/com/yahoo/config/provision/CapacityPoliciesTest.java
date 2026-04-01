@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class CapacityPoliciesTest {
 
     private static final Zone prodZone = new Zone(SystemName.Public, Environment.prod, RegionName.from("foo"));
+    private static final Zone devZone = new Zone(Environment.dev, RegionName.from("us-east"));
     private static final Exclusivity exclusivity = new Exclusivity(prodZone, SharedHosts.empty());
     private static final ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.admin, ClusterSpec.Id.from("cluster-controllers"))
                                                               .vespaVersion("8.597.12")
@@ -148,6 +149,47 @@ public class CapacityPoliciesTest {
 
         assertEquals(48, specifiedResources.memoryGiB(), 0.01);
         assertEquals(150, specifiedResources.diskGb(), 0.01, "Explicitly specified disk should be preserved");
+    }
+
+    @Test
+    void testDevResourcesNoCpuCapSpecified() {
+        var devExclusivity = new Exclusivity(devZone, SharedHosts.empty());
+        var capacityPolicies = new CapacityPolicies(devZone, devExclusivity, ApplicationId.defaultId(),
+                                                    new CapacityPolicies.Tuning(arm64, 0.0, 0));
+        NodeResources requestedResources = new NodeResources(4, 16, 50, 0.3);
+        var capacity = Capacity.from(new ClusterResources(2, 1, requestedResources));
+        var result = capacityPolicies.applyOn(capacity, false);
+
+        assertEquals(0.1, result.minResources().nodeResources().vcpu(), 0.01, "CPU should be capped to 0.1 in dev when cpuCapInDev is false");
+        assertEquals(0.1, result.minResources().nodeResources().bandwidthGbps(), 0.01, "Bandwidth should be capped to 0.1 in dev when cpuCapInDev is false");
+    }
+
+    @Test
+    void testDevResourcesWithoutCpuCap() {
+        var devExclusivity = new Exclusivity(devZone, SharedHosts.empty());
+        double cpuCap = 0.0;
+        var capacityPolicies = new CapacityPolicies(devZone, devExclusivity, ApplicationId.defaultId(),
+                                                    new CapacityPolicies.Tuning(arm64, 0.0, 0), cpuCap);
+        NodeResources requestedResources = new NodeResources(4, 16, 50, 0.3);
+        var capacity = Capacity.from(new ClusterResources(2, 1, requestedResources));
+        var result = capacityPolicies.applyOn(capacity, false);
+
+        assertEquals(0.1, result.minResources().nodeResources().vcpu(), 0.01, "CPU should be capped to 0.1 in dev when cpuCapInDev is false");
+        assertEquals(0.1, result.minResources().nodeResources().bandwidthGbps(), 0.01, "Bandwidth should be capped to 0.1 in dev when cpuCapInDev is false");
+    }
+
+    @Test
+    void testDevResourcesWithCpuCap() {
+        var devExclusivity = new Exclusivity(devZone, SharedHosts.empty());
+        double cpuCap = 1.0;
+        var capacityPolicies = new CapacityPolicies(devZone, devExclusivity, ApplicationId.defaultId(),
+                                                    new CapacityPolicies.Tuning(arm64, 0.0, 0), cpuCap);
+        NodeResources requestedResources = new NodeResources(4, 16, 50, 0.3);
+        var capacity = Capacity.from(new ClusterResources(2, 1, requestedResources));
+        var result = capacityPolicies.applyOn(capacity, false);
+
+        assertEquals(4, result.minResources().nodeResources().vcpu(), 0.01, "CPU should not be capped in dev when cpuCapInDev is true");
+        assertEquals(0.1, result.minResources().nodeResources().bandwidthGbps(), 0.01, "Bandwidth should still be capped to 0.1 in dev");
     }
 
     @Test

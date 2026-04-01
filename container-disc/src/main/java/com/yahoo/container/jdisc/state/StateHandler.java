@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 
@@ -347,7 +346,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         Tuple latencySeconds = new Tuple(NULL_DIMENSIONS, "latencySeconds", null);
         for (Map.Entry<MetricDimensions, MetricSet> entry : snapshot) {
             MetricSet metricSet = entry.getValue();
-            MetricValue val = metricSet.get(ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY.baseName());
+            MetricValue val = metricSet.get(ContainerMetrics.JDISC_HTTP_LATENCY.baseName());
             if (val instanceof GaugeMetric gauge) {
                 latencySeconds.add(GaugeMetric.newInstance(gauge.getLast() / 1000,
                                                            gauge.getMax() / 1000,

@@ -17,23 +17,9 @@ import com.yahoo.document.serialization.DocumentUpdateReader;
  * If document type "testdoc" has a field "svec" which is an array of struct containing an integer field "ival" then
  * "svec[$x]" and "testdoc.svec[$x].ival == 5" can be used to remove all array elements where ival is 5.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public class RemoveFieldPathUpdate extends FieldPathUpdate {
-    class IteratorHandler extends FieldPathIteratorHandler {
-        IteratorHandler() {
-        }
-
-        @Override
-        public ModificationStatus doModify(FieldValue fv) {
-            return ModificationStatus.REMOVED;
-        }
-
-        @Override
-        public boolean onComplex(FieldValue fv) {
-            return false;
-        }
-    }
 
     IteratorHandler handler;
 
@@ -61,4 +47,19 @@ public class RemoveFieldPathUpdate extends FieldPathUpdate {
     public String toString() {
         return "Remove: " + super.toString();
     }
+
+    static class IteratorHandler extends FieldPathIteratorHandler {
+
+        @Override
+        public ModificationStatus doModify(FieldValue fv) {
+            return ModificationStatus.REMOVED;
+        }
+
+        @Override
+        public boolean onComplex(FieldValue fv) {
+            return false;
+        }
+
+    }
+
 }

@@ -19,13 +19,16 @@ template <typename FieldIndexType>
 class Verifier : public SearchIteratorVerifier {
 private:
     mutable TermFieldMatchData _tfmd;
+    TermFieldMatchDataArray    _tfmda;
     FieldIndexType _field_index;
 
 public:
     Verifier(const Schema& schema)
         : _tfmd(),
+          _tfmda(),
           _field_index(schema, 0)
     {
+        _tfmda.add(&_tfmd);
         WrapInserter inserter(_field_index);
         inserter.word("a");
         for (uint32_t docId : getExpectedDocIds()) {
@@ -37,10 +40,12 @@ public:
 
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
-        TermFieldMatchDataArray match_data;
-        match_data.add(&_tfmd);
-        return _field_index.make_search_iterator("a", 0, match_data);
+        return _field_index.make_search_iterator("a", 0, _tfmda);
     }
+    std::unique_ptr<SearchIterator> create(bool, const TermFieldMatchDataArray& tfmda) const override {
+        return _field_index.make_search_iterator("a", 0, tfmda);
+    }
+    void verify_hidden_from_ranking() { SearchIteratorVerifier::verify_hidden_from_ranking(_tfmda); }
 };
 
 template <typename FieldIndexType>
@@ -69,12 +74,14 @@ TEST(FieldIndexIteratorTest, require_that_normal_posting_iterator_conforms)
 {
     Fixture<FieldIndex<false>> f;
     f.verifier.verify();
+    f.verifier.verify_hidden_from_ranking();
 }
 
 TEST(FieldIndexIteratorTest, require_that_interleaved_posting_iterator_conforms)
 {
     Fixture<FieldIndex<true>> f;
     f.verifier.verify();
+    f.verifier.verify_hidden_from_ranking();
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

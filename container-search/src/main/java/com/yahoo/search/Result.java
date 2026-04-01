@@ -213,7 +213,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
     /** Sets the top level hit group containing all the hits of this result */
     public void setHits(HitGroup hits) {
         Validator.ensureNotNull("The top-level hit group of " + this,hits);
-        this.hits=hits;
+        this.hits = hits;
     }
 
     /**

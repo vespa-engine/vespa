@@ -15,7 +15,7 @@ public:
     DECLARE_NBO_SERIALIZE;
     TimeStampFunctionNode();
     TimeStampFunctionNode(ExpressionNode::UP arg, TimePart timePart, bool gmt=true);
-    ~TimeStampFunctionNode();
+    ~TimeStampFunctionNode() override;
     TimeStampFunctionNode(const TimeStampFunctionNode & rhs);
     TimeStampFunctionNode & operator = (const TimeStampFunctionNode & rhs);
     unsigned int getTime() const { return getResult()->getInteger(); } // Not valid until after node has been prepared
@@ -33,7 +33,7 @@ unsigned hour(timestamp); [0-23]
 unsigned minute(timestamp);[0-59]
 unsigned second(timestamp);[0-59]
 */
-    bool onExecute() const override;
+    void onExecute() const override;
     void onPrepareResult() override;
 private:
     class Handler {

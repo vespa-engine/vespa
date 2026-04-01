@@ -28,9 +28,9 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SidecarImages;
 import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.Zone;
@@ -123,7 +123,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -264,12 +263,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
+            var sidecarImage = SidecarImages.readFromPropertiesFile().getOrThrow("triton");
 
-            // Hardcoded values for changes to be reviewed and tested
             var spec = SidecarSpec.builder()
                     .id(0)
                     .name("triton")
-                    .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.12-py3"))
+                    .image(sidecarImage)
+                    .hasImageMirror(true)
                     .minCpu(1) // Must have at least one CPU
                     .hasGpu(hasGpu)
                     .volumeMounts(List.of("/models"))
@@ -339,6 +339,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addSecrets(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {
         if ( ! deployState.isHosted() || ! cluster.getZone().system().isPublicCloudLike())
             return;
+        cluster.addComponent(new CloudAsmSecrets(deployState.getProperties().ztsUrl(),
+                                                 deployState.getProperties().tenantSecretDomain(),
+                                                 deployState.zone().system(),
+                                                 deployState.getProperties().applicationId().tenant(),
+                                                 deployState.getProperties().tenantVaults()));
         Element secretsElement = XML.getChild(spec, "secrets");
         if (secretsElement != null) {
             CloudSecrets secretsConfig = new CloudSecrets();
@@ -349,11 +354,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 secretsConfig.addSecret(key, name, vault);
             }
             cluster.setTenantSecretsConfig(secretsConfig);
-            cluster.addComponent(new CloudAsmSecrets(deployState.getProperties().ztsUrl(),
-                                                     deployState.getProperties().tenantSecretDomain(),
-                                                     deployState.zone().system(),
-                                                     deployState.getProperties().applicationId().tenant(),
-                                                     deployState.getProperties().tenantVaults()));
         }
     }
 
@@ -1049,8 +1049,22 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addContainers(List.of(container));
     }
 
-    private static String buildJvmGCOptions(ConfigModelContext context, String jvmGCOptions) {
-        return new JvmGcOptions(context.getDeployState(), jvmGCOptions).build();
+    private static String buildJvmGCOptions(ConfigModelContext context, ApplicationContainerCluster cluster, String jvmGCOptions) {
+        return new JvmGcOptions(context.getDeployState(), cluster.getName(), jvmGCOptions).build();
+    }
+
+    private static void applyPerContainerGCOptions(List<ApplicationContainer> containers, ConfigModelContext context,
+                                                   ApplicationContainerCluster cluster, String xmlGcOptions) {
+        if (xmlGcOptions != null) return; // XML-specified gc-options apply uniformly (set on cluster)
+        var flag = context.getDeployState().getProperties().jvmGCOptionsFlag()
+                .withClusterType(ClusterSpec.Type.container)
+                .withClusterId(ClusterSpec.Id.from(cluster.getName()));
+        for (var container : containers) {
+            var resolved = flag.withHostname(container.getHostName()).value();
+            if (resolved != null && !resolved.isEmpty()) {
+                container.setJvmGCOptions(resolved);
+            }
+        }
     }
 
     private static String getJvmOptions(Element nodesElement,
@@ -1063,24 +1077,27 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return element.hasAttribute(attrName) ? element.getAttribute(attrName) : null;
     }
 
-    private void extractJvmOptions(List<ApplicationContainer> nodes,
-                                   ApplicationContainerCluster cluster,
-                                   Element nodesElement,
-                                   ConfigModelContext context) {
+    /** Returns the XML-specified gc-options, or null if not specified in XML. */
+    private String extractJvmOptions(List<ApplicationContainer> nodes,
+                                     ApplicationContainerCluster cluster,
+                                     Element nodesElement,
+                                     ConfigModelContext context) {
         Element jvmElement = XML.getChild(nodesElement, "jvm");
         if (jvmElement == null) {
-            extractJvmFromLegacyNodesTag(nodes, cluster, nodesElement, context);
+            return extractJvmFromLegacyNodesTag(nodes, cluster, nodesElement, context);
         } else {
-            extractJvmTag(nodes, cluster, nodesElement, jvmElement, context);
+            return extractJvmTag(nodes, cluster, nodesElement, jvmElement, context);
         }
     }
 
-    private void extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
-                                              Element nodesElement, ConfigModelContext context) {
+    /** Returns the XML-specified gc-options, or null if not specified in XML. */
+    private String extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
+                                                Element nodesElement, ConfigModelContext context) {
         applyNodesTagJvmArgs(nodes, getJvmOptions(nodesElement, context.getDeployState(), true));
 
+        String jvmGCOptions = null;
         if (cluster.getJvmGCOptions().isEmpty()) {
-            String jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
+            jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
 
             if (jvmGCOptions != null && !jvmGCOptions.isEmpty()) {
                 DeployLogger logger = context.getDeployState().getDeployLogger();
@@ -1089,7 +1106,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         " See https://docs.vespa.ai/en/reference/services/container.html#jvm");
             }
 
-            cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
+            cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, jvmGCOptions));
         }
 
         if (applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME)))
@@ -1097,14 +1114,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                    .logApplicationPackage(WARNING, "'allocated-memory' is deprecated and will be removed in Vespa 9." +
                            " Please merge into 'allocated-memory' in 'jvm' element." +
                            " See https://docs.vespa.ai/en/reference/services/container.html#jvm");
+        return jvmGCOptions;
     }
 
-    private void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
-                               Element nodesElement, Element jvmElement, ConfigModelContext context) {
+    /** Returns the XML-specified gc-options, or null if not specified in XML. */
+    private String extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
+                                 Element nodesElement, Element jvmElement, ConfigModelContext context) {
         applyNodesTagJvmArgs(nodes, getJvmOptions(nodesElement, context.getDeployState(), false));
         applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
-        String jvmGCOptions = extractAttribute(jvmElement, VespaDomBuilder.GC_OPTIONS);
-        cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
+        var jvmGCOptions = extractAttribute(jvmElement, VespaDomBuilder.GC_OPTIONS);
+        cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, jvmGCOptions));
+        return jvmGCOptions;
     }
 
     /**
@@ -1117,12 +1137,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addNodesFromXml(ApplicationContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         if (nodesElement == null) {
-            cluster.addContainers(allocateWithoutNodesTag(cluster, context));
-            cluster.setJvmGCOptions(buildJvmGCOptions(context, null));
+            var nodes = allocateWithoutNodesTag(cluster, context);
+            cluster.addContainers(nodes);
+            cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, null));
+            applyPerContainerGCOptions(nodes, context, cluster, null);
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
 
-            extractJvmOptions(nodes, cluster, nodesElement, context);
+            var xmlGcOptions = extractJvmOptions(nodes, cluster, nodesElement, context);
             applyDefaultPreload(nodes, nodesElement);
             var envVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT)).entrySet();
             for (var container : nodes) {
@@ -1133,6 +1155,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (useCpuSocketAffinity(nodesElement))
                 AbstractService.distributeCpuSocketAffinity(nodes);
             cluster.addContainers(nodes);
+            applyPerContainerGCOptions(nodes, context, cluster, xmlGcOptions);
         }
     }
 
@@ -1567,19 +1590,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         private static final Pattern invalidCMSPattern = Pattern.compile("-XX:[+-]\\w*CMS[a-zA-z0-9=]+");
 
         private final DeployState deployState;
+        private final String clusterName;
         private final String jvmGcOptions;
         private final DeployLogger logger;
         private final boolean isHosted;
 
-        public JvmGcOptions(DeployState deployState, String jvmGcOptions) {
+        public JvmGcOptions(DeployState deployState, String clusterName, String jvmGcOptions) {
             this.deployState = deployState;
+            this.clusterName = clusterName;
             this.jvmGcOptions = jvmGcOptions;
             this.logger = deployState.getDeployLogger();
             this.isHosted = deployState.isHosted();
         }
 
         private String build() {
-            String options = deployState.getProperties().jvmGCOptions();
+            var options = deployState.getProperties().jvmGCOptionsFlag()
+                    .withClusterType(ClusterSpec.Type.container)
+                    .withClusterId(ClusterSpec.Id.from(clusterName))
+                    .value();
             if (jvmGcOptions != null) {
                 options = jvmGcOptions;
                 String[] optionList = options.split(" ");

@@ -2,14 +2,38 @@
 
 #include "near_query_node.h"
 #include "hit_iterator_pack.h"
+#include <vespa/searchlib/queryeval/near_search_flags.h>
 #include <vespa/searchlib/queryeval/near_search_utils.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
+using search::queryeval::MatchSpan;
+using search::queryeval::NearSearchFlags;
 using search::queryeval::near_search_utils::BoolMatchResult;
 using search::queryeval::near_search_utils::ElementIdMatchResult;
+using search::queryeval::near_search_utils::SpanMatchResult;
 using vespalib::PriorityQueue;
 
 namespace search::streaming {
+
+NearQueryNode::NearQueryNode(const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept
+    : AndQueryNode("NEAR"),
+      _distance(0),
+      _num_negative_terms(0),
+      _exclusion_distance(0),
+      _element_gap_inspector(element_gap_inspector),
+      _match_spans(),
+      _filtered_match_spans()
+{ }
+
+NearQueryNode::NearQueryNode(const char * opName, const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept
+    : AndQueryNode(opName),
+      _distance(0),
+      _num_negative_terms(0),
+      _exclusion_distance(0),
+      _element_gap_inspector(element_gap_inspector),
+      _match_spans(),
+      _filtered_match_spans()
+{ }
 
 NearQueryNode::~NearQueryNode() = default;
 
@@ -46,7 +70,11 @@ NearQueryNode::evaluate_helper(MatchResult& match_result) const
         auto last_allowed = calc_window_end_pos(*front);
         if (!(last_allowed < max_pos.key())) {
             if (filter.check_window(*front, max_pos)) {
-                match_result.register_match(front.get_field_element().second);
+                if constexpr (MatchResult::collect_spans) {
+                    match_result.register_match(MatchSpan(*front, max_pos));
+                } else {
+                    match_result.register_match(front.get_field_element().second);
+                }
                 if constexpr (MatchResult::shortcut_return) {
                     return;
                 }
@@ -85,6 +113,34 @@ NearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
     ElementIdMatchResult match_result(element_ids);;
     evaluate_helper(match_result);
     match_result.maybe_sort_element_ids();
+}
+
+void
+NearQueryNode::get_match_spans(std::vector<MatchSpan>& match_spans)
+{
+    // Retrieve the matching spans
+    SpanMatchResult match_result(match_spans);
+    evaluate_helper(match_result);
+}
+
+void
+NearQueryNode::unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
+                                 search::common::ElementIds element_ids)
+{
+    if (evaluate()) {
+        if (NearSearchFlags::filter_terms()) {
+            _match_spans.clear();
+            get_match_spans(_match_spans);
+            auto match_spans = _filtered_match_spans.intersection(_match_spans, element_ids);
+            for (const auto& node : getChildren()) {
+                node->unpack_match_data(docid, match_data, index_env, match_spans);
+            }
+        } else {
+            for (const auto& node : getChildren()) {
+                node->unpack_match_data(docid, match_data, index_env, element_ids);
+            }
+        }
+    }
 }
 
 void

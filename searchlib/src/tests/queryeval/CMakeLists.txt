@@ -2,6 +2,7 @@
 vespa_add_executable(searchlib_queryeval_test_app TEST
     SOURCES
     queryeval_test.cpp
+    filtered_match_spans_test.cpp
     DEPENDS
     searchlib_queryeval_test
     vespa_searchlib

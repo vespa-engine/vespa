@@ -32,6 +32,7 @@ private:
     void fetch_matching_elements(uint32_t docid, std::vector<uint32_t> &dst);
     bool check_docid_match(uint32_t docid);
     bool check_element_match(uint32_t docid);
+    void hide_descendants_match_data();
     void filter_descendants_match_data(uint32_t docid, std::span<const uint32_t> element_ids);
 
 public:
@@ -51,6 +52,8 @@ public:
     // initRange must be called before use.
     // doSeek/doUnpack must not be called.
     void find_matching_elements(uint32_t docid, std::vector<uint32_t> &dst);
+
+    Trinary is_strict() const override { return _strict ? Trinary::True : Trinary::False; };
 };
 
 }

@@ -316,6 +316,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public java.lang.String getIndexName()",
+      "public java.lang.String getFieldName()",
       "public void setWeight(int)"
     ],
     "fields" : [ ]
@@ -383,6 +384,7 @@
     "methods" : [
       "public void <init>()",
       "public java.lang.String getIndexName()",
+      "public java.lang.String getFieldName()",
       "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void setIndexName(java.lang.String)",
       "protected void appendIndexString(java.lang.StringBuilder)",
@@ -615,6 +617,7 @@
     ],
     "methods" : [
       "public abstract java.lang.String getIndexName()",
+      "public java.lang.String getFieldName()",
       "public abstract int getNumWords()"
     ],
     "fields" : [ ]
@@ -686,6 +689,7 @@
     "methods" : [
       "protected void <init>(java.lang.String, java.lang.String, boolean, boolean, com.yahoo.prelude.query.Substring)",
       "public java.lang.String getIndexName()",
+      "public java.lang.String getFieldName()",
       "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void setIndexName(java.lang.String)",
       "protected void appendIndexString(java.lang.StringBuilder)",
@@ -1021,6 +1025,7 @@
       "public int getTargetNumHits()",
       "public java.lang.Integer getTargetHits()",
       "public java.lang.Integer getTotalTargetHits()",
+      "public java.lang.Integer getMinTargetHits()",
       "public java.lang.String getIndexName()",
       "public double getDistanceThreshold()",
       "public int getHnswExploreAdditionalHits()",
@@ -1035,6 +1040,7 @@
       "public void setTargetNumHits(int)",
       "public void setTargetHits(java.lang.Integer)",
       "public void setTotalTargetHits(java.lang.Integer)",
+      "public void setMinTargetHits(java.lang.Integer)",
       "public void setDistanceThreshold(double)",
       "public void setHnswExploreAdditionalHits(int)",
       "public void setAllowApproximate(boolean)",
@@ -1470,7 +1476,6 @@
       "public java.lang.String getName()",
       "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public java.util.regex.Pattern getRegexp()",
-      "public java.lang.String toString()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
     ],
@@ -1928,10 +1933,18 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, int)",
+      "public void <init>(java.lang.String, java.lang.Integer)",
+      "public void <init>(java.lang.String, java.util.Map)",
+      "public void <init>(java.lang.String, java.lang.Integer, java.util.Map)",
       "public void <init>(java.lang.String, int, java.util.Map)",
       "public void setScoreThreshold(double)",
       "public void setThresholdBoostFactor(double)",
+      "public java.lang.Integer getTargetHits()",
+      "public java.lang.Integer getTotalTargetHits()",
+      "public void setTargetHits(java.lang.Integer)",
+      "public void setTotalTargetHits(java.lang.Integer)",
       "public int getTargetNumHits()",
       "public double getScoreThreshold()",
       "public double getThresholdBoostFactor()",
@@ -3132,6 +3145,21 @@
       "protected static varargs java.util.List asList(java.lang.Object, java.lang.Object[])",
       "protected static varargs java.util.List asList(java.lang.Object, java.lang.Object, java.lang.Object[])",
       "protected static java.util.List asList(java.util.List, java.util.List)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.GeoDistanceFunction" : {
+    "superClass" : "com.yahoo.search.grouping.request.FunctionNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.AttributeFunction, com.yahoo.search.grouping.request.GroupingExpression, com.yahoo.search.grouping.request.GroupingExpression, java.lang.String)",
+      "public java.lang.String getUnit()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.GeoDistanceFunction copy()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
     ],
     "fields" : [ ]
   },
@@ -4521,6 +4549,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(com.yahoo.search.grouping.result.GroupId, com.yahoo.search.result.Relevance, com.yahoo.search.Query)",
       "public void <init>(com.yahoo.search.grouping.result.GroupId, com.yahoo.search.result.Relevance)",
       "public com.yahoo.search.grouping.result.GroupId getGroupId()",
       "public com.yahoo.search.grouping.result.HitList getHitList(java.lang.String)",
@@ -4639,6 +4668,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(int, com.yahoo.search.grouping.Continuation, com.yahoo.search.Query)",
       "public void <init>(int, com.yahoo.search.grouping.Continuation)",
       "public com.yahoo.search.grouping.Continuation continuation()"
     ],
@@ -5847,6 +5877,8 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String keepRankCountProperty",
+      "public static final java.lang.String totalKeepRankCountProperty",
       "public static final com.yahoo.processing.request.CompoundName RANKFEATURES",
       "public static final java.lang.String RANKING",
       "public static final java.lang.String LOCATION",
@@ -5855,9 +5887,9 @@
       "public static final java.lang.String LIST_FEATURES",
       "public static final java.lang.String FRESHNESS",
       "public static final java.lang.String QUERYCACHE",
-      "public static final java.lang.String RERANKCOUNT",
       "public static final java.lang.String KEEPRANKCOUNT",
       "public static final java.lang.String TOTALKEEPRANKCOUNT",
+      "public static final java.lang.String RERANKCOUNT",
       "public static final java.lang.String RANKSCOREDROPLIMIT",
       "public static final java.lang.String ELEMENT_GAP",
       "public static final java.lang.String FEATURES",
@@ -7419,7 +7451,9 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
-      "public static final java.lang.String GLOBAL_PHASE"
+      "public static final java.lang.String GLOBAL_PHASE",
+      "public static final java.lang.String RERANK_COUNT",
+      "public static final java.lang.String RANK_SCORE_DROP_LIMIT"
     ]
   },
   "com.yahoo.search.query.ranking.MatchPhase" : {
@@ -7438,8 +7472,10 @@
       "public void setAscending(boolean)",
       "public boolean getAscending()",
       "public void setMaxHits(long)",
+      "public void setTotalMaxHits(long)",
       "public void setMaxFilterCoverage(double)",
       "public java.lang.Long getMaxHits()",
+      "public java.lang.Long getTotalMaxHits()",
       "public java.lang.Double getMaxFilterCoverage()",
       "public com.yahoo.search.query.ranking.Diversity getDiversity()",
       "public void setDiversity(com.yahoo.search.query.ranking.Diversity)",
@@ -7450,10 +7486,13 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
+      "public static final java.lang.String maxHitsProperty",
+      "public static final java.lang.String totalMaxHitsProperty",
       "public static final java.lang.String MATCH_PHASE",
       "public static final java.lang.String ATTRIBUTE",
       "public static final java.lang.String ASCENDING",
       "public static final java.lang.String MAX_HITS",
+      "public static final java.lang.String TOTAL_MAX_HITS",
       "public static final java.lang.String MAX_FILTER_COVERAGE"
     ]
   },
@@ -7601,7 +7640,10 @@
     "fields" : [
       "public static final java.lang.String rerankCountProperty",
       "public static final java.lang.String totalRerankCountProperty",
-      "public static final java.lang.String SECOND_PHASE"
+      "public static final java.lang.String SECOND_PHASE",
+      "public static final java.lang.String RERANK_COUNT",
+      "public static final java.lang.String TOTAL_RERANK_COUNT",
+      "public static final java.lang.String RANK_SCORE_DROP_LIMIT"
     ]
   },
   "com.yahoo.search.query.ranking.Significance" : {
@@ -8598,6 +8640,7 @@
       "public void setCached(boolean)",
       "public boolean isCached()",
       "public void setFillable()",
+      "public void setUnfillable()",
       "public void setFilled(java.lang.String)",
       "public boolean isFillable()",
       "public java.util.Set getFilled()",
@@ -8704,6 +8747,7 @@
       "public void analyze()",
       "public com.yahoo.search.result.HitGroup clone()",
       "public void setFillable()",
+      "public void setUnfillable()",
       "public void setFilled(java.lang.String)",
       "public boolean isFillable()",
       "public java.util.Set getFilled()",
@@ -9133,6 +9177,36 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.schema.MatchPhase$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.schema.MatchPhase$Builder setMaxHits(long)",
+      "public com.yahoo.search.schema.MatchPhase$Builder setTotalMaxHits(long)",
+      "public com.yahoo.search.schema.MatchPhase build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.MatchPhase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.schema.MatchPhase$Builder)",
+      "public java.util.OptionalLong maxHits()",
+      "public java.util.OptionalLong totalMaxHits()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.schema.RankProfile$Builder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -9147,6 +9221,7 @@
       "public com.yahoo.search.schema.RankProfile$Builder setUseSignificanceModel(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder setKeepRankCount(int)",
       "public com.yahoo.search.schema.RankProfile$Builder setTotalKeepRankCount(int)",
+      "public com.yahoo.search.schema.RankProfile$Builder setMatchPhase(com.yahoo.search.schema.MatchPhase)",
       "public com.yahoo.search.schema.RankProfile$Builder setSecondPhase(com.yahoo.search.schema.SecondPhase)",
       "public com.yahoo.search.schema.RankProfile build()"
     ],
@@ -9186,6 +9261,7 @@
       "public java.util.Map inputs()",
       "public java.util.OptionalInt keepRankCount()",
       "public java.util.OptionalInt totalKeepRankCount()",
+      "public com.yahoo.search.schema.MatchPhase matchPhase()",
       "public com.yahoo.search.schema.SecondPhase secondPhase()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",

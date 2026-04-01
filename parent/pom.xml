@@ -301,6 +301,9 @@
                     <groupId>io.github.tulipcc</groupId>
                     <artifactId>tulipcc-maven-plugin</artifactId>
                     <version>5.0.0</version>
+                    <configuration>
+                        <jdkVersion>17</jdkVersion>
+                    </configuration>
                     <executions>
                         <execution>
                             <phase>generate-sources</phase>
@@ -309,6 +312,19 @@
                             </goals>
                         </execution>
                     </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.reporting</groupId>
+                            <artifactId>maven-reporting-impl</artifactId>
+                            <version>3.2.0</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>dom4j</groupId>
+                                    <artifactId>dom4j</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>io.github.ascopes</groupId>
@@ -374,36 +390,8 @@
                         </dependency>
                     </dependencies>
                 </plugin>
-                <plugin>
-                    <groupId>com.diffplug.spotless</groupId>
-                    <artifactId>spotless-maven-plugin</artifactId>
-                    <version>${spotless-maven-plugin.vespa.version}</version>
-                    <configuration>
-                        <java>
-                            <includes>
-                                <include>src/**/*.java</include>
-                            </includes>
-                            <forbidWildcardImports/>
-                        </java>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>check-wildcard-imports</id>
-                            <phase>verify</phase>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
             </plugins>
         </pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
     </build>
     <profiles>
         <profile>
@@ -784,9 +772,9 @@
                 <version>${onnxruntime.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>de.kherud</groupId>
-                <artifactId>llama</artifactId>
-                <version>${kherud.llama.vespa.version}</version>
+                <groupId>io.github.arnej27959</groupId>
+                <artifactId>jllama</artifactId>
+                <version>${jllama.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -1271,7 +1259,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
                 <artifactId>jetty-http2-client-transport</artifactId>
-                <version>${jetty.client.vespa.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
@@ -1291,7 +1279,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-client</artifactId>
-                <version>${jetty.client.vespa.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>

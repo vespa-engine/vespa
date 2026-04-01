@@ -1,16 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "scheduler.h"
+
 #include "task.h"
-#include <sstream>
+
 #include <cmath>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet.scheduler");
 
 const vespalib::duration FNET_Scheduler::tick_ms = vespalib::adjustTimeoutByDetectedHz(10ms);
 
-FNET_Scheduler::FNET_Scheduler(vespalib::steady_time *sampler)
+FNET_Scheduler::FNET_Scheduler(vespalib::steady_time* sampler)
     : _cond(),
       _next(),
       _now(),
@@ -20,8 +22,7 @@ FNET_Scheduler::FNET_Scheduler(vespalib::steady_time *sampler)
       _currPt(nullptr),
       _tailPt(nullptr),
       _performing(nullptr),
-      _waitTask(false)
-{
+      _waitTask(false) {
     for (int i = 0; i < NUM_SLOTS; i++)
         _slots[i] = nullptr;
     _slots[NUM_SLOTS] = nullptr;
@@ -29,21 +30,19 @@ FNET_Scheduler::FNET_Scheduler(vespalib::steady_time *sampler)
     _next = _now + tick_ms;
 }
 
-
-FNET_Scheduler::~FNET_Scheduler()
-{
+FNET_Scheduler::~FNET_Scheduler() {
     if (LOG_WOULD_LOG(debug)) {
-        bool empty = true;
+        bool              empty = true;
         std::stringstream dump;
         {
             std::lock_guard<std::mutex> guard(_lock);
             dump << "FNET_Scheduler {" << std::endl;
             dump << "  [slot=" << _currSlot << "][iter=" << _currIter << "]" << std::endl;
             for (int i = 0; i <= NUM_SLOTS; i++) {
-                FNET_Task *pt = _slots[i];
+                FNET_Task* pt = _slots[i];
                 if (pt != nullptr) {
                     empty = false;
-                    FNET_Task *end = pt;
+                    FNET_Task* end = pt;
                     do {
                         dump << "  FNET_Task { slot=" << pt->_task_slot;
                         dump << ", iter=" << pt->_task_iter << " }" << std::endl;
@@ -54,19 +53,18 @@ FNET_Scheduler::~FNET_Scheduler()
             dump << "}" << std::endl;
         }
         if (!empty) {
-            LOG(debug, "~FNET_Scheduler(): tasks still pending when deleted"
-                "\n%s", dump.str().c_str());
+            LOG(debug,
+                "~FNET_Scheduler(): tasks still pending when deleted"
+                "\n%s",
+                dump.str().c_str());
         }
     }
 }
 
-
-void
-FNET_Scheduler::Schedule(FNET_Task *task, double seconds)
-{
+void FNET_Scheduler::Schedule(FNET_Task* task, double seconds) {
     constexpr double ONE_MONTH_S = 3600 * 24 * 30;
     seconds = std::min(seconds, ONE_MONTH_S);
-    uint32_t ticks = 2 + (uint32_t) std::ceil(seconds * (1000.0 / vespalib::count_ms(tick_ms)));
+    uint32_t ticks = 2 + (uint32_t)std::ceil(seconds * (1000.0 / vespalib::count_ms(tick_ms)));
 
     std::lock_guard<std::mutex> guard(_lock);
     if (!task->_killed) {
@@ -78,10 +76,7 @@ FNET_Scheduler::Schedule(FNET_Task *task, double seconds)
     }
 }
 
-
-void
-FNET_Scheduler::ScheduleNow(FNET_Task *task)
-{
+void FNET_Scheduler::ScheduleNow(FNET_Task* task) {
     std::lock_guard<std::mutex> guard(_lock);
     if (!task->_killed) {
         if (IsActive(task))
@@ -92,20 +87,14 @@ FNET_Scheduler::ScheduleNow(FNET_Task *task)
     }
 }
 
-
-void
-FNET_Scheduler::Unschedule(FNET_Task *task)
-{
+void FNET_Scheduler::Unschedule(FNET_Task* task) {
     std::unique_lock<std::mutex> guard(_lock);
     WaitTask(guard, task);
     if (IsActive(task))
         LinkOut(task);
 }
 
-
-void
-FNET_Scheduler::Kill(FNET_Task *task)
-{
+void FNET_Scheduler::Kill(FNET_Task* task) {
     std::unique_lock<std::mutex> guard(_lock);
     WaitTask(guard, task);
     if (IsActive(task))
@@ -113,20 +102,16 @@ FNET_Scheduler::Kill(FNET_Task *task)
     task->_killed = true;
 }
 
-
-void
-FNET_Scheduler::Print(FILE *dst)
-{
+void FNET_Scheduler::Print(FILE* dst) {
     std::lock_guard<std::mutex> guard(_lock);
     fprintf(dst, "FNET_Scheduler {\n");
     fprintf(dst, "  [slot=%d][iter=%d]\n", _currSlot, _currIter);
     for (int i = 0; i <= NUM_SLOTS; i++) {
-        FNET_Task *pt = _slots[i];
+        FNET_Task* pt = _slots[i];
         if (pt != nullptr) {
-            FNET_Task *end = pt;
+            FNET_Task* end = pt;
             do {
-                fprintf(dst, "  FNET_Task { slot=%d, iter=%d }\n",
-                        pt->_task_slot, pt->_task_iter);
+                fprintf(dst, "  FNET_Task { slot=%d, iter=%d }\n", pt->_task_slot, pt->_task_iter);
                 pt = pt->_task_next;
             } while (pt != end);
         }
@@ -134,10 +119,7 @@ FNET_Scheduler::Print(FILE *dst)
     fprintf(dst, "}\n");
 }
 
-
-void
-FNET_Scheduler::CheckTasks()
-{
+void FNET_Scheduler::CheckTasks() {
     std::unique_lock guard(_lock);
     _now = _sampler ? *_sampler : vespalib::steady_clock::now();
     // perform urgent tasks
@@ -157,33 +139,19 @@ FNET_Scheduler::CheckTasks()
     }
 }
 
-void
-FNET_Scheduler::FirstTask(uint32_t slot) {
+void FNET_Scheduler::FirstTask(uint32_t slot) {
     _currPt = _slots[slot];
-    _tailPt = (_currPt != nullptr) ?
-              _currPt->_task_prev : nullptr;
+    _tailPt = (_currPt != nullptr) ? _currPt->_task_prev : nullptr;
 }
 
-void
-FNET_Scheduler::NextTask() {
-    _currPt = (_currPt != _tailPt) ?
-              _currPt->_task_next : nullptr;
-}
+void FNET_Scheduler::NextTask() { _currPt = (_currPt != _tailPt) ? _currPt->_task_next : nullptr; }
 
-void
-FNET_Scheduler::AdjustCurrPt() {
-    _currPt = (_currPt != _tailPt) ?
-              _currPt->_task_next : nullptr;
-}
+void FNET_Scheduler::AdjustCurrPt() { _currPt = (_currPt != _tailPt) ? _currPt->_task_next : nullptr; }
 
-void
-FNET_Scheduler::AdjustTailPt() {
-    _tailPt = _tailPt->_task_prev;
-}
+void FNET_Scheduler::AdjustTailPt() { _tailPt = _tailPt->_task_prev; }
 
-void
-FNET_Scheduler::LinkIn(FNET_Task *task) {
-    FNET_Task **head = &(_slots[task->_task_slot]);
+void FNET_Scheduler::LinkIn(FNET_Task* task) {
+    FNET_Task** head = &(_slots[task->_task_slot]);
 
     if ((*head) == nullptr) {
         (*head) = task;
@@ -197,9 +165,8 @@ FNET_Scheduler::LinkIn(FNET_Task *task) {
     }
 }
 
-void
-FNET_Scheduler::LinkOut(FNET_Task *task) {
-    FNET_Task **head = &(_slots[task->_task_slot]);
+void FNET_Scheduler::LinkOut(FNET_Task* task) {
+    FNET_Task** head = &(_slots[task->_task_slot]);
 
     if (task == _currPt)
         AdjustCurrPt();
@@ -218,14 +185,12 @@ FNET_Scheduler::LinkOut(FNET_Task *task) {
     task->_task_prev = nullptr;
 }
 
-void
-FNET_Scheduler::BeforeTask(std::unique_lock<std::mutex> &guard, FNET_Task *task) {
+void FNET_Scheduler::BeforeTask(std::unique_lock<std::mutex>& guard, FNET_Task* task) {
     _performing = task;
     guard.unlock();
 }
 
-void
-FNET_Scheduler::AfterTask(std::unique_lock<std::mutex> &guard) {
+void FNET_Scheduler::AfterTask(std::unique_lock<std::mutex>& guard) {
     guard.lock();
     _performing = nullptr;
     if (_waitTask) {
@@ -234,18 +199,16 @@ FNET_Scheduler::AfterTask(std::unique_lock<std::mutex> &guard) {
     }
 }
 
-void
-FNET_Scheduler::WaitTask(std::unique_lock<std::mutex> &guard, FNET_Task *task) {
+void FNET_Scheduler::WaitTask(std::unique_lock<std::mutex>& guard, FNET_Task* task) {
     while (IsPerforming(task)) {
         _waitTask = true;
         _cond.wait(guard);
     }
 }
 
-void
-FNET_Scheduler::PerformTasks(std::unique_lock<std::mutex> &guard, uint32_t slot, uint32_t iter) {
+void FNET_Scheduler::PerformTasks(std::unique_lock<std::mutex>& guard, uint32_t slot, uint32_t iter) {
     FirstTask(slot);
-    for (FNET_Task *task; (task = GetTask()) != nullptr; ) {
+    for (FNET_Task* task; (task = GetTask()) != nullptr;) {
         NextTask();
 
         if (task->_task_iter == iter) {
@@ -257,6 +220,4 @@ FNET_Scheduler::PerformTasks(std::unique_lock<std::mutex> &guard, uint32_t slot,
     }
 }
 
-bool FNET_Scheduler::IsActive(FNET_Task *task) {
-    return task->_task_next != nullptr;
-}
+bool FNET_Scheduler::IsActive(FNET_Task* task) { return task->_task_next != nullptr; }

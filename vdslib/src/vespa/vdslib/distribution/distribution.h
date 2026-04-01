@@ -31,7 +31,6 @@ public:
     using DistributionConfigBuilder = vespa::config::content::internal::InternalStorDistributionType;
 
 private:
-    std::vector<uint32_t>      _distributionBitMasks;
     std::unique_ptr<Group>     _nodeGraph;
     std::vector<const Group *> _node2Group;
     uint16_t                   _redundancy;
@@ -156,6 +155,11 @@ public:
     std::vector<IndexList> splitNodesIntoLeafGroups(std::span<const uint16_t> nodes) const;
 
     static bool allDistributorsDown(const Group&, const ClusterState&);
+
+    // BucketId LSB mask based on the current cluster distribution bit value
+    [[nodiscard]] constexpr static uint32_t distribution_bit_mask(const uint32_t distribution_bits) noexcept {
+        return static_cast<uint32_t>((uint64_t{1} << distribution_bits) - 1);
+    }
 };
 
 } // storage::lib

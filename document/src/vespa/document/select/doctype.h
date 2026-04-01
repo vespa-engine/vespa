@@ -14,8 +14,7 @@
 
 namespace document::select {
 
-class DocType : public Node
-{
+class DocType : public Node {
 private:
     std::string _doctype;
 
@@ -28,7 +27,6 @@ public:
     void visit(Visitor& v) const override;
 
     Node::UP clone() const override { return wrapParens(new DocType(_doctype)); }
-
 };
 
-}
+} // namespace document::select

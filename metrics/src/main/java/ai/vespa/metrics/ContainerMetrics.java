@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metrics;
 
+import java.util.EnumSet;
+
 /**
  * @author gjoranv
  */
@@ -52,6 +54,8 @@ public enum ContainerMetrics implements VespaMetrics {
     JDISC_HTTP_SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED("jdisc.http.ssl.handshake.failure.connection_closed", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to connection closed"),
     JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN("jdisc.http.ssl.handshake.failure.unknown", Unit.OPERATION, "JDISC HTTP SSL Handshake failures for unknown reason"),
 
+    JDISC_HTTP_LATENCY("jdisc.http.latency", Unit.MILLISECOND, "Request latency including the HTTP layer"),
+    JDISC_HTTP_TIME_TO_FIRST_BYTE("jdisc.http.time_to_first_byte", Unit.MILLISECOND, "Time from request has been received by the server until the first byte is returned to the client"),
     JDISC_HTTP_REQUEST_PREMATURELY_CLOSED("jdisc.http.request.prematurely_closed", Unit.REQUEST, "HTTP requests prematurely closed"),
     JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION("jdisc.http.request.requests_per_connection", Unit.REQUEST, "HTTP requests per connection"),
     JDISC_HTTP_REQUEST_URI_LENGTH("jdisc.http.request.uri_length", Unit.BYTE, "HTTP URI length"),
@@ -204,10 +208,6 @@ public enum ContainerMetrics implements VespaMetrics {
 
     SERVER_NUM_SUCCESSFUL_RESPONSE_WRITES("serverNumSuccessfulResponseWrites", Unit.REQUEST, "Number of successful response writes"),
     SERVER_NUM_FAILED_RESPONSE_WRITES("serverNumFailedResponseWrites", Unit.REQUEST, "Number of failed response writes"),
-
-    SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY("serverTotalSuccessfulResponseLatency", Unit.MILLISECOND, "Total duration for execution of successful responses"),
-    SERVER_TOTAL_FAILED_RESPONSE_LATENCY("serverTotalFailedResponseLatency", Unit.MILLISECOND, "Total duration for execution of failed responses"),
-    SERVER_TIME_TO_FIRST_BYTE("serverTimeToFirstByte", Unit.MILLISECOND, "Time from request has been received by the server until the first byte is returned to the client"),
 
     SERVER_STARTED_MILLIS("serverStartedMillis", Unit.MILLISECOND, "Time since the service was started"),
 

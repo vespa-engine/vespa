@@ -21,8 +21,8 @@ protected:
     void onPrepareResult() override;
 private:
     void onPrepare(bool preserveAccurateTypes) override;
-    virtual bool internalExecute(const vespalib::nbostream & os) const = 0;
-    bool onExecute() const override;
+    virtual void internalExecute(const vespalib::nbostream & os) const = 0;
+    void onExecute() const override;
     uint32_t _numBits;
     mutable vespalib::nbostream _tmpOs;
 };

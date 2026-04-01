@@ -38,7 +38,8 @@
         <guava.vespa.version>33.2.1-jre</guava.vespa.version>
         <guice.vespa.version>6.0.0</guice.vespa.version>
         <j2objc-annotations.vespa.version>3.0.0</j2objc-annotations.vespa.version>
-        <jackson2.vespa.version>2.19.4</jackson2.vespa.version>
+        <jackson2.vespa.version>2.21.1</jackson2.vespa.version>
+        <jackson-annotations.vespa.version>2.21</jackson-annotations.vespa.version>
         <jackson-databind.vespa.version>${jackson2.vespa.version}</jackson-databind.vespa.version>
         <jakarta.inject.vespa.version>2.0.1</jakarta.inject.vespa.version>
         <javax.activation-api.vespa.version>1.2.0</javax.activation-api.vespa.version>
@@ -56,19 +57,19 @@
 
         <!-- Dependencies used internally in Vespa, not visible for users, or only visible in test classpath -->
 
-        <aircompressor.vespa.version>0.27</aircompressor.vespa.version>
+        <aircompressor.vespa.version>2.0.3</aircompressor.vespa.version>
         <airline.vespa.version>0.9</airline.vespa.version>
         <antlr.vespa.version>3.5.3</antlr.vespa.version>
         <antlr4.vespa.version>4.13.2</antlr4.vespa.version>
         <apache.httpclient.vespa.version>4.5.14</apache.httpclient.vespa.version>
         <apache.httpcore.vespa.version>4.4.16</apache.httpcore.vespa.version>
-        <apache.httpclient5.vespa.version>5.3.1</apache.httpclient5.vespa.version>
-        <apache.httpcore5.vespa.version>5.2.5</apache.httpcore5.vespa.version>
+        <apache.httpclient5.vespa.version>5.4.4</apache.httpclient5.vespa.version>
+        <apache.httpcore5.vespa.version>5.3.4</apache.httpcore5.vespa.version>
         <apiguardian.vespa.version>1.1.2</apiguardian.vespa.version>
         <asm.vespa.version>9.9</asm.vespa.version>
         <assertj.vespa.version>3.27.7</assertj.vespa.version>
 
-        <bouncycastle.vespa.version>1.78.1</bouncycastle.vespa.version>
+        <bouncycastle.vespa.version>1.83</bouncycastle.vespa.version>
         <byte-buddy.vespa.version>1.17.6</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
         <commons-beanutils.vespa.version>1.9.4</commons-beanutils.vespa.version>
@@ -108,8 +109,7 @@
         <io-perfmark.vespa.version>0.27.0</io-perfmark.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
         <jaxb.runtime.vespa.version>4.0.5</jaxb.runtime.vespa.version>
-        <jetty.vespa.version>12.0.30</jetty.vespa.version>
-        <jetty.client.vespa.version>12.0.22</jetty.client.vespa.version>
+        <jetty.vespa.version>12.0.33</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jieba.vespa.version>1.0.2</jieba.vespa.version>
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
@@ -118,7 +118,7 @@
         <junit.vespa.version>5.10.2</junit.vespa.version>
         <junit.platform.vespa.version>1.10.2</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
-        <kherud.llama.vespa.version>4.1.0</kherud.llama.vespa.version>
+        <jllama.vespa.version>4.7.10</jllama.vespa.version>
         <kotlin.vespa.version>1.9.25</kotlin.vespa.version>
         <luben.zstd.vespa.version>1.5.6-4</luben.zstd.vespa.version>
         <lucene.vespa.version>9.11.1</lucene.vespa.version>
@@ -146,7 +146,7 @@
         <plexus-archiver.vespa.version>4.11.0</plexus-archiver.vespa.version>
         <plexus-interpolation.vespa.version>1.29</plexus-interpolation.vespa.version>
         <plexus-io.vespa.version>3.6.0</plexus-io.vespa.version>
-        <plexus-utils.vespa.version>4.0.2</plexus-utils.vespa.version>
+        <plexus-utils.vespa.version>4.0.3</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.1.1</plexus-xml.vespa.version>
         <plexus-classworlds.vespa.version>2.9.0</plexus-classworlds.vespa.version>
         <proto-google-common-protos.vespa.version>2.51.0</proto-google-common-protos.vespa.version>
@@ -165,7 +165,7 @@
         <stax2-api.vespa.version>4.2.2</stax2-api.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
-        <zookeeper.client.vespa.version>3.9.4</zookeeper.client.vespa.version>
+        <zookeeper.client.vespa.version>3.9.5</zookeeper.client.vespa.version>
         <zookeeper.client.artifactId>zookeeper-server-${zookeeper.client.vespa.version}</zookeeper.client.artifactId>
         <vafer.jdependency.vespa.version>2.10</vafer.jdependency.vespa.version>
 
@@ -183,7 +183,7 @@
         <maven-assembly-plugin.vespa.version>3.7.1</maven-assembly-plugin.vespa.version>
         <maven-bundle-plugin.vespa.version>5.1.9</maven-bundle-plugin.vespa.version>
         <maven-compiler-plugin.vespa.version>3.13.0</maven-compiler-plugin.vespa.version>
-        <maven-core.vespa.version>3.9.12</maven-core.vespa.version>
+        <maven-core.vespa.version>3.9.14</maven-core.vespa.version>
         <maven-dependency-plugin.vespa.version>3.8.1</maven-dependency-plugin.vespa.version>
         <maven-deploy-plugin.vespa.version>3.1.4</maven-deploy-plugin.vespa.version>
         <maven-enforcer-plugin.vespa.version>3.6.2</maven-enforcer-plugin.vespa.version>
@@ -202,8 +202,8 @@
         <maven-site-plugin.vespa.version>3.12.1</maven-site-plugin.vespa.version>
         <maven-source-plugin.vespa.version>3.3.1</maven-source-plugin.vespa.version>
         <properties-maven-plugin.vespa.version>1.2.1</properties-maven-plugin.vespa.version>
-        <spotless-maven-plugin.vespa.version>3.2.1</spotless-maven-plugin.vespa.version>
         <versions-maven-plugin.vespa.version>2.17.1</versions-maven-plugin.vespa.version>
+        <spotless-maven-plugin.vespa.version>3.2.1</spotless-maven-plugin.vespa.version>
     </properties>
 
 </project>

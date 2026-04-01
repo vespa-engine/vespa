@@ -306,9 +306,16 @@ TEST(TermFieldModelTest, require_that_TermFieldMatchData_can_be_tagged_as_needed
 }
 
 TEST(TermFieldModelTest, require_that_MatchData_soft_reset_retains_appropriate_state) {
-    auto md = MatchData::makeTestInstance(10, 10);
+    MatchDataLayout mdl;
+    constexpr uint32_t field0 = 0;
+    constexpr uint32_t field7 = 7;
+    for (uint32_t i = 0; i < 7; ++i) {
+        (void) mdl.allocTermField(field0);
+    }
+    auto handle7 = mdl.allocTermField(field7);
+    auto md = mdl.createMatchData();
     md->set_termwise_limit(0.5);
-    auto *old_term = md->resolveTermField(7); 
+    auto *old_term = md->resolveTermField(handle7);
     old_term->tagAsNotNeeded();
     old_term->populate_fixed()->setElementWeight(21);
     old_term->resetOnlyDocId(42);
@@ -318,7 +325,7 @@ TEST(TermFieldModelTest, require_that_MatchData_soft_reset_retains_appropriate_s
     EXPECT_EQ(old_term->getWeight(), 21);
     EXPECT_TRUE(old_term->has_ranking_data(42u));
     md->soft_reset();
-    auto *new_term = md->resolveTermField(7);
+    auto *new_term = md->resolveTermField(handle7);
     EXPECT_EQ(new_term, old_term);
     EXPECT_EQ(md->get_termwise_limit(), 1.0);
     EXPECT_TRUE(new_term->isNotNeeded());

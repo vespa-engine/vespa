@@ -128,9 +128,11 @@ public class YqlParserTestCase {
     }
 
     @Test
-    void backslashCanBeEscaped() {
+    void testRegexpItem() {
+        assertParse("select * from sources * where myField matches '10001-1234*'",
+                    "REGEXP myField:10001-1234*");
         // Java escaping on top of YQL escaping, to produce a regexp with a single backslash
-        assertParse("select * from sources * where artist matches 'a\\\\.'", "RegExpItem [expression=a\\.]");
+        assertParse("select * from sources * where artist matches 'a\\\\.'", "REGEXP artist:a\\.");
     }
 
     @Test
@@ -821,22 +823,22 @@ public class YqlParserTestCase {
     @Test
     void testWand() {
         assertParse("select foo from bar where wand(description, {\"a\":1, \"b\":2});",
-                "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND description{[1]:\"a\",[2]:\"b\"}");
         assertParse("select foo from bar where {scoreThreshold : 13.3, targetHits: 7, " +
                 "thresholdBoostFactor: 2.3} wand(description, {\"a\":1, \"b\":2})",
-                "WAND(7,13.3,2.3) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND(7) {scoreThreshold=13.3, thresholdBoostFactor=2.3} description{[1]:\"a\",[2]:\"b\"}");
     }
 
     @Test
     void testQuotedAnnotations() {
         assertParse("select foo from bar where {\"scoreThreshold\": 13.3, \"targetHits\": 7, " +
                 "'thresholdBoostFactor': 2.3} wand(description, {\"a\":1})",
-                "WAND(7,13.3,2.3) description{[1]:\"a\"}");
+                "WAND(7) {scoreThreshold=13.3, thresholdBoostFactor=2.3} description{[1]:\"a\"}");
     }
 
     @Test
     void testNumericWand() {
-        String numWand = "WAND(10,0.0,1.0) description{[1]:\"11\",[2]:\"37\"}";
+        String numWand = "WAND description{[1]:\"11\",[2]:\"37\"}";
         assertParse("select foo from bar where wand(description, [[11,1], [37,2]])", numWand);
         assertParse("select foo from bar where wand(description, [[11L,1], [37L,2]])", numWand);
         assertParseFail("select foo from bar where wand(description, 12);",
@@ -893,33 +895,33 @@ public class YqlParserTestCase {
     @Test
     void testNearestNeighbor() {
         assertParse("select foo from bar where nearestNeighbor(semantic_embedding, my_vector);",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector}");
         assertParse("select foo from bar where {targetHits: 37} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=37}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=37}");
         assertParse("select foo from bar where {approximate: false, hnsw.exploreAdditionalHits: 8, targetHits: 3} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=8,distanceThreshold=Infinity,approximate=false,targetHits=3}");
-
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=3,approximate=false,hnsw.exploreAdditionalHits=8}");
         assertParse("select foo from bar where {targetHits: 7, distanceThreshold: 100100.25} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=100100.25,approximate=true,targetHits=7}");
-
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=7,distanceThreshold=100100.25}");
+        assertParse("select foo from bar where {totalTargetHits: 100, minTargetHits: 11} nearestNeighbor(semantic_embedding, my_vector)",
+                    "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,totalTargetHits=100,minTargetHits=11}");
     }
 
     @Test
     void testNearestNeighborWithHnswTuningParameters() {
         assertParse("select foo from bar where {targetHits: 10, hnsw.approximateThreshold: 0.05} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.approximateThreshold=0.05}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.approximateThreshold=0.05}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.explorationSlack: 0.1} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.explorationSlack=0.1}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.explorationSlack=0.1}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstExploration: 0.3} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.filterFirstExploration=0.3}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstExploration=0.3}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstThreshold: 0.2} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.filterFirstThreshold=0.2}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstThreshold=0.2}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.postFilterThreshold: 0.8} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.postFilterThreshold=0.8}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.postFilterThreshold=0.8}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.targetHitsMaxAdjustmentFactor: 20.0} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.targetHitsMaxAdjustmentFactor=20.0}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.targetHitsMaxAdjustmentFactor=20.0}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstThreshold: 0.1, hnsw.filterFirstExploration: 0.25, hnsw.postFilterThreshold: 0.9} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.filterFirstExploration=0.25,hnsw.filterFirstThreshold=0.1,hnsw.postFilterThreshold=0.9}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstExploration=0.25,hnsw.filterFirstThreshold=0.1,hnsw.postFilterThreshold=0.9}");
     }
 
     @Test
@@ -1169,6 +1171,12 @@ public class YqlParserTestCase {
             AttributeSorter sorter = fieldOrder.getSorter();
             assertEquals(LowerCaseSorter.class, sorter.getClass());
         }
+    }
+
+    @Test
+    void testArrayIndex() {
+        assertParse("SELECT title FROM product WHERE inventory.in_stock[10000] = true",
+                    "inventory.in_stock[10000]:{true}");
     }
 
     @Test
@@ -1713,6 +1721,43 @@ public class YqlParserTestCase {
         Item root = tree.getRoot();
         assertEquals(Language.UNKNOWN, root.getLanguage(),
                 "No language annotation on contains should leave UNKNOWN");
+    }
+
+    /** Creates index facts where top-level "x" and struct-field "myArray.x" have different settings. */
+    private static IndexFacts createIndexFactsWithFieldNameCollision() {
+        SearchDefinition sd = new SearchDefinition("default");
+        // Top-level field x: indexed, not exact
+        Index topX = new Index("x");
+        topX.setString(true);
+        sd.addIndex(topX);
+        // Struct-field myArray.x: attribute, exact
+        Index structX = new Index("myArray.x");
+        structX.setExact(true, null);
+        structX.setString(true);
+        sd.addIndex(structX);
+        // Parent field for sameElement
+        Index myArray = new Index("myArray");
+        sd.addIndex(myArray);
+        return new IndexFacts(new IndexModel(sd));
+    }
+
+    @Test
+    void testSameElementUsesStructFieldSettings() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsWithFieldNameCollision()));
+        // Inside sameElement, "x" should resolve to struct-field "myArray.x" which is exact
+        QueryTree tree = parse("select * from sources * where myArray contains sameElement(x contains \"hello\")");
+        SameElementItem sameElement = (SameElementItem) tree.getRoot();
+        assertInstanceOf(ExactStringItem.class, sameElement.getItem(0),
+                "struct-field myArray.x is exact, so should produce ExactStringItem");
+    }
+
+    @Test
+    void testTopLevelFieldNotAffectedByStructFieldSettings() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsWithFieldNameCollision()));
+        // Outside sameElement, "x" should resolve to top-level field which is not exact
+        QueryTree tree = parse("select * from sources * where x contains \"hello\"");
+        assertInstanceOf(WordItem.class, tree.getRoot(),
+                "Top-level field x is not exact, so should produce WordItem");
     }
 
 }

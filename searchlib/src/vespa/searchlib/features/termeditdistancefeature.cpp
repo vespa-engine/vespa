@@ -35,7 +35,7 @@ TedCell::TedCell(feature_t argCost, uint32_t argNumDel, uint32_t argNumIns, uint
 // TermEditDistanceConfig
 //---------------------------------------------------------------------------------------------------------------------
 TermEditDistanceConfig::TermEditDistanceConfig() :
-    fieldId(search::fef::IllegalHandle),
+    fieldId(search::fef::IllegalFieldId),
     fieldBegin(0),
     fieldEnd(std::numeric_limits<uint32_t>::max()),
     costDel(1),

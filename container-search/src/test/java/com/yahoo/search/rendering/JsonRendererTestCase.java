@@ -1183,7 +1183,7 @@ public class JsonRendererTestCase {
             public String toString() {
                 return "AAAA";
             }
-        });
+        }, r.getQuery());
         GroupList gl = new GroupList("customer");
         gl.continuations().put("prev", new Continuation() {
             @Override
@@ -1207,7 +1207,7 @@ public class JsonRendererTestCase {
                 return "CCCC";
             }
         });
-        Group g = new Group(new StringId("Jones"), new Relevance(1.0));
+        Group g = new Group(new StringId("Jones"), new Relevance(1.0), r.getQuery());
         g.setField("count()", 7);
         gl.add(g);
         rg.add(gl);
@@ -1269,9 +1269,9 @@ public class JsonRendererTestCase {
             public String toString() {
                 return "AAAA";
             }
-        });
+        }, r.getQuery());
         GroupList gl = new GroupList("customer");
-        Group g = new Group(new DoubleBucketId(1.0, 2.0), new Relevance(1.0));
+        Group g = new Group(new DoubleBucketId(1.0, 2.0), new Relevance(1.0), r.getQuery());
         g.setField("something()", 7);
         gl.add(g);
         rg.add(gl);

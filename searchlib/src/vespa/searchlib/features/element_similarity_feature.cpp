@@ -374,7 +374,7 @@ struct ElementSimilarityBlueprint::OutputContext {
 //-----------------------------------------------------------------------------
 
 ElementSimilarityBlueprint::ElementSimilarityBlueprint()
-    : Blueprint("elementSimilarity"), _field_id(fef::IllegalHandle), _outputs()
+    : Blueprint("elementSimilarity"), _field_id(fef::IllegalFieldId), _outputs()
 {}
 
 ElementSimilarityBlueprint::~ElementSimilarityBlueprint() = default;

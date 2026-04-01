@@ -233,6 +233,46 @@ public class LowercasingTestCase {
         assertEquals("def", w1.getWord());
     }
 
+    /** Creates index facts where top-level "x" has lowercase=true but struct-field "myArray.x" has lowercase=false. */
+    private Execution createCollisionExecution() {
+        SearchDefinition sd = new SearchDefinition("test");
+        Index topX = new Index("x");
+        topX.setLowercase(true);
+        sd.addIndex(topX);
+        Index structX = new Index("myArray.x");
+        structX.setLowercase(false);
+        sd.addIndex(structX);
+        return new Execution(new Chain<Searcher>(
+                new VespaLowercasingSearcher(new LowercasingConfig(new LowercasingConfig.Builder()))),
+                Execution.Context.createContextStub(new IndexFacts(new IndexModel(sd))));
+    }
+
+    @Test
+    void testSameElementFieldNameCollision() {
+        Query q = new Query();
+        SameElementItem sameElement = new SameElementItem("myArray");
+        sameElement.addItem(new WordItem("ABC", "x", true));
+        q.getModel().getQueryTree().setRoot(sameElement);
+        createCollisionExecution().search(q);
+
+        SameElementItem result = (SameElementItem) q.getModel().getQueryTree().getRoot();
+        WordItem w = (WordItem) result.getItem(0);
+        assertEquals("ABC", w.getWord(), "struct-field myArray.x has lowercase=false, so should not be lowercased");
+    }
+
+    @Test
+    void testTopLevelFieldLowercasedDespiteStructField() {
+        Query q = new Query();
+        AndItem and = new AndItem();
+        and.addItem(new WordItem("ABC", "x", true));
+        q.getModel().getQueryTree().setRoot(and);
+        createCollisionExecution().search(q);
+
+        AndItem result = (AndItem) q.getModel().getQueryTree().getRoot();
+        WordItem w = (WordItem) result.getItem(0);
+        assertEquals("abc", w.getWord(), "Top-level field x has lowercase=true, so should be lowercased");
+    }
+
     @Test
     void testIn() {
         Query q = new Query();

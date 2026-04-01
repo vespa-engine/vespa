@@ -24,6 +24,7 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.DocumentFrequency;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
@@ -430,6 +431,49 @@ public class StemmingSearcherTestCase {
         if (result.hits().getError() != null)
             throw new RuntimeException(result.hits().getError().toString());
         assertEquals("OR default:machin default:machin", query.getModel().getQueryTree().toString());
+    }
+
+    /** Creates index facts where top-level "x" is indexed with stemming, but struct-field "myArray.x" is an attribute. */
+    private IndexFacts createIndexFactsWithFieldNameCollision() {
+        var schema = new SearchDefinition("test");
+        var topLevelX = new Index("x");
+        topLevelX.setStemMode("BEST");
+        schema.addIndex(topLevelX);
+        var structFieldX = new Index("myArray.x");
+        structFieldX.setString(true);
+        schema.addIndex(structFieldX);
+        return new IndexFacts(new IndexModel(schema));
+    }
+
+    @Test
+    void testSameElementStructFieldIsNotStemmed() {
+        var indexFacts = createIndexFactsWithFieldNameCollision();
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        SameElementItem sameElement = new SameElementItem("myArray");
+        sameElement.addItem(new WordItem("trees", "x", true));
+        query.getModel().getQueryTree().setRoot(sameElement);
+
+        new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
+                      Execution.Context.createContextStub(indexFacts, linguistics)).search(query);
+
+        SameElementItem result = (SameElementItem) query.getModel().getQueryTree().getRoot();
+        WordItem resultWord = (WordItem) result.getItem(0);
+        assertEquals("trees", resultWord.getWord(), "Struct-field should not be stemmed since myArray.x is an attribute");
+    }
+
+    @Test
+    void testTopLevelFieldIsStemmedDespiteStructField() {
+        var indexFacts = createIndexFactsWithFieldNameCollision();
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        query.getModel().getQueryTree().setRoot(new WordItem("trees", "x", true));
+
+        new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
+                      Execution.Context.createContextStub(indexFacts, linguistics)).search(query);
+
+        assertNotEquals("trees", query.getModel().getQueryTree().getRoot().toString(),
+                        "Top-level field x should be stemmed");
     }
 
     private static class MockLinguistics extends SimpleLinguistics {

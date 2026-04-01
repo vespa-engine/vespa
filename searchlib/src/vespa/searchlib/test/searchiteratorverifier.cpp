@@ -4,6 +4,7 @@
 #include "docid_iterator.h"
 #include "initrange.h"
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
 #include <vespa/searchlib/queryeval/termwise_search.h>
@@ -13,6 +14,8 @@
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <set>
 
+using search::fef::TermFieldMatchData;
+using search::fef::TermFieldMatchDataArray;
 
 namespace search::test {
 using namespace search::queryeval;
@@ -273,6 +276,38 @@ SearchIteratorVerifier::searchStrict(SearchIterator & it, Range range)
         result.push_back(docId);
     }
     return result;
+}
+
+std::unique_ptr<SearchIterator>
+SearchIteratorVerifier::create(bool, const fef::TermFieldMatchDataArray&) const
+{
+    return {};
+}
+
+void
+SearchIteratorVerifier::verify_hidden_from_ranking(const fef::TermFieldMatchDataArray& tfmda) const
+{
+    auto* tfmd = tfmda[0];
+    auto iterator = create(true, tfmda);
+    ASSERT_TRUE(iterator);
+    iterator->initFullRange();
+    iterator->seek(_docIds[0]);
+    EXPECT_FALSE(iterator->isAtEnd());
+    EXPECT_EQ(_docIds[0], iterator->getDocId());
+    EXPECT_FALSE(tfmd->has_data(iterator->getDocId()));
+    iterator->unpack(iterator->getDocId());
+    EXPECT_TRUE(tfmd->has_ranking_data(iterator->getDocId()));
+    tfmd->set_hidden_from_ranking();
+    EXPECT_FALSE(tfmd->has_ranking_data(iterator->getDocId()));
+    iterator->unpack(iterator->getDocId());
+    EXPECT_TRUE(tfmd->has_ranking_data(iterator->getDocId()));
+    tfmd->set_hidden_from_ranking();
+    EXPECT_FALSE(tfmd->has_ranking_data(iterator->getDocId()));
+    iterator->seek(_docIds[1]);
+    EXPECT_EQ(_docIds[1], iterator->getDocId());
+    EXPECT_FALSE(tfmd->has_ranking_data(iterator->getDocId()));
+    iterator->unpack(iterator->getDocId());
+    EXPECT_TRUE(tfmd->has_ranking_data(iterator->getDocId()));
 }
 
 }

@@ -26,14 +26,13 @@ DebugWaitFunctionNode::DebugWaitFunctionNode(ExpressionNode::UP arg, double wait
 
 using std::chrono::microseconds;
 
-bool
+void
 DebugWaitFunctionNode::onExecute() const
 {
     vespalib::Timer::waitAtLeast(vespalib::from_s(_waitTime), _busyWait);
 
     getArg().execute();
     updateResult().assign(*getArg().getResult());
-    return true;
 }
 
 Serializer &

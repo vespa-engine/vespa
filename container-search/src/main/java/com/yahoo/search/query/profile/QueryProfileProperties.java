@@ -30,6 +30,7 @@ import java.util.Map;
  */
 public class QueryProfileProperties extends Properties {
 
+    private static final String APPLICATION = "application";
     private static final String ENVIRONMENT = "environment";
     private static final String REGION = "region";
     private static final String INSTANCE = "instance";
@@ -72,6 +73,7 @@ public class QueryProfileProperties extends Properties {
         this.embedders = embedders;
         this.zoneInfo = zoneInfo;
         this.zoneContext = Map.of(
+                APPLICATION, zoneInfo.application().application(),
                 ENVIRONMENT, zoneInfo.zone().environment().name(),
                 REGION, zoneInfo.zone().region(),
                 INSTANCE, zoneInfo.application().instance());

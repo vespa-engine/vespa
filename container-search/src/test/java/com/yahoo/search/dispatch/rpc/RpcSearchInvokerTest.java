@@ -12,6 +12,7 @@ import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
@@ -21,6 +22,7 @@ import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.schema.MatchPhase;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
@@ -32,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -107,47 +110,103 @@ public class RpcSearchInvokerTest {
     }
 
     @Test
+    void contentShareIsUsedToSetMatchPhaseMaxHits() throws IOException {
+        // total max hits in query is applied
+        var query = new Query("?query=ignored&ranking=myProfile");
+        query.getRanking().getMatchPhase().setTotalMaxHits(100);
+        assertAdjustedProperty("vespa.matchphase.degradation.maxhits",
+                               query,
+                               1,
+                               schemaInfoWithMaxHits(OptionalLong.empty(), OptionalLong.empty()));
+
+        // total max hits in schema is applied
+        query = new Query("?query=ignored&ranking=myProfile");
+        assertAdjustedProperty("vespa.matchphase.degradation.maxhits",
+                               query,
+                               1, // Schema info is used when not set in query
+                               schemaInfoWithMaxHits(OptionalLong.empty(), OptionalLong.of(100)));
+
+        // total max hits in query overrides schema
+        query = new Query("?query=ignored&ranking=myProfile");
+        query.getRanking().getMatchPhase().setTotalMaxHits(200);
+        assertAdjustedProperty("vespa.matchphase.degradation.maxhits",
+                               query,
+                               2,
+                               schemaInfoWithMaxHits(OptionalLong.empty(), OptionalLong.of(100)));
+
+        // max hits in query overrides max hits in schema
+        query = new Query("?query=ignored&ranking=myProfile");
+        query.getRanking().getMatchPhase().setMaxHits(200);
+        assertFlatProperty("vespa.matchphase.degradation.maxhits",
+                           query,
+                           200,
+                           schemaInfoWithMaxHits(OptionalLong.empty(), OptionalLong.of(100)));
+
+        // max hits in query overrides schema
+        query = new Query("?query=ignored&ranking=myProfile");
+        query.getRanking().getMatchPhase().setMaxHits(200);
+        assertFlatProperty("vespa.matchphase.degradation.maxhits",
+                           query,
+                           200,
+                           schemaInfoWithMaxHits(OptionalLong.of(100), OptionalLong.empty()));
+
+        // total max hits in query overrides max hits in schema
+        query = new Query("?query=ignored&ranking=myProfile");
+        query.getRanking().getMatchPhase().setTotalMaxHits(200);
+        assertAdjustedProperty("vespa.matchphase.degradation.maxhits",
+                               query,
+                               2,
+                               schemaInfoWithMaxHits(OptionalLong.of(100), OptionalLong.empty()));
+    }
+
+    @Test
     void contentShareIsUsedToSetSecondPhaseRerankCount() throws IOException {
         // total rerank count in query is applied
         var query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().getSecondPhase().setTotalRerankCount(100);
-        assertAdjustedSecondPhaseRerankCount(query,
-                                             1,
-                                             schemaInfo(OptionalInt.empty(), OptionalInt.empty()));
+        assertAdjustedProperty("vespa.hitcollector.heapsize",
+                               query,
+                               1,
+                               schemaInfoWithRerankCount(OptionalInt.empty(), OptionalInt.empty()));
 
         // total rerank count in schema is applied
         query = new Query("?query=ignored&ranking=myProfile");
-        assertAdjustedSecondPhaseRerankCount(query,
-                                             1, // Schema info is used when not set in query
-                                             schemaInfo(OptionalInt.empty(), OptionalInt.of(100)));
+        assertAdjustedProperty("vespa.hitcollector.heapsize",
+                               query,
+                               1, // Schema info is used when not set in query
+                               schemaInfoWithRerankCount(OptionalInt.empty(), OptionalInt.of(100)));
 
         // total rerank count in query overrides schema
         query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().getSecondPhase().setTotalRerankCount(200);
-        assertAdjustedSecondPhaseRerankCount(query,
-                                             2,
-                                             schemaInfo(OptionalInt.empty(), OptionalInt.of(100)));
+        assertAdjustedProperty("vespa.hitcollector.heapsize",
+                               query,
+                               2,
+                               schemaInfoWithRerankCount(OptionalInt.empty(), OptionalInt.of(100)));
 
         // rerank count in query overrides total rerank count in schema
         query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().getSecondPhase().setRerankCount(200);
-        assertFlatSecondPhaseRerankCount(query,
-                                         200,
-                                         schemaInfo(OptionalInt.empty(), OptionalInt.of(100)));
+        assertFlatProperty("vespa.hitcollector.heapsize",
+                           query,
+                          200,
+                           schemaInfoWithRerankCount(OptionalInt.empty(), OptionalInt.of(100)));
 
         // rerank count in query overrides schema
         query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().getSecondPhase().setRerankCount(200);
-        assertFlatSecondPhaseRerankCount(query,
-                                         200,
-                                         schemaInfo(OptionalInt.of(100), OptionalInt.empty()));
+        assertFlatProperty("vespa.hitcollector.heapsize",
+                           query,
+                           200,
+                           schemaInfoWithRerankCount(OptionalInt.of(100), OptionalInt.empty()));
 
         // total rerank count in query overrides rerank count in schema
         query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().getSecondPhase().setTotalRerankCount(200);
-        assertAdjustedSecondPhaseRerankCount(query,
-                                             2,
-                                             schemaInfo(OptionalInt.of(100), OptionalInt.empty()));
+        assertAdjustedProperty("vespa.hitcollector.heapsize",
+                               query,
+                               2,
+                               schemaInfoWithRerankCount(OptionalInt.of(100), OptionalInt.empty()));
     }
 
     @Test
@@ -155,64 +214,49 @@ public class RpcSearchInvokerTest {
         // total keep rank count in query is applied
         var query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().setTotalKeepRankCount(100);
-        assertAdjustedKeepRankCount(query,
-                                    1,
-                                    schemaInfo(OptionalInt.empty(), OptionalInt.empty(),
-                                               OptionalInt.empty(), OptionalInt.empty()));
+        assertAdjustedProperty("vespa.hitcollector.arraysize",
+                               query,
+                               1,
+                               schemaInfoWithKeepRankCount(OptionalInt.empty(), OptionalInt.empty()));
 
         // total keep rank count in schema is applied
         query = new Query("?query=ignored&ranking=myProfile");
-        assertAdjustedKeepRankCount(query,
-                                    1,
-                                    schemaInfo(OptionalInt.empty(), OptionalInt.of(100),
-                                               OptionalInt.empty(), OptionalInt.empty()));
+        assertAdjustedProperty("vespa.hitcollector.arraysize",
+                               query,
+                               1,
+                               schemaInfoWithKeepRankCount(OptionalInt.empty(), OptionalInt.of(100)));
 
         // total keep rank count in query overrides schema
         query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().setTotalKeepRankCount(200);
-        assertAdjustedKeepRankCount(query,
-                                    2,
-                                    schemaInfo(OptionalInt.empty(), OptionalInt.of(100),
-                                               OptionalInt.empty(), OptionalInt.empty()));
+        assertAdjustedProperty("vespa.hitcollector.arraysize",
+                               query,
+                               2,
+                               schemaInfoWithKeepRankCount(OptionalInt.empty(), OptionalInt.of(100)));
 
         // keep rank count in query overrides total keep rank count in schema
         query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().setKeepRankCount(200);
-        assertFlatKeepRankCount(query,
-                                200,
-                                schemaInfo(OptionalInt.empty(), OptionalInt.of(100),
-                                           OptionalInt.empty(), OptionalInt.empty()));
+        assertFlatProperty("vespa.hitcollector.arraysize",
+                           query,
+                           200,
+                           schemaInfoWithKeepRankCount(OptionalInt.empty(), OptionalInt.of(100)));
 
         // keep rank count in query overrides schema
         query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().setKeepRankCount(200);
-        assertFlatKeepRankCount(query,
-                                200,
-                                schemaInfo(OptionalInt.of(100), OptionalInt.empty(),
-                                           OptionalInt.empty(), OptionalInt.empty()));
+        assertFlatProperty("vespa.hitcollector.arraysize",
+                           query,
+                           200,
+                           schemaInfoWithKeepRankCount(OptionalInt.of(100), OptionalInt.empty()));
 
         // total keep rank count in query overrides keep rank count in schema
         query = new Query("?query=ignored&ranking=myProfile");
         query.getRanking().setTotalKeepRankCount(200);
-        assertAdjustedKeepRankCount(query,
-                                    2,
-                                    schemaInfo(OptionalInt.of(100), OptionalInt.empty(),
-                                               OptionalInt.empty(), OptionalInt.empty()));
-    }
-
-    private void assertAdjustedKeepRankCount(Query query, int multiplier, SchemaInfo schemaInfo) throws IOException {
-        List<Holders> nodeHolders = queryGroup(query, schemaInfo, List.of(1000, 1035, 0, 1, 13));
-        List<Integer> expected = List.of(49 * multiplier, 49 * multiplier, 20 * multiplier, 1, 1 * multiplier);
-        var requests = nodeHolders.stream().map(this::decompress).toList();
-        for (int i = 0; i < expected.size(); i++)
-            assertProperty("vespa.hitcollector.arraysize", expected.get(i), requests.get(i));
-    }
-
-    private void assertFlatKeepRankCount(Query query, int value, SchemaInfo schemaInfo) throws IOException {
-        List<Holders> nodeHolders = queryGroup(query, schemaInfo, List.of(1000, 1035, 0, 1, 13));
-        var requests = nodeHolders.stream().map(this::decompress).toList();
-        for (int i = 0; i < 5; i++)
-            assertProperty("vespa.hitcollector.arraysize", value, requests.get(i));
+        assertAdjustedProperty("vespa.hitcollector.arraysize",
+                               query,
+                               2,
+                               schemaInfoWithKeepRankCount(OptionalInt.of(100), OptionalInt.empty()));
     }
 
     private List<Holders> queryGroup(Query query,
@@ -224,6 +268,7 @@ public class RpcSearchInvokerTest {
         var schema = schemaInfo.newSession(query).schema("mySchema");
         ClusterSearcher.transferKeepRankCounts(query, schema);
         ClusterSearcher.transferRerankCounts(query, schema);
+        ClusterSearcher.transferMatchPhaseMaxHits(query, schema);
 
         List<Node> nodes = new ArrayList<>();
         List<RpcSearchInvoker> nodeInvokers = new ArrayList<>();
@@ -247,19 +292,19 @@ public class RpcSearchInvokerTest {
         return nodeHolders;
     }
 
-    private void assertAdjustedSecondPhaseRerankCount(Query query, int multiplier, SchemaInfo schemaInfo) throws IOException {
+    private void assertAdjustedProperty(String property, Query query, int multiplier, SchemaInfo schemaInfo) throws IOException {
         List<Holders> nodeHolders = queryGroup(query, schemaInfo, List.of(1000, 1035, 0, 1, 13));
         List<Integer> expected = List.of(49 * multiplier, 49 * multiplier, 20 * multiplier, 1, 1 * multiplier);
         var requests = nodeHolders.stream().map(this::decompress).toList();
         for (int i = 0; i < expected.size(); i++)
-            assertProperty("vespa.hitcollector.heapsize", expected.get(i), requests.get(i));
+            assertProperty(property, expected.get(i), requests.get(i));
     }
 
-    private void assertFlatSecondPhaseRerankCount(Query query, int value, SchemaInfo schemaInfo) throws IOException {
+    private void assertFlatProperty(String property, Query query, int value, SchemaInfo schemaInfo) throws IOException {
         List<Holders> nodeHolders = queryGroup(query, schemaInfo, List.of(1000, 1035, 0, 1, 13));
         var requests = nodeHolders.stream().map(this::decompress).toList();
         for (int i = 0; i < 5; i++)
-            assertProperty("vespa.hitcollector.heapsize", value, requests.get(i));
+            assertProperty(property, value, requests.get(i));
     }
 
     private void assertProperty(String name, int value, SearchProtocol.SearchRequest request) {
@@ -282,38 +327,70 @@ public class RpcSearchInvokerTest {
         weakAnd.addItem(new WordItem("bar", "myindex"));
         root.addItem(weakAnd);
 
+        var wandItem = new WandItem("myField");
+        wandItem.setTotalTargetHits(100);
+        wandItem.addToken(10L, 37);
+        root.addItem(wandItem);
+
+        var minTargetHits = 2;
         var nn = new NearestNeighborItem("myField", "myQueryTensor");
         nn.setTotalTargetHits(100);
+        nn.setMinTargetHits(minTargetHits);
         root.addItem(nn);
 
         query.getModel().getQueryTree().setRoot(root);
 
         List<Holders> nodeHolders = queryGroup(query,
-                                               schemaInfo(OptionalInt.empty(), OptionalInt.empty()),
+                                               schemaInfo(),
                                                activeDocs);
         var requests = nodeHolders.stream().map(this::decompress).toList();
         for (int i = 0; i < expected.size(); i++) {
             var or = requests.get(i).getQueryTree().getRoot().getItemOr();
             assertEquals(expected.get(i), or.getChildren(0).getItemWeakAnd().getTargetNumHits(),
                          "WeakAnd in node " + i);
-            assertEquals(expected.get(i), or.getChildren(1).getItemNearestNeighbor().getTargetNumHits(),
+            assertEquals(expected.get(i), or.getChildren(1).getItemLongWand().getTargetNumHits(),
+                         "Wand in node " + i);
+            assertEquals(Math.max(minTargetHits, expected.get(i)),
+                         or.getChildren(2).getItemNearestNeighbor().getTargetNumHits(),
                          "NearestNeighbor in node " + i);
         }
     }
 
-    private SchemaInfo schemaInfo(OptionalInt rerankCount, OptionalInt totalRerankCount) {
-        return schemaInfo(OptionalInt.empty(), OptionalInt.empty(), rerankCount, totalRerankCount);
+    private SchemaInfo schemaInfo() {
+        var schema = new Schema.Builder("mySchema");
+        var profile = new RankProfile.Builder("myProfile");
+        schema.add(profile.build());
+        return new SchemaInfo(List.of(schema.build()), List.of());
     }
 
-    private SchemaInfo schemaInfo(OptionalInt keepRankCount, OptionalInt totalKeepRankCount,
-                                  OptionalInt rerankCount, OptionalInt totalRerankCount) {
+    private SchemaInfo schemaInfoWithMaxHits(OptionalLong maxHits, OptionalLong totalMaxHits) {
+        var schema = new Schema.Builder("mySchema");
+        var profile = new RankProfile.Builder("myProfile");
+        var matchPhase = new MatchPhase.Builder();
+        maxHits.ifPresent(matchPhase::setMaxHits);
+        totalMaxHits.ifPresent(matchPhase::setTotalMaxHits);
+        profile.setMatchPhase(matchPhase.build());
+        schema.add(profile.build());
+        return new SchemaInfo(List.of(schema.build()), List.of());
+    }
+
+    private SchemaInfo schemaInfoWithRerankCount(OptionalInt rerankCount, OptionalInt totalRerankCount) {
+        var schema = new Schema.Builder("mySchema");
+        var profile = new RankProfile.Builder("myProfile");
+        var secondPhase = new SecondPhase.Builder();
+        rerankCount.ifPresent(secondPhase::setRerankCount);
+        totalRerankCount.ifPresent(secondPhase::setTotalRerankCount);
+        profile.setSecondPhase(secondPhase.build());
+        schema.add(profile.build());
+        return new SchemaInfo(List.of(schema.build()), List.of());
+    }
+
+    private SchemaInfo schemaInfoWithKeepRankCount(OptionalInt keepRankCount, OptionalInt totalKeepRankCount) {
         var schema = new Schema.Builder("mySchema");
         var profile = new RankProfile.Builder("myProfile");
         keepRankCount.ifPresent(profile::setKeepRankCount);
         totalKeepRankCount.ifPresent(profile::setTotalKeepRankCount);
         var secondPhase = new SecondPhase.Builder();
-        rerankCount.ifPresent(secondPhase::setRerankCount);
-        totalRerankCount.ifPresent(secondPhase::setTotalRerankCount);
         profile.setSecondPhase(secondPhase.build());
         schema.add(profile.build());
         return new SchemaInfo(List.of(schema.build()), List.of());

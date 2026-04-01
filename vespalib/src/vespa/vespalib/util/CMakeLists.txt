@@ -100,6 +100,8 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     threadstackexecutor.cpp
     threadstackexecutorbase.cpp
     time.cpp
+    unordered_u32_set.cpp
+    typed_data_layout.cpp
     unwind_message.cpp
     valgrind.cpp
     xmlserializable.cpp

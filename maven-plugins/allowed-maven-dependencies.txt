@@ -1,7 +1,7 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 aopalliance:aopalliance:${aopalliance.vespa.version}
-com.fasterxml.jackson.core:jackson-annotations:${jackson2.vespa.version}
+com.fasterxml.jackson.core:jackson-annotations:${jackson-annotations.vespa.version}
 com.fasterxml.jackson.core:jackson-core:${jackson2.vespa.version}
 com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}
 com.fasterxml.woodstox:woodstox-core:${woodstox.vespa.version}

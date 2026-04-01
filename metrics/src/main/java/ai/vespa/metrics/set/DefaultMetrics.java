@@ -62,6 +62,7 @@ public class DefaultMetrics {
                 .metric(ContainerMetrics.HTTP_STATUS_5XX.rate())
                 .metric(ContainerMetrics.JDISC_GC_MS, EnumSet.of(max, average))
                 .metric(ContainerMetrics.MEM_HEAP_FREE.average())
+                .metric(ContainerMetrics.JDISC_HTTP_LATENCY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile))
                 .metric(ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count))
                 // .metric(ContainerMetrics.CPU.baseName()) // TODO: Add to container metrics
                 .metric(ContainerMetrics.JDISC_THREAD_POOL_SIZE.max())

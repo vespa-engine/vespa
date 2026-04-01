@@ -14,7 +14,9 @@ HnswGraph<type>::HnswGraph()
     active_nodes(0u),
     levels_store(HnswIndex<type>::make_default_level_array_store_config(), {}),
     links_store(HnswIndex<type>::make_default_link_array_store_config(), {}),
-    entry_nodeid_and_level()
+    entry_nodeid_and_level(),
+    _generation_handler(),
+    _last_flush_duration(0)
 {
     nodes.ensure_size(1, NodeType());
     EntryNode entry;

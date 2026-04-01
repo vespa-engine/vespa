@@ -13,7 +13,6 @@ private:
     ResultNode::CP _from;
     ResultNode::CP _to;
     static RawBucketResultNode _nullResult;
-    size_t onGetRawByteSize() const override { return sizeof(_from) + sizeof(_to); }
 public:
     struct GetValue {
         BufferRef _tmp;
@@ -26,7 +25,7 @@ public:
     RawBucketResultNode(const RawBucketResultNode&);
     RawBucketResultNode(RawBucketResultNode&&) noexcept = default;
     RawBucketResultNode(ResultNode::UP from, ResultNode::UP to) : _from(from.release()), _to(to.release()) {}
-    ~RawBucketResultNode();
+    ~RawBucketResultNode() override;
     RawBucketResultNode& operator=(const RawBucketResultNode&);
     RawBucketResultNode& operator=(RawBucketResultNode&&) noexcept;
     size_t hash() const override;

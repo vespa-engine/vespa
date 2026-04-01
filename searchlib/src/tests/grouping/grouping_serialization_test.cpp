@@ -5,9 +5,11 @@
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/quantile_aggregation_result.h>
+#include <vespa/searchlib/expression/geo_distance_function_node.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
+#include <vespa/searchlib/expression/position_document_field_node.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
@@ -210,6 +212,15 @@ TEST(GroupingSerializationTest, testFunctionNodes) {
     f.checkObject(RangeBucketPreDefFunctionNode(MU<AttributeNode>("foo")));
     f.checkObject(DebugWaitFunctionNode(MU<ConstantNode>(MU<Int64ResultNode>(5)),
                                       3.3, false));
+    f.checkObject(GeoDistanceFunctionNode()
+                .addArg(MU<AttributeNode>("pos"))
+                .addArg(MU<ConstantNode>(MU<FloatResultNode>(63.0)))
+                .addArg(MU<ConstantNode>(MU<FloatResultNode>(10.0))));
+    f.checkObject(GeoDistanceFunctionNode(GeoDistanceFunctionNode::Unit::MILES)
+                .addArg(MU<AttributeNode>("pos"))
+                .addArg(MU<ConstantNode>(MU<FloatResultNode>(63.0)))
+                .addArg(MU<ConstantNode>(MU<FloatResultNode>(10.0))));
+    f.checkObject(PositionDocumentFieldNode("mypos"));
 }
 
 TEST(GroupingSerializationTest, testAggregatorResults) {

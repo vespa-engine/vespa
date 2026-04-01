@@ -3,6 +3,7 @@ package com.yahoo.search.grouping.vespa;
 
 import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdString;
+import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.result.AbstractList;
@@ -925,7 +926,7 @@ public class ResultBuilderTestCase {
         reqBuilder.build();
         assertEquals(reqBuilder.getRequestList().size(), test.result.size());
 
-        ResultBuilder resBuilder = new ResultBuilder();
+        ResultBuilder resBuilder = new ResultBuilder(new Query());
         resBuilder.setHitConverter(new MyHitConverter());
         resBuilder.setTransform(reqBuilder.getTransform());
         resBuilder.setRequestId(REQUEST_ID);

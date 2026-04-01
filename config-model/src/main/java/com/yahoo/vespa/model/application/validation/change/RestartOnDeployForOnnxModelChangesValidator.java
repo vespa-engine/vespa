@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ConfigChangeRestartAction;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.model.AbstractService;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import static com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange.DEFER_UNTIL_RESTART;
 import static com.yahoo.config.model.api.OnnxModelCost.ModelInfo;
 import static com.yahoo.vespa.model.application.validation.JvmHeapSizeValidator.gbLimit;
 import static com.yahoo.vespa.model.application.validation.JvmHeapSizeValidator.percentLimit;
@@ -96,9 +98,13 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
 
     private static void setRestartOnDeployAndAddRestartAction(List<ConfigChangeAction> actions, ApplicationContainerCluster cluster, String message) {
         log.log(INFO, message);
-        cluster.onnxModelCostCalculator().setRestartOnDeploy();
-        cluster.onnxModelCostCalculator().store();
-        actions.add(new VespaRestartAction(cluster.id(), message, cluster.getContainers().stream().map(AbstractService::getServiceInfo).toList()));
+        actions.add(new VespaRestartAction(
+                cluster.id(),
+                message,
+                cluster.getContainers().stream()
+                        .map(AbstractService::getServiceInfo)
+                        .toList(),
+                DEFER_UNTIL_RESTART));
     }
 
     private static boolean enoughMemoryToAvoidRestart(ApplicationContainerCluster clusterInCurrentModel,

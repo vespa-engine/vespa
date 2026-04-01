@@ -52,7 +52,7 @@ public class PermanentFlags {
             "jvm-gc-options", "",
             "Sets default jvm gc options",
             "Takes effect at redeployment",
-            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, HOSTNAME);
 
     public static final UnboundIntFlag HEAP_SIZE_PERCENTAGE = defineIntFlag(
             "heap-size-percentage", 69,
@@ -161,7 +161,7 @@ public class PermanentFlags {
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask), or some node-agent " +
                     "functionality (see NodeAgentTask), that should be skipped",
             "Takes effect on next host admin tick",
-            HOSTNAME, NODE_TYPE, CLAVE);
+            HOSTNAME, NODE_TYPE, CLAVE, CLOUD_ACCOUNT);
 
     public static final UnboundStringFlag DOCKER_IMAGE_REPO = defineStringFlag(
             "docker-image-repo", "",
@@ -218,7 +218,7 @@ public class PermanentFlags {
             HOSTNAME, NODE_TYPE, TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
 
     public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
-            "zookeeper-server-version", "3.9.4",
+            "zookeeper-server-version", "3.9.5",
             "ZooKeeper server version, a jar file zookeeper-server-<ZOOKEEPER_SERVER_VERSION>-jar-with-dependencies.jar must exist",
             "Takes effect on restart of Docker container",
             NODE_TYPE, INSTANCE_ID, HOSTNAME);
@@ -281,7 +281,7 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_DISK = defineDoubleFlag(
-            "resource-limit-disk", 0.75,
+            "resource-limit-disk", 0.8,
             "Resource limit (between 0.0 and 1.0) for disk usage on content nodes, used by cluster controller for when to block feed",
             "Takes effect on next deployment",
             INSTANCE_ID
@@ -327,12 +327,6 @@ public class PermanentFlags {
     public static final UnboundIntFlag DELAY_HOST_SECURITY_AGENT_START_MINUTES = defineIntFlag(
             "delay-host-security-agent-start-minutes", 5,
             "The number of minutes (from host admin start) to delay the start of the host security agent",
-            "Takes effect on next host-admin tick",
-            NODE_TYPE);
-
-    public static final UnboundStringFlag HOST_SECURITY_AGENT_VERSION = defineStringFlag(
-            "host-security-agent-version", "",
-            "Upgrades/downgrades the host security agent to the specified version, does nothing if empty. Only effective in public systems.",
             "Takes effect on next host-admin tick",
             NODE_TYPE);
 
@@ -500,7 +494,7 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_HOSTS_PER_HOUR = defineIntFlag(
-            "max-hosts-per-hour", 40,
+            "max-hosts-per-hour", 125,
             "The number of hosts that can be provisioned per hour in a zone, before throttling is " +
             "triggered",
             "Takes effect immediately");

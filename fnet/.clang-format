@@ -1,0 +1,51 @@
+AccessModifierOffset: -4
+ColumnLimit: 118
+IndentWidth: 4
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+AlignConsecutiveDeclarations: Consecutive
+AlignEscapedNewlines: LeftWithLastLine
+PackConstructorInitializers: NextLine
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel:  false
+  AfterClass:      false
+  AfterControlStatement: MultiLine
+  AfterEnum:       false
+  AfterExternBlock: false
+  AfterFunction:   false
+  AfterNamespace:  false
+  AfterObjCDeclaration: false
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     false
+  BeforeElse:      false
+  BeforeLambdaBody: false
+  BeforeWhile:     false
+  IndentBraces:    false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^"'
+    Priority:        1
+    SortPriority:    1
+  - Regex:           '^<vespa/log/log[.]h'
+    Priority:        9
+  - Regex:           '^<vespa/.*[.]h>'
+    Priority:        3
+  - Regex:           '^<vespa/'
+    Priority:        4
+  - Regex:           '<.*[.]h>'
+    Priority:        5
+    SortPriority:    6
+  - Regex:           '<.*[.]hpp>'
+    Priority:        5
+    SortPriority:    7
+  - Regex:           '<.*>'
+    Priority:        8
+
+PenaltyBreakOpenParenthesis: 13
+PenaltyIndentedWhitespace: 1

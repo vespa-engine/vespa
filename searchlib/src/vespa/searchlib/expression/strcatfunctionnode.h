@@ -14,7 +14,7 @@ public:
     StrCatFunctionNode(ExpressionNode::UP arg) { addArg(std::move(arg)); }
 private:
     void onPrepareResult() override;
-    bool onExecute() const override;
+    void onExecute() const override;
 };
 
 }

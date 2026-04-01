@@ -177,8 +177,8 @@ public record OnnxModelOptions(
 
     public record GpuDevice(int deviceNumber, boolean required) {
         public GpuDevice {
-            if (deviceNumber < 0) {
-                throw new IllegalArgumentException("deviceNumber cannot be negative, got " + deviceNumber);
+            if (deviceNumber < -1) {
+                throw new IllegalArgumentException("deviceNumber cannot be less than -1, got " + deviceNumber);
             }
         }
 

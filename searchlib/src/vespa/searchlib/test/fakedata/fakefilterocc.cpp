@@ -163,7 +163,11 @@ FakeFilterOccArrayIterator::~FakeFilterOccArrayIterator() = default;
 void
 FakeFilterOccArrayIterator::doUnpack(uint32_t docId)
 {
-    if (_matchData.size() != 1 || getUnpacked()) {
+    if (_matchData.size() != 1) {
+        return;
+    }
+    _matchData[0]->clear_hidden_from_ranking();
+    if (getUnpacked()) {
         return;
     }
     assert(docId == getDocId());

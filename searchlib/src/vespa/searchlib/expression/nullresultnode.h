@@ -21,14 +21,6 @@ private:
     int64_t onGetInteger(size_t index) const override;
     double onGetFloat(size_t index)    const override;
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
-    size_t onGetRawByteSize() const override { return 0; }
-    void create(void * buf)  const override { (void) buf; }
-    void destroy(void * buf) const override { (void) buf;}
-
-    void decode(const void * buf) override { (void) buf; }
-    void encode(void * buf) const override { (void) buf; }
-    void swap(void * buf) override { (void) buf; }
-
     std::string_view friendly_type_name() const noexcept override { return "null"; }
 };
 

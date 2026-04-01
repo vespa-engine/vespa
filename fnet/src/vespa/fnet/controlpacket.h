@@ -20,13 +20,12 @@
  * greater than or equal to 5000. Note that control packets may NOT be
  * sent across the network.
  **/
-class FNET_ControlPacket : public FNET_Packet
-{
+class FNET_ControlPacket : public FNET_Packet {
 private:
     uint32_t _command;
 
-    FNET_ControlPacket(const FNET_ControlPacket &);
-    FNET_ControlPacket &operator=(const FNET_ControlPacket &);
+    FNET_ControlPacket(const FNET_ControlPacket&);
+    FNET_ControlPacket& operator=(const FNET_ControlPacket&);
 
 public:
     FNET_ControlPacket(uint32_t command) : _command(command) {}
@@ -74,9 +73,9 @@ public:
     bool IsControlPacket() override;
 
     uint32_t GetCommand() override;
-    bool IsChannelLostCMD() override;
-    bool IsTimeoutCMD() override;
-    bool IsBadPacketCMD() override;
+    bool     IsChannelLostCMD() override;
+    bool     IsTimeoutCMD() override;
+    bool     IsBadPacketCMD() override;
 
     /**
      * @return FNET_NOID
@@ -91,12 +90,11 @@ public:
     /**
      * This method should never be called and will abort the program.
      **/
-    void Encode(FNET_DataBuffer *) override;
+    void Encode(FNET_DataBuffer*) override;
 
     /**
      * This method should never be called and will abort the program.
      **/
-    bool Decode(FNET_DataBuffer *, uint32_t) override;
+    bool        Decode(FNET_DataBuffer*, uint32_t) override;
     std::string Print(uint32_t indent = 0) override;
 };
-

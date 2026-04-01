@@ -7,23 +7,28 @@
 #include "serialized_tensor_ref.h"
 #include "tensor_attribute_constants.h"
 #include "tensor_attribute_explorer.h"
+#include "tensor_attribute_flags.h"
 #include "tensor_attribute_loader.h"
 #include "tensor_attribute_saver.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/datastore/i_compaction_context.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
+#include <algorithm>
 
 using document::TensorDataType;
 using document::TensorUpdate;
 using document::WrongTensorTypeException;
 using search::AddressSpaceComponents;
+using vespalib::GenerationHandler;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -60,7 +65,10 @@ TensorAttribute::TensorAttribute(std::string_view name, const Config &cfg, Tenso
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
       _compactGeneration(0),
       _subspace_type(cfg.tensorType()),
-      _comp(cfg.tensorType())
+      _comp(cfg.tensorType()),
+      _memory_usage_empty(0),
+      _memory_usage_at_save_start(0),
+      _size_on_disk_factor(1.0)
 {
     if (cfg.hnsw_index_params().has_value()) {
         auto tensor_type = cfg.tensorType();
@@ -137,9 +145,6 @@ TensorAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
     _tensorStore.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
-    if (_index) {
-        _index->reclaim_memory(oldest_used_gen);
-    }
 }
 
 void
@@ -147,9 +152,6 @@ TensorAttribute::before_inc_generation(generation_t current_gen)
 {
     getGenerationHolder().assign_generation(current_gen);
     _tensorStore.assign_generation(current_gen);
-    if (_index) {
-        _index->assign_generation(current_gen);
-    }
 }
 
 bool
@@ -343,6 +345,8 @@ TensorAttribute::onLoad(vespalib::Executor* executor)
 std::unique_ptr<AttributeSaver>
 TensorAttribute::onInitSave(std::string_view fileName)
 {
+    updateStat(CommitParam::UpdateStats::FORCE);
+    set_memory_usage_at_save_start(getStatus().get_used_minus_dead_and_onhold());
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());
     auto header = this->createAttributeHeader(fileName);
@@ -451,6 +455,87 @@ TensorAttribute::tensor_cells_are_unchanged(DocId docid, VectorBundle vectors) c
         }
     }
     return true;
+}
+
+void
+TensorAttribute::setup_memory_usage_empty()
+{
+    updateStat(CommitParam::UpdateStats::FORCE);
+    _memory_usage_empty = getStatus().get_used_minus_dead_and_onhold();
+    _memory_usage_at_save_start = _memory_usage_empty;
+}
+
+void
+TensorAttribute::set_memory_usage_at_save_start(uint64_t memory_usage) noexcept
+{
+    _memory_usage_at_save_start = std::max(memory_usage, _memory_usage_empty);
+}
+
+void
+TensorAttribute::set_size_on_disk(uint64_t value) noexcept
+{
+    AttributeVector::set_size_on_disk(value);
+    uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT;
+    double size_on_disk_factor = 1.0;
+    auto dynamic_memory_usage = _memory_usage_at_save_start - _memory_usage_empty;
+    if (dynamic_memory_usage >= 40_Ki) {
+        size_on_disk_factor = static_cast<double>(value - headerSize) / dynamic_memory_usage;
+    }
+    auto clamped_size_on_disk_factor = std::clamp<double>(size_on_disk_factor, 0.1, 10.0);
+    _size_on_disk_factor.store(clamped_size_on_disk_factor, std::memory_order_relaxed);
+}
+
+uint64_t
+TensorAttribute::getEstimatedSaveByteSize() const
+{
+    const Status &status = getStatus();
+    uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT;
+    uint64_t dynamic_memory_usage = std::max(status.get_used_minus_dead_and_onhold() - _memory_usage_empty, 4_Ki);
+    double size_on_disk_factor = _size_on_disk_factor.load(std::memory_order_relaxed);
+    /*
+     * A tensor label is stored in memory as a vespalib::string_id (4 bytes long) that references an entry in a
+     * shared string repo. The serialized format on disk contains the full tensor label string. Thus, tensors with
+     * long tensor labels will use more space on disk than in memory.
+     */
+    double estimate = size_on_disk_factor * dynamic_memory_usage + headerSize;
+    return estimate;
+}
+
+void
+TensorAttribute::incGeneration()
+{
+    auto& generation_handler = getGenerationHandler();
+    auto current_gen = generation_handler.getCurrentGeneration();
+    before_inc_generation(current_gen);
+    if constexpr (!TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+        if (_index) {
+            _index->assign_generation(current_gen);
+        }
+    }
+    generation_handler.incGeneration();
+    if constexpr (TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+        if (_index) {
+            _index->inc_generation();
+        }
+    }
+    // Remove old data on hold lists that can no longer be reached by readers
+    reclaim_unused_memory();
+}
+
+void
+TensorAttribute::reclaim_unused_memory()
+{
+    auto& generation_handler = getGenerationHandler();
+    generation_handler.update_oldest_used_generation();
+    auto oldest_used_gen = generation_handler.get_oldest_used_generation();
+    reclaim_memory(oldest_used_gen);
+    if (_index) {
+        if constexpr (TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+            _index->reclaim_unused_memory();
+        } else {
+            _index->reclaim_memory(oldest_used_gen);
+        }
+    }
 }
 
 }

@@ -37,18 +37,21 @@ AttributeDirectory::AttributeDirectory(const std::shared_ptr<AttributeDiskLayout
                                        const std::string &name)
     : _diskLayout(diskLayout),
       _name(name),
-      _lastFlushTime(vespalib::system_time()),
+      _last_flush_time(0),
       _writer(nullptr),
       _mutex(),
       _cv(),
       _snapInfo(getDirName()),
-      _disk_sizes()
+      _disk_sizes(),
+      _flushed_serial(0)
 {
     _snapInfo.load();
+    IndexMetaInfo::Snapshot bestSnap = _snapInfo.getBestSnapshot();
+    _flushed_serial.store(bestSnap.valid ? bestSnap.syncToken : 0, std::memory_order_relaxed);
     SerialNum flushedSerialNum = getFlushedSerialNum();
     if (flushedSerialNum != 0) {
         std::string dirName = getSnapshotDir(flushedSerialNum);
-        _lastFlushTime = search::FileKit::getModificationTime(dirName);
+        setLastFlushTime(search::FileKit::getModificationTime(dirName));
     }
     for (const auto& snapshot : _snapInfo.snapshots()) {
         search::DirectoryTraverse dirt(getSnapshotDir(snapshot.syncToken));
@@ -78,26 +81,6 @@ AttributeDirectory::getDirName() const
     return diskLayout->getBaseDir() + "/" + _name;
 }
 
-SerialNum
-AttributeDirectory::getFlushedSerialNum() const
-{
-    std::lock_guard<std::mutex> guard(_mutex);
-    IndexMetaInfo::Snapshot bestSnap = _snapInfo.getBestSnapshot();
-    return bestSnap.valid ? bestSnap.syncToken : 0;
-}
-
-vespalib::system_time
-AttributeDirectory::getLastFlushTime() const
-{
-    return _lastFlushTime;
-}
-
-void
-AttributeDirectory::setLastFlushTime(vespalib::system_time lastFlushTime)
-{
-    _lastFlushTime = lastFlushTime;
-}
-
 void
 AttributeDirectory::saveSnapInfo()
 {
@@ -106,6 +89,8 @@ AttributeDirectory::saveSnapInfo()
         LOG(warning, "Could not save meta-info file for attribute vector '%s' to disk", dirName.c_str());
         LOG_ABORT("should not be reached");
     }
+    IndexMetaInfo::Snapshot bestSnap = _snapInfo.getBestSnapshot();
+    _flushed_serial.store(bestSnap.valid ? bestSnap.syncToken : 0, std::memory_order_relaxed);
 }
 
 std::string

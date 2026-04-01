@@ -20,7 +20,8 @@ import java.util.Set;
  * @author Tony Vaagenes
 */
 abstract class Node {
-    //How this node should be prioritized if its compared with a node of the same class, see class priority.
+
+    /** How this node should be prioritized if its compared with a node of the same class, see class priority. */
     final int priority;
 
     private int numNodesBeforeThis = 0;

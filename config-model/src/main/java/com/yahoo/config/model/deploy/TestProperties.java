@@ -72,7 +72,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
-    private int contentLayerMetadataFeatureLevel = 0;
     private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int searchCoreMaxOutstandingMoveOps = 100;
@@ -81,7 +80,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useTriton = false;
     private boolean scaleMetricsproxyHeapByNodeCount = false;
     private boolean ignoreConnectivityChecksAtStartup = false;
-    private double searchNodeReservedDiskSpaceFactor = 0.0;
+    private double searchNodeReservedDiskSpaceFactor = 1.0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -93,6 +92,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String athenzDnsSuffix() { return null; }
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
+    @SuppressWarnings("removal")
     @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId) { return jvmGCOptions; }
     @Override public boolean isBootstrap() { return false; }
     @Override public boolean isFirstTimeDeployment() { return firstTimeDeployment; }
@@ -129,7 +129,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
-    @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
@@ -308,11 +307,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setDataplaneTokens(Collection<DataplaneToken> tokens) {
         this.dataplaneTokens = List.copyOf(tokens);
-        return this;
-    }
-
-    public TestProperties setContentLayerMetadataFeatureLevel(int level) {
-        this.contentLayerMetadataFeatureLevel = level;
         return this;
     }
 

@@ -66,24 +66,6 @@ protected:
     void setValue(const T &value) { _value = value; }
     T getValue() const { return _value; }
 private:
-    int cmpMem(const void * a, const void *b) const override {
-        const T & ai(*static_cast<const T *>(a));
-        const T & bi(*static_cast<const T *>(b));
-        return ai < bi ? -1 : ai == bi ? 0 : 1;
-    }
-    void create(void * buf)  const override { (void) buf; }
-    void destroy(void * buf) const override { (void) buf; }
-    void decode(const void * buf)  override { _value = *static_cast<const T *>(buf); }
-    void encode(void * buf) const  override { *static_cast<T *>(buf) = _value; }
-    void swap(void * buf)          override { std::swap(*static_cast<T *>(buf), _value); }
-    size_t hash(const void * buf) const override { return *static_cast<const T *>(buf); }
-    uint64_t  radixAsc(const void * buf) const override {
-        return vespalib::convertForSort<T,  true>::convert(*static_cast<const T *>(buf));
-    }
-    uint64_t radixDesc(const void * buf) const override {
-        return vespalib::convertForSort<T, false>::convert(*static_cast<const T *>(buf));
-    }
-    size_t onGetRawByteSize() const override { return sizeof(_value); }
     void setMin() override { _value = std::numeric_limits<T>::min(); }
     void setMax() override { _value = std::numeric_limits<T>::max(); }
     vespalib::Serializer & onSerialize(vespalib::Serializer & os) const override { return os << _value; }

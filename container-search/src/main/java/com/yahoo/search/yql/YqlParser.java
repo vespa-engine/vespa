@@ -215,6 +215,7 @@ public class YqlParser implements Parser {
     public static final String TARGET_HITS = "targetHits";
     public static final String TARGET_NUM_HITS = "targetNumHits";
     public static final String TOTAL_TARGET_HITS = "totalTargetHits";
+    public static final String MIN_TARGET_HITS = "minTargetHits";
     public static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
     public static final String UNIQUE_ID = "id";
     public static final String URI = "uri";
@@ -519,7 +520,7 @@ public class YqlParser implements Parser {
 
     private Item buildIn(OperatorNode<ExpressionOperator> ast) {
         String field = getIndex(ast.getArgument(0));
-        var index = indexFactsSession.getIndex(field);
+        var index = indexFactsSession.getIndex(indexNameExpander.expand(field));
         boolean stringField = index.isString();
         if (!index.isInteger() && !stringField)
             throw new IllegalArgumentException("The in operator is only supported for integer and string fields. The field " +
@@ -603,6 +604,7 @@ public class YqlParser implements Parser {
         throw newUnexpectedArgumentException(literalOrNested, ExpressionOperator.LITERAL);
     }
 
+    @SuppressWarnings("deprecation")
     private Item buildNearestNeighbor(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
@@ -611,6 +613,7 @@ public class YqlParser implements Parser {
         NearestNeighborItem item = new NearestNeighborItem(indexFactsSession.getCanonicName(field), property);
         item.setTargetHits(buildTargetHits(ast));
         item.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
+        item.setMinTargetHits(getAnnotation(ast, MIN_TARGET_HITS, Integer.class, null, "min hits to produce on a node"));
 
         Double distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD, Double.class, null, "maximum distance allowed from query point");
         if (distanceThreshold != null) {
@@ -707,10 +710,9 @@ public class YqlParser implements Parser {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        Integer targetNumHits = buildTargetHits(ast);
-        if (targetNumHits == null)
-            targetNumHits = DEFAULT_WAND_TARGET_HITS;
-        WandItem out = new WandItem(getIndex(args.get(0)), targetNumHits);
+        WandItem out = new WandItem(getIndex(args.get(0)));
+        out.setTargetHits(buildTargetHits(ast));
+        out.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
         Double scoreThreshold = getAnnotation(ast, SCORE_THRESHOLD, Double.class, null,
                                               "score must be above this threshold for hit inclusion");
         if (scoreThreshold != null) {
@@ -824,7 +826,7 @@ public class YqlParser implements Parser {
     }
 
     /** Element filter accepts Integer. Allows Long that is within Integer size. */
-    private int convertToElementId(Object val) {
+    public static int convertToElementId(Object val) {
         if (val == null) {
             throw new IllegalArgumentException("element id cannot be null");
         }
@@ -1129,7 +1131,11 @@ public class YqlParser implements Parser {
             case VARREF -> {
                 Preconditions.checkState(userQuery != null,
                         "properties must be available when trying to fetch user input");
-                yield userQuery.properties().getString(operator.getArgument(0, String.class));
+                String key = operator.getArgument(0, String.class);
+                String value = userQuery.properties().getString(key);
+                if (value == null)
+                    throw new IllegalInputException("Input '" + key + "' is not set");
+                yield value;
             }
             default -> throw newUnexpectedArgumentException(operator.getOperator(),
                     ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
@@ -1496,10 +1502,7 @@ public class YqlParser implements Parser {
 
     private CompositeItem buildWeakAnd(OperatorNode<ExpressionOperator> spec) {
         WeakAndItem weakAnd = new WeakAndItem();
-        Integer targetHits = buildTargetHits(spec);
-        if (targetHits != null) {
-            weakAnd.setTargetHits(targetHits);
-        }
+        weakAnd.setTargetHits(buildTargetHits(spec));
         weakAnd.setTotalTargetHits(getAnnotation(spec, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
         return convertVarArgs(spec, 1, weakAnd, null);
     }
@@ -1536,7 +1539,7 @@ public class YqlParser implements Parser {
     private Item buildTermSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.CONTAINS);
         String field = getIndex(ast.getArgument(0));
-        if (userQuery != null && indexFactsSession.getIndex(field).isAttribute()) {
+        if (userQuery != null && indexFactsSession.getIndex(indexNameExpander.expand(field)).isAttribute()) {
             userQuery.trace("Field '" + field + "' is an attribute, 'contains' will only match exactly (unless fuzzy is used)", 2);
         }
         return instantiateLeafItem(field, ast.getArgument(1));
@@ -1545,7 +1548,7 @@ public class YqlParser implements Parser {
     private Item buildRegExpSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.MATCHES);
         String field = getIndex(ast.getArgument(0));
-        if (userQuery != null && !indexFactsSession.getIndex(field).isAttribute()) {
+        if (userQuery != null && !indexFactsSession.getIndex(indexNameExpander.expand(field)).isAttribute()) {
             userQuery.trace("Field '" + field + "' is indexed, non-literal regular expressions will not be matched", 1);
         }
         OperatorNode<ExpressionOperator> ast1 = ast.getArgument(1);
@@ -1751,7 +1754,7 @@ public class YqlParser implements Parser {
         UriItem uriItem = new UriItem(field);
 
         boolean startAnchorDefault = false;
-        boolean endAnchorDefault = indexFactsSession.getIndex(field).isHostIndex();
+        boolean endAnchorDefault = indexFactsSession.getIndex(indexNameExpander.expand(field)).isHostIndex();
 
         if (getAnnotation(ast, START_ANCHOR, Boolean.class, startAnchorDefault,
                           "whether uri matching should be anchored to the start"))
@@ -2306,7 +2309,7 @@ public class YqlParser implements Parser {
     protected String linguisticsProfileFor(String field) {
         String queryAssignedProfile = environment.getType().getProfile();
         if (queryAssignedProfile != null) return queryAssignedProfile;
-        Index index = indexFactsSession.getIndex(field);
+        Index index = indexFactsSession.getIndex(indexNameExpander.expand(field));
         if (index == null) return null;
         return index.getLinguisticsProfile();
     }

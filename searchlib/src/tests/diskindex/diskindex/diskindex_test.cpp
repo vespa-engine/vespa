@@ -71,6 +71,10 @@ public:
         (void) strict;
         return SearchIterator::UP(_fp->createIterator(_tfmda));
     }
+    std::unique_ptr<SearchIterator> create(bool, const TermFieldMatchDataArray& tfmda) const override {
+        return _fp->createIterator(tfmda);
+    }
+    void verify_hidden_from_ranking() { SearchIteratorVerifier::verify_hidden_from_ranking(_tfmda); }
 private:
     TermFieldMatchData _tfmd;
     TermFieldMatchDataArray _tfmda;
@@ -197,6 +201,7 @@ DiskIndexTest::requireThatSearchIteratorsConforms()
             FakePosting::SP f(ff->make(fw));
             Verifier verifier(f);
             verifier.verify();
+            verifier.verify_hidden_from_ranking();
         }
     }
 }

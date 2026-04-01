@@ -21,6 +21,7 @@ public:
     ~ONearQueryNode() override;
     bool evaluate() override;
     void get_element_ids(std::vector<uint32_t>& element_ids) override;
+    void get_match_spans(std::vector<search::queryeval::MatchSpan>& match_spans) override;
 };
 
 }

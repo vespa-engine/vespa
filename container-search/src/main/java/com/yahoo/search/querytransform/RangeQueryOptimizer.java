@@ -64,7 +64,7 @@ public class RangeQueryOptimizer extends Searcher {
             if ( ! (item instanceof IntItem intItem)) continue;
             if (intItem.getHitLimit() != 0) continue; // each such op gets a different partial set: Cannot be optimized
             if (intItem.getFromLimit().equals(intItem.getToLimit())) continue; // don't optimize searches for single numbers
-            if (indexFacts.getIndex(intItem.getIndexName()).isMultivalue()) continue; // May match different values in each range
+            if (indexFacts.getIndex(intItem.getFieldName()).isMultivalue()) continue; // May match different values in each range
 
             if (fieldRanges == null) fieldRanges = new ArrayList<>();
             Optional<FieldRange> compatibleRange = findCompatibleRange(intItem, fieldRanges);

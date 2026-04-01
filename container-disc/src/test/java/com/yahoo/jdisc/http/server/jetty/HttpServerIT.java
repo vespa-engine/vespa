@@ -76,7 +76,7 @@ import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.jdisc.Response.Status.REQUEST_TOO_LONG;
-import static com.yahoo.jdisc.Response.Status.REQUEST_URI_TOO_LONG;
+
 import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
 import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.CONNECTION;
@@ -96,6 +96,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -117,14 +118,14 @@ public class HttpServerIT {
 
     @Test
     void requireThatServerCanListenToRandomPort() {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(mockRequestHandler());
+        JettyTestDriver driver = JettyTestDriver.newInstance(mockRequestHandler());
         assertNotEquals(0, driver.server().getListenPort());
         assertTrue(driver.close());
     }
 
     @Test
     void requireThatServerCanNotListenToBoundPort() {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(mockRequestHandler());
+        JettyTestDriver driver = JettyTestDriver.newInstance(mockRequestHandler());
         try {
             JettyTestDriver.newConfiguredInstance(
                     mockRequestHandler(),
@@ -132,15 +133,15 @@ public class HttpServerIT {
                     new ConnectorConfig.Builder()
                             .listenPort(driver.server().getListenPort())
             );
-        } catch (final Throwable t) {
-            assertTrue(t.getCause() instanceof BindException);
+        } catch (Throwable t) {
+            assertInstanceOf(BindException.class, t.getCause());
         }
         assertTrue(driver.close());
     }
 
     @Test
     void requireThatBindingSetNotFoundReturns404() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder()
                         .developerMode(true),
@@ -156,20 +157,20 @@ public class HttpServerIT {
     }
 
     @Test
-    void requireThatTooLongInitLineReturns414() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+    void requireThatTooLongInitLineReturns431() throws Exception {
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder()
                         .requestHeaderSize(1));
         driver.client().get("/status.html")
-                .expectStatusCode(is(REQUEST_URI_TOO_LONG));
+                .expectStatusCode(is(431));
         assertTrue(driver.close());
     }
 
     @Test
     void requireThatTooLargePayloadFailsWith413() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 new EchoRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder()
@@ -202,39 +203,37 @@ public class HttpServerIT {
     @Test
     void requireThatAccessLogIsCalledForRequestRejectedByJetty() throws Exception {
         BlockingQueueRequestLog requestLogMock = new BlockingQueueRequestLog();
-        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().requestHeaderSize(1),
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().get("/status.html")
-                .expectStatusCode(is(REQUEST_URI_TOO_LONG));
+                .expectStatusCode(is(431));
         RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));
-        assertEquals(414, entry.statusCode().getAsInt());
+        assertEquals(431, entry.statusCode().getAsInt());
         assertTrue(driver.close());
     }
 
     @Test
     void requireThatServerCanEcho() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
-        driver.client().get("/status.html")
-                .expectStatusCode(is(OK));
+        JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
+        driver.client().get("/status.html").expectStatusCode(is(OK));
         assertTrue(driver.close());
     }
 
     @Test
     void requireThatServerCanEchoCompressed() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
+        JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
         try (SimpleHttpClient client = driver.newClient(true)) {
-            client.get("/status.html")
-                    .expectStatusCode(is(OK));
+            client.get("/status.html").expectStatusCode(is(OK));
         }
         assertTrue(driver.close());
     }
 
     @Test
     void requireThatServerCanHandleMultipleRequests() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
+        JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK));
         driver.client().get("/status.html")
@@ -244,9 +243,9 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormPostWorks() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
-        final String requestContent = generateContent('a', 30);
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
+        String requestContent = generateContent('a', 30);
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .setContent(requestContent)
@@ -258,8 +257,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormPostDoesNotRemoveContentByDefault() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .setContent("foo=bar")
@@ -271,8 +270,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormPostKeepsContentWhenConfiguredTo() throws Exception {
-        final JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), false);
-        final ResponseValidator response =
+        JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), false);
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .setContent("foo=bar")
@@ -284,8 +283,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormPostRemovesContentWhenConfiguredTo() throws Exception {
-        final JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
-        final ResponseValidator response =
+        JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .setContent("foo=bar")
@@ -297,8 +296,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormPostWithInvalidDataFailsWith400() throws Exception {
-        final JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
-        final ResponseValidator response =
+        JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .setContent("%!Foo=bar")
@@ -310,9 +309,9 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormPostWithCharsetSpecifiedWorks() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
-        final String requestContent = generateContent('a', 30);
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
+        String requestContent = generateContent('a', 30);
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(X_DISABLE_CHUNKING, "true")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED + ";charset=UTF-8")
@@ -325,8 +324,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatEmptyFormPostWorks() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .execute();
@@ -337,8 +336,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormParametersAreParsed() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .setContent("a=b&c=d")
@@ -350,8 +349,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatUriParametersAreParsed() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
+        ResponseValidator response =
                 driver.client().newPost("/status.html?a=b&c=d")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .execute();
@@ -362,8 +361,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormAndUriParametersAreMerged() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
+        ResponseValidator response =
                 driver.client().newPost("/status.html?a=b&c=d1")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .setContent("c=d2&e=f")
@@ -375,8 +374,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormCharsetIsHonored() throws Exception {
-        final JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
-        final ResponseValidator response =
+        JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED + ";charset=ISO-8859-1")
                         .setBinaryContent(new byte[]{66, (byte) 230, 114, 61, 98, 108, (byte) 229})
@@ -388,8 +387,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatUnknownFormCharsetIsTreatedAsBadRequest() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED + ";charset=FLARBA-GARBA-7")
                         .setContent("a=b")
@@ -400,8 +399,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormPostWithPercentEncodedContentIsDecoded() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .setContent("%20%3D%C3%98=%22%25+")
@@ -413,8 +412,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatFormPostWithThrowingHandlerIsExceptionSafe() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ThrowingHandler());
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ThrowingHandler());
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                         .setContent("a=b")
@@ -426,12 +425,12 @@ public class HttpServerIT {
     @Test
     void requireThatMultiPostWorks() throws Exception {
         // This is taken from tcpdump of bug 5433352 and reassembled here to see that httpserver passes things on.
-        final String startTxtContent = "this is a test for POST.";
-        final String updaterConfContent
+        String startTxtContent = "this is a test for POST.";
+        String updaterConfContent
                 = "identifier                      = updater\n"
                 + "server_type                     = gds\n";
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .setMultipartContent(
                                 newFileBody("start.txt", startTxtContent),
@@ -444,8 +443,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatRequestCookiesAreReceived() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new CookiePrinterRequestHandler());
-        final ResponseValidator response =
+        JettyTestDriver driver = JettyTestDriver.newInstance(new CookiePrinterRequestHandler());
+        ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(COOKIE, "foo=bar")
                         .execute();
@@ -456,7 +455,7 @@ public class HttpServerIT {
 
     @Test
     void requireThatSetCookieHeaderIsCorrect() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new CookieSetterRequestHandler(
+        JettyTestDriver driver = JettyTestDriver.newInstance(new CookieSetterRequestHandler(
                 new Cookie("foo", "bar")
                         .setDomain(".localhost")
                         .setHttpOnly(true)
@@ -471,8 +470,8 @@ public class HttpServerIT {
 
     @Test
     void requireThatTimeoutWorks() throws Exception {
-        final UnresponsiveHandler requestHandler = new UnresponsiveHandler();
-        final JettyTestDriver driver = JettyTestDriver.newInstance(requestHandler);
+        UnresponsiveHandler requestHandler = new UnresponsiveHandler();
+        JettyTestDriver driver = JettyTestDriver.newInstance(requestHandler);
         driver.client().get("/status.html")
                 .expectStatusCode(is(GATEWAY_TIMEOUT));
         ResponseDispatch.newInstance(OK).dispatch(requestHandler.responseHandler);
@@ -483,7 +482,7 @@ public class HttpServerIT {
     // Details in https://github.com/eclipse/jetty.project/issues/1116
     @Test
     void requireThatHeaderWithNullValueIsOmitted() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoWithHeaderRequestHandler("X-Foo", null));
+        JettyTestDriver driver = JettyTestDriver.newInstance(new EchoWithHeaderRequestHandler("X-Foo", null));
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
                 .expectNoHeader("X-Foo");
@@ -494,7 +493,7 @@ public class HttpServerIT {
     // Details in https://github.com/eclipse/jetty.project/issues/1116
     @Test
     void requireThatHeaderWithEmptyValueIsAllowed() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoWithHeaderRequestHandler("X-Foo", ""));
+        JettyTestDriver driver = JettyTestDriver.newInstance(new EchoWithHeaderRequestHandler("X-Foo", ""));
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
                 .expectHeader("X-Foo", is(""));
@@ -503,7 +502,7 @@ public class HttpServerIT {
 
     @Test
     void requireThatNoConnectionHeaderMeansKeepAliveInHttp11KeepAliveDisabled() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoWithHeaderRequestHandler(CONNECTION, CLOSE));
+        JettyTestDriver driver = JettyTestDriver.newInstance(new EchoWithHeaderRequestHandler(CONNECTION, CLOSE));
         driver.client().get("/status.html")
                 .expectHeader(CONNECTION, is(CLOSE));
         assertTrue(driver.close());
@@ -512,7 +511,7 @@ public class HttpServerIT {
     @Test
     @Disabled("Temporarily ignore until stabilized")
     void requireThatConnectionIsClosedAfterXRequests() throws Exception {
-        final int MAX_REQUESTS = 10;
+        int MAX_REQUESTS = 10;
         Path privateKeyFile = File.createTempFile("junit", null, tmpFolder).toPath();
         Path certificateFile = File.createTempFile("junit", null, tmpFolder).toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
@@ -567,7 +566,7 @@ public class HttpServerIT {
         Path certificateFile = File.createTempFile("junit", null, tmpFolder).toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
 
-        final JettyTestDriver driver = JettyTestDriver.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        JettyTestDriver driver = JettyTestDriver.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK));
         assertTrue(driver.close());
@@ -612,7 +611,7 @@ public class HttpServerIT {
 
     @Test
     void requireThatConnectedAtReturnsNonZero() throws Exception {
-        final JettyTestDriver driver = JettyTestDriver.newInstance(new ConnectedAtRequestHandler());
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ConnectedAtRequestHandler());
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
                 .expectContent(matchesPattern("\\d{13,}"));
@@ -928,14 +927,14 @@ public class HttpServerIT {
     }
 
     private static RequestHandler mockRequestHandler() {
-        final RequestHandler mockRequestHandler = mock(RequestHandler.class);
+        RequestHandler mockRequestHandler = mock(RequestHandler.class);
         when(mockRequestHandler.refer()).thenReturn(References.NOOP_REFERENCE);
         when(mockRequestHandler.refer(any())).thenReturn(References.NOOP_REFERENCE);
         return mockRequestHandler;
     }
 
-    private static String generateContent(final char c, final int len) {
-        final StringBuilder ret = new StringBuilder(len);
+    private static String generateContent(char c, int len) {
+        StringBuilder ret = new StringBuilder(len);
         for (int i = 0; i < len; ++i) {
             ret.append(c);
         }
@@ -951,7 +950,7 @@ public class HttpServerIT {
                 new ConnectorConfig.Builder());
     }
 
-    private static FormBodyPart newFileBody(final String fileName, final String fileContent) {
+    private static FormBodyPart newFileBody(String fileName, String fileContent) {
         return FormBodyPartBuilder.create()
                 .setBody(
                         new StringBody(fileContent, ContentType.TEXT_PLAIN) {
@@ -966,10 +965,10 @@ public class HttpServerIT {
     private static class ConnectedAtRequestHandler extends AbstractRequestHandler {
 
         @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-            final HttpRequest httpRequest = (HttpRequest)request;
-            final String connectedAt = String.valueOf(httpRequest.getConnectedAt(TimeUnit.MILLISECONDS));
-            final ContentChannel ch = handler.handleResponse(new Response(OK));
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            HttpRequest httpRequest = (HttpRequest)request;
+            String connectedAt = String.valueOf(httpRequest.getConnectedAt(TimeUnit.MILLISECONDS));
+            ContentChannel ch = handler.handleResponse(new Response(OK));
             ch.write(ByteBuffer.wrap(connectedAt.getBytes(UTF_8)), null);
             ch.close(null);
             return null;
@@ -982,7 +981,7 @@ public class HttpServerIT {
         private ResponseHandler responseHandler;
 
         @Override
-        public synchronized ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
+        public synchronized ContentChannel handleRequest(Request request, ResponseHandler handler) {
             this.responseHandler = handler;
             return this;
         }
@@ -998,15 +997,15 @@ public class HttpServerIT {
 
     private static class CookieSetterRequestHandler extends AbstractRequestHandler {
 
-        final Cookie cookie;
+        Cookie cookie;
 
-        CookieSetterRequestHandler(final Cookie cookie) {
+        CookieSetterRequestHandler(Cookie cookie) {
             this.cookie = cookie;
         }
 
         @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-            final HttpResponse response = HttpResponse.newInstance(OK);
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            HttpResponse response = HttpResponse.newInstance(OK);
             response.encodeSetCookieHeader(List.of(cookie));
             ResponseDispatch.newInstance(response).dispatch(handler);
             return null;
@@ -1016,10 +1015,10 @@ public class HttpServerIT {
     private static class CookiePrinterRequestHandler extends AbstractRequestHandler {
 
         @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
             List<Cookie> cookies = new ArrayList<>(((HttpRequest)request).decodeCookieHeader());
             cookies.sort(new CookieComparator());
-            final ContentChannel out = ResponseDispatch.newInstance(Response.Status.OK).connect(handler);
+            ContentChannel out = ResponseDispatch.newInstance(Response.Status.OK).connect(handler);
             out.write(UTF_8.encode(cookies.toString()), null);
             out.close(null);
             return null;
@@ -1060,7 +1059,7 @@ public class HttpServerIT {
 
     private static class ThrowingHandler extends AbstractRequestHandler {
         @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
             throw new RuntimeException("Deliberately thrown exception");
         }
     }
@@ -1070,7 +1069,7 @@ public class HttpServerIT {
         ResponseHandler responseHandler;
 
         @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
             request.setTimeout(100, TimeUnit.MILLISECONDS);
             responseHandler = handler;
             return null;
@@ -1088,17 +1087,17 @@ public class HttpServerIT {
 
     private static class EchoWithHeaderRequestHandler extends AbstractRequestHandler {
 
-        final String headerName;
-        final String headerValue;
+        String headerName;
+        String headerValue;
 
-        EchoWithHeaderRequestHandler(final String headerName, final String headerValue) {
+        EchoWithHeaderRequestHandler(String headerName, String headerValue) {
             this.headerName = headerName;
             this.headerValue = headerValue;
         }
 
         @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-            final Response response = new Response(OK);
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            Response response = new Response(OK);
             response.headers().add(headerName, headerValue);
             return handler.handleResponse(response);
         }
@@ -1107,7 +1106,7 @@ public class HttpServerIT {
     private static class UriRequestHandler extends AbstractRequestHandler {
         @Override
         public ContentChannel handleRequest(Request req, ResponseHandler handler) {
-            final ContentChannel ch = handler.handleResponse(new Response(OK));
+            ContentChannel ch = handler.handleResponse(new Response(OK));
             ch.write(ByteBuffer.wrap(req.getUri().toString().getBytes(UTF_8)), null);
             ch.close(null);
             return null;
@@ -1115,7 +1114,7 @@ public class HttpServerIT {
     }
 
     private static class RequestHeaderEchoingHandler extends AbstractRequestHandler {
-        final String headerName;
+        String headerName;
         RequestHeaderEchoingHandler(String headerName) { this.headerName = headerName; }
 
         @Override
@@ -1129,7 +1128,7 @@ public class HttpServerIT {
         }
     }
 
-    private static Module newBindingSetSelector(final String setName) {
+    private static Module newBindingSetSelector(String setName) {
         return new AbstractModule() {
 
             @Override
@@ -1137,7 +1136,7 @@ public class HttpServerIT {
                 bind(BindingSetSelector.class).toInstance(new BindingSetSelector() {
 
                     @Override
-                    public String select(final URI uri) {
+                    public String select(URI uri) {
                         return setName;
                     }
                 });
@@ -1148,7 +1147,7 @@ public class HttpServerIT {
     private static class CookieComparator implements Comparator<Cookie> {
 
         @Override
-        public int compare(final Cookie lhs, final Cookie rhs) {
+        public int compare(Cookie lhs, Cookie rhs) {
             return lhs.getName().compareTo(rhs.getName());
         }
     }
