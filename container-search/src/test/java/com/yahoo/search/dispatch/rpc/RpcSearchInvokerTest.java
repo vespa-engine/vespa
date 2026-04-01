@@ -46,11 +46,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * @author ollivir
+ * @author Olli Virtanen
  */
 public class RpcSearchInvokerTest {
 
@@ -400,10 +399,7 @@ public class RpcSearchInvokerTest {
         DispatchConfig dispatchConfig = new DispatchConfig.Builder().build();
         TopKEstimator hitEstimator = new TopKEstimator(30, dispatchConfig.topKProbability(), 0.05);
         List<SearchInvoker> invokers = new ArrayList<>(nodeInvokers);
-        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, group, Set.of());
-        invoker.responseAvailable(invokers.get(0));
-        invoker.responseAvailable(invokers.get(1));
-        return invoker;
+        return new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, group, Set.of());
     }
 
     RpcSearchInvoker createRpcInvoker(Node node, int maxHits, Holders holders) {
@@ -438,6 +434,7 @@ public class RpcSearchInvokerTest {
                         holders.compressionType.set(compression);
                         holders.payload.set(compressedPayload);
                         holders.length.set(uncompressedLength);
+                        responseReceiver.receive(Client.ResponseOrError.fromError("mock"));
                     }
 
                     @Override
