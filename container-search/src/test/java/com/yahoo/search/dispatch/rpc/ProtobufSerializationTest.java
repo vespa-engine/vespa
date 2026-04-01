@@ -20,6 +20,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -160,6 +161,20 @@ public class ProtobufSerializationTest {
         assertEquals(3, req.getProfiling().getMatch().getDepth());
         assertFalse(req.getProfiling().hasFirstPhase());
         assertFalse(req.getProfiling().hasSecondPhase());
+    }
+
+    @Test
+    void soft_timeout_errors_use_timeout_error_code() {
+        Query q = new Query("search/?query=test");
+        SearchProtocol.SearchReply reply = SearchProtocol.SearchReply.newBuilder()
+                .setDegradedBySoftTimeout(true)
+                .addErrors(SearchProtocol.Error.newBuilder()
+                        .setMessage("Search request soft doomed during query setup and initialization."))
+                .build();
+        InvokerResult result = ProtobufSerialization.convertToResult(q, reply, null, 1, 2);
+        var error = result.getResult().hits().getError();
+        assertNotNull(error);
+        assertEquals(com.yahoo.container.protect.Error.TIMEOUT.code, error.getCode());
     }
 
 }
