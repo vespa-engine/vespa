@@ -18,6 +18,7 @@ import (
 type customTarget struct {
 	targetType    string
 	baseURL       string
+	deployment    Deployment
 	httpClient    httputil.Client
 	tlsOptions    TLSOptions
 	retryInterval time.Duration
@@ -36,10 +37,11 @@ type serviceInfo struct {
 }
 
 // LocalTarget creates a target for a Vespa platform running locally.
-func LocalTarget(httpClient httputil.Client, tlsOptions TLSOptions, retryInterval time.Duration) Target {
+func LocalTarget(httpClient httputil.Client, tlsOptions TLSOptions, retryInterval time.Duration, deployment Deployment) Target {
 	return &customTarget{
 		targetType:    TargetLocal,
 		baseURL:       "http://127.0.0.1",
+		deployment:    deployment,
 		httpClient:    httpClient,
 		tlsOptions:    tlsOptions,
 		retryInterval: retryInterval,
@@ -47,10 +49,11 @@ func LocalTarget(httpClient httputil.Client, tlsOptions TLSOptions, retryInterva
 }
 
 // CustomTarget creates a Target for a Vespa platform running at baseURL.
-func CustomTarget(httpClient httputil.Client, baseURL string, tlsOptions TLSOptions, retryInterval time.Duration) Target {
+func CustomTarget(httpClient httputil.Client, baseURL string, tlsOptions TLSOptions, retryInterval time.Duration, deployment Deployment) Target {
 	return &customTarget{
 		targetType:    TargetCustom,
 		baseURL:       baseURL,
+		deployment:    deployment,
 		httpClient:    httpClient,
 		tlsOptions:    tlsOptions,
 		retryInterval: retryInterval,
@@ -61,7 +64,7 @@ func (t *customTarget) Type() string { return t.targetType }
 
 func (t *customTarget) IsCloud() bool { return false }
 
-func (t *customTarget) Deployment() Deployment { return DefaultDeployment }
+func (t *customTarget) Deployment() Deployment { return t.deployment }
 
 func (t *customTarget) PrintLog(options LogOptions) error {
 	deployService, err := t.DeployService()

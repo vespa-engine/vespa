@@ -21,7 +21,7 @@ import (
 
 func TestDeploy(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	target := LocalTarget(&httpClient, TLSOptions{}, 0)
+	target := LocalTarget(&httpClient, TLSOptions{}, 0, DefaultDeployment)
 	appDir, _ := mock.ApplicationPackageDir(t, false, false)
 	opts := DeploymentOptions{
 		Target:             target,
@@ -32,6 +32,27 @@ func TestDeploy(t *testing.T) {
 	assert.Equal(t, 1, len(httpClient.Requests))
 	req := httpClient.LastRequest
 	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate", req.URL.String())
+	assert.Equal(t, "application/zip", req.Header.Get("content-type"))
+	buf := make([]byte, 5)
+	req.Body.Read(buf)
+	assert.Equal(t, "PK\x03\x04\x14", string(buf))
+}
+
+func TestDeployCustomInstance(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	application := ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	deployment := Deployment{Application: application, Zone: DefaultZone}
+	target := LocalTarget(&httpClient, TLSOptions{}, 0, deployment)
+	appDir, _ := mock.ApplicationPackageDir(t, false, false)
+	opts := DeploymentOptions{
+		Target:             target,
+		ApplicationPackage: ApplicationPackage{Path: appDir},
+	}
+	_, err := Deploy(opts)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(httpClient.Requests))
+	req := httpClient.LastRequest
+	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate?instance=i1", req.URL.String())
 	assert.Equal(t, "application/zip", req.Header.Get("content-type"))
 	buf := make([]byte, 5)
 	req.Body.Read(buf)
@@ -180,7 +201,7 @@ func TestFindApplicationPackage(t *testing.T) {
 
 func TestDeactivate(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	target := LocalTarget(&httpClient, TLSOptions{}, 0)
+	target := LocalTarget(&httpClient, TLSOptions{}, 0, DefaultDeployment)
 	opts := DeploymentOptions{Target: target}
 	require.Nil(t, Deactivate(opts))
 	assert.Equal(t, 1, len(httpClient.Requests))
@@ -205,7 +226,7 @@ func TestDeactivateCloud(t *testing.T) {
 
 func TestFetch(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	target := LocalTarget(&httpClient, TLSOptions{}, 0)
+	target := LocalTarget(&httpClient, TLSOptions{}, 0, DefaultDeployment)
 	opts := DeploymentOptions{Target: target}
 	httpClient.NextResponse(mock.HTTPResponse{
 		URI:    "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/content",

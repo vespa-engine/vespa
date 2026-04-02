@@ -537,11 +537,15 @@ func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, er
 	if err != nil {
 		return nil, err
 	}
+	deployment := vespa.DefaultDeployment
+	if app, err := c.config.application(); err == nil {
+		deployment.Application = app
+	}
 	switch targetType {
 	case vespa.TargetLocal:
-		return vespa.LocalTarget(c.httpClient, tlsOptions, c.retryInterval), nil
+		return vespa.LocalTarget(c.httpClient, tlsOptions, c.retryInterval, deployment), nil
 	case vespa.TargetCustom:
-		return vespa.CustomTarget(c.httpClient, customURL, tlsOptions, c.retryInterval), nil
+		return vespa.CustomTarget(c.httpClient, customURL, tlsOptions, c.retryInterval, deployment), nil
 	default:
 		return nil, fmt.Errorf("invalid custom target: %s", targetType)
 	}

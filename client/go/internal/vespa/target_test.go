@@ -20,7 +20,7 @@ import (
 func TestLocalTarget(t *testing.T) {
 	// Local target uses discovery
 	client := &mock.HTTPClient{}
-	lt := LocalTarget(client, TLSOptions{}, 0)
+	lt := LocalTarget(client, TLSOptions{}, 0, DefaultDeployment)
 	assertServiceURL(t, "http://127.0.0.1:19071", lt, "deploy")
 	for range 2 {
 		response := `
@@ -70,17 +70,17 @@ func TestLocalTarget(t *testing.T) {
 
 func TestCustomTarget(t *testing.T) {
 	// Custom target always uses URL directly, without discovery
-	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{}, 0)
+	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{}, 0, DefaultDeployment)
 	assertServiceURL(t, "http://192.0.2.42", ct, "deploy")
 	assertServiceURL(t, "http://192.0.2.42", ct, "")
-	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{}, 0)
+	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{}, 0, DefaultDeployment)
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "deploy")
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "")
 }
 
 func TestCustomTargetWait(t *testing.T) {
 	client := &mock.HTTPClient{}
-	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0, DefaultDeployment)
 	// Fails once
 	client.NextStatus(500)
 	assertService(t, true, target, "", 0)
@@ -96,7 +96,7 @@ func TestCustomTargetWait(t *testing.T) {
 
 func TestCustomTargetAwaitDeployment(t *testing.T) {
 	client := &mock.HTTPClient{}
-	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0, DefaultDeployment)
 
 	// Not converged initially
 	_, err := target.AwaitDeployment(42, 0)
@@ -121,7 +121,7 @@ func TestCustomTargetAwaitDeployment(t *testing.T) {
 
 func TestCustomTargetCompatibleWith(t *testing.T) {
 	client := &mock.HTTPClient{}
-	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0, DefaultDeployment)
 	for range 3 {
 		client.NextResponse(mock.HTTPResponse{
 			URI:    "/state/v1/version",
