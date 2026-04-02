@@ -37,7 +37,7 @@ func TestDeploy(t *testing.T) {
 	req.Body.Read(buf)
 	assert.Equal(t, "PK\x03\x04\x14", string(buf))
 }
-
+q
 func TestDeployCustomInstance(t *testing.T) {
 	httpClient := mock.HTTPClient{}
 	application := ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
@@ -52,7 +52,7 @@ func TestDeployCustomInstance(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(httpClient.Requests))
 	req := httpClient.LastRequest
-	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate?instance=i1", req.URL.String())
+	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate?instance=i1&applicationName=a1", req.URL.String())
 	assert.Equal(t, "application/zip", req.Header.Get("content-type"))
 	buf := make([]byte, 5)
 	req.Body.Read(buf)

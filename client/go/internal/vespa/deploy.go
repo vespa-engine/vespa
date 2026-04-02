@@ -368,9 +368,18 @@ func Deploy(deployment DeploymentOptions) (PrepareResult, error) {
 		u, err = url.Parse(deployment.Target.Deployment().System.DeployURL(deployment.Target.Deployment()))
 	} else {
 		instance := deployment.Target.Deployment().Application.Instance
+		applicationName := deployment.Target.Deployment().Application.Application
+		var params []string
 		path := "/application/v2/tenant/default/prepareandactivate"
 		if instance != "" && instance != "default" {
-			path += "?instance=" + instance
+			params = append(params, "instance="+instance)
+		}
+		if applicationName != "" && applicationName != "application" {
+			params = append(params, "applicationName="+applicationName)
+		}
+		queryParams := strings.Join(params, "&")
+		if queryParams != "" {
+			path += "?" + queryParams
 		}
 		u, err = deployment.url(path)
 	}
