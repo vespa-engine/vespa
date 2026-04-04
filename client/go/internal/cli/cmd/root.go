@@ -303,8 +303,8 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 		debugMode   bool
 	)
 	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", `The target platform to use. Must be "local", "cloud", "hosted" or an URL`)
-	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", `The application to use (cloud only). Format "tenant.application.instance" - instance is optional`)
-	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to use (cloud only)")
+	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", `The application to use. Format "tenant.application.instance" - instance is optional (tenant required for cloud targets)`)
+	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to use")
 	c.cmd.PersistentFlags().StringVarP(&cluster, clusterFlag, "C", "", "The container cluster to use. This is only required for applications with multiple clusters")
 	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone (cloud only)")
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
