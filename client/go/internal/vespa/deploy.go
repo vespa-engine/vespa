@@ -371,10 +371,10 @@ func Deploy(deployment DeploymentOptions) (PrepareResult, error) {
 		applicationName := deployment.Target.Deployment().Application.Application
 		params := url.Values{}
 		path := "/application/v2/tenant/default/prepareandactivate"
-		if applicationName != "" && applicationName != "application" {
+		if applicationName != "" && applicationName != DefaultApplication.Application {
 			params.Set("applicationName", applicationName)
 		}
-		if instance != "" && instance != "default" {
+		if instance != "" && instance != DefaultApplication.Instance {
 			params.Set("instance", instance)
 		}
 		if queryParams := params.Encode(); queryParams != "" {
