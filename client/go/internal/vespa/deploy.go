@@ -181,7 +181,19 @@ func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
 		return err
 	}
 	defer os.RemoveAll(tmpDir)
-	u, err := deployment.url("/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/content")
+	applicationName := deployment.Target.Deployment().Application.Application
+	if applicationName == "" {
+		applicationName = DefaultApplication.Application
+	}
+	instanceName := deployment.Target.Deployment().Application.Instance
+	if instanceName == "" {
+		instanceName = DefaultApplication.Instance
+	}
+	endpoint := fmt.Sprintf(
+		"/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/content",
+		applicationName,
+		instanceName)
+	u, err := deployment.url(endpoint)
 	if err != nil {
 		return err
 	}

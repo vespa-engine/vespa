@@ -270,6 +270,55 @@ func TestFetch(t *testing.T) {
 	assert.Equal(t, `music.sd contents`, string(data))
 }
 
+func TestFetchCustomApplication(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	deployment := DefaultDeployment
+	deployment.Application.Application = "a1"
+	deployment.Application.Instance = "i1"
+	target := LocalTarget(&httpClient, TLSOptions{}, 0, deployment)
+	opts := DeploymentOptions{Target: target}
+	httpClient.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1/content",
+		Status: 200,
+		Body: []byte(`[
+"/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1/content/schemas/",
+"/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1/content/services.xml"
+]`),
+	})
+	httpClient.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1/content/schemas/",
+		Status: 200,
+		Body: []byte(`[
+"/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1/content/schemas/music.sd"
+]`),
+	})
+	httpClient.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1/content/schemas/music.sd",
+		Status: 200,
+		Body:   []byte(`music.sd contents`),
+	})
+	httpClient.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1/content/services.xml",
+		Status: 200,
+		Body:   []byte(`services.xml contents`),
+	})
+	dir := t.TempDir()
+	dst, err := Fetch(opts, dir)
+	require.Nil(t, err)
+	assert.True(t, ioutil.Exists(dst))
+
+	f, err := os.Open(dst)
+	require.Nil(t, err)
+	defer f.Close()
+	zr, err := zip.NewReader(f, 1000)
+	require.Nil(t, err)
+	schema, err := zr.Open("schemas/music.sd")
+	require.Nil(t, err)
+	data, err := io.ReadAll(schema)
+	require.Nil(t, err)
+	assert.Equal(t, `music.sd contents`, string(data))
+}
+
 func TestFetchCloud(t *testing.T) {
 	httpClient := mock.HTTPClient{}
 	target, _ := createCloudTarget(t, io.Discard)
