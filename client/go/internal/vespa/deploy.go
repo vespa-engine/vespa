@@ -350,7 +350,12 @@ func Deactivate(deployment DeploymentOptions) error {
 		deploymentURL := deployment.Target.Deployment().System.DeploymentURL(deployment.Target.Deployment())
 		u, err = url.Parse(deploymentURL)
 	} else {
-		u, err = deployment.url("/application/v2/tenant/default/application/default")
+		applicationName := deployment.Target.Deployment().Application.Application
+		if applicationName == "" {
+			applicationName = DefaultApplication.Application
+		}
+		endpoint := fmt.Sprintf("/application/v2/tenant/default/application/%s", applicationName)
+		u, err = deployment.url(endpoint)
 	}
 	if err != nil {
 		return err

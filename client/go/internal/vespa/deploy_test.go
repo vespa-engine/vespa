@@ -210,6 +210,19 @@ func TestDeactivate(t *testing.T) {
 	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/application/default", req.URL.String())
 }
 
+func TestDeactivateCustomApplication(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	deployment := DefaultDeployment
+	deployment.Application.Application = "a1"
+	target := LocalTarget(&httpClient, TLSOptions{}, 0, deployment)
+	opts := DeploymentOptions{Target: target}
+	require.Nil(t, Deactivate(opts))
+	assert.Equal(t, 1, len(httpClient.Requests))
+	req := httpClient.LastRequest
+	assert.Equal(t, "DELETE", req.Method)
+	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/application/a1", req.URL.String())
+}
+
 func TestDeactivateCloud(t *testing.T) {
 	httpClient := mock.HTTPClient{}
 	target, _ := createCloudTarget(t, io.Discard)
