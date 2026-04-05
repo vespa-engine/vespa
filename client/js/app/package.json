@@ -32,7 +32,7 @@
     "eslint-plugin-react-perf": "3.3.3",
     "eslint-plugin-unused-imports": "4.1.4",
     "husky": "9.1.7",
-    "lodash": "4.17.23",
+    "lodash": "4.18.1",
     "prettier": "3.5.3",
     "pretty-quick": "4.1.1",
     "react-router-dom": "7.12.0",
