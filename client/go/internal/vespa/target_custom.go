@@ -71,7 +71,19 @@ func (t *customTarget) PrintLog(options LogOptions) error {
 	if err != nil {
 		return err
 	}
-	logsURL := deployService.BaseURL + "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/logs"
+	applicationName := t.deployment.Application.Application
+	if applicationName == "" {
+		applicationName = DefaultApplication.Application
+	}
+	instanceName := t.deployment.Application.Instance
+	if instanceName == "" {
+		instanceName = DefaultApplication.Instance
+	}
+	endpoint := fmt.Sprintf(
+		"/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/logs",
+		applicationName,
+		instanceName)
+	logsURL := deployService.BaseURL + endpoint
 	return pollLogs(t, logsURL, options, t.retryInterval)
 }
 
@@ -197,7 +209,8 @@ func (t *customTarget) serviceStatus(wantedGeneration int64, timeout time.Durati
 	if instanceName == "" {
 		instanceName = DefaultApplication.Instance
 	}
-	url := fmt.Sprintf("%s/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/serviceconverge",
+	url := fmt.Sprintf(
+		"%s/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/serviceconverge",
 		deployService.BaseURL,
 		applicationName,
 		instanceName)
