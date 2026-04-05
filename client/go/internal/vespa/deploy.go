@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	DefaultApplication = ApplicationID{Tenant: "default", Application: "application", Instance: "default"}
+	DefaultApplication = ApplicationID{Tenant: "default", Application: "default", Instance: "default"}
 	DefaultZone        = ZoneID{Environment: "prod", Region: "default"}
 	DefaultDeployment  = Deployment{Application: DefaultApplication, Zone: DefaultZone}
 	ErrUnauthorized    = errors.New("unauthorized")

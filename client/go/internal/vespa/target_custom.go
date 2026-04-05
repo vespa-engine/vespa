@@ -189,7 +189,18 @@ func (t *customTarget) serviceStatus(wantedGeneration int64, timeout time.Durati
 	if err != nil {
 		return serviceStatus{}, err
 	}
-	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployService.BaseURL)
+	applicationName := t.deployment.Application.Application
+	if applicationName == "" {
+		applicationName = DefaultApplication.Application
+	}
+	instanceName := t.deployment.Application.Instance
+	if instanceName == "" {
+		instanceName = DefaultApplication.Instance
+	}
+	url := fmt.Sprintf("%s/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/serviceconverge",
+		deployService.BaseURL,
+		applicationName,
+		instanceName)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return serviceStatus{}, err

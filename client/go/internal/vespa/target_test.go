@@ -119,6 +119,34 @@ func TestCustomTargetAwaitDeployment(t *testing.T) {
 	assert.Equal(t, int64(42), convergedID)
 }
 
+func TestCustomTargetCustomApplicationAwaitDeployment(t *testing.T) {
+	client := &mock.HTTPClient{}
+	deployment := DefaultDeployment
+	deployment.Application.Application = "a1"
+	deployment.Application.Instance = "i1"
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0, deployment)
+
+	// Not converged initially
+	_, err := target.AwaitDeployment(43, 0)
+	assert.NotNil(t, err)
+
+	// Not converged on this generation
+	response := mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1/serviceconverge",
+		Status: 200,
+		Body:   []byte(`{"currentGeneration": 43}`),
+	}
+	client.NextResponse(response)
+	_, err = target.AwaitDeployment(42, 0)
+	assert.NotNil(t, err)
+
+	// Converged
+	client.NextResponse(response)
+	convergedID, err := target.AwaitDeployment(43, 0)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(43), convergedID)
+}
+
 func TestCustomTargetCompatibleWith(t *testing.T) {
 	client := &mock.HTTPClient{}
 	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0, DefaultDeployment)
