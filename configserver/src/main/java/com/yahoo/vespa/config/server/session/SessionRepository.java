@@ -6,6 +6,7 @@ import com.google.common.collect.Multiset;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -719,6 +720,9 @@ public class SessionRepository {
                     }
                     if (deletedRemoteSessions + deletedLocalSessions >= deleteMax)
                         break;
+                } catch (UncheckedTimeoutException e) {
+                    // ignore exception, will be retried, just log at info level
+                    log.log(Level.INFO, Exceptions.toMessageString(e));
                 }
             } catch (Throwable e) { // Make sure to catch here, to avoid executor just dying in case of issues ...
                 log.log(Level.WARNING, "Error when deleting expired sessions ", e);
