@@ -33,6 +33,7 @@ private:
     size_t obtain_slow();
     char read_slow();
     Memory read_slow(size_t bytes);
+    bool read_into_slow(void* buf, size_t bytes);
 
 public:
     explicit InputReader(Input &input)
@@ -120,6 +121,27 @@ public:
             return ret;
         }
         return read_slow(bytes);
+    }
+
+    /**
+     * Read data into output buffer `buf`, transparently handling multiple chunks.
+     *
+     * This is an alternative to read() that copies into a receiving buffer
+     * without using a temporary for oversized reads. Useful for interop with
+     * legacy read() usage that already allocates a dedicated receiver buffer
+     * at the caller side.
+     *
+     * @param buf Output buffer for read results.
+     * @param bytes Number of bytes to read into `buf`.
+     * @return true iff reading `bytes` number of bytes into `buf` succeeded.
+     */
+    [[nodiscard]] bool read_into(void *buf, const size_t bytes) {
+        if (obtain() >= bytes) [[likely]] {
+            memcpy(buf, data(), bytes);
+            _pos += bytes;
+            return true;
+        }
+        return read_into_slow(buf, bytes);
     }
 };
 
