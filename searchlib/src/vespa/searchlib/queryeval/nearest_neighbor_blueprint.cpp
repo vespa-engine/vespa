@@ -82,6 +82,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _will_perform_index_top_k(false),
       _doom(doom),
       _matching_phase(MatchingPhase::FIRST_PHASE),
+      _ann_time(vespalib::duration::zero()),
       _nni_stats(),
       _stats()
 {
@@ -154,7 +155,9 @@ NearestNeighborBlueprint::will_perform_index_top_k() const {
 void
 NearestNeighborBlueprint::perform_index_top_k() {
     if (_will_perform_index_top_k) {
+        vespalib::Timer timer;
         perform_top_k(_attr_tensor.nearest_neighbor_index());
+        _ann_time = timer.elapsed();
         _will_perform_index_top_k = false;
     }
 }
@@ -225,6 +228,7 @@ void NearestNeighborBlueprint::flush_stats() {
     if (_stats) {
         _stats->add_to_approximate_nns_distances_computed(_nni_stats.distances_computed());
         _stats->add_to_approximate_nns_nodes_visited(_nni_stats.nodes_visited());
+        _ann_time = vespalib::duration::zero();
         _nni_stats.reset();
     }
 }
@@ -245,6 +249,7 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
         visitor.visitBool("filter_first_heuristic_used", _low_hit_ratio);
     }
     if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
+        visitor.visitFloat("time", vespalib::count_ns(_ann_time) / 1000000.0);
         visitor.visitInt("distances_computed", _nni_stats.distances_computed());
         visitor.visitInt("nodes_visited", _nni_stats.nodes_visited());
         visitor.visitInt("top_k_hits", _found_hits.size());

@@ -61,8 +61,9 @@ private:
     bool _will_perform_index_top_k;
     const vespalib::Doom& _doom;
     MatchingPhase _matching_phase;
+    vespalib::duration                          _ann_time;
     search::tensor::NearestNeighborIndex::Stats _nni_stats;
-    std::shared_ptr<QueryEvalStats> _stats;
+    std::shared_ptr<QueryEvalStats>             _stats;
 
     static double convert_distance_threshold(double distance_threshold,
                                              const search::tensor::DistanceCalculator& distance_calc);
