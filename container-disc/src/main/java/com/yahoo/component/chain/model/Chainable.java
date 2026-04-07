@@ -17,6 +17,7 @@ import java.util.Set;
  */
 public interface Chainable {
 
+    @SuppressWarnings("removal")
     default Dependencies getAnnotatedDependencies() {
         Set<String> provides = new LinkedHashSet<>();
         Set<String> before = new LinkedHashSet<>();
