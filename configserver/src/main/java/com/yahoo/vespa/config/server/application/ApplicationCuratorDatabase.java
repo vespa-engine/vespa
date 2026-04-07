@@ -60,7 +60,7 @@ public class ApplicationCuratorDatabase {
         this.lockTimeout = Duration.ofSeconds(configserverConfig.applicationLockTimeoutSeconds());
     }
 
-    /** Returns the lock for changing the session status of the given application. */
+    /** Returns the lock for changes to the given application. */
     public Lock lock(ApplicationId id) {
         return lock(lockPath(id));
     }
@@ -237,10 +237,20 @@ public class ApplicationCuratorDatabase {
         return curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
     }
 
+    /** Returns the lock for changes to the given application, with the given timeout. */
+    public Lock lock(ApplicationId id, Duration lockTimeout) {
+        return lock(lockPath(id),  lockTimeout);
+    }
+
     /**
      * Returns the lock for the given lock path.
      */
-    private Lock lock(Path lockPath) { return curator.lock(lockPath, lockTimeout); }
+    private Lock lock(Path lockPath) { return lock(lockPath, lockTimeout); }
+
+    /**
+     * Returns the lock for the given lock path.
+     */
+    private Lock lock(Path lockPath, Duration lockTimeout) { return curator.lock(lockPath, lockTimeout); }
 
     private Path restartsLockPath(ApplicationId id) {
         return locksPath.append(id.serializedForm() + "::restarts");
