@@ -228,6 +228,7 @@ void NearestNeighborBlueprint::flush_stats() {
     if (_stats) {
         _stats->add_to_approximate_nns_distances_computed(_nni_stats.distances_computed());
         _stats->add_to_approximate_nns_nodes_visited(_nni_stats.nodes_visited());
+        _stats->add_to_total_ann_time(_ann_time);
         _ann_time = vespalib::duration::zero();
         _nni_stats.reset();
     }
