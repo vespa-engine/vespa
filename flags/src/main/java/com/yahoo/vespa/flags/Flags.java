@@ -369,12 +369,20 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
     );
 
+    public static final UnboundBooleanFlag RESTART_ON_DEPLOY_MAINTAINER = defineFeatureFlag(
+            "restart-on-deploy-maintainer", false,
+            List.of("glebashnik"), "2026-04-07", "2026-10-07",
+            "When enabled, RestartOnDeployMaintainer is used instead of PendingRestartsMaintainer " +
+                    "to trigger pending restarts.",
+            "Takes effect at next run of RestartOnDeployMaintainer and PendingRestartsMaintainer.",
+            INSTANCE_ID
+    );
+
     public static final UnboundBooleanFlag WAIT_FOR_APPLY_ON_RESTART = defineFeatureFlag(
             "wait-for-apply-on-restart", false,
             List.of("glebashnik"), "2026-02-01", "2026-08-01",
             "Determines whether triggering of a pending restart waits for `applyOnRestart` to be set to `true` " +
-                    "in the observed config state. In addition, changes service convergence condition bounded to a " +
-                    "current node instead of across multiple nodes, see `RestartOnDeployMaintainer`.",
+                    "in the observed config state.",
             "Takes effect at next run of RestartOnDeployMaintainer.",
             INSTANCE_ID
     );
