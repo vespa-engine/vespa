@@ -53,7 +53,7 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "double"));
         argumentType.addField(new FieldDescription(LAZY_FILTER, "boolean"));
         argumentType.addField(new FieldDescription(FILTER_THRESHOLD, "double"));
-        argumentType.addField(new FieldDescription(ANNTIMEBUDGET, "long"));
+        argumentType.addField(new FieldDescription(ANNTIMEBUDGET, "string"));
         argumentType.addField(new FieldDescription(ANNTIMEOUT, new QueryProfileFieldType(AnnTimeout.getArgumentType())));
         argumentType.addField(new FieldDescription(WEAKAND, new QueryProfileFieldType(WeakAnd.getArgumentType())));
         argumentType.freeze();
