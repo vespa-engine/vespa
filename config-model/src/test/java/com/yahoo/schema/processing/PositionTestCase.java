@@ -8,6 +8,8 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.FieldSet;
+import com.yahoo.schema.document.MatchType;
+import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
@@ -18,8 +20,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -29,6 +33,147 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author hmusum
  */
 public class PositionTestCase {
+
+    private static Schema buildPositionSchema(String fieldType, String attributeBlock) throws ParseException {
+        return ApplicationBuilder.createFromString(
+                "search test {\n" +
+                "  document test {\n" +
+                "    field pos type " + fieldType + " {\n" +
+                "      indexing: attribute | summary\n" +
+                "      " + attributeBlock + "\n" +
+                "    }\n" +
+                "  }\n" +
+                "}\n").getSchema();
+    }
+
+    private static void assertNoStrayPositionAttributes(Schema schema, String fieldName) {
+        assertNull(schema.getAttribute(fieldName));
+        assertNull(schema.getAttribute(fieldName + ".x"));
+        assertNull(schema.getAttribute(fieldName + ".y"));
+    }
+
+    @Test
+    void requireThatPositionFastSearchIsAllowed() throws Exception {
+        Schema schema = buildPositionSchema("position", "attribute: fast-search");
+        assertNoStrayPositionAttributes(schema, "pos");
+        Attribute zcurve = schema.getAttribute(PositionDataType.getZCurveFieldName("pos"));
+        assertNotNull(zcurve);
+        assertTrue(zcurve.isFastSearch());
+    }
+
+    @Test
+    void requireThatPositionFastAccessIsForwarded() throws Exception {
+        Schema schema = buildPositionSchema("position", "attribute { fast-access }");
+        assertNoStrayPositionAttributes(schema, "pos");
+        Attribute zcurve = schema.getAttribute(PositionDataType.getZCurveFieldName("pos"));
+        assertNotNull(zcurve);
+        assertTrue(zcurve.isFastAccess());
+        // Verify that the temporary attribute did not trigger implicit WORD matching
+        assertNotEquals(MatchType.WORD, schema.getConcreteField("pos").getMatching().getType());
+    }
+
+    @Test
+    void requireThatPositionPagedIsForwarded() throws Exception {
+        Schema schema = buildPositionSchema("position", "attribute { paged }");
+        assertNoStrayPositionAttributes(schema, "pos");
+        Attribute zcurve = schema.getAttribute(PositionDataType.getZCurveFieldName("pos"));
+        assertNotNull(zcurve);
+        assertTrue(zcurve.isPaged());
+    }
+
+    @Test
+    void requireThatPositionAllSettingsAreForwarded() throws Exception {
+        Schema schema = buildPositionSchema("position", "attribute { fast-search\n fast-access\n paged }");
+        assertNoStrayPositionAttributes(schema, "pos");
+        Attribute zcurve = schema.getAttribute(PositionDataType.getZCurveFieldName("pos"));
+        assertNotNull(zcurve);
+        assertTrue(zcurve.isFastSearch());
+        assertTrue(zcurve.isFastAccess());
+        assertTrue(zcurve.isPaged());
+    }
+
+    @Test
+    void requireThatPositionEmptyAttributeIsAllowed() throws Exception {
+        Schema schema = buildPositionSchema("position", "attribute { }");
+        assertNoStrayPositionAttributes(schema, "pos");
+        Attribute zcurve = schema.getAttribute(PositionDataType.getZCurveFieldName("pos"));
+        assertNotNull(zcurve);
+        assertTrue(zcurve.isFastSearch());
+    }
+
+    @Test
+    void requireThatPositionArrayFastAccessIsForwarded() throws Exception {
+        Schema schema = buildPositionSchema("array<position>", "attribute { fast-access }");
+        assertNoStrayPositionAttributes(schema, "pos");
+        Attribute zcurve = schema.getAttribute(PositionDataType.getZCurveFieldName("pos"));
+        assertNotNull(zcurve);
+        assertTrue(zcurve.isFastAccess());
+        assertEquals(Attribute.CollectionType.ARRAY, zcurve.getCollectionType());
+    }
+
+    @Test
+    void requireThatPositionFastRankIsRejected() {
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> buildPositionSchema("position", "attribute { fast-rank }"));
+        assertTrue(e.getMessage().contains("position fields only support 'fast-search', 'fast-access', and 'paged' attribute settings"));
+    }
+
+    @Test
+    void requireThatPositionMutableIsRejected() {
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> buildPositionSchema("position", "attribute { mutable }"));
+        assertTrue(e.getMessage().contains("position fields only support 'fast-search', 'fast-access', and 'paged' attribute settings"));
+    }
+
+    @Test
+    void requireThatPositionBitVectorIsRejected() {
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> buildPositionSchema("position", "attribute { enable-only-bit-vector }"));
+        assertTrue(e.getMessage().contains("position fields only support 'fast-search', 'fast-access', and 'paged' attribute settings"));
+    }
+
+    @Test
+    void requireThatPositionSortingIsRejected() {
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> buildPositionSchema("position", "attribute { sorting { ascending } }"));
+        assertTrue(e.getMessage().contains("position fields only support 'fast-search', 'fast-access', and 'paged' attribute settings"));
+    }
+
+    @Test
+    void requireThatPositionDistanceMetricIsRejected() {
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> buildPositionSchema("position", "attribute { distance-metric: euclidean }"));
+        assertTrue(e.getMessage().contains("position fields only support 'fast-search', 'fast-access', and 'paged' attribute settings"));
+    }
+
+    @Test
+    void requireThatPositionAliasIsRejected() {
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> buildPositionSchema("position", "attribute { alias: my_alias }"));
+        assertTrue(e.getMessage().contains("position fields only support 'fast-search', 'fast-access', and 'paged' attribute settings"));
+    }
+
+    @Test
+    void requireThatPositionNamedAttributeIsRejected() {
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> buildPositionSchema("position", "attribute my_attr { fast-search }"));
+        assertTrue(e.getMessage().contains("position fields do not support named attribute"));
+    }
+
+    @Test
+    void requireThatPositionAttributeSettingsRequireAttributing() {
+        var e = assertThrows(IllegalArgumentException.class, () ->
+                ApplicationBuilder.createFromString(
+                        "search test {\n" +
+                        "  document test {\n" +
+                        "    field pos type position {\n" +
+                        "      indexing: summary\n" +
+                        "      attribute: fast-search\n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}\n"));
+        assertTrue(e.getMessage().contains("attribute properties require 'attribute' in the indexing statement"));
+    }
 
     @Test
     void inherited_position_zcurve_field_is_not_added_to_document_fieldset() throws Exception {
