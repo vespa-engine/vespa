@@ -20,6 +20,7 @@ import com.yahoo.yolean.chain.Provides;
  *
  * @author karowan
  */
+@SuppressWarnings("removal")
 @Provides(WeakAndReplacementSearcher.REPLACE_OR_WITH_WEAKAND)
 @After(MinimalQueryInserter.EXTERNAL_YQL)
 public class WeakAndReplacementSearcher extends Searcher {

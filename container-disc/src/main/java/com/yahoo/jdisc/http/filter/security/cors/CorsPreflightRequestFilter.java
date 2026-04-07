@@ -30,6 +30,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
  * @author gv
  * @author bjorncs
  */
+@SuppressWarnings("removal")
 @Provides("CorsPreflightRequestFilter")
 public class CorsPreflightRequestFilter implements SecurityRequestFilter {
     private final CorsLogic cors;

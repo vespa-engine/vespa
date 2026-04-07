@@ -28,6 +28,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
+@SuppressWarnings("removal")
 @Before(GroupingExecutor.COMPONENT_NAME) // Must happen before query.prepare()
 public class ValidateSameElementSearcher extends Searcher {
 
