@@ -695,7 +695,7 @@ public class SessionRepository {
                 }
 
                 Optional<ApplicationId> applicationId = session.getOptionalApplicationId();
-                try (var ignored = lockApplication(applicationId)) {
+                try (var ignored = lockApplication(applicationId, Duration.ofSeconds(1))) {
                     Session.Status status = session.getStatus();
                     boolean activeForApplication = sessionIsActiveForApplication.test(session);
                     if (status == ACTIVATE && activeForApplication) continue;
@@ -751,6 +751,11 @@ public class SessionRepository {
     private ApplicationLock lockApplication(Optional<ApplicationId> applicationId) {
         return applicationId.map(id -> new ApplicationLock(Optional.of(tenantApplications.lock(id))))
                 .orElseGet(() -> new ApplicationLock(Optional.empty()));
+    }
+
+    private ApplicationLock lockApplication(Optional<ApplicationId> applicationId, Duration lockTimeout) {
+        return applicationId.map(id -> new ApplicationLock(Optional.of(tenantApplications.lock(id, lockTimeout))))
+                            .orElseGet(() -> new ApplicationLock(Optional.empty()));
     }
 
     private Optional<LocalSession> getOptionalSessionFromFileSystem(long sessionId) {
