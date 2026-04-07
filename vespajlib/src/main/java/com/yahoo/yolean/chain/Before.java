@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * The component that is annotated with this must be placed earlier than the components or phases providing names
  * contained in the given list.
  *
- * @deprecated Use {@link com.yahoo.component.chain.dependencies.Before} instead.
+ * @deprecated Use com.yahoo.component.chain.dependencies.Before instead.
  * @author Tony Vaagenes
  */
 @Deprecated(forRemoval = true)
