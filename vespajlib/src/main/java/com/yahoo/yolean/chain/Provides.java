@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * <p>Mark this component as providing some named functionality. Other components can then mark themselves as "before"
  * and "after" the string provided here, to impose constraints on ordering.</p>
  *
- * @deprecated Use {@link com.yahoo.component.chain.dependencies.Provides} instead.
+ * @deprecated Use com.yahoo.component.chain.dependencies.Provides instead.
  * @author Tony Vaagenes
  */
 @Deprecated(forRemoval = true)
