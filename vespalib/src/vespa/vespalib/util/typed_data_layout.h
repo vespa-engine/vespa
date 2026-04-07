@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <new>
 #include <span>
 #include <utility>
 
@@ -22,9 +23,11 @@
 // Layout:
 //   Used to plan which objects are needed.
 //   Reserves handles that can later be resolved against Data.
+//   Defines the Data and DataUP types used to access the data.
 //
 // Data:
 //   Owns the packed storage for all objects planned by Layout.
+//   Inherits from the Base class specified in Layout.
 //
 // Handle:
 //   Reserved by Layout for a single object.
@@ -36,6 +39,8 @@
 //   into individual Handles.
 
 namespace vespalib::tdl {
+
+namespace detail {
 
 template <size_t align>
 constexpr size_t align_up(size_t value) {
@@ -81,13 +86,17 @@ constexpr auto get_type_at() {
     }
 }
 
+struct EmptyBase {};
+
+} // detail
+
 template <typename H, typename... Ts>
 struct Domain {
     static constexpr size_t num_types = 1 + sizeof...(Ts);
     using index_sequence = std::index_sequence_for<H, Ts...>;
-    static_assert(!has_duplicate_types<H, Ts...>(), "duplicate types not allowed");
-    template <typename T> static constexpr size_t type_id = get_type_id<T, H, Ts...>();
-    template <size_t I> using type_at = decltype(get_type_at<I, H, Ts...>())::type;
+    static_assert(!detail::has_duplicate_types<H, Ts...>(), "duplicate types not allowed");
+    template <typename T> static constexpr size_t type_id = detail::get_type_id<T, H, Ts...>();
+    template <size_t I> using type_at = decltype(detail::get_type_at<I, H, Ts...>())::type;
     static constexpr size_t max_align = std::max({alignof(H), alignof(Ts)...});
 };
 
@@ -105,16 +114,26 @@ constexpr size_t type_id() {
     return D::template type_id<T>;
 }
 
-template <domain D> class Data;
-template <domain D> class DataDeleter;
-template <domain D> class Layout;
+namespace detail {
+
+template <domain D, typename Base>
+constexpr std::align_val_t full_align() {
+    return std::align_val_t(std::max(D::max_align, alignof(Base)));
+}
+
+template <domain D, typename Base> struct DataDeleter;
+
+} // detail
+
+template <domain D, typename Base> class Data;
+template <domain D, typename Base = detail::EmptyBase> class Layout;
 class ArrayHandle;
 
 class Handle {
 private:
     friend class ArrayHandle;
     friend class HandleIterator;
-    template <domain D> friend class Layout;
+    template <domain D, typename Base> friend class Layout;
     uint32_t _value;
     static constexpr uint32_t invalid_handle = 0xffffffff;
     static constexpr uint32_t offset_bits    = 24;
@@ -160,8 +179,8 @@ public:
 
 class ArrayHandle {
 private:
-    template <domain D> friend class Layout;
-    template <domain D> friend class Data;
+    template <domain D, typename Base> friend class Layout;
+    template <domain D, typename Base> friend class Data;
     Handle _base;
     uint32_t _size;
 
@@ -185,12 +204,12 @@ public:
     constexpr auto end() const noexcept { return HandleIterator(_base._value + _size); }
 };
 
-template <typename... Ts>
-class Data<Domain<Ts...>> {
+template <typename... Ts, typename Base>
+class Data<Domain<Ts...>, Base> : public Base {
 private:
     using MyDomain = Domain<Ts...>;
-    friend class Layout<MyDomain>;
-    friend class DataDeleter<MyDomain>;
+    friend class Layout<MyDomain, Base>;
+    friend struct detail::DataDeleter<MyDomain, Base>;
     struct VectorRef {
         uint32_t pos;
         uint32_t len;
@@ -207,12 +226,18 @@ public:
     template <typename T>
     std::span<T> all_of() noexcept {
         static constexpr size_t I = type_id<T, MyDomain>();
+        if (_header[I].len == 0) {
+            return {};
+        }
         char *base = reinterpret_cast<char*>(this);
         return {reinterpret_cast<T*>(base + _header[I].pos), _header[I].len};
     }
     template <typename T>
     std::span<const T> all_of() const noexcept {
         static constexpr size_t I = type_id<T, MyDomain>();
+        if (_header[I].len == 0) {
+            return {};
+        }
         const char *base = reinterpret_cast<const char*>(this);
         return {reinterpret_cast<const T*>(base + _header[I].pos), _header[I].len};
     }
@@ -242,12 +267,12 @@ public:
     constexpr size_t allocated() const noexcept { return _allocated; }
 };
 
-template <typename... Ts>
-class DataDeleter<Domain<Ts...>> {
-private:
+namespace detail {
+
+template <typename... Ts, typename Base>
+struct DataDeleter<Domain<Ts...>, Base> {
     using MyDomain = Domain<Ts...>;
-    using MyData = Data<MyDomain>;
-public:
+    using MyData = Data<MyDomain, Base>;
     void operator()(MyData *ptr) noexcept {
         auto destruct_array = [&]<typename T>() {
             for (auto &obj : ptr->template all_of<T>()) {
@@ -255,19 +280,21 @@ public:
             }
         };
         (destruct_array.template operator()<Ts>(), ...);
-        ::operator delete(ptr, std::align_val_t(MyDomain::max_align));
+        ptr->~MyData();
+        ::operator delete(ptr, full_align<MyDomain, Base>());
     }
 };
 
-template <domain D>
-using DataUP = std::unique_ptr<Data<D>, DataDeleter<D>>;
+} // detail
 
-template <typename... Ts>
-class Layout<Domain<Ts...>> {
+template <typename... Ts, typename Base>
+class Layout<Domain<Ts...>, Base> {
 private:
     using MyDomain = Domain<Ts...>;
     std::array<uint32_t, MyDomain::num_types> counts{};
 public:
+    using MyData = Data<MyDomain, Base>;
+    using DataUP = std::unique_ptr<MyData, detail::DataDeleter<MyDomain, Base>>;
     template <typename T>
     Handle reserve() {
         static constexpr size_t I = type_id<T, MyDomain>();
@@ -285,31 +312,35 @@ public:
         static constexpr size_t I = type_id<T, MyDomain>();
         return ArrayHandle::make<I>(0, counts[I]);
     }
-    DataUP<MyDomain> create_data() const {
-        using MyData = Data<MyDomain>;
+    DataUP create_data() const {
         size_t need_size = sizeof(MyData);
         [&]<size_t... Is>(std::index_sequence<Is...>) {
             auto handle_array = [&]<typename T, size_t I>() {
-                need_size = align_up<alignof(T)>(need_size);
-                need_size += counts[I] * sizeof(T);
+                if (counts[I] > 0) {
+                    need_size = detail::align_up<alignof(T)>(need_size);
+                    need_size += counts[I] * sizeof(T);
+                }
             };
             (handle_array.template operator()<Ts, Is>(), ...);
         }(typename MyDomain::index_sequence{});
         assert(need_size <= UINT32_MAX);
-        char *mem = static_cast<char *>(::operator new(need_size, std::align_val_t(MyDomain::max_align)));
-        DataUP<MyDomain> result(new (mem) MyData(need_size));
+        constexpr auto align = detail::full_align<MyDomain, Base>();
+        char *mem = static_cast<char *>(::operator new(need_size, align));
+        DataUP result(new (mem) MyData(need_size));
         auto &obj = *result;
         size_t offset = sizeof(MyData);
         [&]<size_t... Is>(std::index_sequence<Is...>) {
             auto construct_array = [&]<typename T, size_t I>() {
-                offset = align_up<alignof(T)>(offset);
-                obj._header[I].pos = uint32_t(offset);
-                T *arr = reinterpret_cast<T*>(mem + offset);
-                for (uint32_t j = 0; j < counts[I]; ++j) {
-                    new (arr + j) T();
-                    ++obj._header[I].len;
+                if (counts[I] > 0) {
+                    offset = detail::align_up<alignof(T)>(offset);
+                    obj._header[I].pos = uint32_t(offset);
+                    T *arr = reinterpret_cast<T*>(mem + offset);
+                    for (uint32_t j = 0; j < counts[I]; ++j) {
+                        new (arr + j) T();
+                        ++obj._header[I].len;
+                    }
+                    offset += (counts[I] * sizeof(T));
                 }
-                offset += (counts[I] * sizeof(T));
             };
             (construct_array.template operator()<Ts, Is>(), ...);
         }(typename MyDomain::index_sequence{});

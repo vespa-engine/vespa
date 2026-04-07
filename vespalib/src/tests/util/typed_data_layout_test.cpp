@@ -10,21 +10,46 @@ using namespace vespalib::tdl;
 
 namespace {
 
-struct MyInt {
+struct MyObj {
     int value;
     std::vector<int> *ext_list = nullptr;
     static int live_cnt;
-    MyInt() : value(++live_cnt) {}
-    ~MyInt() {
+    MyObj() : value(++live_cnt) {}
+    ~MyObj() {
         --live_cnt;
         if (ext_list != nullptr) {
             ext_list->push_back(value);
         }
     }
 };
-int MyInt::live_cnt = 0;
+int MyObj::live_cnt = 0;
 
-using MyDomain = Domain<int, double, std::string, MyInt>;
+struct alignas(32) BigObj {
+    int value;
+    static int live_cnt;
+    BigObj() : value(++live_cnt) {}
+    ~BigObj() { --live_cnt; }
+};
+int BigObj::live_cnt = 0;
+
+struct Size {
+    size_t value;
+    template <typename Data>
+    explicit Size(const Data &d) : value(sizeof(d)) {}
+    template <typename T>
+    Size &add(size_t n, bool skip_empty = true) {
+        if (n > 0 || !skip_empty) {
+            value = detail::align_up<alignof(T)>(value);
+            value += n * sizeof(T);
+        }
+        return *this;
+    }
+};
+
+template <typename T>
+bool is_aligned(const T *ptr) {
+    return (reinterpret_cast<uintptr_t>(ptr) % alignof(T)) == 0;
+}
 
 } // namespace
 
@@ -39,35 +64,35 @@ TEST(TypedDataLayoutTest, default_array_handle_is_invalid) {
 }
 
 TEST(TypedDataLayoutTest, empty_layout_can_create_data) {
-    Layout<MyDomain> layout;
+    Layout<Domain<int>> layout;
     auto data = layout.create_data();
     EXPECT_TRUE(data);
-    EXPECT_EQ(data->allocated(), 40);
+    EXPECT_EQ(data->allocated(), Size(*data).value);
 }
 
 TEST(TypedDataLayoutTest, reserve_and_resolve) {
-    Layout<MyDomain> layout;
+    Layout<Domain<int>> layout;
     Handle handle = layout.reserve<int>();
     EXPECT_TRUE(handle.valid());
 
-    DataUP<MyDomain> data = layout.create_data();
-    EXPECT_EQ(data->allocated(), 48);
+    auto data = layout.create_data();
+    EXPECT_EQ(data->allocated(), Size(*data).add<int>(1).value);
     EXPECT_TRUE((std::is_same_v<decltype(data->resolve<int>(handle)), int&>));
     EXPECT_EQ(data->resolve<int>(handle), 0); // value constructed
     data->resolve<int>(handle) = 42;
 
-    const Data<MyDomain>& cdata = *data;
+    const auto& cdata = *data;
     EXPECT_TRUE((std::is_same_v<decltype(cdata.resolve<int>(handle)), const int&>));
     EXPECT_EQ(cdata.resolve<int>(handle), 42);
 }
 
 TEST(TypedDataLayoutTest, reserve_and_resolve_array) {
-    Layout<MyDomain> layout;
+    Layout<Domain<int>> layout;
     ArrayHandle handle = layout.reserve_array<int>(3);
     EXPECT_TRUE(handle.valid());
 
-    DataUP<MyDomain> data = layout.create_data();
-    EXPECT_EQ(data->allocated(), 56);
+    auto data = layout.create_data();
+    EXPECT_EQ(data->allocated(), Size(*data).add<int>(3).value);
     EXPECT_TRUE((std::is_same_v<decltype(data->resolve_array<int>(handle)), std::span<int>>));
     auto span = data->resolve_array<int>(handle);
     ASSERT_EQ(span.size(), 3);
@@ -76,7 +101,7 @@ TEST(TypedDataLayoutTest, reserve_and_resolve_array) {
         span[i] = 42 + i;
     }
 
-    const Data<MyDomain>& cdata = *data;
+    const auto& cdata = *data;
     EXPECT_TRUE((std::is_same_v<decltype(cdata.resolve_array<int>(handle)), std::span<const int>>));
     auto cspan = cdata.resolve_array<int>(handle);
     ASSERT_EQ(cspan.size(), 3);
@@ -88,33 +113,34 @@ TEST(TypedDataLayoutTest, reserve_and_resolve_array) {
 }
 
 TEST(TypedDataLayoutTest, object_construction_and_destruction_order) {
-    ASSERT_EQ(MyInt::live_cnt, 0);
+    ASSERT_EQ(MyObj::live_cnt, 0);
     std::vector<int> list;
     {
-        Layout<MyDomain> layout;
-        auto h1 = layout.reserve<MyInt>();
-        auto h2 = layout.reserve<MyInt>();
-        auto h3 = layout.reserve<MyInt>();
+        Layout<Domain<MyObj>> layout;
+        auto h1 = layout.reserve<MyObj>();
+        auto h2 = layout.reserve<MyObj>();
+        auto h3 = layout.reserve<MyObj>();
         auto data = layout.create_data();
-        EXPECT_EQ(data->allocated(), 40 + sizeof(MyInt) * 3);
-        EXPECT_EQ(data->resolve<MyInt>(h1).value, 1);
-        data->resolve<MyInt>(h1).ext_list = &list;
-        EXPECT_EQ(data->resolve<MyInt>(h2).value, 2);
-        data->resolve<MyInt>(h2).ext_list = &list;
-        EXPECT_EQ(data->resolve<MyInt>(h3).value, 3);
-        data->resolve<MyInt>(h3).ext_list = &list;
-        EXPECT_EQ(MyInt::live_cnt, 3);
+        EXPECT_EQ(data->allocated(), Size(*data).add<MyObj>(3).value);
+        EXPECT_EQ(data->resolve<MyObj>(h1).value, 1);
+        data->resolve<MyObj>(h1).ext_list = &list;
+        EXPECT_EQ(data->resolve<MyObj>(h2).value, 2);
+        data->resolve<MyObj>(h2).ext_list = &list;
+        EXPECT_EQ(data->resolve<MyObj>(h3).value, 3);
+        data->resolve<MyObj>(h3).ext_list = &list;
+        EXPECT_EQ(MyObj::live_cnt, 3);
     }
-    EXPECT_EQ(MyInt::live_cnt, 0);
+    EXPECT_EQ(MyObj::live_cnt, 0);
     // Note: objects are destructed in construction order
     std::vector<int> expected = {1, 2, 3};
     EXPECT_EQ(list, expected);
 }
 
 TEST(TypedDataLayoutTest, array_handle_iteration) {
-    Layout<MyDomain> layout;
+    Layout<Domain<int>> layout;
     ArrayHandle handle = layout.reserve_array<int>(4);
     auto data = layout.create_data();
+    EXPECT_EQ(data->allocated(), Size(*data).add<int>(4).value);
     auto span = data->resolve_array<int>(handle);
     ASSERT_EQ(span.size(), 4);
     for (size_t i = 0; i < 4; ++i) {
@@ -128,7 +154,7 @@ TEST(TypedDataLayoutTest, array_handle_iteration) {
 }
 
 TEST(TypedDataLayoutTest, mixed_reserve_and_reserve_array) {
-    Layout<MyDomain> layout;
+    Layout<Domain<int>> layout;
     Handle h1 = layout.reserve<int>();
     ArrayHandle empty = layout.reserve_array<int>(0);
     EXPECT_TRUE(empty.valid());
@@ -136,6 +162,7 @@ TEST(TypedDataLayoutTest, mixed_reserve_and_reserve_array) {
     ArrayHandle ah = layout.reserve_array<int>(3);
     Handle h2 = layout.reserve<int>();
     auto data = layout.create_data();
+    EXPECT_EQ(data->allocated(), Size(*data).add<int>(5).value);
     ASSERT_EQ(data->all_of<int>().size(), 5);
     ASSERT_EQ(data->resolve_array<int>(empty).size(), 0);
     data->resolve<int>(h1) = 1;
@@ -153,7 +180,8 @@ TEST(TypedDataLayoutTest, mixed_reserve_and_reserve_array) {
 }
 
 TEST(TypedDataLayoutTest, multi_reserve_and_resolve) {
-    Layout<MyDomain> layout;
+    using MyLayout = Layout<Domain<int, double, std::string>>;
+    MyLayout layout;
     std::vector<Handle> ints;
     std::vector<Handle> doubles;
     std::vector<Handle> strings;
@@ -188,8 +216,8 @@ TEST(TypedDataLayoutTest, multi_reserve_and_resolve) {
         EXPECT_EQ(strings[i], layout.all_of<std::string>().at(i));
     }
 
-    DataUP<MyDomain> data = layout.create_data();
-    EXPECT_EQ(data->allocated(), 40 + cnt * sizeof(int) + cnt * sizeof(double) + cnt * sizeof(std::string));
+    MyLayout::DataUP data = layout.create_data();
+    EXPECT_EQ(data->allocated(), Size(*data).add<int>(cnt).add<double>(cnt).add<std::string>(cnt).value);
 
     ASSERT_EQ(data->all_of<int>().size(), cnt);
     ASSERT_EQ(data->all_of<double>().size(), cnt);
@@ -199,4 +227,52 @@ TEST(TypedDataLayoutTest, multi_reserve_and_resolve) {
         EXPECT_EQ(&data->resolve<double>(doubles[i]), &data->all_of<double>()[i]);
         EXPECT_EQ(&data->resolve<std::string>(strings[i]), &data->all_of<std::string>()[i]);
     }
+}
+
+TEST(TypedDataLayoutTest, base_class) {
+    ASSERT_EQ(MyObj::live_cnt, 0);
+    {
+        Layout<Domain<int, double>, MyObj> layout;
+        auto hi = layout.reserve<int>();
+        auto hd = layout.reserve<double>();
+        auto data = layout.create_data();
+        EXPECT_EQ(MyObj::live_cnt, 1);
+        EXPECT_EQ(data->allocated(), Size(*data).add<int>(1).add<double>(1).value);
+        data->value = 42;
+        data->resolve<int>(hi) = 10;
+        data->resolve<double>(hd) = 3.14;
+        EXPECT_EQ(data->value, 42);
+        EXPECT_EQ(data->resolve<int>(hi), 10);
+        EXPECT_EQ(data->resolve<double>(hd), 3.14);
+    }
+    EXPECT_EQ(MyObj::live_cnt, 0);
+}
+
+TEST(TypedDataLayoutTest, unused_types_do_not_affect_size) {
+    Layout<Domain<char, BigObj, int>> layout;
+    layout.reserve_array<char>(4);
+    layout.reserve<int>();
+    auto data = layout.create_data();
+    EXPECT_EQ(Size(*data).add<char>(4).add<BigObj>(0, false).add<int>(1).value, 68);
+    EXPECT_EQ(Size(*data).add<char>(4).add<BigObj>(0).add<int>(1).value, 40);
+    EXPECT_EQ(data->allocated(), 40);
+    EXPECT_EQ(data->all_of<BigObj>().size(), 0);
+}
+
+TEST(TypedDataLayoutTest, alignment) {
+    ASSERT_EQ(BigObj::live_cnt, 0);
+    {
+        Layout<Domain<char, int, BigObj>, BigObj> layout;
+        auto hc = layout.reserve<char>();
+        auto hi = layout.reserve<int>();
+        auto hb = layout.reserve<BigObj>();
+        auto data = layout.create_data();
+        EXPECT_EQ(BigObj::live_cnt, 2);
+        EXPECT_EQ(data->allocated(), Size(*data).add<char>(1).add<int>(1).add<BigObj>(1).value);
+        EXPECT_TRUE(is_aligned(data.get()));
+        EXPECT_TRUE(is_aligned(&data->resolve<char>(hc)));
+        EXPECT_TRUE(is_aligned(&data->resolve<int>(hi)));
+        EXPECT_TRUE(is_aligned(&data->resolve<BigObj>(hb)));
+    }
+    EXPECT_EQ(BigObj::live_cnt, 0);
 }
