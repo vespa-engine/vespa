@@ -47,6 +47,9 @@ func (n annNode) makeRows(tab *table) {
 	if top_k_hits := n.root.Field("top_k_hits"); top_k_hits.Valid() {
 		tab.str("found hits").str(fmt.Sprintf("%d", top_k_hits.AsLong())).commit()
 	}
+	if time := n.root.Field("time"); time.Valid() {
+		tab.str("time").str(fmt.Sprintf("%.3f ms", time.AsDouble())).commit()
+	}
 }
 
 func (p protonTrace) findAnnNodes() []annNode {
