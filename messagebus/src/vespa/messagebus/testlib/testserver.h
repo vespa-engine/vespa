@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/network/rpcnetwork.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
-#include <vespa/fnet/frt/supervisor.h>
 
 namespace mbus {
 
@@ -19,30 +19,30 @@ private:
     vespalib::Version _version;
 
 protected:
-    const vespalib::Version &getVersion() const override { return _version; }
+    const vespalib::Version& getVersion() const override { return _version; }
 
 public:
-    VersionedRPCNetwork(const RPCNetworkParams &params);
+    VersionedRPCNetwork(const RPCNetworkParams& params);
     ~VersionedRPCNetwork() override;
-    void setVersion(const vespalib::Version &version);
+    void setVersion(const vespalib::Version& version);
 };
 
 class TestServer {
 public:
     using UP = std::unique_ptr<TestServer>;
-    TestServer(const TestServer &) = delete;
-    TestServer & operator = (const TestServer &) = delete;
+    TestServer(const TestServer&) = delete;
+    TestServer& operator=(const TestServer&) = delete;
 
     VersionedRPCNetwork net;
-    MessageBus mb;
+    MessageBus          mb;
 
-    TestServer(const Identity &ident, const RoutingSpec &spec, const Slobrok &slobrok,
+    TestServer(const Identity& ident, const RoutingSpec& spec, const Slobrok& slobrok,
                IProtocol::SP protocol = IProtocol::SP());
-    TestServer(const MessageBusParams &mbusParams, const RPCNetworkParams &netParams);
+    TestServer(const MessageBusParams& mbusParams, const RPCNetworkParams& netParams);
     ~TestServer();
 
-    bool waitSlobrok(const string &pattern, uint32_t cnt = 1);
-    bool waitState(const SlobrokState &slobrokState);
+    bool waitSlobrok(const string& pattern, uint32_t cnt = 1);
+    bool waitState(const SlobrokState& slobrokState);
 };
 
 } // namespace mbus

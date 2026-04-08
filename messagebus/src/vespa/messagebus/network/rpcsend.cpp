@@ -1,19 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "rpcsend.h"
+
 #include "rpcsend_private.h"
 #include "rpcserviceaddress.h"
-#include <vespa/messagebus/network/rpcnetwork.h>
-#include <vespa/messagebus/tracelevel.h>
+
+#include <vespa/fnet/channel.h>
+#include <vespa/fnet/frt/reflection.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/metadata_extractor.h>
-#include <vespa/fnet/channel.h>
-#include <vespa/fnet/frt/reflection.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/lambdatask.h>
-
+#include <vespa/messagebus/network/rpcnetwork.h>
+#include <vespa/messagebus/tracelevel.h>
 #include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string;
 using vespalib::makeLambdaTask;
@@ -25,31 +26,29 @@ using network::internal::SendContext;
 
 namespace {
 
-class FillByCopy final : public PayLoadFiller
-{
+class FillByCopy final : public PayLoadFiller {
 public:
-    FillByCopy(BlobRef payload) : _payload(payload) { }
-    void fill(FRT_Values & v) const override {
-        v.AddData(_payload.data(), _payload.size());
-    }
-    void fill(const vespalib::Memory & name, vespalib::slime::Cursor & v) const override {
+    FillByCopy(BlobRef payload) : _payload(payload) {}
+    void fill(FRT_Values& v) const override { v.AddData(_payload.data(), _payload.size()); }
+    void fill(const vespalib::Memory& name, vespalib::slime::Cursor& v) const override {
         v.setData(name, vespalib::Memory(_payload.data(), _payload.size()));
     }
+
 private:
     BlobRef _payload;
 };
 
-class FillByHandover final : public PayLoadFiller
-{
+class FillByHandover final : public PayLoadFiller {
 public:
-    FillByHandover(Blob payload) : _payload(std::move(payload)) { }
-    void fill(FRT_Values & v) const override {
+    FillByHandover(Blob payload) : _payload(std::move(payload)) {}
+    void fill(FRT_Values& v) const override {
         size_t sz = _payload.size();
         v.AddData(std::move(_payload.payload()), sz);
     }
-    void fill(const vespalib::Memory & name, vespalib::slime::Cursor & v) const override {
+    void fill(const vespalib::Memory& name, vespalib::slime::Cursor& v) const override {
         v.setData(name, vespalib::Memory(_payload.data(), _payload.size()));
     }
+
 private:
     mutable Blob _payload;
 };
@@ -59,9 +58,7 @@ private:
 class AlwaysEmptyMetadataExtractor final : public MetadataExtractor {
 public:
     ~AlwaysEmptyMetadataExtractor() override = default;
-    std::optional<std::string> extract_value(std::string_view) const override {
-        return std::nullopt;
-    }
+    std::optional<std::string> extract_value(std::string_view) const override { return std::nullopt; }
     [[nodiscard]] static const AlwaysEmptyMetadataExtractor& instance() noexcept {
         static const AlwaysEmptyMetadataExtractor sentinel;
         return sentinel;
@@ -70,19 +67,14 @@ public:
 
 } // namespace
 
-RPCSend::RPCSend()
-    : _net(nullptr),
-      _clientIdent("client"),
-      _serverIdent("server")
-{ }
+RPCSend::RPCSend() : _net(nullptr), _clientIdent("client"), _serverIdent("server") {
+}
 
 RPCSend::~RPCSend() = default;
 
-void
-RPCSend::attach(RPCNetwork &net, CapabilitySet required_capabilities)
-{
+void RPCSend::attach(RPCNetwork& net, CapabilitySet required_capabilities) {
     _net = &net;
-    const string &prefix = _net->getIdentity().getServicePrefix();
+    const string& prefix = _net->getIdentity().getServicePrefix();
     if (!prefix.empty()) {
         _clientIdent = make_string("'%s'", prefix.c_str());
         _serverIdent = _clientIdent;
@@ -92,9 +84,8 @@ RPCSend::attach(RPCNetwork &net, CapabilitySet required_capabilities)
     build(builder, required_capabilities);
 }
 
-void
-RPCSend::replyError(FRT_RPCRequest *req, const vespalib::Version &version, uint32_t traceLevel, const Error &err)
-{
+void RPCSend::replyError(FRT_RPCRequest* req, const vespalib::Version& version, uint32_t traceLevel,
+                         const Error& err) {
     Reply::UP reply(new EmptyReply());
     reply->setContext(Context(new ReplyContext(*req, version)));
     reply->getTrace().setLevel(traceLevel);
@@ -102,40 +93,34 @@ RPCSend::replyError(FRT_RPCRequest *req, const vespalib::Version &version, uint3
     handleReply(std::move(reply));
 }
 
-void
-RPCSend::handleDiscard(Context ctx)
-{
+void RPCSend::handleDiscard(Context ctx) {
     ReplyContext::UP tmp(static_cast<ReplyContext*>(ctx.value.PTR));
-    FRT_RPCRequest &req = tmp->getRequest();
-    FNET_Channel *chn = req.GetContext()._value.CHANNEL;
+    FRT_RPCRequest&  req = tmp->getRequest();
+    FNET_Channel*    chn = req.GetContext()._value.CHANNEL;
     req.internal_subref();
     chn->Free();
 }
 
-void
-RPCSend::sendByHandover(RoutingNode &recipient, const vespalib::Version &version, Blob payload, duration timeRemaining)
-{
+void RPCSend::sendByHandover(RoutingNode& recipient, const vespalib::Version& version, Blob payload,
+                             duration timeRemaining) {
     send(recipient, version, FillByHandover(std::move(payload)), timeRemaining);
 }
 
-void
-RPCSend::send(RoutingNode &recipient, const vespalib::Version &version, BlobRef payload, duration timeRemaining)
-{
+void RPCSend::send(RoutingNode& recipient, const vespalib::Version& version, BlobRef payload,
+                   duration timeRemaining) {
     send(recipient, version, FillByCopy(payload), timeRemaining);
 }
 
-void
-RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
-              const PayLoadFiller & payload, duration timeRemaining)
-{
-    auto ctx = std::make_unique<SendContext>(recipient, timeRemaining);
-    auto &address = static_cast<RPCServiceAddress&>(recipient.getServiceAddress());
-    const Message &msg = recipient.getMessage();
-    Route route = recipient.getRoute();
-    Hop hop = route.removeHop(0);
+void RPCSend::send(RoutingNode& recipient, const vespalib::Version& version, const PayLoadFiller& payload,
+                   duration timeRemaining) {
+    auto           ctx = std::make_unique<SendContext>(recipient, timeRemaining);
+    auto&          address = static_cast<RPCServiceAddress&>(recipient.getServiceAddress());
+    const Message& msg = recipient.getMessage();
+    Route          route = recipient.getRoute();
+    Hop            hop = route.removeHop(0);
 
-    FRT_RPCRequest *req = _net->allocRequest();
-    encodeRequest(*req, version, route, address, msg, recipient.getTrace().getLevel(),  payload, timeRemaining);
+    FRT_RPCRequest* req = _net->allocRequest();
+    encodeRequest(*req, version, route, address, msg, recipient.getTrace().getLevel(), payload, timeRemaining);
 
     if (ctx->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         ctx->getTrace().trace(TraceLevel::SEND_RECEIVE,
@@ -147,52 +132,49 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
     if (hop.getIgnoreResult()) {
         address.getTarget().getFRTTarget().InvokeVoid(req);
         if (ctx->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
-            ctx->getTrace().trace(TraceLevel::SEND_RECEIVE,
-                                  make_string("Not waiting for a reply from '%s'.", address.getServiceName().c_str()));
+            ctx->getTrace().trace(TraceLevel::SEND_RECEIVE, make_string("Not waiting for a reply from '%s'.",
+                                                                        address.getServiceName().c_str()));
         }
         auto reply = std::make_unique<EmptyReply>();
         reply->getTrace().swap(ctx->getTrace());
         _net->getOwner().deliverReply(std::move(reply), recipient);
     } else {
-        SendContext *ptr = ctx.release();
+        SendContext* ptr = ctx.release();
         req->SetContext(FNET_Context(ptr));
         address.getTarget().getFRTTarget().InvokeAsync(req, vespalib::to_s(ptr->getTimeout()), this);
     }
 }
 
-void
-RPCSend::RequestDone(FRT_RPCRequest *req)
-{
+void RPCSend::RequestDone(FRT_RPCRequest* req) {
     doRequestDone(req);
 }
 
-void
-RPCSend::doRequestDone(FRT_RPCRequest *req) {
+void RPCSend::doRequestDone(FRT_RPCRequest* req) {
     SendContext::UP ctx(static_cast<SendContext*>(req->GetContext()._value.VOIDP));
-    const string &serviceName = static_cast<RPCServiceAddress&>(ctx->getRecipient().getServiceAddress()).getServiceName();
+    const string&   serviceName =
+        static_cast<RPCServiceAddress&>(ctx->getRecipient().getServiceAddress()).getServiceName();
     Reply::UP reply;
-    Error error;
-    Trace & trace = ctx->getTrace();
+    Error     error;
+    Trace&    trace = ctx->getTrace();
     if (!req->CheckReturnTypes(getReturnSpec())) {
         reply = std::make_unique<EmptyReply>();
         switch (req->GetErrorCode()) {
-            case FRTE_RPC_TIMEOUT:
-                error = Error(ErrorCode::TIMEOUT,
-                              make_string("A timeout occurred while waiting for '%s' (%g seconds expired); %s",
-                                          serviceName.c_str(), vespalib::to_s(ctx->getTimeout()), req->GetErrorMessage()));
-                break;
-            case FRTE_RPC_CONNECTION:
-                error = Error(ErrorCode::CONNECTION_ERROR,
-                              make_string("A connection error occurred for '%s'; %s",
-                                          serviceName.c_str(), req->GetErrorMessage()));
-                break;
-            default:
-                error = Error(ErrorCode::NETWORK_ERROR,
-                              make_string("A network error occurred for '%s'; %s",
-                                          serviceName.c_str(), req->GetErrorMessage()));
+        case FRTE_RPC_TIMEOUT:
+            error =
+                Error(ErrorCode::TIMEOUT,
+                      make_string("A timeout occurred while waiting for '%s' (%g seconds expired); %s",
+                                  serviceName.c_str(), vespalib::to_s(ctx->getTimeout()), req->GetErrorMessage()));
+            break;
+        case FRTE_RPC_CONNECTION:
+            error = Error(ErrorCode::CONNECTION_ERROR, make_string("A connection error occurred for '%s'; %s",
+                                                                   serviceName.c_str(), req->GetErrorMessage()));
+            break;
+        default:
+            error = Error(ErrorCode::NETWORK_ERROR, make_string("A network error occurred for '%s'; %s",
+                                                                serviceName.c_str(), req->GetErrorMessage()));
         }
     } else {
-        FRT_Values &ret = *req->GetReturn();
+        FRT_Values& ret = *req->GetReturn();
         reply = createReply(ret, serviceName, error, trace);
     }
     if (trace.shouldTrace(TraceLevel::SEND_RECEIVE)) {
@@ -207,11 +189,10 @@ RPCSend::doRequestDone(FRT_RPCRequest *req) {
     req->internal_subref();
 }
 
-std::unique_ptr<Reply>
-RPCSend::decode(std::string_view protocolName, const vespalib::Version & version, BlobRef payload, Error & error) const
-{
-    Reply::UP reply;
-    IProtocol * protocol = _net->getOwner().getProtocol(protocolName);
+std::unique_ptr<Reply> RPCSend::decode(std::string_view protocolName, const vespalib::Version& version,
+                                       BlobRef payload, Error& error) const {
+    Reply::UP  reply;
+    IProtocol* protocol = _net->getOwner().getProtocol(protocolName);
     if (protocol != nullptr) {
         Routable::UP routable = protocol->decode(version, payload);
         if (routable) {
@@ -226,24 +207,22 @@ RPCSend::decode(std::string_view protocolName, const vespalib::Version & version
         }
 
     } else {
-        error = Error(ErrorCode::UNKNOWN_PROTOCOL,
-                      make_string("Protocol '%s' is not known by %s.", std::string(protocolName).c_str(), _serverIdent.c_str()));
+        error =
+            Error(ErrorCode::UNKNOWN_PROTOCOL, make_string("Protocol '%s' is not known by %s.",
+                                                           std::string(protocolName).c_str(), _serverIdent.c_str()));
     }
     return reply;
 }
 
-void
-RPCSend::handleReply(Reply::UP reply)
-{
+void RPCSend::handleReply(Reply::UP reply) {
     doHandleReply(std::move(reply));
 }
 
-void
-RPCSend::doHandleReply(Reply::UP reply) {
-    const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
+void RPCSend::doHandleReply(Reply::UP reply) {
+    const IProtocol* protocol = _net->getOwner().getProtocol(reply->getProtocol());
     ReplyContext::UP ctx(static_cast<ReplyContext*>(reply->getContext().value.PTR));
-    FRT_RPCRequest &req = ctx->getRequest();
-    string version = ctx->getVersion().toAbbreviatedString();
+    FRT_RPCRequest&  req = ctx->getRequest();
+    string           version = ctx->getVersion().toAbbreviatedString();
     if (reply->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         reply->getTrace().trace(TraceLevel::SEND_RECEIVE, make_string("Sending reply (version %s) from %s.",
                                                                       version.c_str(), _serverIdent.c_str()));
@@ -255,36 +234,33 @@ RPCSend::doHandleReply(Reply::UP reply) {
             reply->addError(Error(ErrorCode::ENCODE_ERROR, "An error occurred while encoding the reply, see log."));
         }
     }
-    FRT_Values &ret = *req.GetReturn();
+    FRT_Values& ret = *req.GetReturn();
     createResponse(ret, version, *reply, std::move(payload));
     req.Return();
 }
 
-void
-RPCSend::invoke(FRT_RPCRequest *req)
-{
+void RPCSend::invoke(FRT_RPCRequest* req) {
     req->Detach();
     doRequest(req);
 }
 
-void
-RPCSend::doRequest(FRT_RPCRequest *req)
-{
-    FRT_Values &args = *req->GetParams();
+void RPCSend::doRequest(FRT_RPCRequest* req) {
+    FRT_Values&             args = *req->GetParams();
     std::unique_ptr<Params> params = toParams(args);
-    IProtocol * protocol = _net->getOwner().getProtocol(params->getProtocol());
+    IProtocol*              protocol = _net->getOwner().getProtocol(params->getProtocol());
     if (protocol == nullptr) {
         replyError(req, params->getVersion(), params->getTraceLevel(),
-                   Error(ErrorCode::UNKNOWN_PROTOCOL, make_string("Protocol '%s' is not known by %s.",
-                                                                  std::string(params->getProtocol()).c_str(), _serverIdent.c_str())));
+                   Error(ErrorCode::UNKNOWN_PROTOCOL,
+                         make_string("Protocol '%s' is not known by %s.", std::string(params->getProtocol()).c_str(),
+                                     _serverIdent.c_str())));
         return;
     }
     Routable::UP routable = protocol->decode(params->getVersion(), params->getPayload());
     req->DiscardBlobs();
-    if ( ! routable ) {
+    if (!routable) {
         replyError(req, params->getVersion(), params->getTraceLevel(),
-                   Error(ErrorCode::DECODE_ERROR,
-                         make_string("Protocol '%s' failed to decode routable.", std::string(params->getProtocol()).c_str())));
+                   Error(ErrorCode::DECODE_ERROR, make_string("Protocol '%s' failed to decode routable.",
+                                                              std::string(params->getProtocol()).c_str())));
         return;
     }
     if (routable->isReply()) {
@@ -292,7 +268,7 @@ RPCSend::doRequest(FRT_RPCRequest *req)
                    Error(ErrorCode::DECODE_ERROR, "Payload decoded to a reply when expecting a message."));
         return;
     }
-    Message::UP msg(static_cast<Message*>(routable.release()));
+    Message::UP      msg(static_cast<Message*>(routable.release()));
     std::string_view route = params->getRoute();
     if (!route.empty()) {
         msg->setRoute(Route::parse(route));
@@ -306,8 +282,8 @@ RPCSend::doRequest(FRT_RPCRequest *req)
     msg->getTrace().setLevel(params->getTraceLevel());
     if (msg->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         msg->getTrace().trace(TraceLevel::SEND_RECEIVE,
-                              make_string("Message (type %d) received at %s for session '%s'.",
-                                          msg->getType(), _serverIdent.c_str(), string(params->getSession()).c_str()));
+                              make_string("Message (type %d) received at %s for session '%s'.", msg->getType(),
+                                          _serverIdent.c_str(), string(params->getSession()).c_str()));
     }
     if (auto meta_extractor = params->steal_metadata_extractor()) {
         msg->extractMetadata(*meta_extractor);

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "messenger.h"
+
 #include <vespa/vespalib/util/gate.h>
 
 #include <vespa/log/log.h>
@@ -8,11 +9,8 @@ LOG_SETUP(".messenger");
 
 namespace {
 
-template<class T>
-struct DeleteFunctor
-{
-    bool operator()(T *ptr) const
-    {
+template <class T> struct DeleteFunctor {
+    bool operator()(T* ptr) const {
         delete ptr;
         return true;
     }
@@ -20,56 +18,42 @@ struct DeleteFunctor
 
 class SyncTask : public mbus::Messenger::ITask {
 private:
-    vespalib::Gate &_gate;
+    vespalib::Gate& _gate;
 
 public:
-    SyncTask(vespalib::Gate &gate)
-        : _gate(gate)
-    { }
+    SyncTask(vespalib::Gate& gate) : _gate(gate) {}
 
     ~SyncTask() override;
 
-    void run() override { }
+    void run() override {}
 
-    uint8_t priority() const override {
-        return 255;
-    }
+    uint8_t priority() const override { return 255; }
 };
 
-SyncTask::~SyncTask()
-{
+SyncTask::~SyncTask() {
     _gate.countDown();
 }
 
 class AddRecurrentTask : public mbus::Messenger::ITask {
 private:
-    std::vector<ITask*>       &_tasks;
+    std::vector<ITask*>&       _tasks;
     mbus::Messenger::ITask::UP _task;
 
 public:
-    AddRecurrentTask(std::vector<ITask*> &tasks, mbus::Messenger::ITask::UP task)
-        : _tasks(tasks),
-          _task(std::move(task))
-    { }
+    AddRecurrentTask(std::vector<ITask*>& tasks, mbus::Messenger::ITask::UP task)
+        : _tasks(tasks), _task(std::move(task)) {}
 
-    void run() override {
-        _tasks.push_back(_task.release());
-    }
+    void run() override { _tasks.push_back(_task.release()); }
 
-    uint8_t priority() const override {
-        return 255;
-    }
+    uint8_t priority() const override { return 255; }
 };
 
 class DiscardRecurrentTasks : public SyncTask {
 private:
-    std::vector<ITask*> &_tasks;
+    std::vector<ITask*>& _tasks;
 
 public:
-    DiscardRecurrentTasks(vespalib::Gate &gate, std::vector<ITask*> &tasks)
-        : SyncTask(gate),
-          _tasks(tasks)
-    { }
+    DiscardRecurrentTasks(vespalib::Gate& gate, std::vector<ITask*>& tasks) : SyncTask(gate), _tasks(tasks) {}
 
     void run() override {
         std::for_each(_tasks.begin(), _tasks.end(), DeleteFunctor<ITask>());
@@ -77,26 +61,17 @@ public:
         SyncTask::run();
     }
 
-    uint8_t priority() const override {
-        return 255;
-    }
+    uint8_t priority() const override { return 255; }
 };
 
-} // anonymous
+} // namespace
 
 namespace mbus {
 
-Messenger::Messenger()
-    : _lock(),
-      _cond(),
-      _children(),
-      _queue(),
-      _closed(false),
-      _thread()
-{}
+Messenger::Messenger() : _lock(), _cond(), _children(), _queue(), _closed(false), _thread() {
+}
 
-Messenger::~Messenger()
-{
+Messenger::~Messenger() {
     {
         std::lock_guard guard(_lock);
         _closed = true;
@@ -106,10 +81,9 @@ Messenger::~Messenger()
         _thread.join();
     }
     std::for_each(_children.begin(), _children.end(), DeleteFunctor<ITask>());
-    if ( ! _queue.empty()) {
-        LOG(warning,
-            "Messenger shut down with pending tasks, "
-            "please review shutdown logic.");
+    if (!_queue.empty()) {
+        LOG(warning, "Messenger shut down with pending tasks, "
+                     "please review shutdown logic.");
         while (!_queue.empty()) {
             delete _queue.front();
             _queue.pop();
@@ -117,9 +91,7 @@ Messenger::~Messenger()
     }
 }
 
-void
-Messenger::run()
-{
+void Messenger::run() {
     while (true) {
         ITask::UP task;
         {
@@ -138,53 +110,43 @@ Messenger::run()
         if (task) {
             try {
                 task->run();
-            } catch (const std::exception &e) {
-                LOG(warning, "An exception was thrown while running "
-                    "a task; %s", e.what());
+            } catch (const std::exception& e) {
+                LOG(warning,
+                    "An exception was thrown while running "
+                    "a task; %s",
+                    e.what());
             }
         }
-        for (ITask * itask : _children) {
+        for (ITask* itask : _children) {
             itask->run();
         }
     }
 }
 
-void
-Messenger::addRecurrentTask(ITask::UP task)
-{
+void Messenger::addRecurrentTask(ITask::UP task) {
     enqueue(std::make_unique<AddRecurrentTask>(_children, std::move(task)));
 }
 
-void
-Messenger::discardRecurrentTasks()
-{
+void Messenger::discardRecurrentTasks() {
     vespalib::Gate gate;
     enqueue(std::make_unique<DiscardRecurrentTasks>(gate, _children));
     gate.await();
 }
 
-bool
-Messenger::start()
-{
-    _thread = std::thread([this](){run();});
+bool Messenger::start() {
+    _thread = std::thread([this]() { run(); });
     return true;
 }
 
-void
-Messenger::deliverMessage(Message::UP msg, IMessageHandler &handler)
-{
+void Messenger::deliverMessage(Message::UP msg, IMessageHandler& handler) {
     handler.handleMessage(std::move(msg));
 }
 
-void
-Messenger::deliverReply(Reply::UP reply, IReplyHandler &handler)
-{
+void Messenger::deliverReply(Reply::UP reply, IReplyHandler& handler) {
     handler.handleReply(std::move(reply));
 }
 
-void
-Messenger::enqueue(ITask::UP task)
-{
+void Messenger::enqueue(ITask::UP task) {
     std::unique_lock guard(_lock);
     if (!_closed) {
         _queue.push(task.release());
@@ -195,17 +157,13 @@ Messenger::enqueue(ITask::UP task)
     }
 }
 
-void
-Messenger::sync()
-{
+void Messenger::sync() {
     vespalib::Gate gate;
     enqueue(std::make_unique<SyncTask>(gate));
     gate.await();
 }
 
-bool
-Messenger::isEmpty() const
-{
+bool Messenger::isEmpty() const {
     std::lock_guard guard(_lock);
     return _queue.empty();
 }

@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "identity.h"
 #include "inetwork.h"
 #include "rpcsendadapter.h"
 #include "rpctarget.h"
-#include "identity.h"
+
+#include <vespa/fnet/frt/invokable.h>
 #include <vespa/messagebus/blob.h>
 #include <vespa/messagebus/blobref.h>
 #include <vespa/messagebus/message.h>
@@ -13,14 +15,15 @@
 #include <vespa/vespalib/component/versionspecification.h>
 #include <vespa/vespalib/net/tls/capability_set.h>
 #include <vespa/vespalib/util/compressionconfig.h>
-#include <vespa/fnet/frt/invokable.h>
 
 class FNET_Transport;
 
 namespace slobrok {
-    namespace api { class RegisterAPI; }
-    class ConfiguratorFactory;
+namespace api {
+class RegisterAPI;
 }
+class ConfiguratorFactory;
+} // namespace slobrok
 
 namespace mbus {
 
@@ -36,39 +39,39 @@ class RPCServiceAddress;
 class RPCNetwork : public FRT_Invokable, public INetwork {
 private:
     using CompressionConfig = vespalib::compression::CompressionConfig;
-    using CapabilitySet     = vespalib::net::tls::CapabilitySet;
+    using CapabilitySet = vespalib::net::tls::CapabilitySet;
     struct SendContext : public RPCTarget::IVersionHandler {
         std::mutex                _lock;
-        RPCNetwork               &_net;
-        const Message            &_msg;
+        RPCNetwork&               _net;
+        const Message&            _msg;
         uint32_t                  _traceLevel;
         std::vector<RoutingNode*> _recipients;
         bool                      _hasError;
         uint32_t                  _pending;
         vespalib::Version         _version;
 
-        SendContext(RPCNetwork &net, const Message &msg, const std::vector<RoutingNode*> &recipients);
-        void handleVersion(const vespalib::Version *version) override;
+        SendContext(RPCNetwork& net, const Message& msg, const std::vector<RoutingNode*>& recipients);
+        void handleVersion(const vespalib::Version* version) override;
     };
 
     using SendAdapterMap = std::map<vespalib::Version, RPCSendAdapter*>;
 
-    INetworkOwner                                     *_owner;
-    Identity                                           _ident;
-    std::unique_ptr<FNET_Transport>                    _transport;
-    std::unique_ptr<FRT_Supervisor>                    _orb;
-    FNET_Scheduler                                    &_scheduler;
-    std::unique_ptr<slobrok::ConfiguratorFactory>      _slobrokCfgFactory;
-    std::unique_ptr<slobrok::api::IMirrorAPI>          _mirror;
-    std::unique_ptr<slobrok::api::RegisterAPI>         _regAPI;
-    int                                                _requestedPort;
-    std::unique_ptr<RPCTargetPool>                     _targetPool;
-    std::unique_ptr<FNET_Task>                         _targetPoolTask;
-    std::unique_ptr<RPCServicePool>                    _servicePool;
-    std::unique_ptr<RPCSendAdapter>                    _sendV2;
-    SendAdapterMap                                     _sendAdapters;
-    CompressionConfig                                  _compressionConfig;
-    CapabilitySet                                      _required_capabilities;
+    INetworkOwner*                                _owner;
+    Identity                                      _ident;
+    std::unique_ptr<FNET_Transport>               _transport;
+    std::unique_ptr<FRT_Supervisor>               _orb;
+    FNET_Scheduler&                               _scheduler;
+    std::unique_ptr<slobrok::ConfiguratorFactory> _slobrokCfgFactory;
+    std::unique_ptr<slobrok::api::IMirrorAPI>     _mirror;
+    std::unique_ptr<slobrok::api::RegisterAPI>    _regAPI;
+    int                                           _requestedPort;
+    std::unique_ptr<RPCTargetPool>                _targetPool;
+    std::unique_ptr<FNET_Task>                    _targetPoolTask;
+    std::unique_ptr<RPCServicePool>               _servicePool;
+    std::unique_ptr<RPCSendAdapter>               _sendV2;
+    SendAdapterMap                                _sendAdapters;
+    CompressionConfig                             _compressionConfig;
+    CapabilitySet                                 _required_capabilities;
 
     /**
      * Resolves and assigns a service address for the given recipient using the
@@ -81,7 +84,7 @@ private:
      * @param serviceName The name of the service to resolve.
      * @return Any error encountered, or ErrorCode::NONE.
      */
-    Error resolveServiceAddress(RoutingNode &recipient, const string &serviceName);
+    Error resolveServiceAddress(RoutingNode& recipient, const string& serviceName);
 
     /**
      * This method is a callback invoked after {@link #send(Message, List)} once
@@ -92,7 +95,7 @@ private:
      *
      * @param ctx All the required send-data.
      */
-    void send(SendContext &ctx);
+    void send(SendContext& ctx);
 
     static std::string buildRecipientListString(const SendContext& ctx);
 
@@ -109,7 +112,7 @@ protected:
      *
      * @return The version to claim to be.
      */
-    virtual const vespalib::Version &getVersion() const;
+    virtual const vespalib::Version& getVersion() const;
 
     /**
      * The network uses a cache of RPC targets (see {@link RPCTargetPool}) that
@@ -128,7 +131,7 @@ public:
      *
      * @param params A complete set of parameters.
      */
-    explicit RPCNetwork(const RPCNetworkParams &params);
+    explicit RPCNetwork(const RPCNetworkParams& params);
 
     /**
      * Destruct
@@ -141,14 +144,14 @@ public:
      *
      * @return network owner
      **/
-    INetworkOwner &getOwner() { return *_owner; }
+    INetworkOwner& getOwner() { return *_owner; }
 
     /**
      * Returns the identity of this network.
      *
      * @return The identity.
      */
-    const Identity &getIdentity() const { return _ident; }
+    const Identity& getIdentity() const { return _ident; }
 
     /**
      * Obtain the port number this network is listening to. This method will
@@ -164,7 +167,7 @@ public:
      *
      * @return a new rpc request
      **/
-    FRT_RPCRequest *allocRequest();
+    FRT_RPCRequest* allocRequest();
 
     /**
      * Returns an RPC target for the given service address.
@@ -172,7 +175,7 @@ public:
      * @param address The address for which to return a target.
      * @return The target to send to.
      */
-    RPCTarget::SP getTarget(const RPCServiceAddress &address);
+    RPCTarget::SP getTarget(const RPCServiceAddress& address);
 
     /**
      * Obtain a reference to the internal scheduler. This will be mostly used
@@ -180,7 +183,7 @@ public:
      *
      * @return internal scheduler
      **/
-    FNET_Scheduler &getScheduler() { return _scheduler; }
+    FNET_Scheduler& getScheduler() { return _scheduler; }
 
     /**
      * Obtain a reference to the internal supervisor. This is used by
@@ -188,7 +191,7 @@ public:
      *
      * @return The supervisor.
      */
-    FRT_Supervisor &getSupervisor() { return *_orb; }
+    FRT_Supervisor& getSupervisor() { return *_orb; }
 
     /**
      * Deliver an error reply to the recipients of a {@link SendContext} in a
@@ -198,7 +201,7 @@ public:
      * @param errCode The error code to return.
      * @param errMsg  The error string to return.
      */
-    void replyError(const SendContext &ctx, uint32_t errCode, const string &errMsg);
+    void replyError(const SendContext& ctx, uint32_t errCode, const string& errMsg);
 
     /**
      * Determines and returns the send adapter that is compatible with the given
@@ -207,23 +210,23 @@ public:
      * @param version The version for which to return an adapter.
      * @return The compatible adapter.
      */
-    RPCSendAdapter *getSendAdapter(const vespalib::Version &version);
+    RPCSendAdapter* getSendAdapter(const vespalib::Version& version);
 
-    void attach(INetworkOwner &owner) override;
+    void attach(INetworkOwner& owner) override;
     const string getConnectionSpec() const override;
     bool start() override;
     bool waitUntilReady(duration timout) const override;
-    void registerSession(const string &session) override;
-    void unregisterSession(const string &session) override;
-    bool allocServiceAddress(RoutingNode &recipient) override;
-    void freeServiceAddress(RoutingNode &recipient) override;
-    void send(const Message &msg, const std::vector<RoutingNode*> &recipients) override;
+    void registerSession(const string& session) override;
+    void unregisterSession(const string& session) override;
+    bool allocServiceAddress(RoutingNode& recipient) override;
+    void freeServiceAddress(RoutingNode& recipient) override;
+    void send(const Message& msg, const std::vector<RoutingNode*>& recipients) override;
     void sync() override;
     void shutdown() override;
     void postShutdownHook() override;
-    const slobrok::api::IMirrorAPI &getMirror() const override;
+    const slobrok::api::IMirrorAPI& getMirror() const override;
     CompressionConfig getCompressionConfig() { return _compressionConfig; }
-    void invoke(FRT_RPCRequest *req);
+    void invoke(FRT_RPCRequest* req);
 };
 
 } // namespace mbus

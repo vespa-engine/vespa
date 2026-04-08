@@ -20,9 +20,7 @@ using namespace mbus;
 
 namespace {
 
-bool
-testErrorDirective(const IHopDirective & dir, const string &msg)
-{
+bool testErrorDirective(const IHopDirective& dir, const string& msg) {
     bool failed = false;
     EXPECT_EQ(IHopDirective::TYPE_ERROR, dir.getType()) << (failed = true, "");
     if (failed) {
@@ -32,9 +30,7 @@ testErrorDirective(const IHopDirective & dir, const string &msg)
     return !failed;
 }
 
-bool
-testError(const Hop &hop, const string &msg)
-{
+bool testError(const Hop& hop, const string& msg) {
     LOG(info, "%s", hop.toDebugString().c_str());
     bool failed = false;
     EXPECT_EQ(1u, hop.getNumDirectives()) << (failed = true, "");
@@ -47,9 +43,7 @@ testError(const Hop &hop, const string &msg)
     return true;
 }
 
-bool
-testError(const Route &route, const string &msg)
-{
+bool testError(const Route& route, const string& msg) {
     bool failed = false;
     EXPECT_EQ(1u, route.getNumHops()) << (failed = true, "");
     if (failed) {
@@ -61,9 +55,7 @@ testError(const Route &route, const string &msg)
     return true;
 }
 
-bool
-testPolicyDirective(const IHopDirective & dir, const string &name, const string &param)
-{
+bool testPolicyDirective(const IHopDirective& dir, const string& name, const string& param) {
     bool failed = false;
     EXPECT_EQ(IHopDirective::TYPE_POLICY, dir.getType()) << (failed = true, "");
     if (failed) {
@@ -77,9 +69,7 @@ testPolicyDirective(const IHopDirective & dir, const string &name, const string 
     return !failed;
 }
 
-bool
-testRouteDirective(const IHopDirective & dir, const string &name)
-{
+bool testRouteDirective(const IHopDirective& dir, const string& name) {
     bool failed = false;
     EXPECT_EQ(IHopDirective::TYPE_ROUTE, dir.getType()) << (failed = true, "");
     if (failed) {
@@ -89,9 +79,7 @@ testRouteDirective(const IHopDirective & dir, const string &name)
     return !failed;
 }
 
-bool
-testTcpDirective(const IHopDirective & dir, const string &host, uint32_t port, const string &session)
-{
+bool testTcpDirective(const IHopDirective& dir, const string& host, uint32_t port, const string& session) {
     bool failed = false;
     EXPECT_EQ(IHopDirective::TYPE_TCP, dir.getType()) << (failed = true, "");
     if (failed) {
@@ -109,9 +97,7 @@ testTcpDirective(const IHopDirective & dir, const string &host, uint32_t port, c
     return !failed;
 }
 
-bool
-testVerbatimDirective(const IHopDirective & dir, const string &image)
-{
+bool testVerbatimDirective(const IHopDirective& dir, const string& image) {
     bool failed = false;
     EXPECT_EQ(IHopDirective::TYPE_VERBATIM, dir.getType()) << (failed = true, "");
     if (failed) {
@@ -121,7 +107,7 @@ testVerbatimDirective(const IHopDirective & dir, const string &image)
     return !failed;
 }
 
-}
+} // namespace
 
 class RouteParserTest : public testing::Test {
 protected:
@@ -132,8 +118,7 @@ protected:
 RouteParserTest::RouteParserTest() = default;
 RouteParserTest::~RouteParserTest() = default;
 
-TEST_F(RouteParserTest, test_hop_parser)
-{
+TEST_F(RouteParserTest, test_hop_parser) {
     {
         Hop hop = Hop::parse("foo");
         EXPECT_EQ(1u, hop.getNumDirectives());
@@ -176,13 +161,13 @@ TEST_F(RouteParserTest, test_hop_parser)
                              "]");
         EXPECT_EQ(1u, hop.getNumDirectives());
         EXPECT_TRUE(testPolicyDirective(hop.getDirective(0), "DocumentRouteSelector",
-                                       "raw:route[2]\n"
-                                       "route[0].name \"foo\"\n"
-                                       "route[0].selector \"testdoc\"\n"
-                                       "route[0].feed \"myfeed\"\n"
-                                       "route[1].name \"bar\"\n"
-                                       "route[1].selector \"other\"\n"
-                                       "route[1].feed \"myfeed\"\n"));
+                                        "raw:route[2]\n"
+                                        "route[0].name \"foo\"\n"
+                                        "route[0].selector \"testdoc\"\n"
+                                        "route[0].feed \"myfeed\"\n"
+                                        "route[1].name \"bar\"\n"
+                                        "route[1].selector \"other\"\n"
+                                        "route[1].feed \"myfeed\"\n"));
     }
     {
         Hop hop = Hop::parse("[DocumentRouteSelector:raw:route[1]\n"
@@ -192,33 +177,31 @@ TEST_F(RouteParserTest, test_hop_parser)
                              "]");
         EXPECT_EQ(1u, hop.getNumDirectives());
         EXPECT_TRUE(testPolicyDirective(hop.getDirective(0), "DocumentRouteSelector",
-                                       "raw:route[1]\n"
-                                       "route[0].name \"docproc/cluster.foo\"\n"
-                                       "route[0].selector \"testdoc\"\n"
-                                       "route[0].feed \"myfeed\"\n"));
+                                        "raw:route[1]\n"
+                                        "route[0].name \"docproc/cluster.foo\"\n"
+                                        "route[0].selector \"testdoc\"\n"
+                                        "route[0].feed \"myfeed\"\n"));
     }
 }
 
-TEST_F(RouteParserTest, test_hop_parser_errors)
-{
+TEST_F(RouteParserTest, test_hop_parser_errors) {
     EXPECT_TRUE(testError(Hop::parse(""), "Failed to parse empty string."));
     EXPECT_TRUE(testError(Hop::parse("[foo"), "Unexpected token '': syntax error"));
     EXPECT_TRUE(testError(Hop::parse("foo/[bar]]"), "Unexpected token ']': syntax error"));
     EXPECT_TRUE(testError(Hop::parse("foo bar"), "Failed to completely parse 'foo bar'."));
 }
 
-TEST_F(RouteParserTest, test_route_parser)
-{
+TEST_F(RouteParserTest, test_route_parser) {
     {
         Route route = Route::parse("foo bar/baz");
         EXPECT_EQ(2u, route.getNumHops());
         {
-            const Hop &hop = route.getHop(0);
+            const Hop& hop = route.getHop(0);
             EXPECT_EQ(1u, hop.getNumDirectives());
             EXPECT_TRUE(testVerbatimDirective(hop.getDirective(0), "foo"));
         }
         {
-            const Hop &hop = route.getHop(1);
+            const Hop& hop = route.getHop(1);
             EXPECT_EQ(2u, hop.getNumDirectives());
             EXPECT_TRUE(testVerbatimDirective(hop.getDirective(0), "bar"));
             EXPECT_TRUE(testVerbatimDirective(hop.getDirective(1), "baz"));
@@ -228,20 +211,19 @@ TEST_F(RouteParserTest, test_route_parser)
         Route route = Route::parse("[Extern:tcp/localhost:3633;itr/session] default");
         EXPECT_EQ(2u, route.getNumHops());
         {
-            const Hop &hop = route.getHop(0);
+            const Hop& hop = route.getHop(0);
             EXPECT_EQ(1u, hop.getNumDirectives());
             EXPECT_TRUE(testPolicyDirective(hop.getDirective(0), "Extern", "tcp/localhost:3633;itr/session"));
         }
         {
-            const Hop &hop = route.getHop(1);
+            const Hop& hop = route.getHop(1);
             EXPECT_EQ(1u, hop.getNumDirectives());
             EXPECT_TRUE(testVerbatimDirective(hop.getDirective(0), "default"));
         }
     }
 }
 
-TEST_F(RouteParserTest, test_route_parser_errors)
-{
+TEST_F(RouteParserTest, test_route_parser_errors) {
     EXPECT_TRUE(testError(Route::parse(""), "Failed to parse empty string."));
     EXPECT_TRUE(testError(Route::parse("foo [bar"), "Unexpected token '': syntax error"));
     EXPECT_TRUE(testError(Route::parse("foo bar/[baz]]"), "Unexpected token ']': syntax error"));

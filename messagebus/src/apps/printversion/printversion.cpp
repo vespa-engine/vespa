@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/component/vtag.h>
+
 #include <stdio.h>
 
-int main(int, char **)
-{
+int main(int, char**) {
     printf("version tag: %s\n", vespalib::VersionTag);
     printf("version tag date: %s\n", vespalib::VersionTagDate);
     printf("version tag system: %s\n", vespalib::VersionTagSystem);

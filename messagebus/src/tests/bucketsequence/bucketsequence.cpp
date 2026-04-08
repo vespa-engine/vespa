@@ -13,28 +13,25 @@ using namespace mbus;
 
 class MyMessage : public SimpleMessage {
 public:
-    MyMessage() : SimpleMessage("foo") { }
+    MyMessage() : SimpleMessage("foo") {}
     bool hasBucketSequence() const override { return true; }
 };
 
 TEST(BucketSequenceTest, bucketsequence_test) {
-    Slobrok slobrok;
-    TestServer server(MessageBusParams()
-                      .addProtocol(std::make_shared<SimpleProtocol>())
-                      .setRetryPolicy(std::make_shared<RetryTransientErrorsPolicy>()),
-                      RPCNetworkParams(slobrok.config()));
-    Receptor receptor;
-    SourceSession::UP session = server.mb.createSourceSession(
-            SourceSessionParams()
-            .setReplyHandler(receptor));
-    auto msg = std::make_unique<MyMessage>();
+    Slobrok           slobrok;
+    TestServer        server(MessageBusParams()
+                                 .addProtocol(std::make_shared<SimpleProtocol>())
+                                 .setRetryPolicy(std::make_shared<RetryTransientErrorsPolicy>()),
+                             RPCNetworkParams(slobrok.config()));
+    Receptor          receptor;
+    SourceSession::UP session = server.mb.createSourceSession(SourceSessionParams().setReplyHandler(receptor));
+    auto              msg = std::make_unique<MyMessage>();
     msg->setRoute(Route::parse("foo"));
     ASSERT_TRUE(session->send(std::move(msg)).isAccepted());
     Reply::UP reply = receptor.getReply();
     ASSERT_TRUE(reply);
     EXPECT_EQ(1u, reply->getNumErrors());
     EXPECT_EQ((uint32_t)ErrorCode::SEQUENCE_ERROR, reply->getError(0).getCode());
-
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

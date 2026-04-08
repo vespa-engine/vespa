@@ -1,18 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/messagebus/blob.h>
 #include <vespa/messagebus/blobref.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using mbus::Blob;
 using mbus::BlobRef;
 
-Blob makeBlob(const char *txt) {
+Blob makeBlob(const char* txt) {
     Blob b(strlen(txt) + 1);
     strcpy(b.data(), txt);
     return b;
 }
 
-BlobRef makeBlobRef(const Blob &b) {
+BlobRef makeBlobRef(const Blob& b) {
     return BlobRef(b.data(), b.size());
 }
 

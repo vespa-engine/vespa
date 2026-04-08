@@ -29,4 +29,4 @@ public:
     virtual void inject_key_value(std::string_view key, std::string_view value) = 0;
 };
 
-}
+} // namespace mbus

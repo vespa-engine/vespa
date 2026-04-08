@@ -1,40 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "routingspec.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string;
 
 namespace mbus {
 
-HopSpec::HopSpec(const string &name, const string &selector) :
-    _name(name),
-    _selector(selector),
-    _recipients(),
-    _ignoreResult(false)
-{ }
+HopSpec::HopSpec(const string& name, const string& selector)
+    : _name(name), _selector(selector), _recipients(), _ignoreResult(false) {
+}
 
-HopSpec::HopSpec(const HopSpec & rhs) = default;
-HopSpec & HopSpec::operator=(const HopSpec & rhs) = default;
-HopSpec::HopSpec(HopSpec && rhs) noexcept = default;
-HopSpec & HopSpec::operator=(HopSpec && rhs) noexcept = default;
+HopSpec::HopSpec(const HopSpec& rhs) = default;
+HopSpec& HopSpec::operator=(const HopSpec& rhs) = default;
+HopSpec::HopSpec(HopSpec&& rhs) noexcept = default;
+HopSpec& HopSpec::operator=(HopSpec&& rhs) noexcept = default;
 HopSpec::~HopSpec() = default;
 
-HopSpec &
-HopSpec::addRecipient(const string &recipient) & {
+HopSpec& HopSpec::addRecipient(const string& recipient) & {
     _recipients.push_back(recipient);
     return *this;
 }
 
-HopSpec &&
-HopSpec::addRecipient(const string &recipient) && {
+HopSpec&& HopSpec::addRecipient(const string& recipient) && {
     _recipients.push_back(recipient);
     return std::move(*this);
 }
 
-void
-HopSpec::toConfig(string &cfg, const string &prefix) const
-{
+void HopSpec::toConfig(string& cfg, const string& prefix) const {
     cfg.append(prefix).append("name ").append(RoutingSpec::toConfigString(_name)).append("\n");
     cfg.append(prefix).append("selector ").append(RoutingSpec::toConfigString(_selector)).append("\n");
     if (_ignoreResult) {
@@ -50,17 +44,13 @@ HopSpec::toConfig(string &cfg, const string &prefix) const
     }
 }
 
-string
-HopSpec::toString() const
-{
+string HopSpec::toString() const {
     string ret = "";
     toConfig(ret, "");
     return ret;
 }
 
-bool
-HopSpec::operator==(const HopSpec &rhs) const
-{
+bool HopSpec::operator==(const HopSpec& rhs) const {
     if (_name != rhs._name) {
         return false;
     }
@@ -77,6 +67,5 @@ HopSpec::operator==(const HopSpec &rhs) const
     }
     return true;
 }
-
 
 } // namespace mbus

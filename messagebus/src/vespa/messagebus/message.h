@@ -2,6 +2,7 @@
 #pragma once
 
 #include "routable.h"
+
 #include <vespa/messagebus/routing/route.h>
 
 namespace mbus {
@@ -18,10 +19,10 @@ public:
     using UP = std::unique_ptr<Message>;
 
     Message();
-    Message(const Message &) = delete;
-    Message(Message &&) = delete;
-    Message & operator = (const Message &) = delete;
-    Message & operator = (Message &&) = delete;
+    Message(const Message&) = delete;
+    Message(Message&&) = delete;
+    Message& operator=(const Message&) = delete;
+    Message& operator=(Message&&) = delete;
 
     /**
      * If a message is deleted with elements on the callstack, this destructor
@@ -30,7 +31,7 @@ public:
      */
     ~Message() override;
 
-    void swapState(Routable &rhs) override;
+    void swapState(Routable& rhs) override;
 
     /**
      * Returns the timestamp for when this message was last seen by message
@@ -47,7 +48,7 @@ public:
      *
      * @return This, to allow chaining.
      */
-    Message &setTimeReceivedNow();
+    Message& setTimeReceivedNow();
 
     /**
      * Returns the number of milliseconds that remain before this message times
@@ -67,7 +68,10 @@ public:
      * @param timeRemaining The number of milliseconds until expiration.
      * @return This, to allow chaining.
      */
-    Message &setTimeRemaining(duration timeRemaining) { _timeRemaining = timeRemaining; return *this; }
+    Message& setTimeRemaining(duration timeRemaining) {
+        _timeRemaining = timeRemaining;
+        return *this;
+    }
 
     /**
      * Returns the number of milliseconds that remain right now before this
@@ -88,14 +92,14 @@ public:
      *
      * @return reference to internal route object
      */
-    Route &getRoute() { return _route; }
+    Route& getRoute() { return _route; }
 
     /**
      * Access the route associated with this message.
      *
      * @return reference to internal route object
      */
-    const Route &getRoute() const { return _route; }
+    const Route& getRoute() const { return _route; }
 
     /**
      * Set a new route for this routable.
@@ -103,7 +107,10 @@ public:
      * @param route The new route.
      * @return This, to allow chaining.
      */
-    Message &setRoute(Route route) { _route = std::move(route); return *this; }
+    Message& setRoute(Route route) {
+        _route = std::move(route);
+        return *this;
+    }
 
     /**
      * Inherited from Routable. Classifies this object as 'not a reply'.
@@ -215,14 +222,17 @@ public:
      * @param retry The retry count.
      * @return This, to allow chaining.
      */
-    Message &setRetry(uint32_t retry) { _retry = retry; return *this; }
+    Message& setRetry(uint32_t retry) {
+        _retry = retry;
+        return *this;
+    }
+
 private:
-    Route         _route;
-    time_point    _timeReceived;
-    duration      _timeRemaining;
-    bool          _retryEnabled;
-    uint32_t      _retry;
+    Route      _route;
+    time_point _timeReceived;
+    duration   _timeRemaining;
+    bool       _retryEnabled;
+    uint32_t   _retry;
 };
 
 } // namespace mbus
-

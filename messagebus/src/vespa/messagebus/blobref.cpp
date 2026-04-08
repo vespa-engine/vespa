@@ -2,6 +2,4 @@
 
 #include "blobref.h"
 
-namespace mbus {
-
-} // namespace mbus
+namespace mbus {} // namespace mbus
