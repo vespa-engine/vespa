@@ -305,6 +305,7 @@ AttributeVector::createAttributeHeader(std::string_view fileName) const {
                                       getCommittedDocIdLimit(),
                                       getUniqueValueCount(),
                                       getTotalValueCount(),
+                                      getStatus().get_used_minus_dead_and_onhold(),
                                       getCreateSerialNum(),
                                       getVersion());
 }
