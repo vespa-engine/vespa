@@ -5,19 +5,18 @@ namespace {
 
 static mbus::string EmptyReplyProtocolName = "";
 
-} // namespace anon
+} // namespace
 
 namespace mbus {
 
-EmptyReply::EmptyReply() { }
+EmptyReply::EmptyReply() {
+}
 
-const string &
-EmptyReply::getProtocol() const {
+const string& EmptyReply::getProtocol() const {
     return EmptyReplyProtocolName;
 }
 
-uint32_t
-EmptyReply::getType() const {
+uint32_t EmptyReply::getType() const {
     return 0;
 }
 

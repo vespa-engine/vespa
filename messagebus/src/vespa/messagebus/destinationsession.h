@@ -19,9 +19,9 @@ private:
     friend class MessageBus;
     using MessageUP = std::unique_ptr<Message>;
 
-    MessageBus      &_mbus;
+    MessageBus&      _mbus;
     string           _name;
-    IMessageHandler &_msgHandler;
+    IMessageHandler& _msgHandler;
     bool             _session_registered;
     bool             _broadcast_name;
 
@@ -32,7 +32,7 @@ private:
      * @param mbus    The message bus that created this instance.
      * @param params  The parameter object for this session.
      */
-    DestinationSession(MessageBus &mbus, const DestinationSessionParams &params);
+    DestinationSession(MessageBus& mbus, const DestinationSessionParams& params);
 
 public:
     /**
@@ -96,7 +96,7 @@ public:
      *
      * @return The message handler.
      */
-    IMessageHandler &getMessageHandler() { return _msgHandler; }
+    IMessageHandler& getMessageHandler() { return _msgHandler; }
 
     /**
      * Returns the connection spec string for this session. This returns a
@@ -109,4 +109,3 @@ public:
 };
 
 } // namespace mbus
-

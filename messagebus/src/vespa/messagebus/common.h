@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/time.h>
+
 #include <string>
 
 namespace mbus {
@@ -12,4 +13,3 @@ using duration = vespalib::duration;
 using time_point = vespalib::steady_clock::time_point;
 
 } // namespace mbus
-

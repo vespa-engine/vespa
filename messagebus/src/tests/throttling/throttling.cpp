@@ -7,11 +7,12 @@
 #include <vespa/messagebus/sourcesession.h>
 #include <vespa/messagebus/sourcesessionparams.h>
 #include <vespa/messagebus/staticthrottlepolicy.h>
-#include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simplereply.h>
+#include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <thread>
 
 using namespace mbus;
@@ -30,21 +31,15 @@ public:
         // empty
     }
 
-    uint64_t getMilliTime() const override {
-        return _millis;
-    }
+    uint64_t getMilliTime() const override { return _millis; }
 };
 
-RoutingSpec getRouting()
-{
-    return RoutingSpec()
-        .addTable(RoutingTableSpec("Simple")
-                  .addHop(HopSpec("dst", "dst/session"))
-                  .addRoute(RouteSpec("dst").addHop("dst")));
+RoutingSpec getRouting() {
+    return RoutingSpec().addTable(
+        RoutingTableSpec("Simple").addHop(HopSpec("dst", "dst/session")).addRoute(RouteSpec("dst").addHop("dst")));
 }
 
-bool waitQueueSize(RoutableQueue &queue, uint32_t size)
-{
+bool waitQueueSize(RoutableQueue& queue, uint32_t size) {
     for (uint32_t i = 0; i < 10000; ++i) {
         if (queue.size() == size) {
             return true;
@@ -54,8 +49,7 @@ bool waitQueueSize(RoutableQueue &queue, uint32_t size)
     return false;
 }
 
-bool waitPending(SourceSession& session, uint32_t size)
-{
+bool waitPending(SourceSession& session, uint32_t size) {
     for (uint32_t i = 0; i < 60000; ++i) {
         if (session.getPendingCount() == size) {
             return true;
@@ -65,11 +59,9 @@ bool waitPending(SourceSession& session, uint32_t size)
     return false;
 }
 
-uint32_t
-getWindowSize(DynamicThrottlePolicy &policy, DynamicTimer &timer, uint32_t maxPending)
-{
+uint32_t getWindowSize(DynamicThrottlePolicy& policy, DynamicTimer& timer, uint32_t maxPending) {
     SimpleMessage msg("foo");
-    SimpleReply reply("bar");
+    SimpleReply   reply("bar");
     reply.setContext(mbus::Context(uint64_t(1))); // To offset pending size bump in static policy
 
     for (uint32_t i = 0; i < 999; ++i) {
@@ -82,7 +74,7 @@ getWindowSize(DynamicThrottlePolicy &policy, DynamicTimer &timer, uint32_t maxPe
         uint64_t tripTime = (numPending < maxPending) ? 1000 : 1000 + (numPending - maxPending) * 1000;
         timer._millis += tripTime;
 
-        for( ; numPending > 0 ; --numPending) {
+        for (; numPending > 0; --numPending) {
             policy.processReply(reply);
         }
     }
@@ -97,16 +89,15 @@ getWindowSize(DynamicThrottlePolicy &policy, DynamicTimer &timer, uint32_t maxPe
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-TEST(ThrottlingTest, test_max_pending_count)
-{
-    Slobrok     slobrok;
-    TestServer  src(Identity(""), getRouting(), slobrok);
-    TestServer  dst(Identity("dst"), getRouting(), slobrok);
+TEST(ThrottlingTest, test_max_pending_count) {
+    Slobrok    slobrok;
+    TestServer src(Identity(""), getRouting(), slobrok);
+    TestServer dst(Identity("dst"), getRouting(), slobrok);
 
     RoutableQueue srcQ;
     RoutableQueue dstQ;
 
-    SourceSessionParams params;
+    SourceSessionParams      params;
     StaticThrottlePolicy::SP policy(new StaticThrottlePolicy());
     policy->setMaxPendingCount(5);
     policy->setMaxPendingSize(0); // unlimited
@@ -149,22 +140,21 @@ TEST(ThrottlingTest, test_max_pending_count)
     ASSERT_TRUE(waitQueueSize(dstQ, 0));
 }
 
-TEST(ThrottlingTest, test_max_pending_size)
-{
+TEST(ThrottlingTest, test_max_pending_size) {
     ASSERT_TRUE(SimpleMessage("1234567890").getApproxSize() == 10);
     ASSERT_TRUE(SimpleMessage("123456").getApproxSize() == 6);
     ASSERT_TRUE(SimpleMessage("12345").getApproxSize() == 5);
     ASSERT_TRUE(SimpleMessage("1").getApproxSize() == 1);
     ASSERT_TRUE(SimpleMessage("").getApproxSize() == 0);
 
-    Slobrok     slobrok;
-    TestServer  src(Identity(""), getRouting(), slobrok);
-    TestServer  dst(Identity("dst"), getRouting(), slobrok);
+    Slobrok    slobrok;
+    TestServer src(Identity(""), getRouting(), slobrok);
+    TestServer dst(Identity("dst"), getRouting(), slobrok);
 
     RoutableQueue srcQ;
     RoutableQueue dstQ;
 
-    SourceSessionParams params;
+    SourceSessionParams      params;
     StaticThrottlePolicy::SP policy(new StaticThrottlePolicy());
     policy->setMaxPendingCount(0); // unlimited
     policy->setMaxPendingSize(2);
@@ -197,19 +187,18 @@ TEST(ThrottlingTest, test_max_pending_size)
     ASSERT_TRUE(waitQueueSize(srcQ, 3));
 }
 
-TEST(ThrottlingTest, test_min_one)
-{
+TEST(ThrottlingTest, test_min_one) {
     ASSERT_TRUE(SimpleMessage("1234567890").getApproxSize() == 10);
     ASSERT_TRUE(SimpleMessage("").getApproxSize() == 0);
 
-    Slobrok     slobrok;
-    TestServer  src(Identity(""), getRouting(), slobrok);
-    TestServer  dst(Identity("dst"), getRouting(), slobrok);
+    Slobrok    slobrok;
+    TestServer src(Identity(""), getRouting(), slobrok);
+    TestServer dst(Identity("dst"), getRouting(), slobrok);
 
     RoutableQueue srcQ;
     RoutableQueue dstQ;
 
-    SourceSessionParams params;
+    SourceSessionParams      params;
     StaticThrottlePolicy::SP policy(new StaticThrottlePolicy());
     policy->setMaxPendingCount(0); // unlimited
     policy->setMaxPendingSize(5);
@@ -229,15 +218,12 @@ TEST(ThrottlingTest, test_min_one)
     EXPECT_TRUE(waitQueueSize(dstQ, 0));
 }
 
-
-TEST(ThrottlingTest, test_dynamic_window_size)
-{
-    auto ptr = std::make_unique<DynamicTimer>();
-    auto* timer = ptr.get();
+TEST(ThrottlingTest, test_dynamic_window_size) {
+    auto                  ptr = std::make_unique<DynamicTimer>();
+    auto*                 timer = ptr.get();
     DynamicThrottlePolicy policy(std::move(ptr));
 
-    policy.setWindowSizeIncrement(5)
-          .setResizeRate(1);
+    policy.setWindowSizeIncrement(5).setResizeRate(1);
 
     double windowSize = getWindowSize(policy, *timer, 100);
     ASSERT_TRUE(windowSize >= 90 && windowSize <= 105);
@@ -255,15 +241,12 @@ TEST(ThrottlingTest, test_dynamic_window_size)
     ASSERT_TRUE(windowSize >= 90 && windowSize <= 115);
 }
 
-TEST(ThrottlingTest, test_idle_time_period)
-{
-    auto ptr = std::make_unique<DynamicTimer>();
-    auto* timer = ptr.get();
+TEST(ThrottlingTest, test_idle_time_period) {
+    auto                  ptr = std::make_unique<DynamicTimer>();
+    auto*                 timer = ptr.get();
     DynamicThrottlePolicy policy(std::move(ptr));
 
-    policy.setWindowSizeIncrement(5)
-          .setMinWindowSize(1)
-          .setResizeRate(1);
+    policy.setWindowSizeIncrement(5).setMinWindowSize(1).setResizeRate(1);
 
     double windowSize = getWindowSize(policy, *timer, 100);
     ASSERT_TRUE(windowSize >= 90 && windowSize <= 110);
@@ -282,29 +265,23 @@ TEST(ThrottlingTest, test_idle_time_period)
     EXPECT_EQ(5u, policy.getMaxPendingCount());
 }
 
-TEST(ThrottlingTest, test_min_window_size)
-{
-    auto ptr = std::make_unique<DynamicTimer>();
-    auto* timer = ptr.get();
+TEST(ThrottlingTest, test_min_window_size) {
+    auto                  ptr = std::make_unique<DynamicTimer>();
+    auto*                 timer = ptr.get();
     DynamicThrottlePolicy policy(std::move(ptr));
 
-    policy.setWindowSizeIncrement(5)
-          .setResizeRate(1)
-          .setMinWindowSize(150);
+    policy.setWindowSizeIncrement(5).setResizeRate(1).setMinWindowSize(150);
 
     double windowSize = getWindowSize(policy, *timer, 200);
     ASSERT_TRUE(windowSize >= 150 && windowSize <= 210);
 }
 
-TEST(ThrottlingTest, test_max_window_size)
-{
-    auto ptr = std::make_unique<DynamicTimer>();
-    auto* timer = ptr.get();
+TEST(ThrottlingTest, test_max_window_size) {
+    auto                  ptr = std::make_unique<DynamicTimer>();
+    auto*                 timer = ptr.get();
     DynamicThrottlePolicy policy(std::move(ptr));
 
-    policy.setWindowSizeIncrement(5)
-          .setResizeRate(1)
-          .setMaxWindowSize(50);
+    policy.setWindowSizeIncrement(5).setResizeRate(1).setMaxWindowSize(50);
 
     double windowSize = getWindowSize(policy, *timer, 100);
     ASSERT_TRUE(windowSize >= 40 && windowSize <= 50);
@@ -312,7 +289,6 @@ TEST(ThrottlingTest, test_max_window_size)
     policy.setMaxPendingCount(15);
     windowSize = getWindowSize(policy, *timer, 100);
     ASSERT_TRUE(windowSize >= 10 && windowSize <= 15);
-
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

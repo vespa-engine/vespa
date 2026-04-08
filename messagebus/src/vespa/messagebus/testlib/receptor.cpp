@@ -9,28 +9,22 @@ namespace mbus {
 Receptor::Receptor() = default;
 Receptor::~Receptor() = default;
 
-void
-Receptor::handleMessage(Message::UP msg)
-{
+void Receptor::handleMessage(Message::UP msg) {
     std::lock_guard guard(_mon);
     _msg = std::move(msg);
     _cond.notify_all();
 }
 
-void
-Receptor::handleReply(Reply::UP reply)
-{
+void Receptor::handleReply(Reply::UP reply) {
     std::lock_guard guard(_mon);
     _reply = std::move(reply);
     _cond.notify_all();
 }
 
-Message::UP
-Receptor::getMessage(duration maxWait)
-{
+Message::UP Receptor::getMessage(duration maxWait) {
     steady_clock::time_point startTime = steady_clock::now();
-    std::unique_lock guard(_mon);
-    while ( ! _msg) {
+    std::unique_lock         guard(_mon);
+    while (!_msg) {
         duration w = maxWait - duration_cast<milliseconds>(steady_clock::now() - startTime);
         if (w <= duration::zero() || (_cond.wait_for(guard, w) == std::cv_status::timeout)) {
             break;
@@ -39,11 +33,9 @@ Receptor::getMessage(duration maxWait)
     return std::move(_msg);
 }
 
-Reply::UP
-Receptor::getReply(duration maxWait)
-{
+Reply::UP Receptor::getReply(duration maxWait) {
     steady_clock::time_point startTime = steady_clock::now();
-    std::unique_lock guard(_mon);
+    std::unique_lock         guard(_mon);
     while (_reply.get() == nullptr) {
         duration w = maxWait - duration_cast<milliseconds>(steady_clock::now() - startTime);
         if (w <= duration::zero() || (_cond.wait_for(guard, w) == std::cv_status::timeout)) {

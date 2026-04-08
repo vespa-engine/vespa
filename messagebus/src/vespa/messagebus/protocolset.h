@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include "iprotocol.h"
+
 #include <memory>
 #include <vector>
-#include "iprotocol.h"
 
 namespace mbus {
 
@@ -12,8 +13,7 @@ namespace mbus {
  * This class is used to bundle a set of IProtocol objects to be
  * supported by a MessageBus instance.
  **/
-class ProtocolSet
-{
+class ProtocolSet {
 private:
     std::vector<IProtocol::SP> _vector;
 
@@ -29,7 +29,7 @@ public:
      * @return this object, to allow chaining
      * @param protocol the IProtocol we want to add
      **/
-    ProtocolSet &add(IProtocol::SP protocol);
+    ProtocolSet& add(IProtocol::SP protocol);
 
     /**
      * Check if this set is empty
@@ -49,4 +49,3 @@ public:
 };
 
 } // namespace mbus
-

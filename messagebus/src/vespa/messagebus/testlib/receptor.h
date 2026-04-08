@@ -6,18 +6,18 @@
 #include <vespa/messagebus/ireplyhandler.h>
 #include <vespa/messagebus/message.h>
 #include <vespa/messagebus/reply.h>
+
 #include <condition_variable>
 
 namespace mbus {
 
-class Receptor : public IMessageHandler,
-                 public IReplyHandler
-{
+class Receptor : public IMessageHandler, public IReplyHandler {
 private:
     std::mutex              _mon;
     std::condition_variable _cond;
     Message::UP             _msg;
     Reply::UP               _reply;
+
 public:
     Receptor();
     ~Receptor() override;

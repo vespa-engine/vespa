@@ -9,11 +9,10 @@
 
 using namespace mbus;
 
-TEST(ServicePoolTest, testMaxSize)
-{
-    Slobrok slobrok;
-    TestServer me(Identity("me"), RoutingSpec(), slobrok);
-    RPCNetwork & net = me.net;
+TEST(ServicePoolTest, testMaxSize) {
+    Slobrok     slobrok;
+    TestServer  me(Identity("me"), RoutingSpec(), slobrok);
+    RPCNetwork& net = me.net;
     net.registerSession("foo");
     net.registerSession("bar");
     net.registerSession("baz");

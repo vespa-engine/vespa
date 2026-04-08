@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
-#include <vespa/slobrok/imirrorapi.h>
 #include "inetworkowner.h"
+
+#include <vespa/slobrok/imirrorapi.h>
+
+#include <memory>
 
 namespace mbus {
 
@@ -20,9 +22,10 @@ class RoutingNode;
 class INetwork {
 protected:
     INetwork() = default;
+
 public:
-    INetwork(const INetwork &) = delete;
-    INetwork & operator = (const INetwork &) = delete;
+    INetwork(const INetwork&) = delete;
+    INetwork& operator=(const INetwork&) = delete;
     /**
      * Destructor. Frees any allocated resources.
      */
@@ -35,7 +38,7 @@ public:
      *
      * @param owner owner of the network
      */
-    virtual void attach(INetworkOwner &owner) = 0;
+    virtual void attach(INetworkOwner& owner) = 0;
 
     /**
      * Returns a string that represents the connection specs of this network. It
@@ -70,7 +73,7 @@ public:
      *
      * @param session the session name
      */
-    virtual void registerSession(const string &session) = 0;
+    virtual void registerSession(const string& session) = 0;
 
     /**
      * Unregister a session name with the network layer. This will make the
@@ -78,7 +81,7 @@ public:
      *
      * @param session session name
      */
-    virtual void unregisterSession(const string &session) = 0;
+    virtual void unregisterSession(const string& session) = 0;
 
     /**
      * Resolves the service address of the recipient referenced by the given
@@ -90,7 +93,7 @@ public:
      * @param recipient The node whose service address to allocate.
      * @return True if a service address was allocated.
      */
-    virtual bool allocServiceAddress(RoutingNode &recipient) = 0;
+    virtual bool allocServiceAddress(RoutingNode& recipient) = 0;
 
     /**
      * Frees the service address from the given routing node. This allows the
@@ -98,7 +101,7 @@ public:
      *
      * @param recipient The node whose service address to free.
      */
-    virtual void freeServiceAddress(RoutingNode &recipient) = 0;
+    virtual void freeServiceAddress(RoutingNode& recipient) = 0;
 
     /**
      * Send a message to the given recipients. A {@link RoutingNode} contains
@@ -107,7 +110,7 @@ public:
      * @param msg        The message to send.
      * @param recipients A list of routing leaf nodes resolved for the message.
      */
-    virtual void send(const Message &msg, const std::vector<RoutingNode*> &recipients) = 0;
+    virtual void send(const Message& msg, const std::vector<RoutingNode*>& recipients) = 0;
 
     /**
      * Synchronize with internal threads. This method will handshake with all
@@ -143,8 +146,7 @@ public:
      *
      * @return The mirror object.
      */
-    virtual const slobrok::api::IMirrorAPI &getMirror() const = 0;
+    virtual const slobrok::api::IMirrorAPI& getMirror() const = 0;
 };
 
 } // namespace mbus
-
