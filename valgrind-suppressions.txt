@@ -849,3 +849,22 @@
    fun:_ZNK3re23RE27DoMatchESt17basic_string_viewIcSt11char_traitsIcEENS0_6AnchorEPmPKPKNS0_3ArgEi
    ...
 }
+{
+   for onnxruntime CPUIDInfo on ARM
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:cpuinfo_arm_linux_init
+   ...
+   fun:_ZN11onnxruntime9CPUIDInfoC2Ev.constprop.0
+   ...
+}
+{
+   for GCC 15 optimized string scanning in pagedict4
+   Memcheck:Cond
+   fun:getLCP
+   ...
+   fun:_Z9testWordsRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERN8vespalib6Rand48ESt8optionalIjEmjjjjjbbb
+   fun:_ZN16PageDict4TestApp9testWordsEv
+   ...
+}
