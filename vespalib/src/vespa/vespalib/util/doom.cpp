@@ -29,7 +29,7 @@ void Doom::arm_ann_doom(uint32_t num_ann_searches) const noexcept {
     vespalib::steady_time now(_now.load(std::memory_order_relaxed));
     vespalib::duration ann_duration = _ann_timebudget;
     if (_ann_timeout_enabled) {
-        ann_duration = std::min(ann_duration, (_ann_doom - now) / num_ann_searches);
+        ann_duration = std::min(ann_duration, (_ann_timeout - now) / num_ann_searches);
     }
     _ann_doom = now + ann_duration;
 }
