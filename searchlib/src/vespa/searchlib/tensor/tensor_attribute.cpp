@@ -345,7 +345,6 @@ TensorAttribute::onLoad(vespalib::Executor* executor)
 std::unique_ptr<AttributeSaver>
 TensorAttribute::onInitSave(std::string_view fileName)
 {
-    updateStat(CommitParam::UpdateStats::FORCE);
     set_memory_usage_at_save_start(getStatus().get_used_minus_dead_and_onhold());
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());

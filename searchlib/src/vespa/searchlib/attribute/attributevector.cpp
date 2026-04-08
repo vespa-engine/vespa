@@ -544,7 +544,7 @@ void AttributeVector::setInterlock(const std::shared_ptr<attribute::Interlock> &
 std::unique_ptr<AttributeSaver>
 AttributeVector::initSave(std::string_view fileName)
 {
-    commit();
+    commit(CommitParam::UpdateStats::FORCE);
     return onInitSave(fileName);
 }
 
