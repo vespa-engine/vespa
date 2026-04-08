@@ -22,6 +22,7 @@ const ValueType tensor_type = ValueType::from_spec("tensor<float>(x[4])");
 constexpr uint32_t num_docs = 23;
 constexpr uint64_t unique_value_count = 11;
 constexpr uint64_t total_value_count = 13;
+constexpr uint64_t memory_usage = 420042;
 constexpr uint64_t create_serial_num = 17;
 constexpr uint32_t version = 19;
 
@@ -38,6 +39,7 @@ populate_header(const HnswIPO& hnsw_params)
                            num_docs,
                            unique_value_count,
                            total_value_count,
+                           memory_usage,
                            create_serial_num,
                            version);
 
@@ -59,6 +61,7 @@ verify_roundtrip_serialization(const HnswIPO& hnsw_params_in)
     EXPECT_EQ(create_serial_num, attr_header.getCreateSerialNum());
     EXPECT_EQ(total_value_count, attr_header.get_total_value_count());
     EXPECT_EQ(unique_value_count, attr_header.get_unique_value_count());
+    EXPECT_EQ(memory_usage, attr_header.get_memory_usage());
     EXPECT_EQ(version, attr_header.getVersion());
     EXPECT_EQ(false, attr_header.getPredicateParamsSet());
     const auto& hnsw_params_out = attr_header.get_hnsw_index_params();
