@@ -106,7 +106,7 @@ putMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id,
             const DocumentOperation &op, bool is_removed_doc)
 {
     documentmetastore::IStore::Result putRes(
-            meta_store.put(doc_id.getGlobalId(), op.getBucketId(), op.getTimestamp(),
+            meta_store.put(doc_id, op.getBucketId(), op.getTimestamp(),
                            op.getSerializedDocSize(), op.getLid(), op.get_prepare_serial_num()));
     if (!putRes.ok()) {
         throw IllegalStateException(fmt("Could not put <lid, gid> pair for %sdocument with id '%s' and gid '%s'",

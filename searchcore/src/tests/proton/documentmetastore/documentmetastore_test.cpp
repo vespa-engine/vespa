@@ -109,12 +109,13 @@ void
 assertPut(const BucketId &bucketId,
           uint64_t timestamp,
           uint32_t lid,
-          const GlobalId &gid,
+          const DocumentId& docId,
           DocumentMetaStore &dms)
 {
+    auto gid = docId.getGlobalId();
     Result inspect = dms.inspect(gid, 0u);
     uint32_t docSize = 1;
-    PutRes putRes = dms.put(gid, bucketId, timestamp, docSize, inspect.getLid(), 0u);
+    PutRes putRes = dms.put(docId, bucketId, timestamp, docSize, inspect.getLid(), 0u);
     dms.commit();
     EXPECT_TRUE(putRes.ok());
     EXPECT_EQ(lid, putRes.getLid());
@@ -221,11 +222,16 @@ assertBucketInfo(uint32_t expDocCount,
     EXPECT_EQ(expMetaCount, act.getEntryCount());
 }
 
-GlobalId gid1("111111111111");
-GlobalId gid2("222222222222");
-GlobalId gid3("333333333333");
-GlobalId gid4("444444444444");
-GlobalId gid5("555555555555");
+DocumentId docid1("id::test::111111111111");
+DocumentId docid2("id::test::222222222222");
+DocumentId docid3("id::test::333333333333");
+DocumentId docid4("id::test::444444444444");
+DocumentId docid5("id::test::555555555555");
+const GlobalId& gid1 = docid1.getGlobalId();
+const GlobalId& gid2 = docid2.getGlobalId();
+const GlobalId& gid3 = docid3.getGlobalId();
+const GlobalId& gid4 = docid4.getGlobalId();
+const GlobalId& gid5 = docid5.getGlobalId();
 const uint32_t minNumBits = 8u;
 BucketId bucketId1(minNumBits,
                    gid1.convertToBucketId().getRawId());
@@ -247,28 +253,31 @@ uint32_t docSize4 = 1;
 uint32_t docSize5 = 1;
 
 uint32_t
-addGid(DocumentMetaStore &dms, const GlobalId &gid, const BucketId &bid, Timestamp timestamp, uint32_t docSize = 1)
+addDoc(DocumentMetaStore &dms, const DocumentId &docid, const BucketId &bid, Timestamp timestamp, uint32_t docSize = 1)
 {
+    auto& gid = docid.getGlobalId();
     Result inspect = dms.inspect(gid, 0u);
     PutRes putRes;
-    EXPECT_TRUE((putRes = dms.put(gid, bid, timestamp, docSize, inspect.getLid(), 0u)).ok());
+    EXPECT_TRUE((putRes = dms.put(docid, bid, timestamp, docSize, inspect.getLid(), 0u)).ok());
     dms.commit();
     return putRes.getLid();
 }
 
 uint32_t
-addGid(DocumentMetaStore &dms, const GlobalId &gid, Timestamp timestamp)
+addDoc(DocumentMetaStore &dms, const DocumentId& docid, Timestamp timestamp)
 {
+    auto& gid = docid.getGlobalId();
     BucketId bid(minNumBits, gid.convertToBucketId().getRawId());
-    return addGid(dms, gid, bid, timestamp);
+    return addDoc(dms, docid, bid, timestamp);
 }
 
 void
-putGid(DocumentMetaStore &dms, const GlobalId &gid, uint32_t lid, Timestamp timestamp = Timestamp())
+putDoc(DocumentMetaStore &dms, const DocumentId& docid, uint32_t lid, Timestamp timestamp = Timestamp())
 {
+    auto& gid = docid.getGlobalId();
     BucketId bid(minNumBits, gid.convertToBucketId().getRawId());
     uint32_t docSize = 1;
-    EXPECT_TRUE(dms.put(gid, bid, timestamp, docSize, lid, 0u).ok());
+    EXPECT_TRUE(dms.put(docid, bid, timestamp, docSize, lid, 0u).ok());
     dms.commit();
 }
 
@@ -285,9 +294,9 @@ TEST(DocumentMetaStoreTest, control_meta_data_sizeof) {
 
     vespalib::GenerationHandler::Guard guard = dms.getGuard();
     EXPECT_EQ(BucketId(), dms.getBucketOf(guard, 1));
-    assertPut(bucketId1, time1, 1, gid1, dms);
+    assertPut(bucketId1, time1, 1, docid1, dms);
     EXPECT_EQ(bucketId1, dms.getBucketOf(guard, 1));
-    assertPut(bucketId2, time2, 2, gid2, dms);
+    assertPut(bucketId2, time2, 2, docid2, dms);
     EXPECT_EQ(bucketId2, dms.getBucketOf(guard, 2));
     EXPECT_TRUE(dms.remove(1, 0u));
     dms.commit();
@@ -302,16 +311,16 @@ TEST(DocumentMetaStoreTest, gids_can_be_inserted_and_retrieved)
     // put()
     EXPECT_EQ(1u, dms.getNumDocs());
     EXPECT_EQ(0u, dms.getNumUsedLids());
-    assertPut(bucketId1, time1, 1, gid1, dms);
+    assertPut(bucketId1, time1, 1, docid1, dms);
     EXPECT_EQ(2u, dms.getNumDocs());
     EXPECT_EQ(1u, dms.getNumUsedLids());
-    assertPut(bucketId2, time2, 2, gid2, dms);
+    assertPut(bucketId2, time2, 2, docid2, dms);
     EXPECT_EQ(3u, dms.getNumDocs());
     EXPECT_EQ(2u, dms.getNumUsedLids());
     // gid1 already inserted
-    assertPut(bucketId1, time1, 1, gid1, dms);
+    assertPut(bucketId1, time1, 1, docid1, dms);
     // gid2 already inserted
-    assertPut(bucketId2, time2, 2, gid2, dms);
+    assertPut(bucketId2, time2, 2, docid2, dms);
 
 
     // getGid()
@@ -333,7 +342,7 @@ TEST(DocumentMetaStore, gids_can_be_cleared)
     GlobalId gid;
     uint32_t lid = 0u;
     dms.constructFreeList();
-    addGid(dms, gid1, bucketId1, time1);
+    addDoc(dms, docid1, bucketId1, time1);
     assertGid(gid1, 1, dms);
     assertLid(1, gid1, dms);
     EXPECT_EQ(1u, dms.getNumUsedLids());
@@ -344,7 +353,7 @@ TEST(DocumentMetaStore, gids_can_be_cleared)
     EXPECT_TRUE(!dms.getLid(gid1, lid));
     dms.removes_complete({ 1 });
     // reuse lid
-    addGid(dms, gid2, bucketId2, time2);
+    addDoc(dms, docid2, bucketId2, time2);
     assertGid(gid2, 1, dms);
     assertLid(1, gid2, dms);
     EXPECT_EQ(1u, dms.getNumUsedLids());
@@ -364,7 +373,7 @@ TEST(DocumentMetaStore, generation_handling_is_working)
     dms->constructFreeList();
     const GenerationHandler & gh = dms->getGenerationHandler();
     EXPECT_EQ(1u, gh.getCurrentGeneration());
-    addGid(*dms, gid1, bucketId1, time1);
+    addDoc(*dms, docid1, bucketId1, time1);
     EXPECT_EQ(2u, gh.getCurrentGeneration());
     EXPECT_EQ(0u, gh.getGenerationRefCount());
     {
@@ -388,10 +397,10 @@ TEST(DocumentMetaStoreTest, lid_and_gid_space_is_reused)
     dms->constructFreeList();
     EXPECT_EQ(1u, dms->getNumDocs());
     EXPECT_EQ(0u, dms->getNumUsedLids());
-    assertPut(bucketId1, time1, 1, gid1, *dms); // -> gen 1
+    assertPut(bucketId1, time1, 1, docid1, *dms); // -> gen 1
     EXPECT_EQ(2u, dms->getNumDocs());
     EXPECT_EQ(1u, dms->getNumUsedLids());
-    assertPut(bucketId2, time2, 2, gid2, *dms); // -> gen 2
+    assertPut(bucketId2, time2, 2, docid2, *dms); // -> gen 2
     EXPECT_EQ(3u, dms->getNumDocs());
     EXPECT_EQ(2u, dms->getNumUsedLids());
     dms->remove(2, 0u); // -> gen 3
@@ -399,7 +408,7 @@ TEST(DocumentMetaStoreTest, lid_and_gid_space_is_reused)
     EXPECT_EQ(3u, dms->getNumDocs());
     EXPECT_EQ(1u, dms->getNumUsedLids());
     // -> gen 5 (reuse of lid 2)
-    assertPut(bucketId3, time3, 2, gid3, *dms);
+    assertPut(bucketId3, time3, 2, docid3, *dms);
     EXPECT_EQ(3u, dms->getNumDocs());
     EXPECT_EQ(2u, dms->getNumUsedLids()); // reuse
     assertGid(gid3, 2, *dms);
@@ -409,33 +418,33 @@ TEST(DocumentMetaStoreTest, lid_and_gid_space_is_reused)
         dms->removes_complete({ 2 });
         EXPECT_EQ(3u, dms->getNumDocs());
         EXPECT_EQ(1u, dms->getNumUsedLids()); // lid 2 free but guarded
-        assertPut(bucketId4, time4, 3, gid4, *dms);
+        assertPut(bucketId4, time4, 3, docid4, *dms);
         EXPECT_EQ(4u, dms->getNumDocs()); // generation guarded, new lid
         EXPECT_EQ(2u, dms->getNumUsedLids());
         assertGid(gid4, 3, *dms);
     }
-    assertPut(bucketId5, time5, 4, gid5, *dms);
+    assertPut(bucketId5, time5, 4, docid5, *dms);
     EXPECT_EQ(5u, dms->getNumDocs()); // reuse blocked by previous guard. released at end of put()
     EXPECT_EQ(3u, dms->getNumUsedLids());
     assertGid(gid5, 4, *dms);
-    assertPut(bucketId2, time2, 2, gid2, *dms); // reuse of lid 2
+    assertPut(bucketId2, time2, 2, docid2, *dms); // reuse of lid 2
     EXPECT_EQ(5u, dms->getNumDocs());
     EXPECT_EQ(4u, dms->getNumUsedLids());
     assertGid(gid2, 2, *dms);
 }
 
-GlobalId
-createGid(uint32_t lid)
+DocumentId
+createDocId(uint32_t lid)
 {
     DocumentId docId(vespalib::make_string("id:ns:testdoc::%u", lid));
-    return docId.getGlobalId();
+    return docId;
 }
 
-GlobalId
-createGid(uint32_t userId, uint32_t lid)
+DocumentId
+createDocId(uint32_t userId, uint32_t lid)
 {
     DocumentId docId(vespalib::make_string("id:ns:testdoc:n=%u:%u", userId, lid));
-    return docId.getGlobalId();
+    return docId;
 }
 
 TEST(DocumentMetaStoreTest, can_store_bucket_id_and_timestamp)
@@ -445,14 +454,16 @@ TEST(DocumentMetaStoreTest, can_store_bucket_id_and_timestamp)
 
     dms.constructFreeList();
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
-        GlobalId gid = createGid(lid);
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
         BucketId bucketId(gid.convertToBucketId());
         bucketId.setUsedBits(numBucketBits);
-        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias));
+        uint32_t addLid = addDoc(dms, docid, bucketId, Timestamp(lid + timestampBias));
         EXPECT_EQ(lid, addLid);
     }
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
-        GlobalId gid = createGid(lid);
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
         BucketId bucketId(gid.convertToBucketId());
         bucketId.setUsedBits(numBucketBits);
         assertGid(gid, lid, dms, bucketId,
@@ -472,10 +483,11 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded)
     removeLids.push_back(500);
     dms1.constructFreeList();
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
-        GlobalId gid = createGid(lid);
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
         BucketId bucketId(gid.convertToBucketId());
         bucketId.setUsedBits(numBucketBits);
-        uint32_t addLid = addGid(dms1, gid, bucketId, Timestamp(lid + timestampBias));
+        uint32_t addLid = addDoc(dms1, docid, bucketId, Timestamp(lid + timestampBias));
         EXPECT_EQ(lid, addLid);
     }
     for (uint32_t lid : removeLids) {
@@ -496,7 +508,8 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded)
     EXPECT_EQ(numLids + 1, dms2.getNumDocs());
     EXPECT_EQ(numLids - 4, dms2.getNumUsedLids()); // 4 removed
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
-        GlobalId gid = createGid(lid);
+        const auto docid = createDocId(lid);
+        const auto& gid = docid.getGlobalId();
         BucketId bucketId(gid.convertToBucketId());
         bucketId.setUsedBits(numBucketBits);
         if (std::count(removeLids.begin(), removeLids.end(), lid) == 0) {
@@ -514,11 +527,12 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded)
     // check we can re-use from free list after load
     for (size_t i = 0; i < removeLids.size(); ++i) {
         LOG(info, "Re-use remove lid %u", removeLids[i]);
-        GlobalId gid = createGid(removeLids[i]);
+        const auto docid = createDocId(removeLids[i]);
+        auto& gid = docid.getGlobalId();
         BucketId bucketId(numBucketBits,
                           gid.convertToBucketId().getRawId());
         // re-use removeLid[i]
-        uint32_t addLid = addGid(dms2, gid, bucketId, Timestamp(43u + i));
+        uint32_t addLid = addDoc(dms2, docid, bucketId, Timestamp(43u + i));
         EXPECT_EQ(removeLids[i], addLid);
         EXPECT_EQ(numLids + 1, dms2.getNumDocs());
         EXPECT_EQ(numLids - (3 - i), dms2.getNumUsedLids());
@@ -532,10 +546,11 @@ TEST(DocumentMetaStoreTest, bucket_used_bits_are_lbounded_at_load_time)
     dms1.constructFreeList();
 
     constexpr uint32_t lid = 1;
-    GlobalId gid = createGid(lid);
+    const auto docid = createDocId(lid);
+    auto& gid = docid.getGlobalId();
     BucketId bucketId(gid.convertToBucketId());
     bucketId.setUsedBits(storage::spi::BucketLimits::MinUsedBits - 1);
-    uint32_t added_lid = addGid(dms1, gid, bucketId, Timestamp(1000));
+    uint32_t added_lid = addDoc(dms1, docid, bucketId, Timestamp(1000));
     ASSERT_EQ(added_lid, lid);
 
     TuneFileAttributes tuneFileAttributes;
@@ -565,7 +580,7 @@ TEST(DocumentMetaStore, stats_are_updated)
     EXPECT_GT(lastUsed, perGidUsed);
 
     std::this_thread::sleep_for(6000ms);
-    addGid(dms, gid1, bucketId1, time1);
+    addDoc(dms, docid1, bucketId1, time1);
     EXPECT_EQ(2u, dms.getStatus().getNumDocs());
     EXPECT_EQ(2u, dms.getStatus().getNumValues());
     EXPECT_GE(dms.getStatus().getAllocated(), lastAllocated);
@@ -575,7 +590,7 @@ TEST(DocumentMetaStore, stats_are_updated)
     lastAllocated = dms.getStatus().getAllocated();
     lastUsed = dms.getStatus().getUsed();
 
-    addGid(dms, gid2, bucketId2, time2);
+    addDoc(dms, docid2, bucketId2, time2);
     dms.commit(CommitParam::UpdateStats::FORCE);
     EXPECT_EQ(3u, dms.getStatus().getNumDocs());
     EXPECT_EQ(3u, dms.getStatus().getNumValues());
@@ -594,25 +609,25 @@ TEST(DocumentMetaStore, stats_are_updated)
 TEST(DocumentMetaStoreTest, can_put_and_remove_before_free_list_construct)
 {
     DocumentMetaStore dms(createBucketDB());
-    EXPECT_TRUE(dms.put(gid4, bucketId4, time4, docSize4, 4, 0u).ok());
+    EXPECT_TRUE(dms.put(docid4, bucketId4, time4, docSize4, 4, 0u).ok());
     dms.commit();
     assertLid(4, gid4, dms);
     assertGid(gid4, 4, dms);
     EXPECT_EQ(1u, dms.getNumUsedLids());
     EXPECT_EQ(5u, dms.getNumDocs());
-    EXPECT_TRUE(dms.put(gid1, bucketId1, time1, docSize1, 1, 0u).ok());
+    EXPECT_TRUE(dms.put(docid1, bucketId1, time1, docSize1, 1, 0u).ok());
     dms.commit();
     // already there, nothing changes
-    EXPECT_TRUE(dms.put(gid1, bucketId1, time1, docSize1, 1, 0u).ok());
+    EXPECT_TRUE(dms.put(docid1, bucketId1, time1, docSize1, 1, 0u).ok());
     dms.commit();
     assertLid(1, gid1, dms);
     assertGid(gid1, 1, dms);
     EXPECT_EQ(2u, dms.getNumUsedLids());
     EXPECT_EQ(5u, dms.getNumDocs());
     // gid1 already there with lid 1
-    EXPECT_THROW(dms.put(gid1, bucketId1, time1, docSize1, 2, 0u).ok(),
+    EXPECT_THROW(dms.put(docid1, bucketId1, time1, docSize1, 2, 0u).ok(),
                  vespalib::IllegalStateException);
-    EXPECT_THROW(dms.put(gid5, bucketId5, time5, docSize5, 1, 0u).ok(),
+    EXPECT_THROW(dms.put(docid5, bucketId5, time5, docSize5, 1, 0u).ok(),
                  vespalib::IllegalStateException);
     assertLid(1, gid1, dms);
     assertGid(gid1, 1, dms);
@@ -629,8 +644,8 @@ TEST(DocumentMetaStoreTest, can_put_and_remove_before_free_list_construct)
     dms.constructFreeList();
     EXPECT_EQ(1u, dms.getNumUsedLids());
     EXPECT_EQ(5u, dms.getNumDocs());
-    assertPut(bucketId2, time2, 2, gid2, dms);
-    assertPut(bucketId3, time3, 3, gid3, dms);
+    assertPut(bucketId2, time2, 2, docid2, dms);
+    assertPut(bucketId3, time3, 3, docid3, dms);
     EXPECT_EQ(3u, dms.getNumUsedLids());
     EXPECT_EQ(5u, dms.getNumDocs());
 }
@@ -645,25 +660,28 @@ requireThatBasicBucketInfoWorks()
     uint32_t numLids = 2000;
     dms.constructFreeList();
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
-        GlobalId gid = createGid(lid);
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
         Timestamp timestamp(UINT64_C(123456789) * lid);
         Timestamp oldTimestamp;
         BucketId bucketId(minNumBits, gid.convertToBucketId().getRawId());
-        uint32_t addLid = addGid(dms, gid, bucketId, timestamp);
+        uint32_t addLid = addDoc(dms, docid, bucketId, timestamp);
         EXPECT_EQ(lid, addLid);
         m[std::make_pair(bucketId, gid)] = timestamp;
     }
     for (uint32_t lid = 2; lid <= numLids; lid += 7) {
-        GlobalId gid = createGid(lid);
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
         Timestamp timestamp(UINT64_C(14735) * lid);
         Timestamp oldTimestamp;
         BucketId bucketId(minNumBits, gid.convertToBucketId().getRawId());
-        uint32_t addLid = addGid(dms, gid, bucketId, timestamp);
+        uint32_t addLid = addDoc(dms, docid, bucketId, timestamp);
         EXPECT_EQ(lid, addLid);
         m[std::make_pair(bucketId, gid)] = timestamp;
     }
     for (uint32_t lid = 3; lid <= numLids; lid += 5) {
-        GlobalId gid = createGid(lid);
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
         BucketId bucketId(minNumBits, gid.convertToBucketId().getRawId());
         EXPECT_TRUE(dms.remove(lid, 0u));
         dms.removes_complete({ lid });
@@ -717,10 +735,11 @@ TEST(DocumentMetaStoreTest, can_retrieve_list_of_lids_from_bucket_id)
     dms.constructFreeList();
     // insert global ids
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
-        GlobalId gid = createGid(lid);
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
         BucketId bucketId(bucketBits,
                           gid.convertToBucketId().getRawId());
-        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(0));
+        uint32_t addLid = addDoc(dms, docid, bucketId, Timestamp(0));
         EXPECT_EQ(lid, addLid);
         m[bucketId].push_back(lid);
     }
@@ -764,50 +783,47 @@ struct Comparator {
 struct UserDocFixture {
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     DocumentMetaStore dms;
-    std::vector<GlobalId> gids;
+    std::vector<DocumentId> docids;
     BucketId bid1;
     BucketId bid2;
     BucketId bid3;
     bucketdb::BucketDBHandler _bucketDBHandler;
     UserDocFixture();
     ~UserDocFixture();
-    void addGlobalId(const GlobalId &gid, uint32_t expLid, uint32_t timestampConst = 100) {
-        uint32_t actLid = addGid(dms, gid, Timestamp(expLid + timestampConst));
+    void addDocumentId(const DocumentId& docid, uint32_t expLid, uint32_t timestampConst = 100) {
+        uint32_t actLid = addDoc(dms, docid, Timestamp(expLid + timestampConst));
         EXPECT_EQ(expLid, actLid);
     }
-    void putGlobalId(const GlobalId &gid, uint32_t lid, uint32_t timestampConst = 100) {
-        putGid(dms, gid, lid, Timestamp(lid + timestampConst));
-    }
-    void addGlobalIds(size_t numGids=7) __attribute__((noinline));
+    void addDocumentIds(size_t numGids=7) __attribute__((noinline));
 };
 
 UserDocFixture::UserDocFixture()
     : _bucketDB(createBucketDB()),
-      dms(_bucketDB), gids(), bid1(), bid2(), bid3(),
+      dms(_bucketDB), docids(), bid1(), bid2(), bid3(),
       _bucketDBHandler(*_bucketDB)
 {
     _bucketDBHandler.addDocumentMetaStore(&dms, 0);
-    gids.push_back(createGid(10, 1));
-    gids.push_back(createGid(10, 2));
-    gids.push_back(createGid(20, 3));
-    gids.push_back(createGid(10, 4));
-    gids.push_back(createGid(10, 5));
-    gids.push_back(createGid(20, 6));
-    gids.push_back(createGid(20, 7));
-    gids.push_back(createGid(30, 8)); // extra
-    gids.push_back(createGid(10, 9)); // extra
+    docids.push_back(createDocId(10, 1));
+    docids.push_back(createDocId(10, 2));
+    docids.push_back(createDocId(20, 3));
+    docids.push_back(createDocId(10, 4));
+    docids.push_back(createDocId(10, 5));
+    docids.push_back(createDocId(20, 6));
+    docids.push_back(createDocId(20, 7));
+    docids.push_back(createDocId(30, 8)); // extra
+    docids.push_back(createDocId(10, 9)); // extra
     // 3 users -> 3 buckets
-    bid1 = BucketId(minNumBits, gids[0].convertToBucketId().getRawId());
-    bid2 = BucketId(minNumBits, gids[2].convertToBucketId().getRawId());
-    bid3 = BucketId(minNumBits, gids[7].convertToBucketId().getRawId());
+    bid1 = BucketId(minNumBits, docids[0].getGlobalId().convertToBucketId().getRawId());
+    bid2 = BucketId(minNumBits, docids[2].getGlobalId().convertToBucketId().getRawId());
+    bid3 = BucketId(minNumBits, docids[7].getGlobalId().convertToBucketId().getRawId());
 }
 UserDocFixture::~UserDocFixture() = default;
 
 void
-UserDocFixture::addGlobalIds(size_t numGids) {
+UserDocFixture::addDocumentIds(size_t numGids) {
     for (size_t i = 0; i < numGids; ++i) {
         uint32_t expLid = i + 1;
-        addGlobalId(gids[i], expLid);
+        addDocumentId(docids[i], expLid);
     }
 }
 
@@ -820,20 +836,20 @@ TEST(DocumentMetaStoreTest, can_retrieve_list_of_meta_data_from_bucket_id)
         EXPECT_EQ(0u, result.size());
     }
     f.dms.constructFreeList();
-    f.addGlobalIds();
+    f.addDocumentIds();
     { // verify bucket 1
         DocumentMetaData::Vector result;
         f.dms.getMetaData(f.bid1, result);
         std::sort(result.begin(), result.end(), Comparator());
         EXPECT_EQ(4u, result.size());
         assertMetaData(DocumentMetaData(1, Timestamp(101), f.bid1,
-                                        f.gids[0]), result[0]);
+                                        f.docids[0].getGlobalId()), result[0]);
         assertMetaData(DocumentMetaData(2, Timestamp(102), f.bid1,
-                                        f.gids[1]), result[1]);
+                                        f.docids[1].getGlobalId()), result[1]);
         assertMetaData(DocumentMetaData(4, Timestamp(104), f.bid1,
-                                        f.gids[3]), result[2]);
+                                        f.docids[3].getGlobalId()), result[2]);
         assertMetaData(DocumentMetaData(5, Timestamp(105), f.bid1,
-                                        f.gids[4]), result[3]);
+                                        f.docids[4].getGlobalId()), result[3]);
     }
     { // verify bucket 2
         DocumentMetaData::Vector result;
@@ -841,11 +857,11 @@ TEST(DocumentMetaStoreTest, can_retrieve_list_of_meta_data_from_bucket_id)
         std::sort(result.begin(), result.end(), Comparator());
         EXPECT_EQ(3u, result.size());
         assertMetaData(DocumentMetaData(3, Timestamp(103), f.bid2,
-                                        f.gids[2]), result[0]);
+                                        f.docids[2].getGlobalId()), result[0]);
         assertMetaData(DocumentMetaData(6, Timestamp(106), f.bid2,
-                                        f.gids[5]), result[1]);
+                                        f.docids[5].getGlobalId()), result[1]);
         assertMetaData(DocumentMetaData(7, Timestamp(107), f.bid2,
-                                        f.gids[6]), result[2]);
+                                        f.docids[6].getGlobalId()), result[2]);
     }
 }
 
@@ -855,7 +871,7 @@ TEST(DocumentMetaStoreTest, bucket_state_can_be_updated)
     f.dms.constructFreeList();
     EXPECT_EQ(1u, f.dms.getActiveLids().size()); // lid 0 is reserved
 
-    f.addGlobalIds();
+    f.addDocumentIds();
     assertActiveLids(BoolVector().F().F().F().F().F().F().F(), f.dms.getActiveLids());
     EXPECT_EQ(0u, f.dms.getNumActiveLids());
     EXPECT_FALSE(f.dms.getBucketDB().takeGuard()->get(f.bid1).isActive());
@@ -873,8 +889,8 @@ TEST(DocumentMetaStoreTest, bucket_state_can_be_updated)
     EXPECT_TRUE(f.dms.getBucketDB().takeGuard()->get(f.bid1).isActive());
     EXPECT_TRUE(f.dms.getBucketDB().takeGuard()->get(f.bid2).isActive());
 
-    f.addGlobalId(createGid(30, 8), 8);
-    f.addGlobalId(createGid(10, 9), 9); // bid1 is active so added document should be active as well
+    f.addDocumentId(createDocId(30, 8), 8);
+    f.addDocumentId(createDocId(10, 9), 9); // bid1 is active so added document should be active as well
     assertActiveLids(BoolVector().T().T().T().T().T().T().T().F().T(), f.dms.getActiveLids());
     EXPECT_EQ(8u, f.dms.getNumActiveLids());
     EXPECT_TRUE(f.dms.getBucketDB().takeGuard()->get(f.bid1).isActive());
@@ -901,7 +917,7 @@ TEST(DocumentMetaStoreTest, removed_lids_are_cleared_as_active)
 {
     UserDocFixture f;
     f.dms.constructFreeList();
-    f.addGlobalIds(2);
+    f.addDocumentIds(2);
     f.dms.setBucketState(f.bid1, true);
     assertActiveLids(BoolVector().T().T(), f.dms.getActiveLids());
     EXPECT_EQ(2u, f.dms.getNumActiveLids());
@@ -909,12 +925,12 @@ TEST(DocumentMetaStoreTest, removed_lids_are_cleared_as_active)
     f.dms.removes_complete({ 2 });
     assertActiveLids(BoolVector().T().F(), f.dms.getActiveLids());
     EXPECT_EQ(1u, f.dms.getNumActiveLids());
-    f.addGlobalId(f.gids[2], 2); // from bid2
+    f.addDocumentId(f.docids[2], 2); // from bid2
     assertActiveLids(BoolVector().T().F(), f.dms.getActiveLids());
     EXPECT_EQ(1u, f.dms.getNumActiveLids());
     f.dms.remove(2, 0u);
     f.dms.removes_complete({ 2 });
-    f.addGlobalId(f.gids[3], 2); // from bid1
+    f.addDocumentId(f.docids[3], 2); // from bid1
     assertActiveLids(BoolVector().T().T(), f.dms.getActiveLids());
     EXPECT_EQ(2u, f.dms.getNumActiveLids());
 }
@@ -923,7 +939,7 @@ TEST(DocumentMetaStoreTest, whitelist_blueprint_is_created)
 {
     UserDocFixture f;
     f.dms.constructFreeList();
-    f.addGlobalIds();
+    f.addDocumentIds();
 
     f.dms.setBucketState(f.bid1, true);
     assertWhiteList(SimpleResult().addHit(1).addHit(2).addHit(4).addHit(5), f.dms.createWhiteListBlueprint(),
@@ -942,7 +958,7 @@ TEST(DocumentMetaStoreTest, document_and_meta_entry_count_is_updated)
     EXPECT_EQ(0u, f.dms.getBucketDB().takeGuard()->get(f.bid1).getEntryCount());
     EXPECT_EQ(0u, f.dms.getBucketDB().takeGuard()->get(f.bid2).getDocumentCount());
     EXPECT_EQ(0u, f.dms.getBucketDB().takeGuard()->get(f.bid2).getEntryCount());
-    f.addGlobalIds();
+    f.addDocumentIds();
     EXPECT_EQ(4u, f.dms.getBucketDB().takeGuard()->get(f.bid1).getDocumentCount());
     EXPECT_EQ(4u, f.dms.getBucketDB().takeGuard()->get(f.bid1).getEntryCount());
     EXPECT_EQ(3u, f.dms.getBucketDB().takeGuard()->get(f.bid2).getDocumentCount());
@@ -961,7 +977,7 @@ TEST(DocumentMetaStoreTest, empty_buckets_are_removed)
     f.dms.constructFreeList();
     EXPECT_FALSE(f.dms.getBucketDB().takeGuard()->hasBucket(f.bid1));
     EXPECT_FALSE(f.dms.getBucketDB().takeGuard()->hasBucket(f.bid2));
-    f.addGlobalIds(3);
+    f.addDocumentIds(3);
     EXPECT_TRUE(f.dms.getBucketDB().takeGuard()->hasBucket(f.bid1));
     EXPECT_TRUE(f.dms.getBucketDB().takeGuard()->hasBucket(f.bid2));
     f.dms.remove(3, 0u); // from bid2
@@ -986,13 +1002,15 @@ TEST(DocumentMetaStoreTest, empty_buckets_are_removed)
 
 struct GlobalIdEntry {
     uint32_t lid;
+    DocumentId docid;
     GlobalId gid;
     BucketId bid1;
     BucketId bid2;
     BucketId bid3;
     explicit GlobalIdEntry(uint32_t lid_) :
         lid(lid_),
-        gid(createGid(lid_)),
+        docid(createDocId(lid_)),
+        gid(docid.getGlobalId()),
         bid1(1, gid.convertToBucketId().getRawId()),
         bid2(2, gid.convertToBucketId().getRawId()),
         bid3(3, gid.convertToBucketId().getRawId())
@@ -1083,7 +1101,7 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture {
     void insertGids1() {
         uint32_t docSize = 1;
         for (size_t i = 0; i < gids.size(); ++i) {
-            EXPECT_TRUE(dms.put(gids[i].gid, gids[i].bid1, Timestamp(0),
+            EXPECT_TRUE(dms.put(gids[i].docid, gids[i].bid1, Timestamp(0),
                                 docSize,
                                 gids[i].lid, 0u).ok());
         }
@@ -1092,7 +1110,7 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture {
     void insertGids2() {
         uint32_t docSize = 1;
         for (size_t i = 0; i < gids.size(); ++i) {
-            EXPECT_TRUE(dms.put(gids[i].gid, gids[i].bid2, Timestamp(0),
+            EXPECT_TRUE(dms.put(gids[i].docid, gids[i].bid2, Timestamp(0),
                                 docSize,
                                 gids[i].lid, 0u).ok());
         }
@@ -1106,7 +1124,7 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture {
         for (size_t i = 0; i < gids.size(); ++i) {
             const GlobalIdEntry &g(gids[i]);
             BucketId b(g.bid3 == alt ? g.bid2 : g.bid1);
-            EXPECT_TRUE(dms.put(g.gid, b, Timestamp(0), docSize, g.lid, 0u).ok());
+            EXPECT_TRUE(dms.put(g.docid, b, Timestamp(0), docSize, g.lid, 0u).ok());
         }
         dms.commit();
     }
@@ -1118,7 +1136,7 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture {
         for (size_t i = 0; i < gids.size(); ++i) {
             const GlobalIdEntry &g(gids[i]);
             BucketId b(g.bid3 == alt ? g.bid1 : g.bid2);
-            EXPECT_TRUE(dms.put(g.gid, b, Timestamp(0), docSize, g.lid, 0u).ok());
+            EXPECT_TRUE(dms.put(g.docid, b, Timestamp(0), docSize, g.lid, 0u).ok());
         }
         dms.commit();
     }
@@ -1584,9 +1602,9 @@ TEST(DocumentMetaStoreTest, remove_changed_bucket_works)
     GlobalIdEntry g(1);
     f.dms.constructFreeList();
     f._bucketDBHandler.handleCreateBucket(g.bid1);
-    uint32_t addLid1 = addGid(f.dms, g.gid, g.bid1, Timestamp(0));
+    uint32_t addLid1 = addDoc(f.dms, g.docid, g.bid1, Timestamp(0));
     EXPECT_EQ(1u, addLid1);
-    uint32_t addLid2 = addGid(f.dms, g.gid, g.bid2, Timestamp(0));
+    uint32_t addLid2 = addDoc(f.dms, g.docid, g.bid2, Timestamp(0));
     EXPECT_TRUE(1u == addLid2);
     EXPECT_TRUE(f.dms.remove(1u, 0u));
     f.dms.removes_complete({ 1u });
@@ -1603,7 +1621,7 @@ TEST(DocumentMetaStoreTest, get_lid_usage_stats_works)
     EXPECT_EQ(1u, s.getLowestFreeLid());
     EXPECT_EQ(0u, s.getHighestUsedLid());
 
-    putGid(dms, createGid(1), 1);
+    putDoc(dms, createDocId(1), 1);
 
     s = dms.getLidUsageStats();
     EXPECT_EQ(2u, s.getLidLimit());
@@ -1611,7 +1629,7 @@ TEST(DocumentMetaStoreTest, get_lid_usage_stats_works)
     EXPECT_EQ(2u, s.getLowestFreeLid());
     EXPECT_EQ(1u, s.getHighestUsedLid());
 
-    putGid(dms, createGid(2), 2);
+    putDoc(dms, createDocId(2), 2);
 
     s = dms.getLidUsageStats();
     EXPECT_EQ(3u, s.getLidLimit());
@@ -1620,7 +1638,7 @@ TEST(DocumentMetaStoreTest, get_lid_usage_stats_works)
     EXPECT_EQ(2u, s.getHighestUsedLid());
 
 
-    putGid(dms, createGid(3), 3);
+    putDoc(dms, createDocId(3), 3);
 
     s = dms.getLidUsageStats();
     EXPECT_EQ(4u, s.getLidLimit());
@@ -1679,10 +1697,10 @@ TEST(DocumentMetaStoreTest, move_works)
 
     EXPECT_EQ(1u, dms.getNumDocs());
     EXPECT_EQ(0u, dms.getNumUsedLids());
-    assertPut(bucketId1, time1, 1u, gid1, dms);
+    assertPut(bucketId1, time1, 1u, docid1, dms);
     EXPECT_EQ(2u, dms.getNumDocs());
     EXPECT_EQ(1u, dms.getNumUsedLids());
-    assertPut(bucketId2, time2, 2u, gid2, dms);
+    assertPut(bucketId2, time2, 2u, docid2, dms);
     EXPECT_EQ(3u, dms.getNumDocs());
     EXPECT_EQ(2u, dms.getNumUsedLids());
     EXPECT_TRUE(dms.getGid(1u, gid));
@@ -1732,8 +1750,8 @@ void
 populate(uint32_t endLid, DocumentMetaStore &dms)
 {
     for (uint32_t lid = 1; lid < endLid; ++lid) {
-        GlobalId gid = createGid(lid);
-        putGid(dms, gid, lid, Timestamp(10000 + lid));
+        const auto docid = createDocId(lid);
+        putDoc(dms, docid, lid, Timestamp(10000 + lid));
     }
     assertLidSpace(endLid, endLid, endLid - 1, false, false, dms);
 }
@@ -1821,10 +1839,11 @@ namespace {
 void
 addLid(DocumentMetaStore &dms, uint32_t lid, uint32_t docSize = 1)
 {
-    GlobalId gid = createGid(lid);
+    const auto docid = createDocId(lid);
+    auto& gid = docid.getGlobalId();
     BucketId bucketId(gid.convertToBucketId());
     bucketId.setUsedBits(numBucketBits);
-    uint32_t addedLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias), docSize);
+    uint32_t addedLid = addDoc(dms, docid, bucketId, Timestamp(lid + timestampBias), docSize);
     EXPECT_EQ(lid, addedLid);
 }
 
@@ -1922,7 +1941,8 @@ namespace {
 void
 assertLidGidFound(uint32_t lid, DocumentMetaStore &dms)
 {
-    GlobalId gid = createGid(lid);
+    const auto docid = createDocId(lid);
+    auto& gid = docid.getGlobalId();
     assertLid(lid, gid, dms);
     assertGid(gid, lid, dms);
     EXPECT_TRUE(dms.validLid(lid));
@@ -1931,7 +1951,8 @@ assertLidGidFound(uint32_t lid, DocumentMetaStore &dms)
 void
 assertLidGidNotFound(uint32_t lid, DocumentMetaStore &dms)
 {
-    GlobalId gid = createGid(lid);
+    const auto docid = createDocId(lid);
+    auto& gid = docid.getGlobalId();
     uint32_t resultLid;
     GlobalId resultGid;
     EXPECT_FALSE(dms.getLid(gid, resultLid));
