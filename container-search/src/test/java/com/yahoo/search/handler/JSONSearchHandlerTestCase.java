@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -407,6 +408,20 @@ public class JSONSearchHandlerTestCase {
 
         String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()))\"}}]}}";
         assertEquals(expected, result);
+    }
+
+    @Test
+    void testSelectFieldsSetsSummaryFields() {
+        var query = new com.yahoo.search.Query();
+        query.properties().set("select.fields", "[\"id\", \"title\", \"body\"]");
+        assertEquals(Set.of("id", "title", "body"), query.getPresentation().getSummaryFields());
+    }
+
+    @Test
+    void testSelectFieldsEmptyArray() {
+        var query = new com.yahoo.search.Query();
+        query.properties().set("select.fields", "[]");
+        assertTrue(query.getPresentation().getSummaryFields().isEmpty());
     }
 
     @Test

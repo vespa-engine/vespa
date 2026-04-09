@@ -14,6 +14,8 @@ import com.yahoo.slime.SlimeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -336,6 +338,22 @@ public class YqlJsonQueryFeatureParityTest {
         assertGroupingParity(
                 "all(group(predefined(price, bucket[1, 2>, bucket[3, 4>)))",
                 "[ { 'all' : { 'group' : { 'predefined' : [ 'price', { 'bucket' : [1, 2] }, { 'bucket' : [3, 4] } ] } } } ]");
+    }
+
+    @Test
+    void testSelectFields() {
+        // YQL: select id, title from sources * where title contains 'madonna'
+        var yqlQuery = new Query();
+        yqlParser.parse(new Parsable().setQuery("select id, title from sources * where title contains 'madonna'"));
+        yqlQuery.getPresentation().getSummaryFields().addAll(yqlParser.getYqlSummaryFields());
+
+        // JSON: { "select": { "fields": ["id", "title"], "where": ... } }
+        var jsonQuery = new Query();
+        jsonQuery.properties().set("select.fields", "[\"id\", \"title\"]");
+
+        assertEquals(yqlQuery.getPresentation().getSummaryFields(), jsonQuery.getPresentation().getSummaryFields(),
+                "YQL field selection and JSON select.fields should produce the same summary fields");
+        assertEquals(Set.of("id", "title"), jsonQuery.getPresentation().getSummaryFields());
     }
 
     /** Asserts parity using a where-clause; automatically wraps the YQL in {@code select * from sources * where ...} */

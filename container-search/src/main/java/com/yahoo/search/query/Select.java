@@ -27,6 +27,7 @@ public class Select implements Cloneable {
     public static final String SELECT = "select";
     public static final String WHERE = "where";
     public static final String GROUPING = "grouping";
+    public static final String FIELDS = "fields";
 
     private final Query parent;
     private final List<GroupingRequest> groupingRequests;
@@ -41,6 +42,7 @@ public class Select implements Cloneable {
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(WHERE, "string"));
         argumentType.addField(new FieldDescription(GROUPING, "string"));
+        argumentType.addField(new FieldDescription(FIELDS, "string"));
         argumentType.freeze();
     }
 

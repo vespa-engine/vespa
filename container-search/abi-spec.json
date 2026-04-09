@@ -5932,7 +5932,8 @@
     "fields" : [
       "public static final java.lang.String SELECT",
       "public static final java.lang.String WHERE",
-      "public static final java.lang.String GROUPING"
+      "public static final java.lang.String GROUPING",
+      "public static final java.lang.String FIELDS"
     ]
   },
   "com.yahoo.search.query.SelectParser" : {
