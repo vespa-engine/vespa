@@ -78,6 +78,7 @@ private:
     size_t              _changesSinceCommit;
     OperationListenerSP _op_listener;
     bool                _should_compact_gid_to_lid_map;
+    bool                _store_full_document_id;
 
     DocId getFreeLid();
     DocId peekFreeLid();
@@ -150,8 +151,16 @@ public:
     DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string & name);
     DocumentMetaStore(BucketDBOwnerSP bucketDB,
                       const std::string & name,
+                      const search::GrowStrategy & grow);
+    DocumentMetaStore(BucketDBOwnerSP bucketDB,
+                      const std::string & name,
                       const search::GrowStrategy & grow,
-                      SubDbType subDbType = SubDbType::READY);
+                      SubDbType subDbType);
+    DocumentMetaStore(BucketDBOwnerSP bucketDB,
+                      const std::string & name,
+                      const search::GrowStrategy & grow,
+                      bool store_full_document_id,
+                      SubDbType subDbType);
     ~DocumentMetaStore() override;
 
     /**
