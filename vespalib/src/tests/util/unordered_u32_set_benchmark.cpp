@@ -20,7 +20,7 @@ struct ManyCollisions {
     }
 };
 
-// Xorshift linear shift feedback register (LSFR) PRNG with a period of 2^32-1.
+// Xorshift linear-feedback shift register (LFSR) PRNG with a period of 2^32-1.
 // See https://en.wikipedia.org/wiki/Xorshift.
 // Pre -and postcondition: `state` is non-zero (which happens to be exactly what we want).
 inline void xorshift32_step(uint32_t& state) noexcept {
@@ -42,7 +42,7 @@ static void BM_insert_unique_from_empty(benchmark::State& state) {
         SetT set;
         state.ResumeTiming();
         benchmark::ClobberMemory();
-        // We use an LSFR to insert in an "as-if randomized" order that still guarantees
+        // We use an LFSR to insert in an "as-if randomized" order that still guarantees
         // that none of the inserted values are duplicated (unlike if we used a generic PRNG).
         uint32_t prng_state = initial_seed;
         for (ssize_t i = 1; i <= state.range(); ++i) { // assume range always < UINT32_MAX
