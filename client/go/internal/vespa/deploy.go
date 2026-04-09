@@ -394,10 +394,10 @@ func Deploy(deployment DeploymentOptions) (PrepareResult, error) {
 		if instance != "" && instance != DefaultApplication.Instance {
 			params.Set("instance", instance)
 		}
-		if queryParams := params.Encode(); queryParams != "" {
-			path += "?" + queryParams
-		}
 		u, err = deployment.url(path)
+		if u != nil {
+			u.RawQuery = params.Encode()
+		}
 	}
 	if err != nil {
 		return PrepareResult{}, err
