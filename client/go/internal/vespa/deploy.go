@@ -354,7 +354,13 @@ func Deactivate(deployment DeploymentOptions) error {
 		if applicationName == "" {
 			applicationName = DefaultApplication.Application
 		}
-		endpoint := fmt.Sprintf("/application/v2/tenant/default/application/%s", applicationName)
+		instance := deployment.Target.Deployment().Application.Instance
+		if instance == "" {
+			instance = DefaultApplication.Instance
+		}
+		endpoint := fmt.Sprintf(
+			"/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s",
+			applicationName, instance)
 		u, err = deployment.url(endpoint)
 	}
 	if err != nil {
