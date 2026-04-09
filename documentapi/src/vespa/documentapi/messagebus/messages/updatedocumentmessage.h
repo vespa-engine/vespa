@@ -2,9 +2,12 @@
 #pragma once
 
 #include "testandsetmessage.h"
+
 #include <optional>
 
-namespace document { class DocumentUpdate; }
+namespace document {
+class DocumentUpdate;
+}
 
 namespace documentapi {
 
@@ -45,7 +48,7 @@ public:
      * @return The update.
      */
     [[nodiscard]] DocumentUpdateSP stealDocumentUpdate() const { return std::move(_documentUpdate); }
-    const document::DocumentUpdate & getDocumentUpdate() const { return *_documentUpdate; }
+    const document::DocumentUpdate& getDocumentUpdate() const { return *_documentUpdate; }
     /**
      * Sets the document update to perform.
      *
@@ -81,13 +84,9 @@ public:
      */
     void setNewTimestamp(uint64_t time) { _newTime = time; }
 
-    void set_cached_create_if_missing(bool create) noexcept {
-        _create_if_missing = create;
-    }
+    void set_cached_create_if_missing(bool create) noexcept { _create_if_missing = create; }
 
-    [[nodiscard]] bool has_cached_create_if_missing() const noexcept {
-        return _create_if_missing.has_value();
-    }
+    [[nodiscard]] bool has_cached_create_if_missing() const noexcept { return _create_if_missing.has_value(); }
     // Note: iff has_cached_create_if_missing() == false, this will trigger a deserialization of the
     // underlying DocumentUpdate instance, which might throw an exception on deserialization failure.
     // Otherwise, this is noexcept.
@@ -99,4 +98,4 @@ public:
     string toString() const override { return "updatedocumentmessage"; }
 };
 
-}
+} // namespace documentapi

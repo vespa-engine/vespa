@@ -7,20 +7,21 @@
  */
 
 #include "asyncinitializationpolicy.h"
-#include <vespa/vespalib/util/threadstackexecutor.h>
+
+#include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/error.h>
-#include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+
 #include <string>
 
 namespace {
-    VESPA_THREAD_STACK_TAG(async_init_policy);
+VESPA_THREAD_STACK_TAG(async_init_policy);
 }
 namespace documentapi {
 
-std::map<string, string>
-AsyncInitializationPolicy::parse(string parameters) {
+std::map<string, string> AsyncInitializationPolicy::parse(string parameters) {
     std::map<string, string> retVal;
 
     vespalib::StringTokenizer tokenizer(parameters, ";");
@@ -40,39 +41,32 @@ AsyncInitializationPolicy::parse(string parameters) {
 AsyncInitializationPolicy::AsyncInitializationPolicy(const std::map<string, string>&)
     : _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, async_init_policy)),
       _state(State::NOT_STARTED),
-      _syncInit(true)
-{
+      _syncInit(true) {
 }
 
 AsyncInitializationPolicy::~AsyncInitializationPolicy() = default;
 
-void
-AsyncInitializationPolicy::initSynchronous()
-{
+void AsyncInitializationPolicy::initSynchronous() {
     init();
     _state = State::DONE;
 }
 
 namespace {
 
-mbus::Error
-currentPolicyInitError(std::string_view error) {
+mbus::Error currentPolicyInitError(std::string_view error) {
     // If an init error has been recorded for the last init attempt, report
     // it back until we've managed to successfully complete the init step.
     if (error.empty()) {
-        return mbus::Error(DocumentProtocol::ERROR_NODE_NOT_READY,
-                           "Waiting to initialize policy");
+        return mbus::Error(DocumentProtocol::ERROR_NODE_NOT_READY, "Waiting to initialize policy");
     } else {
         return mbus::Error(DocumentProtocol::ERROR_POLICY_FAILURE,
                            "Error when creating policy: " + std::string(error));
     }
 }
 
-}
+} // namespace
 
-void
-AsyncInitializationPolicy::select(mbus::RoutingContext& context)
-{
+void AsyncInitializationPolicy::select(mbus::RoutingContext& context) {
     {
         std::lock_guard lock(_lock);
 
@@ -108,9 +102,7 @@ AsyncInitializationPolicy::select(mbus::RoutingContext& context)
     doSelect(context);
 }
 
-void
-AsyncInitializationPolicy::Task::run()
-{
+void AsyncInitializationPolicy::Task::run() {
     string error;
 
     try {
@@ -126,4 +118,4 @@ AsyncInitializationPolicy::Task::run()
     _owner._state = error.empty() ? State::DONE : State::FAILED;
 }
 
-}
+} // namespace documentapi

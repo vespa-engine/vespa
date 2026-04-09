@@ -1,25 +1,28 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/documentapi/messagebus/policies/config-documentrouteselectorpolicy.h>
-#include <vespa/document/select/node.h>
-#include <map>
-#include <vespa/messagebus/routing/iroutingpolicy.h>
-#include <vespa/documentapi/common.h>
 #include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/document/select/node.h>
+#include <vespa/documentapi/common.h>
+#include <vespa/documentapi/messagebus/policies/config-documentrouteselectorpolicy.h>
+#include <vespa/messagebus/routing/iroutingpolicy.h>
+
+#include <map>
 #include <mutex>
 
-namespace document { class IDocumentTypeRepo; }
+namespace document {
+class IDocumentTypeRepo;
+}
 
 namespace mbus {
-    class Route;
-    class RoutingContext;
-}
+class Route;
+class RoutingContext;
+} // namespace mbus
 
 namespace config {
-    class ConfigUri;
-    class ConfigFetcher;
-}
+class ConfigUri;
+class ConfigFetcher;
+} // namespace config
 
 namespace documentapi {
 
@@ -29,14 +32,14 @@ namespace documentapi {
  * names to a document selector and a feed name of every search cluster. This can very well be extended to include
  * storage at a later time.
  */
-class DocumentRouteSelectorPolicy : public mbus::IRoutingPolicy,
-                                    public config::IFetcherCallback<messagebus::protocol::DocumentrouteselectorpolicyConfig>
-{
+class DocumentRouteSelectorPolicy
+    : public mbus::IRoutingPolicy,
+      public config::IFetcherCallback<messagebus::protocol::DocumentrouteselectorpolicyConfig> {
 private:
     using SelectorPtr = std::shared_ptr<document::select::Node>;
     using ConfigMap = std::map<string, SelectorPtr>;
 
-    const document::IDocumentTypeRepo      &_repo;
+    const document::IDocumentTypeRepo&     _repo;
     mutable std::mutex                     _lock;
     ConfigMap                              _config;
     string                                 _error;
@@ -50,7 +53,7 @@ private:
      * @param routeName The candidate route whose selector to run.
      * @return Whether or not to send to the given recipient.
      */
-    bool select(mbus::RoutingContext &context, const std::string &routeName);
+    bool select(mbus::RoutingContext& context, const std::string& routeName);
 
 public:
     /**
@@ -59,8 +62,7 @@ public:
      *
      * @param configUri The configuration uri to subscribe with.
      */
-    DocumentRouteSelectorPolicy(const document::IDocumentTypeRepo &repo,
-                                const config::ConfigUri &configUri);
+    DocumentRouteSelectorPolicy(const document::IDocumentTypeRepo& repo, const config::ConfigUri& configUri);
     ~DocumentRouteSelectorPolicy() override;
 
     /**
@@ -68,11 +70,10 @@ public:
      *
      * @return The error string, or null if no error.
      */
-    const string &getError() const;
+    const string& getError() const;
     void configure(std::unique_ptr<messagebus::protocol::DocumentrouteselectorpolicyConfig> cfg) override;
-    void select(mbus::RoutingContext &context) override;
-    void merge(mbus::RoutingContext &context) override;
+    void select(mbus::RoutingContext& context) override;
+    void merge(mbus::RoutingContext& context) override;
 };
 
-}
-
+} // namespace documentapi

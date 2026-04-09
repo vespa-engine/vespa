@@ -14,9 +14,8 @@ private:
 public:
     TestAndSetMessage();
     ~TestAndSetMessage() override;
-    void setCondition(const TestAndSetCondition & condition) { _condition = condition; }
-    const TestAndSetCondition & getCondition() const { return _condition; }
+    void setCondition(const TestAndSetCondition& condition) { _condition = condition; }
+    const TestAndSetCondition& getCondition() const { return _condition; }
 };
 
-}
-
+} // namespace documentapi

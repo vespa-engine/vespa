@@ -16,9 +16,9 @@ public:
     WrongDistributionReply();
     explicit WrongDistributionReply(string systemState);
     ~WrongDistributionReply() override;
-    const string &getSystemState() const { return _systemState; };
-    void setSystemState(const string &state) { _systemState = state; };
+    const string& getSystemState() const { return _systemState; };
+    void setSystemState(const string& state) { _systemState = state; };
     string toString() const override { return "wrongdistributionreply"; }
 };
 
-}
+} // namespace documentapi

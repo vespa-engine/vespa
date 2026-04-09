@@ -1,20 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentrouteselectorpolicy.h"
+
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/documentapi/messagebus/messages/documentignoredreply.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
-#include <vespa/documentapi/messagebus/messages/documentignoredreply.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/routing/routingtable.h>
-#include <vespa/messagebus/messagebus.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/config/helper/configfetcher.hpp>
-#include <vespa/config/subscription/configuri.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/messagebus.h>
+#include <vespa/messagebus/routing/routingtable.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/config/helper/configfetcher.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".documentrouteselectorpolicy");
@@ -23,41 +25,37 @@ using document::select::Result;
 
 namespace documentapi {
 
-DocumentRouteSelectorPolicy::DocumentRouteSelectorPolicy(
-        const document::IDocumentTypeRepo &repo, const config::ConfigUri & configUri) :
-    mbus::IRoutingPolicy(),
-    config::IFetcherCallback<messagebus::protocol::DocumentrouteselectorpolicyConfig>(),
-    _repo(repo),
-    _lock(),
-    _config(),
-    _error("Not configured."),
-    _fetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext()))
-{
+DocumentRouteSelectorPolicy::DocumentRouteSelectorPolicy(const document::IDocumentTypeRepo& repo,
+                                                         const config::ConfigUri&           configUri)
+    : mbus::IRoutingPolicy(),
+      config::IFetcherCallback<messagebus::protocol::DocumentrouteselectorpolicyConfig>(),
+      _repo(repo),
+      _lock(),
+      _config(),
+      _error("Not configured."),
+      _fetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())) {
     _fetcher->subscribe<messagebus::protocol::DocumentrouteselectorpolicyConfig>(configUri.getConfigId(), this);
     _fetcher->start();
 }
 
 DocumentRouteSelectorPolicy::~DocumentRouteSelectorPolicy() = default;
 
-void
-DocumentRouteSelectorPolicy::configure(std::unique_ptr<messagebus::protocol::DocumentrouteselectorpolicyConfig> cfg)
-{
-    string error = "";
+void DocumentRouteSelectorPolicy::configure(
+    std::unique_ptr<messagebus::protocol::DocumentrouteselectorpolicyConfig> cfg) {
+    string    error = "";
     ConfigMap config;
-    for (const auto & route : cfg->route) {
+    for (const auto& route : cfg->route) {
         if (route.selector.empty()) {
             continue;
         }
         SelectorPtr selector;
         try {
             document::BucketIdFactory factory;
-            document::select::Parser parser(_repo, factory);
+            document::select::Parser  parser(_repo, factory);
             selector.reset(parser.parse(route.selector).release());
-        }
-        catch (document::select::ParsingFailedException &e) {
-            error = vespalib::make_string("Error parsing selector '%s' for route '%s'; %s",
-                                          route.selector.c_str(), route.name.c_str(),
-                                          e.getMessage().c_str());
+        } catch (document::select::ParsingFailedException& e) {
+            error = vespalib::make_string("Error parsing selector '%s' for route '%s'; %s", route.selector.c_str(),
+                                          route.name.c_str(), e.getMessage().c_str());
             break;
         }
         config[string(route.name)] = selector;
@@ -67,20 +65,15 @@ DocumentRouteSelectorPolicy::configure(std::unique_ptr<messagebus::protocol::Doc
     _error.swap(error);
 }
 
-const string &
-DocumentRouteSelectorPolicy::getError() const
-{
+const string& DocumentRouteSelectorPolicy::getError() const {
     std::lock_guard guard(_lock);
     return _error;
 }
 
-void
-DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context)
-{
+void DocumentRouteSelectorPolicy::select(mbus::RoutingContext& context) {
     // Require that recipients have been configured.
     if (!context.hasRecipients()) {
-        context.setError(DocumentProtocol::ERROR_POLICY_FAILURE,
-                         "No recipients configured.");
+        context.setError(DocumentProtocol::ERROR_POLICY_FAILURE, "No recipients configured.");
         return;
     }
 
@@ -92,10 +85,11 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context)
             return;
         }
         for (uint32_t i = 0; i < context.getNumRecipients(); ++i) {
-            const mbus::Route &recipient = context.getRecipient(i);
-            std::string routeName = recipient.toString();
+            const mbus::Route& recipient = context.getRecipient(i);
+            std::string        routeName = recipient.toString();
             if (select(context, routeName)) {
-                const mbus::Route *route = context.getMessageBus().getRoutingTable(DocumentProtocol::NAME)->getRoute(routeName);
+                const mbus::Route* route =
+                    context.getMessageBus().getRoutingTable(DocumentProtocol::NAME)->getRoute(routeName);
                 context.addChild(route != nullptr ? *route : recipient);
             }
         }
@@ -109,9 +103,7 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context)
     }
 }
 
-bool
-DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const std::string &routeName)
-{
+bool DocumentRouteSelectorPolicy::select(mbus::RoutingContext& context, const std::string& routeName) {
     if (_config.empty()) {
         LOG(debug, "No config at all, select '%s'.", routeName.c_str());
         return true;
@@ -124,16 +116,17 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const std::st
     LOG_ASSERT(it->second);
 
     // Select based on message content.
-    const mbus::Message &msg = context.getMessage();
-    switch(msg.getType()) {
+    const mbus::Message& msg = context.getMessage();
+    switch (msg.getType()) {
     case DocumentProtocol::MESSAGE_PUTDOCUMENT:
         return it->second->contains(static_cast<const PutDocumentMessage&>(msg).getDocument()) == Result::True;
 
     case DocumentProtocol::MESSAGE_UPDATEDOCUMENT:
-        return it->second->contains(static_cast<const UpdateDocumentMessage&>(msg).getDocumentUpdate()) != Result::False;
+        return it->second->contains(static_cast<const UpdateDocumentMessage&>(msg).getDocumentUpdate()) !=
+               Result::False;
 
     case DocumentProtocol::MESSAGE_REMOVEDOCUMENT: {
-        const RemoveDocumentMessage &removeMsg = static_cast<const RemoveDocumentMessage &>(msg);
+        const RemoveDocumentMessage& removeMsg = static_cast<const RemoveDocumentMessage&>(msg);
         if (removeMsg.getDocumentId().hasDocType()) {
             return it->second->contains(removeMsg.getDocumentId()) != Result::False;
         } else {
@@ -141,7 +134,7 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const std::st
         }
     }
     case DocumentProtocol::MESSAGE_GETDOCUMENT: {
-        const GetDocumentMessage &getMsg = static_cast<const GetDocumentMessage &>(msg);
+        const GetDocumentMessage& getMsg = static_cast<const GetDocumentMessage&>(msg);
         if (getMsg.getDocumentId().hasDocType()) {
             return it->second->contains(getMsg.getDocumentId()) != Result::False;
         } else {
@@ -153,10 +146,8 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const std::st
     }
 }
 
-void
-DocumentRouteSelectorPolicy::merge(mbus::RoutingContext &context)
-{
+void DocumentRouteSelectorPolicy::merge(mbus::RoutingContext& context) {
     DocumentProtocol::merge(context);
 }
 
-}
+} // namespace documentapi

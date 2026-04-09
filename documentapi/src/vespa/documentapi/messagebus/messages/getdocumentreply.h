@@ -3,7 +3,9 @@
 
 #include "documentacceptedreply.h"
 
-namespace document { class Document; }
+namespace document {
+class Document;
+}
 
 namespace documentapi {
 
@@ -38,7 +40,7 @@ public:
      *
      * @return The document.
      */
-    const document::Document & getDocument() const { return *_document; }
+    const document::Document& getDocument() const { return *_document; }
     bool hasDocument() const { return _document.get() != nullptr; }
 
     /**
@@ -65,5 +67,4 @@ public:
     string toString() const override { return "getdocumentreply"; }
 };
 
-}
-
+} // namespace documentapi

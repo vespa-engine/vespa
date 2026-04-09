@@ -2,6 +2,7 @@
 #pragma once
 
 #include "visitor.h"
+
 #include <vespa/document/bucket/bucketid.h>
 
 namespace documentapi {
@@ -21,11 +22,11 @@ protected:
 
 public:
     EmptyBucketsMessage(); // must be serialized into
-    EmptyBucketsMessage(const std::vector<document::BucketId> &bucketIds);
+    EmptyBucketsMessage(const std::vector<document::BucketId>& bucketIds);
     ~EmptyBucketsMessage();
 
-    std::vector<document::BucketId> &getBucketIds() { return _bucketIds; }
-    const std::vector<document::BucketId> &getBucketIds() const { return _bucketIds; }
+    std::vector<document::BucketId>& getBucketIds() { return _bucketIds; }
+    const std::vector<document::BucketId>& getBucketIds() const { return _bucketIds; }
 
     void setBucketIds(std::vector<document::BucketId> bucketIds);
     void resize(uint32_t size);
@@ -33,5 +34,4 @@ public:
     string toString() const override { return "emptybucketsmessage"; }
 };
 
-}
-
+} // namespace documentapi

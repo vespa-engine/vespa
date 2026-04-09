@@ -2,15 +2,18 @@
 
 #pragma once
 
-#include "writedocumentreply.h"
 #include "documentmessage.h"
 #include "documentreply.h"
-#include <vespa/vdslib/container/parameters.h>
-#include <vespa/vdslib/container/visitorstatistics.h>
+#include "writedocumentreply.h"
+
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/vdslib/container/parameters.h>
+#include <vespa/vdslib/container/visitorstatistics.h>
 
-namespace document { class Document; }
+namespace document {
+class Document;
+}
 namespace documentapi {
 
 using Timestamp = uint64_t;
@@ -23,22 +26,22 @@ using Timestamp = uint64_t;
  */
 class CreateVisitorMessage : public DocumentMessage {
 private:
-    string _libName;
-    string _instanceId;
-    string _controlDestination;
-    string _dataDestination;
-    string _bucketSpace;
-    string _docSelection;
-    uint32_t _maxPendingReplyCount;
+    string                          _libName;
+    string                          _instanceId;
+    string                          _controlDestination;
+    string                          _dataDestination;
+    string                          _bucketSpace;
+    string                          _docSelection;
+    uint32_t                        _maxPendingReplyCount;
     std::vector<document::BucketId> _buckets;
-    Timestamp _fromTime;
-    Timestamp _toTime;
-    bool   _visitRemoves;
-    string _fieldSet;
-    bool _visitInconsistentBuckets;
-    vdslib::Parameters _params;
-    uint32_t _version;
-    uint32_t _maxBucketsPerVisitor;
+    Timestamp                       _fromTime;
+    Timestamp                       _toTime;
+    bool                            _visitRemoves;
+    string                          _fieldSet;
+    bool                            _visitInconsistentBuckets;
+    vdslib::Parameters              _params;
+    uint32_t                        _version;
+    uint32_t                        _maxBucketsPerVisitor;
 
 protected:
     DocumentReply::UP doCreateReply() const override;
@@ -47,9 +50,7 @@ public:
     using UP = std::unique_ptr<CreateVisitorMessage>;
 
     CreateVisitorMessage(); // must be deserialized into
-    CreateVisitorMessage(const string& libraryName,
-                         const string& instanceId,
-                         const string& controlDestination,
+    CreateVisitorMessage(const string& libraryName, const string& instanceId, const string& controlDestination,
                          const string& dataDestination);
     ~CreateVisitorMessage() override;
 
@@ -81,16 +82,14 @@ public:
 
     const std::vector<document::BucketId>& getBuckets() const { return _buckets; }
     std::vector<document::BucketId>& getBuckets() { return _buckets; }
-    void setBuckets(std::vector<document::BucketId> buckets) noexcept {
-        _buckets = std::move(buckets);
-    }
+    void setBuckets(std::vector<document::BucketId> buckets) noexcept { _buckets = std::move(buckets); }
 
     const document::BucketId getBucketId() const { return *_buckets.begin(); }
 
     bool visitRemoves() const { return _visitRemoves; }
     void setVisitRemoves(bool val) { _visitRemoves = val; }
 
-    const string & getFieldSet() const { return _fieldSet; }
+    const string& getFieldSet() const { return _fieldSet; }
     void setFieldSet(std::string_view fieldSet) { _fieldSet = fieldSet; }
 
     bool visitInconsistentBuckets() const { return _visitInconsistentBuckets; }
@@ -130,7 +129,7 @@ public:
     using UP = std::unique_ptr<DestroyVisitorMessage>;
 
     DestroyVisitorMessage(); // must be deserialized into
-    DestroyVisitorMessage(const string &instanceId);
+    DestroyVisitorMessage(const string& instanceId);
     ~DestroyVisitorMessage();
 
     const string& getInstanceId() const { return _instanceId; }
@@ -146,7 +145,7 @@ public:
  */
 class VisitorMessage : public DocumentMessage {
 protected:
-    VisitorMessage() { }
+    VisitorMessage() {}
 };
 
 /**
@@ -160,7 +159,7 @@ public:
 
 class CreateVisitorReply : public DocumentReply {
 private:
-    document::BucketId _lastBucket;
+    document::BucketId        _lastBucket;
     vdslib::VisitorStatistics _visitorStatistics;
 
 public:
@@ -187,7 +186,7 @@ public:
 class VisitorInfoMessage : public VisitorMessage {
 private:
     std::vector<document::BucketId> _finishedBuckets;
-    string                     _errorMessage;
+    string                          _errorMessage;
 
 protected:
     DocumentReply::UP doCreateReply() const override;
@@ -252,13 +251,14 @@ public:
         Entry();
         Entry(int64_t timestamp, DocumentSP doc, bool removeEntry);
         Entry(const Entry& other);
-        Entry(const document::DocumentTypeRepo &repo, document::ByteBuffer& buf);
+        Entry(const document::DocumentTypeRepo& repo, document::ByteBuffer& buf);
 
         int64_t getTimestamp() const noexcept { return _timestamp; }
-        const DocumentSP & getDocument() const noexcept { return _document; }
+        const DocumentSP& getDocument() const noexcept { return _document; }
         bool isRemoveEntry() const noexcept { return _removeEntry; }
 
         void serialize(vespalib::GrowableByteBuffer& buf) const;
+
     private:
         int64_t    _timestamp;
         DocumentSP _document;
@@ -287,5 +287,4 @@ public:
     string toString() const override { return "documentlistmessage"; }
 };
 
-}
-
+} // namespace documentapi
