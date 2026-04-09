@@ -67,7 +67,7 @@ MySubDb::insertDocs(const UserDocuments &docs_) {
     for (const auto & entry : docs_) {
         const auto & bucketDocs = entry.second;
         for (const auto & testDoc : bucketDocs.getDocs()) {
-            _metaStore.put(testDoc.getGid(), testDoc.getBucket(),
+            _metaStore.put(testDoc.getDocId(), testDoc.getBucket(),
                            testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid(), 0u);
             _realRetriever->_docs.push_back(testDoc.getDoc());
             ASSERT_EQ(testDoc.getLid() + 1, _realRetriever->_docs.size());

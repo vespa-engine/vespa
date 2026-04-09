@@ -147,10 +147,9 @@ MatchingTestSharedState::meta_store()
         // metaStore
         for (uint32_t i = 0; i < NUM_DOCS; ++i) {
             document::DocumentId docId(vespalib::make_string("id:ns:searchdocument::%u", i));
-            const document::GlobalId &gid = docId.getGlobalId();
             document::BucketId bucketId(BucketFactory::getBucketId(docId));
             uint32_t docSize = 1;
-            _meta_store->put(gid, bucketId, Timestamp(0u), docSize, i, 0u);
+            _meta_store->put(docId, bucketId, Timestamp(0u), docSize, i, 0u);
             _meta_store->setBucketState(bucketId, true);
         }
     }

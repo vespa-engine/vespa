@@ -167,7 +167,7 @@ public:
      * map is then re-built the same way it was originally where add()
      * was used to create the <lid, gid> pairs.
      **/
-    Result put(const GlobalId &gid, const BucketId &bucketId, Timestamp timestamp,
+    Result put(const document::DocumentId& docid, const BucketId &bucketId, Timestamp timestamp,
                uint32_t docSize, DocId lid, uint64_t prepare_serial_num) override;
     bool updateMetaData(DocId lid, const BucketId &bucketId, Timestamp timestamp) override;
     bool remove(DocId lid, uint64_t prepare_serial_num) override;

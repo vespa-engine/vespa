@@ -67,10 +67,10 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     Result inspect(const GlobalId &gid, uint64_t prepare_serial_num) override {
         return _store.inspect(gid, prepare_serial_num);
     }
-    Result put(const GlobalId &gid, const BucketId &bucketId, Timestamp timestamp,
+    Result put(const document::DocumentId& docid, const BucketId &bucketId, Timestamp timestamp,
                uint32_t docSize, DocId lid, uint64_t prepare_serial_num) override
     {
-        return _store.put(gid, bucketId, timestamp, docSize, lid, prepare_serial_num);
+        return _store.put(docid, bucketId, timestamp, docSize, lid, prepare_serial_num);
     }
     bool updateMetaData(DocId lid, const BucketId &bucketId, Timestamp timestamp) override {
         return _store.updateMetaData(lid, bucketId, timestamp);

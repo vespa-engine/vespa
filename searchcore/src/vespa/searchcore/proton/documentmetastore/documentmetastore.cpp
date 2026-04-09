@@ -6,6 +6,7 @@
 #include "search_context.h"
 #include "document_meta_store_versions.h"
 #include <vespa/fastos/file_interface.h>
+#include <vespa/document/base/documentid.h>
 #include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
@@ -33,6 +34,7 @@
 LOG_SETUP(".proton.documentmetastore");
 
 using document::BucketId;
+using document::DocumentId;
 using document::GlobalId;
 using proton::bucketdb::BucketState;
 using proton::bucketdb::RemoveBatchEntry;
@@ -508,10 +510,11 @@ DocumentMetaStore::inspect(const GlobalId &gid, uint64_t prepare_serial_num)
 }
 
 DocumentMetaStore::Result
-DocumentMetaStore::put(const GlobalId &gid, const BucketId &bucketId, Timestamp timestamp,
+DocumentMetaStore::put(const DocumentId& docid, const BucketId &bucketId, Timestamp timestamp,
                        uint32_t docSize, DocId lid, uint64_t prepare_serial_num)
 {
     Result res;
+    auto& gid = docid.getGlobalId();
     RawDocumentMetaData metaData(gid, bucketId, storage::spi::Timestamp(timestamp), docSize);
     KeyComp comp(metaData, get_unbound_meta_data_view());
     auto find_key = GidToLidMapKey::make_find_key(gid);
