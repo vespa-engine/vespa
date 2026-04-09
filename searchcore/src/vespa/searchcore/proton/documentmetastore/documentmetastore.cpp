@@ -431,9 +431,24 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB)
 DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string &name)
     : DocumentMetaStore(std::move(bucketDB), name, search::GrowStrategy())
 {}
+
+DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
+                                     const std::string &name,
+                                     const GrowStrategy &grow)
+     : DocumentMetaStore(std::move(bucketDB), name, grow, false, SubDbType::READY)
+{}
+
 DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
                                      const std::string &name,
                                      const GrowStrategy &grow,
+                                     SubDbType subDbType)
+     : DocumentMetaStore(std::move(bucketDB), name, grow, false, subDbType)
+{}
+
+DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
+                                     const std::string &name,
+                                     const GrowStrategy &grow,
+                                     bool store_full_document_id,
                                      SubDbType subDbType)
     : DocumentMetaStoreAttribute(name),
       _metaDataStore(grow, getGenerationHolder()),
@@ -447,7 +462,8 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
       _trackDocumentSizes(true),
       _changesSinceCommit(0),
       _op_listener(),
-      _should_compact_gid_to_lid_map(false)
+      _should_compact_gid_to_lid_map(false),
+      _store_full_document_id(store_full_document_id)
 {
     ensureSpace(0);         // lid 0 is reserved
     setCommittedDocIdLimit(1u);         // lid 0 is reserved
