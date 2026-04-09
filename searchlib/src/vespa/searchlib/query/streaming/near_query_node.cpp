@@ -74,7 +74,7 @@ NearQueryNode::evaluate_helper(MatchResult& match_result) const
                     auto& backing_vector = queue.backing_vector();
                     auto extended_max_pos = max_pos;
                     for (auto& itr : backing_vector) {
-                        if (&itr  != &front) {
+                        if (&itr != &front) {
                             extended_max_pos = std::max(extended_max_pos, itr.get_max_pos(last_allowed));
                         }
                     }
