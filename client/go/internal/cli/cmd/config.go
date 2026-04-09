@@ -27,8 +27,6 @@ const (
 	configFile = "config.yaml"
 )
 
-var ErrNoApplicationSpecified = errHint(fmt.Errorf("no application specified"), "Try the --"+applicationFlag+" flag")
-
 func newConfigCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "config",
@@ -376,7 +374,7 @@ func (c *Config) isQuiet() bool {
 func (c *Config) application() (vespa.ApplicationID, error) {
 	app, ok := c.get(applicationFlag)
 	if !ok {
-		return vespa.ApplicationID{}, ErrNoApplicationSpecified
+		return vespa.ApplicationID{}, errHint(fmt.Errorf("no application specified"), "Try the --"+applicationFlag+" flag")
 	}
 	application, err := vespa.ApplicationFromString(app)
 	if err != nil {

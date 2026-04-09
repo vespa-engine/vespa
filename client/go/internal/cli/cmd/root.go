@@ -538,15 +538,16 @@ func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, er
 		return nil, err
 	}
 	deployment := vespa.DefaultDeployment
-	if app, err := c.config.application(); err == nil {
-		deployment.Application = app
-	} else if errors.As(err, &ErrNoApplicationSpecified) {
-		// fall back to DefaultDeployment when the --application was not set
-		deployment.Application = vespa.DefaultApplication
-	} else {
-		// The --application is malformed, propagate an error
-		return nil, err
+
+	// Set deployment application or keep default if config is not set
+	if _, ok := c.config.get(applicationFlag); ok {
+		if app, err := c.config.application(); err == nil {
+			deployment.Application = app
+		} else {
+			return nil, err
+		}
 	}
+
 	switch targetType {
 	case vespa.TargetLocal:
 		return vespa.LocalTarget(c.httpClient, tlsOptions, c.retryInterval, deployment), nil
