@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+    <container id="container" version="1.0">
+        <search />
+        <document-api />
+
+        <!-- OpenAI Embedder with all configuration options -->
+        <component id="openai" type="openai-embedder">
+            <model>text-embedding-3-small</model>
+            <api-key-secret-ref>openai_api_key</api-key-secret-ref>
+            <dimensions>1024</dimensions>
+            <endpoint>https://api.openai.com/v1/embeddings</endpoint>
+        </component>
+
+        <!-- OpenAI Embedder with minimal configuration (uses default endpoint) -->
+        <component id="openai-minimal" type="openai-embedder">
+            <model>text-embedding-3-small</model>
+            <api-key-secret-ref>openai_api_key</api-key-secret-ref>
+            <dimensions>1536</dimensions>
+        </component>
+    </container>
+</services>

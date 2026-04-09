@@ -2,34 +2,24 @@
 
 package=ai.vespa.embedding.config
 
-# API Configuration
-
 # Reference to the secret in Vespa's secret store containing the VoyageAI API key
-apiKeySecretRef          string
+apiKeySecretRef          string default=""
 
-# VoyageAI API endpoint URL
+# VoyageAI API endpoint URL (auto-selected between text, multimodal, and contextualized endpoints based on model)
 endpoint                 string default="https://api.voyageai.com/v1/embeddings"
 
 # VoyageAI model name (e.g., voyage-3.5, voyage-3.5-lite, voyage-code-3, voyage-finance-2)
 model                    string
 
 # Output dimension
-dimensions int
+dimensions               int
 
 # Output quantization mode
-quantization enum { AUTO, FLOAT, INT8, BINARY } default=AUTO
-
-# Maximum number of retry attempts for failed requests
-maxRetries int default=3
-
-# HTTP client timeout in milliseconds for read/write operations
-timeout int default=60000
-
-# Input Processing
+quantization             enum { AUTO, FLOAT, INT8, BINARY } default=AUTO
 
 # Truncate inputs that exceed model's maximum token limit
-truncate bool default=true
+truncate                 bool default=true
 
 # Dynamic batching configuration
-batching.maxSize int default=0
-batching.maxDelayMillis long default=0
+batching.maxSize         int default=0
+batching.maxDelayMillis  long default=0
