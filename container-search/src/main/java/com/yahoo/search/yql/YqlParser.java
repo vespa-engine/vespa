@@ -615,9 +615,9 @@ public class YqlParser implements Parser {
         item.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
         item.setMinTargetHits(getAnnotation(ast, MIN_TARGET_HITS, Integer.class, null, "min hits to produce on a node"));
 
-        Double distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD, Double.class, null, "maximum distance allowed from query point");
+        Number distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD, Number.class, null, "maximum distance allowed from query point");
         if (distanceThreshold != null) {
-            item.setDistanceThreshold(distanceThreshold);
+            item.setDistanceThreshold(distanceThreshold.doubleValue());
         }
         Integer hnswExploreAdditionalHits = getAnnotation(ast, HNSW_EXPLORE_ADDITIONAL_HITS,
                                                           Integer.class, null, "number of extra hits to explore for HNSW algorithm");
