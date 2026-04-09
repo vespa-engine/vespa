@@ -902,6 +902,8 @@ public class YqlParserTestCase {
                 "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=3,approximate=false,hnsw.exploreAdditionalHits=8}");
         assertParse("select foo from bar where {targetHits: 7, distanceThreshold: 100100.25} nearestNeighbor(semantic_embedding, my_vector)",
                 "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=7,distanceThreshold=100100.25}");
+        assertParse("select foo from bar where {targetHits: 7, distanceThreshold: 45} nearestNeighbor(semantic_embedding, my_vector)",
+            "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=7,distanceThreshold=45.0}");
         assertParse("select foo from bar where {totalTargetHits: 100, minTargetHits: 11} nearestNeighbor(semantic_embedding, my_vector)",
                     "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,totalTargetHits=100,minTargetHits=11}");
     }
