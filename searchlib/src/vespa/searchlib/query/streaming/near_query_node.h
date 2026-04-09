@@ -52,7 +52,7 @@ protected:
 
         void add(const HitList& hits) {
             if (!hits.empty()) {
-                _queue.push(hits);
+                _queue.push(HitIterator(hits));
             }
         }
 

@@ -530,6 +530,19 @@ TEST_F(NearSearchTest, merged_match_spans)
     onear("AB", 2).element_gap(0).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
 }
 
+TEST_F(NearSearchTest, extended_match_span)
+{
+    auto docs = index().doc(69).elem(0, "AABAA");
+    near("AB", 1).verify_spans(docs, 69, {match_span(0, 0, 1, 0, 3)});
+    near("BA", 1).verify_spans(docs, 69, {match_span(0, 0, 1, 0, 3)});
+    onear("AB", 1).verify_spans(docs, 69, {match_span(0, 0, 1, 0, 2)});
+    onear("BA", 1).verify_spans(docs, 69, {match_span(0, 0, 2, 0, 3)});
+    near("AB", 10).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 4)});
+    near("BA", 10).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 4)});
+    onear("AB", 10).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 2)});
+    onear("BA", 10).verify_spans(docs, 69, {match_span(0, 0, 2, 0, 4)});
+}
+
 TEST_F(NearSearchTest, non_matching_negative_term)
 {
     for (uint32_t id: {1, 69}) {

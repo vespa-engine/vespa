@@ -655,6 +655,22 @@ TEST_P(NearTest, merged_match_spans)
     }
 }
 
+TEST_P(NearTest, extended_match_spans)
+{
+    auto docs = index().doc(69).elem(0, "AABAA");
+    if (GetParam().ordered()) {
+        near("AB", 1).verify_spans(docs, 69, {match_span(0, 0, 1, 0, 2)});
+        near("BA", 1).verify_spans(docs, 69, {match_span(0, 0, 2, 0, 3)});
+        near("AB", 10).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 2)});
+        near("BA", 10).verify_spans(docs, 69, {match_span(0, 0, 2, 0, 4)});
+    } else {
+        near("AB", 1).verify_spans(docs, 69, {match_span(0, 0, 1, 0, 3)});
+        near("BA", 1).verify_spans(docs, 69, {match_span(0, 0, 1, 0, 3)});
+        near("AB", 10).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 4)});
+        near("BA", 10).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 4)});
+    }
+}
+
 TEST_P(NearTest, multi_field_visual_test)
 {
     auto docs = index().doc(69)

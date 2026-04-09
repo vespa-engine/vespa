@@ -22,6 +22,7 @@ namespace search::queryeval {
 namespace {
 
 using search::fef::ElementGap;
+using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
 using search::fef::TermFieldMatchDataPosition;
 using search::fef::TermFieldMatchDataPositionKey;
@@ -232,8 +233,9 @@ NearSearch::~NearSearch() = default;
 namespace {
 
 struct PosIter {
-    search::fef::TermFieldMatchData::PositionsIterator curPos;
-    search::fef::TermFieldMatchData::PositionsIterator endPos;
+    TermFieldMatchData::PositionsIterator curPos;
+    TermFieldMatchData::PositionsIterator endPos;
+    TermFieldMatchData::PositionsIterator lookahead;
 
     bool operator< (const PosIter &other) const {
         // assumes none is at end
@@ -241,6 +243,17 @@ struct PosIter {
         TermFieldMatchDataPositionKey otherkey = *other.curPos;
         return mykey < otherkey;
     }
+    TermFieldMatchDataPosition get_max_pos(const TermFieldMatchDataPositionKey& last_allowed) {
+        if (lookahead < curPos) {
+            lookahead = curPos;
+        }
+        while (lookahead != endPos && !(last_allowed < lookahead->key())) {
+            ++lookahead;
+        }
+        --lookahead;
+        return *lookahead;
+    }
+
 };
 
 // Helper class to efficiently check if negative terms break windows
@@ -258,9 +271,9 @@ public:
 
     bool setup(const TermFieldMatchDataArray &input, size_t num_positive_terms, uint32_t docid) {
         for (size_t i = num_positive_terms; i < input.size(); ++i) {
-            const search::fef::TermFieldMatchData *term = input[i];
+            const TermFieldMatchData *term = input[i];
             if (term->has_data(docid) && term->begin() != term->end()) {
-                _queue.push({term->begin(), term->end()});
+                _queue.push({term->begin(), term->end(), term->begin()});
             }
         }
         return !_queue.empty();
@@ -314,11 +327,12 @@ struct Iterators
         if (_queue.size() == 1 || _maxOcc < occ) { _maxOcc = occ; }
     }
 
-    void add(const search::fef::TermFieldMatchData *term)
+    void add(const TermFieldMatchData *term)
     {
         PosIter iter;
         iter.curPos = term->begin();
         iter.endPos = term->end();
+        iter.lookahead = iter.curPos;
         LOG_ASSERT(iter.curPos != iter.endPos);
         _queue.push(iter);
         update(*iter.curPos);
@@ -333,7 +347,14 @@ struct Iterators
             if (!(lastAllowed < _maxOcc)) {
                 if (filter.check_window(*front.curPos, _maxOcc)) {
                     if constexpr (MatchResult::collect_spans) {
-                        match_result.register_match(MatchSpan(_field_id, *front.curPos, _maxOcc));
+                        auto& backing_vector = _queue.backing_vector();
+                        auto extended_max_pos = _maxOcc;
+                        for (auto& itr : backing_vector) {
+                            if (&itr != &front) {
+                                extended_max_pos = std::max(extended_max_pos, itr.get_max_pos(lastAllowed));
+                            }
+                        }
+                        match_result.register_match(MatchSpan(_field_id, *front.curPos, extended_max_pos));
                     } else {
                         match_result.register_match(front.curPos->getElementId());
                     }
@@ -365,7 +386,7 @@ NearSearch::Matcher::match(uint32_t docId, MatchResult& match_result)
     Iterators pos(get_element_gap(), field_id());
     uint32_t num_positive_terms = inputs().size() - num_negative_terms();
     for (uint32_t i = 0; i < num_positive_terms; ++i) {
-        const search::fef::TermFieldMatchData *term = inputs()[i];
+        const TermFieldMatchData *term = inputs()[i];
         if (!term->has_data(docId) || term->begin() == term->end()) {
             LOG(debug, "No occurrences found for term %d.", i);
             return;
@@ -467,8 +488,9 @@ ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filt
 {
     uint32_t numTerms = inputs().size() - num_negative_terms();
     PositionsIteratorList pos;
+
     for (uint32_t i = 0; i < numTerms; ++i) {
-        const search::fef::TermFieldMatchData *term = inputs()[i];
+        const TermFieldMatchData *term = inputs()[i];
         if (!term->has_data(docId) || term->begin() == term->end()) {
             LOG(debug, "No occurrences found for term %d.", i);
             return;
@@ -497,6 +519,7 @@ ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filt
     TermFieldMatchDataPositionKey prevTermPos;
     TermFieldMatchDataPositionKey curTermPos;
     TermFieldMatchDataPositionKey lastAllowed;
+    TermFieldMatchData::PositionsIterator lookahead = pos.back();
 
     // Look for match for every occurrence of the first term.
     for ( ; pos[0] != inputs()[0]->end(); ++pos[0]) {
@@ -529,7 +552,14 @@ ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filt
                     LOG(debug, "ONEAR match found for document %d.", docId);
                     // OK for all terms
                     if constexpr (MatchResult::collect_spans) {
-                        match_result.register_match(MatchSpan(field_id(), *pos[0], *pos[i]));
+                        if (lookahead < pos[i]) {
+                            lookahead = pos[i];
+                        }
+                        while (lookahead != inputs()[i]->end() && !(lastAllowed < lookahead->key())) {
+                            ++lookahead;
+                        }
+                        --lookahead;
+                        match_result.register_match(MatchSpan(field_id(), *pos[0], *lookahead));
                     } else {
                         match_result.register_match(pos[0]->getElementId());
                     }

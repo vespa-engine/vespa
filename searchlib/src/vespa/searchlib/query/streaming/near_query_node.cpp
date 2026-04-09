@@ -71,7 +71,14 @@ NearQueryNode::evaluate_helper(MatchResult& match_result) const
         if (!(last_allowed < max_pos.key())) {
             if (filter.check_window(*front, max_pos)) {
                 if constexpr (MatchResult::collect_spans) {
-                    match_result.register_match(MatchSpan(*front, max_pos));
+                    auto& backing_vector = queue.backing_vector();
+                    auto extended_max_pos = max_pos;
+                    for (auto& itr : backing_vector) {
+                        if (&itr  != &front) {
+                            extended_max_pos = std::max(extended_max_pos, itr.get_max_pos(last_allowed));
+                        }
+                    }
+                    match_result.register_match(MatchSpan(*front, extended_max_pos));
                 } else {
                     match_result.register_match(front.get_field_element().second);
                 }
