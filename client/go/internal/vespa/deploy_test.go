@@ -199,29 +199,13 @@ func TestFindApplicationPackage(t *testing.T) {
 	})
 }
 
-func TestDeactivate(t *testing.T) {
+func TestDeactivateLocalUnsupported(t *testing.T) {
 	httpClient := mock.HTTPClient{}
 	target := LocalTarget(&httpClient, TLSOptions{}, 0, DefaultDeployment)
 	opts := DeploymentOptions{Target: target}
-	require.Nil(t, Deactivate(opts))
-	assert.Equal(t, 1, len(httpClient.Requests))
-	req := httpClient.LastRequest
-	assert.Equal(t, "DELETE", req.Method)
-	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default", req.URL.String())
-}
-
-func TestDeactivateCustomApplication(t *testing.T) {
-	httpClient := mock.HTTPClient{}
-	deployment := DefaultDeployment
-	deployment.Application.Application = "a1"
-	deployment.Application.Instance = "i1"
-	target := LocalTarget(&httpClient, TLSOptions{}, 0, deployment)
-	opts := DeploymentOptions{Target: target}
-	require.Nil(t, Deactivate(opts))
-	assert.Equal(t, 1, len(httpClient.Requests))
-	req := httpClient.LastRequest
-	assert.Equal(t, "DELETE", req.Method)
-	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1", req.URL.String())
+	err := Deactivate(opts)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "deactivate is unsupported by local target")
 }
 
 func TestDeactivateCloud(t *testing.T) {

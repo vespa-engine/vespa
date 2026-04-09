@@ -339,30 +339,18 @@ func Activate(sessionID int64, deployment DeploymentOptions, timeout time.Durati
 
 // Deactivate given deployment
 func Deactivate(deployment DeploymentOptions) error {
+	if !deployment.Target.IsCloud() {
+		return fmt.Errorf("%s: deactivate is unsupported by %s target", deployment, deployment.Target.Type())
+	}
 	var (
 		u   *url.URL
 		err error
 	)
-	if deployment.Target.IsCloud() {
-		if deployment.Target.Deployment().Zone.Environment == "" || deployment.Target.Deployment().Zone.Region == "" {
-			return fmt.Errorf("%s: missing zone", deployment)
-		}
-		deploymentURL := deployment.Target.Deployment().System.DeploymentURL(deployment.Target.Deployment())
-		u, err = url.Parse(deploymentURL)
-	} else {
-		applicationName := deployment.Target.Deployment().Application.Application
-		if applicationName == "" {
-			applicationName = DefaultApplication.Application
-		}
-		instance := deployment.Target.Deployment().Application.Instance
-		if instance == "" {
-			instance = DefaultApplication.Instance
-		}
-		endpoint := fmt.Sprintf(
-			"/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s",
-			applicationName, instance)
-		u, err = deployment.url(endpoint)
+	if deployment.Target.Deployment().Zone.Environment == "" || deployment.Target.Deployment().Zone.Region == "" {
+		return fmt.Errorf("%s: missing zone", deployment)
 	}
+	deploymentURL := deployment.Target.Deployment().System.DeploymentURL(deployment.Target.Deployment())
+	u, err = url.Parse(deploymentURL)
 	if err != nil {
 		return err
 	}
